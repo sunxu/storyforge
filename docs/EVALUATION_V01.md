@@ -142,3 +142,21 @@ python scripts/analyze_blind_eval.py \
 ```
 
 Do not commit raw stories, scorer files, or private mappings to public Git.
+
+
+## 2026-10-08: 128-token truncation diagnosis and 512-token validation rerun
+
+The accepted 15-pair generation used `max_new_tokens=128`. A subsequent
+CPU tokenizer audit found that **all 30 responses re-tokenize to exactly
+132 tokens**. Together with the reported incomplete sentence endings, this
+strongly indicates the generation cap was binding. Retokenized lengths are
+*not* authoritative generated token counts, so do not claim that generation
+termination reasons were proven.
+
+The validation evaluation Runner now requests `max_new_tokens=512`; the
+128-token output remains an engineering/alignment artifact but should **not**
+be used as a final narrative-quality benchmark. The next evaluation needs
+its own fresh HF Job ID and must never overwrite the accepted 128-token run.
+Perform CPU-only checks first, then explicitly authorize any new A100 job.
+Repeat the tokenizer audit on the 512-token outputs prior to blind scoring.
+The 20 held-out test examples remain untouched.
