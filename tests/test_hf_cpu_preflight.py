@@ -43,6 +43,6 @@ def test_preflight_rejects_baseline_with_smoke_step_override(tmp_path: Path):
     root = Path(__file__).resolve().parents[1]
     source = (root / "configs/qwen38-27b-qlora-v0.1.yaml").read_text(encoding="utf-8")
     config = tmp_path / "bad.yaml"
-    config.write_text(source + "\\nmax_steps: 3\\n", encoding="utf-8")
+    config.write_text(source + chr(10) + "max_steps: 3" + chr(10), encoding="utf-8")
     with pytest.raises(ValueError, match="smoke requires lora_rank=32"):
         check_config(config)
