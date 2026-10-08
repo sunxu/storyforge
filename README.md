@@ -51,7 +51,7 @@ cd storyforge
 
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,analysis]"
 ```
 
 Put the extracted private export under `data/raw/`. It is intentionally excluded from Git.
@@ -83,7 +83,7 @@ data/compiled/v0.1/
 └── manifest.json
 ```
 
-See `docs/DATASET_V0_1.md` for the leakage and split contract.
+Analyze token budget with the exact target tokenizer/chat template:\n\n```bash\nstoryforge-dataset analyze \\\n  data/compiled/v0.1 \\\n  --model Qwen/Qwen3.8-27B\n```\n\nThis writes `data/compiled/v0.1/token_report.json` and reports P50/P90/P95/P99, 4K/8K/16K fit rates, the 10 largest samples, and a recommended `max_length`.\n\nSee `docs/DATASET_V0_1.md` for the leakage and split contract.
 
 ## Status
 
