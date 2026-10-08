@@ -43,9 +43,8 @@ python3 -m venv .venv-train
 source .venv-train/bin/activate
 
 pip install -U pip
-pip install -U ms-swift
-pip install -U "transformers>=5.2.0" qwen_vl_utils decord
-pip install -U bitsandbytes
+pip install -U "ms-swift==4.5.3" "transformers==5.16.1" \
+  "qwen-vl-utils>=0.0.14" "bitsandbytes==0.50.2"
 ```
 
 Optional after the baseline is stable:
@@ -93,7 +92,7 @@ swift sft configs/qwen38-27b-qlora-smoke.yaml
 
 ## Baseline command
 
-Only after smoke acceptance:
+Only after smoke acceptance **and a separate baseline config/GPU-memory review**:
 
 ```bash
 CUDA_VISIBLE_DEVICES=0 \
@@ -101,3 +100,30 @@ swift sft configs/qwen38-27b-qlora-v0.1.yaml
 ```
 
 The baseline is intentionally conservative. With only 65 training samples, training quality must be judged by held-out narrative evaluation, not by minimizing train loss.
+
+
+## 2026-10-08 Smoke closure
+
+The accepted A100 80GB engineering smoke completed 3 steps, evaluation,
+checkpoint save, adapter reload and inference. See
+[`docs/evidence/GPU_SMOKE_20261008.md`](evidence/GPU_SMOKE_20261008.md).
+
+The smoke used rank 32 and peak sampled GPU memory 61007 MiB. This does
+**not** yet establish rank-64 baseline memory headroom, final quality,
+training convergence or generalization.
+
+## Baseline SFT readiness
+
+Baseline candidate currently uses 65 train / 15 validation, rank 64,
+gradient accumulation 8, 16,384 max length and one epoch. Effective
+optimizer-step count is roughly nine for 65 examples at batch 1 with
+accumulation 8; the training framework's final partial-step behavior
+must be checked. Save/eval every 8 steps is too sparse for useful learning
+curve analysis and may only sample the tail. Review scheduling before
+creating a billable HF Job.
+
+Hold-out policy: do not feed the 20 test samples to the trainer,
+validation, checkpoint selection or hyperparameter tuning.
+
+Recommended next action: complete a CPU-only config sanity check and
+plan a short rank-64 capacity qualification before launching the full epoch.
