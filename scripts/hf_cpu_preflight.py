@@ -35,13 +35,25 @@ def check_data(path: Path) -> dict:
 def check_config(path: Path) -> dict:
     import yaml
     config = yaml.safe_load(path.read_text(encoding="utf-8"))
-    for key, expected in {
-        "max_length": 16384, "max_steps": 3,
-        "quant_bits": 4, "quant_method": "bnb"
-    }.items():
+    for key, expected in {"max_length": 16384, "quant_bits": 4, "quant_method": "bnb"}.items():
         if config.get(key) != expected:
             raise ValueError(f"config {key}: expected {expected}, got {config.get(key)}")
-    return {"config": str(path), "max_length": config["max_length"]}
+
+    if config.get("max_steps") == 3:
+        if config.get("lora_rank") != 32:
+            raise ValueError("smoke requires lora_rank=32")
+        mode = "smoke"
+    elif config.get("num_train_epochs") == 1 and "max_steps" not in config:
+        if config.get("lora_rank") != 64:
+            raise ValueError("baseline requires lora_rank=64")
+        if config.get("eval_steps") != 3 or config.get("save_steps") != 3:
+            raise ValueError("baseline requires eval_steps=save_steps=3")
+        mode = "baseline"
+    else:
+        raise ValueError("expected 3-step smoke or 1-epoch baseline configuration")
+    if config.get("loss_scale") != "last_round":
+        raise ValueError("loss_scale must remain last_round")
+    return {"config": str(path), "mode": mode, "max_length": config["max_length"]}
 
 def main() -> None:
     p = argparse.ArgumentParser()
