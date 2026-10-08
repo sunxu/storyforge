@@ -10,6 +10,8 @@ import time
 from importlib.metadata import version
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from scripts.hf_job_runner import (
     GpuMonitor,
     Runner,
@@ -83,11 +85,21 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("capacity", "baseline"), required=True)
     parser.add_argument("--git-commit", required=True)
+    parser.add_argument("--capacity-job-id")
     args = parser.parse_args()
     job_id = os.environ.get("JOB_ID", "")
     if not job_id or not job_id.replace("-", "").isalnum():
         raise RuntimeError("missing or invalid JOB_ID")
     validate_config()
+    if args.mode == "baseline":
+        if not args.capacity_job_id or not args.capacity_job_id.replace("-", "").isalnum():
+            raise RuntimeError("baseline requires --capacity-job-id from accepted rank-64 qualification")
+        prior = ROOT / "baseline-runs" / "capacity" / args.capacity_job_id
+        if not (prior / "CAPACITY_PASS").is_file():
+            raise RuntimeError(f"capacity PASS is missing: {prior}")
+        prior_summary = (prior / "summary.md").read_text(encoding="utf-8")
+        if f"config_sha256: {sha256(CONFIG)}" not in prior_summary:
+            raise RuntimeError("capacity config hash does not match baseline config")
     run_dir = ROOT / "baseline-runs" / args.mode / job_id
     run_dir.mkdir(parents=True, exist_ok=False)
     runner = Runner(run_dir)
