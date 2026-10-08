@@ -57,6 +57,22 @@ pip install -U liger-kernel
 
 Do not add DeepSpeed to the initial single-GPU QLoRA smoke test.
 
+## Label-mask policy
+
+StoryForge is target-only SFT: only the final Gold assistant response is supervised.
+
+Both smoke and baseline configs use:
+
+```yaml
+loss_scale: last_round
+```
+
+ms-swift's SFT default strategy supervises all assistant responses, including history, so it is
+not appropriate for these compiled multi-turn samples.
+
+Label audits must allow template-owned response suffix/control tokens attached to the final
+assistant response while rejecting any supervised system, user, or historical assistant tokens.
+
 ## Smoke command
 
 ```bash
