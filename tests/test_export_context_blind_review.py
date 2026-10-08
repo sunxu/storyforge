@@ -42,3 +42,17 @@ def test_context_csv_preserves_context_and_blindness(tmp_path):
     assert "base" not in rows[0] and "adapter" not in rows[0]
     with pytest.raises(FileExistsError):
         export_context_review(prompt_path, manifest_path, pairs_path, out_dir)
+
+
+def test_direct_script_help_runs_from_repository_root():
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    result = subprocess.run(
+        [sys.executable, str(root / "scripts/export_context_blind_review.py"), "--help"],
+        cwd=root, capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--prompts" in result.stdout
