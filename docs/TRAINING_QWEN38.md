@@ -118,12 +118,26 @@ Baseline candidate currently uses 65 train / 15 validation, rank 64,
 gradient accumulation 8, 16,384 max length and one epoch. Effective
 optimizer-step count is roughly nine for 65 examples at batch 1 with
 accumulation 8; the training framework's final partial-step behavior
-must be checked. Save/eval every 8 steps is too sparse for useful learning
-curve analysis and may only sample the tail. Review scheduling before
-creating a billable HF Job.
+must be checked. The baseline candidate now explicitly sets step-based evaluation and saving
+at every 3 optimizer steps (rather than 8), with logging each step.
+This improves early visibility but still does not establish model quality or
+prevent overfitting. Verify ms-swift 4.5.3 resolves these strategies and the
+final incomplete accumulation step correctly in the CPU preflight.
 
 Hold-out policy: do not feed the 20 test samples to the trainer,
 validation, checkpoint selection or hyperparameter tuning.
 
 Recommended next action: complete a CPU-only config sanity check and
 plan a short rank-64 capacity qualification before launching the full epoch.
+
+## Important execution safeguard
+
+The accepted `scripts/hf_job_runner.py` is a **smoke-only runner**: it
+hard-codes the smoke config and `--max_steps 3`. **Do not** use
+`scripts/hf_submit_smoke.sh --submit` to start baseline training: it will
+start another 3-step smoke, not a one-epoch job. A dedicated baseline runner
+with unique run paths, explicit config identity, finite-loss/checkpoint
+assertions and rank-64 GPU capacity gates must be built and tested first.
+
+The current candidate config is not a claim that rank 64 fits A100 80GB.
+A full epoch must not be launched until a bounded GPU capacity test succeeds.
