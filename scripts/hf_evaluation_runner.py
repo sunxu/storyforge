@@ -25,11 +25,11 @@ def infer_command(result: Path, *, adapter: bool) -> list[str]:
     if adapter:
         cmd.extend(["--adapters", str(ADAPTER)])
     return cmd + [
-        "--val_dataset", str(PROMPTS), "--val_dataset_sample", "-1",
+        "--val_dataset", str(PROMPTS),
         "--infer_backend", "transformers", "--torch_dtype", "bfloat16",
         "--quant_method", "bnb", "--quant_bits", "4",
         "--bnb_4bit_compute_dtype", "bfloat16", "--max_new_tokens", "128",
-        "--seed", "42", "--data_seed", "42",
+        "--seed", "42", "--data_seed", "42", "--do_sample", "false",
         "--val_dataset_shuffle", "false", "--result_path", str(result),
     ]
 
