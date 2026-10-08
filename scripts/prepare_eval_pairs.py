@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import secrets
 from pathlib import Path
 
 
@@ -16,9 +17,9 @@ def read_results(path: Path, expected: int) -> list[str]:
     return answers
 
 
-def prepare_pairs(manifest_path: Path, base_path: Path, adapter_path: Path, output: Path) -> int:
-    if output.exists():
-        raise FileExistsError(f"will not overwrite: {output}")
+def prepare_pairs(manifest_path: Path, base_path: Path, adapter_path: Path, output: Path, key_path: Path) -> int:
+    if output.exists() or key_path.exists():
+        raise FileExistsError("will not overwrite blind evaluation or secret key")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     samples = manifest["samples"]
     count = manifest["count"]
@@ -27,9 +28,11 @@ def prepare_pairs(manifest_path: Path, base_path: Path, adapter_path: Path, outp
     base = read_results(base_path, count)
     adapter = read_results(adapter_path, count)
     pairs = []
+    mapping = []
     for i, sample in enumerate(samples):
-        # Deterministic balanced presentation order, independent from model content.
-        order = ("base", "adapter") if i % 2 == 0 else ("adapter", "base")
+        # Randomized concealed order, independently assigned per sample.
+        order = ("base", "adapter") if secrets.randbelow(2) == 0 else ("adapter", "base")
+        mapping.append({"sample_id": sample["sample_id"], "a": order[0], "b": order[1]})
         candidates = {"base": base[i], "adapter": adapter[i]}
         pairs.append({"sample_id": sample["sample_id"],
                       "prompt_sha256": sample["prompt_sha256"],
@@ -49,7 +52,10 @@ def prepare_pairs(manifest_path: Path, base_path: Path, adapter_path: Path, outp
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("".join(json.dumps(pair, ensure_ascii=False) + "\n" for pair in pairs),
                       encoding="utf-8")
-    # Never include the hidden answer mapping in grader output.
+    key_path.parent.mkdir(parents=True, exist_ok=True)
+    with key_path.open("x", encoding="utf-8") as handle:
+        handle.write(json.dumps(mapping, ensure_ascii=False, indent=2) + "\n")
+    key_path.chmod(0o600)
     return count
 
 
@@ -59,8 +65,9 @@ def main() -> None:
     parser.add_argument("--base-results", type=Path, required=True)
     parser.add_argument("--adapter-results", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--secret-key", type=Path, required=True)
     args = parser.parse_args()
-    print(f"PAIRED_EVAL_PASS: {prepare_pairs(args.manifest, args.base_results, args.adapter_results, args.output)}")
+    print(f"PAIRED_EVAL_PASS: {prepare_pairs(args.manifest, args.base_results, args.adapter_results, args.output, args.secret_key)}")
 
 
 if __name__ == "__main__":
