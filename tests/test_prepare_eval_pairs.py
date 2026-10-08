@@ -22,7 +22,7 @@ def test_prepare_pairs_keeps_grader_blind_and_separate_key(tmp_path):
     rows = [json.loads(line) for line in output.read_text(encoding="utf-8").splitlines()]
     mapping = json.loads(key.read_text(encoding="utf-8"))
     assert len(rows) == len(mapping) == 2
-    assert all("base" not in row.keys() and "adapter" not in row.keys() for row in rows)
+    assert all("base" not in row and "adapter" not in row for row in rows)
     for i, row in enumerate(rows):
         candidates = {row["response_a"], row["response_b"]}
         assert candidates == {f"base {['one', 'two'][i]}", f"tuned {['one', 'two'][i]}"}
