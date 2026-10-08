@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.hf_job_runner import Runner, check_inference_result, training_evidence
+from scripts.hf_job_runner import (\n    Runner,\n    check_inference_result,\n    make_inference_input,\n    training_evidence,\n)
 
 
 def _checkpoint(tmp_path: Path, *, loss=1.0, eval_loss=2.0, step=3, weights=True):
@@ -57,3 +57,21 @@ def test_stream_drains_both_pipes_without_deadlock(tmp_path):
         runner.close()
     assert (tmp_path / "stdout.log").stat().st_size > 100_000
     assert (tmp_path / "stderr.log").stat().st_size > 100_000
+
+
+def test_inference_input_excludes_gold_and_loss_metadata(tmp_path):
+    source = tmp_path / "validation.jsonl"
+    output = tmp_path / "infer.jsonl"
+    sample = {"messages": [
+        {"role": "system", "content": "rules"},
+        {"role": "user", "content": "earlier"},
+        {"role": "assistant", "content": "history", "loss": False},
+        {"role": "user", "content": "continue"},
+        {"role": "assistant", "content": "secret gold answer", "loss": True},
+    ]}
+    source.write_text(json.dumps(sample) + "\n", encoding="utf-8")
+    make_inference_input(source, output)
+    prepared = json.loads(output.read_text(encoding="utf-8"))
+    assert prepared["messages"][-1] == {"role": "user", "content": "continue"}
+    assert "secret gold answer" not in output.read_text(encoding="utf-8")
+    assert all("loss" not in message for message in prepared["messages"])
