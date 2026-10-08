@@ -15,7 +15,7 @@ def check_help(help_text: str) -> None:
                 "--torch_dtype", "--quant_method", "--quant_bits",
                 "--bnb_4bit_compute_dtype", "--max_new_tokens",
                 "--seed", "--data_seed", "--val_dataset_shuffle",
-                "--do_sample", "--adapters", "--result_path")
+                "--temperature", "--adapters", "--result_path")
     missing = [flag for flag in required
                if not re.search(r"(?<![\w-])" + re.escape(flag) + r"(?![\w-])", help_text)]
     if missing:
@@ -28,8 +28,8 @@ def main() -> None:
     for cmd in (base, tuned):
         if "--val_dataset_sample" in cmd:
             raise ValueError("val_dataset_sample override must be absent")
-        if cmd[cmd.index("--do_sample") + 1] != "false":
-            raise ValueError("do_sample must be false")
+        if cmd[cmd.index("--temperature") + 1] != "0":
+            raise ValueError("temperature must be zero for deterministic inference")
     result = subprocess.run(["swift", "infer", "--help"], check=True,
                             capture_output=True, text=True)
     check_help(result.stdout + result.stderr)
