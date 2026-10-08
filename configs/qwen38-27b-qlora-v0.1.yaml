@@ -1,5 +1,6 @@
 # StoryForge Qwen3.8-27B QLoRA baseline candidate
-# Do not run until smoke test passes and GPU memory is measured.
+# GPU smoke PASS (rank 32); rank-64 GPU capacity NOT YET VERIFIED.
+# Requires separate capacity gate before any billable one-epoch baseline.
 # Dataset v0.3: 65 train / 15 validation / 20 held-out test.
 
 model: Qwen/Qwen3.8-27B
@@ -38,8 +39,10 @@ num_train_epochs: 1
 warmup_ratio: 0.05
 
 logging_steps: 1
-eval_steps: 8
-save_steps: 8
+eval_strategy: steps
+save_strategy: steps
+eval_steps: 3
+save_steps: 3
 save_total_limit: 2
 
 gradient_checkpointing: true
