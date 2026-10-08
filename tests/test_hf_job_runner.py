@@ -80,3 +80,12 @@ def test_inference_input_excludes_gold_and_loss_metadata(tmp_path):
     assert prepared["messages"][-1] == {"role": "user", "content": "continue"}
     assert "secret gold answer" not in output.read_text(encoding="utf-8")
     assert all("loss" not in message for message in prepared["messages"])
+
+
+def test_smoke_runner_has_no_mandatory_decord_install():
+    from pathlib import Path
+
+    runner_source = Path(__file__).parents[1] / "scripts" / "hf_job_runner.py"
+    text = runner_source.read_text(encoding="utf-8")
+    assert '"qwen-vl-utils>=0.0.14"])' in text
+    assert '"decord": version("decord")' not in text
