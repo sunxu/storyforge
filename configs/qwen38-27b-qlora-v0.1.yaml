@@ -1,0 +1,44 @@
+# StoryForge Qwen3.8-27B QLoRA baseline candidate
+# Do not run until smoke test passes and GPU memory is measured.
+# Dataset v0.3: 65 train / 15 validation / 20 held-out test.
+
+model: Qwen/Qwen3.8-27B
+use_hf: true
+
+tuner_type: lora
+target_modules: all-linear
+lora_rank: 64
+lora_alpha: 128
+lora_dropout: 0.05
+
+dataset:
+  - data/compiled/v0.3/train.jsonl
+val_dataset:
+  - data/compiled/v0.3/validation.jsonl
+
+torch_dtype: bfloat16
+quant_method: bnb
+quant_bits: 4
+bnb_4bit_compute_dtype: bfloat16
+bnb_4bit_quant_type: nf4
+bnb_4bit_use_double_quant: true
+
+max_length: 16384
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 8
+
+learning_rate: 0.00005
+num_train_epochs: 1
+warmup_ratio: 0.05
+
+logging_steps: 1
+eval_steps: 8
+save_steps: 8
+save_total_limit: 2
+
+gradient_checkpointing: true
+dataloader_num_workers: 2
+dataset_num_proc: 2
+
+output_dir: output/qwen38-27b-storyforge-v0.1
