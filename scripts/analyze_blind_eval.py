@@ -40,25 +40,40 @@ def inspect_pairs(path: Path) -> dict:
             "note": "possible_truncation is a heuristic, not proof of token-limit truncation"}
 
 
+CHINESE_SCORE_FIELDS = {
+    "narrative_continuity": "剧情连续性",
+    "character_consistency": "角色一致性",
+    "instruction_adherence": "指令遵循",
+    "writing_quality": "文学表现力",
+    "interactive_progression": "互动推进",
+}
+
+
 def export_scorecard(source: Path, output: Path) -> int:
+    """Export a blind, reviewer-friendly UTF-8 BOM CSV with both actual replies."""
     if output.exists():
         raise FileExistsError(f"will not overwrite {output}")
     rows = read_jsonl(source)
     if not rows:
         raise ValueError("empty blind evaluation")
-    columns = ["sample_id", "preference", "reason", "critical_failure"]
-    columns += [f"{field}_{arm}" for field in FIELDS for arm in ("a", "b")]
+    columns = ["样本编号", "回复A", "回复B", "整体偏好(A/B/TIE)", "评分理由", "严重问题"]
+    columns += [f"{label}·{arm}" for label in CHINESE_SCORE_FIELDS.values()
+                for arm in ("A", "B")]
     output.parent.mkdir(parents=True, exist_ok=True)
-    with output.open("x", encoding="utf-8", newline="") as stream:
+    with output.open("x", encoding="utf-8-sig", newline="") as stream:
         writer = csv.DictWriter(stream, fieldnames=columns)
         writer.writeheader()
         for row in rows:
-            writer.writerow({"sample_id": row["sample_id"]})
+            writer.writerow({
+                "样本编号": row["sample_id"],
+                "回复A": row["response_a"],
+                "回复B": row["response_b"],
+            })
     return len(rows)
 
 
 def summarize_scores(scorecard: Path, private_key: Path) -> dict:
-    with scorecard.open(encoding="utf-8", newline="") as stream:
+    with scorecard.open(encoding="utf-8-sig", newline="") as stream:
         rows = list(csv.DictReader(stream))
     mapping = json.loads(private_key.read_text(encoding="utf-8"))
     lookup = {entry["sample_id"]: entry for entry in mapping}
@@ -68,20 +83,21 @@ def summarize_scores(scorecard: Path, private_key: Path) -> dict:
     score_sums = {"base": 0, "adapter": 0}
     seen = set()
     for row in rows:
-        sid = row["sample_id"]
+        sid = row.get("样本编号", row.get("sample_id"))
         if sid in seen or sid not in lookup:
             raise ValueError("duplicate or unknown sample_id")
         seen.add(sid)
         order = lookup[sid]
         if {order["a"], order["b"]} != {"base", "adapter"}:
             raise ValueError("invalid answer key")
-        pref = row["preference"].strip().upper()
+        pref = row.get("整体偏好(A/B/TIE)", row.get("preference", "")).strip().upper()
         if pref not in {"A", "B", "TIE"}:
             raise ValueError(f"invalid or missing preference for {sid}")
         preferences["tie" if pref == "TIE" else order[pref.lower()]] += 1
         for field in FIELDS:
             for arm in ("a", "b"):
-                raw = row[f"{field}_{arm}"].strip()
+                chinese_key = f"{CHINESE_SCORE_FIELDS[field]}·{arm.upper()}"
+                raw = row.get(chinese_key, row.get(f"{field}_{arm}", "")).strip()
                 if not raw.isdecimal() or int(raw) not in range(1, 6):
                     raise ValueError(f"invalid {field}_{arm} for {sid}")
                 score_sums[order[arm]] += int(raw)
