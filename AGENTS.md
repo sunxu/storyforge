@@ -143,6 +143,33 @@ Acceptance:
 
 Do not rebuild v0.3 unless required.
 
+#### Label-mask qualification
+
+StoryForge SFT supervises only the final Gold assistant response.
+
+The training configs MUST use:
+
+```yaml
+loss_scale: last_round
+```
+
+Do not use ms-swift SFT's default loss strategy for StoryForge multi-turn samples because
+the default also supervises historical assistant responses.
+
+When auditing labels, Qwen/ms-swift may supervise assistant response suffix/control tokens
+(e.g. response terminators). These template-owned suffix tokens are not history/system leakage.
+
+A label-mask audit must distinguish:
+
+- forbidden: system tokens
+- forbidden: user tokens
+- forbidden: historical assistant response tokens
+- allowed: final Gold assistant content
+- allowed: template-owned suffix/control tokens attached to the final response
+
+If an audit reports a small number of leaked tokens, decode their exact token IDs and positions
+before changing the training mask. Never waive the audit without identifying them.
+
 #### Stage C — Smoke training
 
 Run only:
