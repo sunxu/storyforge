@@ -42,7 +42,8 @@ def build_train_command(run_dir: Path, *, mode: str) -> list[str]:
     ]
     if mode == "capacity":
         # One real optimizer step at rank 64, not a full epoch.
-        cmd += ["--max_steps", "1", "--save_strategy", "no", "--eval_strategy", "no"]
+        cmd += ["--max_steps", "1", "--save_strategy", "steps", "--save_steps", "1",
+                "--eval_strategy", "no"]
     return cmd
 
 
