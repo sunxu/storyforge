@@ -30,7 +30,7 @@ if [[ "$MODE" == sync ]]; then
   exit 0
 fi
 hf jobs run --namespace adradar --name storyforge-blind-validation-v01 \
-  --flavor a100-large --timeout 120m \
+  --flavor a100-large --timeout 240m \
   -v "$BUCKET:/workspace:rw" \
   pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime \
   python /workspace/scripts/hf_evaluation_runner.py --git-commit "$(git rev-parse HEAD)"
