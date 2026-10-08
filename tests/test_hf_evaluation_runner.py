@@ -11,7 +11,9 @@ def test_base_and_adapter_use_same_prompt_and_decoding():
     assert "--adapters" in tuned
     for option in ("--val_dataset", "--max_new_tokens", "--quant_method", "--quant_bits"):
         assert base[base.index(option) + 1] == tuned[tuned.index(option) + 1]
-    assert "--val_dataset_sample" in base
+    assert "--val_dataset_sample" not in base
+    assert base[base.index("--do_sample") + 1] == "false"
+    assert tuned[tuned.index("--do_sample") + 1] == "false"
 
 
 def test_eval_launch_is_opt_in_and_validation_only():
