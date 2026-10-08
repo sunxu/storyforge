@@ -214,10 +214,10 @@ def main() -> None:
         collect_environment(runner, before=True, require_gpu=not args.audit_only)
         runner.run([sys.executable, "-m", "pip", "install", "-U",
                     "ms-swift==4.5.3", "transformers==5.16.1", "bitsandbytes",
-                    "qwen-vl-utils>=0.0.14", "decord"])
+                    "qwen-vl-utils>=0.0.14"])
         runner.run([sys.executable, "-m", "pip", "freeze"], name="pip-freeze.txt")
         runner.run([sys.executable, "-c",
-                    "import importlib.metadata as m; print({n: m.version(n) for n in ('ms-swift','transformers','bitsandbytes','decord')})"],
+                    "import importlib.metadata as m; print({n: m.version(n) for n in ('ms-swift','transformers','bitsandbytes','qwen_vl_utils')})"],
                    name="versions.txt")
         from importlib.metadata import version
         (run_dir / "environment.json").write_text(json.dumps({
@@ -225,7 +225,7 @@ def main() -> None:
             "ms_swift": version("ms-swift"),
             "transformers": version("transformers"),
             "bitsandbytes": version("bitsandbytes"),
-            "decord": version("decord"),
+            "qwen_vl_utils": version("qwen_vl_utils"),
             "job_id": os.environ.get("JOB_ID"),
             "git_commit": args.git_commit,
         }, indent=2), encoding="utf-8")
