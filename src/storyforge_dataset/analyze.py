@@ -47,11 +47,15 @@ def load_compiled_dataset(root: Path) -> list[dict[str, Any]]:
 
 
 def _encode_chat(tokenizer: Any, messages: list[dict[str, str]]) -> list[int]:
-    encoded = tokenizer.apply_chat_template(
+    # Render first, then tokenize explicitly. Some custom Qwen tokenizers may return
+    # mapping-like objects from apply_chat_template(tokenize=True); list(mapping)
+    # would count dictionary keys instead of token ids.
+    rendered = tokenizer.apply_chat_template(
         messages,
-        tokenize=True,
+        tokenize=False,
         add_generation_prompt=False,
     )
+    encoded = tokenizer(rendered, add_special_tokens=False)["input_ids"]
     if hasattr(encoded, "tolist"):
         encoded = encoded.tolist()
     if encoded and isinstance(encoded[0], list):
