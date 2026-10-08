@@ -127,6 +127,28 @@ def _pick_nonempty(source: dict[str, Any], fields: tuple[str, ...]) -> dict[str,
     }
 
 
+def _clip_text(value: Any, max_chars: int) -> Any:
+    if isinstance(value, str) and len(value) > max_chars:
+        return value[:max_chars].rstrip() + "…"
+    return value
+
+
+def _clip_nested(value: Any, max_items: int, max_string_chars: int) -> Any:
+    if isinstance(value, str):
+        return _clip_text(value, max_string_chars)
+    if isinstance(value, list):
+        return [
+            _clip_nested(item, max_items, max_string_chars)
+            for item in value[:max_items]
+        ]
+    if isinstance(value, dict):
+        return {
+            key: _clip_nested(item, max_items, max_string_chars)
+            for key, item in value.items()
+        }
+    return value
+
+
 def _compact_story_payload(card: dict[str, Any]) -> dict[str, Any]:
     data = card.get("v2_data") or {}
     world = data.get("world") or {}
@@ -148,6 +170,26 @@ def _compact_story_payload(card: dict[str, Any]) -> dict[str, Any]:
             seen_character_ids.add(identity)
         compact = _pick_nonempty(character, _COMPACT_CHARACTER_FIELDS)
         if compact:
+            for field, limit in {
+                "upbringing": 1500,
+                "introduction": 1400,
+                "speechExample": 1000,
+                "bottomLine": 1000,
+                "currentGoal": 1000,
+                "coreConflict": 1000,
+                "desiredFuture": 800,
+            }.items():
+                if field in compact:
+                    compact[field] = _clip_text(compact[field], limit)
+            for field, limits in {
+                "relationNodes": (8, 500),
+                "keyMemories": (8, 500),
+                "relEvents": (8, 400),
+                "personalityTraits": (12, 300),
+                "relationModes": (8, 400),
+            }.items():
+                if field in compact:
+                    compact[field] = _clip_nested(compact[field], *limits)
             characters.append(compact)
 
     npcs = []
@@ -158,6 +200,16 @@ def _compact_story_payload(card: dict[str, Any]) -> dict[str, Any]:
                 npcs.append(compact_npc)
 
     compact_director = _pick_nonempty(director, _COMPACT_DIRECTOR_FIELDS)
+    if "forbiddenRules" in compact_director:
+        compact_director["forbiddenRules"] = _clip_nested(
+            compact_director["forbiddenRules"], 16, 300
+        )
+    if "storyClue" in compact_director:
+        compact_director["storyClue"] = _clip_text(compact_director["storyClue"], 1600)
+    if "simulationRules" in compact_director:
+        compact_director["simulationRules"] = _clip_text(
+            compact_director["simulationRules"], 1600
+        )
     if npcs:
         compact_director["npcs"] = npcs
 
