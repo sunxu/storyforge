@@ -3,7 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from scripts.hf_job_runner import (\n    Runner,\n    check_inference_result,\n    make_inference_input,\n    training_evidence,\n)
+from scripts.hf_job_runner import (
+    Runner,
+    check_inference_result,
+    make_inference_input,
+    training_evidence,
+)
 
 
 def _checkpoint(tmp_path: Path, *, loss=1.0, eval_loss=2.0, step=3, weights=True):
@@ -37,10 +42,12 @@ def test_training_evidence_rejects_nonfinite_eval_loss(tmp_path):
 
 def test_inference_result_requires_nonempty_response(tmp_path):
     path = tmp_path / "results.jsonl"
-    path.write_text('{"response": ""}\n', encoding="utf-8")
+    path.write_text('{"response": ""}
+', encoding="utf-8")
     with pytest.raises(RuntimeError, match="non-empty response"):
         check_inference_result(path)
-    path.write_text('{"response": "ok"}\n', encoding="utf-8")
+    path.write_text('{"response": "ok"}
+', encoding="utf-8")
     check_inference_result(path)
 
 
@@ -69,7 +76,8 @@ def test_inference_input_excludes_gold_and_loss_metadata(tmp_path):
         {"role": "user", "content": "continue"},
         {"role": "assistant", "content": "secret gold answer", "loss": True},
     ]}
-    source.write_text(json.dumps(sample) + "\n", encoding="utf-8")
+    source.write_text(json.dumps(sample) + "
+", encoding="utf-8")
     make_inference_input(source, output)
     prepared = json.loads(output.read_text(encoding="utf-8"))
     assert prepared["messages"][-1] == {"role": "user", "content": "continue"}
