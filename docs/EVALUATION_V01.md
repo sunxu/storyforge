@@ -179,3 +179,30 @@ overwrite prior 128/512-token outputs. Keep identical Gold-free prompts,
 model/adapter identities and decoding controls. Review completion and
 actual stopping behavior before rating; Gold length alone cannot guarantee
 natural model termination. The 20 held-out Test prompts stay locked.
+
+
+## Context-enriched Chinese blind review (three independent reviewers)
+
+Use the **exact Gold-free Validation prompt file** from the accepted paired
+evaluation and its matching manifest. The exporter cryptographically verifies
+all 15 prompt/pair IDs and hashes. It never reads Gold or the private answer key.
+
+```bash
+BUCKET="hf://buckets/adradar/storyforge-training"
+hf buckets cp "$BUCKET/evaluation/v0.1/validation-prompts.jsonl" /tmp/storyforge-eval-prompts.jsonl
+hf buckets cp "$BUCKET/evaluation/v0.1/validation-manifest.json" /tmp/storyforge-eval-manifest.json
+hf buckets cp "$BUCKET/evaluation-runs/validation/6ac794fae7a0dae8a2788ee6/blind-pairs.jsonl" /tmp/storyforge-blind-1536.jsonl
+
+python scripts/export_context_blind_review.py \
+  --prompts /tmp/storyforge-eval-prompts.jsonl \
+  --manifest /tmp/storyforge-eval-manifest.json \
+  --pairs /tmp/storyforge-blind-1536.jsonl \
+  --out-dir /tmp/storyforge-review-1536
+```
+
+The exporter creates `StoryForge_Reviewer_01.csv`,
+`StoryForge_Reviewer_02.csv` and `StoryForge_Reviewer_03.csv`.
+Each sheet includes system/story rules, past conversation, current user input,
+and anonymous response A/B, followed by Chinese rating columns. Do not share
+the confidential A/B key with reviewers. The source inputs may include private
+story material and should not be committed to GitHub.
