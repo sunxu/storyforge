@@ -44,5 +44,5 @@ def test_missing_scores_rejected(tmp_path):
     key.write_text(json.dumps([{"sample_id": "x", "a": "base", "b": "adapter"}]))
     sheet = tmp_path / "sheet.csv"
     sheet.write_text("sample_id,preference\nx,A\n")
-    with pytest.raises(KeyError):
+    with pytest.raises(ValueError, match="invalid"):
         summarize_scores(sheet, key)
