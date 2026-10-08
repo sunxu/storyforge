@@ -58,3 +58,35 @@ held-out prompts, avoid asserting statistically robust improvements.
   hashes match, and no Gold target is in generation input.
 - Model quality: not yet accepted until blind grading is completed and scores
   are reviewed. A successful train loss or eval loss is not sufficient.
+
+
+## Implementation (2026-10-08)
+- `scripts/hf_evaluation_runner.py`: validation-only paired base/adapter inference,
+  isolated Job ID directory, no SFT training and no held-out test access.
+- `scripts/hf_submit_evaluation.sh`: default `sync`, paid `submit` requires
+  `STORYFORGE_ALLOW_PAID_GPU=YES`.
+- `scripts/prepare_eval_pairs.py`: checks result counts and nonempty responses,
+  writes randomized A/B grading records and a separately stored, restricted
+  `PRIVATE-answer-key.json`.
+
+### CPU preparation & upload
+```bash
+pytest -q tests/test_prepare_blind_eval.py tests/test_prepare_eval_pairs.py tests/test_hf_evaluation_runner.py
+bash scripts/hf_submit_evaluation.sh
+```
+The script expects the validation files generated in `/tmp` by the preceding
+Gold-free CPU preparation instructions. The upload step is not GPU billable.
+
+### Remaining launch gates
+- The base-only `swift infer` CLI flags, including `--val_dataset_sample -1`,
+  must be checked on CPU; the earlier inference smoke only verified adapter
+  inference of a single prompt.
+- Validate the output order and one-output-per-input behavior of ms-swift;
+  the current pairer assumes output order matches prompt order.
+- Freeze generation arguments (including deterministic decoding/seed) after
+  compatibility checks. Merely matching command flags does not prove identical
+  effective generation defaults.
+- Confirm the `checkpoint-9` from the accepted Baseline still exists in Bucket.
+- Review cost before paid GPU submission.
+
+**Do not submit the GPU evaluation until these gates have been verified.**
