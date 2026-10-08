@@ -29,7 +29,8 @@ def infer_command(result: Path, *, adapter: bool) -> list[str]:
         "--infer_backend", "transformers", "--torch_dtype", "bfloat16",
         "--quant_method", "bnb", "--quant_bits", "4",
         "--bnb_4bit_compute_dtype", "bfloat16", "--max_new_tokens", "128",
-        "--result_path", str(result),
+        "--seed", "42", "--data_seed", "42",
+        "--val_dataset_shuffle", "false", "--result_path", str(result),
     ]
 
 
@@ -83,7 +84,7 @@ def main() -> None:
         check_inference_result(tuned)
         graded = run_dir / "blind-pairs.jsonl"
         private_key = run_dir / "PRIVATE-answer-key.json"
-        prepare_pairs(MANIFEST, base, tuned, graded, private_key)
+        prepare_pairs(MANIFEST, base, tuned, graded, private_key, PROMPTS)
         details.extend([f"pairs: {count}", f"manifest_sha256: {sha256(MANIFEST)}",
                         f"prompts_sha256: {sha256(PROMPTS)}", "paired_inference: PASS"])
         status = "PASS"
