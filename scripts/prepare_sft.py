@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
 """Validate and convert StoryForge dataset for last-assistant-only ms-swift SFT."""
 from __future__ import annotations
 
 import argparse
 import json
 from pathlib import Path
+
 
 def convert(source: Path, dest: Path) -> int:
     count = 0
