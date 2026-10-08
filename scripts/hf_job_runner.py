@@ -140,6 +140,18 @@ def training_evidence(output: Path) -> dict[str, object]:
             "adapter": str(checkpoint), "adapter_weights": str(weights[-1])}
 
 
+def make_inference_input(source: Path, destination: Path) -> None:
+    """Create one generation-only prompt, never exposing the Gold assistant target."""
+    row = next((json.loads(line) for line in source.open(encoding="utf-8") if line.strip()), None)
+    if not row:
+        raise RuntimeError("validation dataset is empty")
+    messages = row["messages"]
+    if len(messages) < 2 or messages[-2]["role"] != "user" or messages[-1]["role"] != "assistant":
+        raise RuntimeError("validation sample does not end in user/Gold assistant")
+    prompt = [{"role": m["role"], "content": m["content"]} for m in messages[:-1]]
+    destination.write_text(json.dumps({"messages": prompt}, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 def check_inference_result(path: Path) -> None:
     rows = [json.loads(line) for line in path.open(encoding="utf-8") if line.strip()]
     if not rows or not any(isinstance(row.get("response"), str) and row["response"].strip() for row in rows):
@@ -250,8 +262,7 @@ def main() -> None:
         evidence = training_evidence(run_dir / "output")
         adapter = Path(str(evidence["adapter"]))
         inference_input = run_dir / "infer-input.jsonl"
-        first = next(line for line in (run_dir / "validation.jsonl").open(encoding="utf-8") if line.strip())
-        inference_input.write_text(first, encoding="utf-8")
+        make_inference_input(run_dir / "validation.jsonl", inference_input)
         inference_output = run_dir / "inference-results.jsonl"
         runner.run(["swift", "infer", "--model", "Qwen/Qwen3.8-27B", "--use_hf", "true", "--adapters", str(adapter),
                     "--val_dataset", str(inference_input), "--val_dataset_sample", "1", "--infer_backend", "transformers",
