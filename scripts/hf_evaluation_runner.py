@@ -29,7 +29,7 @@ def infer_command(result: Path, *, adapter: bool) -> list[str]:
         "--infer_backend", "transformers", "--torch_dtype", "bfloat16",
         "--quant_method", "bnb", "--quant_bits", "4",
         "--bnb_4bit_compute_dtype", "bfloat16", "--max_new_tokens", "128",
-        "--temperature", "0", "--result_path", str(result),
+        "--result_path", str(result),
     ]
 
 
@@ -39,7 +39,7 @@ def validate_input() -> int:
         raise ValueError("invalid manifest schema")
     rows = [json.loads(line) for line in PROMPTS.read_text(encoding="utf-8").splitlines()
             if line.strip()]
-    if len(rows) != manifest.get("count") or len(rows) != 15:
+    if len(rows) != manifest.get("count") or len(rows) != 15 or len(manifest["samples"]) != 15:
         raise ValueError("validation evaluation requires exactly 15 prompts")
     import hashlib
     for row, entry in zip(rows, manifest["samples"]):
