@@ -267,7 +267,8 @@ def main() -> None:
         runner.run(["swift", "infer", "--model", "Qwen/Qwen3.8-27B", "--use_hf", "true", "--adapters", str(adapter),
                     "--val_dataset", str(inference_input), "--val_dataset_sample", "1", "--infer_backend", "transformers",
                     "--torch_dtype", "bfloat16", "--quant_method", "bnb", "--quant_bits", "4",
-                    "--bnb_4bit_compute_dtype", "bfloat16", "--result_path", str(inference_output)])
+                    "--bnb_4bit_compute_dtype", "bfloat16", "--max_new_tokens", "128",
+                    "--result_path", str(inference_output)])
         check_inference_result(inference_output)
         collect_environment(runner, before=False, require_gpu=True)
         after_collected = True
