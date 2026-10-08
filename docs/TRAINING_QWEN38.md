@@ -65,13 +65,24 @@ Both smoke and baseline configs use:
 
 ```yaml
 loss_scale: last_round
+disable_ignore_empty_think: true
+add_non_thinking_prefix: false
 ```
+
+ms-swift 4.5.3 automatically appends `ignore_empty_think` for Qwen hybrid thinking
+templates. The explicit flags above preserve the exact audited `last_round` strategy
+and prevent a synthetic empty thinking prefix from becoming part of the Gold response.
+The audit verifies that the template has preserved the original final Gold content.
 
 ms-swift's SFT default strategy supervises all assistant responses, including history, so it is
 not appropriate for these compiled multi-turn samples.
 
 Label audits must allow template-owned response suffix/control tokens attached to the final
 assistant response while rejecting any supervised system, user, or historical assistant tokens.
+
+The HF Job runner audits every train and validation sample before invoking `swift sft`.
+Its runtime guard checks the parsed arguments, actual template strategy, parameter dtypes,
+and quantized `Linear4bit` weights with bfloat16 compute before the first training step.
 
 ## Smoke command
 

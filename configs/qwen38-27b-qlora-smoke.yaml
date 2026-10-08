@@ -25,6 +25,10 @@ bnb_4bit_use_double_quant: true
 
 max_length: 16384
 loss_scale: last_round
+# Keep the exact audited strategy; ms-swift otherwise appends ignore_empty_think.
+disable_ignore_empty_think: true
+# Gold is already the complete response; do not synthesize a thinking prefix.
+add_non_thinking_prefix: false
 per_device_train_batch_size: 1
 per_device_eval_batch_size: 1
 gradient_accumulation_steps: 4
