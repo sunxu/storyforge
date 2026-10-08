@@ -1,4 +1,4 @@
-from storyforge_dataset.compiler import assign_story_splits
+from storyforge_dataset.compiler import _compact_story_payload, assign_story_splits
 
 
 def test_story_split_is_deterministic_and_isolated():
@@ -10,9 +10,6 @@ def test_story_split_is_deterministic_and_isolated():
     assert sum(v == "validation" for v in first.values()) == 2
     assert sum(v == "test" for v in first.values()) == 2
     assert set(first) == set(stories)
-
-
-from storyforge_dataset.compiler import _compact_story_payload
 
 
 def test_compact_story_payload_deduplicates_and_bounds_verbose_fields():
