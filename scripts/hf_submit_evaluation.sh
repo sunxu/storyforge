@@ -15,6 +15,7 @@ test -s /tmp/storyforge-blind-validation.jsonl
 test -s /tmp/storyforge-blind-validation-manifest.json
 for src in \
   scripts/hf_evaluation_runner.py \
+  scripts/hf_eval_cli_preflight.py \
   scripts/hf_job_runner.py \
   scripts/prepare_eval_pairs.py; do
   hf buckets cp "$src" "$BUCKET/$src"
