@@ -156,7 +156,7 @@ def analyze_dataset(root: Path, model: str) -> dict[str, Any]:
             "max": max(values) if values else 0,
         }
 
-    thresholds = [4096, 8192, 16384]
+    thresholds = [4096, 8192, 16384, 32768, 65536]
     fit = {
         str(limit): {
             "count": sum(1 for value in totals if value <= limit),
@@ -168,12 +168,10 @@ def analyze_dataset(root: Path, model: str) -> dict[str, Any]:
         for limit in thresholds
     }
 
-    if fit["4096"]["percent"] >= 95:
-        recommended = 4096
-    elif fit["8192"]["percent"] >= 95:
-        recommended = 8192
-    else:
-        recommended = 16384
+    recommended = next(
+        (limit for limit in thresholds if fit[str(limit)]["percent"] >= 95),
+        None,
+    )
 
     return {
         "model": model,
@@ -190,6 +188,8 @@ def analyze_dataset(root: Path, model: str) -> dict[str, Any]:
         "recommended_max_length": recommended,
         "recommendation_reason": (
             f"smallest tested max_length covering at least 95% of samples: {recommended}"
+            if recommended is not None
+            else "no tested max_length covers at least 95% of samples"
         ),
         "largest_samples": sorted(
             per_sample,
