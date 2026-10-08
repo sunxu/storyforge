@@ -10,8 +10,6 @@ from pathlib import Path
 
 ROOT = Path("/workspace")
 DATA = ROOT / "datasets/v0.3"
-RUN = ROOT / "runs" / os.environ.get("JOB_ID", "local-smoke")
-ENV = ROOT / "env"
 CACHE = ROOT / "cache"
 
 def run(cmd: list[str], **kwargs: object) -> None:
@@ -19,7 +17,13 @@ def run(cmd: list[str], **kwargs: object) -> None:
     subprocess.run(cmd, check=True, **kwargs)
 
 def main() -> None:
-    RUN.mkdir(parents=True, exist_ok=True)
+    job_id = os.environ.get("JOB_ID")
+    if not job_id or "/" in job_id or job_id in {".", ".."}:
+        raise RuntimeError("Missing or invalid HF Jobs JOB_ID; refusing shared output path")
+    run_dir = ROOT / "runs" / job_id
+    if run_dir.exists():
+        raise FileExistsError(f"Refusing to overwrite an existing run: {run_dir}")
+    run_dir.mkdir(parents=True, exist_ok=False)
     CACHE.mkdir(parents=True, exist_ok=True)
     os.environ["HF_HOME"] = str(CACHE / "huggingface")
     os.environ["PIP_CACHE_DIR"] = str(CACHE / "pip")
@@ -29,7 +33,7 @@ def main() -> None:
          "ms-swift", "transformers>=5.2.0", "bitsandbytes",
          "qwen_vl_utils", "decord"])
     from importlib.metadata import version
-    (RUN / "environment.json").write_text(json.dumps({
+    (run_dir / "environment.json").write_text(json.dumps({
         "python": sys.version,
         "ms_swift": version("ms-swift"),
         "transformers": version("transformers"),
@@ -42,7 +46,7 @@ def main() -> None:
             raise FileNotFoundError(f"missing {source}")
         run([sys.executable, str(script),
              "--source", str(source),
-             "--output", str(RUN / f"{split}.jsonl")])
+             "--output", str(run_dir / f"{split}.jsonl")])
     config = ROOT / "configs/qwen38-27b-qlora-smoke.yaml"
     cmd = ["swift", "sft", str(config),
            "--dataset", str(RUN / "train.jsonl"),
@@ -65,7 +69,7 @@ def main() -> None:
             raise RuntimeError(f"swift exited {code}")
         (RUN / "SUCCESS").write_text("Smoke training exited successfully; adapter reload unverified\n")
     finally:
-        print("Artifacts at", RUN, flush=True)
+        print("Artifacts at", run_dir, flush=True)
 
 if __name__ == "__main__":
     main()
