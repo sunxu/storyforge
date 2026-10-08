@@ -6,10 +6,11 @@ import pytest
 from scripts import hf_baseline_runner as baseline
 
 
-def test_capacity_is_bounded_and_disables_save_eval(tmp_path):
+def test_capacity_is_bounded_and_preserves_checkpoint(tmp_path):
     command = baseline.build_train_command(tmp_path, mode="capacity")
     assert command[command.index("--max_steps") + 1] == "1"
-    assert command[command.index("--save_strategy") + 1] == "no"
+    assert command[command.index("--save_strategy") + 1] == "steps"
+    assert command[command.index("--save_steps") + 1] == "1"
     assert command[command.index("--eval_strategy") + 1] == "no"
     assert "--custom_register_path" in command
 
