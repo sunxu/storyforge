@@ -13,6 +13,7 @@ authors = [{ name = "sunxu" }]
 dependencies = []
 
 [project.optional-dependencies]
+analysis = ["transformers>=4.57", "tokenizers>=0.22", "huggingface-hub>=0.35"]
 dev = ["pytest>=8.0", "ruff>=0.8"]
 
 [project.scripts]
