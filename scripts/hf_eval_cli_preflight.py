@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import re
 import subprocess
+import sys
+from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.hf_evaluation_runner import infer_command
 
 
@@ -20,7 +23,7 @@ def check_help(help_text: str) -> None:
 
 
 def main() -> None:
-    base = infer_command(__import__("pathlib").Path("/tmp/base.jsonl"), adapter=False)
+    base = infer_command(Path("/tmp/base.jsonl"), adapter=False)
     tuned = infer_command(__import__("pathlib").Path("/tmp/adapter.jsonl"), adapter=True)
     for cmd in (base, tuned):
         if "--val_dataset_sample" in cmd:
