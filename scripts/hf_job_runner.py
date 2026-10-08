@@ -31,7 +31,7 @@ def main() -> None:
     # Reuse package wheels/cache, but use the container's compatible PyTorch.
     run([sys.executable, "-m", "pip", "install", "-U",
          "ms-swift", "transformers>=5.2.0", "bitsandbytes",
-         "qwen_vl_utils", "decord"])
+         "qwen-vl-utils>=0.0.14", "decord"])
     from importlib.metadata import version
     (run_dir / "environment.json").write_text(json.dumps({
         "python": sys.version,
