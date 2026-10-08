@@ -42,12 +42,10 @@ def test_training_evidence_rejects_nonfinite_eval_loss(tmp_path):
 
 def test_inference_result_requires_nonempty_response(tmp_path):
     path = tmp_path / "results.jsonl"
-    path.write_text('{"response": ""}
-', encoding="utf-8")
+    path.write_text(json.dumps({"response": ""}) + "\n", encoding="utf-8")
     with pytest.raises(RuntimeError, match="non-empty response"):
         check_inference_result(path)
-    path.write_text('{"response": "ok"}
-', encoding="utf-8")
+    path.write_text(json.dumps({"response": "ok"}) + "\n", encoding="utf-8")
     check_inference_result(path)
 
 
