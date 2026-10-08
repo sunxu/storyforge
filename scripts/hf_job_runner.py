@@ -49,14 +49,14 @@ def main() -> None:
              "--output", str(run_dir / f"{split}.jsonl")])
     config = ROOT / "configs/qwen38-27b-qlora-smoke.yaml"
     cmd = ["swift", "sft", str(config),
-           "--dataset", str(RUN / "train.jsonl"),
-           "--val_dataset", str(RUN / "validation.jsonl"),
-           "--output_dir", str(RUN / "output"),
+           "--dataset", str(run_dir / "train.jsonl"),
+           "--val_dataset", str(run_dir / "validation.jsonl"),
+           "--output_dir", str(run_dir / "output"),
            "--max_steps", "3",
            "--max_length", "16384",
            "--save_only_model", "false"]
     try:
-        with (RUN / "train.log").open("w") as log:
+        with (run_dir / "train.log").open("w") as log:
             process = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                        stderr=subprocess.STDOUT, text=True, bufsize=1)
             assert process.stdout is not None
@@ -67,7 +67,7 @@ def main() -> None:
             code = process.wait()
         if code:
             raise RuntimeError(f"swift exited {code}")
-        (RUN / "SUCCESS").write_text("Smoke training exited successfully; adapter reload unverified\n")
+        (run_dir / "SUCCESS").write_text("Smoke training exited successfully; adapter reload unverified\n")
     finally:
         print("Artifacts at", run_dir, flush=True)
 
