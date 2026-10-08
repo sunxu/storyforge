@@ -28,7 +28,7 @@ def infer_command(result: Path, *, adapter: bool) -> list[str]:
         "--val_dataset", str(PROMPTS),
         "--infer_backend", "transformers", "--torch_dtype", "bfloat16",
         "--quant_method", "bnb", "--quant_bits", "4",
-        "--bnb_4bit_compute_dtype", "bfloat16", "--max_new_tokens", "128",
+        "--bnb_4bit_compute_dtype", "bfloat16", "--max_new_tokens", "512",
         "--seed", "42", "--data_seed", "42", "--temperature", "0",
         "--val_dataset_shuffle", "false", "--result_path", str(result),
     ]
