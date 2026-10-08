@@ -21,6 +21,12 @@ def main() -> None:
     compile_cmd.add_argument("root", type=Path)
     compile_cmd.add_argument("--output", type=Path, required=True)
     compile_cmd.add_argument("--history-messages", type=int, default=12)
+    compile_cmd.add_argument(
+        "--story-card-profile",
+        choices=("full", "compact"),
+        default="full",
+        help="full preserves v0.1 behavior; compact emits Dataset v0.2 prompts",
+    )
 
     analyze = sub.add_parser("analyze", help="analyze token budget using the target model tokenizer")
     analyze.add_argument("root", type=Path)
@@ -41,7 +47,11 @@ def main() -> None:
         return
 
     bundle = RawBundle.load(args.root)
-    samples, manifest = compile_samples(bundle, history_messages=args.history_messages)
+    samples, manifest = compile_samples(
+        bundle,
+        history_messages=args.history_messages,
+        story_card_profile=args.story_card_profile,
+    )
     write_compiled(samples, manifest, args.output)
     print(json.dumps(manifest, ensure_ascii=False, indent=2))
 
