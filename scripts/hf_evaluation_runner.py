@@ -75,6 +75,8 @@ def main() -> None:
         runner.run([sys.executable, "-m", "pip", "install", "-U",
                     "ms-swift==4.5.3", "transformers==5.16.1",
                     "bitsandbytes==0.50.2", "qwen-vl-utils==0.0.14"])
+        runner.run([sys.executable, str(ROOT / "scripts/hf_eval_cli_preflight.py")],
+                   name="eval-cli-preflight.txt")
         count = validate_input()
         base = run_dir / "base-results.jsonl"
         tuned = run_dir / "adapter-results.jsonl"
