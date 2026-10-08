@@ -1,12 +1,11 @@
-#!/usr/bin/env python3
 """Fail-fast CPU preflight for StoryForge HF Jobs (no GPU required)."""
 from __future__ import annotations
 
 import argparse
 import json
 import subprocess
-import sys
 from pathlib import Path
+
 
 def check_data(path: Path) -> dict:
     count = 0
