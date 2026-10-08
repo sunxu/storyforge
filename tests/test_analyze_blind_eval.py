@@ -18,10 +18,10 @@ def test_inspect_and_score_without_revealing_mapping(tmp_path):
     with sheet.open(newline="") as handle:
         rows = list(csv.DictReader(handle))
     for row in rows:
-        row.update({"preference": "A", **{
-            f"{field}_{arm}": "4" for field in (
-                "narrative_continuity", "character_consistency", "instruction_adherence",
-                "writing_quality", "interactive_progression") for arm in ("a", "b")
+        row.update({"整体偏好(A/B/TIE)": "A", **{
+            f"{label}·{arm.upper()}": "4" for label in (
+                "剧情连续性", "角色一致性", "指令遵循",
+                "文学表现力", "互动推进") for arm in ("a", "b")
         }})
     with sheet.open("w", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
