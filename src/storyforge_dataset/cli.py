@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 from .analyze import analyze_dataset, write_token_report
+from .budget import budget_dataset
 from .compiler import RawBundle, compile_samples, write_compiled
 from .validator import validate_raw
 
@@ -33,6 +34,12 @@ def main() -> None:
     analyze.add_argument("--model", required=True)
     analyze.add_argument("--output", type=Path)
 
+    budget = sub.add_parser("budget", help="trim oldest history to fit an exact token budget")
+    budget.add_argument("root", type=Path)
+    budget.add_argument("--output", type=Path, required=True)
+    budget.add_argument("--model", required=True)
+    budget.add_argument("--max-length", type=int, required=True)
+
     args = parser.parse_args()
     if args.command == "validate":
         report = validate_raw(args.root, args.expected_selected)
@@ -43,6 +50,11 @@ def main() -> None:
         report = analyze_dataset(args.root, args.model)
         output = args.output or (args.root / "token_report.json")
         write_token_report(report, output)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return
+
+    if args.command == "budget":
+        report = budget_dataset(args.root, args.output, args.model, args.max_length)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return
 
