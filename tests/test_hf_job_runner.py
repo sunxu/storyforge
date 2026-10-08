@@ -76,8 +76,7 @@ def test_inference_input_excludes_gold_and_loss_metadata(tmp_path):
         {"role": "user", "content": "continue"},
         {"role": "assistant", "content": "secret gold answer", "loss": True},
     ]}
-    source.write_text(json.dumps(sample) + "
-", encoding="utf-8")
+    source.write_text(json.dumps(sample) + "\n", encoding="utf-8")
     make_inference_input(source, output)
     prepared = json.loads(output.read_text(encoding="utf-8"))
     assert prepared["messages"][-1] == {"role": "user", "content": "continue"}
