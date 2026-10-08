@@ -8,6 +8,7 @@ test -s data/compiled/v0.3/validation.jsonl
 hf buckets sync data/compiled/v0.3 "$BUCKET/datasets/v0.3"
 hf buckets cp scripts/hf_job_runner.py "$BUCKET/scripts/hf_job_runner.py"
 hf buckets cp scripts/prepare_sft.py "$BUCKET/scripts/prepare_sft.py"
+hf buckets cp scripts/hf_cpu_preflight.py "$BUCKET/scripts/hf_cpu_preflight.py"
 hf buckets cp configs/qwen38-27b-qlora-smoke.yaml "$BUCKET/configs/qwen38-27b-qlora-smoke.yaml"
 echo "Files synced to $BUCKET"
 if [[ "${1:-}" != "--submit" ]]; then
