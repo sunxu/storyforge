@@ -13,7 +13,7 @@ class RawBundle:
     records: list[dict[str, Any]]
 
     @classmethod
-    def load(cls, root: Path) -> "RawBundle":
+    def load(cls, root: Path) -> RawBundle:
         records: list[dict[str, Any]] = []
         for path in sorted(root.rglob("*.jsonl")):
             with path.open("r", encoding="utf-8-sig") as fh:
@@ -149,7 +149,7 @@ def compile_samples(
                         card = cards_by_version[version]
                         break
             if card is None and cards:
-                card = sorted(cards, key=lambda c: c.get("source_updated_at") or "")[-1]
+                card = max(cards, key=lambda c: c.get("source_updated_at") or "")
 
             messages_out: list[dict[str, str]] = [
                 {"role": "system", "content": _build_system_prompt(card, opening)}
