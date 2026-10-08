@@ -160,3 +160,22 @@ its own fresh HF Job ID and must never overwrite the accepted 128-token run.
 Perform CPU-only checks first, then explicitly authorize any new A100 job.
 Repeat the tokenizer audit on the 512-token outputs prior to blind scoring.
 The 20 held-out test examples remain untouched.
+
+
+## 2026-10-08: Gold-informed 1536-token full Validation evaluation
+
+Gold-only tokenizer audit of Dataset v0.3 reports 100 Gold targets: mean
+572.23, P95 969.9, max 1178 tokens; Validation max 1044 and 9/15 targets
+exceed 512 tokens. The accepted 512-token paired validation Job
+`6ac783ede7a0dae8a2788163` passed alignment, but 8/15 responses on
+each arm re-tokenized close to the 512-token limit. That result remains
+inadequate for final narrative-quality judgments.
+
+The Evaluation Runner is now pinned at `max_new_tokens=1536` for **all
+15 Validation samples in both arms**. No smaller pilot/qualification run is
+required by this protocol. The full rerun is an explicitly authorized paid
+GPU job and writes to a fresh job-specific directory. Do not reuse or
+overwrite prior 128/512-token outputs. Keep identical Gold-free prompts,
+model/adapter identities and decoding controls. Review completion and
+actual stopping behavior before rating; Gold length alone cannot guarantee
+natural model termination. The 20 held-out Test prompts stay locked.
