@@ -90,3 +90,18 @@ Gold-free CPU preparation instructions. The upload step is not GPU billable.
 - Review cost before paid GPU submission.
 
 **Do not submit the GPU evaluation until these gates have been verified.**
+
+
+## 2026-10-08 alignment hardening
+- Paired output verifier now **fails closed** unless each result includes the
+  matching original `messages` prefix. A shuffled, missing, or transformed
+  prompt is refused instead of silently scored against the wrong story.
+- Evaluation commands explicitly set `--seed 42`, `--data_seed 42` and
+  `--val_dataset_shuffle false` for both arms.
+- **Pending runtime compatibility**: it is not yet established that ms-swift
+  4.5.3 writes original prompt `messages` in result JSONL. If absent, the
+  evaluation correctly blocks instead of guessing, and the adapter/parser will
+  need to be updated against a redacted real output sample.
+- The base-only invocation, `-1` sample selector, and effective decoding
+  strategy still require verification. Do **not** authorize GPU evaluation
+  solely from a green Python unit-test run.
