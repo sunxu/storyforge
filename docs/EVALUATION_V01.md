@@ -105,3 +105,40 @@ Gold-free CPU preparation instructions. The upload step is not GPU billable.
 - The base-only invocation, `-1` sample selector, and effective decoding
   strategy still require verification. Do **not** authorize GPU evaluation
   solely from a green Python unit-test run.
+
+
+## Phase 3 validation blind review (GPU inference accepted)
+
+HF Job `6ac776d5e7a0dae8a278755d` reported `PASS`, `pairs: 15`,
+`paired_inference: PASS`, with `EVAL_GENERATION_PASS`. This establishes
+generation and alignment, **not** model superiority.
+
+### CPU-only reviewer workflow
+
+Keep the private answer key separate and **do not disclose it to graders**.
+
+```bash
+# After downloading blind-pairs.jsonl privately from the accepted evaluation Job:
+python scripts/analyze_blind_eval.py \
+  --pairs /tmp/storyforge-validation-blind.jsonl \
+  --scorecard /tmp/storyforge-validation-scorecard.csv \
+  --results /tmp/storyforge-validation-inspection.json
+```
+
+Review the inspection report first. `possible_truncation` is a punctuation
+heuristic, not a reliable count of truncated token-limit outputs. To
+distinguish actual truncation, inspect generation metadata or a trusted
+per-response generated-token count against the configured 128-token cap.
+
+Fill every 1–5 rubric score and one `A`/`B`/`TIE` preference per row
+while blinded. **Only after rating is complete**, download the private key
+to a separate reviewer-controlled path and run:
+
+```bash
+python scripts/analyze_blind_eval.py \
+  --pairs /tmp/storyforge-validation-blind.jsonl \
+  --scorecard /tmp/storyforge-validation-scorecard.csv \
+  --private-key /secure/PRIVATE-answer-key.json
+```
+
+Do not commit raw stories, scorer files, or private mappings to public Git.
