@@ -37,13 +37,22 @@ This is a navigation and provenance index for the frozen v0.1 research cycle. Th
 - Adapter reload/inference: PASS per accepted job evidence
 - Canonical Adapter path: `hf://buckets/adradar/storyforge-training/baseline-runs/baseline/6ac75bafdf2184ac91acb293/output/v0-20261008-090236/checkpoint-9`
 
+## Base model revision evidence (2026-10-09)
+
+- Model: `Qwen/Qwen3.8-27B`
+- Hugging Face current repository revision returned by `HfApi.model_info()`: `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`
+- Repository last modified according to HF API: `2026-08-14 15:00:01+00:00`
+- Local Mac cached snapshot: `models--Qwen--Qwen3.8-27B/snapshots/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`
+- **Training-job-resolved base revision:** `PENDING_REMOTE_EVIDENCE`. Current revision and a local cache match do not conclusively identify the snapshot loaded in the A100 HF Job.
+- Artifact adapter file SHA256: `PENDING`.
+
 ## Reproducibility metadata still pending
 
 These values **have not been independently verified** and should not be guessed:
 
 | Field | Status | How to obtain |
 |---|---|---|
-| Exact base model HF revision / commit SHA | PENDING | Record resolved snapshot revision from the completed Job manifest or base model cache metadata |
+| Exact **training-job-resolved** base model HF revision / commit SHA | PENDING; current revision and local cache both `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | Confirm from completed remote Job manifest/cache evidence |
 | `adapter_model.safetensors` SHA256 | PENDING | Hash the existing checkpoint file from the saved HF Bucket; do not rerun training |
 | Adapter config/tokenizer file checksums | PENDING | Hash files present in the saved checkpoint; record exact file names and hashes |
 | Validation inference config/prompts hashes | PARTIALLY RECORDED | Cross-reference frozen validation evidence before claiming exact source-file equality |
