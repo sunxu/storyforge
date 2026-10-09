@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "status": "SIZE_METADATA_PASS__SHA256_REPORTED_BY_PRIOR_CPU_JOB",
+  "checkpoint_uri": "hf://buckets/adradar/storyforge-training/baseline-runs/baseline/6ac75bafdf2184ac91acb293/output/v0-20261008-090236/checkpoint-9",
+  "sha256_job_id": "6ac8be0e095c578089304f37",
+  "sha256_job_terminal_marker": "STORYFORGE_SHA256_PASS",
+  "sha256_provenance": "docs/HF_RUN_REGISTRY.md (prior CPU Job output)",
+  "sha256_recomputed_by_this_script": false,
+  "size_source": "HfFileSystem.ls(detail=True, refresh=True)",
+  "metadata_checked_at_utc": "2026-10-09T11:08:34.241484+00:00",
+  "file_count": 10,
+  "total_size_bytes": 5603977212,
+  "files": [
+    {
+      "filename": "README.md",
+      "size_bytes": 5372,
+      "sha256": "f800dff428b64eb5f2b32b525ccc5220a222faf721b003f779ae2b2825f7e60a"
+    },
+    {
+      "filename": "adapter_config.json",
+      "size_bytes": 1282,
+      "sha256": "8e1ea2e3fbdab719ab500664acd87f30ae38d1c107655301198ef318e61cc793"
+    },
+    {
+      "filename": "adapter_model.safetensors",
+      "size_bytes": 1867797544,
+      "sha256": "621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478"
+    },
+    {
+      "filename": "additional_config.json",
+      "size_bytes": 67,
+      "sha256": "c7799462ebedae6557ffad31566029e2d2f958b7b40e46e972cf901bcaf45733"
+    },
+    {
+      "filename": "args.json",
+      "size_bytes": 18432,
+      "sha256": "4402231ac5a5c50d149163cf8b37f4eb0feef8a0f42715ea25c7edfcb9d37de8"
+    },
+    {
+      "filename": "optimizer.pt",
+      "size_bytes": 3736129330,
+      "sha256": "6c67c93509284f69893b9e024cccb6a3ad5a299bf0cec2a29789f13a773521f6"
+    },
+    {
+      "filename": "rng_state.pth",
+      "size_bytes": 14244,
+      "sha256": "e7d7f29b8b92e06b42a8166ade972e2162c7ccb0e0abeb9d93b8f09937b34df0"
+    },
+    {
+      "filename": "scheduler.pt",
+      "size_bytes": 1000,
+      "sha256": "566db558936da179408fc6d7c6a556419a6eb8889df0820b89ada4047b190ffb"
+    },
+    {
+      "filename": "trainer_state.json",
+      "size_bytes": 3549,
+      "sha256": "b6c03601d9a63cb998b67b8443399ccfc5c6b00f6d3a8c4135716f784f626c8a"
+    },
+    {
+      "filename": "training_args.bin",
+      "size_bytes": 6392,
+      "sha256": "f649fa91bdc10620b030801b8c5def77c26ecdd1c857be9d6bcb8f62f8d74678"
+    }
+  ]
+}
