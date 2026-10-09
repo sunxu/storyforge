@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Enrich archived StoryForge v0.1 HF CPU Job hashes with size metadata.
 
 This is a read-only metadata operation: no checkpoint bytes are downloaded,
@@ -9,7 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -98,7 +97,7 @@ def main() -> None:
 
     report = build_report(
         HfFileSystem(), hashes,
-        observed_at=datetime.now(timezone.utc).isoformat(),
+        observed_at=datetime.now(UTC).isoformat(),
     )
     payload = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output is not None:
