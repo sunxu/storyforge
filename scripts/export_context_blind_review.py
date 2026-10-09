@@ -43,8 +43,10 @@ def export_context_review(
     entries = manifest["samples"]
     if manifest.get("schema") != "storyforge-blind-v1":
         raise ValueError("unexpected manifest schema")
-    if not (len(prompts) == len(pairs) == len(entries) == manifest["count"] == 15):
-        raise ValueError("expected exactly 15 matched validation samples")
+    if not (len(prompts) == len(pairs) == len(entries) == manifest["count"]):
+        raise ValueError("prompt, manifest and blind pair counts do not match")
+    if len(prompts) not in (15, 20):
+        raise ValueError("expected 15 validation or 20 held-out samples")
     lookup = {}
     for prompt, entry in zip(prompts, entries):
         messages = prompt["messages"]
