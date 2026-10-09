@@ -1,46 +1,43 @@
 # StoryForge
 
-StoryForge is an experimental training and evaluation pipeline for interactive narrative language models.
+StoryForge is an experimental training and evaluation pipeline for interactive narrative language models, initially targeting `Qwen/Qwen3.8-27B` with SFT / QLoRA and curated multi-turn stories.
 
-The initial target is Qwen3.8-27B with SFT / QLoRA, using curated multi-turn story data with character profiles, world state, conversation history, and gold responses.
+## Project status (2026-10-09)
 
-## Current milestone
+**v0.1 engineering: PASS. Model-quality promotion: NOT APPROVED.** Training and both held-out human review rounds are complete. The v0.1 evidence is frozen at Git tag [`v0.1-evidence-frozen`](https://github.com/sunxu/storyforge/tree/v0.1-evidence-frozen), commit `d1186a731a81219f86eb81b89ac1440dd116e9f4`.
 
-Dataset v0.1 compiler is in place.
+- Dataset v0.3: 19 stories / 23 transcripts / 100 selected Gold examples.
+- Story-isolated sample split: **65 train / 15 validation / 20 test**.
+- Baseline: Qwen3.8-27B, rank64 QLoRA NF4 BF16, 1 epoch, 9 optimizer steps, saved adapter checkpoint-9.
+- Validation: 15 A/B samples; held-out test: 20 A/B samples with two independent review rounds and arbitration.
+- Held-out round 1: Base 13 wins / Adapter 7; round 2: Base 10 / Adapter 10.
+- v0.1 adapter has **not demonstrated a stable overall improvement** over Base. Do not promote it to default production model on this evidence.
+- Next milestone: **v0.2 / Dataset v0.4** — new story-isolated Gold data and a genuinely new held-out set, with failure taxonomy and predeclared acceptance criteria.
 
-Verified against the 2026-09-30 complete-context export:
+### Start here
 
-- 19 stories
-- 23 transcripts
-- 795 content messages
-- 100 selected gold assistant targets
-- deterministic story-level split: 15 train / 2 validation / 2 test
-- compiled sample split: 65 train / 15 validation / 20 test
-- future messages and target metadata are excluded from prompt construction
+- [v0.1 final handoff](docs/V01_FINAL_HANDOFF.md)
+- [Hugging Face Job & artifact index](docs/HF_RUN_REGISTRY.md)
+- [Frozen two-round evaluation evidence](evaluations/v0.1/README.md)
+- [Baseline engineering acceptance](docs/evidence/BASELINE_SFT_V01_20261008.md)
+- [Held-out test execution protocol (historical)](docs/HELDOUT_TEST_V01.md)
 
-## Project goals
+The frozen 20-sample test has now been disclosed and analyzed. It remains useful as a retrospective diagnostic benchmark, **not** as a new unseen v0.2 generalization test.
 
-- Compile raw story transcripts into reproducible training datasets
-- Prevent future-state / label leakage during dataset construction
-- Fine-tune narrative models with SFT / QLoRA
-- Evaluate character consistency, plot continuity, agency, formatting, and narrative quality
-- Version datasets, training configs, adapters, and evaluation results
-
-## Structure
+## Repository structure
 
 ```text
 storyforge/
-├── .github/workflows/   # CI and later training workflows
-├── configs/             # Training configs
-├── data/                # Local raw/compiled data; private data is gitignored
-├── docs/                # Dataset and training contracts
-├── eval/                # Gold evaluation sets and evaluation tooling
-├── scripts/             # Future training/evaluation utilities
-├── src/
-│   └── storyforge_dataset/
+├── .github/workflows/   # CI
+├── configs/             # Training configurations
+├── data/                # Local raw and compiled training data (gitignored)
+├── docs/                # Contracts, training evidence, handoff, HF Job registry
+├── eval/                # Evaluation support
+├── evaluations/v0.1/    # Publicly archived v0.1 blind evaluation evidence
+├── scripts/             # Training/evaluation tools
+├── src/storyforge_dataset/
 ├── tests/
-├── pyproject.toml
-└── README.md
+└── pyproject.toml
 ```
 
 ## Local setup
@@ -48,48 +45,15 @@ storyforge/
 ```bash
 git clone https://github.com/sunxu/storyforge.git
 cd storyforge
-
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev,analysis]"
 ```
 
-Put the extracted private export under `data/raw/`. It is intentionally excluded from Git.
+## Data provenance and safety
 
-Validate it:
+Dataset compilation is story-isolated: source messages after the target are excluded from prompts, and only the final selected Gold assistant response is supervised. See [dataset contract](docs/DATASET_V0_1.md) and current training config.
 
-```bash
-storyforge-dataset validate \
-  data/raw/100条作品回答范例_完整上下文_JSONL_20260930 \
-  --expected-selected 100
-```
+The user explicitly authorized public archiving of completed v0.1 evaluation materials. The original story training exports, large compiled datasets, model weights and adapters are not stored as Git objects; actual API credentials, HF access tokens and private keys must never be committed.
 
-Compile Dataset v0.1:
-
-```bash
-storyforge-dataset compile \
-  data/raw/100条作品回答范例_完整上下文_JSONL_20260930 \
-  --output data/compiled/v0.1 \
-  --history-messages 12
-```
-
-Output:
-
-```text
-data/compiled/v0.1/
-├── train.jsonl
-├── validation.jsonl
-├── test.jsonl
-└── manifest.json
-```
-
-Analyze token budget with the exact target tokenizer/chat template:\n\n```bash\nstoryforge-dataset analyze \\\n  data/compiled/v0.1 \\\n  --model Qwen/Qwen3.8-27B\n```\n\nThis writes `data/compiled/v0.1/token_report.json` and reports P50/P90/P95/P99, 4K/8K/16K fit rates, the 10 largest samples, and a recommended `max_length`.\n\nSee `docs/DATASET_V0_1.md` for the leakage and split contract.
-
-## Status
-
-- Repository initialization: complete
-- Raw dataset contract: complete
-- Dataset v0.1 validator/compiler: complete
-- CI: enabled
-- Token-budget analysis: next
-- Qwen3.8-27B smoke training config: next
+The authoritative v0.1 acceptance record is the immutable frozen tag; later `main` documentation updates do not alter its contents.
