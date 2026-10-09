@@ -65,11 +65,31 @@ f649fa91bdc10620b030801b8c5def77c26ecdd1c857be9d6bcb8f62f8d74678  ./training_arg
 
 The manifest may be used for future integrity checks; if the source bucket changes, rerun hash validation and compare against this frozen reference.
 
-### Checkpoint byte-size metadata (not yet independently collected)
+### Checkpoint byte-size metadata (HF Bucket listing, 2026-10-09)
 
-The archived CPU Job supplied SHA256 values, but the registry did **not** record the exact per-file byte sizes. The earlier approximately 5.60 GB download estimate is **not** a byte-exact file manifest. Do not invent the missing sizes or confuse a metadata-only listing with rehashing file contents.
+**Status:** `SIZE_METADATA_PASS__SHA256_REPORTED_BY_PRIOR_CPU_JOB`.
 
-A **read-only, no-Job, no-download** metadata query can fill the missing fields using the existing authenticated HF account:
+The authenticated read-only HF Bucket query via `HfFileSystem.ls(detail=True, refresh=True)` reported ten files at the canonical `checkpoint-9` directory, collected **2026-10-09T11:08:34.241484+00:00**. All ten filenames match the previously recorded CPU Job hash manifest exactly, and the supplied `size_bytes` values sum to **5,603,977,212 bytes** (approximately **5.604 GB**, decimal).
+
+Machine-readable evidence: [`docs/evidence/V01_CHECKPOINT_SIZE_MANIFEST_20261009.json`](evidence/V01_CHECKPOINT_SIZE_MANIFEST_20261009.json), preserving the source Checkpoint URI, HF Job ID, hashes, exact byte sizes, source and query time.
+
+| Checkpoint filename | Size (bytes) |
+|---|---:|
+| `README.md` | 5,372 |
+| `adapter_config.json` | 1,282 |
+| `adapter_model.safetensors` | 1,867,797,544 |
+| `additional_config.json` | 67 |
+| `args.json` | 18,432 |
+| `optimizer.pt` | 3,736,129,330 |
+| `rng_state.pth` | 14,244 |
+| `scheduler.pt` | 1,000 |
+| `trainer_state.json` | 3,549 |
+| `training_args.bin` | 6,392 |
+| **Total (10 files)** | **5,603,977,212** |
+
+**Evidence distinction:** the *size metadata* was collected from the HF Bucket listing and independently checked for internal consistency against the previously reported ten files; the SHA256 values were computed in the **earlier CPU Job** `6ac8be0e095c578089304f37` (terminal marker `STORYFORGE_SHA256_PASS`) and were copied from this registry by the metadata-only script. The size query **did not rehash payload bytes**. The repository CI also did not rehash the remote 5.60 GB payload. No new HF Job, GPU instance, checkpoint download, or Bucket write is required.
+
+To reproduce the metadata listing with an authorized HF account:
 
 ~~~bash
 python3 -m pip install -U huggingface_hub
@@ -78,10 +98,7 @@ python3 scripts/hf_checkpoint_size_manifest.py \
   --output /tmp/storyforge-v01-checkpoint-sizes.json
 ~~~
 
-The script parses this registry's existing ten hashes, queries the exact saved checkpoint directory via `HfFileSystem.ls(detail=True, refresh=True)`, rejects unexpected/missing files or invalid sizes, then generates a JSON report with `filename`, `size_bytes`, `sha256`, `sha256_job_id` and `checkpoint_uri`. The JSON explicitly records that the hashes came from the earlier CPU Job and were **not recomputed** by the metadata query. It never opens the checkpoint files, starts a remote Job, changes the Bucket, or overwrites an existing local report.
-
-**Status:** SHA256 values REPORTED VERIFIED from CPU Job; exact file byte sizes PENDING until a successful authenticated Bucket metadata query. The GitHub integration alone does not authorize reading a private HF Bucket.
-
+The script rejects missing/unexpected file names and invalid sizes; it does not open or mutate Checkpoint files or overwrite an existing local report.
 
 ## Reproducibility metadata still pending
 
@@ -92,6 +109,7 @@ The checkpoint hashes below are now recorded from completed CPU Job output; othe
 | Exact **training-job-resolved** base model HF revision / commit SHA | VERIFIED: `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | Baseline HF Job `6ac75bafdf2184ac91acb293` log, `model_dir` and `lora_config.base_model_name_or_path` |
 | `adapter_model.safetensors` SHA256 | REPORTED VERIFIED: `621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478` | CPU Job `6ac8be0e095c578089304f37`, `STORYFORGE_SHA256_PASS` |
 | Checkpoint accompanying file SHA256 values | REPORTED VERIFIED: 9 additional files listed above | CPU Job `6ac8be0e095c578089304f37`; no tokenizer file present in the reported checkpoint listing |
+| Exact byte sizes for all 10 Checkpoint files | SIZE_METADATA_PASS: total 5,603,977,212 bytes | Authenticated HF Bucket file listing at 2026-10-09 11:08:34 UTC; [machine-readable evidence](evidence/V01_CHECKPOINT_SIZE_MANIFEST_20261009.json); metadata only, no rehash |
 | Validation inference config/prompts hashes | PARTIALLY RECORDED | Cross-reference frozen validation evidence before claiming exact source-file equality |
 
 **Note:** The baseline Job is `6ac75bafdf2184ac91acb293`; the different rank64 capacity Job is `6ac74ce3df2184ac91ac8f43`. Do not confuse their artifacts.
