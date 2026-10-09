@@ -1,0 +1,87 @@
+{
+  "schema": "storyforge-evidence-manifest-v1",
+  "job_id": "6ac85c22fee2c90070172dad",
+  "sources": [
+    {
+      "path": "reviewers/round1/g.csv",
+      "git_blob_sha1": "8d223d4e587fbb0f60feb8de366c1a962a8155fb"
+    },
+    {
+      "path": "reviewers/round1/q.csv",
+      "git_blob_sha1": "76f865655bbcfdf32a7cb1f5d2ebfe557430721a"
+    },
+    {
+      "path": "reviewers/round1/c.csv",
+      "git_blob_sha1": "7b8303ea955167ebfe800dae4f3fa253687feb3e"
+    },
+    {
+      "path": "reviewers/round1/ch.csv",
+      "git_blob_sha1": "a646d0b1e822621e5ff5847f7a0a0c831ac8ed9b"
+    },
+    {
+      "path": "reviewers/round2/cp.csv",
+      "git_blob_sha1": "eddd4f4bade3299c538ac374a453e7d8313fe159"
+    },
+    {
+      "path": "reviewers/round2/ceh-original.csv",
+      "git_blob_sha1": "500be5df393cc73d8e698df35f1719dee4cea2e1"
+    },
+    {
+      "path": "reviewers/round2/ceh-fixed.csv",
+      "git_blob_sha1": "9cdaff49f603fc5dc398b14f681bef4f36a8a8de"
+    },
+    {
+      "path": "reviewers/round2/ch.csv",
+      "git_blob_sha1": "94520a94c0d054181863fd96cddf7a012b55a350"
+    },
+    {
+      "path": "test/blind-pairs.jsonl",
+      "git_blob_sha1": "185431cf1c55e823d8f9abed28b39e1f38fd3e8b"
+    },
+    {
+      "path": "test/prompts.jsonl",
+      "git_blob_sha1": "ac301a61d4130369a83dc67ac02aa2d8dda9e82b"
+    },
+    {
+      "path": "test/manifest.json",
+      "git_blob_sha1": "f4e39196c6aa0a87b095d7de5cae4acd8b2fca63"
+    },
+    {
+      "path": "test/answer-key.json",
+      "git_blob_sha1": "fd60a9900e98aad646f5e76ac3809f170fb127bd"
+    },
+    {
+      "path": "results/round1-unblind.json",
+      "git_blob_sha1": "ab54736b22949f6ca7ee749911514c64b39a67fd"
+    },
+    {
+      "path": "results/round2-original-key-verified.json",
+      "git_blob_sha1": "131d04493c065e840c79e2e808f56718b8762b68"
+    },
+    {
+      "path": "results/round2-inferred-sensitivity.json",
+      "git_blob_sha1": "90adf21786f672c28973c32be94b69e9198c632c"
+    },
+    {
+      "path": "reports/round2-model-comparison.md",
+      "git_blob_sha1": "4f3efef209ee8e43b3608afb65378ae42d15f41e"
+    },
+    {
+      "path": "arbitration/round1-four-disputes.md",
+      "git_blob_sha1": "07e533935ea16e6b3f1ef6507062a777af5e3252"
+    },
+    {
+      "path": "arbitration/round2-eval012.md",
+      "git_blob_sha1": "65788a003450da243e982439a432dcb0b00dcd46"
+    },
+    {
+      "path": "reports/failure-attribution.md",
+      "git_blob_sha1": "5751144115e70d60b45274546f95cee2aebffc61"
+    },
+    {
+      "path": "reports/round2-review-quality-audit.md",
+      "git_blob_sha1": "b0939bea5f36d76b19f8d8e9094529d55350af26"
+    }
+  ],
+  "notes": "Both rounds' ch.csv are distinct files; ceh-original is not scored for round two."
+}

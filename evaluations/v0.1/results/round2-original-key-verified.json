@@ -1,0 +1,134 @@
+{
+  "split": "test",
+  "evaluation_job_id": "6ac85c22fee2c90070172dad",
+  "reviewers": 3,
+  "samples": 20,
+  "raw_votes": {
+    "base": 34,
+    "adapter": 25,
+    "tie": 1
+  },
+  "sample_majority": {
+    "base": 10,
+    "adapter": 10
+  },
+  "mean_scores": {
+    "base": {
+      "剧情连续性": 3.1667,
+      "角色一致性": 3.3,
+      "指令遵循": 2.5333,
+      "文学表现力": 3.3667,
+      "互动推进": 2.6667
+    },
+    "adapter": {
+      "剧情连续性": 3.0,
+      "角色一致性": 3.15,
+      "指令遵循": 2.7167,
+      "文学表现力": 2.8,
+      "互动推进": 2.5167
+    }
+  },
+  "per_sample": [
+    {
+      "sample_id": "eval-000-948012b6173a",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-001-e84ab59937bd",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-002-d7d968e46fca",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-003-4280fab90a6f",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-004-dcb8125405bb",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-005-c0ba67282789",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-006-4bfafe9aa041",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-007-a7d038870997",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-008-58f99d0a6cb2",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-009-fad8a45c1995",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-010-95fc6ec25be5",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-011-13544888d5c0",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-012-bf902fa5b002",
+      "winner": "adapter",
+      "arbitrated": true
+    },
+    {
+      "sample_id": "eval-013-98b7dd971c3b",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-014-7add48022d9a",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-015-111145d5743f",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-016-193774e13ceb",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-017-78608eccba9d",
+      "winner": "adapter",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-018-7b18b1de6eb3",
+      "winner": "base",
+      "arbitrated": false
+    },
+    {
+      "sample_id": "eval-019-22cc0fa9229a",
+      "winner": "base",
+      "arbitrated": false
+    }
+  ],
+  "mapping_verified_against_original_key": true
+}
