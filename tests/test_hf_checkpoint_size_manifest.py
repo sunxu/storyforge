@@ -2,6 +2,7 @@
 import importlib.util
 import unittest
 from pathlib import Path
+from typing import ClassVar
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/hf_checkpoint_size_manifest.py"
 spec = importlib.util.spec_from_file_location("hf_checkpoint_size_manifest", SCRIPT)
@@ -20,7 +21,7 @@ class DummyFS:
 
 
 class TestCheckpointSizeManifest(unittest.TestCase):
-    HASHES = {
+    HASHES: ClassVar[dict[str, str]] = {
         "adapter_model.safetensors": "a" * 64,
         "adapter_config.json": "b" * 64,
     }
