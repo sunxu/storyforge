@@ -65,6 +65,24 @@ f649fa91bdc10620b030801b8c5def77c26ecdd1c857be9d6bcb8f62f8d74678  ./training_arg
 
 The manifest may be used for future integrity checks; if the source bucket changes, rerun hash validation and compare against this frozen reference.
 
+### Checkpoint byte-size metadata (not yet independently collected)
+
+The archived CPU Job supplied SHA256 values, but the registry did **not** record the exact per-file byte sizes. The earlier approximately 5.60 GB download estimate is **not** a byte-exact file manifest. Do not invent the missing sizes or confuse a metadata-only listing with rehashing file contents.
+
+A **read-only, no-Job, no-download** metadata query can fill the missing fields using the existing authenticated HF account:
+
+~~~bash
+python3 -m pip install -U huggingface_hub
+hf auth whoami
+python3 scripts/hf_checkpoint_size_manifest.py \
+  --output /tmp/storyforge-v01-checkpoint-sizes.json
+~~~
+
+The script parses this registry's existing ten hashes, queries the exact saved checkpoint directory via `HfFileSystem.ls(detail=True, refresh=True)`, rejects unexpected/missing files or invalid sizes, then generates a JSON report with `filename`, `size_bytes`, `sha256`, `sha256_job_id` and `checkpoint_uri`. The JSON explicitly records that the hashes came from the earlier CPU Job and were **not recomputed** by the metadata query. It never opens the checkpoint files, starts a remote Job, changes the Bucket, or overwrites an existing local report.
+
+**Status:** SHA256 values REPORTED VERIFIED from CPU Job; exact file byte sizes PENDING until a successful authenticated Bucket metadata query. The GitHub integration alone does not authorize reading a private HF Bucket.
+
+
 ## Reproducibility metadata still pending
 
 The checkpoint hashes below are now recorded from completed CPU Job output; other unresolved provenance remains explicitly marked:
