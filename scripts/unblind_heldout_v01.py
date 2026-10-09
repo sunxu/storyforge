@@ -7,9 +7,11 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from collections import Counter
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.unblind_review_v01 import DIMS
 
 ARBITRATION = {"001": "B", "002": "B", "012": "A", "018": "B"}
