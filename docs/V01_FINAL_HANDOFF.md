@@ -40,7 +40,7 @@ The adapter did **not** establish reliable aggregate quality improvement over Ba
 
 - Exact base model snapshot revision: VERIFIED — `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` from the original A100 baseline Job log.
 - Saved `adapter_model.safetensors` and nine accompanying checkpoint file SHA256 values: REPORTED VERIFIED by completed HF CPU Job `6ac8be0e095c578089304f37` (`STORYFORGE_SHA256_PASS`). These hashes are archived in `docs/HF_RUN_REGISTRY.md`; repository CI did not independently rehash the 5.60 GB payload.
-- Exact per-file checkpoint byte sizes: PENDING. Collect authenticated **metadata only**, without another Job, using `scripts/hf_checkpoint_size_manifest.py`.
+- Exact per-file checkpoint byte sizes: **SIZE_METADATA_PASS**, collected from the HF Bucket listing at `2026-10-09T11:08:34.241484+00:00` and archived in [`docs/evidence/V01_CHECKPOINT_SIZE_MANIFEST_20261009.json`](evidence/V01_CHECKPOINT_SIZE_MANIFEST_20261009.json). The 10 files total **5,603,977,212 bytes**. The listing was metadata-only and did **not** independently rehash the payload; the recorded SHA256 values remain attributed to the earlier CPU Job.
 - Complete remote Job manifest/log integrity checks: PARTIAL, see HF run registry.
 
 These fields should be populated from existing artifacts if available, not invented. Nothing here requests a new GPU run.
