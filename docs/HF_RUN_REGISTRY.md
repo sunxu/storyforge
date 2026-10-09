@@ -44,17 +44,36 @@ This is a navigation and provenance index for the frozen v0.1 research cycle. Th
 - Repository last modified according to HF API: `2026-08-14 15:00:01+00:00`
 - Local Mac cached snapshot: `models--Qwen--Qwen3.8-27B/snapshots/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`
 - **Training-job-resolved base revision: VERIFIED from the completed baseline HF Job log** (`6ac75bafdf2184ac91acb293`): `[INFO:swift] Loading the model using model_dir: /workspace/cache/huggingface/hub/models--Qwen--Qwen3.8-27B/snapshots/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`. The same snapshot is shown again under `model_info.model_dir` and `lora_config.base_model_name_or_path`. `hub_revision=None` and `model_revision=None` reflect unspecified explicit overrides, not an unknown loaded snapshot.
-- Artifact adapter file SHA256: `PENDING`.
+- Artifact adapter file SHA256: `621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478`, reported by completed CPU Job `6ac8be0e095c578089304f37`.
+
+## Baseline checkpoint SHA256 manifest (CPU verification, 2026-10-09)
+
+The following SHA256 checksums were reported by the completed Hugging Face CPU Job `6ac8be0e095c578089304f37`, with terminal marker `STORYFORGE_SHA256_PASS`. They refer to the ten files in the previously accepted baseline `checkpoint-9` directory. This is verification **as reported by the user's remote CPU Job output**; the repository does not store the 5.60 GB checkpoint contents, and these bytes were not independently rehashed by the repository CI.
+
+```text
+f800dff428b64eb5f2b32b525ccc5220a222faf721b003f779ae2b2825f7e60a  ./README.md
+8e1ea2e3fbdab719ab500664acd87f30ae38d1c107655301198ef318e61cc793  ./adapter_config.json
+621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478  ./adapter_model.safetensors
+c7799462ebedae6557ffad31566029e2d2f958b7b40e46e972cf901bcaf45733  ./additional_config.json
+4402231ac5a5c50d149163cf8b37f4eb0feef8a0f42715ea25c7edfcb9d37de8  ./args.json
+6c67c93509284f69893b9e024cccb6a3ad5a299bf0cec2a29789f13a773521f6  ./optimizer.pt
+e7d7f29b8b92e06b42a8166ade972e2162c7ccb0e0abeb9d93b8f09937b34df0  ./rng_state.pth
+566db558936da179408fc6d7c6a556419a6eb8889df0820b89ada4047b190ffb  ./scheduler.pt
+b6c03601d9a63cb998b67b8443399ccfc5c6b00f6d3a8c4135716f784f626c8a  ./trainer_state.json
+f649fa91bdc10620b030801b8c5def77c26ecdd1c857be9d6bcb8f62f8d74678  ./training_args.bin
+```
+
+The manifest may be used for future integrity checks; if the source bucket changes, rerun hash validation and compare against this frozen reference.
 
 ## Reproducibility metadata still pending
 
-These values **have not been independently verified** and should not be guessed:
+The checkpoint hashes below are now recorded from completed CPU Job output; other unresolved provenance remains explicitly marked:
 
 | Field | Status | How to obtain |
 |---|---|---|
 | Exact **training-job-resolved** base model HF revision / commit SHA | VERIFIED: `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | Baseline HF Job `6ac75bafdf2184ac91acb293` log, `model_dir` and `lora_config.base_model_name_or_path` |
-| `adapter_model.safetensors` SHA256 | PENDING | Hash the existing checkpoint file from the saved HF Bucket; do not rerun training |
-| Adapter config/tokenizer file checksums | PENDING | Hash files present in the saved checkpoint; record exact file names and hashes |
+| `adapter_model.safetensors` SHA256 | REPORTED VERIFIED: `621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478` | CPU Job `6ac8be0e095c578089304f37`, `STORYFORGE_SHA256_PASS` |
+| Checkpoint accompanying file SHA256 values | REPORTED VERIFIED: 9 additional files listed above | CPU Job `6ac8be0e095c578089304f37`; no tokenizer file present in the reported checkpoint listing |
 | Validation inference config/prompts hashes | PARTIALLY RECORDED | Cross-reference frozen validation evidence before claiming exact source-file equality |
 
 **Note:** The baseline Job is `6ac75bafdf2184ac91acb293`; the different rank64 capacity Job is `6ac74ce3df2184ac91ac8f43`. Do not confuse their artifacts.
