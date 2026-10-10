@@ -59,7 +59,7 @@ def prepare_gold_comparisons(
     if manifest.get("schema") != "storyforge-blind-v1" or not isinstance(entries, list):
         raise ValueError("unexpected manifest schema")
     if not isinstance(key, list):
-        raise ValueError("answer key must be a list")
+        raise TypeError("answer key must be a list")
     if not (
         len(compiled) == len(prompts) == len(entries) == len(blind_pairs) == len(key)
         == manifest.get("count") == expected_count
