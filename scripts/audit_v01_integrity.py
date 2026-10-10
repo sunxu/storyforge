@@ -186,9 +186,9 @@ def test_alignment_audit() -> dict:
 def checkpoint_audit() -> dict:
     chk = source_json(ROOT / "docs/evidence/V01_CHECKPOINT_SIZE_MANIFEST_20261009.json")
     registry = (ROOT / "docs/HF_RUN_REGISTRY.md").read_text(encoding="utf-8")
-    checksum_rows = dict((filename, digest) for digest, filename in
+    checksum_rows = {filename: digest for digest, filename in
                          re.findall(r"^([a-f0-9]{64})  \./([^\s]+)$",
-                                    registry, re.MULTILINE))
+                                    registry, re.MULTILINE)}
     items = chk["files"]
     fail_if(chk.get("file_count") != 10 or len(items) != 10
             or len(checksum_rows) != 10
