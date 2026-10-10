@@ -2,6 +2,7 @@
 .DS_Store
 
 # Python
+*.egg-info/
 __pycache__/
 *.py[cod]
 *.so
@@ -62,3 +63,4 @@ temp/
 *.tar
 *.tar.gz
 *.tgz
+
