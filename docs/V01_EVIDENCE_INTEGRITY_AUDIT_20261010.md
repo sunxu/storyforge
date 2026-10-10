@@ -9,9 +9,9 @@ This is a **post-freeze, read-only evidence-chain audit of committed v0.1 materi
 
 ## Executable evidence
 
-- CPU standard-library audit: [`scripts/audit_v01_integrity.py`](../../scripts/audit_v01_integrity.py).
-- Pytest protection: [`tests/test_v01_integrity.py`](../../tests/test_v01_integrity.py).
-- The [CI workflow](../../.github/workflows/ci.yml) executes the audit explicitly after Ruff and pytest.
+- CPU standard-library audit: [`scripts/audit_v01_integrity.py`](../scripts/audit_v01_integrity.py).
+- Pytest protection: [`tests/test_v01_integrity.py`](../tests/test_v01_integrity.py).
+- The [CI workflow](../.github/workflows/ci.yml) executes the audit explicitly after Ruff and pytest.
 - Machine-readable **actual CI output** (not a hand-authored synthetic success report): [`V01_CROSS_ARTIFACT_AUDIT_20261010.json`](evidence/V01_CROSS_ARTIFACT_AUDIT_20261010.json), sourced from [GitHub Actions run 38036181012](https://github.com/sunxu/storyforge/actions/runs/38036181012), job `114166961388`, at audited commit `f9159dabe927722d788321ad4aacc4ac1c3df0ef`.
 - The CI run returned **72 passing tests**, Ruff PASS and the standalone evidence audit PASS. Future main changes rerun the same gate.
 
