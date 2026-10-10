@@ -67,3 +67,20 @@ The output directory holds:
 - The already disclosed 20 prompts provide diagnostic evidence, not independent generalization. Gold agreement does not establish absolute model quality.
 
 **No new inference, training, GPU use, checkpoint download or change to the original 20 test items is required.**
+
+
+## 2026-10-10 CPU source-provenance triage (partial; no quality grades)
+
+The local uploaded authoring workbook `Qwen_互动剧情_100条训练Schema.xlsx` was inspected against a 20-case existing held-out reviewer CSV (`StoryForge_Reviewer_01(9).csv`), its saved original answer key and 20-entry test manifest:
+
+- **20/20 unique current-user-input matches** to workbook `训练主数据`; the workbook covers the two original held-out story groups.
+- **11/20 candidate Gold responses** were also found **verbatim as complete text** inside other archived held-out prompts' previous dialogue (stronger independent provenance evidence).
+- **9/20 candidate Gold responses** have *only* unique-user-input matches. Those do **not** establish equality with the final compiled Dataset v0.3 Gold targets.
+- Workbook rows have `context_complete=NO`, `sft_ready=PENDING_DB_BACKFILL` and unfilled source record IDs. This early authoring schema must **not** silently replace the final `data/compiled/v0.3/test.jsonl`.
+- A 40-response archive consistency check matched all original Base/Adapter A/B text fields against the frozen `evaluations/v0.1/test/blind-pairs.jsonl` using independent FNV-1a 64-bit UTF-16-code-unit digests. This is a consistency check, not a proof of canonical Gold equality.
+- Two **candidate-Gold** blinded 20-case reviewer sheets, with their answer key kept separately, were produced locally for inspection; the unverified candidate Gold text and new reviewer sheets were **not committed**.
+- **Gate: `PARTIAL_SOURCE_PROVENANCE / BLIND_SHEETS_READY / QUALITY_REVIEW_NOT_RUN`.** No Gold-vs-Base or Gold-vs-Adapter win totals or quality gains have yet been established.
+
+**Next required gate:** run the already committed `scripts/prepare_gold_comparisons.py` with the canonical compiled `data/compiled/v0.3/test.jsonl` against frozen `prompts.jsonl`, `manifest.json`, `blind-pairs.jsonl` and `answer-key.json`. That script fails closed on any mismatch and prepares definitive blind materials without new GPU inference. Compare any candidate-Gold workbook text against those canonical Gold targets before considering the local candidate sheets final.
+
+The immutable `v0.1-evidence-frozen` tag and prior v0.1 review results remain untouched.
