@@ -1,0 +1,5 @@
+9a24f07befee9e701c587f4b154b0e780c29534abe3a0fa8b0c310511172a60f  data/compiled/v0.3/train.jsonl
+083a6f124abc414a0edf268d1a95788f738d55e7ecd229a78c67087991f46c36  data/compiled/v0.3/validation.jsonl
+d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d  data/compiled/v0.3/test.jsonl
+6e60d70e44b564007bea1297a77d39d3a24936015d2d70c9b12456dc8a5e367a  data/compiled/v0.3/budget_report.json
+9803b276a37f2e1a75d98b7d70e81518522232ea66e5ca4487dcd0054ef18271  data/compiled/v0.3/token_report.json

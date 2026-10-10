@@ -1,0 +1,118 @@
+{
+  "schema_version": "0.3",
+  "source_dataset": "data/compiled/v0.2",
+  "model": "Qwen/Qwen3.8-27B",
+  "max_length": 16384,
+  "sample_count": 100,
+  "split_sample_counts": {
+    "train": 65,
+    "validation": 15,
+    "test": 20
+  },
+  "changed_sample_count": 11,
+  "overflow_sample_count": 0,
+  "max_before_tokens": 19349,
+  "max_after_tokens": 16259,
+  "changed_samples": [
+    {
+      "id": "sample-000052",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 16460,
+      "after_tokens": 15577,
+      "removed_history_messages": 2,
+      "fits": true
+    },
+    {
+      "id": "sample-000053",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18110,
+      "after_tokens": 15250,
+      "removed_history_messages": 6,
+      "fits": true
+    },
+    {
+      "id": "sample-000054",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 19349,
+      "after_tokens": 15737,
+      "removed_history_messages": 7,
+      "fits": true
+    },
+    {
+      "id": "sample-000055",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18563,
+      "after_tokens": 16259,
+      "removed_history_messages": 5,
+      "fits": true
+    },
+    {
+      "id": "sample-000056",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18187,
+      "after_tokens": 16053,
+      "removed_history_messages": 5,
+      "fits": true
+    },
+    {
+      "id": "sample-000057",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18018,
+      "after_tokens": 16038,
+      "removed_history_messages": 5,
+      "fits": true
+    },
+    {
+      "id": "sample-000058",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 17983,
+      "after_tokens": 15674,
+      "removed_history_messages": 5,
+      "fits": true
+    },
+    {
+      "id": "sample-000059",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 17693,
+      "after_tokens": 16161,
+      "removed_history_messages": 3,
+      "fits": true
+    },
+    {
+      "id": "sample-000060",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18090,
+      "after_tokens": 15805,
+      "removed_history_messages": 7,
+      "fits": true
+    },
+    {
+      "id": "sample-000061",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18364,
+      "after_tokens": 15574,
+      "removed_history_messages": 7,
+      "fits": true
+    },
+    {
+      "id": "sample-000062",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "before_tokens": 18055,
+      "after_tokens": 16024,
+      "removed_history_messages": 5,
+      "fits": true
+    }
+  ],
+  "overflow_samples": []
+}

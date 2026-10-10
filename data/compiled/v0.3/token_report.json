@@ -1,0 +1,188 @@
+{
+  "model": "Qwen/Qwen3.8-27B",
+  "sample_count": 100,
+  "tokenizer_class": "Qwen3_5Tokenizer",
+  "stats": {
+    "total_tokens": {
+      "min": 1154,
+      "mean": 7995.01,
+      "p50": 6510,
+      "p75": 10344,
+      "p90": 15282,
+      "p95": 15816,
+      "p99": 16162,
+      "max": 16259
+    },
+    "system_tokens": {
+      "min": 664,
+      "mean": 5236.12,
+      "p50": 3606,
+      "p75": 5778,
+      "p90": 13557,
+      "p95": 13557,
+      "p99": 13557,
+      "max": 13557
+    },
+    "history_tokens": {
+      "min": 0,
+      "mean": 2061.44,
+      "p50": 2040,
+      "p75": 2988,
+      "p90": 3667,
+      "p95": 4138,
+      "p99": 4653,
+      "max": 4954
+    },
+    "current_user_tokens": {
+      "min": 2,
+      "mean": 15.42,
+      "p50": 11,
+      "p75": 18,
+      "p90": 31,
+      "p95": 34,
+      "p99": 58,
+      "max": 64
+    },
+    "target_tokens": {
+      "min": 214,
+      "mean": 572.23,
+      "p50": 542,
+      "p75": 702,
+      "p90": 854,
+      "p95": 970,
+      "p99": 1133,
+      "max": 1178
+    }
+  },
+  "fit_by_max_length": {
+    "4096": {
+      "count": 12,
+      "percent": 12.0,
+      "over_count": 88
+    },
+    "8192": {
+      "count": 63,
+      "percent": 63.0,
+      "over_count": 37
+    },
+    "16384": {
+      "count": 100,
+      "percent": 100.0,
+      "over_count": 0
+    },
+    "32768": {
+      "count": 100,
+      "percent": 100.0,
+      "over_count": 0
+    },
+    "65536": {
+      "count": 100,
+      "percent": 100.0,
+      "over_count": 0
+    }
+  },
+  "recommended_max_length": 16384,
+  "recommendation_reason": "smallest tested max_length covering at least 95% of samples: 16384",
+  "largest_samples": [
+    {
+      "id": "sample-000055",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 16259,
+      "system_tokens": 13557,
+      "history_tokens": 1881,
+      "current_user_tokens": 18,
+      "target_tokens": 704
+    },
+    {
+      "id": "sample-000059",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 16161,
+      "system_tokens": 13557,
+      "history_tokens": 2018,
+      "current_user_tokens": 10,
+      "target_tokens": 463
+    },
+    {
+      "id": "sample-000056",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 16053,
+      "system_tokens": 13557,
+      "history_tokens": 1841,
+      "current_user_tokens": 14,
+      "target_tokens": 542
+    },
+    {
+      "id": "sample-000057",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 16038,
+      "system_tokens": 13557,
+      "history_tokens": 1574,
+      "current_user_tokens": 6,
+      "target_tokens": 802
+    },
+    {
+      "id": "sample-000062",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 16024,
+      "system_tokens": 13557,
+      "history_tokens": 1760,
+      "current_user_tokens": 14,
+      "target_tokens": 594
+    },
+    {
+      "id": "sample-000060",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 15805,
+      "system_tokens": 13557,
+      "history_tokens": 1325,
+      "current_user_tokens": 24,
+      "target_tokens": 814
+    },
+    {
+      "id": "sample-000054",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 15737,
+      "system_tokens": 13557,
+      "history_tokens": 1470,
+      "current_user_tokens": 14,
+      "target_tokens": 611
+    },
+    {
+      "id": "sample-000058",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 15674,
+      "system_tokens": 13557,
+      "history_tokens": 1498,
+      "current_user_tokens": 17,
+      "target_tokens": 503
+    },
+    {
+      "id": "sample-000052",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 15577,
+      "system_tokens": 13557,
+      "history_tokens": 764,
+      "current_user_tokens": 7,
+      "target_tokens": 1178
+    },
+    {
+      "id": "sample-000061",
+      "split": "test",
+      "story_id": "780e7a64-89da-42fd-9223-360408f5776d",
+      "total_tokens": 15574,
+      "system_tokens": 13557,
+      "history_tokens": 1436,
+      "current_user_tokens": 18,
+      "target_tokens": 478
+    }
+  ]
+}
