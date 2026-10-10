@@ -106,7 +106,13 @@ def dataset_audit() -> dict:
             or report.get("fit_by_max_length", {}).get("16384", {}).get("count") != 100
             or report.get("stats", {}).get("total_tokens", {}).get("max", 999999) > 16384,
             "token budget report contradicts expected fit")
-    config = (ROOT / "configs/qwen38-27b-qlora-v0.1.yaml").read_text(encoding="utf-8")
+    accepted_config = ROOT / "configs/qwen38-27b-qlora-v0.1.yaml"
+    fail_if(
+        sha256(accepted_config)
+        != "8569a7b5502308ae4cd7d6778152ae7dca19303ee486632f6bd89ef6b099fbfa",
+        "accepted v0.1 baseline training config byte SHA256 has changed",
+    )
+    config = accepted_config.read_text(encoding="utf-8")
     for line in ("- data/compiled/v0.3/train.jsonl",
                  "- data/compiled/v0.3/validation.jsonl",
                  "lora_rank: 64", "lora_alpha: 128", "loss_scale: last_round",
