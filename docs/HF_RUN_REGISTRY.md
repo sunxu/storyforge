@@ -114,6 +114,14 @@ The checkpoint hashes below are now recorded from completed CPU Job output; othe
 
 **Note:** The baseline Job is `6ac75bafdf2184ac91acb293`; the different rank64 capacity Job is `6ac74ce3df2184ac91ac8f43`. Do not confuse their artifacts.
 
+### Validation 1536-token scored submissions (post-freeze archive, 2026-10-10)
+
+- [Raw scored evidence and reproducibility package](../evaluations/v0.1/validation-1536/README.md): 4 original reviewer CSVs, 15 samples each, **60/60 scored rows**, with original-file SHA256 and CI-tested CPU reproducer.
+- Anonymized raw votes: A=29, B=29, TIE=2. **Not** verified Base/Adapter winner counts, because the exact matching 1536 answer-key mapping is not part of this archive.
+- The reconstructed full-length 15-pair JSONL is explicitly derived from the scored CSVs; it is **not** the authentic HF evaluation Job inference artifact. Original 1536 blind-pairs JSONL, prompt manifest and key remain unverified as raw job-origin files.
+- **128/512-token early generation outputs were not committed** to the new Validation archive and must not be substituted for 1536 outputs.
+- The frozen v0.1 evidence tag and existing quality disposition are unchanged.
+
 ## Evaluation and quality disposition
 
 - Frozen test generation: 1536 new tokens, temperature 0, seed 42, data_seed 42, no shuffle
