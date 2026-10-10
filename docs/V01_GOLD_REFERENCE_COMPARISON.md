@@ -116,3 +116,14 @@ If the ZIP extracts to a nested directory, use that path rather than guessing. S
 After a successful canonical audit, run the existing `scripts/prepare_gold_comparisons.py` command above, which produces two new 20-case blind datasets **from the actual compiled Gold** and the frozen Base/Adapter responses. Run `export_context_blind_review.py` to produce reviewer CSV files and check that no answer-key JSON is included in reviewer handoffs. The old candidate sheets were not frozen or scored.
 
 **Gate status at document creation:** `CANONICAL_TEST_JSONL_NOT_ACCESSIBLE_IN_CURRENT_SESSION`, exact equality **PENDING**, no Gold-based quality winner claimed; no Job and no GPU usage.
+
+
+### Candidate organizer package and normalization audit
+
+The earlier organizer provenance ZIP lacked the 20 candidate Gold texts. A distinct organizer-only archive, `StoryForge_v01_Gold_候选来源校验输入_仅组织者.zip`, now includes `TRIPLETS_INTERNAL_UNBLINDED.json` and a README; SHA256 of that ZIP is `9e9dd36ef0ede813c0a22d2d44c43b4d1ccc656fcd9fbe0943a0b860aede733f`. This is supplied separately to the project owner, **not** stored among frozen GitHub evidence.
+
+Cross-check of the earlier *candidate* blind sheets and this new organizer source:
+- Gold: 20/20 identical candidate replies in **each** of Gold-vs-Base and Gold-vs-Adapter sheets.
+- Model bodies: Base 20/20 and Adapter 20/20 equal to organizer triplets **after stripping only the empty leading `<think>\n\n</think>\n\n` wrapper** that occurs in the archived blind-model outputs. Raw review-sheet replies retain the original wrapper; no substantive story text was altered.
+- These tests protect the **candidate material's internal alignment**, not the candidate-vs-canonical Gold provenance. The canonical Gold gate is still **PENDING** until the final compiled `test.jsonl` is available.
+
