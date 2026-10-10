@@ -19,3 +19,5 @@ jobs:
         run: ruff check .
       - name: Tests
         run: pytest -q
+      - name: Evidence integrity (v0.1)
+        run: python3 scripts/audit_v01_integrity.py
