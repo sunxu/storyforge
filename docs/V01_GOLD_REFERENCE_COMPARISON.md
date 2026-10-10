@@ -97,9 +97,9 @@ cd storyforge
 git pull --ff-only origin main
 python3 -m pytest -q tests/test_audit_gold_reference.py
 
-# Unpack the organizer-only ZIP previously prepared in this chat:
+# Download the organizer-only candidate source package from this chat, then:
 mkdir -p /tmp/storyforge-v01-gold-organizer
-unzip -n StoryForge_v01_Gold_来源审计_组织者.zip -d /tmp/storyforge-v01-gold-organizer
+unzip -n StoryForge_v01_Gold_候选来源校验输入_仅组织者.zip -d /tmp/storyforge-v01-gold-organizer
 find /tmp/storyforge-v01-gold-organizer -name TRIPLETS_INTERNAL_UNBLINDED.json
 
 # Supply the actual resulting path from the find command as --candidate.
