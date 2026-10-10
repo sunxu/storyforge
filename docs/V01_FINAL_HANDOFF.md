@@ -51,3 +51,12 @@ These fields should be populated from existing artifacts if available, not inven
 - Keep the frozen evaluation source files immutable, including original and corrected reviewer versions.
 - Public research materials are allowed by the project owner, but never commit live credentials or private keys.
 - Model weights and large checkpoint artifacts remain in the Hugging Face Bucket.
+
+
+## Post-freeze cross-artifact audit (2026-10-10)
+
+See [the v0.1 integrity audit](V01_EVIDENCE_INTEGRITY_AUDIT_20261010.md) and the [machine-readable CI-observed evidence](evidence/V01_CROSS_ARTIFACT_AUDIT_20261010.json).
+
+The new offline CI audit revalidates the committed Dataset v0.3 SHA256 file manifest, the exact accepted training-config SHA256, story isolation, 20 held-out prompt/hash alignments, frozen source Git blobs, both original held-out summaries, and separately submitted Validation and Gold-reviewer scorecards. The checkpoint hash/size record remains attributed to the earlier HF CPU Job, **not** an independent 5.60GB payload rehash by CI.
+
+The original remote Train/Validation input bytes were not separately re-downloaded; four larger HF Validation 1536 original files remain remote-only; third-party reviewer identity/independence is not independently established. These are *open provenance qualifications*, not new engineering failures. The frozen tag and `QUALITY_PROMOTION_NOT_APPROVED` decision remain unchanged.
