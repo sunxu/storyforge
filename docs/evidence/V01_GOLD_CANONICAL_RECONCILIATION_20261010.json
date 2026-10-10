@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "name": "StoryForge v0.1 Gold canonical source reconciliation",
+  "status": "CANONICAL_GOLD_MATCH_PASS__BLIND_REVIEW_READY",
+  "recorded_date_utc": "2026-10-10",
+  "source_origin": "user-uploaded official compiled Dataset v0.3 Test (test(1).jsonl)",
+  "source_sha256": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+  "manifest_sha256": "2f0e4104262541f598084e8ba3c4eef520b74f825ec24b78ca61c4b5630379e6",
+  "candidate_zip_sha256": "9e9dd36ef0ede813c0a22d2d44c43b4d1ccc656fcd9fbe0943a0b860aede733f",
+  "test_cases": 20,
+  "exact_prompt_manifest_matches": 20,
+  "exact_candidate_gold_matches": 20,
+  "reconciled_model_response_cases": 40,
+  "prepared_pairwise_comparisons": 40,
+  "quality_status": "FORMAL_BLIND_RATING_PENDING",
+  "exploratory_nonblind_diagnostic": {
+    "type": "single-reader-known-identity-descriptive-not-formal",
+    "gold_vs_base": {
+      "gold": 13,
+      "base": 2,
+      "tie": 5
+    },
+    "gold_vs_adapter": {
+      "gold": 14,
+      "adapter": 2,
+      "tie": 4
+    }
+  },
+  "checksum_qualification": "The official compiled v0.3 Test was provided by the user; the repo CI does not contain those source bytes and has not independently recalculated Gold checksums",
+  "promotion_status": "ENGINEERING_PASS / QUALITY_PROMOTION_NOT_APPROVED",
+  "historical_freeze": {
+    "tag": "v0.1-evidence-frozen",
+    "sha": "d1186a731a81219f86eb81b89ac1440dd116e9f4"
+  }
+}
