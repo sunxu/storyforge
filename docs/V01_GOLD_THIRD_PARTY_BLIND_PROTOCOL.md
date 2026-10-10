@@ -39,11 +39,11 @@ The standard quality report must distinguish raw votes (60 per comparison), samp
 
 | Reviewer | ZIP SHA256 |
 |---|---|
-| R01 | `5fd21c25c14468d5eb51187b4477d5e22f02b0b55483a9dfaa977f11222a2269` |
-| R02 | `57b0091f31d9e90dc25569f29840189634d283f926f028c606b734e15e45dba9` |
-| R03 | `1c4d5ed74cd85c16730570d4a8262b1b4d7d3dc57be42e0bf82704f9018e6f5a` |
-| R04 | `35bcb1cbe0b9c6a3b2bd708f3e709f53dfc95123862aa0bcf3a61d3df27fa268` |
-| R05 | `d536fca893a7fa2e59e42b6f0a629ce767e338c88e6ef3a67b130e54703d54c6` |
-| R06 | `64b84d989230ac42701adcd2fbdcbf8d254842c97ff94320ef4b45c0e71f7758` |
+| R01 | `d6a968e72304d9d5e4a77271e779c508e2df79039300601346da44afedc4214d` |
+| R02 | `19f03829fe2cd7bae17e468cc160b1adb15ac205d14e56525437e216369c8428` |
+| R03 | `12409d28b71240372cfa7965d944c2b097cb23b57a3ce913c211b02b1491cad5` |
+| R04 | `10c11a767d73058dde6a939354fb5f6ff645809a6570e64bac36d58145b5bf07` |
+| R05 | `7a9b944402ef2f65222c9b324b39b9a25abc0feae53b9bc1e2557d79916a275e` |
+| R06 | `899766af8674902891ff719a08b814d1718294994904a0493c29946a5fa83ade` |
 
-Verify real archive digests against organizer-only manifest before distribution; listed checksums are provisional until matched to the exact final exported files. The organizer ZIP and its keys must never be given to judges.
+These SHA256 values were verified against the six final ZIP files exported in the current conversation. Cross-check them with the organizer-only manifest before distribution. The organizer ZIP and its keys must never be given to judges.
