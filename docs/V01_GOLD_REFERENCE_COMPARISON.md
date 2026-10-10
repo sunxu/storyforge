@@ -127,3 +127,28 @@ Cross-check of the earlier *candidate* blind sheets and this new organizer sourc
 - Model bodies: Base 20/20 and Adapter 20/20 equal to organizer triplets **after stripping only the empty leading `<think>\n\n</think>\n\n` wrapper** that occurs in the archived blind-model outputs. Raw review-sheet replies retain the original wrapper; no substantive story text was altered.
 - These tests protect the **candidate material's internal alignment**, not the candidate-vs-canonical Gold provenance. The canonical Gold gate is still **PENDING** until the final compiled `test.jsonl` is available.
 
+
+### Recommended one-command workflow on the original Mac
+
+The simplest CPU-only path is the fail-closed wrapper script, which executes canonical Gold provenance audit **before** exporting either 20-case blind review sheet. The generated reviewer ZIP excludes answer keys.
+
+~~~bash
+cd storyforge
+git pull --ff-only origin main
+
+bash scripts/run_v01_gold_canonical.sh \
+  "$HOME/Downloads/StoryForge_v01_Gold_候选来源校验输入_仅组织者.zip" \
+  "$PWD/data/compiled/v0.3/test.jsonl" \
+  "/tmp/storyforge-v01-gold-final"
+~~~
+
+The output directory **must not exist** before execution. If Gold differs, the audit JSON remains in the new directory with each candidate and canonical Gold SHA256; the script exits before creating reviewer CSVs. If every candidate Gold is identical to canonical, the expected terminal marker is:
+
+~~~text
+CANONICAL_GOLD_MATCH_PASS: 20/20 matched
+GOLD_COMPARISON_PREP_PASS: 20 source samples, 40 blind pairs
+CANONICAL_GOLD_REVIEW_EXPORT_PASS: 20 canonical Gold, 40 blinded pairs
+~~~
+
+Outputs: \`/tmp/storyforge-v01-gold-final/canonical-gold-audit.json\` (source audit), \`BLIND_REVIEW_ONLY.zip\` (two sets of reviewer CSVs without answer maps), \`canonical-gold-comparison/\` (organizer-only paired results and answer keys). Do not treat any of these as *review scores* until human ratings are completed.
+
