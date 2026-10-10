@@ -1,6 +1,22 @@
 # StoryForge v0.1 — Original Gold Reference Comparison
 
-**Status: CPU PREPARATION READY / HUMAN REVIEW NOT RUN**
+**Status: CANONICAL_GOLD_MATCH_PASS / BLIND_REVIEW_READY / FORMAL_HUMAN_REVIEW_PENDING**
+
+
+## Canonical Gold verified from final Dataset v0.3 Test (2026-10-10)
+
+**PASS.** The project owner supplied the full, compiled `test(1).jsonl` (20 records); the final assistant content for all 20 records matches the earlier candidate Gold text **byte-for-byte at the Unicode text level**. Each prompt reconstructed from all messages preceding the final assistant matched the frozen `manifest.json` SHA256, sample ID, and source line (**20/20**). The historical Base/Adapter outputs were also reconciled (**40 model responses**); original model strings retain their empty leading think wrapper.
+
+- Official uploaded compiled Test SHA256: `d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d`.
+- Frozen v0.1 Test manifest SHA256 (source copy): `2f0e4104262541f598084e8ba3c4eef520b74f825ec24b78ca61c4b5630379e6`.
+- Previously supplied candidate-source ZIP SHA256: `9e9dd36ef0ede813c0a22d2d44c43b4d1ccc656fcd9fbe0943a0b860aede733f`.
+- Counts: **20/20 prompt-manifest PASS**, **20/20 candidate-vs-canonical Gold PASS**, **40/40 model response body reconciliation PASS**.
+- Machine-readable evidence summary: [`docs/evidence/V01_GOLD_CANONICAL_RECONCILIATION_20261010.json`](evidence/V01_GOLD_CANONICAL_RECONCILIATION_20261010.json).
+- Official Gold-vs-Base and Gold-vs-Adapter reviewer-only ZIP (two separate 20-case CSVs) and organizer-only provenance/answer-key ZIP were produced in the current conversation workspace; intentionally not added to the immutable v0.1 historical tree.
+
+**Research-only observation, NOT blind scores:** A single known-identity qualitative reading provisionally favored Gold over Base in 13 cases, Base in 2 and considered 5 equivocal; Gold over Adapter in 14, Adapter in 2 and considered 4 equivocal. Gold has its own notable agency/instruction violations, and these **must not** be used as a formal promotion metric or compared as if 40 cases were independent. The fresh anonymous reviewer CSVs are blank and await grading. Existing two-round Base-vs-Adapter conclusions remain unchanged.
+
+The older "PENDING" paragraphs below document the **historical pre-upload state**, superseded by this verified addendum. Do not rerun training, inference or earlier reviews to close this data provenance gate.
 
 Scope: retrospective comparison of the *same 20 already evaluated story-held-out samples* with their original selected Gold assistant replies. This is **not** v0.2, not a new unseen test set, and does not change the frozen Base-vs-Adapter decision.
 
