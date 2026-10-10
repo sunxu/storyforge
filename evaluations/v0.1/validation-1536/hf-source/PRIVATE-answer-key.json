@@ -1,0 +1,77 @@
+[
+  {
+    "sample_id": "eval-000-3bba2a520edf",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-001-3089a193d19e",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-002-efbad4afd134",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-003-39948633e69d",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-004-782f6582c139",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-005-a53b8fd794b2",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-006-97c41f75ff06",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-007-8a91572502d1",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-008-22ad19a47783",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-009-9437d00baaed",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-010-2d5cfc292d77",
+    "a": "adapter",
+    "b": "base"
+  },
+  {
+    "sample_id": "eval-011-84788f9beb3a",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-012-fe50ba10af57",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-013-96b2cb3adbc0",
+    "a": "base",
+    "b": "adapter"
+  },
+  {
+    "sample_id": "eval-014-0336638e3d7b",
+    "a": "base",
+    "b": "adapter"
+  }
+]

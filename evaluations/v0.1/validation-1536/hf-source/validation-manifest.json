@@ -1,0 +1,81 @@
+{
+  "schema": "storyforge-blind-v1",
+  "count": 15,
+  "samples": [
+    {
+      "sample_id": "eval-000-3bba2a520edf",
+      "prompt_sha256": "3bba2a520edfaf16dce405fc852f278ae65b1d40ae701c4b798e4b46f6df9d0f",
+      "source_line": 1
+    },
+    {
+      "sample_id": "eval-001-3089a193d19e",
+      "prompt_sha256": "3089a193d19efe1b03700de9db51685180a5974d82719342f7591ba70af341b4",
+      "source_line": 2
+    },
+    {
+      "sample_id": "eval-002-efbad4afd134",
+      "prompt_sha256": "efbad4afd134ea48e237a517198935764984b1b915e0d4abb60b62a9acb5bd2d",
+      "source_line": 3
+    },
+    {
+      "sample_id": "eval-003-39948633e69d",
+      "prompt_sha256": "39948633e69d121033420d58fce59ccef4a08219b7c22ef6dff2bee31c83920a",
+      "source_line": 4
+    },
+    {
+      "sample_id": "eval-004-782f6582c139",
+      "prompt_sha256": "782f6582c139cfb174d8addf9d5226e9e21f6a45a9c532b144d002ccc32b63e8",
+      "source_line": 5
+    },
+    {
+      "sample_id": "eval-005-a53b8fd794b2",
+      "prompt_sha256": "a53b8fd794b274d5770a53d88337921c63640f0234e885d3a6436e05408817fd",
+      "source_line": 6
+    },
+    {
+      "sample_id": "eval-006-97c41f75ff06",
+      "prompt_sha256": "97c41f75ff06f0201cc59b70d0d2103c7dbc47fa213651db8f7f18e5a67d5421",
+      "source_line": 7
+    },
+    {
+      "sample_id": "eval-007-8a91572502d1",
+      "prompt_sha256": "8a91572502d14538e0e12b670b99968b1b11ece45e459ad3ec28121d04d58fd1",
+      "source_line": 8
+    },
+    {
+      "sample_id": "eval-008-22ad19a47783",
+      "prompt_sha256": "22ad19a47783f801047c4054173fc3cf0937e77c5fe17445c1c0cf792885ecab",
+      "source_line": 9
+    },
+    {
+      "sample_id": "eval-009-9437d00baaed",
+      "prompt_sha256": "9437d00baaed27c09001cfcf1fbe9b54bede8c108a0b763837e00ab986c35c5a",
+      "source_line": 10
+    },
+    {
+      "sample_id": "eval-010-2d5cfc292d77",
+      "prompt_sha256": "2d5cfc292d7725d7445003c6b69c0f5b73674c57e369aee4e6d9e33616dfe5a4",
+      "source_line": 11
+    },
+    {
+      "sample_id": "eval-011-84788f9beb3a",
+      "prompt_sha256": "84788f9beb3a1d35843d97143a396762edde1ae450ebc1ab5ea0aa9a57686528",
+      "source_line": 12
+    },
+    {
+      "sample_id": "eval-012-fe50ba10af57",
+      "prompt_sha256": "fe50ba10af57863a3f25cc54f22bb06254f2f3bd851e24e17c732873dbae7dd5",
+      "source_line": 13
+    },
+    {
+      "sample_id": "eval-013-96b2cb3adbc0",
+      "prompt_sha256": "96b2cb3adbc00907a94877d346f6d90ee0ed1d9ab75be70aa191728c8ac37758",
+      "source_line": 14
+    },
+    {
+      "sample_id": "eval-014-0336638e3d7b",
+      "prompt_sha256": "0336638e3d7b6670b26ecc7ed68e75a8facc9cc05dac0ae834f2c564e0ea132b",
+      "source_line": 15
+    }
+  ]
+}

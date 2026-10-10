@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "status": "ORIGINAL_HF_1536_SOURCE_VERIFIED__RAW_BYTES_REFERENCED_NOT_COMMITTED",
+  "source_job_id": "6ac794fae7a0dae8a2788ee6",
+  "source_hf_bucket_uri": "hf://buckets/adradar/storyforge-training/evaluation-runs/validation/6ac794fae7a0dae8a2788ee6",
+  "source_archive_sha256": "138b8f8ce5b1a3466c166d3c853ba01b5a8f387c803aa1d2eb38f9dd74e3b493",
+  "source_archive_bytes": 311241,
+  "source_files": 7,
+  "sha256_file_check": "7/7 PASS",
+  "reconstructed_input_alignment": "15/15 PASS",
+  "inference_response_alignment": "30/30 PASS",
+  "blind_pair_key_alignment": "15/15 PASS",
+  "historic_four_scorecard_response_match": "60/60 PASS",
+  "original_authorized_bundle": "StoryForge_Validation_1536_Original.zip (user-provided; original full texts retained in HF Bucket and this conversation attachment)",
+  "model_votes": {
+    "base": 28,
+    "adapter": 30,
+    "tie": 2
+  },
+  "five_dimension_means": {
+    "base": {
+      "剧情连续性": 3.766667,
+      "角色一致性": 4,
+      "指令遵循": 3.95,
+      "文学表现力": 3.733333,
+      "互动推进": 3.5,
+      "overall": 3.79
+    },
+    "adapter": {
+      "剧情连续性": 4.016667,
+      "角色一致性": 4.233333,
+      "指令遵循": 4.016667,
+      "文学表现力": 3.85,
+      "互动推进": 3.5,
+      "overall": 3.923333
+    }
+  },
+  "evidence_note": "Checks were performed on uploaded ZIP and user-provided original scorecards. GitHub CI can reproduce key/scorecard unblinding but cannot independently rehash the original HF JSONLs because full inference bytes are not stored in this commit.",
+  "final_decision": "ENGINEERING_PASS / QUALITY_PROMOTION_NOT_APPROVED",
+  "frozen_tag_sha": "d1186a731a81219f86eb81b89ac1440dd116e9f4",
+  "discarded_early_inference": "128/512-token runs are excluded",
+  "strict_sample_majority": {
+    "base": 5,
+    "adapter": 5,
+    "no_majority": 5
+  },
+  "sample_plurality": {
+    "base": 5,
+    "adapter": 6,
+    "equal_top": 4
+  },
+  "qualification": "Strict majority requires at least 3 of 4 reviewers; adapter's 2 base's 1 and 1 tie is a plurality, not a strict majority."
+}

@@ -1,6 +1,6 @@
 # StoryForge Hugging Face Run Registry
 
-**Updated:** 2026-10-09  
+**Updated:** 2026-10-10  
 **Status:** v0.1 completed; engineering PASS, quality promotion NOT APPROVED.
 
 This is a navigation and provenance index for the frozen v0.1 research cycle. The authoritative historical record is Git tag `v0.1-evidence-frozen` at commit `d1186a731a81219f86eb81b89ac1440dd116e9f4`. This index was added **after** the tag; do not move or rewrite that tag.
@@ -117,8 +117,9 @@ The checkpoint hashes below are now recorded from completed CPU Job output; othe
 ### Validation 1536-token scored submissions (post-freeze archive, 2026-10-10)
 
 - [Raw scored evidence and reproducibility package](../evaluations/v0.1/validation-1536/README.md): 4 original reviewer CSVs, 15 samples each, **60/60 scored rows**, with original-file SHA256 and CI-tested CPU reproducer.
-- Anonymized raw votes: A=29, B=29, TIE=2. **Not** verified Base/Adapter winner counts, because the exact matching 1536 answer-key mapping is not part of this archive.
-- The reconstructed full-length 15-pair JSONL is explicitly derived from the scored CSVs; it is **not** the authentic HF evaluation Job inference artifact. Original 1536 blind-pairs JSONL, prompt manifest and key remain unverified as raw job-origin files.
+- Four scorecards' original anonymous preferences: A=29, B=29, TIE=2. **Official original 1536-token HF answer key has since been verified**: Base=28, Adapter=30, TIE=2. Strict sample majority is 5 Base / 5 Adapter / 5 no-majority; five-dimensional average Base=3.7900, Adapter=3.9233. This is descriptive Validation evidence, **not** a promotion decision.
+- The user supplied `StoryForge_Validation_1536_Original.zip` from accepted HF Job `6ac794fae7a0dae8a2788ee6`. All 7 original file SHA256s, 15 prompt hashes, 30 original inference responses, 15 A/B mappings and all 60 scored entries passed the 2026-10-10 alignment audit. [`hf-source/`](../evaluations/v0.1/validation-1536/hf-source/) stores byte-exact original key, manifest, summary and checksum list; [verification JSON](../evaluations/v0.1/validation-1536/hf-source/source_verification.json) records the original ZIP digest and checks.
+- **Raw inference provenance is VERIFIED from the uploaded HF ZIP, but raw inference JSONLs and raw prompts are not Git-archived.** Canonical JSONLs remain in HF Bucket; the existing 15-pair `derived/` file came from the scorecards and must not be represented as the original HF infer output. [`unblind.py`](../evaluations/v0.1/validation-1536/unblind.py) and CI reproduce votes, ratings and strict sample majorities without GPU.
 - **128/512-token early generation outputs were not committed** to the new Validation archive and must not be substituted for 1536 outputs.
 - The frozen v0.1 evidence tag and existing quality disposition are unchanged.
 
