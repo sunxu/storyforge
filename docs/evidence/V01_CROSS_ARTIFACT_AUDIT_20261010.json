@@ -1,0 +1,107 @@
+{
+  "schema": "storyforge-v01-cross-artifact-audit-v1",
+  "audited_commit": "f9159dabe927722d788321ad4aacc4ac1c3df0ef",
+  "audited_utc": "2026-10-10",
+  "evidence_source": "GitHub Actions CI standard-library script stdout",
+  "workflow_run_id": 38036181012,
+  "workflow_job_id": 114166961388,
+  "workflow_conclusion": "success",
+  "frozen_tag": "v0.1-evidence-frozen",
+  "frozen_tag_target_verified": "d1186a731a81219f86eb81b89ac1440dd116e9f4",
+  "training_config_sha256_matches_accepted_baseline": true,
+  "reproducible_audit": {
+    "checks": {
+      "checkpoint": {
+        "actual_remote_checkpoint_bytes_rehashed_by_ci": false,
+        "file_count": 10,
+        "sha256_origin_job": "6ac8be0e095c578089304f37",
+        "status": "PASS_REPORTED_HASH_METADATA_ONLY",
+        "total_bytes": 5603977212
+      },
+      "dataset": {
+        "budget_report_verified_as_metadata_only": true,
+        "files_sha256": {
+          "budget_report.json": "6e60d70e44b564007bea1297a77d39d3a24936015d2d70c9b12456dc8a5e367a",
+          "test.jsonl": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+          "token_report.json": "9803b276a37f2e1a75d98b7d70e81518522232ea66e5ca4487dcd0054ef18271",
+          "train.jsonl": "9a24f07befee9e701c587f4b154b0e780c29534abe3a0fa8b0c310511172a60f",
+          "validation.jsonl": "083a6f124abc414a0edf268d1a95788f738d55e7ecd229a78c67087991f46c36"
+        },
+        "split_counts": {
+          "test": 20,
+          "train": 65,
+          "validation": 15
+        },
+        "status": "PASS",
+        "stories_by_split": {
+          "test": 2,
+          "train": 15,
+          "validation": 2
+        },
+        "token_count_retokenization_performed": false,
+        "training_config_current_sha256": "8569a7b5502308ae4cd7d6778152ae7dca19303ee486632f6bd89ef6b099fbfa"
+      },
+      "decision": "ENGINEERING_PASS / QUALITY_PROMOTION_NOT_APPROVED",
+      "evaluation": {
+        "gold": {
+          "gold_vs_adapter": {
+            "gold": 45,
+            "model": 15,
+            "tie": 0
+          },
+          "gold_vs_base": {
+            "gold": 38,
+            "model": 22,
+            "tie": 0
+          },
+          "reviewer_independence": "NOT_VERIFIED"
+        },
+        "status": "PASS_ARCHIVED_REVIEWS",
+        "validation": {
+          "raw_inference_full_bytes_in_git": false,
+          "strict_majority": {
+            "adapter": 5,
+            "base": 5,
+            "no_majority": 5
+          },
+          "votes": {
+            "adapter": 30,
+            "base": 28,
+            "tie": 2
+          }
+        }
+      },
+      "external_limits": [
+        "No new HF Job; training logs/base-model revision remain prior verified reports.",
+        "CI does not rehash the private remote 5.60GB checkpoint.",
+        "Remote Train/Validation bytes were not separately re-downloaded from the training Job.",
+        "Original HF 1536 inference JSONL bytes were verified from user ZIP, not in Git.",
+        "Reviewers' real-world identity and independence not independently verified.",
+        "A frozen Git tag must be separately checked against the Git remote."
+      ],
+      "heldout": {
+        "historical_git_blob_sha1_verified": 20,
+        "round1_majority": {
+          "adapter": 7,
+          "base": 13
+        },
+        "round2_majority": {
+          "adapter": 10,
+          "base": 10
+        },
+        "same_20_original_test_prompts_in_both_rounds": true,
+        "status": "PASS",
+        "test_alignment": "20/20"
+      },
+      "historical_frozen_tag_expected": "d1186a731a81219f86eb81b89ac1440dd116e9f4",
+      "schema_version": 1,
+      "scope": "StoryForge v0.1 frozen + post-freeze main evidence"
+    },
+    "status": "V01_LOCAL_EVIDENCE_INTEGRITY_PASS__EXTERNAL_LIMITS_RETAINED"
+  },
+  "external_verification_notes": [
+    "Run was executed on GitHub checkout of the audited commit.",
+    "GitHub Actions is a reproducibility gate for committed files, not a re-execution of historical HF training/inference.",
+    "Frozen tag was separately read through GitHub's tag reference endpoint at time of audit."
+  ]
+}
