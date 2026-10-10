@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "status": "VALIDATION_1536_SCORED_REVIEW_ARCHIVE_PASS__INFERENCE_RAW_PENDING",
+  "version": "v0.1",
+  "split": "validation",
+  "generation_max_new_tokens": 1536,
+  "evaluation_job_reference": "6ac794fae7a0dae8a2788ee6",
+  "job_association_source": "docs/HF_RUN_REGISTRY.md; attribution not verified against raw HF job inference bytes",
+  "reviewers": [
+    "b",
+    "c",
+    "g",
+    "q"
+  ],
+  "sample_count": 15,
+  "scorecard_rows": 60,
+  "anonymous_preference_votes": {
+    "A": 29,
+    "B": 29,
+    "TIE": 2
+  },
+  "raw_review_csvs": {
+    "raw/b.csv": {
+      "sha256": "c2783d660a490000ce2bd256a9c07a27ae10e9f072659de3b86578b31b2edfb3",
+      "blob": "ed9cefa46f7985107eb74316841dfb8c82d8675a",
+      "source_name": "StoryForge_Reviewer_01_b(2).csv"
+    },
+    "raw/c.csv": {
+      "sha256": "9435d3c8ab18404816fbc8535944f81e902cf5163f2b7a073ecc2ba9eccc6e16",
+      "blob": "1759e3517f4095dd185789e0785de1724fd0100e",
+      "source_name": "StoryForge_Reviewer_01_c(2).csv"
+    },
+    "raw/g.csv": {
+      "sha256": "0159ebf2f2f860813c14ff3dafdc4b900092402bdce49f2d7579c1d91e9c7d3b",
+      "blob": "e5c23bd126072750bffe6c73f2306e2e74a8eaca",
+      "source_name": "StoryForge_Reviewer_01_g(2).csv"
+    },
+    "raw/q.csv": {
+      "sha256": "8417e65e41524c7be35e52979bd4c29fc970a86275a88c3b2a5f19beec27ee6d",
+      "blob": "3322e17f49a2c037dbb5ceb0594bfb3d99acfafc",
+      "source_name": "StoryForge_Reviewer_01_q(1).csv"
+    }
+  },
+  "derived_response_file": "derived/reconstructed-from-reviewer-sheets.jsonl",
+  "derived_response_origin": "Extracted verbatim from the scored b.csv sheet; text matched c/g/q; not the original HF Job blind-pairs JSONL",
+  "excluded_earlier_runs": "128/512 token early generation artifacts are intentionally not archived",
+  "constraints": [
+    "Only submitted four complete 1536-reviewer scorecards are byte-preserved.",
+    "The original Hugging Face 1536 inference JSONL, original gold-free validation prompt JSONL, manifest, and answer key have not been independently authenticated in this archive.",
+    "Anonymous A/B counts cannot be interpreted as Base vs Adapter win rates without the matching original 1536 mapping.",
+    "Nothing in this archive changes the v0.1 frozen evidence tag or quality promotion disposition."
+  ]
+}
