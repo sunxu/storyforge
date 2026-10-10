@@ -84,3 +84,35 @@ The local uploaded authoring workbook `Qwen_互动剧情_100条训练Schema.xlsx
 **Next required gate:** run the already committed `scripts/prepare_gold_comparisons.py` with the canonical compiled `data/compiled/v0.3/test.jsonl` against frozen `prompts.jsonl`, `manifest.json`, `blind-pairs.jsonl` and `answer-key.json`. That script fails closed on any mismatch and prepares definitive blind materials without new GPU inference. Compare any candidate-Gold workbook text against those canonical Gold targets before considering the local candidate sheets final.
 
 The immutable `v0.1-evidence-frozen` tag and prior v0.1 review results remain untouched.
+
+
+## Canonical Gold reconciliation gate (2026-10-10, CPU only)
+
+The 2026-09-30 authoring workbook was linked to all 20 frozen held-out current-user inputs. However, its candidate Gold is not the canonical compiled Test: 11/20 have verbatim support in other frozen dialogue history, while 9/20 have only uniquely matching user input. **All 20 must be checked against the actual** `data/compiled/v0.3/test.jsonl`. In particular, constructing a new `test.jsonl` from the workbook is not acceptable evidence.
+
+The separate, earlier organizer audit ZIP contains `TRIPLETS_INTERNAL_UNBLINDED.json`. Keep it away from blind reviewers. The new `scripts/audit_gold_reference.py` compares candidate Gold to canonical Gold by frozen SHA256 prompt, source line and sample ID, reporting exact UTF-8 Gold SHA256 per sample. It leaves mismatches visible and refuses to claim a pass.
+
+~~~bash
+cd storyforge
+git pull --ff-only origin main
+python3 -m pytest -q tests/test_audit_gold_reference.py
+
+# Unpack the organizer-only ZIP previously prepared in this chat:
+mkdir -p /tmp/storyforge-v01-gold-organizer
+unzip -n StoryForge_v01_Gold_来源审计_组织者.zip -d /tmp/storyforge-v01-gold-organizer
+find /tmp/storyforge-v01-gold-organizer -name TRIPLETS_INTERNAL_UNBLINDED.json
+
+# Supply the actual resulting path from the find command as --candidate.
+python3 scripts/audit_gold_reference.py \
+  --compiled-test data/compiled/v0.3/test.jsonl \
+  --prompts evaluations/v0.1/test/prompts.jsonl \
+  --manifest evaluations/v0.1/test/manifest.json \
+  --candidate /tmp/storyforge-v01-gold-organizer/TRIPLETS_INTERNAL_UNBLINDED.json \
+  --output /tmp/storyforge-v01-canonical-gold-audit.json
+~~~
+
+If the ZIP extracts to a nested directory, use that path rather than guessing. Success is **`CANONICAL_GOLD_MATCH_PASS: 20/20 matched`**. On 1–19 matches, the script writes a diagnostic JSON and exits status 2 with `CANONICAL_GOLD_MISMATCH__REBUILD_REVIEW_SHEETS`: do **not** reuse the old candidate review sheets.
+
+After a successful canonical audit, run the existing `scripts/prepare_gold_comparisons.py` command above, which produces two new 20-case blind datasets **from the actual compiled Gold** and the frozen Base/Adapter responses. Run `export_context_blind_review.py` to produce reviewer CSV files and check that no answer-key JSON is included in reviewer handoffs. The old candidate sheets were not frozen or scored.
+
+**Gate status at document creation:** `CANONICAL_TEST_JSONL_NOT_ACCESSIBLE_IN_CURRENT_SESSION`, exact equality **PENDING**, no Gold-based quality winner claimed; no Job and no GPU usage.
