@@ -1,0 +1,35 @@
+{
+  "schema": "storyforge-v0.1-gold-six-reviewer-archive-v1",
+  "archive_date_utc": "2026-10-10",
+  "status": "SIX_REVIEW_FILES_VALIDATED__THIRD_PARTY_INDEPENDENCE_UNVERIFIED",
+  "count_original_source_prompts": 20,
+  "count_unique_gold_model_pairs": 40,
+  "count_reviewers": 6,
+  "count_rating_rows": 120,
+  "source_dataset": "Dataset v0.3 canonical compiled Test; source prompts: evaluations/v0.1/test/manifest.json",
+  "archive_original_sha256": {
+    "raw/StoryForge_R01.csv": "7aa07b9d960b130b89261240903323d36f18c3c4322eaa9ebc0cd93df1fafb50",
+    "raw/StoryForge_R02.csv": "3e6908cf7c82f2f240dba93c9df5b3d68c4716d00f5ddf4534e8b03485bf5fc9",
+    "raw/StoryForge_R03.csv": "6ca6fb1f946c46d46b66b4f51712f89bd2ca41977ff66faaf1ba6ec11f7396cb7fe0b5dff7",
+    "raw/StoryForge_R04.csv": "8710c93438c9c0a240806d8d51e51f6fd3ca02e3ba6ec11f7396cb7fe0b5dff7",
+    "raw/StoryForge_R05.csv": "f787ba0648db210f5cff37e23e269d2eae1d84d0345722381f0b206da051860d",
+    "raw/StoryForge_R06.csv": "2a39c44aa9ae7816846b09cfae9efd7eaa09e0b3ce458b450e60013a95f8e638"
+  },
+  "input_review_package_sha256": {
+    "R01": "d6a968e72304d9d5e4a77271e779c508e2df79039300601346da44afedc4214d",
+    "R02": "19f03829fe2cd7bae17e468cc160b1adb15ac205d14e56525437e216369c8428",
+    "R03": "12409d28b71240372cfa7965d944c2b097cb23b57a3ce913c211b02b1491cad5",
+    "R04": "10c11a767d73058dde6a939354fb5f6ff645809a6570e64bac36d58145b5bf07",
+    "R05": "7a9b944402ef2f65222c9b324b39b9a25abc0feae53b9bc1e2557d79916a275e",
+    "R06": "899766af8674902891ff719a08b814d1718294994904a0493c29946a5fa83ade"
+  },
+  "source_organizer_zip_sha256": "7134b68e3efcf6b37db12bfbf17296da00959bb61830f8526446a6f38a3110c7",
+  "source_organizer_answer_map_sha256": "e5271e5c23de2de0b7998af14f30ee4abd083fc848338e7d45a1f75d5e7f1c2a",
+  "primary_report_original_git_blob_sha": "c7945a6a4fee0a476a6e6f8834dfb642427d569b",
+  "source_spreadsheet_sha256": "13d560aa810d690716046479a5ad12d2a57e60c130050434a9feb8dac2ee9567",
+  "source_organizer_summary_zip_sha256": "76bdd17845347f7ef90f057ae476b8d84c139af6afce0dee1142a8953a211f93",
+  "description": "Original six CSV bytes, original Markdown and per-case majority CSV preserved; compact identity map reproduces the original organizer mapping relevant to unblinding. Spreadsheet is derivative of raw source and not duplicated in this Git revision.",
+  "original_historical_tag": "v0.1-evidence-frozen",
+  "original_historical_commit": "d1186a731a81219f86eb81b89ac1440dd116e9f4",
+  "protection": "No credentials stored. Original frozen tag untouched. Reviewer real-world independence unverified."
+}

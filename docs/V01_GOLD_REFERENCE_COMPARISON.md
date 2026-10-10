@@ -168,3 +168,10 @@ CANONICAL_GOLD_REVIEW_EXPORT_PASS: 20 canonical Gold, 40 blinded pairs
 
 Outputs: \`/tmp/storyforge-v01-gold-final/canonical-gold-audit.json\` (source audit), \`BLIND_REVIEW_ONLY.zip\` (two sets of reviewer CSVs without answer maps), \`canonical-gold-comparison/\` (organizer-only paired results and answer keys). Do not treat any of these as *review scores* until human ratings are completed.
 
+
+
+## Six reviewer score submissions archived (2026-10-10)
+
+The earlier `BLIND_REVIEW_READY` phase is now followed by a **six-file scored submission** with an audit and retrospective Gold comparison summary, without asserting reviewer identity or independence. See [the supplementary record](../evaluations/v0.1/gold-reference/2026-10-10/README.md).
+
+The 120 ratings correspond to **20 original prompts × two comparison arms × three anonymous scores per arm**, not 120 independent held-out examples. Gold preference totals are 38/60 vs Base and 45/60 vs Adapter; corresponding Gold sample-level majorities are 14/20 and 16/20. `THIRD_PARTY_IDENTITY_NOT_VERIFIED`. The frozen v0.1 decision remains `ENGINEERING_PASS / QUALITY_PROMOTION_NOT_APPROVED`.

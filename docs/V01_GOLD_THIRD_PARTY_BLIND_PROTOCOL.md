@@ -1,7 +1,7 @@
 # StoryForge v0.1 — Independent Third-Party Gold Review Protocol
 
 **Prepared:** 2026-10-10  
-**Status:** `ANONYMIZED_PACKS_READY / EXTERNAL_GRADING_PENDING`  
+**Status:** `SIX_REVIEW_FILES_VALIDATED / THIRD_PARTY_IDENTITY_NOT_VERIFIED`  
 **Historical evidence tag (immutable):** `v0.1-evidence-frozen` → `d1186a731a81219f86eb81b89ac1440dd116e9f4`
 
 ## Purpose
@@ -47,3 +47,13 @@ The standard quality report must distinguish raw votes (60 per comparison), samp
 | R06 | `899766af8674902891ff719a08b814d1718294994904a0493c29946a5fa83ade` |
 
 These SHA256 values were verified against the six final ZIP files exported in the current conversation. Cross-check them with the organizer-only manifest before distribution. The organizer ZIP and its keys must never be given to judges.
+
+
+## Post-submission supplementary evidence (2026-10-10)
+
+Six submitted reviewer CSVs (R01–R06), each containing 20 complete scored cases, passed source-text, response-hash, score and preference checks (120 ratings total). The source documents and supplementary analysis were archived on `main` under [`evaluations/v0.1/gold-reference/2026-10-10/`](../evaluations/v0.1/gold-reference/2026-10-10/README.md), separately from the original frozen tag. The per-case mapping permits Gold-vs-Base and Gold-vs-Adapter result reconstruction.
+
+- Gold vs Base: Gold 38/60 votes, Base 22/60; Gold majority 14/20.
+- Gold vs Adapter: Gold 45/60 votes, Adapter 15/60; Gold majority 16/20.
+- **Critical constraint:** original reviewer identities and independence have not been independently verified. These are six anonymous **submissions**, not proven six independent human evaluators.
+- The historical v0.1 quality-promotion decision remains **NOT APPROVED**. Do not equate the 120 ratings with 120 held-out prompts or use the indirect panels as a direct Base/Adapter head-to-head.

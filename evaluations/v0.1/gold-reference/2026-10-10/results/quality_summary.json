@@ -1,0 +1,66 @@
+{
+  "status": "SIX_SHEETS_VALIDATED__THIRD_PARTY_INDEPENDENCE_UNVERIFIED",
+  "source_prompts": 20,
+  "ratings": 120,
+  "comparisons": {
+    "GOLD_BASE": {
+      "votes": {
+        "gold": 38,
+        "model": 22,
+        "tie": 0
+      },
+      "majority": {
+        "gold": 14,
+        "model": 6
+      },
+      "overall": {
+        "gold": 3.72,
+        "model": 3.2467,
+        "gap": 0.4733
+      },
+      "dimension_gold_minus_model": {
+        "剧情连续性": 0.5667,
+        "角色一致性": 0.5167,
+        "指令遵循": 0.2167,
+        "文学表现力": 0.3667,
+        "互动推进": 0.7
+      }
+    },
+    "GOLD_ADAPTER": {
+      "votes": {
+        "gold": 45,
+        "model": 15,
+        "tie": 0
+      },
+      "majority": {
+        "gold": 16,
+        "model": 4
+      },
+      "overall": {
+        "gold": 3.8233,
+        "model": 3.09,
+        "gap": 0.7333
+      },
+      "dimension_gold_minus_model": {
+        "剧情连续性": 0.7333,
+        "角色一致性": 0.65,
+        "指令遵循": 0.4,
+        "文学表现力": 0.8833,
+        "互动推进": 1
+      }
+    }
+  },
+  "reviewer_independence": "NOT_VERIFIED",
+  "bootstrap_descriptive": {
+    "resample_unit": "20 original prompts, paired panels",
+    "iterations": 30000,
+    "seed": 42,
+    "advantage_gap_adapter_panel_minus_base_panel": 0.26,
+    "ci95": [
+      -0.2,
+      0.6533
+    ]
+  },
+  "historical_decision": "ENGINEERING_PASS / QUALITY_PROMOTION_NOT_APPROVED",
+  "caveat": "Two distinct three-reviewer panels rate Gold-vs-Base and Gold-vs-Adapter; differences are not direct Base-vs-Adapter judgments. 120 ratings are not 120 independent held-out prompts."
+}

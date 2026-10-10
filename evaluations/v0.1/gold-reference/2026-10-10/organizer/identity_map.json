@@ -1,0 +1,1086 @@
+{
+  "schema_version": 1,
+  "description": "Decoded relevant fields from original 120-row organizer map. Reference original SHA256 in source_manifest.json",
+  "items": [
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-001",
+      "source_index": 19,
+      "source_sample_id": "eval-019-22cc0fa9229a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-002",
+      "source_index": 12,
+      "source_sample_id": "eval-012-bf902fa5b002",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-003",
+      "source_index": 17,
+      "source_sample_id": "eval-017-78608eccba9d",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-004",
+      "source_index": 16,
+      "source_sample_id": "eval-016-193774e13ceb",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-005",
+      "source_index": 0,
+      "source_sample_id": "eval-000-948012b6173a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-006",
+      "source_index": 3,
+      "source_sample_id": "eval-003-4280fab90a6f",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-007",
+      "source_index": 18,
+      "source_sample_id": "eval-018-7b18b1de6eb3",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-008",
+      "source_index": 14,
+      "source_sample_id": "eval-014-7add48022d9a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-009",
+      "source_index": 9,
+      "source_sample_id": "eval-009-fad8a45c1995",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-010",
+      "source_index": 2,
+      "source_sample_id": "eval-002-d7d968e46fca",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-011",
+      "source_index": 15,
+      "source_sample_id": "eval-015-111145d5743f",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-012",
+      "source_index": 4,
+      "source_sample_id": "eval-004-dcb8125405bb",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-013",
+      "source_index": 13,
+      "source_sample_id": "eval-013-98b7dd971c3b",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-014",
+      "source_index": 5,
+      "source_sample_id": "eval-005-c0ba67282789",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-015",
+      "source_index": 6,
+      "source_sample_id": "eval-006-4bfafe9aa041",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-016",
+      "source_index": 10,
+      "source_sample_id": "eval-010-95fc6ec25be5",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-017",
+      "source_index": 8,
+      "source_sample_id": "eval-008-58f99d0a6cb2",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-018",
+      "source_index": 1,
+      "source_sample_id": "eval-001-e84ab59937bd",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-019",
+      "source_index": 7,
+      "source_sample_id": "eval-007-a7d038870997",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R01",
+      "anonymous_case_id": "R01-020",
+      "source_index": 11,
+      "source_sample_id": "eval-011-13544888d5c0",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-001",
+      "source_index": 0,
+      "source_sample_id": "eval-000-948012b6173a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-002",
+      "source_index": 7,
+      "source_sample_id": "eval-007-a7d038870997",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-003",
+      "source_index": 1,
+      "source_sample_id": "eval-001-e84ab59937bd",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-004",
+      "source_index": 15,
+      "source_sample_id": "eval-015-111145d5743f",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-005",
+      "source_index": 6,
+      "source_sample_id": "eval-006-4bfafe9aa041",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-006",
+      "source_index": 11,
+      "source_sample_id": "eval-011-13544888d5c0",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-007",
+      "source_index": 10,
+      "source_sample_id": "eval-010-95fc6ec25be5",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-008",
+      "source_index": 4,
+      "source_sample_id": "eval-004-dcb8125405bb",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-009",
+      "source_index": 13,
+      "source_sample_id": "eval-013-98b7dd971c3b",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-010",
+      "source_index": 19,
+      "source_sample_id": "eval-019-22cc0fa9229a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-011",
+      "source_index": 18,
+      "source_sample_id": "eval-018-7b18b1de6eb3",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-012",
+      "source_index": 3,
+      "source_sample_id": "eval-003-4280fab90a6f",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-013",
+      "source_index": 2,
+      "source_sample_id": "eval-002-d7d968e46fca",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-014",
+      "source_index": 17,
+      "source_sample_id": "eval-017-78608eccba9d",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-015",
+      "source_index": 9,
+      "source_sample_id": "eval-009-fad8a45c1995",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-016",
+      "source_index": 8,
+      "source_sample_id": "eval-008-58f99d0a6cb2",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-017",
+      "source_index": 14,
+      "source_sample_id": "eval-014-7add48022d9a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-018",
+      "source_index": 5,
+      "source_sample_id": "eval-005-c0ba67282789",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-019",
+      "source_index": 12,
+      "source_sample_id": "eval-012-bf902fa5b002",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R02",
+      "anonymous_case_id": "R02-020",
+      "source_index": 16,
+      "source_sample_id": "eval-016-193774e13ceb",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-001",
+      "source_index": 2,
+      "source_sample_id": "eval-002-d7d968e46fca",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-002",
+      "source_index": 17,
+      "source_sample_id": "eval-017-78608eccba9d",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-003",
+      "source_index": 10,
+      "source_sample_id": "eval-010-95fc6ec25be5",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-004",
+      "source_index": 0,
+      "source_sample_id": "eval-000-948012b6173a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-005",
+      "source_index": 5,
+      "source_sample_id": "eval-005-c0ba67282789",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-006",
+      "source_index": 15,
+      "source_sample_id": "eval-015-111145d5743f",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-007",
+      "source_index": 14,
+      "source_sample_id": "eval-014-7add48022d9a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-008",
+      "source_index": 9,
+      "source_sample_id": "eval-009-fad8a45c1995",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-009",
+      "source_index": 8,
+      "source_sample_id": "eval-008-58f99d0a6cb2",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-010",
+      "source_index": 3,
+      "source_sample_id": "eval-003-4280fab90a6f",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-011",
+      "source_index": 7,
+      "source_sample_id": "eval-007-a7d038870997",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-012",
+      "source_index": 13,
+      "source_sample_id": "eval-013-98b7dd971c3b",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-013",
+      "source_index": 16,
+      "source_sample_id": "eval-016-193774e13ceb",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-014",
+      "source_index": 12,
+      "source_sample_id": "eval-012-bf902fa5b002",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-015",
+      "source_index": 1,
+      "source_sample_id": "eval-001-e84ab59937bd",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-016",
+      "source_index": 19,
+      "source_sample_id": "eval-019-22cc0fa9229a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-017",
+      "source_index": 4,
+      "source_sample_id": "eval-004-dcb8125405bb",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-018",
+      "source_index": 11,
+      "source_sample_id": "eval-011-13544888d5c0",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-019",
+      "source_index": 6,
+      "source_sample_id": "eval-006-4bfafe9aa041",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R03",
+      "anonymous_case_id": "R03-020",
+      "source_index": 18,
+      "source_sample_id": "eval-018-7b18b1de6eb3",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-001",
+      "source_index": 1,
+      "source_sample_id": "eval-001-e84ab59937bd",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-002",
+      "source_index": 6,
+      "source_sample_id": "eval-006-4bfafe9aa041",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-003",
+      "source_index": 3,
+      "source_sample_id": "eval-003-4280fab90a6f",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-004",
+      "source_index": 19,
+      "source_sample_id": "eval-019-22cc0fa9229a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-005",
+      "source_index": 8,
+      "source_sample_id": "eval-008-58f99d0a6cb2",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-006",
+      "source_index": 7,
+      "source_sample_id": "eval-007-a7d038870997",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-007",
+      "source_index": 15,
+      "source_sample_id": "eval-015-111145d5743f",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-008",
+      "source_index": 11,
+      "source_sample_id": "eval-011-13544888d5c0",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-009",
+      "source_index": 18,
+      "source_sample_id": "eval-018-7b18b1de6eb3",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-010",
+      "source_index": 16,
+      "source_sample_id": "eval-016-193774e13ceb",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-011",
+      "source_index": 12,
+      "source_sample_id": "eval-012-bf902fa5b002",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-012",
+      "source_index": 17,
+      "source_sample_id": "eval-017-78608eccba9d",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-013",
+      "source_index": 2,
+      "source_sample_id": "eval-002-d7d968e46fca",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-014",
+      "source_index": 14,
+      "source_sample_id": "eval-014-7add48022d9a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-015",
+      "source_index": 10,
+      "source_sample_id": "eval-010-95fc6ec25be5",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-016",
+      "source_index": 5,
+      "source_sample_id": "eval-005-c0ba67282789",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-017",
+      "source_index": 13,
+      "source_sample_id": "eval-013-98b7dd971c3b",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-018",
+      "source_index": 0,
+      "source_sample_id": "eval-000-948012b6173a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-019",
+      "source_index": 4,
+      "source_sample_id": "eval-004-dcb8125405bb",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R04",
+      "anonymous_case_id": "R04-020",
+      "source_index": 9,
+      "source_sample_id": "eval-009-fad8a45c1995",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-001",
+      "source_index": 5,
+      "source_sample_id": "eval-005-c0ba67282789",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-002",
+      "source_index": 11,
+      "source_sample_id": "eval-011-13544888d5c0",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-003",
+      "source_index": 10,
+      "source_sample_id": "eval-010-95fc6ec25be5",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-004",
+      "source_index": 12,
+      "source_sample_id": "eval-012-bf902fa5b002",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-005",
+      "source_index": 8,
+      "source_sample_id": "eval-008-58f99d0a6cb2",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-006",
+      "source_index": 1,
+      "source_sample_id": "eval-001-e84ab59937bd",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-007",
+      "source_index": 4,
+      "source_sample_id": "eval-004-dcb8125405bb",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-008",
+      "source_index": 7,
+      "source_sample_id": "eval-007-a7d038870997",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-009",
+      "source_index": 18,
+      "source_sample_id": "eval-018-7b18b1de6eb3",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-010",
+      "source_index": 14,
+      "source_sample_id": "eval-014-7add48022d9a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-011",
+      "source_index": 19,
+      "source_sample_id": "eval-019-22cc0fa9229a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-012",
+      "source_index": 13,
+      "source_sample_id": "eval-013-98b7dd971c3b",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-013",
+      "source_index": 6,
+      "source_sample_id": "eval-006-4bfafe9aa041",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-014",
+      "source_index": 15,
+      "source_sample_id": "eval-015-111145d5743f",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-015",
+      "source_index": 9,
+      "source_sample_id": "eval-009-fad8a45c1995",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-016",
+      "source_index": 16,
+      "source_sample_id": "eval-016-193774e13ceb",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-017",
+      "source_index": 2,
+      "source_sample_id": "eval-002-d7d968e46fca",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-018",
+      "source_index": 3,
+      "source_sample_id": "eval-003-4280fab90a6f",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-019",
+      "source_index": 0,
+      "source_sample_id": "eval-000-948012b6173a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R05",
+      "anonymous_case_id": "R05-020",
+      "source_index": 17,
+      "source_sample_id": "eval-017-78608eccba9d",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-001",
+      "source_index": 8,
+      "source_sample_id": "eval-008-58f99d0a6cb2",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-002",
+      "source_index": 15,
+      "source_sample_id": "eval-015-111145d5743f",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-003",
+      "source_index": 3,
+      "source_sample_id": "eval-003-4280fab90a6f",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-004",
+      "source_index": 16,
+      "source_sample_id": "eval-016-193774e13ceb",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-005",
+      "source_index": 19,
+      "source_sample_id": "eval-019-22cc0fa9229a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-006",
+      "source_index": 2,
+      "source_sample_id": "eval-002-d7d968e46fca",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-007",
+      "source_index": 13,
+      "source_sample_id": "eval-013-98b7dd971c3b",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-008",
+      "source_index": 14,
+      "source_sample_id": "eval-014-7add48022d9a",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-009",
+      "source_index": 0,
+      "source_sample_id": "eval-000-948012b6173a",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-010",
+      "source_index": 18,
+      "source_sample_id": "eval-018-7b18b1de6eb3",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-011",
+      "source_index": 10,
+      "source_sample_id": "eval-010-95fc6ec25be5",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-012",
+      "source_index": 7,
+      "source_sample_id": "eval-007-a7d038870997",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-013",
+      "source_index": 17,
+      "source_sample_id": "eval-017-78608eccba9d",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-014",
+      "source_index": 12,
+      "source_sample_id": "eval-012-bf902fa5b002",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-015",
+      "source_index": 9,
+      "source_sample_id": "eval-009-fad8a45c1995",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-016",
+      "source_index": 4,
+      "source_sample_id": "eval-004-dcb8125405bb",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-017",
+      "source_index": 11,
+      "source_sample_id": "eval-011-13544888d5c0",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-018",
+      "source_index": 6,
+      "source_sample_id": "eval-006-4bfafe9aa041",
+      "comparison": "GOLD_BASE",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-019",
+      "source_index": 5,
+      "source_sample_id": "eval-005-c0ba67282789",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "gold",
+      "response_b_role": "model"
+    },
+    {
+      "reviewer_id": "R06",
+      "anonymous_case_id": "R06-020",
+      "source_index": 1,
+      "source_sample_id": "eval-001-e84ab59937bd",
+      "comparison": "GOLD_ADAPTER",
+      "response_a_role": "model",
+      "response_b_role": "gold"
+    }
+  ]
+}
