@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "project": "StoryForge",
+  "stage": "v0.2",
+  "last_verified": "2026-10-12",
+  "git_repository": "sunxu/storyforge",
+  "raw_source_backup_status": "SOURCE_BYTES_NOT_COMMITTED",
+  "raw_source_reason": "GitHub connector only supports text input; original source uploads total over 112MB, including a 66MB single JSONL file.",
+  "source_files": [
+    {
+      "code": "01",
+      "filename": "01-京圈的灯火与暗流-050caa3c-be1e-4a3d-ace6-9eea3663ee64.jsonl",
+      "size_bytes": 66609515,
+      "sha256": "b33408e39a8c15f05b4f83fe755336ec64caf8a4932e7045911e574dbc9275c6",
+      "status": "HASH_MANIFEST_ONLY"
+    },
+    {
+      "code": "02",
+      "filename": "02-如何攻略仙尊-136a52c3-860f-4554-8db0-ae48130e0af9.jsonl",
+      "size_bytes": 15622149,
+      "sha256": "f11a0f1900a492b0c70274db337d7f0cd34043dde611bbd649ca946245fa095a",
+      "status": "HASH_MANIFEST_ONLY"
+    },
+    {
+      "code": "03",
+      "filename": "03-我会在雪停之前等待和你重逢。-84ce3444-3d7e-4274-98f6-22b5c9d2385e.jsonl",
+      "size_bytes": 10647543,
+      "sha256": "eaafbad9452734bda76e627330832dceba17a52b82b6fdc00da6f8e374d4160a",
+      "status": "HASH_MANIFEST_ONLY"
+    },
+    {
+      "code": "04",
+      "filename": "04-处女之死-807d4431-b252-4c96-bb64-c5e2981a09ba.jsonl",
+      "size_bytes": 9674146,
+      "sha256": "907a02ee738efda938fb0bae199f9c511e4ce5e3e498100fcc7516a8bb049e32",
+      "status": "HASH_MANIFEST_ONLY"
+    },
+    {
+      "code": "05",
+      "filename": "05-战争与血-f2e943ad-ff95-484e-accf-30d37c996c11.jsonl",
+      "size_bytes": 9687892,
+      "sha256": "fefbfab1a47a2b0e87a63a8d01e8a735999f1a88cba37956f5eaa16ab534c5c0",
+      "status": "HASH_MANIFEST_ONLY"
+    }
+  ],
+  "curation_candidates": [
+    30,
+    27,
+    15,
+    13,
+    27
+  ],
+  "quality_accepted_by_story": [
+    21,
+    24,
+    14,
+    10,
+    18
+  ],
+  "quality_accepted_total": 87,
+  "unselected_closed": 25,
+  "training_admission": "PENDING_NOT_APPROVED",
+  "v01_tag": "v0.1-evidence-frozen",
+  "v01_tag_expected_commit": "d1186a731a81219f86eb81b89ac1440dd116e9f4"
+}
