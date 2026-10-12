@@ -30,3 +30,9 @@ Additional stories should be ingested into distinct per-story namespaces, with i
 - 42 of the frozen 150 candidates were not selected, including all disagreements and HOLD/REJECT cases. The six later administrator-arbitration approvals are **not** included.
 - Existing 87-row first cohort is unchanged. Total curator-quality accepted across both cohorts: **87 + 108 = 195** (separate snapshots).
 - Both cohorts remain `PENDING_NOT_APPROVED` for training until full story-card, story isolation, split, age/content and actual tokenizer/loss-mask gates pass.
+
+## 2026-10-13: original evidence chain for stories 06–15
+
+- [`source-archives/06-15/`](source-archives/06-15/README.md) now stores byte-verified frozen 63/90/120/150 JSONL snapshots, archive SHA256 inventories, and read-only validation scripts for the 108 double-ACCEPT selection.
+- The full raw/reviewer/R01–R04 ZIP has been assembled and locally verified, but its **binary content has not yet been pushed to Git LFS**. The repository contains an upload procedure and explicit hash contract; do not treat it as a complete remote backup until a fresh-clone LFS download verifies.
+- Existing 87- and 108-record quality snapshots remain unchanged; training remains `PENDING_NOT_APPROVED`.

@@ -1,0 +1,183 @@
+{
+  "schema": "storyforge.v0.2.06-15.github-evidence-index.v1",
+  "date": "2026-10-13",
+  "repository": "sunxu/storyforge",
+  "branch": "main",
+  "bundle_name": "StoryForge_v02_06-15_Full_Evidence_20261013.zip",
+  "bundle_size_bytes": 65332700,
+  "bundle_sha256": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+  "bundle_local_status": "CREATED_AND_VERIFIED",
+  "bundle_remote_lfs_status": "NOT_UPLOADED",
+  "raw_story_zip_count": 10,
+  "r01_zip_count": 10,
+  "rounds": [
+    {
+      "round": "R01",
+      "candidates": 63,
+      "sha256": "5f95632e4ee2e5703668518e4743f02325befc95f51c06e58e00f9c6cb196f50"
+    },
+    {
+      "round": "R02",
+      "candidates": 90,
+      "sha256": "fe8b1a921826a35f1d23541af7e53fc0bce87948c3f4c15d26cd73a376589fa7"
+    },
+    {
+      "round": "R03",
+      "candidates": 120,
+      "sha256": "3b385db306e11493ac1707f5a02ed4f44c9dd1d71dff93b96bf49a96d575b09c"
+    },
+    {
+      "round": "R04",
+      "candidates": 150,
+      "sha256": "8fbd2581b6823882d27e7839238335319202b1d9a726fc25d9aa74fedf5487f1"
+    }
+  ],
+  "selection": {
+    "first_review": "119 ACCEPT / 25 HOLD / 6 REJECT",
+    "second_review": "131 ACCEPT / 13 HOLD / 6 REJECT",
+    "double_accept": 108,
+    "not_selected": 42,
+    "arbitration_only_approvals_excluded": 6,
+    "training_admission": "PENDING_NOT_APPROVED"
+  },
+  "bundle_file_sha256": [
+    {
+      "path": "admin/StoryForge_v02_150_AB_Preflight_Admin_20261012.zip",
+      "size_bytes": 605376,
+      "sha256": "c1d09a40ba4ce0e94ce93e7542bd713014d4092ffe33b1a92d3d95ec34f5e595"
+    },
+    {
+      "path": "admin/StoryForge_v02_150_AB_Prompts_20261012.zip",
+      "size_bytes": 467771,
+      "sha256": "91ce30e6d940dd19811b90885cde53831a7393b773a3d9dba88258f0ad996acc"
+    },
+    {
+      "path": "admin/StoryForge_v02_150_B_Generation_Runner_20261012.zip",
+      "size_bytes": 478006,
+      "sha256": "55f48d9a20678408b4f56d8c3193a2f7076cfeaf1c56c4be20e9870c67325b0f"
+    },
+    {
+      "path": "curation/StoryForge_v02_06-15_R02_Delivery_20261012.zip",
+      "size_bytes": 486692,
+      "sha256": "2e40e782f4078166791620f52693ad0fc2d241ea4a56e5864f4a9a15c3b15408"
+    },
+    {
+      "path": "curation/StoryForge_v02_06-15_R03_Delivery_20261012.zip",
+      "size_bytes": 654966,
+      "sha256": "e5b9bea9c8b6b7d68ce6ff6c1d0c1d48c9774270ce08e0beed6571a2aa3a59fb"
+    },
+    {
+      "path": "curation/StoryForge_v02_06-15_R04_Delivery_20261012.zip",
+      "size_bytes": 791311,
+      "sha256": "f750fafaac2dd8d0c5051336d88ea493a119ae0fc56128bbfc12ba72f00d4a62"
+    },
+    {
+      "path": "review/StoryForge_v02_150_Arbitration_R01_20261012.zip",
+      "size_bytes": 577574,
+      "sha256": "f0b584296f3c9472265d9851a6535736f89f0fe5c78d5a221cb5edfba9cc8465"
+    },
+    {
+      "path": "review/StoryForge_v02_150_DualReviewer_Reconciliation_20261012.zip",
+      "size_bytes": 663621,
+      "sha256": "afbb66c10badb62a01ca6714558d2c513b2296cf984385a2b4892ee7b9ea2947"
+    },
+    {
+      "path": "review/StoryForge_v02_150_Quality_Review_R01_20261012.zip",
+      "size_bytes": 133283,
+      "sha256": "74ca2d133e822216a4b3e1200b4c47996c69b21fd7e761967031c21ce5f4c534"
+    },
+    {
+      "path": "review/StoryForge_v02_150_Reviewer2_results_20261012.zip",
+      "size_bytes": 84125,
+      "sha256": "801dfae5337e308df6bff93ba779ace51f44ae7bb48814c70b22ef5e8506644b"
+    },
+    {
+      "path": "review/StoryForge_v02_150_Second_Reviewer_Blind_20261012.zip",
+      "size_bytes": 538106,
+      "sha256": "6508e9bb17e8f8e42611a6a39643a3feadb12f2ac868365bf0ff272e9d135078"
+    },
+    {
+      "path": "snapshots/dual_accepted_quality_only_108.jsonl",
+      "size_bytes": 1179162,
+      "sha256": "27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308"
+    },
+    {
+      "path": "snapshots/frozen_candidates_150.jsonl",
+      "size_bytes": 1579447,
+      "sha256": "8fbd2581b6823882d27e7839238335319202b1d9a726fc25d9aa74fedf5487f1"
+    },
+    {
+      "path": "sources/StoryForge_v02_06-15_R02_Handoff_Assets_20261012.zip",
+      "size_bytes": 58729936,
+      "sha256": "3d4c45250dceffc11af9f11fbf22eb40bfa1b316329b0d9908c97c1212401dd6"
+    }
+  ],
+  "nested_source_sha256": [
+    {
+      "story_number": 6,
+      "raw_zip_sha256": "3fcd92fee094e5132cd20ac6dfc0ccbe69c6d4274571ea9dca22a8e83272f995",
+      "r01_zip_sha256": "0fdfc330c1b20c2500f873dd3ece12c90f112c07e4156fd17de67dac7fdc21ea"
+    },
+    {
+      "story_number": 7,
+      "raw_zip_sha256": "d96f5554100ad72c15e298a98b80396a2163fe861178017a34d9079ce29e02ac",
+      "r01_zip_sha256": "82581d26babeec50c4a1ce23efdf126612d18940aa03c6f8e4d673c86770cab8"
+    },
+    {
+      "story_number": 8,
+      "raw_zip_sha256": "9528f72433c87f92767610e4b3350f4a43f8bcb274793cff0292d38522f73bdf",
+      "r01_zip_sha256": "99c5b0d70ab631e23a6efe0574ea27561d533aa9dde4f3e6124b29a2c68f0be4"
+    },
+    {
+      "story_number": 9,
+      "raw_zip_sha256": "bb911700b01fd4e4be90377128bd6eed5b51d4e47d05cf5a10f8018cf43df9ef",
+      "r01_zip_sha256": "3d09c64ab041f45a0f1ecb614db73ec3065aaec40870e1b53910204027d90161"
+    },
+    {
+      "story_number": 10,
+      "raw_zip_sha256": "6334880b144c0bc07c486eb6ae33cb9addaabd9e9c75a076d7bf4531d815b572",
+      "r01_zip_sha256": "3c45d49c21fcfc5f85cec385a8e694f320beacf371089680de63229457367b15"
+    },
+    {
+      "story_number": 11,
+      "raw_zip_sha256": "09f606c2d44ea4712bab1b1dcb631e5a5227053071d0370e96929e6d18e8ef15",
+      "r01_zip_sha256": "a681d9b07bf17cfa61cdb1ae7e0ab884353f67e7dd18920072de13b5c002bfb0"
+    },
+    {
+      "story_number": 12,
+      "raw_zip_sha256": "73a471fa8ef7e7171913e9b95bed1d980e9be074823c491097d243b89f9f1bf9",
+      "r01_zip_sha256": "2a3abb1b5a142ccfa3257a87eb089f87f7670cd94bfe3f7544ea3d289113cd28"
+    },
+    {
+      "story_number": 13,
+      "raw_zip_sha256": "9bbc04429f801ac44d70cca9102903b93f7b13995e418fd4a7cad361a35f9bdf",
+      "r01_zip_sha256": "ff252ebfcb057e22a3eff7049518a24357b3ab24194ad019ce279ffb6253c6b1"
+    },
+    {
+      "story_number": 14,
+      "raw_zip_sha256": "9ad6383c782040b78f5cec2e5254bcfd5263b4a7bf4b3ff39a671d17f7cfff8f",
+      "r01_zip_sha256": "b333014ec2ad18389c430c341a0e3bc20210e25ff7366354aa32e680a3aeea6e"
+    },
+    {
+      "story_number": 15,
+      "raw_zip_sha256": "778cb0fba849bc7d4dadaabd25d291ecd82c70e1d912ced7e5ffed230b7f2852",
+      "r01_zip_sha256": "0bd3f2fb34801a08cf01634e1680346be7cdb7acba2b22c3633720e9b4afdce0"
+    }
+  ],
+  "validation": {
+    "original_source_and_history": "150/150 PASS",
+    "zip_crc": "PASS",
+    "round_prefix_byte_exact": "PASS",
+    "upstream_r04_verifier": "PASS",
+    "double_accept_exact": "108/108 PASS"
+  },
+  "remaining": [
+    "LFS_REMOTE_OBJECT_AND_FRESH_CLONE_VERIFICATION",
+    "TARGET_TIME_CHARACTER_CARD",
+    "AGE_CONTENT_BOUNDS",
+    "04_07_ISOLATION",
+    "V01_SPLIT_OVERLAP",
+    "QWEN_16384_TOKEN_LIMIT",
+    "ACTUAL_ASSISTANT_ONLY_LAST_ROUND_MASK"
+  ]
+}
