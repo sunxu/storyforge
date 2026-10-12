@@ -1,0 +1,74 @@
+{
+  "schema_version": "storyforge.v0.2.gold-quality-selection.v1",
+  "release_date": "2026-10-13",
+  "repo": "sunxu/storyforge",
+  "target_branch": "main",
+  "directory": "evaluations/v0.2/gold-quality-108",
+  "owner_selection": "GOLD_QUALITY_ACCEPTED_BY_OWNER",
+  "selection_rule": "R1==ACCEPT && R2==ACCEPT (all five dimensions >=4; no severe issue)",
+  "source": {
+    "cohort": "stories_06_to_15",
+    "freeze_date": "2026-10-12",
+    "frozen_150_zip": "StoryForge_v02_06-15_R04_Delivery_20261012.zip",
+    "frozen_jsonl_entry": "gold_selected.jsonl",
+    "frozen_jsonl_sha256": "8fbd2581b6823882d27e7839238335319202b1d9a726fc25d9aa74fedf5487f1",
+    "double_review_zip": "StoryForge_v02_150_DualReviewer_Reconciliation_20261012.zip",
+    "double_accepted_jsonl_sha256": "27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308",
+    "raw_06_15_story_exports_in_this_commit": false
+  },
+  "counts": {
+    "frozen_candidates": 150,
+    "selected_double_accept": 108,
+    "not_selected": 42,
+    "arbitration_only_6_excluded": true,
+    "by_story": {
+      "10": 19,
+      "11": 0,
+      "12": 4,
+      "13": 17,
+      "14": 12,
+      "15": 20,
+      "06": 7,
+      "07": 0,
+      "08": 4,
+      "09": 25
+    },
+    "cross_reviewer": {
+      "ACCEPT_ACCEPT": 108,
+      "ACCEPT_HOLD": 9,
+      "HOLD_ACCEPT": 21,
+      "ACCEPT_REJECT": 2,
+      "REJECT_ACCEPT": 2,
+      "HOLD_HOLD": 4,
+      "REJECT_REJECT": 4
+    }
+  },
+  "files_git_blob_sha1": {
+    "gold_quality_accepted_108.jsonl": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+    "gold_108_index.csv": "38e350a9694cc35e4b1e0e8cb4858bd85b5d6ef3",
+    "other_42_not_selected.csv": "7cf6c7dae3b7436d8cfd46bce49ddb5cbf0b812d",
+    "dual_accept_review_evidence_108.jsonl": "b9ea046bd70e5b4e4c7e31c439474e04c9e6eac2",
+    "README.md": "53fd6766864916c56d21fb2041ec1815e4079bae",
+    "verify_gold108.py": "fdb4f65568c01f6cc3a6bb3a58fe5b9650a0e907"
+  },
+  "original_records_byte_exact": true,
+  "quality_status": "GOLD_QUALITY_ACCEPTED_BY_OWNER",
+  "training_admission": "PENDING_NOT_APPROVED",
+  "formal_gold_for_training": false,
+  "data_split": null,
+  "supervised_target_policy": "FINAL_ASSISTANT_ONLY_HISTORY_ASSISTANT_MASKED",
+  "original_87": {
+    "path": "evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
+    "expected_git_blob_sha1": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+    "records": 87,
+    "unchanged": true
+  },
+  "pending_gates": [
+    "TARGET_TIME_STORY_CARDS_AND_FULL_CANON",
+    "AGE_CONSENT_AND_CONTENT_BOUNDARIES",
+    "STORY_04_07_ISOLATION",
+    "V01_HELD_OUT_OVERLAP_AND_STORY_LEVEL_SPLIT",
+    "PINNED_QWEN_16384_TOKEN_CHECK",
+    "ACTUAL_LAST_ROUND_ASSISTANT_ONLY_LOSS_MASK"
+  ]
+}

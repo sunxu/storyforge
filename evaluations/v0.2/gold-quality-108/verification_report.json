@@ -1,0 +1,26 @@
+{
+  "stage": "precommit_verified",
+  "checked_on": "2026-10-13",
+  "source_150_records": 150,
+  "selection_records": 108,
+  "unique_selected_ids": 108,
+  "excluded_ids": 42,
+  "checks": {
+    "selected_rows_exist_byte_for_byte_in_frozen_source": true,
+    "selected_records_unchanged": true,
+    "github_uploaded_dataset_blob_matches_local_git_blob_sha1": true,
+    "reviewer1_and_reviewer2_accept_108": true,
+    "review_dimensions_all_ge4": true,
+    "assistant_is_final_target_108": true,
+    "target_sha256_matches_review_record_108": true,
+    "training_admission_pending_108": true,
+    "split_null_108": true,
+    "selected_and_excluded_id_disjoint": true,
+    "arbitration_only_approvals_excluded": true
+  },
+  "sha256_selected": "27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308",
+  "sha1_git_blob_selected": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+  "legacy_87_expected_blob_sha1": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+  "training_admission": "PENDING_NOT_APPROVED",
+  "notes": "Mechanical evidence/integrity checks are not proof of global canon, content eligibility, reviewer independence, split safety, tokenizer bounds or correct loss masking."
+}

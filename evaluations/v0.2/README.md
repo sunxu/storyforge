@@ -22,4 +22,11 @@ To back up raw sources from the user's local checkout, restore the five original
 
 Additional stories should be ingested into distinct per-story namespaces, with immutable source hashes and separate curator decisions. Extend the candidate corpus only through additive revisions; never rewrite the 87-row accepted snapshot. Quality acceptance is not training approval. Story-card, v0.1 split overlap, pinned Qwen tokenizer and actual last-round mask audits remain pending.
 
-**Status:** `GOLD_QUALITY_ACCEPTED=87`; `OTHER_CANDIDATES_CLOSED=25`; `TRAINING_ADMISSION=PENDING_NOT_APPROVED`; `RAW_SOURCES_BACKUP=PENDING`.
+**Historical first-cohort status:** `GOLD_QUALITY_ACCEPTED=87`; `OTHER_CANDIDATES_CLOSED=25`; `TRAINING_ADMISSION=PENDING_NOT_APPROVED`.
+
+## 2026-10-13: second curator-quality cohort (06–15)
+
+- [`gold-quality-108/`](gold-quality-108/README.md) contains **exactly 108** original records accepted by **both** independent reviewers, with a traceable index, selection manifest, evidence and read-only verifier.
+- 42 of the frozen 150 candidates were not selected, including all disagreements and HOLD/REJECT cases. The six later administrator-arbitration approvals are **not** included.
+- Existing 87-row first cohort is unchanged. Total curator-quality accepted across both cohorts: **87 + 108 = 195** (separate snapshots).
+- Both cohorts remain `PENDING_NOT_APPROVED` for training until full story-card, story isolation, split, age/content and actual tokenizer/loss-mask gates pass.
