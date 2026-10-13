@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """R18 private HF tokenizer + actual ms-swift no-training audit (fail closed)."""
 import argparse, csv, hashlib, io, json, os, sys, traceback, zipfile
+import importlib.metadata
 from pathlib import Path
 
 REV='1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
@@ -39,7 +40,7 @@ def frozen(path):
                     raise ValueError('R15/R07 count or duplicate mismatch')
                 for q in selection:
                     m=by[q['candidate_id']]['messages']
-                    if len(m)<2 or m[-2]['role']!='user' or m[-1]['role']!='assistant' or m[-1].get('loss') is not True or any(x.get('loss') is True for x in m[:-1]):raise ValueError('wrong supervised target')
+                    if len(m)<2 or m[-2]['role']!='user' or m[-1]['role']!='assistant' or m[-1].get('loss') is not True or any(x.get('loss') is not False for x in m[:-1] if x['role']=='assistant'):raise ValueError('wrong supervised target')
                     if digest(m[-1]['content'].encode())!=q['target_sha256']:raise ValueError('target tampered')
                 return selection,by
             n=[x for x in z.namelist() if x.endswith('.zip') and ('/baseline/' in x or x.endswith('evidence/R07_UniformPrompt_Admission_20261013.zip'))]
@@ -95,6 +96,10 @@ def main():
     p=argparse.ArgumentParser();p.add_argument('--r17-zip',type=Path,required=True);p.add_argument('--output-dir',type=Path,required=True);p.add_argument('--stage',choices=['token','both'],default='both');a=p.parse_args()
     a.output_dir.mkdir(parents=True,exist_ok=True)
     result={'status':'BLOCKED','admission':'PENDING_NOT_APPROVED','training_performed':False,'stage':a.stage,'rows':[]}
+    result['runtime_versions']={}
+    for package in ('ms-swift','transformers','tokenizers','torch','huggingface-hub'):
+        try:result['runtime_versions'][package]=importlib.metadata.version(package)
+        except importlib.metadata.PackageNotFoundError:result['runtime_versions'][package]=None
     try:
         selection,by=frozen(a.r17_zip)
         result['r17_sha256']=SOURCE;result['model_revision']=REV
