@@ -1,2 +1,4 @@
 evaluations/v0.2/source-archives/*.zip filter=lfs diff=lfs merge=lfs -text
 evaluations/v0.2/source-archives/06-15/*.zip filter=lfs diff=lfs merge=lfs -text
+evaluations/v0.2/training-readiness/20261013/private/*.zip filter=lfs diff=lfs merge=lfs -text
+evaluations/v0.2/training-readiness/20261013/private/*.json filter=lfs diff=lfs merge=lfs -text
