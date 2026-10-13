@@ -1,0 +1,49 @@
+{
+  "schema": "storyforge-v02-r25-jsonl-provenance-v1",
+  "date": "2026-10-13",
+  "training_admission": "PENDING_NOT_APPROVED",
+  "frozen_gold_candidates": 195,
+  "frozen_gold_modified": false,
+  "training_performed": false,
+  "private_source_zip_sha256": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+  "private_evidence_zip_sha256": "af521e0052028142549f6dbd220ca21bee3bfa1c32b6dfbb2c32eb7b1f171fdb",
+  "previous_r24_archive_still_frozen": true,
+  "uploaded_jsonl_entries": 14,
+  "required_sources_story_and_session_id_verified": 13,
+  "extra_source_entries_excluded": 1,
+  "messages_across_14_exports": 62583,
+  "messages_across_13_required_sources": 58783,
+  "required_frozen_target_ids_found": 195,
+  "target_uuid_body_sha256_role_created_at_timezone_valid": 195,
+  "earlier_r23_first_lanes_aligned": 40,
+  "leading_assistant_truncated_windows": 132,
+  "truncated_window_lossless_proved": 0,
+  "original_expected_json_bytes_sha256_verified": 0,
+  "request_time_card_version_verified": 0,
+  "target_mutation_revision_zero": 193,
+  "target_mutation_revision_nonzero": 2,
+  "nonzero_mutation_candidates": [
+    {
+      "id": "s09-gold-r04-t03104",
+      "revision": 4
+    },
+    {
+      "id": "sf14-gold-t02392",
+      "revision": 3
+    }
+  ],
+  "historical_original_content_at_created_at_proven": false,
+  "result": "R25_TARGET_MESSAGE_TIME_VERIFIED_195_JSONL_ONLY",
+  "independent_archive_check": "R25_PORTABLE_EVIDENCE_INTEGRITY_PASS_ONLY",
+  "blocked": [
+    "as-of-card-version",
+    "historical mutation revisions for two target responses",
+    "132 opening truncation reconstruction",
+    "age/content clearance",
+    "linked-world leakage graph",
+    "fresh held-out",
+    "final split",
+    "training approval"
+  ],
+  "notes": "ZIP contains source snapshots with matching target body hashes and created_at, not original byte-identical .json exports; no train approval."
+}
