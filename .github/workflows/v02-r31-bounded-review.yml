@@ -1,0 +1,52 @@
+name: R31 bounded review integrity (not training release)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R31_REVIEW_SCOPE_AND_GATE_20261013.json'
+      - '.github/workflows/v02-r31-bounded-review.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-nonapproval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download original R27 LFS artifact
+        run: git lfs pull
+      - name: Verify review counts and unchanged original candidate bytes
+        run: |
+          python - <<'PY'
+          import hashlib, json, zipfile
+          from pathlib import Path
+          j=json.loads(Path('docs/evidence/V02_R31_REVIEW_SCOPE_AND_GATE_20261013.json').read_text())
+          f=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          with zipfile.ZipFile(f) as z:
+              n=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              assert len(n)==1
+              b=z.read(n[0])
+          assert hashlib.sha256(b).hexdigest()==j['r27_dataset_sha256']
+          rows=[json.loads(x) for x in b.splitlines() if x.strip()]
+          ids={x['id'] for x in rows}
+          assert len(rows)==117 and len(ids)==117
+          assert set(j['proposed_hold_ids']).issubset(ids)
+          assert j['r30_prior_ip_quarantine_untouched']==25
+          assert j['r30_non_ip_review_candidates']==92
+          assert j['selected_history_plus_full_target_bounded_case_examinations']==21
+          assert j['non_ip_not_subject_to_deeper_selected_turn_review']==71
+          assert j['new_followup_hold_recommendations']==2
+          assert j['training_admission']=='PENDING_NOT_APPROVED'
+          assert j['training_job_started'] is False and j['full_gpu_train_approved'] is False
+          assert j['formal_policy_age_approved']==j['approved_train']==j['approved_validation']==j['fresh_heldout_components']==0
+          assert all(x['metadata']['dataset_admission']=='NOT_APPROVED' for x in rows)
+          print('R31_SCOPED_REVIEW_ARCHIVE_CHECK_PASS__NO_TRAINING_RELEASE')
+          PY
