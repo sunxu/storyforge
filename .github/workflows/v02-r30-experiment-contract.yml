@@ -1,0 +1,51 @@
+name: R30 authorized input contract (not GPU release)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R30_CONTRACT_AND_RELEASE_GATE_20261013.json'
+      - 'docs/evidence/V02_R30_APPROVED_NO_CARD_EXPERIMENTAL_CONTRACT_20261013.md'
+      - '.github/workflows/v02-r30-experiment-contract.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  no-card-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download private original R27 input
+        run: git lfs pull
+      - name: Confirm R30 contract and fail closed
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+          gate=json.loads(Path('docs/evidence/V02_R30_CONTRACT_AND_RELEASE_GATE_20261013.json').read_text())
+          assert gate['user_approval']=='YES_EXPERIMENTAL_NO_CARD_INPUT_ONLY'
+          assert gate['input_design_approved'] is True
+          assert gate['training_admission']=='PENDING_NOT_APPROVED'
+          assert gate['gpu_job_started'] is False
+          assert gate['approved_train']==gate['approved_validation']==0
+          assert gate['full_signed_content_approvals']==0
+          assert gate['new_fresh_heldout_story_groups']==0
+          assert not gate['linked_world_alias_isolation_approved']
+          p=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          assert hashlib.sha256(p.read_bytes()).hexdigest()=='cfedf6935babd12c9fc214b46dc2078381b55de9487afe25212bf54e8706794f'
+          with zipfile.ZipFile(p) as z:
+            ff=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+            assert len(ff)==1
+            data=z.read(ff[0])
+          assert hashlib.sha256(data).hexdigest()==gate['candidate_artifact_sha256']
+          rows=[json.loads(line) for line in data.splitlines() if line.strip()]
+          assert len(rows)==117 and len({r['id'] for r in rows})==117
+          system={r['messages'][0]['content'] for r in rows}
+          assert len(system)==1 and hashlib.sha256(next(iter(system)).encode('utf8')).hexdigest()==gate['system_utf8_sha256']
+          assert all(r['metadata']['dataset_admission']=='NOT_APPROVED' and r['metadata']['approved_split'] is None for r in rows)
+          print('R30_USER_APPROVED_INPUT_CONTRACT_PASS__TRAINING_RELEASE_BLOCKED')
+          PY
