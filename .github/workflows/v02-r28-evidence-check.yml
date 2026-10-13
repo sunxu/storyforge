@@ -1,0 +1,50 @@
+name: R28 evidence integrity (NOT training approval)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R28_RELEASE_PREP_GATE_20261013.json'
+      - 'scripts/v02_verify_r27_hf_report.py'
+      - '.github/workflows/v02-r28-evidence-check.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-r28-blocked-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pull private full report and candidate bytes
+        run: git lfs pull
+      - name: Replay actual R27 HF 117 engineering report
+        run: |
+          python scripts/v02_verify_r27_hf_report.py \
+            --report evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Actual_Collator_Report_20261013.json \
+            --r27-archive evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip
+      - name: Ensure R28 release remains fail closed
+        run: |
+          python - <<'PY'
+          import json, hashlib
+          from pathlib import Path
+          f=Path('docs/evidence/V02_R28_RELEASE_PREP_GATE_20261013.json')
+          j=json.loads(f.read_text())
+          d=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Actual_Collator_Report_20261013.json')
+          assert hashlib.sha256(d.read_bytes()).hexdigest()==j['hf_report_sha256']
+          assert j['training_admission']=='PENDING_NOT_APPROVED'
+          assert j['training_performed'] is False
+          assert j['hf_actual_last_round_collator_pass']==117
+          assert j['approved_train']==j['approved_validation']==j['approved_test']==0
+          assert j['human_content_age_final_approved']==0
+          assert not j['linked_world_isolation_approved']
+          assert not j['synthetic_system_derivative_approved']
+          assert j['unseen_heldout_story_count']==0
+          print('R28_EVIDENCE_INTEGRITY_PASS__TRAINING_RELEASE_STILL_BLOCKED')
+          PY
