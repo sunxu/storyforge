@@ -1,0 +1,49 @@
+{
+  "schema": "storyforge-v02-r33-full-visible-history-scope-v1",
+  "date": "2026-10-13",
+  "original_gold_frozen": 195,
+  "r27_derived_provisional_unchanged": 117,
+  "r27_source_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "prior_r32_full_visible_histories": 22,
+  "new_r33_full_visible_histories": 49,
+  "non_ip_full_visible_histories_total": 71,
+  "non_ip_r31_selected_turn_only_remaining": 21,
+  "source_ip_quarantine_count": 25,
+  "new_r33_precise_review_followups": 8,
+  "previous_claims_corrected_by_original_user_turns": 3,
+  "actual_prior_user_turn_witnesses": 4,
+  "original_upstream_turn_references": {
+    "virgin-death-gold-t01860": [
+      1847
+    ],
+    "bh-gold-t0578": [
+      567,
+      569
+    ],
+    "bh-gold-t2404": [
+      2393
+    ]
+  },
+  "the_three_upstream_facts_visible_in_r27": false,
+  "policy_age_signoff": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "new_unexposed_heldout": 0,
+  "linked_world_cleared": false,
+  "no_card_experiment_user_authorized": true,
+  "r27_hf117_real_token_mask": "PASS_PREVIOUSLY_FOR_UNMODIFIED_BYTES",
+  "release": "PENDING_NOT_APPROVED",
+  "gpu_training_started": false,
+  "r32_parent_archive_sha256": "bdd9bdde58fc6b670daba7ec94f50b4d73a1c5802a73e3cebc0571eb65519a3e",
+  "r33_private_archive_sha256": "57cfea5f921ca7b91329c5f24f24df6dcbd35ea49df92af9713ee38b7a891fd4",
+  "original_chat_sha256": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+  "private_verifier": "R33_49_FULL_R27_VISIBLE_HISTORY_READ_EVIDENCE_PASS_ONLY__TRAINING_ADMISSION_BLOCKED",
+  "original_source_replay": "R33_ORIGINAL_SOURCE_CORRECTIONS_REPLAY_PASS",
+  "tamper_rejection_exit_code": 2,
+  "qualifications": [
+    "All 49 reviewed only within the complete R27 visible history, not entire original story or original generation-time prompt.",
+    "41 without new substantiated visible-window target hard errors are not content/age approved.",
+    "Three true earlier source facts do not become visible in the R27 short prompt."
+  ]
+}
