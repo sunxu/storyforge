@@ -1,0 +1,43 @@
+name: R27 HF worker safety checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/v02_r27_hf_worker.sh'
+      - 'scripts/v02_r27_hf_retry.sh'
+      - '.github/workflows/r27-hf-worker-checks.yml'
+  pull_request:
+    paths:
+      - 'scripts/v02_r27_hf_worker.sh'
+      - 'scripts/v02_r27_hf_retry.sh'
+      - '.github/workflows/r27-hf-worker-checks.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safety-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bash syntax
+        run: |
+          bash -n scripts/v02_r27_hf_worker.sh
+          bash -n scripts/v02_r27_hf_retry.sh
+      - name: No stale source path, pinned input hash and fail closed
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          w = Path("scripts/v02_r27_hf_worker.sh").read_text()
+          s = Path("scripts/v02_r27_hf_retry.sh").read_text()
+          assert "r27_private_candidate_117_NOT_APPROVED.jsonl" in w
+          assert "r27_private_candidate_118_NOT_APPROVED.jsonl" not in w
+          assert "117 distinct candidate IDs" in w
+          assert w.index("R27_SOURCE_PREFLIGHT_PASS") < w.index("python -m pip install")
+          assert "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a" in s
+          assert "STORYFORGE_ALLOW_PAID_CPU" in s
+          assert "r27_hf_worker.sh" in s
+          assert "swift sft" not in s + w
+          print("R27_117_WORKER_SAFETY_PASS")
+          PY
