@@ -1,0 +1,80 @@
+{
+  "schema": "storyforge-v02-r38-hf-inheritance-and-split-sensitivity-v1",
+  "date": "2026-10-14",
+  "official_training_admission": "PENDING_NOT_APPROVED",
+  "gpu_training_started": false,
+  "original_gold_frozen": 195,
+  "r27_original_candidate_count": 117,
+  "r37_provisional_unchanged_count": 82,
+  "r37_provisional_sha256": "f108c2b85ae096fd00e49e23e50d00b1cf0cf779682793ea6e3951e700b9e7c9",
+  "r27_original_input_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "r27_real_hf_report_sha256": "e23f166226142e28a04f42a3d481776b6ac84d9b30f92e30a55de838e5d2b213",
+  "github_actions_run": 38428606867,
+  "github_independent_subset_inheritance": "PASS_82_OUT_OF_REAL_R27_117",
+  "inherited_original_ms_swift_total_tokens": 155946,
+  "inherited_supervised_tokens": 21807,
+  "inherited_max_ms_swift_tokens": 3694,
+  "original_r37_train_proposal": 65,
+  "original_r37_validation_proposal": 17,
+  "original_r37_validation_source_counts": [
+    16,
+    1
+  ],
+  "validation_largest_story_fraction": 0.94118,
+  "train_val_exact_normalized_16character_dialogue_overlap_count": 0,
+  "preliminary_splits": [
+    {
+      "type": "R37_ORIGINAL",
+      "train": 65,
+      "validation": 17,
+      "validation_story_sizes": [
+        16,
+        1
+      ],
+      "approved": false
+    },
+    {
+      "type": "R38_BALANCED_A",
+      "train": 64,
+      "validation": 18,
+      "validation_story_sizes": [
+        8,
+        8,
+        2
+      ],
+      "approved": false
+    },
+    {
+      "type": "R38_DIVERSE_B",
+      "train": 66,
+      "validation": 16,
+      "validation_story_sizes": [
+        8,
+        5,
+        2,
+        1
+      ],
+      "approved": false
+    }
+  ],
+  "row_level_hf_inheritance_true": true,
+  "actual_new_hf_job_submitted": false,
+  "final_training_batch_packing_and_compiled_loader_audit_done": false,
+  "final_content_age_signoff": 0,
+  "final_rights_signoff": 0,
+  "final_world_alias_signoff": false,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "new_independent_sealed_heldout_components": 0,
+  "private_r37_parent_zip_sha256": "5e1ac01fd2d65f08a962782316e59dd013c7e2e848199129d19604ea26dadfc7",
+  "private_r38_pack_zip_sha256": "b4bbfcb5953d0d4337a25f57481ce55793731058966035be418bf8b046a61ddc",
+  "local_verifier": "R38_82_INHERITED_HF_REAL_REPORT_AND_SPLIT_SCENARIOS_EVIDENCE_PASS_ONLY__NO_GPU_RELEASE",
+  "tamper_rejection_exit_code": 2,
+  "limitations": [
+    "Reused exact per-row results from the original 117 input; no new Tokenizer/ms-swift model execution or batch-pack test.",
+    "16-char exact normalized dialogue scan cannot prove no semantic leakage, shared characters/world, copyright provenance, or alias independence.",
+    "Validation group balance is a statistical concern, not formal proof any sample is invalid.",
+    "No per-sample final content or age approvals or independent sealed heldout data."
+  ]
+}
