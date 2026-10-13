@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only exact-SHA check for private pre-GPU StoryForge v0.2 Git LFS assets."""
 from __future__ import annotations
 
