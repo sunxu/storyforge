@@ -1,7 +1,14 @@
-#!/usr/bin/env python3
 """R18 private HF tokenizer + actual ms-swift no-training audit (fail closed)."""
-import argparse, csv, hashlib, io, json, os, sys, traceback, zipfile
+import argparse
+import csv
+import hashlib
 import importlib.metadata
+import io
+import json
+import os
+import sys
+import traceback
+import zipfile
 from pathlib import Path
 
 REV='1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
@@ -58,8 +65,8 @@ def probe(selection,by,stage,report):
     report['chat_template_sha256']=digest(str(tok.chat_template).encode())
     template=None
     if stage=='both':
-        from swift import get_processor,get_template
         import hf_label_mask_audit as audit
+        from swift import get_processor, get_template
         os.environ['HF_HUB_OFFLINE']='1'
         template=get_template(get_processor(str(snapshot)),loss_scale='last_round',max_length=16384,add_non_thinking_prefix=False)
         template.set_mode('train')
@@ -78,7 +85,7 @@ def probe(selection,by,stage,report):
             original_ids=ids(encoded['input_ids']); original_labels=ids(encoded['labels'])
             if len(original_ids)!=len(original_labels) or len(original_ids)>16384:raise ValueError('template length invalid')
             collator=getattr(template,'data_collator',None)
-            if not callable(collator):raise ValueError('real data_collator unavailable')
+            if not callable(collator):raise TypeError('real data_collator unavailable')
             batch=collator([encoded]); b_ids=ids(batch['input_ids']); b_labels=ids(batch['labels'])
             if (b_ids[:len(original_ids)]!=original_ids or b_labels[:len(original_labels)]!=original_labels or len(b_ids)!=len(b_labels) or any(x!=-100 for x in b_labels[len(original_labels):])):raise ValueError('collator labels differ from actual template')
             if not any(x!=-100 for x in original_labels):raise ValueError('Gold target not supervised')
@@ -86,7 +93,7 @@ def probe(selection,by,stage,report):
             result['ms_swift_token_count']=len(original_ids)
             result['labels_sha256']=digest(json.dumps(original_labels,separators=(',',':')).encode())
             result['transformers_ms_swift_input_same']=t==original_ids
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001 - preserve BLOCKED report for all runtime failures
             result['mask']='BLOCKED'; result['error']=f'{type(exc).__name__}: {str(exc)[:300]}'
     n=sum(r['token_count']<=16384 and (stage=='token' or r['mask']=='ACTUAL_COLLATOR_LABELS_CONSISTENT') for r in report['rows'])
     report['checked']=len(report['rows']);report['consistent']=n
@@ -104,7 +111,7 @@ def main():
         selection,by=frozen(a.r17_zip)
         result['r17_sha256']=SOURCE;result['model_revision']=REV
         probe(selection,by,a.stage,result)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - preserve BLOCKED report for all runtime failures
         traceback.print_exc();result['error']=f'{type(exc).__name__}: {exc}'
     (a.output_dir/'r18_actual_no_train_report.json').write_text(json.dumps(result,ensure_ascii=False,indent=2)+'\n')
     print('R18',result['status'],result.get('consistent',0),'of 40; admission=PENDING_NOT_APPROVED')
