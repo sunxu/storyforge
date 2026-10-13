@@ -70,7 +70,13 @@ for file in "$BASE"/*; do
   }
 done
 python3 scripts/v02_verify_before_gpu_archive.py --root "$REPO"
-git add -- "$BASE"
+# Global .gitignore ignores *.zip: force-add only the exact verified private directory.
+git add -f -- "$BASE"/*
+for file in "$BASE"/*; do
+  [[ $(git show ":$file" | head -1) == 'version https://git-lfs.github.com/spec/v1' ]] || {
+    echo "BLOCKED: Git index contains non-LFS data: $file" >&2; exit 2;
+  }
+done
 echo 'LOCAL_ARCHIVE_STAGED_ONLY: all four exact-hash files, through Git LFS'
 if [[ "$ACTION" != --push ]]; then exit 0; fi
 git commit -m 'archive(v0.2): preserve R18/R26/R27 and original sources before GPU training'
