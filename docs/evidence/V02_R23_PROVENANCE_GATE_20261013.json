@@ -1,0 +1,34 @@
+{
+  "schema": "storyforge-v02-r23-provenance-preflight-v1",
+  "date": "2026-10-13",
+  "training_admission": "PENDING_NOT_APPROVED",
+  "training_performed": false,
+  "frozen_gold_modified": false,
+  "frozen_gold_candidates": 195,
+  "source_exports_identified": 13,
+  "original_export_bytes_present": 0,
+  "original_export_sha256_verified": 0,
+  "target_uuid_content_hash_checked": 40,
+  "target_created_at_joined": 0,
+  "request_effective_card_versions_verified": 0,
+  "checkpoint_streams_indexed": 13,
+  "relationship_checkpoint_proximity_counts": {
+    "SAME_TURN_CHECKPOINT": 9,
+    "BETWEEN_CHECKPOINTS": 13,
+    "AFTER_LAST_CHECKPOINT": 17,
+    "BEFORE_FIRST_CHECKPOINT": 1
+  },
+  "checkpoint_event_time_used_as_target_created_at": false,
+  "full_policy_age_signoffs": 0,
+  "fresh_unseen_heldout_cases": 0,
+  "approved_split_assignments": 0,
+  "source_sha256": {
+    "parent_r22_zip": "01e5f89b975f5cdda64f67a3d95534ca1218c36217c27e8018390b29f5cddca5",
+    "supplement_zip": "c7bfd1bc3d3366f80b21bb3709fad3f6367b62ae12418010dc9e3a1e9e5b060b",
+    "frozen_r07_preview": "21255ffaf3460721bfbd89fb448e4cf5bcf53e98d3eec76585a7817e8bafd210",
+    "private_r23_archive": "9fdc43839ae2ab03a7648eaaac4bfe35d35d7a2a1962d1c972281517f064de76"
+  },
+  "portable_verifier": "R23_PROVENANCE_LOCATOR_AND_CHECKPOINT_INTEGRITY_PASS_ONLY",
+  "missing_original_source_join": "BLOCKED",
+  "note": "State checkpoint timestamps do not prove target message created_at or historical request-effective story cards."
+}
