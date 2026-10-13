@@ -1,0 +1,80 @@
+name: R37 unsigned 82 source replay (NO GPU)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R37_REVIEW_GATE_20261013.json'
+      - '.github/workflows/v02-r37-unsigned-82.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  exact-source-and-release-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Get R27 source bytes from Git LFS
+        run: git lfs pull
+      - name: Recompute strict 82 65 17 original-row SHA256 from R27
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,zipfile,csv,io
+          sha=lambda b:hashlib.sha256(b).hexdigest()
+          gate=json.loads(Path('docs/evidence/V02_R37_REVIEW_GATE_20261013.json').read_text())
+          p=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          with zipfile.ZipFile(p) as z:
+              f=[n for n in z.namelist() if n.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              g=[n for n in z.namelist() if n.endswith('/output/r27_proposed_groups_11.csv')]
+              assert len(f)==len(g)==1
+              blob=z.read(f[0])
+              groups={x['story_id']:x['proposed_split'] for x in csv.DictReader(io.StringIO(z.read(g[0]).decode()))}
+          assert sha(blob)==gate['r27_117_original_sha256']
+          ip={'2e679438-e9f0-4cfd-979f-6663ae619120','d0155181-e6af-442e-932e-db440761ad3a'}
+          prior_window={'bh-gold-t0578','bh-gold-t2404','virgin-death-gold-t01860'}
+          r36={'na-gold-t0195','s08-gold-t00183','s15-gold-r02-t01460','sf12-gold-t00751'}
+          r37=set(gate['three_new_window_hold_recommendations'])
+          assert len(r37)==3 and not r37.intersection(r36|prior_window)
+          previous85=[]; keep=[]; train=[]; validation=[]; seen=set()
+          counts={'ip':0,'window':0,'r36':0,'r37':0}
+          for line in blob.splitlines(keepends=True):
+              if not line.strip():continue
+              r=json.loads(line);cid=r['id'];sid=r['metadata']['source_story_id']
+              assert cid not in seen
+              seen.add(cid)
+              assert r['metadata']['dataset_admission']=='NOT_APPROVED'
+              assert r['metadata']['approved_split'] is None
+              assert sha(r['messages'][-1]['content'].encode())==r['metadata']['target_sha256']
+              if sid in ip:counts['ip']+=1;continue
+              if cid in prior_window:counts['window']+=1;continue
+              if cid in r36:counts['r36']+=1;continue
+              previous85.append(line)
+              if cid in r37:counts['r37']+=1;continue
+              keep.append(line)
+              split=groups[sid]
+              assert split in ('TRAIN_PROPOSAL','VALIDATION_PROPOSAL')
+              (train if split=='TRAIN_PROPOSAL' else validation).append(line)
+          assert len(seen)==117 and counts=={'ip':25,'window':3,'r36':4,'r37':3}
+          assert len(previous85)==85 and sha(b''.join(previous85))==gate['r36_parent_ceiling_85_sha256']
+          assert len(keep)==82 and sha(b''.join(keep))==gate['unsigned_ceiling_82_sha256']
+          assert len(train)==gate['provisional_train_rows']==65 and sha(b''.join(train))==gate['unsigned_train_65_sha256']
+          assert len(validation)==gate['provisional_validation_rows']==17 and sha(b''.join(validation))==gate['unsigned_validation_17_sha256']
+          tr={json.loads(l)['metadata']['source_story_id'] for l in train}
+          va={json.loads(l)['metadata']['source_story_id'] for l in validation}
+          assert len(tr)==7 and len(va)==2 and not tr.intersection(va)
+          assert gate['training_admission']=='PENDING_NOT_APPROVED'
+          assert gate['paid_gpu_training_authorized'] is False and gate['gpu_training_started'] is False
+          assert gate['approved_train']==gate['approved_validation']==gate['approved_test']==gate['fresh_independent_sealed_heldout_components']==0
+          assert gate['content_age_signed']==gate['rights_clearance_signed']==0
+          assert gate['world_alias_isolation_signed'] is False
+          assert gate['final_compiled_input_HF_rerun_completed'] is False
+          print('R37_REMOTE_GIT_LFS_82_65_17_BYTE_REPLAY_PASS__TRAINING_NOT_APPROVED')
+          PY
