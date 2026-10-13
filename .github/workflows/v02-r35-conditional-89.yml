@@ -1,0 +1,80 @@
+name: R35 conditional 89 exact-byte verification (NO GPU)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R35_CONDITIONAL_89_GATE_20261013.json'
+      - '.github/workflows/v02-r35-conditional-89.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-89-conditional-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pull frozen private R27 Git LFS bytes
+        run: git lfs pull
+      - name: Rebuild exact 89/70/19 hash-only from original 117 bytes
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import csv, hashlib, io, json, zipfile
+          H=lambda b:hashlib.sha256(b).hexdigest()
+          j=json.loads(Path('docs/evidence/V02_R35_CONDITIONAL_89_GATE_20261013.json').read_text())
+          p=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          assert H(p.read_bytes())==j['r27_original_zip_sha256']
+          with zipfile.ZipFile(p) as z:
+              f=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              groupf=[x for x in z.namelist() if x.endswith('/output/r27_proposed_groups_11.csv')]
+              assert len(f)==len(groupf)==1
+              orig=z.read(f[0])
+              groups=list(csv.DictReader(io.StringIO(z.read(groupf[0]).decode())))
+          assert H(orig)==j['r27_dataset_sha256']
+          proposal={x['story_id']:x['proposed_split'] for x in groups}
+          assert len(proposal)==11 and set(proposal.values())=={'TRAIN_PROPOSAL','VALIDATION_PROPOSAL'}
+          isolated=set(j['ip_provenance_quarantined_story_uuids'])
+          held=set(j['window_hold_ids'])
+          assert len(isolated)==2 and len(held)==3
+          all_rows=[]; candidates=[]; train=[]; validation=[]; hit_ip=hit_hold=0
+          for line in orig.splitlines(keepends=True):
+              if not line.strip():continue
+              item=json.loads(line); all_rows.append(item)
+              assert item['metadata']['dataset_admission']=='NOT_APPROVED'
+              assert item['metadata']['approved_split'] is None
+              assert H(item['messages'][-1]['content'].encode())==item['metadata']['target_sha256']
+              ident=item['id']; story=item['metadata']['source_story_id']
+              if story in isolated:
+                  hit_ip+=1;continue
+              if ident in held:
+                  hit_hold+=1;continue
+              candidates.append(line)
+              if proposal[story]=='TRAIN_PROPOSAL':train.append(line)
+              else:validation.append(line)
+          assert len(all_rows)==j['r27_candidate_rows']==117
+          assert len({r['id'] for r in all_rows})==117
+          assert hit_ip==j['ip_provenance_quarantine_rows']==25
+          assert hit_hold==j['window_premise_not_visible_hold_rows']==3
+          assert len(candidates)==j['conditional_not_approved_rows']==89
+          assert len(train)==j['unapproved_train_proposal_rows']==70
+          assert len(validation)==j['unapproved_validation_proposal_rows']==19
+          assert H(b''.join(candidates))==j['conditional_89_sha256']
+          assert H(b''.join(train))==j['train_proposal_70_sha256']
+          assert H(b''.join(validation))==j['validation_proposal_19_sha256']
+          trids={r['metadata']['source_story_id'] for r in map(json.loads,train)}
+          vaids={r['metadata']['source_story_id'] for r in map(json.loads,validation)}
+          assert trids.isdisjoint(vaids) and len(trids)==7 and len(vaids)==2
+          assert j['approved_train']==j['approved_validation']==j['approved_test']==0
+          assert j['conditional_content_age_policy_approvals']==j['world_ip_alias_component_signoffs']==j['fresh_sealed_heldout_story_components']==0
+          assert j['training_admission']=='PENDING_NOT_APPROVED'
+          assert j['gpu_training_authorized'] is False and j['gpu_training_started'] is False
+          assert j['full_final_input_token_mask_recheck_completed'] is False
+          print('R35_GITHUB_LFS_89_70_19_RAW_BYTE_HASH_PASS__ZERO_TRAINING_APPROVAL')
+          PY
