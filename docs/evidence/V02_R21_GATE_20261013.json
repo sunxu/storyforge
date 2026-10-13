@@ -1,0 +1,30 @@
+{
+  "schema": "storyforge-v02-r21-gate-v1",
+  "date": "2026-10-13",
+  "admission": "PENDING_NOT_APPROVED",
+  "training_performed": false,
+  "frozen_gold_modified": false,
+  "frozen_gold_candidates": 195,
+  "r18_diagnostic_candidates": 40,
+  "bounded_local_context_reviewed": 40,
+  "additional_review_attention": 20,
+  "content_final_approved": 0,
+  "asof_story_card_exports_inspected": 13,
+  "proven_target_time_version_binding": 0,
+  "exact_v01_train_uuid_overlap_v02_candidates": 21,
+  "exact_v01_collision_in_r18_diagnostics": 0,
+  "original_split_group_missing_first40": 25,
+  "new_unseen_heldout_reserved": 0,
+  "train_val_test_approved_rows": 0,
+  "hf_job": "6acdeae181fefd5110e1963c",
+  "r18_runtime_status": "REMOTE_REPORTED_40_OF_40",
+  "parent_r20_zip_sha256": "a9cccce1d9324b248efebaa70e1b1758059e6c22a949de3f12d66a16df174d9a",
+  "private_r21_zip_sha256": "b369fcf58678a38d922c00e4fbf20e59956ac7b8a035a1b41d054e789b7cbfa4",
+  "verification": "R21_EVIDENCE_CONSISTENCY_PASS_ONLY",
+  "limitations": [
+    "40 observations bounded to current User, target Assistant and adjacent history; not full independent semantic or policy approval.",
+    "As-of character ages and aliases are not proved from later exported story cards.",
+    "No full connected component graph or untouched heldout dataset.",
+    "No optimizer or training run; no final derived input retokenization."
+  ]
+}
