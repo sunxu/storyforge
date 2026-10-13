@@ -1,0 +1,61 @@
+{
+  "schema": "storyforge.v0.2.cross-cohort-overlap.v1",
+  "date": "2026-10-13",
+  "method": "Fetched the exact five archived Git blobs and parsed every JSONL record. Compared canonical story UUIDs (including source_story_id fallback) and final Assistant response text exactly. No raw text emitted.",
+  "sources_git_blob_sha1": {
+    "archive": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+    "selection108": "27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308",
+    "first87blob": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+    "new108blob": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+    "v01train": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+    "v01validation": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+    "v01test": "c17f225967b6b2f8cbaf3d82fadac1b4031d0654"
+  },
+  "counts": {
+    "v01_train": 65,
+    "v01_validation": 15,
+    "v01_test": 20,
+    "v02_first": 87,
+    "v02_second": 108
+  },
+  "results": {
+    "v01_split_story_ids_pairwise_disjoint": true,
+    "second108_vs_v01_train": {
+      "story_ids": [],
+      "same_response_count": 0
+    },
+    "second108_vs_v01_validation": {
+      "story_ids": [],
+      "same_response_count": 0
+    },
+    "second108_vs_v01_test": {
+      "story_ids": [],
+      "same_response_count": 0
+    },
+    "first87_vs_v01_validation": {
+      "story_ids": [],
+      "same_response_count": 0
+    },
+    "first87_vs_v01_test": {
+      "story_ids": [],
+      "same_response_count": 0
+    },
+    "first87_vs_v01_train": {
+      "story_ids": [
+        "dc87aac6-cf4f-4422-a12b-534fea3a487d"
+      ],
+      "v02_first_candidates_in_shared_story": 21,
+      "v01_train_samples_in_shared_story": 2,
+      "v01_train_sample_ids": [
+        "sample-000073",
+        "sample-000074"
+      ],
+      "same_response_count": 0
+    },
+    "first87_vs_second108": {
+      "story_ids": [],
+      "same_response_count": 0
+    }
+  },
+  "caution": "Story-level identity checks do not exclude paraphrased content or related fictional worlds. First-cohort 21 candidates from the old train story are not valid independent held-out test data against the v0.1 trained model."
+}

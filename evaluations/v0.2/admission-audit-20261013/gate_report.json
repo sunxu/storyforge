@@ -1,0 +1,95 @@
+{
+  "schema": "storyforge.v0.2.training-admission-audit.v1",
+  "as_of_date": "2026-10-13",
+  "repository": "sunxu/storyforge",
+  "branch": "main",
+  "nature": "READ_ONLY_EVIDENCE_CHECK",
+  "status": "BLOCKED_TRAINING_NOT_APPROVED",
+  "input_sha": {
+    "archive": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+    "selection108": "27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308",
+    "first87blob": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+    "new108blob": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+    "v01train": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+    "v01validation": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+    "v01test": "c17f225967b6b2f8cbaf3d82fadac1b4031d0654"
+  },
+  "quality_batches": {
+    "first_87": 87,
+    "second_double_accept_108": 108,
+    "total_quality_195": 195,
+    "formal_training_approved": 0
+  },
+  "verified_counts": {
+    "frozen_pool": 150,
+    "second_selected": 108,
+    "second_excluded": 42,
+    "source_target_verbatim": 108,
+    "source_story_traced": 108,
+    "metadata_primary_story_id_absent": 3,
+    "source_story_id_fallback_verified": 3,
+    "story_card_version_pinned_as_of_target": 0,
+    "export_snapshot_updated_after_target": 44,
+    "export_snapshot_not_after_target": 64,
+    "second_selected_with_system_message": 0,
+    "second_selected_with_explicit_loss_field": 0
+  },
+  "second_by_story": {
+    "10": 19,
+    "11": 0,
+    "12": 4,
+    "13": 17,
+    "14": 12,
+    "15": 20,
+    "06": 7,
+    "07": 0,
+    "08": 4,
+    "09": 25
+  },
+  "postdated_story_card_by_story": {
+    "10": 19,
+    "11": 0,
+    "12": 0,
+    "13": 16,
+    "14": 0,
+    "15": 5,
+    "06": 0,
+    "07": 0,
+    "08": 4,
+    "09": 0
+  },
+  "checks": {
+    "frozen_108_double_accept": "PASS",
+    "original_target_verbatim_in_raw": "PASS",
+    "source_story_identity": "PASS_WITH_FALLBACK_3",
+    "first87_second108_same_story_ids": "NONE",
+    "first87_second108_exact_target_reuse": 0,
+    "second108_vs_v01_train_story_ids": "NONE",
+    "second108_vs_v01_validation_story_ids": "NONE",
+    "second108_vs_v01_test_story_ids": "NONE",
+    "second108_vs_v01_train_validation_test_exact_target_reuse": 0,
+    "first87_vs_v01_test_story_ids": "NONE",
+    "first87_vs_v01_validation_story_ids": "NONE",
+    "first87_vs_v01_train": "REVIEW_1_SHARED_STORY_21_FIRST_COHORT_2_OLD_TRAIN",
+    "story_07_selected": "ZERO__LINKED_04_07_WORLD_ISOLATION_UNCLEARED",
+    "target_point_in_time_character_cards": "BLOCKED_NOT_PINNED_108",
+    "age_consent_and_content": "BLOCKED_UNVERIFIED",
+    "v02_train_validation_test_story_split": "NOT_RUN",
+    "qwen38_pinned_chat_template_16384_token_check": "NOT_RUN",
+    "ms_swift45_last_round_actual_label_mask": "NOT_RUN"
+  },
+  "remediation_order": [
+    "PIN_TRUE_TARGET_TIME_STORY_CARDS_AND_CANON",
+    "VERIFY_PARTICIPANT_AGES_CONSENT_CONTENT_BOUNDARIES",
+    "ENFORCE_04_07_LINKED_UNIVERSE_ISOLATION_AND_PRIOR_TRAIN_OVERLAP_POLICY",
+    "REVIEW_AND_FREEZE_NEW_STORY_LEVEL_SPLITS_NO_RANDOM_ROW_SPLITS",
+    "PIN_QWEN_TOKENIZER_REVISION_AND_ACTUAL_SYSTEM_PROMPT_REENCODE",
+    "RUN_ACTUAL_MS_SWIFT_LAST_ROUND_MASK_ALL_TRAIN_AND_VALIDATION_ROWS"
+  ],
+  "limitations": [
+    "Current export-time card is not proven identical to card at target time even if updated_at <= target timestamp.",
+    "Only exact canonical story ID and exact final text overlaps were measured against v0.1; no shared-world semantic isolation proof.",
+    "This JSON does not authorize any SFT data compilation or training run.",
+    "The 108 archived candidate rows remain byte-for-byte unchanged."
+  ]
+}
