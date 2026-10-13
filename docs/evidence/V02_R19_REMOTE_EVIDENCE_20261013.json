@@ -1,0 +1,49 @@
+{
+  "schema": "storyforge-v02-r19-remote-evidence-v1",
+  "report_date": "2026-10-13",
+  "hf_job_id": "6acdeae181fefd5110e1963c",
+  "hf_report_bucket_path": "hf://buckets/adradar/storyforge-training/preflight/v02-r18/results/r18-20261013T082505Z-11237/r18_actual_no_train_report.json",
+  "report_sha256": "2b8bc8e5988a60d842e6e2c0c3f60e4e677fc9e77813a0f3e71da12ea803d44f",
+  "r17_archive_sha256": "ba42ad7568ce0ca3ab8b3d218397006b430affc9f1b2f74b7ea4392e5103eab3",
+  "model": "Qwen/Qwen3.8-27B",
+  "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "runtime": {
+    "ms-swift": "4.5.3",
+    "transformers": "5.16.1",
+    "tokenizers": "0.23.3",
+    "torch": "2.6.0+cu124",
+    "huggingface-hub": "1.33.0"
+  },
+  "rows": 40,
+  "unique_story_ids": 10,
+  "remote_reported_collator_consistent": 40,
+  "tokenizer_tokens": {
+    "min": 526,
+    "max": 3292,
+    "sum": 46401,
+    "mean": 1160.025
+  },
+  "ms_swift_tokens": {
+    "min": 480,
+    "max": 3230,
+    "sum": 44389,
+    "mean": 1109.725
+  },
+  "tokenizer_input_id_match_with_ms_swift": 0,
+  "delta_distribution": {
+    "46": 11,
+    "50": 20,
+    "54": 6,
+    "58": 1,
+    "62": 2
+  },
+  "missing_original_split_group": 25,
+  "template_difference_cause": "NOT_ESTABLISHED",
+  "independent_collator_label_reexecution": false,
+  "raw_per_token_labels_available": false,
+  "training_performed": false,
+  "training_admission": "PENDING_NOT_APPROVED",
+  "content_age_gate": "BLOCKED",
+  "linked_world_and_heldout_split_gate": "BLOCKED",
+  "actual_data_split_gate": "BLOCKED"
+}
