@@ -35,15 +35,17 @@ STORYFORGE_R18_STAGE=token STORYFORGE_ALLOW_PAID_CPU=YES \
   "$HOME/Downloads/StoryForge_v02_R17_Runtime_And_Label_Contract_20261013.zip" submit
 ```
 
-Retrieve the Job ID printed by `hf jobs run`:
+The launcher prints `R18_RUN_KEY=r18-...` and `R18_RESULT_PREFIX=...` before starting the Job. Save the **RUN_KEY**, which is distinct from the Hugging Face **JOB_ID**. HF executes the mounted worker script directly rather than attempting to run a long command string. Retrieve the Job ID printed by `hf jobs run`:
 
 ```bash
 hf jobs logs adradar/JOB_ID
-hf buckets ls hf://buckets/adradar/storyforge-training/preflight/v02-r18/results/JOB_ID/
+hf buckets ls hf://buckets/adradar/storyforge-training/preflight/v02-r18/results/R18_RUN_KEY/
 hf buckets cp \
-  hf://buckets/adradar/storyforge-training/preflight/v02-r18/results/JOB_ID/r18_actual_no_train_report.json \
+  hf://buckets/adradar/storyforge-training/preflight/v02-r18/results/R18_RUN_KEY/r18_actual_no_train_report.json \
   ./r18_actual_no_train_report.json
 ```
+
+If installation fails before the Python auditor starts, no JSON report is guaranteed: read the HF Job logs. `sync` sends the worker script plus the two Python audit files; no GPU or training process is launched.
 
 ## Guarantees and limitations
 
