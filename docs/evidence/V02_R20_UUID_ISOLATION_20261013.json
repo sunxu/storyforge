@@ -1,0 +1,49 @@
+{
+  "schema": "storyforge-v02-r20-source-isolation-v1",
+  "date": "2026-10-13",
+  "admission": "PENDING_NOT_APPROVED",
+  "training_performed": false,
+  "original_gold_mutated": false,
+  "historical_v01": {
+    "samples": {
+      "train": 65,
+      "validation": 15,
+      "test": 20
+    },
+    "story_uuid_groups": {
+      "train": 15,
+      "validation": 2,
+      "test": 2
+    },
+    "git_blobs": {
+      "train": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+      "validation": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+      "test": "c17f225967b6b2f8cbaf3d82fadac1b4031d0654"
+    }
+  },
+  "v02": {
+    "frozen_candidates": 195,
+    "story_uuid_groups": 13,
+    "exact_historical_story_collision_ids": [
+      "dc87aac6-cf4f-4422-a12b-534fea3a487d"
+    ],
+    "collision_v01_split": "train",
+    "collision_v01_samples": 2,
+    "collision_v02_frozen_candidates": 21,
+    "diagnostic_candidates": 40,
+    "diagnostic_story_uuid_groups": 10,
+    "diagnostic_historical_exact_uuid_collisions": 0,
+    "missing_split_group_in_diagnostics": 25,
+    "fully_content_approved": 0,
+    "approved_train_val_test_assignments": 0
+  },
+  "qualifiers": [
+    "Exact UUID non-overlap does not establish shared-world or canonical independence.",
+    "Content excerpts and review focus flags are not final human safety or age approvals.",
+    "No as-of story card validity proof; no fresh heldout allocation; do not launch training.",
+    "R18 collator pass is remote reported and not independently reproduced from per-token arrays."
+  ],
+  "parent_r19_zip_sha256": "788a0cacf04045ff34b9263bf34c0ac9d17c56ee39532bd84b3ac3ab9e3f8789",
+  "private_r20_zip_sha256": "a9cccce1d9324b248efebaa70e1b1758059e6c22a949de3f12d66a16df174d9a",
+  "independent_zip_verification": "R20_EVIDENCE_AND_UUID_MEMBERSHIP_PASS_ONLY"
+}
