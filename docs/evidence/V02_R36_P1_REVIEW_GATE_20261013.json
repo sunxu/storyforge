@@ -1,0 +1,64 @@
+{
+  "schema": "storyforge-v02-r36-P1-grounded-preliminary-adjudication-v1",
+  "date": "2026-10-13",
+  "parent_r35_private_zip_sha256": "7547ebada5365248a197b01a5c4a380a560cfe090b01430ae41e60740a2bd939",
+  "parent_r35_conditional_sha256": "b07451301120ab570544a47a63f08f652ec0d95c852e1985ab6beaa042871d29",
+  "parent_r27_input_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "priority_1_preliminary_cases": 32,
+  "other_priority_cases_not_reassessed": 57,
+  "new_derivative_hold_recommendations_not_owner_adjudicated": [
+    "na-gold-t0195",
+    "s08-gold-t00183",
+    "s15-gold-r02-t01460",
+    "sf12-gold-t00751"
+  ],
+  "hold_recommendation_count": 4,
+  "provisional_ceiling_not_approved": 85,
+  "provisional_train_not_approved": 67,
+  "provisional_validation_not_approved": 18,
+  "draft_train_story_uuid_groups": 7,
+  "draft_validation_story_uuid_groups": 2,
+  "draft_dataset_hashes": {
+    "subset85": "6904707203c9219d398d0d38f67e782374efbf69c8448e383b1afc5fc876ba43",
+    "train67": "ab7dc2e6c834d0ef138b5cbe0966a239b5883315e44aba541230fcd4bdddbb00",
+    "validation18": "15c897c4daa28323f5b676e08209905b629d40ec09728c086c3767531bd0eb78"
+  },
+  "preliminary_case_counts": {
+    "HISTORICAL_CONTEXT_REVIEW": 9,
+    "TARGET_DETAIL_REVIEW": 4,
+    "DERIVATIVE_HOLD_RECOMMENDED": 4,
+    "FORMAT_REQUIREMENT_REVIEW": 1,
+    "BOUNDARY_CONTEXT_REVIEW": 2,
+    "AGE_CONTEXT_SIGNOFF_REQUIRED": 7,
+    "CANON_RULE_REVIEW": 1,
+    "CONTENT_CONTEXT_REVIEW": 4
+  },
+  "source_anchor_overlap_probe": {
+    "anchors_checked": 16,
+    "observed_cross_story_collisions": 0,
+    "complete_alias_graph_signed": false
+  },
+  "synthetic_auxiliary_eval": {
+    "new_worlds": 2,
+    "unscored_cases": 20,
+    "private_jsonl_sha256": "15d47bd458139baf0bb2c198cd57dac03c8d2446c3fe4fa3b30781322f21432c",
+    "status": "ASSISTANT_AUTHORED_AUXILIARY_ONLY",
+    "not_official_independent_heldout": true,
+    "never_use_in_training": true
+  },
+  "actual_independent_human_certified_sealed_heldout_count": 0,
+  "source_excerpt_uploaded_to_plain_git": false,
+  "independent_zip_sha256": "3d7365f547a99bd9a16b15d6fd4ff0910b6e11c9aeac7657d7ac35a19daf912b",
+  "independent_zip_verifier": "R36_32_EXACT_SOURCE_WITNESSES_PASS__4_NEW_HOLD_RECOMMENDATIONS__85_67_18_BYTE_IDENTICAL__TRAINING_BLOCKED",
+  "formal_content_age_signed": 0,
+  "world_ip_provenance_approved": false,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "previous_r27_actual_HF_last_round_audit": "PASS_ON_ORIGINAL_117_ONLY",
+  "final_compiled_input_HF_audit_completed": false,
+  "gpu_training_authorized": false,
+  "gpu_training_started": false,
+  "training_admission": "PENDING_NOT_APPROVED",
+  "note": "Assistant preliminary, not final human signoff. P1 review anchored to current user/target and selected history excerpts; no claimed independent full-history reassessment of all 32."
+}
