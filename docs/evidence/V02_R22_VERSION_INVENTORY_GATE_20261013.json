@@ -1,0 +1,37 @@
+{
+  "schema": "storyforge-v02-r22-evidence-correction-v1",
+  "date": "2026-10-13",
+  "admission": "PENDING_NOT_APPROVED",
+  "training_performed": false,
+  "gold_changed": false,
+  "candidates": 195,
+  "stories": 13,
+  "source_field_used_by_R21": "story_content_versions",
+  "actual_source_field": "content_versions",
+  "previous_reported_archived_versions": 0,
+  "corrected_archived_versions": 38,
+  "stories_with_versions": 6,
+  "export_character_rows": 30,
+  "exact_cross_story_export_character_id_matches": 0,
+  "exact_cross_story_normalized_character_name_matches": 0,
+  "r18_target_ids_recovered": 40,
+  "target_message_event_times_verified": 0,
+  "card_versions_bound_to_target_time": 0,
+  "content_approved": 0,
+  "train_validation_test_approved": 0,
+  "fresh_heldout_reserved": 0,
+  "historical_v01_train_same_story_uuid_components": 1,
+  "r18_remote_engineering": "40/40 reported pass unchanged",
+  "source_sha256": {
+    "r21_zip": "b369fcf58678a38d922c00e4fbf20e59956ac7b8a035a1b41d054e789b7cbfa4",
+    "r22_zip": "01e5f89b975f5cdda64f67a3d95534ca1218c36217c27e8018390b29f5cddca5",
+    "supplement_zip": "c7bfd1bc3d3366f80b21bb3709fad3f6367b62ae12418010dc9e3a1e9e5b060b",
+    "r07_preview": "21255ffaf3460721bfbd89fb448e4cf5bcf53e98d3eec76585a7817e8bafd210"
+  },
+  "verifier": "R22_INVENTORY_AND_ROUTING_INTEGRITY_PASS_ONLY",
+  "qualifications": [
+    "Export snapshots are not request-time model input evidence.",
+    "Exact character identifiers and names cannot establish world/alias/legal independence.",
+    "No fresh heldout, human signoff, or final split; no training authorized."
+  ]
+}
