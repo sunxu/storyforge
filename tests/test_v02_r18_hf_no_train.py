@@ -5,6 +5,7 @@ import sys
 import tempfile
 import unittest
 import zipfile
+from collections import UserDict
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/v02_r18_hf_no_train.py"
@@ -19,6 +20,33 @@ class TestR18NoTrain(unittest.TestCase):
             r18.digest(b"a"),
             "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb",
         )
+
+    def test_transformers_v5_batch_encoding(self):
+        cases = [
+            [101, 202],
+            [[101, 202]],
+            {"input_ids": [101, 202]},
+            UserDict({"input_ids": [101, 202], "attention_mask": [1, 1]}),
+            {"input_ids": [[101, 202]], "attention_mask": [[1, 1]]},
+        ]
+        for output in cases:
+            with self.subTest(kind=type(output).__name__):
+                self.assertEqual(r18.ids(output), [101, 202])
+
+    def test_invalid_token_shapes_fail_closed(self):
+        cases = [
+            {},
+            {"attention_mask": [1, 1]},
+            {"input_ids": [[1], [2]]},
+            {"input_ids": []},
+            {"input_ids": [101, "bad"]},
+            {"input_ids": [101, True]},
+            b"not tokens",
+        ]
+        for output in cases:
+            with self.subTest(value=repr(output)):
+                with self.assertRaises(ValueError):
+                    r18.ids(output)
 
     def test_fake_archive_refused(self):
         with tempfile.TemporaryDirectory() as td:
