@@ -91,12 +91,13 @@ if git diff --cached --quiet -- "${FILES[@]}"; then
 else
   # --only excludes unrelated staged user files, even under evaluations/by-story/.
   git commit --only -m 'archive(v0.2): preserve R18/R26/R27 and original sources before GPU training' -- "${FILES[@]}"
-  mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
-  [[ ${#committed[@]} -eq ${#FILES[@]} ]] || {
+  # macOS default Bash 3.2 lacks mapfile; use portable commands.
+  committed_count=$(git diff-tree --no-commit-id --name-only -r HEAD | wc -l | tr -d '[:space:]')
+  [[ "$committed_count" -eq "${#FILES[@]}" ]] || {
     echo 'BLOCKED: resulting archive commit did not contain exactly four paths' >&2; exit 2;
   }
   for file in "${FILES[@]}"; do
-    printf '%s\n' "${committed[@]}" | grep -Fxq -- "$file" || {
+    git diff-tree --no-commit-id --name-only -r HEAD | grep -Fxq -- "$file" || {
       echo "BLOCKED: missing archive path in new commit: $file" >&2; exit 2;
     }
   done
