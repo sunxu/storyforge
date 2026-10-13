@@ -1,0 +1,46 @@
+{
+  "schema": "storyforge-v02-r26-source-predecessor-audit-v1",
+  "date": "2026-10-13",
+  "training_admission": "PENDING_NOT_APPROVED",
+  "training_performed": false,
+  "original_gold_modified": false,
+  "frozen_gold_candidates": 195,
+  "synthetic_visible_histories_exactly_aligned": 195,
+  "truncated_leading_assistant_windows": 132,
+  "source_user_assistant_predecessor_pairs_recovered": 132,
+  "recovered_spans_without_nonzero_mutation_flags": 130,
+  "candidates_with_history_or_predecessor_mutations": 2,
+  "nonzero_target_mutations": 2,
+  "mutation_exceptions": [
+    {
+      "candidate_id": "s09-gold-r04-t03104",
+      "target_revision": 4
+    },
+    {
+      "candidate_id": "sf14-gold-t02392",
+      "target_revision": 3
+    }
+  ],
+  "adjacent_created_at_inversion_observations": 296,
+  "candidate_windows_with_inversion": 69,
+  "max_backward_milliseconds": 55.65,
+  "r22_indexed_card_snapshots": 38,
+  "candidates_in_stories_with_indexed_cards": 89,
+  "candidates_with_any_card_source_update_not_after_target": 59,
+  "candidates_with_any_card_archive_not_after_target": 23,
+  "actual_request_effective_card_verified": 0,
+  "lossless_original_model_prompt_proved": 0,
+  "final_training_windows_created": 0,
+  "source_original_zip_sha256": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+  "parent_r25_zip_sha256": "af521e0052028142549f6dbd220ca21bee3bfa1c32b6dfbb2c32eb7b1f171fdb",
+  "r26_private_zip_sha256": "4ad742260826ff02b643232a9bdef56d669c5b4bea07215ddc47c8d2047538c9",
+  "private_r26_zip_bytes": 1811375,
+  "source_replay": "WITNESS_AND_TIMESTAMP_ANOMALY_BYTE_IDENTICAL",
+  "standalone_verifier": "R26_SOURCE_PREDECESSOR_AND_PACKAGE_INTEGRITY_PASS_ONLY",
+  "tamper_test": "REJECTED",
+  "cautions": [
+    "Current exported source snapshot and turn order do not prove original generation-time prompt, model-request system context, effective card version or historical pre-mutation content.",
+    "No token count or collator mask has been run on an approved final derived context.",
+    "No story/world split, policy-age clearance or new fresh held-out has been approved."
+  ]
+}
