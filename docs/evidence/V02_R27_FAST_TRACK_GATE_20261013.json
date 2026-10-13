@@ -1,0 +1,41 @@
+{
+  "schema": "storyforge-v02-r27-fasttrack-v1",
+  "date": "2026-10-13",
+  "formal_admission": "PENDING_NOT_APPROVED",
+  "paid_training_job_started": false,
+  "frozen_gold_mutated": false,
+  "original_gold": 195,
+  "unique_exclusions": 78,
+  "exclusions": {
+    "HOLD": 38,
+    "WARBLOOD": 18,
+    "V01_SAME_STORY_UUID_ADDITIONAL": 19,
+    "MUTATION_HISTORY": 2,
+    "EMPTY_ORIGINAL_USER": 1
+  },
+  "diagnostic_candidates": 117,
+  "source_anchored_restored_drafts": 77,
+  "existing_visible_drafts": 40,
+  "story_uuid_groups": 11,
+  "proposed_train": 96,
+  "proposed_validation": 21,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "previous_r18_40_actual_collator_report": "REUSED_AS_HISTORY_ONLY",
+  "r27_new_full_input_runtime_pass": false,
+  "r27_local_gate": "R27_DRAFT_INTEGRITY_AND_FAIL_CLOSED_GATE_PASS_ONLY",
+  "r27_bad_sha_test": "BLOCKED_EXIT_2",
+  "gold_target_sha256_verified_in_draft": true,
+  "private_r27_zip_sha256": "1f6d41b0bfc9c4382c55debc82770a3cad7c9cd38c99026213cc624bc418c286",
+  "private_r27_dataset_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "remaining": [
+    "FINAL_AGE_CONTENT_SIGNOFF",
+    "AS_OF_EFFECTIVE_CARD_OR_APPROVED_NO_CARD_DERIVATIVE",
+    "WORLD_ALIAS_COMPONENT_ISOLATION",
+    "FRESH_UNSEEN_HELDOUT",
+    "FULL_FINAL_INPUT_117_HF_TOKEN_COLLATOR",
+    "FINAL_SIGNED_TRAIN_VAL_SPLIT"
+  ],
+  "note": "Assistant environment cannot submit to Hugging Face because not logged in. No training step has begun."
+}
