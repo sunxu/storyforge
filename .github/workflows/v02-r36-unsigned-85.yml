@@ -1,0 +1,81 @@
+name: R36 conservative ceiling from frozen LFS (NO GPU)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R36_P1_REVIEW_GATE_20261013.json'
+      - '.github/workflows/v02-r36-unsigned-85.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-r36-hashes-and-nonapproval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download R27 source from Git LFS
+        run: git lfs pull
+      - name: Independent 117 to 89 to 85 exact-row replay
+        run: |
+          python - <<'PY'
+          import csv,hashlib,io,json,zipfile
+          from pathlib import Path
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          state=json.loads(Path('docs/evidence/V02_R36_P1_REVIEW_GATE_20261013.json').read_text())
+          source=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          with zipfile.ZipFile(source) as z:
+              f=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              gp=[x for x in z.namelist() if x.endswith('/output/r27_proposed_groups_11.csv')]
+              assert len(f)==len(gp)==1
+              raw=z.read(f[0])
+              proposals={x['story_id']:x['proposed_split'] for x in csv.DictReader(io.StringIO(z.read(gp[0]).decode()))}
+          assert h(raw)==state['parent_r27_input_sha256']
+          isolated={'2e679438-e9f0-4cfd-979f-6663ae619120','d0155181-e6af-442e-932e-db440761ad3a'}
+          oldholds={'bh-gold-t0578','bh-gold-t2404','virgin-death-gold-t01860'}
+          newholds=set(state['new_derivative_hold_recommendations_not_owner_adjudicated'])
+          assert len(newholds)==4
+          r35=[];strict=[];train=[];validation=[];allids=set();n_ip=n_old=n_new=0
+          for line in raw.splitlines(keepends=True):
+              if not line.strip():continue
+              r=json.loads(line);cid=r['id'];story=r['metadata']['source_story_id']
+              assert cid not in allids
+              allids.add(cid)
+              assert r['metadata']['dataset_admission']=='NOT_APPROVED'
+              assert r['metadata']['approved_split'] is None
+              assert h(r['messages'][-1]['content'].encode())==r['metadata']['target_sha256']
+              if story in isolated:n_ip+=1;continue
+              if cid in oldholds:n_old+=1;continue
+              r35.append(line)
+              if cid in newholds:n_new+=1;continue
+              strict.append(line)
+              s=proposals[story]
+              assert s in {'TRAIN_PROPOSAL','VALIDATION_PROPOSAL'}
+              (train if s=='TRAIN_PROPOSAL' else validation).append(line)
+          assert len(allids)==117 and (n_ip,n_old,n_new)==(25,3,4)
+          assert len(r35)==89 and h(b''.join(r35))==state['parent_r35_conditional_sha256']
+          assert len(strict)==85 and h(b''.join(strict))==state['draft_dataset_hashes']['subset85']
+          assert len(train)==67 and h(b''.join(train))==state['draft_dataset_hashes']['train67']
+          assert len(validation)==18 and h(b''.join(validation))==state['draft_dataset_hashes']['validation18']
+          assert state['preliminary_case_counts']['DERIVATIVE_HOLD_RECOMMENDED']==4
+          assert sum(state['preliminary_case_counts'].values())==state['priority_1_preliminary_cases']==32
+          assert state['other_priority_cases_not_reassessed']==57
+          trstories={json.loads(x)['metadata']['source_story_id'] for x in train}
+          vastories={json.loads(x)['metadata']['source_story_id'] for x in validation}
+          assert trstories.isdisjoint(vastories) and len(trstories)==7 and len(vastories)==2
+          assert state['source_anchor_overlap_probe']['complete_alias_graph_signed'] is False
+          assert state['actual_independent_human_certified_sealed_heldout_count']==0
+          assert state['synthetic_auxiliary_eval']['not_official_independent_heldout']
+          assert state['formal_content_age_signed']==state['approved_train']==state['approved_validation']==state['approved_test']==0
+          assert not state['world_ip_provenance_approved']
+          assert state['training_admission']=='PENDING_NOT_APPROVED'
+          assert not state['gpu_training_authorized'] and not state['gpu_training_started']
+          print('R36_GITHUB_LFS_REPLAY_85_67_18_PASS__TRAINING_STILL_BLOCKED')
+          PY
