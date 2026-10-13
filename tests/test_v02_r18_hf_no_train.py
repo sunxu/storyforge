@@ -1,11 +1,11 @@
 """R18 offline fail-closed tests (no HF model download and no training)."""
 import importlib.util
 import json
-from pathlib import Path
 import sys
 import tempfile
 import unittest
 import zipfile
+from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/v02_r18_hf_no_train.py"
 spec = importlib.util.spec_from_file_location("v02_r18_no_train", SCRIPT)
