@@ -1,0 +1,52 @@
+{
+  "schema": "storyforge.v0.2.asof-card-provenance.r02",
+  "date": "2026-10-13",
+  "status": "BLOCKED_NO_VERIFIED_TARGET_TIME_CARDS",
+  "source_archive_sha256": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+  "selected_108_sha256": "27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308",
+  "source_zip_structure": {
+    "story_raw_zip": 10,
+    "json_jsonl_equivalent": 10,
+    "export_metadata_states_nonhistorical_card": 10
+  },
+  "counts": {
+    "selected": 108,
+    "asof_card_proven": 0,
+    "exported_card_updated_after_target": 44,
+    "exported_card_not_updated_after_target": 64,
+    "primary_story_id_missing_source_fallback": 3,
+    "target_event_runtime_metadata": 13,
+    "source_current_persona_snapshot_missing": 10
+  },
+  "postdated_by_story": {
+    "6": 0,
+    "8": 4,
+    "9": 0,
+    "10": 19,
+    "12": 0,
+    "13": 16,
+    "14": 0,
+    "15": 5
+  },
+  "story_counts": {
+    "6": 7,
+    "8": 4,
+    "9": 25,
+    "10": 19,
+    "12": 4,
+    "13": 17,
+    "14": 12,
+    "15": 20
+  },
+  "temporal_risk_not_a_quality_rejection": true,
+  "age_safety_gate": "BLOCKED_NEED_ALL_PLAYERS_NPCS_ADULTHOOD_AND_CONTENT_REVIEW",
+  "content_not_read_or_reproduced_in_outputs": true,
+  "do_not_derive_system_prompt_from_export_snapshot": true,
+  "additional_source_needed": [
+    "append-only story-card revision table or point-in-time database backup",
+    "target-bound original system prompt or exact server request with its card version",
+    "as-of actor/player age and relationship/consent evidence for each relevant target",
+    "story 04↔07 linkage handling; actual pinned tokenizer and ms-swift loss audit"
+  ],
+  "training_admission": "PENDING_NOT_APPROVED"
+}

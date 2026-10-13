@@ -41,3 +41,9 @@ Additional stories should be ingested into distinct per-story namespaces, with i
 
 - [Admission gate audit](admission-audit-20261013/README.md): validates raw source lineage and the 108 double-ACCEPT cohort, checks v0.1 split overlap, and records 44 cases where export-time story cards were modified after the target message.
 - **Training admission remains `PENDING_NOT_APPROVED`**: target-time story cards, character-age/content checks, story-linked isolation, new story-level splits, pinned Qwen tokenizer 16,384 budget, and actual ms-swift last-round label masking have not passed. This audit neither modifies the 87+108 quality datasets nor starts training.
+
+## 2026-10-13 R02: target-time card version provenance
+
+- [R02 as-of card audit](admission-audit-20261013/r02-point-in-time-cards/README.md): 108-record export-provenance check and per-record metadata trace, plus historical card/revision evidence requirements.
+- **44** export-time story cards are timestamped after the target Assistant; the other **64** are not verified historical revisions. **0/108 target-time card versions are proven.** The original export explicitly documents that story/persona/runtime snapshots are not per-turn system prompts.
+- This preserves the previous 87 + 108 quality snapshots and `PENDING_NOT_APPROVED` for training. No inferred historical role cards or training jobs were created.
