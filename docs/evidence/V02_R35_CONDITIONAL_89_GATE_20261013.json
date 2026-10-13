@@ -1,0 +1,55 @@
+{
+  "schema": "storyforge-v02-r35-draft-89-v1",
+  "date": "2026-10-13",
+  "original_quality_gold_frozen": 195,
+  "r27_candidate_rows": 117,
+  "r27_dataset_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "unchanged_parent_r34_zip_sha256": "0b07207725d0f129a6b5e906c4a029efeca532ab1edd43f4ea6e2d4dfdef8abd",
+  "r27_original_zip_sha256": "cfedf6935babd12c9fc214b46dc2078381b55de9487afe25212bf54e8706794f",
+  "ip_provenance_quarantine_rows": 25,
+  "ip_provenance_quarantined_story_uuids": [
+    "2e679438-e9f0-4cfd-979f-6663ae619120",
+    "d0155181-e6af-442e-932e-db440761ad3a"
+  ],
+  "window_premise_not_visible_hold_rows": 3,
+  "window_hold_ids": [
+    "bh-gold-t0578",
+    "bh-gold-t2404",
+    "virgin-death-gold-t01860"
+  ],
+  "conditional_not_approved_rows": 89,
+  "unapproved_train_proposal_rows": 70,
+  "unapproved_validation_proposal_rows": 19,
+  "unapproved_train_story_groups": 7,
+  "unapproved_validation_story_groups": 2,
+  "conditional_89_sha256": "b07451301120ab570544a47a63f08f652ec0d95c852e1985ab6beaa042871d29",
+  "train_proposal_70_sha256": "32b40cfe20f2508d595b17ff3d28f26b87b2fd97d7f9bb17491ef9e36b3e4ade",
+  "validation_proposal_19_sha256": "44061a11fc2e0bdef74a163c7d6b5106c3eb4168b374de58e1f0a5f5b8c113b5",
+  "previous_real_hf117_report_sha256": "e23f166226142e28a04f42a3d481776b6ac84d9b30f92e30a55de838e5d2b213",
+  "review_priority_only": {
+    "specific_source_followup": 32,
+    "automatic_keywords_only": 37,
+    "no_specific_signal_general_signoff": 20
+  },
+  "conditional_content_age_policy_approvals": 0,
+  "world_ip_alias_component_signoffs": 0,
+  "fresh_sealed_heldout_story_components": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "full_final_input_token_mask_recheck_completed": false,
+  "generic_no_card_experiment_contract_user_approved": true,
+  "gpu_training_authorized": false,
+  "gpu_training_started": false,
+  "training_admission": "PENDING_NOT_APPROVED",
+  "private_r35_zip_sha256": "7547ebada5365248a197b01a5c4a380a560cfe090b01430ae41e60740a2bd939",
+  "independent_offline_validator": "R35_FROZEN_SOURCE_ROWS_117_PASS__89_CONDITIONAL_ONLY_70_19_PROPOSAL__TRAINING_NOT_APPROVED",
+  "tamper_test": "BLOCKED",
+  "release_gate_exit_code": 2,
+  "limitations": [
+    "89 is an upper bound conditional pool after two mechanical exclusions, not final quality/safety approval.",
+    "Story UUID-only proposal does not establish independent world/character aliases.",
+    "Same original row bytes individually audited in R27; R35 assembled train/val proposals have not had a separate actual HF whole-input audit.",
+    "No fresh untouched heldout data delivered."
+  ]
+}
