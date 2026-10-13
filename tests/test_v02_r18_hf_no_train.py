@@ -44,9 +44,8 @@ class TestR18NoTrain(unittest.TestCase):
             b"not tokens",
         ]
         for output in cases:
-            with self.subTest(value=repr(output)):
-                with self.assertRaises(ValueError):
-                    r18.ids(output)
+            with self.subTest(value=repr(output)), self.assertRaises(ValueError):
+                r18.ids(output)
 
     def test_fake_archive_refused(self):
         with tempfile.TemporaryDirectory() as td:
