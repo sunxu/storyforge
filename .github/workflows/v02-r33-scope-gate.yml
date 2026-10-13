@@ -1,0 +1,50 @@
+name: R33 review scope and frozen R27 input (not training release)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R33_SCOPE_GATE_20261013.json'
+      - '.github/workflows/v02-r33-scope-gate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  provenance-counts-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download frozen R27 ZIP from LFS
+        run: git lfs pull
+      - name: Verify exact source SHA256 and nonapproval counters
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+          j=json.loads(Path('docs/evidence/V02_R33_SCOPE_GATE_20261013.json').read_text())
+          p=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          with zipfile.ZipFile(p) as z:
+              matches=[n for n in z.namelist() if n.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              assert len(matches)==1
+              raw=z.read(matches[0])
+          assert hashlib.sha256(raw).hexdigest()==j['r27_source_sha256']
+          data=[json.loads(x) for x in raw.splitlines() if x.strip()]
+          assert len(data)==117 and len({x['id'] for x in data})==117
+          assert j['prior_r32_full_visible_histories']+j['new_r33_full_visible_histories']==j['non_ip_full_visible_histories_total']==71
+          assert j['non_ip_full_visible_histories_total']+j['non_ip_r31_selected_turn_only_remaining']+j['source_ip_quarantine_count']==117
+          assert j['new_r33_precise_review_followups']==8
+          assert j['previous_claims_corrected_by_original_user_turns']==3
+          assert j['actual_prior_user_turn_witnesses']==4
+          assert j['the_three_upstream_facts_visible_in_r27'] is False
+          assert j['release']=='PENDING_NOT_APPROVED' and j['gpu_training_started'] is False
+          assert j['policy_age_signoff']==j['approved_train']==j['approved_validation']==j['approved_test']==j['new_unexposed_heldout']==0
+          assert all(x['metadata']['dataset_admission']=='NOT_APPROVED' for x in data)
+          print('R33_SOURCE_AND_SCOPE_COUNTS_PASS__TRAINING_RELEASE_STILL_BLOCKED')
+          PY
