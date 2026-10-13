@@ -30,6 +30,8 @@ bash scripts/v02_archive_before_gpu.sh \
 
 The command first checks all four sizes, SHA256, ZIP CRC and the actual R18 report. It requires the correct origin, main branch and Git LFS filter. `--push` commits and pushes only these four files. Omit `--push` to stage and inspect without uploading. **No CPU or GPU Job is run.**
 
+**Unrelated local files are safe:** the upload script permits existing modified or staged `evaluations/by-story/*.jsonl` and other work. It commits with `git commit --only --` and four explicit source-archive paths, preserving unrelated staged/unstaged edits. It first verifies that `main` has no unpushed older commits compared with `origin/main`. If your checkout has not been updated since this fix, run `git pull --ff-only origin main` before retrying; **do not reset, delete, or stash the original by-story files merely to satisfy the archive script.**
+
 To confirm that the **remote binaries** exist (not merely LFS pointer files), perform a fresh clone:
 
 ```bash
