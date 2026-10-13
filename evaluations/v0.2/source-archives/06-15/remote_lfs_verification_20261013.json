@@ -1,0 +1,23 @@
+{
+  "schema": "storyforge.v0.2.06-15.remote-lfs-verification.v1",
+  "date": "2026-10-13",
+  "repository": "sunxu/storyforge",
+  "branch": "main",
+  "archive_path": "evaluations/v0.2/source-archives/06-15/StoryForge_v02_06-15_Full_Evidence_20261013.zip",
+  "git_pointer_commit": "e3508ed6fc10cd9307532ebad4b7b65de4b47790",
+  "expected_lfs_oid_sha256": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+  "expected_bytes": 65332700,
+  "checks_reported_by_user": {
+    "fresh_clone": true,
+    "git_lfs_pull": true,
+    "downloaded_file_exact_size": true,
+    "sha256_match": true,
+    "zip_crc_test": true,
+    "result": "REMOTE_LFS_PASS"
+  },
+  "github_pointer_verified_by_assistant": true,
+  "binary_independently_downloaded_by_assistant": false,
+  "interpretation": "Remote LFS artifact validated based on user's successful fresh-clone test, not independent binary download by assistant.",
+  "data_preservation": "The two quality cohorts (87 and 108) are not modified.",
+  "training_admission": "PENDING_NOT_APPROVED"
+}

@@ -34,5 +34,5 @@ Additional stories should be ingested into distinct per-story namespaces, with i
 ## 2026-10-13: original evidence chain for stories 06–15
 
 - [`source-archives/06-15/`](source-archives/06-15/README.md) now stores byte-verified frozen 63/90/120/150 JSONL snapshots, archive SHA256 inventories, and read-only validation scripts for the 108 double-ACCEPT selection.
-- The full raw/reviewer/R01–R04 ZIP has been assembled and locally verified, but its **binary content has not yet been pushed to Git LFS**. The repository contains an upload procedure and explicit hash contract; do not treat it as a complete remote backup until a fresh-clone LFS download verifies.
+- The full raw/reviewer/R01–R04 ZIP was uploaded via Git LFS (commit `e3508ed`), and the repository owner reported **`REMOTE_LFS_PASS`** on 2026-10-13 after a fresh clone, `git lfs pull`, exact file-size and SHA256 verification, and `unzip -tq`. Remote archive status: **`REMOTE_VERIFIED` (user-attested fresh-clone test)**. The assistant independently checked the Git pointer, not the downloaded binary.
 - Existing 87- and 108-record quality snapshots remain unchanged; training remains `PENDING_NOT_APPROVED`.

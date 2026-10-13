@@ -7,7 +7,7 @@
   "bundle_size_bytes": 65332700,
   "bundle_sha256": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
   "bundle_local_status": "CREATED_AND_VERIFIED",
-  "bundle_remote_lfs_status": "NOT_UPLOADED",
+  "bundle_remote_lfs_status": "REMOTE_VERIFIED",
   "raw_story_zip_count": 10,
   "r01_zip_count": 10,
   "rounds": [
@@ -172,12 +172,22 @@
     "double_accept_exact": "108/108 PASS"
   },
   "remaining": [
-    "LFS_REMOTE_OBJECT_AND_FRESH_CLONE_VERIFICATION",
     "TARGET_TIME_CHARACTER_CARD",
     "AGE_CONTENT_BOUNDS",
     "04_07_ISOLATION",
     "V01_SPLIT_OVERLAP",
     "QWEN_16384_TOKEN_LIMIT",
     "ACTUAL_ASSISTANT_ONLY_LAST_ROUND_MASK"
-  ]
+  ],
+  "bundle_remote_lfs_verification": {
+    "status": "PASS",
+    "verified_date": "2026-10-13",
+    "evidence_source": "repository owner reported REMOTE_LFS_PASS after running the prescribed fresh-clone verification command",
+    "method": "fresh clone + git lfs pull + macOS stat -f%z + shasum -a 256 -c - + unzip -tq",
+    "expected_sha256": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+    "expected_size_bytes": 65332700,
+    "lfs_pointer_commit": "e3508ed6fc10cd9307532ebad4b7b65de4b47790",
+    "user_attested": true,
+    "assistant_independently_downloaded_binary": false
+  }
 }
