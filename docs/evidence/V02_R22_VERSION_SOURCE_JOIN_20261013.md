@@ -20,7 +20,7 @@ Original target-message timestamps, the actual effective story-card version used
 
 The complete R22 ZIP retains the R21 baseline and records: 13 card summaries, 38 archived version SHA256 entries, 30 export-only identity rows, 40 missing join requests, 195 unchanged admission routes, and a read-only verifier. No original dialogue or card text is committed here.
 
-- R21 parent SHA256: `a9cccce1d9324b248efebaa70e1b1758059e6c22a949de3f12d66a16df174d9a` (as asserted by R21 from R20 is **not** the R21 ZIP; see R22 private report for the exact parent hash).
+- R21 parent ZIP SHA256: `b369fcf58678a38d922c00e4fbf20e59956ac7b8a035a1b41d054e789b7cbfa4`.
 - R22 private ZIP SHA256: `01e5f89b975f5cdda64f67a3d95534ca1218c36217c27e8018390b29f5cddca5`
 - Portable verifier: `R22_INVENTORY_AND_ROUTING_INTEGRITY_PASS_ONLY`. It does not prove request-time canon or policy approval.
 
