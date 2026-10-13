@@ -1,0 +1,34 @@
+{
+  "schema": "storyforge-v02-r24-acquisition-preflight-v1",
+  "date": "2026-10-13",
+  "formal_training_admission": "PENDING_NOT_APPROVED",
+  "original_gold_count": 195,
+  "original_gold_mutated": false,
+  "training_performed": false,
+  "r23_expected_source_exports": 13,
+  "source_export_bytes_verified": 0,
+  "r23_target_message_requests": 40,
+  "verified_target_created_at": 0,
+  "actual_card_revision_asof_proved": 0,
+  "content_age_signoffs": 0,
+  "fresh_heldout_reserved": 0,
+  "train_val_test_approved": 0,
+  "r18_remote_collator_report": "40/40 remote report passed - unchanged, not rerun",
+  "owner_source_tool": "r24_locate_and_join_sources.py (in private R24 ZIP, not committed)",
+  "synthetic_code_tests_passed": 7,
+  "synthetic_code_test_count": 7,
+  "no_source_probe_exit_code": 2,
+  "no_source_probe_status": "BLOCKED",
+  "independent_zip_verification": "R24_VERIFIED_SOURCE_LOCATORS_AND_FAIL_CLOSED_TOOL_ONLY",
+  "private_r24_zip_sha256": "7eb5d140a1c172d5c5dc82dd0e1241c9ba2d12591e7f124030f00206b9c30321",
+  "parent_r23_zip_sha256": "9fdc43839ae2ab03a7648eaaac4bfe35d35d7a2a1962d1c972281517f064de76",
+  "manifest_13_sha256": "e0a358c7ef665997605fa1edccfec0f9a2a0a7a09f6c6ba5cd86e0cff7e1812f",
+  "target_join_40_sha256": "acca3b135763b594b92d509f269bc409586f5508c3b1a69328ec03afbcb77cb8",
+  "source_status_counts": {
+    "BLOCKED_MISSING_SOURCE": 13
+  },
+  "target_status_counts": {
+    "BLOCKED_NO_VALID_ORIGINAL_SOURCE": 40
+  },
+  "note": "Original chat exports were not present in available conversation artifacts; card/checkpoint snapshots cannot prove created_at of target or request-effective card."
+}
