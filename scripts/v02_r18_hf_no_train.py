@@ -9,6 +9,7 @@ import os
 import sys
 import traceback
 import zipfile
+from collections.abc import Mapping
 from pathlib import Path
 
 REV='1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
@@ -17,10 +18,21 @@ QUEUE='27d63ccc7652e41403d9cb4add58c0aa7d2925282d4bd8605bff4d7564133ac7'
 PREVIEW='21255ffaf3460721bfbd89fb448e4cf5bcf53e98d3eec76585a7817e8bafd210'
 def digest(b): return hashlib.sha256(b).hexdigest()
 def ids(x):
-    if hasattr(x,'detach'):x=x.detach().cpu().tolist()
-    elif hasattr(x,'tolist'):x=x.tolist()
-    if isinstance(x,list) and len(x)==1 and isinstance(x[0],list):x=x[0]
-    if not isinstance(x,list) or not x or any(type(t)!=int for t in x):raise ValueError('no genuine token IDs or labels')
+    """Accept v5 BatchEncoding or one real sequence; reject ambiguous batches."""
+    if isinstance(x, Mapping):
+        if "input_ids" not in x:
+            raise ValueError("tokenized mapping missing input_ids")
+        x = x["input_ids"]
+    if hasattr(x, "detach"):
+        x = x.detach().cpu().tolist()
+    elif hasattr(x, "tolist"):
+        x = x.tolist()
+    if isinstance(x, tuple):
+        x = list(x)
+    if isinstance(x, list) and len(x) == 1 and isinstance(x[0], (list, tuple)):
+        x = list(x[0])
+    if not isinstance(x, list) or not x or any(type(t) is not int for t in x):
+        raise ValueError(f"expected one nonempty list[int], received {type(x).__name__}")
     return x
 
 def frozen(path):
@@ -74,7 +86,7 @@ def probe(selection,by,stage,report):
     for i,q in enumerate(selection,1):
         cid=q['candidate_id']; row=by[cid]
         messages=[{'role':m['role'],'content':m['content']} for m in row['messages']]
-        t=ids(tok.apply_chat_template(messages,tokenize=True,add_generation_prompt=False))
+        t=ids(tok.apply_chat_template(messages,tokenize=True,add_generation_prompt=False,return_dict=True))
         result={'candidate_id':cid,'story_id':q['story_id'],'token_count':len(t),'full_tokens_sha256':digest(json.dumps(t,separators=(',',':')).encode()),'mask':'NOT_TESTED'}
         report['rows'].append(result)
         if len(t)>16384:result['error']='TOKEN_OVERFLOW';continue
