@@ -1,0 +1,50 @@
+name: R32 scoped audit counts (not training release)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R32_REVIEW_SCOPE_GATE_20261013.json'
+      - '.github/workflows/v02-r32-scoped-audit.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download frozen R27 source
+        run: git lfs pull
+      - name: Verify bounded review scope and prevent premature training release
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+          j=json.loads(Path('docs/evidence/V02_R32_REVIEW_SCOPE_GATE_20261013.json').read_text())
+          source=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          with zipfile.ZipFile(source) as z:
+              p=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              assert len(p)==1
+              raw=z.read(p[0])
+          assert hashlib.sha256(raw).hexdigest()==j['r27_dataset_sha256']
+          rows=[json.loads(x) for x in raw.splitlines() if x.strip()]
+          assert len(rows)==117 and len({x['id'] for x in rows})==117
+          assert j['source_ip_quarantine_inherited'] + j['non_ip_candidates']==117
+          assert j['r31_prior_selected_history_and_full_target_bounded']+j['r32_new_entire_user_and_target_read']==92
+          assert j['r32_full_visible_history_read']+j['r32_partial_history_openers_only']==71
+          assert j['r32_prioritized_quote_witnesses']==12
+          assert j['r32_distinct_candidates_with_new_witnesses']==11
+          assert j['training_admission']=='PENDING_NOT_APPROVED' and j['training_performed'] is False
+          assert j['formal_content_age_signed']==j['approved_train']==j['approved_validation']==j['approved_test']==j['fresh_unseen_heldout']==0
+          assert not j['linked_world_isolation_approved']
+          assert all(x['metadata']['dataset_admission']=='NOT_APPROVED' for x in rows)
+          print('R32_SCOPED_AUDIT_METADATA_PASS__49_FULL_HISTORY_PENDING__NO_TRAINING_RELEASE')
+          PY
