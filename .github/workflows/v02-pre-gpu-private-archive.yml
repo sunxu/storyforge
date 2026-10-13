@@ -1,0 +1,25 @@
+name: StoryForge v0.2 private pre-GPU source archive
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'evaluations/v0.2/training-readiness/20261013/private/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-private-source-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch full Git LFS objects
+        run: git lfs pull
+      - name: Verify exact 4 file SHA256, sizes, CRC and R18 metadata
+        run: python scripts/v02_verify_before_gpu_archive.py
