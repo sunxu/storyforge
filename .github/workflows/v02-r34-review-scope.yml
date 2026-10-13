@@ -1,0 +1,50 @@
+name: R34 evidence counts (not training release)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R34_VISIBLE_HISTORY_GATE_20261013.json'
+      - '.github/workflows/v02-r34-review-scope.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-immutable-review-scope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch full private R27 input
+        run: git lfs pull
+      - name: Check candidate identity and R34 nonrelease counts
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+          g=json.loads(Path('docs/evidence/V02_R34_VISIBLE_HISTORY_GATE_20261013.json').read_text())
+          p=Path('evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip')
+          with zipfile.ZipFile(p) as z:
+              names=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              assert len(names)==1
+              blob=z.read(names[0])
+          assert hashlib.sha256(blob).hexdigest()==g['r27_source_sha256']
+          records=[json.loads(x) for x in blob.splitlines() if x.strip()]
+          assert len(records)==g['r27_provisional_candidate_count']==117
+          assert len({r['id'] for r in records})==117
+          assert all(r['metadata']['dataset_admission']=='NOT_APPROVED' for r in records)
+          assert g['r32_complete_visible_history']+g['r33_complete_visible_history']+g['r34_new_complete_visible_history']==g['non_ip_complete_visible_history_cumulative']==g['non_ip_candidates']==92
+          assert g['non_ip_complete_visible_history_remaining']==0 and g['ip_quarantine_unchanged']==25
+          assert g['r31_prior_window_premise_hold_reconfirmed']==2
+          assert g['upstream_fact_corrections_in_original_story']==3
+          assert g['training_admission']=='PENDING_NOT_APPROVED'
+          assert not g['gpu_training_started'] and not g['linked_world_components_approved']
+          assert g['formal_content_age_approvals']==g['ip_rights_clearances']==g['approved_train']==g['approved_validation']==g['approved_test']==g['new_sealed_heldout_components']==0
+          print('R34_GIT_SOURCE_SCOPE_COUNTS_PASS__CONTENT_SPLIT_HELDOUT_BLOCKED')
+          PY
