@@ -35,6 +35,30 @@ def verify(root: Path) -> None:
                 bad = z.testzip()
                 if bad:
                     raise ValueError(f"ZIP CRC error: {bad}")
+                if p.name.startswith("original_chat_jsonl_"):
+                    count = sum(
+                        name.endswith(".jsonl") and not name.startswith("__MACOSX/")
+                        for name in z.namelist()
+                    )
+                    if count != 14:
+                        raise ValueError(f"expected 14 original JSONL exports, got {count}")
+                if p.name.startswith("R27_HF117_Fix_"):
+                    matches = [
+                        name for name in z.namelist()
+                        if name.endswith("/output/r27_private_candidate_117_NOT_APPROVED.jsonl")
+                    ]
+                    if len(matches) != 1:
+                        raise ValueError("R27 candidate JSONL missing or ambiguous")
+                    blob = z.read(matches[0])
+                    if hashlib.sha256(blob).hexdigest() != (
+                        "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a"
+                    ):
+                        raise ValueError("R27 117 candidate content digest mismatch")
+                    rows = [json.loads(line) for line in blob.splitlines() if line.strip()]
+                    if len(rows) != 117 or len({r["id"] for r in rows}) != 117:
+                        raise ValueError("R27 117 candidate count or duplicate mismatch")
+                    if any(r["metadata"]["dataset_admission"] != "NOT_APPROVED" for r in rows):
+                        raise ValueError("R27 source was improperly promoted")
         else:
             r = json.loads(p.read_text())
             if not (r.get("checked") == r.get("consistent") == 40
