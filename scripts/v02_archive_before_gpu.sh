@@ -22,13 +22,20 @@ cd "$REPO"
 [[ $(git remote get-url origin) == *sunxu/storyforge* ]] || { echo 'BLOCKED: incorrect remote' >&2; exit 2; }
 
 BASE=evaluations/v0.2/training-readiness/20261013/private
+FILES=(
+  "$BASE/original_chat_jsonl_14_20261013.zip"
+  "$BASE/R26_Source_Anchored_History_20261013.zip"
+  "$BASE/R27_HF117_Fix_20261013.zip"
+  "$BASE/R18_HF40_Actual_Collator_Report_20261013.json"
+)
+# Allow unrelated staged, unstaged, and untracked work: this script never touches it.
+# Before pushing, ensure the existing HEAD has no unrelated local commits.
 if [[ "$ACTION" == --push ]]; then
-  while IFS= read -r state; do
-    [[ -z "$state" || "${state:3}" == "$BASE/"* ]] || {
-      echo "BLOCKED: unrelated working tree change: ${state:3}" >&2
-      exit 2
-    }
-  done < <(git status --porcelain --untracked-files=all)
+  git fetch origin main --quiet
+  [[ "$(git rev-parse HEAD)" == "$(git rev-parse origin/main)" ]] || {
+    echo "BLOCKED: local main differs from origin/main; inspect/sync commits first" >&2
+    exit 2
+  }
 fi
 mkdir -p "$BASE"
 export SF_ARCHIVE_DEST="$REPO/$BASE"
@@ -63,22 +70,36 @@ for source, item in zip(sys.argv[1:], manifest["required_files"], strict=True):
 PY
 
 git lfs install --local >/dev/null
-for file in "$BASE"/*; do
-  [[ -f "$file" ]] || continue
+for file in "${FILES[@]}"; do
+  [[ -f "$file" ]] || { echo "BLOCKED: expected archive item missing: $file" >&2; exit 2; }
   [[ $(git check-attr filter -- "$file") == *': lfs' ]] || {
     echo "BLOCKED: LFS filter not active: $file" >&2; exit 2;
   }
 done
 python3 scripts/v02_verify_before_gpu_archive.py --root "$REPO"
-# Global .gitignore ignores *.zip: force-add only the exact verified private directory.
-git add -f -- "$BASE"/*
-for file in "$BASE"/*; do
+# Stage ONLY the four exact paths, even though *.zip is globally ignored.
+git add -f -- "${FILES[@]}"
+for file in "${FILES[@]}"; do
   [[ $(git show ":$file" | head -1) == 'version https://git-lfs.github.com/spec/v1' ]] || {
     echo "BLOCKED: Git index contains non-LFS data: $file" >&2; exit 2;
   }
 done
-echo 'LOCAL_ARCHIVE_STAGED_ONLY: all four exact-hash files, through Git LFS'
+echo 'LOCAL_ARCHIVE_STAGED_ONLY: four exact-hash LFS objects; unrelated changes preserved'
 if [[ "$ACTION" != --push ]]; then exit 0; fi
-git commit -m 'archive(v0.2): preserve R18/R26/R27 and original sources before GPU training'
+if git diff --cached --quiet -- "${FILES[@]}"; then
+  echo 'ARCHIVE_ALREADY_COMMITTED: nothing new to commit'
+else
+  # --only excludes unrelated staged user files, even under evaluations/by-story/.
+  git commit --only -m 'archive(v0.2): preserve R18/R26/R27 and original sources before GPU training' -- "${FILES[@]}"
+  mapfile -t committed < <(git diff-tree --no-commit-id --name-only -r HEAD)
+  [[ ${#committed[@]} -eq ${#FILES[@]} ]] || {
+    echo 'BLOCKED: resulting archive commit did not contain exactly four paths' >&2; exit 2;
+  }
+  for file in "${FILES[@]}"; do
+    printf '%s\n' "${committed[@]}" | grep -Fxq -- "$file" || {
+      echo "BLOCKED: missing archive path in new commit: $file" >&2; exit 2;
+    }
+  done
+fi
 git push origin main
-echo 'PUSH_DONE: now verify full LFS bytes using a clean fresh clone'
+echo 'PUSH_DONE: existing staged and unstaged user files were not included; verify via fresh clone'
