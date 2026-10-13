@@ -1,0 +1,114 @@
+name: R38 original-byte HF117 inheritance and validation diversity (no GPU)
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/v02-r38-inherited-mask.yml'
+      - 'docs/evidence/V02_R37_REVIEW_GATE_20261013.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-unchanged-82:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download actual frozen source and successful HF report
+        run: git lfs pull
+      - name: Replay 117 actual mask results against all 82 byte-identical candidates
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import sys,json,hashlib,zipfile,csv,io,re
+          sys.path.insert(0,'scripts')
+          from v02_verify_r27_hf_report import verify
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          base=Path('evaluations/v0.2/training-readiness/20261013/private')
+          source=base/'R27_HF117_Fix_20261013.zip'
+          actual=base/'R27_HF117_Actual_Collator_Report_20261013.json'
+          gate=json.loads(Path('docs/evidence/V02_R37_REVIEW_GATE_20261013.json').read_text())
+          assert h(source.read_bytes())=='cfedf6935babd12c9fc214b46dc2078381b55de9487afe25212bf54e8706794f'
+          assert h(actual.read_bytes())=='e23f166226142e28a04f42a3d481776b6ac84d9b30f92e30a55de838e5d2b213'
+          full=verify(actual,source)
+          assert full['rows']==117 and full['status']=='R27_REMOTE_REPORT_INTEGRITY_VERIFIED_ONLY'
+          report=json.loads(actual.read_text())
+          by_id={e['candidate_id']:e for e in report['rows']}
+          assert len(by_id)==117
+          with zipfile.ZipFile(source) as z:
+              f=[s for s in z.namelist() if s.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              g=[s for s in z.namelist() if s.endswith('/output/r27_proposed_groups_11.csv')]
+              assert len(f)==len(g)==1
+              raw=z.read(f[0])
+              groups={a['story_id']:a['proposed_split'] for a in csv.DictReader(io.StringIO(z.read(g[0]).decode()))}
+          assert h(raw)==gate['r27_117_original_sha256']
+          ip={'2e679438-e9f0-4cfd-979f-6663ae619120','d0155181-e6af-442e-932e-db440761ad3a'}
+          older={'bh-gold-t0578','bh-gold-t2404','virgin-death-gold-t01860'}
+          r36={'na-gold-t0195','s08-gold-t00183','s15-gold-r02-t01460','sf12-gold-t00751'}
+          r37=set(gate['three_new_window_hold_recommendations'])
+          assert len(r37)==3 and not r37.intersection(older|r36)
+          excl=Counter()
+          selected=[];tr=[];va=[];evidence=[];seen=set()
+          for line in raw.splitlines(keepends=True):
+              if not line.strip():continue
+              a=json.loads(line);cid=a['id'];sid=a['metadata']['source_story_id']
+              assert cid not in seen;seen.add(cid)
+              if sid in ip:excl['ip']+=1;continue
+              if cid in older:excl['older']+=1;continue
+              if cid in r36:excl['r36']+=1;continue
+              if cid in r37:excl['r37']+=1;continue
+              assert a['metadata']['dataset_admission']=='NOT_APPROVED'
+              assert a['metadata']['approved_split'] is None
+              assert h(a['messages'][-1]['content'].encode())==a['metadata']['target_sha256']
+              assert a['messages'][-1]['loss'] is True
+              assert all(x['loss'] is False for x in a['messages'][:-1])
+              audit=by_id[cid]
+              assert audit['story_id']==sid and audit['status']=='ACTUAL_LAST_ROUND_INTERNAL_PASS'
+              assert re.fullmatch('[a-f0-9]{64}',audit['label_digest'])
+              evidence.append(audit);selected.append((line,a))
+              branch=groups[sid]
+              assert branch in ('TRAIN_PROPOSAL','VALIDATION_PROPOSAL')
+              (tr if branch=='TRAIN_PROPOSAL' else va).append((line,a))
+          assert len(seen)==117 and excl=={'ip':25,'older':3,'r36':4,'r37':3}
+          assert len(selected)==82 and len(tr)==65 and len(va)==17
+          assert h(b''.join(x for x,_ in selected))==gate['unsigned_ceiling_82_sha256']
+          assert h(b''.join(x for x,_ in tr))==gate['unsigned_train_65_sha256']
+          assert h(b''.join(x for x,_ in va))==gate['unsigned_validation_17_sha256']
+          trgroups={a['metadata']['source_story_id'] for _,a in tr}
+          vagroups={a['metadata']['source_story_id'] for _,a in va}
+          assert len(trgroups)==7 and len(vagroups)==2 and trgroups.isdisjoint(vagroups)
+          sizes=Counter(a['metadata']['source_story_id'] for _,a in va)
+          assert sorted(sizes.values())==[1,16]
+          # Long exact-text leakage: synthetic common system deliberately excluded.
+          def shingles(row):
+              for msg in row['messages'][1:]:
+                  x=re.sub(r'[^\w\u3400-\u9fff]','',msg['content']).lower()
+                  for i in range(len(x)-15):
+                      yield x[i:i+16]
+          known={v for _,a in tr for v in shingles(a)}
+          overlap_count=sum(any(v in known for v in shingles(a)) for _,a in va)
+          assert overlap_count==0
+          assert gate['training_admission']=='PENDING_NOT_APPROVED'
+          assert gate['approved_train']==gate['approved_validation']==gate['approved_test']==0
+          assert gate['paid_gpu_training_authorized'] is False
+          assert gate['fresh_independent_sealed_heldout_components']==0
+          print(json.dumps({
+           'status':'R38_INHERITED_PER_ROW_REAL_HF_MASK_EVIDENCE_PASS_ONLY',
+           'original_HF_job':'6ace19935ccb47ba0f787af5',
+           'inherited_rows':82,'train_proposal':65,'validation_proposal':17,
+           'ms_swift_total_tokens':sum(e['ms_swift_token_count'] for e in evidence),
+           'supervised_tokens':sum(e['supervised_tokens'] for e in evidence),
+           'ms_swift_max_tokens':max(e['ms_swift_token_count'] for e in evidence),
+           'validation_story_sizes':sorted(sizes.values(),reverse=True),
+           'train_val_cross_normalized_16char_dialogue_matches':overlap_count,
+           'batch_or_final_compiled_mask_rerun':False,
+           'content_age_world_heldout_training_admission':'PENDING_NOT_APPROVED'
+           },indent=2))
+          PY
