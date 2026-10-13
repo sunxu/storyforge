@@ -1,0 +1,31 @@
+name: StoryForge R27 HF117 report verification
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Actual_Collator_Report_20261013.json'
+      - 'scripts/v02_verify_r27_hf_report.py'
+      - '.github/workflows/v02-r27-report-verify.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-r27-report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pull actual Git LFS bytes
+        run: git lfs pull
+      - name: Verify original R27 117-result report with source-archive hash
+        run: |
+          python scripts/v02_verify_r27_hf_report.py \
+            --report evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Actual_Collator_Report_20261013.json \
+            --r27-archive evaluations/v0.2/training-readiness/20261013/private/R27_HF117_Fix_20261013.zip
