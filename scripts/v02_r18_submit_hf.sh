@@ -28,7 +28,7 @@ with zipfile.ZipFile(p) as z:
     assert any(n.endswith("/baseline/StoryForge_v02_R16_Offline_Engineering_Preflight_20261013.zip") for n in z.namelist()), "No R16 baseline"
 print("R17 PRIVATE SOURCE HASH PASS; no training.")
 PY
-for f in scripts/v02_r18_hf_no_train.py scripts/hf_label_mask_audit.py; do
+for f in scripts/v02_r18_hf_no_train.py scripts/v02_r18_hf_worker.sh scripts/hf_label_mask_audit.py; do
   hf buckets cp "$f" "$PREFIX/code/$(basename "$f")"
 done
 hf buckets cp "$R17_ZIP" "$PREFIX/private/StoryForge_v02_R17_Runtime_And_Label_Contract_20261013.zip"
@@ -39,12 +39,17 @@ if [[ "${STORYFORGE_ALLOW_PAID_CPU:-}" != YES ]]; then
 fi
 if [[ "$STAGE" == both ]]; then
   IMAGE="pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime"
-  INSTALL='python -m pip install --disable-pip-version-check "ms-swift==4.5.3" "transformers==5.16.1" "huggingface_hub>=0.35,<3" "qwen-vl-utils>=0.0.14"'
 else
   IMAGE="python:3.11-slim"
-  INSTALL='python -m pip install --disable-pip-version-check "transformers==5.16.1" "huggingface_hub>=0.35,<3"'
 fi
-RUN='set -e; cd /workspace/preflight/v02-r18/code; '"$INSTALL"'; python -u /workspace/preflight/v02-r18/code/v02_r18_hf_no_train.py --r17-zip /workspace/preflight/v02-r18/private/StoryForge_v02_R17_Runtime_And_Label_Contract_20261013.zip --output-dir /workspace/preflight/v02-r18/results/${JOB_ID:?missing_HF_JOB_ID} --stage '"$STAGE"
+
+RUN_KEY="r18-$(date -u +%Y%m%dT%H%M%SZ)-${RANDOM}"
+echo "R18_RUN_KEY=$RUN_KEY"
+echo "R18_RESULT_PREFIX=$PREFIX/results/$RUN_KEY/"
+# HF Jobs COMMAND... is a sequence of executable and arguments.
+# Passing a long bash -lc string is unreliable; execute a mounted worker file.
 hf jobs run --namespace adradar --name "storyforge-v02-r18-${STAGE}-no-train" \
-  --flavor cpu-upgrade --timeout 90m -v "$BUCKET:/workspace:rw" \
-  "$IMAGE" bash -lc "$RUN"
+  --flavor cpu-upgrade --timeout 90m \
+  --env "STORYFORGE_R18_RUN_KEY=$RUN_KEY" \
+  -v "$BUCKET:/workspace:rw" \
+  "$IMAGE" bash /workspace/preflight/v02-r18/code/v02_r18_hf_worker.sh "$STAGE"
