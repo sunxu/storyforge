@@ -1,0 +1,44 @@
+{
+  "schema": "storyforge-v02-pre-gpu-private-source-manifest-v1",
+  "date": "2026-10-13",
+  "repository": "sunxu/storyforge",
+  "destination": "evaluations/v0.2/training-readiness/20261013/private/",
+  "storage": "Git LFS required for all archived raw/private assets",
+  "train_admission": "PENDING_NOT_APPROVED",
+  "dataset_status": "117 provisional derived diagnostic candidates; not train-approved",
+  "source_status": "LOCAL_HASH_CHECKED_NOT_YET_PUSHED",
+  "required_files": [
+    {
+      "archive_name": "original_chat_jsonl_14_20261013.zip",
+      "size_bytes": 57602487,
+      "sha256": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+      "source_hint": "归档(1).zip",
+      "role": "raw conversation exports supporting R25/R26 replay"
+    },
+    {
+      "archive_name": "R26_Source_Anchored_History_20261013.zip",
+      "size_bytes": 1811375,
+      "sha256": "4ad742260826ff02b643232a9bdef56d669c5b4bea07215ddc47c8d2047538c9",
+      "source_hint": "StoryForge_v02_R26_Source_Anchored_History_20261013.zip",
+      "role": "source anchored witness chain and parent baselines"
+    },
+    {
+      "archive_name": "R27_HF117_Fix_20261013.zip",
+      "size_bytes": 405814,
+      "sha256": "cfedf6935babd12c9fc214b46dc2078381b55de9487afe25212bf54e8706794f",
+      "source_hint": "StoryForge_v02_R27_HF117_Fix_20261013.zip",
+      "role": "exact 117 unapproved candidate JSONL, 195 route ledger, code, group proposal"
+    },
+    {
+      "archive_name": "R18_HF40_Actual_Collator_Report_20261013.json",
+      "size_bytes": 19308,
+      "sha256": "2b8bc8e5988a60d842e6e2c0c3f60e4e677fc9e77813a0f3e71da12ea803d44f",
+      "source_hint": "r18_actual_no_train_report.json",
+      "role": "real previous 40-row tokenizer and last-round mask diagnostic"
+    }
+  ],
+  "additional_remote_artifacts_not_yet_archived": [
+    "R27 full 117 actual HF collator report, if/when Job completes"
+  ],
+  "full_gpu_training_authorized": false
+}
