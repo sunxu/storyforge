@@ -1,0 +1,60 @@
+name: StoryForge v0.2 archive upload path isolation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/v02_archive_before_gpu.sh'
+      - '.github/workflows/v02-pre-gpu-upload-safety.yml'
+  pull_request:
+    paths:
+      - 'scripts/v02_archive_before_gpu.sh'
+      - '.github/workflows/v02-pre-gpu-upload-safety.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive-path-isolation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check Bash syntax
+        run: bash -n scripts/v02_archive_before_gpu.sh
+      - name: Protect unrelated Chinese-named story files and staged work
+        shell: bash
+        run: |
+          set -euo pipefail
+          WORK=$(mktemp -d)
+          cd "$WORK"
+          git init -q -b main
+          git config user.name 'StoryForge Test'
+          git config user.email 'test@example.com'
+          mkdir -p evaluations/by-story evaluations/v0.2/training-readiness/20261013/private
+          printf 'original\n' > 'evaluations/by-story/01-京圈的灯火与暗流.jsonl'
+          git add .
+          git commit -qm original
+          printf 'owner private work\n' >> 'evaluations/by-story/01-京圈的灯火与暗流.jsonl'
+          printf 'user staged source\n' > 'evaluations/by-story/02-其他.jsonl'
+          git add 'evaluations/by-story/02-其他.jsonl'
+          BASE=evaluations/v0.2/training-readiness/20261013/private
+          FILES=(
+            "$BASE/original_chat_jsonl_14_20261013.zip"
+            "$BASE/R26_Source_Anchored_History_20261013.zip"
+            "$BASE/R27_HF117_Fix_20261013.zip"
+            "$BASE/R18_HF40_Actual_Collator_Report_20261013.json"
+          )
+          for file in "${FILES[@]}"; do
+            printf 'version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 123\n' > "$file"
+          done
+          git add -f -- "${FILES[@]}"
+          git commit --only -qm 'four protected archive files' -- "${FILES[@]}"
+          committed_count=$(git diff-tree --no-commit-id --name-only -r HEAD | wc -l | tr -d '[:space:]')
+          [[ "$committed_count" -eq 4 ]]
+          for file in "${FILES[@]}"; do
+            git diff-tree --no-commit-id --name-only -r HEAD | grep -Fxq -- "$file"
+          done
+          git status --short | grep -q 'by-story'
+          [[ -n $(git diff -- evaluations/by-story) ]]
+          [[ -n $(git diff --cached -- evaluations/by-story) ]]
+          echo 'ARCHIVE_PATH_ISOLATION_PASS'
