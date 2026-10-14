@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
       - name: Verify offline entrypoints
         run: |
-          bash -n scripts/v02_r48_prepare_git.sh
+          bash -n scripts/v02_r48_prepare_git.sh scripts/v02_r48_unblind_git.sh
           python -m py_compile scripts/v02_r48_four_arm_build.py scripts/v02_r48_review_aggregate.py scripts/v02_r48_review_freeze.py
       - name: Hash canonical Test original 20 replies
         run: |
