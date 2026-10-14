@@ -48,4 +48,42 @@ class R47Tests(unittest.TestCase):
             rows[0]["messages"][0]["loss"]=True
             f.write_text("\n".join(json.dumps(x) for x in rows)+"\n")
             with self.assertRaises(ValueError):validate_prompts(f,m)
+    def test_swift_infer_output_with_null_loss_and_appended_assistant(self):
+        # ms-swift may serialize loss:null on input turns and append its
+        # assistant output under messages; both representations must agree.
+        with tempfile.TemporaryDirectory() as t:
+            p=Path(t);f,m,r=self.fixture(p)
+            import json as _json
+            rows=[_json.loads(x) for x in r["base"].read_text().splitlines()]
+            for row in rows:
+                for message in row["messages"]:
+                    message["loss"]=None
+                row["messages"].append({"role":"assistant","content":row["response"]})
+            r["base"].write_text("\n".join(_json.dumps(x) for x in rows)+"\n")
+            from v02_r47_eval_validate import validate_responses
+            prompts=[_json.loads(x) for x in f.read_text().splitlines()]
+            self.assertEqual(len(validate_responses(r["base"],prompts)),20)
+            self.assertEqual(write_blind(f,m,r,p/"output")["responses"],60)
+
+    def test_appended_assistant_mismatch_refused(self):
+        with tempfile.TemporaryDirectory() as t:
+            p=Path(t);f,m,r=self.fixture(p)
+            rows=[json.loads(x) for x in r["base"].read_text().splitlines()]
+            rows[0]["messages"].append({"role":"assistant","content":"wrong response"})
+            r["base"].write_text("\n".join(json.dumps(x) for x in rows)+"\n")
+            from v02_r47_eval_validate import validate_responses
+            with self.assertRaises(ValueError):
+                validate_responses(r["base"],[json.loads(x) for x in f.read_text().splitlines()])
+
+    def test_swift_prompt_changed_is_not_tolerated(self):
+        with tempfile.TemporaryDirectory() as t:
+            p=Path(t);f,m,r=self.fixture(p)
+            rows=[json.loads(x) for x in r["base"].read_text().splitlines()]
+            rows[0]["messages"][0]["content"]="different system"
+            for row in rows:
+                for item in row["messages"]:item["loss"]=None
+            r["base"].write_text("\n".join(json.dumps(x) for x in rows)+"\n")
+            from v02_r47_eval_validate import validate_responses
+            with self.assertRaises(ValueError):
+                validate_responses(r["base"],[json.loads(x) for x in f.read_text().splitlines()])
 if __name__=="__main__":unittest.main()
