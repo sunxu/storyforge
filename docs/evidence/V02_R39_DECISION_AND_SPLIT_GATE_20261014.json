@@ -1,0 +1,117 @@
+{
+  "schema": "storyforge-v02-r39-decision-evidence-v1",
+  "date": "2026-10-14",
+  "source_r37_sha256": "f108c2b85ae096fd00e49e23e50d00b1cf0cf779682793ea6e3951e700b9e7c9",
+  "r27_frozen_input_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "source_r38_zip_sha256": "b4bbfcb5953d0d4337a25f57481ce55793731058966035be418bf8b046a61ddc",
+  "private_r39_zip_sha256": "0a4f2086dbaeb5fd3fc1f7f24d4930a27399e0d69ed64d7aacbf57fcb1b68c95",
+  "candidate_count": 82,
+  "source_story_uuid_count": 9,
+  "supervised_tokens_inherited_HF117": 21807,
+  "all_input_tokens_inherited_HF117": 155946,
+  "remote_hf_job": "6ace19935ccb47ba0f787af5",
+  "validation_diversity_options": [
+    {
+      "option": "R37_OLD_65_17",
+      "train_rows": 65,
+      "validation_rows": 17,
+      "validation_story_uuids": [
+        "b468bfb5-37e6-4dd5-b9f6-20241c9bd682",
+        "dc06d6c4-317b-4a13-bda0-28e0f8fa8b76"
+      ],
+      "train_sha256": "7e696f991d1b7280b853f50280406423ddd47907e7b919afa742944bc03318d3",
+      "validation_sha256": "fb66cbcf29afe0347a4657227bb624de4a7d7a79af946c846fe50aab2bceb3fc",
+      "validation_story_sizes": [
+        16,
+        1
+      ],
+      "largest_validation_world_fraction": 0.941176,
+      "final_split_approved": false
+    },
+    {
+      "option": "BALANCED_A_64_18",
+      "train_rows": 64,
+      "validation_rows": 18,
+      "validation_story_uuids": [
+        "3056e2eb-28d6-4a08-9905-db448b69d316",
+        "5f31876b-6507-4171-b007-2da0d9fcee67",
+        "8b347732-956e-45aa-a4d0-ea281587c29e"
+      ],
+      "train_sha256": "349b4d30c1e7248464a7f649f0584af5a0377d9b89f3207fcfb426d38b46239d",
+      "validation_sha256": "84d6eea775772af4dfcda56fdeab8a97c95aeea199c86cb5968b8f8d55b7c07c",
+      "validation_story_sizes": [
+        8,
+        8,
+        2
+      ],
+      "largest_validation_world_fraction": 0.444444,
+      "final_split_approved": false
+    },
+    {
+      "option": "DIVERSE_B_66_16",
+      "train_rows": 66,
+      "validation_rows": 16,
+      "validation_story_uuids": [
+        "3056e2eb-28d6-4a08-9905-db448b69d316",
+        "866b67ec-127a-4172-9dad-891349739ce8",
+        "8b347732-956e-45aa-a4d0-ea281587c29e",
+        "dc06d6c4-317b-4a13-bda0-28e0f8fa8b76"
+      ],
+      "train_sha256": "b10e9084bd5b63b06214bfb50fb4479f8c20167307cb1467602f6fb53d4129b2",
+      "validation_sha256": "4df484e90cf7aef5ce8b71a973af6c9f86128d3f7d1bc8cbbaeae9132e784969",
+      "validation_story_sizes": [
+        8,
+        5,
+        2,
+        1
+      ],
+      "largest_validation_world_fraction": 0.5,
+      "final_split_approved": false
+    },
+    {
+      "option": "R39_FOUR_WORLDS_63_19",
+      "train_rows": 63,
+      "validation_rows": 19,
+      "validation_story_uuids": [
+        "3056e2eb-28d6-4a08-9905-db448b69d316",
+        "5f31876b-6507-4171-b007-2da0d9fcee67",
+        "8b347732-956e-45aa-a4d0-ea281587c29e",
+        "dc06d6c4-317b-4a13-bda0-28e0f8fa8b76"
+      ],
+      "train_sha256": "b1567a04d531d7fcad9a7d092409a041a702b654c86d37f5d68c472d5dece27b",
+      "validation_sha256": "2058111269523070e311f7db3638356ad2820ad622cbd0649aa49aa3a058cfc9",
+      "validation_story_sizes": [
+        8,
+        8,
+        2,
+        1
+      ],
+      "largest_validation_world_fraction": 0.421053,
+      "final_split_approved": false
+    }
+  ],
+  "common_word_evidence": {
+    "token": "绵绵",
+    "occurrences_in_distinct_candidate_windows": 26,
+    "proper_name_in_one_story": 16,
+    "adjective_in_other_four_stories": 10,
+    "confirmed_cross_story_same_person_based_on_this_word": false,
+    "global_alias_clearance": false
+  },
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "final_per_sample_content_age_signoff": 0,
+  "final_rights_signoff": 0,
+  "official_new_independent_sealed_heldout": 0,
+  "formal_ontology_world_isolation_approved": false,
+  "paid_gpu_authorized": false,
+  "paid_gpu_started": false,
+  "admission": "PENDING_NOT_APPROVED",
+  "limits": [
+    "Resolved one common-word exact-match false positive only, not the full linked-world graph.",
+    "Four validation options are unsigned and use only whole story UUIDs.",
+    "No new HF model run; per-row results inherited from immutable R27 data.",
+    "No policy/age/rights approval, and no independently authenticated heldout."
+  ]
+}
