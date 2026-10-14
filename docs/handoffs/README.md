@@ -2,6 +2,8 @@
 
 **Latest historical stage:** R46 exploratory GPU SFT engineering PASS; R47 old 20-case 3-arm retrospective review complete; R48 old 20-case Gold+3-model retrospective review complete; **no model promotion**.
 
+**Next-stage plan (proposed, NOT executed):** [v0.3 R49–R57 detailed Test & Training plan](../plans/StoryForge_v03_Test_and_Training_Plan_20261014.md) and [machine-readable phase gates](../plans/StoryForge_v03_Test_and_Training_Gates_20261014.json). This is the current forward workplan, not a change to the frozen R46–R48 evidence; new paid GPU work remains unauthorized.
+
 **Read these first in the new conversation:**
 
 1. [Complete new-chat handoff](StoryForge_v02_Handoff_After_R48_20261014.md) — scope, job IDs, exact input/adapter hashes, model scores, CI gates, and next steps.
