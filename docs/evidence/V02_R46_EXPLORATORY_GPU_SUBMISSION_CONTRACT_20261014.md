@@ -23,7 +23,7 @@ Owner instructs to prioritize GPU training while independent Held-out is being p
 - No `git push`/PR merge/remote HF job is triggered by publishing this README. **No HF credentials/tools were available to the assistant to submit the actual paid job.**
 
 ## Tested launcher artifact (PRIVATE; not part of ordinary Git)
-- `StoryForge_R46_GPU_Experimental_20261014.zip`: SHA256 `72916adf75f9683fb568d037126aae12c8ca39c793894cf9b40f2ec30c88a72d`. Contains exact R45 private ZIP and R46 code/config. The package's SHA256SUMS and ZIP CRC passed; local R45 verification printed `R46_R45_49_15_SOURCE_PASS_EXPERIMENT_ONLY`; a mocked HF CLI reported successful sync/no-GPU and one correct `a100-large --timeout 110m` call in explicit-submit mode; missing GPU env was rejected. **This does not prove remote GPU success.**
+- `StoryForge_R46_GPU_Experimental_20261014.zip`: SHA256 `8d45fd85f57f061761e18f938a733319ddd2f57c1ebc5754ca53a7e0fa688714`. Contains exact R45 private ZIP and R46 code/config. The package's SHA256SUMS and ZIP CRC passed; local R45 verification printed `R46_R45_49_15_SOURCE_PASS_EXPERIMENT_ONLY`; an additional compiled-data schema check PASS (non-assistant loss keys omitted by prepare_sft) and intentional forbidden System supervision was rejected; a mocked HF CLI reported successful sync/no-GPU and one correct `a100-large --timeout 110m` call in explicit-submit mode; missing GPU env was rejected. **This does not prove remote GPU success.**
 
 ## Steps for owner on Mac
 ```bash
