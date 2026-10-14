@@ -1,0 +1,367 @@
+{
+  "schema": "storyforge-r48-four-arm-unblind-verified-summary-v1",
+  "source_report_sha256": "e1593437c51a7b880a6e7495031ad8c06cbaa84f510e7be74326e1bc336575e8",
+  "source_status": "R48_GOLD_FOUR_ARM_RETROSPECTIVE_UNBLIND_NOT_PROMOTED",
+  "cases": 20,
+  "reviewers": 3,
+  "ratings": 1440,
+  "majority_wins": {
+    "base": 2,
+    "v01": 3,
+    "gold": 8,
+    "v02": 7
+  },
+  "preference_votes": {
+    "base": 8,
+    "gold": 23,
+    "v01": 8,
+    "v02": 21
+  },
+  "means": {
+    "gold": 3.4611,
+    "base": 3.1639,
+    "v01": 2.9111,
+    "v02": 3.375
+  },
+  "dimensions": {
+    "gold": {
+      "剧情连续性": 3.75,
+      "角色一致性": 3.95,
+      "指令遵循": 2.4333,
+      "文学表现力": 4.0167,
+      "互动推进": 4.0833,
+      "玩家自主权": 2.5333
+    },
+    "base": {
+      "剧情连续性": 3.4,
+      "角色一致性": 3.4833,
+      "指令遵循": 2.4333,
+      "文学表现力": 3.6,
+      "互动推进": 3.3833,
+      "玩家自主权": 2.6833
+    },
+    "v01": {
+      "剧情连续性": 3.4667,
+      "角色一致性": 3.35,
+      "指令遵循": 2.25,
+      "文学表现力": 2.9167,
+      "互动推进": 3.1167,
+      "玩家自主权": 2.3667
+    },
+    "v02": {
+      "剧情连续性": 3.6167,
+      "角色一致性": 3.6667,
+      "指令遵循": 2.65,
+      "文学表现力": 3.5333,
+      "互动推进": 3.5833,
+      "玩家自主权": 3.2
+    }
+  },
+  "severe_player_agency_markers": {
+    "gold": 22,
+    "v01": 25,
+    "v02": 6,
+    "base": 16
+  },
+  "case_level_serious_agency_flags": {
+    "gold": {
+      "one": 11,
+      "two": 6,
+      "three": 5
+    },
+    "v02": {
+      "one": 3,
+      "two": 2,
+      "three": 1
+    },
+    "base": {
+      "one": 6,
+      "two": 5,
+      "three": 5
+    },
+    "v01": {
+      "one": 10,
+      "two": 9,
+      "three": 6
+    }
+  },
+  "per_sample": [
+    {
+      "id": "eval-000-948012b6173a",
+      "majority": "base",
+      "votes": {
+        "base": 2,
+        "gold": 1
+      },
+      "serious_player_agency_flags": {
+        "gold": 1,
+        "v02": 0,
+        "base": 0,
+        "v01": 3
+      }
+    },
+    {
+      "id": "eval-001-e84ab59937bd",
+      "majority": "v01",
+      "votes": {
+        "v01": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 1,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-002-d7d968e46fca",
+      "majority": "v01",
+      "votes": {
+        "v01": 2,
+        "gold": 1
+      },
+      "serious_player_agency_flags": {
+        "gold": 2,
+        "v02": 0,
+        "base": 1,
+        "v01": 1
+      }
+    },
+    {
+      "id": "eval-003-4280fab90a6f",
+      "majority": "gold",
+      "votes": {
+        "gold": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-004-dcb8125405bb",
+      "majority": "v02",
+      "votes": {
+        "v02": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 3,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-005-c0ba67282789",
+      "majority": "v02",
+      "votes": {
+        "v02": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 1,
+        "v02": 0,
+        "base": 0,
+        "v01": 3
+      }
+    },
+    {
+      "id": "eval-006-4bfafe9aa041",
+      "majority": "gold",
+      "votes": {
+        "gold": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-007-a7d038870997",
+      "majority": "gold",
+      "votes": {
+        "gold": 2,
+        "v02": 1
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 3,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-008-58f99d0a6cb2",
+      "majority": "v02",
+      "votes": {
+        "v02": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 3
+      }
+    },
+    {
+      "id": "eval-009-fad8a45c1995",
+      "majority": "v02",
+      "votes": {
+        "v02": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 1,
+        "v02": 0,
+        "base": 3,
+        "v01": 2
+      }
+    },
+    {
+      "id": "eval-010-95fc6ec25be5",
+      "majority": "gold",
+      "votes": {
+        "base": 1,
+        "gold": 2
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 2
+      }
+    },
+    {
+      "id": "eval-011-13544888d5c0",
+      "majority": "gold",
+      "votes": {
+        "base": 1,
+        "gold": 2
+      },
+      "serious_player_agency_flags": {
+        "gold": 1,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-012-bf902fa5b002",
+      "majority": "gold",
+      "votes": {
+        "gold": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-013-98b7dd971c3b",
+      "majority": "v02",
+      "votes": {
+        "base": 1,
+        "v02": 2
+      },
+      "serious_player_agency_flags": {
+        "gold": 1,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-014-7add48022d9a",
+      "majority": "v01",
+      "votes": {
+        "v01": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 3,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-015-111145d5743f",
+      "majority": "v02",
+      "votes": {
+        "v02": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 3
+      }
+    },
+    {
+      "id": "eval-016-193774e13ceb",
+      "majority": "gold",
+      "votes": {
+        "gold": 2,
+        "base": 1
+      },
+      "serious_player_agency_flags": {
+        "gold": 3,
+        "v02": 2,
+        "base": 3,
+        "v01": 2
+      }
+    },
+    {
+      "id": "eval-017-78608eccba9d",
+      "majority": "v02",
+      "votes": {
+        "v02": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 3,
+        "v02": 0,
+        "base": 3,
+        "v01": 3
+      }
+    },
+    {
+      "id": "eval-018-7b18b1de6eb3",
+      "majority": "base",
+      "votes": {
+        "base": 2,
+        "gold": 1
+      },
+      "serious_player_agency_flags": {
+        "gold": 0,
+        "v02": 0,
+        "base": 0,
+        "v01": 0
+      }
+    },
+    {
+      "id": "eval-019-22cc0fa9229a",
+      "majority": "gold",
+      "votes": {
+        "gold": 3
+      },
+      "serious_player_agency_flags": {
+        "gold": 3,
+        "v02": 3,
+        "base": 3,
+        "v01": 3
+      }
+    }
+  ],
+  "pristine_review_csvs_verified_as_reported": true,
+  "reviewer_original_csv_sha256": [
+    "48ba53e37a5d9dfa536cbcfac2e189feac617e06eb1a79978fbc66dbeb994cfb",
+    "4ac13669fb92b969fb7f30cac037aaec418cd7963762240ad5c34aab3a44aab7",
+    "41cf53daedcb3db9dfeea510507b44413cd5399adda8d61361c196a1ab282ee4"
+  ],
+  "private_answer_key_not_uploaded": true,
+  "new_heldout": false,
+  "model_promotion": false
+}
