@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """R47 three-arm retrospective inference; no training or quality promotion."""
 from __future__ import annotations
-import argparse,hashlib,json,os,re,subprocess,sys,time,traceback
+import argparse,hashlib,json,os,re,shutil,subprocess,sys,time,traceback
 from pathlib import Path
 ROOT=Path("/workspace")
 MODEL="Qwen/Qwen3.8-27B"
@@ -88,10 +88,36 @@ def main():
         if REV not in str(snap.resolve()) or not (snap/"config.json").is_file():
             raise RuntimeError("pinned Qwen model unavailable")
         report["model_revision"]=REV
+        # R47.1 rescue: re-use the already-paid, completed Base inference.
+        # The old run is immutable, its prompt manifest must match this stage,
+        # and its 20 outputs must pass strict role/content alignment BEFORE
+        # any old Base result can enter the new blind evaluation.
+        reuse=os.environ.get("STORYFORGE_R47_REUSE_BASE_RUN_KEY","")
+        if reuse and (not re.fullmatch(r"r47-[0-9TZ-]+-[0-9]{6}",reuse) or reuse==a.run_key):
+            raise RuntimeError("invalid Base recovery RUN_KEY")
         for arm,adapter in (("base",None),("v01",V01),("v02",V02)):
             target=out/(arm+"-results.jsonl")
-            run(infer(prompts,target,snap,adapter),log)
-            validate_responses(target,data)
+            if arm=="base" and reuse:
+                previous=ROOT/"evaluation-runs/v02-r47"/reuse
+                previous_report=json.loads((previous/"R47_PRIVATE_RUN_REPORT.json").read_text())
+                if (previous_report.get("run_key")!=reuse
+                        or previous_report.get("status")!="BLOCKED"
+                        or previous_report.get("training_performed") is not False
+                        or previous_report.get("input",{}).get("prompts_sha256")!=sha(prompts)
+                        or previous_report.get("input",{}).get("manifest_sha256")!=sha(manifest)):
+                    raise RuntimeError("old Base report identity/input mismatch")
+                source=previous/"base-results.jsonl"
+                validate_responses(source,data)
+                source_digest=sha(source)
+                shutil.copyfile(source,target)
+                if sha(target)!=source_digest:
+                    raise RuntimeError("copied Base result SHA mismatch")
+                report["reused_base"]={"run_key":reuse,"sha256":source_digest,
+                                       "source":"original failed R47 GPU run, preserved byte-exact"}
+                print("R47_REUSED_BASE_20_20_PASS sha256="+source_digest,flush=True)
+            else:
+                run(infer(prompts,target,snap,adapter),log)
+                validate_responses(target,data)
             report["completed_arms"].append(arm)
             report.setdefault("results_sha256",{})[arm]=sha(target)
             store(out/"R47_PRIVATE_RUN_REPORT.json",report)
