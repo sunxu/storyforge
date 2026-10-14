@@ -1,0 +1,211 @@
+{
+  "schema": "storyforge-v03-next-phase-plan-gates-v1",
+  "prepared": "2026-10-14",
+  "plan_state": "PROPOSED_NOT_YET_APPROVED",
+  "billing_authorization": false,
+  "model_quality_promotion": false,
+  "project": "sunxu/storyforge",
+  "plan_markdown": "docs/plans/StoryForge_v03_Test_and_Training_Plan_20261014.md",
+  "referenced_baselines": {
+    "r45_training": {
+      "train": 49,
+      "validation": 15,
+      "training_data_admitted": false
+    },
+    "r46_gpu": {
+      "status": "EXPLORATORY_GPU_SFT_PASS_NOT_PROMOTED",
+      "steps": 7,
+      "train_loss": 1.9259772300720215,
+      "validation_loss": 1.7483125925064087,
+      "adapter_sha256_reported": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b"
+    },
+    "r47_exposed_20_three_arm_majorities": {
+      "v02": 11,
+      "base": 5,
+      "v01": 4
+    },
+    "r48_exposed_20_four_arm_majorities": {
+      "gold": 8,
+      "v02": 7,
+      "v01": 3,
+      "base": 2
+    },
+    "r48_player_agency_severe_flags_out_of_60": {
+      "gold": 22,
+      "base": 16,
+      "v01": 25,
+      "v02": 6
+    },
+    "curated_gold_quality_accepted": 195
+  },
+  "phases": [
+    {
+      "id": "R49",
+      "name": "Baseline and preregistration freeze",
+      "gpu_required": false,
+      "dependencies": [],
+      "exit_gate": "Historical R45-R48 SHA/adapter evidence and intended deployment prompt, metrics, privacy permissions preregistered; generic CI Ruff status disclosed."
+    },
+    {
+      "id": "R50",
+      "name": "Independent test intake and sealing",
+      "gpu_required": false,
+      "dependencies": [
+        "R49"
+      ],
+      "target_cases": {
+        "min": 40,
+        "recommended": 60,
+        "max": 60
+      },
+      "target_world_components": {
+        "min": 4,
+        "recommended": 6
+      },
+      "exit_gate": "Distinct story components, authorship independence, identical prompt availability, no target answers, no near/exact train/old-test duplicates, world alias graph and per-sample hashes sealed. Not exposed to model developers."
+    },
+    {
+      "id": "R51",
+      "name": "Gold195 training-admission and world-source audit",
+      "gpu_required": false,
+      "dependencies": [
+        "R49"
+      ],
+      "candidate_source_gold": 195,
+      "initial_experiment_scope": {
+        "train": 49,
+        "validation": 15,
+        "quality_holds": 18
+      },
+      "training_admitted_target": {
+        "min_recommended": 120,
+        "max_recommended": 160,
+        "not_a_hard_quota": true
+      },
+      "exit_gate": "Per-row rights/timestamp/world-history/instruction/player agency trace; two-source anchored reviewers; 18 HOLD unchanged unless new decisions; Train/Validation world components disjoint and no heldout overlap."
+    },
+    {
+      "id": "R52",
+      "name": "One-factor v03-A data-only experiment preregistration",
+      "gpu_required": false,
+      "dependencies": [
+        "R51"
+      ],
+      "exit_gate": "Frozen data ids, code, config, model revision, QLoRA hyperparameters and declared single modified variable (dataset). No model tuning based on sealed Test."
+    },
+    {
+      "id": "R53",
+      "name": "CPU collator and admission gate",
+      "gpu_required": false,
+      "dependencies": [
+        "R50",
+        "R52"
+      ],
+      "exit_gate": "Actual ms-swift collator template and last Assistant-only loss labels PASS for all entries; max_length 16384; source target SHA complete; no world overlap, critical content gate and CI exception declaration PASS."
+    },
+    {
+      "id": "R54",
+      "name": "Bounded GPU QLoRA v03-A",
+      "gpu_required": true,
+      "requires_explicit_paid_gpu_owner_authorization": true,
+      "dependencies": [
+        "R53"
+      ],
+      "suggested_gpu": "single A100 80GB",
+      "suggested_timeout_minutes": 120,
+      "executable_now": false,
+      "exit_gate": "Exactly authorized single run, pinned model and inputs, optimizer state, finite train/val loss, checkpoint hash, reload/inference PASS, no automatic rerun."
+    },
+    {
+      "id": "R55",
+      "name": "Development-only regression and candidate freeze",
+      "gpu_required": "possibly inference, separate owner approval",
+      "dependencies": [
+        "R54"
+      ],
+      "exit_gate": "Previously exposed R47/R48 and distinct development prompts only; known failures documented; exact v03 model SHA and final generation contract fixed before new sealed Test access."
+    },
+    {
+      "id": "R56",
+      "name": "One-time sealed independent blinded evaluation",
+      "gpu_required": "possibly inference, separate owner approval",
+      "dependencies": [
+        "R50",
+        "R55"
+      ],
+      "comparators": [
+        "Base",
+        "v0.1",
+        "v0.2",
+        "v0.3-A"
+      ],
+      "expected_reviewers": 3,
+      "exit_gate": "No test target leakage, all prompts and 3 or 4 outputs identical aligned across arms; randomized four-way best-of plus independent randomized v03-v02 pairwise; ratings and hashes frozen before secret unblind; cluster-by-world uncertainty; preregistered hard errors."
+    },
+    {
+      "id": "R57",
+      "name": "Promotion-or-hold and archive",
+      "gpu_required": false,
+      "dependencies": [
+        "R56"
+      ],
+      "exit_gate": "Scoped release review only if training admission, quality and hard gates pass with owner approval; else INCONCLUSIVE/FAIL and new future test required after model iteration."
+    }
+  ],
+  "proposed_training": {
+    "model": "Qwen/Qwen3.8-27B",
+    "pinned_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "runtime": {
+      "ms_swift": "4.5.3",
+      "transformers": "5.16.1",
+      "bitsandbytes": "0.50.2"
+    },
+    "qlora": {
+      "rank": 64,
+      "alpha": 128,
+      "dropout": 0.05,
+      "quant": "bnb NF4 4-bit BF16",
+      "targets": "all-linear"
+    },
+    "recipe": {
+      "max_length": 16384,
+      "loss_scale": "last_round",
+      "disable_ignore_empty_think": true,
+      "add_non_thinking_prefix": false,
+      "batch_size": 1,
+      "gradient_accumulation": 8,
+      "learning_rate": 0.00005,
+      "epochs": 1
+    },
+    "initial_variable_to_change": "increase and audit data only; keep R46 recipe fixed",
+    "no_retraining_without_owner_authorization": true
+  },
+  "proposed_promotion_gates_pending_owner_acceptance": {
+    "new_heldout_min_cases": 40,
+    "new_heldout_min_world_components": 4,
+    "direct_v03_vs_v02_blinded_pairwise_required": true,
+    "never_infer_pairwise_from_four_way": true,
+    "candidate_pairwise_non_tie_win_fraction_strictly_over": 0.5,
+    "world_clustered_95pct_CI_must_support_advantage": true,
+    "overall_six_dim_mean_must_exceed_v02": true,
+    "literature_and_interactive_progression_must_not_degrade_vs_v02": true,
+    "case_level_adjudicated_serious_player_agency_max_fraction": 0.05,
+    "serious_player_agency_must_not_be_worse_than_v02": true,
+    "confirmed_verbatim_forbidden_line_max_count": 0,
+    "failure_actions": [
+      "FAIL_NO_PROMOTION",
+      "INCONCLUSIVE_NO_PROMOTION"
+    ],
+    "owner_approval_required_for_gate_adoption": true
+  },
+  "prohibited": [
+    "Use exposed R47/R48 as a new independent final heldout",
+    "Tune model using sealed R50 test texts, generations or grades",
+    "Mix or rewrite original 195 Gold and R45 18 HOLD without tracked evidence",
+    "Commit secret identity mapping, HF credentials, large checkpoint or new raw narrative files to ordinary Git",
+    "Auto-submit paid HF GPU Job without new explicit owner approval",
+    "Claim engineering SFT PASS equals model promotion",
+    "Treat three reviewer votes on one sample as independent tests"
+  ],
+  "next_action": "Implement R49-R50 input schema, intake validator, alias-world graph, independent test sealing, and perform Gold195 audit in parallel without GPU."
+}
