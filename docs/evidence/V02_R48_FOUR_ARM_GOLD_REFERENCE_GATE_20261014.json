@@ -1,0 +1,53 @@
+{
+  "schema": "storyforge-v02-r48-original-gold-four-arm-v1",
+  "date": "2026-10-14",
+  "status": "R48_FOUR_ARM_20_80_REFERENCE_BLIND_READY_NO_GPU_NOT_PROMOTED",
+  "owner_request": "Add the original source Assistant replies as fourth reference to R47 Base/v01/v02 comparisons",
+  "source_test": "data/compiled/v0.3/test.jsonl",
+  "canonical_test_sha256": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+  "original_prompt_manifest": "evaluations/v0.1/test/manifest.json",
+  "canonical_prompt_reply_alignment_count": 20,
+  "models_or_references": [
+    "gold_original_author",
+    "base",
+    "v01",
+    "v02"
+  ],
+  "r47_reused_result_run_key": "r47-20261014T091647Z-637890",
+  "comparison_cases": 20,
+  "total_frozen_answers_to_compare": 80,
+  "gpu_inference_needed": false,
+  "new_training_needed": false,
+  "newly_scored_four_way_reviews": 0,
+  "expected_independent_four_way_reviewers": 3,
+  "expected_rating_cells": 1440,
+  "new_randomized_four_way_key": "coordinator-only local, not in Git",
+  "historical_gold_pairwise_majorities": {
+    "gold_over_base": "14/20 historical different review",
+    "gold_over_v01": "16/20 historical different review"
+  },
+  "previous_three_arm_v02_majority": "11/20 (NOT comparable as a 4-arm score)",
+  "engineering_validation": {
+    "status": "PASS",
+    "code_location": [
+      "scripts/v02_r48_four_arm_build.py",
+      "scripts/v02_r48_prepare_git.sh",
+      "scripts/v02_r48_review_aggregate.py",
+      "tests/test_v02_r48_four_arm.py"
+    ],
+    "dedicated_ci_run": "https://github.com/sunxu/storyforge/actions/runs/38570049455",
+    "dedicated_ci_conclusion": "success",
+    "total_real_source_items": 20,
+    "four_arm_package_test": "synthetic CPU test PASS",
+    "strict_test_source_sha_pin": true,
+    "no_zip": true,
+    "no_lfs": true
+  },
+  "release_limitations": [
+    "same exposed 20 v0.1 Test prompts; not new independent heldout",
+    "Gold original is editorial/reference material, not guaranteed error-free and not a fourth model",
+    "all four newly randomized blind answers must be independently reviewed before a four-way winner can be declared",
+    "R47 scored preference cannot be reused as four-way scores"
+  ],
+  "promotion_approved": false
+}
