@@ -1,0 +1,27 @@
+{
+  "schema": "storyforge-r48-archive-manifest-v1",
+  "date": "2026-10-14",
+  "source_run": "R48",
+  "source_diagnostic_sha256": "e1593437c51a7b880a6e7495031ad8c06cbaa84f510e7be74326e1bc336575e8",
+  "source_aggregate_json_sha256": "4f11fc51b5656c164dc2407d79b1b46ce6e233abd5207196335352d18a39ec2f",
+  "source_aggregate_markdown_sha256": "07196257f3eec91a20f70f5b03c58307fcfc7405962b26aba20a9ae6d8e49783",
+  "scored_csv_commit": "c4688f709352642cedec4e273c6c4be75279e786",
+  "cases": 20,
+  "reviewers": 3,
+  "ratings": 1440,
+  "majority_wins": {
+    "gold": 8,
+    "v02": 7,
+    "v01": 3,
+    "base": 2
+  },
+  "votes": {
+    "gold": 23,
+    "v02": 21,
+    "base": 8,
+    "v01": 8
+  },
+  "status": "RETROSPECTIVE_ONLY_NO_MODEL_PROMOTION",
+  "answer_key_excluded": true,
+  "new_gpu_work": false
+}
