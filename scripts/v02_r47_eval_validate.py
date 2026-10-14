@@ -36,13 +36,41 @@ def validate_prompts(prompts,manifest):
         seen.add(sid)
     return rows,entries
 def validate_responses(path,prompts):
+    """Check exact input role/content despite ms-swift output-only metadata.
+
+    ms-swift may attach 'loss': null to each input message and append a
+    generated Assistant to the returned messages. Those are output formatting,
+    not source-input modifications. Never accept a changed prompt or missing
+    original prompt history.
+    """
     rows=read(path)
-    if len(rows)!=len(prompts):raise ValueError("missing results")
+    if len(rows)!=len(prompts):
+        raise ValueError(f"{path}: expected {len(prompts)} outputs, got {len(rows)}")
     answer=[]
     for i,(row,p) in enumerate(zip(rows,prompts,strict=True)):
-        if row.get("messages")!=p["messages"]:raise ValueError(f"prompt/context mismatch at {i}")
+        orig=p["messages"]
+        observed=row.get("messages")
+        if not isinstance(observed,list):
+            raise ValueError(f"{path}: missing messages for alignment at {i}")
+        if len(observed) not in (len(orig),len(orig)+1):
+            raise ValueError(f"{path}: unexpected message count at {i}: {len(observed)}")
+        for j,expected in enumerate(orig):
+            msg=observed[j]
+            if (not isinstance(msg,dict) or msg.get("role")!=expected["role"]
+                    or msg.get("content")!=expected["content"]):
+                raise ValueError(f"{path}: prompt role/content mismatch at {i}:{j}")
+            # Only null/false extra loss metadata is tolerated; loss=true
+            # would indicate an invalid supervision field in inference output.
+            if "loss" in msg and msg["loss"] not in (None,False):
+                raise ValueError(f"{path}: unexpected supervised prompt at {i}:{j}")
         response=row.get("response")
-        if not isinstance(response,str) or not response.strip():raise ValueError(f"blank response {i}")
+        if not isinstance(response,str) or not response.strip():
+            raise ValueError(f"{path}: missing/nontext model response at {i}")
+        if len(observed)==len(orig)+1:
+            last=observed[-1]
+            if (not isinstance(last,dict) or last.get("role")!="assistant"
+                    or last.get("content")!=response):
+                raise ValueError(f"{path}: appended Assistant differs from response at {i}")
         answer.append(response)
     return answer
 def write_blind(prompts,manifest,results,out):
