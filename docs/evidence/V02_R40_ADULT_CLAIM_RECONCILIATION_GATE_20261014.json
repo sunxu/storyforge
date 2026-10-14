@@ -24,8 +24,8 @@
     ],
     "shared_story_uuids": 0,
     "shared_exact_16char_normalized_dialogue_shingles": 0,
-    "train_sha256": "",
-    "validation_sha256": "",
+    "train_sha256": "e46a7fb8a909f55f07f56609c5ddd763caa77a5c8dd981281d62d2eaaeeff71a",
+    "validation_sha256": "e1d5f2c8f6cbb2597bf821942367f82321524f1e4b0a0a351a774d09b76105bd",
     "source": "private_exact_copy_preview",
     "final_split_approved": false
   },
