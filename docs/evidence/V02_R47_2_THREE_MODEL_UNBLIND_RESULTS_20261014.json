@@ -1,0 +1,126 @@
+{
+  "schema": "storyforge-v02-r47-three-arm-retrospective-unblind-v1",
+  "date": "2026-10-14",
+  "status": "R47_RETROSPECTIVE_REVIEW_ONLY_NOT_PROMOTED",
+  "evaluation_scope": "previously exposed v0.1 20 prompts, three anonymous independent ratings, NOT fresh heldout",
+  "source": {
+    "uploaded_diagnostic_filename": "R47_PRIVATE_UNBLIND_DIAGNOSTIC.json",
+    "uploaded_diagnostic_sha256": "086861daa047cf2426344d1b9da47574e7363592968579bc7eb724d19896710c",
+    "source_report_method": "review_aggregate.py unblind output uploaded by owner; private key not uploaded",
+    "three_completed_csvs_commit": "04fbf45e73ec824c25d2692c8e6a6ebf4ca14a7d",
+    "freeze_ci_run_url": "https://github.com/sunxu/storyforge/actions/runs/38565580015",
+    "freeze_ci_pass": true,
+    "pristine_original_blank_review_templates_checked_in_current_turn": false,
+    "private_key_independently_rechecked_in_current_turn": false,
+    "per_sample_relabel_counts_consistent_with_blind_review_preferences": true,
+    "text_reviews_reviewed_anonymously_before_unblind": true
+  },
+  "models": {
+    "base": {
+      "majority_cases": 5,
+      "individual_votes": 16,
+      "dimensions": {
+        "剧情连续性": 3.1,
+        "角色一致性": 3.267,
+        "指令遵循": 2.65,
+        "文学表现力": 3.467,
+        "互动推进": 3.183,
+        "玩家自主权": 2.35
+      },
+      "overall_mean_of_six_means": 3.003
+    },
+    "v01": {
+      "majority_cases": 4,
+      "individual_votes": 13,
+      "dimensions": {
+        "剧情连续性": 3.1,
+        "角色一致性": 3.217,
+        "指令遵循": 2.733,
+        "文学表现力": 2.9,
+        "互动推进": 3.217,
+        "玩家自主权": 2.283
+      },
+      "overall_mean_of_six_means": 2.908
+    },
+    "v02": {
+      "majority_cases": 11,
+      "individual_votes": 31,
+      "dimensions": {
+        "剧情连续性": 3.417,
+        "角色一致性": 3.483,
+        "指令遵循": 3,
+        "文学表现力": 3.4,
+        "互动推进": 3.45,
+        "玩家自主权": 2.7
+      },
+      "overall_mean_of_six_means": 3.242
+    }
+  },
+  "reviewers": 3,
+  "cases": 20,
+  "scores_expected": 1080,
+  "individual_votes_total": 60,
+  "majorities_total": 20,
+  "unanimous_cases": 16,
+  "two_to_one_cases": 4,
+  "all_different_cases": 0,
+  "nonunanimous_sample_ids": [
+    "eval-010-95fc6ec25be5",
+    "eval-012-bf902fa5b002",
+    "eval-014-7add48022d9a",
+    "eval-019-22cc0fa9229a"
+  ],
+  "relative_scores": {
+    "v02_vs_base_overall_mean_delta": 0.239,
+    "v02_vs_v01_overall_mean_delta": 0.333
+  },
+  "sample_errors": [
+    {
+      "sample_id": "eval-014-7add48022d9a",
+      "model": "v02",
+      "anonymous_letter": "B",
+      "type": "explicit_banned_phrase",
+      "evidence_excerpt": "你只能是我的。",
+      "grounding": "source world/system contains banned phrase; anonymous B is remaining model after C=v0.1 majority and A=Base minority",
+      "requires_targeted_regression": true
+    },
+    {
+      "sample_id": "eval-019-22cc0fa9229a",
+      "model": "v02",
+      "anonymous_letter": "B",
+      "type": "player_action_and_identity_confusion",
+      "evidence_excerpt": "你端起那盅血燕粥",
+      "grounding": "user only described feeling abandoned, not deciding to eat; majority A=Base, minority C=v0.1, so B=v0.2",
+      "requires_targeted_regression": true
+    },
+    {
+      "sample_id": "eval-016-193774e13ceb",
+      "model": "base",
+      "anonymous_letter": "B",
+      "type": "relative_best_still_severe_player_agency",
+      "evidence_excerpt": "你再次张口，就着他的手将粥咽下",
+      "grounding": "all three chose anonymous B=Base; one reviewer marks severe player agency on B",
+      "requires_qualitative_review": true
+    },
+    {
+      "sample_id": "eval-019-22cc0fa9229a",
+      "model": "v01",
+      "anonymous_letter": "C",
+      "type": "relative_best_still_severe_player_agency",
+      "evidence_excerpt": "你走过去，伸手去够那盏烛台",
+      "grounding": "Reviewer 1 chooses and severe-flags C=v0.1 while other 2 prefer A=Base",
+      "requires_qualitative_review": true
+    }
+  ],
+  "v02_assessment": "retrospective preference lead; engineering results support proceeding to independent evaluation, not promoting",
+  "limitations": [
+    "20 old prompts from 2 previously exposed story worlds; reused in prior R01 analyses",
+    "v0.2 trained with generic no-card System whereas historical prompts contain detailed character cards",
+    "reviewer independence cannot be proven merely from CSV; ratings are not 60 independent test cases",
+    "private key was not uploaded; mapping consistency checked only from report and anonymous majority identity where inferable",
+    "no new sealed 40-60 independent heldout received"
+  ],
+  "formal_data_admission_approved": false,
+  "model_promotion_approved": false,
+  "next_gate": "new sealed independently authored heldout 40-60 across at least 4 unused story/world components, preregistered triple-arm evaluation; targeted hard-constraint/player-agency analysis"
+}
