@@ -1,0 +1,131 @@
+{
+  "schema": "storyforge-r47-preunblind-3-review-audit-v1",
+  "date": "2026-10-14",
+  "status": "THREE_COMPLETED_CSV_GIT_FROZEN_SHA256_CI_PASS_PRISTINE_ORIGINAL_COMPARE_PENDING",
+  "frozen_scored_review_git_commit": "04fbf45e73ec824c25d2692c8e6a6ebf4ca14a7d",
+  "dedicated_ci_run": "https://github.com/sunxu/storyforge/actions/runs/38565580015",
+  "dedicated_ci_conclusion": "success",
+  "files": [
+    {
+      "path": "evaluations/v0.2/r47/reviews/round1/R47_Reviewer_01_completed.csv",
+      "git_blob_sha1": "9f7adee4bb084513dd98a39c5cf91215aa7a32ed",
+      "sha256": "ed1151970ad272efe76962bbec4662e18d903f3567bbf762a6b82c860c657ef5"
+    },
+    {
+      "path": "evaluations/v0.2/r47/reviews/round1/R47_Reviewer_02_completed.csv",
+      "git_blob_sha1": "1af161b578966d835a3fede409e2146814252303",
+      "sha256": "67d9a9b81e68defd9ad5f71075d3c4c2f80d85b98a99941a2c7922ba23d34783"
+    },
+    {
+      "path": "evaluations/v0.2/r47/reviews/round1/R47_Reviewer_03_completed.csv",
+      "git_blob_sha1": "6d70353e035f3d335276c1535c8801b848a942c1",
+      "sha256": "69e067d6f05d4429eb6c5fe8f7dc278d57098b0744552637e9916b2d4423ef17"
+    }
+  ],
+  "checks": {
+    "rows_per_review": 20,
+    "score_dimensions": 6,
+    "anonymous_models_per_case": 3,
+    "reviewers": 3,
+    "rating_cells_total": 1080,
+    "all_ratings_integer_range_1_5": true,
+    "all_preferences_present": true,
+    "all_reasons_present": true,
+    "all_severity_notes_present": true,
+    "all_history_and_response_columns_identical_across_reviewers": true,
+    "all_sample_ids_match_v01_test_manifest": true,
+    "all_cases_have_at_least_one_identifiable_verbatim_quote": true,
+    "private_answer_key_read": false,
+    "compared_against_original_unscored_private_csv": false
+  },
+  "preference_by_reviewer": [
+    {
+      "reviewer": 1,
+      "A": 9,
+      "B": 6,
+      "C": 5
+    },
+    {
+      "reviewer": 2,
+      "A": 12,
+      "B": 6,
+      "C": 2
+    },
+    {
+      "reviewer": 3,
+      "A": 12,
+      "B": 5,
+      "C": 3
+    }
+  ],
+  "pooled_anonymous_votes": {
+    "A": 33,
+    "B": 17,
+    "C": 10,
+    "TIE": 0
+  },
+  "sample_majority_anonymous": {
+    "A": 11,
+    "B": 6,
+    "C": 3
+  },
+  "unanimous_cases": 16,
+  "two_to_one_cases": 4,
+  "all_different_cases": 0,
+  "pairwise_preference_agreement_proportions": [
+    0.85,
+    0.85,
+    0.9
+  ],
+  "mean_ratings_by_anonymous_letter": {
+    "A": 3.3333,
+    "B": 2.9361,
+    "C": 2.8833
+  },
+  "mean_ratings_by_dimension": {
+    "A": {
+      "剧情连续性": 3.5,
+      "角色一致性": 3.4833,
+      "指令遵循": 3.2667,
+      "文学表现力": 3.3833,
+      "互动推进": 3.5667,
+      "玩家自主权": 2.8
+    },
+    "B": {
+      "剧情连续性": 3.3167,
+      "角色一致性": 3.3333,
+      "指令遵循": 2.6167,
+      "文学表现力": 3.0167,
+      "互动推进": 2.95,
+      "玩家自主权": 2.3833
+    },
+    "C": {
+      "剧情连续性": 2.8,
+      "角色一致性": 3.15,
+      "指令遵循": 2.5,
+      "文学表现力": 3.3667,
+      "互动推进": 3.3333,
+      "玩家自主权": 2.15
+    }
+  },
+  "severe_player_agency_markers": {
+    "A": 1,
+    "B": 6,
+    "C": 19,
+    "无": 34
+  },
+  "preferred_and_severe_flagged": [
+    {
+      "sample_id": "eval-016-193774e13ceb",
+      "reviewer": 3
+    },
+    {
+      "sample_id": "eval-019-22cc0fa9229a",
+      "reviewer": 1
+    }
+  ],
+  "unblind_approved": false,
+  "reason": "original blank CSV comparison against private collector artifacts still pending; freeze scores before coordinator-only unblind",
+  "trained_model_quality_promotion": false,
+  "fresh_independent_heldout": false
+}
