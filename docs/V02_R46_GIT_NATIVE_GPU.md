@@ -2,6 +2,20 @@
 
 **Branch to pull:** `main`. **No ZIP, no new Git LFS objects and no raw story Gold in Git.**
 
+## R46 GPU outcome — completed 2026-10-14
+
+**DO NOT re-submit this R46 one-epoch GPU Job solely to prove engineering success.** The exact stage has already completed:
+
+- HF Job: `6acf29e4c66288145223871b` (owner reported completed); R46_RUN_KEY: `r46-20261014T070529Z-248172`.
+- Uploaded full run report hash: `4ad35faedc97724f588914f59d3a00293e681e2245d2d74c27d528e3179a8e83`.
+- Status: `EXPLORATORY_GPU_SFT_PASS_NOT_PROMOTED`. 49 Train/15 Validation; 7 steps; last loss 1.9259772300720215; validation loss 1.7483125925064087; adapter reload `PASS`.
+- Reported adapter SHA256: `bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b`.
+- R45 raw and transformed/compiled 49/15 hashes were independently matched to the uploaded report (see below).
+- Full original report and checkpoint remain **private in HF Bucket**. No model-quality claims until newly authored and sealed independent Held-out testing.
+- Read [R46 engineering acceptance](evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.md) and [machine-readable evidence](evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json).
+
+The submission commands below are retained **for historical reproduction only**, not as a next step.
+
 ## Why this works
 
 The private HF Bucket already contains (a) R27's frozen 117-line experimental input and (b) the 72/72 PASS R43 CPU Collator JSON report. The R44 and R45 decisions are committed on branch `audit/r40-corrective-execution-20261014`. The launcher pulls *only those existing decision files* using `git fetch/git show`; it downloads the two existing small JSON/JSONL files temporarily from the **private** HF Bucket, reconstructs the R45 candidate JSONL locally, and checks exact SHA256s before provisioning a GPU. No archive download and no new LFS object is needed.
