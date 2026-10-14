@@ -1,0 +1,29 @@
+name: R48 Original Gold Four-Arm Offline Test
+on:
+  push:
+    paths:
+      - "scripts/v02_r48_*.py"
+      - "scripts/v02_r48_*.sh"
+      - "tests/test_v02_r48_four_arm.py"
+      - ".github/workflows/v02-r48-four-arm-offline.yml"
+  pull_request:
+    paths:
+      - "scripts/v02_r48_*.py"
+      - "scripts/v02_r48_*.sh"
+      - "tests/test_v02_r48_four_arm.py"
+      - ".github/workflows/v02-r48-four-arm-offline.yml"
+jobs:
+  no-gpu-four-arm:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify offline entrypoints
+        run: |
+          bash -n scripts/v02_r48_prepare_git.sh
+          python -m py_compile scripts/v02_r48_four_arm_build.py scripts/v02_r48_review_aggregate.py
+      - name: Test original compiled 20-case Gold source and four-arm privacy guards
+        run: |
+          python -m unittest discover -s tests -p test_v02_r48_four_arm.py -v
