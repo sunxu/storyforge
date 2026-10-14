@@ -1,0 +1,29 @@
+name: v0.2 R46 plain-Git launcher static safety
+on:
+  push:
+    paths:
+      - "scripts/v02_r46_*.py"
+      - "scripts/v02_r46_*.sh"
+      - "configs/v02_r46_experimental_qlora.yaml"
+      - ".github/workflows/v02-r46-git-no-train.yml"
+  workflow_dispatch:
+jobs:
+  no-training-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify scripts parse without invoking HF Jobs
+        run: |
+          python3 -m py_compile scripts/v02_r46_build_dataset.py scripts/v02_r46_manifest_from_evidence.py scripts/v02_r46_gpu_runner.py
+          bash -n scripts/v02_r46_submit_git.sh
+          bash -n scripts/v02_r46_gpu_worker.sh
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('scripts/v02_r46_submit_git.sh').read_text()
+          assert 'STORYFORGE_ALLOW_PAID_GPU' in p
+          assert 'STORYFORGE_R46_OWNER_EXPERIMENT_ONLY' in p
+          assert 'a100-large --timeout 110m' in p
+          assert 'git show FETCH_HEAD:' in p
+          assert 'hf buckets cp' in p
+          print('R46_GIT_NO_TRAIN_STATIC_SAFETY_PASS')
+          PY
