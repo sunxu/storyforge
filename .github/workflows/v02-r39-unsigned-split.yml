@@ -1,0 +1,90 @@
+name: R39 unsigned A/B split source replay (NO GPU)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R39_RELEASE_AND_SPLIT_GATE_20261014.json'
+      - '.github/workflows/v02-r39-unsigned-split.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-raw-source-and-split-hashes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Pull frozen original source and real HF report
+        run: git lfs pull
+      - name: Replay 82 original bytes and A/B proposals without admission
+        run: |
+          python - <<'PY'
+          import hashlib,json,zipfile,collections
+          from pathlib import Path
+          h=lambda b:hashlib.sha256(b).hexdigest()
+          j=json.loads(Path('docs/evidence/V02_R39_RELEASE_AND_SPLIT_GATE_20261014.json').read_text())
+          base=Path('evaluations/v0.2/training-readiness/20261013/private')
+          original=base/'R27_HF117_Fix_20261013.zip'
+          report=base/'R27_HF117_Actual_Collator_Report_20261013.json'
+          assert h(original.read_bytes())=='cfedf6935babd12c9fc214b46dc2078381b55de9487afe25212bf54e8706794f'
+          assert h(report.read_bytes())=='e23f166226142e28a04f42a3d481776b6ac84d9b30f92e30a55de838e5d2b213'
+          hf=json.loads(report.read_text())
+          assert hf['checked']==hf['passed']==117 and hf['source_sha256']==j['original_R27_117_sha256']
+          by_id={a['candidate_id']:a for a in hf['rows']}
+          assert len(by_id)==117
+          with zipfile.ZipFile(original) as z:
+              f=[x for x in z.namelist() if x.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              assert len(f)==1
+              blob=z.read(f[0])
+          assert h(blob)==j['original_R27_117_sha256']
+          isolated={'2e679438-e9f0-4cfd-979f-6663ae619120','d0155181-e6af-442e-932e-db440761ad3a'}
+          old={'bh-gold-t0578','bh-gold-t2404','virgin-death-gold-t01860'}
+          r36={'na-gold-t0195','s08-gold-t00183','s15-gold-r02-t01460','sf12-gold-t00751'}
+          r37={'s09-gold-r04-t02942','s10-gold-r04-t01415','s08-gold-t00521'}
+          source82=[]; seen=set(); x=collections.Counter()
+          for line in blob.splitlines(keepends=True):
+              if not line.strip(): continue
+              a=json.loads(line); cid=a['id']; sid=a['metadata']['source_story_id']
+              assert cid not in seen
+              seen.add(cid)
+              if sid in isolated:x['ip']+=1;continue
+              if cid in old:x['old']+=1;continue
+              if cid in r36:x['r36']+=1;continue
+              if cid in r37:x['r37']+=1;continue
+              assert a['metadata']['dataset_admission']=='NOT_APPROVED'
+              assert a['metadata']['approved_split'] is None
+              assert h(a['messages'][-1]['content'].encode())==a['metadata']['target_sha256']
+              assert a['messages'][-1]['loss'] is True and all(not m['loss'] for m in a['messages'][:-1])
+              assert by_id[cid]['story_id']==sid and by_id[cid]['status']=='ACTUAL_LAST_ROUND_INTERNAL_PASS'
+              source82.append((line,a))
+          assert len(seen)==117 and x=={'ip':25,'old':3,'r36':4,'r37':3}
+          assert len(source82)==j['r37_conditional_rows']==82
+          assert h(b''.join(line for line,_ in source82))==j['source_r37_82_sha256']
+          assert len({r['metadata']['source_story_id'] for _,r in source82})==9
+          for name,valid_uuid in {
+            'A':{'3056e2eb-28d6-4a08-9905-db448b69d316','5f31876b-6507-4171-b007-2da0d9fcee67','8b347732-956e-45aa-a4d0-ea281587c29e'},
+            'B':{'3056e2eb-28d6-4a08-9905-db448b69d316','866b67ec-127a-4172-9dad-891349739ce8','8b347732-956e-45aa-a4d0-ea281587c29e','dc06d6c4-317b-4a13-bda0-28e0f8fa8b76'},
+          }.items():
+              train=[line for line,a in source82 if a['metadata']['source_story_id'] not in valid_uuid]
+              validation=[line for line,a in source82 if a['metadata']['source_story_id'] in valid_uuid]
+              expected=j['unapproved_splits'][name]
+              assert len(train)==expected['train'] and len(validation)==expected['validation']
+              assert h(b''.join(train))==expected['train_sha256']
+              assert h(b''.join(validation))==expected['validation_sha256']
+              counts=collections.Counter(a['metadata']['source_story_id'] for _,a in source82 if a['metadata']['source_story_id'] in valid_uuid)
+              assert sorted(counts.values(),reverse=True)==expected['validation_story_sizes']
+          assert j['original_hf_evidence_inherited_rows']==82
+          assert j['content_age_reviewer_signed']==j['source_rights_story_groups_signed']==j['world_alias_components_signed']==0
+          assert j['approved_train']==j['approved_validation']==j['approved_test']==j['verified_new_sealed_heldout_worlds']==0
+          assert j['formal_training_admission']=='PENDING_NOT_APPROVED'
+          assert j['paid_gpu_training_authorized'] is False and j['paid_gpu_training_started'] is False
+          assert j['normalized_exact_16char_overlapping_story_pairs']==0
+          print('R39_REAL_GIT_LFS_82_A64_18_B66_16_HASH_PASS__ALL_APPROVALS_PENDING')
+          PY
