@@ -21,6 +21,10 @@ The original v0.1 Test embeds rich story/character cards in System text, whereas
 - Prompt hashes are recomputed per sample from the exact messages and compared to the original manifest; no prompt is rewritten.
 - Existing Git-native checkout, **no new ZIP and no Git LFS**. Only the same 20 old prompts and small scripts are copied to a unique prefix of `hf://buckets/adradar/storyforge-training`.
 
+## CPU integrity check — PASS
+
+GitHub Actions R47 no-GPU guard [run 38532874241](https://github.com/sunxu/storyforge/actions/runs/38532874241) completed **SUCCESS**, testing original 20 Test prompt/manifest SHA contracts, Python/Shell syntax and 4 negative/success tests. This does **not** mean any HF GPU inference has run.
+
 ## Same-condition inference
 
 HF Jobs `--namespace adradar --flavor a100-large`, image `pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime`, 360-minute hard timeout. This is a worst-case guardrail, not an expected duration or price guarantee; a full three-arm, 1536-token evaluation can take considerably longer than a single R46 128-token adapter reload test.
