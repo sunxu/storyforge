@@ -23,10 +23,13 @@ jobs:
       - name: Verify offline entrypoints
         run: |
           bash -n scripts/v02_r48_prepare_git.sh
-          python -m py_compile scripts/v02_r48_four_arm_build.py scripts/v02_r48_review_aggregate.py
+          python -m py_compile scripts/v02_r48_four_arm_build.py scripts/v02_r48_review_aggregate.py scripts/v02_r48_review_freeze.py
       - name: Hash canonical Test original 20 replies
         run: |
           sha256sum data/compiled/v0.3/test.jsonl
       - name: Test original compiled 20-case Gold source and four-arm privacy guards
         run: |
           python -m unittest discover -s tests -p test_v02_r48_four_arm.py -v
+      - name: Freeze actual R48 three completed CSVs against canonical Gold plus R47 without answer key
+        run: |
+          python scripts/v02_r48_review_freeze.py
