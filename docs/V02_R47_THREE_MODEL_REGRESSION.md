@@ -1,3 +1,18 @@
+## 2026-10-14 operational update — R47 inference completed; do not resubmit paid GPU
+
+**Owner-reported completed resume Job** `6acf48935ccb47ba0f79853d`, `R47_RUN_KEY=r47-20261014T091647Z-637890`. Last v0.2 inference output 20/20, 10,078 generated tokens, saved `v02-results.jsonl`. The earlier Base is salvaged under immutable SHA256 `becd890268edb1002c3f7195a1906f73045a86643fdac45eaf7090ee82d4dcfe`. See [R47.1 completed Job collection record](evidence/V02_R47_1_COMPLETED_JOB_COLLECTION_20261014.md).
+
+**Do not repeat either R47 full GPU submission or the R47.1 partial resume.** From your Git-updated Mac checkout, execute only the read-only collector:
+
+```bash
+git pull --ff-only origin main
+bash scripts/v02_r47_collect_git.sh
+```
+
+It stores three anonymous reviewer CSVs under `~/.local/share/storyforge/r47/r47-20261014T091647Z-637890/reviewers/`, separate from the private coordinator answer key. This collector will validate all 60 responses and the blind mapping; **the currently visible HF console output alone is not yet a complete acceptance report**.
+
+The original submit commands below are historical record only. Model quality promotion remains blocked pending new independent Held-out.
+
 # StoryForge v0.2 — R47 three-arm retrospective regression blind review
 
 **2026-10-14 · Operationally prepared / NO GPU evaluation Job launched by this documentation.**
