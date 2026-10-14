@@ -1,0 +1,39 @@
+{
+  "schema": "storyforge-v02-r40-no-minors-reconciliation-v1",
+  "date": "2026-10-14",
+  "source_r37_sha256": "f108c2b85ae096fd00e49e23e50d00b1cf0cf779682793ea6e3951e700b9e7c9",
+  "rights": "OWNER_ATTESTED_DOCUMENTS_NOT_REQUIRED",
+  "age_legality": "OWNER_ATTESTED_DOCUMENTS_NOT_REQUIRED",
+  "no_minor_characters_owner_assertion": "CONTRADICTED_BY_VISIBLE_CONTEXT",
+  "minor_character_scene_cases": [
+    "virgin-death-gold-t02840",
+    "virgin-death-gold-t03997"
+  ],
+  "narrow_target_content_boundary_pass": 2,
+  "full_sample_approved_for_training": 0,
+  "war_and_blood_legacy_17_year_old_story_in_current_79": false,
+  "conditional_candidates": 79,
+  "provisional_quality_quarantines": 3,
+  "balanced_a_preview": {
+    "train": 62,
+    "validation": 17,
+    "validation_story_sizes": [
+      8,
+      7,
+      2
+    ],
+    "shared_story_uuids": 0,
+    "shared_exact_16char_normalized_dialogue_shingles": 0,
+    "train_sha256": "",
+    "validation_sha256": "",
+    "source": "private_exact_copy_preview",
+    "final_split_approved": false
+  },
+  "v01_cross_exposure_cleared": false,
+  "world_alias_graph_cleared": false,
+  "independent_heldout_received": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "paid_gpu_authorized": false,
+  "gpu_started": false
+}
