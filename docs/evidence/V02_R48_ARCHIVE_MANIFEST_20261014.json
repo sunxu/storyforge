@@ -1,27 +1,72 @@
 {
-  "schema": "storyforge-r48-archive-manifest-v1",
+  "schema": "storyforge-r48-archive-manifest-v2",
   "date": "2026-10-14",
-  "source_run": "R48",
-  "source_diagnostic_sha256": "e1593437c51a7b880a6e7495031ad8c06cbaa84f510e7be74326e1bc336575e8",
-  "source_aggregate_json_sha256": "4f11fc51b5656c164dc2407d79b1b46ce6e233abd5207196335352d18a39ec2f",
-  "source_aggregate_markdown_sha256": "07196257f3eec91a20f70f5b03c58307fcfc7405962b26aba20a9ae6d8e49783",
-  "scored_csv_commit": "c4688f709352642cedec4e273c6c4be75279e786",
-  "cases": 20,
-  "reviewers": 3,
-  "ratings": 1440,
-  "majority_wins": {
-    "gold": 8,
-    "v02": 7,
-    "v01": 3,
-    "base": 2
+  "owner_request": "Archive necessary R48 four-arm blind-review deliverables to private GitHub without LFS",
+  "current_status": "R48_GOLD_FOUR_ARM_RETROSPECTIVE_UNBLIND_NOT_PROMOTED",
+  "source_diagnostic": {
+    "name": "R48_PRIVATE_UNBLIND_DIAGNOSTIC.json",
+    "sha256": "e1593437c51a7b880a6e7495031ad8c06cbaa84f510e7be74326e1bc336575e8",
+    "size_bytes": 13093,
+    "committed_to_git": false,
+    "reason": "private coordinator unblind report remains local; source identity by hash"
   },
-  "votes": {
-    "gold": 23,
-    "v02": 21,
-    "base": 8,
-    "v01": 8
+  "archive": {
+    "markdown": {
+      "path": "docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.md",
+      "sha256": "07196257f3eec91a20f70f5b03c58307fcfc7405962b26aba20a9ae6d8e49783",
+      "size_bytes": 5455
+    },
+    "json": {
+      "path": "docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.json",
+      "sha256": "4f11fc51b5656c164dc2407d79b1b46ce6e233abd5207196335352d18a39ec2f",
+      "size_bytes": 7186
+    },
+    "frozen_original_scored_csv_commit": "c4688f709352642cedec4e273c6c4be75279e786",
+    "scored_csv_files": [
+      "evaluations/v0.2/r48/reviews/round1/R48_Reviewer_01_completed.csv",
+      "evaluations/v0.2/r48/reviews/round1/R48_Reviewer_02_completed.csv",
+      "evaluations/v0.2/r48/reviews/round1/R48_Reviewer_03_completed.csv"
+    ],
+    "immutable_gold_source": "data/compiled/v0.3/test.jsonl",
+    "gold_source_sha256": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+    "prior_preunblind_freeze_path": "docs/evidence/V02_R48_PREUNBLIND_SCORING_FREEZE_20261014.json"
   },
-  "status": "RETROSPECTIVE_ONLY_NO_MODEL_PROMOTION",
-  "answer_key_excluded": true,
-  "new_gpu_work": false
+  "numeric_summary": {
+    "cases": 20,
+    "reviewers": 3,
+    "rating_cells": 1440,
+    "majority_wins": {
+      "gold": 8,
+      "v02": 7,
+      "v01": 3,
+      "base": 2
+    },
+    "individual_preference_votes": {
+      "gold": 23,
+      "v02": 21,
+      "v01": 8,
+      "base": 8
+    },
+    "means": {
+      "gold": 3.4611,
+      "v02": 3.375,
+      "base": 3.1639,
+      "v01": 2.9111
+    },
+    "severe_player_agency_markers": {
+      "gold": 22,
+      "v02": 6,
+      "base": 16,
+      "v01": 25
+    }
+  },
+  "safety_and_scientific_scope": {
+    "repository_private": true,
+    "private_answer_key_excluded": true,
+    "no_new_lfs": true,
+    "no_new_gpu": true,
+    "old_exposed_test": true,
+    "independent_heldout": false,
+    "model_quality_promotion": false
+  }
 }
