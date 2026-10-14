@@ -88,7 +88,8 @@ class R48Test(unittest.TestCase):
             root = Path(tmp)
             t, p, m, r, mf = self.fixture(root)
             out = root / "r48"
-            with patch("v02_r48_four_arm_build.BASE_SHA256", sha(mf["base"])):
+            with patch("v02_r48_four_arm_build.BASE_SHA256", sha(mf["base"])), \
+                 patch("v02_r48_four_arm_build.CANONICAL_TEST_SHA256", sha(t)):
                 report = build(compiled_test=t, prompts_file=p, manifest_file=m,
                                report_file=r, model_files=mf, output=out)
             self.assertEqual(report["reply_count"], 80)
@@ -104,7 +105,8 @@ class R48Test(unittest.TestCase):
             self.assertFalse(any("gold" in str(path.name).lower() for path in
                                  (out / "reviewers").glob("R48_Reviewer_*.csv")))
             with self.assertRaises(FileExistsError):
-                with patch("v02_r48_four_arm_build.BASE_SHA256", sha(mf["base"])):
+                with patch("v02_r48_four_arm_build.BASE_SHA256", sha(mf["base"])), \
+                     patch("v02_r48_four_arm_build.CANONICAL_TEST_SHA256", sha(t)):
                     build(compiled_test=t, prompts_file=p, manifest_file=m,
                           report_file=r, model_files=mf, output=out)
 
