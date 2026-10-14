@@ -1,0 +1,76 @@
+{
+  "schema": "storyforge-v02-r39-release-evidence-consolidation-v1",
+  "date": "2026-10-14",
+  "formal_training_admission": "PENDING_NOT_APPROVED",
+  "paid_gpu_training_started": false,
+  "paid_gpu_training_authorized": false,
+  "original_gold_frozen": 195,
+  "unchanged_r27_provisional_rows": 117,
+  "r37_conditional_rows": 82,
+  "source_r37_82_sha256": "f108c2b85ae096fd00e49e23e50d00b1cf0cf779682793ea6e3951e700b9e7c9",
+  "original_R27_117_sha256": "cdecc311f05e2c700f1038f3afca09c889ff681d4ef55dc18dc7426c9d14a92a",
+  "original_r27_hf_job": "6ace19935ccb47ba0f787af5",
+  "r38_real_hf_inheritance_github_run": 38428606867,
+  "original_hf_evidence_inherited_rows": 82,
+  "inherited_total_ms_swift_tokens": 155946,
+  "inherited_supervised_tokens": 21807,
+  "original_validation_split": {
+    "train": 65,
+    "validation": 17,
+    "validation_story_sizes": [
+      16,
+      1
+    ]
+  },
+  "unapproved_splits": {
+    "A": {
+      "train": 64,
+      "validation": 18,
+      "validation_story_sizes": [
+        8,
+        8,
+        2
+      ],
+      "train_sha256": "349b4d30c1e7248464a7f649f0584af5a0377d9b89f3207fcfb426d38b46239d",
+      "validation_sha256": "84d6eea775772af4dfcda56fdeab8a97c95aeea199c86cb5968b8f8d55b7c07c"
+    },
+    "B": {
+      "train": 66,
+      "validation": 16,
+      "validation_story_sizes": [
+        8,
+        5,
+        2,
+        1
+      ],
+      "train_sha256": "b10e9084bd5b63b06214bfb50fb4479f8c20167307cb1467602f6fb53d4129b2",
+      "validation_sha256": "4df484e90cf7aef5ce8b71a973af6c9f86128d3f7d1bc8cbbaeae9132e784969"
+    }
+  },
+  "analytic_preference": "A_ONLY_IF_SEPARATE_WORLD_AND_CONTENT_CERTIFIED",
+  "source_story_uuid_groups": 9,
+  "pairwise_source_story_comparisons": 36,
+  "normalized_exact_12char_overlapping_story_pairs": 4,
+  "normalized_exact_16char_overlapping_story_pairs": 0,
+  "normalized_exact_24char_overlapping_story_pairs": 0,
+  "lexical_overlap_neither_proves_nor_refutes_world_links": true,
+  "content_age_reviewer_signed": 0,
+  "source_rights_story_groups_signed": 0,
+  "world_alias_components_signed": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "approved_test": 0,
+  "verified_new_sealed_heldout_worlds": 0,
+  "final_hf_compiled_loader_audit_pass": false,
+  "user_approved_no_card_experiment_design": true,
+  "parent_r38_zip_sha256": "b4bbfcb5953d0d4337a25f57481ce55793731058966035be418bf8b046a61ddc",
+  "private_r39_package_sha256": "edee5d7ec0d2f795dd70ab760127afc3ec198ca53a9c93e964e67c859e4a4711",
+  "private_verifier": "R39_82_SOURCE_AND_A_B_SPLIT_BYTE_REPLAY_PASS__4_SHORT_LEXICAL_PAIRS__ALL_RELEASE_GATES_BLOCKED",
+  "tamper_test_exit_code": 2,
+  "no_gpu_launch": true,
+  "limitations": [
+    "82 records have inherited row-level real HF label evidence only; no final compiled batch/packing replay.",
+    "Four 12-character identical string overlaps are superficial textual evidence only.",
+    "All final human content/right/world-split signoffs and fresh sealed heldout remain absent."
+  ]
+}
