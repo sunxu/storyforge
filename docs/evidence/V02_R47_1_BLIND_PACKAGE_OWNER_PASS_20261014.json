@@ -1,0 +1,28 @@
+{
+  "schema": "storyforge-v02-r47-1-blind-package-acceptance-v1",
+  "date": "2026-10-14",
+  "evidence_level": "user_reported_local_collection_validator_terminal_marker",
+  "source_command": "bash scripts/v02_r47_collect_git.sh",
+  "result": "R47_THREE_ARM_20_60_BLIND_INTEGRITY_PASS_NO_PROMOTION",
+  "hf_job_id": "6acf48935ccb47ba0f79853d",
+  "hf_run_key": "r47-20261014T091647Z-637890",
+  "source_base_run_key": "r47-20261014T082109Z-820409",
+  "reused_base_sha256": "becd890268edb1002c3f7195a1906f73045a86643fdac45eaf7090ee82d4dcfe",
+  "num_test_prompts": 20,
+  "models": [
+    "Base",
+    "v0.1",
+    "R46 v0.2"
+  ],
+  "expected_total_responses": 60,
+  "expected_independent_reviewer_count": 3,
+  "new_independent_reviews_received": 0,
+  "existing_old_test_exposed": true,
+  "new_heldout": false,
+  "full_private_artifacts_independently_read_in_this_record": false,
+  "blind_model_identity_key_public": false,
+  "gpu_resubmit_needed": false,
+  "training_restart_needed": false,
+  "quality_promotion_approved": false,
+  "next_step": "3 independent blinded reviews, freeze completed sheets, coordinator-only unblind"
+}
