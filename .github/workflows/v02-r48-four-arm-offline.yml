@@ -6,12 +6,16 @@ on:
       - "scripts/v02_r48_*.sh"
       - "tests/test_v02_r48_four_arm.py"
       - ".github/workflows/v02-r48-four-arm-offline.yml"
+      - "docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.*"
+      - "docs/evidence/V02_R48_ARCHIVE_MANIFEST_20261014.json"
   pull_request:
     paths:
       - "scripts/v02_r48_*.py"
       - "scripts/v02_r48_*.sh"
       - "tests/test_v02_r48_four_arm.py"
       - ".github/workflows/v02-r48-four-arm-offline.yml"
+      - "docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.*"
+      - "docs/evidence/V02_R48_ARCHIVE_MANIFEST_20261014.json"
 jobs:
   no-gpu-four-arm:
     runs-on: ubuntu-latest
@@ -33,3 +37,23 @@ jobs:
       - name: Freeze actual R48 three completed CSVs against canonical Gold plus R47 without answer key
         run: |
           python scripts/v02_r48_review_freeze.py
+      - name: Verify archived R48 analysis artifacts are original bytes
+        run: |
+          printf '%s\n' \
+            '07196257f3eec91a20f70f5b03c58307fcfc7405962b26aba20a9ae6d8e49783  docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.md' \
+            '4f11fc51b5656c164dc2407d79b1b46ce6e233abd5207196335352d18a39ec2f  docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.json' \
+            | sha256sum -c -
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("docs/evidence")
+          summary = json.loads((root / "V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.json").read_text())
+          manifest = json.loads((root / "V02_R48_ARCHIVE_MANIFEST_20261014.json").read_text())
+          assert summary["cases"] == manifest["numeric_summary"]["cases"] == 20
+          assert summary["majority_wins"] == manifest["numeric_summary"]["majority_wins"]
+          assert summary["preference_votes"] == manifest["numeric_summary"]["individual_preference_votes"]
+          assert summary["private_answer_key_not_uploaded"] is True
+          assert summary["model_promotion"] is False
+          assert manifest["safety_and_scientific_scope"]["no_new_lfs"] is True
+          print("R48_ARCHIVE_ANALYSIS_SHA256_AND_SUMMARY_PASS_NO_PROMOTION")
+          PY
