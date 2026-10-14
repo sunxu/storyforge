@@ -1,0 +1,54 @@
+{
+  "schema": "storyforge-v02-r40-world-exposure-followthrough-v1",
+  "date": "2026-10-14",
+  "raw_14_sha256": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+  "v01_dataset_source": "data/compiled/v0.3/{train,validation,test}.jsonl",
+  "v01_samples": {
+    "train": 65,
+    "validation": 15,
+    "test": 20
+  },
+  "v01_story_uuids": {
+    "train": 15,
+    "validation": 2,
+    "test": 2,
+    "total": 19
+  },
+  "current_candidates": 79,
+  "current_worlds": 9,
+  "shared_v01_story_uuid_count": 0,
+  "v01_card_lead_names_in_current_non_system_dialogue": 0,
+  "original_story_card_exports_examined": 14,
+  "exported_character_exact_cross_story_collision_count": 0,
+  "confirmed_connected_source_story_numbers": [
+    [
+      4,
+      7
+    ]
+  ],
+  "confirmed_linked_world_evidence_id": "virgin-death-gold-t03176",
+  "story_07_in_current_candidates": 0,
+  "source_12_name_early_adverb_in_story_14_false_positives": 2,
+  "balanced_a_analysis": {
+    "train": 62,
+    "validation": 17,
+    "train_sha256": "e46a7fb8a909f55f07f56609c5ddd763caa77a5c8dd981281d62d2eaaeeff71a",
+    "validation_sha256": "e1d5f2c8f6cbb2597bf821942367f82321524f1e4b0a0a351a774d09b76105bd",
+    "known_component_cross_split_count": 0,
+    "approved": false
+  },
+  "local_content_reviews": {
+    "limited_scope_pass_not_final": 10,
+    "full_new_approvals": 0
+  },
+  "rights": "OWNER_ATTESTED_NO_DOCUMENTS_REQUIRED",
+  "age": "OWNER_ATTESTED_NO_DOCUMENTS_REQUIRED",
+  "global_alias_ontology_cleared": false,
+  "v01_full_connected_world_nonexposure_certified": false,
+  "independent_heldout_new_received": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "gpu_authorized": false,
+  "gpu_started": false,
+  "state": "SCOPED_WORLD_EVIDENCE_PASS__FINAL_RELEASE_BLOCKED"
+}
