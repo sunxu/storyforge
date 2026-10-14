@@ -104,11 +104,13 @@ class R48Test(unittest.TestCase):
                              {"response_a", "response_b", "response_c", "response_d"})
             self.assertFalse(any("gold" in str(path.name).lower() for path in
                                  (out / "reviewers").glob("R48_Reviewer_*.csv")))
-            with self.assertRaises(FileExistsError):
-                with patch("v02_r48_four_arm_build.BASE_SHA256", sha(mf["base"])), \
-                     patch("v02_r48_four_arm_build.CANONICAL_TEST_SHA256", sha(t)):
-                    build(compiled_test=t, prompts_file=p, manifest_file=m,
-                          report_file=r, model_files=mf, output=out)
+            with (
+                self.assertRaises(FileExistsError),
+                patch("v02_r48_four_arm_build.BASE_SHA256", sha(mf["base"])),
+                patch("v02_r48_four_arm_build.CANONICAL_TEST_SHA256", sha(t)),
+            ):
+                build(compiled_test=t, prompts_file=p, manifest_file=m,
+                      report_file=r, model_files=mf, output=out)
 
             submitted = []
             for i in (1, 2, 3):
@@ -153,7 +155,7 @@ class R48Test(unittest.TestCase):
 
     def test_source_mismatch_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
-            t, p, m, r, mf = self.fixture(Path(tmp))
+            t, p, m, _, _ = self.fixture(Path(tmp))
             data = json.loads(t.read_text().splitlines()[0])
             data["messages"][-2]["content"] += " changed"
             rows = [json.loads(line) for line in t.read_text().splitlines()]
