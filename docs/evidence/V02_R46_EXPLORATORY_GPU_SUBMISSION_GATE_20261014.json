@@ -41,5 +41,5 @@
   "local_zip_and_data_verification": "PASS",
   "mock_hf_submission_test": "PASS",
   "real_gpu_run_status": "NOT_LAUNCHED",
-  "private_launcher_zip_sha256": "72916adf75f9683fb568d037126aae12c8ca39c793894cf9b40f2ec30c88a72d"
+  "private_launcher_zip_sha256": "8d45fd85f57f061761e18f938a733319ddd2f57c1ebc5754ca53a7e0fa688714"
 }
