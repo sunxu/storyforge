@@ -1,3 +1,24 @@
+## Current R48 progress — 2026-10-14
+
+**Four-arm Gold/Base/v0.1/v0.2 preparation was completed by the owner.** Three scored CSVs were committed and the original replies, 1,440 score cells, sample IDs and 4-way answer texts passed the [GitHub R48 freeze CI](https://github.com/sunxu/storyforge/actions/runs/38576709308). See [pre-unblind scoring freeze](evidence/V02_R48_PREUNBLIND_SCORING_FREEZE_20261014.md). **Do not rerun `v02_r48_prepare_git.sh`, re-rate this round, or launch a GPU to complete this audit.**
+
+Before private unblind, run these safe local commands:
+
+```bash
+cd ~/workspace/storyforge
+git switch main
+git pull --ff-only origin main
+bash scripts/v02_r48_unblind_git.sh check
+```
+
+Once PASS, the coordinator alone may open the existing local key with:
+
+```bash
+STORYFORGE_R48_OWNER_UNBLIND=YES bash scripts/v02_r48_unblind_git.sh unblind
+```
+
+The resulting private JSON must be interpreted as retrospective old-test diagnosis, **not** a model-promotion decision.
+
 # StoryForge v0.2 — R48 original Gold reference in four-response comparison
 
 **Date:** 2026-10-14. **Stage:** offline four-arm blind package **READY**, without new GPU training or inference. **No new R48 reviewer ratings collected**.
