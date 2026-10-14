@@ -1,0 +1,106 @@
+name: R39 HF inheritance and split sensitivity (NO GPU)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/evidence/V02_R39_DECISION_AND_SPLIT_GATE_20261014.json'
+      - '.github/workflows/v02-r39-split-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  replay-private-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download actual private source and HF evidence
+        run: git lfs pull
+      - name: Replay 82 candidate identities and four exact-row split proposals
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import hashlib,json,zipfile
+          H=lambda b:hashlib.sha256(b).hexdigest()
+          meta=json.loads(Path('docs/evidence/V02_R39_DECISION_AND_SPLIT_GATE_20261014.json').read_text())
+          r37=json.loads(Path('docs/evidence/V02_R37_REVIEW_GATE_20261013.json').read_text())
+          base=Path('evaluations/v0.2/training-readiness/20261013/private')
+          src=base/'R27_HF117_Fix_20261013.zip'
+          report_file=base/'R27_HF117_Actual_Collator_Report_20261013.json'
+          assert H(src.read_bytes())=='cfedf6935babd12c9fc214b46dc2078381b55de9487afe25212bf54e8706794f'
+          assert H(report_file.read_bytes())=='e23f166226142e28a04f42a3d481776b6ac84d9b30f92e30a55de838e5d2b213'
+          rep=json.loads(report_file.read_text())
+          assert rep['status']=='REMOTE_FINAL_INPUT_DIAGNOSTIC_ONLY'
+          assert rep['passed']==rep['checked']==117
+          indexed={x['candidate_id']:x for x in rep['rows']}
+          assert len(indexed)==117
+          with zipfile.ZipFile(src) as z:
+              names=[s for s in z.namelist() if s.endswith('/output/r27_private_candidate_117_NOT_APPROVED.jsonl')]
+              assert len(names)==1
+              frozen=z.read(names[0])
+          assert H(frozen)==meta['r27_frozen_input_sha256']
+          ip={'2e679438-e9f0-4cfd-979f-6663ae619120','d0155181-e6af-442e-932e-db440761ad3a'}
+          window={'bh-gold-t0578','bh-gold-t2404','virgin-death-gold-t01860'}
+          r36={'na-gold-t0195','s08-gold-t00183','s15-gold-r02-t01460','sf12-gold-t00751'}
+          r37hold=set(r37['three_new_window_hold_recommendations'])
+          source=[]; omitted=Counter();soft=proper=0;personworlds=set();seen=set()
+          for line in frozen.splitlines(keepends=True):
+              if not line.strip():continue
+              row=json.loads(line);cid=row['id'];sid=row['metadata']['source_story_id']
+              assert cid not in seen
+              seen.add(cid)
+              assert row['metadata']['dataset_admission']=='NOT_APPROVED'
+              assert row['metadata']['approved_split'] is None
+              assert H(row['messages'][-1]['content'].encode())==row['metadata']['target_sha256']
+              assert row['messages'][-1]['loss'] is True
+              assert all(m['loss'] is False for m in row['messages'][:-1])
+              if sid in ip:omitted['ip']+=1;continue
+              if cid in window:omitted['old_window']+=1;continue
+              if cid in r36:omitted['r36']+=1;continue
+              if cid in r37hold:omitted['r37']+=1;continue
+              actual=indexed[cid]
+              assert actual['story_id']==sid
+              assert actual['status']=='ACTUAL_LAST_ROUND_INTERNAL_PASS'
+              assert len(actual['label_digest'])==64
+              source.append((line,row,actual))
+              for msg in row['messages'][1:]:
+                  p=0;t=msg['content']
+                  while True:
+                      k=t.find('绵绵',p)
+                      if k<0:break
+                      if k>0 and t[k-1]=='软':soft+=1
+                      else:proper+=1;personworlds.add(sid)
+                      p=k+2
+          assert len(seen)==117 and omitted=={'ip':25,'old_window':3,'r36':4,'r37':3}
+          assert len(source)==82 and H(b''.join(x for x,_,_ in source))==meta['source_r37_sha256']
+          assert (soft,proper)==(10,16) and personworlds=={'efd7a773-9393-4055-a4c8-b83fbf1a5842'}
+          assert len(meta['validation_diversity_options'])==4
+          stats=[]
+          for o in meta['validation_diversity_options']:
+              val=set(o['validation_story_uuids'])
+              train=[(l,r,a) for l,r,a in source if r['metadata']['source_story_id'] not in val]
+              valid=[(l,r,a) for l,r,a in source if r['metadata']['source_story_id'] in val]
+              assert len(train)==o['train_rows'] and len(valid)==o['validation_rows']
+              assert H(b''.join(l for l,_,_ in train))==o['train_sha256']
+              assert H(b''.join(l for l,_,_ in valid))==o['validation_sha256']
+              dist=Counter(r['metadata']['source_story_id'] for _,r,_ in valid)
+              assert sorted(dist.values(),reverse=True)==o['validation_story_sizes']
+              assert o['final_split_approved'] is False
+              stats.append({'option':o['option'],'train':len(train),'validation':len(valid),
+                            'train_supervised_tokens':sum(a['supervised_tokens'] for _,_,a in train),
+                            'validation_supervised_tokens':sum(a['supervised_tokens'] for _,_,a in valid),
+                            'largest_world_share':o['largest_validation_world_fraction']})
+          assert sum(a['supervised_tokens'] for _,_,a in source)==21807
+          assert sum(a['ms_swift_token_count'] for _,_,a in source)==155946
+          assert meta['admission']=='PENDING_NOT_APPROVED'
+          assert meta['approved_train']==meta['approved_validation']==meta['approved_test']==meta['official_new_independent_sealed_heldout']==0
+          assert meta['final_per_sample_content_age_signoff']==meta['final_rights_signoff']==0
+          assert not meta['paid_gpu_authorized'] and not meta['paid_gpu_started'] and not meta['formal_ontology_world_isolation_approved']
+          print('R39_SOURCE_REAL_HF_FOUR_SPLITS_AND_WORD_COLLISION_PASS__TRAINING_BLOCKED')
+          print(json.dumps(stats,ensure_ascii=False,indent=2))
+          PY
