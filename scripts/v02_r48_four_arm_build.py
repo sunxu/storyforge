@@ -20,6 +20,7 @@ ARMS = ("gold", "base", "v01", "v02")
 DIMS = ("剧情连续性", "角色一致性", "指令遵循", "文学表现力", "互动推进", "玩家自主权")
 RUN_KEY = "r47-20261014T091647Z-637890"
 BASE_SHA256 = "becd890268edb1002c3f7195a1906f73045a86643fdac45eaf7090ee82d4dcfe"
+CANONICAL_TEST_SHA256 = "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d"
 R47_STATUS = "R47_THREE_MODEL_REGRESSION_GENERATION_PASS_NOT_PROMOTED"
 SOURCE_COLS = (
     "样本编号", "故事背景与系统规则", "历史对话", "当前用户输入",
@@ -115,6 +116,8 @@ def build(*, compiled_test: Path, prompts_file: Path, manifest_file: Path,
           report_file: Path, model_files: dict[str, Path], output: Path) -> dict:
     if output.exists():
         raise FileExistsError("R48 output already exists; never overwrite a blind pack")
+    if sha(compiled_test) != CANONICAL_TEST_SHA256:
+        raise ValueError("v0.1 canonical 20-case original Test file SHA256 mismatch")
     prompts, manifest_entries = validate_prompts(prompts_file, manifest_file)
     original = read_gold(compiled_test, prompts)
     model_results = check_r47(
