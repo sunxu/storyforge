@@ -1,0 +1,201 @@
+{
+  "schema": "storyforge-v02-new-chat-handoff-after-r48-v1",
+  "prepared_at": "2026-10-14",
+  "repository": {
+    "full_name": "sunxu/storyforge",
+    "visibility": "private",
+    "default_branch": "main",
+    "handoff_base_commit": "1ff4e509aacdafc0092c66a2eae96d7112fd0d73",
+    "audit_draft_pr": "https://github.com/sunxu/storyforge/pull/1"
+  },
+  "handoff_markdown": "docs/handoffs/StoryForge_v02_Handoff_After_R48_20261014.md",
+  "stage": "R48_OLD_TEST_FOUR_ARM_DONE__V02_ENGINEERING_PASS__NO_MODEL_PROMOTION__FRESH_HELDOUT_PENDING",
+  "guardrails": {
+    "gpu_training_relaunch": false,
+    "reuse_r47_or_r48_exposed_test_for_fresh_promotion": false,
+    "r45_training_formally_admitted": false,
+    "model_quality_promoted": false,
+    "fresh_independent_heldout_received": 0,
+    "fresh_heldout_target_cases": [
+      40,
+      60
+    ],
+    "fresh_heldout_min_new_worlds": 4,
+    "do_not_commit_private_answer_key": true,
+    "do_not_commit_model_weights": true,
+    "prefer_git_without_new_lfs": true,
+    "new_billable_gpu_requires_owner_approval": true
+  },
+  "curation": {
+    "gold_total": 195,
+    "gold_batch_01_05": 87,
+    "gold_batch_06_15": 108,
+    "r45_scoped_train": 49,
+    "r45_scoped_validation": 15,
+    "r45_quality_holds_from_82": 18,
+    "train_r45_sha256": "e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742",
+    "validation_r45_sha256": "5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963"
+  },
+  "r46_gpu": {
+    "job_id": "6acf29e4c66288145223871b",
+    "run_key": "r46-20261014T070529Z-248172",
+    "status": "EXPLORATORY_GPU_SFT_PASS_NOT_PROMOTED",
+    "base_model": "Qwen/Qwen3.8-27B",
+    "base_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "train_rows": 49,
+    "validation_rows": 15,
+    "optimizer_steps": 7,
+    "train_loss": 1.9259772300720215,
+    "validation_loss": 1.7483125925064087,
+    "elapsed_seconds": 1260.88,
+    "adapter_reload": "PASS",
+    "checkpoint_uri": "hf://buckets/adradar/storyforge-training/experiments/v02-r46/r46-20261014T070529Z-248172/output/v0-20261014-070817/checkpoint-7/",
+    "adapter_sha256_reported": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b",
+    "original_report_sha256": "4ad35faedc97724f588914f59d3a00293e681e2245d2d74c27d528e3179a8e83",
+    "training_done": true
+  },
+  "r47_old_test_three_arm": {
+    "old_test_cases": 20,
+    "stories": 2,
+    "unique_response_count": 60,
+    "reviewers": 3,
+    "original_failed_base_job": "6acf3b8fc66288145223b41e",
+    "salvaged_base_sha256": "becd890268edb1002c3f7195a1906f73045a86643fdac45eaf7090ee82d4dcfe",
+    "resume_job_id": "6acf48935ccb47ba0f79853d",
+    "resume_run_key": "r47-20261014T091647Z-637890",
+    "majority_wins": {
+      "v02": 11,
+      "base": 5,
+      "v01": 4
+    },
+    "individual_votes": {
+      "v02": 31,
+      "base": 16,
+      "v01": 13
+    },
+    "not_fresh_heldout": true,
+    "unblind_json_sha256": "086861daa047cf2426344d1b9da47574e7363592968579bc7eb724d19896710c",
+    "evidence_report": "docs/evidence/V02_R47_2_THREE_MODEL_UNBLIND_RESULTS_20261014.md"
+  },
+  "r48_old_test_gold_four_arm": {
+    "case_count": 20,
+    "reviewers": 3,
+    "ratings": 1440,
+    "source_gold_compiled_test_sha256": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+    "majority_wins": {
+      "gold": 8,
+      "v02": 7,
+      "v01": 3,
+      "base": 2
+    },
+    "individual_votes": {
+      "gold": 23,
+      "v02": 21,
+      "base": 8,
+      "v01": 8
+    },
+    "overall_means": {
+      "gold": 3.4611,
+      "v02": 3.375,
+      "base": 3.1639,
+      "v01": 2.9111
+    },
+    "six_dimensions": {
+      "gold": {
+        "剧情连续性": 3.75,
+        "角色一致性": 3.95,
+        "指令遵循": 2.4333,
+        "文学表现力": 4.0167,
+        "互动推进": 4.0833,
+        "玩家自主权": 2.5333
+      },
+      "base": {
+        "剧情连续性": 3.4,
+        "角色一致性": 3.4833,
+        "指令遵循": 2.4333,
+        "文学表现力": 3.6,
+        "互动推进": 3.3833,
+        "玩家自主权": 2.6833
+      },
+      "v01": {
+        "剧情连续性": 3.4667,
+        "角色一致性": 3.35,
+        "指令遵循": 2.25,
+        "文学表现力": 2.9167,
+        "互动推进": 3.1167,
+        "玩家自主权": 2.3667
+      },
+      "v02": {
+        "剧情连续性": 3.6167,
+        "角色一致性": 3.6667,
+        "指令遵循": 2.65,
+        "文学表现力": 3.5333,
+        "互动推进": 3.5833,
+        "玩家自主权": 3.2
+      }
+    },
+    "serious_agency_marker_opportunities_per_arm": 60,
+    "serious_agency_flags": {
+      "gold": 22,
+      "base": 16,
+      "v01": 25,
+      "v02": 6
+    },
+    "cases_with_at_least_one_serious_agency_flag": {
+      "gold": 11,
+      "base": 6,
+      "v01": 10,
+      "v02": 3
+    },
+    "source_review_commit": "c4688f709352642cedec4e273c6c4be75279e786",
+    "private_original_unblind_report_sha256": "e1593437c51a7b880a6e7495031ad8c06cbaa84f510e7be74326e1bc336575e8",
+    "analysis_md": {
+      "path": "docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.md",
+      "sha256": "07196257f3eec91a20f70f5b03c58307fcfc7405962b26aba20a9ae6d8e49783"
+    },
+    "analysis_json": {
+      "path": "docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.json",
+      "sha256": "4f11fc51b5656c164dc2407d79b1b46ce6e233abd5207196335352d18a39ec2f"
+    },
+    "archive_manifest": "docs/evidence/V02_R48_ARCHIVE_MANIFEST_20261014.json",
+    "dedicated_ci_run": "https://github.com/sunxu/storyforge/actions/runs/38580602545",
+    "dedicated_ci_result": "success",
+    "default_ci_run": "https://github.com/sunxu/storyforge/actions/runs/38580602539",
+    "default_ci_result": "failure",
+    "default_ci_failure_step": "Ruff",
+    "reported_ruff_issue_count": 35,
+    "blind_reviewer_authorship_independence_proven": false,
+    "not_fresh_heldout": true,
+    "quality_promotion_approved": false
+  },
+  "release_blockers": [
+    "New independently authored sealed Held-out 40-60 from at least 4 previously unused story/world components has not been supplied",
+    "Pre-register prompt contract, story/world separation, evaluation rubric, and hard player-agency/forbidden-dialogue thresholds",
+    "R46 no-role-card System train contract differs from v0.1 role-card Test prompts",
+    "Old R47/R48 remain retrospective regression only; do not reuse for final promotion",
+    "Generic repository CI Ruff failures still outstanding (do not imply specialized CI PASS means all CI PASS)"
+  ],
+  "next_steps": [
+    {
+      "priority": 0,
+      "task": "Create independent Held-out intake schema, world-isolation/hash sealing gates, and no-Gold-target evaluator inputs; await user's new 40-60 samples"
+    },
+    {
+      "priority": 1,
+      "task": "Pre-register same-condition Base-v0.1-v0.2 evaluation settings, blind review, critical player-autonomy/hard-ban gates"
+    },
+    {
+      "priority": 2,
+      "task": "Run newly authorized inference on sealed fresh Held-out only when data ready; no auto GPU submission"
+    },
+    {
+      "priority": 3,
+      "task": "Return independent 3-reviewer scores and release/no-release decision; preserve R46 checkpoint"
+    },
+    {
+      "priority": 4,
+      "task": "Triage 35 Ruff errors in default CI with small-scope source fixes without rewriting historic evidence"
+    }
+  ],
+  "resume_instruction": "Read docs/handoffs/StoryForge_v02_Handoff_After_R48_20261014.md and this JSON first. Preserve all R45–R48 frozen evidence; do not rerun paid GPU or historical tests. Prioritize new independent heldout, predeclared guardrails, and model quality promotion review."
+}
