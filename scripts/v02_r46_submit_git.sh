@@ -41,6 +41,13 @@ hf buckets ls "$BUCKET/preflight/v02-r27/private/" > "$TMP/inputs_listing.txt"
 grep -q 'r27_private_candidate_117_NOT_APPROVED.jsonl' "$TMP/inputs_listing.txt" || {
   echo R46_PRIVATE_R27_SOURCE_NOT_FOUND >&2; exit 2;
 }
+# Download only the existing 1MB private R27 JSONL (not an archive) into a temporary directory.
+# Reconstruct and hash-verify the exact R45 49/15 before provisioning any GPU.
+hf buckets cp "$BUCKET/preflight/v02-r27/private/r27_private_candidate_117_NOT_APPROVED.jsonl" "$TMP/r27.jsonl"
+python3 "$ROOT/scripts/v02_r46_build_dataset.py" \
+  --source "$TMP/r27.jsonl" --manifest "$TMP/code/manifest.json" \
+  --output-dir "$TMP/reconstructed"
+echo R46_LOCAL_EXACT_49_15_SOURCE_PASS
 
 RUN_KEY="r46-$(date -u +%Y%m%dT%H%M%SZ)-$(python3 - <<'PY'
 import secrets
