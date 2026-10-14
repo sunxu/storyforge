@@ -1,0 +1,91 @@
+{
+  "schema": "storyforge-r48-four-arm-preunblind-reviewed-sheets-v1",
+  "date": "2026-10-14",
+  "status": "R48_THREE_SCORING_FILES_20_80_ORIGINAL_GOLD_SOURCE_FROZEN_PRE_UNBLIND",
+  "owner_scored_review_commit": "c4688f709352642cedec4e273c6c4be75279e786",
+  "source_hashes": {
+    "canonical_v01_gold_test_sha256": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+    "r48_reviewer_git_blob_sha1": [
+      "d5e4c259ea0a69904c7dbfe21abac67e4e935514",
+      "deecd293903ca89ba406addc9a4cbf9956fae8b0",
+      "0185b3cf041f861384cf3cb0bbafb773ed896e87"
+    ],
+    "r48_reviewer_sha256": [
+      "48ba53e37a5d9dfa536cbcfac2e189feac617e06eb1a79978fbc66dbeb994cfb",
+      "4ac13669fb92b969fb7f30cac037aaec418cd7963762240ad5c34aab3a44aab7",
+      "41cf53daedcb3db9dfeea510507b44413cd5399adda8d61361c196a1ab282ee4"
+    ]
+  },
+  "ci_run": "https://github.com/sunxu/storyforge/actions/runs/38576709308",
+  "ci_conclusion": "SUCCESS",
+  "ci_source_checks": "Real GitHub Actions checkout of exact R48 scored CSV; 20/20 prompts and replies reconciled against original Gold and R47 three-arm frozen scored output, no answer key",
+  "reviewer_count": 3,
+  "cases_per_reviewer": 20,
+  "reference_reply_types_per_case": 4,
+  "valid_integer_rating_cells": 1440,
+  "total_votes": 60,
+  "original_and_crossreview_mismatches": 0,
+  "reviewer_scores_complete": true,
+  "reasons_present": true,
+  "severe_issues_present": true,
+  "source_evidence_quote_locatable_every_review_case": true,
+  "anonymous_votes_by_reviewer": [
+    {
+      "reviewer": 1,
+      "A": 6,
+      "B": 5,
+      "C": 5,
+      "D": 4
+    },
+    {
+      "reviewer": 2,
+      "A": 7,
+      "B": 2,
+      "C": 6,
+      "D": 5
+    },
+    {
+      "reviewer": 3,
+      "A": 6,
+      "B": 4,
+      "C": 5,
+      "D": 5
+    }
+  ],
+  "anonymous_votes_total": {
+    "A": 19,
+    "B": 11,
+    "C": 16,
+    "D": 14
+  },
+  "anonymous_majority_cases": {
+    "A": 6,
+    "B": 3,
+    "C": 5,
+    "D": 6
+  },
+  "unanimous_decisions": 12,
+  "two_to_one_decisions": 8,
+  "no_majority": 0,
+  "disagreement_sample_ids": [
+    "eval-000-948012b6173a",
+    "eval-002-d7d968e46fca",
+    "eval-007-a7d038870997",
+    "eval-010-95fc6ec25be5",
+    "eval-011-13544888d5c0",
+    "eval-013-98b7dd971c3b",
+    "eval-016-193774e13ceb",
+    "eval-018-7b18b1de6eb3"
+  ],
+  "review_original_pristine_sheet_local_comparison_passed": false,
+  "private_answer_key_read": false,
+  "reviewer_identity_and_statistical_independence_externally_verified": false,
+  "scientific_scope": "previously exposed v0.1 old Test 20 samples (2 stories), not a sealed fresh held-out",
+  "gold_not_assumed_correct": true,
+  "model_promotion": false,
+  "next_actions": [
+    "Run bash scripts/v02_r48_unblind_git.sh check on owner's Mac to compare the original blank sheets and completed CSVs, no key read",
+    "Only after check PASS, run STORYFORGE_R48_OWNER_UNBLIND=YES bash scripts/v02_r48_unblind_git.sh unblind",
+    "Keep original R48 private answer key out of Git; share only private diagnostic after freezing"
+  ]
+}
