@@ -1,0 +1,32 @@
+name: R47 Retrospective Blind Regression CPU Guards
+on:
+  push:
+    paths:
+      - "scripts/v02_r47_*.py"
+      - "scripts/v02_r47_*.sh"
+      - "tests/test_v02_r47_three_arm.py"
+      - ".github/workflows/v02-r47-blind-regression.yml"
+  pull_request:
+    paths:
+      - "scripts/v02_r47_*.py"
+      - "scripts/v02_r47_*.sh"
+      - "tests/test_v02_r47_three_arm.py"
+      - ".github/workflows/v02-r47-blind-regression.yml"
+jobs:
+  validate-no-gpu:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Verify static scripts
+        run: |
+          bash -n scripts/v02_r47_eval_submit_git.sh scripts/v02_r47_eval_worker.sh
+          python -m py_compile scripts/v02_r47_eval_validate.py scripts/v02_r47_eval_runner.py scripts/v02_r47_review_aggregate.py
+      - name: Verify original v0.1 20-prompt manifest (no model used)
+        run: |
+          python scripts/v02_r47_eval_validate.py --prompts evaluations/v0.1/test/prompts.jsonl --manifest evaluations/v0.1/test/manifest.json
+      - name: Test fail-closed blind pipeline
+        run: |
+          python -m unittest discover -s tests -p test_v02_r47_three_arm.py -v
