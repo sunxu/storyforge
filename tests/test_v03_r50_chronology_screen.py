@@ -105,6 +105,23 @@ class ChronologyTests(unittest.TestCase):
                              {"before_chat": 1, "during_chat": 1,
                               "after_chat": 1, "undated": 1})
 
+    def test_source_edit_date_and_archive_date_kept_separate(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            fixture(root)
+            p = root / SOURCE / "16-case" / "story-cards.json"
+            card = json.loads(p.read_text(encoding="utf-8"))
+            card["content_versions"] = [{
+                "source_updated_at": "2026-01-02T00:00:00+00:00",
+                "archived_at": "2026-01-08T00:00:00+00:00",
+            }]
+            p.write_text(json.dumps(card), encoding="utf-8")
+            row = next(x for x in run(root)["stories"] if x["story_number"] == 16)
+            self.assertEqual(row["content_version_source_update_buckets"]["before_chat"], 1)
+            self.assertEqual(row["content_version_archive_time_buckets"]["after_chat"], 1)
+            self.assertEqual(row["historical_version_source_timestamp_only"],
+                             "SOURCE_ASSERTION_NOT_PER_CASE_PROOF")
+
     def test_naive_timestamp_rejected(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
