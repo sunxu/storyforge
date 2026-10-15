@@ -1,7 +1,6 @@
 """Private R45 checks use synthetic fixtures only; no frozen original files needed."""
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 import tempfile
