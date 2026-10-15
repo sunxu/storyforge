@@ -86,6 +86,25 @@ class ChronologyTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "story id mismatch"):
                 run(root)
 
+    def test_version_snapshot_timestamp_buckets(self):
+        with tempfile.TemporaryDirectory() as t:
+            root = Path(t)
+            fixture(root)
+            p = root / SOURCE / "16-case" / "story-cards.json"
+            card = json.loads(p.read_text(encoding="utf-8"))
+            card["content_versions"] = [
+                {"created_at": "2026-01-02T00:00:00+00:00"},
+                {"created_at": "2026-01-04T00:00:00+00:00"},
+                {"created_at": "2026-01-08T00:00:00+00:00"},
+                {"revision": 4},
+            ]
+            p.write_text(json.dumps(card), encoding="utf-8")
+            result = run(root)
+            one = next(w for w in result["stories"] if w["story_number"] == 16)
+            self.assertEqual(one["content_version_timestamp_buckets"],
+                             {"before_chat": 1, "during_chat": 1,
+                              "after_chat": 1, "undated": 1})
+
     def test_naive_timestamp_rejected(self):
         with tempfile.TemporaryDirectory() as t:
             root = Path(t)
