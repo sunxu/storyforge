@@ -1,0 +1,38 @@
+name: R50 Source Integrity (no GPU)
+
+on:
+  push:
+    branches:
+      - audit/r49-r50-source-intake-20261015
+
+permissions:
+  contents: read
+
+jobs:
+  verify-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run R50 verifier unit tests
+        run: python3 -m unittest discover -s tests -p 'test_v03_r50_verify_sources.py' -v
+      - name: Verify exact bytes against Git source receipt (no output upload)
+        run: |
+          python3 scripts/v03_r50_verify_sources.py \
+            --repo . \
+            --receipt docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json \
+            --output "$RUNNER_TEMP/r50-private-sha256.json"
+          python3 - "$RUNNER_TEMP/r50-private-sha256.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert doc["status"] == "SOURCE_BYTES_VERIFIED_ONLY__NO_HELDOUT_ADMISSION"
+          assert doc["file_count"] == 35
+          assert doc["world_count"] == 5
+          assert doc["total_bytes"] == 70383383
+          print("R50_SOURCE_BYTES_VERIFIED_35_35__NO_HELDOUT_ADMISSION__NO_GPU")
+          PY
