@@ -1,0 +1,54 @@
+{
+  "schema": "storyforge-r50-source-long-text-overlap-v1",
+  "date": "2026-10-15",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "audit_branch": "audit/r49-r50-source-intake-20261015",
+  "ci_run": "https://github.com/sunxu/storyforge/actions/runs/38692958252",
+  "status": "LONG_TEXT_REUSE_SCREEN_COMPLETED__HUMAN_REVIEW_PENDING",
+  "historical_rows": {
+    "gold_87": 87,
+    "gold_108": 108,
+    "exposed_test_20": 20
+  },
+  "screened_input": {
+    "new_worlds": 5,
+    "total_nonempty_source_messages": 11627,
+    "by_story": {
+      "16": 2354,
+      "17": 2349,
+      "18": 2333,
+      "19": 2312,
+      "20": 2279
+    }
+  },
+  "fingerprint": {
+    "exact_normalized_message_min_chars": 80,
+    "window_chars": 120,
+    "window_stride": 80,
+    "text_normalization": "unicode NFKC + Unicode casefold + whitespace collapse"
+  },
+  "findings": {
+    "new_vs_history_exact_message_duplicates": 0,
+    "new_vs_history_120_char_window_duplicates": 0,
+    "cross_new_world_exact_long_message_pairs": [],
+    "cross_new_world_120_char_window_pairs": []
+  },
+  "tests": {
+    "source_receipt": 4,
+    "exact_id": 3,
+    "alias_time": 6,
+    "long_text": 5,
+    "total": 18
+  },
+  "limitations": [
+    "Not semantic-paraphrase duplicate detection or all shorter phrases.",
+    "Only canonical original .jsonl message.content text and Git-tracked Gold87/108 / exposed Test20 were screened.",
+    "Private R45 Train49/Val15 was not separately and byte-wise checked against all source data.",
+    "Original story source scripts do not establish independent new test prompt authorship.",
+    "No original story text, sensitive attributes, hashes of individual narrative snippets, model responses or private answer keys in this archive."
+  ],
+  "fresh_heldout_cases_received": 0,
+  "model_training_performed": false,
+  "paid_gpu_inference_performed": false,
+  "model_quality_promoted": false
+}
