@@ -163,5 +163,7 @@ jobs:
                     "versions", world["content_version_records"],
                     "snapshot_records", world["moderation_snapshot_records"],
                     "version_timestamp_buckets", world["content_version_timestamp_buckets"],
-                    "review_snapshot_buckets", world["moderation_snapshot_timestamp_buckets"])
+                    "review_snapshot_buckets", world["moderation_snapshot_timestamp_buckets"],
+                    "version_keys", world["content_version_schema_keys"],
+                    "snapshot_keys", world["moderation_snapshot_schema_keys"])
           PY
