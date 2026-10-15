@@ -170,3 +170,34 @@ jobs:
                     "version_keys", world["content_version_schema_keys"],
                     "snapshot_keys", world["moderation_snapshot_schema_keys"])
           PY
+      - name: Verify real source message ID coverage for future case cutoffs
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("evaluations/v0.2/source-archives/16-20")
+          items = []
+          for folder in sorted(root.iterdir()):
+              if not folder.is_dir():
+                  raise ValueError("unexpected source entry")
+              rank = int(folder.name.split("-", 1)[0])
+              transcript = json.loads((folder / (folder.name + ".jsonl")).read_text(encoding="utf-8"))
+              card = json.loads((folder / "story-cards.json").read_text(encoding="utf-8"))
+              messages = transcript["messages"]
+              message_ids = [m.get("id") for m in messages if isinstance(m, dict)]
+              present = [v for v in message_ids if isinstance(v, str) and v]
+              if card["story_id"] != transcript["story"]["id"]:
+                  raise ValueError("source story mismatch")
+              if card["session_id"] != transcript["session"]["session_id"]:
+                  raise ValueError("source session mismatch")
+              if len(present) != len(set(present)):
+                  raise ValueError("duplicate message id")
+              items.append({"rank": rank, "messages": len(messages),
+                            "ids": len(present), "missing_id": len(messages)-len(present)})
+          if {x["rank"] for x in items} != set(range(16, 21)):
+              raise ValueError("missing source")
+          print("R50_REAL_SOURCE_MESSAGE_ID_SCHEMA_VERIFIED__TEST_AUTHORING_PENDING")
+          for x in items:
+              print("R50_SOURCE_IDS", x["rank"], "messages", x["messages"],
+                    "stable_ids", x["ids"], "missing", x["missing_id"])
+          PY
