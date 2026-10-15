@@ -1,0 +1,59 @@
+{
+  "rank": 18,
+  "story_id": "52392eca-2bec-4931-b59b-a33dcdff4010",
+  "title": "我怀疑我是小三",
+  "scope": "仅抽取各版角色卡的显式 age 字段；对未列出角色、玩家面具、叙事年龄及选中的195条回复不作成年推定。",
+  "has_explicit_under_18": false,
+  "explicit_under_18": [],
+  "age_fields": [
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mr4tk992_z77uu0",
+      "character_name": "沈墨言",
+      "raw_age": "26",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mr4tk992_z77uu0",
+      "character_name": "沈墨言",
+      "raw_age": "26",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mr4tk992_z77uu0",
+      "character_name": "沈墨言",
+      "raw_age": "26",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mr4tk992_z77uu0",
+      "character_name": "沈墨言",
+      "raw_age": "26",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_public_projection",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mr4tk992_z77uu0",
+      "character_name": "沈墨言",
+      "raw_age": "26",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_public_projection",
+      "path": "v2_data.character.age",
+      "character_id": "c_mr4tk992_z77uu0",
+      "character_name": "沈墨言",
+      "raw_age": "26",
+      "classification": "stated_18_or_older"
+    }
+  ],
+  "requires_sample_level_review": true
+}

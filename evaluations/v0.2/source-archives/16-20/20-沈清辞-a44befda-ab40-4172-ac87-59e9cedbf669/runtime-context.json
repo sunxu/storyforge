@@ -1,0 +1,55 @@
+{
+  "rank": 20,
+  "story_id": "4b280246-0da6-4c67-9fe3-979cd58b53db",
+  "session_id": "a44befda-ab40-4172-ac87-59e9cedbf669",
+  "checkpoint_cutoff": "2026-10-10 03:29:07.32292+00",
+  "checkpoint_count": 139,
+  "checkpoint_fields": [
+    "character_stages",
+    "character_states",
+    "stage_history_at_transition"
+  ],
+  "exported_session_stage_history": [
+    {
+      "at": "2026-09-20T19:00:24.345Z",
+      "char_id": "c_mtdi97xe_tqk2yl",
+      "from": 0,
+      "reason": "双方在器材室产生了高度亲密的肢体接触与主动亲吻互动，互动性质已明显脱离陌生阶段。",
+      "to": 1,
+      "turn": 5
+    },
+    {
+      "at": "2026-09-20T19:11:48.537Z",
+      "char_id": "c_mtdi97xe_tqk2yl",
+      "from": 1,
+      "reason": "双方已发生深度的身体与情感亲密互动，用户主动配合并表现出高度的信任与依恋，关系已产生实质性质变。",
+      "to": 2,
+      "turn": 15
+    },
+    {
+      "at": "2026-09-21T19:27:19.571Z",
+      "char_id": "c_mtdi97xe_tqk2yl",
+      "from": 2,
+      "reason": "双方互动亲密自然，包含主动亲吻、靠肩共眠及一同去海边度假等深度依恋行为，情感积累充分且好感度已逼近下一阶段。",
+      "to": 3,
+      "turn": 65
+    },
+    {
+      "at": "2026-09-21T19:37:56.639Z",
+      "char_id": "c_mtdi97xe_tqk2yl",
+      "from": 3,
+      "reason": "好感度虽仍为50，但对话中用户表达了‘只要跟你在一起，去哪儿我都开心’的强烈依赖与情感，角色也以‘男朋友’自称并给予亲密回应，双方互动已明显超越依赖阶段，具备进入心动阶段的质变信号。",
+      "to": 4,
+      "turn": 70
+    },
+    {
+      "at": "2026-09-23T17:36:02.633Z",
+      "char_id": "c_mtdi97xe_tqk2yl",
+      "from": 4,
+      "reason": "好感度已达100，远超下一阶段下限，且对话中充满亲密信任与情感表达，关系已自然推进。",
+      "to": 5,
+      "turn": 145
+    }
+  ],
+  "note": "检查点为保存后的阶段/状态，不是模型请求快照。检查点 turn_index 是剧情轮数，聊天消息 turn_index 是物理消息序号，不能直接等值连接。"
+}

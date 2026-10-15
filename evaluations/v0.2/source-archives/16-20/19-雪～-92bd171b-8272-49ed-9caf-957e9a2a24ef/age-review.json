@@ -1,0 +1,1035 @@
+{
+  "rank": 19,
+  "story_id": "8c75f0ee-b0fe-4903-b01c-be8e787fe2f2",
+  "title": "雪～",
+  "scope": "仅抽取各版角色卡的显式 age 字段；对未列出角色、玩家面具、叙事年龄及选中的195条回复不作成年推定。",
+  "has_explicit_under_18": false,
+  "explicit_under_18": [],
+  "age_fields": [
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:1",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:1",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:1",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:1",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:2",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:2",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:2",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:2",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:3",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:3",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:3",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:3",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:4",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:4",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:4",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:4",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:5",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:5",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:5",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:5",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:6",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:6",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:6",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:6",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:7",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:7",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:7",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:7",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:8",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:8",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:8",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:8",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:9",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:9",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:9",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:9",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:10",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:10",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:10",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:10",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:11",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:11",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:11",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:11",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:12",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:12",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:12",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:12",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:13",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:13",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:13",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:13",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:14",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:14",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:14",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:14",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:15",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:15",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:15",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:15",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:16",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:16",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:16",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:16",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:17",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:17",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:17",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:17",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:18",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:18",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:18",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:18",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:19",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:19",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:19",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:19",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:20",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:20",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:20",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:20",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:21",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:21",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:21",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:21",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:22",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:22",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:22",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:22",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:23",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:23",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:23",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:23",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:24",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:24",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:24",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:24",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:25",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:25",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:25",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:25",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:26",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:26",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:26",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:26",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:27",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:27",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:27",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:27",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:28",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:28",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:28",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:28",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:29",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:29",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:29",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:29",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "story_content_versions:30",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:30",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:30",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:30",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtvrzsx5_xbvuq5",
+      "character_name": "李一桐",
+      "raw_age": "28",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[1].age",
+      "character_id": "c_mtvs5mdp_ju38yv",
+      "character_name": "戚薇",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[2].age",
+      "character_id": "c_mtvsa2ce_011086",
+      "character_name": "张艺凡",
+      "raw_age": "25",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtvrq1l2_0b0mtg",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    }
+  ],
+  "requires_sample_level_review": true
+}

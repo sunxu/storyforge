@@ -1,0 +1,28 @@
+{
+  "rank": 17,
+  "story_id": "8becb648-38a4-4f1b-9d5e-14ce4d404b33",
+  "title": "cod里唯爱你的大兵konig",
+  "note": "仅为角色卡正文中的低年龄或未成年相关词命中，可能是往事、世界时间线或其他人物；不能直接断言该轮回复涉及未成年。",
+  "hits": [
+    {
+      "path": "v2_data.characters[0].keyMemories[1].content",
+      "matched_text": "17岁",
+      "excerpt": "17岁奥地利自愿入伍，一部分初衷是逃避复杂人际，军队只需要服从命令，不用应对",
+      "sources": [
+        "export_time_card",
+        "current_author_card",
+        "current_public_projection"
+      ]
+    },
+    {
+      "path": "v2_data.characters[0].upbringing",
+      "matched_text": "17岁",
+      "excerpt": "建立深度情感联结，仅能产生浅层战友情，缺少普通人的温柔社交圈。\n3. 17岁就脱离平民社会自愿参军，长久浸泡在战场环境，几乎没有和普通平民长期相处",
+      "sources": [
+        "export_time_card",
+        "current_author_card",
+        "current_public_projection"
+      ]
+    }
+  ]
+}

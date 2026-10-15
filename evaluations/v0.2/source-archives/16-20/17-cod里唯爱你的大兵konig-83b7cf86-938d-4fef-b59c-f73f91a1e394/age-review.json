@@ -1,0 +1,59 @@
+{
+  "rank": 17,
+  "story_id": "8becb648-38a4-4f1b-9d5e-14ce4d404b33",
+  "title": "cod里唯爱你的大兵konig",
+  "scope": "仅抽取各版角色卡的显式 age 字段；对未列出角色、玩家面具、叙事年龄及选中的195条回复不作成年推定。",
+  "has_explicit_under_18": false,
+  "explicit_under_18": [],
+  "age_fields": [
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mqlfmkgm_g0a436",
+      "character_name": "konig",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mqlfm3la_cv5k5f",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mqlfmkgm_g0a436",
+      "character_name": "konig",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mqlfm3la_cv5k5f",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "current_public_projection",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mqlfmkgm_g0a436",
+      "character_name": "konig",
+      "raw_age": "35",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_public_projection",
+      "path": "v2_data.character.age",
+      "character_id": "c_mqlfm3la_cv5k5f",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    }
+  ],
+  "requires_sample_level_review": true
+}

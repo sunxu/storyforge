@@ -1,0 +1,523 @@
+{
+  "rank": 16,
+  "story_id": "aa09b761-b818-4912-ba17-e91b0b84134c",
+  "title": "老公你什么时候正常一点",
+  "scope": "仅抽取各版角色卡的显式 age 字段；对未列出角色、玩家面具、叙事年龄及选中的195条回复不作成年推定。",
+  "has_explicit_under_18": false,
+  "explicit_under_18": [],
+  "age_fields": [
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:55",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:55",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:56",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:56",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:57",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:57",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:58",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:58",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:59",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:59",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:60",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:60",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:61",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:61",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:62",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:62",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:63",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:63",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:64",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:64",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:65",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:65",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:66",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:66",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:67",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:67",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:68",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:68",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:69",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:69",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:70",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:70",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:71",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:71",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:72",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:72",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:73",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:73",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:74",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:74",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:75",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:75",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:76",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:76",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:77",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:77",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:78",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:78",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:79",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:79",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:80",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:80",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:81",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:81",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:82",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:82",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:83",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:83",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:84",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "story_content_versions:84",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtwcw319_6x1cw3",
+      "character_name": "陆乾昭",
+      "raw_age": "336",
+      "classification": "stated_18_or_older"
+    }
+  ],
+  "requires_sample_level_review": true
+}

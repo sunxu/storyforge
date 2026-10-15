@@ -1,0 +1,75 @@
+{
+  "rank": 20,
+  "story_id": "4b280246-0da6-4c67-9fe3-979cd58b53db",
+  "title": "沈清辞",
+  "scope": "仅抽取各版角色卡的显式 age 字段；对未列出角色、玩家面具、叙事年龄及选中的195条回复不作成年推定。",
+  "has_explicit_under_18": false,
+  "explicit_under_18": [],
+  "age_fields": [
+    {
+      "source": "export_time_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtdi97xe_tqk2yl",
+      "character_name": "沈清辞",
+      "raw_age": "19",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "export_time_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtdi7x3z_g58hxn",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "moderation_submission:954b2e3c-97e6-499a-bcd0-ce059e1722dd",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtdi97xe_tqk2yl",
+      "character_name": "沈清辞",
+      "raw_age": "19",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "moderation_submission:954b2e3c-97e6-499a-bcd0-ce059e1722dd",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtdi7x3z_g58hxn",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "moderation_submission:a26fb338-0f9a-4109-829c-51c76f999363",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtdi97xe_tqk2yl",
+      "character_name": "沈清辞",
+      "raw_age": "19",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "moderation_submission:a26fb338-0f9a-4109-829c-51c76f999363",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtdi7x3z_g58hxn",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.characters[0].age",
+      "character_id": "c_mtdi97xe_tqk2yl",
+      "character_name": "沈清辞",
+      "raw_age": "19",
+      "classification": "stated_18_or_older"
+    },
+    {
+      "source": "current_author_card",
+      "path": "v2_data.character.age",
+      "character_id": "c_mtdi7x3z_g58hxn",
+      "character_name": "",
+      "raw_age": "",
+      "classification": "not_stated"
+    }
+  ],
+  "requires_sample_level_review": true
+}
