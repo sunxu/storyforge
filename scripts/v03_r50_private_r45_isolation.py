@@ -14,7 +14,7 @@ from pathlib import Path
 
 from v03_r50_exhaustive_screen import all_windows
 from v03_r50_text_reuse_screen import (
-    BLOCK, MIN_EXACT, SOURCE, digest, read_jsonl, strings_from_messages,
+    MIN_EXACT, SOURCE, digest, read_jsonl, strings_from_messages,
 )
 
 FROZEN = {
