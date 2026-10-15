@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - audit/r49-r50-source-intake-20261015
+    paths:
+      - '.github/workflows/v03-r50-source-integrity.yml'
+      - 'docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json'
+      - 'scripts/v03_r50_*.py'
+      - 'tests/test_v03_r50_*.py'
+      - 'evaluations/v0.2/source-archives/16-20/**'
+      - 'evaluations/v0.2/gold-quality-*/gold_quality_accepted_*.jsonl'
+      - 'evaluations/v0.1/test/prompts.jsonl'
 
 permissions:
   contents: read
