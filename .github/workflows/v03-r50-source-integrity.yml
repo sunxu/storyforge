@@ -33,6 +33,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_v03_r50_text_reuse_screen.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_exhaustive_screen.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_private_r45_isolation.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_chronology_screen.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
@@ -140,4 +141,25 @@ jobs:
               print("R50_EXHAUSTIVE_COUNTS", v["rank"], "historical_exact",
                     v["historic_exact_long_message_fingerprints"], "historical_windows",
                     v["historic_all_offset_120_codepoint_fingerprints"])
+          PY
+      - name: Inspect recorded chat and source-card chronology (without printing story)
+        run: |
+          python3 scripts/v03_r50_chronology_screen.py --repo . --output "$RUNNER_TEMP/r50-chronology.json"
+          python3 - "$RUNNER_TEMP/r50-chronology.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert report["status"] == "CHRONOLOGY_METADATA_CHECKED__POINT_IN_TIME_MANUAL_REVIEW_PENDING"
+          assert len(report["stories"]) == 5
+          assert report["fresh_heldout_cases"] == 0
+          print("R50_CHRONOLOGY_METADATA_CHECKED__MANUAL_CUTOFF_REVIEW_PENDING")
+          print("message_count_total:", report["total_message_records"])
+          for world in report["stories"]:
+              print("R50_CHRONOLOGY", world["story_number"],
+                    "messages", world["message_records"],
+                    "timestamps_missing", world["messages_missing_timestamp"],
+                    "pre_update", world["messages_before_export_card_update"],
+                    "versions", world["content_version_records"],
+                    "snapshot_records", world["moderation_snapshot_records"])
           PY
