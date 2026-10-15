@@ -86,6 +86,30 @@ def run(repo: Path) -> dict:
         moderation = card.get("moderation_source_snapshots") or []
         if not isinstance(versions, list) or not isinstance(moderation, list):
             raise ValueError("invalid card snapshot data")
+
+        def classify_snapshots(records):
+            stats = {"before_chat": 0, "during_chat": 0, "after_chat": 0,
+                     "undated": 0}
+            for rec in records:
+                if not isinstance(rec, dict):
+                    raise ValueError("invalid version record")
+                stamp = None
+                for key in ("created_at", "observed_at", "snapshot_created_at", "updated_at"):
+                    if rec.get(key):
+                        stamp = when(rec[key])
+                        break
+                if stamp is None:
+                    stats["undated"] += 1
+                elif stamp < first:
+                    stats["before_chat"] += 1
+                elif stamp > last:
+                    stats["after_chat"] += 1
+                else:
+                    stats["during_chat"] += 1
+            return stats
+
+        version_timing = classify_snapshots(versions)
+        moderation_timing = classify_snapshots(moderation)
         rows.append({
             "story_number": rank,
             "message_records": len(msgs),
@@ -100,6 +124,8 @@ def run(repo: Path) -> dict:
             "export_card_last_edited_after_chat_end": card_updated > last,
             "content_version_records": len(versions),
             "moderation_snapshot_records": len(moderation),
+            "content_version_timestamp_buckets": version_timing,
+            "moderation_snapshot_timestamp_buckets": moderation_timing,
             "per_test_cutoff_reconstruction": "REQUIRED",
         })
     if {row["story_number"] for row in rows} != set(range(16, 21)):
