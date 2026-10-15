@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -110,6 +111,17 @@ def run(repo: Path) -> dict:
 
         version_timing = classify_snapshots(versions)
         moderation_timing = classify_snapshots(moderation)
+        # Schema keys only, never source values: identify alternate time fields
+        # without putting story cards, characters or prompt content in logs.
+        schema_key = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
+        version_fields = sorted({
+            key for obj in versions for key in obj
+            if isinstance(key, str) and schema_key.fullmatch(key)
+        })
+        moderation_fields = sorted({
+            key for obj in moderation for key in obj
+            if isinstance(key, str) and schema_key.fullmatch(key)
+        })
         rows.append({
             "story_number": rank,
             "message_records": len(msgs),
@@ -126,6 +138,8 @@ def run(repo: Path) -> dict:
             "moderation_snapshot_records": len(moderation),
             "content_version_timestamp_buckets": version_timing,
             "moderation_snapshot_timestamp_buckets": moderation_timing,
+            "content_version_schema_keys": version_fields,
+            "moderation_snapshot_schema_keys": moderation_fields,
             "per_test_cutoff_reconstruction": "REQUIRED",
         })
     if {row["story_number"] for row in rows} != set(range(16, 21)):
