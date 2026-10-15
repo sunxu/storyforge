@@ -31,7 +31,8 @@
     "new_vs_history_exact_message_duplicates": 0,
     "new_vs_history_120_char_window_duplicates": 0,
     "cross_new_world_exact_long_message_pairs": [],
-    "cross_new_world_120_char_window_pairs": []
+    "cross_new_world_120_char_window_pairs": [],
+    "window_comparison_scope": "sampled_fixed_length_windows_not_exhaustive_all_offsets"
   },
   "tests": {
     "source_receipt": 4,
@@ -41,6 +42,7 @@
     "total": 18
   },
   "limitations": [
+    "120-character windows were sampled every 80 characters (with the last boundary window included); a zero-hit result does NOT exclude arbitrary offset-shifted identical 120-character substrings.",
     "Not semantic-paraphrase duplicate detection or all shorter phrases.",
     "Only canonical original .jsonl message.content text and Git-tracked Gold87/108 / exposed Test20 were screened.",
     "Private R45 Train49/Val15 was not separately and byte-wise checked against all source data.",
