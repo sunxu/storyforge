@@ -161,5 +161,7 @@ jobs:
                     "timestamps_missing", world["messages_missing_timestamp"],
                     "pre_update", world["messages_before_export_card_update"],
                     "versions", world["content_version_records"],
-                    "snapshot_records", world["moderation_snapshot_records"])
+                    "snapshot_records", world["moderation_snapshot_records"],
+                    "version_timestamp_buckets", world["content_version_timestamp_buckets"],
+                    "review_snapshot_buckets", world["moderation_snapshot_timestamp_buckets"])
           PY
