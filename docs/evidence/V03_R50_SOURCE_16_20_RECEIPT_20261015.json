@@ -1,0 +1,235 @@
+{
+  "schema": "storyforge-r50-source-receipt-v1",
+  "prepared_on": "2026-10-15",
+  "repository": "sunxu/storyforge",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "source_root": "evaluations/v0.2/source-archives/16-20",
+  "worlds": [
+    {
+      "number": 16,
+      "folder": "16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18",
+      "story_id": "aa09b761-b818-4912-ba17-e91b0b84134c",
+      "session_id": "90d0f9cc-5845-47ad-b8b3-eaef49846e18"
+    },
+    {
+      "number": 17,
+      "folder": "17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394",
+      "story_id": "8becb648-38a4-4f1b-9d5e-14ce4d404b33",
+      "session_id": "83b7cf86-938d-4fef-b59c-f73f91a1e394"
+    },
+    {
+      "number": 18,
+      "folder": "18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447",
+      "story_id": "52392eca-2bec-4931-b59b-a33dcdff4010",
+      "session_id": "5d11db05-87ae-4058-a565-b8cf4fa61447"
+    },
+    {
+      "number": 19,
+      "folder": "19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef",
+      "story_id": "8c75f0ee-b0fe-4903-b01c-be8e787fe2f2",
+      "session_id": "92bd171b-8272-49ed-9caf-957e9a2a24ef"
+    },
+    {
+      "number": 20,
+      "folder": "20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669",
+      "story_id": "4b280246-0da6-4c67-9fe3-979cd58b53db",
+      "session_id": "a44befda-ab40-4172-ac87-59e9cedbf669"
+    }
+  ],
+  "file_count": 35,
+  "total_bytes": 70383383,
+  "files": [
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18.json",
+      "size_bytes": 15447853,
+      "git_blob_sha1": "df8d5a4ec5418ee316f1966ac57a523a871b09f0"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18.jsonl",
+      "size_bytes": 15445029,
+      "git_blob_sha1": "d310c53b7a76730b8506752db4fb048454abb9c5"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/age-prose-hits.json",
+      "size_bytes": 312,
+      "git_blob_sha1": "c2630d1838c3e541d3d21c30e103dd8a4fd46313"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/age-review.json",
+      "size_bytes": 16239,
+      "git_blob_sha1": "4dd9987b086c785bbfc7812828bc41b59f30110d"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/relationship-checkpoints.jsonl",
+      "size_bytes": 170626,
+      "git_blob_sha1": "5ae380a60f527fe7a39b9d782a29d73baff09156"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/runtime-context.json",
+      "size_bytes": 2047,
+      "git_blob_sha1": "1332e910041fb939dd17ebc4e84a584c24028a7d"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/16-老公你什么时候正常一点-90d0f9cc-5845-47ad-b8b3-eaef49846e18/story-cards.json",
+      "size_bytes": 2778221,
+      "git_blob_sha1": "9e30ae5f668f9aa556ac0af0794f0bc26c71eddd"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394.json",
+      "size_bytes": 4694704,
+      "git_blob_sha1": "9cbb61c9dce76c0e91c354bc285331ada834e48b"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394.jsonl",
+      "size_bytes": 4691880,
+      "git_blob_sha1": "367145c466032ac67e87239022b461c49b168c72"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/age-prose-hits.json",
+      "size_bytes": 1114,
+      "git_blob_sha1": "6c1d2d69492660b22a5dc156cb8f1b26716896b0"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/age-review.json",
+      "size_bytes": 1776,
+      "git_blob_sha1": "620413c12177ddeeb3a71d0e575726b0b785cc5d"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/relationship-checkpoints.jsonl",
+      "size_bytes": 130294,
+      "git_blob_sha1": "8fbe889f7b787a8064f8993b0022418938ef3829"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/runtime-context.json",
+      "size_bytes": 2391,
+      "git_blob_sha1": "3b47f2f67495c11ad16e32e34e6f8fcbc15eea1e"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/17-cod里唯爱你的大兵konig-83b7cf86-938d-4fef-b59c-f73f91a1e394/story-cards.json",
+      "size_bytes": 63838,
+      "git_blob_sha1": "8806f5b1c84666c310be5264e334e189c03bd9fa"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447.json",
+      "size_bytes": 5745207,
+      "git_blob_sha1": "4241151c4e7d64d78a369c5db811891219d62ddb"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447.jsonl",
+      "size_bytes": 5742383,
+      "git_blob_sha1": "b6106447c75b396e19ceac324de368dcb43bde15"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/age-prose-hits.json",
+      "size_bytes": 300,
+      "git_blob_sha1": "5dfe93c19723401ada1e406cb2987c6708eb35ff"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/age-review.json",
+      "size_bytes": 1837,
+      "git_blob_sha1": "40cafb06d42f946c96a2e7feb316b574b7cfabc5"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/relationship-checkpoints.jsonl",
+      "size_bytes": 106209,
+      "git_blob_sha1": "a6eedb87c610524d1b9420e340325c6327f4b933"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/runtime-context.json",
+      "size_bytes": 2407,
+      "git_blob_sha1": "b2d946197ae423d2e3773526959085a0904c0809"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/18-我怀疑我是小三-5d11db05-87ae-4058-a565-b8cf4fa61447/story-cards.json",
+      "size_bytes": 74674,
+      "git_blob_sha1": "3d5282a21b655aa713c3ea798edd8278e0e34845"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef.json",
+      "size_bytes": 2213334,
+      "git_blob_sha1": "c9a9304780955c9d55fc72915365f8cf714c083f"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef.jsonl",
+      "size_bytes": 2210510,
+      "git_blob_sha1": "f22ce18b9fb65d4b257dd19d18b2d6c065e8fc80"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/age-prose-hits.json",
+      "size_bytes": 285,
+      "git_blob_sha1": "feb01c4ad7ed5241205602e3ce60bc8f029c8b28"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/age-review.json",
+      "size_bytes": 31314,
+      "git_blob_sha1": "57e2c318ca88aa5699049fad6f52af32a98dba7f"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/relationship-checkpoints.jsonl",
+      "size_bytes": 124099,
+      "git_blob_sha1": "9ed9233a250b23b5757a6839734be6b095dd3fa0"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/runtime-context.json",
+      "size_bytes": 6282,
+      "git_blob_sha1": "7b54c011fb8a1f60d0c9fd0b57ac369554767ab5"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/19-雪～-92bd171b-8272-49ed-9caf-957e9a2a24ef/story-cards.json",
+      "size_bytes": 904550,
+      "git_blob_sha1": "e004b04bd7a412fcd4f5aaaba10ad353b66f98b4"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669.json",
+      "size_bytes": 4818047,
+      "git_blob_sha1": "1b7819e3d46ac49bd60f0b656060dc9f1eea20f3"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669.jsonl",
+      "size_bytes": 4815223,
+      "git_blob_sha1": "abb0f7a1c631e3ca610d588a96aaaa7103424a30"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/age-prose-hits.json",
+      "size_bytes": 288,
+      "git_blob_sha1": "8d9e5b5b5df643cc7d850e0d7252294adad8078c"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/age-review.json",
+      "size_bytes": 2375,
+      "git_blob_sha1": "e92d544e5e8be8d4e5b605aff4e80cea62d2b60b"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/relationship-checkpoints.jsonl",
+      "size_bytes": 79084,
+      "git_blob_sha1": "af8ca5d79e360c475e64617a8937caeddc863da8"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/runtime-context.json",
+      "size_bytes": 2173,
+      "git_blob_sha1": "0dd0e2902dd3b90a1383a886dff4918d3a01d9bb"
+    },
+    {
+      "path": "evaluations/v0.2/source-archives/16-20/20-沈清辞-a44befda-ab40-4172-ac87-59e9cedbf669/story-cards.json",
+      "size_bytes": 56478,
+      "git_blob_sha1": "4e65e9b0c1dac741e2c0da4d24fd4f5f5cd3c549"
+    }
+  ],
+  "user_declarations": {
+    "all_characters_adult": "OWNER_ATTESTED_2026-10-15",
+    "names_do_not_refer_to_real_people": "OWNER_ATTESTED_2026-10-15",
+    "copyright_or_third_party_permissions": "NOT_DETERMINED_BY_THIS_STATEMENT"
+  },
+  "audit": {
+    "commit_frozen": true,
+    "file_enumeration": "PASS_METADATA",
+    "verified_local_sha256": "PENDING_LOCAL_CHECKOUT",
+    "old_train_val_test_world_isolation": "PENDING",
+    "world_alias_semantic_review": "PENDING",
+    "prompt_exact_and_near_duplicate": "PENDING",
+    "full_narrative_content_review": "PENDING",
+    "independent_heldout_cases_received": 0,
+    "model_promotion": false,
+    "charged_gpu_authorized": false
+  }
+}
