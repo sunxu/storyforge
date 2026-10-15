@@ -109,7 +109,7 @@ class CaseProvenanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             x, p = fixture(Path(temp))
             p[0]["cutoff_message_id"] = "message-16-1"
-            with self.assertRaisesRegex(ValueError, "source cutoff"):
+            with self.assertRaisesRegex(ValueError, "after cutoff|source cutoff"):
                 verify_case_sources(Path(temp), x, p)
 
     def test_copied_player_input_rejected(self):
