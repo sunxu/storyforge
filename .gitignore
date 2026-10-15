@@ -64,3 +64,10 @@ temp/
 *.tar.gz
 *.tgz
 
+
+# Prospective independent Held-out: keep test originals and private mappings out of Git
+/evaluations/v0.3/heldout/incoming/
+/evaluations/v0.3/heldout/sealed/
+/evaluations/v0.3/heldout/private/
+/evaluations/v0.3/heldout/results/private/
+/evaluations/v0.3/heldout/reviewers/
