@@ -7,14 +7,13 @@ window fingerprints leave the process. No fuzzy/paraphrase or R45 private pass.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 from v03_r50_text_reuse_screen import (
-    BLOCK, HIST, SOURCE, MIN_EXACT, digest, normalized, read_jsonl, strings_from_messages,
+    BLOCK, HIST, SOURCE, MIN_EXACT, digest, read_jsonl, strings_from_messages,
 )
 
 
