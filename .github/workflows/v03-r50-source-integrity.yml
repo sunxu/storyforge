@@ -18,7 +18,9 @@ jobs:
         with:
           python-version: "3.11"
       - name: Run R50 verifier unit tests
-        run: python3 -m unittest discover -s tests -p 'test_v03_r50_verify_sources.py' -v
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_sources.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_id_isolation.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
@@ -35,4 +37,21 @@ jobs:
           assert doc["world_count"] == 5
           assert doc["total_bytes"] == 70383383
           print("R50_SOURCE_BYTES_VERIFIED_35_35__NO_HELDOUT_ADMISSION__NO_GPU")
+          PY
+      - name: Cross-check five story and session IDs against historic Gold195 and exposed Test20
+        run: |
+          python3 scripts/v03_r50_id_isolation.py --repo . --output "$RUNNER_TEMP/r50-id-isolation.json"
+          python3 - "$RUNNER_TEMP/r50-id-isolation.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert report["world_count"] == 5
+          assert sum(report["history_row_counts"].values()) == 215
+          assert not report["exact_story_id_conflicts"]
+          assert not report["exact_session_id_conflicts"]
+          assert report["semantic_alias_review"] == "PENDING"
+          print("R50_EXACT_ID_CHECK_PASS_ONLY__SEMANTIC_ISOLATION_PENDING")
+          print("historic_gold_story_ids:", report["known_historic_story_id_count"])
+          print("historic_gold_session_ids:", report["known_historic_session_id_count"])
           PY
