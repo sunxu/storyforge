@@ -95,7 +95,7 @@ def run(repo: Path) -> dict:
                 if not isinstance(rec, dict):
                     raise ValueError("invalid version record")
                 stamp = None
-                for key in ("created_at", "observed_at", "snapshot_created_at", "updated_at"):
+                for key in ("created_at", "observed_at", "snapshot_created_at", "source_updated_at", "updated_at", "archived_at"):
                     if rec.get(key):
                         stamp = when(rec[key])
                         break
@@ -111,6 +111,26 @@ def run(repo: Path) -> dict:
 
         version_timing = classify_snapshots(versions)
         moderation_timing = classify_snapshots(moderation)
+
+        def single_field_buckets(records, field):
+            stats = {"before_chat": 0, "during_chat": 0, "after_chat": 0,
+                     "missing": 0}
+            for rec in records:
+                value = rec.get(field)
+                if not value:
+                    stats["missing"] += 1
+                    continue
+                stamp = when(value)
+                if stamp < first:
+                    stats["before_chat"] += 1
+                elif stamp > last:
+                    stats["after_chat"] += 1
+                else:
+                    stats["during_chat"] += 1
+            return stats
+
+        version_source_update = single_field_buckets(versions, "source_updated_at")
+        version_archive_time = single_field_buckets(versions, "archived_at")
         # Schema keys only, never source values: identify alternate time fields
         # without putting story cards, characters or prompt content in logs.
         schema_key = re.compile(r"^[A-Za-z_][A-Za-z0-9_]{0,63}$")
@@ -137,7 +157,10 @@ def run(repo: Path) -> dict:
             "content_version_records": len(versions),
             "moderation_snapshot_records": len(moderation),
             "content_version_timestamp_buckets": version_timing,
+            "content_version_source_update_buckets": version_source_update,
+            "content_version_archive_time_buckets": version_archive_time,
             "moderation_snapshot_timestamp_buckets": moderation_timing,
+            "historical_version_source_timestamp_only": "SOURCE_ASSERTION_NOT_PER_CASE_PROOF",
             "content_version_schema_keys": version_fields,
             "moderation_snapshot_schema_keys": moderation_fields,
             "per_test_cutoff_reconstruction": "REQUIRED",
