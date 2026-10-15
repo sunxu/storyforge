@@ -31,6 +31,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_v03_r50_id_isolation.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_world_alias_screen.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_text_reuse_screen.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_exhaustive_screen.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
@@ -120,4 +121,22 @@ jobs:
               print("R50_TEXT_COUNTS", w["rank"], "messages", w["text_messages"],
                     "historic_exact", w["historic_exact_message_hit_count"],
                     "historic_long_fragments", w["historic_120char_block_hit_count"])
+          PY
+      - name: Check every offset of 120-codepoint windows (no story text output)
+        run: |
+          python3 scripts/v03_r50_exhaustive_screen.py --repo . --output "$RUNNER_TEMP/r50-exhaustive.json"
+          python3 - "$RUNNER_TEMP/r50-exhaustive.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          d = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert d["status"] == "ALL_OFFSET_120_CODEPOINT_SCREEN_DONE__SEMANTIC_REVIEW_PENDING"
+          assert d["window_step"] == 1 and d["historic_records"] == 215
+          assert len(d["worlds"]) == 5 and d["heldout_test_cases"] == 0
+          print("R50_ALL_OFFSET_SCAN_DONE_NOT_A_FINAL_HELDOUT")
+          print("cross_world_pairs:", d["new_world_shared_120_codepoint_window_pairs"])
+          for v in d["worlds"]:
+              print("R50_EXHAUSTIVE_COUNTS", v["rank"], "historical_exact",
+                    v["historic_exact_long_message_fingerprints"], "historical_windows",
+                    v["historic_all_offset_120_codepoint_fingerprints"])
           PY
