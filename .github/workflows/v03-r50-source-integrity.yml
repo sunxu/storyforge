@@ -29,6 +29,7 @@ jobs:
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_verify_sources.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_id_isolation.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_world_alias_screen.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
@@ -62,4 +63,25 @@ jobs:
           print("R50_EXACT_ID_CHECK_PASS_ONLY__SEMANTIC_ISOLATION_PENDING")
           print("historic_gold_story_ids:", report["known_historic_story_id_count"])
           print("historic_gold_session_ids:", report["known_historic_session_id_count"])
+          PY
+      - name: Screen aliases, historic name mentions and exported-card chronology (not final isolation)
+        run: |
+          python3 scripts/v03_r50_world_alias_screen.py \
+            --repo . \
+            --output "$RUNNER_TEMP/r50-world-alias-screen.json"
+          python3 - "$RUNNER_TEMP/r50-world-alias-screen.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          a = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert a["status"] == "AUTOMATED_CANDIDATE_SCREEN_DONE__MANUAL_WORLD_ISOLATION_PENDING"
+          assert a["historic_rows_scanned"] == 215
+          assert len(a["worlds"]) == 5
+          assert a["final_heldout_cases"] == 0
+          print("R50_WORLD_ALIAS_SCREEN_COMPLETED__MANUAL_REVIEW_PENDING")
+          print("cross_world_character_id_groups:", len(a["same_character_id_world_groups"]))
+          print("cross_world_name_groups:", len(a["same_name_world_groups"]))
+          print("historic_name_mentions_by_story:", a["historical_rows_with_name_mentions_by_world"])
+          print("world_card_updates_after_first_message:",
+                [w["rank"] for w in a["worlds"] if w["export_card_updated_after_first_message"]])
           PY
