@@ -34,6 +34,7 @@ jobs:
           python3 -m unittest discover -s tests -p 'test_v03_r50_exhaustive_screen.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_private_r45_isolation.py' -v
           python3 -m unittest discover -s tests -p 'test_v03_r50_chronology_screen.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_case_provenance.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
