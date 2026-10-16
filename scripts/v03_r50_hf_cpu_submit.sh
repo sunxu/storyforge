@@ -8,7 +8,7 @@ umask 077
 MODE="${1:-}"
 SOURCE_STAGE_KEY="${2:-}"
 BUCKET="hf://buckets/adradar/storyforge-training"
-PINNED_PREFLIGHT_COMMIT="61f317b123f1802b0ae6739f6244892c828c5cf5"
+PINNED_PREFLIGHT_BLOB_SHA="c546194bd02608e921d9c673fa3e549c022468ae"
 PINNED_CASE_SHA="109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2"
 PINNED_SYSTEM_SHA="5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -61,14 +61,14 @@ case "$MODE" in
     check_key "$SOURCE_STAGE_KEY"
     need git
     [[ -e "$REPO/.git" ]] || { echo 'MISSING_LOCAL_GIT_REPO' >&2; exit 2; }
-    [[ "$(git -C "$REPO" rev-parse "$PINNED_PREFLIGHT_COMMIT^{commit}")" == "$PINNED_PREFLIGHT_COMMIT" ]] || {
-      echo 'PINNED_PREFLIGHT_COMMIT_NOT_FOUND' >&2; exit 2;
+    [[ "$(git -C "$REPO" rev-parse "HEAD:scripts/v03_r50_cpu_tokenizer_preflight_46.py")" == "$PINNED_PREFLIGHT_BLOB_SHA" ]] || {
+      echo 'LOCAL_PREFLIGHT_BLOB_MISMATCH__REFUSE_TO_STAGE' >&2; exit 2;
     }
     bash "$HERE/test_r50_cpu_guard.sh" "$HERE/v03_r50_hf_cpu_worker.sh"
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     mkdir -p "$tmp/code" "$tmp/private"
-    git -C "$REPO" show "$PINNED_PREFLIGHT_COMMIT:scripts/v03_r50_cpu_tokenizer_preflight_46.py" > "$tmp/code/preflight.py"
+    git -C "$REPO" cat-file blob "$PINNED_PREFLIGHT_BLOB_SHA" > "$tmp/code/preflight.py"
     cp "$HERE/v03_r50_hf_cpu_worker.sh" "$tmp/code/worker.sh"
     # The R50 private prompts stay OUTSIDE Git. Reuse previously staged HF inputs.
     for name in R50_CANDIDATE_46_PRESEAL_PRIVATE.jsonl R45_SYSTEM_CANDIDATE_64_OF_64_NOT_APPROVED_PRIVATE.txt; do
@@ -105,6 +105,11 @@ PY
     ;;
   submit)
     check_key "$SOURCE_STAGE_KEY"
+    need git
+    [[ -e "$REPO/.git" ]] || { echo 'MISSING_LOCAL_GIT_REPO' >&2; exit 2; }
+    [[ "$(git -C "$REPO" rev-parse "HEAD:scripts/v03_r50_cpu_tokenizer_preflight_46.py")" == "$PINNED_PREFLIGHT_BLOB_SHA" ]] || {
+      echo 'LOCAL_PREFLIGHT_BLOB_MISMATCH__NO_JOB_SUBMITTED' >&2; exit 2;
+    }
     [[ "${STORYFORGE_ALLOW_PAID_CPU:-}" == YES && "${STORYFORGE_R50_CPU_JOB_ONLY:-}" == YES ]] || {
       echo 'PAID_CPU_NOT_AUTHORIZED' >&2; exit 3;
     }
@@ -112,12 +117,17 @@ PY
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     hf buckets cp "$BUCKET/preflight/v03-r50/cpu-tokenizer/$SOURCE_STAGE_KEY/code/worker.sh" "$tmp/staged_worker.sh"
-    python3 - "$HERE/v03_r50_hf_cpu_worker.sh" "$tmp/staged_worker.sh" <<'PY'
+    hf buckets cp "$BUCKET/preflight/v03-r50/cpu-tokenizer/$SOURCE_STAGE_KEY/code/preflight.py" "$tmp/staged_preflight.py"
+    git -C "$REPO" cat-file blob "$PINNED_PREFLIGHT_BLOB_SHA" > "$tmp/pinned_preflight.py"
+    python3 - "$HERE/v03_r50_hf_cpu_worker.sh" "$tmp/staged_worker.sh" "$tmp/pinned_preflight.py" "$tmp/staged_preflight.py" <<'PY'
 import hashlib, pathlib, sys
 sha = lambda p: hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
 if sha(sys.argv[1]) != sha(sys.argv[2]):
     raise SystemExit('STAGED_WORKER_SHA_MISMATCH__NO_JOB_SUBMITTED')
 print('STAGED_WORKER_SHA256_PASS__CPU_GUARD_V2')
+if sha(sys.argv[3]) != sha(sys.argv[4]):
+    raise SystemExit('STAGED_PREFLIGHT_BLOB_SHA256_MISMATCH__NO_JOB_SUBMITTED')
+print('STAGED_PREFLIGHT_BLOB_SHA256_PASS__TRANSFORMERS_V5')
 PY
     # Verify frozen public model SHA before creating any paid CPU Job.
     verify_model_revision

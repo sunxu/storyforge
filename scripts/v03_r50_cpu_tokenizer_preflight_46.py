@@ -8,6 +8,7 @@ The prompt construction here is an UNAPPROVED DRAFT, not R49 registration.
 """
 from __future__ import annotations
 import argparse
+from collections.abc import Mapping
 import hashlib
 import json
 from pathlib import Path
@@ -43,6 +44,36 @@ def make_messages(case: dict, system_text: str) -> list[dict]:
     return [{'role':'system','content':composed}] + [
         {'role':m['role'], 'content':m['content']} for m in case['history']
     ] + [{'role':'user','content':case['user_input']}]
+
+def strict_input_ids(encoded: object, case_id: str) -> list[int]:
+    """Unpack the Transformers v5 BatchEncoding without silently reshaping data.
+
+    A single conversation with return_dict=True must have a flat list[int].
+    No batch, tensor, truncation, or implicit conversion is accepted.
+    """
+    if not isinstance(encoded, Mapping) or "input_ids" not in encoded:
+        raise TypeError(f"expected BatchEncoding.input_ids for {case_id}")
+    ids = encoded["input_ids"]
+    if (not isinstance(ids, list) or not ids or
+            any(type(token) is not int or not (0 <= token < 2**32) for token in ids)):
+        raise TypeError(f"invalid flat input_ids for {case_id}")
+    return ids
+
+
+def tokenize_case_messages(tokenizer: object, messages: list[dict],
+                           enable_thinking: bool, case_id: str) -> list[int]:
+    # Transformers 5.x apply_chat_template returns BatchEncoding, NOT list[int].
+    encoded = tokenizer.apply_chat_template(
+        messages,
+        tokenize=True,
+        return_dict=True,
+        add_generation_prompt=True,
+        enable_thinking=enable_thinking,
+        truncation=False,
+        padding=False,
+    )
+    return strict_input_ids(encoded, case_id)
+
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
@@ -85,9 +116,7 @@ def main() -> int:
     rows=[]
     for case in cases:
         msgs=make_messages(case,system)
-        enc=tok.apply_chat_template(msgs, tokenize=True, add_generation_prompt=True, enable_thinking=(a.thinking=='enabled'))
-        if not isinstance(enc,list) or not all(isinstance(i,int) for i in enc):
-            raise TypeError(f"invalid encoded ids for {case['case_id']}")
+        enc=tokenize_case_messages(tok, msgs, a.thinking=='enabled', case['case_id'])
         n=len(enc)
         b=b''.join(struct.pack('<I',i) for i in enc)
         rows.append({'case_id':case['case_id'],'history_count':len(case['history']),'consecutive_user':bool(case['history'] and case['history'][-1]['role']=='user'),'input_tokens':n,'input_plus_output_budget':n+a.reserved_output_tokens,'within_budget':n+a.reserved_output_tokens<=a.max_context,'input_id_sha256':sha256(b)})

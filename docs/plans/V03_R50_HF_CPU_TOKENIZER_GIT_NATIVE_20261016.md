@@ -143,3 +143,59 @@ Review the new `R50_STAGE_KEY` before separately approving any *paid* CPU
 `submit`. Private narrative data stays in the HF Bucket; the five-job
 incident audit in Git is text-free and preserves the original failure ID.
 No final Held-out seal or quality promotion is authorized.
+
+## 2026-10-16: Transformers v5 BatchEncoding contract correction
+
+CPU Job `6ad1f3bf5ccb47ba0f7b1d9c` **successfully retrieved all five pinned
+tokenizer files**, after passing CPU guard, Jinja2 and frozen-model SHA checks.
+It then failed on the first content case with
+`TypeError: invalid encoded ids for SFH50-W16-001`.
+
+Root cause: Transformers v5 changed `apply_chat_template(tokenize=True)`
+to return a **BatchEncoding mapping** with `input_ids`, whereas the R50
+preflight checked the returned object itself against `list[int]`.
+Official reference:
+https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md
+
+Corrected implementation specifies `return_dict=True`, extracts only
+`input_ids`, fails closed on malformed/nested/non-integer lists, and sets
+`truncation=False`, `padding=False`. It leaves the byte-exact R50 input,
+System candidate, tokenizer revision, generation prompt, thinking mode, and
+per-token SHA256 serialization unchanged.
+
+The local `test_r50_cpu_guard.sh` now additionally executes the pure-stdlib
+`tests/test_v03_r50_cpu_tokenizer_encoding.py` before staging or
+submitting. This does not load or generate any model. **Only source/API
+contract tests are covered; the full 46-case remote preflight remains HOLD.**
+
+```bash
+cd ~/workspace/storyforge
+git fetch origin audit/r49-r50-source-intake-20261015
+git switch audit/r49-r50-source-intake-20261015
+git pull --ff-only
+bash scripts/test_r50_cpu_guard.sh
+bash scripts/v03_r50_hf_cpu_submit.sh verify-model
+# Reuse last staged private input (no new upload/download exchange with ChatGPT):
+bash scripts/v03_r50_hf_cpu_submit.sh stage-from-bucket \
+  r50-token-20261016T094627Z-21ca6cce
+```
+
+Use the **new** Stage Key and a separate explicit paid CPU authorization
+only after reviewing test output. Previous stages carry the old preflight
+and must not be submitted. Final Held-out sealing and model quality promotion
+remain disallowed.
+
+### 2026-10-16 follow-up: eliminate stale staged preflight risk
+
+The earlier launcher staged the old preflight directly from commit `61f317b`.
+That would silently defeat a local fix to Transformers v5 BatchEncoding.
+
+The corrected launcher pins the **Git blob SHA** of the reviewed
+`v03_r50_cpu_tokenizer_preflight_46.py` (`c546194bd02608e921d9c673fa3e549c022468ae`).
+Before staging it checks that the local checked-out Git HEAD resolves to
+this exact blob; it writes that blob's bytes to the HF private stage.
+Before *every paid submit* it downloads only the staged Worker and preflight,
+compares both with the local reviewed bytes and refuses the Job on mismatch.
+
+No private test content is committed. Old HF stages remain intentionally
+unmodified and **cannot** be submitted under the fixed launcher.

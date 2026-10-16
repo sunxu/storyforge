@@ -73,6 +73,21 @@ if wrong == frozen or unique(r"^rev='([0-9a-f]+)'$",
     raise SystemExit('R50_REVISION_PIN_NEGATIVE_TEST_HOLD')
 print('R50_PINNED_REVISION_TRIPLE_MATCH_PASS', frozen)
 PY
+# Run pure-stdlib regression tests for the actual Transformers v5
+# BatchEncoding/dict input_ids API before staging or paid CPU execution.
+python3 "$(dirname "$launcher")/../tests/test_v03_r50_cpu_tokenizer_encoding.py"
+# Protect against the old launcher re-staging a 2026-10-16 preflight
+# from the obsolete 61f317b commit. All staged preflights must match the
+# reviewed Git blob SHA, and submit must verify staged bytes before billing.
+grep -Fq 'PINNED_PREFLIGHT_BLOB_SHA="c546194bd02608e921d9c673fa3e549c022468ae"' "$launcher" || {
+  echo 'MISSING_PINNED_PREFLIGHT_BLOB_SHA' >&2; exit 3;
+}
+grep -Fq 'STAGED_PREFLIGHT_BLOB_SHA256_PASS__TRANSFORMERS_V5' "$launcher" || {
+  echo 'MISSING_STAGED_PREFLIGHT_CHECK' >&2; exit 3;
+}
+if grep -Fq 'PINNED_PREFLIGHT_COMMIT=' "$launcher"; then
+  echo 'OBSOLETE_PREFLIGHT_COMMIT_PIN' >&2; exit 3;
+fi
 for value in '' none cpu; do
   ACCELERATOR="$value" R50_WORKER_GUARD_TEST_ONLY=1 bash "$worker" >/dev/null
 done
