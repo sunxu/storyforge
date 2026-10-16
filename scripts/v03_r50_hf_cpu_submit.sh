@@ -23,7 +23,40 @@ check_key() {
 need hf
 need python3
 
+# Zero-billing fail-closed API probe. This deliberately does not use the Hub's
+# /revision/<commit> endpoint, which returned 404 for the existing commit.
+verify_model_revision() {
+  python3 - <<'PY'
+import json
+import urllib.request
+
+pin = '1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
+repo = 'Qwen/Qwen3.8-27B'
+root = 'https://huggingface.co'
+info_req = urllib.request.Request(root + '/api/models/' + repo,
+    headers={'User-Agent':'StoryForge-R50-CPU-tokenizer-preflight'})
+with urllib.request.urlopen(info_req, timeout=20) as response:
+    data = json.load(response)
+sha = data.get('sha')
+if sha != pin:
+    raise SystemExit('R50_QWEN_API_SHA_HOLD: model head differs from frozen revision')
+head_req = urllib.request.Request(
+    root + '/' + repo + '/resolve/main/tokenizer_config.json',
+    method='HEAD',
+    headers={'User-Agent':'StoryForge-R50-CPU-tokenizer-preflight'},
+)
+with urllib.request.urlopen(head_req, timeout=20) as response:
+    remote_sha = response.headers.get('X-Repo-Commit')
+if remote_sha != pin:
+    raise SystemExit('R50_QWEN_TOKENIZER_HEADER_SHA_HOLD: cannot confirm pinned commit')
+print('R50_QWEN_PUBLIC_MODEL_PIN_PREFLIGHT_PASS', pin)
+PY
+}
+
 case "$MODE" in
+  verify-model)
+    verify_model_revision
+    ;;
   stage-from-bucket)
     check_key "$SOURCE_STAGE_KEY"
     need git
@@ -86,6 +119,8 @@ if sha(sys.argv[1]) != sha(sys.argv[2]):
     raise SystemExit('STAGED_WORKER_SHA_MISMATCH__NO_JOB_SUBMITTED')
 print('STAGED_WORKER_SHA256_PASS__CPU_GUARD_V2')
 PY
+    # Prevent a known-404 Hugging Face revision issue from burning another CPU Job.
+    verify_model_revision
     echo "SUBMITTING_SINGLE_CPU_BASIC_JOB_FOR $SOURCE_STAGE_KEY"
     hf jobs run \
       --namespace adradar --name storyforge-r50-46-tokenizer-cpu \
@@ -97,7 +132,7 @@ PY
     echo "REPORT_URI=$BUCKET/preflight/v03-r50/cpu-tokenizer/$SOURCE_STAGE_KEY/reports/R50_46_TOKENIZER.json"
     ;;
   *)
-    echo 'Usage: bash scripts/v03_r50_hf_cpu_submit.sh stage-from-bucket <PRIOR_STAGE_KEY> | submit <NEW_STAGE_KEY>' >&2
+    echo 'Usage: bash scripts/v03_r50_hf_cpu_submit.sh verify-model | stage-from-bucket <PRIOR_STAGE_KEY> | submit <NEW_STAGE_KEY>' >&2
     exit 2
     ;;
 esac

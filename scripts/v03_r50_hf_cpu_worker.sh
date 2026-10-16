@@ -35,14 +35,39 @@ rev='1d4bf0f2ff6012fd82039d0dd7c60c0'
 tokdir="/tmp/storyforge-tokenizer/$rev"
 mkdir -p "$tokdir"
 python - "$tokdir" "$rev" <<'PY'
-from huggingface_hub import snapshot_download
+# The immutable commit exists on the Hub, but the explicit
+# /api/models/<repo>/revision/<commit> API returned 404 in the CPU Job.
+# Bypass only THAT metadata endpoint. Verify public HEAD SHA before and after;
+# verify the actual immutable revision reported for EVERY downloaded file.
+from huggingface_hub import HfApi, hf_hub_download
+from pathlib import Path
+import shutil
 import sys
-snapshot_download(
-    repo_id='Qwen/Qwen3.8-27B', revision=sys.argv[2], local_dir=sys.argv[1],
-    allow_patterns=['tokenizer.json','tokenizer_config.json','special_tokens_map.json',
-                    'added_tokens.json','chat_template.jinja','vocab.json','merges.txt'],
-)
-print('PINNED_TOKENIZER_FILES_READY__NO_MODEL_WEIGHTS')
+
+target = Path(sys.argv[1])
+pin = sys.argv[2]
+repo = 'Qwen/Qwen3.8-27B'
+api = HfApi()
+head = api.model_info(repo_id=repo).sha
+if head != pin:
+    raise RuntimeError(f'QWEN_MAIN_SHA_MISMATCH: expected {pin}, received {head}')
+print('R50_QWEN_DEFAULT_METADATA_SHA_PASS', head, flush=True)
+
+# Fetch only the five known tokenizer files. Never fetch weights or config.json.
+required = ('tokenizer.json', 'tokenizer_config.json', 'chat_template.jinja',
+            'vocab.json', 'merges.txt')
+target.mkdir(parents=True, exist_ok=True)
+for name in required:
+    downloaded = Path(hf_hub_download(repo_id=repo, filename=name, revision='main'))
+    # hub cache paths contain snapshots/<actual Git commit>/<filename>.
+    # This guarantees no silent fallback to a drifting main revision.
+    if downloaded.parent.name != pin or downloaded.parent.parent.name != 'snapshots':
+        raise RuntimeError(f'TOKENIZER_FILE_COMMIT_MISMATCH: {name}')
+    shutil.copyfile(downloaded, target / name)
+    print('R50_PINNED_TOKENIZER_FILE_PASS', name, flush=True)
+if api.model_info(repo_id=repo).sha != pin:
+    raise RuntimeError('QWEN_MAIN_SHA_CHANGED_DURING_DOWNLOAD')
+print('PINNED_TOKENIZER_FILES_READY__NO_MODEL_WEIGHTS', flush=True)
 PY
 python -u "$base/code/preflight.py" \
   --candidates "$base/private/R50_CANDIDATE_46_PRESEAL_PRIVATE.jsonl" \

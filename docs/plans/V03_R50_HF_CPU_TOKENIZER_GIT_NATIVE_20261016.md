@@ -78,3 +78,32 @@ new `cpu-basic` run using `STORYFORGE_ALLOW_PAID_CPU=YES` and
 `STORYFORGE_R50_CPU_JOB_ONLY=YES` with `submit <NEW_KEY>`.
 A CPU Job can incur charges. Do not reuse old stages or overwrite private
 reports. No GPU, inference, or final Held-out seal is authorized.
+
+## 2026-10-16: Qwen immutable revision metadata 404
+
+CPU Job `6ad1e42dc66288145225ae0f` passed CPU guard and Jinja2,
+then received `RevisionNotFoundError` at the explicit
+`/api/models/Qwen/Qwen3.8-27B/revision/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` API.
+The public default model metadata and commit page still identify that same SHA.
+This is **not** authorization to switch models, silently use a moving `main`
+or ignore integrity checking.
+
+The updated worker queries default model metadata and validates that the HEAD
+SHA equals the frozen 40-hex revision; downloads only the published tokenizer
+files via `revision=main` with `hf_hub_download`, and checks that **every**
+returned cache path belongs to `snapshots/<frozen SHA>/`. It also verifies
+the model HEAD again after downloading. If any check fails, it fails closed.
+
+Before staging or submitting, run the network-only local probe without cost:
+
+```bash
+bash scripts/v03_r50_hf_cpu_submit.sh verify-model
+bash scripts/test_r50_cpu_guard.sh
+```
+
+`submit` repeats the no-billing API probe and refuses an HF Job if it fails.
+Old stages contain old worker bytes: create a **new** stage via
+`stage-from-bucket <prior key>`, then review billing authorization for any
+new `submit <new key>`. Neither the code commit nor the probe creates a
+paid Job. A successful public SHA probe does not prove the remote tokenizer
+download will succeed; actual HF CPU execution remains PENDING.

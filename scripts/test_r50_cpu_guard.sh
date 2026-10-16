@@ -19,6 +19,14 @@ grep -Fq '$HERE/v03_r50_hf_cpu_worker.sh' "$launcher" || {
 # The actual install-and-import smoke runs inside the HF worker before downloads.
 grep -Fq "'jinja2==3.1.6'" "$worker" || { echo 'MISSING_PINNED_JINJA2_DEPENDENCY' >&2; exit 3; }
 grep -Fq 'R50_JINJA_TEMPLATE_SELFTEST_PASS' "$worker" || { echo 'MISSING_JINJA_RUNTIME_SELFTEST' >&2; exit 3; }
+# Prevent regressions that call the failing pinned-revision model metadata API.
+grep -Fq 'R50_QWEN_DEFAULT_METADATA_SHA_PASS' "$worker" || { echo 'MISSING_MODEL_SHA_GUARD' >&2; exit 3; }
+grep -Fq 'TOKENIZER_FILE_COMMIT_MISMATCH' "$worker" || { echo 'MISSING_PER_FILE_SHA_GUARD' >&2; exit 3; }
+if grep -Fq "snapshot_download(" "$worker"; then
+  echo 'REVISION_API_BUG_PRONE_SNAPSHOT_DOWNLOAD' >&2
+  exit 3
+fi
+grep -Fq 'verify_model_revision' "$launcher" || { echo 'MISSING_NO_BILL_MODEL_PROBE' >&2; exit 3; }
 for value in '' none cpu; do
   ACCELERATOR="$value" R50_WORKER_GUARD_TEST_ONLY=1 bash "$worker" >/dev/null
 done
