@@ -66,9 +66,10 @@ def identity(obj: dict) -> str | None:
 def old14_data(path: Path) -> dict[int, dict]:
     """One story per rank, permitting equivalent JSON and JSONL representations.
 
-    Raw 14-story ZIPs may contain multiple representations of one source.
-    Inspect all valid-looking root-level chat members and fail closed if they
-    disagree in story identity, message roles or exact message text.
+    Archive label '14 original exports' is NOT proof that story numbers
+    are exactly 01–14. Parse and reconcile *all* numbered root chat exports,
+    then require the nine R45-source ranks available in this archive.
+    Any additional numbered sources remain visible to the scoped audit.
     """
     grouped: dict[int, list[tuple[str, dict]]] = {}
     with zipfile.ZipFile(path) as z:
@@ -81,15 +82,18 @@ def old14_data(path: Path) -> dict[int, dict]:
             if not match:
                 continue
             rank = int(match.group(1))
-            require(1 <= rank <= 14, "OLD14_UNEXPECTED_SOURCE_RANK")
+            require(1 <= rank <= 99, "OLD14_INVALID_SOURCE_RANK")
             require(member.file_size <= 150_000_000,
                     "OLD14_MEMBER_SIZE_LIMIT")
             data = json.loads(z.read(member).decode("utf-8-sig"))
             require(is_chat(data), "OLD14_SOURCE_NOT_CHAT")
             grouped.setdefault(rank, []).append((match.group(2).lower(), data))
 
-    require(set(grouped) == set(range(1, 15)),
-            "OLD14_14_RAW_STORIES_NOT_FOUND")
+    # Frozen R45 train/validation uses 02/04/06/08/09/10/12/14/15;
+    # old 04↔07 is linked. World 15 comes from the second LFS bundle.
+    # All other numeric ranks are retained for extra-ID overlap diagnostics.
+    needed = (R45_RANKS | {7}) - {15}
+    require(needed <= set(grouped), "OLD14_R45_REQUIRED_RANKS_MISSING")
     found = {}
     for rank, variants in sorted(grouped.items()):
         source_ids = {identity(obj) for _, obj in variants}
@@ -201,14 +205,29 @@ def keys(msgs: list[str], *, blocks: bool) -> set[bytes]:
 def screen(repo: Path, old14: Path, old06_15: Path) -> dict:
     verify_zip(old14, "old14")
     verify_zip(old06_15, "old06_15")
-    old = old14_data(old14)
-    old[15] = old15_data(old06_15)
-    old = {rank:old[rank] for rank in sorted(OLD_RANKS)}
+    old14_all = old14_data(old14)
+    nested_15 = old15_data(old06_15)
+    # If the first archive also contains story 15, both archives must agree
+    # on identity and ordered message contents before selecting either copy.
+    if 15 in old14_all:
+        require(identity(old14_all[15]) == identity(nested_15),
+                "OLD15_CROSS_ARCHIVE_ID_MISMATCH")
+        require(
+            [(m.get("role"), m.get("content")) for m in old14_all[15]["messages"]]
+            == [(m.get("role"), m.get("content")) for m in nested_15["messages"]],
+            "OLD15_CROSS_ARCHIVE_TRANSCRIPT_MISMATCH",
+        )
+    old = {rank: (nested_15 if rank == 15 else old14_all[rank])
+           for rank in sorted(OLD_RANKS)}
     new = new_data(repo)
     oi = [identity(v) for v in old.values()]
     ni = [identity(v) for v in new.values()]
     require(None not in oi + ni and len(set(oi)) == len(oi) and
             len(set(ni)) == len(ni), "STORY_ID_MISSING_OR_DUPLICATE")
+    extras = sorted(set(old14_all) - (OLD_RANKS | {7}))
+    extra_ids = [identity(old14_all[rank]) for rank in extras]
+    require(None not in extra_ids, "OLD14_EXTRA_SOURCE_ID_MISSING")
+    extra_new_id_conflicts = sum(sid in set(ni) for sid in extra_ids)
     old_msgs = {k:messages(v) for k,v in old.items()}
     new_msgs = {k:messages(v) for k,v in new.items()}
     old_full = {k:keys(v, blocks=False) for k,v in old_msgs.items()}
@@ -225,12 +244,18 @@ def screen(repo: Path, old14: Path, old06_15: Path) -> dict:
     require(len(pairs) == 50, "EXPECTED_10_OLD_COMPONENTS_X_5_NEW")
     flags = sum(bool(p["same_source_id"] or p["long_exact_message_matches"] or
                      p["sampled_120char_matches"]) for p in pairs)
+    flags += extra_new_id_conflicts
     return {
         "schema":"storyforge-r50-full-original-source-git-lfs-triage-v1",
         "archive_evidence":{k:{"sha256":v[0],"size_bytes":v[1],
                                  "full_bytes_and_crc":"PASS"} for k,v in ARCHIVES.items()},
         "r45_source_ranks":sorted(R45_RANKS),
         "transitive_known_old_link":[4,7],
+        "old14_numbered_chat_source_count":len(old14_all),
+        "old14_numbered_chat_ranks":sorted(old14_all),
+        "extra_archive_ranks_outside_frozen_r45":extras,
+        "extra_archive_source_id_conflicts_with_r50":extra_new_id_conflicts,
+        "old15_checked_against_two_archives":15 in old14_all,
         "old_source_ranks_checked":sorted(old),
         "new_source_ranks_checked":sorted(new),
         "old_full_source_message_count":sum(map(len, old_msgs.values())),

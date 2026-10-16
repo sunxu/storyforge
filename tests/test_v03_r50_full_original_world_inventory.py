@@ -88,6 +88,65 @@ class FullSourceGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "OLD14_VARIANT_ID_MISMATCH"):
             m.screen(self.repo, self.old14, self.old0615)
 
+    def test_old14_uses_frozen_required_ranks_not_01_to_14(self):
+        # A 14-export archive can contain an additional numbered story.
+        # That alone must not be silently ignored or treated as a conflict.
+        with zipfile.ZipFile(self.old14) as z:
+            payloads = {info.filename: z.read(info) for info in z.infolist()}
+        payloads["21-extra.json"] = json.dumps(record(21)).encode()
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        parsed = m.old14_data(self.old14)
+        self.assertIn(21, parsed)
+        report = m.screen(self.repo, self.old14, self.old0615)
+        self.assertIn(21, report["extra_archive_ranks_outside_frozen_r45"])
+        self.assertEqual(report["extra_archive_source_id_conflicts_with_r50"], 0)
+        self.assertEqual(report["semantic_hidden_alias_and_world_component_closure"], "HOLD")
+
+    def test_required_old14_rank_still_fail_closed(self):
+        with zipfile.ZipFile(self.old14) as z:
+            payloads = {info.filename: z.read(info) for info in z.infolist()
+                        if not info.filename.startswith("14-")}
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        with self.assertRaisesRegex(ValueError, "OLD14_R45_REQUIRED_RANKS_MISSING"):
+            m.screen(self.repo, self.old14, self.old0615)
+
+    def test_out_of_scope_extra_story_identity_overlap_is_flagged(self):
+        with zipfile.ZipFile(self.old14) as z:
+            payloads = {info.filename: z.read(info) for info in z.infolist()}
+        extra = record(21)
+        extra["story"]["id"] = "synthetic-16"
+        payloads["21-extra.json"] = json.dumps(extra).encode()
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        r = m.screen(self.repo, self.old14, self.old0615)
+        self.assertEqual(r["extra_archive_source_id_conflicts_with_r50"], 1)
+        self.assertEqual(r["screen_status"],
+                         "LEXICAL_OR_IDENTITY_FLAGS_REQUIRE_AI_ADJUDICATION")
+
+    def test_old15_cross_archive_divergence_is_rejected(self):
+        with zipfile.ZipFile(self.old14) as z:
+            payloads = {info.filename: z.read(info) for info in z.infolist()}
+        payloads["15-extra.json"] = json.dumps(record(15)).encode()
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        r = m.screen(self.repo, self.old14, self.old0615)
+        self.assertTrue(r["old15_checked_against_two_archives"])
+        changed = record(15)
+        changed["messages"][0]["content"] = "altered synthetic old15 text"
+        payloads["15-extra.json"] = json.dumps(changed).encode()
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        with self.assertRaisesRegex(ValueError,
+                                    "OLD15_CROSS_ARCHIVE_TRANSCRIPT_MISMATCH"):
+            m.screen(self.repo, self.old14, self.old0615)
+
     def test_nested_old_15(self):
         self.assertEqual(m.identity(m.old15_data(self.old0615)),"synthetic-15")
 

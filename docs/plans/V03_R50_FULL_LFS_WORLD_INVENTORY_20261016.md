@@ -55,3 +55,26 @@ change addresses the ambiguous-rank failure mode conservatively.
 Three new synthetic checks cover JSON/JSONL pair equivalence,
 contradictory transcripts and contradictory source identity. No GPU,
 HF Job, test generation or final Held-out seal is performed.
+
+## Follow-up: OLD14_UNEXPECTED_SOURCE_RANK (root-cause correction)
+
+The old14 ZIP has additional numbered root-level JSON/JSONL candidates
+beyond the presumed range 01–14. The archive name describes the number
+of source exports; it is **not** an authoritative guarantee of contiguous
+numeric ranks. The previous parser rejected an extra rank before checking
+the actual nine-world R45 source coverage.
+
+The revised check parses all two-digit numbered source records (01–99),
+demands the specific R45 historical ranks 02/04/06/07/08/09/10/12/14
+(15 is independently verified from the 06–15 LFS archive), reconciles
+all JSON/JSONL variants, and records extra source ranks in the
+*aggregate* report. Unexpected extra ranks cannot override frozen required
+stories. Their source IDs are compared against R50 identities and any
+conflict creates a flagged result; an optional rank-15 representation in
+the first archive must match the second archive exactly.
+
+This was added in response to the owner's real-world
+`R50_LFS_SOURCE_INVENTORY_HOLD: ValueError OLD14_UNEXPECTED_SOURCE_RANK`.
+The complete LFS ZIP member listing is still not available through the
+ChatGPT GitHub connector; no claim is made that the real run has passed.
+The source archives and existing dataset hashes remain unchanged.
