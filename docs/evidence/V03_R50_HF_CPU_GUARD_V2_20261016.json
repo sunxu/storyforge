@@ -19,7 +19,12 @@
     }
   ],
   "diagnosis": "CPU ACCELERATOR=cpu was rejected by an overly strict GPU guard",
-  "guard_allowed_values": ["unset", "", "none", "cpu"],
+  "guard_allowed_values": [
+    "unset",
+    "",
+    "none",
+    "cpu"
+  ],
   "guard_other_values": "DENY",
   "cpu_job_flavor": "cpu-basic",
   "timeout": "30m",
@@ -42,5 +47,19 @@
   "model_generation": false,
   "gpu_executed": false,
   "model_promotion": false,
-  "privacy": "No narrative prompts, per-case provenance, private token receipts, answers, or credentials stored in Git"
+  "privacy": "No narrative prompts, per-case provenance, private token receipts, answers, or credentials stored in Git",
+  "path_bug_fix": {
+    "symptom": "MISSING_CPU_WORKER while running stage-from-bucket",
+    "cause": "launcher and local guard test referred to r50_hf_cpu_worker.sh, but committed worker is v03_r50_hf_cpu_worker.sh",
+    "code_files_updated": [
+      "scripts/v03_r50_hf_cpu_submit.sh",
+      "scripts/test_r50_cpu_guard.sh"
+    ],
+    "launcher_references_corrected": 4,
+    "guard_default_corrected": true,
+    "regression_check": "test_r50_cpu_guard.sh verifies launcher filename consistency and rejects stale path",
+    "job_executed_during_fix": false,
+    "stage_completed_during_fix": false,
+    "tokenizer_preflight": "PENDING"
+  }
 }

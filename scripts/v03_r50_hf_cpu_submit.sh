@@ -31,12 +31,12 @@ case "$MODE" in
     [[ "$(git -C "$REPO" rev-parse "$PINNED_PREFLIGHT_COMMIT^{commit}")" == "$PINNED_PREFLIGHT_COMMIT" ]] || {
       echo 'PINNED_PREFLIGHT_COMMIT_NOT_FOUND' >&2; exit 2;
     }
-    bash "$HERE/test_r50_cpu_guard.sh" "$HERE/r50_hf_cpu_worker.sh"
+    bash "$HERE/test_r50_cpu_guard.sh" "$HERE/v03_r50_hf_cpu_worker.sh"
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     mkdir -p "$tmp/code" "$tmp/private"
     git -C "$REPO" show "$PINNED_PREFLIGHT_COMMIT:scripts/v03_r50_cpu_tokenizer_preflight_46.py" > "$tmp/code/preflight.py"
-    cp "$HERE/r50_hf_cpu_worker.sh" "$tmp/code/worker.sh"
+    cp "$HERE/v03_r50_hf_cpu_worker.sh" "$tmp/code/worker.sh"
     # The R50 private prompts stay OUTSIDE Git. Reuse previously staged HF inputs.
     for name in R50_CANDIDATE_46_PRESEAL_PRIVATE.jsonl R45_SYSTEM_CANDIDATE_64_OF_64_NOT_APPROVED_PRIVATE.txt; do
       hf buckets cp "$BUCKET/preflight/v03-r50/cpu-tokenizer/$SOURCE_STAGE_KEY/private/$name" "$tmp/private/$name"
@@ -75,11 +75,11 @@ PY
     [[ "${STORYFORGE_ALLOW_PAID_CPU:-}" == YES && "${STORYFORGE_R50_CPU_JOB_ONLY:-}" == YES ]] || {
       echo 'PAID_CPU_NOT_AUTHORIZED' >&2; exit 3;
     }
-    bash "$HERE/test_r50_cpu_guard.sh" "$HERE/r50_hf_cpu_worker.sh"
+    bash "$HERE/test_r50_cpu_guard.sh" "$HERE/v03_r50_hf_cpu_worker.sh"
     tmp="$(mktemp -d)"
     trap 'rm -rf "$tmp"' EXIT
     hf buckets cp "$BUCKET/preflight/v03-r50/cpu-tokenizer/$SOURCE_STAGE_KEY/code/worker.sh" "$tmp/staged_worker.sh"
-    python3 - "$HERE/r50_hf_cpu_worker.sh" "$tmp/staged_worker.sh" <<'PY'
+    python3 - "$HERE/v03_r50_hf_cpu_worker.sh" "$tmp/staged_worker.sh" <<'PY'
 import hashlib, pathlib, sys
 sha = lambda p: hashlib.sha256(pathlib.Path(p).read_bytes()).hexdigest()
 if sha(sys.argv[1]) != sha(sys.argv[2]):
