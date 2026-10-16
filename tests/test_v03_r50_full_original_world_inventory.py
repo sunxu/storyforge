@@ -33,8 +33,14 @@ class FullSourceGateTests(unittest.TestCase):
         t=tempfile.TemporaryDirectory();self.addCleanup(t.cleanup)
         self.root=Path(t.name)
         self.repo=self.root/"repo";self.repo.mkdir();(self.repo/".git").mkdir()
-        raw14=archive({f"{i:02d}-raw.json":json.dumps(record(i)).encode()
-                       for i in range(1,15)})
+        raw14=archive({
+            **{f"{i:02d}-raw.json":json.dumps(record(i)).encode()
+               for i in range(1,15)},
+            **{f"{i:02d}-raw.jsonl":json.dumps({
+                **record(i), "export_format": "jsonl"
+            }).encode() for i in range(1,15)},
+            "02-notes.txt": b"synthetic non-conversation sidecar",
+        })
         self.old14=self.root/"old14.zip";self.old14.write_bytes(raw14)
         zip15=archive({"15-original.json":json.dumps(record(15)).encode()})
         bundle=archive({"raw/15-original.zip":zip15})
@@ -51,6 +57,36 @@ class FullSourceGateTests(unittest.TestCase):
             row=record(i)
             (folder/(folder.name+".jsonl")).write_text(json.dumps(row)+"\n")
             (folder/"story-cards.json").write_text(json.dumps({"story_id":f"synthetic-{i}"}))
+
+    def test_old14_equivalent_json_and_jsonl(self):
+        rows = m.old14_data(self.old14)
+        self.assertEqual(len(rows), 14)
+        self.assertEqual(set(rows), set(range(1, 15)))
+        self.assertEqual(rows[4]["story"]["id"], "synthetic-4")
+
+    def test_old14_nonmatching_variants_hold(self):
+        with zipfile.ZipFile(self.old14) as z:
+            payloads = {info.filename: z.read(info) for info in z.infolist()}
+        edited = record(4)
+        edited["messages"][0]["content"] = "DIFFERENT SYNTHETIC USER CONTENT"
+        payloads["04-raw.jsonl"] = json.dumps(edited).encode()
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        with self.assertRaisesRegex(ValueError, "OLD14_VARIANTS_DIVERGE"):
+            m.screen(self.repo, self.old14, self.old0615)
+
+    def test_old14_changed_variant_identity_hold(self):
+        with zipfile.ZipFile(self.old14) as z:
+            payloads = {info.filename: z.read(info) for info in z.infolist()}
+        edited = record(4)
+        edited["story"]["id"] = "synthetic-different-world"
+        payloads["04-raw.jsonl"] = json.dumps(edited).encode()
+        binary = archive(payloads)
+        self.old14.write_bytes(binary)
+        m.ARCHIVES["old14"] = (hashlib.sha256(binary).hexdigest(), len(binary))
+        with self.assertRaisesRegex(ValueError, "OLD14_VARIANT_ID_MISMATCH"):
+            m.screen(self.repo, self.old14, self.old0615)
 
     def test_nested_old_15(self):
         self.assertEqual(m.identity(m.old15_data(self.old0615)),"synthetic-15")

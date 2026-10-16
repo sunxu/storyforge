@@ -64,17 +64,51 @@ def identity(obj: dict) -> str | None:
 
 
 def old14_data(path: Path) -> dict[int, dict]:
-    found = {}
+    """One story per rank, permitting equivalent JSON and JSONL representations.
+
+    Raw 14-story ZIPs may contain multiple representations of one source.
+    Inspect all valid-looking root-level chat members and fail closed if they
+    disagree in story identity, message roles or exact message text.
+    """
+    grouped: dict[int, list[tuple[str, dict]]] = {}
     with zipfile.ZipFile(path) as z:
-        for name in z.namelist():
-            if not re.fullmatch(r"\d{2}-[^/]+", name):
+        for member in z.infolist():
+            name = member.filename
+            if member.is_dir() or "/" in name:
                 continue
-            rank = int(name[:2])
-            require(1 <= rank <= 14 and rank not in found, "OLD14_RANK_COLLISION")
-            data = json.loads(z.read(name).decode("utf-8-sig"))
+            match = re.fullmatch(r"(\d{2})-[^/]+\.(json|jsonl)", name,
+                                 flags=re.IGNORECASE)
+            if not match:
+                continue
+            rank = int(match.group(1))
+            require(1 <= rank <= 14, "OLD14_UNEXPECTED_SOURCE_RANK")
+            require(member.file_size <= 150_000_000,
+                    "OLD14_MEMBER_SIZE_LIMIT")
+            data = json.loads(z.read(member).decode("utf-8-sig"))
             require(is_chat(data), "OLD14_SOURCE_NOT_CHAT")
-            found[rank] = data
-    require(set(found) == set(range(1, 15)), "OLD14_14_RAW_STORIES_NOT_FOUND")
+            grouped.setdefault(rank, []).append((match.group(2).lower(), data))
+
+    require(set(grouped) == set(range(1, 15)),
+            "OLD14_14_RAW_STORIES_NOT_FOUND")
+    found = {}
+    for rank, variants in sorted(grouped.items()):
+        source_ids = {identity(obj) for _, obj in variants}
+        require(len(source_ids) == 1 and None not in source_ids,
+                "OLD14_VARIANT_ID_MISMATCH")
+        signatures = set()
+        for _, obj in variants:
+            require(all(isinstance(msg, dict) for msg in obj["messages"]),
+                    "OLD14_SOURCE_MALFORMED_MESSAGE")
+            signature = hashlib.sha256(json.dumps(
+                [(msg.get("role"), msg.get("content"))
+                 for msg in obj["messages"]],
+                ensure_ascii=False, separators=(",", ":"),
+            ).encode("utf-8")).hexdigest()
+            signatures.add(signature)
+        require(len(signatures) == 1, "OLD14_VARIANTS_DIVERGE")
+        # Both full JSON and JSONL must agree; prefer full .json wrapper
+        # (and use .jsonl if there is no full JSON).
+        found[rank] = sorted(variants, key=lambda x: x[0] != "json")[0][1]
     return found
 
 

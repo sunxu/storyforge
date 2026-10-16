@@ -35,3 +35,23 @@ bash scripts/v03_r50_run_full_lfs_world_gate.sh --push
 The program verifies immutable archive SHA256+ZIP CRC, all 14 direct historical original story records, one unique old-15 nested source, the tracked five R50 source transcripts/card identities, and an exact-ID / sampled 120-codepoint cross-world lexical screen. It emits only source rank numbers, counts, and flags, without any original names or text. The output remains outside Git unless `--push` is explicitly chosen. Neither outcome can certify hidden aliases, transformed characters, semantic paraphrases, or point-in-time card facts: **semantic HOLD remains until AI adjudication based on full original text**.
 
 Potential causes of fail-closed HOLD include unavailable LFS binary, nested 15 record ambiguity, and mismatch of frozen source structure. The script does not rewrite originals, delete anything, generate text, run inference or create a final seal. If it HOLDs, share only its marker/error code, not raw story excerpts.
+
+## 2026-10-16: old14 duplicate-rank parser correction
+
+An actual owner-side scan failed with `OLD14_RANK_COLLISION`. The previous
+parser treated **every** root ZIP entry beginning with `NN-` as a unique
+story, without accounting for alternate exported representations.
+
+The corrected parser groups root-level `NN-*.json` and `NN-*.jsonl`
+chat entries by rank. It permits multiple representations only when the
+source story ID and complete ordered sequence of message role and exact
+content are equal. It rejects any altered/missing ID, changed transcript,
+malformed message, missing rank or invalid ZIP payload. Unrelated TXT
+sidecars are ignored. No prior data are silently selected without
+cross-validation. The exact list of member names in the actual old14
+archive has not been disclosed or independently inspected here; this
+change addresses the ambiguous-rank failure mode conservatively.
+
+Three new synthetic checks cover JSON/JSONL pair equivalence,
+contradictory transcripts and contradictory source identity. No GPU,
+HF Job, test generation or final Held-out seal is performed.
