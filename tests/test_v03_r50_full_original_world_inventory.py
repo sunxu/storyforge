@@ -1,5 +1,6 @@
 """Synthetic-only R50 old/full-world ZIP inventory tests; no private material."""
 from __future__ import annotations
+
 import hashlib
 import importlib.util
 import json
