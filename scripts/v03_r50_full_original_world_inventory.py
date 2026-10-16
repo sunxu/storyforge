@@ -108,7 +108,7 @@ def old14_data(path: Path) -> dict[int, dict]:
         require(len(signatures) == 1, "OLD14_VARIANTS_DIVERGE")
         # Both full JSON and JSONL must agree; prefer full .json wrapper
         # (and use .jsonl if there is no full JSON).
-        found[rank] = sorted(variants, key=lambda x: x[0] != "json")[0][1]
+        found[rank] = min(variants, key=lambda x: x[0] != "json")[1]
     return found
 
 
