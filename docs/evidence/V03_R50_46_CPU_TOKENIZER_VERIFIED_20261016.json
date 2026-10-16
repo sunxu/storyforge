@@ -1,0 +1,44 @@
+{
+  "schema": "storyforge-r50-cpu-tokenizer-verified-aggregate-v1",
+  "source": "OWNER_AUTHENTICATED_HF_PRIVATE_BUCKET_REPORT",
+  "validation": "FULL_PRIVATE_REPORT_FIELDS_AND_46_RECORDS_VALIDATED",
+  "report_file_sha256": "7798e5b1f5c51fba23cb3c7ac076a80d16d599a46650973cdc3c110c4a672cb7",
+  "hf_job_id": "6ad1fd155ccb47ba0f7b1ec6",
+  "model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "candidate_sha256": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2",
+  "system_sha256": "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83",
+  "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+  "tokenizer_file_sha256": {
+    "tokenizer.json": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "tokenizer_config.json": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27"
+  },
+  "thinking_mode": "disabled",
+  "context_tokens": 16384,
+  "reserved_output_tokens": 1536,
+  "case_count": 46,
+  "history_message_count": 364,
+  "consecutive_user_case_count": 12,
+  "world_case_counts": {
+    "16": 9,
+    "17": 10,
+    "18": 9,
+    "19": 8,
+    "20": 10
+  },
+  "overflow_count": 0,
+  "input_token_distribution": {
+    "min": 558,
+    "median": 1362.0,
+    "p95_nearest_rank": 4265,
+    "max": 8757
+  },
+  "result": "R50_46_ACTUAL_QWEN_TOKENIZER_BUDGET_PASS_ONLY",
+  "input_strategy": "DRAFT_NOT_PREREGISTERED",
+  "semantic_world_alias": "HOLD",
+  "four_arm_runtime_input_equality": "NOT_VERIFIED",
+  "heldout_final_seal": "NOT_PERFORMED",
+  "model_generation": false,
+  "gpu_executed": false,
+  "model_promotion": false,
+  "privacy": "Aggregate only; no prompts, per-case IDs, mappings, token counts or answers."
+}
