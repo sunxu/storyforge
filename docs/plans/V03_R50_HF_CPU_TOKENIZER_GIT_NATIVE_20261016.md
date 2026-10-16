@@ -47,3 +47,34 @@ The future successful report (if any) remains private:
 `hf://buckets/adradar/storyforge-training/preflight/v03-r50/cpu-tokenizer/<NEW_STAGE_KEY>/reports/R50_46_TOKENIZER.json`
 
 Only a **sanitized aggregate summary** may enter `docs/evidence/` after validation; never commit the private 46-case JSONL, provenance, case-level token receipt, System plaintext, stage credentials or answers. Full semantic alias isolation and preregistration remain HOLD.
+
+## 2026-10-16 CPU tokenizer dependency fix
+
+The third CPU Job `6ad1e135c66288145225a9e3` reached the preflight but failed
+with `ImportError: apply_chat_template requires jinja2 to be installed`.
+`PyTorch was not found` is expected for the tokenizer-only container and was
+not the fatal error. The worker now installs pinned `jinja2==3.1.6`, and executes
+a Jinja2 rendering/import self-test before downloading the tokenizer. The local
+guard checks that the dependency and remote self-test remain present.
+
+**No Job is submitted by this commit.** Old HF stages still contain the
+obsolete worker. Create a fresh stage by copying the existing private inputs
+from the prior stage; the launcher verifies both input SHA256 hashes.
+
+```bash
+git fetch origin audit/r49-r50-source-intake-20261015
+git switch audit/r49-r50-source-intake-20261015
+git pull --ff-only origin audit/r49-r50-source-intake-20261015
+bash scripts/test_r50_cpu_guard.sh
+
+# Read a previously staged key from the existing private HF Bucket; stage only, no billable Job:
+# OLD_STAGE_KEY must be the actual r50-token-... value from that listing.
+bash scripts/v03_r50_hf_cpu_submit.sh stage-from-bucket \
+  "$OLD_STAGE_KEY"
+```
+
+Record the **new** `R50_STAGE_KEY`. The owner may separately authorize a
+new `cpu-basic` run using `STORYFORGE_ALLOW_PAID_CPU=YES` and
+`STORYFORGE_R50_CPU_JOB_ONLY=YES` with `submit <NEW_KEY>`.
+A CPU Job can incur charges. Do not reuse old stages or overwrite private
+reports. No GPU, inference, or final Held-out seal is authorized.

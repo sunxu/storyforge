@@ -21,8 +21,17 @@ key="${R50_STAGE_KEY:?R50_STAGE_KEY must be provided by launcher}"
 base="/workspace/preflight/v03-r50/cpu-tokenizer/$key"
 mkdir -p "$base/reports"
 python -m pip install --disable-pip-version-check --quiet \
-  'transformers==5.16.1' 'huggingface_hub>=0.35,<3'
-rev='1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
+  'transformers==5.16.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6'
+# Fail before model/tokenizer download if the chat-template dependency is missing.
+python - <<'PY'
+from importlib.metadata import version
+from jinja2 import Environment
+from transformers import AutoTokenizer  # import only: no model or weights
+assert Environment().from_string('{{ value }}').render(value='ok') == 'ok'
+assert version('jinja2') == '3.1.6'
+print('R50_JINJA_TEMPLATE_SELFTEST_PASS: jinja2=3.1.6; tokenizer-only mode')
+PY
+rev='1d4bf0f2ff6012fd82039d0dd7c60c0'
 tokdir="/tmp/storyforge-tokenizer/$rev"
 mkdir -p "$tokdir"
 python - "$tokdir" "$rev" <<'PY'

@@ -15,6 +15,10 @@ grep -Fq '$HERE/v03_r50_hf_cpu_worker.sh' "$launcher" || {
   echo 'EXPECTED_WORKER_PATH_NOT_IN_LAUNCHER' >&2
   exit 3
 }
+# Static regression against the missing-Jinja2 failure seen in CPU Job 6ad1e135... .
+# The actual install-and-import smoke runs inside the HF worker before downloads.
+grep -Fq "'jinja2==3.1.6'" "$worker" || { echo 'MISSING_PINNED_JINJA2_DEPENDENCY' >&2; exit 3; }
+grep -Fq 'R50_JINJA_TEMPLATE_SELFTEST_PASS' "$worker" || { echo 'MISSING_JINJA_RUNTIME_SELFTEST' >&2; exit 3; }
 for value in '' none cpu; do
   ACCELERATOR="$value" R50_WORKER_GUARD_TEST_ONLY=1 bash "$worker" >/dev/null
 done

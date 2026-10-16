@@ -1,0 +1,34 @@
+{
+  "schema": "storyforge-r50-hf-cpu-tokenizer-optional-dependency-fix-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "audit_branch": "audit/r49-r50-source-intake-20261015",
+  "failed_job": {
+    "id": "6ad1e135c66288145225a9e3",
+    "stage": "ERROR",
+    "exit_code": 1,
+    "failure": "ImportError: apply_chat_template requires jinja2 to be installed",
+    "status": "TOKENIZER_PREFLIGHT_HOLD"
+  },
+  "torch_warning": "Not fatal: PyTorch is absent in tokenizer-only runtime",
+  "change": {
+    "file": "scripts/v03_r50_hf_cpu_worker.sh",
+    "dependencies": {
+      "transformers": "5.16.1",
+      "jinja2": "3.1.6"
+    },
+    "runtime_preflight": "Jinja rendering + tokenizer import before tokenizer snapshot download",
+    "new_paid_job": false
+  },
+  "tests": {
+    "local_guard": "Checks pinned dependency and presence of runtime self-test; actual remote installation not yet verified",
+    "run_success": "PENDING"
+  },
+  "persistent_private_inputs": "HF Bucket only; preserved, not committed",
+  "actual_qwen_tokenizer_preflight": "HOLD",
+  "semantic_world_alias": "HOLD",
+  "four_arm_contract": "DRAFT_NOT_APPROVED",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "gpu_executed": false,
+  "model_generation": false
+}
