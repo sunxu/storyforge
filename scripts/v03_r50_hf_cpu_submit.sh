@@ -23,8 +23,8 @@ check_key() {
 need hf
 need python3
 
-# Zero-billing fail-closed API probe. This deliberately does not use the Hub's
-# /revision/<commit> endpoint, which returned 404 for the existing commit.
+# Zero-billing fail-closed API probe. Previous explicit-revision 404 used
+# a malformed worker SHA (not evidence of an HF API outage).
 verify_model_revision() {
   python3 - <<'PY'
 import json
@@ -119,7 +119,7 @@ if sha(sys.argv[1]) != sha(sys.argv[2]):
     raise SystemExit('STAGED_WORKER_SHA_MISMATCH__NO_JOB_SUBMITTED')
 print('STAGED_WORKER_SHA256_PASS__CPU_GUARD_V2')
 PY
-    # Prevent a known-404 Hugging Face revision issue from burning another CPU Job.
+    # Verify frozen public model SHA before creating any paid CPU Job.
     verify_model_revision
     echo "SUBMITTING_SINGLE_CPU_BASIC_JOB_FOR $SOURCE_STAGE_KEY"
     hf jobs run \

@@ -31,14 +31,13 @@ assert Environment().from_string('{{ value }}').render(value='ok') == 'ok'
 assert version('jinja2') == '3.1.6'
 print('R50_JINJA_TEMPLATE_SELFTEST_PASS: jinja2=3.1.6; tokenizer-only mode')
 PY
-rev='1d4bf0f2ff6012fd82039d0dd7c60c0'
+rev='1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
 tokdir="/tmp/storyforge-tokenizer/$rev"
 mkdir -p "$tokdir"
 python - "$tokdir" "$rev" <<'PY'
-# The immutable commit exists on the Hub, but the explicit
-# /api/models/<repo>/revision/<commit> API returned 404 in the CPU Job.
-# Bypass only THAT metadata endpoint. Verify public HEAD SHA before and after;
-# verify the actual immutable revision reported for EVERY downloaded file.
+# The earlier revision-API 404 was triggered with a MALFORMED worker SHA.
+# Verify public HEAD SHA before and after downloading tokenizer-only assets;
+# verify the immutable revision of every downloaded cached file.
 from huggingface_hub import HfApi, hf_hub_download
 from pathlib import Path
 import shutil

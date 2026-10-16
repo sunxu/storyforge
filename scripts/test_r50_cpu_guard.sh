@@ -27,6 +27,52 @@ if grep -Fq "snapshot_download(" "$worker"; then
   exit 3
 fi
 grep -Fq 'verify_model_revision' "$launcher" || { echo 'MISSING_NO_BILL_MODEL_PROBE' >&2; exit 3; }
+# Cross-check the SAME exact 40-hex revision in worker, free API probe,
+# and immutable 46-case preflight code BEFORE staging or paid CPU submission.
+# Also simulate the incorrect prior worker SHA to ensure this guard catches it.
+python3 - "$worker" "$launcher" "$(dirname "$launcher")/v03_r50_cpu_tokenizer_preflight_46.py" <<'PY'
+import ast
+import pathlib
+import re
+import sys
+
+worker_path, launcher_path, preflight_path = map(pathlib.Path, sys.argv[1:])
+w, l, p = (path.read_text(encoding='utf-8') for path in
+           (worker_path, launcher_path, preflight_path))
+frozen = '1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0'
+
+def unique(pattern, source, label):
+    vals = re.findall(pattern, source, re.M)
+    if len(vals) != 1:
+        raise SystemExit(f'R50_REVISION_PIN_HOLD: {label} has {len(vals)} pins')
+    return vals[0]
+
+worker_pin = unique(r"^rev='([0-9a-f]+)'$", w, 'worker')
+launcher_pin = unique(r"^pin = '([0-9a-f]+)'$", l, 'launcher')
+tree = ast.parse(p)
+pin_values = [
+    node.value.value
+    for node in tree.body
+    if isinstance(node, ast.Assign)
+    and any(isinstance(target, ast.Name) and target.id == 'PINNED_REVISION'
+            for target in node.targets)
+    and isinstance(node.value, ast.Constant)
+    and isinstance(node.value.value, str)
+]
+if len(pin_values) != 1:
+    raise SystemExit('R50_REVISION_PIN_HOLD: preflight PINNED_REVISION missing')
+preflight_pin = pin_values[0]
+if not all(len(value) == 40 and value == frozen for value in
+           (worker_pin, launcher_pin, preflight_pin)):
+    raise SystemExit('R50_REVISION_PIN_HOLD: worker/launcher/preflight SHA mismatch')
+# Negative regression: the exact SHA from the failed CPU Job must be rejected.
+wrong = '1d4bf0f2ff6012fd82039d0dd7c60c0'
+if wrong == frozen or unique(r"^rev='([0-9a-f]+)'$",
+      w.replace("rev='" + frozen + "'", "rev='" + wrong + "'"),
+      'mutated-worker') == frozen:
+    raise SystemExit('R50_REVISION_PIN_NEGATIVE_TEST_HOLD')
+print('R50_PINNED_REVISION_TRIPLE_MATCH_PASS', frozen)
+PY
 for value in '' none cpu; do
   ACCELERATOR="$value" R50_WORKER_GUARD_TEST_ONLY=1 bash "$worker" >/dev/null
 done

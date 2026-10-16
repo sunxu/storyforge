@@ -107,3 +107,39 @@ Old stages contain old worker bytes: create a **new** stage via
 new `submit <new key>`. Neither the code commit nor the probe creates a
 paid Job. A successful public SHA probe does not prove the remote tokenizer
 download will succeed; actual HF CPU execution remains PENDING.
+
+## 2026-10-16: Corrected root cause of HF revision mismatch
+
+CPU Job `6ad1edc35ccb47ba0f7b1c00` reached the remote SHA guard but failed
+`QWEN_MAIN_SHA_MISMATCH`. Its Worker contained the incorrect shortened
+SHA `1d4bf0f2ff6012fd82039d0dd7c60c0` while the public model metadata, local free probe,
+and immutable preflight code all used the correct full revision
+`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`.
+
+**Erratum:** Earlier notes described an HF revision metadata API problem.
+The 404 request also contained the same invalid SHA, so that diagnosis was
+not established. The frozen model is **not changed**, and there is no reason
+to switch to an unpinned model.
+
+The Worker SHA is now corrected and the local `test_r50_cpu_guard.sh`
+verifies the three SHA references (Worker, launcher, preflight), exact 40-hex
+length, and rejection of the previous wrong SHA. This test is called by both
+`stage-from-bucket` and `submit` before any paid job.
+
+```bash
+cd ~/workspace/storyforge
+git fetch origin audit/r49-r50-source-intake-20261015
+git switch audit/r49-r50-source-intake-20261015
+git pull --ff-only
+bash scripts/test_r50_cpu_guard.sh
+bash scripts/v03_r50_hf_cpu_submit.sh verify-model
+
+# Stage only, using the previous private HF inputs. No GPU or HF Job:
+bash scripts/v03_r50_hf_cpu_submit.sh stage-from-bucket \
+  "<PRIOR_R50_STAGE_KEY>"
+```
+
+Review the new `R50_STAGE_KEY` before separately approving any *paid* CPU
+`submit`. Private narrative data stays in the HF Bucket; the five-job
+incident audit in Git is text-free and preserves the original failure ID.
+No final Held-out seal or quality promotion is authorized.
