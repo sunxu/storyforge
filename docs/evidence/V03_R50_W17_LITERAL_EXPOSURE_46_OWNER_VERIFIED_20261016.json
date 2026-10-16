@@ -1,0 +1,73 @@
+{
+  "schema": "storyforge-r50-w17-known-shared-literal-retained-input-exposure-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "source": "OWNER_EXECUTED_GIT_PINNED_R50_W17_SOURCE_OVERLAP_SCRIPT",
+  "verification_level": "OWNER_LOCAL_OUTPUT_REVIEWED__NO_INDEPENDENT_PRIVATE_RAW_REHASH_BY_ASSISTANT",
+  "expected_script": "scripts/v03_r50_w17_source_overlap.py",
+  "frozen_candidate_sha256": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2",
+  "frozen_system_sha256": "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83",
+  "source_scope": {
+    "ten_old_worlds_including_known_link_04_07": true,
+    "five_r50_worlds": true,
+    "source_pair_count": 50,
+    "flagged_old_to_r50_pairs": [
+      [
+        2,
+        17
+      ],
+      [
+        4,
+        17
+      ],
+      [
+        10,
+        17
+      ]
+    ],
+    "exact_story_id_conflicts": 0,
+    "distinct_exact_long_literals": 1,
+    "one_literal_shared_by_old_02_04_10": true,
+    "matched_literal_normalized_length_codepoints": 322,
+    "matched_old_assistant_message_occurrences": 3,
+    "matched_new_assistant_message_occurrences": 3,
+    "distinct_sampled_120char_windows": 5,
+    "sampled_windows_all_explained_by_exact_literal": true
+  },
+  "private_prompt_exposure": {
+    "all_cases_sha_gate_locally_enforced": true,
+    "total_retained_cases_checked": 46,
+    "w17_retained_case_count": 10,
+    "w17_cases_containing_shared_long_literal": {
+      "history": 0,
+      "world_card": 0,
+      "long_term_rules": 0,
+      "user_input": 0
+    },
+    "w17_cases_containing_shared_120_window": {
+      "history": 0,
+      "world_card": 0,
+      "long_term_rules": 0,
+      "user_input": 0
+    },
+    "common_system_contains_literal": false,
+    "common_system_contains_120_window": false
+  },
+  "gate_decisions": {
+    "w17_known_exact_shared_literal_exposure": "PASS_ABSENT_FROM_RETAINED_W17_PROMPT_FIELDS",
+    "w17_known_shared_sampled_windows_exposure": "PASS_ABSENT_FROM_RETAINED_W17_PROMPT_FIELDS",
+    "shared_literal_content_type": "UNDETERMINED_WITHOUT_READING_ORIGINAL_322_CHARACTER_MESSAGE",
+    "semantic_world_identity_and_alias_graph": "HOLD",
+    "other_unchecked_semantic_overlap": "PENDING",
+    "r50_46_cpu_tokenizer": "PASS_PREVIOUSLY_ARCHIVED",
+    "four_arm_preregistration": "DRAFT_OWNER_APPROVAL_PENDING",
+    "final_heldout_seal": "NOT_PERFORMED",
+    "drop_or_rewrite_cases": "NOT_AUTHORIZED",
+    "model_promotion": false
+  },
+  "interpretation": "All 3 old-to-W17 exact message pair flags arise from one normalized long Assistant message, with no exact literal or corresponding sampled 120-character window in the 10 frozen W17 retained prompts or common System. This resolves only the known literal's direct input-exposure subgate; no conclusion is drawn about thematic/character/world alias independence or innocuousness of source message.",
+  "privacy": "Counts and source rank numbers only; no raw narrative, shared literal, fingerprint, personal names, case IDs or answer keys.",
+  "no_paid_hf_job": true,
+  "no_model_inference": true,
+  "no_gpu": true
+}
