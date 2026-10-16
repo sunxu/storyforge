@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """R50 full-original world inventory; fail-closed, no inference or final seal.
 
 Read two immutable Git LFS ZIPs and five tracked R50 source transcripts.
@@ -7,17 +6,16 @@ Outputs only aggregate counts; AI alias/identity adjudication still required.
 from __future__ import annotations
 
 import argparse
-from collections import defaultdict
 import hashlib
-from io import BytesIO
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
 import unicodedata
 import zipfile
+from io import BytesIO
+from pathlib import Path
 
 ARCHIVES = {
     "old14": ("050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb", 57602487),
@@ -91,8 +89,7 @@ def old15_data(path: Path) -> dict:
                     continue
                 base = Path(name).name
                 lower = name.lower()
-                if root and not (lower.startswith("sources/") or
-                                 lower.startswith("raw/") or base.startswith("15-")):
+                if root and not (lower.startswith(("sources/", "raw/")) or base.startswith("15-")):
                     continue
                 info = z.getinfo(name)
                 require(info.file_size <= 150_000_000, "OLD15_MEMBER_SIZE_LIMIT")
@@ -101,7 +98,7 @@ def old15_data(path: Path) -> dict:
                         walk(z.read(name), level + 1, False)
                     except (EOFError, zipfile.BadZipFile):
                         continue
-                elif re.fullmatch(r"15-[^/]+\.jsonl?", base, flags=re.I):
+                elif re.fullmatch(r"15-[^/]+\.jsonl?", base, flags=re.IGNORECASE):
                     try:
                         row = json.loads(z.read(name).decode("utf-8-sig"))
                     except (json.JSONDecodeError, UnicodeError):

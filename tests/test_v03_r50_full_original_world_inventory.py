@@ -1,14 +1,13 @@
-#!/usr/bin/env python3
 """Synthetic-only R50 old/full-world ZIP inventory tests; no private material."""
 from __future__ import annotations
 import hashlib
 import importlib.util
-from io import BytesIO
 import json
-from pathlib import Path
 import tempfile
 import unittest
 import zipfile
+from io import BytesIO
+from pathlib import Path
 
 P=Path(__file__).resolve().parents[1]/"scripts"/"v03_r50_full_original_world_inventory.py"
 spec=importlib.util.spec_from_file_location("r50_lfs_inventory",P)
