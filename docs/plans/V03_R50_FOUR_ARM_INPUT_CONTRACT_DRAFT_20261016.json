@@ -31,14 +31,16 @@
     {
       "label": "V01",
       "base_revision": "TO_VERIFY_AT_R56",
-      "adapter_sha256": "TO_VERIFY_AT_R56",
-      "runtime_load_verified": false
+      "adapter_sha256": "621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478",
+      "runtime_load_verified": false,
+      "adapter_evidence": "docs/HF_RUN_REGISTRY.md; v0.1 checkpoint-9, CPU SHA report; remote runtime reload still unverified for R56"
     },
     {
       "label": "V02",
-      "base_revision": "TO_VERIFY_AT_R56",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
       "adapter_sha256": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b",
-      "runtime_load_verified": false
+      "runtime_load_verified": false,
+      "adapter_evidence": "docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json; SHA reported, not independently rehashed here"
     },
     {
       "label": "V03_A",
@@ -133,5 +135,6 @@
     "final_heldout_seal": "NOT_PERFORMED",
     "paid_gpu_execution": "NOT_AUTHORIZED",
     "model_promotion": "NOT_AUTHORIZED"
-  }
+  },
+  "pinned_adapter_evidence_review": "V01_V02_HISTORICAL_HASHES_GROUNDED__R56_LIVE_RUNTIME_LOAD_STILL_PENDING"
 }

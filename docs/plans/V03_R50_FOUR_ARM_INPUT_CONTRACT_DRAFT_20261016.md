@@ -72,3 +72,15 @@ to `INCONCLUSIVE_NO_PROMOTION`.
 Privacy: Only this **text-free** contract and aggregate evidence belong in Git.
 The 46 prompts, provenance map, per-case tokens, reference text, private blind
 mapping and source story records remain outside normal Git commits.
+
+### Historical v0.1/v0.2 adapter references (not runtime approval)
+
+The existing v0.1 baseline checkpoint-9 registry records Adapter
+`621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478`
+(see `docs/HF_RUN_REGISTRY.md`). The R46 v0.2 evidence records Base revision
+`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` and Adapter
+`bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b`
+(see `docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json`).
+These are **historical recorded hashes**. They do not demonstrate that any
+R56 runtime has loaded the exact four arms or used identical inputs.
+v0.3-A remains untrained/unselected under the current gate evidence.
