@@ -38,6 +38,9 @@ jobs:
       - name: Synthetic test of old original LFS rank handling (no archive download)
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_full_original_world_inventory.py' -v
+      - name: Synthetic W17 flagged-source overlap tests (private data unavailable)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_source_overlap.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \

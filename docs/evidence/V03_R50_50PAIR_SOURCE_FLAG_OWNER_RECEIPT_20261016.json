@@ -1,0 +1,57 @@
+{
+  "schema": "storyforge-r50-full-source-owner-reported-three-pair-flag-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "source": "OWNER_LOCAL_R50_LFS_SOURCE_INVENTORY_OUTPUT",
+  "verification_level": "OWNER_REPORTED_AGGREGATE; private report bytes not directly read in ChatGPT",
+  "private_archive_sha_checks": "SCRIPT_REPORTED_SUCCESSFUL; original archives not materialized in chat",
+  "scope": "R45 9 frozen worlds plus historically linked old 07 vs R50 5 worlds (50 pairs)",
+  "screen_status": "LEXICAL_OR_IDENTITY_FLAGS_REQUIRE_AI_ADJUDICATION",
+  "pair_count": 50,
+  "same_story_id_pair_count": 0,
+  "exact_long_message_flagged_pairs": 3,
+  "sampled_120_flagged_pairs": 3,
+  "extra_archive_source_id_conflicts_with_r50": 0,
+  "old14_numbered_chat_source_count": 14,
+  "extra_archive_ranks_outside_frozen_r45": [
+    1,
+    3,
+    5,
+    13
+  ],
+  "flagged_pairs": [
+    {
+      "old_rank": 2,
+      "r50_rank": 17,
+      "same_story_id": false,
+      "long_exact_message_matches": 1,
+      "sampled_120char_matches": 5
+    },
+    {
+      "old_rank": 4,
+      "r50_rank": 17,
+      "same_story_id": false,
+      "long_exact_message_matches": 1,
+      "sampled_120char_matches": 5
+    },
+    {
+      "old_rank": 10,
+      "r50_rank": 17,
+      "same_story_id": false,
+      "long_exact_message_matches": 1,
+      "sampled_120char_matches": 5
+    }
+  ],
+  "interpretation": "Three lexical flags all concern new W17; the matched text may be one shared template or multiple distinct excerpts; cannot classify without comparing the matched full messages and exposure in 46 private cases.",
+  "hard_rules": {
+    "confirmed_semantic_link": "NOT_DETERMINED",
+    "w17_world_admission": "HOLD_PENDING_AI_REVIEW",
+    "other_worlds_semantic_certification": "NOT_ESTABLISHED",
+    "heldout_final_seal": "NOT_PERFORMED",
+    "four_arm_contract": "DRAFT_NOT_APPROVED",
+    "model_promotion": false,
+    "no_gpu": true,
+    "no_model_generation": true
+  },
+  "privacy": "No story names, exact matched text, source UUIDs, per-case IDs, fingerprints, or model answers included."
+}
