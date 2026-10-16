@@ -105,6 +105,48 @@ class CaseProvenanceTests(unittest.TestCase):
             self.assertEqual(result["card_evidence_type_counts"]["content_versions"], 40)
             self.assertEqual(result["semantic_world_and_card_fact_review"], "PENDING")
 
+    def test_realistic_numeric_version_id_string_is_accepted(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            x, p = fixture(root)
+            for rank in range(16, 21):
+                folder = root / ROOT / f"{rank}-example" / "story-cards.json"
+                card = json.loads(folder.read_text(encoding="utf-8"))
+                card["content_versions"][0]["id"] = 1000 + rank
+                folder.write_text(json.dumps(card), encoding="utf-8")
+            for item in p:
+                item["card_evidence"] = {
+                    "kind": "content_versions",
+                    "record_id": str(1000 + item["story_number"]),
+                }
+            result = verify_case_sources(root, x, p)
+            self.assertEqual(result["source_history_exactly_matched"], 40)
+
+    def test_historical_card_version_expired_before_cutoff_is_rejected(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            x, p = fixture(root)
+            folder = root / ROOT / "16-example" / "story-cards.json"
+            card = json.loads(folder.read_text(encoding="utf-8"))
+            card["content_versions"][0]["archived_at"] = "2026-01-02T00:00:00+00:00"
+            folder.write_text(json.dumps(card), encoding="utf-8")
+            p[0]["card_evidence"] = {"kind": "content_versions",
+                                     "record_id": "version-16"}
+            with self.assertRaisesRegex(ValueError, "expired"):
+                verify_case_sources(root, x, p)
+
+    def test_noncanonical_numeric_alias_does_not_match(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            x, p = fixture(root)
+            folder = root / ROOT / "16-example" / "story-cards.json"
+            card = json.loads(folder.read_text(encoding="utf-8"))
+            card["content_versions"][0]["id"] = 1879
+            folder.write_text(json.dumps(card), encoding="utf-8")
+            p[0]["card_evidence"] = {"kind": "content_versions", "record_id": "01879"}
+            with self.assertRaisesRegex(ValueError, "missing or ambiguous"):
+                verify_case_sources(root, x, p)
+
     def test_wrong_cutoff_and_duplicate_source_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             x, p = fixture(Path(temp))
