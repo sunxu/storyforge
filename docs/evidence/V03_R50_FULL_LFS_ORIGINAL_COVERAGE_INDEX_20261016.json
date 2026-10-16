@@ -1,0 +1,45 @@
+{
+  "schema": "storyforge-r50-original-source-archive-coverage-index-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "review_status": "GIT_LFS_POINTERS_VERIFIED__FULL_BINARY_VALIDATION_PENDING",
+  "r45_frozen_source_ranks": [
+    2,
+    4,
+    6,
+    8,
+    9,
+    10,
+    12,
+    14,
+    15
+  ],
+  "known_linked_rank_07_through_rank_04": true,
+  "r50_worlds": [
+    16,
+    17,
+    18,
+    19,
+    20
+  ],
+  "pair_count_planned": 50,
+  "archive_old01_14": {
+    "file": "evaluations/v0.2/training-readiness/20261013/private/original_chat_jsonl_14_20261013.zip",
+    "sha256": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+    "size_bytes": 57602487,
+    "provenance": "Git LFS pointer matches R45 original_source_14_zip_sha256"
+  },
+  "archive_old06_15": {
+    "file": "evaluations/v0.2/source-archives/06-15/StoryForge_v02_06-15_Full_Evidence_20261013.zip",
+    "sha256": "b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb",
+    "size_bytes": 65332700,
+    "provenance": "Git LFS pointer, historical owner-reported REMOTE_LFS_PASS"
+  },
+  "run_status": "NOT_EXECUTED_AGAINST_REAL_ORIGINAL_ZIPS",
+  "scoped_screen": "PENDING_LOCAL_LFS_PULL",
+  "semantic_world_alias_independence": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "model_generation": false,
+  "paid_hf_job": false,
+  "security": "Original narrative never committed or output, only aggregate rank/count flags."
+}
