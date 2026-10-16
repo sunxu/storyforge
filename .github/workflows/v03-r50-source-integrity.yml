@@ -44,6 +44,9 @@ jobs:
       - name: Verify recorded W17 known-literal exposure invariants (no private data)
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_w17_exposure_receipt.py' -v
+      - name: Synthetic tests for W17 private AI semantic kit (no private source)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_build_w17_semantic_kit.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
