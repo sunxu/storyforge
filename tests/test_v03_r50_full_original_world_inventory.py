@@ -201,7 +201,7 @@ class FullSourceGateTests(unittest.TestCase):
         record["worlds"][0]["folder"] = "16-another"
         receipt_path.write_text(json.dumps(record))
         with self.assertRaisesRegex(ValueError,
-                                    "R50_EXPECTED_WORLD_FOLDER_MISSING"):
+                                    "R50_UNEXPECTED_SOURCE_ROOT_ENTRY"):
             m.new_data(self.repo)
 
     def test_nested_old_15(self):
@@ -235,6 +235,10 @@ class FullSourceGateTests(unittest.TestCase):
         (folder/"story-cards.json").write_text(json.dumps({
             "rank": 20, "story_id": "synthetic-2"
         }))
+        receipt_path = self.repo / m.RECEIPT
+        receipt = json.loads(receipt_path.read_text())
+        receipt["worlds"][-1]["story_id"] = "synthetic-2"
+        receipt_path.write_text(json.dumps(receipt))
         r=m.screen(self.repo,self.old14,self.old0615)
         self.assertEqual(r["same_story_id_pair_count"],1)
         self.assertEqual(r["screen_status"],"LEXICAL_OR_IDENTITY_FLAGS_REQUIRE_AI_ADJUDICATION")
