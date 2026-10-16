@@ -51,12 +51,22 @@ class FullSourceGateTests(unittest.TestCase):
                     "old06_15":(hashlib.sha256(raw0615).hexdigest(),len(raw0615))}
         self.addCleanup(lambda:setattr(m,"ARCHIVES",original))
         receipt=self.repo/m.RECEIPT;receipt.parent.mkdir(parents=True)
-        receipt.write_text(json.dumps({"source_commit":m.SOURCE_COMMIT,"files":[{}]*35}))
+        receipt.write_text(json.dumps({
+            "source_commit": m.SOURCE_COMMIT,
+            "source_root": m.ROOT.as_posix(),
+            "files": [{}] * 35,
+            "worlds": [{
+                "number": i, "folder": f"{i}-synthetic",
+                "story_id": f"synthetic-{i}"
+            } for i in range(16, 21)],
+        }))
         for i in range(16,21):
             folder=self.repo/m.ROOT/f"{i}-synthetic";folder.mkdir(parents=True)
             row=record(i)
             (folder/(folder.name+".jsonl")).write_text(json.dumps(row)+"\n")
-            (folder/"story-cards.json").write_text(json.dumps({"story_id":f"synthetic-{i}"}))
+            (folder/"story-cards.json").write_text(json.dumps({
+                "rank": i, "story_id": f"synthetic-{i}"
+            }))
 
     def test_old14_equivalent_json_and_jsonl(self):
         rows = m.old14_data(self.old14)
@@ -147,6 +157,53 @@ class FullSourceGateTests(unittest.TestCase):
                                     "OLD15_CROSS_ARCHIVE_TRANSCRIPT_MISMATCH"):
             m.screen(self.repo, self.old14, self.old0615)
 
+    def test_finder_metadata_is_ignored_without_changing_world_count(self):
+        root = self.repo / m.ROOT
+        (root / ".DS_Store").write_bytes(b"synthetic Finder metadata")
+        (root / ".localized").write_text("synthetic")
+        (root / "._20-synthetic").write_bytes(b"synthetic AppleDouble")
+        r = m.screen(self.repo, self.old14, self.old0615)
+        self.assertEqual(r["source_pair_count"], 50)
+        self.assertEqual(r["new_source_ranks_checked"], list(range(16, 21)))
+        self.assertEqual(r["semantic_hidden_alias_and_world_component_closure"],
+                         "HOLD")
+
+    def test_unknown_root_file_fails_closed(self):
+        (self.repo / m.ROOT / "unsafe.txt").write_text("synthetic")
+        with self.assertRaisesRegex(ValueError,
+                                    "R50_UNEXPECTED_SOURCE_ROOT_ENTRY"):
+            m.new_data(self.repo)
+
+    def test_unknown_world_directory_fails_closed(self):
+        (self.repo / m.ROOT / "21-other").mkdir()
+        with self.assertRaisesRegex(ValueError,
+                                    "R50_UNEXPECTED_SOURCE_ROOT_ENTRY"):
+            m.new_data(self.repo)
+
+    def test_missing_frozen_world_directory_fails_closed(self):
+        (self.repo / m.ROOT / "20-synthetic").rename(
+            self.repo / "removed-source-outside-world-root"
+        )
+        with self.assertRaisesRegex(ValueError,
+                                    "R50_EXPECTED_WORLD_FOLDER_MISSING"):
+            m.new_data(self.repo)
+
+    def test_sidecar_symlink_cannot_bypass_guard(self):
+        root = self.repo / m.ROOT
+        (root / ".DS_Store").symlink_to(self.repo / m.RECEIPT)
+        with self.assertRaisesRegex(ValueError,
+                                    "R50_SOURCE_ROOT_SYMLINK_HOLD"):
+            m.new_data(self.repo)
+
+    def test_modified_frozen_world_folder_name_is_rejected(self):
+        receipt_path = self.repo / m.RECEIPT
+        record = json.loads(receipt_path.read_text())
+        record["worlds"][0]["folder"] = "16-another"
+        receipt_path.write_text(json.dumps(record))
+        with self.assertRaisesRegex(ValueError,
+                                    "R50_EXPECTED_WORLD_FOLDER_MISSING"):
+            m.new_data(self.repo)
+
     def test_nested_old_15(self):
         self.assertEqual(m.identity(m.old15_data(self.old0615)),"synthetic-15")
 
@@ -175,7 +232,9 @@ class FullSourceGateTests(unittest.TestCase):
         folder=self.repo/m.ROOT/"20-synthetic"
         v=record(20);v["story"]["id"]="synthetic-2"
         (folder/(folder.name+".jsonl")).write_text(json.dumps(v)+"\n")
-        (folder/"story-cards.json").write_text(json.dumps({"story_id":"synthetic-2"}))
+        (folder/"story-cards.json").write_text(json.dumps({
+            "rank": 20, "story_id": "synthetic-2"
+        }))
         r=m.screen(self.repo,self.old14,self.old0615)
         self.assertEqual(r["same_story_id_pair_count"],1)
         self.assertEqual(r["screen_status"],"LEXICAL_OR_IDENTITY_FLAGS_REQUIRE_AI_ADJUDICATION")

@@ -162,17 +162,68 @@ def new_data(repo: Path) -> dict[int, dict]:
     receipt = json.loads((repo / RECEIPT).read_text(encoding="utf8"))
     require(receipt.get("source_commit") == SOURCE_COMMIT and
             len(receipt.get("files", [])) == 35, "R50_FROZEN_RECEIPT_MISMATCH")
+    require(receipt.get("source_root") == ROOT.as_posix(),
+            "R50_SOURCE_ROOT_RECEIPT_MISMATCH")
+    entries = receipt.get("worlds")
+    require(isinstance(entries, list) and len(entries) == 5,
+            "R50_WORLD_RECEIPT_COUNT_MISMATCH")
+    expected = {}
+    for world in entries:
+        require(isinstance(world, dict) and type(world.get("number")) is int,
+                "R50_WORLD_RECEIPT_INVALID")
+        rank = world["number"]
+        name = world.get("folder")
+        require(rank in NEW_RANKS and rank not in expected and
+                isinstance(name, str) and
+                name.startswith(f"{rank}-") and
+                name not in (".", "..") and
+                "/" not in name and "\\" not in name,
+                "R50_WORLD_RECEIPT_FOLDER_MISMATCH")
+        expected[rank] = world
+    require(set(expected) == NEW_RANKS, "R50_WORLD_RECEIPT_RANK_MISMATCH")
+
+    root = repo / ROOT
+    require(root.is_dir() and not root.is_symlink(),
+            "R50_SOURCE_ROOT_NOT_DIRECTORY")
+    expected_names = {w["folder"] for w in expected.values()}
+    for entry in root.iterdir():
+        # macOS Finder creates untracked metadata beside the Git-verified
+        # folders. Ignore only known regular-file sidecars, never symlinks.
+        require(not entry.is_symlink(), "R50_SOURCE_ROOT_SYMLINK_HOLD")
+        if entry.name in expected_names:
+            require(entry.is_dir(), "R50_EXPECTED_WORLD_FOLDER_NOT_DIRECTORY")
+        elif entry.is_file() and (
+            entry.name in (".DS_Store", ".localized") or
+            entry.name.startswith("._")
+        ):
+            continue
+        else:
+            raise ValueError("R50_UNEXPECTED_SOURCE_ROOT_ENTRY")
+
     found = {}
-    for folder in sorted((repo / ROOT).iterdir()):
-        require(folder.is_dir() and not folder.is_symlink(), "BAD_NEW_WORLD_FOLDER")
-        rank = int(folder.name.split("-", 1)[0])
-        require(rank in NEW_RANKS and rank not in found, "INVALID_R50_SOURCE_RANK")
-        raw = (folder / (folder.name + ".jsonl")).read_bytes()
+    for rank, world in sorted(expected.items()):
+        folder = root / world["folder"]
+        require(folder.is_dir() and not folder.is_symlink(),
+                "R50_EXPECTED_WORLD_FOLDER_MISSING")
+        source = folder / (folder.name + ".jsonl")
+        cards = folder / "story-cards.json"
+        require(source.is_file() and not source.is_symlink() and
+                cards.is_file() and not cards.is_symlink(),
+                "R50_REQUIRED_WORLD_SOURCE_FILE_MISSING")
+        raw = source.read_bytes()
         require(raw.endswith(b"\n"), "SOURCE_JSONL_TERMINATOR_MISSING")
         item = json.loads(raw)
-        card = json.loads((folder / "story-cards.json").read_text(encoding="utf8"))
-        require(is_chat(item) and item.get("rank") == rank, "BAD_NEW_WORLD_SOURCE")
-        require(identity(item) == card.get("story_id"), "NEW_WORLD_CARD_ID_MISMATCH")
+        card = json.loads(cards.read_text(encoding="utf8"))
+        require(is_chat(item), "BAD_NEW_WORLD_SOURCE")
+        if "rank" in item:
+            require(item["rank"] == rank, "BAD_NEW_WORLD_SOURCE_RANK")
+        require(card.get("rank") == rank and
+                card.get("story_id") == world.get("story_id") and
+                identity(item) == world.get("story_id"),
+                "NEW_WORLD_CARD_ID_MISMATCH")
+        if world.get("session_id") is not None:
+            require(card.get("session_id") == world["session_id"],
+                    "NEW_WORLD_CARD_SESSION_MISMATCH")
         found[rank] = item
     require(set(found) == NEW_RANKS, "R50_NOT_FIVE_WORLDS")
     return found

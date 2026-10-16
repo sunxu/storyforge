@@ -78,3 +78,25 @@ This was added in response to the owner's real-world
 The complete LFS ZIP member listing is still not available through the
 ChatGPT GitHub connector; no claim is made that the real run has passed.
 The source archives and existing dataset hashes remain unchanged.
+
+## 2026-10-16: BAD_NEW_WORLD_FOLDER on macOS
+
+The owner reported `R50_LFS_SOURCE_INVENTORY_HOLD: ValueError
+BAD_NEW_WORLD_FOLDER` after the old-source archive stage. The prior scanner
+incorrectly required **all** root entries under `16-20/` to be directories.
+The five immutable R50 world folder names, numeric ranks and source identities
+are already pinned in `V03_R50_SOURCE_16_20_RECEIPT_20261015.json`.
+
+The patched scanner reads only those **five expected directories**, requires
+all five to exist exactly, and allows only explicitly identified macOS
+non-symlink regular-file metadata beside them: `.DS_Store`, `.localized`,
+and `._*`. It refuses unknown files/directories and **all root symlinks**
+(including a symlink pretending to be an ignorable metadata sidecar).
+Within each frozen world it still checks the JSONL, story-card, rank, story ID
+and (where supplied in the receipt) session ID.
+
+Six pure synthetic test cases were added to prevent silent skips, missing
+worlds, unrecognized root entries and metadata symlink bypass. This patch is
+not an assertion that the actual Mac has a `.DS_Store` (the GitHub connector
+cannot inspect the owner's local untracked files). No archive bytes or frozen
+inputs are rewritten; semantic isolation remains HOLD.

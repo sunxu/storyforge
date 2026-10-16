@@ -1,0 +1,27 @@
+{
+  "schema": "storyforge-r50-new-world-root-metadata-parser-fix-v1",
+  "date": "2026-10-16",
+  "owner_reported_failure": "R50_LFS_SOURCE_INVENTORY_HOLD: ValueError BAD_NEW_WORLD_FOLDER",
+  "observed_owner_local_extra_filename": "UNKNOWN_NOT_EXPOSED_BY_GITHUB",
+  "confirmed_code_issue": "Prior new_data() required every R50 root entry to be a real directory, including untracked macOS Finder metadata",
+  "now_requires": "Five exact immutable folder names/ranks/source story IDs from frozen Git source receipt",
+  "allowlisted_ignorable_metadata_files": [
+    ".DS_Store",
+    ".localized",
+    "._*"
+  ],
+  "ignorable_entries_must_be_regular_files": true,
+  "symlinks_allowed": false,
+  "unexpected_root_files_or_directories": "HOLD",
+  "missing_expected_folders": "HOLD",
+  "synthetic_negative_and_positive_test_cases_added": 6,
+  "r45_original_archive_checks": "UNCHANGED",
+  "r50_candidate_sha256": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2",
+  "archive_bytes_modified": false,
+  "actual_owner_lfs_scan": "PENDING_RETRY",
+  "semantic_alias_isolation": "HOLD",
+  "heldout_seal": "NOT_PERFORMED",
+  "model_inference": false,
+  "gpu": false,
+  "paid_job": false
+}
