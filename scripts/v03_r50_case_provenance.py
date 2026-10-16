@@ -63,14 +63,24 @@ def select_card(card: dict, evidence: dict, cutoff: datetime) -> str:
         field = "created_at"
     else:
         raise ValueError("unknown historical card evidence kind")
+    record_id = evidence["record_id"]
+    if type(record_id) not in (str, int):
+        raise ValueError("invalid card record id")
     matches = [x for x in candidates if isinstance(x, dict)
-               and x.get("id") == evidence["record_id"]]
+               and ((type(x.get("id")) is type(record_id)
+                     and x.get("id") == record_id)
+                    or (type(x.get("id")) is int and type(record_id) is str
+                        and str(x["id"]) == record_id)
+                    or (type(x.get("id")) is str and type(record_id) is int
+                        and x["id"] == str(record_id)))]
     if len(matches) != 1:
         raise ValueError("historical card evidence record missing or ambiguous")
     chosen = matches[0]
     time = timestamp(chosen.get(field))
     if time > cutoff:
         raise ValueError("historical card evidence postdates case cutoff")
+    if kind == "content_versions" and cutoff >= timestamp(chosen.get("archived_at")):
+        raise ValueError("historical card evidence expired before cutoff")
     return kind
 
 
