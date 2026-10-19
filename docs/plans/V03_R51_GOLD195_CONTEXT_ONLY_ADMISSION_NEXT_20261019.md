@@ -81,3 +81,20 @@ source-anchored review should decide each route and document why.
 
 **Present state:** `R51_GOLD195_ORIGINAL_INTEGRITY_PASS ·
 R51_ADMISSION_ZERO · TRAIN_VAL_NOT_SPLIT · R50_W17_EVIDENCE_HOLD · NO_GPU`.
+
+
+## R51 first independent semantic review batch (Gold108)
+
+Following owner-confirmed creation of 108 authenticated source-context
+review packets (79 Assistant-opening windows, 29 User-opening; 107
+include some preceding source messages; 22 recovered source pointers),
+the next action is **real independent content review**, not further
+source metadata triage. See:
+`docs/plans/V03_R51_Independent_Source_Review_Guide.md`.
+
+The owner-side tool splits 108 packets into two independently ordered
+reviewer workstreams with five batches, starting with 24 across eight
+stories, prioritizing Assistant-opening visible histories. Source-cited
+verdicts must be returned by two independent reviewers and validated
+before recording *provisional* context-only versus card/long-range
+dependency route agreements. No automatic Train/Val approval.
