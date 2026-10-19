@@ -100,6 +100,19 @@ class TestIndependentReviews(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "NOT_IN_AUTHENTIC_PACKET"):
             reviews.validate_review(good, tasks["A"], "A")
 
+
+    def test_error_reporting_redacts_private_strings_and_identifies_stage(self):
+        self.assertEqual(
+            reviews.diagnostic_error(
+                "REVIEWER_B_VALIDATE",
+                ValueError("REVIEWER_RESPONSE_SCHEMA_OR_PIN_INVALID")),
+            "R51_REVIEW_TASK_HOLD__REVIEWER_B_VALIDATE__"
+            "REVIEWER_RESPONSE_SCHEMA_OR_PIN_INVALID")
+        self.assertEqual(
+            reviews.diagnostic_error(
+                "REVIEWER_B_READ", ValueError("SECRET_CHARACTER_OR_DIALOGUE")),
+            "R51_REVIEW_TASK_HOLD__REVIEWER_B_READ__ValueError")
+
     def test_never_certify_card_or_rights(self):
         tasks, _ = reviews.build_batch(fixture(), 1)
         self.assertTrue(all(t["historical_card_version_verified"] is False
