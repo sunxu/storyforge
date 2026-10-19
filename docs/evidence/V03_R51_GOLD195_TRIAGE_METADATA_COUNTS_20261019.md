@@ -184,3 +184,37 @@ JSONL record of each of eight Gold-bearing story sources. It prints
 does not touch v1/v2/v3 or run inference. Use this structural receipt
 to implement a schema-exact adapter before the next real replay.
 Do not continue repeating metadata triage or alter frozen Gold/R50.
+
+
+### R51 v3 failure isolation — target ID vs target-body SHA256
+
+Owner's safe source-schema probe of 8/8 Gold-bearing stories shows an
+original root JSONL object with a `messages` array; each first sampled
+message has typed `id`, `content`, `role`, `turn_index`,
+`created_at`, `status`, and `metadata`. Thus the previous
+generic source parser **should have been able to encounter
+these messages**, and schema shape by itself does not explain 0/108
+unique matches.
+
+The existing offline R51 source-replay tool now supports a separate
+aggregate-only diagnostic on all 108 candidate IDs and expected target
+SHA256s. It independently counts candidate hits in *direct*
+root.messages IDs, source content UTF-8 SHA256s, matching ID+SHA
+pairs, unique ID+SHA pairs, and the prior recursive parser. A
+source-record count helps identify repeated export snapshots.
+Run with private v2 already present:
+
+```bash
+python3 scripts/v03_r51_gold195_source_replay.py \
+  --repo . \
+  --probe-matches \
+  --private-v2 ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v2.jsonl
+```
+
+This command never overwrites any worksheet, emits only per-story-rank
+counts without original texts, IDs or hashes, and performs no
+training admission. Match-level evidence is diagnostic, **not**
+authorization to automatically clear the 22 pointer gaps or train.
+Once counts identify the precise mismatch, correct the parser or
+historical mapping and do one fresh replay into an exclusively
+created *new* local v4 rather than silently reusing the failed v3.
