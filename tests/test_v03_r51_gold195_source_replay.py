@@ -47,7 +47,8 @@ class SourceReplayTests(unittest.TestCase):
             ("t", sha("answer"), "assistant"),
         ]
         ordered, contiguous = replay.ordered_history(
-            events, 3, [{"sha256": sha("one")}, {"sha256": sha("two")}])
+            events, 3, [{"role": "user", "sha256": sha("one")},
+                        {"role": "user", "sha256": sha("two")}])
         self.assertTrue(ordered)
         self.assertFalse(contiguous)
 
@@ -173,8 +174,10 @@ class SourceReplayTests(unittest.TestCase):
             target = f"synthetic completion {i}"
             ctx = f"synthetic user input {i}"
             events.extend([
-                {"message_id": f"h-{i}", "role": "user", "content": ctx},
-                {"message_id": f"t-{i}", "role": "assistant", "content": target},
+                {"id": f"h-{i}", "role": "user", "content": ctx,
+                 "turn_index": i * 2},
+                {"id": f"t-{i}", "role": "assistant", "content": target,
+                 "turn_index": i * 2 + 1},
             ])
             rows.append({
                 "candidate_id": f"test-{i}",
@@ -188,7 +191,7 @@ class SourceReplayTests(unittest.TestCase):
                 "training_admission": "PENDING_NOT_APPROVED",
                 "split": None,
             })
-        source = "\n".join(json.dumps(x) for x in events) + "\n"
+        source = json.dumps({"messages": events}) + "\n"
         raw = zip_data({"raw.jsonl": source})
         result = replay.replay_108(rows, {6: raw})
         self.assertEqual(result["gold108_target_unique_id_sha_matches"], 108)
