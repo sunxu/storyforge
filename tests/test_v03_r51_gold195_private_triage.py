@@ -9,7 +9,7 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BASE / "scripts"))
-import v03_r51_gold195_private_triage as triage  # noqa: E402
+import v03_r51_gold195_private_triage as triage
 
 spec = importlib.util.spec_from_file_location(
     "readiness_test_fixtures",
