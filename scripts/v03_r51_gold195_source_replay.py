@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import io
+import itertools
 import json
 import os
 import stat
@@ -346,7 +347,7 @@ def replay_108(rows: list[dict], raw_zips: dict[int, bytes]) -> dict:
                 turns = [event[3] for event in
                          events[matches[0] - len(history):matches[0] + 1]]
                 if all(isinstance(turn, int) for turn in turns) and all(
-                    b == a + 1 for a, b in zip(turns, turns[1:])
+                    b == a + 1 for a, b in itertools.pairwise(turns)
                 ):
                     local["contiguous_turn_indices"] += 1
             if "SOURCE_POINTER_RECONCILIATION_HOLD" in row["holds"]:
