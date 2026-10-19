@@ -208,6 +208,25 @@ def summarize(manifest: dict, packets: list[dict], manifest_sha: str,
     }
 
 
+def checked_private_workpaper(repo: Path, requested: Path) -> Path:
+    """Give stable non-sensitive pre-read file safety failure reasons.
+
+    Resolve after ruling out a direct symlink, so symlinked parent paths
+    cannot hide a file inside Git. Do not chmod, copy, write, or print paths.
+    """
+    require((repo / ".git").exists(), "LOCAL_GIT_CHECKOUT_REQUIRED")
+    path = requested.expanduser().absolute()
+    require(not path.is_symlink(), "PRIVATE_WORKPAPER_SYMLINK_FORBIDDEN")
+    require(path.exists(), "PRIVATE_WORKPAPER_FILE_MISSING")
+    require(path.is_file(), "PRIVATE_WORKPAPER_NOT_REGULAR_FILE")
+    resolved = path.resolve(strict=True)
+    require(resolved != repo and repo not in resolved.parents,
+            "PRIVATE_WORKPAPER_INSIDE_GIT_FORBIDDEN")
+    require(stat.S_IMODE(path.stat().st_mode) & 0o077 == 0,
+            "PRIVATE_WORKPAPER_PERMISSIONS_NOT_0600")
+    return path
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--repo", required=True, type=Path)
@@ -215,11 +234,7 @@ def main() -> None:
     p.add_argument("--workpaper", required=True, type=Path)
     a = p.parse_args()
     repo = a.repo.resolve()
-    wp = a.workpaper.expanduser().absolute()
-    require((repo / ".git").exists() and repo not in wp.parents and
-            not wp.is_symlink() and wp.is_file() and
-            stat.S_IMODE(wp.stat().st_mode) & 0o077 == 0,
-            "PRIVATE_WORKPAPER_NOT_SAFE")
+    wp = checked_private_workpaper(repo, a.workpaper)
     manifest, packets, manifest_sha = load_manifest(
         a.packets_dir.expanduser().absolute()
     )

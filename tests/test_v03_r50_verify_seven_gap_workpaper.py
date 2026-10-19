@@ -180,6 +180,69 @@ class W17SevenGapWorkpaperTests(unittest.TestCase):
         report = module.summarize({}, packets, sha, decision, "c" * 64)
         self.assertEqual(report["assessments"][0]["reported_full_message_review_count"], 1)
 
+    def test_private_workpaper_preflight_reports_missing_file_without_leak(self):
+        with tempfile.TemporaryDirectory() as root:
+            repo = Path(root) / "repository"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            missing = Path(root) / "private" / "review.json"
+            with self.assertRaisesRegex(ValueError, "PRIVATE_WORKPAPER_FILE_MISSING"):
+                module.checked_private_workpaper(repo, missing)
+
+    def test_private_workpaper_preflight_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as root:
+            repo = Path(root) / "repository"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            data = Path(root) / "real.json"
+            data.write_text("{}", encoding="utf8")
+            link = Path(root) / "alias.json"
+            link.symlink_to(data)
+            with self.assertRaisesRegex(ValueError, "PRIVATE_WORKPAPER_SYMLINK_FORBIDDEN"):
+                module.checked_private_workpaper(repo, link)
+
+    def test_private_workpaper_preflight_rejects_broad_permissions(self):
+        with tempfile.TemporaryDirectory() as root:
+            repo = Path(root) / "repository"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            data = Path(root) / "decision.json"
+            data.write_text("{}", encoding="utf8")
+            os.chmod(data, 0o644)
+            with self.assertRaisesRegex(ValueError, "PRIVATE_WORKPAPER_PERMISSIONS_NOT_0600"):
+                module.checked_private_workpaper(repo, data)
+
+    def test_private_workpaper_preflight_accepts_private_regular_file(self):
+        with tempfile.TemporaryDirectory() as root:
+            repo = Path(root) / "repository"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            data = Path(root) / "decision.json"
+            data.write_text("{}", encoding="utf8")
+            os.chmod(data, 0o600)
+            self.assertEqual(module.checked_private_workpaper(repo, data), data)
+
+    def test_private_workpaper_preflight_rejects_git_output(self):
+        with tempfile.TemporaryDirectory() as root:
+            repo = Path(root) / "repository"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            data = repo / "decision.json"
+            data.write_text("{}", encoding="utf8")
+            os.chmod(data, 0o600)
+            with self.assertRaisesRegex(ValueError, "PRIVATE_WORKPAPER_INSIDE_GIT_FORBIDDEN"):
+                module.checked_private_workpaper(repo, data)
+
+    def test_private_workpaper_preflight_rejects_directory(self):
+        with tempfile.TemporaryDirectory() as root:
+            repo = Path(root) / "repository"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            data = Path(root) / "decisiondir"
+            data.mkdir()
+            with self.assertRaisesRegex(ValueError, "PRIVATE_WORKPAPER_NOT_REGULAR_FILE"):
+                module.checked_private_workpaper(repo, data)
+
     def test_semantic_pass_is_never_authorized(self):
         _, _, decision = fixtures()
         decision["semantic_world_graph_gate"] = "PASS"
