@@ -62,6 +62,9 @@ jobs:
       - name: Verify seven-gap private source index coverage contract (synthetic-only)
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_verify_seven_gap_coverage.py' -v
+      - name: Seven-gap private contextual packet synthetic provenance tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_build_seven_gap_context_packets.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
