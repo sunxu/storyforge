@@ -318,19 +318,106 @@ def replay_108(rows: list[dict], raw_zips: dict[int, bytes]) -> dict:
     }
 
 
+
+# Only technical/schema-like field names may appear in diagnostic output.
+SCHEMA_FIELDS = (
+    "messages", "message", "id", "message_id", "messageId",
+    "uuid", "role", "author", "sender", "speaker", "from",
+    "type", "is_ai", "content", "text", "body", "payload",
+    "data", "parts", "value", "message_text", "text_content",
+    "content_text", "content_type", "turn_index", "created_at",
+    "status", "metadata", "raw", "items",
+)
+
+
+def safe_shape(value: object, depth: int = 0) -> object:
+    """Technical keys and Python types only. No arbitrary names or values."""
+    if isinstance(value, dict):
+        if depth >= 4:
+            return {"type": "dict"}
+        return {
+            "type": "dict",
+            "fields": {key: safe_shape(value[key], depth + 1)
+                       for key in SCHEMA_FIELDS if key in value},
+            "unlisted_key_count": sum(k not in SCHEMA_FIELDS for k in value),
+        }
+    if isinstance(value, list):
+        return {"type": "list", "first": safe_shape(value[0], depth + 1)
+                if value and depth < 4 else None}
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "bool"
+    if isinstance(value, (int, float)):
+        return "number"
+    if isinstance(value, str):
+        return "str"
+    return "other"
+
+
+def probe_original_schema(repo: Path, raw_zip_by_rank: dict[int, bytes]) -> dict:
+    gold108 = baseline.read_pinned_rows(
+        repo, baseline.GOLD108, 108,
+        sha256_digest=baseline.EXPECTED_SHA256_108)
+    ix = baseline.read_gold108_index(repo)
+    ranks: dict[int, set[str]] = defaultdict(set)
+    for row, index_row in zip(gold108, ix, strict=True):
+        digest = row["metadata"].get("source_jsonl_sha256")
+        if digest:
+            ranks[int(index_row["story_number"])].add(digest)
+        else:
+            ranks[int(index_row["story_number"])].add("")
+    out = {}
+    for rank in sorted(ranks):
+        payload = choose_source_jsonl(
+            raw_zip_by_rank[rank], ranks[rank] - {""})
+        first = next((line for line in payload.decode("utf-8-sig").splitlines()
+                      if line.strip()), None)
+        require(first is not None, "SOURCE_JSONL_EMPTY")
+        root = json.loads(first)
+        # Shape of the first JSONL entry; no values, hashes or arbitrary keys.
+        out[str(rank)] = {
+            "first_jsonl_entry_shape": safe_shape(root),
+            "first_entry_is_record_with_messages":
+                isinstance(root, dict) and isinstance(root.get("messages"), list),
+        }
+    return {
+        "schema": "storyforge-r51-original-source-shape-only-v1",
+        "diagnostic": "SOURCE_PARSER_MISMATCH_INVESTIGATION",
+        "stories_probed": len(out),
+        "story_rank_only_structural_shapes": out,
+        "source_message_bodies_returned": False,
+        "candidate_identifiers_returned": False,
+        "raw_target_match_or_training_admission": "NOT_ASSERTED",
+    }
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, required=True)
-    parser.add_argument("--private-v2", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--private-v2", type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--probe-schema", action="store_true",
+                        help="Only print safe structural field names and types")
     args = parser.parse_args()
     os.umask(0o077)
     try:
         repo = args.repo.resolve(strict=True)
-        rows = read_private_v2(args.private_v2, repo)
+        require(args.probe_schema or
+                (args.private_v2 is not None and args.output is not None),
+                "PRIVATE_V2_AND_OUTPUT_REQUIRED")
         asset, manifest = pinned_archive(repo)
         raw = discover_raw_zips(asset, manifest)
+        if args.probe_schema:
+            require(args.private_v2 is None and args.output is None,
+                    "SCHEMA_PROBE_TAKES_NO_WORKPAPER_ARGUMENTS")
+            receipt = probe_original_schema(repo, raw)
+            print(json.dumps(receipt, ensure_ascii=False,
+                             sort_keys=True, indent=2))
+            return 0
+        rows = read_private_v2(args.private_v2, repo)
         receipt = replay_108(rows, raw)
+        require(receipt["gold108_target_unique_id_sha_matches"] > 0,
+                "ALL_108_TARGETS_UNMATCHED_PARSER_SCHEMA_HOLD")
         for row in rows:
             row["schema"] = "storyforge-r51-private-gold195-triage-v3"
             require(row["training_admission"] == triage.HOLD
