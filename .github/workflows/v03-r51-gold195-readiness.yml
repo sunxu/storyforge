@@ -1,0 +1,42 @@
+name: R51 Gold195 Original Readiness (no GPU)
+
+on:
+  push:
+    branches:
+      - audit/r49-r50-source-intake-20261015
+    paths:
+      - .github/workflows/v03-r51-gold195-readiness.yml
+      - scripts/v03_r51_gold195_readiness.py
+      - tests/test_v03_r51_gold195_readiness.py
+      - evaluations/v0.2/gold-quality-87/**
+      - evaluations/v0.2/gold-quality-108/**
+  pull_request:
+    paths:
+      - .github/workflows/v03-r51-gold195-readiness.yml
+      - scripts/v03_r51_gold195_readiness.py
+      - tests/test_v03_r51_gold195_readiness.py
+      - evaluations/v0.2/gold-quality-87/**
+      - evaluations/v0.2/gold-quality-108/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-candidate-integrity:
+    name: Gold195 frozen-original check only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify R51 fail-closed synthetic checks
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_readiness.py' -v
+      - name: Verify all 195 real Git-pinned original Gold candidates
+        run: |
+          python3 scripts/v03_r51_gold195_readiness.py --repo .
+      # No model inference, GPU, HF connection, artifact uploads, raw data
+      # printing, case-level ID disclosure or training admission by this CI.
