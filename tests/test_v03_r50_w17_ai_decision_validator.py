@@ -171,9 +171,8 @@ class W17DecisionValidatorTests(unittest.TestCase):
                     "old_world_contexts.2.__dict__"):
             d = reviewed()
             d["pair_reviews"][0]["fact_evidence_paths"] = [bad]
-            with self.subTest(path=bad):
-                with self.assertRaises(ValueError):
-                    valid_summary(d=d)
+            with self.subTest(path=bad), self.assertRaises(ValueError):
+                valid_summary(d=d)
 
     def test_untrusted_evidence_path_rejected(self):
         d = reviewed()

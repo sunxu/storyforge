@@ -88,9 +88,9 @@ def evidence_scope(parts: tuple[str, ...], old_rank: int) -> str:
             return "context"
     if parts == ("w17_export_card_review_hints",):
         return "new"
-    if len(parts) >= 2 and parts[0] == "w17_export_card_review_hints":
-        if parts[1] in ("world", "opening", "character_briefs", "version_id"):
-            return "new"
+    if (len(parts) >= 2 and parts[0] == "w17_export_card_review_hints"
+            and parts[1] in ("world", "opening", "character_briefs", "version_id")):
+        return "new"
     raise ValueError("UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH")
 
 
@@ -105,7 +105,7 @@ def resolve_evidence(kit: dict, parts: tuple[str, ...]) -> object:
                   "EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT")
             node = node[int(segment)]
         else:
-            raise ValueError("EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT")
+            guard(False, "EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT")
     return node
 
 
