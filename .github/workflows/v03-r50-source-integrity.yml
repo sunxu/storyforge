@@ -74,6 +74,12 @@ jobs:
       - name: Synthetic full-original-message private W17 evidence dossier tests
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_build_w17_full_source_dossiers.py' -v
+      - name: Verify SHA-pinned full-original W17 dossier and AI workpaper contracts
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_w17_full_source_review.py' -v
+      - name: Synthetic fail-closed full-source AI reviewer runner test (no remote call)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_full_source_ai_runner.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \

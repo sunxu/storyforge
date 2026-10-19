@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "enum": [
+        "storyforge-r50-w17-seven-gap-full-message-ai-review-v1"
+      ]
+    },
+    "reviewed_full_manifest_sha256": {
+      "type": "string",
+      "enum": [
+        "189f84e0e2891499723ba7e9e14cc866c057c9ab5ead727ff4c192e717510476"
+      ]
+    },
+    "prior_workpaper_sha256": {
+      "type": "string",
+      "enum": [
+        "6507ac6caec72aa031e9c70004a3d96781e7de8c0373976036c716aa9c884d9a"
+      ]
+    },
+    "gap_reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "gap_index": {
+            "type": "integer"
+          },
+          "assessment": {
+            "type": "string",
+            "enum": [
+              "SUPPORTED_IN_FULL_MESSAGE_SCOPE",
+              "NOT_SUPPORTED_IN_REVIEWED_SCOPE",
+              "INSUFFICIENT_CONTEXT",
+              "SOURCE_UNAVAILABLE"
+            ]
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "source_rank": {
+                  "type": "integer"
+                },
+                "source_message_index": {
+                  "type": "integer"
+                }
+              },
+              "required": [
+                "source_rank",
+                "source_message_index"
+              ]
+            }
+          },
+          "private_reasoning": {
+            "type": "string"
+          },
+          "historical_card_timing": {
+            "type": "string",
+            "enum": [
+              "NOT_CHECKED",
+              "POSTDATE_RISK"
+            ]
+          },
+          "remaining_evidence_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gap_index",
+          "assessment",
+          "source_refs",
+          "private_reasoning",
+          "historical_card_timing",
+          "remaining_evidence_requirements"
+        ]
+      }
+    },
+    "full_world_graph_gate": {
+      "type": "string",
+      "enum": [
+        "HOLD"
+      ]
+    },
+    "final_heldout_seal": {
+      "type": "string",
+      "enum": [
+        "NOT_PERFORMED"
+      ]
+    },
+    "model_promotion": {
+      "type": "boolean",
+      "enum": [
+        false
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "reviewed_full_manifest_sha256",
+    "prior_workpaper_sha256",
+    "gap_reviews",
+    "full_world_graph_gate",
+    "final_heldout_seal",
+    "model_promotion"
+  ]
+}
