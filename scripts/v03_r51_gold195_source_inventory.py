@@ -103,15 +103,27 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
                   bool(target["content"].strip()),
                   "GOLD_FINAL_SUPERVISION_TARGET_NOT_ASSISTANT")
             story_id = m.get("story_id")
-            guard(isinstance(story_id, str) and story_id.strip(),
-                  "GOLD_SOURCE_STORY_ID_MISSING")
-            unique_story_ids.add(story_id)
-            prefix = str(m.get("source_file") or "")
-            found = re.match(r"^(\d{2})-", prefix)
-            if found:
+            if isinstance(story_id, str) and story_id.strip():
+                unique_story_ids.add(story_id)
+                source_identity = story_id
+                counts["source_story_id_present"] += 1
+            else:
+                # Some frozen records omit it. This is an evidence gap,
+                # NOT an excuse to invent a verified source UUID.
+                counts["source_story_id_missing"] += 1
+                source_identity = None
+            source_number = m.get("story_number")
+            source_file = m.get("source_file") or m.get("source_jsonl_member")
+            found = re.match(r"^(\d{2})-", Path(source_file).name) if isinstance(source_file,str) else None
+            if type(source_number) is int and 1 <= source_number <= 15:
+                by_story[f"{source_number:02d}"] += 1
+                source_number_label = f"{source_number:02d}"
+            elif found:
                 by_story[found.group(1)] += 1
+                source_number_label = found.group(1)
             else:
                 counts["source_story_number_unmapped"] += 1
+                source_number_label = None
             target_sha = hashlib.sha256(target["content"].encode("utf8")).hexdigest()
             expected_sha = m.get("target_sha256_utf8", m.get("target_sha256"))
             if expected_sha is not None:
@@ -124,7 +136,12 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
             target_hashes[target_sha] += 1
             source_target_id = m.get("target_message_id")
             if isinstance(source_target_id, str) and source_target_id:
-                key = (story_id, source_target_id)
+                scope_identity = source_identity or (
+                    f"UNVERIFIED_NUMERIC_SOURCE_{cohort}_{source_number_label}"
+                    if source_number_label is not None else
+                    f"UNVERIFIED_RECORD_SCOPE_{cohort}_{rid}"
+                )
+                key = (scope_identity, source_target_id)
                 guard(key not in seen_target_source,
                       "GOLD_DUPLICATE_TARGET_SOURCE_MESSAGE")
                 seen_target_source.add(key)
@@ -132,6 +149,7 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
             else:
                 counts["target_source_id_missing"] += 1
             raw_ids = m.get("source_message_ids")
+            history_ids = m.get("history_source_message_ids")
             if isinstance(raw_ids, list) and raw_ids:
                 guard(len(raw_ids) == len(messages),
                       "GOLD_SOURCE_MESSAGE_ID_COUNT_MISMATCH")
@@ -139,6 +157,11 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
                     guard(raw_ids[-1] == source_target_id,
                           "GOLD_FINAL_TARGET_SOURCE_ID_MISMATCH")
                 counts["source_message_ids_present"] += 1
+            elif isinstance(history_ids, list) and history_ids:
+                # Cohort108 names the historical IDs separately from target.
+                guard(len(history_ids) == len(messages)-1,
+                      "GOLD_HISTORY_SOURCE_ID_COUNT_MISMATCH")
+                counts["history_source_message_ids_present"] += 1
             else:
                 counts["source_message_ids_missing"] += 1
             contract = m.get("supervision_contract")
@@ -152,11 +175,15 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
             elif contract is not None:
                 raise ValueError("GOLD_SUPERVISION_CONTRACT_TYPE_INVALID")
             counts["actual_loss_label_mask_verified"] += 0  # never assume a runtime label test
-            for k in ("target_text_modified", "history_text_modified",
-                      "system_prompt_added"):
-                if m.get(k) is True:
+            for k, aliases in (
+                ("target_text_modified", ("target_text_modified","raw_assistant_text_edited")),
+                ("history_text_modified", ("history_text_modified","raw_history_text_edited")),
+                ("system_prompt_added", ("system_prompt_added",)),
+            ):
+                known = [m[a] for a in aliases if a in m]
+                if any(v is True for v in known):
                     raise ValueError("GOLD_ORIGINAL_SOURCE_MODIFIED_OR_SYSTEM_ADDED")
-                if m.get(k) is None:
+                if not known:
                     counts[k+"_not_attested"] += 1
             guard(m.get("training_admission") in (None, "PENDING_NOT_APPROVED"),
                   "GOLD_UNAUTHORIZED_TRAINING_ADMISSION_STATUS")
@@ -165,9 +192,15 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
             counts["split_not_assigned"] += 1
             counts["version_id_present"] += int(bool(m.get("story_card_version_id")))
             counts["version_id_absent"] += int(not bool(m.get("story_card_version_id")))
-            for k in ("qwen_token_length_check","last_round_label_mask_check",
-                      "independent_gold_review","prior_v01_split_overlap"):
-                counts[k+":"+_state(m.get(k))] += 1
+            for k, keys in (
+                ("qwen_token_check", ("qwen_token_length_check","qwen_16384_token_check")),
+                ("loss_mask_check", ("last_round_label_mask_check","last_round_loss_mask_audit")),
+                ("independent_review", ("independent_gold_review","independent_ab_review")),
+                ("prior_v01_split_overlap", ("prior_v01_split_overlap",)),
+                ("target_time_card", ("story_card_version_id","story_card_as_of_target")),
+            ):
+                value = next((m[z] for z in keys if z in m), None)
+                counts[k+":"+_state(value)] += 1
             counts["source_message_records"] += len(messages)
             counts["target_characters"] += len(target["content"])
             counts["historical_assistant_messages_to_mask"] += sum(
@@ -179,9 +212,13 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
             "last_assistant_target_rows": counts["rows"],
             "target_source_hash_verified": counts["target_source_hash_verified"],
             "target_source_hash_missing": counts["target_source_hash_missing"],
+            "source_story_id_present": counts["source_story_id_present"],
+            "source_story_id_missing": counts["source_story_id_missing"],
             "source_target_id_present": counts["target_source_id_present"],
             "source_target_id_missing": counts["target_source_id_missing"],
             "source_message_ids_present": counts["source_message_ids_present"],
+            "history_source_message_ids_present":
+                counts["history_source_message_ids_present"],
             "source_message_ids_missing": counts["source_message_ids_missing"],
             "declared_final_assistant_only": counts["declared_final_assistant_only"],
             "historical_assistant_messages_to_mask":
@@ -194,15 +231,19 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
             "source_story_number_unmapped": counts["source_story_number_unmapped"],
             "qwen_status": {
                 key.split(":",1)[1]: value for key,value in sorted(counts.items())
-                if key.startswith("qwen_token_length_check:")
+                if key.startswith("qwen_token_check:")
             },
             "actual_loss_mask_status": {
                 key.split(":",1)[1]: value for key,value in sorted(counts.items())
-                if key.startswith("last_round_label_mask_check:")
+                if key.startswith("loss_mask_check:")
             },
             "independent_review_status": {
                 key.split(":",1)[1]: value for key,value in sorted(counts.items())
-                if key.startswith("independent_gold_review:")
+                if key.startswith("independent_review:")
+            },
+            "card_time_evidence_status": {
+                key.split(":",1)[1]: value for key,value in sorted(counts.items())
+                if key.startswith("target_time_card:")
             },
             "original_modification_attestation_missing": sum(
                 counts[k+"_not_attested"] for k in
