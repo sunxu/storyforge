@@ -59,6 +59,9 @@ jobs:
       - name: Test private seven-gap W17 source locator (synthetic-only)
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_index_w17_seven_gaps.py' -v
+      - name: Verify seven-gap private source index coverage contract (synthetic-only)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_seven_gap_coverage.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
