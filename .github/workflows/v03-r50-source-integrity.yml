@@ -86,6 +86,10 @@ jobs:
       - name: Verify W17 temporal owner receipt remains cutoff NOT_CERTIFIED
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_w17_timepoint_receipt.py' -v
+      - name: R51 Gold195 pinned original candidate integrity (NO admission, no GPU)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_readiness.py' -v
+          python3 scripts/v03_r51_gold195_readiness.py --repo .
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
