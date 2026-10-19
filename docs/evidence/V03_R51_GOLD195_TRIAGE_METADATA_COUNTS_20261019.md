@@ -116,3 +116,32 @@ licensing or substitute for source-anchored individual review.
 It adds private matched R02 metadata receipts for the 22 candidates.
 It exclusively creates mode-0600 output outside the repository, prints
 only aggregate counts, and does not start AI/HF/GPU operations.
+
+## R51 v3 — read-only local raw source replay (06–15)
+
+Prerequisite: owner reports original outer ZIP SHA256 verified and 10/10
+nested original raw ZIP hashes matched. The 195-row v2 worksheet is generated.
+This is not a training approval.
+
+From an authorized checkout after pulling this commit:
+
+```bash
+python3 scripts/v03_r51_gold195_source_replay.py \
+  --repo . \
+  --private-v2 ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v2.jsonl \
+  --output ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v3.jsonl
+```
+
+The script hashes the pinned original LFS outer ZIP, 58 MB nested
+asset bundle, ten nested original raw story ZIPs and each selected JSONL.
+For each of the 108 Gold06–15 candidates it attempts an exact source
+target message ID+SHA256 match and a separately reported ordered /
+immediately contiguous historical SHA256 sequence. It never invents
+a source JSON pointer when the archive parser cannot substantiate one.
+All 87 Gold01–05 remain source-replay HOLD here.
+
+The v3 private worksheet is exclusively created mode 0600 outside Git.
+Stdout is aggregate-only; actual original messages are never printed,
+committed, uploaded or passed to CI. CI runs only synthetic ZIP fixtures.
+All semantic context-vs-card judgments, rights, independent review,
+Train/Val splits and admission remain HOLD. No GPU/HF.
