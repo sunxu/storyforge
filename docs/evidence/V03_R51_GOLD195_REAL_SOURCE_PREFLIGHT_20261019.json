@@ -1,0 +1,69 @@
+{
+  "schema": "storyforge-v03-r51-gold195-real-structural-audit-and-index-reconciliation-v1",
+  "date": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "audit_branch": "audit/r51-gold195-admission-20261019",
+  "provenance": {
+    "source": "ACTUAL_GITHUB_ACTIONS_REAL_FROZEN_GOLD195_DATA",
+    "ci_url": "https://github.com/sunxu/storyforge/actions/runs/39220232578",
+    "ci_result": "success",
+    "no_new_hf_jobs": true,
+    "no_model_inference": true,
+    "no_source_record_mutation": true
+  },
+  "immutable_source_blobs": {
+    "gold87": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+    "gold108": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+    "gold108_review_index": "38e350a9694cc35e4b1e0e8cb4858bd85b5d6ef3"
+  },
+  "counts": {
+    "gold87": 87,
+    "gold108": 108,
+    "total_gold_candidates": 195,
+    "unique_candidate_ids": 195,
+    "source_story_ids_observed_unique": 13,
+    "candidates_with_direct_source_story_id": 192,
+    "candidates_missing_source_story_id_in_original_and_review_index": 3,
+    "candidate_target_shas_verified_after_immutable_index_reconciliation": 195,
+    "gold108_target_sha_missing_original_but_verified_by_review_index": 3,
+    "gold108_story_number_missing_original_but_resolved_by_review_index": 15,
+    "gold108_double_accepted_index_entries": 108,
+    "total_history_assistant_messages_needing_mask": 923,
+    "provenance_source_messages_sum_in_candidate_windows": 2104,
+    "candidate_metadata_train_approved": 0,
+    "split_assignments": 0
+  },
+  "source_story_number_counts": {
+    "10": 19,
+    "12": 4,
+    "13": 17,
+    "14": 12,
+    "15": 20,
+    "01": 21,
+    "02": 24,
+    "03": 14,
+    "04": 10,
+    "05": 18,
+    "06": 7,
+    "08": 4,
+    "09": 25
+  },
+  "quality_vs_admission": {
+    "curator_gold_quality_accepted_candidates": 195,
+    "training_admission": "PENDING_NOT_APPROVED",
+    "last_assistant_target_format_check": "PASS_195",
+    "final_assistant_loss_mask_actual_runtime": "NOT_VERIFIED",
+    "world_component_split": "NOT_VERIFIED",
+    "per_target_historical_card": "NOT_VERIFIED",
+    "rights_age_player_agency_longterm_constraints": "NOT_VERIFIED",
+    "fresh_heldout_leakage_exclusion": "NOT_VERIFIED",
+    "source_identity_three_rows": "HOLD",
+    "remaining_r45_holds_released": 0,
+    "admitted_train_count": 0,
+    "admitted_validation_count": 0
+  },
+  "privacy": "No story, character, source UUID, target text, training prompt, model output, reviewer rationale, or per-row mapping archived.",
+  "no_gpu": true,
+  "no_model_promotion": true,
+  "no_final_heldout_seal": true
+}
