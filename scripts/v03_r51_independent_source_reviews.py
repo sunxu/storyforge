@@ -37,6 +37,50 @@ def demand(ok: bool, code: str) -> None:
     if not ok:
         raise ValueError(code)
 
+# Only these fixed parser/validator messages may be exposed as error codes.
+# Never echo exception strings originating from original story files or paths.
+SAFE_ERROR_REASONS = frozenset({
+    "PRIVATE_FILE_MISSING_OR_SYMLINK",
+    "PRIVATE_FILE_PERMISSIONS_UNSAFE",
+    "PRIVATE_DIRECTORY_PERMISSIONS_UNSAFE",
+    "PRIVATE_PATH_SYMLINK",
+    "PRIVATE_FILE_EMPTY_OR_INVALID",
+    "R51_EXPECTED_108_PACKETS",
+    "R51_PACKET_PROVENANCE_OR_ADMISSION_CHANGED",
+    "R51_PACKET_DUPLICATE_CANDIDATE",
+    "R51_FIRST_ROLE_MISSING",
+    "R51_PACKET_BODY_HASH_OR_WINDOW_INVALID",
+    "R51_WINDOW_OR_PREVIEW_MISSING",
+    "R51_PACKET_SOURCE_CITATION_HASH_CHANGED",
+    "BATCH_SIZE_OUT_OF_RANGE",
+    "GOLD108_EXPECTED_EIGHT_STORY_RANKS",
+    "R51_BATCH_COVERAGE_INVALID",
+    "BATCH_NUMBER_OUT_OF_RANGE",
+    "UNKNOWN_REVIEWER",
+    "REVIEWER_INCOMPLETE_BATCH",
+    "REVIEWER_DUPLICATE_OR_UNKNOWN_CANDIDATE",
+    "REVIEWER_RESPONSE_SCHEMA_OR_PIN_INVALID",
+    "REVIEWER_SOURCE_REASON_REQUIRED",
+    "REVIEWER_SOURCE_CITATIONS_REQUIRED",
+    "REVIEWER_CITATION_INVALID",
+    "REVIEWER_CITATION_NOT_IN_AUTHENTIC_PACKET",
+    "REVIEWER_CITATION_DUPLICATED",
+    "CONTEXT_ONLY_REQUIRES_VISIBLE_AND_TARGET_CITATIONS",
+    "REVIEWER_CANNOT_ADMIT_TRAINING",
+    "REVIEWER_BATCH_COVERAGE_MISMATCH",
+    "REVIEWER_TASK_SETS_DIVERGED",
+    "OUTPUT_DIRECTORY_NOT_PRIVATE",
+    "PREPARE_TAKES_NO_REVIEW_RESULTS",
+    "TWO_REVIEW_FILES_REQUIRED",
+})
+
+
+def diagnostic_error(stage: str, error: Exception) -> str:
+    reason = str(error)
+    code = (reason if isinstance(error, ValueError) and
+            reason in SAFE_ERROR_REASONS else type(error).__name__)
+    return f"R51_REVIEW_TASK_HOLD__{stage}__{code}"
+
 
 def read_local(path: Path, *, expected_mode: int = 0o600) -> list[dict]:
     path = path.expanduser().absolute()
@@ -300,14 +344,18 @@ def main() -> int:
     parser.add_argument("--review-B", type=Path)
     args = parser.parse_args()
     os.umask(0o077)
+    stage = "PACKET_READ"
     try:
         packets = read_local(args.private_packets)
+        stage = "BATCH_BUILD"
         tasks, receipt = build_batch(packets, args.batch, args.batch_size)
+        stage = "OUTPUT_DIRECTORY"
         directory = args.out_dir.expanduser().absolute()
         demand(directory.is_dir() and not directory.is_symlink() and
                stat.S_IMODE(directory.stat().st_mode) & 0o077 == 0,
                "OUTPUT_DIRECTORY_NOT_PRIVATE")
         if args.prepare:
+            stage = "TASKS_WRITE"
             demand(args.review_A is None and args.review_B is None,
                    "PREPARE_TAKES_NO_REVIEW_RESULTS")
             for reviewer in ("A", "B"):
@@ -318,16 +366,24 @@ def main() -> int:
         else:
             demand(args.review_A is not None and args.review_B is not None,
                    "TWO_REVIEW_FILES_REQUIRED")
+            stage = "REVIEWER_A_READ"
             a = read_local(args.review_A)
+            stage = "REVIEWER_B_READ"
             b = read_local(args.review_B)
+            stage = "REVIEWER_A_VALIDATE"
+            validate_review(a, tasks["A"], "A")
+            stage = "REVIEWER_B_VALIDATE"
+            validate_review(b, tasks["B"], "B")
+            stage = "RECONCILE"
             combined, receipt = reconcile(tasks["A"], tasks["B"], a, b)
+            stage = "RECONCILED_WRITE"
             write_private(
                 directory / f"R51_BATCH_{args.batch:02d}_RECONCILED_PRIVATE.jsonl",
                 combined, Path.cwd().resolve())
             print("R51_TWO_INDEPENDENT_SOURCE_REVIEWS_RECONCILED__NO_ADMISSION")
         print(json.dumps(receipt, sort_keys=True, ensure_ascii=False, indent=2))
     except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError) as exc:
-        print("R51_REVIEW_TASK_HOLD__" + type(exc).__name__, file=sys.stderr)
+        print(diagnostic_error(stage, exc), file=sys.stderr)
         return 2
     return 0
 
