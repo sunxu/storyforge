@@ -1,0 +1,20 @@
+{
+  "schema": "storyforge-r50-w17-private-ai-kit-owner-build-receipt-v1",
+  "as_of": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "source": "USER_TERMINAL_OUTPUT_LOCAL_KIT_CREATION",
+  "kit_sha256": "0c1dccd8de0926ab416a85ccb77f474e668138938171f0419eb43ce582a99cc3",
+  "terminal_markers": [
+    "R50_W17_PRIVATE_AI_KIT_BUILT__SEMANTIC_REVIEW_PENDING",
+    "NO_GIT_WRITE__NO_MODEL_INFERENCE__NO_FINAL_SEAL"
+  ],
+  "kit_location": "OWNER_LOCAL_PRIVATE_DIRECTORY__NOT_UPLOADED_TO_GITHUB",
+  "actual_kit_bytes_directly_examined_by_assistant": false,
+  "private_independent_ai_review": "NOT_YET_RECEIVED",
+  "semantic_world_alias_gate": "HOLD",
+  "heldout_final_seal": "NOT_PERFORMED",
+  "model_generation": false,
+  "paid_hf_job": false,
+  "gpu": false,
+  "privacy": "Only content digest and owner-reported status recorded, no source literal or contextual narrative."
+}

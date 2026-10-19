@@ -47,6 +47,9 @@ jobs:
       - name: Synthetic tests for W17 private AI semantic kit (no private source)
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_build_w17_semantic_kit.py' -v
+      - name: Verify private W17 semantic decision validator with synthetic inputs
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_ai_decision_validator.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
