@@ -1,7 +1,6 @@
 """Synthetic tests for R51 private, source-grounded HOLD workpaper."""
 import importlib.util
 import json
-import os
 import stat
 import sys
 import tempfile

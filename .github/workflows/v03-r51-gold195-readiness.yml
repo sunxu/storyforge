@@ -8,6 +8,8 @@ on:
       - .github/workflows/v03-r51-gold195-readiness.yml
       - scripts/v03_r51_gold195_readiness.py
       - tests/test_v03_r51_gold195_readiness.py
+      - scripts/v03_r51_gold195_private_triage.py
+      - tests/test_v03_r51_gold195_private_triage.py
       - evaluations/v0.2/gold-quality-87/**
       - evaluations/v0.2/gold-quality-108/**
   pull_request:
@@ -15,6 +17,8 @@ on:
       - .github/workflows/v03-r51-gold195-readiness.yml
       - scripts/v03_r51_gold195_readiness.py
       - tests/test_v03_r51_gold195_readiness.py
+      - scripts/v03_r51_gold195_private_triage.py
+      - tests/test_v03_r51_gold195_private_triage.py
       - evaluations/v0.2/gold-quality-87/**
       - evaluations/v0.2/gold-quality-108/**
   workflow_dispatch:
@@ -35,6 +39,9 @@ jobs:
       - name: Verify R51 fail-closed synthetic checks
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_readiness.py' -v
+      - name: Verify R51 private HOLD worksheet on synthetic-only fixtures
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_private_triage.py' -v
       - name: Verify all 195 real Git-pinned original Gold candidates
         run: |
           python3 scripts/v03_r51_gold195_readiness.py --repo .

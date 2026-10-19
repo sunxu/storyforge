@@ -1,6 +1,6 @@
 # R51 Gold195 — metadata-based private triage (2026-10-19)
 
-Source pinned to PR #2 HEAD \`cfb9f4d0530eb5af3895f4fab2a81766b4e814d3\` before this implementation commit. This is **real frozen source metadata inspection**, not full transcript replay, training admission, or per-row human review.
+Source pinned to PR #2 HEAD `cfb9f4d0530eb5af3895f4fab2a81766b4e814d3` before this implementation commit. This is **real frozen source metadata inspection**, not full transcript replay, training admission, or per-row human review.
 
 ## Observed cross-tabs (195 original selected rows)
 
@@ -20,16 +20,16 @@ Important: 22 records lack the *two examined direct index fields*, not necessari
 
 Local-only command on the authorized Git checkout:
 
-\`\`\`bash
+```bash
 install -d -m 700 ~/.local/share/storyforge/r51
 python3 scripts/v03_r51_gold195_private_triage.py \\
   --repo . \\
   --output ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v1.jsonl
-\`\`\`
+```
 
 The command verifies frozen cohort SHA and selection index using the existing readiness implementation. It creates **195 private, versioned candidate rows** with candidate and source identities, original target digest, history-message fingerprints, explicit metadata-risk flags, evidence placeholders and two-reviewer fields; write mode is 0600 with exclusive creation. The parent directory must be private (0700); a Git-tree output is rejected. Original chat, target prose, raw reviewer reasons and identifiers do **not** go into the count-only stdout or any new tracked file.
 
-Each row starts at \`PENDING_NOT_APPROVED\`, \`split=null\`, with \`CONTENT_OR_RIGHTS_HOLD\`; the 22 direct-index gaps also receive \`SOURCE_POINTER_RECONCILIATION_HOLD\`. Card/timepoint uncertainty remains a distinct evidence flag. **The script deliberately does not infer \`CONTEXT_ONLY_POSSIBLE__HOLD\` or \`CARD_OR_LONG_RANGE_SOURCE_REQUIRED__HOLD\` from metadata alone**: the route stays \`UNDECIDED__SOURCE_ANCHORED_REVIEW_REQUIRED\` until a reviewer verifies actual context sufficiency and historically available facts.
+Each row starts at `PENDING_NOT_APPROVED`, `split=null`, with `CONTENT_OR_RIGHTS_HOLD`; the 22 direct-index gaps also receive `SOURCE_POINTER_RECONCILIATION_HOLD`. Card/timepoint uncertainty remains a distinct evidence flag. **The script deliberately does not infer `CONTEXT_ONLY_POSSIBLE__HOLD` or `CARD_OR_LONG_RANGE_SOURCE_REQUIRED__HOLD` from metadata alone**: the route stays `UNDECIDED__SOURCE_ANCHORED_REVIEW_REQUIRED` until a reviewer verifies actual context sufficiency and historically available facts.
 
 ## Next review operation, not a new audit-loop
 
