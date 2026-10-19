@@ -23,10 +23,24 @@ def kit() -> dict:
         "exact_flagged_pairs": [[2, 17], [4, 17], [10, 17]],
         "known_historical_link": [4, 7],
         "shared_literal_322_codepoints": "S" * 322,
-        "old_world_contexts": {str(rank): {"context_examples": []}
-                               for rank in (2, 4, 7, 10)},
-        "w17_context": {"context_examples": []},
-        "w17_export_card_review_hints": {},
+        "old_world_contexts": {str(rank): {
+            "context_examples": [{
+                "source_message_index": 1,
+                "neighbors": [{"relative_offset": 0, "role": "assistant",
+                               "text_excerpt": "SYNTHETIC SOURCE"}],
+            }],
+            "story_metadata_excerpt": "synthetic world evidence",
+        } for rank in (2, 4, 7, 10)},
+        "w17_context": {"context_examples": [{
+            "source_message_index": 3,
+            "neighbors": [{"relative_offset": 0, "role": "assistant",
+                           "text_excerpt": "SYNTHETIC NEW"}],
+        }]},
+        "w17_export_card_review_hints": {
+            "character_briefs": [{"name": "synthetic-character",
+                                  "brief": "synthetic private character"}],
+            "world": "synthetic world context",
+        },
     }
 
 
@@ -90,6 +104,76 @@ class W17DecisionValidatorTests(unittest.TestCase):
         d["pair_reviews"][1]["old_rank"] = 2
         with self.assertRaisesRegex(ValueError, "INVALID_OR_DUPLICATE_PAIR"):
             valid_summary(d=d)
+
+    def test_indexed_nested_paths_resolve_against_real_kit_shape(self):
+        d = reviewed(generic=True)
+        d["pair_reviews"][0]["fact_evidence_paths"] = [
+            "old_world_contexts.2.context_examples[0].neighbors[0].text_excerpt",
+            "w17_context.context_examples[0].neighbors[0].text_excerpt",
+            "w17_export_card_review_hints.character_briefs[0].name",
+        ]
+        result = valid_summary(d=d)
+        self.assertEqual(result["pair_decisions"][0]["evidence_pointer_count"], 3)
+
+    def test_jsonpath_quoted_keys_resolve(self):
+        d = reviewed(generic=True)
+        d["pair_reviews"][1]["fact_evidence_paths"] = [
+            '$["old_world_contexts"]["4"]["context_examples"][0]["neighbors"][0]["text_excerpt"]',
+            "$.w17_context.context_examples[0].neighbors[0].text_excerpt",
+        ]
+        result = valid_summary(d=d)
+        self.assertEqual(result["pair_decisions"][1]["evidence_pointer_count"], 2)
+
+    def test_nonexistent_index_rejected_without_raw_path(self):
+        d = reviewed()
+        d["pair_reviews"][0]["fact_evidence_paths"] = [
+            "old_world_contexts.2.context_examples[999].neighbors[0].text_excerpt",
+            "w17_context",
+        ]
+        with self.assertRaisesRegex(ValueError,
+                                    "EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT"):
+            valid_summary(d=d)
+
+    def test_other_old_world_reference_rejected(self):
+        d = reviewed()
+        d["pair_reviews"][0]["fact_evidence_paths"] = [
+            "old_world_contexts.10.context_examples[0]",
+            "w17_context",
+        ]
+        with self.assertRaisesRegex(ValueError,
+                                    "UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH"):
+            valid_summary(d=d)
+
+    def test_empty_old_evidence_cannot_support_world_link(self):
+        k = kit()
+        k["old_world_contexts"]["2"]["context_examples"] = []
+        k["old_world_contexts"]["2"]["story_metadata_excerpt"] = ""
+        d = reviewed(generic=True)
+        with self.assertRaisesRegex(ValueError,
+                                    "STRONG_PAIR_DECISION_REQUIRES_TWO_SOURCE_ANCHORS"):
+            valid_summary(k=k, d=d)
+
+    def test_duplicate_canonical_evidence_paths_rejected(self):
+        d = reviewed()
+        d["pair_reviews"][0]["fact_evidence_paths"] = [
+            "old_world_contexts.2.context_examples[0]",
+            'old_world_contexts["2"].context_examples.0',
+        ]
+        with self.assertRaisesRegex(ValueError,
+                                    "DUPLICATE_CANONICAL_EVIDENCE_PATH"):
+            valid_summary(d=d)
+
+    def test_malicious_or_invented_citations_fail(self):
+        for bad in ("__class__", "secrets.API_KEY",
+                    "old_world_contexts.2.context_examples[-1]",
+                    "old_world_contexts.2.context_examples[0].neighbors[999]",
+                    "w17_context.context_examples[0].invented",
+                    "old_world_contexts.2.__dict__"):
+            d = reviewed()
+            d["pair_reviews"][0]["fact_evidence_paths"] = [bad]
+            with self.subTest(path=bad):
+                with self.assertRaises(ValueError):
+                    valid_summary(d=d)
 
     def test_untrusted_evidence_path_rejected(self):
         d = reviewed()

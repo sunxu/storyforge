@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import stat
 import subprocess
 import sys
@@ -37,6 +38,106 @@ def parse(raw: bytes, name: str) -> dict:
     doc = json.loads(raw.decode("utf8"))
     guard(isinstance(doc, dict), f"{name}_NOT_JSON_OBJECT")
     return doc
+
+
+# Canonical dotted and bracketed JSON evidence pointers; no arbitrary traversal.
+BRACKET_KEY = re.compile(r"""\[['"]([A-Za-z_][A-Za-z0-9_]*|[0-9]+)['"]\]""")
+BRACKET_INDEX = re.compile(r"\[([0-9]+)\]")
+SEGMENT = re.compile(r"[A-Za-z_][A-Za-z0-9_]*|[0-9]+")
+
+
+def canonical_evidence_path(raw: str) -> tuple[str, ...]:
+    guard(type(raw) is str and 1 <= len(raw) <= 280,
+          "UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH")
+    s = raw.strip().strip(chr(96)).strip()
+    if s.startswith("$."):
+        s = s[2:]
+    elif s.startswith("$["):
+        s = s[1:]
+    s = BRACKET_KEY.sub(r".\1", s)
+    s = BRACKET_INDEX.sub(r".\1", s)
+    s = s.lstrip(".")
+    parts = s.split(".")
+    guard(1 <= len(parts) <= 16 and
+          all(SEGMENT.fullmatch(part) is not None for part in parts) and
+          all(not part.isdecimal() or len(part) <= 3 for part in parts),
+          "UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH")
+    return tuple(parts)
+
+
+def evidence_scope(parts: tuple[str, ...], old_rank: int) -> str:
+    """Constrain evidence to this old rank, linked 07, W17 or shared literal."""
+    if parts == ("shared_literal_322_codepoints",):
+        return "context"
+    if len(parts) >= 3 and parts[:2] == ("old_world_contexts", str(old_rank)):
+        if parts[2] in ("context_examples", "story_metadata_excerpt"):
+            return "old"
+        if parts[2] in ("matched_message_occurrences",
+                        "occurrence_count_truncated"):
+            return "context"
+    if (len(parts) >= 3 and parts[:2] == ("old_world_contexts", "7") and
+            parts[2] == "linked_world_07_context_sample"):
+        return "context"
+    if parts == ("w17_context",):
+        return "new"
+    if len(parts) >= 2 and parts[0] == "w17_context":
+        if parts[1] == "context_examples":
+            return "new"
+        if parts[1] in ("matched_message_occurrences",
+                        "occurrence_count_truncated"):
+            return "context"
+    if parts == ("w17_export_card_review_hints",):
+        return "new"
+    if len(parts) >= 2 and parts[0] == "w17_export_card_review_hints":
+        if parts[1] in ("world", "opening", "character_briefs", "version_id"):
+            return "new"
+    raise ValueError("UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH")
+
+
+def resolve_evidence(kit: dict, parts: tuple[str, ...]) -> object:
+    node: object = kit
+    for segment in parts:
+        if isinstance(node, dict):
+            guard(segment in node, "EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT")
+            node = node[segment]
+        elif isinstance(node, list):
+            guard(segment.isdecimal() and int(segment) < len(node),
+                  "EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT")
+            node = node[int(segment)]
+        else:
+            raise ValueError("EVIDENCE_PATH_NOT_FOUND_IN_PINNED_KIT")
+    return node
+
+
+def meaningful_evidence(value: object) -> bool:
+    return value is not None and value is not False and value != "" and (
+        not isinstance(value, (dict, list)) or bool(value)
+    )
+
+
+def checked_evidence_paths(kit: dict, paths: list[str], old_rank: int,
+                           decision: str) -> None:
+    strong_old = strong_new = 0
+    seen: set[tuple[str, ...]] = set()
+    for index, raw in enumerate(paths):
+        try:
+            parts = canonical_evidence_path(raw)
+            guard(parts not in seen, "DUPLICATE_CANONICAL_EVIDENCE_PATH")
+            seen.add(parts)
+            category = evidence_scope(parts, old_rank)
+            value = resolve_evidence(kit, parts)
+            if category == "old" and meaningful_evidence(value):
+                strong_old += 1
+            elif category == "new" and meaningful_evidence(value):
+                strong_new += 1
+        except ValueError as exc:
+            # Pointer values may contain private data: never echo them.
+            raise ValueError(
+                f"{exc}__OLD_RANK_{old_rank}__POINTER_INDEX_{index}"
+            ) from None
+    if decision != "INSUFFICIENT_EVIDENCE":
+        guard(strong_old > 0 and strong_new > 0,
+              "STRONG_PAIR_DECISION_REQUIRES_TWO_SOURCE_ANCHORS")
 
 
 def validate(kit_raw: bytes, decision_raw: bytes,
@@ -105,18 +206,7 @@ def validate(kit_raw: bytes, decision_raw: bytes,
         guard(isinstance(paths, list) and 1 <= len(paths) <= 12 and
               all(type(x) is str for x in paths) and len(paths) == len(set(paths)),
               "PAIR_EVIDENCE_PATHS_INVALID")
-        allowed = {
-            f"old_world_contexts.{old}.context_examples",
-            f"old_world_contexts.{old}.story_metadata_excerpt",
-            "old_world_contexts.7.linked_world_07_context_sample",
-            "w17_context",
-            "w17_export_card_review_hints",
-        }
-        guard(set(paths) <= allowed, "UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH")
-        if vote != "INSUFFICIENT_EVIDENCE":
-            guard(any(p.startswith(f"old_world_contexts.{old}.") for p in paths)
-                  and any(p.startswith("w17_") for p in paths),
-                  "STRONG_PAIR_DECISION_REQUIRES_TWO_SOURCE_ANCHORS")
+        checked_evidence_paths(kit, paths, old, vote)
         counts[vote] += 1
         safe_pairs.append({
             "old_rank": old,
@@ -138,7 +228,7 @@ def validate(kit_raw: bytes, decision_raw: bytes,
     return {
         "schema": "storyforge-r50-w17-sanitized-ai-review-verification-v1",
         "review_source": "OWNER_LOCAL_PRIVATE_AI_REVIEW",
-        "verification": "KIT_AND_DECISION_SHA_SCHEMA_AND_EVIDENCE_POINTERS_ONLY",
+        "verification": "KIT_AND_DECISION_SHA_SCHEMA_AND_RESOLVED_EVIDENCE_POINTERS_ONLY",
         "reviewer_independence_or_correctness_verified_by_script": False,
         "private_kit_sha256": expected_kit_sha,
         "private_decision_sha256": sha(decision_raw),

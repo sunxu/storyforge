@@ -1,0 +1,23 @@
+{
+  "schema": "storyforge-r50-w17-ai-decision-evidence-path-gate-fix-v1",
+  "date": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "owner_reported_error": "R50_W17_PRIVATE_AI_REVIEW_VALIDATION_HOLD: ValueError UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH",
+  "interpretation": "AI decision file exists and was read, but a cited evidence field was not in prior fixed exact-path allowlist; no semantic inference from the error.",
+  "existing_private_kit_sha256": "0c1dccd8de0926ab416a85ccb77f474e668138938171f0419eb43ce582a99cc3",
+  "root_cause_in_code": "Validator accepted only entire context_examples/story_metadata_excerpt/w17_context hints, not indexed nested paths into actual frozen kit.",
+  "new_policy": [
+    "Support canonical dot/array-index path and bracketed JSONPath keys for allowed, existing kit subtrees.",
+    "Resolve every cited pointer against SHA256-pinned private evidence kit with actual array index bounds.",
+    "Reject cross-pair old-world references, invalid fields, non-existent array indices, duplicate canonical paths.",
+    "Require meaningful evidence from both specific old source and W17 for WORLD_LINK or CLEAR_WITH_EVIDENCE.",
+    "Return only pointer ordinal and source rank for failures; do not expose raw citation values or private story text."
+  ],
+  "independent_ai_decision_file_altered": false,
+  "actual_private_decision_validated_here": false,
+  "no_result_forgery": true,
+  "semantic_world_graph": "HOLD",
+  "heldout_seal": "NOT_PERFORMED",
+  "gpu_job": false,
+  "model_inference": false
+}
