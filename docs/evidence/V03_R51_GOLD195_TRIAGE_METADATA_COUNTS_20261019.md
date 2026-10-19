@@ -257,3 +257,49 @@ All story/world/card-context decisions, content rights, reviewer
 signoff and train/validation admission stay HOLD.
 No original chat text, character name, candidate ID, original message
 ID or per-record hash enters Git or terminal output.
+
+
+## R51 Gold108 authentic replay PASS, 2026-10-19 — context reviewer pack
+
+Owner ran v4 against the verified original 06–15 LFS archive:
+**108/108** target ID/SHA/Assistant role unique; **108/108**
+history role+SHA ordered, immediately contiguous and source turns
+consecutive; **22/22** previously absent pointer indexes recovered
+in the private v4 receipt. This closes original-source *structural*
+provenance for Gold108, not history sufficiency, training rights,
+semantic world isolation, reviewer consent, card reconstruction,
+final training admission or Gold87 independent replay.
+
+The frozen Gold108 data has **79** examples whose first visible
+history message is Assistant and **29** starting with User. These
+counts reflect window boundaries, NOT evidence that any one target
+requires an unseen instruction or context. Previous R26 recovered
+source-side adjacent prefixes for the earlier 195-candidate preview,
+but its original full source is a different owner-supplied ZIP.
+
+The following new **private content-review packet generator** is now
+available. It reconstructs the exact Gold108 frozen visible context
+against authenticated raw source messages and includes *up to four*
+preceding original messages in a clearly marked reviewer-only
+supplement. It never silently injects the supplement into training,
+nor claims a four-message preview is complete original long-range
+context. Reviewers must independently trace deeper source history
+when a rule, relation or fact is missing from the visible window.
+
+```bash
+python3 scripts/v03_r51_prepare_private_review_packets.py \
+  --repo . \
+  --private-v4 ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v4.jsonl \
+  --output ~/.local/share/storyforge/r51/R51_GOLD108_PRIVATE_CONTEXT_REVIEW_v1.jsonl
+```
+
+All private content (full frozen selected contexts, original targets,
+up-to-four source predecessors, original source IDs, two reviewer
+decision fields) goes only to an exclusively created local mode-0600
+JSONL outside Git, under mode-0700 directory. Public stdout only
+shows story-number counts, first-visible-role categories and how
+many have source-only predecessors. All 108 begin with independent
+reviewer decisions PENDING, route UNDECIDED, no approved training or
+validation split. The owner age/consent/content statement remains
+distinct from unverified training rights/license. No R50 texts,
+GPU/HF, public narrative notes, PR merge or model promotion.
