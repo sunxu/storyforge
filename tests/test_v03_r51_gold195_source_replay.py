@@ -72,7 +72,7 @@ class SourceReplayTests(unittest.TestCase):
                 "training_admission": "PENDING_NOT_APPROVED",
                 "split": None,
             })
-        source = "\\n".join(json.dumps(x) for x in events) + "\\n"
+        source = "\n".join(json.dumps(x) for x in events) + "\n"
         raw = zip_data({"raw.jsonl": source})
         result = replay.replay_108(rows, {6: raw})
         self.assertEqual(result["gold108_target_unique_id_sha_matches"], 108)
