@@ -4,6 +4,7 @@ import io
 import json
 import sys
 import unittest
+from unittest.mock import patch
 import zipfile
 from pathlib import Path
 
@@ -70,6 +71,40 @@ class SourceReplayTests(unittest.TestCase):
         self.assertNotIn("highly-sensitive-id", dump)
         self.assertNotIn("secret_field_for_character_name", dump)
         self.assertNotIn("private_story_name", dump)
+
+
+    def test_root_messages_probe_separates_id_and_hash_disagreements(self):
+        gold = []
+        original_messages = []
+        for i in range(108):
+            body = f"synthetic-target-{i}"
+            gold.append({
+                "cohort": 108,
+                "source_rank": 6,
+                "source_reference": {},
+                "original_target_message_id": f"expected-{i}",
+                "original_target_sha256": sha(body),
+            })
+            actual_id = f"expected-{i}" if i < 104 else f"alternate-{i}"
+            actual_body = body if i < 100 or i >= 104 else f"edited-{i}"
+            original_messages.append({
+                "id": actual_id, "content": actual_body,
+                "role": "assistant", "turn_index": i,
+            })
+        payload = (json.dumps({"messages": original_messages}) + "\n").encode()
+        with patch.object(replay, "read_private_v2", return_value=gold), \
+             patch.object(replay, "choose_source_jsonl", return_value=payload):
+            result = replay.probe_original_target_matching(
+                Path("."), Path("unused-private-v2"), {6: b"synthetic-source"})
+        self.assertEqual(result["summary"]["root_messages_id_hit"], 104)
+        self.assertEqual(result["summary"]["root_messages_sha_hit"], 104)
+        self.assertEqual(result["summary"]["root_messages_id_and_sha_hit"], 100)
+        self.assertEqual(result["summary"]["recursive_parser_id_and_sha_hit"], 100)
+        self.assertEqual(result["summary"]["candidates"], 108)
+        self.assertEqual(result["training_admitted"], 0)
+        public = json.dumps(result)
+        self.assertNotIn("synthetic-target", public)
+        self.assertNotIn("expected-0", public)
 
     def test_synthetic_replay_always_keeps_holds(self):
         events = []
