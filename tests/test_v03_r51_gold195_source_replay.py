@@ -188,6 +188,7 @@ class SourceReplayTests(unittest.TestCase):
                 "history_fingerprints": [{"role": "user", "sha256": sha(ctx)}],
                 "source_reference": {},
                 "source_review": {},
+                "holds": ["CONTENT_OR_RIGHTS_HOLD"],
                 "training_admission": "PENDING_NOT_APPROVED",
                 "split": None,
             })
