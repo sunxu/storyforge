@@ -174,6 +174,53 @@ class W17DecisionValidatorTests(unittest.TestCase):
             with self.subTest(path=bad), self.assertRaises(ValueError):
                 valid_summary(d=d)
 
+    def test_card_warning_is_real_but_not_substantive_evidence(self):
+        k = kit()
+        k["w17_export_card_review_hints"]["WARNING"] = (
+            "Export-time card is not automatically valid at test cutoff"
+        )
+        d = reviewed(generic=True)
+        for row in d["pair_reviews"]:
+            row["fact_evidence_paths"].append(
+                "w17_export_card_review_hints.WARNING"
+            )
+        summary = valid_summary(k=k, d=d)
+        self.assertEqual(summary["scoped_pair_count"], 3)
+        self.assertEqual(summary["full_semantic_world_graph_gate"], "HOLD")
+        self.assertTrue(all(
+            row["evidence_pointer_count"] == 3
+            for row in summary["pair_decisions"]
+        ))
+
+    def test_card_warning_alone_does_not_support_world_clear(self):
+        k = kit()
+        k["w17_export_card_review_hints"]["WARNING"] = (
+            "Export-time card is not automatically valid at test cutoff"
+        )
+        d = reviewed(generic=True)
+        d["pair_reviews"][0]["fact_evidence_paths"] = [
+            "old_world_contexts.2.context_examples[0]",
+            "w17_export_card_review_hints.WARNING",
+        ]
+        with self.assertRaisesRegex(
+            ValueError, "STRONG_PAIR_DECISION_REQUIRES_TWO_SOURCE_ANCHORS"
+        ):
+            valid_summary(k=k, d=d)
+
+    def test_unknown_w17_card_warning_alias_still_rejected(self):
+        k = kit()
+        k["w17_export_card_review_hints"]["WARNING"] = (
+            "Export-time card is not automatically valid at test cutoff"
+        )
+        d = reviewed()
+        d["pair_reviews"][0]["fact_evidence_paths"].append(
+            "w17_export_card_review_hints.UNKNOWN_WARNING"
+        )
+        with self.assertRaisesRegex(
+            ValueError, "UNTRUSTED_OR_OUT_OF_SCOPE_EVIDENCE_PATH"
+        ):
+            valid_summary(k=k, d=d)
+
     def test_untrusted_evidence_path_rejected(self):
         d = reviewed()
         d["pair_reviews"][0]["fact_evidence_paths"] = ["secrets.API_KEY"]

@@ -86,6 +86,11 @@ def evidence_scope(parts: tuple[str, ...], old_rank: int) -> str:
         if parts[1] in ("matched_message_occurrences",
                         "occurrence_count_truncated"):
             return "context"
+    # Exactly the immutable Kit's export-time-card temporal caveat.
+    # This is a limitation, not proof about character/world identity.
+    # Do not count it as a W17-side substantive evidence anchor.
+    if parts == ("w17_export_card_review_hints", "WARNING"):
+        return "context"
     if parts == ("w17_export_card_review_hints",):
         return "new"
     if (len(parts) >= 2 and parts[0] == "w17_export_card_review_hints"
