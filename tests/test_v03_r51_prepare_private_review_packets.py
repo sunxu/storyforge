@@ -11,9 +11,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
-import v03_r51_prepare_private_review_packets as packets
-import v03_r51_gold195_source_replay as replay
 import v03_r51_gold195_private_triage as triage
+import v03_r51_gold195_source_replay as replay
+import v03_r51_prepare_private_review_packets as packets
 
 
 def digest(t):
@@ -103,14 +103,14 @@ class ContextPacketTests(unittest.TestCase):
         self.assertEqual(pkt["reviewer_1"]["decision"], "PENDING")
 
     def test_summary_counts_only_and_private_write(self):
-        source, row, gold, raw, zipped = self.fixture()
+        _, row, gold, raw, zipped = self.fixture()
         pool = [dict(row, candidate_id=f"synthetic-{i}") for i in range(108)]
         golds = [dict(gold, id=f"synthetic-{i}") for i in range(108)]
-        with patch.object(packets.base, "read_pinned_rows", return_value=golds):
-            with patch.object(packets.replay, "choose_source_jsonl",
-                              return_value=raw):
-                output, summary = packets.prepare(
-                    Path("."), pool, {6: zipped})
+        with (
+            patch.object(packets.base, "read_pinned_rows", return_value=golds),
+            patch.object(packets.replay, "choose_source_jsonl", return_value=raw),
+        ):
+            output, summary = packets.prepare(Path("."), pool, {6: zipped})
         self.assertEqual(len(output), 108)
         self.assertEqual(summary["packets_created"], 108)
         self.assertEqual(summary["starts_with_user"], 108)
