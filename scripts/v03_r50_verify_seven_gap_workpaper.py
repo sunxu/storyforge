@@ -26,8 +26,9 @@ RANKS = (2, 4, 7, 10, 17)
 PINNED_MANIFEST_SHA256 = "b4e08232bdd12d9401d78fe6e0ab945a6f5156938c88ef811da9bf52a9b41a3b"
 
 
-def verify_manifest_sha(raw: bytes, *, expected: str = PINNED_MANIFEST_SHA256) -> None:
-    require(digest(raw) == expected, "PRIVATE_MANIFEST_SHA256_MISMATCH")
+def verify_manifest_sha(raw: bytes, *, expected: str | None = None) -> None:
+    pinned = PINNED_MANIFEST_SHA256 if expected is None else expected
+    require(digest(raw) == pinned, "PRIVATE_MANIFEST_SHA256_MISMATCH")
 
 
 
