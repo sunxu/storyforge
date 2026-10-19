@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """R51 read-only Gold195 quality-pool integrity and training-blocker inventory.
 
 Does NOT admit training examples, assign a split, synthesize a card, open
@@ -102,7 +101,7 @@ def inspect_rows(cohort87: list[dict], cohort108: list[dict],
     lengths: list[int] = []
     ids: set[str] = set()
     target_keys: set[tuple[str, str]] = set()
-    source_rank_missing = 0
+    source_story_id_fallback_count = 0
 
     for cohort, records in ((87, cohort87), (108, cohort108)):
         for position, row in enumerate(records):
@@ -140,6 +139,9 @@ def inspect_rows(cohort87: list[dict], cohort108: list[dict],
                     sha256(messages[-1]["content"].encode("utf8")) == expected_target,
                     "GOLD195_TARGET_SHA256_MISMATCH")
             story_id = meta.get("story_id")
+            if story_id is None and cohort == 108:
+                story_id = meta.get("source_story_id")
+                source_story_id_fallback_count += int(story_id is not None)
             target_id = meta.get("target_message_id")
             require(type(story_id) is str and story_id and
                     type(target_id) is str and target_id,
@@ -228,7 +230,7 @@ def inspect_rows(cohort87: list[dict], cohort108: list[dict],
         "max_history_message_count": max(lengths),
         "existing_explicit_loss_true_message_count": active_supervision_labels,
         "original_messages_beginning_with_system": messages_with_system_first,
-        "source_rank_missing": source_rank_missing,
+        "legacy_source_story_id_fallback_records": source_story_id_fallback_count,
         "source_index_fields_absent_in_source_metadata":
             explicit_source_index_missing,
         "explicit_export_or_target_card_unverified_flags":

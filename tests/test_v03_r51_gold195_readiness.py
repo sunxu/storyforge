@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import importlib.util
-import sys
 import unittest
 from pathlib import Path
 
@@ -98,6 +97,19 @@ class Gold195ReadinessTests(unittest.TestCase):
         with self.assertRaisesRegex(
             ValueError, "TARGET_DIGEST_MISSING_OR_CONFLICTING"
         ):
+            m.inspect_rows(a, b, i)
+
+    def test_original_cohort_108_source_story_id_fallback_only(self):
+        a, b, i = fixtures()
+        original = b[0]["metadata"].pop("story_id")
+        b[0]["metadata"]["source_story_id"] = original
+        summary = m.inspect_rows(a, b, i)
+        self.assertEqual(summary["legacy_source_story_id_fallback_records"], 1)
+
+    def test_missing_both_source_story_ids_fails(self):
+        a, b, i = fixtures()
+        b[0]["metadata"].pop("story_id")
+        with self.assertRaisesRegex(ValueError, "SOURCE_TARGET_ID_MISSING"):
             m.inspect_rows(a, b, i)
 
     def test_review_index_order_mismatch_rejected(self):
