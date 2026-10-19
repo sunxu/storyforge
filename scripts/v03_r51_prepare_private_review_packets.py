@@ -7,8 +7,6 @@ a content-only admission. Never commit or print the private packet.
 from __future__ import annotations
 
 import argparse
-import hashlib
-import io
 import json
 import os
 import stat
