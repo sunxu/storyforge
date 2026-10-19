@@ -218,3 +218,42 @@ authorization to automatically clear the 22 pointer gaps or train.
 Once counts identify the precise mismatch, correct the parser or
 historical mapping and do one fresh replay into an exclusively
 created *new* local v4 rather than silently reusing the failed v3.
+
+
+## R51 source-replay v4 correction after 108/108 original-source ID+hash match probe
+
+The owner-provided aggregate diagnostic found, for all eight Gold-bearing
+06–15 stories, **108/108 exact unique source root.messages ID+body-SHA256
+pairs** and 108/108 matches in the previous recursive parser. The first
+R51 v3 had reported 0/108 not because target IDs or bodies differed, but
+because the recursive traversal processed nested metadata objects and
+counted multiple events under an inherited original message ID, then
+required exactly one event per ID. The outer archive and 10 nested
+raw-ZIP SHA256 checks remain unchanged and PASS.
+
+The corrected local v4 replay reads only the original top-level
+`messages` array, preserves the true original array index and
+`turn_index` in private evidence, requires unique target ID + SHA256 +
+Assistant role, checks history role+SHA ordered subsequence and immediate
+preceding suffix separately, and counts consecutive original turn
+indices independently. A mismatch in ANY of the 108 target identities
+fails closed before creating v4. It does **not** assert that every
+history window must be consecutive if the real source says otherwise.
+The previous failed v3 file is retained but not used as proof.
+
+Run in the owner's authorized checkout after pulling:
+
+```bash
+python3 scripts/v03_r51_gold195_source_replay.py \
+  --repo . \
+  --private-v2 ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v2.jsonl \
+  --output ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v4.jsonl
+```
+
+The source-specific pointer-location check for 22 candidates can
+now be independently evidenced if exact root ID/SHA succeeds, but
+their previous HOLD flags are **not** automatically removed.
+All story/world/card-context decisions, content rights, reviewer
+signoff and train/validation admission stay HOLD.
+No original chat text, character name, candidate ID, original message
+ID or per-record hash enters Git or terminal output.

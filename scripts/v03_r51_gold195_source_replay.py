@@ -220,93 +220,160 @@ def parse_source_events(payload: bytes) -> list[tuple[str | None, str, str | Non
     require(len(events) > 0, "RAW_JSONL_NO_MESSAGE_EVENTS")
     return events
 
+def parse_root_source_events(
+    payload: bytes,
+) -> list[tuple[str, str, str | None, int | None]]:
+    """Exactly one authenticated JSONL export; only root.messages are events.
 
-def ordered_history(events: list[tuple[str | None, str, str | None]],
-                    target_pos: int, history: list[dict]) -> tuple[bool, bool]:
-    expected = [x["sha256"] for x in history]
-    prefix = [x[1] for x in events[:target_pos]]
+    A nested metadata/character/card field is not a second message, even
+    if the recursive diagnostic discovers the same inherited message ID.
+    The returned index is the true root.messages array index.
+    """
+    roots = 0
+    events: list[tuple[str, str, str | None, int | None]] = []
+    with io.TextIOWrapper(io.BytesIO(payload), encoding="utf-8-sig") as stream:
+        for line in stream:
+            if not line.strip():
+                continue
+            roots += 1
+            require(roots == 1, "MULTIPLE_ROOT_SOURCE_RECORDS_HOLD")
+            root = json.loads(line)
+            require(isinstance(root, dict) and
+                    isinstance(root.get("messages"), list),
+                    "ORIGINAL_ROOT_MESSAGES_NOT_FOUND")
+            for message in root["messages"]:
+                require(isinstance(message, dict), "SOURCE_MESSAGE_NOT_OBJECT")
+                oid = message.get("id")
+                body = message.get("content")
+                require(isinstance(oid, str) and bool(oid)
+                        and isinstance(body, str),
+                        "ORIGINAL_MESSAGE_ID_OR_BODY_TYPE_INVALID")
+                turn = message.get("turn_index")
+                require(turn is None or (isinstance(turn, int)
+                                        and not isinstance(turn, bool)),
+                        "SOURCE_TURN_INDEX_TYPE_INVALID")
+                events.append((oid, sha256(body.encode("utf8")),
+                               normalize_role(message.get("role")), turn))
+    require(roots == 1 and len(events) > 0, "ORIGINAL_SOURCE_MESSAGES_EMPTY")
+    return events
+
+
+
+def ordered_history(
+    events: list[tuple], target_pos: int, history: list[dict]
+) -> tuple[bool, bool]:
+    """Role+SHA ordered-subsequence and true immediate suffix separately."""
+    require(target_pos >= 0, "SOURCE_TARGET_POSITION_INVALID")
+    require(all("sha256" in h and "role" in h for h in history),
+            "HISTORY_FINGERPRINT_MISSING_ROLE_OR_SHA")
+    expected = [(h["sha256"], normalize_role(h["role"])) for h in history]
+    before = [(e[1], e[2]) for e in events[:target_pos]]
     cursor = 0
-    selected = []
-    for digest in expected:
-        while cursor < len(prefix) and prefix[cursor] != digest:
+    for item in expected:
+        while cursor < len(before) and before[cursor] != item:
             cursor += 1
-        if cursor >= len(prefix):
+        if cursor >= len(before):
             return False, False
-        selected.append(cursor)
         cursor += 1
-    contiguous = bool(selected) and selected == list(
-        range(target_pos - len(selected), target_pos))
-    return True, contiguous
+    suffix = (len(expected) <= len(before) and
+              before[-len(expected):] == expected) if expected else True
+    return True, suffix
 
 
 def replay_108(rows: list[dict], raw_zips: dict[int, bytes]) -> dict:
-    groups = defaultdict(list)
+    """Source-root ID+SHA replay only, preserving all semantic HOLDs."""
+    groups: dict[int, list[dict]] = defaultdict(list)
     for row in rows:
         if row["cohort"] == 108:
             groups[row["source_rank"]].append(row)
-    require(sum(map(len, groups.values())) == 108, "GOLD108_GROUP_COUNT")
-    counter = Counter()
+    require(sum(len(v) for v in groups.values()) == 108,
+            "GOLD108_GROUP_COUNT")
+    totals = Counter()
     story_summary = {}
-    for rank in sorted(groups):
-        group = groups[rank]
+    for rank, group in sorted(groups.items()):
         expected_hashes = {r["source_reference"]["source_jsonl_sha256"]
                            for r in group
                            if r["source_reference"].get("source_jsonl_sha256")}
         raw_jsonl = choose_source_jsonl(raw_zips[rank], expected_hashes)
-        raw_sha = sha256(raw_jsonl)
-        events = parse_source_events(raw_jsonl)
-        target_id_count = 0
-        target_and_sha = 0
-        history_ordered = 0
-        history_contiguous = 0
+        jsonl_sha = sha256(raw_jsonl)
+        events = parse_root_source_events(raw_jsonl)
+        id_positions: dict[str, list[int]] = defaultdict(list)
+        for pos, (msg_id, _, _, _) in enumerate(events):
+            id_positions[msg_id].append(pos)
+        local = Counter(candidates=len(group))
         for row in group:
-            matches = [(pos, digest) for pos, (oid, digest, _) in enumerate(events)
-                       if oid == row["original_target_message_id"]]
-            valid = [pos for pos, digest in matches
-                     if digest == row["original_target_sha256"]]
-            # Never silently take the first if source structure has duplicate IDs.
-            unique = len(matches) == len(valid) == 1
-            checked = row["source_review"]
-            checked["raw_target_replay"] = "ID_SHA_UNIQUE_PASS" if unique else (
-                "NO_ID_MATCH__HOLD" if not matches else "ID_SHA_NOT_UNIQUE__HOLD")
-            checked["raw_source_receipt"] = {
+            identity = row["original_target_message_id"]
+            positions = id_positions.get(identity, [])
+            matches = [
+                pos for pos in positions
+                if events[pos][1] == row["original_target_sha256"]
+                and events[pos][2] == "assistant"
+            ]
+            unique = len(positions) == len(matches) == 1
+            reviewed = row["source_review"]
+            reviewed["raw_target_replay"] = (
+                "ROOT_MESSAGES_UNIQUE_ASSISTANT_ID_SHA_PASS" if unique
+                else "ROOT_MESSAGES_TARGET_NOT_UNIQUE_OR_DIFFERENT__HOLD")
+            reviewed["raw_source_receipt"] = {
                 "raw_zip_sha256": sha256(raw_zips[rank]),
-                "source_jsonl_sha256": raw_sha,
-                "target_source_event_offset": valid[0] if unique else None,
+                "source_jsonl_sha256": jsonl_sha,
+                "original_root_messages_array_index": matches[0]
+                if unique else None,
+                "original_turn_index": events[matches[0]][3] if unique else None,
                 "historical_card_certified": False,
             }
             if not unique:
                 continue
-            counter["target_match"] += 1
-            target_and_sha += 1
-            target_id_count += 1
-            # The raw source ZIP/JSONL and target-time record are authenticated.
-            row["source_archive_replay"] = "RAW_TARGET_ID_AND_SHA_PASS"
-            # Direct index is not the same as event position; do not forge it.
+            local["target_unique_id_sha_role_pass"] += 1
+            row["source_archive_replay"] = "ORIGINAL_ROOT_MESSAGE_ID_SHA_ROLE_PASS"
+            reviewed["source_pointer_verified"] = (
+                "ROOT_MESSAGES_INDEX_ID_SHA_ROLE_VERIFIED")
+            # Original metadata is immutable. Only the verified, private v4
+            # workpaper receives the recovered raw-array index.
             history = row["history_fingerprints"]
-            ordered, contiguous = ordered_history(events, valid[0], history)
-            checked["raw_history_in_order"] = (
-                "PASS" if ordered else "UNPROVEN__HOLD")
-            checked["raw_history_contiguous_before_target"] = (
-                "PASS" if contiguous else "UNPROVEN__HOLD")
+            ordered, contiguous = ordered_history(events, matches[0], history)
+            reviewed["raw_history_in_order"] = (
+                "PASS_ROLE_SHA" if ordered else "UNPROVEN__HOLD")
+            reviewed["raw_history_contiguous_before_target"] = (
+                "PASS_ROLE_SHA" if contiguous else "UNPROVEN__HOLD")
+            reviewed["source_replay_and_history_contiguity"] = (
+                "PASS_SOURCE_WINDOW_ROLE_SHA"
+                if contiguous else "SOURCE_WINDOW_UNPROVEN__HOLD")
             if ordered:
-                history_ordered += 1
-                counter["history_ordered"] += 1
+                local["history_ordered_by_sha_role"] += 1
             if contiguous:
-                history_contiguous += 1
-                counter["history_contiguous"] += 1
-        story_summary[str(rank)] = {
-            "candidates": len(group),
-            "target_unique_id_and_sha": target_and_sha,
-            "history_ordered_by_sha": history_ordered,
-            "history_immediately_contiguous": history_contiguous,
-        }
+                local["history_immediately_contiguous"] += 1
+                turns = [event[3] for event in
+                         events[matches[0] - len(history):matches[0] + 1]]
+                if all(isinstance(turn, int) for turn in turns) and all(
+                    b == a + 1 for a, b in zip(turns, turns[1:])
+                ):
+                    local["contiguous_turn_indices"] += 1
+            if "SOURCE_POINTER_RECONCILIATION_HOLD" in row["holds"]:
+                local["pointer_gap_candidates_root_index_recovered"] += 1
+                # Retain original HOLD until source reviewer reconciles the
+                # crosslinked audit evidence with this recovered index.
+        for k in ("candidates", "target_unique_id_sha_role_pass",
+                  "history_ordered_by_sha_role",
+                  "history_immediately_contiguous",
+                  "contiguous_turn_indices",
+                  "pointer_gap_candidates_root_index_recovered"):
+            totals[k] += local[k]
+        story_summary[str(rank)] = dict(local)
     return {
-        "status": "RAW_GOLD108_REPLAY_PERFORMED__NO_SEMANTIC_ADMISSION",
+        "schema": "storyforge-r51-original-root-message-replay-v4",
+        "status": "GOLD108_TARGET_REPLAY_COMPLETE__SEMANTIC_ADMISSION_HOLD",
         "source_stories_replayed": len(groups),
-        "gold108_target_unique_id_sha_matches": counter["target_match"],
-        "gold108_history_sha_in_original_order": counter["history_ordered"],
-        "gold108_history_immediately_contiguous": counter["history_contiguous"],
+        "gold108_target_unique_id_sha_matches":
+            totals["target_unique_id_sha_role_pass"],
+        "gold108_history_sha_in_original_order":
+            totals["history_ordered_by_sha_role"],
+        "gold108_history_immediately_contiguous":
+            totals["history_immediately_contiguous"],
+        "gold108_history_source_turns_consecutive":
+            totals["contiguous_turn_indices"],
+        "previous_22_pointer_gaps_original_indices_recovered":
+            totals["pointer_gap_candidates_root_index_recovered"],
         "gold87_source_replay": "NOT_PERFORMED",
         "by_story_rank": story_summary,
         "card_or_context_routes_decided": 0,
@@ -526,10 +593,10 @@ def main() -> int:
             return 0
         rows = read_private_v2(args.private_v2, repo)
         receipt = replay_108(rows, raw)
-        require(receipt["gold108_target_unique_id_sha_matches"] > 0,
-                "ALL_108_TARGETS_UNMATCHED_PARSER_SCHEMA_HOLD")
+        require(receipt["gold108_target_unique_id_sha_matches"] == 108,
+                "GOLD108_TARGET_REPLAY_INCOMPLETE_HOLD")
         for row in rows:
-            row["schema"] = "storyforge-r51-private-gold195-triage-v3"
+            row["schema"] = "storyforge-r51-private-gold195-triage-v4"
             require(row["training_admission"] == triage.HOLD
                     and row["split"] is None, "R51_TRAIN_APPROVAL_FORBIDDEN")
         triage.write_private(args.output, rows, repo)
@@ -539,7 +606,7 @@ def main() -> int:
         # Never print exception values: ZIP member names can contain private text.
         print("R51_RAW_REPLAY_HOLD__" + type(exc).__name__, file=sys.stderr)
         return 2
-    print("R51_ORIGINAL_GOLD108_RAW_REPLAY_RECORDED__NO_ADMISSION")
+    print("R51_ORIGINAL_GOLD108_ROOT_MESSAGES_V4_REPLAY_PASS__NO_ADMISSION")
     print(json.dumps(receipt, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 
