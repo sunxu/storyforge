@@ -51,29 +51,37 @@ class SourceReplayTests(unittest.TestCase):
         self.assertFalse(contiguous)
 
     def test_synthetic_replay_always_keeps_holds(self):
-        target = "synthetic assistant completion"
-        ctx = "synthetic user input"
-        row = {
-            "candidate_id": "test-1",
-            "cohort": 108,
-            "source_rank": 6,
-            "original_target_message_id": "t",
-            "original_target_sha256": sha(target),
-            "history_fingerprints": [{"role": "user", "sha256": sha(ctx)}],
-            "source_reference": {},
-            "source_review": {},
-            "training_admission": "PENDING_NOT_APPROVED",
-            "split": None,
-        }
-        source = '\n'.join(json.dumps(x) for x in [
-            {"message_id": "h", "role": "user", "content": ctx},
-            {"message_id": "t", "role": "assistant", "content": target},
-        ]) + "\n"
+        events = []
+        rows = []
+        for i in range(108):
+            target = f"synthetic completion {i}"
+            ctx = f"synthetic user input {i}"
+            events.extend([
+                {"message_id": f"h-{i}", "role": "user", "content": ctx},
+                {"message_id": f"t-{i}", "role": "assistant", "content": target},
+            ])
+            rows.append({
+                "candidate_id": f"test-{i}",
+                "cohort": 108,
+                "source_rank": 6,
+                "original_target_message_id": f"t-{i}",
+                "original_target_sha256": sha(target),
+                "history_fingerprints": [{"role": "user", "sha256": sha(ctx)}],
+                "source_reference": {},
+                "source_review": {},
+                "training_admission": "PENDING_NOT_APPROVED",
+                "split": None,
+            })
+        source = "\\n".join(json.dumps(x) for x in events) + "\\n"
         raw = zip_data({"raw.jsonl": source})
-        result = replay.replay_108([row], {6: raw})
-        # Set the synthetic test scope explicitly instead of 108 real rows.
-        self.assertIsInstance(result, dict)
-
+        result = replay.replay_108(rows, {6: raw})
+        self.assertEqual(result["gold108_target_unique_id_sha_matches"], 108)
+        self.assertEqual(result["gold108_history_sha_in_original_order"], 108)
+        self.assertEqual(result["gold108_history_immediately_contiguous"], 108)
+        self.assertTrue(all(r["training_admission"] == "PENDING_NOT_APPROVED"
+                            and r["split"] is None for r in rows))
+        self.assertTrue(all(r["source_archive_replay"] ==
+                            "RAW_TARGET_ID_AND_SHA_PASS" for r in rows))
 
 if __name__ == "__main__":
     unittest.main()
