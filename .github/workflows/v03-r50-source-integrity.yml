@@ -68,6 +68,9 @@ jobs:
       - name: Synthetic seven-gap private AI workpaper verification tests
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_verify_seven_gap_workpaper.py' -v
+      - name: Test fail-closed private AI reviewer runner (NO model call)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_seven_gap_ai_runner.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
