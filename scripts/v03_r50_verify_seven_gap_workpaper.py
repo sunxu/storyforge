@@ -23,6 +23,12 @@ ASSESSMENTS = {
 }
 CARD_TIMINGS = {"VERIFIED_AS_OF_CUTOFF", "POSTDATE_RISK", "NOT_CHECKED"}
 RANKS = (2, 4, 7, 10, 17)
+PINNED_MANIFEST_SHA256 = "b4e08232bdd12d9401d78fe6e0ab945a6f5156938c88ef811da9bf52a9b41a3b"
+
+
+def verify_manifest_sha(raw: bytes, *, expected: str = PINNED_MANIFEST_SHA256) -> None:
+    require(digest(raw) == expected, "PRIVATE_MANIFEST_SHA256_MISMATCH")
+
 
 
 def require(condition: bool, code: str) -> None:
@@ -41,6 +47,10 @@ def load_manifest(folder: Path) -> tuple[dict, list[dict], str]:
     mp = folder / "manifest.json"
     require(mp.is_file() and not mp.is_symlink(), "PACKET_MANIFEST_MISSING")
     raw = mp.read_bytes()
+    verify_manifest_sha(raw)
+    require(stat.S_IMODE(mp.stat().st_mode) & 0o077 == 0,
+            "PACKET_MANIFEST_FILE_NOT_PRIVATE")
+    manifest_sha = digest(raw)
     manifest = json.loads(raw)
     require(manifest.get("schema") ==
             "storyforge-r50-w17-seven-gap-private-context-manifest-v1" and
@@ -90,7 +100,7 @@ def load_manifest(folder: Path) -> tuple[dict, list[dict], str]:
                     "PACKET_SOURCE_PROVENANCE_INVALID")
             seen.add((rank, pos))
         packets.append(packet)
-    return manifest, packets, digest(raw)
+    return manifest, packets, manifest_sha
 
 
 def summarize(manifest: dict, packets: list[dict], manifest_sha: str,
@@ -139,6 +149,26 @@ def summarize(manifest: dict, packets: list[dict], manifest_sha: str,
             checked_full = ref.get("full_untruncated_message_reviewed")
             require(type(checked_full) is bool,
                     "WORKPAPER_FULL_MESSAGE_REVIEW_NOT_BOOL")
+            # The packet itself must contain the COMPLETE original message.
+            # A reviewer might separately see more, but the private packets
+            # cannot attest that unseen material was read.
+            source = next(
+                item for item in packets[i]["private_candidate_contexts"]
+                if (item["source_rank"],
+                    item["original_source_message_index"]) == key
+            )
+            fully_contained = (
+                source.get("focus_start_character") == 0
+                and source.get("focus_is_truncated") is False
+                and isinstance(source.get("focus_excerpt"), str)
+                and type(source.get("original_message_codepoints")) is int
+                and len(source["focus_excerpt"]) ==
+                source["original_message_codepoints"]
+                and digest(source["focus_excerpt"].encode("utf8")) ==
+                source.get("original_message_sha256")
+            )
+            require(not checked_full or fully_contained,
+                    "FULL_MESSAGE_CLAIM_NOT_SUPPORTED_BY_PACKET")
             full_count += int(checked_full)
         reason = row.get("private_reasoning")
         require(type(reason) is str and 30 <= len(reason.strip()) <= 5000,
