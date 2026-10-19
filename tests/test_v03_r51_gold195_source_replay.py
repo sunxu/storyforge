@@ -201,7 +201,7 @@ class SourceReplayTests(unittest.TestCase):
         self.assertTrue(all(r["training_admission"] == "PENDING_NOT_APPROVED"
                             and r["split"] is None for r in rows))
         self.assertTrue(all(r["source_archive_replay"] ==
-                            "RAW_TARGET_ID_AND_SHA_PASS" for r in rows))
+                            "ORIGINAL_ROOT_MESSAGE_ID_SHA_ROLE_PASS" for r in rows))
 
 if __name__ == "__main__":
     unittest.main()
