@@ -27,6 +27,22 @@ jobs:
       - name: Synthetic R51 schema and fail-closed tests
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_source_inventory.py' -v
+      - name: Check original Gold108 schema keys ONLY (no data values)
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          for cohort in ("87", "108"):
+              root = Path(f"evaluations/v0.2/gold-quality-{cohort}")
+              name = f"gold_quality_accepted_{cohort}.jsonl"
+              with (root / name).open(encoding="utf8") as f:
+                  entry = json.loads(f.readline())
+              meta = entry.get("metadata")
+              print(f"R51_SCHEMA_{cohort}_TOP_KEYS=",
+                    sorted(k for k in entry if k.isascii()))
+              print(f"R51_SCHEMA_{cohort}_METADATA_KEYS=",
+                    sorted(k for k in meta if k.isascii()) if isinstance(meta, dict) else "MISSING")
+          PY
       - name: Audit real 195 frozen Gold candidates without raw output
         run: |
           python3 scripts/v03_r51_gold195_source_inventory.py --repo .
