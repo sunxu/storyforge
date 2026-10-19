@@ -229,7 +229,7 @@ def main() -> None:
     require(repo != dossier_dir.resolve(strict=False) and
             repo not in dossier_dir.resolve(strict=False).parents,
             "PRIVATE_DOSSIER_INSIDE_GIT_FORBIDDEN")
-    dossiers, manifest_sha, manifest = load_dossiers(dossier_dir)
+    dossiers, manifest_sha, _manifest = load_dossiers(dossier_dir)
     print("R50_W17_FULL_DOSSIERS_SHA_AND_MESSAGES_VERIFIED__SEMANTIC_HOLD")
     print("GAP_COUNT=7__TOTAL_COMPLETE_SOURCE_MESSAGES=" +
           str(sum(len(x["full_original_messages"]) for x in dossiers)))
