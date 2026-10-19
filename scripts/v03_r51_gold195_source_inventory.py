@@ -173,7 +173,7 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
                 if contract.get("only_final_assistant_supervised") is True:
                     counts["declared_final_assistant_only"] += 1
             elif contract is not None:
-                raise ValueError("GOLD_SUPERVISION_CONTRACT_TYPE_INVALID")
+                counts["supervision_contract_unstructured"] += 1
             counts["actual_loss_label_mask_verified"] += 0  # never assume a runtime label test
             for k, aliases in (
                 ("target_text_modified", ("target_text_modified","raw_assistant_text_edited")),
@@ -221,6 +221,7 @@ def inspect(cohorts: dict[str, list[dict]]) -> dict:
                 counts["history_source_message_ids_present"],
             "source_message_ids_missing": counts["source_message_ids_missing"],
             "declared_final_assistant_only": counts["declared_final_assistant_only"],
+            "supervision_contract_unstructured": counts["supervision_contract_unstructured"],
             "historical_assistant_messages_to_mask":
                 counts["historical_assistant_messages_to_mask"],
             "story_card_version_id_missing": counts["version_id_absent"],
