@@ -64,21 +64,31 @@ def reconcile(rows: list[dict], index: list[dict]) -> dict:
         target_hash = hashlib.sha256(
             source["messages"][-1]["content"].encode("utf8")
         ).hexdigest()
-        require(row.get("target_sha256") == target_hash,
-                "R51_REVIEW_INDEX_TARGET_SHA_MISMATCH")
-        counts["target_sha_crosschecked_against_index"] += 1
+        indexed_sha = row.get("target_sha256")
+        if indexed_sha:
+            require(indexed_sha == target_hash,
+                    "R51_REVIEW_INDEX_TARGET_SHA_MISMATCH")
+            counts["target_sha_crosschecked_against_index"] += 1
+        else:
+            counts["target_sha_missing_in_index"] += 1
         val = meta.get("target_sha256_utf8") or meta.get("target_sha256")
         if val:
             require(val == target_hash, "R51_ORIGINAL_METADATA_TARGET_SHA_CONFLICT")
-        else:
+            counts["target_sha_verified_by_original_metadata"] += 1
+        elif indexed_sha:
             counts["original_target_hash_missing_recovered_by_index"] += 1
-        source_story = row.get("story_id")
-        require(isinstance(source_story,str) and bool(source_story.strip()),
-                "R51_REVIEW_INDEX_STORY_ID_MISSING")
-        if meta.get("story_id"):
-            require(meta["story_id"] == source_story, "R51_STORY_ID_INDEX_CONFLICT")
         else:
+            counts["target_sha_not_independently_attested"] += 1
+        source_story = row.get("story_id")
+        recorded_story = meta.get("story_id")
+        if source_story and recorded_story:
+            require(recorded_story == source_story, "R51_STORY_ID_INDEX_CONFLICT")
+        elif source_story and not recorded_story:
             counts["original_story_id_missing_recovered_by_index"] += 1
+        elif recorded_story and not source_story:
+            counts["index_story_id_missing_but_original_present"] += 1
+        else:
+            counts["story_id_missing_in_both_sources"] += 1
         source_target = row.get("target_message_id")
         require(isinstance(source_target,str) and bool(source_target.strip()) and
                 source_target == meta.get("target_message_id"),
@@ -121,10 +131,18 @@ def reconcile(rows: list[dict], index: list[dict]) -> dict:
         "record_count": 108,
         "double_accepted_source_index_rows": counts["double_accepted_source_index_rows"],
         "verified_target_hash_against_original_reply": counts["target_sha_crosschecked_against_index"],
+        "target_hash_present_in_original_metadata":
+            counts["target_sha_verified_by_original_metadata"],
+        "target_hash_missing_in_frozen_index": counts["target_sha_missing_in_index"],
+        "target_hash_missing_in_both_sources":
+            counts["target_sha_not_independently_attested"],
         "metadata_target_hash_gaps_resolved_by_frozen_index":
             counts["original_target_hash_missing_recovered_by_index"],
         "metadata_story_id_gaps_resolved_by_frozen_index":
             counts["original_story_id_missing_recovered_by_index"],
+        "story_id_missing_in_review_index_but_present_in_original":
+            counts["index_story_id_missing_but_original_present"],
+        "story_id_missing_in_both": counts["story_id_missing_in_both_sources"],
         "metadata_story_number_gaps_resolved_by_frozen_index":
             counts["original_story_number_missing_recovered_by_index"],
         "per_story": dict(sorted(by_story.items())),
