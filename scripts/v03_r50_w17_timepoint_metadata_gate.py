@@ -29,7 +29,7 @@ def require(ok: bool, marker: str) -> None:
 def parsed_time(value: object) -> datetime:
     require(isinstance(value, str) and bool(value.strip()),
             "SOURCE_TIME_FIELD_MISSING")
-    timestamp = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    timestamp = datetime.fromisoformat(value)
     require(timestamp.tzinfo is not None and timestamp.utcoffset() is not None,
             "SOURCE_TIMEZONE_REQUIRED")
     return timestamp
@@ -56,7 +56,7 @@ def audit_w17_timepoint(card: dict, transcript: dict, dossiers: list[dict],
     observed = parsed_time(export.get("observed_at"))
     author_updated = parsed_time(author.get("updated_at"))
     public_observed = parsed_time(public.get("observed_at"))
-    require(created <= updated and updated <= observed and
+    require(created <= updated <= observed and
             author_updated <= public_observed,
             "W17_CARD_METADATA_TIME_INCONSISTENT")
     versions = card.get("content_versions")
