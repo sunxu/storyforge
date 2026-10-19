@@ -45,5 +45,29 @@ jobs:
       - name: Verify all 195 real Git-pinned original Gold candidates
         run: |
           python3 scripts/v03_r51_gold195_readiness.py --repo .
+      - name: Verify real 195-row metadata intersections without saving private workpapers
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          import v03_r51_gold195_readiness as base
+          import v03_r51_gold195_private_triage as triage
+          root = Path('.')
+          a = base.read_pinned_rows(root, base.GOLD87, 87, blob_sha1=base.EXPECTED_GIT_SHA1_87)
+          b = base.read_pinned_rows(root, base.GOLD108, 108, sha256_digest=base.EXPECTED_SHA256_108)
+          i = base.read_gold108_index(root)
+          _, counts = triage.make_rows(a, b, i)
+          assert counts['explicit_card_unverified'] == 171
+          assert counts['source_index_metadata_absent'] == 22
+          assert counts['age_unspecified'] == 10
+          assert counts['flag_intersections'] == {
+              'card_only': 161, 'card_and_age': 10,
+              'pointer_only': 22, 'none_of_these_three': 2,
+              'other_patterns': 0,
+          }
+          assert counts['train_admitted'] == counts['validation_admitted'] == 0
+          print('R51_REAL_GOLD195_METADATA_TRIAGE_PASS__ADMISSION_HOLD')
+          PY
       # No model inference, GPU, HF connection, artifact uploads, raw data
       # printing, case-level ID disclosure or training admission by this CI.

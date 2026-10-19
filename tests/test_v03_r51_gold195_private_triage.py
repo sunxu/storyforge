@@ -38,6 +38,12 @@ class R51PrivateTriageTests(unittest.TestCase):
 
     def test_overlap_flags_and_pointer_hold(self):
         a, b, index = fixtures_module.fixtures()
+        # Unlike the minimal fixtures, real Gold87 carries direct pointers.
+        for k, row in enumerate(a):
+            row["metadata"]["source_json_pointer"] = f"/synthetic/{k}"
+        for row in b:
+            row["metadata"]["source_message_array_index"] = 1
+        b[-1]["metadata"].pop("source_message_array_index")
         work, report = triage.make_rows(a, b, index)
         self.assertEqual(report["age_unspecified"], 10)
         self.assertEqual(report["flag_intersections"]["card_and_age"], 10)
@@ -46,6 +52,15 @@ class R51PrivateTriageTests(unittest.TestCase):
                              in r["holds"] for r in work))
         self.assertNotIn("content", work[0]["source_reference"])
         self.assertTrue(work[0]["history_fingerprints"])
+
+    def test_unflagged_metadata_never_auto_approves(self):
+        a, b, index = fixtures_module.fixtures()
+        a[0]["metadata"]["story_card_status"] = "NO_EXPLICIT_MARKER"
+        a[0]["metadata"]["source_json_pointer"] = "/synthetic/1"
+        work, _ = triage.make_rows(a, b, index)
+        self.assertEqual(work[0]["metadata_risks"], [])
+        self.assertEqual(work[0]["holds"], ["CONTENT_OR_RIGHTS_HOLD"])
+        self.assertEqual(work[0]["triage_route"], triage.UNDECIDED)
 
     def test_source_mutation_rejected(self):
         a, b, index = fixtures_module.fixtures()
@@ -75,7 +90,7 @@ class R51PrivateTriageTests(unittest.TestCase):
         _, summary = triage.make_rows(a, b, index)
         raw = json.dumps(summary)
         self.assertNotIn("synthetic private note", raw)
-        self.assertNotIn("candidate_id", raw)
+        self.assertNotIn(a[0]["id"], raw)
         self.assertNotIn("original_target_sha256", raw)
 
 
