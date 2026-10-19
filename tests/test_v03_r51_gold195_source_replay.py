@@ -50,6 +50,27 @@ class SourceReplayTests(unittest.TestCase):
         self.assertTrue(ordered)
         self.assertFalse(contiguous)
 
+
+    def test_safe_schema_probe_never_returns_story_or_message_content(self):
+        source = {
+            "messages": [
+                {"message_id": "highly-sensitive-id",
+                 "role": "assistant",
+                 "content": {"text": "PRIVATE_SCENE_TEXT"},
+                 "secret_field_for_character_name": "PRIVATE_PERSON"}
+            ],
+            "private_story_name": "PRIVATE_STORY",
+        }
+        report = replay.safe_shape(source)
+        dump = json.dumps(report)
+        self.assertIn("messages", dump)
+        self.assertIn("message_id", dump)
+        self.assertIn("content", dump)
+        self.assertNotIn("PRIVATE", dump)
+        self.assertNotIn("highly-sensitive-id", dump)
+        self.assertNotIn("secret_field_for_character_name", dump)
+        self.assertNotIn("private_story_name", dump)
+
     def test_synthetic_replay_always_keeps_holds(self):
         events = []
         rows = []
