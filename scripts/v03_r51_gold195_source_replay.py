@@ -391,6 +391,105 @@ def probe_original_schema(repo: Path, raw_zip_by_rank: dict[int, bytes]) -> dict
         "raw_target_match_or_training_admission": "NOT_ASSERTED",
     }
 
+
+def probe_original_target_matching(
+    repo: Path, private_v2: Path, raw_zip_by_rank: dict[int, bytes]
+) -> dict:
+    """Cross-check original root.messages schema, IDs and body hashes separately.
+
+    Purely structural/aggregate diagnostics. The generic recursive parser
+    is evaluated separately from the direct root.messages parser to expose
+    accidental wrapper/ordering assumptions. No user content leaves memory.
+    """
+    rows = read_private_v2(private_v2, repo)
+    groups: dict[int, list[dict]] = defaultdict(list)
+    for row in rows:
+        if row["cohort"] == 108:
+            groups[row["source_rank"]].append(row)
+    require(sum(len(v) for v in groups.values()) == 108,
+            "GOLD108_EXPECTED_FOR_DIAGNOSTIC")
+    total = Counter()
+    summaries: dict[str, dict] = {}
+    for rank, candidates in sorted(groups.items()):
+        hashes = {r["source_reference"]["source_jsonl_sha256"]
+                  for r in candidates
+                  if r["source_reference"].get("source_jsonl_sha256")}
+        payload = choose_source_jsonl(raw_zip_by_rank[rank], hashes)
+        directly_parsed = []
+        source_roots = 0
+        source_message_dicts = 0
+        with io.TextIOWrapper(io.BytesIO(payload), encoding="utf-8-sig") as stream:
+            for line in stream:
+                if not line.strip():
+                    continue
+                source_roots += 1
+                root = json.loads(line)
+                require(isinstance(root, dict) and
+                        isinstance(root.get("messages"), list),
+                        "RAW_ROOT_MESSAGES_FORMAT_UNEXPECTED")
+                for msg in root["messages"]:
+                    if not isinstance(msg, dict):
+                        continue
+                    source_message_dicts += 1
+                    msg_id = msg.get("id")
+                    content = msg.get("content")
+                    if isinstance(content, str):
+                        directly_parsed.append((
+                            msg_id if isinstance(msg_id, str) else None,
+                            sha256(content.encode("utf8")),
+                            normalize_role(msg.get("role")),
+                        ))
+        recursive = parse_source_events(payload)
+        explicit_id_set = {eid for eid, _, _ in directly_parsed if eid is not None}
+        explicit_hash_set = {digest for _, digest, _ in directly_parsed}
+        explicit_pair_counts = Counter((eid, digest)
+                                       for eid, digest, _ in directly_parsed)
+        generic_pair_counts = Counter((eid, digest)
+                                      for eid, digest, _ in recursive)
+        rank_counts = Counter()
+        for row in candidates:
+            identity = row["original_target_message_id"]
+            expected = row["original_target_sha256"]
+            checks = {
+                "root_messages_id_hit": identity in explicit_id_set,
+                "root_messages_sha_hit": expected in explicit_hash_set,
+                "root_messages_id_and_sha_hit":
+                    explicit_pair_counts[(identity, expected)] > 0,
+                "root_messages_unique_id_and_sha_hit":
+                    explicit_pair_counts[(identity, expected)] == 1,
+                "recursive_parser_id_and_sha_hit":
+                    generic_pair_counts[(identity, expected)] > 0,
+            }
+            for label, hit in checks.items():
+                if hit:
+                    rank_counts[label] += 1
+        # With no message IDs or body strings in the source, no match can
+        # be inferred from positional guesses or partial metadata.
+        rank_counts["candidates"] = len(candidates)
+        rank_counts["jsonl_root_records"] = source_roots
+        rank_counts["root_message_objects"] = source_message_dicts
+        rank_counts["root_messages_id_and_string_content"] = sum(
+            mid is not None for mid, _, _ in directly_parsed)
+        rank_counts["recursive_parser_event_count"] = len(recursive)
+        for key in ("candidates", "root_messages_id_hit",
+                    "root_messages_sha_hit", "root_messages_id_and_sha_hit",
+                    "root_messages_unique_id_and_sha_hit",
+                    "recursive_parser_id_and_sha_hit"):
+            total[key] += rank_counts[key]
+        summaries[str(rank)] = dict(rank_counts)
+    return {
+        "schema": "storyforge-r51-raw-target-match-diagnostic-v1",
+        "status": "RAW_SOURCE_ID_VS_SHA_MATCH_COUNTS_ONLY__NO_ADMISSION",
+        "gold108": len(groups) and total["candidates"],
+        "summary": dict(total),
+        "by_story_rank": summaries,
+        "private_values_or_hashes_emitted": False,
+        "training_admitted": 0,
+        "validation_admitted": 0,
+        "raw_history_or_semantic_review_certified": False,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=Path, required=True)
@@ -398,11 +497,15 @@ def main() -> int:
     parser.add_argument("--output", type=Path)
     parser.add_argument("--probe-schema", action="store_true",
                         help="Only print safe structural field names and types")
+    parser.add_argument("--probe-matches", action="store_true",
+                        help="Aggregate direct root.messages ID and SHA matching diagnostics")
     args = parser.parse_args()
     os.umask(0o077)
     try:
         repo = args.repo.resolve(strict=True)
-        require(args.probe_schema or
+        require(not (args.probe_schema and args.probe_matches),
+                "CHOOSE_ONE_DIAGNOSTIC")
+        require(args.probe_schema or args.probe_matches or
                 (args.private_v2 is not None and args.output is not None),
                 "PRIVATE_V2_AND_OUTPUT_REQUIRED")
         asset, manifest = pinned_archive(repo)
@@ -411,6 +514,13 @@ def main() -> int:
             require(args.private_v2 is None and args.output is None,
                     "SCHEMA_PROBE_TAKES_NO_WORKPAPER_ARGUMENTS")
             receipt = probe_original_schema(repo, raw)
+            print(json.dumps(receipt, ensure_ascii=False,
+                             sort_keys=True, indent=2))
+            return 0
+        if args.probe_matches:
+            require(args.private_v2 is not None and args.output is None,
+                    "MATCH_PROBE_REQUIRES_PRIVATE_V2_ONLY")
+            receipt = probe_original_target_matching(repo, args.private_v2, raw)
             print(json.dumps(receipt, ensure_ascii=False,
                              sort_keys=True, indent=2))
             return 0
