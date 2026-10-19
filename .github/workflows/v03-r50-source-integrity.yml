@@ -53,6 +53,9 @@ jobs:
       - name: Synthetic read-only W17 invalid-citation classification tests
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_diagnose_w17_evidence_paths.py' -v
+      - name: Verify W17 owner-reported independent AI verdict remains a semantic HOLD
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_owner_review_receipt.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
