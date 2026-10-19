@@ -145,3 +145,42 @@ Stdout is aggregate-only; actual original messages are never printed,
 committed, uploaded or passed to CI. CI runs only synthetic ZIP fixtures.
 All semantic context-vs-card judgments, rights, independent review,
 Train/Val splits and admission remain HOLD. No GPU/HF.
+
+## 2026-10-19 R51 v3 replay: fail-closed parser-schema mismatch
+
+Owner ran the private Gold108 v3 raw replay against the already independently
+SHA256-validated 06–15 original LFS archive. All eight Gold-bearing stories
+(108 candidates) returned `target_unique_id_and_sha=0`, ordered history=0,
+contiguous history=0. **This is not evidence of 108 invalid training targets.**
+The earlier R25 original private JSONL target-identity source join reported
+195/195 original target IDs, bodies and created-at timestamps; R26 reported
+195/195 original preceding histories contiguous in source turn order and
+recovered 132 previously truncated User–Assistant prefixes. These older
+findings must not be mistaken for this new parser independently passing;
+they also do not authorize admission or card-version reconstruction.
+
+R51 v3's generic recursive ID/text parser did not recognize the actual
+06–15 original export shape. The v3 private file contains *unmatched*
+diagnostic rows only and **must not be used as a training approval receipt**
+or basis to discard Gold. The replay program is now fail-closed if *all*
+108 original target IDs/hashes are unmatched, rather than emitting a false
+"replay performed" success. Root cause remains pending schema diagnosis.
+
+### One privacy-safe schema probe, no new workpaper
+
+Run in the owner's verified checkout (with the LFS archive already pulled):
+
+```bash
+python3 scripts/v03_r51_gold195_source_replay.py \
+  --repo . \
+  --probe-schema
+```
+
+The diagnostic checks the already pinned 65 MB/58 MB archive hashes and
+10 raw-story ZIP hashes, then prints ONLY allowlisted structural field
+names, container types, story rank and counts for the first original
+JSONL record of each of eight Gold-bearing story sources. It prints
+**no candidate identifiers, story names, message text or values** and
+does not touch v1/v2/v3 or run inference. Use this structural receipt
+to implement a schema-exact adapter before the next real replay.
+Do not continue repeating metadata triage or alter frozen Gold/R50.
