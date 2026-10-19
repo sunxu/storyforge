@@ -10,6 +10,8 @@ on:
       - tests/test_v03_r51_gold195_readiness.py
       - scripts/v03_r51_gold195_private_triage.py
       - tests/test_v03_r51_gold195_private_triage.py
+      - scripts/v03_r51_gold195_source_replay.py
+      - tests/test_v03_r51_gold195_source_replay.py
       - evaluations/v0.2/gold-quality-87/**
       - evaluations/v0.2/gold-quality-108/**
   pull_request:
@@ -19,6 +21,8 @@ on:
       - tests/test_v03_r51_gold195_readiness.py
       - scripts/v03_r51_gold195_private_triage.py
       - tests/test_v03_r51_gold195_private_triage.py
+      - scripts/v03_r51_gold195_source_replay.py
+      - tests/test_v03_r51_gold195_source_replay.py
       - evaluations/v0.2/gold-quality-87/**
       - evaluations/v0.2/gold-quality-108/**
   workflow_dispatch:
