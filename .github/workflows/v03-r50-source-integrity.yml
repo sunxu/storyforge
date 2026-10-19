@@ -83,6 +83,9 @@ jobs:
       - name: Synthetic W17 original-message temporal metadata audit gate
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_w17_timepoint_metadata_gate.py' -v
+      - name: Verify W17 temporal owner receipt remains cutoff NOT_CERTIFIED
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_timepoint_receipt.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
