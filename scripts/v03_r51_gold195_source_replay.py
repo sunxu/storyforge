@@ -200,7 +200,7 @@ def messages_in_json(value: object) -> list[tuple[str | None, str, str | None]]:
                 if signature not in digests:
                     results.append((oid, signature, role))
                     digests.add(signature)
-        for key, child in obj.items():
+        for child in obj.values():
             if isinstance(child, (dict, list)):
                 descend(child, oid, role, level + 1)
 
