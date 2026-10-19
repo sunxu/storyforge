@@ -4,9 +4,9 @@ import io
 import json
 import sys
 import unittest
-from unittest.mock import patch
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 import v03_r51_gold195_source_replay as replay
