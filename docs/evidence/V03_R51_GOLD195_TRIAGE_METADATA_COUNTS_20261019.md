@@ -36,3 +36,39 @@ Each row starts at `PENDING_NOT_APPROVED`, `split=null`, with `CONTENT_OR_RIGHTS
 For each candidate, use authenticated original source chat with target-point cutoff to resolve pointers and contiguous history, determine local context-only sufficiency versus historical card/long-range dependency, then check age/consent/rights/forbidden rules and player autonomy. Record evidence references and two independent source reviewers in the private workpaper. Final component-disjoint Train/Val assignment requires verified linkage across stories, frozen older tests and R50, and separate engineering loss-mask checks.
 
 R45 18 HOLD unchanged; W17 frozen; R50 test text untouched; no HF/GPU, model promotion, final seal or PR merge. The metadata screening output is not a new R51 content or training PASS.
+
+
+## Owner declaration received on 2026-10-19 — age, consent, content limits
+
+The project owner stated in the R51 continuation conversation that they
+have confirmed **age, consent and content-boundary compliance** for the
+candidate material. Record this as **OWNER_ATTESTED__2026-10-19** for the
+Gold195 admission work, not as an independently source-replayed per-row fact,
+legal opinion, training-data license grant or a final model-input approval.
+
+The ten original `source_character_age=UNSPECIFIED` metadata values remain
+unchanged, because a later owner declaration does not retroactively add
+historical source metadata. Their review follow-up becomes
+`OWNER_ATTESTED__SOURCE_METADATA_UNSPECIFIED`, not an automatic safety
+or source-chronology PASS. Avoid repeating a generic request for the
+owner to confirm age/consent/content limits unless specific contradictory
+source evidence arises.
+
+The local private 195-row worksheet v1 has been reported successfully
+created with status `R51_PRIVATE_GOLD195_HOLD_WORKPAPER_CREATED__NO_ADMISSION`.
+Its existing `source_review.age_and_consent=PENDING` records are historical
+pre-declaration state; preserve v1 and record the owner declaration in a
+new **local-only** worksheet version. Do not change Gold originals, silently
+delete source-risk flags, upload candidate IDs or raw private review notes
+to Git/CI, or claim individual source-anchored reviews have occurred.
+
+**Remaining substantive blockers:** authenticated original-source pointer
+reconciliation for the 22 direct-index gaps, context-only vs long-range/card
+dependency backed by actual original conversations and target-time evidence,
+training-use rights/licenses beyond the owner's age/consent/content assertion,
+player-agency and rule compliance, independent source review, semantic
+world-component segregation from frozen older tests/R50, and eventual
+CPU tokenizer/collator loss-mask verification. All 195 remain
+`training_admission=PENDING_NOT_APPROVED`, `split=null`;
+`CONTENT_OR_RIGHTS_HOLD` remains until its other grounds are resolved.
+No GPU/HF/inference/merge/promotion/seal is authorized by this declaration.
