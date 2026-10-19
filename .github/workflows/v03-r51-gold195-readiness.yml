@@ -69,5 +69,28 @@ jobs:
           assert counts['train_admitted'] == counts['validation_admitted'] == 0
           print('R51_REAL_GOLD195_METADATA_TRIAGE_PASS__ADMISSION_HOLD')
           PY
+      - name: Validate 22 original missing-index records against prior R02 audit
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "scripts")
+          import v03_r51_gold195_readiness as base
+          import v03_r51_gold195_private_triage as triage
+          repo = Path(".")
+          a = base.read_pinned_rows(repo, base.GOLD87, 87, blob_sha1=base.EXPECTED_GIT_SHA1_87)
+          b = base.read_pinned_rows(repo, base.GOLD108, 108, sha256_digest=base.EXPECTED_SHA256_108)
+          i = base.read_gold108_index(repo)
+          work, _ = triage.make_rows(a, b, i)
+          receipt = triage.owner_v2_crosslink(work, triage.prior_r02_index(repo))
+          assert receipt["prior_r02_missing_pointer_anchor_links"] == 22
+          assert receipt["prior_r02_card_snapshot_postdates_target"] == 9
+          assert receipt["prior_r02_source_story_id_fallback"] == 3
+          assert receipt["pointer_gaps_by_story_rank"] == {
+              "6": 5, "8": 4, "9": 7, "10": 3, "13": 3,
+          }
+          assert receipt["source_pointer_gaps_cleared"] == 0
+          print("R51_R02_22_METADATA_CROSSLINK_PASS__RAW_SOURCE_AND_ADMISSION_HOLD")
+          PY
       # No model inference, GPU, HF connection, artifact uploads, raw data
       # printing, case-level ID disclosure or training admission by this CI.

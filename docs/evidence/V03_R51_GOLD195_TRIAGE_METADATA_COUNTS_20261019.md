@@ -72,3 +72,47 @@ CPU tokenizer/collator loss-mask verification. All 195 remain
 `training_admission=PENDING_NOT_APPROVED`, `split=null`;
 `CONTENT_OR_RIGHTS_HOLD` remains until its other grounds are resolved.
 No GPU/HF/inference/merge/promotion/seal is authorized by this declaration.
+
+
+## R51 continuation — actual cross-link for 22 pointer-gap candidates
+
+Compared the original Gold108 rows, its double-review index, and the
+prior original-source R02 card/timepoint audit CSV pinned at Git blob
+47748c7bf8f0c32aa9ec737e4223a707665c0060.
+
+All 22/22 missing-direct-index candidates cross-link to a prior audit
+record with matching candidate ID, original Assistant target SHA256,
+target message ID, story ID (including 3 source_story_id fallbacks),
+story rank, and an original target timestamp. Distribution: 06=5,
+08=4, 09=7, 10=3, 13=3. Nine export cards postdate their targets;
+none of the 22 has certified as-of card content. The older Gold108
+review index has 3 blank primary story_id cells; no missing ID has been
+invented or backfilled.
+
+This is cross-linkage to an existing **historical source verifier's
+metadata receipt**. It is not an actual replay of the full 65 MB
+LFS source archive in this run, and does not recover the direct JSON
+array index or historically valid card. All 22 source-pointer HOLDs
+and all 195 training admission HOLDs remain.
+
+### Privately prepare owner-attested version 2
+
+After `git pull --ff-only`, from the authorized Git checkout:
+
+```bash
+python3 scripts/v03_r51_gold195_private_triage.py \
+  --repo . \
+  --owner-attested-v2 \
+  --output ~/.local/share/storyforge/r51/R51_GOLD195_PRIVATE_TRIAGE_v2.jsonl
+```
+
+Version 2 is recreated deterministically from the frozen, hash-pinned
+Gold195 sources and immutable prior R02 audit CSV. It does not modify
+the already created v1. It retains all 10 original age-UNSPECIFIED
+metadata markers, all original source-index holds and
+CONTENT_OR_RIGHTS_HOLD, while noting the project owner's declaration
+on age/consent/content only; it does **not** certify training-data
+licensing or substitute for source-anchored individual review.
+It adds private matched R02 metadata receipts for the 22 candidates.
+It exclusively creates mode-0600 output outside the repository, prints
+only aggregate counts, and does not start AI/HF/GPU operations.

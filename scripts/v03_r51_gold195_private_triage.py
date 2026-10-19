@@ -6,6 +6,7 @@ Run on an authorized local checkout only, with a private output directory.
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import os
@@ -178,11 +179,100 @@ def write_private(output: Path, rows: list[dict], repo: Path) -> None:
         os.fsync(stream.fileno())
 
 
+
+R02_INDEX = Path("evaluations/v0.2/admission-audit-20261013/"
+                 "r02-point-in-time-cards/candidate_card_version_evidence_108.csv")
+R02_BLOB = "47748c7bf8f0c32aa9ec737e4223a707665c0060"
+
+
+def prior_r02_index(repo: Path) -> list[dict]:
+    path = repo / R02_INDEX
+    baseline.require(path.is_file() and not path.is_symlink(),
+                     "R02_INDEX_NOT_FOUND")
+    baseline.require(baseline.git_blob_sha1(path.read_bytes()) == R02_BLOB,
+                     "R02_SOURCE_AUDIT_INDEX_CHANGED")
+    with path.open(encoding="utf8", newline="") as stream:
+        records = list(csv.DictReader(stream))
+    baseline.require(len(records) == 108 and
+                     len({r["candidate_id"] for r in records}) == 108,
+                     "R02_AUDIT_INVALID")
+    return records
+
+
+def owner_v2_crosslink(rows: list[dict], audit_rows: list[dict]) -> dict:
+    audit_by_id = {r["candidate_id"]: r for r in audit_rows}
+    linked = postdated = fallback = 0
+    story_counts = Counter()
+    for row in rows:
+        row["schema"] = "storyforge-r51-private-gold195-triage-v2"
+        row["owner_attestation"] = {
+            "date": "2026-10-19",
+            "authority": "PROJECT_OWNER_DECLARATION",
+            "scope": "AGE_CONSENT_AND_CONTENT_BOUNDARIES",
+            "independent_source_verification": "NOT_PERFORMED",
+            "training_rights_license": "NOT_ATTESTED",
+        }
+        review = row["source_review"]
+        review["age_and_consent"] = (
+            "OWNER_ATTESTED__SOURCE_AGE_METADATA_UNSPECIFIED"
+            if "AGE_UNSPECIFIED" in row["metadata_risks"]
+            else "OWNER_ATTESTED__2026-10-19")
+        review["content_boundaries"] = "OWNER_ATTESTED__2026-10-19"
+        if "SOURCE_POINTER_RECONCILIATION_HOLD" in row["holds"]:
+            baseline.require(row["cohort"] == 108, "NON108_POINTER_GAP")
+            old = audit_by_id.get(row["candidate_id"])
+            baseline.require(old is not None and
+                             old["story_id"] == row["source_story_id"] and
+                             old["target_message_id"] == row["original_target_message_id"] and
+                             old["target_sha256"] == row["original_target_sha256"] and
+                             int(old["story_number"]) == row["source_rank"] and
+                             bool(old["target_timestamp_utc"]),
+                             "R02_SOURCE_AUDIT_CROSSLINK_MISMATCH")
+            baseline.require(old["training_admission"] == HOLD and
+                             old["target_time_card_version_present"] == "false" and
+                             old["exported_story_postdates_target"] in ("true", "false"),
+                             "R02_TEMPORAL_AND_ADMISSION_FLAGS_CHANGED")
+            review["prior_r02_audit_crosslink"] = {
+                "status": "METADATA_ANCHOR_VERIFIED__RAW_REPLAY_PENDING",
+                "git_blob_sha1": R02_BLOB,
+                "source": str(R02_INDEX),
+                "target_timestamp_utc": old["target_timestamp_utc"],
+                "export_card_postdates_target":
+                    old["exported_story_postdates_target"] == "true",
+            }
+            linked += 1
+            postdated += int(old["exported_story_postdates_target"] == "true")
+            fallback += int("source_story_id" in row["source_reference"]
+                            and "story_id" not in row["source_reference"])
+            story_counts[row["source_rank"]] += 1
+        baseline.require(row["training_admission"] == HOLD and
+                         row["split"] is None and "CONTENT_OR_RIGHTS_HOLD" in row["holds"],
+                         "R51_TRAINING_ADMISSION_NOT_PERMITTED")
+    return {
+        "status": "OWNER_ATTESTED__PRIOR_R02_METADATA_CROSSLINK__ADMISSION_HOLD",
+        "private_rows": len(rows),
+        "owner_attested_age_consent_content": len(rows),
+        "age_unspecified_original_flags_preserved": sum(
+            "AGE_UNSPECIFIED" in r["metadata_risks"] for r in rows),
+        "prior_r02_missing_pointer_anchor_links": linked,
+        "prior_r02_card_snapshot_postdates_target": postdated,
+        "prior_r02_source_story_id_fallback": fallback,
+        "pointer_gaps_by_story_rank": {str(k): v for k, v in sorted(story_counts.items())},
+        "raw_archive_replay_this_run": False,
+        "source_pointer_gaps_cleared": 0,
+        "training_admitted": 0,
+        "validation_admitted": 0,
+        "new_split_assigned": 0,
+        "rights_or_license_certified": False,
+    }
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True,
                         help="New private local JSONL file (parent mode 0700)")
+    parser.add_argument("--owner-attested-v2", action="store_true",
+                        help="New v2 worksheet: owner declaration + prior R02 audit links")
     args = parser.parse_args()
     os.umask(0o077)
     try:
@@ -197,13 +287,17 @@ def main() -> int:
             sha256_digest=baseline.EXPECTED_SHA256_108)
         idx = baseline.read_gold108_index(repo)
         rows, summary = make_rows(a, b, idx)
+        if args.owner_attested_v2:
+            summary = owner_v2_crosslink(rows, prior_r02_index(repo))
         write_private(args.output, rows, repo)
     except (OSError, ValueError, KeyError, TypeError, AssertionError,
             json.JSONDecodeError) as exc:
         print("R51_PRIVATE_TRIAGE_HOLD:", type(exc).__name__,
               str(exc)[:100], file=sys.stderr)
         return 2
-    print("R51_PRIVATE_GOLD195_HOLD_WORKPAPER_CREATED__NO_ADMISSION")
+    print("R51_PRIVATE_GOLD195_OWNER_ATTESTED_V2_CREATED__NO_ADMISSION"
+          if args.owner_attested_v2 else
+          "R51_PRIVATE_GOLD195_HOLD_WORKPAPER_CREATED__NO_ADMISSION")
     print(json.dumps(summary, ensure_ascii=False, sort_keys=True, indent=2))
     return 0
 

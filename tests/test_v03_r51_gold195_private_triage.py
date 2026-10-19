@@ -62,6 +62,61 @@ class R51PrivateTriageTests(unittest.TestCase):
         self.assertEqual(work[0]["holds"], ["CONTENT_OR_RIGHTS_HOLD"])
         self.assertEqual(work[0]["triage_route"], triage.UNDECIDED)
 
+
+    def test_owner_v2_owner_declaration_and_pointer_crosslink(self):
+        a, b, index = fixtures_module.fixtures()
+        for k, row in enumerate(a):
+            row["metadata"]["source_json_pointer"] = f"/synthetic/{k}"
+        for row in b:
+            row["metadata"]["source_message_array_index"] = 7
+        b[-1]["metadata"].pop("source_message_array_index")
+        work, _ = triage.make_rows(a, b, index)
+        target = work[-1]
+        audit = [{
+            "candidate_id": target["candidate_id"],
+            "story_id": target["source_story_id"],
+            "target_message_id": target["original_target_message_id"],
+            "target_sha256": target["original_target_sha256"],
+            "story_number": str(target["source_rank"]),
+            "target_timestamp_utc": "2026-01-01T00:00:00Z",
+            "training_admission": "PENDING_NOT_APPROVED",
+            "target_time_card_version_present": "false",
+            "exported_story_postdates_target": "true",
+        }]
+        receipt = triage.owner_v2_crosslink(work, audit)
+        self.assertEqual(receipt["prior_r02_missing_pointer_anchor_links"], 1)
+        self.assertEqual(receipt["owner_attested_age_consent_content"], 195)
+        self.assertEqual(receipt["age_unspecified_original_flags_preserved"], 10)
+        self.assertEqual(receipt["prior_r02_card_snapshot_postdates_target"], 1)
+        self.assertEqual(work[-1]["source_review"]["source_pointer_verified"], "PENDING")
+        self.assertEqual(work[-1]["source_review"]["rights_and_license"], "PENDING")
+        self.assertIn("SOURCE_POINTER_RECONCILIATION_HOLD", work[-1]["holds"])
+        self.assertTrue(all(x["training_admission"] == "PENDING_NOT_APPROVED"
+                            and x["split"] is None for x in work))
+
+    def test_owner_v2_rejects_unmatched_source_target_sha(self):
+        a, b, index = fixtures_module.fixtures()
+        for k, row in enumerate(a):
+            row["metadata"]["source_json_pointer"] = f"/synthetic/{k}"
+        for row in b:
+            row["metadata"]["source_message_array_index"] = 7
+        b[-1]["metadata"].pop("source_message_array_index")
+        work, _ = triage.make_rows(a, b, index)
+        target = work[-1]
+        audit = [{
+            "candidate_id": target["candidate_id"],
+            "story_id": target["source_story_id"],
+            "target_message_id": target["original_target_message_id"],
+            "target_sha256": "0" * 64,
+            "story_number": str(target["source_rank"]),
+            "target_timestamp_utc": "2026-01-01T00:00:00Z",
+            "training_admission": "PENDING_NOT_APPROVED",
+            "target_time_card_version_present": "false",
+            "exported_story_postdates_target": "false",
+        }]
+        with self.assertRaisesRegex(ValueError, "R02_SOURCE_AUDIT_CROSSLINK_MISMATCH"):
+            triage.owner_v2_crosslink(work, audit)
+
     def test_source_mutation_rejected(self):
         a, b, index = fixtures_module.fixtures()
         b[0]["messages"][-1]["content"] = "synthetic tamper"
