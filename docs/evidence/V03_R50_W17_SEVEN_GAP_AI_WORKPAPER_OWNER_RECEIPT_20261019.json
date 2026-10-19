@@ -1,0 +1,43 @@
+{
+  "schema": "storyforge-r50-w17-seven-gap-ai-workpaper-owner-validated-v1",
+  "date": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "local_result": "R50_W17_SEVEN_GAP_INDEPENDENT_AI_WORKPAPER_VALIDATED__SEMANTIC_HOLD",
+  "source": "OWNER_LOCAL_TERMINAL_OUTPUT__GITHUB_PRIVATE_BYTES_NOT_ACCESSED",
+  "private_workpaper_sha256": "6507ac6caec72aa031e9c70004a3d96781e7de8c0373976036c716aa9c884d9a",
+  "manifest_sha256": "b4e08232bdd12d9401d78fe6e0ab945a6f5156938c88ef811da9bf52a9b41a3b",
+  "gap_count": 7,
+  "assessments": {
+    "INSUFFICIENT_CONTEXT": 7,
+    "SUPPORTED_IN_SCOPED_CONTEXT": 0,
+    "SOURCE_UNAVAILABLE": 0,
+    "NOT_SUPPORTED_IN_REVIEWED_SCOPE": 0
+  },
+  "reviewed_reference_count_per_gap": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+  ],
+  "complete_original_messages_verified_by_prior_reviewer": 0,
+  "historical_card_timing_checked_by_prior_reviewer": 0,
+  "remaining_requirements_per_gap": [
+    2,
+    2,
+    2,
+    2,
+    2,
+    2,
+    2
+  ],
+  "reported_remaining_requirement_total": 14,
+  "distinct_remaining_requirements": "UNDETERMINED_MAY_OVERLAP",
+  "reviewer_independence_verified_by_assistant": false,
+  "global_semantic_world_gate": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "heldout_candidate_data_modified": false,
+  "no_source_text_committed": true
+}

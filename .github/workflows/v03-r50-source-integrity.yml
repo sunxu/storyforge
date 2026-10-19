@@ -71,6 +71,9 @@ jobs:
       - name: Test fail-closed private AI reviewer runner (NO model call)
         run: |
           python3 -m unittest discover -s tests -p 'test_v03_r50_seven_gap_ai_runner.py' -v
+      - name: Synthetic full-original-message private W17 evidence dossier tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_build_w17_full_source_dossiers.py' -v
       - name: Verify exact bytes against Git source receipt (no output upload)
         run: |
           python3 scripts/v03_r50_verify_sources.py \
