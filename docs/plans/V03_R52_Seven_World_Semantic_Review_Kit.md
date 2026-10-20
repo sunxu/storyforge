@@ -174,3 +174,16 @@ The owner reported an authenticated local package result:
 - **0 Train / 0 Validation / No GPU / R50 sealed heldout unopened**.
 
 The next step is private independent reading of the packaged full-original story sources and three pair descriptions, including original message-index/SHA256 evidence, followed by validated per-pair decisions. Keep all complete source files and case-level rationales outside public Git.
+
+
+## Priority three pair independent full-source review result (2026-10-20)
+
+Full-source review of the authenticated priority three-pair ZIP completed using original source exports (source package SHA256 `4b5afbb8f6e44f88dea5c5b173577d7fca98c01162e463e64ea831c7618adcd7`). The source package contained **3 complete original stories, 9,718 original messages** (the earlier seven-source recovery covered 20,577). The review covered all available messages with full-message hash/index validation, systematic bidirectional named-identity searches and a bounded 90-character stepwise reuse screen, plus targeted semantic examination of original anchored messages; it was **not** a line-by-line independent certification of all possible hidden aliases.
+
+- **3/3** previously insufficient bounded pairs now have independent full-source review decisions, with **15** validated original-message index/SHA256 citations.
+- All three routes are `NO_LINK_OBSERVED_IN_FULL_AVAILABLE_SOURCE__HOLD`, **not** isolated-world PASS. There is no observed cross-world source connection, while unknown aliases, semantic rewrite, undumped materials and other cohort exposures are not ruled out.
+- Validation status: `R52_PRIORITY_03_FULL_SOURCE_DECISIONS_VALIDATED__GRAPH_HOLD`; a synthetic alteration of an original-source citation SHA correctly failed closed.
+- Private decision JSONL SHA256 `f9bdee7693fb2ed6f66babafb431c5e83b13185248cc95969c55976f126a0f36`. The original story texts, target IDs and private review reasons are **not** committed.
+- Full-original story pair review still pending for the remaining **18** edges; final world-component graph, cross-Gold87/v0.1 semantic exposure, 46-case individual content/safety signoff, exact no-card prompt/token budget/last-target labels and explicit owner training release remain pending.
+
+**All training admissions remain `PENDING_NOT_APPROVED`: Train 0 / Validation 0 / No GPU, R50 sealed heldout unopened.**
