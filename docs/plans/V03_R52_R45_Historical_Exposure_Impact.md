@@ -57,3 +57,23 @@ No trained model, R50 sealed answers or network services are accessed. A long fr
 **Next after the safe result:** decide which worlds are already in the actual trained model's data ancestry, which are only past evaluation sources, and which could qualify as truly independent new validation worlds. Independently review human character-alias/setting ties and 46 candidate final quality/safety. R50 remains sealed. Absolutely no Train/Val/GPU without explicit subsequent owner signing.
 
 Synthetic-only code CI: https://github.com/sunxu/storyforge/actions/runs/39413586965
+
+
+## Owner-local diagnostic — R45 archive outer SHA mismatch (2026-10-20)
+
+If `R52_R45_IMPACT_HOLD__R45_ORIGINAL_ZIP_HASH_CHANGED` occurs with the original impact script, the failure happens **before** the 537-witness replay, not after substantive target comparisons. The original error combined a missing/symlinked path and a mismatched whole-ZIP SHA256. Updated implementation distinguishes `R45_ORIGINAL_ZIP_MISSING_OR_SYMLINK` and `R45_ORIGINAL_OUTER_ZIP_SHA256_NOT_PINNED`. It continues to **require the same immutable original ZIP SHA256**, `da4b7718f1c1cbd0429553b684eeaf70f207fd2e41aae4e8fe0a52a11b647b9e`. Train49/Val15 *members* additionally must match their frozen SHA256. A re-packaged ZIP is **not automatically authorized** merely because its filename looks right.
+
+Safe local check:
+
+```bash
+R45_ORIGINAL_ZIP="/path/to/the/exact-original-R45-zip-used-in-the-prior-successful-screen"
+if [[ ! -f "$R45_ORIGINAL_ZIP" || -L "$R45_ORIGINAL_ZIP" ]]; then
+  echo "R45_ZIP_MISSING_OR_SYMLINK"
+else
+  shasum -a 256 "$R45_ORIGINAL_ZIP"
+fi
+```
+
+Copy the *exact unchanged original* R45 ZIP path from the previous `--r45-original-zip` command to the impact invocation; do not change the expected hash or edit/repackage the archive just to turn HOLD into a pass. If the original ZIP cannot be recovered, preserve HOLD and first compare frozen member SHA256 against an alternative archive as a separate explicit source-provenance action.
+
+The latest fix also compares all 537 original witness dicts as a canonical multiset, not a process-dependent list ordering: Python hash-set iteration can vary between the two separate commands, but unchanged content must validate. Synthetic regression suite: https://github.com/sunxu/storyforge/actions/runs/39414475982.
