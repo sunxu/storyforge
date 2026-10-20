@@ -1,0 +1,25 @@
+name: R52 Remaining 18 Full Source Pack (synthetic)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_pack_remaining18_full_source_pairs.py
+      - tests/test_v03_r52_pack_remaining18_full_source_pairs.py
+      - .github/workflows/r52-remaining18-full-source-pack.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_pack_remaining18_full_source_pairs.py
+      - tests/test_v03_r52_pack_remaining18_full_source_pairs.py
+      - .github/workflows/r52-remaining18-full-source-pack.yml
+  workflow_dispatch:
+jobs:
+  remaining18-package-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Synthetic seven-source package and tamper rejection
+        run: python -m unittest discover -s tests -p 'test_v03_r52_pack_remaining18_full_source_pairs.py' -v
