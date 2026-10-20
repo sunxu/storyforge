@@ -49,10 +49,12 @@ def make_fixture():
                 "messages":[{"role":"assistant","content":text}]}
     tr=[fake_record(6,worlds[6]["original_root_messages"][0]["content"]),
         fake_record(9,"R45 prior text")]
-    tr.extend(fake_record(0,"other") for _ in range(47))
+    tr.extend(fake_record(6,"R45 earlier train story line") for _ in range(27))
+    tr.extend(fake_record(0,"other") for _ in range(20))
     val=[fake_record(6,"R45 validation only"),
          fake_record(12,"R45 validation text")]
-    val.extend(fake_record(0,"other") for _ in range(13))
+    val.extend(fake_record(12,"R45 earlier validation story line") for _ in range(11))
+    val.extend(fake_record(0,"other") for _ in range(2))
     cohorts={"r45_train":tr,"r45_validation":val}
     text=worlds[6]["original_root_messages"][0]["content"]
     source_sha=worlds[6]["original_root_messages"][0]["source_body_sha256"]
