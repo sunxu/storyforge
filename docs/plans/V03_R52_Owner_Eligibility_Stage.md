@@ -67,3 +67,16 @@ The owner reported successful local validation of `R52_NO_CARD_BATCH_01_QUALITY_
 - Original Gold195 is unchanged. The owner-local decisions, target text, story identities and citations remain private, and are not committed to this repository.
 
 **Next action:** owner prepares the existing batch 02 tasks from the same pinned 62-queue and 108 private source packets; quality review must use frozen visible input only, not historical-card reconstruction or prior source previews as model input.
+
+
+## R52 Batch 02 no-card quality review — local validation (2026-10-20)
+
+The owner ran the local `scripts/v03_r52_no_card_quality_reviews.py --validate --batch 2` against the 16 frozen private tasks and reported `R52_QUALITY_RESULTS_VALIDATED__NO_ADMISSION`.
+
+- Batch 02: **16/16** validated decisions; **58** source citations; **12** `NO_CARD_CONTEXT_AND_TARGET_POSSIBLE__HOLD`, **2** `HIDDEN_PREMISE_OR_CARD_DEPENDENCY__HOLD`, **2** `TARGET_PLAYER_AGENCY_DEFECT__HOLD`.
+- Batches 01–02 combined: **32/62** reviewed; **23** context/quality preliminarily possible, **4** agency defects, **2** target continuity/fact defects, **3** hidden-premise/card dependencies. **108** source citations across both batches.
+- Batches 03–04 remaining: **30** cases (16 + 14).
+- **All original cases remain `PENDING_NOT_APPROVED`; Train 0 / Validation 0 / No GPU.** The 23 preliminarily feasible cases are not approved and no split or promotion is authorized.
+- The private source text, candidate IDs, and full rationales remain owner-local; this count-only checkpoint is safe for the repository.
+
+Next step: prepare Batch 03 (16 cases) from the same owner-attested R52 62-queue and original private R51 packets, without replacing historical cards or altering Gold195.
