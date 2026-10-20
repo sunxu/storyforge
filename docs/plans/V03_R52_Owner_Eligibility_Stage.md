@@ -80,3 +80,15 @@ The owner ran the local `scripts/v03_r52_no_card_quality_reviews.py --validate -
 - The private source text, candidate IDs, and full rationales remain owner-local; this count-only checkpoint is safe for the repository.
 
 Next step: prepare Batch 03 (16 cases) from the same owner-attested R52 62-queue and original private R51 packets, without replacing historical cards or altering Gold195.
+
+
+## R52 Batch 03 no-card quality review — local validation (2026-10-20)
+
+The owner reported `R52_QUALITY_RESULTS_VALIDATED__NO_ADMISSION` from local `scripts/v03_r52_no_card_quality_reviews.py --validate --batch 3`, verifying **16/16** adjudicated target-quality responses and **50** source citations:
+
+- Batch 03 routes: **13** `NO_CARD_CONTEXT_AND_TARGET_POSSIBLE__HOLD`, **1** `TARGET_PLAYER_AGENCY_DEFECT__HOLD`, **1** `TARGET_CONTINUITY_OR_FACT_DEFECT__HOLD`, **1** `HIDDEN_PREMISE_OR_CARD_DEPENDENCY__HOLD`.
+- Cumulative batches 01–03: **48/62** reviewed, **158** verified citations, **36** no-card context/target preliminarily possible, **5** agency concerns, **3** continuity/fact defects, **4** hidden-premise/card dependencies.
+- The remaining **14** unreviewed quality candidates are Batch 04. **All remain `PENDING_NOT_APPROVED`; Train 0 / Validation 0 / No GPU.**
+- No private source text, target IDs, case rationales or final experimental training decisions are included in this count-only checkpoint.
+
+Next step: prepare and independently review Batch 04 (14 cases), then reconcile all 62 frozen no-card quality findings and run explicit downstream data-admission, world-isolation and tokenizer/loss-mask gates before any training.
