@@ -309,9 +309,10 @@ def run(owner_source: Path, r45_original: Path, history_dir: Path,
     graph_receipt = private_json(
         graph_dir / "R52_ALL_21_WORLD_GRAPH_SAFE_AGGREGATE.json")
     validate_receipts(history, graph_receipt)
-    need(r45_original.is_file() and not r45_original.is_symlink() and
-         prior.exact.sha_file(r45_original) == EXPECTED_ARCHIVE_SHA,
-         "R45_ORIGINAL_ZIP_HASH_CHANGED")
+    need(r45_original.is_file() and not r45_original.is_symlink(),
+         "R45_ORIGINAL_ZIP_MISSING_OR_SYMLINK")
+    need(prior.exact.sha_file(r45_original) == EXPECTED_ARCHIVE_SHA,
+         "R45_ORIGINAL_OUTER_ZIP_SHA256_NOT_PINNED")
     worlds, _ = graph.recover_worlds(owner_source)
     witnesses = private_rows(
         history_dir / "R52_PRIVATE_HISTORICAL_EXPOSURE_WITNESSES.jsonl",
@@ -329,7 +330,13 @@ def run(owner_source: Path, r45_original: Path, history_dir: Path,
             "r45_validation": list(prior.exact.read_jsonl(b, private=True, count=15))
         }
         expected_witnesses, counts, collisions = prior.triage(worlds, cohorts)
-        need(expected_witnesses == witnesses and
+        # Probe indexing iterates a set of fragments. Its iteration order can
+        # differ between Python runs even when the source bytes are identical.
+        # Compare a canonical multiset, never a process-dependent list order.
+        def canonical(rows):
+            return sorted(json.dumps(r, ensure_ascii=False, sort_keys=True,
+                                     separators=(",", ":")) for r in rows)
+        need(canonical(expected_witnesses) == canonical(witnesses) and
              dict(collisions) == {"r45_train": 29, "r45_validation": 13} and
              counts["EXACT_LONG_MESSAGE"] == 273 and
              counts["SAMPLED_120_CODEPOINT_FRAGMENT"] == 264,
