@@ -31,3 +31,23 @@ Reconciliation file SHA256:
 Generate Batch 04 locally using the already-committed `scripts/v03_r51_independent_source_reviews.py --prepare --batch 4`, with the same private 108-case input packet and owner-only output directory. Distribute A and B tasks separately. Keep C blind arbitration for 10 disputes in parallel, and complete Batch 05 after Batch 04.
 
 All statuses remain **PENDING_NOT_APPROVED**. No GPU job authorized.
+
+
+## R51 Gold108 checkpoint — Batch 04 reconciliation (2026-10-20)
+
+Newly verified private Batch 04 merged output: **24 cases, 21 same-route, 3 disagreements**, all strict `PENDING_NOT_APPROVED`, no Train/Val admission. Source citations were checked against uploaded original A tasks (the matched A/B task candidates), along with 24 unchanged Reviewer A results. The underlying complete original archives and Reviewer B's separate initial export were **not** rechecked here.
+
+| Route / status | Batch 01 | Batch 02 | Batch 03 | Batch 04 | Total |
+|---|---:|---:|---:|---:|---:|
+| Agreed context-only possible, HOLD | 15 | 16 | 14 | 12 | **57** |
+| Agreed long-range/card dependency, HOLD | 2 | 6 | 5 | 8 | **21** |
+| Agreed agency/rule concern, HOLD | 2 | 1 | 1 | 1 | **5** |
+| A/B disagreement, HOLD | 5 | 1 | 4 | 3 | **13** |
+| **A/B reviewed** | **24** | **24** | **24** | **24** | **96** |
+
+- Unique A/B reviewed: **96/108**, **12 remaining** for Batch 05.
+- Same-route: **83/96 = 86.4583%**, Cohen's kappa **0.729049**.
+- Third-party Reviewer C status: Batch 03 **4/4 C decisions received and evidence-validated** (including one three-way disagreement requiring source follow-up); Batch 01–02 **6** and Batch 04 **3** still require C. Overall **9** C decisions pending. C decisions are not automatic admission.
+- Batch 04 reconciliation SHA256: `5eea50eec6ca52a408b392cbbcb5d71f580b917aeea16b8a50ca20c8eafdee40`.
+- Separate owner-only blind third-party evidence kit exists for Batch 04's three disputes. **No original dialogues, candidate identities, private reviewer rationale, citations, or comparison sidecars are committed.**
+- All samples remain **HOLD**, Train 0 / Validation 0, R50 sealed heldout untouched, no HF/GPU model training or promotion. Historical card timepoints and data rights are not certified.
