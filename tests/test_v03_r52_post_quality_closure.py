@@ -28,13 +28,19 @@ def fake_source():
             "candidate_id": ident, "target_sha256": q.digest(target),
             "target_content_for_review_only": target,
             "story_rank": i // 18 + 1, "source_story_id": "world-%02d" % (i // 18),
-            "target_original_array_index": i * 10 + 2,
+            "target_original_array_index": i * 10 + 3,
             "training_admission": q.HOLD, "split": None,
             "historical_card_version_verified": False,
             "frozen_visible_history": [
-                {"role": "user", "content": user,
-                 "source_body_sha256": q.digest(user),
-                 "original_source_array_index": i * 10 + 1}],
+                {"role": "user", "content": user + "-a",
+                 "source_body_sha256": q.digest(user + "-a"),
+                 "original_source_array_index": i * 10},
+                {"role": "assistant", "content": user + "-b",
+                 "source_body_sha256": q.digest(user + "-b"),
+                 "original_source_array_index": i * 10 + 1},
+                {"role": "user", "content": user + "-c",
+                 "source_body_sha256": q.digest(user + "-c"),
+                 "original_source_array_index": i * 10 + 2}],
             "preceding_source_preview_NOT_PART_OF_FROZEN_INPUT": [],
         }
         packets.append(p)
@@ -61,15 +67,32 @@ def fixture(tmp):
     queue, packets = fake_source()
     write_private(qfile, queue)
     write_private(pfile, packets)
-    for batch, _, _, routes in closure.EXPECTED:
+    for batch, n, total_citations, routes in closure.EXPECTED:
         tasks, _ = q.make_batch(queue, packets, batch)
         write_private(qdir / f"R52_NO_CARD_BATCH_{batch:02d}_QUALITY_TASKS.jsonl", tasks)
         ordered = []
         for route, count in routes.items():
             ordered.extend([route] * count)
         results = []
-        for task, route in zip(tasks, ordered, strict=True):
+        for i, (task, route) in enumerate(zip(tasks, ordered, strict=True)):
             msg = task["frozen_visible_history"][0]
+            citations = [
+                {"scope": "FROZEN_VISIBLE",
+                 "original_source_array_index": msg["original_source_array_index"],
+                 "source_body_sha256": msg["source_body_sha256"]},
+                {"scope": "TARGET",
+                 "original_source_array_index": task["target_original_array_index"],
+                 "source_body_sha256": task["target_sha256"]},
+            ]
+            extra = total_citations - 2 * n
+            for j, cutoff in ((1, n), (2, 2 * n)):
+                if i < max(0, extra - (j - 1) * n):
+                    other = task["frozen_visible_history"][j]
+                    citations.append({
+                        "scope": "FROZEN_VISIBLE",
+                        "original_source_array_index": other["original_source_array_index"],
+                        "source_body_sha256": other["source_body_sha256"],
+                    })
             results.append({
                 "schema": q.RESULT_SCHEMA,
                 "candidate_id": task["candidate_id"],
@@ -77,17 +100,8 @@ def fixture(tmp):
                 "quality_batch_number": batch, "review_route": route,
                 "training_admission": q.HOLD,
                 "rationale": "Synthetic review rationale is for technical testing only.",
-                "source_citations": [
-                    {"scope": "FROZEN_VISIBLE",
-                     "original_source_array_index": msg["original_source_array_index"],
-                     "source_body_sha256": msg["source_body_sha256"]},
-                    {"scope": "TARGET",
-                     "original_source_array_index": task["target_original_array_index"],
-                     "source_body_sha256": task["target_sha256"]},
-                ],
+                "source_citations": citations,
             })
-        # Synthetic citations must match frozen batch totals; adding distinct
-        # valid citations requires more than one visible message in fake fixtures.
         write_private(qdir / f"R52_NO_CARD_BATCH_{batch:02d}_QUALITY_RESULTS.jsonl",
                       results)
     return qfile, pfile, qdir
@@ -111,11 +125,26 @@ class QualityClosureTests(unittest.TestCase):
             }]
         }) == closure.original_history_digest({"frozen_visible_history": []}))
 
-    def test_fail_closed_if_citation_counts_differ(self):
+    def test_reconcile_all_four_batches(self):
         with tempfile.TemporaryDirectory() as d:
-            path = Path(d)
-            qfile, pfile, qdir = fixture(path)
-            with self.assertRaisesRegex(q.Hold, "FROZEN_BATCH_VERIFICATION_MISMATCH"):
+            qfile, pfile, qdir = fixture(Path(d))
+            shortlist, held, groups, safe = closure.collect(qfile, pfile, qdir)
+            self.assertEqual(len(shortlist), 46)
+            self.assertEqual(len(held), 16)
+            self.assertEqual(safe["source_citations_revalidated"], 205)
+            self.assertEqual(safe["train_admitted"], 0)
+            self.assertEqual(safe["world_split_assigned"], 0)
+            self.assertTrue(all(x["split"] is None for x in shortlist + held))
+            self.assertTrue(all(x["world_split"] is None for x in groups))
+
+    def test_tampered_citation_is_rejected(self):
+        with tempfile.TemporaryDirectory() as d:
+            qfile, pfile, qdir = fixture(Path(d))
+            f = qdir / "R52_NO_CARD_BATCH_02_QUALITY_RESULTS.jsonl"
+            lines = [json.loads(x) for x in f.read_text().splitlines()]
+            lines[0]["source_citations"][0]["source_body_sha256"] = "a" * 64
+            write_private(f, lines)
+            with self.assertRaisesRegex(q.Hold, "QUALITY_CITATION_NOT_IN_PACKET"):
                 closure.collect(qfile, pfile, qdir)
 
 
