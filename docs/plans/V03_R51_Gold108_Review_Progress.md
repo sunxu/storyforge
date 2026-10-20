@@ -13,7 +13,7 @@
 
 - A/B same-route: **62/72 (86.11%)**; Cohen's kappa **0.709326**.
 - Remaining Gold108: **36** (Batch 04: 24; Batch 05: 12), not yet independently dual-reviewed.
-- Third-party Reviewer C adjudication required for **10** A/B disagreements: 6 from Batch 01–02; 4 from Batch 03.
+- Third-party Reviewer C: **4/4 Batch 03 disputed cases now have frozen, citation-validated independent-C judgments** (16/16 citations verified, all HOLD); C aligns with A on 1, with B on 2, and differs from both on 1 (**three-way disagreement, source follow-up required**). C blindness is attested in the private submission, not independently provable. The **six Batch 01–02 disputes still await C**, and a final owner source/quality disposition has not been granted.
 - Blind adjudication evidence must **not** include A/B routes or rationales. Freeze independent C decisions and validate citations before owner compares against the A/B sidecar. Reviewer A cannot act as independent C.
 - All **45** agreed context-only possible cases remain **HOLD** pending broader target quality, original historical story-card/timepoint and usage rights/license gates. A source-window assessment is not training admission.
 - Do not alter Gold195 frozen originals, R50 sealed heldout, run HF/GPU training, or promote any model from these review findings alone.
