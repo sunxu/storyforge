@@ -26,6 +26,34 @@ class GraphClosedEvidenceTests(unittest.TestCase):
             src / "R52_PRIVATE_PRIORITY_03_FULL_SOURCE_PAIR_REVIEW_QUEUE.jsonl")
         return src, zipped, raw, all21, pri3
 
+    def test_missing_inputs_use_safe_names_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            private = root / "pri"
+            remain = root / "remaining"
+            post = root / "post"
+            for folder in (private, remain, post):
+                folder.mkdir(mode=0o700)
+            def issues():
+                return graph.required_input_status(
+                    remain / "source.zip", remain / "safe.json",
+                    private / "priority.jsonl", private / "receipt.json",
+                    remain, post)
+            missing = issues()
+            self.assertEqual(len(missing), 12)
+            self.assertIn("PRIORITY03_DECISIONS", missing)
+            self.assertNotIn(str(root), str(missing))
+            for name in ("priority.jsonl", "receipt.json"):
+                p = private / name
+                p.write_text("{}", encoding="utf8")
+                p.chmod(0o600)
+            self.assertNotIn("PRIORITY03_DECISIONS", issues())
+            self.assertNotIn("PRIORITY03_RECEIPT", issues())
+            p = private / "priority.jsonl"
+            p.chmod(0o644)
+            self.assertEqual(issues()["PRIORITY03_DECISIONS"],
+                             "PRIVATE_INPUT_FILE_MODE_UNSAFE")
+
     def test_recover_seven_stories_and_complete_21_edges(self):
         with tempfile.TemporaryDirectory() as p:
             src, zipped, raw, all21, pri3 = self.source_worlds(Path(p))
