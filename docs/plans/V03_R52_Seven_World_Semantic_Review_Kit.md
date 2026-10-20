@@ -133,3 +133,29 @@ Owner supplied `R52_FULL_ORIGINAL_WORLD_RECOVERY_SAFE_AGGREGATE.json`, produced 
 - **0** full-source semantic reviews, **0** linked-world components certified, **0** quality/admission signatures, **0** Train/Val assignments, **0** GPU jobs authorized; R50 sealed heldout unopened.
 
 The next activity is to *review* the three prioritized full-source pairs, preserving all 21 graph edges as HOLD. A source integrity/recovery receipt cannot establish world independence by itself.
+
+
+## R52 priority 3 full original source handoff (2026-10-20)
+
+After the owner recovered **7/7 full original story exports** (20,577 original messages; 104 source-pinned R51 targets within these stories), the new `scripts/v03_r52_pack_priority_full_source_pairs.py` can **package the three unresolved pairs with their complete original story files** for an independent full-source reviewer. It verifies all 7 full story files, all 20,577 message SHA256 values, all 104 R51 target pins, the exact three priority edges against the full 21-pair queue, and the original source ZIP receipt. It then includes **only** the distinct story files required for the three priority pairs, with the priority tasks, README and a SHA256 manifest.
+
+Run on the Mac, in the audit branch:
+
+```bash
+cd ~/workspace/storyforge
+git pull --ff-only
+d="$HOME/.local/share/storyforge"
+install -d -m 700 "$d/r52/priority03"
+python3 scripts/v03_r52_pack_priority_full_source_pairs.py \
+  --repo . \
+  --world-full-dir "$d/r52/world_full" \
+  --out-dir "$d/r52/priority03"
+```
+
+Expected only after owner-local verification: `R52_PRIORITY_03_COMPLETE_SOURCE_PACKAGE_VERIFIED__GRAPH_HOLD`.
+
+Private outputs (do **not** commit to GitHub):
+- `R52_PRIORITY_03_FULL_ORIGINAL_WORLD_REVIEW_PRIVATE.zip` — three priority pair specs + their distinct complete original story files, source manifest and reviewer instructions.
+- `R52_PRIORITY_03_FULL_ORIGINAL_WORLD_REVIEW_SAFE_RECEIPT.json` — count-only SHA256 validation and no-admission receipt.
+
+No graph edge or story is certified independent by this *packaging* stage. After full original pair adjudications, the remaining 18 bounded no-link pair relationships must still undergo full-source coverage and owner component signing. The owner-retained ownership statement does not substitute for target content/safety and experimental SFT data gates. **Train 0 / Validation 0 / No GPU; R50 sealed set unopened.**
