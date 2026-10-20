@@ -297,6 +297,36 @@ def exclusive_write(path: Path, value: str) -> None:
         stream.write(value)
 
 
+def required_input_status(source_zip: Path, source_receipt: Path,
+                          priority_decisions: Path, priority_receipt: Path,
+                          remaining18_dir: Path, post_quality_dir: Path) -> dict:
+    """List only safe input labels for missing/unsafe files, never paths/IDs."""
+    expected = {
+        "SOURCE_ZIP": source_zip,
+        "SOURCE_RECEIPT": source_receipt,
+        "PRIORITY03_DECISIONS": priority_decisions,
+        "PRIORITY03_RECEIPT": priority_receipt,
+        "R52_FIRST_PASS_46": post_quality_dir /
+            "R52_PRIVATE_FIRST_PASS_46_SHORTLIST.jsonl",
+        "R52_QUALITY_HOLD_16": post_quality_dir /
+            "R52_PRIVATE_QUALITY_16_HOLD_REGISTER.jsonl",
+    }
+    for batch in (1, 2, 3):
+        expected[f"BATCH{batch:02d}_DECISIONS"] = remaining18_dir / (
+            f"R52_REMAINING_18_BATCH_{batch:02d}_FULL_SOURCE_DECISIONS.jsonl")
+        expected[f"BATCH{batch:02d}_RECEIPT"] = remaining18_dir / (
+            f"R52_REMAINING_18_BATCH_{batch:02d}_VALIDATION_RECEIPT.json")
+    issues = {}
+    for label, file in expected.items():
+        if not file.is_file() or file.is_symlink():
+            issues[label] = "PRIVATE_INPUT_MISSING_OR_SYMLINK"
+        elif stat.S_IMODE(file.stat().st_mode) != 0o600:
+            issues[label] = "PRIVATE_INPUT_FILE_MODE_UNSAFE"
+        elif stat.S_IMODE(file.parent.stat().st_mode) & 0o077:
+            issues[label] = "PRIVATE_INPUT_PARENT_MODE_UNSAFE"
+    return issues
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--source-zip", type=Path, required=True)
@@ -314,6 +344,18 @@ def main() -> int:
                stat.S_IMODE(out.stat().st_mode) & 0o077 == 0 and
                out.resolve() != cwd and cwd not in out.resolve().parents,
                "OUTPUT_DIR_IS_NOT_PRIVATE_OR_OUTSIDE_WORKTREE")
+        problems = required_input_status(
+            args.source_zip.expanduser().absolute(),
+            args.source_receipt.expanduser().absolute(),
+            args.priority_decisions.expanduser().absolute(),
+            args.priority_receipt.expanduser().absolute(),
+            args.remaining18_dir.expanduser().absolute(),
+            args.post_quality_dir.expanduser().absolute(),
+        )
+        if problems:
+            print("R52_GRAPH_21_INPUT_PREFLIGHT_HOLD__" +
+                  "__".join(sorted(problems)), file=sys.stderr)
+            return 2
         edges, owners, safe = consolidate(
             args.source_zip.expanduser().absolute(),
             args.source_receipt.expanduser().absolute(),
