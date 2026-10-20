@@ -92,3 +92,14 @@ The owner reported `R52_QUALITY_RESULTS_VALIDATED__NO_ADMISSION` from local `scr
 - No private source text, target IDs, case rationales or final experimental training decisions are included in this count-only checkpoint.
 
 Next step: prepare and independently review Batch 04 (14 cases), then reconcile all 62 frozen no-card quality findings and run explicit downstream data-admission, world-isolation and tokenizer/loss-mask gates before any training.
+
+
+## R52 Batch 04 and 62-case no-card quality closure — local validation (2026-10-20)
+
+The owner reported `R52_QUALITY_RESULTS_VALIDATED__NO_ADMISSION` from local Batch 04 verification: **14/14** decisions, **47** valid source citations; **10** `NO_CARD_CONTEXT_AND_TARGET_POSSIBLE__HOLD`, **4** `TARGET_PLAYER_AGENCY_DEFECT__HOLD`.
+
+The complete R52 no-card quality track now has **62/62** validated decisions over four batches, with **205** validated source citations. Frozen reviewer route totals: **46** no-card context and target preliminarily possible, **9** player-agency defects, **3** continuity/fact defects, and **4** hidden-premise/card dependencies. Source identities, rationale text and target bodies remain private.
+
+This is *quality screening*, not admission: all `PENDING_NOT_APPROVED`; **Train 0 / Validation 0 / No GPU**; no original Gold195 mutation and no R50 heldout access. The no-card experimental input contract is not a reconstruction of historical point-in-time cards, and R30's approval of another experimental task does not automatically approve this 46-case derivative.
+
+**Next gate:** re-derive all four R52 batches from the unchanged pinned Gold108 62-queue and R51 108 private source packets, revalidate all result citations, create a private 46-case source-pinned *eligibility shortlist* and 16-case hold register, inspect world/story isolation including v0.1 and linked-world overlap, and perform a separate final quality/safety owner signoff plus real tokenizer and last-target loss-mask audit. Do not create Train/Val splits in this checkpoint.
