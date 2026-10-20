@@ -36,7 +36,7 @@ class TestR52HistoricalExposure(unittest.TestCase):
             contents = {
                 split: (('{"metadata":{"source_story_id":"fake"},'
                          '"messages":[{"content":"no private content"}]}'
-                         '\\n') * count).encode()
+                         '\n') * count).encode()
                 for split, count in triage.R45_REQUIRED.items()
             }
             want = {
