@@ -18,3 +18,21 @@ Files handed to owner outside Git:
 - `R52_FINAL_46_REVIEW_PREP_SAFE_RECEIPT.json` — only counts/hashes/HOLD flags
 - `r52_validate_final_46_review_results.py` — batch-scoped source index+SHA and status verifier (zero approvals issued)
 - `R52_FINAL_46_REVIEW_HANDOFF.md` — private operator instructions
+
+
+## Independent reviewer delivery received; source/format precheck HOLD (2026-10-20)
+
+Owner delivered private ZIP `R52_FINAL_46_INDEPENDENT_CONTENT_REVIEW_PRIVATE_DELIVERY(1).zip`; SHA256 `cd13e9e3ff31cf8da6bfc442f83da724a5752d9a9c38b38d0ad07479152d9452`. CRC and five frozen JSONL output-file hashes match the accompanying delivery summary. All **46/46** candidate IDs, source story IDs and target SHA256 match the frozen task ZIP. **98/98** frozen-visible source citations match original index+body SHA, and every case cites the final User input and at least one earlier Assistant message.
+
+Reviewer-reported routes: **44** `CONTEXTUAL_TARGET_QUALITY_POSSIBLE__HOLD`, **2** `CONTINUITY_OR_FACT_DEFECT__HOLD`. These are incoming reviewer opinions, **not yet formally validated final decisions**.
+
+**Blockers to formal acceptance:** the original four-batch validator rejected all batches. **39** of 46 rationales are shorter than the pre-agreed 80-character minimum (batch 1/2/3/4 breakdown **9/11/10/9**). The delivery also represents `age_safety_rights_hold` and `historical_card_dependency` as explicit dictionaries, while the original validator expected strings. A separate strict compatibility validator accepts only the dicts' explicit NOT_CERTIFIED / HOLD states, preserves the 80-character requirement and was tested with *synthetic-only altered review text*; **all four unaltered batches still HOLD**. No reviewer text, rationales, citations or identities were rewritten or approved.
+
+Further review gaps:
+- Prior **nonblind** P4 second-look identified **five soft content followups**, while the new blind reviewer gave all ten P4 cases the provisional possible route. These five are **owner-only** reconciliation questions after decisions are frozen; old opinions must not be passed into the blind revision stage.
+- **46/46** rights and third-party-character uses remain NOT_CERTIFIED; age at target is not independently verified on 46 records. Two rows explicitly call for dedicated age/consent review. No agedness or historical role-card timeline is certified.
+- Reviewer supplied a single claimed independent reviewer identity. `no_prior_reviewer_results_consulted` is a self-declaration; the audit does not independently verify the reviewer's lack of previous exposure.
+
+Private output bundles are separate: `R52_FINAL46_REVIEWER_CORRECTION_REQUEST_PRIVATE.zip` (39 short rationales to be revised by original reviewer using only frozen visible history), and `R52_FINAL46_P4_OWNER_DISCREPANCY_RECONCILIATION_PRIVATE.zip` (five nonblind soft issues, **not** to be given to the blind reviewer). A safe aggregate `R52_FINAL46_DELIVERY_PRECHECK_SAFE_RECEIPT.json` records the counts; no raw story or candidate ID in Git.
+
+**State:** `R52_FINAL46_DELIVERY_SOURCE_CITATIONS_REPLAY_PASS__CONTRACT_CORRECTIONS_HOLD`. Formal final reviewer batches validated: **0/4**; independent content review delivered 46/46 but not admitted; Owner final case signoffs **0/46**; Train0 / Val0 / World component 0 / No GPU; R50 sealed.
