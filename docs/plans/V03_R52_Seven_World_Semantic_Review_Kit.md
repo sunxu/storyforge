@@ -81,3 +81,15 @@ Expected `R52_21_WORLD_PAIR_REVIEWS_VALIDATED__GRAPH_STILL_HOLD`. Validity means
 The owner must examine **full original story/card source evidence** for any possible linked-world groups, perform cross-comparison with Gold87, historical v0.1 exposure and sealed test components without unsealing R50 answers, then sign a linked-component map. In a separate step, sign target-specific ages/consent/content and final quality decisions for the 46 candidates. Only after those gates can a world-component-disjoint Train/Val proposal be evaluated, along with an exact pinned no-card system prompt, tokenizer length and final-target-only ms-swift labels. No GPU before explicit authorization.
 
 This workflow never changes Gold195, R51 adjudications or R52 Batch 01–04 decisions.
+
+
+## Owner-validated 21-pair bounded semantic review (2026-10-20)
+
+Owner ran `scripts/v03_r52_world_semantic_review_kit.py --validate` against private, frozen decisions, obtaining `R52_21_WORLD_PAIR_REVIEWS_VALIDATED__GRAPH_STILL_HOLD`.
+
+- **21/21** pairs with **126/126** authentic citations passed validator.
+- Routes: **18** `NO_LINK_OBSERVED_IN_BOUNDED_EVIDENCE__HOLD`, **3** `INSUFFICIENT_SOURCE_EVIDENCE__HOLD`, **0** `LINKED_WORLD_EVIDENCE__HOLD`.
+- These outcomes **do not certify independence**. The three insufficient pairs are prioritized for *full-original-source* examination; the 18 other pairs remain unverified beyond their bounded source slices.
+- **No Train/Val assigned**, **Train 0 / Validation 0**, **no GPU**, **sealed R50 not accessed**. All original source and private pair rationales remain outside Git.
+
+Next: use the R51-authenticated source archive and original full message histories to collect per-world original-source evidence, including the three priority pairs, then undertake owner source/quality/safety signoff. A bounded no-match vote must not be used as a substitute for the source-complete graph gate.
