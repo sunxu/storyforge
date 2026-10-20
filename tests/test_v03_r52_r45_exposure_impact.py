@@ -74,6 +74,15 @@ def make_fixture():
 
 
 class R45ImpactTests(unittest.TestCase):
+    def test_witness_replay_order_is_not_semantic(self):
+        a = [{"story_rank": 6, "source": "A"}, {"story_rank": 9, "source": "B"}]
+        b = [{"source": "B", "story_rank": 9}, {"source": "A", "story_rank": 6}]
+        self.assertEqual(impact.canonical_witnesses(a),
+                         impact.canonical_witnesses(b))
+        b[0]["source"] = "TAMPERED"
+        self.assertNotEqual(impact.canonical_witnesses(a),
+                            impact.canonical_witnesses(b))
+
     def test_world_case_and_witness_deduplication(self):
         worlds,cases,owners,cohorts,witnesses=make_fixture()
         with patch.object(impact,"WITNESS_COUNT",2):
