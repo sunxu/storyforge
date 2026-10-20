@@ -53,3 +53,17 @@ All 108 queues preserve target hash, story rank, original source offset and froz
 ## Fail-closed behavior
 
 A wrong source hash, missing record, changed A/B/C route status, nonprivate file or duplicated output causes `R52_OWNER_INTAKE_HOLD__<fixed error code>`. Do not edit original R51 review files to make a failure disappear; preserve all previous reviews and receipts.
+
+
+## R52 Batch 01 no-card quality review — local validation (2026-10-20)
+
+The owner reported successful local validation of `R52_NO_CARD_BATCH_01_QUALITY_RESULTS.jsonl` with `scripts/v03_r52_no_card_quality_reviews.py --validate --batch 1`:
+
+- Receipt status: `R52_QUALITY_RESULTS_VALIDATED__NO_ADMISSION`.
+- Completed and validated: **16/16** target-quality reviews, **50** source citations.
+- Route counts: **11** `NO_CARD_CONTEXT_AND_TARGET_POSSIBLE__HOLD`, **2** `TARGET_PLAYER_AGENCY_DEFECT__HOLD`, **2** `TARGET_CONTINUITY_OR_FACT_DEFECT__HOLD`, **1** `HIDDEN_PREMISE_OR_CARD_DEPENDENCY__HOLD`.
+- These are *review findings*, **not admission approvals**. All 16 remain `PENDING_NOT_APPROVED`. **Train 0 / Validation 0 / No GPU**.
+- Remaining unreviewed in the 62-case R52 no-card quality track: **46** (batches 02–04: 16, 16, 14).
+- Original Gold195 is unchanged. The owner-local decisions, target text, story identities and citations remain private, and are not committed to this repository.
+
+**Next action:** owner prepares the existing batch 02 tasks from the same pinned 62-queue and 108 private source packets; quality review must use frozen visible input only, not historical-card reconstruction or prior source previews as model input.
