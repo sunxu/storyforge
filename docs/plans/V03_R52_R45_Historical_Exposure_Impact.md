@@ -106,3 +106,24 @@ Train-overlap and validation-overlap world groups are disjoint (both-split world
 - An honest fresh blind evaluation needs new, genuinely independent source worlds, preferably independently authored and sealed **before model outputs are seen**. Do not relabel Gold195 or reuse R45 validation rows as independent heldout.
 
 Still `PENDING_NOT_APPROVED` for all 46. Owner rights attestation, R52 source/citation integrity and R45 lineage do **not** substitute for world-component and 46-case content/safety owner signoff or explicit later admission. **Train0 / Val0 / No GPU / R50 sealed set unopened.**
+
+
+## R52 — Frozen 46-case R45 source-exposure review priority handoff
+
+On 2026-10-20, independently ingested owner's `R52_PRIVATE_46_R45_CASE_EXPOSURE_IMPACT.jsonl` (SHA256 `fc5a883e39b93191a521ab764596ac4176f61f31c971d31cff1fae011901a10e`): **46 valid rows, 46 unique candidate IDs, 46 unique target SHA256 values, seven source worlds**. Preserved all original records byte-semantically, maintaining `PENDING_NOT_APPROVED`, `split=null`, no component signatures or final content/safety signoffs.
+
+The **audit work queue**, with mutually exclusive primary risk categories:
+
+| Audit priority | Historical source relation | Candidates | Interpretation |
+|---|---|---:|---|
+| P0 | Exact target SHA reused in R45 **Train** | **15** | First resolve R46 known train source reuse; not fresh R46 heldout |
+| P1 | R45 **Train** world UUID overlap, different target | **7** | Prior learned world likely; a new target is not a new world |
+| P2 | Exact target SHA reused in R45 **Validation** | **9** | Historical evaluation source reuse; not fresh R46 heldout |
+| P3 | R45 **Validation** world UUID overlap, different target | **5** | Prior evaluation-world exposure; not necessarily gradient input |
+| P4 | No exact R45 UUID or target SHA overlap | **10** | One source world only; semantic alias & Gold87/v0.1 still unresolved |
+
+Totals: 22 cases in four R45-train-overlap worlds; 14 cases in two R45-validation-overlap worlds; 10 cases in one no-R45-exact-UUID-overlap world. The priority is **investigation order** and does not imply quality rank or any sample being admitted to Train/Validation. Existing R46 training evidence has matching compiled Train49/Val15 digests and completed owner-reported run, but full GPU runtime was not independently audited. Do not mark the original strict `model_training_exposure_confirmed=false` field as true.
+
+Private derived handoff: 46 source-record-preserving JSONL priorities, optional CSV for manual review and case-level evidentiary requirements; never commit candidate UUIDs/target hashes or private risk justifications. Count-only derived safe artifact SHA256 `6f6b4fa1d5d21a8c9ffe228a81ffa05b882076f62856afa64ac7a76c2c0e6685`. No model output was generated and no target content, target-time card, agency, safety or semantic alias decisions were claimed from this metadata-only input.
+
+**Next review:** address P0/P2 exact target reuse as known historical comparators, distinguish P1/P3 entire-world prior exposure, and independently resolve P4 semantic story identity. Separately review all 46 frozen target texts under their original model-visible histories for final content/safety release gates. **All remains HOLD; Train 0 / Val 0 / No GPU / R50 sealed.**
