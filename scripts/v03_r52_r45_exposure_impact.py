@@ -264,7 +264,7 @@ def compute_impact(worlds: dict[int, dict],
                 "training_admission": HOLD,
             })
     need(len(decision_rows) == 46 and sum(worlds_by_class.values()) == 7 and
-         len(unique_witnesses) == 537, "R45_WORLD_OR_TARGET_IMPACT_COUNTS_CHANGED")
+         len(unique_witnesses) == WITNESS_COUNT, "R45_WORLD_OR_TARGET_IMPACT_COUNTS_CHANGED")
     safe = {
         "schema": "storyforge-r52-r45-world-impact-safe-aggregate-v1",
         "status": "R52_R45_HISTORICAL_WORLD_IMPACT_RECONCILED__SEMANTIC_AND_MODEL_LINEAGE_HOLD",
