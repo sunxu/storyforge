@@ -100,3 +100,18 @@ The reviewer examined the owner-uploaded pinned 7-story source ZIP (SHA256 `4076
 - The **formal owner-side per-batch** `scripts/v03_r52_validate_remaining18_world_pair_decisions.py` verification is **PENDING** and must complete before the 18 reviews can be treated as owner-validated.
 - With the prior priority three, there are **21/21 independently reviewed full-source pairs** and a combined **87 source-anchored reviewer citations**, awaiting owner validation of the 18. This does not sign a world-component graph or old Gold87/v0.1 semantic isolation.
 - Private files, narrative content, identities, rationales and decision JSONL must remain owner-local. **Train 0 / Validation 0 / No GPU / R50 sealed heldout unopened.**
+
+
+## Owner-validated remaining eighteen full-original story pair reviews (2026-10-20)
+
+The owner independently ran the project validator on all three batches against the same frozen source package SHA256 `4076ac6de54ad41d3617628555ee35e6f5066e3a38084a4e5211051f9840f74f`, obtaining `R52_REMAINING_18_BATCH_REVIEW_VALIDATED__GRAPH_HOLD` for each:
+
+| Batch | Verified pairs | Verified message references | Decisions SHA256 | Route |
+|---|---:|---:|---|---|
+| 01 | 6 | 24 | `4c1c5159bfdf9d984b5319e20827ebd1d99846be310a81bff4e24243a5e279d9` | 6 no-link-observed HOLD |
+| 02 | 6 | 24 | `c860d69a8a74aff2fbe0c1e55dca40624384a24a2158e4a4f7e9d59168f1f00e` | 6 no-link-observed HOLD |
+| 03 | 6 | 24 | `1e171dda7fef17eba7e287246c498712ff5306a01a28d549a947e496614fa394` | 6 no-link-observed HOLD |
+
+All **18/18** additional pairs and **72/72** source message citations are formally accepted as *valid review results*, **not** as independent-world proof. With the earlier verified 3 priority pairs and 15 citations, **21/21 full-source reviewed pair results with 87 reviewer citations** are now accounted for. **No source-proven world edges found** within the assessed record, but no author-approved story-world connected component split and no historical Gold87/v0.1 semantic independence certificate has been issued.
+
+**All remain `PENDING_NOT_APPROVED`; Train 0 / Validation 0 / No GPU / sealed R50 unopened.**
