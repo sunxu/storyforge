@@ -47,3 +47,12 @@ Do **not** mark `owner_component_isolation_signed=true` based solely on UUID res
 Once the exact screen runs, obtain human-confirmed linked-world graph decisions on the seven private story records, evaluate the 46 quality-possible cases for final player agency, participant ages, consent/content safety, and narrative quality, then decide component-level Train vs Validation. The exact generic no-card prompt bytes/sha and source-visible history rendering must be frozen before the pinned tokenizer and actual last-target-only `ms-swift` labels gate. **None of these can be assumed from reviewer quality routing alone.**
 
 This checkpoint remains **Train 0 / Validation 0 / no GPU**. The CI workflow `R52 Seven-world UUID Preflight (synthetic only)` exercises disjoint, tampered graph and collision HOLD scenarios with fake files only; real private screening must run on the owner's Mac.
+
+
+## Owner-local exact UUID screen PASS and bounded 21-pair handoff (2026-10-20)
+
+Owner reported `R52_V01_EXACT_UUID_SCREEN_PASS__WORLD_GRAPH_AND_SEALED_TEST_HOLD` after verifying all pinned historical v0.1 split SHA256 bytes, 46 positive and 16 held R52 candidates, and **zero** exact R52 story-UUID intersection with v0.1 Train/Validation/Test. This establishes the identity screen only; **7 source stories remain 7 unverified linked-world components**.
+
+Next private tool `scripts/v03_r52_world_semantic_review_kit.py` prepares **7 source dossiers and 21 story pair tasks**, each with exact frozen R51 target/source SHA and short bounded excerpts. See [task preparation and review guide](V03_R52_Seven_World_Semantic_Review_Kit.md). It intentionally reads no R50 sealed test. Synthetic CI for this tool passed, [run 39386164241](https://github.com/sunxu/storyforge/actions/runs/39386164241). A bounded no-match result cannot certify complete semantic isolation; the owner must subsequently review original full-story aliases, Gold87, historical v0.1 exposure and linked-world edges before any Train/Val signing.
+
+**All original training admission remains `PENDING_NOT_APPROVED`; Train 0 / Validation 0 / no GPU.**
