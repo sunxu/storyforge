@@ -120,3 +120,16 @@ python3 scripts/v03_r52_full_original_world_recovery.py \
 Expected only after complete original evidence validation: `R52_SEVEN_COMPLETE_ORIGINAL_STORIES_RECOVERED__ALL_21_GRAPH_HOLD`. Return only `R52_FULL_ORIGINAL_WORLD_RECOVERY_SAFE_AGGREGATE.json` to project tracking. Never commit the private complete story files. Actual historical point-in-time story cards remain unproven; export-time cards are not original prompts.
 
 Next: source-grounded human review of three priority pair links (and then the other 18), full old Gold87/v0.1 semantic overlap and owner content/safety signoff. **All `PENDING_NOT_APPROVED`, Train 0 / Val 0 / No GPU; R50 sealed tests unopened.**
+
+
+## 2026-10-20 — Seven full original world exports recovered (owner-local, no admission)
+
+Owner supplied `R52_FULL_ORIGINAL_WORLD_RECOVERY_SAFE_AGGREGATE.json`, produced by the local source-pinned full-original recovery tool, with status `R52_SEVEN_COMPLETE_ORIGINAL_STORIES_RECOVERED__ALL_21_GRAPH_HOLD`:
+
+- **7/7** complete story exports restored from pinned source archive SHA256 `b874cd07547092e9c3c967f69fab6b75262ff4f44ba2d368fd575f84e8886afb`.
+- **20,577** original source messages indexed with source SHA256.
+- **104** original R51 target/history pins reverified within those seven source stories. This is not 108/108 because the selected seven-world scope excludes the other original Gold108 story; no claim of missing or defective Gold108 records.
+- **21** full-story pair-index tasks; **3** prioritized pairs originally flagged `INSUFFICIENT_SOURCE_EVIDENCE__HOLD`, **18** formerly bounded no-link pairs.
+- **0** full-source semantic reviews, **0** linked-world components certified, **0** quality/admission signatures, **0** Train/Val assignments, **0** GPU jobs authorized; R50 sealed heldout unopened.
+
+The next activity is to *review* the three prioritized full-source pairs, preserving all 21 graph edges as HOLD. A source integrity/recovery receipt cannot establish world independence by itself.
