@@ -1,0 +1,20 @@
+# R52 — Final 46 frozen-context review preparation (2026-10-20)
+
+**Status:** `R52_46_FINAL_CONTENT_BLIND_TASKS_VERIFIED__P4_SECOND_LOOK_DONE__ALL_HOLD`. **No independent final review completed, no owner signoffs, no sample admission, no world graph signatures, no GPU, R50 sealed heldout not opened.**
+
+A private offline replay used the owner-provided, source-pinned 46-case R45 exposure/priority file (SHA256 `c98d7023d278cc05e94216c07ff9f1baa395aa0da6f0f22116c11e24099da775`), R52 four batches of frozen no-card quality tasks and first-pass results, plus all seven complete original story exports ZIP (SHA256 `4076ac6de54ad41d3617628555ee35e6f5066e3a38084a4e5211051f9840f74f`). All **46/46** original target bodies/target SHA256, frozen visible history message bodies, original source array indices and source message SHA256 replayed exactly. Source batch history, candidate identities and existing HOLD were unchanged.
+
+A reviewer-blind private ZIP was generated in **four batches 12/12/12/10**, SHA256 `937b27ea2a9ec3c504f0592a23be831855540bb7203cd4d74f3c0487ed9912cb`. It excludes previous reviewers' rationales/ratings, R45 exposure risk categories, original source previews and unverified target-time role cards. It does include the immutable original model-visible text and target, so the ZIP must **never** enter ordinary public Git. Independent reviewer outputs have not been received or judged. A separate local validator, tested with 12 *synthetic-only* decisions, correctly rejects tampered source citations; a synthetic test is not a genuine review.
+
+A separate **nonblind** second-look was performed for the **ten P4** cases (one world with no exact R45 story UUID overlap): **5** looked text-contextually plausible under the frozen window, **5** had specific soft target-text issues requiring further independent judgment. No case was upgraded to accepted training status, and this second-look cannot substitute for independent reviewers or the owner. The resulting 10-case private second-look file (SHA256 `a8a522c7a73c4ca2aa860532955292568c1c98e246c41768d27bad4e30298475`) stays entirely owner-private and **must not be shown to blind reviewers**.
+
+**Substantive new rights/IP gate:** the P4 story mentions the distinctive fictional character ensemble (Cheng Xiaoshi, Lu Guang, Qiao Ling) and photo-studio setting appearing in the published series *Link Click / 时光代理人*. [Official licensed anime character listing](https://link-click.jp/1st/character/) corroborates those identifiers. This is a *possible third-party character/canon source*, not a legal finding of infringement. Ownership of user-authored narrative text alone does **not** certify permission to fine-tune, distribute or commercialize a model representing the third-party characters/settings. Request documented provenance and usage rights, or keep the source group excluded from the train/release pool. No R45 UUID collision is **not** proof of an independent original world.
+
+The complete private first-pass tasks and user-authored stories remain untouched. Work order: independent 46-case reviewer pass; source-anchored validation against the sealed blind task ZIP; dispute reconciliation; independent IP/age/consent/role-card timepoint evidence; owner signoff; connected world component separation; finally real Qwen tokenizer and ms-swift label-mask before any dataset release. `PENDING_NOT_APPROVED` on all records; **Train 0 / Val 0 / GPU No**.
+
+Files handed to owner outside Git:
+- `R52_PRIVATE_46_FINAL_CONTENT_BLIND_KIT.zip` — 46 source-pinned blind tasks, reviewer README, SHA256 manifest
+- `R52_PRIVATE_P4_10_SECOND_LOOK_HANDOFF.zip` — ten nonblind source-cited second-look assessments, never send to blind reviewers
+- `R52_FINAL_46_REVIEW_PREP_SAFE_RECEIPT.json` — only counts/hashes/HOLD flags
+- `r52_validate_final_46_review_results.py` — batch-scoped source index+SHA and status verifier (zero approvals issued)
+- `R52_FINAL_46_REVIEW_HANDOFF.md` — private operator instructions
