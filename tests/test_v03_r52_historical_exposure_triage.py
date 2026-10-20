@@ -1,6 +1,10 @@
 """R52 historical exposure screen synthetic checks only, no real stories."""
 from __future__ import annotations
 import sys
+import tempfile
+import zipfile
+import stat
+from unittest.mock import patch
 import unittest
 from pathlib import Path
 
@@ -23,6 +27,53 @@ def fake_world(rank):
 class TestR52HistoricalExposure(unittest.TestCase):
     def worlds(self):
         return {x: fake_world(x) for x in (6, 9, 10, 12, 13, 14, 15)}
+
+    def test_r45_zip_ephemeral_verified_and_private(self):
+        with tempfile.TemporaryDirectory() as location:
+            parent = Path(location)
+            safe = parent / "verified"
+            safe.mkdir(mode=0o700)
+            contents = {
+                split: (('{"metadata":{"source_story_id":"fake"},'
+                         '"messages":[{"content":"no private content"}]}'
+                         '\\n') * count).encode()
+                for split, count in triage.R45_REQUIRED.items()
+            }
+            want = {
+                k: {"count": triage.R45_REQUIRED[k],
+                    "sha256": triage.sha_bytes(v)}
+                for k, v in contents.items()
+            }
+            archive = parent / "r45_frozen.zip"
+            with zipfile.ZipFile(archive, "w") as z:
+                for split, filename in triage.R45_ARCHIVE_NAMES.items():
+                    z.writestr("nested/" + filename, contents[split])
+            with patch.object(triage.r45, "FROZEN", want):
+                a, b = triage.extract_verified_r45_archive(archive, safe)
+                self.assertEqual(a.read_bytes(), contents["train"])
+                self.assertEqual(b.read_bytes(), contents["validation"])
+                self.assertEqual(stat.S_IMODE(a.stat().st_mode), 0o600)
+                self.assertEqual(stat.S_IMODE(b.stat().st_mode), 0o600)
+
+    def test_r45_zip_tampered_or_ambiguous_member_fails_closed(self):
+        with tempfile.TemporaryDirectory() as location:
+            home = Path(location)
+            safe = home / "priv"
+            safe.mkdir(mode=0o700)
+            archive = home / "bad_r45.zip"
+            with zipfile.ZipFile(archive, "w") as z:
+                for filename in triage.R45_ARCHIVE_NAMES.values():
+                    z.writestr(filename, b"WRONG_DATA")
+            with self.assertRaisesRegex(
+                triage.exact.GateHold, "R45_FROZEN_SOURCE_BYTES_OR_ROWS_CHANGED"):
+                triage.extract_verified_r45_archive(archive, safe)
+            with zipfile.ZipFile(archive, "w") as z:
+                for filename in triage.R45_ARCHIVE_NAMES.values():
+                    z.writestr("a/" + filename, b"same")
+                    z.writestr("b/" + filename, b"same")
+            with self.assertRaisesRegex(
+                triage.exact.GateHold, "R45_ORIGINAL_FROZEN_MEMBER_AMBIGUOUS"):
+                triage.extract_verified_r45_archive(archive, safe)
 
     def test_exact_same_message_is_flagged_not_approved(self):
         worlds = self.worlds()
