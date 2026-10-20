@@ -103,3 +103,14 @@ The complete R52 no-card quality track now has **62/62** validated decisions ove
 This is *quality screening*, not admission: all `PENDING_NOT_APPROVED`; **Train 0 / Validation 0 / No GPU**; no original Gold195 mutation and no R50 heldout access. The no-card experimental input contract is not a reconstruction of historical point-in-time cards, and R30's approval of another experimental task does not automatically approve this 46-case derivative.
 
 **Next gate:** re-derive all four R52 batches from the unchanged pinned Gold108 62-queue and R51 108 private source packets, revalidate all result citations, create a private 46-case source-pinned *eligibility shortlist* and 16-case hold register, inspect world/story isolation including v0.1 and linked-world overlap, and perform a separate final quality/safety owner signoff plus real tokenizer and last-target loss-mask audit. Do not create Train/Val splits in this checkpoint.
+
+
+## R52 all four quality batches locally validated, closure tooling available (2026-10-20)
+
+Owner returned `R52_QUALITY_RESULTS_VALIDATED__NO_ADMISSION` for Batch 04: **14/14** records, **47** grounded citations; **10** no-card context/quality preliminarily possible, **4** player agency defects.
+
+**Final 62-case no-card first-pass quality route summary:** 46 preliminarily possible, 9 agency defects, 3 continuity/fact defects, 4 hidden-premise/card dependencies; **205** validated reviewer citations across all four batches. All still `PENDING_NOT_APPROVED`, **Train 0 / Validation 0 / No GPU**.
+
+Source-pinned, no-admission aggregation is implemented in `scripts/v03_r52_post_quality_closure.py`. Follow [V03_R52_Post_Quality_Closure.md](V03_R52_Post_Quality_Closure.md) to create the *private* 46-case first-pass shortlist, 16-case hold register and provisional world-isolation grouping on the owner's Mac. Its independent synthetic-only GitHub Actions workflow passed; it has not yet run against the owner's four real private review files. Input hashes/case text/candidate IDs are never posted to GitHub.
+
+The next admission gate requires explicit review of linked story/world components, final target quality/safety signoff, experimental prompt/derivative identity, actual Qwen token length and ms-swift last-target labels. No world split or adapter training has been authorized by this closeout.
