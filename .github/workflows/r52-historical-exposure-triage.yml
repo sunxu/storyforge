@@ -1,0 +1,25 @@
+name: R52 Historical Exposure Triage (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_historical_exposure_triage.py
+      - tests/test_v03_r52_historical_exposure_triage.py
+      - .github/workflows/r52-historical-exposure-triage.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_historical_exposure_triage.py
+      - tests/test_v03_r52_historical_exposure_triage.py
+      - .github/workflows/r52-historical-exposure-triage.yml
+  workflow_dispatch:
+jobs:
+  synthetic:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test historical exposure witnesses and HOLD conditions with fake data
+        run: python -m unittest discover -s tests -p 'test_v03_r52_historical_exposure_triage.py' -v
