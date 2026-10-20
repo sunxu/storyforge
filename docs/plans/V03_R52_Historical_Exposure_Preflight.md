@@ -49,3 +49,37 @@ Private outputs:
 Do not unseal R50 independent tests. Existing historical model exposures and complete author world links must be reviewed by the owner before component separation; separately sign final per-case content/safety for all 46 preliminary quality candidates, then test exact no-card prompt/input and ms-swift target label masks before proposing a Train/Val split.
 
 **No training admission has occurred.**
+
+
+## 2026-10-20 follow-up — verified R45 original ZIP without persistent extraction
+
+Owner's first local exposure-screen report:
+`R52_SEVEN_WORLD_HISTORICAL_EXPOSURE_SCREEN_COMPLETED__SEMANTIC_HOLD`.
+**7** R52 source story exports (20,577 source messages) were screened against 87 Gold87 examples and the pinned v0.1 Train65 / Val15 / Test20; there were **zero exact story-ID collisions** and **zero sampled long-text candidate witnesses** under the stated algorithm. **R45 was explicitly NOT included**, so this report is not final historical exposure clearance, and no story components were signed.
+
+The updated `scripts/v03_r52_historical_exposure_triage.py` can now read the **owner-held original frozen R45 private ZIP** directly using `--r45-original-zip`, with byte-level SHA256 and count pin checks for the original Train49/Validation15 JSONL members, in an ephemeral 0700 temporary directory. Duplicate named members, changed SHAs/counts, symlinks and inappropriate modes fail closed. No private R45 source bytes are persisted in Git or retained by the script after successful execution. Keep the original ZIP itself offline/private.
+
+Example for owner-local run when the ORIGINAL R45 ZIP exists:
+
+```bash
+cd ~/workspace/storyforge
+git switch audit/r49-r50-source-intake-20261015
+git pull --ff-only
+
+d="$HOME/.local/share/storyforge"
+R45_ORIGINAL_ZIP="/absolute/private/path/to/owner-preserved-r45-original.zip"
+install -d -m 700 "$d/r52/history_exposure_with_r45"
+
+python3 scripts/v03_r52_historical_exposure_triage.py \
+  --repo . \
+  --source-zip "$d/r52/remaining18/R52_REMAINING_18_FULL_ORIGINAL_WORLD_REVIEW_PRIVATE.zip" \
+  --graph21-receipt "$d/r52/graph21/R52_ALL_21_WORLD_GRAPH_SAFE_AGGREGATE.json" \
+  --r45-original-zip "$R45_ORIGINAL_ZIP" \
+  --out-dir "$d/r52/history_exposure_with_r45"
+```
+
+The example R45 path is illustrative, not an assertion about where the private ZIP exists. The separate output directory avoids overwriting the first historical screen. If R45 frozen **loose** files are already present, the earlier two-argument `--r45-train` / `--r45-validation` route remains available; the ZIP option is **mutually exclusive** with those loose-file options.
+
+R45 historical candidates may involve some of the same numbered original stories as R52. If direct source story UUID or identical long dialogue hits are observed, treat them as **exposure evidence requiring per-model/per-split review**, not as harmless name coincidences or automatic permanent exclusion from all future training. It would particularly preclude unqualified claims of an independent unseen validation world for a model previously exposed to that story.
+
+**No GPU, no Train/Val assignment, no R50 sealed test access, no seven-world semantic-independence certificate.** Synthetic SHA/ZIP/tamper CI: https://github.com/sunxu/storyforge/actions/runs/39410839236.
