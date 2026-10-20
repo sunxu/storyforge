@@ -1,0 +1,83 @@
+# R52 — Seven source stories / twenty-one bounded world-link reviews
+
+**No admission, no train/validation split, no paid GPU, no R50 sealed heldout access.**
+
+## Current verified starting point
+
+Owner ran `scripts/v03_r52_world_exact_isolation.py` locally and reported
+`R52_V01_EXACT_UUID_SCREEN_PASS__WORLD_GRAPH_AND_SEALED_TEST_HOLD`:
+
+- R52 post-quality: 62 decisions and 205 citations, **46 first-pass feasible**, **16 quality HOLD**, **7 source-story UUIDs**.
+- Exact UUID overlap of R52 seven source stories against SHA256-verified frozen v0.1 Train (65 rows), Validation (15 rows), and Test (20 rows): **0 for all three**.
+- Semantic/world graph status: **0 reviewed**; **0** confirmed independently isolated world components; **0** Train/Val assignments.
+- Existing Gold87 contains known v0.1 Train overlap and must not be merged automatically. The historical 04↔07 linked-world relation must continue to be treated as a component issue if present in eventual source population.
+
+No historical point-in-time character/system card has been recovered by these screens. The generic no-card experiment evaluates a **new task contract**, not the original source-model prompt.
+
+## Build bounded independent world-link review tasks
+
+From the owner's Mac audit branch:
+
+```bash
+cd ~/workspace/storyforge
+git pull --ff-only
+d="$HOME/.local/share/storyforge"
+install -d -m 700 "$d/r52/world_review"
+
+python3 scripts/v03_r52_world_semantic_review_kit.py \
+  --prepare \
+  --world-dir "$d/r52/world_isolation" \
+  --post-quality-dir "$d/r52/post_quality" \
+  --private-packets "$d/r51/R51_GOLD108_PRIVATE_CONTEXT_REVIEW_v1.jsonl" \
+  --out-dir "$d/r52/world_review"
+```
+
+Expected marker:
+`R52_SEVEN_WORLD_TWENTYONE_PAIR_REVIEW_TASKS_PREPARED__NO_ADMISSION`.
+
+The script:
+1. Validates all **108** source packets, their frozen visible message body SHA256 and target body SHA256.
+2. Pins the previously verified 7-source-story world-identity queue and the 46-case first-pass shortlist.
+3. Builds **7** owner-private source dossiers with **up to 2** representative frozen target/visible message excerpts per story, exact index and original SHA256.
+4. Creates **21** pairwise story-world review tasks and a blank **21-row** decision template.
+5. Never includes earlier source preview as model input, never substitutes export-time card snapshots for historical prompts, and never assigns training status.
+
+Files (private directory 0700, individual JSONL 0600):
+- `R52_PRIVATE_07_WORLD_DOSSIERS.jsonl`
+- `R52_PRIVATE_21_WORLD_PAIR_REVIEW_TASKS.jsonl`
+- `R52_PRIVATE_21_WORLD_PAIR_DECISION_TEMPLATE.jsonl`
+- `R52_WORLD_SEMANTIC_KIT_SAFE_AGGREGATE.json`
+
+**Important scope limitation:** Dossiers contain *two bounded examples per world*, not full original stories. Even 21 reviewed pairs with no observed match do **not** certify absence of shared-world aliases or prior v0.1 semantic exposure. Negative evidence in this narrow source sample must remain HOLD. The sealed R50 independent tests must stay sealed.
+
+## Independent review instructions
+
+Give an independent reviewer only the private 21-pair task file, not prior R51 A/B/C quality votes or old pair review answers. For every pair the reviewer must choose **one**:
+
+- `LINKED_WORLD_EVIDENCE__HOLD`: evidence suggests shared persona, world, character identity, unique locale, event, rules or narrative dependency.
+- `NO_LINK_OBSERVED_IN_BOUNDED_EVIDENCE__HOLD`: no link found within the **provided bounded samples**, *not* proven independence.
+- `INSUFFICIENT_SOURCE_EVIDENCE__HOLD`: samples too narrow or ambiguous to decide.
+
+For each of 21 decisions, retain `schema=storyforge-r52-private-world-pair-decision-v1`, the exact `left_rank` / `right_rank`, matching pair target-digest pins, `training_admission=PENDING_NOT_APPROVED`, `reviewer_a_b_analysis_seen=false`, a 30+ character source-grounded rationale and `source_citations` with exact `scope`, `story_rank`, `original_source_array_index`, `source_body_sha256`. Link or bounded no-link judgments require citations from **both** stories; insufficient-source judgments may cite one side or none. **No invented evidence.**
+
+Save the completed **separate** file `R52_PRIVATE_21_WORLD_PAIR_DECISIONS.jsonl` in the same private directory. Preserve the original blank template and tasks.
+
+Validate (not an authorization):
+
+```bash
+python3 scripts/v03_r52_world_semantic_review_kit.py \
+  --validate \
+  --world-dir "$d/r52/world_isolation" \
+  --post-quality-dir "$d/r52/post_quality" \
+  --private-packets "$d/r51/R51_GOLD108_PRIVATE_CONTEXT_REVIEW_v1.jsonl" \
+  --out-dir "$d/r52/world_review" \
+  --decisions "$d/r52/world_review/R52_PRIVATE_21_WORLD_PAIR_DECISIONS.jsonl"
+```
+
+Expected `R52_21_WORLD_PAIR_REVIEWS_VALIDATED__GRAPH_STILL_HOLD`. Validity means **21 source-grounded results**, not 21 proven isolated world pairs.
+
+## Final release gate after pair review
+
+The owner must examine **full original story/card source evidence** for any possible linked-world groups, perform cross-comparison with Gold87, historical v0.1 exposure and sealed test components without unsealing R50 answers, then sign a linked-component map. In a separate step, sign target-specific ages/consent/content and final quality decisions for the 46 candidates. Only after those gates can a world-component-disjoint Train/Val proposal be evaluated, along with an exact pinned no-card system prompt, tokenizer length and final-target-only ms-swift labels. No GPU before explicit authorization.
+
+This workflow never changes Gold195, R51 adjudications or R52 Batch 01–04 decisions.
