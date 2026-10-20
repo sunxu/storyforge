@@ -1,0 +1,25 @@
+name: R52 Remaining 18 World Review Validation (synthetic)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_validate_remaining18_world_pair_decisions.py
+      - tests/test_v03_r52_validate_remaining18_world_pair_decisions.py
+      - .github/workflows/r52-remaining18-review-validation.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_validate_remaining18_world_pair_decisions.py
+      - tests/test_v03_r52_validate_remaining18_world_pair_decisions.py
+      - .github/workflows/r52-remaining18-review-validation.yml
+  workflow_dispatch:
+jobs:
+  synthetics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate fake six-pair evidence and reject tampering
+        run: python -m unittest discover -s tests -p 'test_v03_r52_validate_remaining18_world_pair_decisions.py' -v
