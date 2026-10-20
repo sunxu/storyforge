@@ -88,3 +88,15 @@ Run the corresponding `--batch 2` or `--batch 3` with matching files for the oth
 Combining **3 priority full-source results + 18 remaining full-source results** can create a 21-edge reviewer evidence register, *but not automatically a signed independent-world component map*. An owner source-complete alias/component and historical v0.1/Gold87 exposure review is still necessary, followed by final individual quality/safety signoff of the 46 first-pass positives, exact prompt/tokenizer/last-target mask checks and separate formal train authorization.
 
 R50 sealed heldout stays unopened. Do not create training JSONL, split assignments or GPU jobs in this phase.
+
+
+## 2026-10-20 — Independent remaining 18-pair review handoff prepared (owner validation pending)
+
+The reviewer examined the owner-uploaded pinned 7-story source ZIP (SHA256 `4076ac6de54ad41d3617628555ee35e6f5066e3a38084a4e5211051f9840f74f`) with a combined automated scan of all **20,577** original messages and representative source-anchored qualitative checks, then prepared **18** independent pair review judgments in **3 batches of 6**, each with **4** original-message citations (2 per side; **72** citations total).
+
+- Local independent source-hash/case-index/split-status precheck PASS: `R52_REMAINING18_LOCAL_PRECHECK_PASS__GRAPH_HOLD`. A deliberately modified source citation SHA was rejected.
+- All **18** reviews use `NO_LINK_OBSERVED_IN_FULL_AVAILABLE_SOURCE__HOLD`, **not** world-isolation approval; the review was not a line-by-line human semantic certification of 20,577 messages.
+- Long exact-text scanning flagged only a non-narrative provider safety/policy message shared between two original source exports. This is a provenance/methodology caveat, **not** evidence of a shared fictional universe.
+- The **formal owner-side per-batch** `scripts/v03_r52_validate_remaining18_world_pair_decisions.py` verification is **PENDING** and must complete before the 18 reviews can be treated as owner-validated.
+- With the prior priority three, there are **21/21 independently reviewed full-source pairs** and a combined **87 source-anchored reviewer citations**, awaiting owner validation of the 18. This does not sign a world-component graph or old Gold87/v0.1 semantic isolation.
+- Private files, narrative content, identities, rationales and decision JSONL must remain owner-local. **Train 0 / Validation 0 / No GPU / R50 sealed heldout unopened.**
