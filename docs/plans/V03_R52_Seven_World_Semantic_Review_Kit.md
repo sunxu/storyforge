@@ -93,3 +93,30 @@ Owner ran `scripts/v03_r52_world_semantic_review_kit.py --validate` against priv
 - **No Train/Val assigned**, **Train 0 / Validation 0**, **no GPU**, **sealed R50 not accessed**. All original source and private pair rationales remain outside Git.
 
 Next: use the R51-authenticated source archive and original full message histories to collect per-world original-source evidence, including the three priority pairs, then undertake owner source/quality/safety signoff. A bounded no-match vote must not be used as a substitute for the source-complete graph gate.
+
+
+## 2026-10-20 — 21-pair review validated, full original source recovery
+
+Owner verified all 21 bounded pair decisions and 126 evidence citations. Route totals: 18 bounded no-link HOLD, 3 insufficient-source HOLD, 0 observed links. This does not certify world independence.
+
+The next script `scripts/v03_r52_full_original_world_recovery.py` replays the 06–15 source LFS archive and the R51 original target/history SHA256 provenance before producing **seven owner-private complete original source files**, all **21** full-source review indexes and **three** priority follow-up indexes. A synthetic-only CI passed: [Actions 39387903307](https://github.com/sunxu/storyforge/actions/runs/39387903307). Real owner full-source replay has not run yet.
+
+Local command (audit branch, original LFS ZIP already pulled):
+
+```bash
+cd ~/workspace/storyforge
+git pull --ff-only
+d="$HOME/.local/share/storyforge"
+install -d -m 700 "$d/r52/world_full"
+python3 scripts/v03_r52_full_original_world_recovery.py \
+ --repo . \
+ --private-packets "$d/r51/R51_GOLD108_PRIVATE_CONTEXT_REVIEW_v1.jsonl" \
+ --post-quality-dir "$d/r52/post_quality" \
+ --world-dir "$d/r52/world_isolation" \
+ --bounded-review-dir "$d/r52/world_review" \
+ --out-dir "$d/r52/world_full"
+```
+
+Expected only after complete original evidence validation: `R52_SEVEN_COMPLETE_ORIGINAL_STORIES_RECOVERED__ALL_21_GRAPH_HOLD`. Return only `R52_FULL_ORIGINAL_WORLD_RECOVERY_SAFE_AGGREGATE.json` to project tracking. Never commit the private complete story files. Actual historical point-in-time story cards remain unproven; export-time cards are not original prompts.
+
+Next: source-grounded human review of three priority pair links (and then the other 18), full old Gold87/v0.1 semantic overlap and owner content/safety signoff. **All `PENDING_NOT_APPROVED`, Train 0 / Val 0 / No GPU; R50 sealed tests unopened.**
