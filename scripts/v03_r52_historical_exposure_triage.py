@@ -7,6 +7,9 @@ semantic aliases/paraphrases, owner world signoff, or Train/Val admissions.
 """
 from __future__ import annotations
 import argparse
+import contextlib
+import tempfile
+import zipfile
 import hashlib
 import json
 import os
@@ -27,6 +30,11 @@ FRAGMENT = 120
 STRIDE = 40
 MAX_EVIDENCE = 10000
 R45_REQUIRED = {"train": 49, "validation": 15}
+R45_ARCHIVE_NAMES = {
+    "train": "R45_TRAIN_FROZEN_CANDIDATE_49_NOT_APPROVED.jsonl",
+    "validation": "R45_VALIDATION_FROZEN_CANDIDATE_15_NOT_APPROVED.jsonl",
+}
+R45_MAX_MEMBER_BYTES = 128 * 1024 * 1024
 
 
 def must(value, code):
@@ -85,6 +93,42 @@ def rows_from_cohort(repo: Path, r45_train: Path | None,
                 path, private=True, count=spec["count"]))
             sha_pins[label] = spec["sha256"]
     return sets, sha_pins
+
+
+def extract_verified_r45_archive(archive: Path, private_dir: Path) -> tuple[Path, Path]:
+    """Read pinned two-source ZIP into a 0700 temporary directory only.
+
+    Neither the original ZIP's arbitrary path names nor untrusted metadata
+    influence output paths. No archive members are extracted by path.
+    """
+    must(archive.is_file() and not archive.is_symlink(),
+         "R45_ARCHIVE_MISSING_OR_SYMLINK")
+    must(private_dir.is_dir() and not private_dir.is_symlink() and
+         stat.S_IMODE(private_dir.stat().st_mode) & 0o077 == 0,
+         "R45_TEMP_DIRECTORY_NOT_PRIVATE")
+    members = {}
+    with zipfile.ZipFile(archive) as z:
+        names = z.infolist()
+        must(len(names) <= 10000, "R45_ARCHIVE_TOO_MANY_MEMBERS")
+        for split, basename in R45_ARCHIVE_NAMES.items():
+            hits = [info for info in names
+                    if not info.is_dir() and
+                    info.filename.rsplit("/", 1)[-1] == basename]
+            must(len(hits) == 1, "R45_ORIGINAL_FROZEN_MEMBER_AMBIGUOUS")
+            info = hits[0]
+            must(0 < info.file_size <= R45_MAX_MEMBER_BYTES,
+                 "R45_ORIGINAL_SOURCE_MEMBER_TOO_LARGE")
+            payload = z.read(info)
+            pin = r45.FROZEN[split]
+            must(sha_bytes(payload) == pin["sha256"] and
+                 len(payload.splitlines()) == pin["count"],
+                 "R45_FROZEN_SOURCE_BYTES_OR_ROWS_CHANGED")
+            dest = private_dir / f"r45_{split}.jsonl"
+            fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(payload)
+            members[split] = dest
+    return members["train"], members["validation"]
 
 
 def get_historical_messages(row, corpus):
@@ -224,6 +268,8 @@ def main():
     p.add_argument("--graph21-receipt", required=True, type=Path)
     p.add_argument("--r45-train", type=Path)
     p.add_argument("--r45-validation", type=Path)
+    p.add_argument("--r45-original-zip", type=Path,
+                   help="authenticated original R45 Train49/Val15 ZIP; use instead of two loose files")
     p.add_argument("--out-dir", required=True, type=Path)
     args = p.parse_args()
     try:
@@ -233,11 +279,31 @@ def main():
              stat.S_IMODE(out.stat().st_mode) & 0o077 == 0 and
              repo not in out.resolve().parents and out.resolve() != repo,
              "OUTPUT_DIRECTORY_NOT_PRIVATE")
-        findings, safe = screen(
-            repo, args.source_zip.expanduser().absolute(),
-            args.graph21_receipt.expanduser().absolute(),
-            args.r45_train.expanduser().absolute() if args.r45_train else None,
-            args.r45_validation.expanduser().absolute() if args.r45_validation else None)
+        must(not (args.r45_original_zip and
+                  (args.r45_train or args.r45_validation)),
+             "R45_ARCHIVE_AND_LOOSE_FILES_MUTUALLY_EXCLUSIVE")
+        with contextlib.ExitStack() as stack:
+            train = args.r45_train.expanduser().absolute() if args.r45_train else None
+            validation = (args.r45_validation.expanduser().absolute()
+                          if args.r45_validation else None)
+            archive_digest = None
+            if args.r45_original_zip:
+                archive = args.r45_original_zip.expanduser().absolute()
+                must(archive.is_file() and not archive.is_symlink(),
+                     "R45_ARCHIVE_MISSING_OR_SYMLINK")
+                archive_digest = exact.sha_file(archive)
+                temp = Path(stack.enter_context(tempfile.TemporaryDirectory(
+                    prefix="r52-historical-r45-")))
+                temp.chmod(0o700)
+                train, validation = extract_verified_r45_archive(archive, temp)
+            findings, safe = screen(
+                repo, args.source_zip.expanduser().absolute(),
+                args.graph21_receipt.expanduser().absolute(),
+                train, validation)
+            safe["r45_original_archive_used_ephemerally"] = (
+                bool(args.r45_original_zip))
+            if archive_digest:
+                safe["r45_original_archive_sha256"] = archive_digest
         artifacts = {
             out / "R52_PRIVATE_HISTORICAL_EXPOSURE_WITNESSES.jsonl":
                 "".join(json.dumps(x, ensure_ascii=False, sort_keys=True) + "\n"
@@ -256,7 +322,7 @@ def main():
         finally:
             os.umask(old)
     except (OSError, TypeError, KeyError, ValueError,
-            json.JSONDecodeError) as exc:
+            zipfile.BadZipFile, json.JSONDecodeError) as exc:
         code = str(exc) if isinstance(exc, exact.GateHold) else type(exc).__name__
         print("R52_HISTORICAL_EXPOSURE_HOLD__" + code, file=sys.stderr)
         return 2
