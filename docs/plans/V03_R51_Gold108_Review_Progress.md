@@ -81,3 +81,22 @@ Newly verified private Batch 04 merged output: **24 cases, 21 same-route, 3 disa
 - All Gold108 A/B reconciliations are complete **108/108**; A/B original route disagreements **14**. Independently received and evidence-validated C decisions total **5/14** (Batch 03: 4; Batch 05: 1). Still pending C: **9** (Batch 01–02: 6, Batch 04: 3).
 - Reviewer C submitted `reviewer_a_b_analyses_seen=false` as an independence attestation, but the evidence validator cannot independently verify actual blinding.
 - No rights/card-version certification or final admission from C; Train **0**, Validation **0**, and **no GPU job**. Private C decision, receipt, and post-freeze A/B/C comparison stay outside the public repository.
+
+
+## R51 Reviewer C blind adjudication coverage complete (2026-10-20)
+
+**Coverage/status:** Reviewer C's final Batch 01–02 and Batch 04 receipt integrity checks were independently rerun by the owner and reported **PASS**, completing source-cited C reviews for **14/14 original A/B route disagreements** across all five Gold108 batches. This is a *review coverage milestone*, **not** a resolution or data admission.
+
+| Disputed batch | Cases | Verified C citations | Verification source |
+|---|---:|---:|---|
+| Batch 01–02 | 6 | 20 | Owner's receipt/evidence/decisions SHA256 integrity check, PASS |
+| Batch 03 | 4 | 16 | Previously validated frozen C handoff |
+| Batch 04 | 3 | 10 | Owner's receipt/evidence/decisions SHA256 integrity check, PASS |
+| Batch 05 | 1 | 5 | Previously validated frozen C handoff |
+| **Total** | **14** | **51** | All C verdicts remain **HOLD** |
+
+Batch 04 C primary-route tally: **2** `CONTEXT_ONLY_POSSIBLE__HOLD`, **1** `INSUFFICIENT_VISIBLE_CONTEXT__HOLD`; no other C route counts are inferred for Batch 01–02 without the private decisions.
+
+**Next gate:** join the frozen C decisions back to the 14 A/B disputes, preserving *all three* analyses and recording C=A, C=B, or C distinct; produce a private unresolved-risk register and a public count-only aggregate, never auto-deciding source, rights, or quality issues by 2-vote majority. The previously identified Batch 03 three-way split and Batch 05's preserved secondary agency concern remain unresolved until separately evaluated. Reviewer C independence relies on stated blinding, which a receipt cannot prove.
+
+**TRAIN 0 / VALIDATION 0 / NO GPU.** No changes to Gold195 originals, R50 sealed heldout or training configurations.
