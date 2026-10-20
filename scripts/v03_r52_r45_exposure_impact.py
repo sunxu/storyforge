@@ -303,6 +303,12 @@ def compute_impact(worlds: dict[int, dict],
     return risk_rows, decision_rows, safe
 
 
+def canonical_witnesses(rows: list[dict]) -> list[str]:
+    """Sort complete private witness records, not hashed-order-dependent slots."""
+    return sorted(json.dumps(r, ensure_ascii=False, sort_keys=True,
+                             separators=(",", ":")) for r in rows)
+
+
 def run(owner_source: Path, r45_original: Path, history_dir: Path,
         graph_dir: Path, post_quality_dir: Path):
     history = private_json(history_dir / "R52_HISTORICAL_EXPOSURE_SAFE_AGGREGATE.json")
@@ -333,10 +339,8 @@ def run(owner_source: Path, r45_original: Path, history_dir: Path,
         # Probe indexing iterates a set of fragments. Its iteration order can
         # differ between Python runs even when the source bytes are identical.
         # Compare a canonical multiset, never a process-dependent list order.
-        def canonical(rows):
-            return sorted(json.dumps(r, ensure_ascii=False, sort_keys=True,
-                                     separators=(",", ":")) for r in rows)
-        need(canonical(expected_witnesses) == canonical(witnesses) and
+        need(canonical_witnesses(expected_witnesses) ==
+             canonical_witnesses(witnesses) and
              dict(collisions) == {"r45_train": 29, "r45_validation": 13} and
              counts["EXACT_LONG_MESSAGE"] == 273 and
              counts["SAMPLED_120_CODEPOINT_FRAGMENT"] == 264,
