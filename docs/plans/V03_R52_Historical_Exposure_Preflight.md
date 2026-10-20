@@ -83,3 +83,17 @@ The example R45 path is illustrative, not an assertion about where the private Z
 R45 historical candidates may involve some of the same numbered original stories as R52. If direct source story UUID or identical long dialogue hits are observed, treat them as **exposure evidence requiring per-model/per-split review**, not as harmless name coincidences or automatic permanent exclusion from all future training. It would particularly preclude unqualified claims of an independent unseen validation world for a model previously exposed to that story.
 
 **No GPU, no Train/Val assignment, no R50 sealed test access, no seven-world semantic-independence certificate.** Synthetic SHA/ZIP/tamper CI: https://github.com/sunxu/storyforge/actions/runs/39410839236.
+
+
+## 2026-10-20 — Owner R45 verified archive screen reveals historical source reuse
+
+Owner-local run with private R45 original ZIP SHA256 `da4b7718f1c1cbd0429553b684eeaf70f207fd2e41aae4e8fe0a52a11b647b9e`:
+`R52_SEVEN_WORLD_HISTORICAL_EXPOSURE_SCREEN_COMPLETED__SEMANTIC_HOLD`.
+
+- Authenticated R45 Train49 / Validation15 source hashes `e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742` / `5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963`.
+- **29 Train rows + 13 Validation rows** have source-story UUIDs exactly matching one of the seven R52 story UUIDs. These are **row counts, not numbers of distinct worlds**, and Train vs Validation have different implications.
+- **537 text-overlap witnesses**, **273** normalized exact long-message records and **264** sampled 120-codepoint fragments. Witnesses are *not* distinct target counts or independent reviewed contamination instances. Duplicates or multiple hit routes may arise.
+- Gold87 and v0.1 Train/Validation/Test remain source-hash verified, with zero additional exact-ID and sampled long-text matches under this screen.
+- All 46 preliminary quality candidates remain `PENDING_NOT_APPROVED`; no new Train/Val split, no signed world components, no GPU, no R50 unsealing.
+
+**Important gate change:** Seven R52 worlds can no longer be described as unexposed independent worlds without model/split-specific R45 source lineage review. Next: rank-deduplicated per-world historical collisions, direct target-SHA equality, 46-case risk partition and evidence witness provenance verification. Do not count 537 as 537 unique contaminated messages or assume an R45 validation record was used to optimize R46 weights without a training/run manifest.
