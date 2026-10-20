@@ -72,3 +72,12 @@ Newly verified private Batch 04 merged output: **24 cases, 21 same-route, 3 disa
 - Previously frozen Gold87 and Gold108 remain immutable; final Gold195 training eligibility requires separate historical card/timepoint proof, rights/license to train, world-level split and quality gate review. The 62 context-only possible cases may proceed to further **eligibility checking only**.
 - Raw evidence and all C/A/B comparisons and narrative text remain owner-private, files mode 0600 under owner-private 0700 directory; **do not commit to public Git**.
 - Batch 05 reconciled file SHA256: `b9cc7b95816b179f1ea2694fcef2e1632ae038bc49ea9ef67de8405e92ce0be8`.
+
+
+## R51 Batch 05 Reviewer C blind adjudication (2026-10-20)
+
+- C decision file received from independent reviewer and successfully validated against the original one-case blind evidence: **1/1** complete, **5/5** valid citations, schema and SHA256 pins valid. All states remain `PENDING_NOT_APPROVED`.
+- Frozen post-review comparison: C's principal route agrees with **Reviewer B** (long-range/card dependency), not Reviewer A (agency/rule concern). C independently also noted the narrative/agency perspective risk. **Both concerns remain HOLD**; majority alignment must not clear the secondary issue.
+- All Gold108 A/B reconciliations are complete **108/108**; A/B original route disagreements **14**. Independently received and evidence-validated C decisions total **5/14** (Batch 03: 4; Batch 05: 1). Still pending C: **9** (Batch 01–02: 6, Batch 04: 3).
+- Reviewer C submitted `reviewer_a_b_analyses_seen=false` as an independence attestation, but the evidence validator cannot independently verify actual blinding.
+- No rights/card-version certification or final admission from C; Train **0**, Validation **0**, and **no GPU job**. Private C decision, receipt, and post-freeze A/B/C comparison stay outside the public repository.
