@@ -100,3 +100,19 @@ Batch 04 C primary-route tally: **2** `CONTEXT_ONLY_POSSIBLE__HOLD`, **1** `INSU
 **Next gate:** join the frozen C decisions back to the 14 A/B disputes, preserving *all three* analyses and recording C=A, C=B, or C distinct; produce a private unresolved-risk register and a public count-only aggregate, never auto-deciding source, rights, or quality issues by 2-vote majority. The previously identified Batch 03 three-way split and Batch 05's preserved secondary agency concern remain unresolved until separately evaluated. Reviewer C independence relies on stated blinding, which a receipt cannot prove.
 
 **TRAIN 0 / VALIDATION 0 / NO GPU.** No changes to Gold195 originals, R50 sealed heldout or training configurations.
+
+
+## R51 POST-C validated, frozen, count-only (2026-10-20)
+
+Owner ran `v03_r51_gold108_post_c_triage.py` against private Gold108 A/B reconciled records, all four C evidence/decision/receipt groups and received `R51_GOLD108_POST_C_TRIAGE_VALIDATED__NO_ADMISSION`. Safe owner-supplied output:
+
+- **108/108** Gold108 dual reviews complete; **94 A/B same route**, **14 A/B disagreement**.
+- Third-party C reviewed all **14** A/B disagreements and its **51** citations passed validator.
+- Post-C route alignment: **C=A 5**, **C=B 5**, **C matches neither 4**. These 4 *three-way route splits* require explicit additional owner source/quality review; even two-person alignment is not automatic defect resolution.
+- A/B agreement route counts: **62 context-only possible HOLD**, **26 card/long-range source required HOLD**, **6 agency/rule concern HOLD**.
+- C's 14 route counts: **5 context-only possible HOLD**, **4 card/long-range required HOLD**, **3 agency/rule concern HOLD**, **2 insufficient visible context HOLD**.
+- Gate remains `OWNER_SOURCE_QUALITY_RIGHTS_AND_HISTORICAL_CARD_PROVENANCE_HOLD`; `all_pending_not_approved=true`; **Train 0 / Validation 0**.
+- The private 108-record `R51_GOLD108_POST_C_RISK_REGISTER_PRIVATE.jsonl` is stored by the owner in the protected review directory, not committed; the count-only `R51_GOLD108_POST_C_SAFE_AGGREGATE.json` may be used for status reporting.
+- Review source citations and receipt SHA integrity are distinct from source **training rights/licenses**, historical persona-card version/timepoint evidence, full world-isolated Train/Val split, and quality acceptance. None are certified by a route vote or completion percentage. The sealed R50 held-out set stays untouched.
+
+**Recommended owner action:** first classify four three-way cases as `OWNER_SOURCE_QUALITY_FOLLOWUP__HOLD`, preserve all three opinions and secondary flags; separately assess eligibility for the 62 A/B context-only cases through verified historical cards, training rights, and a world-level split. The 26 agreed long-range and 6 agreed agency/rule cases remain held pending targeted source/quality remediation. Never admit or train from this checkpoint.
