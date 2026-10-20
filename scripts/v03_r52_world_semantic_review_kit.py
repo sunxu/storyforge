@@ -57,7 +57,10 @@ def read_source_packets(path: Path) -> list[dict]:
                 type(row.get("target_original_array_index")) is int,
                 "FROZEN_R51_PACKET_CHANGED")
         seen.add(cid)
-        for entry in row.get("frozen_visible_history", []):
+        require(isinstance(row.get("frozen_visible_history"), list) and
+                bool(row["frozen_visible_history"]),
+                "FROZEN_R51_HISTORY_MISSING")
+        for entry in row["frozen_visible_history"]:
             require(isinstance(entry, dict) and
                     isinstance(entry.get("content"), str) and
                     sha_text(entry["content"]) == entry.get("source_body_sha256") and
@@ -105,6 +108,11 @@ def build(rows: list[dict], shortlist: list[dict],
           world_queue: list[dict], world_receipt: dict):
     require(len(rows) == 108 and len(shortlist) == 46 and
             len(world_queue) == 7, "R52_INPUT_CARDINALITY_CHANGED")
+    overlap = world_receipt.get("exact_overlap_with_v01_splits_by_story_count")
+    require(isinstance(overlap, dict) and
+            set(overlap) == {"train", "validation", "test"} and
+            all(overlap[k] == 0 for k in overlap),
+            "HISTORICAL_EXACT_OVERLAP_RECEIPT_MISSING")
     require(world_receipt.get("schema") ==
             "storyforge-r52-world-isolation-exact-screen-v1" and
             world_receipt.get("status") ==
@@ -138,15 +146,18 @@ def build(rows: list[dict], shortlist: list[dict],
     require(len(allowed) == 7 and all(sid in grouped for sid in allowed),
             "SEVEN_SOURCE_WORLDS_MISSING_FROM_PACKET")
     selected = Counter()
+    selected_ids = set()
     raw_ids = {r["candidate_id"]: r for r in rows}
     for item in shortlist:
         cid = item.get("candidate_id")
-        require(cid in raw_ids and item.get("source_story_id") ==
+        require(cid in raw_ids and cid not in selected_ids and
+                item.get("source_story_id") ==
                 raw_ids[cid]["source_story_id"] and
                 item.get("target_sha256") == raw_ids[cid]["target_sha256"] and
                 item.get("eligibility_stage") == "QUALITY_POSSIBLE__NEEDS_GATES" and
                 item.get("split") is None and item.get("training_admission") == HOLD,
                 "SHORTLIST_PINS_OR_HOLD_CHANGED")
+        selected_ids.add(cid)
         selected[item["source_story_id"]] += 1
     require(set(selected) == set(allowed) and
             all(selected[sid] == world["first_pass_possible"]
@@ -311,6 +322,10 @@ def main() -> int:
         tasks_file = out / "R52_PRIVATE_21_WORLD_PAIR_REVIEW_TASKS.jsonl"
         dossiers_file = out / "R52_PRIVATE_07_WORLD_DOSSIERS.jsonl"
         agg_file = out / "R52_WORLD_SEMANTIC_KIT_SAFE_AGGREGATE.json"
+        template_file = out / "R52_PRIVATE_21_WORLD_PAIR_DECISION_TEMPLATE.jsonl"
+        require(out.resolve() != Path.cwd().resolve() and
+                Path.cwd().resolve() not in out.resolve().parents,
+                "OUTPUT_INSIDE_REPOSITORY_FORBIDDEN")
         source_file = world / "R52_PRIVATE_07_WORLD_COMPONENT_REVIEW_QUEUE.jsonl"
         receipt_file = world / "R52_WORLD_EXACT_ISOLATION_SAFE_AGGREGATE.json"
         source = prior.read_jsonl(source_file, private=True, count=7)
@@ -330,7 +345,7 @@ def main() -> int:
                 tasks_file: tasks,
             }
             require(not any(path.exists() or path.is_symlink()
-                            for path in [*outputs, agg_file]),
+                            for path in [*outputs, agg_file, template_file]),
                     "OUTPUT_ALREADY_EXISTS")
             os.umask(0o077)
             for path, rows_ in outputs.items():
@@ -339,6 +354,21 @@ def main() -> int:
                     for x in rows_))
             write_exclusive(agg_file, json.dumps(
                 aggregate, ensure_ascii=False, sort_keys=True, indent=2) + "\n")
+            templates = [{
+                "schema": DECISION_SCHEMA,
+                "left_rank": p["left_rank"],
+                "right_rank": p["right_rank"],
+                "left_source_targets_digest": p["left_source_targets_digest"],
+                "right_source_targets_digest": p["right_source_targets_digest"],
+                "decision": None,
+                "rationale": "",
+                "source_citations": [],
+                "reviewer_a_b_analysis_seen": False,
+                "training_admission": HOLD,
+            } for p in tasks]
+            write_exclusive(template_file, "".join(
+                json.dumps(x, ensure_ascii=False, sort_keys=True) + "\n"
+                for x in templates))
             print(aggregate["status"])
             print(json.dumps(aggregate, ensure_ascii=False, sort_keys=True, indent=2))
         else:
