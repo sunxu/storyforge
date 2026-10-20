@@ -46,3 +46,14 @@ The close-out does **not** output a `train.jsonl`, `val.jsonl`, `tokenizer-PASS`
 5. **Admission manifest and train authorization:** after all gates, have the owner sign a separate immutable training manifest with sample hash, story-component split, explicit PASS status and exact experiment identity. Do not touch sealed R50 tests or mutate original Gold195.
 
 Synthetic-only GitHub Actions workflow `R52 Post-quality Closure (synthetic only)` checks closure partition and tampering rejection. Real private cases must be run locally by the owner.
+
+
+## Owner-local 62-case post-quality closure PASS and seven-story preflight (2026-10-20)
+
+The owner successfully executed `v03_r52_post_quality_closure.py` on the four original frozen private review batches and reported `R52_ALL_62_QUALITY_REVIEWS_REVERIFIED__NO_ADMISSION`. Source-based replay: **62** revalidated cases, **205** cited-source references, **46** initial no-card feasible candidates, **16** target-quality holds, and **7** distinct `source_story_id` groups. The closure emitted source/task/decision SHA256 pins for all four batches.
+
+This is **not** seven independently verified narrative universes or a Train/Val split. The next git-native program `scripts/v03_r52_world_exact_isolation.py` rechecks the locally frozen v0.1 Train/Validation/Test SHA256 bytes and performs a strict exact UUID comparison with all seven R52 source identities, then prepares **private** per-world semantic-isolation review records. See [seven-world isolation guide](V03_R52_Seven_World_Exact_And_Semantic_Isolation.md).
+
+Synthetic seven-story CI passed: [run 39384312790](https://github.com/sunxu/storyforge/actions/runs/39384312790). **Real exact UUID preflight is not yet marked PASS until the owner's Mac run.** World linkage, narrative aliases, final quality and safety signoff, unexposed R50 heldout isolation, no-card system prompt identity, actual Qwen tokenizer and last-target-only `ms-swift` labels all remain pending.
+
+**Train 0 / Validation 0 / No GPU / all candidate original states `PENDING_NOT_APPROVED`.**
