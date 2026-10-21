@@ -8,6 +8,7 @@ import sys
 BUCKET = "adradar/storyforge-training"
 PREFIX = "preflight/v03-r54/gpu/runs"
 EXPERIMENTS = "experiments/v03-r54"
+SUBMISSIONS = "preflight/v03-r54/gpu/submissions"
 FILES = frozenset({
     "SHA256SUMS.txt",
     "config/r54.yaml",
@@ -46,6 +47,8 @@ def check(mode: str,key: str,api) -> str:
     if not RUN_KEY.fullmatch(key):
         raise ValueError("R54_INVALID_RUN_KEY")
     staged=collect(api,f"{PREFIX}/{key}/")
+    if collect(api,f"{SUBMISSIONS}/{key}/"):
+        raise ValueError("R54_RUN_KEY_ALREADY_SUBMITTED__NO_AUTOMATIC_RETRY")
     if mode=="empty":
         if staged: raise ValueError("R54_REMOTE_STAGE_ALREADY_EXISTS")
         # Never reuse a run whose experiment directory already has artifacts.
