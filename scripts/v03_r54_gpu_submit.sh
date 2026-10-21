@@ -31,7 +31,7 @@ if [[ "$MODE" == sync ]]; then
   python3 - scripts/hf_label_mask_audit.py <<'PY_AUDITOR_PIN'
 import hashlib, pathlib, sys
 b=pathlib.Path(sys.argv[1]).read_bytes()
-blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\\0'+b).hexdigest()
+blob=hashlib.sha1(b'blob '+str(len(b)).encode()+b'\0'+b).hexdigest()
 if blob!='15296f1d8438f40d727c84913ac658cf6de01cb4':
     raise SystemExit('R54_ORIGINAL_MASK_AUDITOR_MISMATCH')
 print('R54_ORIGINAL_MASK_AUDITOR_GIT_BLOB_PASS')
