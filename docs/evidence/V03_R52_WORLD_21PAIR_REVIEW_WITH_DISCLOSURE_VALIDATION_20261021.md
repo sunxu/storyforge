@@ -20,7 +20,7 @@ The review is admitted only as **disclosed, context-exposed supplementary source
 
 The unchanged original blind kit SHA256: `55be7135155fa5456b73507418b54e73be82e689c1f8d5142a61ca2fa1ccd530`.
 
-This returned ZIP SHA256: `9baa1d60c01a7b3f0ac3171c334e6a3db10ca73938fb84a0798852e10ce2fd6e`.
+This returned ZIP SHA256: `56140e686d7fc4fc0907b4be4954ba2b8f9a93ec8ed56bbbdedaa3a6c9c9206c`.
 
 Safe verification archive `R52_WORLD_REVIEW_DISCLOSURE_VALIDATION_SAFE_20261021.zip`, SHA256 `f484ef431dea0f1259b21fc81723276e94c6d49c318cb366094b1ea6d17aa71c` (conversation artifact; no source text).
 
