@@ -78,6 +78,41 @@ fi
 RUN_KEY="${2:-}"
 [[ "$RUN_KEY" =~ ^r54-v2-[0-9]{8}T[0-9]{6}Z-[0-9]{6}$ ]] || { echo R54_INVALID_SUBMIT_KEY >&2; exit 2; }
 python3 scripts/v03_r54_gpu_remote_guard.py ready "$RUN_KEY"
+# A stage can be 'ready' while still containing OLDER buggy code. Refuse to
+# pay for a run unless EVERY exact staged code/config hash equals current Git.
+# The old 20261021T155710Z-607779 stage MUST be resynced as a NEW run key.
+VERIFY_TMP="$(mktemp -d)"
+trap 'rm -rf "$VERIFY_TMP"' EXIT
+hf buckets cp "$PREFIX/$RUN_KEY/SHA256SUMS.txt" "$VERIFY_TMP/STAGED_SHA256SUMS.txt"
+python3 - "$VERIFY_TMP/STAGED_SHA256SUMS.txt" <<'PY_SUBMIT_PIN'
+from pathlib import Path
+import hashlib,sys
+lines=Path(sys.argv[1]).read_text().splitlines()
+entries={}
+for line in lines:
+    bits=line.split('  ',1)
+    if len(bits)!=2 or bits[1] in entries:
+        raise SystemExit('R54_REMOTE_STAGE_MANIFEST_INVALID')
+    entries[bits[1]]=bits[0]
+pinned={
+ 'private/release/train.jsonl':'d0425c54b534307047457d05e6890b50076ad2d23ce9ab3d52f94d1a3db585a7',
+ 'private/release/validation.jsonl':'b5ea4075419ce02a1340f6ece875068746918ce1d4c6d72ee2f799b3fe58754d',
+ 'private/release/R53_RELEASE_RECEIPT.json':'3d8078ee3b4528521b7f67ba1dd7983f0d20bfeb4d7c79e92d9cabe2c6b2e836',
+ 'private/R53_HF_CPU40_AUDIT_REPORT_PRIVATE.json':'8624c21b6d9fff5e74006bca000c69f0d39870f1fb030c2ff4fb96cc523f1f45',
+ 'private/R53_CPU40_OWNER_INTAKE_VERIFIED.json':'b3bff2625c360aad10d985b42884263a26a72e85e7d1ddc7d0df916b6598381e',
+}
+codes=('v03_r54_gpu_runner.py','v03_r54_gpu_worker.sh',
+       'v03_r54_gpu_readiness_v2.py','v03_r54_last_step_checkpoint_gate.py',
+       'hf_label_mask_audit.py','hf_smoke_guard.py','hf_job_runner.py')
+for name in codes:
+    pinned['code/'+name]=hashlib.sha256(Path('scripts',name).read_bytes()).hexdigest()
+pinned['config/r54.yaml']=hashlib.sha256(
+    Path('configs/v03_r54_qlora_31_9_16step_v2.yaml').read_bytes()).hexdigest()
+if entries!=pinned:
+    delta=sorted(k for k in entries.keys()|pinned.keys() if entries.get(k)!=pinned.get(k))
+    raise SystemExit('R54_REMOTE_STAGE_CODE_OR_EVIDENCE_DRIFT__RESYNC_NEW_KEY: '+','.join(delta))
+print('R54_REMOTE_STAGE_ALL_CODE_CONFIG_DATA_PINS_MATCH__NO_GPU_JOB')
+PY_SUBMIT_PIN
 # Conservative idempotency gate: record the attempt BEFORE invoking a billable
 # API. A failed/uncertain submit is NOT silently retried with the same key.
 LOCAL_LOCK="$HOME/.local/state/storyforge/r54-gpu-submit/$RUN_KEY"
