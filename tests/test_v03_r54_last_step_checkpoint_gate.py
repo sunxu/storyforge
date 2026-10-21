@@ -31,6 +31,28 @@ class FinalStepGateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,message):g.check(self.out)
     def test_good_checkpoint_pre_reload(self):
         r=g.check(self.out);self.assertIn('RELOAD_PENDING',r['status']);self.assertEqual(r['global_step'],16)
+    def test_real_ms_swift_nested_version_dir(self):
+        # Real R46 path: output/v0-20261014-070817/checkpoint-7.
+        version_dir=self.out/'v0-20261014-070817'
+        version_dir.mkdir()
+        self.final.rename(version_dir/'checkpoint-16')
+        self.mid.rename(version_dir/'checkpoint-8')
+        r=g.check(self.out,self.reload)
+        self.assertEqual(r['final_checkpoint_relpath'],
+                         'v0-20261014-070817/checkpoint-16')
+        self.assertTrue(r['final_checkpoint_path'].endswith(
+                        '/v0-20261014-070817/checkpoint-16'))
+    def test_duplicate_terminal_checkpoint_blocked(self):
+        version_dir=self.out/'v0-20261014-070817'
+        version_dir.mkdir()
+        (version_dir/'checkpoint-16').mkdir()
+        self.expect_block('exactly one')
+    def test_bad_nested_version_name_rejected(self):
+        version_dir=self.out/'not-an-ms-swift-run'
+        version_dir.mkdir()
+        self.final.rename(version_dir/'checkpoint-16')
+        self.mid.rename(version_dir/'checkpoint-8')
+        self.expect_block('unexpected or symlinked')
     def test_good_checkpoint_with_reload(self):
         self.assertIn('AND_RELOAD',g.check(self.out,self.reload)['status'])
     def test_step3_or_step8_not_final(self):
