@@ -163,7 +163,7 @@ def main() -> int:
         make_inference_input(val,inference_input)
         # No Gold target in the inference prompt.
         run(["swift","infer","--model",str(snap),"--use_hf","true",
-             "--adapters",str(output/"checkpoint-16"),
+             "--adapters",checkpoint["final_checkpoint_path"],
              "--val_dataset",str(inference_input),"--val_dataset_sample","1",
              "--infer_backend","transformers","--torch_dtype","bfloat16",
              "--quant_method","bnb","--quant_bits","4",
