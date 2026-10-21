@@ -95,11 +95,6 @@ def stage_gate(stage: Path) -> dict:
             "validation_sha256":digest(stage/"private/release/validation.jsonl"),
             "config_sha256":digest(stage/"config/r54.yaml")}
 
-def report_final_checkpoint(output: Path, result: Path) -> dict:
-    sys.path.insert(0,str(result.parent.parent/"preflight")) if False else None
-    from v03_r54_last_step_checkpoint_gate import check
-    return check(output)
-
 def main() -> int:
     key=os.environ.get("STORYFORGE_R54_RUN_KEY","")
     insist(re.fullmatch(r"r54-v2-[0-9]{8}T[0-9]{6}Z-[0-9]{6}",key) is not None,"invalid R54 key")
@@ -187,6 +182,8 @@ def main() -> int:
         report["status"]="R54_GPU_16STEP_ENGINEERING_PASS__NOT_PROMOTED"
         save(result/"R54_GPU_RUN_REPORT_PRIVATE.json",report)
         (result/"R54_GPU_SUCCESS_NOT_PROMOTED").write_text(report["status"]+"\n")
+        with log.open("a",encoding="utf-8") as runtime_log:
+            runtime_log.write("R54_STATUS="+report["status"]+"\n")
         print("R54_STATUS="+report["status"],flush=True)
         return 0
     except Exception as exc:
