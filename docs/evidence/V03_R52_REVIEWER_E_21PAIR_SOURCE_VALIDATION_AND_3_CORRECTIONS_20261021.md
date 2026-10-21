@@ -34,6 +34,6 @@ This package contains three case-specific original messages/indexed narrative sn
 
 ## Outcome and remaining gates
 
-**World independence certificate NOT issued** pending accurate semantic reasoning and separate acceptance/adjudication; seven-world Owner declaration and UUID-level Train/Val separation remain previously established and unchanged. Staged **31 Train / 9 Validation** and their bytes are unchanged, still **NOT ADMITTED**. R50 untouched, no CPU/GPU computation authorized or run. Original reviewer result retained unchanged for audit custody.
+**World independence certificate NOT issued** pending accurate semantic reasoning and separate acceptance/adjudication; seven-world Owner declaration and UUID-level Train/Val separation remain previously established and unchanged. Staged **31 Train / 9 Validation** and their bytes are unchanged, still **NOT ADMITTED**. R50 untouched, no paid CPU/GPU model job authorized or launched. Original reviewer result retained unchanged for audit custody.
 
 After correction, rerun the original strict validator; then independently assess absence of distinctive-world semantic links and issue the appropriate scope-limited certificate or HOLD decision. Rights and original R45/R46 execution evidence plus actual Qwen/ms-swift tokenizer/collator/label-mask audit remain separate release gates.
