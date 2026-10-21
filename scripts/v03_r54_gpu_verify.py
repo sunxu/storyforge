@@ -64,7 +64,7 @@ def verify(report_file: Path,log_file: Path,reload_file: Path,release_dir: Path,
            and checkpoint.get("global_step")==16
            and checkpoint.get("final_checkpoint")=="checkpoint-16"
            and checkpoint.get("intermediate_checkpoint")=="checkpoint-8"
-           and all(k in checkpoint.get("eval_steps_verified",[]) for k in (4,8,12)),
+           and all(k in checkpoint.get("eval_steps_verified",[]) for k in (4,8,12,16)),
            "step-16 final checkpoint proof incomplete")
     adapter_sha=checkpoint.get("final_adapter_sha256","")
     insist(isinstance(adapter_sha,str) and HEX.fullmatch(adapter_sha),"adapter digest missing")
