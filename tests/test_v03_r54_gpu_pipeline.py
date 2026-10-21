@@ -113,6 +113,16 @@ class NoPaidSubmitTests(unittest.TestCase):
         self.assertIn('STORYFORGE_R54_OWNER_GPU_SCOPE:-',code)
         self.assertEqual(code.count("hf jobs run"),1)
         self.assertIn("R54_PAID_GPU_SUBMIT_NOT_EXECUTED",code)
+    def test_stale_remote_gpu_code_blocked_before_paid_submit(self):
+        code=(ROOT/"scripts/v03_r54_gpu_submit.sh").read_text()
+        self.assertIn("R54_REMOTE_STAGE_CODE_OR_EVIDENCE_DRIFT__RESYNC_NEW_KEY", code)
+        self.assertIn("STAGED_SHA256SUMS.txt",code)
+        self.assertLess(code.index("R54_REMOTE_STAGE_CODE_OR_EVIDENCE_DRIFT"),
+                        code.index('hf jobs run --namespace'))
+    def test_real_nested_final_adapter_path_used(self):
+        source=(ROOT/"scripts/v03_r54_gpu_runner.py").read_text()
+        self.assertIn('checkpoint["final_checkpoint_path"]',source)
+        self.assertNotIn('str(output/"checkpoint-16")',source)
     def test_worker_fails_without_exact_scope(self):
         code=(ROOT/"scripts/v03_r54_gpu_worker.sh").read_text()
         self.assertIn('R54_31_9_V2_16STEP_ONE_EPOCH',code)
