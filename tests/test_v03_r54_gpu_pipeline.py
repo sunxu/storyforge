@@ -1,0 +1,128 @@
+"""Network-free R54 V2 sync/submit/verify anti-bypass tests; no GPU activity."""
+import importlib.util
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+import unittest
+from unittest import mock
+from types import SimpleNamespace
+
+ROOT=Path(__file__).resolve().parents[1]
+
+def load(name, filename):
+    spec=importlib.util.spec_from_file_location(name,ROOT/"scripts"/filename)
+    m=importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    return m
+
+guard=load("r54_remote_guard","v03_r54_gpu_remote_guard.py")
+runner=load("r54_gpu_runner","v03_r54_gpu_runner.py")
+verifier=load("r54_gpu_verify","v03_r54_gpu_verify.py")
+KEY="r54-v2-20261021T113539Z-523139"
+
+class API:
+    def __init__(self,entries=(),error=None):
+        self.entries=list(entries);self.error=error
+    def list_bucket_tree(self,bucket,*,prefix,recursive):
+        if self.error: raise self.error
+        return [SimpleNamespace(path=x,type="file") for x in self.entries if x.startswith(prefix)]
+
+class GuardTests(unittest.TestCase):
+    def test_empty_stage_and_results_prefix(self):
+        self.assertIn("AVAILABLE",guard.check("empty",KEY,API()))
+    def test_ready_requires_every_file(self):
+        stage=f"{guard.PREFIX}/{KEY}/"
+        self.assertIn("COMPLETE",guard.check("ready",KEY,API([stage+x for x in guard.FILES])))
+    def test_empty_prefix_does_not_misread_listing_exit_code(self):
+        stage=f"{guard.PREFIX}/{KEY}/"
+        with self.assertRaisesRegex(ValueError,"ALREADY_EXISTS"):
+            guard.check("empty",KEY,API([stage+"code/foo.py"]))
+    def test_partial_stage_rejected(self):
+        stage=f"{guard.PREFIX}/{KEY}/"
+        with self.assertRaisesRegex(ValueError,"INCOMPLETE"):
+            guard.check("ready",KEY,API([stage+"SHA256SUMS.txt"]))
+    def test_extra_stage_rejected(self):
+        stage=f"{guard.PREFIX}/{KEY}/"
+        with self.assertRaisesRegex(ValueError,"INCOMPLETE"):
+            guard.check("ready",KEY,API([stage+x for x in guard.FILES]+[stage+"extra"]))
+    def test_old_results_key_never_reused(self):
+        with self.assertRaisesRegex(ValueError,"EXPERIMENT_ALREADY_EXISTS"):
+            guard.check("empty",KEY,API([f"{guard.EXPERIMENTS}/{KEY}/output/log"]))
+    def test_auth_failure_never_treated_as_empty(self):
+        with self.assertRaises(PermissionError):
+            guard.check("empty",KEY,API(error=PermissionError("denied")))
+    def test_key_path_traversal_rejected(self):
+        with self.assertRaisesRegex(ValueError,"INVALID_RUN_KEY"):
+            guard.check("empty","../any",API())
+
+class RunnerStageTests(unittest.TestCase):
+    def setUp(self):
+        t=tempfile.TemporaryDirectory();self.addCleanup(t.cleanup)
+        self.stage=Path(t.name);self.expected=[
+            "config/r54.yaml",
+            "private/release/train.jsonl","private/release/validation.jsonl",
+            "private/release/R53_RELEASE_RECEIPT.json",
+            "private/R53_HF_CPU40_AUDIT_REPORT_PRIVATE.json",
+            "private/R53_CPU40_OWNER_INTAKE_VERIFIED.json",
+            "code/v03_r54_gpu_runner.py","code/v03_r54_gpu_worker.sh",
+            "code/v03_r54_gpu_readiness_v2.py",
+            "code/v03_r54_last_step_checkpoint_gate.py",
+            "code/hf_label_mask_audit.py","code/hf_smoke_guard.py",
+            "code/hf_job_runner.py"]
+        for name in self.expected:
+            p=self.stage/name;p.parent.mkdir(parents=True,exist_ok=True)
+            p.write_text("from pathlib import Path\n"
+                         "def check(*args): return {'training_config':{'optimizer_steps_estimate':16}}\n"
+                         if name=="code/v03_r54_gpu_readiness_v2.py" else "synthetic-test-file")
+        self.update_manifest()
+    def update_manifest(self):
+        (self.stage/"SHA256SUMS.txt").write_text("".join(
+            runner.digest(self.stage/name)+"  "+name+"\n" for name in sorted(self.expected)))
+    def test_synthetic_stage_manifest_ok(self):
+        self.assertEqual(runner.stage_gate(self.stage)["config_sha256"],
+                         runner.digest(self.stage/"config/r54.yaml"))
+    def test_mutated_stage_blocked(self):
+        (self.stage/"private/release/train.jsonl").write_text("tampered")
+        with self.assertRaisesRegex(RuntimeError,"sha mismatch"):
+            runner.stage_gate(self.stage)
+    def test_additional_manifest_object_blocked(self):
+        other=self.stage/"code/extra.py";other.write_text("extra")
+        with (self.stage/"SHA256SUMS.txt").open("a") as stream:
+            stream.write(runner.digest(other)+"  code/extra.py\n")
+        with self.assertRaisesRegex(RuntimeError,"unexpected or missing"):
+            runner.stage_gate(self.stage)
+    def test_relative_path_escape_blocked(self):
+        with (self.stage/"SHA256SUMS.txt").open("a") as stream:
+            stream.write("a"*64+"  ../outside.json\n")
+        with self.assertRaisesRegex(RuntimeError,"unsafe/duplicate"):
+            runner.stage_gate(self.stage)
+
+class NoPaidSubmitTests(unittest.TestCase):
+    def test_shell_syntax(self):
+        for name in ("v03_r54_gpu_submit.sh","v03_r54_gpu_worker.sh"):
+            r=subprocess.run(["bash","-n",str(ROOT/"scripts"/name)],capture_output=True)
+            self.assertEqual(r.returncode,0,r.stderr.decode())
+    def test_sync_does_not_authorize_submit(self):
+        code=(ROOT/"scripts/v03_r54_gpu_submit.sh").read_text()
+        self.assertLess(code.index("if [[ \"$MODE\" == sync ]]"),code.index("STORYFORGE_ALLOW_PAID_GPU:-"))
+        self.assertIn('STORYFORGE_R54_OWNER_GPU_SCOPE:-',code)
+        self.assertEqual(code.count("hf jobs run"),1)
+        self.assertIn("R54_PAID_GPU_SUBMIT_NOT_EXECUTED",code)
+    def test_worker_fails_without_exact_scope(self):
+        code=(ROOT/"scripts/v03_r54_gpu_worker.sh").read_text()
+        self.assertIn('R54_31_9_V2_16STEP_ONE_EPOCH',code)
+        self.assertIn('sha256sum --check --status',code)
+        self.assertIn('v03_r54_gpu_readiness_v2.py',code)
+    def test_runner_requires_terminal_checkpoint_and_actual_infer(self):
+        code=(ROOT/"scripts/v03_r54_gpu_runner.py").read_text()
+        self.assertIn('checkpoint_check(output,reload_file)',code)
+        self.assertIn('check_inference_result(inference_output)',code)
+        self.assertIn('R54_GPU_16STEP_ENGINEERING_PASS__NOT_PROMOTED',code)
+        self.assertNotIn('"swift","sft","--max_steps"',code)
+    def test_verify_no_remote_or_gpu_execution(self):
+        code=(ROOT/"scripts/v03_r54_gpu_verify.py").read_text()
+        for forbidden in ("hf jobs run","swift sft","snapshot_download(","subprocess.run("):
+            self.assertNotIn(forbidden,code)
+
+if __name__=="__main__":unittest.main()
