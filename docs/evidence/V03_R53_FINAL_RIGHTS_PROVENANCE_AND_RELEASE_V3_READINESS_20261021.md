@@ -32,6 +32,8 @@ Private **V3 verifier** `code/r53_verify_release_gate_owner_world_v3.py`, SHA256
 
 The prior V2 Owner world acceptance is honored but not relabeled institution-certified. The V3 adapter is separate and versioned; it has **not produced a formal release**.
 
+Portable regression fix: V3 negative tests now resolve all bundled evidence relative to the extracted package; independently verified in a fresh temporary root. No absolute container paths are required.
+
 Local measured results:
 - **V3: 12/12** synthetic negative/source tests PASS.
 - Unchanged V2 owner world-policy tests: **14/14 PASS**.
@@ -41,10 +43,10 @@ Local measured results:
 
 ## Private reproducibility packet
 
-Conversation-private ZIP `StoryForge_R53_FINAL_RIGHTS_RELEASE_GATE_V3_PRIVATE_20261021.zip`: SHA256 `a89b1ea7692827b8faa1fb65c608d3f78351f737f91ef9fcaf8e5b5372066962`.
+Conversation-private ZIP `StoryForge_R53_FINAL_RIGHTS_RELEASE_GATE_V3_PRIVATE_20261021.zip`: SHA256 `594b7eb48dd34f8d7e35fd2491612e4773a8d020a48f4f256a009e6e72bb2b99`.
 
 It includes full original V1/V2 and versioned V3 release guards, frozen private 31/9 stage, code-only real HF CPU intake verifier, uploaded report/intake receipts and R46 owner export receipt, private original Reviewer E evidence, seven-story provenance inventory, unfilled supporting-doc template, tests and Chinese instructions. This packet contains **private narrative data and candidate IDs**, and must **not** be committed to ordinary Git.
 
-Aggregate-only safe result `R53_FINAL_RIGHTS_RELEASE_V3_SAFE_RECEIPT_20261021.json`, SHA256 `63b3fe55a7160fc4bff9f825442c82ffac8941081dde9724c99d856ff1f2ea75`.
+Aggregate-only safe result `R53_FINAL_RIGHTS_RELEASE_V3_SAFE_RECEIPT_20261021.json`, SHA256 `1905e1d24b7be91d76dadb55c26ab4a8d5258010d3062c60535b4ac93fa3440f`.
 
 **Remaining requirements before exact-byte dataset release:** actual source-rights documentation and documented review, unchanged real log retrieved from the completed HF CPU Job, and a **new separate Owner approval for that exact 31/9 stage SHA**. Do not infer permission from “continue” or earlier paid CPU authorization.
