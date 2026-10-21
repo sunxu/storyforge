@@ -16,7 +16,7 @@ PREFIX="$BASE/preflight/v03-r53/cpu40"
 if [[ "$ACTION" == sync ]]; then
   STAGE="${2:-}"
   [[ -d "$STAGE" ]] || { echo R53_PRIVATE_STAGE_MISSING >&2; exit 2; }
-  for f in v03_r53_hf_cpu40_audit.py v03_r53_hf_cpu40_worker.sh hf_label_mask_audit.py; do
+  for f in v03_r53_hf_cpu40_audit.py v03_r53_hf_cpu40_worker.sh v03_r53_hf_bucket_prefix_guard.py hf_label_mask_audit.py; do
     [[ -s "scripts/$f" ]] || { echo "R53_MISSING_CODE: $f" >&2; exit 2; }
   done
   python3 scripts/v03_r53_hf_cpu40_audit.py preflight --stage "$STAGE"
@@ -40,10 +40,9 @@ PY
     cp "$STAGE/$f" "$TMP/private_stage/$f"
   done
   (cd "$TMP"; sha256sum code/* private_stage/* > SHA256SUMS.txt)
-  # Refuse reuse/overwrite of an existing run path.
-  if hf buckets ls "$PREFIX/runs/$RUN_KEY" >/dev/null 2>&1; then
-    echo R53_REMOTE_RUN_PREFIX_ALREADY_EXISTS >&2; exit 2
-  fi
+  # hf buckets ls may return exit 0 for an EMPTY prefix; success != existence.
+  # The SDK must confirm there are ZERO objects; auth/network errors block sync.
+  python3 scripts/v03_r53_hf_bucket_prefix_guard.py empty "$RUN_KEY"
   for f in "$TMP/code/"*; do hf buckets cp "$f" "$PREFIX/runs/$RUN_KEY/code/$(basename "$f")"; done
   for f in "$TMP/private_stage/"*; do hf buckets cp "$f" "$PREFIX/runs/$RUN_KEY/private_stage/$(basename "$f")"; done
   # Upload manifest last: the worker never accepts a partially synced run.
@@ -58,7 +57,8 @@ fi
 [[ "${STORYFORGE_R53_CPU40_NO_TRAIN_ONLY:-}" == YES ]] || { echo R53_CPU40_SCOPE_NOT_AUTHORIZED >&2; exit 3; }
 RUN_KEY="${2:-}"
 [[ "$RUN_KEY" =~ ^r53-cpu40-[0-9]{8}T[0-9]{6}Z-[0-9]{6}$ ]] || { echo R53_INVALID_SUBMIT_RUN_KEY >&2; exit 2; }
-hf buckets ls "$PREFIX/runs/$RUN_KEY/SHA256SUMS.txt" >/dev/null || { echo R53_REMOTE_STAGE_NOT_READY >&2; exit 2; }
+# Reject a missing/partial run before starting any billable CPU Job.
+python3 scripts/v03_r53_hf_bucket_prefix_guard.py ready "$RUN_KEY"
 echo "R53_PAID_CPU_JOB_SUBMISSION_KEY=$RUN_KEY"
 echo "R53_RESULT_PREFIX=$PREFIX/results/$RUN_KEY/"
 hf jobs run --namespace adradar --name storyforge-r53-cpu40-labelmask-no-train \
