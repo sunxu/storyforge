@@ -46,9 +46,20 @@ def finite(x) -> bool:
 
 def check(output: Path, reload_report: Path | None = None) -> dict:
     must(output.is_dir() and not output.is_symlink(), 'training output missing')
-    final = output / f'checkpoint-{EXPECTED_STEPS}'
-    must(final.is_dir() and not final.is_symlink(), 'final step checkpoint-16 missing')
-    mid = output / 'checkpoint-8'
+    # ms-swift creates output/v0-YYYYMMDD-HHMMSS/checkpoint-N
+    # (confirmed in real R46 run), whereas vanilla Trainer can use output/checkpoint-N.
+    # Search exactly one terminal checkpoint; reject ambiguous or symlinked layout.
+    terminals = [p for p in output.rglob(f'checkpoint-{EXPECTED_STEPS}')
+                 if p.is_dir() and not p.is_symlink()]
+    must(len(terminals) == 1, 'exactly one final step checkpoint-16 required')
+    final = terminals[0]
+    run_dir = final.parent
+    must((run_dir == output or
+          (run_dir.parent == output and
+           re.fullmatch(r'v[0-9]+-[0-9]{8}-[0-9]{6}', run_dir.name) is not None))
+         and not run_dir.is_symlink(),
+         'unexpected or symlinked ms-swift checkpoint version directory')
+    mid = run_dir / 'checkpoint-8'
     must(mid.is_dir() and not mid.is_symlink(), 'scheduled intermediate checkpoint-8 missing')
     state = read_json(final / 'trainer_state.json')
     must(type(state.get('global_step')) is int and state['global_step'] == EXPECTED_STEPS,
@@ -68,7 +79,7 @@ def check(output: Path, reload_report: Path | None = None) -> dict:
         if finite(entry.get('loss')):
             has_finite_loss = True
     must(set(EXPECTED_EVAL_STEPS).issubset(eval_steps),
-         'expected scheduled eval_loss at steps 4,8,12 missing')
+         'expected scheduled eval_loss at steps 4,8,12,16 missing')
     must(has_finite_loss, 'no finite train loss in Trainer state')
     must(normal_file(final / 'adapter_model.safetensors'), 'final adapter weights absent')
     cfg = read_json(final / 'adapter_config.json')
@@ -82,6 +93,8 @@ def check(output: Path, reload_report: Path | None = None) -> dict:
         'status': 'R54_FINAL_OPTIMIZER_STEP_16_CHECKPOINT_PRESENT__RELOAD_PENDING',
         'global_step': EXPECTED_STEPS,
         'final_checkpoint': final.name,
+        'final_checkpoint_path': str(final.resolve()),
+        'final_checkpoint_relpath': str(final.relative_to(output)),
         'intermediate_checkpoint': mid.name,
         'final_adapter_sha256': digest,
         'final_adapter_config_sha256': sha(final / 'adapter_config.json'),
