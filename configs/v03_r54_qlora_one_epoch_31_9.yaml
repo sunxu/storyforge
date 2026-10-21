@@ -1,0 +1,41 @@
+# StoryForge R54: PROPOSED one-epoch small-data QLoRA. NEVER itself authorizes GPU.
+# Runtime MUST override placeholder paths with exact, verified PRIVATE release files.
+model: Qwen/Qwen3.8-27B
+use_hf: true
+tuner_type: lora
+target_modules: all-linear
+lora_rank: 64
+lora_alpha: 128
+lora_dropout: 0.05
+dataset:
+  - /workspace/experiments/v03-r54/REPLACE_WITH_VERIFIED_PRIVATE_TRAIN.jsonl
+val_dataset:
+  - /workspace/experiments/v03-r54/REPLACE_WITH_VERIFIED_PRIVATE_VALIDATION.jsonl
+torch_dtype: bfloat16
+quant_method: bnb
+quant_bits: 4
+bnb_4bit_compute_dtype: bfloat16
+bnb_4bit_quant_type: nf4
+bnb_4bit_use_double_quant: true
+max_length: 16384
+loss_scale: last_round
+disable_ignore_empty_think: true
+add_non_thinking_prefix: false
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 0.00005
+num_train_epochs: 1
+warmup_ratio: 0.05
+logging_steps: 1
+# R46's 3-step eval/save interval is preserved to avoid changing learning behavior.
+# At ~4 optimizer steps, require an explicit final-checkpoint/export verification.
+eval_strategy: steps
+save_strategy: steps
+eval_steps: 3
+save_steps: 3
+save_total_limit: 2
+gradient_checkpointing: true
+dataloader_num_workers: 2
+dataset_num_proc: 2
+output_dir: /workspace/experiments/v03-r54/REPLACE_WITH_UNIQUE_RUN_KEY
