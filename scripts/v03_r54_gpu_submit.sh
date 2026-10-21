@@ -68,6 +68,18 @@ fi
 RUN_KEY="${2:-}"
 [[ "$RUN_KEY" =~ ^r54-v2-[0-9]{8}T[0-9]{6}Z-[0-9]{6}$ ]] || { echo R54_INVALID_SUBMIT_KEY >&2; exit 2; }
 python3 scripts/v03_r54_gpu_remote_guard.py ready "$RUN_KEY"
+# Conservative idempotency gate: record the attempt BEFORE invoking a billable
+# API. A failed/uncertain submit is NOT silently retried with the same key.
+LOCAL_LOCK="$HOME/.local/state/storyforge/r54-gpu-submit/$RUN_KEY"
+mkdir -p "$(dirname "$LOCAL_LOCK")"
+mkdir "$LOCAL_LOCK" || { echo R54_LOCAL_RUN_KEY_ALREADY_SUBMITTED >&2; exit 3; }
+printf 'R54_SUBMIT_ATTEMPT_REGISTERED_NO_AUTORETRY %s\n' "$RUN_KEY" > "$LOCAL_LOCK/submit-attempt.txt"
+# Separate remote submission marker; cross-machine check is best-effort,
+# not a fully atomic distributed lock across clients.
+hf buckets cp "$LOCAL_LOCK/submit-attempt.txt" \
+  "$BUCKET/preflight/v03-r54/gpu/submissions/$RUN_KEY/submit-attempt.txt" || {
+    echo R54_REMOTE_SUBMISSION_MARKER_FAILED__INVESTIGATE_NO_AUTORETRY >&2; exit 2;
+  }
 echo "R54_PAID_ONE_A100_JOB_KEY=$RUN_KEY"
 echo "R54_EXPERIMENT_PREFIX=$BUCKET/experiments/v03-r54/$RUN_KEY/"
 hf jobs run --namespace adradar --name storyforge-r54-v2-31-9-16step \
