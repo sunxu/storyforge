@@ -49,6 +49,10 @@ class GuardTests(unittest.TestCase):
     def test_old_results_key_never_reused(self):
         with self.assertRaisesRegex(ValueError,"EXPERIMENT_ALREADY_EXISTS"):
             guard.check("empty",KEY,API([f"{guard.EXPERIMENTS}/{KEY}/output/log"]))
+    def test_remote_submission_marker_blocks_reuse(self):
+        path=f"{guard.SUBMISSIONS}/{KEY}/submit-attempt.txt"
+        with self.assertRaisesRegex(ValueError,"NO_AUTOMATIC_RETRY"):
+            guard.check("ready",KEY,API([path]))
     def test_auth_failure_never_treated_as_empty(self):
         with self.assertRaises(PermissionError):
             guard.check("empty",KEY,API(error=PermissionError("denied")))
@@ -114,6 +118,11 @@ class NoPaidSubmitTests(unittest.TestCase):
         self.assertIn('R54_31_9_V2_16STEP_ONE_EPOCH',code)
         self.assertIn('sha256sum --check --status',code)
         self.assertIn('v03_r54_gpu_readiness_v2.py',code)
+    def test_submit_local_and_remote_attempt_guard(self):
+        code=(ROOT/"scripts/v03_r54_gpu_submit.sh").read_text()
+        self.assertIn('mkdir "$LOCAL_LOCK"',code)
+        self.assertIn('/submissions/$RUN_KEY/submit-attempt.txt',code)
+        self.assertLess(code.index('mkdir "$LOCAL_LOCK"'),code.index('hf jobs run --namespace'))
     def test_runner_requires_terminal_checkpoint_and_actual_infer(self):
         code=(ROOT/"scripts/v03_r54_gpu_runner.py").read_text()
         self.assertIn('checkpoint_check(output,reload_file)',code)
