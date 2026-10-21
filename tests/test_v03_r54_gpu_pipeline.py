@@ -134,4 +134,75 @@ class NoPaidSubmitTests(unittest.TestCase):
         for forbidden in ("hf jobs run","swift sft","snapshot_download(","subprocess.run("):
             self.assertNotIn(forbidden,code)
 
+
+class VerifierTests(unittest.TestCase):
+    def setUp(self):
+        t=tempfile.TemporaryDirectory();self.addCleanup(t.cleanup)
+        self.root=Path(t.name)
+        self.release=self.root/"release";self.release.mkdir()
+        self.cfg=self.root/"r54.yaml";self.cfg.write_text("synthetic")
+        for name in ("train.jsonl","validation.jsonl","R53_RELEASE_RECEIPT.json"):
+            (self.release/name).write_text("synthetic")
+        self.log=self.root/"runtime.log"
+        self.log.write_text("R54_STATUS=R54_GPU_16STEP_ENGINEERING_PASS__NOT_PROMOTED\\n")
+        self.reload=self.root/"reload.json"
+        self.reload_record={"status":"R54_ADAPTER_RELOAD_INFERENCE_PASS",
+            "final_global_step":16,"adapter_sha256":"a"*64,
+            "model_revision":verifier.REVISION}
+        self.reload.write_text(json.dumps(self.reload_record))
+        self.report=self.root/"report.json"
+        self.data={"schema":"storyforge-r54-v2-gpu-one-epoch-v1",
+            "run_key":KEY,"status":"R54_GPU_16STEP_ENGINEERING_PASS__NOT_PROMOTED",
+            "training_started":True,"training_finished":True,"adapter_reload_pass":True,
+            "model":verifier.MODEL,"revision":verifier.REVISION,
+            "formal_train_rows":31,"formal_validation_rows":9,
+            "r50_read":False,"model_promoted":False,"gpu_used":True,
+            "stage":{"config_sha256":verifier.CONFIG_SHA,"train_sha256":verifier.TRAIN_SHA,
+                     "validation_sha256":verifier.VAL_SHA,
+                     "formal_release_receipt_sha256":verifier.RELEASE_SHA},
+            "dependencies":{"ms-swift":"4.5.3","transformers":"5.16.1",
+                            "bitsandbytes":"0.50.2"},
+            "actual_ms_swift_full_label_audit":"PASS_40",
+            "gpu":{"name":"synthetic-A100"},
+            "checkpoint_and_reload":{
+                "status":"R54_FINAL_STEP_16_CHECKPOINT_AND_RELOAD_EVIDENCE_ACCEPTED__NOT_PROMOTED",
+                "global_step":16,"final_checkpoint":"checkpoint-16",
+                "intermediate_checkpoint":"checkpoint-8",
+                "eval_steps_verified":[4,8,12,16],
+                "final_adapter_sha256":"a"*64}}
+        import hashlib
+        self.data["checkpoint_and_reload"]["reload_report_sha256"]=hashlib.sha256(self.reload.read_bytes()).hexdigest()
+        self.rewrite()
+    def rewrite(self):
+        self.report.write_text(json.dumps(self.data))
+    def evaluate(self):
+        import hashlib
+        trusted={"r54.yaml":verifier.CONFIG_SHA,"train.jsonl":verifier.TRAIN_SHA,
+                 "validation.jsonl":verifier.VAL_SHA,
+                 "R53_RELEASE_RECEIPT.json":verifier.RELEASE_SHA}
+        def fake_hash(p):
+            return trusted.get(p.name,hashlib.sha256(p.read_bytes()).hexdigest())
+        with mock.patch.object(verifier,"hashfile",side_effect=fake_hash):
+            return verifier.verify(self.report,self.log,self.reload,self.release,self.cfg)
+    def test_valid_synthetic_report(self):
+        r=self.evaluate()
+        self.assertEqual(r["global_step"],16)
+        self.assertFalse(r["independent_remote_weight_sha256_verification"])
+    def test_fake_success_state_blocked(self):
+        self.data["status"]="FAILED_OR_INCOMPLETE__NO_PROMOTION";self.rewrite()
+        with self.assertRaisesRegex(ValueError,"not fully PASS"):self.evaluate()
+    def test_missing_terminal_eval_blocked(self):
+        self.data["checkpoint_and_reload"]["eval_steps_verified"]=[4,8,12];self.rewrite()
+        with self.assertRaisesRegex(ValueError,"checkpoint proof incomplete"):self.evaluate()
+    def test_forged_reload_digest_blocked(self):
+        self.reload_record["adapter_sha256"]="f"*64
+        self.reload.write_text(json.dumps(self.reload_record))
+        with self.assertRaisesRegex(ValueError,"reload evidence inconsistent"):self.evaluate()
+    def test_false_log_status_blocked(self):
+        self.log.write_text("R54_STATUS=FAILED_OR_INCOMPLETE__NO_PROMOTION\\n")
+        with self.assertRaisesRegex(ValueError,"console PASS"):self.evaluate()
+    def test_r50_access_blocked(self):
+        self.data["r50_read"]=True;self.rewrite()
+        with self.assertRaisesRegex(ValueError,"scope mismatch"):self.evaluate()
+
 if __name__=="__main__":unittest.main()
