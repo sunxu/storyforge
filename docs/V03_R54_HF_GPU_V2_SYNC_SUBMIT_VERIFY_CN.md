@@ -23,7 +23,7 @@ python3 -m unittest discover -s tests -p 'test_v03_r54_last_step_checkpoint_gate
 ```
 
 - 原有 V2 数据预检、最终 checkpoint 本地测试此前合计 **27/27 PASS**。
-- **新增的 GPU 工作流 19 项自动测试已提交代码，但截至本记录尚未在本次助手容器中执行**；请以上述 Mac 端实际结果为准，不要把未跑的测试写成 PASS。
+- **新增的 GPU 工作流 25 项自动测试已提交代码，但截至本记录尚未在本次助手容器中执行**；请以上述 Mac 端实际结果为准，不要把未跑的测试写成 PASS。
 - `hf jobs run` 仅在脚本的 `submit` 分支，且受两个付费授权开关控制。对本次 `继续` **没有** GPU 授权。
 
 ## 2. 私有源准备与 `sync`（无 GPU Job）
@@ -65,7 +65,7 @@ Bucket 上传本身可能有存储或网络费用，但**没有**启动 GPU Job�
 - `STORYFORGE_R54_OWNER_GPU_SCOPE=R54_31_9_V2_16STEP_ONE_EPOCH`
 - 精确合法 `R54_RUN_KEY`，远端完整 14 个对象，且无历史结果或 submit 占位。
 
-实际授权后执行单次 `submit` 才会创建 A100 Large、120 分钟上限的 Hugging Face Job；在提交前先写入本地防重复目录和远端 submission marker。上传失败、计费 API 未确定状态或 Job 失败，都**不自动重试**：先核查 HF 平台状态，取得新的授权与新 RUN_KEY 再决定。远端标记不是跨多客户端完全原子的分布式锁，运营上应确保只从一个已授权终端提交。
+实际授权后执行单次 `submit` 才会创建 A100 Large、120 分钟上限的 Hugging Face Job；在提交前先写入本地防重复目录和远端 submission marker。同步脚本还会拒绝使用非 R53 原版 SHA1 `15296f1d8438f40d727c84913ac658cf6de01cb4` 的 Label Mask 审核器。上传失败、计费 API 未确定状态或 Job 失败，都**不自动重试**：先核查 HF 平台状态，取得新的授权与新 RUN_KEY 再决定。远端标记不是跨多客户端完全原子的分布式锁，运营上应确保只从一个已授权终端提交。
 
 ## 4. GPU Worker 的真实检查顺序
 
