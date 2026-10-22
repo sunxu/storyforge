@@ -1,0 +1,29 @@
+{
+  "schema": "storyforge-r56-age-encrypted-audit-counts-v1",
+  "format": "age v1 X25519 with ASCII armor",
+  "recipient_public_key": "age10ffvkjh0cq3fcknk8q7h0jkjtmvay35v8ft2yw59y08md3f4nf2qz5d6wp",
+  "ciphertexts": [
+    {
+      "filename": "stage2-review-input-20261022.zip.age",
+      "ciphertext_sha256": "443623eef32f8a33c85cd4df2ed6bb823a2fe3d69eb42940f6881896f3afc8a6",
+      "ciphertext_size": 146562
+    },
+    {
+      "filename": "stage2-gold32-review-20261022.zip.age",
+      "ciphertext_sha256": "bd614913f185329a28b1abb9d1b2c47bb8f86d60d46584e4ccb9f514cf1fb82d",
+      "ciphertext_size": 48900
+    },
+    {
+      "filename": "original03-05-replay-20261022.zip.age",
+      "ciphertext_sha256": "0b1a3fe4368d86819b4479656c11547b6efe7c33aaf396a4a03b1e2835e2cf44",
+      "ciphertext_size": 64890
+    },
+    {
+      "filename": "stage5-world11-review-20261022.zip.age",
+      "ciphertext_sha256": "06d8e1c6f138156f1a1790af1a37200958c8b898b499bacc82c67d3cecf6b6d4",
+      "ciphertext_size": 217461
+    }
+  ],
+  "official_test_admitted": 0,
+  "r50_included": false
+}
