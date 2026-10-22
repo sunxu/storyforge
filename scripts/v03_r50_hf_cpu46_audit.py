@@ -16,6 +16,7 @@ import sys
 
 REV = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 MODEL = "Qwen/Qwen3.8-27B"
+TOKENIZER_CACHE_ROOT = Path("/tmp/storyforge-r50-qwen-tokenizer/snapshots")
 CASE_SHA = "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2"
 SYSTEM_SHA = "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83"
 RUN_RE = re.compile(r"r50-cpu46-\d{8}T\d{6}Z-\d{6}\Z")
@@ -136,12 +137,18 @@ def cpu_run(args):
     import transformers  # Only used INSIDE remote HF CPU Job.
     from huggingface_hub import snapshot_download
     demand(transformers.__version__ == '5.16.1', "WRONG_TRANSFORMERS_VERSION")
-    # Limit downloads to tokenizer metadata; never request model weights.
+    # The original frozen private preflight explicitly requires the model revision
+    # as a *directory component* in --tokenizer-snapshot. The previous worker used
+    # a flat local_dir and failed before any of the 46 cases could be tokenized.
+    # Keep local_dir to avoid cache-snapshot symlinks and use no model weights.
+    tokenizer_dir = TOKENIZER_CACHE_ROOT / REV
     tok_dir = snapshot_download(repo_id=MODEL, revision=REV,
         allow_patterns=['tokenizer.json','tokenizer_config.json','special_tokens_map.json',
                         'added_tokens.json','*.jinja','vocab.json','merges.txt','tokenizer.model'],
-        local_dir='/tmp/storyforge-r50-qwen-tokenizer')
+        local_dir=str(tokenizer_dir))
     snapshot = Path(tok_dir)
+    demand(snapshot.name == REV and snapshot == tokenizer_dir,
+           'TOKENIZER_SNAPSHOT_REVISION_PATH_MISMATCH')
     verified_regular(snapshot / 'tokenizer.json')
     verified_regular(snapshot / 'tokenizer_config.json')
     tok_hashes = {p.name: sha(p) for p in sorted(snapshot.iterdir()) if p.is_file() and not p.name.startswith('.')}

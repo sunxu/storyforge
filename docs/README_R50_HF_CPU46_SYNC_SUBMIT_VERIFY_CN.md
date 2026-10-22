@@ -9,7 +9,7 @@
 - **Mac 仅要求已安装的 `hf` CLI、Python 3 标准库、Git、Bash**。不要在 Mac 安装 Transformers、ms-swift、Torch 或下载模型权重。
 - **远端仅使用 CPU flavor `cpu-upgrade`**，`python:3.12-slim` 中在输入 SHA256 核验后 `pip install transformers==5.16.1, huggingface_hub, jinja2`。不加载模型权重、不训练、不生成回复、不触碰 R50 答案。
 - 原始 R50 冻结 50 题保持不变，本任务仅对明确排除四题后的 46 题 **PRESEAL** 文件执行 **Option A DRAFT** Tokenizer 预检。`thinking disabled`、`max_context=16384`、`reserved_output=1536` 均未获正式合同批准。
-- **不会上传至** `hf://buckets/adradar/storyforge-training`；也**不使用**先前自动 `greenkeedle/jobs-artifacts`。使用单独私有 Bucket `hf://buckets/greenkeedle/storyforge-r50-audit`，除非你明确修改参数且确保相同隔离安全性。
+- **不会上传至** `hf://buckets/adradar/storyforge-training`；也**不使用**先前自动 `greenkeedle/jobs-artifacts`。使用 **adradar 组织下单独的私有审核 Bucket** `hf://buckets/adradar/storyforge-r50-audit`，除非你明确修改参数且确保相同隔离安全性。
 - 每次运行唯一 `RUN_KEY`，所有脚本/输入按 SHA256 固定，`SHA256SUMS.txt` 最后上传，提交 Job 前从 HF 逐个下载回读精确对比。
 - `submit` 默认拒绝。只有运行时同时设 `STORYFORGE_ALLOW_PAID_CPU=YES`、`STORYFORGE_R50_CPU46_DRAFT_ONLY=YES` 才允许单次收费 CPU Job。**失败不自动重试**。
 - Mac `verify` 下载实际报告和回执，对照 46 题原始 SHA、System 草案 SHA、原始审核脚本 SHA、阶段清单和 Job 输出文件 SHA。不会凭 Job 名称或单条日志输出报 PASS。
@@ -35,11 +35,11 @@ python3 -m unittest discover -s "$BUNDLE/tests" -v
 
 ```bash
 hf auth whoami
-hf buckets create greenkeedle/storyforge-r50-audit --private
-hf buckets info greenkeedle/storyforge-r50-audit
+hf buckets create adradar/storyforge-r50-audit --private
+hf buckets info adradar/storyforge-r50-audit
 ```
 
-`info` 必须显示 `"private": true`。**即使个人 `jobs-artifacts` 已有文件，也不要与本 Bucket 混用。** 确认 Bucket 访问权限符合你对 R50 独立测试的保密要求：HF 账户管理员与被授权读 Bucket 的人员仍可能读取明文。对于无法隔离的访问控制，请不要上传 R50。
+`info` 必须显示 `"private": true`。**即使个人 `jobs-artifacts` 已有文件，也不要与本 Bucket 混用。** 确认 Bucket 访问权限符合你对 R50 独立测试的保密要求：HF 组织管理员与有 Bucket 读取权限的成员仍可能读取明文；同属 `adradar` 不等于已经完成访问隔离，请在同步前确认可访问人员名单。对于无法隔离的访问控制，请不要上传 R50。
 
 ## 2. 本机准备 R50 私有文件
 
@@ -72,7 +72,7 @@ bash "$BUNDLE/scripts/v03_r50_hf_cpu46_submit.sh" sync
 R50_CPU46_STAGE_LOCAL_SHA256_PASS__NO_JOB
 R50_REMOTE_STAGE_6_OF_6_BYTES_MATCH__NO_JOB
 R50_RUN_KEY=r50-cpu46-....
-R50_SYNC_READY__NO_HF_JOB=hf://buckets/greenkeedle/storyforge-r50-audit/preflight/r50/cpu46/runs/.../
+R50_SYNC_READY__NO_HF_JOB=hf://buckets/adradar/storyforge-r50-audit/preflight/r50/cpu46/runs/.../
 R50_NO_PAID_CPU_JOB_EXECUTED
 ```
 
@@ -96,7 +96,7 @@ Worker 在远端依次：验证完整阶段清单与 46 条真实输入 → 安�
 若 CLI 超时或提交错误但无法证明创建失败，**不要重复 submit 同一 RUN_KEY**。先查看：
 
 ```bash
-hf jobs ls -a --namespace greenkeedle
+hf jobs ls -a --namespace adradar
 # 用结果里的实际 ID，而非占位符
 hf jobs logs JOB_ID
 ```

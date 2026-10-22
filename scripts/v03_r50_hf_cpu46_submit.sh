@@ -8,10 +8,14 @@ ACTION="${1:-}"
 [[ "$ACTION" == sync || "$ACTION" == submit || "$ACTION" == verify ]] || {
   echo 'Usage: bash scripts/v03_r50_hf_cpu46_submit.sh sync | submit RUN_KEY | verify RUN_KEY' >&2; exit 2;
 }
-BUCKET_ID="${STORYFORGE_R50_HF_BUCKET_ID:-greenkeedle/storyforge-r50-audit}"
-JOB_NAMESPACE="${STORYFORGE_R50_HF_NAMESPACE:-greenkeedle}"
+BUCKET_ID="${STORYFORGE_R50_HF_BUCKET_ID:-adradar/storyforge-r50-audit}"
+JOB_NAMESPACE="${STORYFORGE_R50_HF_NAMESPACE:-adradar}"
 [[ "$BUCKET_ID" =~ ^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$ ]] || { echo R50_HF_BUCKET_ID_INVALID >&2; exit 2; }
 [[ "$JOB_NAMESPACE" =~ ^[A-Za-z0-9._-]+$ ]] || { echo R50_HF_NAMESPACE_INVALID >&2; exit 2; }
+# R50 audit Jobs and their Bucket MUST remain under the existing adradar organization.
+[[ "$JOB_NAMESPACE" == adradar && "$BUCKET_ID" == adradar/* ]] || {
+  echo R50_ORG_NAMESPACE_MISMATCH__REQUIRE_ADRADAR >&2; exit 2;
+}
 # Strictly forbid sharing R50 with historical training storage and the auto jobs-artifacts bucket.
 [[ "$BUCKET_ID" != adradar/storyforge-training && "$BUCKET_ID" != */jobs-artifacts ]] || {
   echo R50_PROTECTED_BUCKET_MUST_BE_SEPARATE >&2; exit 2;

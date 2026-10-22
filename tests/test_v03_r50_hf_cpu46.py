@@ -83,17 +83,22 @@ class SafeStage(unittest.TestCase):
 
     def test_09_good_worker_run_and_verify_with_mocked_tokenizer(self):
         root=self.do_stage()
-        tok=self.root/'tok';tok.mkdir()
+        tok=self.root/'snapshots'/r50.REV;tok.mkdir(parents=True)
         (tok/'tokenizer.json').write_text('{}')
         (tok/'tokenizer_config.json').write_text('{}')
-        fake_hub=types.SimpleNamespace(snapshot_download=lambda **kwargs:str(tok))
+        def fake_snapshot_download(**kwargs):
+            self.assertEqual(kwargs['revision'],r50.REV)
+            self.assertEqual(kwargs['local_dir'],str(tok))
+            self.assertNotIn('*.safetensors',kwargs['allow_patterns'])
+            return kwargs['local_dir']
+        fake_hub=types.SimpleNamespace(snapshot_download=fake_snapshot_download)
         fake_trans=types.SimpleNamespace(__version__='5.16.1')
         key='r50-cpu46-20261022T220000Z-123456'
         dest=self.root/'results'
         def fake_run(command, **kwargs):
             out=Path(command[command.index('--output')+1]);out.write_text('{"cases":46,"synthetic":true}')
             return types.SimpleNamespace(returncode=0,stdout='',stderr='')
-        with patch.dict(sys.modules,{'huggingface_hub':fake_hub,'transformers':fake_trans}),patch.object(r50.subprocess,'run',fake_run),patch.dict(os.environ,{'CUDA_VISIBLE_DEVICES':'','JOB_ID':'TEST123'},clear=False):
+        with patch.dict(sys.modules,{'huggingface_hub':fake_hub,'transformers':fake_trans}),patch.object(r50,'TOKENIZER_CACHE_ROOT',self.root/'snapshots'),patch.object(r50.subprocess,'run',fake_run),patch.dict(os.environ,{'CUDA_VISIBLE_DEVICES':'','JOB_ID':'TEST123'},clear=False):
             r50.cpu_run(types.SimpleNamespace(stage=str(root),run_key=key,output_dir=str(dest)))
         receipt=json.loads((dest/r50.RECEIPT).read_text())
         self.assertFalse(receipt['full_46_token_length_and_role_checks_independently_verified'])
@@ -107,6 +112,17 @@ class SafeStage(unittest.TestCase):
         (dest/r50.REPORT).write_text('{"tampered":true}')
         with self.assertRaises(r50.GateError):
             r50.verify(types.SimpleNamespace(stage=str(root),receipt=str(dest/r50.RECEIPT),report=str(dest/r50.REPORT),private_log=str(dest/r50.PRIVATE_LOG),run_key=key,output=str(self.root/'another.json')))
+
+    def test_09b_tokenizer_dir_without_pinned_revision_is_rejected(self):
+        root=self.do_stage()
+        flat=self.root/'flat-tokenizer';flat.mkdir()
+        (flat/'tokenizer.json').write_text('{}')
+        (flat/'tokenizer_config.json').write_text('{}')
+        fake_hub=types.SimpleNamespace(snapshot_download=lambda **kwargs:str(flat))
+        fake_trans=types.SimpleNamespace(__version__='5.16.1')
+        with patch.dict(sys.modules,{'huggingface_hub':fake_hub,'transformers':fake_trans}),patch.object(r50,'TOKENIZER_CACHE_ROOT',self.root/'snapshots'),patch.dict(os.environ,{'CUDA_VISIBLE_DEVICES':''},clear=False):
+            with self.assertRaisesRegex(r50.GateError,'TOKENIZER_SNAPSHOT_REVISION_PATH_MISMATCH'):
+                r50.cpu_run(types.SimpleNamespace(stage=str(root),run_key='r50-cpu46-20261022T220000Z-123456',output_dir=str(self.root/'flat-results')))
 
     def test_10_worker_forbids_gpu_env(self):
         self.do_stage()
@@ -123,7 +139,7 @@ class SafeStage(unittest.TestCase):
     def test_13_submit_without_explicit_billing_consent_is_blocked(self):
         fake_bin=self.root/'bin';fake_bin.mkdir()
         fake_hf=fake_bin/'hf'
-        fake_hf.write_text('#!/bin/sh\nif [ "$1" = auth ]; then exit 0; fi\nif [ "$1" = buckets ] && [ "$2" = info ]; then echo \'{"id":"greenkeedle/storyforge-r50-audit","private":true}\'; exit 0; fi\nexit 4\n')
+        fake_hf.write_text('#!/bin/sh\nif [ "$1" = auth ]; then exit 0; fi\nif [ "$1" = buckets ] && [ "$2" = info ]; then echo \'{"id":"adradar/storyforge-r50-audit","private":true}\'; exit 0; fi\nexit 4\n')
         fake_hf.chmod(0o755)
         env={**os.environ,'PATH':str(fake_bin)+':'+os.environ['PATH']}
         env.pop('STORYFORGE_ALLOW_PAID_CPU',None)
@@ -135,12 +151,36 @@ class SafeStage(unittest.TestCase):
     def test_14_private_bucket_requirement_blocks_sync(self):
         fake_bin=self.root/'bin';fake_bin.mkdir()
         fake_hf=fake_bin/'hf'
-        fake_hf.write_text('#!/bin/sh\nif [ "$1" = auth ]; then exit 0; fi\nif [ "$1" = buckets ] && [ "$2" = info ]; then echo \'{"id":"greenkeedle/storyforge-r50-audit","private":false}\'; exit 0; fi\nexit 4\n')
+        fake_hf.write_text('#!/bin/sh\nif [ "$1" = auth ]; then exit 0; fi\nif [ "$1" = buckets ] && [ "$2" = info ]; then echo \'{"id":"adradar/storyforge-r50-audit","private":false}\'; exit 0; fi\nexit 4\n')
         fake_hf.chmod(0o755)
         env={**os.environ,'PATH':str(fake_bin)+':'+os.environ['PATH']}
         proc=subprocess.run(['bash',str(THIS/'scripts/v03_r50_hf_cpu46_submit.sh'),'sync'],env=env,capture_output=True,text=True)
         self.assertNotEqual(proc.returncode,0)
         self.assertIn('R50_BUCKET_NOT_CONFIRMED_PRIVATE__HOLD',proc.stderr)
+
+    def test_15_adradar_namespace_pinned_for_jobs_and_bucket(self):
+        text=(THIS/'scripts/v03_r50_hf_cpu46_submit.sh').read_text()
+        self.assertIn('STORYFORGE_R50_HF_BUCKET_ID:-adradar/storyforge-r50-audit',text)
+        self.assertIn('STORYFORGE_R50_HF_NAMESPACE:-adradar',text)
+        self.assertIn('"$JOB_NAMESPACE" == adradar',text)
+        self.assertIn('"$BUCKET_ID" == adradar/*',text)
+        self.assertIn('--namespace "$JOB_NAMESPACE"',text)
+
+    def test_16_cross_namespace_override_refused(self):
+        env={**os.environ, 'STORYFORGE_R50_HF_NAMESPACE':'greenkeedle',
+             'STORYFORGE_R50_HF_BUCKET_ID':'adradar/storyforge-r50-audit'}
+        proc=subprocess.run(['bash',str(THIS/'scripts/v03_r50_hf_cpu46_submit.sh'),'sync'],
+                            env=env,capture_output=True,text=True)
+        self.assertEqual(proc.returncode,2)
+        self.assertIn('R50_ORG_NAMESPACE_MISMATCH',proc.stderr)
+
+    def test_17_training_bucket_override_refused(self):
+        env={**os.environ, 'STORYFORGE_R50_HF_NAMESPACE':'adradar',
+             'STORYFORGE_R50_HF_BUCKET_ID':'adradar/storyforge-training'}
+        proc=subprocess.run(['bash',str(THIS/'scripts/v03_r50_hf_cpu46_submit.sh'),'sync'],
+                            env=env,capture_output=True,text=True)
+        self.assertEqual(proc.returncode,2)
+        self.assertIn('R50_PROTECTED_BUCKET_MUST_BE_SEPARATE',proc.stderr)
 
     def test_12_verify_never_opens_private_text_in_stdout(self):
         self.assertNotIn('print(report)',self.audit.read_text())
