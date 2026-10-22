@@ -28,6 +28,11 @@
       "sha256": "c96b31eb6ef216f36ff02955170ffe6b98a10ca1abd6b9e4753ab82fb7f102ad"
     },
     {
+      "path": "tools/r56/scripts/r56_inventory_originals.py",
+      "bytes": 6168,
+      "sha256": "3b752b24169eb862edd87bce303eb04a54dc834d737bddf94160b89fb6c74302"
+    },
+    {
       "path": "tools/r56/scripts/r56_owner_mac_run.sh",
       "bytes": 4129,
       "sha256": "5993d2e95729f1ff3636bb1f9f1215abbb387612b8c067adf2b7e131d736c770"
@@ -73,9 +78,15 @@
       "sha256": "d6c7018a1b48ec13fd6c56341501c5fad833ba83683ff763d30ddb512155e2cd"
     },
     {
+      "path": "tools/r56/tests/test_r56_inventory_originals.py",
+      "bytes": 2466,
+      "sha256": "14c28cd82f1c45b05dd07be8ba41b4f0cdd9843396f271b49dbfe4ac1d7b9aa9"
+    },
+    {
       "path": "tools/r56/tests/test_r56_stage2.py",
       "bytes": 4519,
       "sha256": "761e4e6e4e41a07f6dbf18b326f7b8bf44c8d28e580753f271ed4b8a8880b2f0"
     }
-  ]
+  ],
+  "stage6_note": "Stage6 original source inventory CPU-only, 10 synthetic tests passed; no evaluation admission."
 }
