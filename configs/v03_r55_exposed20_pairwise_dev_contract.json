@@ -1,0 +1,79 @@
+{
+  "schema": "storyforge-r55-exposed20-pairwise-dev-preregistration-v1",
+  "date": "2026-10-22",
+  "state": "PRE_REGISTERED_NO_GPU_INFERENCE__NO_R50",
+  "source": {
+    "exposed_unique_cases": 20,
+    "old_rounds": [
+      "R47",
+      "R48"
+    ],
+    "r47_and_r48_same_20": true,
+    "fresh_independent_heldout": false,
+    "worlds": 2,
+    "prompts_path": "evaluations/v0.1/test/prompts.jsonl",
+    "prompts_git_blob_sha1": "ac301a61d4130369a83dc67ac02aa2d8dda9e82b",
+    "manifest_path": "evaluations/v0.1/test/manifest.json",
+    "manifest_git_blob_sha1": "f4e39196c6aa0a87b095d7de5cae4acd8b2fca63",
+    "r47_run_key": "r47-20261014T091647Z-637890"
+  },
+  "arms": {
+    "baseline": {
+      "id": "r46-v02",
+      "adapter_sha256": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b",
+      "source": "existing_exact_20_R47_v02_results"
+    },
+    "candidate": {
+      "id": "r54-v03",
+      "training_run_key": "r54-v2-20261021T161818Z-507469",
+      "checkpoint_step": 16,
+      "adapter_sha256": "121ec8f70e66089c7c891a7052c6085de93824776aaa9a25295f612b269b60c0",
+      "r55_20_responses_status": "NOT_GENERATED"
+    }
+  },
+  "inference": {
+    "model": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "temperature": 0,
+    "seed": 42,
+    "data_seed": 42,
+    "max_new_tokens": 1536,
+    "val_dataset_shuffle": false,
+    "exact_same_full_prompt": true,
+    "gpu_authorized": false
+  },
+  "review": {
+    "mode": "DIRECT_PAIRWISE",
+    "case_count": 20,
+    "reviewers": 3,
+    "labels": [
+      "LEFT",
+      "RIGHT",
+      "TIE"
+    ],
+    "score_dimensions": [
+      "剧情连续性",
+      "角色一致性",
+      "指令遵循",
+      "文学表现力",
+      "互动推进",
+      "玩家自主权"
+    ],
+    "score_scale": [
+      1,
+      5
+    ],
+    "severe_flags": [
+      "player_agency",
+      "verbatim_hard_banned_phrase_or_world_fact"
+    ],
+    "single_pairwise_mapping_per_case": true,
+    "freeze_all_three_reviews_before_unblind": true,
+    "primary_stat": "per-case reviewer majority; report tie and 1-1-1 splits separately",
+    "not_independent_test": true
+  },
+  "promotion": {
+    "automatically_permitted": false,
+    "r50_sealed": true
+  }
+}
