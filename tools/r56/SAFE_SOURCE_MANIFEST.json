@@ -43,6 +43,11 @@
       "sha256": "7d2fcc9af330a2b63896a6f5101bc1a61ead148d5f448b09e56a944d1ac9920a"
     },
     {
+      "path": "tools/r56/scripts/r56_scope_triage_gate.py",
+      "bytes": 5575,
+      "sha256": "1a4cf505109d4f6780ba1ca7dcbf52529a2214a2f09149043ade7e4b3a738a04"
+    },
+    {
       "path": "tools/r56/scripts/r56_stage5_validate_review.py",
       "bytes": 3301,
       "sha256": "f71ad1941ee293f796bb8584f3b587435860d06407a700796ff2b98cd78cc381"
@@ -81,6 +86,11 @@
       "path": "tools/r56/tests/test_r56_inventory_originals.py",
       "bytes": 2466,
       "sha256": "14c28cd82f1c45b05dd07be8ba41b4f0cdd9843396f271b49dbfe4ac1d7b9aa9"
+    },
+    {
+      "path": "tools/r56/tests/test_r56_scope_triage_gate.py",
+      "bytes": 3125,
+      "sha256": "2985442e4d226db0ceb1df9a82ab4638973e020600f8825f7c3cd84fc958e615"
     },
     {
       "path": "tools/r56/tests/test_r56_stage2.py",
