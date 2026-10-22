@@ -26,7 +26,7 @@
   "r45_train_val_original_sha_check": "REPORTED_PASS_49_TRAIN_15_VALIDATION",
   "r45_to_46_visible_context_lexical_screen": "REPORTED_ZERO_40_AND_64_CODEPOINT_MATCHES__PARTIAL_SCOPE",
   "r45_world_uuid_direct_conflicts": 0,
-  "complete_five_originals_r45_exact_120_window": "NOT_VERIFIED_PENDING_MAC",
+  "complete_five_originals_r45_exact_120_window": "OWNER_MAC_REPORTED_PASS_0_EXACT_UUID_0_LONG_MESSAGE_0_ALL_OFFSET_120_WINDOW",
   "older_development_semantic_exposure": "PENDING",
   "cross_world_alias_and_temporal_semantics": "HOLD",
   "same_event_context_overlap_pairs_reported": 4,
@@ -48,5 +48,8 @@
     "library:R50_46_COORDINATOR_AUDIT_REPORT_20261016.md",
     "library:R50_46_FOLLOWUP_REPORT_20261016.md",
     "library:R50_46_DEEP_TRIAGE_STATE_20261016.json"
-  ]
+  ],
+  "full_source_gate_owner_mac_receipt": "R50_R45_FULL_SOURCE_EXACT_SCREEN_PASS__SEMANTIC_HOLD__NO_FINAL_SEAL",
+  "full_source_gate_receipt_bytes_independently_read": false,
+  "full_source_gate_new_evidence": "docs/evidence/V03_R50_OWNER_R45_FULL_SOURCE_GATE_COUNTS_ONLY_20261022.md"
 }
