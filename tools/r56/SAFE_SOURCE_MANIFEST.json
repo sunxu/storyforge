@@ -1,0 +1,71 @@
+{
+  "schema": "storyforge-r56-git-first-safe-source-manifest-v1",
+  "gate": "TOOLS_TESTS_ONLY__NO_PRIVATE_CASE_DATA__NO_FORMAL_ADMISSION",
+  "source_files": [
+    {
+      "path": "tools/r56/.gitignore",
+      "bytes": 210,
+      "sha256": "a2ecfc5a243496e1a3ef8b9c30a694cd24d20eb398eaa04281eebf82c6942aa7"
+    },
+    {
+      "path": "tools/r56/README_GIT_FIRST_CN.md",
+      "bytes": 2254,
+      "sha256": "f3c77e1c3500627b884be2b2fbd0f35a57d058f0234e54cafaf23b24bb012e70"
+    },
+    {
+      "path": "tools/r56/scripts/r56_deep_preflight.py",
+      "bytes": 11369,
+      "sha256": "1724b50ffc1ac402beb2b008a256c17b9e02004296218f3259e0e3825c7ec3f4"
+    },
+    {
+      "path": "tools/r56/scripts/r56_discover_new_worlds.py",
+      "bytes": 6763,
+      "sha256": "ffbb5bdc893b81ae7c8defb532417a79bb5f0c932503869dcbd8a0c00853fecd"
+    },
+    {
+      "path": "tools/r56/scripts/r56_owner_mac_run.sh",
+      "bytes": 4129,
+      "sha256": "5993d2e95729f1ff3636bb1f9f1215abbb387612b8c067adf2b7e131d736c770"
+    },
+    {
+      "path": "tools/r56/scripts/r56_prepare_content_review.py",
+      "bytes": 10050,
+      "sha256": "7d2fcc9af330a2b63896a6f5101bc1a61ead148d5f448b09e56a944d1ac9920a"
+    },
+    {
+      "path": "tools/r56/scripts/r56_stage5_validate_review.py",
+      "bytes": 3301,
+      "sha256": "f71ad1941ee293f796bb8584f3b587435860d06407a700796ff2b98cd78cc381"
+    },
+    {
+      "path": "tools/r56/scripts/r56_verify_owner_receipt.py",
+      "bytes": 10796,
+      "sha256": "33b90997dde9bdbe0bf98555406315c5809f8e1723b8f614cb08f9119ed10b32"
+    },
+    {
+      "path": "tools/r56/scripts/validate_stage2_content_decisions.py",
+      "bytes": 5980,
+      "sha256": "570e83de9642906b065ecd11bc1d0a614a1719ad14bca4492fc8e7fe27c7bb57"
+    },
+    {
+      "path": "tools/r56/tests/test_owner_receipt.py",
+      "bytes": 3973,
+      "sha256": "c579640b31a6936f8eaa3028faa46f73d9a3b7b2cf4c18d4934308179c98f02b"
+    },
+    {
+      "path": "tools/r56/tests/test_r56_deep_preflight.py",
+      "bytes": 3165,
+      "sha256": "a9637eb38ecc370be562756d07ce341de4464241803d8c60b8fa21ade9c07f84"
+    },
+    {
+      "path": "tools/r56/tests/test_r56_discovery.py",
+      "bytes": 1621,
+      "sha256": "aa0ba7d8afb7ac6baa5b3cddc358124823764f2283b912f2e3746bac94ccf597"
+    },
+    {
+      "path": "tools/r56/tests/test_r56_stage2.py",
+      "bytes": 4519,
+      "sha256": "761e4e6e4e41a07f6dbf18b326f7b8bf44c8d28e580753f271ed4b8a8880b2f0"
+    }
+  ]
+}

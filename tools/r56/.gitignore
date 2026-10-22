@@ -1,0 +1,15 @@
+# Local execution outputs, secret source and reviewer decisions
+__pycache__/
+*.pyc
+private/
+local/
+outputs/
+artifacts/
+*.key
+*.agekey
+*.identity
+*PRIVATE*.json
+*PRIVATE*.jsonl
+*PRIVATE*.csv
+*PRIVATE*.zip
+R50_*
