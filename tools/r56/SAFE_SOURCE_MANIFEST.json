@@ -23,6 +23,11 @@
       "sha256": "ffbb5bdc893b81ae7c8defb532417a79bb5f0c932503869dcbd8a0c00853fecd"
     },
     {
+      "path": "tools/r56/scripts/r56_encrypt_private_audit.sh",
+      "bytes": 2886,
+      "sha256": "c96b31eb6ef216f36ff02955170ffe6b98a10ca1abd6b9e4753ab82fb7f102ad"
+    },
+    {
       "path": "tools/r56/scripts/r56_owner_mac_run.sh",
       "bytes": 4129,
       "sha256": "5993d2e95729f1ff3636bb1f9f1215abbb387612b8c067adf2b7e131d736c770"
@@ -61,6 +66,11 @@
       "path": "tools/r56/tests/test_r56_discovery.py",
       "bytes": 1621,
       "sha256": "aa0ba7d8afb7ac6baa5b3cddc358124823764f2283b912f2e3746bac94ccf597"
+    },
+    {
+      "path": "tools/r56/tests/test_r56_encrypt_script.py",
+      "bytes": 1171,
+      "sha256": "d6c7018a1b48ec13fd6c56341501c5fad833ba83683ff763d30ddb512155e2cd"
     },
     {
       "path": "tools/r56/tests/test_r56_stage2.py",
