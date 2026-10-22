@@ -1,0 +1,52 @@
+{
+  "schema": "storyforge-r50-46-preseal-gate-delta-count-only-v1",
+  "assessed_at": "2026-10-22",
+  "evidence_as_of": "2026-10-16",
+  "input_scope": "sanitized R50 real source replay GitHub receipt plus historical owner R50_46 coordinator/followup count-only reports; no sealed prompt/provenance text accessed",
+  "original_immutable_candidates": 50,
+  "ai_content_reviewed_pass": 46,
+  "owner_excluded_candidates": 4,
+  "frozen_derived_preseal_candidates": 46,
+  "preseal_world_counts": {
+    "16": 9,
+    "17": 10,
+    "18": 9,
+    "19": 8,
+    "20": 10
+  },
+  "derived_visible_history_messages": 364,
+  "history_ends_user_count": 12,
+  "original_source_reference_replay": {
+    "cases": 50,
+    "history_records": 392,
+    "matched": 392,
+    "card_interval_cases": 50,
+    "status": "PASS_SOURCE_BOUNDED_ONLY"
+  },
+  "r45_train_val_original_sha_check": "REPORTED_PASS_49_TRAIN_15_VALIDATION",
+  "r45_to_46_visible_context_lexical_screen": "REPORTED_ZERO_40_AND_64_CODEPOINT_MATCHES__PARTIAL_SCOPE",
+  "r45_world_uuid_direct_conflicts": 0,
+  "complete_five_originals_r45_exact_120_window": "NOT_VERIFIED_PENDING_MAC",
+  "older_development_semantic_exposure": "PENDING",
+  "cross_world_alias_and_temporal_semantics": "HOLD",
+  "same_event_context_overlap_pairs_reported": 4,
+  "owner_content_review_policy": "AI_ONLY_PER_OWNER__NOT_INDEPENDENT_HUMAN",
+  "true_qwen_tokenizer_max_length": "NOT_RUN",
+  "trailing_user_role_merge_contract": "NOT_APPROVED",
+  "four_model_prompt_parity": "NOT_RUN",
+  "r49_r56_preregistration": "NOT_APPROVED",
+  "final_seal": "NOT_PERFORMED",
+  "official_heldout_test_admitted": 0,
+  "private_R50_prompts_read_by_this_gate_audit": false,
+  "r50_data_edits": false,
+  "new_paid_gpu": false,
+  "inference_started": false,
+  "model_promoted": false,
+  "policy": "HOLD__NO_FINAL_SEAL__NO_MODEL_USE",
+  "provenance_sources": [
+    "github:audit/r49-r50-source-intake-20261015:docs/evidence/V03_R50_REAL_SOURCE_REPLAY_20261016.json",
+    "library:R50_46_COORDINATOR_AUDIT_REPORT_20261016.md",
+    "library:R50_46_FOLLOWUP_REPORT_20261016.md",
+    "library:R50_46_DEEP_TRIAGE_STATE_20261016.json"
+  ]
+}
