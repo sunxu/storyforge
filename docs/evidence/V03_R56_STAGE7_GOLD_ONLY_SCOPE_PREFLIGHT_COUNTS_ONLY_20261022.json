@@ -1,0 +1,16 @@
+{
+  "schema": "storyforge-r56-stage7-source-scope-preflight-counts-v1",
+  "source_world_rows": 5,
+  "gold_uuid_overlap": 5,
+  "historical_uuid_overlap": 0,
+  "potential_new_uuid_only": 0,
+  "old_gold_source_root_observed": true,
+  "formal_world_admitted": 0,
+  "official_test_admitted": 0,
+  "r50_source_opened": false,
+  "gpu_job_started": false,
+  "training_performed": false,
+  "next_scope_action": "LOCATE_NON_GOLD_NON_R50_RAW_EXPORT_ROOT",
+  "status": "GOLD_ONLY_SOURCE_SCOPE__NO_NEW_WORLDS__STOP_REPEAT",
+  "explanation": "Metadata gate only: source files were not opened. Exact UUID membership does not certify semantic isolation or unexposed new evaluation questions."
+}
