@@ -1,0 +1,180 @@
+{
+  "schema": "storyforge-r56-four-model-plus-original-gold-eval-contract-DRAFT-v1",
+  "prepared": "2026-10-23",
+  "status": "DRAFT__OWNER_APPROVAL_PENDING__NO_MODEL_INFERENCE__NO_FINAL_SEAL",
+  "scope_note": "Four models plus a non-model original reference response when authenticated exact prompt match exists",
+  "decision_link": "docs/evidence/V03_R55_CHECKPOINT16_CANDIDATE_GO_NO_GO_20261023.md",
+  "protocol_link": "docs/plans/V03_R56_FOUR_MODELS_PLUS_ORIGINAL_GOLD_DRAFT_20261023.md",
+  "r55_candidate_decision": {
+    "adapter": "v0.3-A R54 checkpoint-16",
+    "protected_r50_permission": "NO_GO_NOW",
+    "engineering_candidate_retain": true,
+    "model_promoted": false,
+    "development_reanalysis_permitted": true,
+    "r46_control": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b",
+    "r54_candidate_sha256": "121ec8f70e66089c7c891a7052c6085de93824776aaa9a25295f612b269b60c0",
+    "basis": {
+      "cases": 20,
+      "worlds": 2,
+      "reviewers": 3,
+      "case_wins": {
+        "r46": 8,
+        "r54": 12
+      },
+      "mean_six": {
+        "r46": 3.397222222222222,
+        "r54": 3.275
+      },
+      "agency_flags_reviewer_case": {
+        "r46": 7,
+        "r54": 9
+      },
+      "all_six_dimension_means_worse_for_r54": true,
+      "severe_flags_unique_cases_adjudicated": false
+    }
+  },
+  "arms": [
+    {
+      "label": "BASE",
+      "type": "model",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_sha256": null,
+      "runtime_load_for_r56_verified": false
+    },
+    {
+      "label": "V01",
+      "type": "model",
+      "base_revision": "TO_VERIFY",
+      "adapter_sha256": "621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478",
+      "runtime_load_for_r56_verified": false
+    },
+    {
+      "label": "V02",
+      "type": "model",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_sha256": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b",
+      "runtime_load_for_r56_verified": false
+    },
+    {
+      "label": "V03_A",
+      "type": "model",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_sha256": "121ec8f70e66089c7c891a7052c6085de93824776aaa9a25295f612b269b60c0",
+      "runtime_load_for_r56_verified": false
+    },
+    {
+      "label": "ORIGINAL_GOLD",
+      "type": "historical_reference_not_model",
+      "requires_exact_same_prompt_and_cutoff": true,
+      "source_match_verified_for_r50": false,
+      "is_perfect_answer": false
+    }
+  ],
+  "r55_dev_gold_track": {
+    "cases_expected": 20,
+    "previously_exposed_worlds": 2,
+    "new_heldout": false,
+    "gold_source": "R48 original v0.1 test response per exact old 20 prompt",
+    "r48_gold_same_case_alignment_reported": true,
+    "all_five_response_files_equal_input_verified": false,
+    "cross_run_scores_may_not_be_pooled": true,
+    "requires_new_independent_blind_five_way_review": true,
+    "requires_separate_frozen_case_source_reply_hashes": true,
+    "gpu_job_needed_for_existing_outputs": false
+  },
+  "r50_protected_track": {
+    "source_count": 46,
+    "source_worlds": 5,
+    "world_case_counts": {
+      "16": 9,
+      "17": 10,
+      "18": 9,
+      "19": 8,
+      "20": 10
+    },
+    "frozen_candidate_sha256": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2",
+    "system_sha256": "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83",
+    "historical_messages": 364,
+    "trailing_user_history": 12,
+    "prompt_only_no_gold_target_in_source_schema": true,
+    "gold_alignment_rule": "ORIGINAL_GOLD_EXACT_MATCH only if exact same user_input, identical historical context and target-time constraints, authenticated original assistant source reply",
+    "gold_availability": "NOT_ESTABLISHED",
+    "gold195_substitution_for_new_prompts": "FORBIDDEN",
+    "gold_missing_case_policy": "FOUR_MODEL_EVALUATION_ONLY_AND_REPORT_GOLD_COVERAGE_SEPARATELY",
+    "optional_new_reference": "NEW_HUMAN_REFERENCE__NOT_ORIGINAL_GOLD__INDEPENDENT_BLIND_BEFORE_MODEL_OUTPUT",
+    "official_heldout_admitted": 0,
+    "final_seal": false,
+    "semantic_world_independence": "OWNER_ATTESTED__NOT_UNCONDITIONAL_TECHNICAL_CERTIFICATION"
+  },
+  "draft_common_input": {
+    "history_exact_preserve": true,
+    "append_new_user": true,
+    "consecutive_user_merge": false,
+    "thinking_enabled": false,
+    "truncation_allowed": false,
+    "max_context_tokens": 16384,
+    "reserved_output_tokens": 1536,
+    "draft_max_input_tokens": 14848,
+    "qwen_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "transformers_version": "5.16.1",
+    "tokenizer_json_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "tokenizer_config_sha256": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27",
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "max_actual_input_tokens_owner_verified": 8757,
+    "candidate_messages_and_input_ids_sha256_4arm_equal_verified": false,
+    "role_interpretation_owner_approved": false
+  },
+  "draft_generation": {
+    "do_sample": false,
+    "temperature": "RUNTIME_COMPATIBLE_POLICY_TO_FREEZE",
+    "seed": 42,
+    "max_new_tokens": 1536,
+    "eos_stop_policy": "UNFROZEN",
+    "same_per_arm_effective_runtime_args_verified": false
+  },
+  "blind_eval": {
+    "reviewer_count": 3,
+    "randomize_each_case_independently": true,
+    "anonymous_gold_and_model_identity": true,
+    "do_not_show_gold_status_to_reviewers": true,
+    "six_axes": [
+      "剧情连续性",
+      "角色一致性",
+      "指令遵循",
+      "文学表现力",
+      "互动推进",
+      "玩家自主权"
+    ],
+    "review_each_response_independently": true,
+    "collect_five_way_ranking_if_gold_exact": true,
+    "collect_four_model_ranking_separately": true,
+    "collect_independently_blinded_v03_v02_direct_pairwise": true,
+    "do_not_derive_direct_pairwise_from_rankings": true,
+    "adjudicate_serious_case_level_errors": true,
+    "do_not_treat_reviewer_votes_as_independent_cases": true,
+    "report_gold_coverage_denominator_separately": true,
+    "world_clustered_uncertainty": true
+  },
+  "draft_promotion_gates": {
+    "owner_approved": false,
+    "direct_v03_vs_v02_nontie_case_win_fraction_strictly_above": 0.5,
+    "world_clustered_95pct_support_required": true,
+    "overall_six_axis_mean_improvement_required": true,
+    "literature_and_interactive_progression_no_decline_required": true,
+    "adjudicated_serious_player_agency_case_rate_max": 0.05,
+    "serious_agency_not_worse_than_v02": true,
+    "confirmed_banned_phrase_error_count_max": 0,
+    "gold_relative_quality_descriptive_only": true,
+    "if_inconclusive": "INCONCLUSIVE_NO_PROMOTION"
+  },
+  "no_go_hard_controls": {
+    "no_new_hf_job": true,
+    "no_gpu": true,
+    "no_model_inference": true,
+    "no_training": true,
+    "no_private_r50_text_in_git": true,
+    "no_final_heldout_seal": true,
+    "owner_paid_inference_authorization": false,
+    "model_promotion": false
+  }
+}
