@@ -1,0 +1,44 @@
+name: R55 Gold5 archived source integrity
+
+on:
+  push:
+    branches:
+      - 'archive/r55-gold5-tools-*'
+    paths:
+      - 'scripts/v03_r55_gold5_*.py'
+      - 'tests/test_v03_r55_gold5_*.py'
+      - 'docs/R55_GOLD5_*.md'
+      - 'docs/evidence/R55_GOLD5_ARCHIVED_SOURCE_MANIFEST_*.json'
+      - 'tools/r55-gold5-subtypes/**'
+      - 'tools/r55-gold5-archive/**'
+      - '.github/workflows/r55-gold5-archive.yml'
+  pull_request:
+    paths:
+      - 'scripts/v03_r55_gold5_*.py'
+      - 'tests/test_v03_r55_gold5_*.py'
+      - 'docs/R55_GOLD5_*.md'
+      - 'docs/evidence/R55_GOLD5_ARCHIVED_SOURCE_MANIFEST_*.json'
+      - 'tools/r55-gold5-subtypes/**'
+      - 'tools/r55-gold5-archive/**'
+      - '.github/workflows/r55-gold5-archive.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-integrity-and-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Verify SHA-frozen 30-file archive
+        run: python3 tools/r55-gold5-archive/check_archive.py
+      - name: Run R55 main synthetic tests (176)
+        run: python3 -m unittest discover -s tests -p 'test_v03_r55_gold5*.py' -q
+      - name: Run subtype synthetic tests (15)
+        run: cd tools/r55-gold5-subtypes && python3 -m unittest discover -s . -p 'test_*.py' -q
