@@ -209,6 +209,8 @@ def synthetic_gold108_rows():
         target = f"synthetic-assistant-{n}"
         meta = (
             {"story_id": "fictional-world", "target_sha256": sha(target.encode())}
+            if n < 90 else
+            {"story_id": "fictional-world", "target_sha256_utf8": sha(target.encode())}
             if n < 105 else
             {"source_story_id": "fictional-world", "target_content_sha256": sha(target.encode())}
         )
@@ -240,12 +242,28 @@ class TestGold108MixedMetadata(unittest.TestCase):
             108,
         )
 
-    def test_mixed_105_plus_3_all_resolve_without_any_raw_text_output(self):
+    def test_mixed_90_15_3_all_resolve_without_any_raw_text_output(self):
         output = self.scan()
         self.assertEqual(len(output), 108)
         self.assertEqual(len({x["target_sha256"] for x in output}), 108)
         self.assertEqual(len({x["world_component_token"] for x in output}), 1)
         self.assertNotIn("synthetic-player", json.dumps(output))
+
+    def test_swapping_existing_legacy_target_field_on_primary_row_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[90]["metadata"]["target_content_sha256"] = rows[90]["metadata"].pop(
+            "target_sha256_utf8"
+        )
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
+
+    def test_91_14_3_distribution_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[90]["metadata"]["target_sha256"] = rows[90]["metadata"].pop(
+            "target_sha256_utf8"
+        )
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
 
     def test_wrong_alternate_target_digest_blocks(self):
         rows = synthetic_gold108_rows()
