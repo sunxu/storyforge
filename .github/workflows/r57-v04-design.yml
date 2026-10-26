@@ -22,6 +22,10 @@ on:
       - 'tests/test_r57_gold195_safe_prescreen.py'
       - 'scripts/r57_source_index_export.py'
       - 'tests/test_r57_source_index_export.py'
+      - 'scripts/r57_trainer_exact_replay.py'
+      - 'tests/test_r57_trainer_exact_replay.py'
+      - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
   pull_request:
     paths:
       - '.github/workflows/r57-v04-design.yml'
@@ -42,6 +46,10 @@ on:
       - 'tests/test_r57_gold195_safe_prescreen.py'
       - 'scripts/r57_source_index_export.py'
       - 'tests/test_r57_source_index_export.py'
+      - 'scripts/r57_trainer_exact_replay.py'
+      - 'tests/test_r57_trainer_exact_replay.py'
+      - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
 
 permissions:
   contents: read
@@ -59,6 +67,27 @@ jobs:
           python-version: '3.13'
       - name: R57 G1-G2 private-admission and source-lineage synthetic regression
         run: python3 -m unittest discover -s tests -p 'test_r57_*.py' -v
+      - name: Verify four real Git blobs byte pins and exact SHA target overlaps (no private input)
+        run: |
+          python3 scripts/r57_trainer_exact_replay.py --repo-root . --mode draft > "${RUNNER_TEMP}/r57_four_source_safe.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads((Path(os.environ['RUNNER_TEMP']) / 'r57_four_source_safe.json').read_text())
+          expected = {"GOLD87": 87, "GOLD108": 108, "V01_TRAIN": 65, "V01_VALIDATION": 15}
+          assert data['source_row_counts'] == expected
+          assert data['original_file_byte_pins_checked_by_cli'] is True
+          assert data['gold_distinct_target_count'] == 195
+          assert all(p['target_exact'] == 0 for p in data['exact_pairwise'])
+          assert all(p['role_content_full_exact'] == 0 for p in data['exact_pairwise'])
+          assert all(p['role_content_history_exact'] == 0 for p in data['exact_pairwise'])
+          assert data['source_metadata_coverage']['GOLD108']['declared_target_hashes_verified'] == 108
+          assert data['source_metadata_coverage']['GOLD87']['declared_target_hashes_verified'] == 87
+          assert data['v04_admitted'] == 0 and data['protected_evaluation_accessed'] is False
+          assert data['true_world_component_isolation_verified'] is False
+          print('R57_G2_FOUR_GIT_BLOBS_BYTE_PIN_AND_EXACT_TARGET_PASS__FULL_EIGHT_SOURCE_HOLD')
+          PY
       - name: Verify count-only source inventory is marked zero-admission
         run: |
           python3 - <<'PY'
