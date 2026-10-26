@@ -2,21 +2,21 @@
 
 import json
 import os
+import pathlib
 import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 
 
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "r57_v04_admission_gate.py"
+SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "r57_v04_admission_gate.py"
 
 
 class TestR57ReadOnlyBoundaries(unittest.TestCase):
     def setUp(self):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
-        self.root = Path(tmp.name)
+        self.root = pathlib.Path(tmp.name)
         self.manifest = self.root / "synthetic_private_manifest.json"
         self.manifest.write_text(
             json.dumps({
