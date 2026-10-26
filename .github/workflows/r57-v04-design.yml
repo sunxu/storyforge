@@ -30,6 +30,7 @@ on:
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
+      - 'docs/evidence/R57_G3_GOLD195_REAL_PRESCREEN_COUNTS_SAFE_20261026.json'
   pull_request:
     paths:
       - '.github/workflows/r57-v04-design.yml'
@@ -58,6 +59,7 @@ on:
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
+      - 'docs/evidence/R57_G3_GOLD195_REAL_PRESCREEN_COUNTS_SAFE_20261026.json'
 
 permissions:
   contents: read
@@ -123,6 +125,21 @@ jobs:
           assert r['independent_quality_review_admission_done'] is False
           assert r['cross_uuid_world_alias_graph_certified'] is False
           assert r['protected_evaluation_content_accessed'] is False
+          archived = json.loads(Path(
+              'docs/evidence/R57_G3_GOLD195_REAL_PRESCREEN_COUNTS_SAFE_20261026.json'
+          ).read_text())
+          assert archived['source_rows'] == r['source_rows']
+          assert archived['gold195']['source_sha256_metadata_field_present'] == (
+              r['gold195_source_sha_field_present']
+          )
+          assert archived['gold195']['source_sha256_metadata_field_absent'] == (
+              r['gold195_source_sha_field_absent']
+          )
+          assert archived['exposure']['gold87_rows_same_story_uuid_as_v01_train'] == (
+              r['per_pool']['GOLD87']['same_uuid_as_v01_train_rows']
+          )
+          assert archived['gates']['DATASET_V04_ADMITTED_ROWS'] == 0
+          assert archived['gates']['R50_CONTENT_ACCESSED'] is False
           print('R57_G3_ACTUAL_GOLD195_PRESCREEN_COUNTS_PASS__NO_ADMISSION')
           PY
       - name: Verify count-only source inventory is marked zero-admission
