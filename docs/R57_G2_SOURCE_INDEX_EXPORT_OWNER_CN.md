@@ -24,6 +24,17 @@ Owner 受控私有目录内的历史**实际 Trainer JSONL**（不能使用编�
 | R54_TRAIN | `r54/train.jsonl` | 31 |
 | R54_VALIDATION | `r54/validation.jsonl` | 9 |
 
+**历史字节强制门禁：** R46/R54 四份私有 compiled Trainer 文件另有仓库冻结回执 SHA256，脚本会**同时**检查私有 plan 的 SHA 与下列历史常量；plan 无法覆盖这些已归档 pin：
+
+| 文件 | 已归档原始字节 SHA256 |
+|---|---|
+| R46_TRAIN（compiled） | `a028bf9fb28b12b4a3fa352d6a60281bd9e1ef5773ebfdfecc7ac80eb2cba517` |
+| R46_VALIDATION（compiled） | `cc8d647471423f4969149f8cabdea980aad15d8bd4424d9dd98da3313c639f3c` |
+| R54_TRAIN（R53 formal compiled） | `d0425c54b534307047457d05e6890b50076ad2d23ce9ab3d52f94d1a3db585a7` |
+| R54_VALIDATION（R53 formal compiled） | `b5ea4075419ce02a1340f6ece875068746918ce1d4c6d72ee2f799b3fe58754d` |
+
+来源：`docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json` 的 `compiled_*_sha256` 与 `docs/evidence/V03_R53_FORMAL_PRIVATE_31_9_RELEASE_OWNER_RECEIPT_ACCEPTED_20261021.md` 的 formal output hash。**不要把 R46 frozen source 49/15 哈希 `e744...`/`5ebb...` 当成 compiled Trainer 哈希。** R54 的历史归档来自 Owner 形式验收，并非新作业的远端独立验证；保持证据层级。
+
 **输入准备规则：**只有经 Owner 来源认证的既存历史源文件才可放入 `PRIVATE`；若缺失某组，保持 `--mode draft`，绝不可造一个“看似正确”的 49/15 或 31/9 文件。不能从封存评估、模型输出、R55 审稿件或未知 HF 作业推断目标内容。真实故事世界内容与 SHA 列表仅留本机；不提交普通 Git、PR 或聊天。
 
 ## 私有 plan 与别名映射
