@@ -45,7 +45,8 @@ HISTORICAL_TRAINER_SHA256 = {
     "R54_TRAIN": "d0425c54b534307047457d05e6890b50076ad2d23ce9ab3d52f94d1a3db585a7",
     "R54_VALIDATION": "b5ea4075419ce02a1340f6ece875068746918ce1d4c6d72ee2f799b3fe58754d",
 }
-WORLD_FIELDS = {"story_id", "source_story_id"}
+WORLD_FIELDS = {"story_id", "source_story_id", "gold108_strict_mixed"}
+TARGET_HASH_FIELDS = ("target_sha256", "target_sha256_utf8", "target_content_sha256")
 
 
 class ExportHold(ValueError):
@@ -139,7 +140,20 @@ def _rows(raw, source_id, world_field, aliases, expected):
         if not isinstance(row, dict) or not isinstance(row.get("metadata"), dict):
             raise ExportHold("row missing metadata")
         metadata = row["metadata"]
-        world = metadata.get(world_field)
+        if world_field == "gold108_strict_mixed":
+            if source_id != "GOLD108":
+                raise ExportHold("mixed metadata contract limited to frozen Gold108")
+            primary, alternate = metadata.get("story_id"), metadata.get("source_story_id")
+            if (isinstance(primary, str) and bool(primary)) == (
+                isinstance(alternate, str) and bool(alternate)
+            ):
+                raise ExportHold("ambiguous or absent Gold108 world identity")
+            world = primary if isinstance(primary, str) and primary else alternate
+            if (("target_sha256" in metadata) +
+                    ("target_content_sha256" in metadata)) != 1:
+                raise ExportHold("ambiguous or absent Gold108 target SHA field")
+        else:
+            world = metadata.get(world_field)
         if not isinstance(world, str) or not world:
             raise ExportHold("world ID absent from chosen metadata field")
         component = aliases.get(world)
@@ -148,7 +162,7 @@ def _rows(raw, source_id, world_field, aliases, expected):
         messages = _project_messages(row.get("messages"))
         target = _digest(messages[-1]["content"].encode("utf-8"))
         # Check real per-row source pins when they exist; never trust them as the only input.
-        for name in ("target_sha256", "target_sha256_utf8"):
+        for name in TARGET_HASH_FIELDS:
             if name in metadata and metadata[name] != target:
                 raise ExportHold("target digest contradicts source metadata")
         entries.append({
@@ -189,6 +203,8 @@ def build_index(plan, aliases, *, repo_root, private_root, read=_read, trusted_s
         _check(pin, {"sha256", "metadata_world_field"})
         if not _sha(pin["sha256"]) or pin["metadata_world_field"] not in WORLD_FIELDS:
             raise ExportHold("source pin/world-field invalid")
+        if (pin["metadata_world_field"] == "gold108_strict_mixed" and name != "GOLD108"):
+            raise ExportHold("strict mixed schema is Gold108-specific")
         if name in trusted_sha256 and pin["sha256"] != trusted_sha256[name]:
             raise ExportHold("source not pinned to the published compiled Trainer SHA256")
         which_root, rel, expected = SOURCE_PATHS[name]
