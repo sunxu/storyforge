@@ -14,7 +14,7 @@
 
 ```bash
 cd ~/workspace/storyforge-r55-tooling
-python3 -m unittest discover -s tests -p 'test_r57_v04_admission_gate.py' -v
+python3 -m unittest discover -s tests -p 'test_r57_v04_*.py' -v
 ```
 
 ## 创建私有空白准入清单（不是可训练集）
@@ -43,6 +43,8 @@ python3 scripts/r57_v04_admission_gate.py \
   --mode draft \
   --safe-out "$PRIVATE/R57_V04_INTAKE_SAFE_COUNT_ONLY.json"
 ```
+
+**新增的输出安全约束：** `--safe-out` 只允许创建不存在的报告；若目标文件或符号链接已经存在，将返回 HOLD，不覆盖原文件。再次审核时请使用新的版本化报告文件名，不要删除或复写旧回执。输入必须是普通文件且不得为最终符号链接；大于 64 MiB 的元数据清单拒绝读取。工具检查的仍是元数据自述，不会通过字段为真的声明自行证明来源正确性。
 
 注意：空的或仅有 HOLD 的清单在 `--mode draft` 可以通过，但**不是**准入 PASS。`--mode admission` 至少需要一条具备两位审核、Owner 批准且 Train/Val 隔离的候选，否则 fail-closed。
 
