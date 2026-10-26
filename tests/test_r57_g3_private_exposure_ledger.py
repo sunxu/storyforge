@@ -127,7 +127,7 @@ class TestG3PrivateExposureLedger(unittest.TestCase):
     def test_private_rows_halt_all_195_and_have_source_ordinals(self):
         ledger, _ = mod.prepare_ledger(self.sources)
         self.assertEqual(
-            set(row["dataset_v04_decision"] for row in ledger["rows"]),
+            {row["dataset_v04_decision"] for row in ledger["rows"]},
             {"HOLD_NOT_REVIEWED"},
         )
         self.assertEqual(
