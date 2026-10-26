@@ -201,5 +201,84 @@ class TestSourceExporter(unittest.TestCase):
             )
 
 
+
+def synthetic_gold108_rows():
+    """108 synthetic rows: 105 new-layout and 3 historical alternate-layout."""
+    result = []
+    for n in range(108):
+        target = f"synthetic-assistant-{n}"
+        meta = (
+            {"story_id": "fictional-world", "target_sha256": sha(target.encode())}
+            if n < 105 else
+            {"source_story_id": "fictional-world", "target_content_sha256": sha(target.encode())}
+        )
+        result.append({
+            "metadata": meta,
+            "messages": [
+                {"role": "user", "content": f"synthetic-player-{n}"},
+                {"role": "assistant", "content": target},
+            ],
+        })
+    return result
+
+
+def encode_rows(rows):
+    return "".join(json.dumps(x, ensure_ascii=False) + "\\n" for x in rows).encode()
+
+
+class TestGold108MixedMetadata(unittest.TestCase):
+    def setUp(self):
+        self.rows = synthetic_gold108_rows()
+        self.world_map = {"fictional-world": "C_fictional_component_0001"}
+
+    def scan(self, rows=None, name="GOLD108", policy="gold108_strict_mixed"):
+        return mod._rows(
+            encode_rows(self.rows if rows is None else rows),
+            name,
+            policy,
+            self.world_map,
+            108,
+        )
+
+    def test_mixed_105_plus_3_all_resolve_without_any_raw_text_output(self):
+        output = self.scan()
+        self.assertEqual(len(output), 108)
+        self.assertEqual(len({x["target_sha256"] for x in output}), 108)
+        self.assertEqual(len({x["world_component_token"] for x in output}), 1)
+        self.assertNotIn("synthetic-player", json.dumps(output))
+
+    def test_wrong_alternate_target_digest_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[-1]["metadata"]["target_content_sha256"] = "0" * 64
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
+
+    def test_both_world_keys_even_if_identical_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[-1]["metadata"]["story_id"] = "fictional-world"
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
+
+    def test_no_world_key_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[-1]["metadata"].pop("source_story_id")
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
+
+    def test_both_target_digest_names_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[-1]["metadata"]["target_sha256"] = rows[-1]["metadata"]["target_content_sha256"]
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
+
+    def test_mixed_schema_for_other_dataset_blocks(self):
+        with self.assertRaises(mod.ExportHold):
+            self.scan(name="GOLD87")
+
+    def test_wrong_single_world_policy_rejects_alternate_rows(self):
+        with self.assertRaises(mod.ExportHold):
+            self.scan(policy="story_id")
+
+
 if __name__ == "__main__":
     unittest.main()
