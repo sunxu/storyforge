@@ -71,7 +71,10 @@ Owner 受控私有目录内的历史**实际 Trainer JSONL**（不能使用编�
 }
 ```
 
-8 组源均使用相同的 `source_pins` 格式；仅声明实际能校验的组。`metadata_world_field` 只允许 `story_id` 或 `source_story_id`，必须按真实原始行结构与来源日志确认后显式选择，不得自动猜测。两个 SHA 均要用**文件级原始字节**计算，而不是 Git Blob SHA-1 或目标段哈希。
+8 组源均使用相同的 `source_pins` 格式；仅声明实际能校验的组。`metadata_world_field` 除 Gold108 的 `gold108_strict_mixed` 外，只允许 `story_id` 或 `source_story_id`，必须按真实原始行结构与来源日志确认后显式选择，不得自动猜测。两个 SHA 均要用**文件级原始字节**计算，而不是 Git Blob SHA-1 或目标段哈希。
+
+**Gold108 字段差异已由冻结 Git Blob 直接确认：** 105 行使用 `story_id` + `target_sha256`，3 行使用 `source_story_id` + `target_content_sha256`；3 行备用世界值均落在其余 105 行已知 UUID 集合中。对 `GOLD108` **必须**使用 `"metadata_world_field": "gold108_strict_mixed"`，而非统一 `story_id`。程序要求每一行恰好提供一种来源世界字段和一种目标摘要字段，冲突或丢失直接 HOLD；此混合选项不接受其他数据源。其他来源继续显式选择经确认的 `story_id` 或 `source_story_id`。见 `docs/evidence/R57_G2_FOUR_GIT_BLOBS_SOURCE_CROSSCHECK_SAFE_20261026.md`。
+
 
 ## 执行（Mac，标准库 CPU，不联网）
 
