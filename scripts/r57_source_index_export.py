@@ -37,6 +37,14 @@ GIT_BLOBS = {
     "V01_TRAIN": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
     "V01_VALIDATION": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
 }
+# Compiled Trainer JSONL byte pins from previously archived safe receipts.
+# R46's precompiled frozen source hashes are different and must NOT be substituted.
+HISTORICAL_TRAINER_SHA256 = {
+    "R46_TRAIN": "a028bf9fb28b12b4a3fa352d6a60281bd9e1ef5773ebfdfecc7ac80eb2cba517",
+    "R46_VALIDATION": "cc8d647471423f4969149f8cabdea980aad15d8bd4424d9dd98da3313c639f3c",
+    "R54_TRAIN": "d0425c54b534307047457d05e6890b50076ad2d23ce9ab3d52f94d1a3db585a7",
+    "R54_VALIDATION": "b5ea4075419ce02a1340f6ece875068746918ce1d4c6d72ee2f799b3fe58754d",
+}
 WORLD_FIELDS = {"story_id", "source_story_id"}
 
 
@@ -152,8 +160,10 @@ def _rows(raw, source_id, world_field, aliases, expected):
     return entries
 
 
-def build_index(plan, aliases, *, repo_root, private_root, read=_read):
-    """No writes. Return private index only after every available source validates."""
+def build_index(plan, aliases, *, repo_root, private_root, read=_read, trusted_sha256=None):
+    """No writes. Test-only injected trust set must never be exposed by the CLI."""
+    if trusted_sha256 is None:
+        trusted_sha256 = HISTORICAL_TRAINER_SHA256
     _check(plan, {"schema", "no_protected_evaluation_accessed", "training_authorized",
                   "alias_map_sha256", "source_pins"})
     if (plan["schema"] != PLAN_FORMAT or
@@ -179,6 +189,8 @@ def build_index(plan, aliases, *, repo_root, private_root, read=_read):
         _check(pin, {"sha256", "metadata_world_field"})
         if not _sha(pin["sha256"]) or pin["metadata_world_field"] not in WORLD_FIELDS:
             raise ExportHold("source pin/world-field invalid")
+        if name in trusted_sha256 and pin["sha256"] != trusted_sha256[name]:
+            raise ExportHold("source not pinned to the published compiled Trainer SHA256")
         which_root, rel, expected = SOURCE_PATHS[name]
         base = repo_root if which_root == "REPO" else private_root
         payload = read(base, rel, MAX_SOURCE_BYTES)
