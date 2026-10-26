@@ -27,6 +27,9 @@ on:
       - 'scripts/r57_gold195_g3_prescreen.py'
       - 'tests/test_r57_gold195_g3_prescreen.py'
       - 'docs/R57_G3_GOLD195_PRESCREEN_OWNER_CN.md'
+      - 'scripts/r57_g2_mac_preflight.py'
+      - 'tests/test_r57_g2_mac_preflight.py'
+      - 'docs/R57_G2_MAC_OWNER_EXECUTION_20261026_CN.md'
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
@@ -56,6 +59,9 @@ on:
       - 'scripts/r57_gold195_g3_prescreen.py'
       - 'tests/test_r57_gold195_g3_prescreen.py'
       - 'docs/R57_G3_GOLD195_PRESCREEN_OWNER_CN.md'
+      - 'scripts/r57_g2_mac_preflight.py'
+      - 'tests/test_r57_g2_mac_preflight.py'
+      - 'docs/R57_G2_MAC_OWNER_EXECUTION_20261026_CN.md'
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
@@ -77,6 +83,21 @@ jobs:
           python-version: '3.13'
       - name: R57 G1-G2 private-admission and source-lineage synthetic regression
         run: python3 -m unittest discover -s tests -p 'test_r57_*.py' -v
+      - name: Owner Mac preflight zero-write four real Git Blob byte pins
+        run: |
+          python3 scripts/r57_g2_mac_preflight.py --repo-root . --only-public > "${RUNNER_TEMP}/r57_mac_source_preflight_safe.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          r = json.loads((Path(os.environ['RUNNER_TEMP']) / 'r57_mac_source_preflight_safe.json').read_text())
+          assert r['all_pins_verified'] is True and r['byte_pin_pass_count'] == 4
+          assert r['checked_collection_count'] == 4
+          assert all(v == 'BYTE_PIN_PASS' for v in r['source_status'].values())
+          assert not r['training_authorized'] and not r['protected_evaluation_accessed']
+          assert r['v04_admitted'] == 0
+          print('R57_G2_MAC_PREFLIGHT_FOUR_REAL_GIT_BLOBS_PASS__EIGHT_HOLD')
+          PY
       - name: Verify four real Git blobs byte pins and exact SHA target overlaps (no private input)
         run: |
           python3 scripts/r57_trainer_exact_replay.py --repo-root . --mode draft > "${RUNNER_TEMP}/r57_four_source_safe.json"
