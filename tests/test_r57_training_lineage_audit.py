@@ -4,14 +4,14 @@ import copy
 import hashlib
 import importlib.util
 import json
+import pathlib
 import subprocess
 import sys
 import tempfile
 import unittest
-from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "r57_training_lineage_audit.py"
 spec = importlib.util.spec_from_file_location("r57_training_lineage_audit", SCRIPT)
 mod = importlib.util.module_from_spec(spec)
@@ -152,7 +152,7 @@ class TestR57Lineage(unittest.TestCase):
 
     def test_cli_no_overwrite_and_no_mutation(self):
         with tempfile.TemporaryDirectory() as tmp:
-            base = Path(tmp)
+            base = pathlib.Path(tmp)
             original = base / "approved_index.json"
             original.write_text(json.dumps(packet()), encoding="utf-8")
             before = original.read_bytes()
@@ -168,7 +168,7 @@ class TestR57Lineage(unittest.TestCase):
 
     def test_cli_rejects_named_protected_path_without_reading(self):
         with tempfile.TemporaryDirectory() as tmp:
-            protected = Path(tmp) / "r50_fake.json"
+            protected = pathlib.Path(tmp) / "r50_fake.json"
             protected.write_text("SENTINEL NOT JSON", encoding="utf-8")
             p = subprocess.run([
                 sys.executable, str(SCRIPT), "--private-index", str(protected),
