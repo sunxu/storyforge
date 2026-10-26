@@ -1,0 +1,121 @@
+{
+  "schema": "storyforge-r57-g2-eight-source-owner-returned-exact-replay-count-only-v1",
+  "as_of": "2026-10-26",
+  "evidence_tier": "OWNER_RETURNED_LOCAL_CPU_CLI_OUTPUT__NOT_INDEPENDENT_PROVIDER_ATTESTATION",
+  "original_cli_status": "EIGHT_SOURCE_EXACT_TARGET_REPLAY_PASS__WORLD_ALIAS_HOLD",
+  "original_cli_schema": "storyforge-r57-g2-byte-pinned-exact-replay-safe-v1",
+  "byte_pins_checked_by_owner_cli": true,
+  "authenticated_source_bytes_read_by_assistant": false,
+  "sources": {
+    "GOLD87": 87,
+    "GOLD108": 108,
+    "V01_TRAIN": 65,
+    "V01_VALIDATION": 15,
+    "R46_TRAIN": 49,
+    "R46_VALIDATION": 15,
+    "R54_TRAIN": 31,
+    "R54_VALIDATION": 9
+  },
+  "pairwise": {
+    "total_pairs": 28,
+    "target_nonzero_pairs": 7,
+    "exact_full_input_nonzero_pairs": 1,
+    "exact_history_nonzero_pairs": 1,
+    "nonzero_target": [
+      {
+        "left": "GOLD87",
+        "right": "R46_TRAIN",
+        "count": 20
+      },
+      {
+        "left": "GOLD108",
+        "right": "R46_TRAIN",
+        "count": 29
+      },
+      {
+        "left": "GOLD108",
+        "right": "R46_VALIDATION",
+        "count": 15
+      },
+      {
+        "left": "GOLD108",
+        "right": "R54_TRAIN",
+        "count": 31
+      },
+      {
+        "left": "GOLD108",
+        "right": "R54_VALIDATION",
+        "count": 9
+      },
+      {
+        "left": "R46_TRAIN",
+        "right": "R54_TRAIN",
+        "count": 14,
+        "role_content_full_exact": 5,
+        "role_content_history_exact": 5
+      },
+      {
+        "left": "R46_VALIDATION",
+        "right": "R54_TRAIN",
+        "count": 9
+      }
+    ],
+    "other_exact_target_pairs_zero": true
+  },
+  "frozen_historical_replay": {
+    "r54_train_in_r46_train": 14,
+    "r54_train_in_r46_validation": 9,
+    "r54_train_absent_from_r46_splits": 8,
+    "exact_full_role_content_sequences_between_r46_and_r54_train": 5
+  },
+  "gold_pools": {
+    "GOLD87": {
+      "rows": 87,
+      "ever_train_exact_targets": 20,
+      "ever_validation_exact_targets": 0,
+      "both_train_and_validation_exact": 0,
+      "any_historical_exact_target_exposure": 20,
+      "no_historical_exact_target_match": 67
+    },
+    "GOLD108": {
+      "rows": 108,
+      "ever_train_exact_targets": 46,
+      "ever_validation_exact_targets": 24,
+      "both_train_and_validation_exact": 9,
+      "any_historical_exact_target_exposure": 61,
+      "no_historical_exact_target_match": 47
+    }
+  },
+  "gold_totals": {
+    "rows": 195,
+    "distinct_exact_target_hashes": 195,
+    "ever_train_exact_targets": 66,
+    "ever_validation_exact_targets": 24,
+    "both_train_and_validation_exact": 9,
+    "any_historical_exact_target_exposure": 81,
+    "no_historical_exact_target_match": 114
+  },
+  "historical_target_coverage": {
+    "r46_train_49_all_in_gold195": true,
+    "r46_validation_15_all_in_gold195": true,
+    "r54_train_31_all_in_gold108": true,
+    "r54_validation_9_all_in_gold108": true,
+    "v01_train_and_validation_exact_target_matches_gold195": 0,
+    "r46_validation_targets_reused_in_r54_train": 9
+  },
+  "limits": {
+    "shared_exact_target_does_not_prove_identical_history": true,
+    "exact_target_nonmatch_does_not_prove_independent_world_or_semantic_novelty": true,
+    "ms_swift_template_token_mask_exactness_verified": false,
+    "world_alias_component_mapping_verified": false,
+    "near_duplicate_semantic_review_done": false,
+    "independent_rights_age_consent_quality_admission_done": false,
+    "r50_content_accessed": false,
+    "v04_admitted_samples": 0,
+    "training_authorized": false,
+    "gpu_training_started": false,
+    "model_promoted": false,
+    "r55_four_hold_cases_unchanged": true
+  },
+  "status": "G2_OWNER_EIGHT_SOURCE_EXACT_TARGET_REPLAY_REPORTED_PASS__G2_WORLD_ALIAS_HOLD__G3_NO_ADMISSION"
+}
