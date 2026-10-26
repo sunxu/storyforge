@@ -9,7 +9,9 @@ Never upload an actual populated private manifest to ordinary Git.
 
 import argparse
 import json
+import os
 import re
+import stat
 import sys
 from collections import Counter
 from pathlib import Path
@@ -209,17 +211,37 @@ def main():
     parser.add_argument("--safe-out", type=Path)
     args = parser.parse_args()
     try:
-        data = json.loads(args.private_manifest.read_text(encoding="utf-8"))
+        # A descriptor-based, size-bounded read avoids following final symlinks.
+        # This CLI must only be given owner-approved, nonprotected metadata files.
+        flags = os.O_RDONLY
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        if args.private_manifest.is_symlink():
+            raise GateError("private manifest symlink is not allowed")
+        fd = os.open(args.private_manifest, flags)
+        with os.fdopen(fd, "r", encoding="utf-8") as manifest:
+            st = os.fstat(manifest.fileno())
+            if not stat.S_ISREG(st.st_mode) or st.st_size > 64 * 1024 * 1024:
+                raise GateError("private manifest must be a regular file at most 64 MiB")
+            data = json.load(manifest)
         result = check_manifest(data, require_admission=args.mode == "admission")
         safe = json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
         if args.safe_out:
             if args.private_manifest.resolve() == args.safe_out.resolve():
                 raise GateError("safe output must not overwrite private input")
-            args.safe_out.write_text(safe, encoding="utf-8")
+            # Exclusive creation: do not replace receipts, private data, or symlink targets.
+            flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+            if hasattr(os, "O_NOFOLLOW"):
+                flags |= os.O_NOFOLLOW
+            fd = os.open(args.safe_out, flags, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as receipt:
+                receipt.write(safe)
         print(safe, end="")
         return 0
     except (ValueError, OSError, json.JSONDecodeError, TypeError) as exc:
-        print(f"R57_V04_ADMISSION_HOLD: {type(exc).__name__}: {str(exc)}", file=sys.stderr)
+        # Suppress OS paths in stderr: a private manifest path may itself be sensitive.
+        message = "filesystem IO failed" if isinstance(exc, OSError) else str(exc)
+        print(f"R57_V04_ADMISSION_HOLD: {type(exc).__name__}: {message}", file=sys.stderr)
         return 2
 
 
