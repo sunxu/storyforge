@@ -271,6 +271,12 @@ class TestGold108MixedMetadata(unittest.TestCase):
         with self.assertRaises(mod.ExportHold):
             self.scan(rows)
 
+    def test_extra_legacy_target_digest_alias_blocks(self):
+        rows = synthetic_gold108_rows()
+        rows[-1]["metadata"]["target_sha256_utf8"] = rows[-1]["metadata"]["target_content_sha256"]
+        with self.assertRaises(mod.ExportHold):
+            self.scan(rows)
+
     def test_mixed_schema_for_other_dataset_blocks(self):
         with self.assertRaises(mod.ExportHold):
             self.scan(name="GOLD87")
