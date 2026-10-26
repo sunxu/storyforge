@@ -30,6 +30,11 @@ on:
       - 'scripts/r57_g2_mac_preflight.py'
       - 'tests/test_r57_g2_mac_preflight.py'
       - 'docs/R57_G2_MAC_OWNER_EXECUTION_20261026_CN.md'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json'
+      - 'tests/test_r57_g2_owner_eight_source_receipt.py'
+      - 'scripts/r57_g3_private_exposure_ledger.py'
+      - 'tests/test_r57_g3_private_exposure_ledger.py'
+      - 'docs/R57_G3_EXACT_EXPOSURE_LEDGER_OWNER_CN.md'
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
@@ -62,6 +67,11 @@ on:
       - 'scripts/r57_g2_mac_preflight.py'
       - 'tests/test_r57_g2_mac_preflight.py'
       - 'docs/R57_G2_MAC_OWNER_EXECUTION_20261026_CN.md'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json'
+      - 'tests/test_r57_g2_owner_eight_source_receipt.py'
+      - 'scripts/r57_g3_private_exposure_ledger.py'
+      - 'tests/test_r57_g3_private_exposure_ledger.py'
+      - 'docs/R57_G3_EXACT_EXPOSURE_LEDGER_OWNER_CN.md'
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
@@ -162,6 +172,25 @@ jobs:
           assert archived['gates']['DATASET_V04_ADMITTED_ROWS'] == 0
           assert archived['gates']['R50_CONTENT_ACCESSED'] is False
           print('R57_G3_ACTUAL_GOLD195_PRESCREEN_COUNTS_PASS__NO_ADMISSION')
+          PY
+      - name: Verify Owner-returned eight-source aggregate math and trust boundaries
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json')
+          d = json.loads(p.read_text())
+          totals = d['gold_totals']
+          assert (totals['ever_train_exact_targets'],
+                  totals['ever_validation_exact_targets'],
+                  totals['both_train_and_validation_exact'],
+                  totals['any_historical_exact_target_exposure'],
+                  totals['no_historical_exact_target_match']) == (66, 24, 9, 81, 114)
+          assert d['evidence_tier'].startswith('OWNER_RETURNED')
+          assert d['authenticated_source_bytes_read_by_assistant'] is False
+          assert d['limits']['v04_admitted_samples'] == 0
+          assert d['limits']['r50_content_accessed'] is False
+          print('R57_G2_OWNER_EIGHT_SOURCE_81_EXPOSED_114_NO_EXACT_MATCH__WORLD_ALIAS_HOLD')
           PY
       - name: Verify count-only source inventory is marked zero-admission
         run: |
