@@ -1,4 +1,5 @@
 """Synthetic-only R57 G2 exposure audit tests; contains no private story data."""
+
 import copy
 import hashlib
 import importlib.util
