@@ -69,8 +69,7 @@ cp -n "$R46_TRAIN_ORIGINAL" "$PRIVATE/r46/train.jsonl"
 cp -n "$R46_VAL_ORIGINAL" "$PRIVATE/r46/validation.jsonl"
 cp -n "$R54_TRAIN_ORIGINAL" "$PRIVATE/r54/train.jsonl"
 cp -n "$R54_VAL_ORIGINAL" "$PRIVATE/r54/validation.jsonl"
-chmod 600 "$PRIVATE/r46/"*.jsonl "$PRIVATE/r54/"*.jsonl
-
+# umask 077 确保新建拷贝为仅当前用户可读；不 chmod 已存在文件，以免误改符号链接目标
 python3 scripts/r57_g2_mac_preflight.py --repo-root "$PWD" --private-root "$PRIVATE"
 ```
 
