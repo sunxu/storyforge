@@ -16,6 +16,7 @@ on:
       - 'tests/test_r57_training_lineage_audit.py'
       - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
       - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_SOURCE_INDEX_TOOLING_SAFE_RECEIPT_20261026.md'
       - 'scripts/r57_source_index_export.py'
       - 'tests/test_r57_source_index_export.py'
   pull_request:
@@ -32,6 +33,7 @@ on:
       - 'tests/test_r57_training_lineage_audit.py'
       - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
       - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_SOURCE_INDEX_TOOLING_SAFE_RECEIPT_20261026.md'
       - 'scripts/r57_source_index_export.py'
       - 'tests/test_r57_source_index_export.py'
 
