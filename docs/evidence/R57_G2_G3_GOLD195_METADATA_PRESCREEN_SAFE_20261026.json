@@ -29,9 +29,10 @@
       "independent_ab_review_field_missing": 37,
       "qwen_token_length_not_run": 71,
       "qwen_token_length_field_missing": 37,
-      "metadata_story_id_and_target_sha256_rows": 105,
+      "metadata_story_id_and_target_sha256_rows": 90,
       "metadata_source_story_id_and_target_content_sha256_rows": 3,
-      "alternate_three_with_new_uuid": 0
+      "alternate_three_with_new_uuid": 0,
+      "metadata_story_id_and_target_sha256_utf8_rows": 15
     },
     {
       "id": "V01_TRAIN",
