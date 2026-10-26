@@ -31,9 +31,10 @@ class TestGold195SafeMetadataReceipt(unittest.TestCase):
 
     def test_mixed_source_fields_account_for_all_gold108(self):
         d = self.sources["GOLD108"]
-        self.assertEqual(d["metadata_story_id_and_target_sha256_rows"], 105)
+        self.assertEqual(d["metadata_story_id_and_target_sha256_rows"], 90)
+        self.assertEqual(d["metadata_story_id_and_target_sha256_utf8_rows"], 15)
         self.assertEqual(d["metadata_source_story_id_and_target_content_sha256_rows"], 3)
-        self.assertEqual(105 + 3, d["rows"])
+        self.assertEqual(90 + 15 + 3, d["rows"])
         self.assertEqual(d["alternate_three_with_new_uuid"], 0)
         self.assertEqual(self.data["gold195"]["distinct_story_uuid"], 13)
 
