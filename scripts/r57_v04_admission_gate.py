@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """StoryForge R57-B Dataset v0.4 PRIVATE metadata-only admission gate.
 
 Standard library only, no network, no source story read, no HF, no R50.
@@ -120,12 +119,14 @@ def check_manifest(data, *, require_admission=False):
         for name in ("parent_target_sha256", "derivation_delta_sha256"):
             if row[name] is not None and not _sha(row[name]):
                 raise GateError("invalid parent/derivative SHA256")
-        if row["corpus_kind"] == "DERIVED_FROM_ORIGINAL":
-            if not _sha(row["parent_target_sha256"]) or not _sha(row["derivation_delta_sha256"]):
-                raise GateError("derived row missing parent/change digests")
-        if row["corpus_kind"] in ("CANONICAL_GOLD", "DIAGNOSTIC_NEGATIVE"):
-            if row["parent_target_sha256"] is not None or row["derivation_delta_sha256"] is not None:
-                raise GateError("non-derived row with parent/derivative data")
+        if row["corpus_kind"] == "DERIVED_FROM_ORIGINAL" and (
+            not _sha(row["parent_target_sha256"]) or not _sha(row["derivation_delta_sha256"])
+        ):
+            raise GateError("derived row missing parent/change digests")
+        if row["corpus_kind"] in ("CANONICAL_GOLD", "DIAGNOSTIC_NEGATIVE") and (
+            row["parent_target_sha256"] is not None or row["derivation_delta_sha256"] is not None
+        ):
+            raise GateError("non-derived row with parent/derivative data")
         labels = row["source_quality_labels"]
         if (not isinstance(labels, list) or not labels or
                 any(not isinstance(t, str) or t not in LABELS for t in labels) or
