@@ -37,11 +37,15 @@ def row(name, *, source="R46_TRAIN", metadata=True, alternate=False):
 
 
 def archive(name, labels, *, metadata=True):
-    return ("".join(
-        json.dumps(row(label, source=name, metadata=metadata,
-                       alternate=(name == "GOLD108" and i >= 105))) + "\n"
-        for i, label in enumerate(labels)
-    )).encode("utf-8")
+    records = []
+    for i, label in enumerate(labels):
+        item = row(label, source=name, metadata=metadata,
+                   alternate=(name == "GOLD108" and i >= 105))
+        if name == "GOLD108" and 90 <= i < 105:
+            digest = item["metadata"].pop("target_sha256")
+            item["metadata"]["target_sha256_utf8"] = digest
+        records.append(json.dumps(item) + "\n")
+    return "".join(records).encode("utf-8")
 
 
 def fixture_all():
