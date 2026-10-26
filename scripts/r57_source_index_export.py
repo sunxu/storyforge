@@ -149,8 +149,7 @@ def _rows(raw, source_id, world_field, aliases, expected):
             ):
                 raise ExportHold("ambiguous or absent Gold108 world identity")
             world = primary if isinstance(primary, str) and primary else alternate
-            if (("target_sha256" in metadata) +
-                    ("target_content_sha256" in metadata)) != 1:
+            if sum(key in metadata for key in TARGET_HASH_FIELDS) != 1:
                 raise ExportHold("ambiguous or absent Gold108 target SHA field")
         else:
             world = metadata.get(world_field)
