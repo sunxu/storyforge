@@ -39,6 +39,10 @@ on:
       - 'tests/test_r57_g2_target_anchored_world_audit.py'
       - 'docs/R57_G2_TARGET_ANCHORED_WORLD_UUID_OWNER_CN.md'
       - 'docs/evidence/R57_G3_OWNER_EXPOSURE_LEDGER_COUNTS_SAFE_20261026.json'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json'
+      - 'scripts/r57_g2_owner_world_review_roster.py'
+      - 'tests/test_r57_g2_owner_world_review_roster.py'
+      - 'docs/R57_G2_WORLD_ALIAS_REVIEW_ROSTER_OWNER_CN.md'
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
@@ -80,6 +84,10 @@ on:
       - 'tests/test_r57_g2_target_anchored_world_audit.py'
       - 'docs/R57_G2_TARGET_ANCHORED_WORLD_UUID_OWNER_CN.md'
       - 'docs/evidence/R57_G3_OWNER_EXPOSURE_LEDGER_COUNTS_SAFE_20261026.json'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json'
+      - 'scripts/r57_g2_owner_world_review_roster.py'
+      - 'tests/test_r57_g2_owner_world_review_roster.py'
+      - 'docs/R57_G2_WORLD_ALIAS_REVIEW_ROSTER_OWNER_CN.md'
       - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
       - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
@@ -180,6 +188,25 @@ jobs:
           assert archived['gates']['DATASET_V04_ADMITTED_ROWS'] == 0
           assert archived['gates']['R50_CONTENT_ACCESSED'] is False
           print('R57_G3_ACTUAL_GOLD195_PRESCREEN_COUNTS_PASS__NO_ADMISSION')
+          PY
+      - name: Verify Owner UUID count-only evidence and 82/32 follow-up boundaries
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json')
+          d = json.loads(p.read_text())
+          x = d['golds_with_no_exact_target']
+          assert x['total'] == 114
+          assert x['shares_any_historical_sft_uuid'] == 82
+          assert x['no_shared_historical_sft_uuid'] == 32
+          assert x['GOLD87']['no_shared_historical_sft_uuid'] == 32
+          assert x['GOLD108']['no_shared_historical_sft_uuid'] == 0
+          assert x['historical_train_uuid_rows'] + x['historical_validation_uuid_rows'] - x['train_and_validation_uuid_rows'] == 82
+          assert d['limits']['world_isolation_certified'] is False
+          assert d['limits']['v04_admitted'] == 0
+          assert d['limits']['r50_content_accessed'] is False
+          print('R57_G2_OWNER_UUID_114_UNMATCHED_TARGETS_82_PRIOR_WORLDS_32_UUID_UNMATCHED__ALIAS_HOLD')
           PY
       - name: Verify Owner-returned eight-source aggregate math and trust boundaries
         run: |
