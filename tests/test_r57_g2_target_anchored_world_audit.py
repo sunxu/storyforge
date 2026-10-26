@@ -16,7 +16,7 @@ SPEC = importlib.util.spec_from_file_location(
 mod = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(mod)
 
-from test_r57_g3_private_exposure_ledger import fake_eight_sources  # noqa: E402
+from test_r57_g3_private_exposure_ledger import fake_eight_sources
 
 
 class TestTargetAnchoredWorldAudit(unittest.TestCase):
