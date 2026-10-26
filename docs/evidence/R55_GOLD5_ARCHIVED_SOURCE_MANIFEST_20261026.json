@@ -1,0 +1,197 @@
+{
+  "schema": "storyforge-r55-gold5-source-archive-v1",
+  "as_of": "2026-10-26",
+  "repository": "sunxu/storyforge",
+  "scope": "SOURCE_CODE_TESTS_GUIDES_ONLY",
+  "source_file_count": 30,
+  "main_synthetic_tests": "176/176 PASS",
+  "subtype_synthetic_tests": "15/15 PASS",
+  "total_synthetic_tests": "191/191 PASS",
+  "private_stories": false,
+  "private_verdicts": false,
+  "private_mapping": false,
+  "r50_accessed": false,
+  "training_performed": false,
+  "files": [
+    {
+      "path": "docs/R55_GOLD5_DEV20_OWNER_RUN_CN.md",
+      "sha256": "0e0ecba12bda95d29d4b3f4f4661fff408f17f6f3882bb948b515912deb7e5a2",
+      "bytes": 5528,
+      "source_bundle": "existing_git_main_verified"
+    },
+    {
+      "path": "docs/R55_GOLD5_EVENT_ARBITRATION_OWNER_CN.md",
+      "sha256": "a5416fb69d17161098b4d0a27499888e690d62ae5d76208528813078df0d6700",
+      "bytes": 6688,
+      "source_bundle": "StoryForge_R55_GOLD5_EVENT_ARBITRATION_NOJOB_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_FINAL_EVIDENCE_OWNER_CN.md",
+      "sha256": "28ba63625d6211e5f4c84d82f52859f97e0bc6918cf6861ffbcf8cdda722e40d",
+      "bytes": 7166,
+      "source_bundle": "StoryForge_R55_GOLD5_FINAL_EVIDENCE_RESOLUTION_NOJOB_20261026.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_SECOND_AUDIT_REVIEWER_PROTOCOL_CN.md",
+      "sha256": "f9c34252b45316e39b5b723f0f8cf8c6dc66a955c15a3c2127df00d2ac721077",
+      "bytes": 2342,
+      "source_bundle": "StoryForge_R55_GOLD5_SECOND_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_SECOND_EVIDENCE_AUDIT_OWNER_CN.md",
+      "sha256": "8e8675eee2ef66ef1e48dbc78893089e6f4158cba881ac044c787bdfbf683bda",
+      "bytes": 6547,
+      "source_bundle": "StoryForge_R55_GOLD5_SECOND_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_THIRD_AUDIT_REVIEWER_PROTOCOL_CN.md",
+      "sha256": "6f601ecf467ec36cb18787cfc5808ee68b5db13322ff7e1a3a1777807e6552bf",
+      "bytes": 2282,
+      "source_bundle": "StoryForge_R55_GOLD5_THIRD_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_THIRD_EVIDENCE_AUDIT_OWNER_CN.md",
+      "sha256": "3aa33519c9305cf749b18f113932d2ce528be897b2b14a6ea992f9781c8eddfd",
+      "bytes": 4892,
+      "source_bundle": "StoryForge_R55_GOLD5_THIRD_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_V2_OWNER_RUN_CN.md",
+      "sha256": "96fb27204da8b914ff5d754d36b976af05ec3cbbe8c67d41d4d87da26432e99c",
+      "bytes": 2324,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_BLIND_FIX_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_V2_OWNER_UNBLIND_CN.md",
+      "sha256": "58a176539e5ddc752a1b8c89b8d2a69f3de2caf11e59f8b1e6713a1792081512",
+      "bytes": 5747,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_OWNER_UNBLIND_NOJOB_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_V2_REVIEWER_PROTOCOL_CN.md",
+      "sha256": "5545057e72498d405aec69f48fdcb86b4ca93f3c4683e1a06ef767a9fb88532a",
+      "bytes": 3506,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_BLIND_FIX_20261023.zip"
+    },
+    {
+      "path": "docs/R55_GOLD5_V2_REVIEW_FREEZE_OWNER_CN.md",
+      "sha256": "3a3534d151faeaa5e0bc00c6fae2b55444f550988ec9066dc783a220e287e6e4",
+      "bytes": 5591,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_FREEZE_TOOL_NOJOB_20261023.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_build.py",
+      "sha256": "b3dfe798bcf25a786bf287eaf04b79c4a365645143ee0a12c92a293b73043640",
+      "bytes": 10706,
+      "source_bundle": "existing_git_main_verified"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_event_arbitration.py",
+      "sha256": "279fa51f4afdec83b1e617a29c8767a0a9eedf3092bc795eef73958a28ee4562",
+      "bytes": 16674,
+      "source_bundle": "StoryForge_R55_GOLD5_EVENT_ARBITRATION_NOJOB_20261023.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_final_evidence_resolution.py",
+      "sha256": "5b452b19d6d9c67f198f2b5c7707dace3e90b2295da2d161611b243c5853a2cd",
+      "bytes": 23998,
+      "source_bundle": "StoryForge_R55_GOLD5_FINAL_EVIDENCE_RESOLUTION_NOJOB_20261026.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_owner_unblind.py",
+      "sha256": "480923dd3ba0a766656fd39efa13099911a14c24804ad0453507d72a882d0c9e",
+      "bytes": 16477,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_OWNER_UNBLIND_NOJOB_20261023.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_review_freeze.py",
+      "sha256": "07028760f1621c6ed3b49390da5ea395537ba12b78dea88fd3a98c427ed1e87c",
+      "bytes": 11771,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_FREEZE_TOOL_NOJOB_20261023.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_review_v2.py",
+      "sha256": "bb1754299033cee85dafbe2186fd0af01b1571f28318a50a98a1a12a8c30b923",
+      "bytes": 7604,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_BLIND_FIX_20261023.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_second_evidence_audit.py",
+      "sha256": "b94f2ce80ce6af207b27edf04c88d3d8356480ce986891f87d05a68925f9b3b6",
+      "bytes": 22240,
+      "source_bundle": "StoryForge_R55_GOLD5_SECOND_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "scripts/v03_r55_gold5_third_evidence_audit.py",
+      "sha256": "d2e05dea175e1174cf69509a3aebf412d3566b4374f8c5c949c1b97176938989",
+      "bytes": 21284,
+      "source_bundle": "StoryForge_R55_GOLD5_THIRD_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_build.py",
+      "sha256": "fc1e78085c42d343bc16a1c4f93783368d82a896e86b5a755317f8408405c73e",
+      "bytes": 8228,
+      "source_bundle": "existing_git_main_verified"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_event_arbitration.py",
+      "sha256": "285c0c79c158d1ed50cab4104584645d5220b2114177fcb82864e47974fa35be",
+      "bytes": 9139,
+      "source_bundle": "StoryForge_R55_GOLD5_EVENT_ARBITRATION_NOJOB_20261023.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_final_evidence_resolution.py",
+      "sha256": "3f7e2099e850a4e99537527100710aaf3c5dbbc5bb6c36276a67c3a851b0bb81",
+      "bytes": 9082,
+      "source_bundle": "StoryForge_R55_GOLD5_FINAL_EVIDENCE_RESOLUTION_NOJOB_20261026.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_owner_unblind.py",
+      "sha256": "74a34d803516f2acfe3903e8a6e5fb83ba45ad2f49adf5e817457c15b1b584ad",
+      "bytes": 12201,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_OWNER_UNBLIND_NOJOB_20261023.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_review_freeze.py",
+      "sha256": "3545ce345f4050b84734e4095b5735be9b57b9cd0e826386ec8b804f252b248a",
+      "bytes": 8874,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_FREEZE_TOOL_NOJOB_20261023.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_review_v2.py",
+      "sha256": "5ff57cd0db7dcaf8294aa2d9e5804011e3b71316807bedab229659b8fd97f260",
+      "bytes": 8016,
+      "source_bundle": "StoryForge_R55_GOLD5_V2_BLIND_FIX_20261023.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_second_evidence_audit.py",
+      "sha256": "d160f68265e7043038cd6f02c993144f036425ab0180088dd54104696bee41d4",
+      "bytes": 13446,
+      "source_bundle": "StoryForge_R55_GOLD5_SECOND_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "tests/test_v03_r55_gold5_third_evidence_audit.py",
+      "sha256": "287f3074126a05c18a5154c29722e508ebe3c2c1a288a6bb88b9406890f18b55",
+      "bytes": 9899,
+      "source_bundle": "StoryForge_R55_GOLD5_THIRD_EVIDENCE_AUDIT_NOJOB_20261023.zip"
+    },
+    {
+      "path": "tools/r55-gold5-subtypes/README_CN.md",
+      "sha256": "09f53f0343e2e9e6063a39e3c9e806ba1e9fc733356954fd62fc3ee4776d9a1e",
+      "bytes": 2952,
+      "source_bundle": "StoryForge_R55_GOLD5_HARD_RULE_SUBTYPES_REVIEW_NOJOB_20261026.zip"
+    },
+    {
+      "path": "tools/r55-gold5-subtypes/test_v03_r55_gold5_rule_subtypes.py",
+      "sha256": "e0db1939ff83d6c2943c07be1ff1c48080332ed504c816e1756dcac5a416d878",
+      "bytes": 4833,
+      "source_bundle": "StoryForge_R55_GOLD5_HARD_RULE_SUBTYPES_REVIEW_NOJOB_20261026.zip"
+    },
+    {
+      "path": "tools/r55-gold5-subtypes/v03_r55_gold5_rule_subtypes.py",
+      "sha256": "c77f2111c432d2bb57c19105c19eb00cb90625ab39b7775fca29f8efb8fda282",
+      "bytes": 7737,
+      "source_bundle": "StoryForge_R55_GOLD5_HARD_RULE_SUBTYPES_REVIEW_NOJOB_20261026.zip"
+    }
+  ]
+}
