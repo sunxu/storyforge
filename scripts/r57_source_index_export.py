@@ -90,7 +90,7 @@ def _digest(data):
 
 
 def _git_blob(data):
-    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\\0" + data).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(data)).encode("ascii") + b"\x00" + data).hexdigest()
 
 
 def _project_messages(messages):
@@ -223,7 +223,7 @@ def main():
         if repo == private or repo in private.parents or private in repo.parents:
             raise ExportHold("private index area and Git worktree must be separate")
         for name in (args.plan_name, args.alias_name, args.index_name):
-            if name != Path(name).name or "/" in name or "\\\\" in name:
+            if name != Path(name).name or "/" in name or "\\" in name:
                 raise ExportHold("plan/alias/output names must be plain basenames")
             if "r50" in name.lower():
                 raise ExportHold("protected path forbidden")
