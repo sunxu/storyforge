@@ -236,7 +236,7 @@ def main():
             raise ExportHold("alias map SHA256 mismatch")
         aliases = json.loads(aliases_raw)
         index = build_index(plan, aliases, repo_root=repo, private_root=private)
-        output = json.dumps(index, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8") + b"\\n"
+        output = json.dumps(index, ensure_ascii=False, indent=2, sort_keys=True).encode("utf-8") + b"\n"
         _put_private(private, args.index_name, output)
         counts = {row["id"]: len(row["rows"]) for row in index["sources"]}
         print(json.dumps({"status": "PRIVATE_INDEX_CREATED__NOT_G2_SOURCE_CERTIFIED",
