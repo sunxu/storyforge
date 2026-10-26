@@ -8,7 +8,6 @@ import sys
 import tempfile
 import unittest
 
-
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "scripts" / "r57_v04_admission_gate.py"
 
 
