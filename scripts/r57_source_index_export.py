@@ -127,6 +127,7 @@ def _projection_sha(messages):
 
 def _rows(raw, source_id, world_field, aliases, expected):
     entries = []
+    gold108_forms = {"sha256": 0, "utf8": 0, "legacy": 0}
     lines = raw.splitlines()
     if len(lines) != expected or any(not ln.strip() for ln in lines):
         raise ExportHold("source row count/blank line mismatch")
@@ -149,8 +150,17 @@ def _rows(raw, source_id, world_field, aliases, expected):
             ):
                 raise ExportHold("ambiguous or absent Gold108 world identity")
             world = primary if isinstance(primary, str) and primary else alternate
-            if sum(key in metadata for key in TARGET_HASH_FIELDS) != 1:
+            declared = [key for key in TARGET_HASH_FIELDS if key in metadata]
+            if len(declared) != 1:
                 raise ExportHold("ambiguous or absent Gold108 target SHA field")
+            if primary and declared == ["target_sha256"]:
+                gold108_forms["sha256"] += 1
+            elif primary and declared == ["target_sha256_utf8"]:
+                gold108_forms["utf8"] += 1
+            elif alternate and declared == ["target_content_sha256"]:
+                gold108_forms["legacy"] += 1
+            else:
+                raise ExportHold("unexpected Gold108 source-target field pairing")
         else:
             world = metadata.get(world_field)
         if not isinstance(world, str) or not world:
@@ -170,6 +180,10 @@ def _rows(raw, source_id, world_field, aliases, expected):
             "history_sha256": _projection_sha(messages[:-1]),
             "world_component_token": component,
         })
+    if world_field == "gold108_strict_mixed" and gold108_forms != {
+        "sha256": 90, "utf8": 15, "legacy": 3,
+    }:
+        raise ExportHold("Gold108 frozen metadata distribution mismatch")
     return entries
 
 
