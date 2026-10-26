@@ -10,7 +10,6 @@ import sys
 import tempfile
 import unittest
 
-
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "r57_training_lineage_audit.py"
 spec = importlib.util.spec_from_file_location("r57_training_lineage_audit", SCRIPT)
