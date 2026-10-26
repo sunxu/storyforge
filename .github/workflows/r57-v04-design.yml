@@ -18,6 +18,8 @@ on:
       - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
       - 'docs/evidence/R57_G2_SOURCE_INDEX_TOOLING_SAFE_RECEIPT_20261026.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOBS_SOURCE_CROSSCHECK_SAFE_20261026.md'
+      - 'docs/evidence/R57_G2_G3_GOLD195_METADATA_PRESCREEN_SAFE_20261026.json'
+      - 'tests/test_r57_gold195_safe_prescreen.py'
       - 'scripts/r57_source_index_export.py'
       - 'tests/test_r57_source_index_export.py'
   pull_request:
@@ -36,6 +38,8 @@ on:
       - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
       - 'docs/evidence/R57_G2_SOURCE_INDEX_TOOLING_SAFE_RECEIPT_20261026.md'
       - 'docs/evidence/R57_G2_FOUR_GIT_BLOBS_SOURCE_CROSSCHECK_SAFE_20261026.md'
+      - 'docs/evidence/R57_G2_G3_GOLD195_METADATA_PRESCREEN_SAFE_20261026.json'
+      - 'tests/test_r57_gold195_safe_prescreen.py'
       - 'scripts/r57_source_index_export.py'
       - 'tests/test_r57_source_index_export.py'
 
