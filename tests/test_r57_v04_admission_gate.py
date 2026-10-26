@@ -1,10 +1,8 @@
 """Synthetic, private-text-free tests for R57 V04 intake gate."""
 
-import copy
 import importlib.util
 import json
 import pathlib
-import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
