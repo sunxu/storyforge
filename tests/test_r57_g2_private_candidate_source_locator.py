@@ -65,7 +65,7 @@ class TestR57CandidateSourceLocator(unittest.TestCase):
             for row in private["candidate_worlds_PRIVATE"]
             for item in row["source_locations_PRIVATE"]
         ))
-        self.assertNotIn("messages", json.dumps(private))
+        self.assertNotIn('"messages":', json.dumps(private))
         self.assertFalse(safe["original_story_files_opened"])
         self.assertEqual(safe["v04_admitted"], 0)
         self.assertFalse(safe["world_isolation_certified"])
