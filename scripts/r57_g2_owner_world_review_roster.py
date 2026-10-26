@@ -12,9 +12,9 @@ import re
 import sys
 from pathlib import Path
 
+import r57_g2_target_anchored_world_audit as anchored
 import r57_source_index_export as frozen
 import r57_trainer_exact_replay as exact
-import r57_g2_target_anchored_world_audit as anchored
 
 SCHEMA = "storyforge-r57-g2-owner-private-world-alias-review-roster-v1"
 SAFE_SCHEMA = "storyforge-r57-g2-world-alias-review-roster-count-only-v1"
@@ -60,7 +60,7 @@ def build_roster(payloads):
     ))
     for name in GROUPS:
         for item, target in zip(original[name], hashes[name], strict=True):
-            if name.startswith("R46_") or name.startswith("R54_"):
+            if name.startswith(("R46_", "R54_")):
                 uuid = origin.get(target["target"])
                 if uuid is None:
                     raise WorldRosterHold("compiled Trainer target lacks unique Gold source")
