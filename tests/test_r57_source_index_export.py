@@ -84,6 +84,7 @@ class TestSourceExporter(unittest.TestCase):
         return mod.build_index(
             obj, mapping, repo_root=self.repo, private_root=self.private,
             read=lambda root, relative, limit: self.raw if relative == "r46/train.jsonl" else None,
+            trusted_sha256={},  # isolated synthetic fixture; production CLI always uses frozen pins
         )
 
     def test_pinned_source_success_private_index_structure(self):
@@ -145,28 +146,37 @@ class TestSourceExporter(unittest.TestCase):
         canonical = hashlib.sha1(b"blob 4\x00test").hexdigest()
         self.assertEqual(mod._git_blob(data), canonical)
 
-    def test_cli_private_outputs_and_refuses_overwrite(self):
+    def test_cli_rejects_wrong_frozen_trainer_sha(self):
         alias_raw = json.dumps(alias()).encode()
         (self.private / "R57_G2_ALIAS_GRAPH_PRIVATE.json").write_bytes(alias_raw)
         (self.private / "R57_G2_SOURCE_PINS_PRIVATE.json").write_text(
             json.dumps(plan(self.raw, sha(alias_raw))), encoding="utf-8"
         )
-        cmd = [
+        result = subprocess.run([
             sys.executable, str(SCRIPT), "--repo-root", str(self.repo),
             "--private-root", str(self.private),
-        ]
-        first = subprocess.run(cmd, text=True, capture_output=True, check=False)
-        self.assertEqual(first.returncode, 0, first.stderr)
-        index_path = self.private / "R57_G2_SOURCE_INDEX_PRIVATE.json"
-        data = json.loads(index_path.read_text(encoding="utf-8"))
-        self.assertEqual(len(data["sources"][0]["rows"]), 49)
-        self.assertNotIn("synthetic assistant line", first.stdout)
+        ], text=True, capture_output=True, check=False)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("published compiled Trainer", result.stderr)
+        self.assertFalse((self.private / "R57_G2_SOURCE_INDEX_PRIVATE.json").exists())
+
+    def test_private_output_exclusive_write_and_perms(self):
+        filename = "R57_G2_SOURCE_INDEX_PRIVATE.json"
+        payload = b'{"synthetic":true}\\n'
+        mod._put_private(self.private, filename, payload)
+        index_path = self.private / filename
+        self.assertEqual(index_path.read_bytes(), payload)
         if os.name == "posix":
             self.assertEqual(index_path.stat().st_mode & 0o777, 0o600)
-        prior = index_path.read_bytes()
-        second = subprocess.run(cmd, text=True, capture_output=True, check=False)
-        self.assertNotEqual(second.returncode, 0)
-        self.assertEqual(index_path.read_bytes(), prior)
+        with self.assertRaises(FileExistsError):
+            mod._put_private(self.private, filename, b"OVERWRITE")
+        self.assertEqual(index_path.read_bytes(), payload)
+
+    def test_published_pin_names_are_exact_and_four(self):
+        self.assertEqual(set(mod.HISTORICAL_TRAINER_SHA256), {
+            "R46_TRAIN", "R46_VALIDATION", "R54_TRAIN", "R54_VALIDATION"
+        })
+        self.assertTrue(all(len(x) == 64 for x in mod.HISTORICAL_TRAINER_SHA256.values()))
 
     def test_symlink_source_rejected(self):
         orig = self.private / "r46/train.jsonl"
