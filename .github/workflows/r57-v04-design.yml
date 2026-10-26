@@ -1,0 +1,54 @@
+name: R57 V04 admission design (CPU only)
+
+on:
+  push:
+    branches: ['r57/v03b-data-design']
+    paths:
+      - '.github/workflows/r57-v04-design.yml'
+      - 'docs/plans/R57_V03B_EXPERIMENT_CONTRACT.md'
+      - 'docs/evidence/R57_DATA_SOURCE_INVENTORY_SAFE.json'
+      - 'docs/R57_V04_DATA_ADMISSION_OWNER_CN.md'
+      - 'evaluations/v0.3/r57/R57_DATASET_V04_ADMISSION_SCHEMA.json'
+      - 'scripts/r57_v04_admission_gate.py'
+      - 'tests/test_r57_v04_admission_gate.py'
+  pull_request:
+    paths:
+      - '.github/workflows/r57-v04-design.yml'
+      - 'docs/plans/R57_V03B_EXPERIMENT_CONTRACT.md'
+      - 'docs/evidence/R57_DATA_SOURCE_INVENTORY_SAFE.json'
+      - 'docs/R57_V04_DATA_ADMISSION_OWNER_CN.md'
+      - 'evaluations/v0.3/r57/R57_DATASET_V04_ADMISSION_SCHEMA.json'
+      - 'scripts/r57_v04_admission_gate.py'
+      - 'tests/test_r57_v04_admission_gate.py'
+
+permissions:
+  contents: read
+
+jobs:
+  admission-synthetic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: R57 V04 private-admission synthetic regression
+        run: python3 -m unittest discover -s tests -p 'test_r57_v04_admission_gate.py' -v
+      - name: Verify count-only source inventory is marked zero-admission
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('docs/evidence/R57_DATA_SOURCE_INVENTORY_SAFE.json')
+          r = json.loads(p.read_text(encoding='utf-8'))
+          assert r['gold195']['rows'] == 195
+          assert sum(p['rows'] for p in r['frozen_source_pools']) == 195
+          v = r['dataset_v04']
+          assert v['admitted_train'] == v['admitted_validation'] == 0
+          assert v['protected_test_body_accessed'] is False
+          assert v['training_job_started'] is False
+          print('R57_V04_INVENTORY_COUNT_ONLY_PREP_PASS__NO_R50__NO_TRAINING')
+          PY
