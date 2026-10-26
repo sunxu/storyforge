@@ -223,7 +223,7 @@ def synthetic_gold108_rows():
 
 
 def encode_rows(rows):
-    return "".join(json.dumps(x, ensure_ascii=False) + "\\n" for x in rows).encode()
+    return "".join(json.dumps(x, ensure_ascii=False) + "\n" for x in rows).encode()
 
 
 class TestGold108MixedMetadata(unittest.TestCase):
