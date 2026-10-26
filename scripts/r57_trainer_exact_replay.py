@@ -42,7 +42,7 @@ def _shape(raw, source_name):
     counters = {"rows_with_metadata": 0, "rows_without_metadata": 0,
                 "declared_target_hashes_verified": 0,
                 "rows_without_declared_target_hash": 0}
-    mixed = {"gold108_standard": 0, "gold108_legacy": 0}
+    mixed = {"gold108_sha256": 0, "gold108_sha256_utf8": 0, "gold108_legacy": 0}
     for line in lines:
         if len(line) > MAX_LINE_BYTES:
             raise ExactReplayHold("oversized JSONL row")
@@ -72,7 +72,9 @@ def _shape(raw, source_name):
             if (bool(primary) == bool(legacy)) or len(declared) != 1:
                 raise ExactReplayHold("ambiguous Gold108 metadata schema")
             if primary and declared == ["target_sha256"]:
-                mixed["gold108_standard"] += 1
+                mixed["gold108_sha256"] += 1
+            elif primary and declared == ["target_sha256_utf8"]:
+                mixed["gold108_sha256_utf8"] += 1
             elif legacy and declared == ["target_content_sha256"]:
                 mixed["gold108_legacy"] += 1
             else:
@@ -92,7 +94,7 @@ def _shape(raw, source_name):
             "input": frozen._projection_sha(messages),
             "history": frozen._projection_sha(messages[:-1]),
         })
-    if source_name == "GOLD108" and mixed != {"gold108_standard": 105, "gold108_legacy": 3}:
+    if source_name == "GOLD108" and mixed != {"gold108_sha256": 90, "gold108_sha256_utf8": 15, "gold108_legacy": 3}:
         raise ExactReplayHold("Gold108 frozen schema distribution changed")
     return parsed, counters
 
