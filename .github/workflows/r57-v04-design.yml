@@ -15,6 +15,9 @@ on:
       - 'scripts/r57_training_lineage_audit.py'
       - 'tests/test_r57_training_lineage_audit.py'
       - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
+      - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
+      - 'scripts/r57_source_index_export.py'
+      - 'tests/test_r57_source_index_export.py'
   pull_request:
     paths:
       - '.github/workflows/r57-v04-design.yml'
@@ -28,6 +31,9 @@ on:
       - 'scripts/r57_training_lineage_audit.py'
       - 'tests/test_r57_training_lineage_audit.py'
       - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
+      - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
+      - 'scripts/r57_source_index_export.py'
+      - 'tests/test_r57_source_index_export.py'
 
 permissions:
   contents: read
