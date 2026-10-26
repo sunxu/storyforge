@@ -12,6 +12,9 @@ on:
       - 'scripts/r57_v04_admission_gate.py'
       - 'tests/test_r57_v04_admission_gate.py'
       - 'tests/test_r57_v04_output_guard.py'
+      - 'scripts/r57_training_lineage_audit.py'
+      - 'tests/test_r57_training_lineage_audit.py'
+      - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
   pull_request:
     paths:
       - '.github/workflows/r57-v04-design.yml'
@@ -22,6 +25,9 @@ on:
       - 'scripts/r57_v04_admission_gate.py'
       - 'tests/test_r57_v04_admission_gate.py'
       - 'tests/test_r57_v04_output_guard.py'
+      - 'scripts/r57_training_lineage_audit.py'
+      - 'tests/test_r57_training_lineage_audit.py'
+      - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
 
 permissions:
   contents: read
@@ -37,8 +43,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: R57 V04 private-admission synthetic regression
-        run: python3 -m unittest discover -s tests -p 'test_r57_v04_*.py' -v
+      - name: R57 G1-G2 private-admission and source-lineage synthetic regression
+        run: python3 -m unittest discover -s tests -p 'test_r57_*.py' -v
       - name: Verify count-only source inventory is marked zero-admission
         run: |
           python3 - <<'PY'
