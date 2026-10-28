@@ -1,0 +1,54 @@
+{
+  "schema": "storyforge-r57-bprompt-safe-archive-v1",
+  "date": "2026-10-28",
+  "suite": "EXPOSED_DEV20_NOT_HELDOUT",
+  "config": {
+    "checkpoint": "R46 v0.2 checkpoint-7",
+    "model_weights_changed": false,
+    "variable": "system_prompt_suffix_only",
+    "stories": 2,
+    "pairs": 20,
+    "responses": 40,
+    "reviewers": 3
+  },
+  "preference": {
+    "A": 5,
+    "B": 11,
+    "MAJORITY_TIE": 2,
+    "NO_MAJORITY": 2,
+    "decisive": 16,
+    "B_wins_of_decisive": 11,
+    "exploratory_exact_sign_p_two_sided": 0.210113525390625
+  },
+  "scores_mean_B_minus_A": {
+    "剧情连续性": 0.066667,
+    "角色一致性": 0.15,
+    "指令遵循": 0.133333,
+    "文学表现力": 0.066667,
+    "互动推进": 0.15,
+    "玩家自主权": 0.15
+  },
+  "serious_selected_subset": {
+    "cases": 10,
+    "verdict_slots": 40,
+    "CONFIRMED": 19,
+    "REJECTED": 19,
+    "HOLD": 2,
+    "any_confirmed_candidates": {
+      "A": 8,
+      "B": 6
+    },
+    "B_HOLD": 2,
+    "unbiased_full20_rate": false
+  },
+  "audit": {
+    "checks_pass": 19,
+    "owner_key_raw_seen_by_independent_auditor": false,
+    "independent_original_key_mapping_verified": false,
+    "independent_owner_signed_prereg_seen": false,
+    "private_archive_sha256": "a6debfc0cc8a462190fd0b9d2923f44ed645dabbf55e7d1d0185a41793546822",
+    "private_safe_audit_sha256": "29dc6b2228008d9d7807eab5d4404e5d48d7538a5961187864abb973d8b4ee04"
+  },
+  "outcome": "EXPLORATORY_DEV_ONLY_NO_PROMOTION",
+  "confidentiality": "Aggregates and SHA256 only. No private source, Owner Key, per-case mapping, reviewer rows or original story content."
+}
