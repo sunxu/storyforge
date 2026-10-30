@@ -67,9 +67,61 @@
     "script": "experiments/r58_roleplay_replay/audit_priority3_mutation_revisions.py",
     "tests": "experiments/r58_roleplay_replay/test_audit_priority3_mutation_revisions.py",
     "new_tests": 8,
-    "owner_execution": "PENDING",
-    "output": "cohort, window length, positive revision counts by user/assistant, guard, HOLD values; no IDs/text/hash"
+    "owner_execution": "PASS_OWNER_REPORTED",
+    "output": "cohort, window length, positive revision counts by user/assistant, guard, HOLD values; no IDs/text/hash",
+    "actual_synthetic_test_result": "NOT_REPORTED"
   },
   "train_admitted": 0,
-  "validation_admitted": 0
+  "validation_admitted": 0,
+  "owner_mutation_revision_role_audit": {
+    "status": "R58_MUTATION_REVISION_ROLE_AUDIT_PASS__HISTORICAL_TEXT_PARITY_HOLD",
+    "evidence_origin": "Owner-provided offline aggregate JSON; no private source files",
+    "source_bundle_integrity": "PASS",
+    "cases": [
+      {
+        "cohort": "AUTHOR",
+        "conditional_window_count": 11,
+        "assistant_total": 5,
+        "assistant_revision_positive": 5,
+        "user_total": 6,
+        "user_revision_positive": 0,
+        "post_target_ledger_events": 0,
+        "as_of_target_text_parity": "HOLD"
+      },
+      {
+        "cohort": "CURRENT_PUBLIC",
+        "conditional_window_count": 11,
+        "assistant_total": 5,
+        "assistant_revision_positive": 5,
+        "user_total": 6,
+        "user_revision_positive": 0,
+        "post_target_ledger_events": 0,
+        "as_of_target_text_parity": "HOLD"
+      },
+      {
+        "cohort": "OLD_PUBLIC",
+        "conditional_window_count": 11,
+        "assistant_total": 5,
+        "assistant_revision_positive": 5,
+        "user_total": 6,
+        "user_revision_positive": 0,
+        "post_target_ledger_events": 0,
+        "as_of_target_text_parity": "HOLD"
+      }
+    ],
+    "totals": {
+      "window_messages": 33,
+      "assistants": 15,
+      "assistants_revision_positive": 15,
+      "users": 18,
+      "users_revision_positive": 0,
+      "post_target_ledger_events": 0
+    },
+    "mutation_cause": "UNKNOWN_FROM_CAPTURE",
+    "stream_finalization": "POSSIBLE_NOT_VERIFIED",
+    "historical_content_unchanged": "HOLD",
+    "provider_request_bytes": "HOLD",
+    "training_admission": "HOLD"
+  },
+  "status": "OWNER_MUTATION_ROLE_AUDIT_3_OF_3_PASS__HISTORICAL_LEDGER_ASOF_HOLD"
 }
