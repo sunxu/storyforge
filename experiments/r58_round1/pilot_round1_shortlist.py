@@ -97,15 +97,15 @@ def discover(rows):
         seen.add(story)
         replies=positive_int(r['assistant_completed'])
         sessions=positive_int(r['session_count'])
-        if (r['story_type']=='v2_sandbox'
-            and r['moderation_status'] in ('approved','override_approved')
+        if (r['story_type'].strip()=='v2_sandbox'
+            and r['moderation_status'].strip() in ('approved','override_approved')
             and boolish(r['not_deleted'])
             and replies>=50 and sessions>=2
             and boolish(r['has_world'])
             and (boolish(r['has_character']) or boolish(r['has_characters']))
             and boolish(r['has_opening'])
-            and r['source_type'] in CATEGORIES):
-            found.append({'story_id':story,'source_type':r['source_type'],
+            and r['source_type'].strip() in CATEGORIES):
+            found.append({'story_id':story,'source_type':r['source_type'].strip(),
                           'assistant_completed':replies,'session_count':sessions})
     return found
 
