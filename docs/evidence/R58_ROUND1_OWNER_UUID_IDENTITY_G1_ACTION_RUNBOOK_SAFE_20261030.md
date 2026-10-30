@@ -16,7 +16,7 @@ Owner Mac **69/69** 合成测试 PASS，R57 29 条故事 UUID 私有元数据名
 
 ## 统一 Mac 本地安全核对（不改写五条队列）
 
-更新到最新 R58 Draft 分支，运行纯合成测试。旧 69 项 + 原先新增的隔离账本 4 项 + 本轮身份规则 2 项及选择器 2 项，预期 **77 项**；Owner Mac 尚未验收。
+更新到最新 R58 Draft 分支，运行纯合成测试。旧 69 项 + 原先新增的隔离账本 4 项 + 本轮身份规则 2 项及选择器 2 项，预期 **80 项**；Owner Mac 尚未验收。
 
 ```bash
 cd ~/workspace/storyforge-r58-run
@@ -32,6 +32,8 @@ python3 experiments/r58_round1/check_prior_sft_exact_world_ids.py \
   --private-discovery "$ROOT/g1_index_candidates_autodiscovered_private.json" \
   --private-hold-output "$ROOT/g1_prior_sft_uuid_owner_policy_v2_private.json"
 ```
+
+新版 shortlist 选择器要求提供 `--prior-sft-holds <本地 v2 账本>`；缺少账本即拒绝候选选择，账本标记历史 SFT 曝光的 UUID 即使其他保护标记误为 true 也被硬性排除。
 
 新私有账本包含五条 story UUID、逐条曝露标记、规范化世界 UUID、来源 SHA；因此只能保留在 Mac 受控 0600 私有目录。**不要上传这个文件、哈希、真实 UUID 或 R50 内容**。脚本输出仍仅 SAFE 汇总；同一路径已存在时禁止覆盖。
 
@@ -49,3 +51,9 @@ python3 experiments/r58_round1/check_prior_sft_exact_world_ids.py \
 ## 不改变的 R58 约束
 
 最多 5 个世界、20 条目标候选回复；已命中的 1 条不补选，当前最多只能对余下 4 条开展必要的 G1 保护集核查。所有候选回复正文继续不读；G2 Runtime Replay、G3 双 Reviewer、G4 分区、G5 数据冻结均未开始；Train/Val/Teacher 0。PR #7 Draft、不合并、Skill v0.1 不改、HF CPU/GPU 不启动。首轮完成后、扩样前提醒仍有效，直到真正出现 `R58_ROUND1_PILOT_COMPLETION_SAFE.json` 的严格完成标记。
+
+## 新增 fail-closed：正式 shortlist 的历史 UUID 硬排除
+
+`pilot_round1_shortlist.py` 在携带 `--guards` 时，**现在也必须携带** `--prior-sft-holds`，引用同一批五个故事的 v2 私有曝光账本；缺失、格式不符、未覆盖 guard story ID 均 HOLD。即使手工误填某故事的 `prior_sft_clear=true`，已经命中历史 SFT UUID 的那个故事仍不得进入后续 shortlist。
+
+**不要现在运行正式带 guards 的 shortlist**：R50、R55/R57 Dev、其他 protected UUID 及历史 SFT 来源完整性尚未通过；这四种保护布尔值目前保持 false。当前唯一应该运行的是上述本地私有账本核验命令，回传 SAFE JSON。生产数据无改写。
