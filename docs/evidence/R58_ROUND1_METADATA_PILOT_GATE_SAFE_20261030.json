@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_FIVE_CANDIDATE_EXACT_HISTORY_CHECK_PENDING__HOLD",
+  "status": "R58_ROUND1_G1_PRIOR_SFT_EXACT_ID_OVERLAP_ONE_OF_FIVE__ALL_FIVE_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_EXACT_ID_R57_NOT_YET_RUN_AND_PROTECTED_SETS_UNVERIFIED",
+    "G1_WORLD_AND_PROTECTION": "HOLD_1_EXACT_PRIOR_SFT_ID_OVERLAP_4_SEMANTIC_AND_PROTECTION_UNVERIFIED",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -342,13 +342,47 @@
     "source_coverage_verified": false
   },
   "g1_exact_historical_sft_next_step": {
-    "status": "TOOL_COMMITTED__OWNER_RUN_PENDING",
+    "status": "OWNER_RUN_COMPLETED_1_OF_5_EXACT_OVERLAP__PRIVATE_HOLD_LEDGER_NEXT",
     "tool": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
     "test": "experiments/r58_round1/test_check_prior_sft_exact_world_ids.py",
     "runbook": "docs/evidence/R58_ROUND1_G1_PRIOR_SFT_EXACT_ID_CHECK_SAFE_20261030.md",
     "total_synthetic_tests_expected": 69,
     "semantic_world_clearance": "HOLD",
     "r50_protection": "HOLD",
-    "expansion_allowed": false
+    "expansion_allowed": false,
+    "owner_tests": "69_OF_69_PASS",
+    "owner_exact_overlap_count": 1
+  },
+  "g1_historical_sft_exact_overlap_owner_20261030": {
+    "status": "R58_G1_PRIOR_SFT_EXACT_UUID_OVERLAP_FOUND__HOLD",
+    "owner_tests": "69_OF_69_PASS",
+    "owner_test_seconds_reported": 0.04,
+    "roster_candidates_found": 1,
+    "roster_schema_verified": true,
+    "r57_historical_sft_uuid_count_verified": true,
+    "candidate_uuid_syntax_count": 5,
+    "candidate_id_namespace": "UNVERIFIED",
+    "frozen_candidate_stories_checked": 5,
+    "exact_identifier_overlap_count": 1,
+    "remaining_without_exact_identifier_overlap_count": 4,
+    "semantic_world_components_verified": 0,
+    "all_five_remain_hold": true,
+    "r50_protection_checked": false,
+    "other_protected_worlds_checked": false,
+    "candidate_reply_text_accessed": false,
+    "training_admitted": 0,
+    "expansion_allowed": false,
+    "interpretation": "One exact identifier collision with historical exposed UUID is strong risk; namespace not independently verified. Four non-matches are still unknown for semantic and protected-world overlap."
+  },
+  "g1_historical_hold_ledger": {
+    "status": "PRIVATE_LEDGER_TOOL_READY__OWNER_RUN_PENDING",
+    "script": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
+    "private_output_example": "Owner-private G1 case-level HOLD ledger; exact IDs remain local only",
+    "synthetic_tests_added": 4,
+    "total_synthetic_tests_expected": 73,
+    "owner_new_test_status": "PENDING",
+    "candidate_queue_modified": false,
+    "replacement_selection_authorized": false,
+    "candidate_reply_access_authorized": false
   }
 }
