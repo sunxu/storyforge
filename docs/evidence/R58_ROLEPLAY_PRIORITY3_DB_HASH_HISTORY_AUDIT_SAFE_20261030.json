@@ -1,0 +1,66 @@
+{
+  "schema": "storyforge-r58-priority3-db-hash-history-evidence-safe-v1",
+  "date": "2026-10-30",
+  "selection": {
+    "source_sql": "docs/evidence/R58_ROLEPLAY_PRIORITY3_SOURCE_WINDOW_QUERY_SAFE_20261030.sql",
+    "tested_sql": "docs/evidence/R58_ROLEPLAY_PRIORITY3_HASH_AND_HISTORY_PROOF_QUERY_SAFE_20261030.sql",
+    "private_physical_ids_frozen": false,
+    "counts": {
+      "author": 1,
+      "reader_current_public": 1,
+      "reader_previous_public": 1
+    },
+    "count_total": 3
+  },
+  "proofs": {
+    "prior_approved_story_v2_data_and_revision_present": 3,
+    "target_text_present": 3,
+    "prior_checkpoint_present": 3,
+    "prior_24_completed": 3,
+    "within_db_sha256_computed_for_card_checkpoint_24_history_target": 3,
+    "hash_values_released_or_committed": false,
+    "history24_post_target_ledger_changes": 0,
+    "history24_total_rows": 72,
+    "history24_prior_ledger_event_observed": 72,
+    "history24_visible_old_content_divergence": 0,
+    "history24_any_nonzero_mutation_revision": 36,
+    "checkpoint_has_historical_last_summary_turn": 3,
+    "current_latest12_all_completed_and_alternate": 3,
+    "latest12_initial_assistant_and_second_user": 3,
+    "source_alignment_yields_11": 3,
+    "nearby_metrics_history_count_11": 3,
+    "event_before_to_previous_assistant_after_jsonb_equal": 2,
+    "event_field_absent_author": 1
+  },
+  "limits": [
+    "No private case identifiers or source/target text were exported or saved",
+    "SHA256 values calculated inside PostgreSQL but were not persisted as a frozen private per-case manifest",
+    "JSONB::text SHA256 canonicalization is not original provider request bytes",
+    "Nearby latency metrics are same-session plus time only, not exact message/request ID mapping",
+    "Summary prune window count consistency does not prove exact history text or original code deployment",
+    "Prior checkpoint is a historical state record but cannot recover all timed retrievals or env flags",
+    "Historical approved card exists but output-locale translation selection remains unknown",
+    "Current fork source commit cannot be assumed equal to target-time deployed revision",
+    "World-alias and protected test-set exposure certification not run",
+    "No private full prompt reconstruction, quality double review or HF CPU preflight"
+  ],
+  "decision": {
+    "source_evidence": "PASS_THREE_SOURCE_PATHS",
+    "in_db_hash_presence": "PASS_3_OF_3_NOT_PERSISTED",
+    "history_structure": "PASS_3_OF_3_COUNT_CONSISTENCY",
+    "event_chain": "PASS_2_OF_2_WITH_METADATA",
+    "runtime_byte_exact": "HOLD_0_OF_3",
+    "trainer_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_generated": 0,
+    "skill_revision": "UNCHANGED_V0_1_0",
+    "pr_state": "DRAFT"
+  },
+  "boundaries": {
+    "supabase_reads_only": true,
+    "git_safe_evidence_only": true,
+    "no_story_text_extracted": true,
+    "no_r50_read": true,
+    "no_paid_hf_jobs": true
+  }
+}
