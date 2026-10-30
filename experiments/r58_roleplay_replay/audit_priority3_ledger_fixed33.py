@@ -69,7 +69,9 @@ WITH fixed AS (
         COALESCE(m.mutation_revision=f.revision,false) AS same_revision,
         COALESCE(encode(sha256(convert_to(m.content,'UTF8')),'hex')=f.digest,false)
           AS same_content,
-        l.earlier, l.later, l.old_completed_different
+        l.earlier, l.later, l.old_completed_different,
+        l.op_insert, l.op_update_before, l.op_update_after,
+        l.op_delete, l.op_other
  FROM fixed f
  LEFT JOIN public.v2_chat_messages m ON
    m.id=f.msgid AND m.story_id=f.story AND m.session_id=f.session
@@ -77,6 +79,17 @@ WITH fixed AS (
  LEFT JOIN LATERAL (
    SELECT count(*) FILTER (WHERE e.recorded_at<=f.target_at) AS earlier,
           count(*) FILTER (WHERE e.recorded_at>f.target_at) AS later,
+          count(*) FILTER (WHERE e.recorded_at<=f.target_at
+             AND e.operation='insert') AS op_insert,
+          count(*) FILTER (WHERE e.recorded_at<=f.target_at
+             AND e.operation='update_before') AS op_update_before,
+          count(*) FILTER (WHERE e.recorded_at<=f.target_at
+             AND e.operation='update_after') AS op_update_after,
+          count(*) FILTER (WHERE e.recorded_at<=f.target_at
+             AND e.operation='delete') AS op_delete,
+          count(*) FILTER (WHERE e.recorded_at<=f.target_at
+             AND (e.operation NOT IN ('insert','update_before','update_after','delete')
+                  OR e.operation IS NULL)) AS op_other,
           count(*) FILTER (WHERE e.recorded_at<=f.target_at
              AND e.operation='update_before'
              AND e.row_data->>'status'='completed'
@@ -95,6 +108,15 @@ WITH fixed AS (
         count(*) FILTER (WHERE NOT same_content) AS content_drift,
         sum(earlier) AS ledger_through_target,
         sum(later) AS ledger_after_target,
+        sum(op_insert) AS ledger_insert_before_target,
+        sum(op_update_before) AS ledger_update_before_before_target,
+        sum(op_update_after) AS ledger_update_after_before_target,
+        sum(op_delete) AS ledger_delete_before_target,
+        sum(op_other) AS ledger_other_before_target,
+        sum(op_insert) FILTER (WHERE role='assistant') AS assistant_insert_before_target,
+        sum(op_insert) FILTER (WHERE role='user') AS user_insert_before_target,
+        sum(op_update_before) FILTER (WHERE role='assistant') AS assistant_update_before_target,
+        sum(op_update_after) FILTER (WHERE role='assistant') AS assistant_update_after_before_target,
         sum(old_completed_different) AS prior_completed_text_variants
  FROM checked GROUP BY cohort
 )
@@ -136,7 +158,12 @@ def aggregate(folder):
         raise Hold("DB scope or read-only verification failed")
     fields = ("messages", "assistants", "users", "missing_current",
               "revision_drift", "content_drift", "ledger_through_target",
-              "ledger_after_target", "prior_completed_text_variants")
+              "ledger_after_target", "prior_completed_text_variants",
+              "ledger_insert_before_target", "ledger_update_before_before_target",
+              "ledger_update_after_before_target", "ledger_delete_before_target",
+              "ledger_other_before_target", "assistant_insert_before_target",
+              "user_insert_before_target", "assistant_update_before_target",
+              "assistant_update_after_before_target")
     for c in cases:
         if any(type(c.get(k)) is not int or c[k] < 0 for k in fields):
             raise Hold("DB counts invalid")
@@ -149,7 +176,19 @@ def aggregate(folder):
         + c["ledger_after_target"] for c in cases
     )
     completed_old_variants = sum(c["prior_completed_text_variants"] for c in cases)
+    operation_count_mismatch = sum(
+        c["ledger_through_target"] != (
+            c["ledger_insert_before_target"]
+            + c["ledger_update_before_before_target"]
+            + c["ledger_update_after_before_target"]
+            + c["ledger_delete_before_target"]
+            + c["ledger_other_before_target"]
+        ) for c in cases
+    )
+    other_operations = sum(c["ledger_other_before_target"] for c in cases)
     diagnostic_status = (
+        "R58_LEDGER_FIXED33_OPERATION_CLASSIFICATION_HOLD"
+        if operation_count_mismatch or other_operations else
         "R58_LEDGER_FIXED33_SOURCE_DRIFT_HOLD" if source_drift else
         "R58_LEDGER_FIXED33_COMPLETED_PRIOR_TEXT_VARIANT_HOLD"
         if completed_old_variants else
