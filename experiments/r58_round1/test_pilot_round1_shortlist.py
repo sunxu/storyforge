@@ -144,18 +144,43 @@ class Cases(unittest.TestCase):
     def test_guards_false_blocked(self):
         entries=discover([STORY]); bad={**GUARD,'r50_protected_clear':'false'}
         picked,pool=select(entries,[bad]);self.assertEqual(picked,[])
-    def test_no_world_component_blocked(self):
-        picked,pool=select(discover([STORY]),[{**GUARD,'world_component':''}]);self.assertFalse(picked)
+    def test_owner_world_identity_derived_from_uuid_without_manual_graph(self):
+        guard={**GUARD,'world_component':'','owner_world_graph_reviewed':'false'}
+        picked,pool=select(discover([STORY]),[guard])
+        self.assertEqual(len(picked),1)
+        self.assertEqual(picked[0]['world_component'],'id1')
     def test_selection_private_only_safe_stdout(self):
         inv=self.csvfile('a.csv',[STORY]); g=self.csvfile('b.csv',[GUARD]); out=self.sec/'selected.json'
         safe=audit(self.args(inv,g,out));self.assertEqual(safe['picked_story_count'],1)
         self.assertNotIn('id1',json.dumps(safe));self.assertTrue(out.exists())
         self.assertEqual(out.stat().st_mode&0o777,0o600)
         self.assertTrue(json.loads(out.read_text())['requires_owner_confirmation_before_expansion'])
-    def test_world_component_unique(self):
+    def test_owner_world_component_is_each_distinct_story_id(self):
         x=[{**STORY,'story_id':'id1'}, {**STORY,'story_id':'id2'}]
         g=[GUARD,{**GUARD,'story_id':'id2'}]
-        picked,_=select(discover(x),g);self.assertEqual(len(picked),1)
+        picked,_=select(discover(x),g)
+        self.assertEqual(len(picked),2)
+        self.assertEqual({item['world_component'] for item in picked},{'id1','id2'})
+    def test_owner_world_policy_does_not_waive_remaining_protected_guards(self):
+        base={**GUARD,'owner_world_graph_reviewed':'false','world_component':''}
+        for flag in ('r50_protected_clear','prior_sft_clear',
+                     'r55_r57_dev_clear','other_protected_clear'):
+            self.assertEqual(select(discover([STORY]),[{**base,flag:'false'}])[0],[])
+
+    def test_owner_world_identity_private_shortlist_still_not_admitted(self):
+        inv=self.csvfile('owner_inv.csv',[STORY])
+        guard={**GUARD,'owner_world_graph_reviewed':'false','world_component':''}
+        g=self.csvfile('owner_guards.csv',[guard])
+        out=self.sec/'owner-shortlist.json'
+        safe=audit(self.args(inv,g,out))
+        self.assertEqual(safe['picked_story_count'],1)
+        self.assertFalse(safe['cross_uuid_semantic_review_required'])
+        private=json.loads(out.read_text())
+        self.assertEqual(private['status'],'SHORTLIST_ONLY__NOT_ADMITTED')
+        self.assertFalse(private['requires_world_review'])
+        self.assertTrue(private['requires_protected_set_evidence_review'])
+        self.assertEqual(private['selected'][0]['world_component'],'id1')
+
     def test_quota(self):
         x=[];g=[]
         cats=['original']*7+['dice_cocreate']*3+['ai_assisted']*2
