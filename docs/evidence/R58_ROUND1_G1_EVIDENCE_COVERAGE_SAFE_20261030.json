@@ -20,8 +20,8 @@
   "mandatory_evidence": [
     {
       "scope": "semantic_world_graph",
-      "status": "MISSING_INDEPENDENT_EVIDENCE",
-      "acceptance": "Provenance-backed candidate story-to-world components, aliases, adaptations and derivations; independent semantic review required"
+      "status": "OWNER_WORLD_IDENTITY_POLICY_SATISFIES_COMPONENT_DEFINITION__NO_GRAPH_PROOF_REQUIRED",
+      "acceptance": "Owner confirms same RolePlay UUID namespace and 1 story UUID = 1 independent world; use story UUID for component and skip cross-UUID alias proof in R58."
     },
     {
       "scope": "r50_protected_worlds",
@@ -53,11 +53,20 @@
     "no_automatic_expansion": true,
     "owner_expansion_approval_required": true
   },
-  "g1_status": "HOLD_NO_COMPLETE_WORLD_AND_EXPOSURE_EVIDENCE",
+  "g1_status": "HOLD_R50_PRIOR_SFT_COMPLETENESS_R55_R57_DEV_OTHER_PROTECTED_UUID_SET_PROOFS",
   "training_admission": {
     "train": 0,
     "validation": 0,
     "teacher": 0
   },
-  "round1_complete": false
+  "round1_complete": false,
+  "owner_policy_supersession": {
+    "evidence": "docs/evidence/R58_OWNER_ROLEPLAY_UUID_WORLD_IDENTITY_POLICY_SAFE_20261030.json",
+    "scope": "R58 RolePlay world UUID identity only",
+    "historical_exact_uuid_overlap": 1,
+    "nonoverlap_with_r57_27_hist_uuids": 4,
+    "remaining_protected_scope_counts_to_review": 4,
+    "independent_graph_review_not_required": true,
+    "r50_dev_other_uuid_checks_still_required": true
+  }
 }
