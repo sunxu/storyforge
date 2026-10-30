@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from argparse import Namespace
-from pilot_round1_shortlist import discover, select, audit, Hold, CATEGORIES
+from pilot_round1_shortlist import discover, select, audit, Hold, CATEGORIES, safe_gate_diagnostics, PARSER_VERSION
 
 STORY={'story_id':'id1','source_type':'original','not_deleted':'true',
        'moderation_status':'approved','story_type':'v2_sandbox',
@@ -68,6 +68,49 @@ class Cases(unittest.TestCase):
         row={**STORY,'not_deleted':'maybe'}
         with self.assertRaises(Hold):
             discover([row])
+
+    def test_diagnostic_aggregate_has_one_survivor(self):
+        stats=safe_gate_diagnostics([STORY])
+        self.assertEqual(stats['parsed_rows'],1)
+        self.assertEqual(stats['individual_pass_counts']['has_opening'],1)
+        self.assertEqual(stats['cumulative_survivor_counts']['recognized_source_type'],1)
+        self.assertTrue(stats['parser_psql_true_supported'])
+        self.assertTrue(stats['parser_psql_false_supported'])
+
+    def test_diagnostic_reports_single_gate_failure(self):
+        failed={**STORY,'has_opening':'f'}
+        stats=safe_gate_diagnostics([STORY,failed])
+        self.assertEqual(stats['individual_pass_counts']['has_opening'],1)
+        self.assertEqual(stats['cumulative_survivor_counts']['recognized_source_type'],1)
+        self.assertEqual(stats['cumulative_survivor_counts']['has_world'],2)
+
+    def test_diagnostic_unknown_value_holds(self):
+        failed={**STORY,'has_opening':'uninterpretable'}
+        with self.assertRaises(Hold):
+            safe_gate_diagnostics([failed])
+
+    def test_diagnostic_does_not_echo_story_ids_or_strings(self):
+        row={**STORY,'story_id':'PRIVATE_SYNTHETIC_ID'}
+        text=json.dumps(safe_gate_diagnostics([row]))
+        self.assertNotIn('PRIVATE_SYNTHETIC_ID',text)
+        self.assertNotIn('v2_sandbox',text)
+
+    def test_large_unexpected_zero_is_explicit_hold(self):
+        rows=[{**STORY,'story_id':f's{i}','has_opening':'f'} for i in range(101)]
+        inp=self.csvfile('zero.csv',rows)
+        result=audit(self.args(inp))
+        self.assertEqual(result['status'],'R58_ROUND1_UNEXPECTED_ZERO__CSV_GATE_HOLD')
+        self.assertEqual(result['metadata_eligible'],0)
+        self.assertFalse(result['expansion_allowed'])
+
+    def test_parser_version_marker_and_normalized_enums(self):
+        x={**STORY,'story_type':' v2_sandbox ',
+           'moderation_status':' approved ', 'source_type':' original '}
+        inp=self.csvfile('enums.csv',[x])
+        result=audit(self.args(inp))
+        self.assertEqual(result['parser_version'],PARSER_VERSION)
+        self.assertEqual(result['metadata_eligible'],1)
+        self.assertEqual(result['metadata_eligible_by_source']['original'],1)
 
     def test_discover_rejects_low_activity(self):
         x={**STORY,'assistant_completed':'49'};self.assertEqual(discover([x]),[])
