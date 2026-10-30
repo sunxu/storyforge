@@ -49,6 +49,46 @@ def positive_int(x):
     if v<0: raise Hold('negative count')
     return v
 
+PARSER_VERSION = 'R58_ROUND1_CSV_GATE_DIAGNOSTIC_V2'
+
+GATE_NAMES = (
+    'story_type_v2_sandbox', 'moderation_approved', 'not_deleted',
+    'assistant_completed_50plus', 'session_count_2plus',
+    'has_world', 'has_character_or_characters', 'has_opening',
+    'recognized_source_type',
+)
+
+
+def safe_gate_diagnostics(rows):
+    """Aggregate only fixed-condition counts. Never emit CSV values or story IDs."""
+    individual = {name: 0 for name in GATE_NAMES}
+    cumulative = {name: 0 for name in GATE_NAMES}
+    for r in rows:
+        checks = (
+            r['story_type'].strip() == 'v2_sandbox',
+            r['moderation_status'].strip() in ('approved', 'override_approved'),
+            boolish(r['not_deleted']),
+            positive_int(r['assistant_completed']) >= 50,
+            positive_int(r['session_count']) >= 2,
+            boolish(r['has_world']),
+            boolish(r['has_character']) or boolish(r['has_characters']),
+            boolish(r['has_opening']),
+            r['source_type'].strip() in CATEGORIES,
+        )
+        surviving = True
+        for name, passed in zip(GATE_NAMES, checks):
+            individual[name] += int(passed)
+            surviving = surviving and passed
+            cumulative[name] += int(surviving)
+    return {
+        'individual_pass_counts': individual,
+        'cumulative_survivor_counts': cumulative,
+        'parser_psql_true_supported': boolish('t'),
+        'parser_psql_false_supported': not boolish('f'),
+        'parsed_rows': len(rows),
+    }
+
+
 def discover(rows):
     found=[]; seen=set()
     for r in rows:
@@ -112,9 +152,14 @@ def write_private(path, data):
 def audit(args):
     input_rows=private_csv(args.inventory, STORY_FIELDS)
     discovered=discover(input_rows)
+    diagnostics=safe_gate_diagnostics(input_rows)
+    if diagnostics['cumulative_survivor_counts']['recognized_source_type'] != len(discovered):
+        raise Hold('diagnostic and discovery count mismatch')
     by_source={source:sum(x['source_type']==source for x in discovered)
                for source in CATEGORIES}
     safe={'schema':'r58_round1_pilot_safe_v1',
+          'parser_version':PARSER_VERSION,
+          'condition_diagnostics':diagnostics,
           'status':'R58_ROUND1_DISCOVERY_ONLY__WORLD_GUARD_HOLD',
           'inventory_rows':len(input_rows),'metadata_eligible':len(discovered),
           'metadata_eligible_by_source':by_source,
@@ -122,6 +167,9 @@ def audit(args):
           'candidate_reply_text_accessed':False,'train_admitted':0,
           'validation_admitted':0,'teacher_admitted':0,
           'expansion_allowed':False,'owner_expansion_approval':'REQUIRED'}
+    if len(input_rows) >= 100 and not discovered:
+        safe['status'] = 'R58_ROUND1_UNEXPECTED_ZERO__CSV_GATE_HOLD'
+        return safe
     if args.guards:
         if not args.private_output: raise Hold('private output required for guarded selection')
         guards=private_csv(args.guards, GUARD_FIELDS)
