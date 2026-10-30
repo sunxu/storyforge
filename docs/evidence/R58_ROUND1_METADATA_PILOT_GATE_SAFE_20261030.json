@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_OWNER_V2_80_TESTS_PASS__ONE_EXPOSED_FOUR_PROTECTION_PENDING",
+  "status": "R58_ROUND1_G1_OWNER_80_TESTS_PASS__R50_PINNED_SAFE_METADATA_READY__FOUR_EXACT_UUID_CHECK_PENDING",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_1_EXCLUDED_SFT_UUID_AND_4_AWAIT_R50_DEV_OTHER_UUID_SET_CLEARANCE",
+    "G1_WORLD_AND_PROTECTION": "HOLD_ONE_EXCLUDED_SFT_AND_R50_DEV_OTHER_PROTECTED_PENDING",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -456,5 +456,36 @@
     "training_admitted": 0,
     "expansion_allowed": false,
     "shortlist_strict_exposure_guard": true
+  },
+  "g1_r50_protected_uuid_probe": {
+    "status": "FROZEN_R50_SAFE_BLOBS_FOUND__OWNER_LOCAL_EXACT_UUID_CHECK_PENDING",
+    "branch": "audit/r49-r50-source-intake-20261015",
+    "source_receipt": "docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json",
+    "source_receipt_blob_sha1": "2d8623c17ef230d8eff5797a5eb29850e97e6ccb",
+    "source_world_story_uuids": 5,
+    "r50_source_world_ranks": [
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "later_r50_case_receipt": "docs/evidence/V03_R50_46_ADMISSION_STATUS_20261016.json",
+    "later_r50_case_receipt_blob_sha1": "20341c6c55bd4564140b05e8319cf66e572137c0",
+    "later_case_count": 46,
+    "later_source_world_count": 5,
+    "source_covering_claim": "Known R50 16-20 frozen source world story UUIDs, metadata-only; R50 final heldout seal remains HOLD",
+    "local_script": "experiments/r58_round1/check_r50_protected_uuid.py",
+    "test": "experiments/r58_round1/test_check_r50_protected_uuid.py",
+    "runbook": "docs/evidence/R58_ROUND1_G1_R50_UUID_PROTECTION_RUNBOOK_SAFE_20261030.md",
+    "owner_local_88_tests": "PENDING",
+    "owner_r50_actual_intersection": "PENDING",
+    "candidate_frozen_five": 5,
+    "historical_sft_uuid_excluded": 1,
+    "r50_lookup_bounded_remaining": 4,
+    "private_candidate_ids_enter_git": false,
+    "candidate_reply_text_accessed": false,
+    "training_admitted": 0,
+    "expansion_allowed": false
   }
 }
