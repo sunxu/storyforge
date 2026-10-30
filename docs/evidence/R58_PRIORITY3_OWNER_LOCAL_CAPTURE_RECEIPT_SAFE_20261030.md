@@ -27,3 +27,19 @@ TRAINING_ADMISSION: HOLD
 ## 保留 HOLD
 
 实际线上代码部署版本、请求时 locale / model / relay 参数、完整 System Prompt、记忆/RAG/导演等动态依赖、请求字节哈希/逐项来源以及语义世界与 R50 保护集隔离均未认证。私有捕获通过**不等于训练数据准入**。
+
+## Owner 离线逐案复核回执（2026-10-30）
+
+Owner 随后提供离线复核器输出：
+
+```text
+{"case_fingerprints_verified": 12, "private_file_permissions": "PASS", "private_source_file_sha256": "PASS", "records": 3, "runtime_request_byte_exact": "HOLD", "status": "R58_OWNER_LOCAL_PRIVATE_CAPTURE_RECHECK_PASS", "training_admission": "HOLD"}
+```
+
+**Source-bundle verification = 3 cases / 12 content digests PASS (OWNER_REPORTED)。** 内容包括已批准来源卡、前置 checkpoint、24 条历史、目标文本。原始用户对话、真实来源 ID、私有哈希仍从未传入 GitHub/对话。此结果是本地源文件与其清单之间的一致性证明，不是具有外部签名或可信时间戳的不可篡改证明。
+
+## 下一关：在原地冻结源包上做条件性历史窗口预检
+
+新增 `preflight_priority3_history.py`（只读本地源包，无数据库、网络、模型接口），对 `sunxu/RolePlay@e9fe29c42434caeb0bac5acc91845ab4741ecb2b` 中的 `PRUNE_MIN/MAX_KEEP_MESSAGES=12`、`selectSummaryHistoryWindow()`、`alignHistoryWindowToUser()` 作**条件性结构推导**，并对最近 12 条消息角色交替、目标前事件状态、附近指标所记的 11 条进行对照。原始系统 prompt、用户入参、动态记忆、重新生成/继续路径和精确请求 ID 仍 HOLD。
+
+新增十项纯合成测试 `test_preflight_priority3_history.py`。**尚无 Owner Mac 对这十项测试和真实离线窗口预检的运行结果；在通过之前不得宣布窗口真实复原。** 预检输出仅包含分组名、结构计数、布尔风险标识，不输出私有正文、ID、digest。Train/Val=0，Skill v0.1 不变。
