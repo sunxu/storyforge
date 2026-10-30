@@ -88,3 +88,42 @@ chmod 600 "$PRIVATE_DIR/priority3_source_quarantine.sha256.private"
 - 原始请求字节或可信哈希；不存在时明确降级为 `RECONSTRUCTED_WITH_EVIDENCE`，而不是自称 `BYTE_EXACT_PASS`。
 
 如 3 条无法同时完成完整上下文恢复，应保留 HOLD 的失败原因并在初版 Skill 的未来修订版本中处理。**Skill v0.1 本轮不改，Train/Val 正式准入仍为零。**
+
+## 五、2026-10-30 捕获器补充（优先于第三节的 Shell 手工保存）
+
+**新捕获入口：** `experiments/r58_roleplay_replay/capture_priority3.py`；合成单元测试：`test_capture_priority3.py`。两者不访问数据库、网络或模型，只处理标准输入的 JSONL 字节。
+
+相比第三节的手工校验方法，新入口还逐案检查：
+- 来源路径恰好各 1 条、3 个物理 story_id/message_id 都不同；
+- approved submission 快照完整、`approval_at < target_created_at`；
+- checkpoint 快照完整、检查点创建时间与逻辑轮次早于目标；
+- 历史 24 条按物理序号严格递增、全部 completed 且创建时间不晚于目标；
+- 从读入的**原始 JSONL 字节**计算 SHA256，私有 manifest 另存来源卡、checkpoint、history24 与 target 的逐案内容指纹；
+- 拒绝覆盖已存在快照、符号链接、非 `0700` 的目标父目录，文件按 `0600` 创建；`CAPTURE_COMPLETE` 最后写入。中断留下的不完整目录不可继续复用；
+- 哈希与历史数据保留在 `manifest.private.json`，因为清单包含真实 story/message/submission ID，**不得提交 GitHub 或复制到对话**。
+
+在有明确执行授权的 HF 私有环境，推荐命令（**本次未执行**）：
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+PRIVATE_PARENT=/workspace/storyforge-r58-private
+mkdir -p -m 700 "$PRIVATE_PARENT"
+chmod 700 "$PRIVATE_PARENT"
+
+python -m unittest discover -s experiments/r58_roleplay_replay -p 'test_capture_priority3.py' -v
+
+# 防止重入：一次运行只可使用从未存在的唯一目录名。
+# Postgres 身份凭据由 HF Secret / 已授权安全配置提供，禁止写入本仓库。
+PGOPTIONS='-c default_transaction_read_only=on' \
+  psql -X -qAt -v ON_ERROR_STOP=1 \
+  -f experiments/r58_roleplay_replay/PRIVATE_PRIORITY3_QUARANTINE_EXPORT_TEMPLATE.sql \
+  | python experiments/r58_roleplay_replay/capture_priority3.py \
+      --private-parent "$PRIVATE_PARENT" \
+      --name "priority3_source_20261030_first_capture"
+```
+
+必须同时满足：**数据库端只读 + `psql` 成功退出 + 捕获器返回 0 + `CAPTURE_COMPLETE` 存在 + 私有 manifest/source SHA 一致**。若任何一步失败，保留 HOLD，不宣称完成。首次捕获后禁止用相同时间种子从动态数据库“补跑替换”原始物理案例。
+
+本轮仅对 SQL 做 `EXPLAIN` 并在隔离的本地测试环境跑合成测试。**没有启动 HF、没有执行私有导出 SELECT，也没有物理案例冻结。**
