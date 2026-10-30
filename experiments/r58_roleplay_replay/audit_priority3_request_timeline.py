@@ -99,7 +99,13 @@ WITH sealed AS (
                              AND c.near_target_update)::int AS near_update_count,
           count(*) FILTER (WHERE c.metric_count=1
                              AND c.metric_history11_count=1
-                             AND c.near_target_update)::int AS both_count,
+                             AND c.near_target_update
+                             AND c.duration_ms BETWEEN 0 AND 1200000
+                             AND a.target_time >= c.occurred_at
+                               - (c.duration_ms * INTERVAL '1 millisecond')
+                               - INTERVAL '2 minutes'
+                             AND a.target_time <= c.occurred_at
+                               + INTERVAL '2 minutes')::int AS both_count,
           (count(*)>100)::boolean AS excess_candidates
    FROM (
      SELECT ev.request_id,ev.occurred_at,ev.duration_ms,
@@ -184,6 +190,8 @@ def project(response: object) -> dict:
             raise Hold("nonmonotonic request aggregate")
         if not (
             rec["events_with_both_soft_signals"]
+            <= rec["timing_compatible_joined_events"]
+            and rec["events_with_both_soft_signals"]
             <= rec["events_with_history11_metric"]
             <= rec["events_with_one_metric"]
             and rec["events_with_both_soft_signals"]
