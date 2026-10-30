@@ -158,3 +158,28 @@ python3 experiments/r58_roleplay_replay/verify_priority3_private.py \
 ```
 
 仅在新合成测试通过时运行第二条。预期 `status=R58_OWNER_LOCAL_PRIVATE_CAPTURE_RECHECK_PASS`、`case_fingerprints_verified=12`、`records=3`、`training_admission=HOLD`。这是二次**源包一致性**核验，不是防恶意篡改签名、实际 API 请求字节验证、世界隔离或训练批准。若失败，**不要**覆盖、重跑或修改既有原始数据，只保留 HOLD 和非敏感错误概要。
+
+## 八、Owner 12 个逐案指纹已通过及条件性历史窗口预检（2026-10-30）
+
+Owner 报告 `R58_OWNER_LOCAL_PRIVATE_CAPTURE_RECHECK_PASS`、`case_fingerprints_verified=12`、私有文件权限与来源 SHA256 均 PASS。私有源包已经固定，不再通过数据库重选。本助手未接触私有正文和哈希。
+
+新离线预检：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+
+python3 -m unittest discover \
+  -s experiments/r58_roleplay_replay \
+  -p 'test_preflight_priority3_history.py' -v
+
+# 仅在上述测试全部通过时执行
+python3 experiments/r58_roleplay_replay/preflight_priority3_history.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture"
+```
+
+预检对照 pinned RolePlay 源码计算**假设正常 DB 历史路径**的消息窗口：12 条上限、基于历史检查点 `last_summary_turn` 裁剪、从首条 User 对齐；再检查 11 条消息结构、相邻事件 `after/before` 连续性与**仅时间邻近**的日志 `historyMsgCount`。它还保守提示可能受 `continue`、历史修改、结构化协议清理影响的记录。
+
+**不能**把 `R58_CONDITIONAL_HISTORY_WINDOW_STRUCTURE_PASS` 宣布为真实 11 条原始请求字节级重建。实际当时的部署 commit、user request flags、locale、runtime prompt rollout、RAG、反复读和策略清理、最后 User 指令注入、请求 hash 仍未取得。Fail/HOLD 时不得重新运行生产数据库补选，更不得重写已固定的 `source.private.jsonl`。
+
+当前该预检和它的 10 项新合成测试**尚未取得 Owner 运行回执**。Train/Val/Teacher 正式准入保持零、Skill v0.1 不改、PR #7 继续 Draft。
