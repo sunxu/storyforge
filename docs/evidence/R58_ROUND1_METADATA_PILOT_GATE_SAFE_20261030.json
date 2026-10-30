@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_PRIOR_SFT_EXACT_ID_OVERLAP_ONE_OF_FIVE__ALL_FIVE_HOLD",
+  "status": "R58_ROUND1_OWNER_UUID_WORLD_POLICY_APPLIED__ONE_HISTORICAL_EXPOSURE_EXCLUDED__R50_DEV_OTHER_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_1_EXACT_PRIOR_SFT_ID_OVERLAP_4_SEMANTIC_AND_PROTECTION_UNVERIFIED",
+    "G1_WORLD_AND_PROTECTION": "HOLD_4_NO_R57_UUID_OVERLAP_AWAIT_R50_DEV_OTHER_PROTECTED_SET_CHECKS",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -372,17 +372,53 @@
     "candidate_reply_text_accessed": false,
     "training_admitted": 0,
     "expansion_allowed": false,
-    "interpretation": "One exact identifier collision with historical exposed UUID is strong risk; namespace not independently verified. Four non-matches are still unknown for semantic and protected-world overlap."
+    "interpretation": "One exact identifier collision with historical exposed UUID is strong risk; namespace not independently verified. Four non-matches are still unknown for semantic and protected-world overlap.",
+    "owner_policy_supersession": {
+      "candidate_id_namespace": "OWNER_CONFIRMED_ROLEPLAY_STORY_UUID",
+      "exact_overlap_classification": "EXCLUDE_ONE_AS_HISTORICALLY_SFT_EXPOSED_UUID",
+      "four_nonmatches_classification": "NO_OVERLAP_WITH_R57_FROZEN_27_UUID_SET__OTHER_PROTECTED_SETS_PENDING",
+      "cross_uuid_semantic_world_review_required": false
+    }
   },
   "g1_historical_hold_ledger": {
-    "status": "PRIVATE_LEDGER_TOOL_READY__OWNER_RUN_PENDING",
+    "status": "V2_OWNER_UUID_POLICY_LEDGER_TOOL_READY__OWNER_RUN_PENDING",
     "script": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
     "private_output_example": "Owner-private G1 case-level HOLD ledger; exact IDs remain local only",
     "synthetic_tests_added": 4,
-    "total_synthetic_tests_expected": 73,
+    "total_synthetic_tests_expected": 77,
     "owner_new_test_status": "PENDING",
     "candidate_queue_modified": false,
     "replacement_selection_authorized": false,
-    "candidate_reply_access_authorized": false
+    "candidate_reply_access_authorized": false,
+    "derived_world_component": "canonical_roleplay_story_uuid",
+    "remaining_required_clearances": [
+      "r50_protected_clear",
+      "prior_sft_clear",
+      "r55_r57_dev_clear",
+      "other_protected_clear"
+    ],
+    "semantic_world_review_requirement": "WAIVED_BY_OWNER_POLICY"
+  },
+  "g1_owner_uuid_world_identity_policy": {
+    "status": "OWNER_POLICY_ACCEPTED_FOR_R58",
+    "evidence": "docs/evidence/R58_OWNER_ROLEPLAY_UUID_WORLD_IDENTITY_POLICY_SAFE_20261030.json",
+    "authority": "OWNER_DIRECT_PROJECT_DECLARATION_20261030",
+    "same_uuid_namespace_roleplay_and_r57": "OWNER_CONFIRMED",
+    "all_known_stories_from_roleplay": "OWNER_CONFIRMED",
+    "one_uuid_one_independent_semantic_world": "OWNER_CONFIRMED",
+    "semantic_alias_re_review_required": false,
+    "canonical_world_identity_key": "RolePlay story_id UUID",
+    "current_five_uuid_worlds_owner_attested": 5,
+    "prior_r57_historical_sft_exact_uuid_exposed": 1,
+    "no_exact_overlap_with_27_uuid_r57_history": 4,
+    "r57_roster_is_not_r50_dev_other_protection_registry": true,
+    "r50_uuid_clearance": "PENDING",
+    "r55_r57_dev_uuid_clearance": "PENDING",
+    "other_reserved_uuid_clearance": "PENDING",
+    "g2_runtime_replay": "NOT_STARTED",
+    "g3_two_independent_reviewers": "NOT_STARTED",
+    "grandfathered_old_results": "SOURCE_RESULTS_NOT_MUTATED",
+    "training_admitted": 0,
+    "expansion_allowed": false
   }
 }
