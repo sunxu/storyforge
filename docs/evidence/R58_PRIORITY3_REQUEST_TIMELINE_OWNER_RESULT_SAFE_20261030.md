@@ -33,3 +33,28 @@ python3 -m unittest discover -s experiments/r58_roleplay_replay \
 ```
 
 只需提交脚本输出的 SAFE JSON。它不访问数据库、不做任何写入，不打印目标元数据的值；训练准入 `HOLD` 不变。当前 Skill v0.1 未修改，PR #7 继续 Draft。
+
+## Owner 本地目标 metadata 请求键检查结果
+
+Owner 提供 `R58_LOCAL_REQUEST_KEY_INVENTORY_COMPLETE__DIRECT_LINK_HOLD`。对 `AUTHOR`、`CURRENT_PUBLIC`、`OLD_PUBLIC` 三条目标回复，各检查 7 种**顶层**预定义键（`requestId`、`request_id`、`apiRequestId`、`api_request_id`、`analyticsEventId`、`analytics_event_id`、`relayRequestId`），**共 21 个存在性结果均为 false**。这是确定的 Owner 本地安全诊断结果，但并没有扫描每个嵌套 metadata、数据库其他列、其他遥测表；不能断言绝对没有任何历史请求关联途径。源包、Prompt 与训练准入均未修改。
+
+## 下一步：仅增加独立的候选软信号
+
+已扩充原 `audit_priority3_request_timeline.py`，附加三项**不含私有标识的聚合计数**：
+
+- `events_with_history11_metric`：同 request_id 的唯一延迟指标包含 `token_breakdown.historyMsgCount=11`；
+- `events_near_target_ledger_update`：候选请求终态时间与**目标 Assistant 行**的 `update_after` Ledger 事件时间相差不超过 2 分钟；
+- `events_with_both_soft_signals`：同时具备两项软信号，并且保留先前的 duration/time 兼容检查。
+
+这些条件不会自动建立 target message ID 到 request ID 的直接键关系，也可能剩下多个或者零个候选；不能人为调窄窗口声称 exact。原 11 项合成测试扩大为 **15 项**，当前 Owner 尚未运行新测试与实际聚合查询。
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover -s experiments/r58_roleplay_replay \
+  -p 'test_audit_priority3_request_timeline.py' -v
+```
+
+测试通过后，在已确认的专用只读 PG 环境重复运行既有工具（先 `--plan-only`、再不带该参数）；只分享安全聚合 JSON。强制保留 `exact_target_message_to_request_join=false`、`request_start_time_certified=false`、`provider_request_byte_exact=HOLD` 与训练准入 HOLD。
+
+固定源码 `RolePlay@e9fe29c` 中 `historyMsgCount` 来自 `llmHistory.length`；当前数据库 `v2_chat_messages.analytics_event_id` 列存在但没有在已检查的持久化路径中确认它能指向请求 ID，因此不能作为直接关联证据。
