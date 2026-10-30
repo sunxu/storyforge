@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_OWNER_UUID_WORLD_POLICY_APPLIED__ONE_HISTORICAL_EXPOSURE_EXCLUDED__R50_DEV_OTHER_HOLD",
+  "status": "R58_ROUND1_UUID_POLICY_ACTIVE__1_EXPOSED_HARD_BLOCKED__4_AWAIT_R50_DEV_OTHER_REGISTRIES",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_4_NO_R57_UUID_OVERLAP_AWAIT_R50_DEV_OTHER_PROTECTED_SET_CHECKS",
+    "G1_WORLD_AND_PROTECTION": "HOLD_R50_DEV_OTHER_PROTECTION_AND_PRIOR_SFT_SOURCE_COVERAGE",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -385,7 +385,7 @@
     "script": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
     "private_output_example": "Owner-private G1 case-level HOLD ledger; exact IDs remain local only",
     "synthetic_tests_added": 4,
-    "total_synthetic_tests_expected": 77,
+    "total_synthetic_tests_expected": 80,
     "owner_new_test_status": "PENDING",
     "candidate_queue_modified": false,
     "replacement_selection_authorized": false,
@@ -397,7 +397,16 @@
       "r55_r57_dev_clear",
       "other_protected_clear"
     ],
-    "semantic_world_review_requirement": "WAIVED_BY_OWNER_POLICY"
+    "semantic_world_review_requirement": "WAIVED_BY_OWNER_POLICY",
+    "strict_shortlist_enforcement": {
+      "status": "CODE_COMMITTED_OWNER_TEST_PENDING",
+      "hard_exclude_exact_exposed_uuid": true,
+      "guarded_shortlist_requires_private_v2_exposure_ledger": true,
+      "missing_or_incomplete_ledger_status": "HOLD",
+      "remaining_four_protected_flags_required": true,
+      "candidate_queue_unchanged": true,
+      "owner_expansion_required": true
+    }
   },
   "g1_owner_uuid_world_identity_policy": {
     "status": "OWNER_POLICY_ACCEPTED_FOR_R58",
@@ -419,6 +428,7 @@
     "g3_two_independent_reviewers": "NOT_STARTED",
     "grandfathered_old_results": "SOURCE_RESULTS_NOT_MUTATED",
     "training_admitted": 0,
-    "expansion_allowed": false
+    "expansion_allowed": false,
+    "shortlist_strict_exposure_guard": true
   }
 }
