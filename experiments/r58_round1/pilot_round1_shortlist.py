@@ -29,7 +29,17 @@ def private_csv(path, mandatory):
         return list(reader)
 
 def boolish(x):
-    return str(x).strip().lower() in {'true','1','yes'}
+    """Accept PostgreSQL psql CSV booleans (t/f) and explicit textual forms.
+
+    Unknown non-empty tokens HOLD rather than silently rejecting all stories.
+    Empty values are treated as false so absent protection attestations block.
+    """
+    token = str(x if x is not None else '').strip().lower()
+    if token in {'t', 'true', '1', 'yes'}:
+        return True
+    if token in {'f', 'false', '0', 'no', ''}:
+        return False
+    raise Hold('unexpected boolean CSV token')
 
 def positive_int(x):
     try:
