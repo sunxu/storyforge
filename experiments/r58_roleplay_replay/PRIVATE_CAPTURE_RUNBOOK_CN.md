@@ -305,3 +305,15 @@ Owner 最新 SAFE JSON `R58_REQUEST_TIMELINE_CORRELATION_HOLD`：三组候选在
 **执行停止规则**：未经新增独立硬证据，禁止继续更改时间窗口、按“最近事件”自动选定请求或将 heuristic 唯一候选标成真实字节级 PASS。具体证据门禁见 `docs/evidence/R58_PRIORITY3_REQUEST_LINK_STOP_RULE_AND_NEXT_GATES_SAFE_20261030.md`。三条来源只保留 `FROZEN_SOURCE_AND_CONDITIONAL_HISTORY_PASS__REQUEST_LINK_AND_PROMPT_BYTES_HOLD`，不升级 Dataset v0.4 正式训练准入。
 
 后续优先检查**历史 Prompt 组装的可验证条件与缺口**，包括当时部署代码、摘要游标、动态记忆、RAG、continue/regenerate/request flags、locale、post-DB history scrub、provider 参数等；只形成 SAFE 缺口矩阵，缺证据继续 HOLD。已冻结源包和 R50 均不可改变。
+
+## 十六、R58 固定源码历史 Prompt 组成缺口矩阵完成（2026-10-30）
+
+本轮转为源码路径研究，**不继续调整请求时间窗口**。已提交：
+- `docs/evidence/R58_PRIORITY3_PROMPT_ASSEMBLY_GAP_MATRIX_SAFE_20261030.json`：19 个细分层的证据状态、缺失证明、源码参照行、阻断门禁（其中 17 项阻断字节级精确重建）。
+- `docs/evidence/R58_PRIORITY3_PROMPT_ASSEMBLY_GAP_MATRIX_SAFE_20261030.md`：典型文字聊天 Prompt 组装概览及 P0/P1 证据获取优先级。
+
+发现除冻结 `story v2_data` 和历史消息外，固定源码在 Route/Provider 阶段还可能执行：Reader 故事本地化/开场索引、人设面具、native/legacy Base 灰度、动态记忆和 RAG、摘要裁剪与历史 scrub、companion 指令、用户最后一条消息的 locale/inline contract、请求重生成/续传、Provider 前 emoji sanitize。以上均为**源码行为或可能分支**，不是经认证的历史实际执行输入；历史线上部署 commit、目标 request_id 和真实 provider bytes 仍缺失。
+
+当前固定三案例的安全证据仍是：来源 3/3；条件历史 11×3；当前/冻结文本与 revision 对比 33/33；Ledger 操作 53/53；请求时间候选软筛选后 2/4/2，缺少直接 request ID。最终状态：`R58_SOURCE_PINNED_PROMPT_GAP_MATRIX_COMPLETE__RUNTIME_REQUEST_AND_BYTE_EXACT_HOLD`，正式 Train/Validation/Teacher 准入仍为 0。
+
+下一步优先**获取历史部署/请求快照/请求时间下 session 动态状态的可信证据**；否则只能将固定三案例保留为研究用途，不得以当前源码推导内容假称历史真实训练输入。禁用 R50、GPU/HF Job、冻结来源覆盖和生产数据库写入。
