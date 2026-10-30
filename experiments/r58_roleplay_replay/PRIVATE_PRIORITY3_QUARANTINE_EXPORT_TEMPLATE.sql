@@ -128,7 +128,7 @@ history AS MATERIALIZED (
 ), private_source AS MATERIALIZED (
  SELECT p.cohort,p.id AS target_message_id,p.story_id,p.session_id,p.user_id,p.turn_index,p.created_at,
  m.content AS target_text,m.metadata AS target_metadata,m.mutation_revision AS target_mutation_revision,
- moderation.id AS approved_submission_id,moderation.content_revision AS approved_revision,
+ moderation.id AS approved_submission_id,moderation.approval_at AS approved_at,moderation.content_revision AS approved_revision,
  moderation.snapshot->'source'->'v2Data' AS approved_story_card,
  ckpt.id AS checkpoint_id,ckpt.turn_index AS checkpoint_logical_turn,ckpt.created_at AS checkpoint_at,ckpt.snapshot AS checkpoint_snapshot,
  prev.history24,prev.n24,prev.n24_complete,prev.post_target_ledger_events,
@@ -137,7 +137,7 @@ history AS MATERIALIZED (
  FROM priority3 p
  JOIN public.v2_chat_messages m ON m.id=p.id
  LEFT JOIN LATERAL(
-  SELECT sub.id,sub.content_revision,sub.snapshot
+  SELECT sub.id,action.created_at AS approval_at,sub.content_revision,sub.snapshot
   FROM public.story_moderation_action_logs action
   JOIN public.story_moderation_submissions sub ON sub.id=action.submission_id
   WHERE action.story_id::text=p.story_id AND action.created_at<p.created_at
@@ -187,7 +187,7 @@ SELECT jsonb_build_object(
  'case',jsonb_build_object('cohort',cohort,'story_id',story_id,'session_id',session_id,
     'target_message_id',target_message_id,'turn_index',turn_index,'target_created_at',created_at),
  'historical_approved_story',jsonb_build_object('submission_id',approved_submission_id,
-    'content_revision',approved_revision,'v2_data',approved_story_card),
+    'approval_at',approved_at,'content_revision',approved_revision,'v2_data',approved_story_card),
  'prior_checkpoint',jsonb_build_object('id',checkpoint_id,'turn_index',checkpoint_logical_turn,
     'created_at',checkpoint_at,'snapshot',checkpoint_snapshot),
  'history24',history24,
