@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_DIAGNOSTIC_TEST_FALSE_POSITIVE_FIXED__OWNER_23_TEST_RERUN_PENDING__WORLD_GUARD_HOLD",
+  "status": "R58_ROUND1_METADATA_DISCOVERY_1280_PASS__WORLD_GUARD_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_NO_GUARD_REGISTRY",
+    "G1_WORLD_AND_PROTECTION": "HOLD_NO_INDEPENDENT_GUARD_REGISTRY",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -61,7 +61,7 @@
   "artifacts": {
     "selector": "experiments/r58_round1/pilot_round1_shortlist.py",
     "synthetic_tests": "experiments/r58_round1/test_pilot_round1_shortlist.py",
-    "synthetic_test_result": "Original 12 PASS_OWNER_REPORTED; expanded 23-test suite PENDING on Owner Mac",
+    "synthetic_test_result": "Owner Mac 23/23 PASS, 0.019s (2026-10-30); independent code review not same as end-to-end external attestation",
     "private_story_or_user_ids_in_repo": false,
     "owner_mac_synthetic_tests": {
       "status": "PASS_OWNER_REPORTED",
@@ -137,26 +137,59 @@
       ],
       "no_private_ids_or_data_in_output": true,
       "new_synthetic_test_count": 23,
-      "owner_test_run": "OWNER 23 TESTS: 22 PASS, 1 FALSE-POSITIVE ASSERTION; FIX COMMITTED; RERUN PENDING",
+      "owner_test_run": "PASS_OWNER_REPORTED_23_OF_23",
       "owner_local_csv_reuse": true,
       "if_zero_large_status": "R58_ROUND1_UNEXPECTED_ZERO__CSV_GATE_HOLD",
       "world_guard": "HOLD",
       "expansion_allowed": false
-    }
+    },
+    "resolution": "CLOSED_OWNER_MAC_V2_23_TESTS_PASS_AND_1280_METADATA_ELIGIBLE"
   },
   "owner_mac_v2_diagnostic_tests_20261030": {
-    "status": "22_PASS_1_TEST_ASSERTION_FALSE_POSITIVE__FIX_COMMITTED__OWNER_RERUN_PENDING",
+    "status": "23_OF_23_PASS_OWNER_REPORTED",
     "tests_run": 23,
-    "failures": 1,
+    "failures": 0,
     "errors": 0,
-    "owner_reported_runtime_seconds": 0.01,
-    "failed_test": "test_diagnostic_does_not_echo_story_ids_or_strings",
-    "root_cause": "Test used substring assertNotIn('v2_sandbox') but a static allowlisted metric key story_type_v2_sandbox contains that substring. Static key label is not private CSV data.",
-    "fix": "Test now checks quoted raw value, known SAFE key whitelist, no private synthetic ID/canary in diagnostic helper or full audit projection.",
-    "selection_algorithm_changed": false,
-    "protected_world_guards_changed": false,
-    "synthetic_test_count_after_fix": 23,
-    "owner_mac_rerun": "PENDING",
-    "local_csv_metadata_discovery": "NOT_YET_REPORTED_AFTER_DIAGNOSTIC_V2"
+    "owner_reported_runtime_seconds": 0.019,
+    "parser_version": "R58_ROUND1_CSV_GATE_DIAGNOSTIC_V2",
+    "private_data_reported": false
+  },
+  "owner_local_discovery_verified_20261030": {
+    "status": "R58_ROUND1_METADATA_DISCOVERY_1280_OWNER_REPORTED_PASS",
+    "parser_version": "R58_ROUND1_CSV_GATE_DIAGNOSTIC_V2",
+    "owner_safe_json_only": true,
+    "parsed_rows": 1284,
+    "eligible": 1280,
+    "eligible_by_source": {
+      "original": 1106,
+      "dice_cocreate": 91,
+      "ai_assisted": 83
+    },
+    "individual_predicate_pass_counts": {
+      "story_type_v2_sandbox": 1284,
+      "moderation_approved": 1284,
+      "not_deleted": 1284,
+      "assistant_completed_50plus": 1284,
+      "session_count_2plus": 1280,
+      "has_world": 1284,
+      "has_character_or_characters": 1284,
+      "has_opening": 1284,
+      "recognized_source_type": 1284
+    },
+    "cumulative_survivor_counts": {
+      "story_type_v2_sandbox": 1284,
+      "moderation_approved": 1284,
+      "not_deleted": 1284,
+      "assistant_completed_50plus": 1284,
+      "session_count_2plus": 1280,
+      "has_world": 1280,
+      "has_character_or_characters": 1280,
+      "has_opening": 1280,
+      "recognized_source_type": 1280
+    },
+    "database_readonly_aggregate_agreement": true,
+    "candidate_reply_text_accessed": false,
+    "story_ids_returned_to_assistant": false,
+    "interpretation": "Only four records fail >=2 sessions; no content/quality/protection clearance established."
   }
 }
