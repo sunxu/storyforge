@@ -123,5 +123,32 @@
     "provider_request_bytes": "HOLD",
     "training_admission": "HOLD"
   },
-  "status": "OWNER_MUTATION_ROLE_AUDIT_3_OF_3_PASS__HISTORICAL_LEDGER_ASOF_HOLD"
+  "status": "OWNER_REVISION_DEPTH_3_OF_3_PASS__HISTORICAL_ASOF_LEDGER_HOLD",
+  "owner_revision_depth": {
+    "status": "R58_REVISION_DEPTH_INVENTORY_PASS__ASOF_RUNTIME_HOLD",
+    "origin": "Owner-supplied safe local JSON output",
+    "cohorts": [
+      "AUTHOR",
+      "CURRENT_PUBLIC",
+      "OLD_PUBLIC"
+    ],
+    "cases": 3,
+    "per_case": {
+      "assistant_total": 5,
+      "assistant_revision_0": 0,
+      "assistant_revision_1": 0,
+      "assistant_revision_2_plus": 5,
+      "user_total": 6,
+      "user_revision_0": 6,
+      "user_revision_1": 0,
+      "user_revision_2_plus": 0
+    },
+    "total_assistant_revision_2_plus": 15,
+    "total_user_revision_0": 18,
+    "source_bundle_integrity": "PASS",
+    "historical_content_unchanged": "HOLD",
+    "provider_request_byte_exact": "HOLD",
+    "training_admission": "HOLD",
+    "new_depth_tests_execution": "NOT_REPORTED"
+  }
 }
