@@ -1,0 +1,81 @@
+{
+  "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
+  "created_date": "2026-10-30",
+  "phase": "ROUND1_PILOT_DISCOVERY",
+  "status": "R58_ROUND1_METADATA_INVENTORY_PASS__PROTECTED_WORLD_GUARD_HOLD",
+  "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
+  "database_read_only": true,
+  "metadata_snapshot": {
+    "rollup_latest_utc": "2026-10-30T09:34:05.552122Z",
+    "approved_active_v2_stories": 1532,
+    "v2_stories_with_50plus_completed_assistant": 1284,
+    "v2_stories_with_100plus_completed_assistant": 1184,
+    "fifty_plus_with_world_key": 1284,
+    "fifty_plus_with_two_or_more_sessions": 1280,
+    "fifty_plus_with_five_or_more_sessions": 1234,
+    "two_hundred_plus_and_five_sessions": 1034,
+    "distinct_nonempty_genre_count": 0,
+    "fifty_plus_with_director_key": 1284,
+    "fifty_plus_with_opening_key": 1284,
+    "source_type_breakdown": {
+      "original": {
+        "count": 1108,
+        "at_least_five_sessions": 1083
+      },
+      "dice_cocreate": {
+        "count": 91,
+        "at_least_five_sessions": 82
+      },
+      "ai_assisted": {
+        "count": 85,
+        "at_least_five_sessions": 69
+      }
+    }
+  },
+  "pilot_bounds": {
+    "max_story_world_components": 5,
+    "max_reply_targets": 20,
+    "source_quotas": {
+      "original": 3,
+      "dice_cocreate": 1,
+      "ai_assisted": 1
+    },
+    "story_activity_min_completed": 50,
+    "story_min_sessions": 2,
+    "genre_dimension_disabled_reason": "All eligible genre values empty; do not invent genre diversity",
+    "world_component_split": "one selected story per independently verified semantic component",
+    "r50_protected_world_exclusion": "REQUIRED_BEFORE_PRIVATE_SELECTION",
+    "prior_sft_world_exposure_exclusion": "REQUIRED_BEFORE_PRIVATE_SELECTION",
+    "r55_r57_dev_exclusion": "REQUIRED_BEFORE_PRIVATE_SELECTION",
+    "other_protected_exclusion": "REQUIRED_BEFORE_PRIVATE_SELECTION",
+    "quality_reviewers_required": 2
+  },
+  "gates": {
+    "G1_WORLD_AND_PROTECTION": "HOLD_NO_GUARD_REGISTRY",
+    "G2_RUNTIME_REPLAY": "HOLD",
+    "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
+    "G4_WORLD_SPLIT": "HOLD",
+    "G5_DATASET_FREEZE": "NOT_STARTED",
+    "G6_TRAINING": "NOT_AUTHORIZED"
+  },
+  "artifacts": {
+    "selector": "experiments/r58_round1/pilot_round1_shortlist.py",
+    "synthetic_tests": "experiments/r58_round1/test_pilot_round1_shortlist.py",
+    "synthetic_test_result": "12/12 PASS on local synthetic-only environment; owner Mac execution PENDING",
+    "private_story_or_user_ids_in_repo": false
+  },
+  "completion": {
+    "status": "NOT_COMPLETE",
+    "completion_receipt_required": "docs/evidence/R58_ROUND1_PILOT_COMPLETION_SAFE.json",
+    "completion_receipt_exact_status": "R58_ROUND1_PILOT_REVIEW_COMPLETE",
+    "notify_user_before_expansion": true,
+    "explicit_owner_expansion_approval_required": true,
+    "expansion_allowed": false
+  },
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "teacher_admitted": 0,
+  "owner_permission_to_run_gpu": false,
+  "original_r58_priority3_frozen_source_unchanged": true,
+  "skill_v01_unchanged": true
+}
