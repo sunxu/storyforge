@@ -1,17 +1,13 @@
--- DANGER: PRIVATE QUARANTINE EXPORT ONLY. THIS RETURNS FULL STORY CARD AND DIALOGUE TEXT!
--- NEVER execute through ChatGPT connectors, or commit/paste the results into GitHub/ChatGPT/SAFE reports.
--- Run only with the owner's scoped READ-ONLY database account inside HF private workspace, umask 077.
--- The statement is one SELECT, giving one PostgreSQL statement-level MVCC snapshot.
--- This does not assert original runtime request, independent worlds, model, locale or training admission.
--- R58 minimal 3-route replay priority, based on 10-case evidence-tier selection; read-only aggregation.
--- No identities or contents are returned. SQL uses 133 candidate LIVE cohort; does not freeze IDs.
--- 'metric_count_equals_raw_completed_count' is diagnostic only: real window is further pruned/scrubbed.
--- R58 RolePlay source-aware audit, SELECT-only, aggregate-only, no IDs/texts/prompt bodies emitted.
--- The results apply only to the pinned 2026-10-30 pilot cohort and live database query time.
--- Repo analysis pinned: sunxu/RolePlay e9fe29c42434caeb0bac5acc91845ab4741ecb2b.
--- R58 RolePlay v0.1 CHECKPOINT-AWARE PILOT: read-only metadata discovery only.
--- This SQL returns aggregate counts only; it does NOT return story/session/message IDs or body text.
--- Live analytics and session mutations mean reruns need not equal a frozen dataset.
+-- DANGER: PRIVATE QUARANTINE EXPORT ONLY; RETURNS FULL PRIVATE STORY CARDS, IDs, AND DIALOGUE!
+-- NEVER execute via ChatGPT or other shared connector; never paste results or query-instance IDs into chat/GitHub.
+-- Owner-local read-only PostgreSQL execution only, with umask 077 and private 0700/0600 files.
+-- Emits exactly 3 PRIVATE JSONL records when qualifying rows exist; this is NOT a SAFE aggregate report.
+-- Query selects a live cohort dynamically. The first already captured 2026-10-30 physical source
+-- is IMMUTABLE: DO NOT rerun this SQL to replace the existing private source capture.
+-- One SQL SELECT uses a single statement-level MVCC snapshot, not historical request-time snapshots.
+-- Does NOT prove provider-request bytes, historical deploy commit, model, locale, or training admission.
+-- Nearby latency metrics are time-correlated, not verified exact request_id joins.
+-- Source code reference PIN: sunxu/RolePlay@e9fe29c42434caeb0bac5acc91845ab4741ecb2b
 WITH base AS MATERIALIZED (
  SELECT s.id,
  CASE WHEN jsonb_typeof(s.v2_data->'characters')='array' AND jsonb_array_length(s.v2_data->'characters')>1 THEN 'multi' ELSE 'single' END AS cb,
