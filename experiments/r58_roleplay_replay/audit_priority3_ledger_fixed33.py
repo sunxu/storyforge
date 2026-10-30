@@ -144,8 +144,19 @@ def aggregate(folder):
             raise Hold("DB fixed source count mismatch")
     # Strict output projection: never echo arbitrary database JSON fields.
     safe_cases = [{k: c[k] for k in ("cohort", *fields)} for c in cases]
+    source_drift = sum(
+        c["missing_current"] + c["revision_drift"] + c["content_drift"]
+        + c["ledger_after_target"] for c in cases
+    )
+    completed_old_variants = sum(c["prior_completed_text_variants"] for c in cases)
+    diagnostic_status = (
+        "R58_LEDGER_FIXED33_SOURCE_DRIFT_HOLD" if source_drift else
+        "R58_LEDGER_FIXED33_COMPLETED_PRIOR_TEXT_VARIANT_HOLD"
+        if completed_old_variants else
+        "R58_LEDGER_FIXED33_DIAGNOSTIC_PASS__ASOF_PROMPT_HOLD"
+    )
     return {
-        "status": "R58_LEDGER_FIXED33_AGGREGATE_COMPLETED__ASOF_PROMPT_HOLD",
+        "status": diagnostic_status,
         "cases": sorted(safe_cases, key=lambda c: c["cohort"]),
         "frozen_message_count": 33,
         "historical_request_time_text_parity": "HOLD",
