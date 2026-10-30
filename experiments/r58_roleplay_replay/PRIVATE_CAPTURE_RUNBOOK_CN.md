@@ -226,3 +226,21 @@ python3 experiments/r58_roleplay_replay/profile_priority3_revision_depth.py \
 工具附带 7 项纯合成回归测试（Owner 尚未运行，不能提前宣布 PASS）。若 15 个 Assistant 皆为 revision=1，则与一次流式最终写入相符，**仍不证明**未发生正文变化；若存在 revision >= 2 则优先追查这些消息的 Ledger 时间/操作。所有情况 `as-of` 历史原文与 provider 原始请求仍 HOLD。
 
 单独的固定 33 条 Ledger as-of 对照是下一道**尚未完成**的门禁：只能在 Owner 授权的私有环境中以固定 ID 只读聚合执行，返回不含 ID、正文、hash 的计数。不可重新执行动态选样 SQL，也不可把私有消息列表带到 ChatGPT/GitHub。
+
+## 十一、固定 33 消息 Ledger 回执与操作分类（2026-10-30）
+
+Owner 报告 `R58_LEDGER_FIXED33_DIAGNOSTIC_PASS__ASOF_PROMPT_HOLD`：三组共 33 条，当前缺失数、内容摘要漂移、修订号漂移、目标时间后 Ledger 事件、已完成旧正文差异均为 0；目标前 Ledger 事件数分别为 AUTHOR=11、CURRENT_PUBLIC=21、OLD_PUBLIC=21。SAFE 计数已存入 `docs/evidence/R58_PRIORITY3_FIXED33_LEDGER_OWNER_REPORT_SAFE_20261030.json`。
+
+**下一步是同一固定 33 条消息的操作分类，而非重选故事**。已扩充 `audit_priority3_ledger_fixed33.py`：新增 `insert/update_before/update_after/delete/other` 及按角色的操作计数，并验证分类之和。测试从 5 增至 9 项，新增测试的 Mac 运行状态仍是 PENDING。
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover -s experiments/r58_roleplay_replay \
+  -p 'test_audit_priority3_ledger_fixed33.py' -v
+python3 experiments/r58_roleplay_replay/audit_priority3_ledger_fixed33.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture" \
+  --plan-only
+```
+
+仅在以上两步 PASS、且 `PGHOST`、`PGUSER`、`PGPASSWORD` 均为此前已确认的专用只读配置时，再对相同来源目录执行一次脚本（去掉 `--plan-only`）。**只提交安全聚合 JSON，不要提供查询 SQL、凭据、UUID、hash 或故事正文。** 此门禁只用于解释 11/21/21，不能认证 API 请求开始时间、线上部署版本、动态 System Prompt、RAG、最后消息注入或字节级一致性。Train/Validation/Teacher 仍为 0，PR Draft，Skill v0.1 不变。
