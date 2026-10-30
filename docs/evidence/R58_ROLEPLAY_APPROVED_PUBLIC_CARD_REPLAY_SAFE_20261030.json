@@ -1,0 +1,65 @@
+{
+  "schema": "storyforge-r58-historical-approved-story-card-evidence-safe-v1",
+  "date": "2026-10-30",
+  "source": {
+    "roleplay_repo": "sunxu/RolePlay",
+    "commit": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "db_permission": "read_only",
+    "sql_path": "docs/evidence/R58_ROLEPLAY_APPROVED_PUBLIC_CARD_REPLAY_QUERY_SAFE_20261030.sql"
+  },
+  "cohort": {
+    "total_with_prior_story_version_record": 133,
+    "author_draft": 3,
+    "reader_current_approved": 113,
+    "reader_previous_approved": 17,
+    "prior_approval_action": 133,
+    "approval_snapshot_v2Data_object": 133,
+    "author_and_reader_current_snapshot_equals_current_public": 116,
+    "reader_old_snapshot_differs_current_public": 17,
+    "distinct_old_approved_submissions": 4,
+    "intervening_nonpublic_action_log": 0
+  },
+  "dynamic": {
+    "translations_cached_created_before_target": {
+      "author": 3,
+      "reader_current": 73,
+      "reader_previous": 11
+    },
+    "actual_locale_proven": 0,
+    "present_session_state_updated_after_target": 133,
+    "with_event_before_after_metadata": 106,
+    "success_metric_time_near_30_sec": 67,
+    "metric_unique_in_window": 60,
+    "metric_multiple": 7,
+    "nearest_metric_native_prompt_v21": 67,
+    "request_id_exact_parity": 0
+  },
+  "code_time": {
+    "candidate_earliest_utc": "2026-10-01 01:59:41.793+00",
+    "candidate_latest_utc": "2026-10-30 05:07:42.549512+00",
+    "before_pinned_source_commit": 106,
+    "after_pinned_source_commit": 27
+  },
+  "status": "HISTORICAL_APPROVED_STORY_CARD_EVIDENCE_133_OF_133__RUNTIME_CONFIG_AND_BYTE_REPLAY_HOLD",
+  "admission": {
+    "train": 0,
+    "validation": 0,
+    "teacher": 0
+  },
+  "privacy": {
+    "conversation_export": false,
+    "story_config_export": false,
+    "user_identifiers_export": false,
+    "r50_accessed": false,
+    "db_writes": false,
+    "hf_jobs": false
+  },
+  "caveats": [
+    "Historical approval does not alone prove historical deployed code or request locale",
+    "Current translation cache presence not the same as selected runtime language",
+    "Current session memory state is later than target",
+    "JSONB equivalence not transport-byte equivalence",
+    "Live cohort IDs are not frozen",
+    "Model metrics are only same-session time-neighbor evidence"
+  ]
+}
