@@ -127,3 +127,15 @@ PGOPTIONS='-c default_transaction_read_only=on' \
 必须同时满足：**数据库端只读 + `psql` 成功退出 + 捕获器返回 0 + `CAPTURE_COMPLETE` 存在 + 私有 manifest/source SHA 一致**。若任何一步失败，保留 HOLD，不宣称完成。首次捕获后禁止用相同时间种子从动态数据库“补跑替换”原始物理案例。
 
 本轮仅对 SQL 做 `EXPLAIN` 并在隔离的本地测试环境跑合成测试。**没有启动 HF、没有执行私有导出 SELECT，也没有物理案例冻结。**
+
+## 六、CPU-only HF Job 一键执行入口
+
+新增 `run_priority3_cpu_capture.sh`，在独立 HF CPU Job 内运行：检查只读数据库环境变量、拒绝 `postgres` 管理员账户、合成测试、Postgres 连接的 `transaction_read_only=on`、目标路径权限，然后通过 `psql | capture_priority3.py` 进行一次受控捕获，最后复核私有文件级 SHA256。**不调用模型、不启动训练、不访问 R50。**
+
+Mac 上的 Hugging Face CLI 任务应通过 `-v ./experiments/r58_roleplay_replay:/app/r58:ro` 只上传此代码目录，另挂载 `hf://buckets/adradar/storyforge-training:/workspace` 写入私有目标；`PGPASSWORD` 使用 `-s PGPASSWORD` 以 HF Job 加密 secrets 注入，严禁用 `-e PGPASSWORD=...`。其他 PGHOST/PGPORT/PGDATABASE/PGUSER 可使用普通 `-e`。
+
+示例远端容器命令：`python:3.12-slim bash /app/r58/run_priority3_cpu_capture.sh`（此 Shell 会在需要时安装 postgresql-client）。**macOS 并不是运行私有 SQL 的机器**；启动动作由 Owner 在核对收费与权限后发起。
+
+Job 必须有专用只读 Postgres 账户，且可读取本 SQL 关联的表及审核/账本记录。HF Storage Bucket 必须是 Owner 的私有 Bucket；FUSE 权限不满足时 fail-closed，不要删掉安全检查绕过。完整 shell 命令在 ChatGPT 的操作指引中提供。
+
+预期 stdout 只出现安全摘要 `PRIVATE_CAPTURE_COMPLETE_NOT_TRAIN_ADMITTED` 和 `R58_PRIVATE_SOURCE_CAPTURE_VERIFIED`；若出现 HOLD/SQL 超时/私有路径不可 chmod，则停止，**不要复制包含原始 SQL 或输出数据的完整日志到聊天**。
