@@ -74,7 +74,7 @@ def protected_ids(src:dict,coverage:dict)->set[str]:
         or coverage.get("candidate_case_count")!=46
         or coverage.get("excluded_case_count")!=4
         or not isinstance(coverage.get("per_world"),dict)
-        or len(coverage["per_world"])!=5):
+        or set(coverage["per_world"])!={f"W{i}" for i in range(16,21)}):
         raise Hold("R50 later case-count coverage mismatch")
     return ids
 
