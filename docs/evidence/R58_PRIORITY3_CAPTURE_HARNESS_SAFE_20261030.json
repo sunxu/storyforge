@@ -1,0 +1,61 @@
+{
+  "schema": "storyforge-r58-priority3-private-capture-harness-safe-v1",
+  "date": "2026-10-30",
+  "state": "PRIVATE_CAPTURE_HARNESS_SYNTHETIC_PASS__HF_CAPTURE_NOT_STARTED",
+  "scope": "Reference experiment outside Skill v0.1; source content not exported through ChatGPT",
+  "content_sql": "experiments/r58_roleplay_replay/PRIVATE_PRIORITY3_QUARANTINE_EXPORT_TEMPLATE.sql",
+  "capture_script": "experiments/r58_roleplay_replay/capture_priority3.py",
+  "synthetic_tests": "experiments/r58_roleplay_replay/test_capture_priority3.py",
+  "runbook": "experiments/r58_roleplay_replay/PRIVATE_CAPTURE_RUNBOOK_CN.md",
+  "code_ref": "sunxu/RolePlay@e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+  "validation": {
+    "synthetic_offline_tests_local": 17,
+    "synthetic_offline_tests_passed": 17,
+    "github_remote_ci_executed": false,
+    "private_content_sql_parse_plan": "EXPLAIN_ONLY_PASS",
+    "private_content_sql_select_executed": false,
+    "private_source_bundle_created": false,
+    "private_case_sha256_manifest_created": false,
+    "executed_paid_job": false,
+    "model_inference_executed": false,
+    "source_story_ids_exported": false,
+    "r50_accessed": false,
+    "supabase_mutated": false
+  },
+  "capture_contract": {
+    "rows_required": 3,
+    "routes": [
+      "AUTHOR",
+      "CURRENT_PUBLIC",
+      "OLD_PUBLIC"
+    ],
+    "distinct_story_ids_required": true,
+    "prior_story_approval_timestamp_guard": true,
+    "prior_checkpoint_timestamp_and_turn_guard": true,
+    "prior_history_24_completed_strictly_increasing_guard": true,
+    "no_later_ledger_updates_required": true,
+    "max_input_bytes": 52428800,
+    "private_directory_permissions": "0700",
+    "private_file_permissions": "0600",
+    "no_overwrite": true,
+    "symlink_guard": true,
+    "completion_marker": "CAPTURE_COMPLETE",
+    "immutable_on_error": true,
+    "manifest_classification": "PRIVATE",
+    "provider_byte_exact_attested": false,
+    "validation_and_frozen_train_admission": false
+  },
+  "known_blockers": [
+    "No HF private execution connector or deployed private job has been invoked",
+    "No physical message ID source manifest has been persisted",
+    "Historical deployed code, runtime locale, memory/RAG outputs, original request bytes are still missing",
+    "Semantic story-world isolation, protected set metadata screen and quality reviews remain undone",
+    "Hash calculations in Supabase are not persisted private source freeze"
+  ],
+  "dataset_v04": {
+    "train_admitted": 0,
+    "validation_admitted": 0
+  },
+  "skill_v01_modified": false,
+  "pr7_draft_expected": true
+}
