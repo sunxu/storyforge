@@ -127,3 +127,29 @@ python3 experiments/r58_round1/pilot_round1_shortlist.py \
 ```
 
 应看到 `Ran 17 tests`、`OK`，正常情况下 `metadata_eligible` 应接近数据库复算的 1280，并保持 `DISCOVERY_ONLY__WORLD_GUARD_HOLD`、`expansion_allowed=false` 和 Train/Val/Teacher=0。若行数/分类与上述基线不一致，**先 HOLD 排查 CSV 生成时间/结构，不私自调整候选数来凑齐**。只向聊天报告第二条命令的 SAFE JSON；不回传任何故事 ID、用户信息或原始 CSV。
+
+## 8. 第二次 1284→0 仍异常：条件瀑布诊断（2026-10-30）
+
+Owner 再次回报 `inventory_rows=1284`、`metadata_eligible=0`，输出仍为旧字段集合，没有 `parser_version`。**目前不能断言 Mac 是否已经运行含 t/f 修复的版本**；也可能是其他枚举/结构/会话筛选条件不匹配。无论如何，0 与独立数据库同条件聚合 1280 不符，禁止将其视为真实空池或审核完成。
+
+已更新筛选器（不变更准入/范围/来源 CSV）：
+- 在 SAFE JSON 中加入固定 `parser_version=R58_ROUND1_CSV_GATE_DIAGNOSTIC_V2`；
+- `condition_diagnostics.individual_pass_counts` 给出 9 个已知门禁各自 PASS 数量；
+- `condition_diagnostics.cumulative_survivor_counts` 给出按既定筛选顺序逐级剩余数量；
+- 全部数字只聚合，不回传任何故事 ID、原始字段值或逐行结果；
+- 若 `inventory_rows>=100` 但 `metadata_eligible=0`，返回 `R58_ROUND1_UNEXPECTED_ZERO__CSV_GATE_HOLD`，绝不放行保护世界或扩样；
+- 枚举字段 trim 空白，PostgreSQL 布尔值支持 t/f，未知布尔字符串报 HOLD；
+- 纯合成测试从 17 项扩展至 **23 项**，Owner Mac 验证仍待运行。
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover -s experiments/r58_round1 \
+  -p 'test_pilot_round1_shortlist.py' -v &&
+python3 experiments/r58_round1/pilot_round1_shortlist.py \
+  --inventory "$HOME/.storyforge-r58-private/round1_pilot_20261030/stories_private.csv"
+```
+
+**请只分享测试摘要（`Ran ... tests` / `OK`）以及 SAFE JSON。** 若 JSON 没有 `parser_version`，说明实际执行的是旧版脚本/不同工作目录，先检查 `git rev-parse HEAD`、`git status --short` 与脚本中该固定标记是否存在（不要输出任何源 CSV 行）。若出现异常 HOLD，分享 SAFE `condition_diagnostics` 数字即可；不要上传整个私有 CSV。
+
+首轮正式候选筛选仍未完成，保护世界隔离、R50/R55/R57 曝光排除仍 HOLD。已设置首轮完成后扩样前提醒，未经 Owner 明确批准禁止扩大。
