@@ -30,8 +30,26 @@ class Cases(unittest.TestCase):
         with p.open('w',newline='',encoding='utf-8') as f:
             w=csv.DictWriter(f,fieldnames=list(rows[0]));w.writeheader();w.writerows(rows)
         return p
+    def synthetic_exposure_ledger(self,story_ids=('id1',),exposed=()):
+        path=self.sec/'test_prior_sft_holds_v2.json'
+        rows=[{
+            'story_id_PRIVATE':sid,
+            'historical_sft_exact_uuid_overlap':sid in exposed,
+            'status':('EXCLUDED_PRIOR_SFT_EXACT_UUID_EXPOSURE' if sid in exposed
+                      else 'HOLD_R50_DEV_OTHER_PROTECTED_UUID_CHECK_PENDING'),
+        } for sid in story_ids]
+        path.write_text(json.dumps({
+            'schema':'r58_round1_g1_prior_sft_exact_id_holds_private_v2',
+            'namespace_equivalence_owner_confirmed':True,
+            'expansion_allowed':False,'entries':rows,
+        }))
+        os.chmod(path,0o600)
+        return path
+
     def args(self,inv,guards=None,out=None):
+        ledger=self.synthetic_exposure_ledger() if guards else None
         return Namespace(inventory=str(inv),guards=str(guards) if guards else None,
+                         prior_sft_holds=str(ledger) if ledger else None,
                          private_output=str(out) if out else None,safe_output=None)
     def test_discover_empty_genre_not_required(self):
         self.assertEqual(len(discover([STORY])),1)
@@ -193,6 +211,34 @@ class Cases(unittest.TestCase):
     def test_requires_private_output_guarded(self):
         inv=self.csvfile('inv.csv',[STORY]);g=self.csvfile('guard.csv',[GUARD])
         with self.assertRaises(Hold):audit(self.args(inv,g))
+    def test_guarded_selection_requires_exposure_ledger_even_if_all_flags_true(self):
+        inv=self.csvfile('exp_inv.csv',[STORY])
+        guards=self.csvfile('exp_guard.csv',[GUARD])
+        args=self.args(inv,guards,self.sec/'exp_selected.json')
+        args.prior_sft_holds=None
+        with self.assertRaises(Hold):
+            audit(args)
+        self.assertFalse((self.sec/'exp_selected.json').exists())
+
+    def test_guarded_selection_hard_excludes_known_prior_sft_uuid(self):
+        inv=self.csvfile('prior_inv.csv',[STORY])
+        guards=self.csvfile('prior_guard.csv',[GUARD])
+        args=self.args(inv,guards,self.sec/'prior_selected.json')
+        args.prior_sft_holds=str(self.synthetic_exposure_ledger(exposed=('id1',)))
+        result=audit(args)
+        self.assertEqual(result['prior_sft_exposed_stories_hard_excluded'],1)
+        self.assertEqual(result['picked_story_count'],0)
+        self.assertEqual(result['owner_claimed_cleared_count'],0)
+        self.assertFalse((self.sec/'prior_selected.json').exists())
+
+    def test_guarded_selection_rejects_ledger_missing_guard_story(self):
+        inv=self.csvfile('missing_inv.csv',[STORY])
+        guards=self.csvfile('missing_guard.csv',[GUARD])
+        args=self.args(inv,guards,self.sec/'missing_selected.json')
+        args.prior_sft_holds=str(self.synthetic_exposure_ledger(story_ids=('unrelated',)))
+        with self.assertRaises(Hold):
+            audit(args)
+
     def test_rejects_overwrite(self):
         inv=self.csvfile('inv2.csv',[STORY]);g=self.csvfile('guard2.csv',[GUARD]);o=self.sec/'chosen.json'
         audit(self.args(inv,g,o))
