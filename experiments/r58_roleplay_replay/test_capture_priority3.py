@@ -3,10 +3,11 @@ import json
 import os
 from pathlib import Path
 import stat
+import sys
 import tempfile
 import unittest
 
-from capture_priority3 import capture, Hold, SCHEMA, EXPECTED_STATUS
+from capture_priority3 import capture, Hold, SCHEMA, EXPECTED_STATUS, _trusted_macos_system_link
 
 
 def row(route, idx):
@@ -120,6 +121,25 @@ class TestCapture(unittest.TestCase):
         link.symlink_to(self.parent)
         with self.assertRaisesRegex(Hold, 'symlink'):
             capture(encode(self.rows), link, 'freeze1')
+
+    def test_macos_system_temp_alias(self):
+        if sys.platform != 'darwin':
+            self.skipTest('macOS-specific /var -> /private/var alias')
+        var = Path('/var')
+        self.assertTrue(var.is_symlink(), 'macOS /var is expected to be a system alias')
+        self.assertEqual(var.resolve(strict=True), Path('/private/var').resolve(strict=True))
+        self.assertTrue(_trusted_macos_system_link(var))
+        self.assertEqual(capture(encode(self.rows), self.parent, 'freeze1')['records'], 3)
+
+    def test_untrusted_ancestor_symlink(self):
+        storage = Path(self.tmp.name) / 'storage'
+        storage.mkdir(mode=0o700)
+        secure = storage / 'secure'
+        secure.mkdir(mode=0o700)
+        redirect = Path(self.tmp.name) / 'redirect'
+        redirect.symlink_to(storage, target_is_directory=True)
+        with self.assertRaisesRegex(Hold, 'symlink'):
+            capture(encode(self.rows), redirect / 'secure', 'freeze1')
 
     def test_no_target(self):
         self.rows[0]['target']['content'] = ''
