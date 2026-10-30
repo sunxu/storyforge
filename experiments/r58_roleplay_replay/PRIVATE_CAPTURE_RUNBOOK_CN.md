@@ -139,3 +139,22 @@ Mac 上的 Hugging Face CLI 任务应通过 `-v ./experiments/r58_roleplay_repla
 Job 必须有专用只读 Postgres 账户，且可读取本 SQL 关联的表及审核/账本记录。HF Storage Bucket 必须是 Owner 的私有 Bucket；FUSE 权限不满足时 fail-closed，不要删掉安全检查绕过。完整 shell 命令在 ChatGPT 的操作指引中提供。
 
 预期 stdout 只出现安全摘要 `PRIVATE_CAPTURE_COMPLETE_NOT_TRAIN_ADMITTED` 和 `R58_PRIVATE_SOURCE_CAPTURE_VERIFIED`；若出现 HOLD/SQL 超时/私有路径不可 chmod，则停止，**不要复制包含原始 SQL 或输出数据的完整日志到聊天**。
+
+## 七、Owner 实际本机捕获已通过（2026-10-30）及下一步复核
+
+Owner 已报告实际私有捕获 `records=3`、`PRIVATE_CAPTURE_COMPLETE_NOT_TRAIN_ADMITTED`，并报告 `R58_SOURCE_CAPTURE: PASS`、`SHA256_VERIFICATION: PASS`、`TRAINING_ADMISSION: HOLD`。**证据等级为 OWNER_REPORTED**；原始文件与私有哈希未被复制进聊天或 GitHub。
+
+下一步**不需要数据库连接、不需要重新捕获**：在 Mac 本地对已保存的隔离目录运行新的离线复核工具，逐条重算 12 个内容指纹：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+
+python3 -m unittest discover -s experiments/r58_roleplay_replay \
+  -p 'test_verify_priority3_private.py' -v
+
+python3 experiments/r58_roleplay_replay/verify_priority3_private.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture"
+```
+
+仅在新合成测试通过时运行第二条。预期 `status=R58_OWNER_LOCAL_PRIVATE_CAPTURE_RECHECK_PASS`、`case_fingerprints_verified=12`、`records=3`、`training_admission=HOLD`。这是二次**源包一致性**核验，不是防恶意篡改签名、实际 API 请求字节验证、世界隔离或训练批准。若失败，**不要**覆盖、重跑或修改既有原始数据，只保留 HOLD 和非敏感错误概要。
