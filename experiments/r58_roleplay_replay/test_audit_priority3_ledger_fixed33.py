@@ -95,7 +95,7 @@ class TestFixedLedger(unittest.TestCase):
             "PGPASSWORD": "test-only",
         }), patch("subprocess.run", return_value=subprocess.CompletedProcess(
             args=["psql"], returncode=0,
-            stdout=json.dumps(response) + "\\n", stderr="untrusted-db-error",
+            stdout=json.dumps(response) + "\n", stderr="untrusted-db-error",
         )) as runner:
             result = aggregate(self.freeze())
             self.assertTrue(runner.call_args.kwargs["capture_output"])
