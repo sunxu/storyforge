@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_41_TESTS_PASS__NO_STRUCTURAL_COLLISIONS__PRIVATE_INDEX_AUTODISCOVERY_READY__G1_HOLD",
+  "status": "R58_ROUND1_G1_FIVE_CANDIDATE_EXACT_HISTORY_CHECK_PENDING__HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_NO_COMPLETE_PROTECTED_WORLD_EXPOSURE_PROOF",
+    "G1_WORLD_AND_PROTECTION": "HOLD_EXACT_ID_R57_NOT_YET_RUN_AND_PROTECTED_SETS_UNVERIFIED",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -330,6 +330,25 @@
     "G1_clearance": "HOLD",
     "owner_mac_test_result": "PENDING",
     "owner_local_discovery": "PENDING",
+    "expansion_allowed": false
+  },
+  "g1_owner_filename_triage_20261030": {
+    "owner_test_result": "60_OF_60_PASS",
+    "candidate_path_occurrences": 29,
+    "unique_paths": 22,
+    "structural_world_index_like": 4,
+    "historical_sft_index_like": 2,
+    "dev_index_like": 5,
+    "source_coverage_verified": false
+  },
+  "g1_exact_historical_sft_next_step": {
+    "status": "TOOL_COMMITTED__OWNER_RUN_PENDING",
+    "tool": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
+    "test": "experiments/r58_round1/test_check_prior_sft_exact_world_ids.py",
+    "runbook": "docs/evidence/R58_ROUND1_G1_PRIOR_SFT_EXACT_ID_CHECK_SAFE_20261030.md",
+    "total_synthetic_tests_expected": 69,
+    "semantic_world_clearance": "HOLD",
+    "r50_protection": "HOLD",
     "expansion_allowed": false
   }
 }
