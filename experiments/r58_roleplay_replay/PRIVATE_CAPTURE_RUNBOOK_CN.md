@@ -183,3 +183,25 @@ python3 experiments/r58_roleplay_replay/preflight_priority3_history.py \
 **不能**把 `R58_CONDITIONAL_HISTORY_WINDOW_STRUCTURE_PASS` 宣布为真实 11 条原始请求字节级重建。实际当时的部署 commit、user request flags、locale、runtime prompt rollout、RAG、反复读和策略清理、最后 User 指令注入、请求 hash 仍未取得。Fail/HOLD 时不得重新运行生产数据库补选，更不得重写已固定的 `source.private.jsonl`。
 
 当前该预检和它的 10 项新合成测试**尚未取得 Owner 运行回执**。Train/Val/Teacher 正式准入保持零、Skill v0.1 不改、PR #7 继续 Draft。
+
+## 九、Owner 条件性 11 消息历史预检 3/3 PASS；修订版号待分类（2026-10-30）
+
+Owner 报告 `R58_CONDITIONAL_HISTORY_WINDOW_STRUCTURE_PASS__RUNTIME_REPLAY_HOLD`：3 路来源均推导出 11 消息；附近 `historyMsgCount=11` 3/3；Reader Event after/before 2/2，Author Event 元数据缺失；三路均有 `mutated_rows_in_conditional_window=5`。真实请求字节、历史送模字节以及训练准入仍 HOLD。
+
+从 Supabase 只读数据库函数定义确认 `mutation_revision` 会因 `status` 或 `partial_content` 变化增加，**不能据此声称五条正文被编辑**。按固定 RolePlay 源码的实际 `pruneHistoryBySummary` 使用 `v2Session.last_summary_turn`，而此离线预检用了 checkpoint 快照中相同字段；它们在目标请求时是否一致，仍缺证据。
+
+下一步以已冻结源包为输入，不连接 Supabase：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover \
+  -s experiments/r58_roleplay_replay \
+  -p 'test_audit_priority3_mutation_revisions.py' -v
+
+# 仅在新测试全通过后运行
+python3 experiments/r58_roleplay_replay/audit_priority3_mutation_revisions.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture"
+```
+
+该工具只输出每种来源的 11 条窗口中 User/Assistant 总数及 revision-positive 计数，不打印正文、ID、digest，且保留 `historical_content_unchanged=HOLD`。新增 8 项合成测试；本节撰写时尚待 Owner 执行。无论结果如何，**不要覆盖原始私有捕获或改变训练准入状态**。
