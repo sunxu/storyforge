@@ -153,3 +153,21 @@ python3 experiments/r58_round1/pilot_round1_shortlist.py \
 **请只分享测试摘要（`Ran ... tests` / `OK`）以及 SAFE JSON。** 若 JSON 没有 `parser_version`，说明实际执行的是旧版脚本/不同工作目录，先检查 `git rev-parse HEAD`、`git status --short` 与脚本中该固定标记是否存在（不要输出任何源 CSV 行）。若出现异常 HOLD，分享 SAFE `condition_diagnostics` 数字即可；不要上传整个私有 CSV。
 
 首轮正式候选筛选仍未完成，保护世界隔离、R50/R55/R57 曝光排除仍 HOLD。已设置首轮完成后扩样前提醒，未经 Owner 明确批准禁止扩大。
+
+## 9. 23 项合成测试中 1 项隐私断言误报：已修复（2026-10-30）
+
+Owner Mac 报告 `Ran 23 tests in 0.010s`，其中 22 项 PASS，唯一失败 `test_diagnostic_does_not_echo_story_ids_or_strings`。原因是测试用 `assertNotIn('v2_sandbox', text)` 错误地把 SAFE 固定统计键 `story_type_v2_sandbox` 当作 CSV 内容泄露。这是**测试断言的误报**，不是已发现数据泄漏，也不意味着先前 `1284→0` 的实际筛选异常已经解除。
+
+本次只修改测试（保持 23 项）：检查完整 JSON 值 `"v2_sandbox"`、synthetic story ID/私有 canary、不出现原始 `story_id` 字段，并严格核对 diagnostics 的键白名单，同时测试完整 `audit()` SAFE 输出。筛选条件与 G1 保护集门禁均未放宽。
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+
+python3 -m unittest discover -s experiments/r58_round1 \
+  -p 'test_pilot_round1_shortlist.py' -v &&
+python3 experiments/r58_round1/pilot_round1_shortlist.py \
+  --inventory "$HOME/.storyforge-r58-private/round1_pilot_20261030/stories_private.csv"
+```
+
+请仅回传测试摘要和带 `parser_version` / `condition_diagnostics` 的 SAFE JSON；不要上传私有 CSV、源字段值或 story ID。预期为 `Ran 23 tests / OK`；真实发现池计数尚待新输出验证。首轮完成和扩样仍为 HOLD。
