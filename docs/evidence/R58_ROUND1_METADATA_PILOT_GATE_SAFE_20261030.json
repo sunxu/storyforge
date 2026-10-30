@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_METADATA_DISCOVERY_1280_PASS__G1_REVIEW_QUEUE_TOOL_READY__GUARDS_HOLD",
+  "status": "R58_ROUND1_G1_PRIVATE_FIVE_QUEUE_CREATED__ALL_WORLD_AND_PROTECTION_GUARDS_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_NO_INDEPENDENT_GUARD_REGISTRY",
+    "G1_WORLD_AND_PROTECTION": "HOLD_5_METADATA_ROWS_NO_PROTECTION_OR_WORLD_PROOF",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -193,7 +193,7 @@
     "interpretation": "Only four records fail >=2 sessions; no content/quality/protection clearance established."
   },
   "g1_review_queue": {
-    "status": "R58_ROUND1_G1_METADATA_REVIEW_QUEUE_TOOL_READY__OWNER_EXECUTION_PENDING",
+    "status": "R58_ROUND1_G1_METADATA_REVIEW_QUEUE_CREATED__ALL_GUARDS_HOLD",
     "script": "experiments/r58_round1/prepare_round1_g1_review_queue.py",
     "runbook": "docs/evidence/R58_ROUND1_G1_PRIVATE_REVIEW_QUEUE_RUNBOOK_SAFE_20261030.md",
     "source_inventory": "OWNER_PRIVATE_EXISTING_CSV",
@@ -206,11 +206,30 @@
     "unverified_world_components": 0,
     "default_guards": "ALL_FALSE",
     "protected_content_accessed": false,
-    "private_queue_created_on_owner_mac": false,
+    "private_queue_created_on_owner_mac": true,
     "new_synthetic_test_cases": 7,
     "combined_synthetic_test_count": 30,
     "owner_new_tests": "PENDING",
     "admission": "HOLD",
-    "expansion_allowed": false
+    "expansion_allowed": false,
+    "owner_mac_test_result": {
+      "status": "30_OF_30_PASS_OWNER_REPORTED",
+      "tests_run": 30,
+      "reported_seconds": 0.014,
+      "failures": 0,
+      "errors": 0
+    },
+    "queue_records": 5,
+    "queue_by_source": {
+      "original": 3,
+      "dice_cocreate": 1,
+      "ai_assisted": 1
+    },
+    "world_components_verified": 0,
+    "all_guard_flags_default_false": true,
+    "protected_worlds_checked": false,
+    "prior_training_exposure_checked": false,
+    "quality_review_started": false,
+    "private_reply_text_accessed": false
   }
 }
