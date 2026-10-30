@@ -1,0 +1,61 @@
+{
+  "schema": "storyforge-r58-roleplay-versioned-pilot-safe-v1",
+  "recorded_date": "2026-10-30",
+  "database": "RolePlay Supabase (read-only transaction; public schema)",
+  "stage": "METADATA_DISCOVERY_ONLY__SHORTLIST_NOT_ADMITTED",
+  "tool_commit_branch": "r58/roleplay-sft-skill-v01",
+  "reproducible_query": "docs/evidence/R58_ROLEPLAY_VERSIONED_PILOT_COUNTS_QUERY_SAFE_20261030.sql",
+  "query_git_blob_sha1": "8356d5599cc01b2395f7f146c0937d52dfd2528c",
+  "selection_seed": ":R58:20261030:pilot2:versioned",
+  "eligible_pool": {
+    "original_approved_active_50plus": 1108,
+    "has_version_and_checkpoint": 467,
+    "missing_genre_in_1108": 1108
+  },
+  "data_sources": {
+    "content_versions": 5794,
+    "content_version_story_ids": 1416,
+    "session_checkpoints": 618253,
+    "checkpoint_story_ids": 3719,
+    "story_admin_versions": 0
+  },
+  "selection": {
+    "preselected_stories": 100,
+    "shortlisted_stories": 24,
+    "selected_persisted_root_sessions": 45,
+    "completed_assistant_target_slots": 135,
+    "distinct_stories_with_slots": 24,
+    "feature_buckets": 8,
+    "selected_multicharacter": 12,
+    "selected_timeline": 12,
+    "selected_director_npcs": 13
+  },
+  "structural_probe": {
+    "slots_examined": 135,
+    "nonblank_target_content": 135,
+    "prior_completed_user_in_same_session": 135,
+    "nonzero_mutation_revision": 84,
+    "source_version_timestamp_before_target": 123,
+    "prior_checkpoint_in_same_session_before_target": 0,
+    "selected_sessions_with_any_same_story_checkpoint": 45,
+    "selected_sessions_with_checkpoint_before_earliest_selected_target": 0
+  },
+  "blockers": [
+    "WORLD_COMPONENT_EXPOSURE_CERTIFICATE_MISSING",
+    "R50_PROTECTED_OVERLAP_METADATA_CERTIFICATE_PENDING",
+    "TARGET_TIME_SYSTEM_AND_DIRECTOR_REPLAY_NOT_PROVEN",
+    "CHECKPOINT_TIMING_DISAGREEMENT_NEEDS_INVESTIGATION",
+    "MUTATION_REVISION_SEMANTICS_PENDING",
+    "REAL_REVIEW_AND_OWNER_ADMISSION_NOT_RUN",
+    "HF_CPU_COLLATOR_NOT_RUN"
+  ],
+  "no_content_export": true,
+  "no_user_ids_exported": true,
+  "no_db_write": true,
+  "no_hf_jobs": true,
+  "admission": {
+    "train": 0,
+    "validation": 0,
+    "teacher_candidates_generated": 0
+  }
+}
