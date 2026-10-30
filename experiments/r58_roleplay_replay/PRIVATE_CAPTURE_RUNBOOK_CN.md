@@ -297,3 +297,11 @@ python3 experiments/r58_roleplay_replay/audit_priority3_request_timeline.py \
 ```
 
 新增后的合成测试共 15 项，**尚未取得 Mac 执行结果**。只有上述测试和范围预检都 PASS，并确认当前 PG 凭据与专用只读账户一致，才可再运行该脚本（去掉 `--plan-only`）。只分享安全聚合 JSON；源包不可写、不可重选。没有 GPU、HF Job 或训练准入。
+
+## 十五、请求时间线软证据 2/4/2：停止继续缩时间窗（2026-10-30）
+
+Owner 最新 SAFE JSON `R58_REQUEST_TIMELINE_CORRELATION_HOLD`：三组候选在附加 `historyMsgCount=11` 和目标 Assistant Ledger `update_after` 时间 ±2 分钟的交集后，分别为 **AUTHOR 2、CURRENT_PUBLIC 4、OLD_PUBLIC 2**。history=11 单项仍匹配全部 9 个候选；Ledger 邻近仅排除 1 个。没有唯一目标消息→请求 ID 证据。
+
+**执行停止规则**：未经新增独立硬证据，禁止继续更改时间窗口、按“最近事件”自动选定请求或将 heuristic 唯一候选标成真实字节级 PASS。具体证据门禁见 `docs/evidence/R58_PRIORITY3_REQUEST_LINK_STOP_RULE_AND_NEXT_GATES_SAFE_20261030.md`。三条来源只保留 `FROZEN_SOURCE_AND_CONDITIONAL_HISTORY_PASS__REQUEST_LINK_AND_PROMPT_BYTES_HOLD`，不升级 Dataset v0.4 正式训练准入。
+
+后续优先检查**历史 Prompt 组装的可验证条件与缺口**，包括当时部署代码、摘要游标、动态记忆、RAG、continue/regenerate/request flags、locale、post-DB history scrub、provider 参数等；只形成 SAFE 缺口矩阵，缺证据继续 HOLD。已冻结源包和 R50 均不可改变。
