@@ -22,8 +22,8 @@
     "MISSING_DIRECT_LINK": "No proven target-message to request ID mapping"
   },
   "summary": {
-    "components": 18,
-    "blocking_byte_exact_components": 16,
+    "components": 19,
+    "blocking_byte_exact_components": 17,
     "direct_request_link_verified": false,
     "conditioned_history_count": 11,
     "history_cohorts_pass": 3,
@@ -247,6 +247,20 @@
       "gate": "DEPENDENT_ON_DEPLOY"
     },
     {
+      "id": "PROVIDER_SANITIZE",
+      "component": "provider_preflight_message_sanitization",
+      "layer": "provider",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/lib/ai/index.ts:1553-1574",
+        "src/lib/ai/index.ts:1617-1639",
+        "src/lib/ai/sanitize.ts:13-55"
+      ],
+      "evidence": "Both completion and streaming paths call sanitizeRequest immediately before provider dispatch; it strips defined emoji/variation/ZWJ character ranges from all message content.",
+      "missing": "Target-time effective provider dispatch, pre- and post-sanitize message content, and any additional provider-side serialization/transformations.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
       "id": "REQ_LINK",
       "component": "target_assistant_to_api_request_id",
       "layer": "provenance",
@@ -272,7 +286,7 @@
       "gate": "BLOCK_BYTE_EXACT"
     }
   ],
-  "stop_rule": "No historical provider bytes, historical deploy+inputs or direct target-request proof: retain request and prompt byte-exact HOLD; do not rank nearest timestamps as causal evidence.",
+  "stop_rule": "No authenticated request bytes, historical deployment+runtime inputs or direct target-request proof: retain provider input byte-exact HOLD; final provider sanitize and serialization may differ from route messages.",
   "safe_only": true,
   "private_source_untouched": true,
   "skill_v01_untouched": true
