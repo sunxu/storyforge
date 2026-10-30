@@ -44,10 +44,11 @@
     "WORLD_COMPONENT_EXPOSURE_CERTIFICATE_MISSING",
     "R50_PROTECTED_OVERLAP_METADATA_CERTIFICATE_PENDING",
     "TARGET_TIME_SYSTEM_AND_DIRECTOR_REPLAY_NOT_PROVEN",
-    "CHECKPOINT_TIMING_DISAGREEMENT_NEEDS_INVESTIGATION",
     "MUTATION_REVISION_SEMANTICS_PENDING",
     "REAL_REVIEW_AND_OWNER_ADMISSION_NOT_RUN",
-    "HF_CPU_COLLATOR_NOT_RUN"
+    "HF_CPU_COLLATOR_NOT_RUN",
+    "CHECKPOINT_AVAILABLE_ONLY_FOR_POST_CHECKPOINT_TARGETS__REPLAY_SEMANTICS_PENDING",
+    "TWO_POST_CHECKPOINT_SLOTS_WITHOUT_PRIOR_STORY_VERSION_TIMESTAMP"
   ],
   "no_content_export": true,
   "no_user_ids_exported": true,
@@ -57,5 +58,21 @@
     "train": 0,
     "validation": 0,
     "teacher_candidates_generated": 0
+  },
+  "post_checkpoint_refinement": {
+    "status": "SHORTLIST_ONLY__TARGET_TIME_CHECKPOINT_EXISTS_NOT_RUNTIME_REPLAY",
+    "recommended_query": "docs/evidence/R58_ROLEPLAY_POST_CHECKPOINT_PILOT_QUERY_SAFE_20261030.sql",
+    "query_git_blob_sha1": "3700242fe8fe75a5c223b939b7b2a70cc5cf931f",
+    "selected_stories": 24,
+    "selected_root_sessions": 45,
+    "after_checkpoint_assistant_slots": 135,
+    "nonblank_slots": 135,
+    "slots_with_prior_completed_user": 135,
+    "slots_with_story_version_timestamp_predating_target": 133,
+    "slots_with_nonzero_mutation_revision": 129,
+    "slots_without_predating_version": 2,
+    "explicit_historical_runtime_system_replay_pass": 0,
+    "message_content_exported": false,
+    "notes": "This replaces the initially selected earliest 135 message positions as the preferred metadata discovery cohort. The same count does not mean the same message IDs. Checkpoint existence alone does not certify prompt, runtime-visible history, or canonical world state."
   }
 }
