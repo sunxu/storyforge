@@ -27,7 +27,7 @@ ROOTS = (
 )
 META_EXTS = {".json", ".csv", ".md", ".txt"}
 SKIP_DIR = re.compile(r"(^|[_.-])(r50|source|sources|raw|message|messages|prompt|prompts|original|originals|cases|items|answers|responses|checkpoint|models?)([_.-]|$)", re.I)
-SKIP_FILE = re.compile(r"(raw|full.source|message|prompt|answer|response|blind.items|case.content|model|train\.json|validation\.json)", re.I)
+SKIP_FILE = re.compile(r"(r50|raw|full.source|message|prompt|answer|response|blind.items|case.content|model|train\.json|validation\.json)", re.I)
 INDEX_HINT = re.compile(r"(world|alias|graph|identity|lineage|isolation|metadata|index|roster|ledger|coverage|exposure|manifest|registry|freeze|split|safe)", re.I)
 SCOPE_PATTERNS = {
     "semantic_world_graph": re.compile(r"world|alias|graph|identity|lineage|isolation", re.I),
