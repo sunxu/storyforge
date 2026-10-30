@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_PRIVATE_FIVE_QUEUE_PASS__STRUCTURAL_COLLISION_PROBE_READY__PROTECTION_HOLD",
+  "status": "R58_ROUND1_G1_5_OF_5_STRUCTURAL_ZERO_COLLISIONS__PROTECTION_WORLD_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_5_METADATA_ROWS_NO_PROTECTION_OR_WORLD_PROOF",
+    "G1_WORLD_AND_PROTECTION": "HOLD_NO_PROTECTION_INDEX_OR_SEMANTIC_WORLD_PROOF",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -239,8 +239,8 @@
     "runbook": "docs/evidence/R58_ROUND1_G1_STRUCTURAL_OVERLAP_SAFE_RUNBOOK_20261030.md",
     "new_synthetic_tests": 11,
     "total_synthetic_tests": 41,
-    "owner_41_test_status": "PENDING",
-    "owner_db_execution": "NOT_EXECUTED",
+    "owner_41_test_status": "41_OF_41_PASS_OWNER_REPORTED",
+    "owner_db_execution": "PASS_OWNER_REPORTED_AGGREGATE_ONLY",
     "query_scope": "Exactly up to five Owner local G1 queue story IDs, local psql stdin, SELECT-only aggregate",
     "signals": [
       "same_author_pairs",
@@ -248,11 +248,36 @@
       "same_world_setting_pairs",
       "same_v2_world_exact_pairs"
     ],
-    "interpretation": "Only overlap risk signals: zero collisions cannot certify world or protected-set independence",
+    "interpretation": "All four exact structural collision counters are zero across 10 pairs; not proof of semantic independence or protected world non-exposure.",
     "world_components_verified": 0,
     "protected_worlds_checked": false,
     "training_exposure_checked": false,
     "training_admission": "HOLD",
-    "expansion_allowed": false
+    "expansion_allowed": false,
+    "owner_mac_test_run": {
+      "tests": 41,
+      "failures": 0,
+      "errors": 0,
+      "elapsed_seconds_reported": 0.017
+    },
+    "owner_plan_only_result": {
+      "status": "PLAN_ONLY__NO_DB_ACCESS",
+      "queue_size": 5,
+      "world_clearance": "HOLD"
+    },
+    "owner_structural_result": {
+      "status": "R58_ROUND1_G1_STRUCTURAL_SIGNALS_ONLY__PROTECTION_AND_WORLD_HOLD",
+      "metadata_story_rows_checked": 5,
+      "pairwise_comparisons": 10,
+      "same_author_pairs": 0,
+      "same_title_pairs": 0,
+      "same_v2_world_exact_pairs": 0,
+      "same_world_setting_pairs": 0,
+      "world_components_certified": 0,
+      "prior_sft_exposure_checked": false,
+      "r50_protection_checked": false,
+      "r55_r57_dev_checked": false,
+      "candidate_reply_text_accessed": false
+    }
   }
 }
