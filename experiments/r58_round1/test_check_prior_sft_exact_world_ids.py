@@ -85,13 +85,16 @@ class TestExactOverlap(unittest.TestCase):
         result=check(self.queue([sid(1),sid(28),sid(29)]),self.discovery([p]),self.root)
         self.assertEqual(result["exact_identifier_overlap_count"],1)
         self.assertIn("OVERLAP_FOUND",result["status"])
-        self.assertFalse(result["no_match_means_semantic_world_clear"])
+        self.assertFalse(result["no_match_means_all_protected_sets_clear"])
+        self.assertTrue(result["owner_attested_one_uuid_one_world"])
+        self.assertFalse(result["cross_uuid_semantic_review_required"])
         self.assertEqual(result["train_admitted"],0)
     def test_zero_exact_overlap_not_clean(self):
         p=self.private_json(self.roster_path(),roster())
         result=check(self.queue([sid(28),sid(29)]),self.discovery([p]),self.root)
         self.assertEqual(result["exact_identifier_overlap_count"],0)
-        self.assertIn("SEMANTIC_NAMESPACE_HOLD",result["status"])
+        self.assertIn("OTHER_PROTECTED_SET_HOLD",result["status"])
+        self.assertEqual(result["candidate_id_namespace"],"OWNER_CONFIRMED_ROLEPLAY_STORY_UUID")
         self.assertEqual(result["g1_clearance"],"HOLD")
     def test_missing_roster_holds(self):
         result=check(self.queue([sid(1)]),self.discovery([]),self.root)
@@ -142,8 +145,9 @@ class TestExactOverlap(unittest.TestCase):
         self.assertEqual(len(private["entries"]),5)
         self.assertEqual(sum(e["historical_sft_exact_uuid_overlap"]
                              for e in private["entries"]),1)
-        self.assertTrue(all(e["status"].startswith("HOLD_")
-                            and not e["train_admitted"] for e in private["entries"]))
+        self.assertEqual(sum(e["status"].startswith("EXCLUDED_") for e in private["entries"]),1)
+        self.assertEqual(sum(e["status"].startswith("HOLD_") for e in private["entries"]),4)
+        self.assertTrue(all(not e["train_admitted"] for e in private["entries"]))
         self.assertEqual(queue.read_bytes(),original)
         self.assertNotIn(ids[0],json.dumps(result))
 
@@ -168,14 +172,32 @@ class TestExactOverlap(unittest.TestCase):
         out=self.owner/"g1_holds_private.json"
         check(self.queue([sid(1),sid(28)]),self.discovery([p]),self.root,out)
         obj=json.loads(out.read_text())
-        self.assertFalse(obj["namespace_equivalence_verified"])
+        self.assertTrue(obj["namespace_equivalence_owner_confirmed"])
+        self.assertFalse(obj["cross_uuid_semantic_world_review_required"])
         self.assertFalse(obj["expansion_allowed"])
         for entry in obj["entries"]:
-            self.assertFalse(entry["semantic_world_verified"])
+            self.assertTrue(entry["owner_attested_distinct_semantic_world"])
+            self.assertEqual(entry["owner_attested_world_component_UUID"],entry["story_id_PRIVATE"])
             self.assertFalse(entry["r50_protected_clear"])
             self.assertFalse(entry["prior_sft_clear"])
             self.assertFalse(entry["r55_r57_dev_clear"])
             self.assertFalse(entry["other_protected_clear"])
+
+    def test_owner_uuid_policy_never_clears_r50_or_dev(self):
+        p=self.private_json(self.roster_path(),roster())
+        output=check(self.queue([sid(28),sid(29)]),self.discovery([p]),self.root)
+        self.assertEqual(output["owner_attested_distinct_worlds_in_queue"],2)
+        self.assertEqual(output["r57_roster_only_exact_id_nonoverlap_count"],2)
+        self.assertFalse(output["cross_uuid_semantic_review_required"])
+        self.assertFalse(output["r50_protection_checked"])
+        self.assertFalse(output["other_protected_worlds_checked"])
+        self.assertEqual(output["g1_clearance"],"HOLD")
+        self.assertEqual(output["train_admitted"],0)
+
+    def test_owner_policy_rejects_non_uuid_story_id(self):
+        p=self.private_json(self.roster_path(),roster())
+        with self.assertRaises(Hold):
+            check(self.queue(["non-uuid-but-previously-valid"]),self.discovery([p]),self.root)
 
     def test_source_roster_field_contract(self):
         v=roster()
