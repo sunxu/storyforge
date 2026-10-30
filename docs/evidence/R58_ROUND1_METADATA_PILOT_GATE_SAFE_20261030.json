@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_5_OF_5_STRUCTURAL_ZERO_COLLISIONS__PROTECTION_WORLD_HOLD",
+  "status": "R58_ROUND1_41_TESTS_PASS__ZERO_STRUCTURAL_COLLISIONS__G1_COVERAGE_PROOF_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_NO_PROTECTION_INDEX_OR_SEMANTIC_WORLD_PROOF",
+    "G1_WORLD_AND_PROTECTION": "HOLD_NO_COMPLETE_PROTECTED_WORLD_EXPOSURE_PROOF",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -279,5 +279,24 @@
       "r55_r57_dev_checked": false,
       "candidate_reply_text_accessed": false
     }
+  },
+  "g1_protection_evidence_readiness": {
+    "status": "FIVE_SCOPE_METADATA_SOURCE_INVENTORY_REQUIRED__HOLD",
+    "coverage_report": "docs/evidence/R58_ROUND1_G1_EVIDENCE_COVERAGE_SAFE_20261030.json",
+    "runbook": "docs/evidence/R58_ROUND1_G1_PROTECTED_INDEX_READINESS_SAFE_20261030.md",
+    "blank_owner_private_template": "experiments/r58_round1/G1_METADATA_EVIDENCE_INVENTORY_BLANK.csv",
+    "scopes": [
+      "semantic_world_graph",
+      "r50_protected_worlds",
+      "prior_sft_exposure",
+      "r55_r57_dev_worlds",
+      "other_protected_or_holdout"
+    ],
+    "authoritative_complete_indices_received": 0,
+    "independent_semantic_world_review_complete": false,
+    "candidate_ids_released_to_assistant": false,
+    "no_protected_text_access": true,
+    "training_admission": "HOLD",
+    "expansion_allowed": false
   }
 }
