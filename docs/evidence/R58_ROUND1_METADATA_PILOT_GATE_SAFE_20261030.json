@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_UUID_POLICY_ACTIVE__1_EXPOSED_HARD_BLOCKED__4_AWAIT_R50_DEV_OTHER_REGISTRIES",
+  "status": "R58_ROUND1_G1_OWNER_V2_80_TESTS_PASS__ONE_EXPOSED_FOUR_PROTECTION_PENDING",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_R50_DEV_OTHER_PROTECTION_AND_PRIOR_SFT_SOURCE_COVERAGE",
+    "G1_WORLD_AND_PROTECTION": "HOLD_1_EXCLUDED_SFT_UUID_AND_4_AWAIT_R50_DEV_OTHER_UUID_SET_CLEARANCE",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -381,12 +381,12 @@
     }
   },
   "g1_historical_hold_ledger": {
-    "status": "V2_OWNER_UUID_POLICY_LEDGER_TOOL_READY__OWNER_RUN_PENDING",
+    "status": "OWNER_MAC_V2_PRIVATE_LEDGER_CREATED__ALL_FIVE_HELD",
     "script": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
     "private_output_example": "Owner-private G1 case-level HOLD ledger; exact IDs remain local only",
     "synthetic_tests_added": 4,
     "total_synthetic_tests_expected": 80,
-    "owner_new_test_status": "PENDING",
+    "owner_new_test_status": "80_OF_80_PASS_OWNER_REPORTED",
     "candidate_queue_modified": false,
     "replacement_selection_authorized": false,
     "candidate_reply_access_authorized": false,
@@ -406,7 +406,33 @@
       "remaining_four_protected_flags_required": true,
       "candidate_queue_unchanged": true,
       "owner_expansion_required": true
-    }
+    },
+    "owner_test_seconds_reported": 0.058,
+    "owner_v2_safe_result": {
+      "schema": "r58_round1_g1_prior_sft_exact_id_safe_v2",
+      "status": "R58_G1_PRIOR_SFT_EXACT_UUID_OVERLAP_FOUND__HOLD",
+      "candidate_id_namespace": "OWNER_CONFIRMED_ROLEPLAY_STORY_UUID",
+      "frozen_candidate_stories_checked": 5,
+      "owner_attested_distinct_worlds_in_queue": 5,
+      "r57_roster_candidates_found": 1,
+      "r57_roster_schema_verified": true,
+      "r57_historical_sft_uuid_count_verified": true,
+      "exact_identifier_overlap_count": 1,
+      "r57_roster_only_exact_id_nonoverlap_count": 4,
+      "private_five_story_hold_ledger_written": true,
+      "private_ledger_case_count": 5,
+      "private_ledger_all_cases_hold": true,
+      "frozen_queue_unmodified": true,
+      "cross_uuid_semantic_review_required": false,
+      "r50_protection_checked": false,
+      "other_protected_worlds_checked": false,
+      "train_admitted": 0,
+      "validation_admitted": 0,
+      "teacher_admitted": 0,
+      "expansion_allowed": false
+    },
+    "owner_private_file_seen_by_assistant": false,
+    "all_five_still_g1_hold": true
   },
   "g1_owner_uuid_world_identity_policy": {
     "status": "OWNER_POLICY_ACCEPTED_FOR_R58",
