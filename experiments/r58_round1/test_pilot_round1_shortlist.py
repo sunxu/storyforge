@@ -35,6 +35,40 @@ class Cases(unittest.TestCase):
                          private_output=str(out) if out else None,safe_output=None)
     def test_discover_empty_genre_not_required(self):
         self.assertEqual(len(discover([STORY])),1)
+    def test_psql_csv_t_true_for_discovery(self):
+        """PostgreSQL --csv emits t/f, not Python's true/false."""
+        row={**STORY,'not_deleted':'t','has_world':'t',
+             'has_character':'t','has_characters':'f','has_opening':'t'}
+        self.assertEqual(len(discover([row])),1)
+
+    def test_psql_csv_f_false_for_discovery(self):
+        row={**STORY,'not_deleted':'f','has_world':'t',
+             'has_character':'t','has_opening':'t'}
+        self.assertEqual(discover([row]),[])
+
+    def test_psql_csv_roundtrip_t_f_metadata_only(self):
+        row={**STORY,'not_deleted':'t','has_world':'t',
+             'has_character':'t','has_characters':'f','has_opening':'t'}
+        inv=self.csvfile('psql.csv',[row])
+        result=audit(self.args(inv))
+        self.assertEqual(result['metadata_eligible'],1)
+        self.assertEqual(result['metadata_eligible_by_source']['original'],1)
+        self.assertFalse(result['expansion_allowed'])
+
+    def test_psql_csv_f_for_protection_guard(self):
+        row={**STORY,'not_deleted':'t','has_world':'t','has_character':'t','has_opening':'t'}
+        good={**GUARD,'r50_protected_clear':'t','prior_sft_clear':'t',
+              'r55_r57_dev_clear':'t','other_protected_clear':'t',
+              'owner_world_graph_reviewed':'t'}
+        blocked={**good,'r50_protected_clear':'f'}
+        self.assertEqual(len(select(discover([row]),[good])[0]),1)
+        self.assertEqual(select(discover([row]),[blocked])[0],[])
+
+    def test_unknown_boolean_token_holds(self):
+        row={**STORY,'not_deleted':'maybe'}
+        with self.assertRaises(Hold):
+            discover([row])
+
     def test_discover_rejects_low_activity(self):
         x={**STORY,'assistant_completed':'49'};self.assertEqual(discover([x]),[])
     def test_discover_rejects_missing_card(self):
