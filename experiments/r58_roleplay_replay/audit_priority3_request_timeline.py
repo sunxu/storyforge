@@ -26,6 +26,8 @@ FIELDS = (
     "terminal_events_in_window", "events_with_matching_metric",
     "events_with_one_metric", "timing_compatible_joined_events",
     "missing_duration_events", "excess_candidates",
+    "events_with_history11_metric", "events_near_target_ledger_update",
+    "events_with_both_soft_signals",
 )
 
 
@@ -77,7 +79,8 @@ WITH sealed AS (
 ), per_target AS (
  SELECT a.cohort,a.target_found,a.time_matches,
         q.candidate_count,q.metric_matched,q.one_metric,
-        q.time_compatible,q.missing_duration,q.excess_candidates
+        q.time_compatible,q.missing_duration,q.excess_candidates,
+        q.history11_count,q.near_update_count,q.both_count
  FROM anchored a
  LEFT JOIN LATERAL (
    SELECT count(*)::int AS candidate_count,
@@ -90,9 +93,30 @@ WITH sealed AS (
              AND a.target_time <= c.occurred_at + INTERVAL '2 minutes'
           )::int AS time_compatible,
           count(*) FILTER (WHERE c.duration_ms IS NULL)::int AS missing_duration,
+          count(*) FILTER (WHERE c.metric_count=1
+                             AND c.metric_history11_count=1)::int AS history11_count,
+          count(*) FILTER (WHERE c.metric_count=1
+                             AND c.near_target_update)::int AS near_update_count,
+          count(*) FILTER (WHERE c.metric_count=1
+                             AND c.metric_history11_count=1
+                             AND c.near_target_update)::int AS both_count,
           (count(*)>100)::boolean AS excess_candidates
    FROM (
      SELECT ev.request_id,ev.occurred_at,ev.duration_ms,
+            EXISTS (
+              SELECT 1 FROM public.v2_chat_message_ledger led
+              WHERE led.message_id=a.target_id AND led.story_id=a.story
+                AND led.session_id=a.session
+                AND led.operation='update_after'
+                AND led.recorded_at BETWEEN ev.occurred_at - INTERVAL '2 minutes'
+                                        AND ev.occurred_at + INTERVAL '2 minutes'
+            ) AS near_target_update,
+            (SELECT count(*)::int FROM public.chat_latency_metrics lm
+              WHERE lm.request_id=ev.request_id AND lm.user_id=a.user_id
+                AND lm.story_id=a.story AND lm.session_id=a.session
+                AND lm.scene='v2-chat' AND lm.status=200
+                AND lm.token_breakdown->>'historyMsgCount'='11'
+            ) AS metric_history11_count,
             (SELECT count(*)::int FROM public.chat_latency_metrics lm
               WHERE lm.request_id=ev.request_id AND lm.user_id=a.user_id
                 AND lm.story_id=a.story AND lm.session_id=a.session
@@ -122,7 +146,10 @@ SELECT jsonb_build_object(
    'events_with_one_metric',one_metric,
    'timing_compatible_joined_events',time_compatible,
    'missing_duration_events',missing_duration,
-   'excess_candidates',excess_candidates
+   'excess_candidates',excess_candidates,
+   'events_with_history11_metric',history11_count,
+   'events_near_target_ledger_update',near_update_count,
+   'events_with_both_soft_signals',both_count
  ) ORDER BY cohort) FROM per_target)
 )::text;
 COMMIT;
@@ -155,22 +182,32 @@ def project(response: object) -> dict:
                 <= rec["events_with_matching_metric"]
                 <= rec["terminal_events_in_window"]):
             raise Hold("nonmonotonic request aggregate")
+        if not (
+            rec["events_with_both_soft_signals"]
+            <= rec["events_with_history11_metric"]
+            <= rec["events_with_one_metric"]
+            and rec["events_with_both_soft_signals"]
+            <= rec["events_near_target_ledger_update"]
+            <= rec["events_with_one_metric"]
+        ):
+            raise Hold("soft signal count inconsistency")
         projected.append(rec)
     if {c["cohort"] for c in projected} != COHORTS:
         raise Hold("cohort duplicate or missing")
     unique = all(
         c["target_found"] and c["target_created_matches"]
         and not c["excess_candidates"]
-        and c["timing_compatible_joined_events"] == 1
+        and c["events_with_both_soft_signals"] == 1
         for c in projected
     )
     return {
-        "status": ("R58_REQUEST_TIMELINE_UNIQUE_CANDIDATE_3_OF_3"
+        "status": ("R58_REQUEST_TIMELINE_SOFT_NARROWED_3_OF_3"
                    "__TARGET_REQUEST_LINK_HOLD"
                    if unique else "R58_REQUEST_TIMELINE_CORRELATION_HOLD"),
         "cases": sorted(projected, key=lambda x: x["cohort"]),
         "exact_request_id_join_between_logs": True,
         "exact_target_message_to_request_join": False,
+        "history11_and_ledger_proximity": "SOFT_SIGNALS_ONLY_NOT_CAUSAL_PROOF",
         "request_start_time_certified": False,
         "provider_request_byte_exact": "HOLD",
         "training_admission": "HOLD",
