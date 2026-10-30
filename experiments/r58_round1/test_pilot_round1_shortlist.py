@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from argparse import Namespace
-from pilot_round1_shortlist import discover, select, audit, Hold, CATEGORIES, safe_gate_diagnostics, PARSER_VERSION
+from pilot_round1_shortlist import discover, select, audit, Hold, CATEGORIES, GATE_NAMES, safe_gate_diagnostics, PARSER_VERSION
 
 STORY={'story_id':'id1','source_type':'original','not_deleted':'true',
        'moderation_status':'approved','story_type':'v2_sandbox',
@@ -90,10 +90,30 @@ class Cases(unittest.TestCase):
             safe_gate_diagnostics([failed])
 
     def test_diagnostic_does_not_echo_story_ids_or_strings(self):
-        row={**STORY,'story_id':'PRIVATE_SYNTHETIC_ID'}
-        text=json.dumps(safe_gate_diagnostics([row]))
+        """Fixed gate labels may name v2_sandbox; CSV values must not escape."""
+        row={**STORY,'story_id':'PRIVATE_SYNTHETIC_ID',
+             'private_extra_field':'PRIVATE_SYNTHETIC_CANARY'}
+        stats=safe_gate_diagnostics([row])
+        text=json.dumps(stats)
         self.assertNotIn('PRIVATE_SYNTHETIC_ID',text)
-        self.assertNotIn('v2_sandbox',text)
+        self.assertNotIn('PRIVATE_SYNTHETIC_CANARY',text)
+        self.assertNotIn('"story_id"',text)
+        self.assertNotIn('"source_type"',text)
+        self.assertNotIn('"v2_sandbox"',text)
+        self.assertEqual(set(stats), {
+            'individual_pass_counts','cumulative_survivor_counts',
+            'parser_psql_true_supported','parser_psql_false_supported',
+            'parsed_rows',
+        })
+        for key in ('individual_pass_counts','cumulative_survivor_counts'):
+            self.assertEqual(set(stats[key]),set(GATE_NAMES))
+            self.assertTrue(all(type(n) is int for n in stats[key].values()))
+        # Exercise the public SAFE audit projection as well, not only the helper.
+        inventory=self.csvfile('privacy.csv',[row])
+        safe=json.dumps(audit(self.args(inventory)))
+        self.assertNotIn('PRIVATE_SYNTHETIC_ID',safe)
+        self.assertNotIn('PRIVATE_SYNTHETIC_CANARY',safe)
+        self.assertNotIn('"story_id"',safe)
 
     def test_large_unexpected_zero_is_explicit_hold(self):
         rows=[{**STORY,'story_id':f's{i}','has_opening':'f'} for i in range(101)]
