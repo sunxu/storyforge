@@ -27,3 +27,7 @@ python3 -m unittest discover -s experiments/r58_roleplay_replay -p 'test_capture
 预期 `Ran 19 tests`，`OK`。如仍失败，保持 `HOLD` 并提供脱敏 traceback；在完整通过前**不要执行** `PRIVATE_PRIORITY3_QUARANTINE_EXPORT_TEMPLATE.sql` 的生产数据捕获。
 
 本轮仅提交 GitHub R58 实验代码和 SAFE 报告，无 Supabase/数据库写入、无 HF Job、无 R50 操作；PR #7 继续 Draft、Skill v0.1 不变、v0.4 Train/Val 0。
+
+## Owner macOS 复测结果（2026-10-30）
+
+Owner 在本轮对话报告：`Ran 19 tests` 与 `OK`。据此，将 **macOS 合成测试 19/19** 标记为 `PASS_OWNER_REPORTED`；未上传完整原始测试日志，因此不能标记为独立 CI 证明。这仅解除合成测试门禁；**真实私有数据捕获、源包 SHA256 冻结与精确运行时输入一致性仍为 HOLD**。下一步可使用现有 `PRIVATE_PRIORITY3_QUARANTINE_EXPORT_TEMPLATE.sql` + `capture_priority3.py` 的 Mac 本地只读捕获流程，严禁将私有故事正文、ID、manifest 粘贴至对话或 GitHub。
