@@ -47,11 +47,30 @@ def read_time(value: object, desc: str) -> datetime:
         raise Hold('invalid ' + desc + ' timestamp') from exc
 
 
+def _trusted_macos_system_link(part: Path) -> bool:
+    """Allow only Apple's fixed /var and /tmp aliases, never user-created links.
+
+    macOS tempfile defaults to /var/folders/..., where /var -> /private/var.
+    Refusing every ancestor symlink makes all local tests fail before validation.
+    The exact, resolved system target is checked; everything else remains HOLD.
+    """
+    if sys.platform != 'darwin':
+        return False
+    aliases = {'/var': '/private/var', '/tmp': '/private/tmp'}
+    expected = aliases.get(str(part))
+    if expected is None:
+        return False
+    try:
+        return part.resolve(strict=True) == Path(expected).resolve(strict=True)
+    except (OSError, RuntimeError):
+        return False
+
+
 def safe_existing_parent(parent: Path) -> None:
     if not parent.is_absolute() or str(parent) in ('/', '/workspace', '/tmp'):
         raise Hold('output parent must be a dedicated absolute private directory')
     for part in (parent, *parent.parents):
-        if part.is_symlink():
+        if part.is_symlink() and not _trusted_macos_system_link(part):
             raise Hold('symlinked path component forbidden')
     if not parent.is_dir():
         raise Hold('output parent does not exist')
