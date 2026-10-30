@@ -9,6 +9,7 @@ An exact match is a risk; a miss NEVER clears semantic world isolation.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -103,7 +104,51 @@ def parse_exposed_roster(obj):
         raise Hold("historical SFT UUID roster count mismatch")
     return exposed
 
-def check(queue:Path,discovery:Path,private_root:Path):
+def save_private_holds(path:Path, ids:list[str], exposed:set[str],
+                       source_roster:Path):
+    """Immutable private case-level HOLD record; never returned to stdout."""
+    parent=path.parent
+    if (path.exists() or path.is_symlink() or not parent.is_dir()
+        or parent.is_symlink() or (parent.stat().st_mode & 0o077)):
+        raise Hold("private HOLD output path invalid or exists")
+    entries=[]
+    for sid in ids:
+        collision=UUID.fullmatch(sid) is not None and sid.lower() in exposed
+        entries.append({
+            "story_id_PRIVATE":sid,
+            "historical_sft_exact_uuid_overlap":collision,
+            "status":("HOLD_PRIOR_SFT_EXACT_ID_OVERLAP__NAMESPACE_UNVERIFIED"
+                      if collision else
+                      "HOLD_NO_EXACT_ID_MATCH__SEMANTIC_AND_PROTECTION_PENDING"),
+            "semantic_world_verified":False,
+            "r50_protected_clear":False,
+            "prior_sft_clear":False,
+            "r55_r57_dev_clear":False,
+            "other_protected_clear":False,
+            "train_admitted":False,
+        })
+    ledger={
+        "schema":"r58_round1_g1_prior_sft_exact_id_holds_private_v1",
+        "status":"G1_FIVE_STORIES_HOLD_ONLY__NOT_ADMITTED",
+        "roster_bytes_sha256_PRIVATE":hashlib.sha256(source_roster.read_bytes()).hexdigest(),
+        "namespace_equivalence_verified":False,
+        "entries":entries,
+        "frozen_queue_unmodified":True,
+        "expansion_allowed":False,
+    }
+    fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+    try:
+        with os.fdopen(fd,"w",encoding="utf-8") as handle:
+            json.dump(ledger,handle,indent=2,ensure_ascii=False)
+            handle.write("\n")
+    except BaseException:
+        path.unlink(missing_ok=True)
+        raise
+    return len(entries)
+
+
+def check(queue:Path,discovery:Path,private_root:Path,
+          private_hold_output:Path|None=None):
     ids=load_queue(queue)
     manifest=private_json(discovery,300000)
     matches=discover_roster(manifest,private_root)
@@ -129,6 +174,8 @@ def check(queue:Path,discovery:Path,private_root:Path):
         "expansion_allowed":False,
     }
     if len(matches)!=1:
+        if private_hold_output is not None:
+            raise Hold("cannot generate private case ledger without a unique roster")
         safe["status"]=(
             "R58_G1_R57_ROSTER_MISSING__HOLD" if len(matches)==0
             else "R58_G1_R57_ROSTER_AMBIGUOUS__HOLD")
@@ -137,6 +184,12 @@ def check(queue:Path,discovery:Path,private_root:Path):
     exposed=parse_exposed_roster(source)
     exact=sum(isinstance(x,str) and UUID.fullmatch(x) is not None
               and x.lower() in exposed for x in ids)
+    if private_hold_output is not None:
+        save_private_holds(private_hold_output,ids,exposed,matches[0])
+        safe["private_five_story_hold_ledger_written"]=True
+        safe["private_ledger_case_count"]=len(ids)
+        safe["private_ledger_all_cases_hold"]=True
+        safe["frozen_queue_unmodified"]=True
     safe.update({
         "r57_roster_schema_verified":True,
         "r57_historical_sft_uuid_count_verified":True,
@@ -152,9 +205,10 @@ def main():
     ap.add_argument("--private-queue",type=Path,required=True)
     ap.add_argument("--private-discovery",type=Path,required=True)
     ap.add_argument("--r57-private-root",type=Path,default=Path.home()/".local/share/storyforge/r57/private")
+    ap.add_argument("--private-hold-output",type=Path)
     args=ap.parse_args()
     try:
-        print(json.dumps(check(args.private_queue,args.private_discovery,args.r57_private_root),
+        print(json.dumps(check(args.private_queue,args.private_discovery,args.r57_private_root,args.private_hold_output),
                          sort_keys=True,ensure_ascii=False,indent=2))
         return 0
     except (Hold,OSError,ValueError,KeyError,TypeError):
