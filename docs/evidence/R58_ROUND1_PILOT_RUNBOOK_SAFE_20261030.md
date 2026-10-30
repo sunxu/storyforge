@@ -103,3 +103,27 @@ python3 experiments/r58_round1/pilot_round1_shortlist.py \
 首轮停止条件：若任一保护门禁无法确认、真实部署 Runtime 证据缺失、Reviewer 产生不可解争议，相关候选 HOLD，避免扩大样本掩盖问题。
 
 当前 Train/Validation/Teacher 准入均为 0。PR #7 Draft；Skill v0.1 不变，不合并、不执行收费 HF CPU/GPU、不自动训练。
+
+## 7. 2026-10-30 PostgreSQL CSV 布尔字段修复（必须复检）
+
+Owner 运行原版发现池后回传 `inventory_rows=1284`、`metadata_eligible=0`，与本次只读 SQL 的同条件统计不符。已在筛选器定位并修复：原版 `boolish` 不接受 PostgreSQL `psql --csv` 输出的真值 `t`，将所有带 `not_deleted=t` / `has_world=t` 的故事误排除。旧 0 计数作废，**不代表数据库真无候选**。新增 5 项回归测试（当前共 17），Owner Mac 实测仍待执行。
+
+使用仅有聚合结果的独立只读 SQL 复算，同样筛选条件预期：
+- 合计 1280（原 1106、骰子共创 91、AI 协助 83）；
+- 比导出的 1284 条少 4 条主要由于会话数门槛；
+- 这只是数据库当前同条件的基线，不代表 Owner 本地已完成新筛选或受保护世界已清关。
+
+**不要重新导出 CSV，不修改原 `stories_private.csv`。** 只要本地原 CSV 完整，更新代码并重新运行：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+
+python3 -m unittest discover -s experiments/r58_round1 \
+  -p 'test_pilot_round1_shortlist.py' -v &&
+
+python3 experiments/r58_round1/pilot_round1_shortlist.py \
+  --inventory "$HOME/.storyforge-r58-private/round1_pilot_20261030/stories_private.csv"
+```
+
+应看到 `Ran 17 tests`、`OK`，正常情况下 `metadata_eligible` 应接近数据库复算的 1280，并保持 `DISCOVERY_ONLY__WORLD_GUARD_HOLD`、`expansion_allowed=false` 和 Train/Val/Teacher=0。若行数/分类与上述基线不一致，**先 HOLD 排查 CSV 生成时间/结构，不私自调整候选数来凑齐**。只向聊天报告第二条命令的 SAFE JSON；不回传任何故事 ID、用户信息或原始 CSV。
