@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_REPEAT_ZERO_INVALID__CONDITION_DIAGNOSTIC_OWNER_RERUN_PENDING__WORLD_GUARD_HOLD",
+  "status": "R58_ROUND1_DIAGNOSTIC_TEST_FALSE_POSITIVE_FIXED__OWNER_23_TEST_RERUN_PENDING__WORLD_GUARD_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -137,11 +137,26 @@
       ],
       "no_private_ids_or_data_in_output": true,
       "new_synthetic_test_count": 23,
-      "owner_test_run": "PENDING",
+      "owner_test_run": "OWNER 23 TESTS: 22 PASS, 1 FALSE-POSITIVE ASSERTION; FIX COMMITTED; RERUN PENDING",
       "owner_local_csv_reuse": true,
       "if_zero_large_status": "R58_ROUND1_UNEXPECTED_ZERO__CSV_GATE_HOLD",
       "world_guard": "HOLD",
       "expansion_allowed": false
     }
+  },
+  "owner_mac_v2_diagnostic_tests_20261030": {
+    "status": "22_PASS_1_TEST_ASSERTION_FALSE_POSITIVE__FIX_COMMITTED__OWNER_RERUN_PENDING",
+    "tests_run": 23,
+    "failures": 1,
+    "errors": 0,
+    "owner_reported_runtime_seconds": 0.01,
+    "failed_test": "test_diagnostic_does_not_echo_story_ids_or_strings",
+    "root_cause": "Test used substring assertNotIn('v2_sandbox') but a static allowlisted metric key story_type_v2_sandbox contains that substring. Static key label is not private CSV data.",
+    "fix": "Test now checks quoted raw value, known SAFE key whitelist, no private synthetic ID/canary in diagnostic helper or full audit projection.",
+    "selection_algorithm_changed": false,
+    "protected_world_guards_changed": false,
+    "synthetic_test_count_after_fix": 23,
+    "owner_mac_rerun": "PENDING",
+    "local_csv_metadata_discovery": "NOT_YET_REPORTED_AFTER_DIAGNOSTIC_V2"
   }
 }
