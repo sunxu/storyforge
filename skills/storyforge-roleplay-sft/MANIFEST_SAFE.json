@@ -1,0 +1,65 @@
+{
+  "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
+  "version": "0.1.0",
+  "date": "2026-10-30",
+  "tests": "10 / 10 synthetic PASS",
+  "real_data_extracted": false,
+  "dataset_v04_admitted_by_this_skill": 0,
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "sha256": "941485ca2f0a0ea2795ba86c156ce70428f02626605080e288250c50a9d33649",
+      "bytes": 659
+    },
+    {
+      "path": "README.md",
+      "sha256": "560b31315b0537a0d2ceddcbae02d4390ed7bc81da4988b6b287c827f791d2ef",
+      "bytes": 1267
+    },
+    {
+      "path": "SKILL.md",
+      "sha256": "9c0d4c1c59f0f3c9c07b55f3f343db4e5c366653dc95e5874eadc9b721a5aea0",
+      "bytes": 5533
+    },
+    {
+      "path": "queries/01_story_inventory.sql",
+      "sha256": "6131ac3c43191839342d2b162f6f92158bd60432dc0b632b1fa7f35291a5463c",
+      "bytes": 970
+    },
+    {
+      "path": "queries/02_story_shortlist.sql",
+      "sha256": "de679f061c3bbd76454c610ea1c247a93caa892b394c776d5742b2d90feeb288",
+      "bytes": 1166
+    },
+    {
+      "path": "queries/03_private_session_export_template.sql",
+      "sha256": "06d08443ba7cfe61e511e31824bfe495fc2bc267a3a41f545942ce7b24f8f572",
+      "bytes": 949
+    },
+    {
+      "path": "reference/R58_EXECUTION_PLAN_CN.md",
+      "sha256": "512b9fdbe82836a3240537f7e4b989b030b1dc1f74a0c551ded2b1182df3ddde",
+      "bytes": 2613
+    },
+    {
+      "path": "reference/REVIEW_AND_TEACHER_POLICY_CN.md",
+      "sha256": "88e9418cf5bb167f88cce65db084c6778c693b38e54ccbcd27dafe1157104f73",
+      "bytes": 2706
+    },
+    {
+      "path": "reference/ROLEPLAY_READONLY_BASELINE_CN.md",
+      "sha256": "601c13b695740a6657a07c8c32a8d137bd5a5afbeed50cafe45aeb5e3fc2caaa",
+      "bytes": 2048
+    },
+    {
+      "path": "scripts/r58_intake.py",
+      "sha256": "0cd361735b93aae2778275f4d9bbfb0f9f523249dc1604c2855f6f79a1d19e93",
+      "bytes": 15759
+    },
+    {
+      "path": "tests/test_r58_intake.py",
+      "sha256": "88fd38e83c588356766500196ad133ecb0847c07669f5b51f919156872e54a20",
+      "bytes": 7112
+    }
+  ]
+}
