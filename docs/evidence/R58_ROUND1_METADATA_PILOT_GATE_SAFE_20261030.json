@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_METADATA_DISCOVERY_1280_PASS__WORLD_GUARD_HOLD",
+  "status": "R58_ROUND1_METADATA_DISCOVERY_1280_PASS__G1_REVIEW_QUEUE_TOOL_READY__GUARDS_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -191,5 +191,26 @@
     "candidate_reply_text_accessed": false,
     "story_ids_returned_to_assistant": false,
     "interpretation": "Only four records fail >=2 sessions; no content/quality/protection clearance established."
+  },
+  "g1_review_queue": {
+    "status": "R58_ROUND1_G1_METADATA_REVIEW_QUEUE_TOOL_READY__OWNER_EXECUTION_PENDING",
+    "script": "experiments/r58_round1/prepare_round1_g1_review_queue.py",
+    "runbook": "docs/evidence/R58_ROUND1_G1_PRIVATE_REVIEW_QUEUE_RUNBOOK_SAFE_20261030.md",
+    "source_inventory": "OWNER_PRIVATE_EXISTING_CSV",
+    "queue_max_story_records": 5,
+    "queue_source_cap": {
+      "original": 3,
+      "dice_cocreate": 1,
+      "ai_assisted": 1
+    },
+    "unverified_world_components": 0,
+    "default_guards": "ALL_FALSE",
+    "protected_content_accessed": false,
+    "private_queue_created_on_owner_mac": false,
+    "new_synthetic_test_cases": 7,
+    "combined_synthetic_test_count": 30,
+    "owner_new_tests": "PENDING",
+    "admission": "HOLD",
+    "expansion_allowed": false
   }
 }
