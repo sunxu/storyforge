@@ -7,7 +7,7 @@
     "CURRENT_PUBLIC",
     "OLD_PUBLIC"
   ],
-  "status": "R58_REQUEST_TIMELINE_CORRELATION_HOLD",
+  "status": "OWNER_LOCAL_KNOWN_REQUEST_KEYS_0_OF_21__REQUEST_TIMELINE_2_5_2_HOLD",
   "cases": [
     {
       "cohort": "AUTHOR",
@@ -67,5 +67,54 @@
     "asynchronous_terminal_event_note": "event timestamp is an asynchronous terminal insert; duration_ms estimate cannot certify request start",
     "next_step": "Do not arbitrarily narrow time window; add independent signals such as 11-message metric and target assistant ledger completion temporal anchor. Never promote without direct target-to-request trace."
   },
-  "synthetic_11_tests_owner_run": "NOT_SEPARATELY_REPORTED"
+  "synthetic_11_tests_owner_run": "NOT_SEPARATELY_REPORTED",
+  "owner_local_known_request_key_inventory": {
+    "status": "R58_LOCAL_REQUEST_KEY_INVENTORY_COMPLETE__DIRECT_LINK_HOLD",
+    "evidence_origin": "Owner-provided safe local JSON; no private metadata transmitted",
+    "cases": [
+      {
+        "cohort": "AUTHOR",
+        "known_request_keys_present_count": 0,
+        "keys_checked": 7
+      },
+      {
+        "cohort": "CURRENT_PUBLIC",
+        "known_request_keys_present_count": 0,
+        "keys_checked": 7
+      },
+      {
+        "cohort": "OLD_PUBLIC",
+        "known_request_keys_present_count": 0,
+        "keys_checked": 7
+      }
+    ],
+    "keys_checked": [
+      "analyticsEventId",
+      "analytics_event_id",
+      "apiRequestId",
+      "api_request_id",
+      "relayRequestId",
+      "requestId",
+      "request_id"
+    ],
+    "scan_scope": "Only the seven named top-level keys in target.metadata; does not search other columns or nested objects",
+    "direct_request_link_verified": false,
+    "synthetic_test_result": "NOT_REPORTED",
+    "training_admission": "HOLD"
+  },
+  "next_gate": {
+    "name": "HISTORY11_AND_TARGET_LEDGER_SOFT_SIGNALS",
+    "script": "experiments/r58_roleplay_replay/audit_priority3_request_timeline.py",
+    "new_fields": [
+      "events_with_history11_metric",
+      "events_near_target_ledger_update",
+      "events_with_both_soft_signals"
+    ],
+    "meaning": "Candidate request events matched by historyMsgCount and +/-2min target message update_after ledger proximity, conditioned on existing time compatibility for combined count",
+    "synthetic_tests_now": 15,
+    "synthetic_execution": "PENDING_OWNER",
+    "real_case_execution": "PENDING_OWNER",
+    "exact_message_request_join": "HOLD",
+    "provider_prompt_byte_exact": "HOLD"
+  }
 }
