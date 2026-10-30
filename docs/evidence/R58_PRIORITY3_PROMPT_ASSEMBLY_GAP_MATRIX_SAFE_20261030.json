@@ -97,7 +97,7 @@
       "source_refs": [
         "src/app/api/chat/v2/route.ts:2490-2533",
         "src/lib/story-v2/prompts/index.ts:220-231",
-        "src/lib/story-v2/prompts/runtime-rollout.ts:37-65"
+        "src/lib/story-v2/prompts/runtime-rollout.ts:37-64"
       ],
       "evidence": "Base+components+tail followed by language constraint; legacy/native base rollout is based on session/model and runtime flags.",
       "missing": "Deployed prompt template version, rollout env and bucket/model, effective draft, actual part bytes.",
@@ -175,7 +175,7 @@
       "status": "OWNER_REPORT_CONDITIONAL_3_OF_3",
       "source_refs": [
         "src/app/api/chat/v2/route.ts:2275-2371",
-        "src/lib/story-v2/summary-history-window.ts:1-30"
+        "src/lib/story-v2/summary-history-window.ts:1-28"
       ],
       "evidence": "Owner verified conditional last-11 structure for all three frozen cases; ledger current-source parity for 33/33.",
       "missing": "Live session.last_summary_turn at request; prior DB read, auto regeneration/resume/continue variants.",
@@ -254,7 +254,7 @@
       "source_refs": [
         "src/lib/ai/index.ts:1553-1574",
         "src/lib/ai/index.ts:1617-1639",
-        "src/lib/ai/sanitize.ts:13-55"
+        "src/lib/ai/sanitize.ts:13-53"
       ],
       "evidence": "Both completion and streaming paths call sanitizeRequest immediately before provider dispatch; it strips defined emoji/variation/ZWJ character ranges from all message content.",
       "missing": "Target-time effective provider dispatch, pre- and post-sanitize message content, and any additional provider-side serialization/transformations.",
