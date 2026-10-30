@@ -22,6 +22,25 @@
 
 在**仅 Owner 可读**的本地目录中执行该 SELECT，将返回的故事级记录保存为 `stories_private.csv`，**禁止发布到 GitHub、聊天、公共 CI 日志或普通可访问存储**。它包含 story_id。
 
+已用只读数据库元数据确认专用角色 `r58_export_reader` 对 `user_stories`、`analytics_story_lifetime`、`story_v2_sessions` 均具有 SELECT。若 macOS 的 `psql` 环境已有该角色的已验证连接参数（`PGHOST/PGUSER/PGPASSWORD`），可以在 Owner Mac 上完成导出，而无须将 ID 发给 ChatGPT：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+umask 077
+ROUND1="$HOME/.storyforge-r58-private/round1_pilot_20261030"
+mkdir -p "$ROUND1"
+chmod 700 "$ROUND1"
+
+# 必须是新文件；不覆盖 Owner 已存在的记录
+test ! -e "$ROUND1/stories_private.csv" &&
+  PGOPTIONS='-c default_transaction_read_only=on -c statement_timeout=90000' \
+  psql -X -w --csv -v ON_ERROR_STOP=1 \
+    -f skills/storyforge-roleplay-sft/queries/02_story_shortlist.sql \
+    > "$ROUND1/stories_private.csv"
+```
+
+该 SELECT 可能输出真实私有 story_id，**仅在本机私有文件**中保留。导出结束后检查文件归属和权限，不要把 CSV 或包含 story_id 的诊断日志发到聊天。
+
 ```bash
 cd ~/workspace/storyforge-r58-run
 git pull --ff-only
