@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-fixed33-ledger-owner-report-safe-v1",
   "report_date": "2026-10-30",
   "evidence_origin": "Owner-submitted safe aggregate JSON, not assistant inspection of private inputs",
-  "status": "R58_LEDGER_FIXED33_DIAGNOSTIC_PASS__ASOF_PROMPT_HOLD",
+  "status": "OWNER_FIXED33_LEDGER_OPERATION_CLASSIFICATION_53_OF_53_PASS__ASOF_PROMPT_HOLD",
   "frozen_message_count": 33,
   "cases": [
     {
@@ -15,7 +15,16 @@
       "content_drift": 0,
       "ledger_through_target": 11,
       "ledger_after_target": 0,
-      "prior_completed_text_variants": 0
+      "prior_completed_text_variants": 0,
+      "ledger_insert_before_target": 6,
+      "ledger_update_before_before_target": 0,
+      "ledger_update_after_before_target": 5,
+      "ledger_delete_before_target": 0,
+      "ledger_other_before_target": 0,
+      "assistant_insert_before_target": 0,
+      "user_insert_before_target": 6,
+      "assistant_update_before_target": 0,
+      "assistant_update_after_before_target": 5
     },
     {
       "cohort": "CURRENT_PUBLIC",
@@ -27,7 +36,16 @@
       "content_drift": 0,
       "ledger_through_target": 21,
       "ledger_after_target": 0,
-      "prior_completed_text_variants": 0
+      "prior_completed_text_variants": 0,
+      "ledger_insert_before_target": 6,
+      "ledger_update_before_before_target": 5,
+      "ledger_update_after_before_target": 10,
+      "ledger_delete_before_target": 0,
+      "ledger_other_before_target": 0,
+      "assistant_insert_before_target": 0,
+      "user_insert_before_target": 6,
+      "assistant_update_before_target": 5,
+      "assistant_update_after_before_target": 10
     },
     {
       "cohort": "OLD_PUBLIC",
@@ -39,7 +57,16 @@
       "content_drift": 0,
       "ledger_through_target": 21,
       "ledger_after_target": 0,
-      "prior_completed_text_variants": 0
+      "prior_completed_text_variants": 0,
+      "ledger_insert_before_target": 6,
+      "ledger_update_before_before_target": 5,
+      "ledger_update_after_before_target": 10,
+      "ledger_delete_before_target": 0,
+      "ledger_other_before_target": 0,
+      "assistant_insert_before_target": 0,
+      "user_insert_before_target": 6,
+      "assistant_update_before_target": 5,
+      "assistant_update_after_before_target": 10
     }
   ],
   "totals": {
@@ -51,19 +78,34 @@
     "content_drift": 0,
     "ledger_through_target": 53,
     "ledger_after_target": 0,
-    "prior_completed_text_variants": 0
+    "prior_completed_text_variants": 0,
+    "operations": {
+      "insert": 18,
+      "update_before": 10,
+      "update_after": 25,
+      "delete": 0,
+      "other": 0,
+      "events": 53
+    }
   },
   "interpretation": {
     "live_vs_frozen_content": "PASS_OWNER_REPORTED",
     "live_vs_frozen_revision": "PASS_OWNER_REPORTED",
     "zero_post_target_ledger_events": "PASS_OWNER_REPORTED",
     "author_vs_reader_ledger_events_before_target": "11 versus 21 in each Reader; cause not yet established",
-    "ledger_operations_distribution": "PENDING",
+    "ledger_operations_distribution": "PASS_OWNER_REPORTED",
     "request_start_time_proven": false,
     "ledger_status_partial_content_only_coverage": false,
     "historical_request_time_text_parity": "HOLD",
     "provider_prompt_byte_exact": "HOLD",
-    "training_admission": "HOLD"
+    "training_admission": "HOLD",
+    "safe_observations": [
+      "All 18 insert events are User, no Assistant insert events; 15 Assistant update_after without prior business snapshot in two Reader cohorts plus Author, with additional paired Reader updates",
+      "Author ledger events: 6 User inserts, 5 Assistant update_after",
+      "Each Reader: 6 User inserts, 5 Assistant update_before, 10 Assistant update_after",
+      "This aggregate does not show per-message event chronology or which mutations changed actual content",
+      "Missing direct request ID and request-start time; no provider request-byte evidence"
+    ]
   },
   "notes": [
     "Only safe cohort aggregate counts saved; never store UUID, user text, SQL populated with IDs, or hashes",
