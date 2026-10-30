@@ -1,0 +1,80 @@
+{
+  "schema": "storyforge-r58-replay-pilot10-priority3-safe-v1",
+  "date": "2026-10-30",
+  "source_pins": {
+    "roleplay": "sunxu/RolePlay@e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "storyforge_branch": "r58/roleplay-sft-skill-v01"
+  },
+  "cohort": {
+    "original_positions": 135,
+    "with_prior_approved_version_evidence": 133,
+    "physical_ids_frozen": false
+  },
+  "evidence_tiers": {
+    "A": 30,
+    "B": 36,
+    "C": 15,
+    "D": 47,
+    "E": 5
+  },
+  "pilot10": {
+    "targets": 10,
+    "distinct_story_ids": 10,
+    "semantic_world_components_certified": false,
+    "by_route": {
+      "author": 1,
+      "reader_current_public": 6,
+      "reader_previous_public": 3
+    },
+    "checkpoint_logical_gap": "1-3",
+    "has_event_before": 9,
+    "unique_success_latency_metric_within_30s": 9,
+    "raw_preceding_24_found_total": 240,
+    "raw_preceding_24_all_completed_total": 240,
+    "raw_preceding_24_created_after_target": 0,
+    "raw_preceding_24_nonzero_mutation_revision": 108,
+    "nearby_metric_history_count_11": 9,
+    "nearby_metric_no_match": 1
+  },
+  "priority3": {
+    "cases": 3,
+    "one_case_each_route": true,
+    "generated_no_earlier_than": "2026-10-26T07:05:10Z",
+    "raw_24_completed_per_case": 24,
+    "within_three_logical_turns": true,
+    "nearby_metric_history_count_11": 3
+  },
+  "known_code_last_changed_utc": {
+    "src/app/api/chat/v2/route.ts": "2026-10-19T01:46:55Z",
+    "src/lib/db/v2-message-service.ts": "2026-10-24T08:30:51Z",
+    "src/lib/story-v2/context-builder.ts": "2026-10-26T07:05:10Z",
+    "src/lib/story-v2/prompts/index.ts": "2026-09-29T09:48:29Z"
+  },
+  "limits": [
+    "A/B/C/D/E are evidence-tier prioritization only, not SFT quality",
+    "Nearby latency metric may belong to another request",
+    "24 raw preceding currently stored messages are not necessarily runtime history",
+    "Historical deployed code and locale are not pinned",
+    "No original request hash or full prompt snapshot",
+    "World identity/alias and protected-set exposure gates pending",
+    "Live cohort IDs not frozen"
+  ],
+  "status": "PILOT10_METADATA_HISTORY_CHECK_PASS__PRIORITY3_SELECTED__EXACT_RUNTIME_REPLAY_HOLD",
+  "admission": {
+    "train": 0,
+    "validation": 0,
+    "teacher": 0
+  },
+  "privacy": {
+    "story_text_returned": false,
+    "identifiers_returned": false,
+    "private_ids_exported": false,
+    "db_writes": false,
+    "r50_read": false,
+    "hf_jobs": false
+  },
+  "evidence_sql": [
+    "docs/evidence/R58_ROLEPLAY_PRIVATE_REPLAY_PILOT10_QUERY_SAFE_20261030.sql",
+    "docs/evidence/R58_ROLEPLAY_PRIORITY3_SOURCE_WINDOW_QUERY_SAFE_20261030.sql"
+  ]
+}
