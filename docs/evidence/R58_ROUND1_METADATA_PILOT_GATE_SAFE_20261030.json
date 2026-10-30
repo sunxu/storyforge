@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_41_TESTS_PASS__ZERO_STRUCTURAL_COLLISIONS__G1_COVERAGE_PROOF_HOLD",
+  "status": "R58_ROUND1_G1_STRUCTURAL_PASS__FIVE_METADATA_SOURCE_READINESS_PREFLIGHT_PENDING__PROTECTION_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -296,6 +296,22 @@
     "independent_semantic_world_review_complete": false,
     "candidate_ids_released_to_assistant": false,
     "no_protected_text_access": true,
+    "training_admission": "HOLD",
+    "expansion_allowed": false
+  },
+  "g1_index_readiness_preflight": {
+    "status": "SOURCE_EXISTENCE_AND_COVERAGE_INVENTORY_PREFLIGHT_TOOL_READY__OWNER_RUN_PENDING",
+    "script": "experiments/r58_round1/audit_g1_index_readiness.py",
+    "tests": "experiments/r58_round1/test_audit_g1_index_readiness.py",
+    "runbook": "docs/evidence/R58_ROUND1_G1_INDEX_READINESS_RUNBOOK_SAFE_20261030.md",
+    "source_inventory": "Owner-private five-scope inventory file",
+    "new_synthetic_tests": 9,
+    "total_round1_synthetic_tests": 50,
+    "owner_tests": "PENDING",
+    "owner_preflight_result": "PENDING",
+    "method": "Checks only five explicit private source paths via stat, does not open referenced files, no protected data or story IDs output",
+    "provenance_claims_do_not_satisfy_independent_coverage": true,
+    "independent_world_proof": "HOLD",
     "training_admission": "HOLD",
     "expansion_allowed": false
   }
