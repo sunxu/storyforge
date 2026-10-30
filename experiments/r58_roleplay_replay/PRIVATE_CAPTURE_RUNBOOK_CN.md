@@ -244,3 +244,19 @@ python3 experiments/r58_roleplay_replay/audit_priority3_ledger_fixed33.py \
 ```
 
 仅在以上两步 PASS、且 `PGHOST`、`PGUSER`、`PGPASSWORD` 均为此前已确认的专用只读配置时，再对相同来源目录执行一次脚本（去掉 `--plan-only`）。**只提交安全聚合 JSON，不要提供查询 SQL、凭据、UUID、hash 或故事正文。** 此门禁只用于解释 11/21/21，不能认证 API 请求开始时间、线上部署版本、动态 System Prompt、RAG、最后消息注入或字节级一致性。Train/Validation/Teacher 仍为 0，PR Draft，Skill v0.1 不变。
+
+## 十二、请求事件列级授权与固定三案例时间线预检
+
+Owner 报告 `request_id_readable=true`、`timestamp_readable=true`；随后元数据只读核验确认 `v2_chat_request_events` 所需七列可读。新增 `audit_priority3_request_timeline.py` 和 11 项纯合成测试；从既有已封存来源包中取三条目标 UUID，本地经 `psql` 标准输入在同用户/故事/会话的有界时间窗内聚合请求终态事件，再使用 `request_id` 精确连接 `chat_latency_metrics`。绝不打印私有标识、查询 SQL、正文或 digest。
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover -s experiments/r58_roleplay_replay \
+  -p 'test_audit_priority3_request_timeline.py' -v
+python3 experiments/r58_roleplay_replay/audit_priority3_request_timeline.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture" \
+  --plan-only
+```
+
+在测试和计划检查通过、确认本机 `PGHOST` 与 `PGUSER` 为既有专用只读配置且 `PGPASSWORD` 已安全输入后，去掉 `--plan-only` 再执行一次。返回的 JSON 是分组候选数；**请求事件日志与延迟日志的精确 request_id 关联不能当作目标消息与请求 ID 精确关联**，`occurred_at` 是异步终态写入，不是请求真实开始时间。无论结果如何，Prompt byte-exact 和训练准入 HOLD；不重选、不覆盖、不启动 GPU。
