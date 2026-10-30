@@ -48,3 +48,7 @@ python3 experiments/r58_round1/check_prior_sft_exact_world_ids.py \
 **注意**：R57 训练世界 UUID 的标识空间与 RolePlay `user_stories.id` 是否真正一致，目前没有证明。即使 0 精确匹配，`candidate_id_namespace=UNVERIFIED`；不同项目的不同 ID 不是无曝光证据。
 
 R50 保护、R55/R57 开发题、其他保护世界以及五候选语义连通图仍未完成，所以 G1 整体 HOLD，G2/G3 不能提前开始。Train/Val/Teacher=0，Skill v0.1 不变，PR #7 Draft，首轮完整回执尚未出现，扩样前提醒继续等待。
+
+## 2026-10-30 额外的纯聚合格式验证
+
+单独使用 RolePlay 生产数据库**只读聚合**复核与本轮发现条件相同的 1280 条故事：`uuid_formatted_story_ids=1280`、`non_uuid_story_ids=0`，ID 长度最小/最大均 36。查询没有返回任何故事 UUID、作者信息或正文。因此，本轮五条队列可以进行精确 UUID 比较，但**仅确认格式相容，没有确认两个数据源的 ID 命名空间和语义世界可互认**。即使工具发现 0 个交叉，G1 仍 HOLD。
