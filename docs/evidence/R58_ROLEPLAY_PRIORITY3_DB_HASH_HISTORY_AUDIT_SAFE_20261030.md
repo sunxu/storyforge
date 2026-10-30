@@ -58,3 +58,7 @@
 - [本次服务器内哈希、历史、事件证据综合核验](R58_ROLEPLAY_PRIORITY3_HASH_AND_HISTORY_PROOF_QUERY_SAFE_20261030.sql)
 
 本轮保持 Skill v0.1 不变，PR #7 继续 DRAFT，Dataset v0.4 正式准入 **0**，无 Supabase 写入、R50 访问或 Hugging Face 付费任务。
+
+## 隔离导出工具已准备（但未执行）
+
+新增 [三案例私有隔离查询模板](../../experiments/r58_roleplay_replay/PRIVATE_PRIORITY3_QUARANTINE_EXPORT_TEMPLATE.sql) 与 [HF 私有工作区操作手册](../../experiments/r58_roleplay_replay/PRIVATE_CAPTURE_RUNBOOK_CN.md)。数据库已对该私有模板执行**仅 `EXPLAIN`**，解析/规划成功，**从未运行会返回对话正文的 SELECT**。模板约束只读、近检查点、事先审核版本、每个案例 24 条前置消息和无后续账本更新；输出必须保存在 HF 私有隔离目录，且继续标注不是训练样本。当前无 HF Job、无物理 ID 冻结；正式准入仍为 0。
