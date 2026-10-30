@@ -142,9 +142,11 @@ def aggregate(folder):
             raise Hold("DB counts invalid")
         if (c["messages"], c["assistants"], c["users"]) != (11, 5, 6):
             raise Hold("DB fixed source count mismatch")
+    # Strict output projection: never echo arbitrary database JSON fields.
+    safe_cases = [{k: c[k] for k in ("cohort", *fields)} for c in cases]
     return {
         "status": "R58_LEDGER_FIXED33_AGGREGATE_COMPLETED__ASOF_PROMPT_HOLD",
-        "cases": sorted(cases, key=lambda c: c["cohort"]),
+        "cases": sorted(safe_cases, key=lambda c: c["cohort"]),
         "frozen_message_count": 33,
         "historical_request_time_text_parity": "HOLD",
         "provider_prompt_byte_exact": "HOLD",
