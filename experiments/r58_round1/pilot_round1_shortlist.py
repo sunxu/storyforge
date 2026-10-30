@@ -14,6 +14,7 @@ GUARD_FIELDS = {'story_id','world_component','owner_world_graph_reviewed',
                 'r50_protected_clear','prior_sft_clear','r55_r57_dev_clear',
                 'other_protected_clear','evidence_reference'}
 CATEGORIES = {'original':3,'dice_cocreate':1,'ai_assisted':1}
+OWNER_WORLD_IDENTITY_POLICY = 'OWNER_ATTESTED_ROLEPLAY_UUID_ONE_UUID_ONE_WORLD_V1'
 
 class Hold(Exception):
     pass
@@ -119,11 +120,15 @@ def select(inventory, guards):
     for story in inventory:
         g=approved.get(story['story_id'])
         if not g: continue
-        keys=['owner_world_graph_reviewed','r50_protected_clear','prior_sft_clear',
+        # Owner attests one RolePlay story UUID = one independent semantic world.
+        # Keep legacy owner_world_graph_reviewed/world_component CSV columns
+        # for compatibility; they are not separate semantic approval gates.
+        keys=['r50_protected_clear','prior_sft_clear',
               'r55_r57_dev_clear','other_protected_clear']
         if not all(boolish(g[k]) for k in keys): continue
-        if not g['world_component'].strip() or not g['evidence_reference'].strip(): continue
-        pool.append({**story,'world_component':g['world_component'].strip(),
+        if not g['evidence_reference'].strip(): continue
+        # RolePlay story UUID itself is the canonical world component.
+        pool.append({**story,'world_component':story['story_id'].strip().lower(),
                      'evidence_reference':g['evidence_reference'].strip()})
     selected=[]; worlds=set()
     for source_type, cap in CATEGORIES.items():
@@ -164,6 +169,8 @@ def audit(args):
           'inventory_rows':len(input_rows),'metadata_eligible':len(discovered),
           'metadata_eligible_by_source':by_source,
           'max_semantic_worlds':5,'max_reply_targets_planned':20,
+          'owner_world_identity_policy':OWNER_WORLD_IDENTITY_POLICY,
+          'cross_uuid_semantic_review_required':False,
           'candidate_reply_text_accessed':False,'train_admitted':0,
           'validation_admitted':0,'teacher_admitted':0,
           'expansion_allowed':False,'owner_expansion_approval':'REQUIRED'}
@@ -178,14 +185,16 @@ def audit(args):
         safe['owner_claimed_cleared_count']=len(cleared)
         safe['picked_story_count']=len(picked)
         safe['picked_by_source']={k:sum(r['source_type']==k for r in picked) for k in CATEGORIES}
-        safe['status']=('R58_ROUND1_PRIVATE_SHORTLIST_READY__INDEPENDENCE_REVIEW_PENDING'
+        safe['status']=('R58_ROUND1_PRIVATE_SHORTLIST_READY__PROTECTED_SET_REVIEW_PENDING'
                          if picked else 'R58_ROUND1_WORLD_GUARD_HOLD__NO_SELECTION')
         if picked:
             private={'schema':'r58_round1_pilot_private_v1',
                      'status':'SHORTLIST_ONLY__NOT_ADMITTED',
                      'selected':picked,
                      'cap_reply_targets':20,
-                     'requires_world_review':True,
+                     'requires_world_review':False,
+                     'owner_world_identity_policy':OWNER_WORLD_IDENTITY_POLICY,
+                     'requires_protected_set_evidence_review':True,
                      'requires_owner_confirmation_before_expansion':True}
             write_private(args.private_output,private)
     return safe
