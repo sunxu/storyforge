@@ -260,3 +260,22 @@ python3 experiments/r58_roleplay_replay/audit_priority3_request_timeline.py \
 ```
 
 在测试和计划检查通过、确认本机 `PGHOST` 与 `PGUSER` 为既有专用只读配置且 `PGPASSWORD` 已安全输入后，去掉 `--plan-only` 再执行一次。返回的 JSON 是分组候选数；**请求事件日志与延迟日志的精确 request_id 关联不能当作目标消息与请求 ID 精确关联**，`occurred_at` 是异步终态写入，不是请求真实开始时间。无论结果如何，Prompt byte-exact 和训练准入 HOLD；不重选、不覆盖、不启动 GPU。
+
+## 十三、Owner 请求时间线 2/5/2 候选：相关性保持 HOLD
+
+Owner 报告 `R58_REQUEST_TIMELINE_CORRELATION_HOLD`：AUTHOR 候选 2、CURRENT_PUBLIC 候选 5、OLD_PUBLIC 候选 2，9 个终态事件都可以按 request_id 精确关联至唯一延迟指标并满足宽时间兼容判断，但**没有任何一个来源具有唯一目标请求候选**。详情见 `docs/evidence/R58_PRIORITY3_REQUEST_TIMELINE_OWNER_RESULT_SAFE_20261030.{json,md}`。
+
+当前先核查目标消息本地已捕获 metadata 中是否有明确的请求关联键，而不改变 SQL 时间窗口、新选来源或运行模型：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover -s experiments/r58_roleplay_replay \
+  -p 'test_inventory_priority3_request_keys.py' -v &&
+python3 experiments/r58_roleplay_replay/inventory_priority3_request_keys.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture"
+```
+
+`inventory_priority3_request_keys.py` 只输出预定义键名的布尔存在性，不输出值、UUID、时间戳、正文或摘要；4 项合成测试尚待 Mac 执行。若目标 metadata 无请求标识，则后续按当时的 historyMsgCount=11、目标行 Ledger 完成更新时刻分别进行**软证据分层**；即便软证据缩至一个候选，仍不得宣称直接 request_id 映射或实际 provider prompt byte exact。
+
+仍保持 `exact_target_message_to_request_join=false`、`request_start_time_certified=false`、Train/Validation/Teacher 0、Skill v0.1 不变和 PR #7 Draft。无需新增 Supabase 授权或查询生产内容。
