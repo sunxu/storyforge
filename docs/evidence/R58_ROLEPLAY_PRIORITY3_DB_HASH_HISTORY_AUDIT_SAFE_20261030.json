@@ -62,5 +62,15 @@
     "no_story_text_extracted": true,
     "no_r50_read": true,
     "no_paid_hf_jobs": true
+  },
+  "private_capture_readiness": {
+    "template_sql": "experiments/r58_roleplay_replay/PRIVATE_PRIORITY3_QUARANTINE_EXPORT_TEMPLATE.sql",
+    "runbook": "experiments/r58_roleplay_replay/PRIVATE_CAPTURE_RUNBOOK_CN.md",
+    "sql_parse_planner_check": "EXPLAIN_ONLY_PASS",
+    "actual_private_sql_executed": false,
+    "private_jsonl_created": false,
+    "any_source_text_returned_to_chat": false,
+    "hf_job_started": false,
+    "safe_receipt_not_training_admission": true
   }
 }
