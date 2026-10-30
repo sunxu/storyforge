@@ -128,6 +128,55 @@ class TestExactOverlap(unittest.TestCase):
         self.assertNotIn(str(self.root),raw)
         self.assertFalse(result["r50_protection_checked"])
         self.assertFalse(result["candidate_reply_text_accessed"])
+    def test_private_hold_ledger_has_exactly_one_collision_and_four_hold(self):
+        p=self.private_json(self.roster_path(),roster())
+        ids=[sid(1),sid(28),sid(29),sid(30),sid(31)]
+        queue=self.queue(ids)
+        original=queue.read_bytes()
+        out=self.owner/"g1_holds_private.json"
+        result=check(queue,self.discovery([p]),self.root,out)
+        self.assertTrue(result["private_five_story_hold_ledger_written"])
+        self.assertEqual(result["private_ledger_case_count"],5)
+        self.assertEqual(out.stat().st_mode & 0o777,0o600)
+        private=json.loads(out.read_text())
+        self.assertEqual(len(private["entries"]),5)
+        self.assertEqual(sum(e["historical_sft_exact_uuid_overlap"]
+                             for e in private["entries"]),1)
+        self.assertTrue(all(e["status"].startswith("HOLD_")
+                            and not e["train_admitted"] for e in private["entries"]))
+        self.assertEqual(queue.read_bytes(),original)
+        self.assertNotIn(ids[0],json.dumps(result))
+
+    def test_private_hold_ledger_must_not_overwrite(self):
+        p=self.private_json(self.roster_path(),roster())
+        queue=self.queue([sid(1)])
+        manifest=self.discovery([p])
+        out=self.owner/"g1_holds_private.json"
+        out.write_text("original private contents")
+        with self.assertRaises(Hold):
+            check(queue,manifest,self.root,out)
+        self.assertEqual(out.read_text(),"original private contents")
+
+    def test_missing_roster_does_not_create_private_hold_ledger(self):
+        out=self.owner/"g1_holds_private.json"
+        with self.assertRaises(Hold):
+            check(self.queue([sid(1)]),self.discovery([]),self.root,out)
+        self.assertFalse(out.exists())
+
+    def test_unsafe_world_guard_stays_false_in_hold_ledger(self):
+        p=self.private_json(self.roster_path(),roster())
+        out=self.owner/"g1_holds_private.json"
+        check(self.queue([sid(1),sid(28)]),self.discovery([p]),self.root,out)
+        obj=json.loads(out.read_text())
+        self.assertFalse(obj["namespace_equivalence_verified"])
+        self.assertFalse(obj["expansion_allowed"])
+        for entry in obj["entries"]:
+            self.assertFalse(entry["semantic_world_verified"])
+            self.assertFalse(entry["r50_protected_clear"])
+            self.assertFalse(entry["prior_sft_clear"])
+            self.assertFalse(entry["r55_r57_dev_clear"])
+            self.assertFalse(entry["other_protected_clear"])
+
     def test_source_roster_field_contract(self):
         v=roster()
         self.assertEqual(set(v),ALLOWED_ROSTER_TOP)
