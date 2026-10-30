@@ -154,6 +154,44 @@ def write_private(path, data):
         p.unlink(missing_ok=True)
         raise
 
+def known_exposed_from_private_ledger(path, guard_rows):
+    """Fail closed on absent/incomplete Owner-private R58 G1 exact-UUID ledger."""
+    p=Path(path)
+    if (p.is_symlink() or not p.is_file() or not (0 < p.stat().st_size <= 250000)
+        or (p.stat().st_mode & 0o077)):
+        raise Hold('private prior SFT exposure ledger path invalid')
+    try:
+        body=json.loads(p.read_text(encoding='utf-8'))
+    except (ValueError,UnicodeError):
+        raise Hold('private prior SFT exposure ledger invalid')
+    if (not isinstance(body,dict) or
+        body.get('schema')!='r58_round1_g1_prior_sft_exact_id_holds_private_v2'
+        or body.get('namespace_equivalence_owner_confirmed') is not True
+        or body.get('expansion_allowed') is not False):
+        raise Hold('Owner world identity and exposure evidence not established')
+    entries=body.get('entries')
+    if not isinstance(entries,list) or not 1 <= len(entries) <= 5:
+        raise Hold('private ledger missing fixed pilot rows')
+    seen=set(); blocked=set()
+    for item in entries:
+        if not isinstance(item,dict):
+            raise Hold('ledger record not object')
+        story=item.get('story_id_PRIVATE')
+        exposed=item.get('historical_sft_exact_uuid_overlap')
+        status=item.get('status')
+        if (not isinstance(story,str) or not story.strip()
+            or story.lower() in seen or type(exposed) is not bool):
+            raise Hold('ledger duplicate/invalid story or exposure flag')
+        if status!=('EXCLUDED_PRIOR_SFT_EXACT_UUID_EXPOSURE' if exposed
+                   else 'HOLD_R50_DEV_OTHER_PROTECTED_UUID_CHECK_PENDING'):
+            raise Hold('ledger exposure status mismatch')
+        seen.add(story.lower())
+        if exposed: blocked.add(story.lower())
+    if not {r['story_id'].strip().lower() for r in guard_rows} <= seen:
+        raise Hold('guard candidates absent from frozen G1 ledger')
+    return blocked
+
+
 def audit(args):
     input_rows=private_csv(args.inventory, STORY_FIELDS)
     discovered=discover(input_rows)
@@ -180,7 +218,15 @@ def audit(args):
     if args.guards:
         if not args.private_output: raise Hold('private output required for guarded selection')
         guards=private_csv(args.guards, GUARD_FIELDS)
-        picked, cleared=select(discovered,guards)
+        ledger_path=getattr(args,'prior_sft_holds',None)
+        if not ledger_path:
+            raise Hold('G1 selection requires private historical SFT exclusion ledger')
+        blocked=known_exposed_from_private_ledger(ledger_path,guards)
+        without_exposed=[story for story in discovered
+                         if story['story_id'].lower() not in blocked]
+        picked, cleared=select(without_exposed,guards)
+        safe['prior_sft_exposed_stories_hard_excluded']=sum(
+            story['story_id'].lower() in blocked for story in discovered)
         safe['guard_registry_rows']=len(guards)
         safe['owner_claimed_cleared_count']=len(cleared)
         safe['picked_story_count']=len(picked)
@@ -203,6 +249,8 @@ def main():
     ap=argparse.ArgumentParser(description='R58 Round1 owner-private discovery and pilot selector')
     ap.add_argument('--inventory',required=True)
     ap.add_argument('--guards')
+    ap.add_argument('--prior-sft-holds',
+                    help='Owner-private frozen G1 exact-SFT-UUID HOLD ledger v2')
     ap.add_argument('--private-output')
     ap.add_argument('--safe-output')
     args=ap.parse_args()
