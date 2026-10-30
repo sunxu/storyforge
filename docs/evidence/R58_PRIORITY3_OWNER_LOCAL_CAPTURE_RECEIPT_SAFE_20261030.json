@@ -13,13 +13,22 @@
       "SHA256_VERIFICATION: PASS",
       "SOURCE_RECORDS: 3",
       "TRAINING_ADMISSION: HOLD"
-    ]
+    ],
+    "private_recheck": {
+      "case_fingerprints_verified": 12,
+      "private_file_permissions": "PASS",
+      "private_source_file_sha256": "PASS",
+      "records": 3,
+      "runtime_request_byte_exact": "HOLD",
+      "status": "R58_OWNER_LOCAL_PRIVATE_CAPTURE_RECHECK_PASS",
+      "training_admission": "HOLD"
+    }
   },
   "assessment": {
     "mac_source_capture": "PASS_OWNER_REPORTED",
     "mac_file_sha256_verification": "PASS_OWNER_REPORTED",
     "local_source_bytes_sealed": "PASS_OWNER_REPORTED",
-    "full_private_source_recheck": "PENDING_OWNER_EXECUTION",
+    "full_private_source_recheck": "PASS_OWNER_REPORTED",
     "full_runtime_prompt_parity": "HOLD",
     "train_admitted": 0,
     "validation_admitted": 0
@@ -37,7 +46,11 @@
     "synthetic_tests": "experiments/r58_roleplay_replay/test_verify_priority3_private.py",
     "new_synthetic_test_count": 9,
     "synthetic_test_run_by_owner": false,
-    "independent_run_verified": false
+    "independent_run_verified": false,
+    "history_preflight": "experiments/r58_roleplay_replay/preflight_priority3_history.py",
+    "history_preflight_synthetic_tests": "experiments/r58_roleplay_replay/test_preflight_priority3_history.py",
+    "history_preflight_synthetic_test_count": 10,
+    "history_preflight_run_by_owner": false
   },
   "limits": [
     "The reported file-level checksum is a self-consistency check of local data and manifest, not independent timestamped external attestation",
@@ -47,5 +60,5 @@
     "Do not export source.private.jsonl or manifest.private.json to GitHub or chat",
     "9 new verifier tests are committed but not yet run on owner Mac"
   ],
-  "status": "OWNER_LOCAL_SOURCE_CAPTURE_SHA256_PASS__PER_CASE_RECHECK_PENDING__RUNTIME_REPLAY_HOLD"
+  "status": "OWNER_LOCAL_12_PER_CASE_HASH_PASS__CONDITIONAL_HISTORY_PREFLIGHT_PENDING__RUNTIME_REPLAY_HOLD"
 }
