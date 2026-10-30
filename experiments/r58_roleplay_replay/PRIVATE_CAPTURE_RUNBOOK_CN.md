@@ -134,7 +134,7 @@ PGOPTIONS='-c default_transaction_read_only=on' \
 
 Mac 上的 Hugging Face CLI 任务应通过 `-v ./experiments/r58_roleplay_replay:/app/r58:ro` 只上传此代码目录，另挂载 `hf://buckets/adradar/storyforge-training:/workspace` 写入私有目标；`PGPASSWORD` 使用 `-s PGPASSWORD` 以 HF Job 加密 secrets 注入，严禁用 `-e PGPASSWORD=...`。其他 PGHOST/PGPORT/PGDATABASE/PGUSER 可使用普通 `-e`。
 
-示例远端容器命令：`python:3.12-slim bash /app/r58/run_priority3_cpu_capture.sh`（此 Shell 会在需要时安装 postgresql-client）。**macOS 并不是运行私有 SQL 的机器**；启动动作由 Owner 在核对收费与权限后发起。
+示例远端容器命令：`python:3.12-slim bash /app/r58/run_priority3_cpu_capture.sh`（此 Shell 会在需要时安装 postgresql-client）。**旧 HF Job 方案仅供未来自愿迁移**；2026-10-30 实际已由 Owner 在 Mac 本地完成第一次私有捕获，HF Jobs 因余额不足未提交。禁止重跑导出替换该固定来源包。
 
 Job 必须有专用只读 Postgres 账户，且可读取本 SQL 关联的表及审核/账本记录。HF Storage Bucket 必须是 Owner 的私有 Bucket；FUSE 权限不满足时 fail-closed，不要删掉安全检查绕过。完整 shell 命令在 ChatGPT 的操作指引中提供。
 
@@ -205,3 +205,24 @@ python3 experiments/r58_roleplay_replay/audit_priority3_mutation_revisions.py \
 ```
 
 该工具只输出每种来源的 11 条窗口中 User/Assistant 总数及 revision-positive 计数，不打印正文、ID、digest，且保留 `historical_content_unchanged=HOLD`。新增 8 项合成测试；本节撰写时尚待 Owner 执行。无论结果如何，**不要覆盖原始私有捕获或改变训练准入状态**。
+
+## 十、Owner 修订角色审计 PASS 后的离线深度分类
+
+Owner 报告的三组历史窗口均为 11 条，User 正修订数均为 0，Assistant 正修订数均为 5，合计 15/15 条正修订都属于 Assistant。该结果仍然**不能证明**每条修订原因只是流式完成。
+
+新增纯离线 `profile_priority3_revision_depth.py`，把既有已冻结窗口按角色划分成 `revision_0`、`revision_1`、`revision_2_plus` 三档；不接触私有账本或网络，不打印原文、哈希和 ID：
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+
+python3 -m unittest discover \
+  -s experiments/r58_roleplay_replay \
+  -p 'test_profile_priority3_revision_depth.py' -v && \
+python3 experiments/r58_roleplay_replay/profile_priority3_revision_depth.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture"
+```
+
+工具附带 7 项纯合成回归测试（Owner 尚未运行，不能提前宣布 PASS）。若 15 个 Assistant 皆为 revision=1，则与一次流式最终写入相符，**仍不证明**未发生正文变化；若存在 revision >= 2 则优先追查这些消息的 Ledger 时间/操作。所有情况 `as-of` 历史原文与 provider 原始请求仍 HOLD。
+
+单独的固定 33 条 Ledger as-of 对照是下一道**尚未完成**的门禁：只能在 Owner 授权的私有环境中以固定 ID 只读聚合执行，返回不含 ID、正文、hash 的计数。不可重新执行动态选样 SQL，也不可把私有消息列表带到 ChatGPT/GitHub。
