@@ -13,7 +13,7 @@ from test_capture_priority3 import row, encode
 from audit_priority3_request_timeline import fixed_targets, query_sql, project, audit
 
 
-def fake_result(compatible=1):
+def fake_result(compatible=1, soft=1):
     return {"role_correct": True, "transaction_read_only": "on", "cases": [
         {
             "cohort": cohort, "target_found": True, "target_created_matches": True,
@@ -23,6 +23,9 @@ def fake_result(compatible=1):
             "timing_compatible_joined_events": compatible,
             "missing_duration_events": 0,
             "excess_candidates": False,
+            "events_with_history11_metric": soft,
+            "events_near_target_ledger_update": soft,
+            "events_with_both_soft_signals": soft,
         }
         for cohort in ("AUTHOR", "CURRENT_PUBLIC", "OLD_PUBLIC")
     ]}
@@ -62,13 +65,13 @@ class TestRequestTimeline(unittest.TestCase):
 
     def test_unique_candidate_still_holds_exact_target_link(self):
         result = project(fake_result())
-        self.assertIn("UNIQUE_CANDIDATE_3_OF_3", result["status"])
+        self.assertIn("SOFT_NARROWED_3_OF_3", result["status"])
         self.assertFalse(result["exact_target_message_to_request_join"])
         self.assertFalse(result["request_start_time_certified"])
         self.assertEqual(result["training_admission"], "HOLD")
 
     def test_ambiguous_or_missing_candidate_holds(self):
-        result = project(fake_result(compatible=0))
+        result = project(fake_result(compatible=0, soft=0))
         self.assertEqual(result["status"], "R58_REQUEST_TIMELINE_CORRELATION_HOLD")
 
     def test_duplicate_or_absent_group_is_rejected(self):
@@ -96,6 +99,34 @@ class TestRequestTimeline(unittest.TestCase):
         data["cases"][1]["events_with_matching_metric"] = 2
         with self.assertRaises(Hold):
             project(data)
+
+    def test_no_history_metric_stays_hold(self):
+        result = project(fake_result(soft=0))
+        self.assertEqual(result["status"], "R58_REQUEST_TIMELINE_CORRELATION_HOLD")
+        self.assertFalse(result["exact_target_message_to_request_join"])
+
+    def test_multiple_soft_candidates_remain_hold(self):
+        value = fake_result()
+        for c in value["cases"]:
+            for key in ("terminal_events_in_window", "events_with_matching_metric",
+                        "events_with_one_metric", "timing_compatible_joined_events",
+                        "events_with_history11_metric", "events_near_target_ledger_update",
+                        "events_with_both_soft_signals"):
+                c[key] = 2
+        result = project(value)
+        self.assertEqual(result["status"], "R58_REQUEST_TIMELINE_CORRELATION_HOLD")
+
+    def test_soft_signal_inconsistency_rejected(self):
+        value = fake_result()
+        value["cases"][0]["events_with_both_soft_signals"] = 2
+        with self.assertRaises(Hold):
+            project(value)
+
+    def test_sql_has_history_metric_and_target_ledger_signal(self):
+        statement = query_sql(fixed_targets(self.freeze()))
+        self.assertIn("historyMsgCount", statement)
+        self.assertIn("led.operation='update_after'", statement)
+        self.assertIn("events_with_both_soft_signals", statement)
 
     def test_private_source_immutable(self):
         folder = self.freeze()
