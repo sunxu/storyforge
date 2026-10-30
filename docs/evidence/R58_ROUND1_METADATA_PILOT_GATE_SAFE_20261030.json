@@ -61,8 +61,16 @@
   "artifacts": {
     "selector": "experiments/r58_round1/pilot_round1_shortlist.py",
     "synthetic_tests": "experiments/r58_round1/test_pilot_round1_shortlist.py",
-    "synthetic_test_result": "12/12 PASS on local synthetic-only environment; owner Mac execution PENDING",
-    "private_story_or_user_ids_in_repo": false
+    "synthetic_test_result": "12/12 PASS, Owner Mac reported: Ran 12 tests in 0.006s / OK (2026-10-30); no independent environment reproduction",
+    "private_story_or_user_ids_in_repo": false,
+    "owner_mac_synthetic_tests": {
+      "status": "PASS_OWNER_REPORTED",
+      "tests_run": 12,
+      "failures": 0,
+      "errors": 0,
+      "elapsed_seconds_reported": 0.006,
+      "source": "Owner supplied unittest terminal summary"
+    }
   },
   "completion": {
     "status": "NOT_COMPLETE",
