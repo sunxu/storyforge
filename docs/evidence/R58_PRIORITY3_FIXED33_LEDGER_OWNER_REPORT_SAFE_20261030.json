@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-fixed33-ledger-owner-report-safe-v1",
   "report_date": "2026-10-30",
   "evidence_origin": "Owner-submitted safe aggregate JSON, not assistant inspection of private inputs",
-  "status": "OWNER_FIXED33_LEDGER_OPERATION_CLASSIFICATION_53_OF_53_PASS__ASOF_PROMPT_HOLD",
+  "status": "OWNER_LEDGER_OPERATION_53_OF_53_PASS__REQUEST_EVENT_READER_PERMISSION_HOLD__RUNTIME_PROMPT_HOLD",
   "frozen_message_count": 33,
   "cases": [
     {
@@ -117,5 +117,42 @@
     "source_replacement": true,
     "model_execution": true
   },
-  "safety_gate": "No SFT admission from ledger diagnostic alone"
+  "safety_gate": "No SFT admission from ledger diagnostic alone",
+  "next_gate": {
+    "name": "REQUEST_ID_TIMELINE_CORRELATION",
+    "priority": "NEXT",
+    "metadata_checked": "read-only schema and privileges; no user rows queried",
+    "available_tables": {
+      "chat_latency_metrics": {
+        "reader_select": true,
+        "columns": [
+          "request_id",
+          "created_at",
+          "total_ms",
+          "orchestration_ms",
+          "model",
+          "token_breakdown"
+        ]
+      },
+      "v2_chat_request_events": {
+        "reader_select": false,
+        "columns": [
+          "request_id",
+          "occurred_at",
+          "duration_ms",
+          "user_id",
+          "story_id",
+          "session_id",
+          "status"
+        ]
+      }
+    },
+    "block": "r58_export_reader lacks SELECT permission on v2_chat_request_events",
+    "recommended_scope": "Only request correlation for the existing three frozen source cases, without returning raw request IDs, story IDs, source text, or hashes",
+    "query_executed": false,
+    "exact_join_to_target_reply_proven": false,
+    "request_start_time_proven": false,
+    "previous_history_asof": "HOLD",
+    "instructions": "Do not elevate role or run access-changing SQL automatically. Confirm a narrowly scoped permission method first."
+  }
 }
