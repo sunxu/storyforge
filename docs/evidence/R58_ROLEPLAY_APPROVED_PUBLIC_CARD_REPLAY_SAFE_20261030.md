@@ -45,3 +45,5 @@
 5. 训练/验证世界隔离、R50 保护集元数据重叠核查、双 Reviewer、Owner 批准及 HF CPU Collator 预检是后续独立门禁。
 
 **准入：Train 0、Validation 0；Skill v0.1 未改，PR #7 保持 Draft。**
+
+补充核查：作者路径 3/3 条，现存 `user_stories.v2_data` 与此前批准的 `snapshot.source.v2Data` 相等，且 `updated_at` 不晚于目标生成时间；仍需确认当时运行时代码、翻译和动态系统段。
