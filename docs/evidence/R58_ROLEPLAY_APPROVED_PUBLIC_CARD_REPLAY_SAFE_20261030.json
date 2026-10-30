@@ -5,7 +5,8 @@
     "roleplay_repo": "sunxu/RolePlay",
     "commit": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
     "db_permission": "read_only",
-    "sql_path": "docs/evidence/R58_ROLEPLAY_APPROVED_PUBLIC_CARD_REPLAY_QUERY_SAFE_20261030.sql"
+    "sql_path": "docs/evidence/R58_ROLEPLAY_APPROVED_PUBLIC_CARD_REPLAY_QUERY_SAFE_20261030.sql",
+    "confirmed_author_code_path": "RolePlay route.ts: getStoryById author branch"
   },
   "cohort": {
     "total_with_prior_story_version_record": 133,
@@ -17,7 +18,9 @@
     "author_and_reader_current_snapshot_equals_current_public": 116,
     "reader_old_snapshot_differs_current_public": 17,
     "distinct_old_approved_submissions": 4,
-    "intervening_nonpublic_action_log": 0
+    "intervening_nonpublic_action_log": 0,
+    "author_current_draft_equals_public_projection": 3,
+    "author_current_draft_equals_prior_approved_snapshot": 3
   },
   "dynamic": {
     "translations_cached_created_before_target": {
