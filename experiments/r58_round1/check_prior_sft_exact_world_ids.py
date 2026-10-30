@@ -4,7 +4,7 @@
 Only opens (1) the already-frozen private G1 metadata queue, (2) filename
 discovery manifest, and (3) one explicitly schema-checked R57 private
 world/alias UUID roster. Never opens messages, R50, or story content.
-An exact match is a risk; a miss NEVER clears semantic world isolation.
+An exact match establishes historical UUID exposure under the Owner-confirmed RolePlay identity policy; a miss clears only the frozen R57 27-UUID set, never R50/dev/other protected sets.
 """
 from __future__ import annotations
 
@@ -19,7 +19,8 @@ import sys
 
 from audit_g1_structural_overlap import load_queue
 
-SCHEMA="r58_round1_g1_prior_sft_exact_id_safe_v1"
+SCHEMA="r58_round1_g1_prior_sft_exact_id_safe_v2"
+OWNER_IDENTITY_POLICY="OWNER_ATTESTED_ROLEPLAY_UUID_ONE_UUID_ONE_WORLD_V1"
 EXPECTED_ROSTER_SCHEMA="storyforge-r57-g2-owner-private-world-alias-review-roster-v1"
 ROSTER_RE=re.compile(r"^R57_G2_WORLD_ALIAS_REVIEW_[0-9]{8}_[0-9]{6}_PRIVATE\.json$")
 UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.I)
@@ -117,10 +118,12 @@ def save_private_holds(path:Path, ids:list[str], exposed:set[str],
         entries.append({
             "story_id_PRIVATE":sid,
             "historical_sft_exact_uuid_overlap":collision,
-            "status":("HOLD_PRIOR_SFT_EXACT_ID_OVERLAP__NAMESPACE_UNVERIFIED"
+            "status":("EXCLUDED_PRIOR_SFT_EXACT_UUID_EXPOSURE"
                       if collision else
-                      "HOLD_NO_EXACT_ID_MATCH__SEMANTIC_AND_PROTECTION_PENDING"),
-            "semantic_world_verified":False,
+                      "HOLD_R50_DEV_OTHER_PROTECTED_UUID_CHECK_PENDING"),
+            "owner_attested_world_component_UUID":sid.lower(),
+            "owner_attested_distinct_semantic_world":True,
+            "historical_sft_exact_uuid_set_nonoverlap":not collision,
             "r50_protected_clear":False,
             "prior_sft_clear":False,
             "r55_r57_dev_clear":False,
@@ -128,10 +131,12 @@ def save_private_holds(path:Path, ids:list[str], exposed:set[str],
             "train_admitted":False,
         })
     ledger={
-        "schema":"r58_round1_g1_prior_sft_exact_id_holds_private_v1",
+        "schema":"r58_round1_g1_prior_sft_exact_id_holds_private_v2",
+        "owner_world_identity_policy":OWNER_IDENTITY_POLICY,
         "status":"G1_FIVE_STORIES_HOLD_ONLY__NOT_ADMITTED",
         "roster_bytes_sha256_PRIVATE":hashlib.sha256(source_roster.read_bytes()).hexdigest(),
-        "namespace_equivalence_verified":False,
+        "namespace_equivalence_owner_confirmed":True,
+        "cross_uuid_semantic_world_review_required":False,
         "entries":entries,
         "frozen_queue_unmodified":True,
         "expansion_allowed":False,
@@ -156,17 +161,22 @@ def check(queue:Path,discovery:Path,private_root:Path,
         "schema":SCHEMA,
         "status":"R58_G1_PRIOR_SFT_EXACT_ID_EVIDENCE_NOT_RESOLVED__HOLD",
         "frozen_candidate_stories_checked":len(ids),
-        "candidate_id_namespace":"UNVERIFIED",
+        "candidate_id_namespace":"OWNER_CONFIRMED_ROLEPLAY_STORY_UUID",
+        "owner_world_identity_policy":OWNER_IDENTITY_POLICY,
+        "owner_attested_one_uuid_one_world":True,
+        "cross_uuid_semantic_review_required":False,
         "r57_roster_candidates_found":len(matches),
         "r57_roster_schema_verified":False,
         "r57_historical_sft_uuid_count_verified":False,
         "exact_identifier_overlap_count":None,
-        "no_match_means_semantic_world_clear":False,
+        "no_match_means_all_protected_sets_clear":False,
+        "r57_exact_uuid_no_match_counts_as_clear_for_r57_roster_only":True,
         "r50_protection_checked":False,
         "other_protected_worlds_checked":False,
         "private_story_text_accessed":False,
         "candidate_reply_text_accessed":False,
-        "world_components_verified":0,
+        "owner_attested_distinct_worlds_in_queue":len(ids),
+        "independently_rechecked_semantic_worlds":0,
         "g1_clearance":"HOLD",
         "train_admitted":0,
         "validation_admitted":0,
@@ -182,8 +192,9 @@ def check(queue:Path,discovery:Path,private_root:Path,
         return safe
     source=private_json(matches[0],400000)
     exposed=parse_exposed_roster(source)
-    exact=sum(isinstance(x,str) and UUID.fullmatch(x) is not None
-              and x.lower() in exposed for x in ids)
+    if any(not UUID.fullmatch(x) for x in ids):
+        raise Hold("RolePlay candidate IDs must be canonical UUIDs")
+    exact=sum(x.lower() in exposed for x in ids)
     if private_hold_output is not None:
         save_private_holds(private_hold_output,ids,exposed,matches[0])
         safe["private_five_story_hold_ledger_written"]=True
@@ -194,9 +205,10 @@ def check(queue:Path,discovery:Path,private_root:Path,
         "r57_roster_schema_verified":True,
         "r57_historical_sft_uuid_count_verified":True,
         "exact_identifier_overlap_count":exact,
+        "r57_roster_only_exact_id_nonoverlap_count":len(ids)-exact,
         "candidate_ids_in_uuid_syntax":sum(UUID.fullmatch(x) is not None for x in ids),
         "status":("R58_G1_PRIOR_SFT_EXACT_UUID_OVERLAP_FOUND__HOLD"
-                  if exact else "R58_G1_NO_EXACT_UUID_OVERLAP__SEMANTIC_NAMESPACE_HOLD"),
+                  if exact else "R58_G1_NO_EXACT_UUID_OVERLAP__OTHER_PROTECTED_SET_HOLD"),
     })
     return safe
 
