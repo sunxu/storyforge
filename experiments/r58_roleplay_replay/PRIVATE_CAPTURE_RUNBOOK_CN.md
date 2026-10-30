@@ -279,3 +279,21 @@ python3 experiments/r58_roleplay_replay/inventory_priority3_request_keys.py \
 `inventory_priority3_request_keys.py` 只输出预定义键名的布尔存在性，不输出值、UUID、时间戳、正文或摘要；4 项合成测试尚待 Mac 执行。若目标 metadata 无请求标识，则后续按当时的 historyMsgCount=11、目标行 Ledger 完成更新时刻分别进行**软证据分层**；即便软证据缩至一个候选，仍不得宣称直接 request_id 映射或实际 provider prompt byte exact。
 
 仍保持 `exact_target_message_to_request_join=false`、`request_start_time_certified=false`、Train/Validation/Teacher 0、Skill v0.1 不变和 PR #7 Draft。无需新增 Supabase 授权或查询生产内容。
+
+## 十四、Owner 预定义请求键 0/21：新增历史数与目标 Ledger 软分层
+
+Owner 报告 `R58_LOCAL_REQUEST_KEY_INVENTORY_COMPLETE__DIRECT_LINK_HOLD`：AUTHOR、CURRENT_PUBLIC、OLD_PUBLIC 各自 `target.metadata` 的 7 种已知**顶层**请求关联键均不存在。不能外推至其他列或嵌套数据。此前请求时间线候选仍分别 2/5/2，精确目标回复 request_id 仍 HOLD。
+
+更新 `audit_priority3_request_timeline.py`：同时返回候选请求的 `historyMsgCount=11` 指标匹配数、与目标 Assistant 的 Ledger `update_after` 时刻距离在 2 分钟内的匹配数，以及兼顾原 duration 时间校验的两项交集。此诊断**只属于软证据**，不存在原始目标消息→request_id 直接映射就不能提升为字节级重建。
+
+```bash
+cd ~/workspace/storyforge-r58-run
+git pull --ff-only
+python3 -m unittest discover -s experiments/r58_roleplay_replay \
+  -p 'test_audit_priority3_request_timeline.py' -v
+python3 experiments/r58_roleplay_replay/audit_priority3_request_timeline.py \
+  --private-dir "$HOME/.storyforge-r58-private/priority3_source_20261030_first_capture" \
+  --plan-only
+```
+
+新增后的合成测试共 15 项，**尚未取得 Mac 执行结果**。只有上述测试和范围预检都 PASS，并确认当前 PG 凭据与专用只读账户一致，才可再运行该脚本（去掉 `--plan-only`）。只分享安全聚合 JSON；源包不可写、不可重选。没有 GPU、HF Job 或训练准入。
