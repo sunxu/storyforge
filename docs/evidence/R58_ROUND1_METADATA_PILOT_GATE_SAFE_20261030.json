@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_PRIVATE_FIVE_QUEUE_CREATED__ALL_WORLD_AND_PROTECTION_GUARDS_HOLD",
+  "status": "R58_ROUND1_G1_PRIVATE_FIVE_QUEUE_PASS__STRUCTURAL_COLLISION_PROBE_READY__PROTECTION_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -231,5 +231,28 @@
     "prior_training_exposure_checked": false,
     "quality_review_started": false,
     "private_reply_text_accessed": false
+  },
+  "g1_structural_overlap_probe": {
+    "status": "G1_STRUCTURAL_OVERLAP_METADATA_ONLY_TOOL_READY__OWNER_TEST_AND_RUN_PENDING",
+    "script": "experiments/r58_round1/audit_g1_structural_overlap.py",
+    "test": "experiments/r58_round1/test_audit_g1_structural_overlap.py",
+    "runbook": "docs/evidence/R58_ROUND1_G1_STRUCTURAL_OVERLAP_SAFE_RUNBOOK_20261030.md",
+    "new_synthetic_tests": 11,
+    "total_synthetic_tests": 41,
+    "owner_41_test_status": "PENDING",
+    "owner_db_execution": "NOT_EXECUTED",
+    "query_scope": "Exactly up to five Owner local G1 queue story IDs, local psql stdin, SELECT-only aggregate",
+    "signals": [
+      "same_author_pairs",
+      "same_title_pairs",
+      "same_world_setting_pairs",
+      "same_v2_world_exact_pairs"
+    ],
+    "interpretation": "Only overlap risk signals: zero collisions cannot certify world or protected-set independence",
+    "world_components_verified": 0,
+    "protected_worlds_checked": false,
+    "training_exposure_checked": false,
+    "training_admission": "HOLD",
+    "expansion_allowed": false
   }
 }
