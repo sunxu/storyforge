@@ -6,6 +6,7 @@ import io
 import json
 from pathlib import Path
 import sys
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest import mock
@@ -98,22 +99,37 @@ class TestV01Primary(unittest.TestCase):
         fs=FakeFS(self.source,self.compiled,fail=f"{m.BUCKET}/datasets/v0.3/train.jsonl")
         fake=SimpleNamespace(HfFileSystem=lambda:fs)
         err=io.StringIO();out=io.StringIO()
-        with mock.patch.object(m,"git_blob",side_effect=[b"def convert(source: Path, dest: Path)",*self.source.values()]),\
-             mock.patch.dict(sys.modules,{"huggingface_hub":fake}),\
-             redirect_stderr(err),redirect_stdout(out):
-            self.assertEqual(m.main(["--repo-root","/tmp","--allow-read-only-private-v01-input-bytes"]),42)
+        # macOS /tmp is a symlink to /private/tmp. Use a real disposable
+        # directory so the provider-error redaction path is actually exercised.
+        with tempfile.TemporaryDirectory() as repo_root:
+            with mock.patch.object(m,"git_blob",side_effect=[
+                    b"def convert(source: Path, dest: Path)",
+                    self.source["train"],self.source["validation"]]),\
+                 mock.patch.dict(sys.modules,{"huggingface_hub":fake}),\
+                 redirect_stderr(err),redirect_stdout(out):
+                self.assertEqual(m.main(["--repo-root",repo_root,
+                                         "--allow-read-only-private-v01-input-bytes"]),42)
+        self.assertIn("HOLD",err.getvalue())
         self.assertNotIn("SECRET_AUTH_TOKEN_DONT_ECHO",err.getvalue())
         self.assertEqual(out.getvalue(),"")
+        self.assertEqual(len(fs.calls),1)
     def test_17_main_all_sources_with_fake_fs(self):
-        fake=SimpleNamespace(HfFileSystem=lambda:FakeFS(self.source,self.compiled))
+        fake_fs=FakeFS(self.source,self.compiled)
+        fake=SimpleNamespace(HfFileSystem=lambda:fake_fs)
         err=io.StringIO();out=io.StringIO()
-        # Must inject matching SOURCE_PINS Git bytes in deterministic iteration order.
-        with mock.patch.object(m,"git_blob",side_effect=[b"def convert(source: Path, dest: Path)",self.source["train"],self.source["validation"]]),\
-             mock.patch.dict(sys.modules,{"huggingface_hub":fake}),\
-             redirect_stderr(err),redirect_stdout(out):
-            self.assertEqual(m.main(["--repo-root","/tmp","--allow-read-only-private-v01-input-bytes"]),0,err.getvalue())
+        # Use a real, non-symlink directory on both macOS and Linux. The
+        # production CLI intentionally rejects symlinked repository roots.
+        with tempfile.TemporaryDirectory() as repo_root:
+            with mock.patch.object(m,"git_blob",side_effect=[
+                    b"def convert(source: Path, dest: Path)",
+                    self.source["train"],self.source["validation"]]),\
+                 mock.patch.dict(sys.modules,{"huggingface_hub":fake}),\
+                 redirect_stderr(err),redirect_stdout(out):
+                self.assertEqual(m.main(["--repo-root",repo_root,
+                                         "--allow-read-only-private-v01-input-bytes"]),0,err.getvalue())
         r=json.loads(out.getvalue())
         self.assertEqual(r["hf_bucket_objects_read"],8)
+        self.assertEqual(len(fake_fs.calls),8)
         self.assertFalse(r["historical_bucket_immutability_proven"])
         self.assertEqual(r["train_admitted"],0)
         for x in m.RUN_DIRS:
