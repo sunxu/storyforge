@@ -1,15 +1,17 @@
 """Synthetic-only R58 GPU single-positive priority audit tests; never network."""
 from __future__ import annotations
-from collections import Counter
+
 import hashlib
 import io
 import json
-from pathlib import Path
 import stat
 import tempfile
 import unittest
+from collections import Counter
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
 from unittest import mock
-from contextlib import redirect_stdout, redirect_stderr
+
 import review_hf_gpu_signal_receipt as m
 
 

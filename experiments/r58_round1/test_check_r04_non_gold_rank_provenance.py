@@ -6,14 +6,14 @@ import csv
 import hashlib
 import io
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
 from unittest import mock
-from contextlib import redirect_stdout, redirect_stderr
 
 import check_r04_non_gold_rank_provenance as m
-from test_check_r04_non_gold_uuid import uid, snapshots, hashes
+from test_check_r04_non_gold_uuid import hashes, snapshots, uid
 
 RANKS = list(range(6, 16))
 MAPPING = {rank:uid(n) for n,rank in enumerate([6,8,9,10,12,13,14,15])}

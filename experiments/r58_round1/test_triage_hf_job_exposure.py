@@ -1,15 +1,16 @@
 """Pure synthetic metadata-only tests, no network and no private user files."""
 from __future__ import annotations
+
 import io
 import json
 import os
-from pathlib import Path
 import sys
 import tempfile
-from types import SimpleNamespace
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
-from contextlib import redirect_stdout, redirect_stderr
 
 import triage_hf_job_exposure as m
 
