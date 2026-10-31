@@ -1,0 +1,106 @@
+{
+  "schema": "storyforge-r58-g1-g2-safe-readiness-matrix-v1",
+  "date": "2026-10-31",
+  "status": "G1_SOURCE_UNIVERSE_HOLD__G2_PROVIDER_REQUEST_HOLD__NO_ADMISSION",
+  "target": "R58_Round1_StoryForge_Skill_v02_preflight",
+  "owner_scope": {
+    "original_candidate_worlds": 5,
+    "known_sft_world_excluded": 1,
+    "remaining_candidate_worlds_in_hold": 4,
+    "max_reply_targets": 20,
+    "owner_policy": "ONE_ROLEPLAY_STORY_UUID_PER_WORLD"
+  },
+  "citations": {
+    "known_five": "docs/evidence/R58_G1_KNOWN_FIVE_JOB_CURRENT_PRIMARY_INPUTS_CROSSCHECK_SAFE_20261031.json",
+    "round1": "docs/evidence/R58_ROUND1_METADATA_PILOT_GATE_SAFE_20261030.json",
+    "g1_coverage": "docs/evidence/R58_ROUND1_G1_EVIDENCE_COVERAGE_SAFE_20261030.json",
+    "g2_gap": "docs/evidence/R58_PRIORITY3_PROMPT_ASSEMBLY_GAP_MATRIX_SAFE_20261030.json"
+  },
+  "g1_scopes": [
+    {
+      "id": "known_sft_frozen_splits",
+      "evidence": "OWNER_GIT_SPLIT_RECONCILIATION",
+      "scope_observed": true,
+      "universe_complete": false,
+      "observation": "v0.1/R46/R54 六份冻结 Train/Validation：184 记录位置，27 世界来自 Owner 私有索引对账"
+    },
+    {
+      "id": "known_five_update_jobs",
+      "evidence": "OWNER_CURRENT_HF_SHA256",
+      "scope_observed": true,
+      "universe_complete": false,
+      "observation": "5 个已知参数更新 Job 的现存 12 个 HF 对象匹配；不证明当年对象未变化"
+    },
+    {
+      "id": "r50_five_protected_worlds",
+      "evidence": "OWNER_METADATA_UUID_CHECK",
+      "scope_observed": true,
+      "universe_complete": false,
+      "observation": "剩余 4 世界与冻结 R50 5 世界精确 UUID 交集 0；未打开 R50 题目"
+    },
+    {
+      "id": "gold195_13_source_worlds",
+      "evidence": "OWNER_PRIOR_SCOPED_SAFE_RECEIPT",
+      "scope_observed": true,
+      "universe_complete": false,
+      "observation": "先前本机回执记载剩余候选对 Gold195 来源的精确 UUID 排除；不是全部 DEV"
+    },
+    {
+      "id": "legacy_dev20_two_worlds",
+      "evidence": "OWNER_PRIOR_SCOPED_SAFE_RECEIPT",
+      "scope_observed": true,
+      "universe_complete": false,
+      "observation": "v0.1 Test 20 题/2 世界，先前 Owner 回执记载剩余 4 世界零精确命中"
+    },
+    {
+      "id": "r04_non_gold_two_worlds",
+      "evidence": "OWNER_PRIOR_SCOPED_SAFE_RECEIPT",
+      "scope_observed": true,
+      "universe_complete": false,
+      "observation": "先前 Owner 回执记载 R04 非 Gold 2 世界零精确命中；07/11 编号证据另行核对"
+    },
+    {
+      "id": "other_protected_worlds",
+      "evidence": "AUTHORITATIVE_UNIVERSE_MISSING",
+      "scope_observed": false,
+      "universe_complete": false,
+      "observation": "R55/R57/R56 与其他 reserved/heldout 全部来源 UUID 的权威完整性仍未证明"
+    },
+    {
+      "id": "other_historical_parameter_update_jobs",
+      "evidence": "HISTORICAL_JOB_UNIVERSE_MISSING",
+      "scope_observed": false,
+      "universe_complete": false,
+      "observation": "之前 69 可见 Job 中 60 未充分分类；取消的 GPU 任务有训练遥测，参数更新未证实"
+    }
+  ],
+  "g2_runtime": {
+    "prompt_components": 19,
+    "byte_exact_blocking_components": 17,
+    "direct_target_to_request_link_verified": false,
+    "provider_original_request_bytes_verified": false,
+    "conditional_history_cohorts": 3,
+    "initial_fixed_messages_ledger_parity": 33,
+    "evidence_level": "OWNER_AND_PINNED_CODE_SCOPED_ONLY",
+    "status": "HOLD"
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_reviews": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "new_paid_hf_job_authorized": false,
+    "source_registry_complete": false,
+    "all_actual_sft_runs_and_input_sources_proven_complete": false
+  },
+  "prohibitions": {
+    "raw_story_text_exported": false,
+    "private_candidate_uuids_exported": false,
+    "r50_test_content_accessed": false,
+    "job_started": false
+  },
+  "evidence_boundary": "Owner SAFE 聚合与 Git 固定内容核验，不等于 R50 保护全集、所有 HF Job、原始 Provider 请求字节或逐案例签核的独立证明"
+}
