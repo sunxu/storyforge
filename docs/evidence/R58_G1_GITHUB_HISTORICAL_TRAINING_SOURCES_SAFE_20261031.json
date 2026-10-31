@@ -1,0 +1,135 @@
+{
+  "all_actual_sft_runs_and_input_sources_proven_complete": false,
+  "expansion_allowed": false,
+  "g1_clearance": "HOLD",
+  "git_branch": "r58/roleplay-sft-skill-v01",
+  "git_sources": {
+    "configs/qwen38-27b-qlora-smoke.yaml": "d300706b0a33a23dd436d87aeb1d7a4fd12c7b18",
+    "data/compiled/v0.3/SHA256SUMS.txt": "18bb89497f492dc1a485cf90e9987eeb5c87c87f",
+    "data/compiled/v0.3/train.jsonl": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+    "data/compiled/v0.3/validation.jsonl": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+    "docs/HF_RUN_REGISTRY.md": "5a5c1ed11bf30bd763480b7c17ac366579e64dc0",
+    "docs/evidence/BASELINE_SFT_V01_20261008.md": "8d6d1883abae031dbb881b0e742503ca0bf4b11c",
+    "docs/evidence/GPU_SMOKE_20261008.md": "bd45d6f1cde67af6d16264d86ca364f31d70d797",
+    "docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json": "788701515f8f7c7afc840ace7ef7a8ba273493cb",
+    "docs/evidence/V03_R53_FORMAL_PRIVATE_31_9_RELEASE_OWNER_RECEIPT_ACCEPTED_20261021.md": "c3cf7613351448161c62d9ca5751c6d12bc050bb",
+    "docs/evidence/V03_R53_R46_PRIMARY_EXPORT_OWNER_RECEIPT_VERIFIED_20261021.md": "ee3b0257dbe1f78f5458698bfe249264ac611c01",
+    "scripts/v03_r54_gpu_runner.py": "02c68be863dd95650b1f69022eb2420ebbe4d2c2"
+  },
+  "known_parameter_update_jobs": [
+    {
+      "declared_split_source": "v0.1",
+      "job_id": "6ac73cabe7a0dae8a278117a",
+      "reported_optimizer_steps": 3,
+      "role": "v01_rank32_smoke",
+      "runtime_input_bytes_independently_rehashed_here": false
+    },
+    {
+      "declared_split_source": "v0.1",
+      "job_id": "6ac74ce3df2184ac91ac8f43",
+      "reported_optimizer_steps": 1,
+      "role": "v01_rank64_capacity",
+      "runtime_input_bytes_independently_rehashed_here": false
+    },
+    {
+      "declared_split_source": "v0.1",
+      "job_id": "6ac75bafdf2184ac91acb293",
+      "reported_optimizer_steps": 9,
+      "role": "v01_rank64_baseline",
+      "runtime_input_bytes_independently_rehashed_here": false
+    },
+    {
+      "declared_split_source": "R46",
+      "job_id": "6acf29e4c66288145223871b",
+      "reported_optimizer_steps": 7,
+      "role": "r46_exploratory_sft",
+      "runtime_input_bytes_independently_rehashed_here": false
+    },
+    {
+      "declared_split_source": "R54",
+      "job_id": "6ad8e60f5275124786e27d21",
+      "reported_optimizer_steps": 16,
+      "role": "r54_v2_sft",
+      "runtime_input_bytes_independently_rehashed_here": false
+    }
+  ],
+  "known_total_split_placements": 184,
+  "known_train_split_placements": 145,
+  "known_unique_world_uuids_owner_private_reconciliation_reported": 27,
+  "known_unique_world_uuids_recomputed_from_public_sources": false,
+  "known_validation_split_placements": 39,
+  "old_hf_job_listing_historical_completeness_proven": false,
+  "other_historical_job_count_unclassified_at_last_owner_inventory": 60,
+  "other_protected_worlds_covered": false,
+  "private_source_jsonl_or_story_uuids_exported": false,
+  "r50_protected_content_accessed": false,
+  "schema": "r58_g1_github_historical_training_sources_safe_v1",
+  "source_registry_complete": false,
+  "splits": [
+    {
+      "compiled_payload_sha256": "9a24f07befee9e701c587f4b154b0e780c29534abe3a0fa8b0c310511172a60f",
+      "git_data_blob_sha": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+      "git_data_path": "data/compiled/v0.3/train.jsonl",
+      "key": "V01_TRAIN",
+      "public_evidence_level": "GIT_CONTENT_AND_SHA256",
+      "rows": 65,
+      "run": "v0.1",
+      "split": "train"
+    },
+    {
+      "compiled_payload_sha256": "083a6f124abc414a0edf268d1a95788f738d55e7ecd229a78c67087991f46c36",
+      "git_data_blob_sha": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+      "git_data_path": "data/compiled/v0.3/validation.jsonl",
+      "key": "V01_VALIDATION",
+      "public_evidence_level": "GIT_CONTENT_AND_SHA256",
+      "rows": 15,
+      "run": "v0.1",
+      "split": "validation"
+    },
+    {
+      "compiled_payload_sha256": "a028bf9fb28b12b4a3fa352d6a60281bd9e1ef5773ebfdfecc7ac80eb2cba517",
+      "git_data_blob_sha": null,
+      "git_data_path": null,
+      "key": "R46_TRAIN",
+      "public_evidence_level": "GIT_RECEIPT_PLUS_OWNER_REMOTE_INPUT_ATTESTATION",
+      "rows": 49,
+      "run": "R46",
+      "split": "train"
+    },
+    {
+      "compiled_payload_sha256": "cc8d647471423f4969149f8cabdea980aad15d8bd4424d9dd98da3313c639f3c",
+      "git_data_blob_sha": null,
+      "git_data_path": null,
+      "key": "R46_VALIDATION",
+      "public_evidence_level": "GIT_RECEIPT_PLUS_OWNER_REMOTE_INPUT_ATTESTATION",
+      "rows": 15,
+      "run": "R46",
+      "split": "validation"
+    },
+    {
+      "compiled_payload_sha256": "d0425c54b534307047457d05e6890b50076ad2d23ce9ab3d52f94d1a3db585a7",
+      "git_data_blob_sha": null,
+      "git_data_path": null,
+      "key": "R54_TRAIN",
+      "public_evidence_level": "GIT_PINNED_PRIVATE_RELEASE_AND_RUNNER_CONTRACT",
+      "rows": 31,
+      "run": "R54",
+      "split": "train"
+    },
+    {
+      "compiled_payload_sha256": "b5ea4075419ce02a1340f6ece875068746918ce1d4c6d72ee2f799b3fe58754d",
+      "git_data_blob_sha": null,
+      "git_data_path": null,
+      "key": "R54_VALIDATION",
+      "public_evidence_level": "GIT_PINNED_PRIVATE_RELEASE_AND_RUNNER_CONTRACT",
+      "rows": 9,
+      "run": "R54",
+      "split": "validation"
+    }
+  ],
+  "status": "SIX_KNOWN_FROZEN_SPLITS_INDEXED__PRIMARY_REMOTE_AND_ALL_RUNS_HOLD",
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "v01_test_held_out_not_a_training_split_rows": 20,
+  "validation_admitted": 0
+}
