@@ -47,9 +47,8 @@ class BridgeTests(unittest.TestCase):
 
     def test_invalid_counts_hold(self):
         for value in ("", "-1", "1.5", "1e2", "x"):
-            with self.subTest(value=value):
-                with self.assertRaises(bridge.Hold):
-                    bridge.count(value)
+            with self.subTest(value=value), self.assertRaises(bridge.Hold):
+                bridge.count(value)
 
     def test_only_source_allowlist(self):
         self.assertFalse(bridge.eligible(fake(source_type="unknown")))
