@@ -112,6 +112,20 @@ class BridgeTests(unittest.TestCase):
             self.assertEqual(out.getvalue(), "")
             self.assertNotIn(temp, err.getvalue())
 
+    def test_g1_audit_cli_rejects_unapproved_paths_without_leaking_them(self):
+        with tempfile.TemporaryDirectory() as temp:
+            private_path = str(Path(temp) / "not_authorized_PRIVATE.json")
+            out = io.StringIO()
+            err = io.StringIO()
+            with redirect_stdout(out), redirect_stderr(err):
+                code = bridge.main([
+                    "g1-audit", "--private-manifest", private_path,
+                    "--prior-sft-ledger", private_path,
+                ])
+            self.assertEqual(code, 42)
+            self.assertEqual(out.getvalue(), "")
+            self.assertNotIn(private_path, err.getvalue())
+
     def test_shortlist_cli_does_not_write(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
