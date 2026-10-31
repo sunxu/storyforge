@@ -1,0 +1,98 @@
+{
+  "schema": "r58_g2_deployment_sha_source_provenance_safe_v1",
+  "date": "2026-10-31",
+  "status": "PINNED_DEPLOYMENT_SHA_WRITER_FOUND__HISTORICAL_TARGET_DEPLOYMENT_HOLD",
+  "scope": "R58 frozen three historical targets; source-code-only audit, no target rows or production host access",
+  "roleplay_source": {
+    "repository": "sunxu/RolePlay",
+    "source_pin": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "historical_production_deployed_sha_verified": false,
+    "verified_git_blobs": {
+      ".github/workflows/deploy.yml": "f1af1a7e1431c51bddf31b3acdc75f56447042e8",
+      "ops/deploy/deploy-standalone-release.sh": "476323356f58b445ebc86cec08abdca2243ac2d4",
+      "ops/deploy/deploy-retention.sh": "fabe2ca87eba8e47cfcc61127d9859e07e7e869c",
+      "scripts/deploy-production-local.ps1": "4d4886d849e5b02c35f92f9b8b098f7df891c175"
+    }
+  },
+  "observed_code": {
+    "workflow_build": {
+      "location": ".github/workflows/deploy.yml:161-168",
+      "description": "ROLEPLAY_BUILD_SHA is set to github.sha for CI Next.js build",
+      "limitation": "The workflow file establishes intended build behavior, not that it executed for the historical target."
+    },
+    "github_actions_deploy": {
+      "location": ".github/workflows/deploy.yml:260-289",
+      "description": "Deployment staging directory includes Github SHA, run ID and attempt; deploy script invoked with github.sha.",
+      "limitation": "Staging name and workflow source alone do not establish successful release or target-time active backend."
+    },
+    "deployed_sha_marker": {
+      "location": "ops/deploy/deploy-standalone-release.sh:536-545",
+      "fields": [
+        "sha",
+        "ref",
+        "actor",
+        "deployed_at",
+        "workflow_run_id",
+        "stage_dir"
+      ],
+      "description": "Records current successful deployment to DEPLOYED_SHA after checks.",
+      "mutable_current_file": true,
+      "historical_time_interval_ledger": false,
+      "workflow_run_id_literal_in_script": "manual-local-build",
+      "workflow_run_id_is_actual_actions_run_identifier": false
+    },
+    "deployment_status": {
+      "location": "ops/deploy/deploy-standalone-release.sh:236-262 and 545",
+      "status_path_pattern": "<managed_staging_dir>/deploy.status",
+      "description": "Per-staging transaction status can report succeeded or failed and source SHA if retained.",
+      "not_a_complete_historical_register": true
+    },
+    "retention_policy": {
+      "location": "ops/deploy/deploy-standalone-release.sh:548-555; ops/deploy/deploy-retention.sh:216-246",
+      "default_staging_keep_count": 3,
+      "default_staging_max_age_seconds": 604800,
+      "retained_staging_assumed_to_exist": false,
+      "note": "Old staging beyond both count and age is eligible for cleanup, so absence cannot prove no historical deploy."
+    },
+    "local_deployer": {
+      "location": "scripts/deploy-production-local.ps1:665-699",
+      "description": "Owner local deployment checks remote DEPLOYED_SHA and a public build version prefix after success.",
+      "historical_proof": false,
+      "build_version_prefix_is_full_sha": false
+    }
+  },
+  "accessible_github_meta_previous_check": {
+    "exact_pinned_source_sha_actions_runs_reported": 0,
+    "exact_pinned_source_sha_commit_status_entries": 0,
+    "deployments_endpoint_query_unavailable": true,
+    "negative_api_result_proves_never_deployed": false
+  },
+  "evidence_recovery": {
+    "priority": "Look for already retained, authoritative deployment transaction receipts, successful stage deploy.status and full SHA with trusted deploy times, then independently bind to each frozen target's generation time and active app/PM2 revision.",
+    "requests_to_owner": "Share only SAFE aggregate: historic_receipt_exists, full_sha_pinned, trusted_interval_covers_each_target, host_role_verified, runtime_was_active and evidence_source_class. Never upload SSH credentials, private paths, logs, message IDs, user details or unredacted env.",
+    "do_not_run_automatic_ssh_or_prod_scan": true,
+    "do_not_read_sensitive_request_payloads": true,
+    "if_only_current_DEPLOYED_SHA_available": "HOLD",
+    "if_only_public_build_prefix_available": "HOLD",
+    "if_only_source_pin_or_workflow_source_available": "HOLD",
+    "if_archived_stage_status_not_tied_to_active_backend_at_target_time": "HOLD"
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "deployed_target_time_sha_proven": false,
+    "direct_target_request_link_proven": false,
+    "original_provider_bytes_proven": false,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "production_host_accessed": false,
+    "hf_job_started": false,
+    "private_case_or_r50_data_accessed": false,
+    "original_server_logs_read": false
+  }
+}
