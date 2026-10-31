@@ -76,3 +76,12 @@ python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py shortlist \
 python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
 ruff check skills/storyforge-roleplay-sft/v02/ --statistics
 ```
+
+## G2 历史部署区间离线预检（不清关）
+
+- `r58_deployment_interval_audit.py` 仅在 Owner 已有、经授权的私有 0600 JSON 中对固定 3 个历史目标的申报生成时刻与部署区间做本地结构检验；不访问 HF、Supabase、生产 VPS、原始 Provider 请求、密封 R50 样本。
+- 对非规范时间、同一后端重叠区间、缺失/重复目标、无效 SHA 和来源证据分类严格拒绝；只返回 SAFE 计数，不输出时间戳、原始 SHA、回执摘要或任何私有 ID。
+- 输入中的来源哈希及“成功部署”枚举仅是 Owner 本地元数据声明。**即使 3/3 区间覆盖，仍 `G2=HOLD`，未建立历史请求 SHA 的独立来源认证、实际生产路由或 Provider 字节证明。**
+- 新增 19 项合成测试。在前次 Owner 本机 61/61 PASS 之后，新的 Skill v0.2 **预期 80 项**，必须以最新 commit 的 Owner 实测为准。
+
+运行说明：`docs/evidence/R58_G2_EXISTING_DEPLOY_INTERVAL_OFFLINE_AUDIT_RUNBOOK_SAFE_20261031.md`。没有已经存在的、独立来源可追溯的部署元数据时 **不要新建或补造 PRIVATE manifest**；保持 HOLD。此预检不改变 `r58_pipeline_bridge.py gate/freeze` 或 Train/Validation/Teacher 准入状态。
