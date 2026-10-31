@@ -2,14 +2,12 @@
 import csv
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 from pilot_round1_shortlist import CATEGORIES, Hold
-from prepare_round1_g1_review_queue import (
-    SCHEMA, QUEUE_STATUS, OUTPUT_FIELDS, prepare_queue, save_private_csv, run,
-)
+from prepare_round1_g1_review_queue import OUTPUT_FIELDS, QUEUE_STATUS, SCHEMA, prepare_queue, run
 
 STORY={
     'story_id':'synthetic-A','source_type':'original','not_deleted':'t',

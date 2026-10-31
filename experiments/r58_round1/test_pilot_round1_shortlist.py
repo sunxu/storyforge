@@ -2,11 +2,21 @@
 import csv
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
 from argparse import Namespace
-from pilot_round1_shortlist import discover, select, audit, Hold, CATEGORIES, GATE_NAMES, safe_gate_diagnostics, PARSER_VERSION
+from pathlib import Path
+
+from pilot_round1_shortlist import (
+    CATEGORIES,
+    GATE_NAMES,
+    PARSER_VERSION,
+    Hold,
+    audit,
+    discover,
+    safe_gate_diagnostics,
+    select,
+)
 
 STORY={'story_id':'id1','source_type':'original','not_deleted':'true',
        'moderation_status':'approved','story_type':'v2_sandbox',

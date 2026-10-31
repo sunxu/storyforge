@@ -2,9 +2,9 @@
 import hashlib
 import importlib.util
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 MODULE=Path(__file__).with_name("verify_github_historical_training_sources.py")
 spec=importlib.util.spec_from_file_location("verify_github_historical_training_sources",MODULE)

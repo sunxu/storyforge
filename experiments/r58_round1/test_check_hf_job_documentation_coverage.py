@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
 """All-synthetic/no-HF regression tests for HF Job Git-document coverage."""
 from __future__ import annotations
+
 import json
-import os
-from pathlib import Path
 import subprocess
 import tempfile
 import types
 import unittest
+from pathlib import Path
 from unittest import mock
-from check_hf_training_job_inventory import KNOWN_SFT_JOBS, Hold
+
 from check_hf_job_documentation_coverage import (
-    checked_tree_entries, JOB_IN_DOC, classify, frozen_job_mentions, summarize_from_facts
+    JOB_IN_DOC,
+    checked_tree_entries,
+    classify,
+    frozen_job_mentions,
 )
+from check_hf_training_job_inventory import KNOWN_SFT_JOBS, Hold
 
 
 def job(i,stage='COMPLETED'):

@@ -1,16 +1,12 @@
 """Synthetic-only R58 R57 Gold195 source UUID guarded comparison tests."""
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import patch
+from pathlib import Path
 
-from check_r57_gold195_uuid import (
-    Hold, r57_gold_ids, evaluate, read_r50_private, run,
-    EXPECTED_SOURCES,
-)
 from check_prior_sft_exact_world_ids import OWNER_IDENTITY_POLICY
+from check_r57_gold195_uuid import EXPECTED_SOURCES, Hold, evaluate, r57_gold_ids, read_r50_private, run
 
 def uid(n):
     return f"00000000-0000-0000-0000-{n:012d}"
