@@ -1,0 +1,63 @@
+{
+  "schema": "r58_round1_owner_334_pass_ruff_97_329_and_lint_batch4_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NO_LOCAL_RERUN_THIS_TURN",
+  "owner_verification_before_edits": {
+    "git_fast_forward_to": "b64517d93bb6dddfcc33665305ca369f062f8d80",
+    "unittest": {
+      "cases": 334,
+      "result": "OK",
+      "seconds_reported": 0.215,
+      "negative_path_hold_messages_expected": true
+    },
+    "ruff": {
+      "round1_errors": 97,
+      "round1_safe_fixable": 40,
+      "repo_errors": 329,
+      "repo_safe_fixable": 158,
+      "shebang_non_executable_round1": 1,
+      "unsorted_imports_round1": 20,
+      "unused_imports_round1": 15
+    }
+  },
+  "changes": [
+    {
+      "commit": "90fda19d3abe7ffe7e25a7dd0d3eaeffe7db56c2",
+      "kind": "restore_git_executable_mode",
+      "files": 1
+    },
+    {
+      "commit": "d1e3e18efb581f1098abb17ea03637cee4315cf5",
+      "kind": "test_import_sort",
+      "files": 3
+    },
+    {
+      "commit": "de83e2a1ce049b807b71d17277bf9fb3690a4d8f",
+      "kind": "test_import_sort",
+      "files": 3
+    }
+  ],
+  "structural_git_verification": {
+    "expected_test_modes_checked": 7,
+    "matched": 7,
+    "all_match": true
+  },
+  "expected_after_edits": {
+    "round1_errors": 90,
+    "repo_errors": 322,
+    "verified_by_ruff": false,
+    "python_unittest_rerun": false
+  },
+  "quality_gate": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  },
+  "r50_protected_content_read": false,
+  "private_story_ids_exported": false,
+  "new_hf_job_started": false,
+  "pr7_draft": true
+}
