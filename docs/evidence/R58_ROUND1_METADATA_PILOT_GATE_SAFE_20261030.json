@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_OWNER_80_TESTS_PASS__R50_PINNED_SAFE_METADATA_READY__FOUR_EXACT_UUID_CHECK_PENDING",
+  "status": "R58_ROUND1_G1_88_TESTS_PASS__ONE_SFT_EXPOSED__FOUR_R50_CLEAR__DEV_OTHER_HOLD",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_ONE_EXCLUDED_SFT_AND_R50_DEV_OTHER_PROTECTED_PENDING",
+    "G1_WORLD_AND_PROTECTION": "HOLD_R55_R57_DEV_OTHER_PROTECTED_AND_SFT_SOURCE_COMPLETENESS",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -447,7 +447,7 @@
     "prior_r57_historical_sft_exact_uuid_exposed": 1,
     "no_exact_overlap_with_27_uuid_r57_history": 4,
     "r57_roster_is_not_r50_dev_other_protection_registry": true,
-    "r50_uuid_clearance": "PENDING",
+    "r50_uuid_clearance": "FOUR_OF_FOUR_NO_MATCH_TO_FROZEN_R50_FIVE_PROTECTED_UUIDS_OWNER_MAC",
     "r55_r57_dev_uuid_clearance": "PENDING",
     "other_reserved_uuid_clearance": "PENDING",
     "g2_runtime_replay": "NOT_STARTED",
@@ -458,7 +458,7 @@
     "shortlist_strict_exposure_guard": true
   },
   "g1_r50_protected_uuid_probe": {
-    "status": "FROZEN_R50_SAFE_BLOBS_FOUND__OWNER_LOCAL_EXACT_UUID_CHECK_PENDING",
+    "status": "OWNER_MAC_R50_SAFE_EXACT_UUID_CHECK_PASS__ZERO_OVERLAPS_WITH_REMAINING_FOUR",
     "branch": "audit/r49-r50-source-intake-20261015",
     "source_receipt": "docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json",
     "source_receipt_blob_sha1": "2d8623c17ef230d8eff5797a5eb29850e97e6ccb",
@@ -478,14 +478,23 @@
     "local_script": "experiments/r58_round1/check_r50_protected_uuid.py",
     "test": "experiments/r58_round1/test_check_r50_protected_uuid.py",
     "runbook": "docs/evidence/R58_ROUND1_G1_R50_UUID_PROTECTION_RUNBOOK_SAFE_20261030.md",
-    "owner_local_88_tests": "PENDING",
-    "owner_r50_actual_intersection": "PENDING",
+    "owner_local_88_tests": "88_OF_88_PASS_OWNER_REPORTED",
+    "owner_r50_actual_intersection": 0,
     "candidate_frozen_five": 5,
     "historical_sft_uuid_excluded": 1,
     "r50_lookup_bounded_remaining": 4,
     "private_candidate_ids_enter_git": false,
     "candidate_reply_text_accessed": false,
     "training_admitted": 0,
-    "expansion_allowed": false
+    "expansion_allowed": false,
+    "owner_test_seconds_reported": 0.056,
+    "remaining_without_sft_or_r50_exact_uuid_match": 4,
+    "private_case_level_r50_hold_written": true,
+    "r50_source_blob_pin_verified": true,
+    "r50_46_case_receipt_blob_pin_verified": true,
+    "r50_original_test_content_accessed": false,
+    "r55_r57_dev_uuid_check_completed": false,
+    "other_protected_uuid_check_completed": false,
+    "g1_clearance": "HOLD"
   }
 }
