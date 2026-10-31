@@ -16,7 +16,23 @@
       "src/lib/db/v2-chat-request-event-service.ts": "5a0dae6ca30d566274757beaaac2689455a80a18",
       "src/lib/db/chat-latency-metrics-service.ts": "efd1a91410e3fb47edb2bcaaf06bd9b1daac960f"
     },
-    "method": "Read-only inspection of pinned GitHub code; no DB row reads, no HF, no original Provider requests or private case identifiers"
+    "method": "Read-only inspection of pinned GitHub code; no DB row reads, no HF, no original Provider requests or private case identifiers",
+    "github_release_metadata": {
+      "exact_pinned_sha_actions_runs_query": {
+        "total_count_reported": 0,
+        "interpretation": "No workflow runs returned by accessible GitHub query for this exact SHA; does not prove commit was never deployed."
+      },
+      "exact_pinned_sha_commit_status_query": {
+        "state": "pending",
+        "statuses_count": 0,
+        "interpretation": "No commit status contexts returned; does not prove any production deployment state."
+      },
+      "deployments_endpoint": {
+        "query_result": "UNAVAILABLE_BY_CONNECTED_READONLY_GITHUB_FETCH_ENDPOINT",
+        "interpretation": "Deployment records not inspected and must not be asserted missing."
+      },
+      "historical_deployed_sha_verified": false
+    }
   },
   "verified_call_sites": [
     {
