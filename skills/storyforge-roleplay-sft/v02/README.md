@@ -51,3 +51,14 @@ python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py shortlist \
 ```
 
 这里的 `EXISTING_INVENTORY.csv` 是占位名，需要替换为现有实际路径；**不得为此重新扫描数据库或开启新的抽样**。所有新增单元测试仅使用虚构行。隔离环境完成的 12 项新桥接测试 PASS，不代表 Owner Mac 的完整 24 项 v0.2 测试、G1/G2 真实证据检查或全仓 CI 已 PASS。首次本机运行后须单独归档 Owner SAFE 回执。
+
+## 新增：G1 已授权 UUID 元数据范围核验（仍不清关）
+
+- `r58_g1_scope_reconcile.py` 只对预先准备的八组元数据 UUID 名册，和已固定的五候选历史 SFT 私有 HOLD 账本做交集核验。针对已知范围要求 27/5/13/2/2 个世界并检查源指纹一致性；缺少其他 DEV、Protected 或历史训练全集仍 HOLD。
+- `r58_pipeline_bridge.py g1-audit` 作为统一 Skill v0.2 命令入口。输入仅限 Owner 本机 `~/.storyforge-r58-private/` 内 0600 JSON，目录需 0700；不允许私有真实路径、故事 ID 或 UUID 出现在 stdout/stderr。
+- **重要：**本地 roster SHA256 和 Owner `OWNER_COMPLETE` 声明只能说明清单内部一致，无法证实历史来源真实性、完整性或 Provider 请求字节。正常核对的退出码 0 **不等于 G1 PASS**；输出必须是 `SCOPED_UUID_RECONCILED__ALL_UNVERIFIED_COVERAGE_HOLD`。
+- `gate` / `freeze` 不受 `g1-audit` 成功与否影响，仍然返回 HOLD，不会调用 v0.1 或生成任何训练数据。
+
+执行前必须阅读：`docs/evidence/R58_G1_SCOPED_UUID_CONTRACT_RUNBOOK_SAFE_20261031.md`。**没有现成的已授权 UUID 元数据 manifest 时，不要求执行 `g1-audit`，也不能为此扫描 R50 原文或扩样。**
+
+新增 19 项 G1 合成测试和 1 项桥接拒绝路径合成测试。与原有 24 项合计**预期 44 项**，需要 Owner Mac 对最新提交重新执行；不能借用之前 24/24 的 PASS 证明新增代码已通过。
