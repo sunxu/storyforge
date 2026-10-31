@@ -2,6 +2,10 @@
 """Synthetic-only R04/Gold108 and G1 PRIVATE ledger tests (no story content)."""
 from __future__ import annotations
 import hashlib
+import io
+from contextlib import redirect_stdout, redirect_stderr
+from unittest import mock
+import check_r04_non_gold_uuid as checker
 import json
 from pathlib import Path
 import tempfile
@@ -169,6 +173,40 @@ class TestR04NonGold(unittest.TestCase):
         self.assertFalse(result['sha256_pin_verified'])
         self.assertFalse(result['distinct_worlds_expected_verified'])
         self.assertEqual(result['valid_single_uuid_rows'],0)
+
+    def test_25_diagnose_only_cli_needs_no_private_args(self):
+        # The source-shape diagnostic must not require or open a private ledger.
+        r04, gold = snapshots()
+        def frozen(_repo, sha, _limit):
+            return r04 if sha == checker.R04_BLOB else gold
+        output = io.StringIO()
+        with (mock.patch('sys.argv', ['checker','--repo-root','/synthetic','--diagnose-only']),
+              mock.patch.object(checker, 'frozen_blob', side_effect=frozen),
+              mock.patch.object(checker, 'private_json', side_effect=AssertionError('PRIVATE_READ')),
+              redirect_stdout(output)):
+            self.assertEqual(checker.main(), 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result['g1_clearance'], 'HOLD')
+        self.assertIs(result['private_ledgers_accessed'], False)
+        self.assertIs(result['expansion_allowed'], False)
+
+    def test_26_normal_cli_without_private_flags_fails_closed(self):
+        errors = io.StringIO()
+        with (mock.patch('sys.argv', ['checker','--repo-root','/synthetic']),
+              mock.patch.object(checker, 'run', side_effect=AssertionError('RUN_NOT_ALLOWED')),
+              redirect_stderr(errors)):
+            self.assertEqual(checker.main(), 42)
+        self.assertIn('HOLD', errors.getvalue())
+
+    def test_27_diagnose_with_private_paths_rejected(self):
+        # This mode does not use or accept private paths, preventing accidental reads.
+        errors = io.StringIO()
+        with (mock.patch('sys.argv', ['checker','--repo-root','/synthetic',
+                                     '--diagnose-only','--private-output','/private/ledger.json']),
+              mock.patch.object(checker, 'frozen_blob', side_effect=AssertionError('BLOB_READ')),
+              redirect_stderr(errors)):
+            self.assertEqual(checker.main(), 42)
+        self.assertIn('HOLD', errors.getvalue())
 
     def test_18_unique_uuids_in_private(self):
         obj=private_dev();obj['entries'][2]['story_id_PRIVATE']=obj['entries'][1]['story_id_PRIVATE']

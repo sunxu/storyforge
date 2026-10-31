@@ -250,13 +250,16 @@ def run(repo: Path, dev_holds: Path, private_output: Path|None) -> dict:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--repo-root', type=Path, required=True)
-    p.add_argument('--private-dev20-holds', type=Path, required=True)
+    p.add_argument('--private-dev20-holds', type=Path,
+                   help='Required for normal check; forbidden with --diagnose-only')
     p.add_argument('--private-output', type=Path)
     p.add_argument('--diagnose-only', action='store_true',
                    help='Only emit aggregate source-shape flags; no private inputs/outputs')
     args = p.parse_args()
     try:
         if args.diagnose_only:
+            if args.private_dev20_holds is not None or args.private_output is not None:
+                raise Hold('diagnose-only forbids PRIVATE input/output paths')
             r04 = frozen_blob(args.repo_root, R04_BLOB, 2_000_000)
             gold = frozen_blob(args.repo_root, GOLD108_BLOB, 2_000_000)
             result = {
