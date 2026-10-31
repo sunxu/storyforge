@@ -1,0 +1,108 @@
+{
+  "schema": "r58_g2_pinned_source_request_id_persistence_audit_safe_v1",
+  "date": "2026-10-31",
+  "status": "PINNED_SOURCE_NO_VERIFIED_ASSISTANT_TO_API_REQUEST_ID_WRITE__DEPLOYMENT_AND_PROVIDER_HOLD",
+  "scope": "G2 three fixed frozen historical target cohorts; no case-level material read",
+  "source": {
+    "repository": "sunxu/RolePlay",
+    "commit": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "historical_deployed_commit_verified": false,
+    "pinned_git_blobs": {
+      "src/app/api/chat/v2/route.ts": "48f177570fa18454eab768f2800c82fa1da07e57",
+      "src/lib/db/v2-message-service.ts": "5c6443629f4c685d57de01886a2e2c36d9175888",
+      "src/lib/story-v2/message-codec.ts": "b5c7aa3959b8b02ee2fd2264bd68fac7e40f723f",
+      "src/lib/story-v2/events/metadata.ts": "02cd23734e4a210d0e81e1df25567b47a6af257c"
+    },
+    "method": "Read-only inspection of pinned GitHub code; no DB row reads, no HF, no original Provider requests or private case identifiers"
+  },
+  "verified_call_sites": [
+    {
+      "feature": "API terminal request event",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "1027-1040",
+      "observation": "logger.ctx.requestId explicitly passed to V2ChatRequestEventService.record; not associated with Assistant message physical ID in this call"
+    },
+    {
+      "feature": "Provider nonstreaming call",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "3020-3032",
+      "observation": "logger.ctx.requestId passed to generateCompletion options; does not show persistent target-message mapping"
+    },
+    {
+      "feature": "Latency metrics",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "3288-3311 and 5169-5187",
+      "observation": "requestId and relayRequestId written to request-level metrics; no Assistant row ID in shown call"
+    },
+    {
+      "feature": "Streaming Assistant stub",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "3745-3759",
+      "observation": "insertStreamingAssistantStub called with user/story/session/turn/platform, no API requestId argument"
+    },
+    {
+      "feature": "Streaming final Assistant",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "7148-7181",
+      "observation": "finalizedMetadata assembled from livePartsToSaveInput and preliminaryEventMetadata; no API requestId added at this call site"
+    },
+    {
+      "feature": "Nonstreaming final Assistant",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "7183-7201",
+      "observation": "assistantSaveInput.metadata merges codec and event-turn metadata; no API requestId added at this call site"
+    },
+    {
+      "feature": "Message codec metadata",
+      "path": "src/lib/story-v2/message-codec.ts",
+      "lines": "267-304",
+      "observation": "Builds metadata from supplied args.metadata and parts/warnings/finishReason, does not synthesize API requestId"
+    },
+    {
+      "feature": "Message service insert/update",
+      "path": "src/lib/db/v2-message-service.ts",
+      "lines": "361-398 and 1471-1494",
+      "observation": "Persists supplied metadata; no requestId synthesis at these shown service operations"
+    },
+    {
+      "feature": "Event metadata builder",
+      "path": "src/lib/story-v2/events/metadata.ts",
+      "lines": "18-55",
+      "observation": "Event claim ID and requestKind are distinct from API logger.ctx.requestId; no API requestId field in the returned object"
+    }
+  ],
+  "interpretation": {
+    "scoped_pinned_source_assistant_message_api_request_id_direct_write_found": false,
+    "api_request_id_present_in_provider_options_and_telemetry": true,
+    "event_claim_id_is_equivalent_to_api_request_id_proven": false,
+    "historical_target_time_code_matches_pin_proven": false,
+    "historical_other_writer_or_archive_complete_audit_done": false,
+    "prior_three_target_top_level_known_key_absence": "OWNER_SAFE_REPORT: THREE_TARGETS_X_SEVEN_KEYS_NOT_FOUND; not proof of all nested keys",
+    "candidate_reduction_by_time_similarity_allowed": false,
+    "source_scan_proves_absence_in_all_historical_deployments": false
+  },
+  "next_step": {
+    "recommendation": "Do not query full message metadata or retry timeline heuristics until a documented source capable of linking actual assistant message/turn/attempt to API request_id is identified; seek historical deployment identity, durable event receipts, or original request envelope if Owner authorizes and records exist.",
+    "protected_data_reads_require_separate_scope_approval": true,
+    "exact_provider_request_bytes_available_from_this_source": false
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "direct_target_request_link_proven": false,
+    "provider_original_request_bytes_verified": false,
+    "g2_blocking_byte_exact_components_last_frozen_report": 17,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "no_private_message_row_read": true,
+    "no_r50_test_content_read": true,
+    "no_live_production_api_call": true,
+    "no_new_hf_job": true,
+    "no_private_identifiers_exported": true
+  }
+}
