@@ -21,3 +21,33 @@ python3 skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py --repo-root
 该模块只负责证据一致性预检，**不是自动 G1/G2 清关器**。后续 v0.2 还需接入真正的候选级授权来源和运行时证据证书，以及只读 Supabase 数据合同；没有直接 request_id / Provider 输入字节证据时，必须继续 HOLD。
 
 详见 `docs/evidence/R58_G1_G2_SKILL_V02_READINESS_MATRIX_SAFE_20261031.json`。这份矩阵只包含汇总计数和已公开来源引用。
+
+
+## 新增：v0.2 受限流水线入口（尚非生产发布）
+
+新增 `r58_pipeline_bridge.py` 与 `test_r58_pipeline_bridge.py`，不修改冻结的 v0.1.0 12 个文件。
+
+这是**接口桥接预览，不是正式 `shortlist → gate → freeze` 的准入实现**：
+
+- `shortlist` 读取 Owner 本地已有的元数据 CSV，执行与 Round1 一致的发现谓词：V2、approved、未删除、至少 50 条完成回复、至少 2 个 Session、有 world、有 character **或** characters、有 opening、且 source_type 为 original / dice_cocreate / ai_assisted；不再要求 director 或 genre。它只打印 SAFE 分类计数，**不会生成/替换候选清单，不重新挑选第五个世界，不读取故事正文**。
+- `gate` 和 `freeze` 必须先经固定 Git blob 的 G1/G2 预检。当前返回 `HOLD_G1_G2_UNPROVEN__NO_V01_EXECUTION`（退出码 42），不打开私有候选输入、不调用 v0.1 命令、不生成任何数据。任何篡改或缺源也会返回 42。
+- 所以 v0.1 仍保留为历史冻结的离线结构工具；**不能直接用 v0.1 的自声明布尔 PASS 作为正式 Dataset v0.4 准入**。
+- 后续要接入的是真实可信的候选级证书及 Owner 审核记录，而非添加“可配置跳过 G1/G2”的开关。数据/保护来源索引或目标时点 Provider 字节证据缺失时继续 HOLD。
+
+Owner 可在 R58 完整 Git 检出中运行以下纯本机测试（不使用 HF、不读取受保护内容）：
+
+```bash
+python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
+python3 skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py --repo-root "$PWD"
+python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py gate --repo-root "$PWD"
+# 上一条命令预计退出 42，这是门禁拒绝的预期行为
+```
+
+可选使用**已存在、已获准的本地元数据清单**进行纯 SAFE 计数（切勿上传清单到 GitHub 或聊天）：
+
+```bash
+python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py shortlist \
+  --inventory "$HOME/.storyforge-r58-private/round1_pilot_20261030/EXISTING_INVENTORY.csv"
+```
+
+这里的 `EXISTING_INVENTORY.csv` 是占位名，需要替换为现有实际路径；**不得为此重新扫描数据库或开启新的抽样**。所有新增单元测试仅使用虚构行。隔离环境完成的 12 项新桥接测试 PASS，不代表 Owner Mac 的完整 24 项 v0.2 测试、G1/G2 真实证据检查或全仓 CI 已 PASS。首次本机运行后须单独归档 Owner SAFE 回执。
