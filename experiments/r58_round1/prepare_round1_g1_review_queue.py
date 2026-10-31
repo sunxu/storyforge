@@ -9,14 +9,12 @@ from __future__ import annotations
 
 import argparse
 import csv
-import os
-from pathlib import Path
-import sys
 import json
+import os
+import sys
+from pathlib import Path
 
-from pilot_round1_shortlist import (
-    STORY_FIELDS, CATEGORIES, Hold, private_csv, discover,
-)
+from pilot_round1_shortlist import CATEGORIES, STORY_FIELDS, Hold, discover, private_csv
 
 REQUIRED_GUARD_FIELDS = [
     'story_id', 'world_component', 'owner_world_graph_reviewed',

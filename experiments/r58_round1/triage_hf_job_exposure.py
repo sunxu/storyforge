@@ -9,16 +9,19 @@ intent, not independently established absence of optimizer operations.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 import os
-from pathlib import Path
 import re
-import stat
 import sys
+from collections import Counter
+from pathlib import Path
 
 from check_hf_training_job_inventory import (
-    KNOWN_SFT_JOBS, Hold, MAX_JOBS, JOB_ID, stage_only,
+    JOB_ID,
+    KNOWN_SFT_JOBS,
+    MAX_JOBS,
+    Hold,
+    stage_only,
 )
 
 SCHEMA = "r58_round1_g1_hf_job_exposure_triage_safe_v1"

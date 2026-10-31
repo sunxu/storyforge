@@ -4,8 +4,8 @@ import argparse
 import csv
 import json
 import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 STORY_FIELDS = {'story_id','source_type','not_deleted','moderation_status',
                 'story_type','assistant_completed','session_count','has_world',

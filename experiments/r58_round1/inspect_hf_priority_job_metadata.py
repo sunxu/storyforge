@@ -11,10 +11,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from pathlib import Path
 import re
 import stat
 import sys
+from pathlib import Path
 
 from probe_hf_gpu_job_logs import authorized_private_path
 from review_hf_gpu_signal_receipt import PRIVATE_SCHEMA as PRIORITY_SCHEMA
@@ -27,9 +27,9 @@ SHA = re.compile(r'^[a-f0-9]{64}$')
 MAX_INPUT = 12000
 MAX_CMD_BYTES = 16000
 MARKERS = [
-    re.compile(r'(?<![\w])(?:swift\s+sft|swift\s+train|torchrun|accelerate\s+launch)(?![\w])',re.I),
-    re.compile(r'(?:^|[\s/])(?:train(?:er)?|finetun(?:e|ing)|sft|gpu_runner|gpu_worker)[\w.-]*\.py(?:\s|$)',re.I),
-    re.compile(r'(?:--do_train|--train_type\s+(?:lora|full)|trainer\.train\s*\()',re.I),
+    re.compile(r'(?<![\w])(?:swift\s+sft|swift\s+train|torchrun|accelerate\s+launch)(?![\w])',re.IGNORECASE),
+    re.compile(r'(?:^|[\s/])(?:train(?:er)?|finetun(?:e|ing)|sft|gpu_runner|gpu_worker)[\w.-]*\.py(?:\s|$)',re.IGNORECASE),
+    re.compile(r'(?:--do_train|--train_type\s+(?:lora|full)|trainer\.train\s*\()',re.IGNORECASE),
 ]
 
 class Hold(Exception): pass

@@ -9,16 +9,15 @@ Always HOLD. Any ambiguous ledger or unexpected counts fail closed.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
-import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import stat
 import sys
+from collections import Counter
+from pathlib import Path
 
-from probe_hf_gpu_job_logs import read_input, authorized_private_path, OUTPUT_SCHEMA
+from probe_hf_gpu_job_logs import OUTPUT_SCHEMA, authorized_private_path, read_input
 
 SAFE_SCHEMA = 'r58_round1_g1_gpu_signal_priority_crosscheck_safe_v1'
 PRIVATE_SCHEMA = 'r58_round1_g1_gpu_signal_priority_case_private_v1'
