@@ -1,0 +1,65 @@
+{
+  "schema": "r58_v02_takeover_scoped_test_status_safe_v1",
+  "date": "2026-10-31",
+  "scope": "R58 Draft PR7 synthetic tests and v02 bridge, no private source material",
+  "previous_owner_round1": {
+    "source": "R58_OWNER_ROUND1_334_PASS_RUFF_91_323_BATCH5_SAFE_20261031.json",
+    "head_tested": "fc0f701b4d2fbef781c4669ea0fb27dd9edc8b52",
+    "tests": 334,
+    "result": "PASS_OWNER_REPORTED",
+    "ruff_round1": 91,
+    "ruff_repo": 323,
+    "no_assistant_independent_rerun": true
+  },
+  "v02_bridge_local_synthetic": {
+    "tests": 12,
+    "passes": 12,
+    "failures": 0,
+    "errors": 0,
+    "elapsed_seconds_reported": 0.007,
+    "result": "PASS_ISOLATED_DRAFT_SOURCE_TEST_MIRROR",
+    "local_python": "3.13.5",
+    "source_git_blob_sha_matches_repo": "6de3a456d20630337b90802a253a0723d032d494",
+    "committed_test_file_byte_identical_to_local_mirror": false,
+    "actual_pinned_g1_g2_preflight_exercised": false,
+    "local_preflight_module": "STUB_REJECT_ONLY",
+    "repo_integrated_result": "NOT_VERIFIED"
+  },
+  "v01_skill": {
+    "test_cases_authored": 10,
+    "owner_rerun_for_this_handoff": "NOT_REPORTED",
+    "integrated_result": "NOT_VERIFIED"
+  },
+  "v02_preflight_existing": {
+    "test_cases_authored": 12,
+    "owner_rerun_for_this_handoff": "NOT_REPORTED",
+    "integrated_result": "NOT_VERIFIED"
+  },
+  "github_actions": {
+    "scoped_workflow": ".github/workflows/r58-scoped-synthetic.yml",
+    "run_id": 41202446725,
+    "url": "https://github.com/sunxu/storyforge/actions/runs/41202446725",
+    "head_sha": "0d061cd93eae760cc68c790a0b4fea62d303c65e",
+    "status": "completed",
+    "conclusion": "failure",
+    "job_id": 124540760229,
+    "job_runner_name": "",
+    "job_step_count_reported": 0,
+    "job_started_utc": "2026-10-31T12:44:34Z",
+    "job_completed_utc": "2026-10-31T12:44:36Z",
+    "job_log_access": "NOT_FOUND",
+    "failed_step_identified": false,
+    "failure_cause": "UNKNOWN__NO_RUNNER_OR_STEP_EVIDENCE",
+    "claim_all_tests_ran": false
+  },
+  "safe_gate": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "paid_hf_job_started": false,
+    "raw_candidate_or_r50_content_read": false
+  }
+}
