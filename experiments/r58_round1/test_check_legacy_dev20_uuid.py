@@ -142,22 +142,25 @@ class TestLegacyDev20(unittest.TestCase):
         actual_symlink=Path.is_symlink
         actual_resolve=Path.resolve
         actual_is_dir=Path.is_dir
+        # Simulate BOTH macOS root aliases explicitly. Never fall through to
+        # the host OS for /tmp, which is itself a symlink on real macOS.
         def fake_is_symlink(p):
-            if str(p)=="/var":return True
-            if str(p)=="/private/var":return False
+            if str(p) in ("/var", "/tmp"):return True
+            if str(p) in ("/private/var", "/private/tmp"):return False
             return actual_symlink(p)
         def fake_resolve(p,*,strict=False):
             if str(p)=="/var":return Path("/private/var")
+            if str(p)=="/tmp":return Path("/private/tmp")
             return actual_resolve(p,strict=strict)
         def fake_is_dir(p):
-            if str(p)=="/private/var":return True
+            if str(p) in ("/private/var", "/private/tmp"):return True
             return actual_is_dir(p)
         with (mock.patch("check_legacy_dev20_uuid.sys.platform","darwin"),
               mock.patch.object(Path,"is_symlink",fake_is_symlink),
               mock.patch.object(Path,"resolve",fake_resolve),
               mock.patch.object(Path,"is_dir",fake_is_dir)):
             self.assertTrue(verified_darwin_root_alias(Path("/var")))
-            self.assertFalse(verified_darwin_root_alias(Path("/tmp")))
+            self.assertTrue(verified_darwin_root_alias(Path("/tmp")))
             self.assertFalse(verified_darwin_root_alias(Path("/users/var")))
             with mock.patch.object(Path,"resolve",return_value=Path("/etc")):
                 self.assertFalse(verified_darwin_root_alias(Path("/var")))
