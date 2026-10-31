@@ -2,7 +2,7 @@
   "schema": "storyforge-r58-round1-metadata-pilot-safe-v1",
   "created_date": "2026-10-30",
   "phase": "ROUND1_PILOT_DISCOVERY",
-  "status": "R58_ROUND1_G1_88_TESTS_PASS__ONE_SFT_EXPOSED__FOUR_R50_CLEAR__DEV_OTHER_HOLD",
+  "status": "R58_ROUND1_G1_OWNER_88_TESTS_PASS__FOUR_R50_NONMATCHING__R57_GOLD195_EXACT_CHECK_READY",
   "evidence_origin": "Read-only Supabase metadata aggregate, no story IDs, user IDs or conversation text returned",
   "database_read_only": true,
   "metadata_snapshot": {
@@ -51,7 +51,7 @@
     "quality_reviewers_required": 2
   },
   "gates": {
-    "G1_WORLD_AND_PROTECTION": "HOLD_R55_R57_DEV_OTHER_PROTECTED_AND_SFT_SOURCE_COMPLETENESS",
+    "G1_WORLD_AND_PROTECTION": "HOLD_R57_GOLD195_LEGACY_DEV20_OTHER_PROTECTED_AND_SFT_COVERAGE",
     "G2_RUNTIME_REPLAY": "HOLD",
     "G3_TWO_BLIND_REVIEWS": "NOT_STARTED",
     "G4_WORLD_SPLIT": "HOLD",
@@ -496,5 +496,23 @@
     "r55_r57_dev_uuid_check_completed": false,
     "other_protected_uuid_check_completed": false,
     "g1_clearance": "HOLD"
+  },
+  "g1_r57_gold195_source_uuid_probe": {
+    "status": "TOOL_AND_SYNTHETIC_TESTS_READY__OWNER_MAC_RUN_PENDING",
+    "script": "experiments/r58_round1/check_r57_gold195_uuid.py",
+    "test": "experiments/r58_round1/test_check_r57_gold195_uuid.py",
+    "runbook": "docs/evidence/R58_ROUND1_G1_R57_GOLD195_DEV_UUID_RUNBOOK_SAFE_20261031.md",
+    "r57_roster_story_uuids": 29,
+    "r57_gold195_source_story_uuids": 13,
+    "r57_gold195_only_not_historical_sft_uuids": 2,
+    "user_previous_sft_and_r50_verified_nonmatching": 4,
+    "owner_test_97_status": "PENDING",
+    "owner_gold195_exact_overlap_result": "PENDING",
+    "legacy_20_dev_test_uuids_covered": false,
+    "other_protected_uuid_sets_covered": false,
+    "private_reply_text_read": false,
+    "r50_test_content_read": false,
+    "train_admitted": 0,
+    "expansion_allowed": false
   }
 }
