@@ -1,17 +1,26 @@
 #!/usr/bin/env python3
 """Synthetic-only unit tests. Does not open real Test or R50 records."""
 from __future__ import annotations
+
 import hashlib
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
+
 from check_legacy_dev20_uuid import (
-    Hold, source_world_ids, verify_source_receipts, checked_private_rows,
-    evaluate, write_private, private_json, OWNER_POLICY, SOURCE_SHA256,
+    OWNER_POLICY,
+    SOURCE_SHA256,
+    Hold,
+    checked_private_rows,
+    evaluate,
+    private_json,
+    source_world_ids,
     verified_darwin_root_alias,
+    verify_source_receipts,
+    write_private,
 )
 U1="11111111-1111-4111-8111-111111111111"
 U2="22222222-2222-4222-8222-222222222222"

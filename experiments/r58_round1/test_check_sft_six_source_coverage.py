@@ -4,14 +4,21 @@ import copy
 import hashlib
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest import mock
 
 from check_sft_six_source_coverage import (
-    Hold, HISTORY_KEYS, SOURCE_PINS, SOURCES, private_json,
-    parse_historical, pinned_split_counts, reconcile, main,
+    HISTORY_KEYS,
+    SOURCE_PINS,
+    SOURCES,
+    Hold,
+    main,
+    parse_historical,
+    pinned_split_counts,
+    private_json,
+    reconcile,
 )
 
 

@@ -1,19 +1,26 @@
 #!/usr/bin/env python3
 """Synthetic-only R04/Gold108 and G1 PRIVATE ledger tests (no story content)."""
 from __future__ import annotations
+
 import hashlib
 import io
-from contextlib import redirect_stdout, redirect_stderr
-from unittest import mock
-import check_r04_non_gold_uuid as checker
 import json
-from pathlib import Path
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
+from unittest import mock
 
+import check_r04_non_gold_uuid as checker
 from check_r04_non_gold_uuid import (
-    Hold, OWNER_POLICY, evaluate, frozen_five_from_dev20,
-    r04_non_gold_worlds, structural_world_rows, source_shape_diagnostic, write_private,
+    OWNER_POLICY,
+    Hold,
+    evaluate,
+    frozen_five_from_dev20,
+    r04_non_gold_worlds,
+    source_shape_diagnostic,
+    structural_world_rows,
+    write_private,
 )
 
 
