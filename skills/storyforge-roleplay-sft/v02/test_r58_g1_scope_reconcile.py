@@ -181,6 +181,48 @@ class ScopeTests(unittest.TestCase):
             with self.assertRaises(m.Hold):
                 m.read_private(link, root)
 
+    def test_parent_traversal_rejected_before_read(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "allowed"
+            root.mkdir(mode=0o700)
+            outside = Path(tmp) / "outside.json"
+            outside.write_text(json.dumps(self.manifest))
+            outside.chmod(0o600)
+            attempted = root / ".." / "outside.json"
+            with self.assertRaises(m.Hold):
+                m.read_private(attempted, root)
+
+    def test_nested_symlink_and_unsafe_nested_directory_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "allowed"
+            root.mkdir(mode=0o700)
+            nested = root / "nested"
+            nested.mkdir(mode=0o700)
+            record = nested / "index.json"
+            record.write_text(json.dumps(self.manifest))
+            record.chmod(0o600)
+            self.assertEqual(m.read_private(record, root)["schema"], m.SCHEMA)
+            nested.chmod(0o755)
+            with self.assertRaises(m.Hold):
+                m.read_private(record, root)
+            nested.chmod(0o700)
+            linked = root / "linked"
+            linked.symlink_to(nested, target_is_directory=True)
+            with self.assertRaises(m.Hold):
+                m.read_private(linked / "index.json", root)
+
+    def test_hardlinked_outside_file_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "allowed"
+            root.mkdir(mode=0o700)
+            outside = Path(tmp) / "outside.json"
+            outside.write_text(json.dumps(self.manifest))
+            outside.chmod(0o600)
+            link = root / "hardlink.json"
+            link.hardlink_to(outside)
+            with self.assertRaises(m.Hold):
+                m.read_private(link, root)
+
     def test_private_file_outside_root_fails(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp) / "allowed"
