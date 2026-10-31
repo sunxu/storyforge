@@ -51,7 +51,7 @@ def git_blob(repo: Path, sha: str) -> bytes:
             stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
             check=False, timeout=25,
         )
-    except (OSError, subprocess.TimeoutExpired) as exc:
+    except (OSError, subprocess.TimeoutExpired):
         raise Hold("pinned source unavailable") from None
     if result.returncode or not 0 < len(result.stdout) <= 150_000:
         raise Hold("pinned source invalid")
@@ -63,7 +63,7 @@ def safe_json(data: bytes) -> dict:
         raise Hold("evidence size invalid")
     try:
         obj = json.loads(data)
-    except (UnicodeError, ValueError) as exc:
+    except (UnicodeError, ValueError):
         raise Hold("evidence format invalid") from None
     if not isinstance(obj, dict):
         raise Hold("evidence must be an object")

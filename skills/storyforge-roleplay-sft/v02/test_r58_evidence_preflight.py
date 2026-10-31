@@ -1,7 +1,6 @@
 """Synthetic-only tests for R58 Skill v0.2 G1/G2 SAFE preflight."""
 from __future__ import annotations
 
-import copy
 import importlib.util
 import io
 import json
