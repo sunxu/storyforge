@@ -90,6 +90,16 @@ def decode_json(raw: bytes) -> dict:
 
 
 def read_private(path: Path, root: Path) -> dict:
+    """Normalize denied OS-level private-file access to fail-closed Hold."""
+    try:
+        return _read_private(path, root)
+    except OSError:
+        # macOS and Linux may raise ELOOP or ENOTDIR for O_NOFOLLOW.
+        # Never leak private path/errno details to the calling layer.
+        raise Hold("private metadata access denied") from None
+
+
+def _read_private(path: Path, root: Path) -> dict:
     """Open owner-private metadata via dirfds; refuse traversal and symlink races."""
     if (not path.is_absolute() or not root.is_absolute()
             or ".." in path.parts or ".." in root.parts
