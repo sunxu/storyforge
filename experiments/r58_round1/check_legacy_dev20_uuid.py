@@ -14,11 +14,11 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import stat
 import subprocess
 import sys
+from pathlib import Path
 
 SCHEMA = "r58_round1_g1_legacy_dev20_uuid_safe_v1"
 SOURCE_BLOB = "c17f225967b6b2f8cbaf3d82fadac1b4031d0654"
@@ -26,7 +26,7 @@ SOURCE_SHA256 = "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980
 MANIFEST_BLOB = "f4e39196c6aa0a87b095d7de5cae4acd8b2fca63"
 AUDIT_BLOB = "2e7041c9b2b417c16f926115212157648c8f8406"
 BUDGET_BLOB = "8d4b35001a6533972e001736b769b630508941b6"
-UUID_RE = re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", re.I)
+UUID_RE = re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$", re.IGNORECASE)
 UUID_BYTES_RE = re.compile(rb'"story_id"\s*:\s*"([0-9a-fA-F-]{36})"')
 SAMPLE_BYTES_RE = re.compile(rb'"id"\s*:\s*"(sample-[0-9]{6})"')
 METADATA_BYTES_RE = re.compile(rb'"metadata"\s*:\s*\{')

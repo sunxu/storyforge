@@ -11,9 +11,9 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from pathlib import Path
 import stat
 import sys
+from pathlib import Path
 
 SCOPES = (
     "semantic_world_graph",

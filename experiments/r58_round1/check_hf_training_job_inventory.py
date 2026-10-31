@@ -8,10 +8,10 @@ G1 ledgers. A Jobs listing alone CANNOT establish complete model exposure.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 import re
 import sys
+from collections import Counter
 
 SCHEMA = "r58_round1_g1_hf_job_inventory_safe_v1"
 # These IDs are already in frozen GitHub public audit docs, not secret values.

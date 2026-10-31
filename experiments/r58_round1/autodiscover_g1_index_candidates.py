@@ -12,10 +12,10 @@ import argparse
 import csv
 import json
 import os
-from pathlib import Path
 import re
 import stat
 import sys
+from pathlib import Path
 
 SCOPES = (
     "semantic_world_graph", "r50_protected_worlds", "prior_sft_exposure",
@@ -26,14 +26,14 @@ ROOTS = (
     "r52/history_exposure_with_r45", "r57/private",
 )
 META_EXTS = {".json", ".csv", ".md", ".txt"}
-SKIP_DIR = re.compile(r"(^|[_.-])(r50|source|sources|raw|message|messages|prompt|prompts|original|originals|cases|items|answers|responses|checkpoint|models?)([_.-]|$)", re.I)
-SKIP_FILE = re.compile(r"(r50|raw|full.source|message|prompt|answer|response|blind.items|case.content|model|train\.json|validation\.json)", re.I)
-INDEX_HINT = re.compile(r"(world|alias|graph|identity|lineage|isolation|metadata|index|roster|ledger|coverage|exposure|manifest|registry|freeze|split|safe)", re.I)
+SKIP_DIR = re.compile(r"(^|[_.-])(r50|source|sources|raw|message|messages|prompt|prompts|original|originals|cases|items|answers|responses|checkpoint|models?)([_.-]|$)", re.IGNORECASE)
+SKIP_FILE = re.compile(r"(r50|raw|full.source|message|prompt|answer|response|blind.items|case.content|model|train\.json|validation\.json)", re.IGNORECASE)
+INDEX_HINT = re.compile(r"(world|alias|graph|identity|lineage|isolation|metadata|index|roster|ledger|coverage|exposure|manifest|registry|freeze|split|safe)", re.IGNORECASE)
 SCOPE_PATTERNS = {
-    "semantic_world_graph": re.compile(r"world|alias|graph|identity|lineage|isolation", re.I),
-    "prior_sft_exposure": re.compile(r"exposure|trainer|compiled|r45|r46|r54|training|sft", re.I),
-    "r55_r57_dev_worlds": re.compile(r"r55|r57|dev|arbiter", re.I),
-    "other_protected_or_holdout": re.compile(r"held.?out|holdout|reserved|freeze|protected|split|hold", re.I),
+    "semantic_world_graph": re.compile(r"world|alias|graph|identity|lineage|isolation", re.IGNORECASE),
+    "prior_sft_exposure": re.compile(r"exposure|trainer|compiled|r45|r46|r54|training|sft", re.IGNORECASE),
+    "r55_r57_dev_worlds": re.compile(r"r55|r57|dev|arbiter", re.IGNORECASE),
+    "other_protected_or_holdout": re.compile(r"held.?out|holdout|reserved|freeze|protected|split|hold", re.IGNORECASE),
 }
 OUTPUT_FIELDS = (
     "scope","private_source_reference","source_revision","coverage_status",

@@ -12,10 +12,9 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
-import stat
 import sys
+from pathlib import Path
 
 from audit_g1_structural_overlap import load_queue
 
@@ -23,7 +22,7 @@ SCHEMA="r58_round1_g1_prior_sft_exact_id_safe_v2"
 OWNER_IDENTITY_POLICY="OWNER_ATTESTED_ROLEPLAY_UUID_ONE_UUID_ONE_WORLD_V1"
 EXPECTED_ROSTER_SCHEMA="storyforge-r57-g2-owner-private-world-alias-review-roster-v1"
 ROSTER_RE=re.compile(r"^R57_G2_WORLD_ALIAS_REVIEW_[0-9]{8}_[0-9]{6}_PRIVATE\.json$")
-UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.I)
+UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.IGNORECASE)
 ALLOWED_ROSTER_RECORD={
   "source_story_uuid_PRIVATE","source_row_counts",
   "gold_final_targets_without_previous_exact_match",

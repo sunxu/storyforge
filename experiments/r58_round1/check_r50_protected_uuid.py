@@ -11,16 +11,16 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 SCHEMA="r58_round1_g1_r50_protected_uuid_safe_v1"
 SOURCE_SHA="2d8623c17ef230d8eff5797a5eb29850e97e6ccb"
 COVERAGE_SHA="20341c6c55bd4564140b05e8319cf66e572137c0"
 OWNER_POLICY="OWNER_ATTESTED_ROLEPLAY_UUID_ONE_UUID_ONE_WORLD_V1"
-UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.I)
+UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.IGNORECASE)
 
 class Hold(ValueError):
     pass
