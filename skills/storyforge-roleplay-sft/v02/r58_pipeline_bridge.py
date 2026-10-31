@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """R58 Skill v0.2 PREVIEW: strict Round1 discovery + fail-closed gate/freeze.
 
 This adapter must not authorize any real private content or train/validation cases.
@@ -13,7 +12,7 @@ import re
 import sys
 from pathlib import Path
 
-from r58_evidence_preflight import Hold, MATRIX_PATH, PINS, git_blob, safe_json, verify
+from r58_evidence_preflight import MATRIX_PATH, PINS, Hold, git_blob, safe_json, verify
 
 SCHEMA = "storyforge-r58-v02-pipeline-bridge-safe-v1"
 CATEGORIES = ("original", "dice_cocreate", "ai_assisted")
