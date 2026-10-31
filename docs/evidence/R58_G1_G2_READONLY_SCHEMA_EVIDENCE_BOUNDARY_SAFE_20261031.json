@@ -1,0 +1,131 @@
+{
+  "schema": "r58_g1_g2_readonly_source_schema_evidence_boundary_safe_v1",
+  "date": "2026-10-31",
+  "status": "READONLY_LIVE_SCHEMA_INSPECTED__G1_SOURCE_UNIVERSE_AND_G2_PROVIDER_BYTES_HOLD",
+  "provenance": {
+    "repository": "sunxu/storyforge",
+    "draft_pr": 7,
+    "source_branch": "r58/roleplay-sft-skill-v01",
+    "basis": [
+      "docs/evidence/R58_OWNER_V02_61_PASS_EXISTING_PRIORITY_CROSSLINK_SAFE_20261031.json",
+      "docs/evidence/R58_G1_G2_TAKEOVER_GAP_REPORT_SAFE_20261031.md",
+      "docs/evidence/R58_PRIORITY3_PROMPT_ASSEMBLY_GAP_MATRIX_SAFE_20261030.json",
+      "docs/evidence/R58_ROUND1_G1_EVIDENCE_COVERAGE_SAFE_20261030.json"
+    ],
+    "live_schema_source": "StoryForge Supabase read-only list_tables public verbose; structural metadata only",
+    "live_table_data_rows_read": false,
+    "sql_mutations_executed": false,
+    "hf_api_called_this_step": false,
+    "repository_code_changed": false
+  },
+  "public_schema_observed": {
+    "scope": "public schema table names and column names; not historical versions or all schemas",
+    "relevant_tables": [
+      {
+        "name": "public.user_stories",
+        "observed_columns": [
+          "id",
+          "version",
+          "schema_version",
+          "source_type",
+          "v2_data",
+          "public_content_revision",
+          "public_content_hash",
+          "deleted_at"
+        ],
+        "interpretation": "Current story record fields; cannot by itself freeze every historic target-time story card."
+      },
+      {
+        "name": "public.story_content_versions",
+        "observed_columns": [
+          "story_id",
+          "content_revision",
+          "source_updated_at",
+          "archived_at",
+          "v2_data"
+        ],
+        "interpretation": "Stored revisions exist but no provider request linkage; table description references limited retained history, not universal historical completeness."
+      },
+      {
+        "name": "public.story_v2_sessions",
+        "observed_columns": [
+          "id",
+          "story_id",
+          "session_id",
+          "last_summary_turn",
+          "memory_source_revision",
+          "history_recovery_message_checksum"
+        ],
+        "interpretation": "Session state fields exist; current state is not proof of target-time in-flight prompt state."
+      },
+      {
+        "name": "public.analytics_story_lifetime",
+        "observed_columns": [
+          "story_id",
+          "total_sessions",
+          "assistant_completed"
+        ],
+        "interpretation": "Aggregate counts only; not a protected-world roster or Trainer input manifest."
+      },
+      {
+        "name": "public.v2_chat_request_events",
+        "observed_columns": [
+          "request_id",
+          "occurred_at",
+          "status",
+          "session_id",
+          "story_id",
+          "platform",
+          "is_realtime"
+        ],
+        "interpretation": "Request event identifiers and outcomes exist; inspected column list contains no serialized Provider messages, exact prompt byte hash or model dispatch payload."
+      }
+    ],
+    "dedicated_r58_protected_universe_registry_identified_in_public_schema": false,
+    "conclusion": "Only observed public table schemas; absence of a dedicated name does NOT prove that protected rosters do not exist in Owner-private files or other data stores.",
+    "provider_payload_available_from_inspected_event_table": false
+  },
+  "one_priority_hf_job": {
+    "evidence": "Owner existing PRIVATE metadata and priority source crosslinked SAFE on prior turn",
+    "stage": "CANCELED",
+    "provider_started_at_present": true,
+    "provider_finished_at_present": false,
+    "commands_arguments_accessed": false,
+    "private_logs_read_this_step": false,
+    "actual_optimizer_update_proven": false,
+    "confirmed_no_optimizer_update": false,
+    "historical_training_input_sha256_verified": false,
+    "interpretation": "A missing finished_at and canceled stage cannot prove zero parameter updates or provenance; no primary Trainer run artifact recovered this turn."
+  },
+  "source_proof_gaps": {
+    "known_five_current_hf_object_crosscheck": "SCOPED_CURRENT_OBJECT_MATCH_ONLY",
+    "additional_historical_job_complete_coverage": false,
+    "other_protected_and_dev_uuid_universe_complete": false,
+    "r50_known_five_uuid_only_partial_exclusion": "OWNER_REPORTED_PREVIOUSLY",
+    "target_to_provider_request_direct_link": false,
+    "historical_deployment_sha_proven": false,
+    "original_provider_request_bytes_proven": false
+  },
+  "next_evidence_requires": {
+    "g1_job": "Authoritatively linked original Trainer run artifact for priority Job: optimizer/global step, checkpoint or run finalization, exact Train/Validation input fingerprints. Sensitive artifact reads require separate explicit Owner approval.",
+    "g1_protected": "Owner-private frozen metadata-only UUID universe manifest for R50, R55/R57 and all other reserved/heldout sets, with version and scope provenance, and independent source completeness boundary.",
+    "g2_runtime": "Immutable target-message-to-request linkage and exact target-time Provider dispatch bytes, runtime/deployment SHA, and session state; no timeline-nearest approximation."
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "round1_complete": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "paid_hf_cpu_or_gpu_job_started": false,
+    "original_story_content_read": false,
+    "r50_test_content_read": false,
+    "private_ids_exported": false,
+    "private_rosters_modified": false
+  }
+}
