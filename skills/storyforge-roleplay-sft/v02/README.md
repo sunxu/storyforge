@@ -62,3 +62,17 @@ python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py shortlist \
 执行前必须阅读：`docs/evidence/R58_G1_SCOPED_UUID_CONTRACT_RUNBOOK_SAFE_20261031.md`。**没有现成的已授权 UUID 元数据 manifest 时，不要求执行 `g1-audit`，也不能为此扫描 R50 原文或扩样。**
 
 新增 19 项 G1 合成测试和 1 项桥接拒绝路径合成测试。与原有 24 项合计**预期 44 项**，需要 Owner Mac 对最新提交重新执行；不能借用之前 24/24 的 PASS 证明新增代码已通过。
+
+## G1 私有输入路径安全补充（2026-10-31）
+
+对 `r58_g1_scope_reconcile.py` 的私有文件读取实施 fail-closed 加固：
+
+- 拒绝绝对路径以外的输入、`..` 父目录穿越、超深层目录、符号链接和可被组/其他人读取的私有目录及文件。
+- 在支持 `O_NOFOLLOW` 与 `O_DIRECTORY` 的 POSIX 系统上，使用从私有根目录逐级打开的目录文件描述符及 `dir_fd` 进行读取；不再采用检查路径后再通过路径名打开的方式。拒绝指向根目录外内容的硬链接及读取期间文件大小变化。
+- **不改变**任何候选、来源集合或准入状态；所有敏感细节只在 Owner 私有工作区处理，stderr 仅输出固定 HOLD 消息。
+- 新增 3 项合成测试（`..` 穿越、嵌套 symlink／过宽权限、硬链接），完整 v0.2 合成测试预期增至 **47 项**。Owner Mac 对安全加固后的完整测试与 Ruff **尚未回报**，不能沿用旧版 44/44 PASS 宣告新 HEAD 已验证。
+
+```bash
+python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
+ruff check skills/storyforge-roleplay-sft/v02/ --statistics
+```
