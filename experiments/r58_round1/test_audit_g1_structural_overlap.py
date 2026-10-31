@@ -1,14 +1,11 @@
 """R58 G1 overlap diagnostics: synthetic-only tests, no live DB or story data."""
 import csv
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
-from audit_g1_structural_overlap import (
-    SCHEMA, Hold, build_sql, load_queue, project, run,
-    EXPECTED_CSV,
-)
+from audit_g1_structural_overlap import EXPECTED_CSV, SCHEMA, Hold, build_sql, load_queue, project, run
 
 def row(story_id="synthetic-one"):
     return {

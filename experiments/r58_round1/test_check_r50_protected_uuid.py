@@ -1,14 +1,12 @@
 """Synthetic-only R58 G1 R50 protected UUID match tests; no R50 cases read."""
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
-from check_r50_protected_uuid import (
-    OWNER_POLICY, Hold, protected_ids, evaluate, read_private_holds,
-    write_private, run,
-)
+
+from check_r50_protected_uuid import Hold, OWNER_POLICY, evaluate, protected_ids, read_private_holds, run
 
 def uid(n):
     return f"00000000-0000-0000-0000-{n:012d}"

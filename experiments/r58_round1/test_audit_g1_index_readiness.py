@@ -2,11 +2,11 @@
 import csv
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
-from audit_g1_index_readiness import SCOPES, COLUMNS, Hold, input_inventory, readiness
+from audit_g1_index_readiness import COLUMNS, SCOPES, Hold, input_inventory, readiness
 
 def rows():
     return {

@@ -1,13 +1,11 @@
 """Synthetic-only tests for R58 G1 metadata filename discovery. No real protected data."""
 import json
 import os
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
-from autodiscover_g1_index_candidates import (
-    SCOPES, ROOTS, Hold, find_candidates, draft_rows, run,
-)
+from autodiscover_g1_index_candidates import SCOPES, Hold, draft_rows, find_candidates, run
 
 class TestG1AutoDiscovery(unittest.TestCase):
     def setUp(self):

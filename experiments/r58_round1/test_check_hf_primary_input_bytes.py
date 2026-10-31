@@ -1,13 +1,14 @@
 """Synthetic-only tests. No HF reads, no real story data."""
 from __future__ import annotations
-from contextlib import redirect_stdout, redirect_stderr
+
 import hashlib
 import io
 import json
 import sys
 import unittest
-from unittest import mock
+from contextlib import redirect_stderr, redirect_stdout
 from types import SimpleNamespace
+from unittest import mock
 
 import check_hf_primary_input_bytes as m
 
