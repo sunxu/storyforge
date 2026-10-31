@@ -16,7 +16,8 @@
     "live_table_data_rows_read": false,
     "sql_mutations_executed": false,
     "hf_api_called_this_step": false,
-    "repository_code_changed": false
+    "repository_code_changed": false,
+    "live_schema_followup": "Additional public table columns inspected through list_tables(verbose=true); zero row-level content inspected"
   },
   "public_schema_observed": {
     "scope": "public schema table names and column names; not historical versions or all schemas",
@@ -79,11 +80,60 @@
           "is_realtime"
         ],
         "interpretation": "Request event identifiers and outcomes exist; inspected column list contains no serialized Provider messages, exact prompt byte hash or model dispatch payload."
+      },
+      {
+        "name": "public.v2_chat_messages",
+        "observed_columns": [
+          "id",
+          "story_id",
+          "session_id",
+          "turn_index",
+          "metadata",
+          "created_at"
+        ],
+        "interpretation": "No top-level request_id column was found. JSONB metadata content was NOT read, so a request key embedded there is neither proved nor ruled out."
+      },
+      {
+        "name": "public.chat_latency_metrics",
+        "observed_columns": [
+          "request_id",
+          "relay_request_id",
+          "relay_trace_id",
+          "attempt_trace",
+          "model",
+          "story_id",
+          "session_id"
+        ],
+        "interpretation": "Potential request-to-relay diagnostic metadata, not an exact target-message link or original Provider message bytes. Table comment describes a rolling 30-day online retention."
+      },
+      {
+        "name": "public.ai_model_scene_runtime_routes_history",
+        "observed_columns": [
+          "revision",
+          "config",
+          "published_at"
+        ],
+        "interpretation": "Route configuration revisions exist but were not matched to target request/deployment SHA."
+      },
+      {
+        "name": "public.chat_abnormal_snapshot",
+        "observed_columns": [
+          "request_id",
+          "conversation_context",
+          "history_preview",
+          "memory_injection",
+          "expires_at"
+        ],
+        "interpretation": "Sensitive, abnormal-only expiring context; no rows or JSON bodies read; not a general historical prompt ledger."
       }
     ],
     "dedicated_r58_protected_universe_registry_identified_in_public_schema": false,
     "conclusion": "Only observed public table schemas; absence of a dedicated name does NOT prove that protected rosters do not exist in Owner-private files or other data stores.",
-    "provider_payload_available_from_inspected_event_table": false
+    "provider_payload_available_from_inspected_event_table": false,
+    "direct_message_request_id_link_proven": false,
+    "request_id_possible_from_unread_jsonb_metadata": "UNVERIFIED",
+    "request_diagnostic_trace_available_by_schema": true,
+    "provider_input_bytes_in_diagnostic_trace_proven": false
   },
   "one_priority_hf_job": {
     "evidence": "Owner existing PRIVATE metadata and priority source crosslinked SAFE on prior turn",
@@ -109,7 +159,7 @@
   "next_evidence_requires": {
     "g1_job": "Authoritatively linked original Trainer run artifact for priority Job: optimizer/global step, checkpoint or run finalization, exact Train/Validation input fingerprints. Sensitive artifact reads require separate explicit Owner approval.",
     "g1_protected": "Owner-private frozen metadata-only UUID universe manifest for R50, R55/R57 and all other reserved/heldout sets, with version and scope provenance, and independent source completeness boundary.",
-    "g2_runtime": "Immutable target-message-to-request linkage and exact target-time Provider dispatch bytes, runtime/deployment SHA, and session state; no timeline-nearest approximation."
+    "g2_runtime": "Immutable target-message-to-request linkage and exact target-time Provider dispatch bytes, runtime/deployment SHA, and session state; no timeline-nearest approximation. Additional possible metadata-only linkage surfaces: v2_chat_messages.metadata (unread JSONB), chat_latency_metrics.request_id/relay_request_id; requires scoped Owner-approved frozen-target query before use."
   },
   "gates": {
     "g1": "HOLD",
