@@ -1,0 +1,65 @@
+name: R58 scoped synthetic (no training)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/r58_round1/**'
+      - 'skills/storyforge-roleplay-sft/**'
+      - '.github/workflows/r58-scoped-synthetic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  r58-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dev-only test dependencies
+        run: pip install -e '.[dev]'
+      - name: Environment and scoped test baselines
+        run: |
+          python3 --version
+          ruff --version
+          python3 -m unittest discover -s experiments/r58_round1 -p 'test_*.py' -q
+          python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.py' -q
+          python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
+      - name: V0.2 pinned SAFE evidence remains HOLD
+        run: |
+          python3 skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py --repo-root "$PWD" > /tmp/r58_safe_preflight.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          record = json.loads(Path('/tmp/r58_safe_preflight.json').read_text())
+          assert record['g1_clearance'] == 'HOLD'
+          assert record['g2_clearance'] == 'HOLD'
+          assert record['training_admitted'] == 0
+          assert record['expansion_allowed'] is False
+          print('SAFE preflight: G1=HOLD G2=HOLD admitted=0')
+          PY
+      - name: V0.2 gate/freeze both refuse without private inputs
+        run: |
+          for action in gate freeze; do
+            set +e
+            python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py "$action" --repo-root "$PWD" > "/tmp/r58_${action}.json"
+            code=$?
+            set -e
+            if [ "$code" -ne 42 ]; then echo "Expected refusal exit 42 for $action, got $code"; exit 1; fi
+            python3 - "$action" <<'PY'
+          import json, sys
+          from pathlib import Path
+          action = sys.argv[1]
+          record = json.loads(Path(f'/tmp/r58_{action}.json').read_text())
+          assert record['status'] == 'HOLD_G1_G2_UNPROVEN__NO_V01_EXECUTION'
+          assert record['output_data_written'] is False
+          assert record['train_admitted'] == 0
+          print(f'{action}: HOLD as required; no data written')
+          PY
+          done
