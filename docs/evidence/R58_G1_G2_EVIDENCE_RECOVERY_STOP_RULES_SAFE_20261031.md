@@ -44,3 +44,15 @@
 - PR #7 保持 Draft；不覆盖私有回执，不启动付费 HF CPU/GPU、不读取 R50 密封题目、不冻结 Dataset v0.4、不自动合并/晋升。
 
 **本文件是按可信来源类型排序的证据取得计划，不是对原始 Trainer 或 Provider 请求的已完成独立验证。**
+
+## 追加：已冻结 RolePlay 源码的请求关联审计（2026-10-31）
+
+新增 Git blob 精确来源证明：`docs/evidence/R58_G2_PINNED_REQUEST_ID_PERSISTENCE_SOURCE_AUDIT_SAFE_20261031.json`，检查 `sunxu/RolePlay@e9fe29c42434caeb0bac5acc91845ab4741ecb2b` 的 V2 Route、message-codec、V2MessageService 和事件元数据构造器。
+
+**结果：**该固定版本的 API `logger.ctx.requestId` 明确写入请求终态事件、延迟指标和 Provider 请求选项；但在已检查的流式 Assistant 占位与最终完成路径、非流式最终保存路径中，**未发现把该 API request ID 直接写进目标 `v2_chat_messages.metadata` 的代码**。事件 `v2EventClaimId` 是另一种 claim 标识，不可直接当作 API request ID。数据库指标层的同 request_id join，仍不能构成目标 Assistant UUID ↔ request_id 的证明。
+
+这是**固定源代码路径的阴性发现**，不代表核实了当时生产部署 SHA、所有未审代码写入者、历史归档或 JSONB 内全部数据。之前的 3 个目标 × 7 个顶层 metadata 键缺失结论仍只是 Owner 已报告的局部结果；本次没有读取任何实际业务行。
+
+**更新下一步：**不建议再对既有三案例重复执行 metadata 字段试探或 2/4/2 软时间过滤。只有找到可证明由当时运行时写入、并把具体物理目标回复（或者唯一 turn/attempt）与 API request_id 明确绑定的**另一份原始证据源**，才启动单案例、严格限定的只读查询。若来源不能满足该条件，`G2=HOLD` 并停止猜测。Provider 字节级完整回放仍是独立门禁。
+
+G1 的单个 CANCELED HF Job 仍缺原始 Trainer 更新/输入来源工件，相关敏感访问没有扩权，本轮未触碰。
