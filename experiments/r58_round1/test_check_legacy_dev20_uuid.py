@@ -162,6 +162,6 @@ class TestLegacyDev20(unittest.TestCase):
             with mock.patch.object(Path,"resolve",return_value=Path("/etc")):
                 self.assertFalse(verified_darwin_root_alias(Path("/var")))
         with mock.patch("check_legacy_dev20_uuid.sys.platform","linux"):
-            self.assertFalse(verified_darwin_root_alias(Path("/var"))
+            self.assertFalse(verified_darwin_root_alias(Path("/var")))
 
 if __name__=="__main__":unittest.main()
