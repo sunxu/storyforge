@@ -7,9 +7,11 @@ import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 from check_legacy_dev20_uuid import (
     Hold, source_world_ids, verify_source_receipts, checked_private_rows,
     evaluate, write_private, private_json, OWNER_POLICY, SOURCE_SHA256,
+    verified_darwin_root_alias,
 )
 U1="11111111-1111-4111-8111-111111111111"
 U2="22222222-2222-4222-8222-222222222222"
@@ -121,5 +123,45 @@ class TestLegacyDev20(unittest.TestCase):
             self.assertEqual(target.stat().st_mode & 0o777,0o600)
             self.assertTrue(json.loads(target.read_text())["expansion_allowed"] is False)
             with self.assertRaises(Hold):write_private(target,private)
+
+    def test_15_untrusted_symlinked_ancestor_rejected(self):
+        rows=checked_private_rows(*ledgers())
+        _,private=evaluate(rows,{U2,U3})
+        with tempfile.TemporaryDirectory() as td:
+            root=Path(td)
+            actual=root/"actual";actual.mkdir(mode=0o700)
+            nested=actual/"nested";nested.mkdir(mode=0o700)
+            alias=root/"redirect";alias.symlink_to(actual, target_is_directory=True)
+            # Parent is a real directory, but its grandparent is a symlink.
+            target=alias/"nested"/"secret.json"
+            with self.assertRaises(Hold):write_private(target,private)
+            self.assertFalse((nested/"secret.json").exists())
+
+    def test_16_only_verified_darwin_system_aliases_accepted(self):
+        """Synthetic Darwin path checks even when running on Linux."""
+        actual_symlink=Path.is_symlink
+        actual_resolve=Path.resolve
+        actual_is_dir=Path.is_dir
+        def fake_is_symlink(p):
+            if str(p)=="/var":return True
+            if str(p)=="/private/var":return False
+            return actual_symlink(p)
+        def fake_resolve(p,*,strict=False):
+            if str(p)=="/var":return Path("/private/var")
+            return actual_resolve(p,strict=strict)
+        def fake_is_dir(p):
+            if str(p)=="/private/var":return True
+            return actual_is_dir(p)
+        with (mock.patch("check_legacy_dev20_uuid.sys.platform","darwin"),
+              mock.patch.object(Path,"is_symlink",fake_is_symlink),
+              mock.patch.object(Path,"resolve",fake_resolve),
+              mock.patch.object(Path,"is_dir",fake_is_dir)):
+            self.assertTrue(verified_darwin_root_alias(Path("/var")))
+            self.assertFalse(verified_darwin_root_alias(Path("/tmp")))
+            self.assertFalse(verified_darwin_root_alias(Path("/users/var")))
+            with mock.patch.object(Path,"resolve",return_value=Path("/etc")):
+                self.assertFalse(verified_darwin_root_alias(Path("/var")))
+        with mock.patch("check_legacy_dev20_uuid.sys.platform","linux"):
+            self.assertFalse(verified_darwin_root_alias(Path("/var"))
 
 if __name__=="__main__":unittest.main()

@@ -227,15 +227,35 @@ def evaluate(rows: list[dict], worlds: set[str]) -> tuple[dict, list[dict]]:
     return safe, private_rows
 
 
+def verified_darwin_root_alias(path: Path) -> bool:
+    """Allow only macOS's fixed /var and /tmp OS aliases, never user links.
+
+    Darwin normally maps /var -> /private/var and /tmp -> /private/tmp.
+    An exact resolved target is required so no arbitrary symlink or renamed
+    ancestor can redirect a private ledger. No generic resolve-and-allow.
+    """
+    expected = {Path("/var"): Path("/private/var"),
+                Path("/tmp"): Path("/private/tmp")}
+    dest = expected.get(path)
+    if sys.platform != "darwin" or dest is None or not path.is_symlink():
+        return False
+    try:
+        return (path.resolve(strict=True) == dest and
+                dest.is_dir() and not dest.is_symlink())
+    except (OSError, RuntimeError):
+        return False
+
+
 def write_private(path: Path, rows: list[dict]):
     if path.exists() or path.is_symlink():
         raise Hold("private output exists")
     parent = path.parent
     if parent.is_symlink() or not parent.is_dir() or parent.stat().st_mode & 0o077:
         raise Hold("private destination unsafe")
-    # Prevent redirect via symlinked ancestors (Home is expected to be real).
+    # Reject user-controlled ancestors. macOS's two verified OS root aliases
+    # are the only exceptions: tempfile can use /var/folders on Darwin.
     for p in list(parent.parents)[:-1] + [parent]:
-        if p.is_symlink():
+        if p.is_symlink() and not verified_darwin_root_alias(p):
             raise Hold("symlinked private ancestor")
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
     try:
