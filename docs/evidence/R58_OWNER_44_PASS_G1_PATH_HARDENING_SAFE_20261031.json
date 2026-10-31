@@ -1,0 +1,59 @@
+{
+  "schema": "r58_g1_v02_owner_44_pass_and_private_path_hardening_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_TERMINAL_OUTPUT_PASTED_IN_CHAT__GITHUB_SOURCE_REVIEW_AND_SCOPED_FIX",
+  "owner_tested_head": "a7302355d278b60818b4543b4cf137f5fd8fd7b9",
+  "owner_results": {
+    "skill_v02_unittest": {
+      "cases": 44,
+      "result": "PASS_OWNER_REPORTED",
+      "seconds_reported": 0.005
+    },
+    "g1_g2_preflight": {
+      "status": "G1_G2_SAFE_EVIDENCE_RECONCILED__BOTH_HOLD",
+      "g1": "HOLD",
+      "g2": "HOLD",
+      "jobs_current_inputs_matched": 5,
+      "remote_current_objects_matched": 12,
+      "remaining_candidates_held": 4,
+      "g2_blockers": 17,
+      "train_admitted": 0
+    },
+    "ruff": {
+      "result": "NOT_EXPLICITLY_PRESENT_IN_OWNER_PASTE",
+      "zero_errors_claimed": false
+    }
+  },
+  "g1_private_path_review": {
+    "issue": "Lexical is_relative_to could be bypassed by .. components; check-then-open was not race resistant",
+    "fix": "Secure dir_fd anchored read using O_NOFOLLOW and O_DIRECTORY, reject .. and hardlinks, permissions and size bound",
+    "affected_file": "skills/storyforge-roleplay-sft/v02/r58_g1_scope_reconcile.py",
+    "new_synthetic_tests": [
+      "parent_dir_traversal",
+      "nested_symlink_or_unsafe_permissions",
+      "hardlink_external_file"
+    ],
+    "new_total_v02_synthetic_tests_expected": 47,
+    "owner_post_fix_tests": "NOT_REPORTED",
+    "owner_post_fix_ruff": "NOT_REPORTED",
+    "no_real_private_input_opened_by_assistant": true
+  },
+  "scope": "R58 DRAFT PR7 ONLY",
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "g3": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "no_new_hf_job": true,
+    "no_private_uuid_export": true,
+    "r50_test_content_read": false,
+    "training_data_modified": false
+  },
+  "note": "44 PASS is for previous code commit; current hardening revision pending fresh Owner Mac tests."
+}
