@@ -1,0 +1,100 @@
+{
+  "all_historical_job_roots_exhausted": false,
+  "all_original_gpu18_remain_pending": true,
+  "eval_root_path_proves_evaluation_only": false,
+  "eval_subroots_scanned": [
+    "test",
+    "v02-r47",
+    "v03-r55",
+    "v03-r57",
+    "validation"
+  ],
+  "expansion_allowed": false,
+  "file_absence_proves_no_optimizer_update": false,
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "git_document_reference_proves_job_role": false,
+  "git_head_documents_scanned": 274,
+  "hf_job_started": false,
+  "historical_input_consumption_proven": false,
+  "job_commands_logs_environment_or_training_bytes_read": false,
+  "job_id_or_path_exported": false,
+  "linked_four_referenced_in_multiple_eval_subroots": 0,
+  "linked_four_with_any_other_eval_subroot": 2,
+  "linked_four_with_git_doc_reference": 0,
+  "linked_four_without_git_doc_reference": 4,
+  "metadata_list_calls": 20,
+  "metadata_nodes": 99,
+  "namespace": "adradar",
+  "optimizer_step_directly_proven": false,
+  "original_completed_gpu7": 7,
+  "original_eval_runs_name_linked": 4,
+  "original_five_root_name_unlinked": 3,
+  "other_three_with_git_doc_reference": 2,
+  "other_three_without_git_doc_reference": 1,
+  "per_subroot_metadata": {
+    "test": {
+      "gpu7_exact_path_name_matches": 0,
+      "metadata_list_calls": 2,
+      "metadata_nodes": 13,
+      "model_safetensors_named": 0,
+      "optimizer_pt_named": 0,
+      "train_validation_jsonl_named": 0,
+      "trainer_state_json_named": 0
+    },
+    "v02-r47": {
+      "gpu7_exact_path_name_matches": 0,
+      "metadata_list_calls": 6,
+      "metadata_nodes": 20,
+      "model_safetensors_named": 0,
+      "optimizer_pt_named": 0,
+      "train_validation_jsonl_named": 0,
+      "trainer_state_json_named": 0
+    },
+    "v03-r55": {
+      "gpu7_exact_path_name_matches": 0,
+      "metadata_list_calls": 2,
+      "metadata_nodes": 6,
+      "model_safetensors_named": 0,
+      "optimizer_pt_named": 0,
+      "train_validation_jsonl_named": 0,
+      "trainer_state_json_named": 0
+    },
+    "v03-r57": {
+      "gpu7_exact_path_name_matches": 2,
+      "metadata_list_calls": 5,
+      "metadata_nodes": 16,
+      "model_safetensors_named": 0,
+      "optimizer_pt_named": 0,
+      "train_validation_jsonl_named": 0,
+      "trainer_state_json_named": 0
+    },
+    "validation": {
+      "gpu7_exact_path_name_matches": 2,
+      "metadata_list_calls": 4,
+      "metadata_nodes": 39,
+      "model_safetensors_named": 0,
+      "optimizer_pt_named": 0,
+      "train_validation_jsonl_named": 0,
+      "trainer_state_json_named": 0
+    }
+  },
+  "private_ledgers_modified": false,
+  "r57_specific_subroot_exact_matches": 2,
+  "raw_error_exported": false,
+  "schema": "r58_g1_gpu7_eval_subroots_and_frozen_docs_safe_v1",
+  "source_registry_complete": false,
+  "status": "GPU7_EVAL_SUBROOT_DISTRIBUTION_AND_FROZEN_DOC_REFS_CHECKED__ALL_PENDING",
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "evidence_level_SAFE": "OWNER_MAC_USER_SUPPLIED_SAFE_JSON__NOT_INDEPENDENT_PRIVATE_LEDGER_REEXECUTION",
+  "source_script_SAFE": "experiments/r58_round1/r58_g1_gpu7_eval_subroots_and_frozen_docs_readonly_20261101.py",
+  "interpretation_SAFE": {
+    "four_exact_path_name_references_found": true,
+    "two_r57_and_two_validation_disjoint": true,
+    "all_original_sixty_unclassified_jobs_still_pending": true,
+    "training_and_nontraining_behavior_not_proven": true,
+    "further_name_only_scans_not_recommended": true
+  }
+}
