@@ -9,9 +9,11 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import stat
 import sys
+from contextlib import ExitStack
 from pathlib import Path
 
 SCHEMA = "r58_g1_private_scoped_uuid_manifest_v1"
@@ -88,30 +90,43 @@ def decode_json(raw: bytes) -> dict:
 
 
 def read_private(path: Path, root: Path) -> dict:
-    """Only fixed owner-private root; no symlinks or group-readable files."""
-    if not path.is_absolute() or not path.is_relative_to(root) or path == root:
+    """Open owner-private metadata via dirfds; refuse traversal and symlink races."""
+    if (not path.is_absolute() or not root.is_absolute()
+            or ".." in path.parts or ".." in root.parts
+            or not path.is_relative_to(root) or path == root):
         raise Hold("private input is outside authorized directory")
-    node = path
-    while True:
-        if node.is_symlink():
-            raise Hold("symlinked input path")
-        if node == root:
-            break
-        node = node.parent
-    if not root.is_dir() or root.is_symlink():
-        raise Hold("private root unavailable")
-    parent = path.parent
-    while parent != root.parent:
-        mode = parent.stat().st_mode
-        if not stat.S_ISDIR(mode) or mode & 0o077:
+    # The required flags are available on supported POSIX Mac/Linux; never silently downgrade.
+    if not hasattr(os, "O_NOFOLLOW") or not hasattr(os, "O_DIRECTORY"):
+        raise Hold("secure private directory open unsupported")
+    parts = path.relative_to(root).parts
+    if not parts or len(parts) > 16:
+        raise Hold("private path depth invalid")
+    dir_flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    file_flags = os.O_RDONLY | os.O_NOFOLLOW
+
+    def check_directory(fd: int) -> None:
+        info = os.fstat(fd)
+        if not stat.S_ISDIR(info.st_mode) or info.st_mode & 0o077:
             raise Hold("private directory permissions unsafe")
-        if parent == root:
-            break
-        parent = parent.parent
-    info = path.lstat()
-    if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077 or not 0 < info.st_size <= MAX_BYTES:
-        raise Hold("private file permissions or size invalid")
-    return decode_json(path.read_bytes())
+
+    with ExitStack() as stack:
+        directory = os.open(root, dir_flags)
+        stack.callback(os.close, directory)
+        check_directory(directory)
+        for component in parts[:-1]:
+            directory = os.open(component, dir_flags, dir_fd=directory)
+            stack.callback(os.close, directory)
+            check_directory(directory)
+        fd = os.open(parts[-1], file_flags, dir_fd=directory)
+        with os.fdopen(fd, "rb") as handle:
+            info = os.fstat(handle.fileno())
+            if (not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077
+                    or info.st_nlink != 1 or not 0 < info.st_size <= MAX_BYTES):
+                raise Hold("private file permissions or size invalid")
+            raw = handle.read(MAX_BYTES + 1)
+            if len(raw) != info.st_size:
+                raise Hold("private metadata changed during read")
+    return decode_json(raw)
 
 
 def reconcile(manifest: dict, ledger: dict) -> dict:
