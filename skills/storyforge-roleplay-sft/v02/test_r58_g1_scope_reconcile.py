@@ -1,7 +1,5 @@
 """Only fabricated UUIDs; no protected/real data or training access."""
-import hashlib
 import json
-import stat
 import tempfile
 import unittest
 from pathlib import Path
