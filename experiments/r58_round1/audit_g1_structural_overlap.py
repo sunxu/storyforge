@@ -8,10 +8,10 @@ import argparse
 import csv
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 SCHEMA='r58_round1_g1_structural_overlap_safe_v1'
 EXPECTED_CSV={'story_id','source_type','review_state','world_component',

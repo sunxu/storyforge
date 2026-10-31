@@ -13,13 +13,20 @@ import csv
 import hashlib
 import io
 import json
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 from check_r04_non_gold_uuid import (
-    R04_BLOB, R04_SHA256, GOLD108_BLOB, GOLD108_SHA256,
-    UUID, Hold, frozen_blob, structural_world_rows, r04_non_gold_worlds,
+    GOLD108_BLOB,
+    GOLD108_SHA256,
+    Hold,
+    R04_BLOB,
+    R04_SHA256,
+    UUID,
+    frozen_blob,
+    r04_non_gold_worlds,
+    structural_world_rows,
 )
 
 INVENTORY_BLOB = '1b28b2fa935d6cac5464e62d3eaebb8aed5758b6'
@@ -161,7 +168,7 @@ def main(argv=None) -> int:
         result = reconcile(r04, gold, inventory, manifest)
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
-    except (Hold, ValueError, OSError, TypeError, KeyError) as exc:
+    except (Hold, ValueError, OSError, TypeError, KeyError):
         # Never print exception details: errors may contain private source info.
         print('R58_G1_R04_RANK_PROVENANCE: HOLD (frozen source or rank linkage mismatch)', file=sys.stderr)
         return 42

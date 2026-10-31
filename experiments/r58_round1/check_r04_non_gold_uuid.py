@@ -12,21 +12,19 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
-from check_legacy_dev20_uuid import (
-    OWNER_POLICY, private_json, verified_darwin_root_alias,
-)
+from check_legacy_dev20_uuid import OWNER_POLICY, private_json, verified_darwin_root_alias
 
 SCHEMA = 'r58_round1_g1_r04_non_gold_uuid_safe_v1'
 R04_BLOB = 'b580038f6fef2ffb41831b8f5451ddcac5d610c2'
 R04_SHA256 = '8fbd2581b6823882d27e7839238335319202b1d9a726fc25d9aa74fedf5487f1'
 GOLD108_BLOB = 'eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90'
 GOLD108_SHA256 = '27d15b6f8baf7935ee2c48f85558adc3b5b25e3558e127485d0f17b620f80308'
-UUID = re.compile(r'^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$', re.I)
+UUID = re.compile(r'^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$', re.IGNORECASE)
 WORLD_FIELDS = (
     re.compile(rb'"story_id"\s*:\s*"([0-9a-fA-F-]{36})"'),
     re.compile(rb'"source_story_id"\s*:\s*"([0-9a-fA-F-]{36})"'),

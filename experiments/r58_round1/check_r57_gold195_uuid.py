@@ -7,20 +7,24 @@ Gold replies, R50 examples, or old Dev20 contents. This does NOT certify
 coverage of the R55/R57 20-case old Test Dev suite or other holdouts.
 """
 from __future__ import annotations
+
 import argparse
 import json
 import os
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 from check_prior_sft_exact_world_ids import (
-    OWNER_IDENTITY_POLICY, private_json, discover_roster, parse_exposed_roster,
+    OWNER_IDENTITY_POLICY,
+    discover_roster,
+    parse_exposed_roster,
+    private_json,
 )
 from check_r50_protected_uuid import read_private_holds
 
 SCHEMA="r58_round1_g1_r57_gold195_uuid_safe_v1"
-UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.I)
+UUID=re.compile(r"^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$",re.IGNORECASE)
 EXPECTED_SOURCES={"GOLD87","GOLD108","V01_TRAIN","V01_VALIDATION",
                   "R46_TRAIN","R46_VALIDATION","R54_TRAIN","R54_VALIDATION"}
 

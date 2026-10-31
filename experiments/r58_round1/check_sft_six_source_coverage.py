@@ -9,13 +9,13 @@ reviewer outputs, model data, HF jobs, or training logs. Always G1 HOLD.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
-from pathlib import Path
 import re
 import stat
 import subprocess
 import sys
+from collections import Counter
+from pathlib import Path
 
 SOURCE_PINS = {
     'V01_TRAIN': ('3e64c9932ca43fefa8ecfb200085fe718581b6f9', 65),
@@ -27,8 +27,8 @@ EXPECTED = {'R46_TRAIN':49, 'R46_VALIDATION':15,
             'R54_TRAIN':31, 'R54_VALIDATION':9}
 SOURCES = ('GOLD87','GOLD108', 'V01_TRAIN','V01_VALIDATION',
            'R46_TRAIN','R46_VALIDATION','R54_TRAIN','R54_VALIDATION')
-UUID = re.compile(r'^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$', re.I)
-HEX64 = re.compile(r'^[0-9a-f]{64}$', re.I)
+UUID = re.compile(r'^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$', re.IGNORECASE)
+HEX64 = re.compile(r'^[0-9a-f]{64}$', re.IGNORECASE)
 WORLD_TOKEN = re.compile(rb'"story_id"\s*:\s*"([0-9a-fA-F-]{36})"')
 META_TOKEN = re.compile(rb'"metadata"\s*:\s*\{')
 SAMPLE_TOKEN = re.compile(rb'"id"\s*:\s*"(sample-[0-9]{6})"')
