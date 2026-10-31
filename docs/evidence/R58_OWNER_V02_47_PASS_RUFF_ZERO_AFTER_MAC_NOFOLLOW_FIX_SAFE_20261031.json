@@ -1,0 +1,46 @@
+{
+  "schema": "r58_owner_v02_47_pass_ruff_zero_after_macos_nofollow_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_ASSISTANT_INDEPENDENT_RERUN",
+  "code_expected_branch": "r58/roleplay-sft-skill-v01",
+  "code_head_at_receipt_creation": "4d4eae8f252163e2bb011f7db1bd695c552b8bda",
+  "exact_owner_git_sha_in_this_output": "NOT_REPORTED",
+  "prior_failure_receipt": "docs/evidence/R58_OWNER_47_TESTS_2_POSIX_ERRORS_RUFF_PASS_SAFE_20261031.json",
+  "fix_commit": "4e59bc28435ceb433016aa7d67c9441277fa4a82",
+  "owner_validation": {
+    "v02_unittest": {
+      "command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q",
+      "ran": 47,
+      "status": "PASS_OWNER_REPORTED",
+      "seconds": 0.011,
+      "failures": 0,
+      "errors": 0
+    },
+    "v02_ruff": {
+      "command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics",
+      "terminal_success_marker": "RUFF_V02_PASS",
+      "status": "PASS_OWNER_REPORTED",
+      "errors": 0
+    },
+    "post_fix_mac_path_rejections": "TESTED_AS_PART_OF_V02_SUITE",
+    "whole_repository_lint": "NOT_RETESTED",
+    "github_actions": "NOT_CLAIMED_PASS",
+    "actual_private_g1_index_audit": "NOT_PERFORMED"
+  },
+  "gate": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "paid_hf_job_started": false,
+    "private_uuid_rosters_exported": false,
+    "r50_test_content_read": false,
+    "model_training_approved": false
+  },
+  "limits": "Synthetic tests plus Ruff PASS do not independently establish private source-universe completeness or actual target-request byte provenance."
+}
