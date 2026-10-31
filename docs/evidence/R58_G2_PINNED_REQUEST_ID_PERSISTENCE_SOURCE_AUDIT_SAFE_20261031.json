@@ -11,7 +11,10 @@
       "src/app/api/chat/v2/route.ts": "48f177570fa18454eab768f2800c82fa1da07e57",
       "src/lib/db/v2-message-service.ts": "5c6443629f4c685d57de01886a2e2c36d9175888",
       "src/lib/story-v2/message-codec.ts": "b5c7aa3959b8b02ee2fd2264bd68fac7e40f723f",
-      "src/lib/story-v2/events/metadata.ts": "02cd23734e4a210d0e81e1df25567b47a6af257c"
+      "src/lib/story-v2/events/metadata.ts": "02cd23734e4a210d0e81e1df25567b47a6af257c",
+      "src/lib/archive/chat-archive.ts": "8cd8dde7c0ebc0c5680bd8c0061d65074944720e",
+      "src/lib/db/v2-chat-request-event-service.ts": "5a0dae6ca30d566274757beaaac2689455a80a18",
+      "src/lib/db/chat-latency-metrics-service.ts": "efd1a91410e3fb47edb2bcaaf06bd9b1daac960f"
     },
     "method": "Read-only inspection of pinned GitHub code; no DB row reads, no HF, no original Provider requests or private case identifiers"
   },
@@ -69,6 +72,30 @@
       "path": "src/lib/story-v2/events/metadata.ts",
       "lines": "18-55",
       "observation": "Event claim ID and requestKind are distinct from API logger.ctx.requestId; no API requestId field in the returned object"
+    },
+    {
+      "feature": "Optional chat archive event",
+      "path": "src/lib/archive/chat-archive.ts",
+      "lines": "14-33 and 182-225",
+      "observation": "ChatArchiveEntry and the archive row contain user/story/session/turn and existing metadata but do not synthesize or add API request_id. Whether this archive was enabled or retained historically is not proven."
+    },
+    {
+      "feature": "Terminal request event service",
+      "path": "src/lib/db/v2-chat-request-event-service.ts",
+      "lines": "4-40",
+      "observation": "Creates request_id level event with status/session/story but not the assistant message ID/turn index."
+    },
+    {
+      "feature": "Latency metrics writer",
+      "path": "src/lib/db/chat-latency-metrics-service.ts",
+      "lines": "150-189",
+      "observation": "Stores request_id, relay_request_id, relay_trace_id, attempt_trace and other diagnostics; does not persist assistant message UUID in the shown row."
+    },
+    {
+      "feature": "Abnormal-only exceptional snapshot",
+      "path": "src/app/api/chat/v2/route.ts",
+      "lines": "730-763 and 4850-4868",
+      "observation": "Certain abnormal captures pass requestId together with turnIndex and sensitive context; conditional diagnostic evidence only, not a complete or safe general mapping; retention and association to frozen target unverified. No snapshots read."
     }
   ],
   "interpretation": {
@@ -79,10 +106,14 @@
     "historical_other_writer_or_archive_complete_audit_done": false,
     "prior_three_target_top_level_known_key_absence": "OWNER_SAFE_REPORT: THREE_TARGETS_X_SEVEN_KEYS_NOT_FOUND; not proof of all nested keys",
     "candidate_reduction_by_time_similarity_allowed": false,
-    "source_scan_proves_absence_in_all_historical_deployments": false
+    "source_scan_proves_absence_in_all_historical_deployments": false,
+    "optional_chat_archive_writer_api_request_id_direct_field_found": false,
+    "abnormal_snapshot_metadata_could_have_request_id_and_turn_index": true,
+    "abnormal_snapshot_is_authoritative_complete_prompt_archive": false,
+    "optional_chat_archive_was_enabled_at_target_time": "UNVERIFIED"
   },
   "next_step": {
-    "recommendation": "Do not query full message metadata or retry timeline heuristics until a documented source capable of linking actual assistant message/turn/attempt to API request_id is identified; seek historical deployment identity, durable event receipts, or original request envelope if Owner authorizes and records exist.",
+    "recommendation": "Do not scan historical messages, archives, or anomaly snapshots broadly. A source linking exact target message/unique turn-attempt to API request_id must be established and independently scoped first; exceptional abnormal snapshot has conditional requestId+turn metadata but may contain sensitive raw context and is not a general provider transcript. Historical deployment identity and byte-exact Provider payload remain separate.",
     "protected_data_reads_require_separate_scope_approval": true,
     "exact_provider_request_bytes_available_from_this_source": false
   },
