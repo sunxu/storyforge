@@ -10,7 +10,8 @@ import argparse
 import json
 import re
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
+from itertools import pairwise
 from pathlib import Path
 
 from r58_g1_scope_reconcile import Hold, read_private
@@ -42,7 +43,7 @@ def parse_instant(value: object) -> datetime:
     if not isinstance(value, str) or not UTC_INSTANT.fullmatch(value):
         raise Hold("UTC time must be seconds-precision Z")
     try:
-        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        parsed = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=UTC)
     except ValueError:
         raise Hold("invalid UTC time") from None
     if parsed.strftime("%Y-%m-%dT%H:%M:%SZ") != value:
@@ -100,7 +101,7 @@ def analyze(manifest: dict) -> dict:
         intervals.append((role, sha, start, end, start_type, end_type))
     if intervals != sorted(intervals, key=lambda x: (x[0], x[2])):
         raise Hold("intervals must be sorted by backend and activation")
-    for prior, current in zip(intervals, intervals[1:]):
+    for prior, current in pairwise(intervals):
         if prior[0] == current[0] and prior[3] > current[2]:
             raise Hold("overlapping deployment claims for the same backend")
 
