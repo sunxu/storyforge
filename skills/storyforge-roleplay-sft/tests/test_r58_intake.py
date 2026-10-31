@@ -1,11 +1,11 @@
 import csv
 import hashlib
 import json
-from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 
 SRC=Path(__file__).resolve().parents[1]/'scripts'/'r58_intake.py'
 SHA='a'*64
@@ -38,7 +38,7 @@ class TestPipeline(unittest.TestCase):
         self.temp.cleanup()
 
     def run_cli(self,*args,pass_expected=True):
-        cp=subprocess.run([sys.executable,str(SRC),*map(str,args)],text=True,capture_output=True)
+        cp=subprocess.run([sys.executable,str(SRC),*map(str,args)],text=True,capture_output=True,check=False)
         if pass_expected:
             self.assertEqual(cp.returncode,0,cp.stderr)
         else:

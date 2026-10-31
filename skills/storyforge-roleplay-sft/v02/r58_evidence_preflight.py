@@ -9,10 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 SCHEMA = "storyforge-r58-g1-g2-safe-readiness-matrix-v1"
 MATRIX_PATH = "docs/evidence/R58_G1_G2_SKILL_V02_READINESS_MATRIX_SAFE_20261031.json"

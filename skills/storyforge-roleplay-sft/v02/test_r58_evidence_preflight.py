@@ -3,12 +3,10 @@ from __future__ import annotations
 
 import importlib.util
 import io
-import json
-from contextlib import redirect_stderr, redirect_stdout
-from pathlib import Path
 import tempfile
 import unittest
-from unittest import mock
+from contextlib import redirect_stderr, redirect_stdout
+from pathlib import Path
 
 SRC = Path(__file__).with_name("r58_evidence_preflight.py")
 spec = importlib.util.spec_from_file_location("r58_v02_preflight", SRC)

@@ -8,9 +8,9 @@ import hashlib
 import json
 import math
 import os
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 MAX_INPUT_BYTES = 50 * 1024 * 1024
 DIGEST = re.compile(r'^[0-9a-f]{64}$')
@@ -303,7 +303,7 @@ def freeze(args):
     private_write(p/'private_manifest.jsonl',dumps_jsonl(private_manifest))
     safe={'schema':'r58-frozen-content-safe-v1','status':'CONTENT_FREEZE_ONLY__HF_CPU_PREFLIGHT_PENDING',
           'train_count':len(written['train']),'validation_count':len(written['validation']),
-          'world_component_counts':{split:len(set(x['world_component_id'] for x in private_manifest if x['split']==split)) for split in ('train','validation')},
+          'world_component_counts':{split:len({x['world_component_id'] for x in private_manifest if x['split']==split}) for split in ('train','validation')},
           'teacher_case_count':synthetic,'world_graph_certificate_sha256':args.world_graph_sha,
           'file_sha256':output_hashes,'contains_raw_text':False}
     private_write(p/'safe_manifest.json',canon(safe)+b'\n')
