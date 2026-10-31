@@ -12,6 +12,7 @@ import re
 import sys
 from pathlib import Path
 
+import r58_g1_scope_reconcile as g1
 from r58_evidence_preflight import MATRIX_PATH, PINS, Hold, git_blob, safe_json, verify
 
 SCHEMA = "storyforge-r58-v02-pipeline-bridge-safe-v1"
@@ -138,11 +139,19 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="action", required=True)
     discovery = sub.add_parser("shortlist", help="metadata-only counts, no new selection")
     discovery.add_argument("--inventory", type=Path, required=True)
+    g1audit = sub.add_parser("g1-audit", help="private UUID metadata consistency, always HOLD")
+    g1audit.add_argument("--private-manifest", type=Path, required=True)
+    g1audit.add_argument("--prior-sft-ledger", type=Path, required=True)
     for operation in ("gate", "freeze"):
         cmd = sub.add_parser(operation, help="verify G1/G2 then refuse while HOLD")
         cmd.add_argument("--repo-root", type=Path, required=True)
     args = parser.parse_args(argv)
     try:
+        if args.action == "g1-audit":
+            return g1.main([
+                "--private-manifest", str(args.private_manifest),
+                "--prior-sft-ledger", str(args.prior_sft_ledger),
+            ])
         if args.action == "shortlist":
             result = inspect_inventory(args.inventory)
             print(json.dumps(result, ensure_ascii=False, sort_keys=True))
