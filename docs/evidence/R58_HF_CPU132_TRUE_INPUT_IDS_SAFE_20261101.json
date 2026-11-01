@@ -1,0 +1,55 @@
+{
+  "schema": "r58_hf_cpu132_tokenizer_safe_v2",
+  "status": "R58_HF_CPU132_REAL_TOKEN_IDS_VERIFIED__NO_INFERENCE",
+  "source_run_key": "r58-hfcpu132-20261101T082542Z-579309",
+  "hf_sandbox_job_id": "6ae6fd0d0e0338d1bb7d64f4",
+  "model": "Qwen/Qwen3-32B",
+  "model_revision": "9216db5781bf21249d130ec9da846c4624c16137",
+  "source_rows_verified": 132,
+  "token_length_source": "input_ids",
+  "counts": {
+    "cases_total": 132,
+    "fits_context": 7,
+    "token_hold": 125,
+    "prompt_tokens_min": 6020,
+    "prompt_tokens_median": 11711,
+    "prompt_tokens_p95": 21200,
+    "prompt_tokens_max": 31608,
+    "max_model_len": 8192,
+    "max_output_tokens": 1200
+  },
+  "context_budget_counts": [
+    {
+      "max_model_len": 8192,
+      "fits": 7,
+      "over": 125
+    },
+    {
+      "max_model_len": 16384,
+      "fits": 107,
+      "over": 25
+    },
+    {
+      "max_model_len": 24576,
+      "fits": 130,
+      "over": 2
+    },
+    {
+      "max_model_len": 32768,
+      "fits": 131,
+      "over": 1
+    },
+    {
+      "max_model_len": 34816,
+      "fits": 132,
+      "over": 0
+    }
+  ],
+  "max_required_tokens": 32808,
+  "gpu_used": false,
+  "training_performed": false,
+  "r50_accessed": false,
+  "quality_v1_admitted": 0,
+  "private_text_or_case_ids_emitted": false,
+  "provenance": "HF CPU sandbox private bucket read-only; original manifest SHA256 4/4 checked; tokenizer 5.16.1 pinned model revision; no private source excerpt written"
+}
