@@ -48,6 +48,7 @@ def check(root: Path) -> dict:
     with evidence_path.open(encoding="utf-8") as f:
         reviewed = [json.loads(line) for line in f if line.strip()]
     errors = Counter()
+    world_gaps = Counter()
     if len(indexed) != EXPECTED or len(reviewed) != EXPECTED:
         errors["frozen_count_mismatch"] += 1
     lookup = {}
@@ -87,7 +88,7 @@ def check(root: Path) -> dict:
         if not SHA64.fullmatch(entry["target_sha256"] or ""):
             errors["target_hash_missing_or_malformed_in_index"] += 1
         if not isinstance(entry["story_id"], str) or not entry["story_id"].strip():
-            errors["index_story_id_missing"] += 1
+            world_gaps["index_story_id_missing"] += 1
     if len(used) != len(lookup):
         errors["index_evidence_set_mismatch"] += 1
     return {
@@ -98,6 +99,8 @@ def check(root: Path) -> dict:
         "index_rows_with_review_link": len(used & lookup.keys()),
         "historical_double_accept_verified": not bool(errors),
         "errors": dict(sorted(errors.items())),
+        "world_identity_gaps": dict(sorted(world_gaps.items())),
+        "world_identity_cleared": not bool(world_gaps),
         "old_review_dimensions": 5,
         "new_quality_v1_dimensions_verified": 0,
         "source_record_target_hash_recomputed": False,

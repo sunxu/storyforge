@@ -60,6 +60,15 @@ class Gold108BindingTests(unittest.TestCase):
             self.build(Path(tmp), lambda row, proof: proof.update(reviewer2_evidence=""))
             self.assertEqual(check(Path(tmp))["status"], "LEGACY_EVIDENCE_BINDING_HOLD")
 
+    def test_missing_world_id_does_not_invalidate_legacy_review_but_holds_world(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.build(Path(tmp), lambda row, proof: row.update(story_id=""))
+            result = check(Path(tmp))
+            self.assertTrue(result["historical_double_accept_verified"])
+            self.assertFalse(result["world_identity_cleared"])
+            self.assertEqual(result["world_identity_gaps"]["index_story_id_missing"], 1)
+            self.assertEqual(result["training_admitted"], 0)
+
     def test_score_dimensions_fail_closed(self):
         self.assertTrue(score_ok("4,4,4,5,5"))
         for s in ("4,4,4,3,5", "4,4,4,4", "4,4,4,4,True", None):
