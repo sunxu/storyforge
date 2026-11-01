@@ -46,6 +46,24 @@ jobs:
           assert result['protected_test_accessed'] is False
           print(json.dumps(result, ensure_ascii=False, sort_keys=True))
           PY
+      - name: Gold195 frozen targets and user boundaries (SAFE)
+        run: |
+          set +e
+          python3 experiments/r58_quality/gold195_target_source.py --repo-root "$PWD" > /tmp/r58_gold195_target_source.json
+          exit_code=$?
+          set -e
+          cat /tmp/r58_gold195_target_source.json
+          if [ "$exit_code" -ne 0 ]; then echo "Gold195 source-target preflight HOLD"; exit "$exit_code"; fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/r58_gold195_target_source.json').read_text())
+          assert result["all_target_hashes_verified"] is True
+          assert result["records_checked"] == 195
+          assert result["quality_v1_admitted"] == 0
+          assert result["r50_accessed"] is False
+          print("Gold195 source-target integrity: PASS; Quality-v1 admission 0")
+          PY
       - name: Gold108 frozen dual-review index binding (SAFE counts only)
         run: |
           set +e
