@@ -1,0 +1,60 @@
+# R58 Gold195：保留 Assistant-first 的质量审核试点（13 个来源 UUID）
+
+日期：2026-11-01。状态：**工具完成，合成测试通过；真实双审未执行；训练准入 0。**
+
+## 为什么不再删除首条 Assistant
+
+R58 已在 HF CPU 环境以 Qwen3.8-27B、ms-swift 4.5.3、transformers 5.16.1、`last_round`，对 132/132 条 Assistant-first 冻结历史完成真实 Loss Mask 和 Data Collator 校验；完整历史可编码且历史监督 0 token。原 Gold195 和冻结目标不更改。
+
+旧的 `quality_v1.py`、`gold195_card_first.py`、`gold195_six_dimension_review_tasks.py` 曾把 Assistant-first 当作不兼容：本轮全部修正为允许原样历史并保留严格的交替角色、来源哈希、离线卡快照审查、双审与世界隔离要求。
+
+## 小批量质量审核（先 13 条，不直接审核 195 条）
+
+在 Owner Mac 的 R58 分支，使用已经存在的私人卡片快照候选（**只有候选资格，非可信训练 System**）：
+
+```bash
+git switch r58/roleplay-sft-skill-v01
+git pull --ff-only
+
+PRIVATE="$HOME/storyforge-review-private"
+test -f "$PRIVATE/gold195-card-snapshots-v1.json" || {
+  echo '私人卡片快照候选缺失；保持 HOLD' >&2
+  exit 42
+}
+```
+
+先准备 195 条原始 Gold + 原始来源卡片的 PRIVATE 语义审阅数据（如果目标文件已经存在且是本流程生成的版本，保持原样，不覆盖）：
+
+```bash
+python3 experiments/r58_quality/gold195_card_gold_review.py \
+  --repo-root "$PWD" \
+  --private-card-candidates "$PRIVATE/gold195-card-snapshots-v1.json" \
+  --private-review-output "$PRIVATE/gold195-card-gold-review-v1.jsonl"
+```
+
+然后生成 13 个**来源故事 UUID 各一条**、两位审阅者独立盲号/独立顺序的材料：
+
+```bash
+python3 experiments/r58_quality/r58_gold195_blind_quality_pilot13.py \
+  --repo-root "$PWD" \
+  --private-card-gold-review "$PRIVATE/gold195-card-gold-review-v1.jsonl" \
+  --private-output-dir "$PRIVATE/r58-quality-pilot13-$(date -u +%Y%m%dT%H%M%SZ)"
+```
+
+所有输出在 Git checkout 外的 0700 目录，PRIVATE 文件 0600；若目标存在即拒绝覆盖。**不要上传两套盲审输入、故事正文、世界卡、Owner crosswalk 到 GitHub 或公开渠道**。未来使用受控的不同 AI 审阅者审核时，A/B 之间不得传递判断、来源身份、既往模型结论。Owner 保存 crosswalk，用于回收审核结果和核对来源。
+
+每份材料必须对中文文笔、人物一致性、NPC 推进、玩家自主、硬规则、剧情连续性独立给出 1–5 分，严重玩家越权/硬事实违例/安全排除显式标注，引用可见原文，确定不了即 HOLD。导出时卡片快照只是供审核的**候选离线设计**，不等于目标时刻的历史 System，也不自动有权进入模型训练。
+
+该 13 条试点按**来源故事 UUID**分层，不代表已经验证 13 个世界在语义上相互独立；R50 和其他密封测试世界的隔离属于后续正式准入条件，不访问其正文。
+
+## 结果合同与下一阶段
+
+正常 SAFE 回执应为：
+
+- `source_rows_checked=195`、`pilot_cases=13`、`reviewer_packets=2`、每位审阅者 13 条；
+- `reviewer_decisions_fabricated=false`、`source_cards_semantically_approved=false`；
+- `quality_v1_admitted=0`、`training_authorized=false`。
+
+私有目录包含 `reviewer_A.private.jsonl`、`reviewer_B.private.jsonl` 和 `owner_crosswalk.private.json`。新审核的 JSON 不得直接覆盖源 Gold195，也不能将旧五维评分直接填为新六维。完成两份独立审核、世界卡语义校验以及世界级 Train/Validation/R50 隔离之前不进入正式训练。
+
+本轮不进行 HTTP 请求精确回放，不重复 Assistant-first GPU 审核，不创建 GPU Job。
