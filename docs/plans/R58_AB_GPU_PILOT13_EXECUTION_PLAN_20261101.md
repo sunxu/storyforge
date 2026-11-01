@@ -1,7 +1,7 @@
 # R58 A/B 13 条 HF GPU 文学盲审执行方案（未提交）
 
 日期：2026-11-01  
-状态：`OWNER_APPROVED__HF_CONNECTOR_403_BLOCKED__NO_GPU_JOB_STARTED`
+状态：`OWNER_APPROVED__A_GPU_JOB_127_STARTUP_ERROR__CORRECTED_COMMAND_READY`
 
 ## 1. 目标与范围
 
@@ -66,7 +66,7 @@ hf jobs run --namespace adradar --name r58-a-pilot13 \
   -v hf://buckets/adradar/jobs-artifacts/input_A-608d21e1:/input:ro \
   -v hf://buckets/adradar/jobs-artifacts/output_A-6c62913b:/output \
   vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9 -- \
-  /bin/sh -lc 'set -eu; timeout --signal=TERM --kill-after=30s 6600s python /input/runner.py --slot A --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --input /input/source.private.jsonl --output-dir /output --phase pilot --max-model-len 32768 --max-output-tokens 2400'
+  /bin/sh -lc 'set -eu; timeout --signal=TERM --kill-after=30s 6600s python3 /input/runner.py --slot A --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --input /input/source.private.jsonl --output-dir /output --phase pilot --max-model-len 32768 --max-output-tokens 2400'
 ```
 
 ### B — GLM-4-32B-0414
@@ -77,8 +77,16 @@ hf jobs run --namespace adradar --name r58-b-pilot13 \
   -v hf://buckets/adradar/jobs-artifacts/input_B-94c62666:/input:ro \
   -v hf://buckets/adradar/jobs-artifacts/output_B-4abd76e2:/output \
   vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9 -- \
-  /bin/sh -lc 'set -eu; timeout --signal=TERM --kill-after=30s 6600s python /input/runner.py --slot B --model zai-org/GLM-4-32B-0414 --revision 077b5c2f5c43bd3239fd605a0600229e8facbd4a --input /input/source.private.jsonl --output-dir /output --phase pilot --max-model-len 32768 --max-output-tokens 2400'
+  /bin/sh -lc 'set -eu; timeout --signal=TERM --kill-after=30s 6600s python3 /input/runner.py --slot B --model zai-org/GLM-4-32B-0414 --revision 077b5c2f5c43bd3239fd605a0600229e8facbd4a --input /input/source.private.jsonl --output-dir /output --phase pilot --max-model-len 32768 --max-output-tokens 2400'
 ```
+
+## 2026-11-01 A H200 首次提交及启动错误
+
+Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回 `ERROR exit 127`，running_secs=3，错误为 `timeout: failed to run command 'python': No such file or directory`。**未运行模型推理；输出 Bucket 没有生成 checkpoint。**
+
+已在上述固定 digest 的真实 vLLM 容器、HF CPU Sandbox 核实：`python` 不存在，`/usr/bin/python3` 存在，`timeout` 存在；因此 A/B 命令统一使用 `python3`。还发现固定镜像中的 Transformers 为 `5.19.0`，不是 CPU 预检用的 4.57.1。使用实际 A staged `runner.py`、固定 Qwen revision 在该 vLLM 镜像中的 CPU-only `--preflight-only --phase pilot` 已返回 `R58_HF_GPU_REVIEW_TOKEN_PREFLIGHT_PASS__NO_GPU_INFERENCE`，并未加载 GPU 模型。不能因此认定推理/显存完整兼容或所有 13 条跨运行时 Token IDs 相同。
+
+**该错误修复不扩大 Owner 已批准的 A/B 两个 Pilot（2+2 条）范围。** 任何重新提交前需核对同槽位没有新 Job 在运行；现有错误 Job 不得冒充评审完成。费用仍以累计 GPU 使用时间衡量，不重复运行已成功生成的 checkpoint。
 
 ## 7. 结果门禁
 
