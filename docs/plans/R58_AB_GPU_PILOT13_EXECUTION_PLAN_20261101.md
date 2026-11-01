@@ -127,3 +127,7 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 - vLLM Docker image digest：<https://hub.docker.com/layers/vllm/vllm-openai/v0.32.0/images/sha256-6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9>
 - vLLM supported models：<https://docs.vllm.ai/en/latest/models/supported_models/>
 - USD/CNY reference 2026-11-01：<https://www.currencybeacon.com/rates/USD/CNY>
+
+## 2026-11-02 B 更新 Runner 的 CPU-only 预检
+
+最新 GitHub Runner 与共享 Token 核心已在固定 vLLM 镜像中对 B 的 pilot 输入执行预检，模型 revision 固定为 077b5c2f5c43bd3239fd605a0600229e8facbd4a，结果 PASS，planned=2。该检查不加载权重、不执行推理、不产生 GPU 费用。B 输出目录仍无 checkpoint；任何付费 GPU 重试须另行取得 Owner 费用批准。
