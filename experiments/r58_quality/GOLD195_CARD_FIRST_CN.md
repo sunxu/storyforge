@@ -39,6 +39,6 @@ python3 experiments/r58_quality/gold195_card_first.py \
   --private-draft-output "$HOME/storyforge-review-private/gold195-card-first-v1.jsonl"
 ```
 
-所有草稿保留 frozen Gold 的原文与目标哈希，System 使用所选卡片正文。起始为 Assistant 的 132 条保持 HOLD，不自动删去首条；3 条缺少可靠 UUID 的记录保持 HOLD。仅对输入结构安全的行建立私人审核草稿。草稿 **不是训练集**，所有 `training_admitted=false`，`split=null`；还需语义世界隔离、双人六维内容审核、Qwen 16K/last_round CPU 校验及明确 GPU 授权。
+所有草稿保留 frozen Gold 的原文与目标哈希，System 使用所选卡片正文。起始为 Assistant 的 132 条不再因起始角色被结构性排除（已有 R58 真实 CPU Collator 132/132 通过），但必须完整保留首条及后续历史，不得删除；缺少可靠 UUID 的记录保持 HOLD。仅对来源、角色与卡片哈希安全的行建立私人审核草稿。草稿 **不是训练集**，所有 `training_admitted=false`，`split=null`；还需语义世界隔离、双人六维内容审核、Qwen 16K/last_round CPU 校验及明确 GPU 授权。
 
 不得上传 PRIVATE 卡、草稿、故事正文或逐案 ID 到公开 CI、GitHub、聊天。R50 保持封存。
