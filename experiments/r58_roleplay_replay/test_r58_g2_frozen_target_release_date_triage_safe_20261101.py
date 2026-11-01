@@ -46,7 +46,9 @@ class ReleaseDateTriageTest(unittest.TestCase):
         for targets in [
             [],
             cases(["2026-10-29T00:00:00Z"] * 3)[:2],
-            cases(["2026-10-29T00:00:00Z"] * 3) + [{"cohort": "X", "target_time": "2026-10-29T00:00:00Z"}],
+            cases(["2026-10-29T00:00:00Z"] * 3) + [
+                {"cohort": "X", "target_time": "2026-10-29T00:00:00Z"}
+            ],
         ]:
             with self.subTest(n=len(targets)), self.assertRaises(ScopeHold):
                 aggregate_frozen_dates(targets)
