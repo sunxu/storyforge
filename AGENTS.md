@@ -111,7 +111,7 @@ For R58 Gold195 literary pilot13, perform A/B tokenizer checks on HF CPU against
 
 Centralize actual input_ids extraction and length/distribution checks instead of copying them into each reviewer/worker. NEVER use len(BatchEncoding) as the token count: it returns the number of encoding fields and previously produced a false 2-token result. Reject missing, malformed, zero or implausibly small token sequences; test both list and BatchEncoding-like mapping returns. Always check prompt tokens plus reserved output tokens, without silently truncating history.
 
-Preferred architecture: a small, **shared tokenizer/preflight core** used through format-specific input/prompt adapters, stable CLI, pinned model/runtime, and reusable SAFE receipts. Keep historical frozen scripts/evidence unchanged. Reuse does not imply approval to run HF CPU or GPU; paid execution and GPU authorization remain separate. Mac performs safe staging and SAFE receipt verification only; tokenizer work runs on HF CPU.
+**Shared implementation now exists:** `src/storyforge_dataset/token_preflight.py` provides the single `input_ids`, `encode_chat`, token-length summary, and serialized-prompt identity implementation. HF staging copies the exact bytes as PRIVATE `token_core.py`. R58 pilot13 CPU/GPU adapters reuse it; new experiments must extend these components rather than clone the algorithms. See `docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`. Keep historical frozen scripts/evidence unchanged. Reuse does not imply approval to run HF CPU or GPU; paid execution and GPU authorization remain separate. Mac performs safe staging and SAFE receipt verification only; tokenizer work runs on HF CPU.
 
 ### 3. Training gate
 
