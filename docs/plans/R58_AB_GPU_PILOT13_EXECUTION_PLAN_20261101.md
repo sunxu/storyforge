@@ -108,8 +108,8 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 - 新 Runner 已加入 `QuoteValidationError`：SAFE 仅记录 case index、quote field、quote index、允许搜索的 source candidate count 和是否尝试纠错；不保存或输出引用文本。
 - 仅引用精确性错误触发一次纠错。纠错 Prompt 使用同一原始评审输入和首次 JSON，重新计算 Token ID 与上下文预算；同一 Schema/模型/采样参数只再生成一次。纠错只允许修改两个引用列表，所有非引用字段逐字段保持完全一致。
 - 纠错再次失败、预算超限、输出截断、JSON 无效或其他字段变化时 HOLD；失败响应不保存 checkpoint，不放宽严格连续子串规则。
-- 新增 4 个合成测试，覆盖字段级诊断、隐私、单次纠错成功、纠错失败不写 checkpoint、非引用字段不可修改。HF CPU-only Sandbox 执行 `test_r58_hf_gpu_literary_reviewer`：10 tests，全部 PASS；未加载模型权重、未推理、未使用 GPU。
-- 新代码提交：`2e290484b92a660c75a32b2f11773ff03fd10f0b`；Skill v0.1.3、技术规范及 SAFE Manifest 已更新，Manifest 中四个变更文件 SHA256/bytes 已复核匹配。
+- 新增 4 个合成测试，覆盖字段级诊断、隐私、单次纠错成功、纠错失败不写 checkpoint、非引用字段不可修改。HF CPU-only Sandbox 执行 `test_r58_hf_gpu_literary_reviewer`：11 tests，全部 PASS；未加载模型权重、未推理、未使用 GPU。
+- 新代码提交：`2e290484`、`3f71783a`、`7b54f77d`、测试 `d1560625`；Skill v0.1.3、技术规范及 SAFE Manifest 已更新，Manifest 中四个变更文件 SHA256/bytes 已复核匹配。
 - B 私人 STAGE 尚未刷新，新 Runner 尚未进入 B GPU Job。刷新前仍须确认 B 没有新 checkpoint；A 已有的两个有效 checkpoint 不得覆盖。B 再次提交属于额外付费 GPU Job，之前 B Job 已发生过运行费用，因此须先向 Owner 明确报告新增费用上限并取得批准。剩余 11 条和训练均未获授权。
 
 ## 7. 结果门禁
