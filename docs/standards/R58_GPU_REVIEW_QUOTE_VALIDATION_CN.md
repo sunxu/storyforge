@@ -76,9 +76,13 @@ experiments/r58_quality/test_r58_hf_gpu_literary_reviewer.py 必须覆盖：
 
 2026-11-02 B 首次修复版 GPU 重试仅运行第 1 条，SAFE 为 R58_HF_GPU_REVIEW_HOLD / RESPONSE_NONEXACT_QUOTE，字段 specific_target_quotes、索引 0；一次自由文本纠错仍未通过。没有生成 checkpoint，第二条未执行。旧输入和输出均保留。
 
-随后将纠错改为候选索引选择：模型只输出 candidate_index，程序从 target_text 或 visible_history 的单条消息中抽取原文。合成测试 12/12 PASS；新 B v2 私有 STAGE 已完成 CPU-only Token 预检 PASS（planned=2），未加载模型权重、未推理。新 GPU Job 仍须在 Owner 已批准的总费用上限内执行，并且只能运行 pilot 前两条；不允许执行 remaining 11 条。
+随后将纠错改为候选索引选择：模型只输出 candidate_index，程序从 target_text 或 visible_history 的单条消息中抽取原文。合成测试 12/12 PASS；新 B v2 私有 STAGE 的 CPU-only Token 预检 PASS（planned=2）。
 
-A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。任何 HOLD 均不构成质量准入；本工作不授予训练授权。
+第二次 GPU Job 6ae76fef0e0338d1bb7d87ac 运行约 109 秒：第 1 条通过候选索引纠错，checkpoint_00 写入。后续 CPU-only SAFE 审计用原始输入、模型 revision 和 read_checkpoint 复核身份及逐字引用，确认 checkpoint 有效，decision=PASS、六维评分齐全、来源/目标引用各 1 条。第 2 条未生成 checkpoint；SAFE reason 为 RESPONSE_SEVERE_MUST_REJECT，表示模型输出的严重标记与 decision 不一致。Runner 按 fail-closed 规则 HOLD，没有自动改写 decision 或放宽门禁。
+
+**B Pilot 最终状态：1/2 checkpoint 有效，整体未完成，不能进入剩余 11 条。** Owner 批准的 ¥66.57 预算内，本次所有 H200 Job 累计约 225.8 秒（包括两次启动失败的短时运行），按 $5/h 与 6.6568 汇率估算约 ¥2.09；估算不等于最终账单。到此停止本次 GPU 重试，不再自动提交 Job。
+
+A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。B 的一个 PASS checkpoint 也不代表整个 Pilot PASS；任何 HOLD 均不构成质量准入；本工作不授予训练授权。
 
 ## 7. 权威实现
 
