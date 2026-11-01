@@ -52,6 +52,28 @@ Mac 获取最新代码后运行：
 
 该命令对比每个 staging source.private.jsonl 与原盲审包字节，验证 Owner crosswalk 仅留在 Mac，不复制给 HF；只升级或补齐 runner.py、token_core.py、token_preflight.py，不改动任何原始数据及 output_A/B。若已经出现真实 GPU 评审检查点，直接 HOLD，禁止更换模型评审器代码后继续复用旧 checkpoint。命令重复执行应返回 code_files_updated=0（幂等）。
 
+### 统一执行入口（先更新 GitHub，再在 Mac 执行）
+
+提交 `9a65db38` 之后，仓库新增薄编排入口 `experiments/r58_quality/r58_refresh_existing_private_stage.sh`。它调用既有的 `r58_hf_gpu_review_stage.py --refresh-code`，**不复制 Token 核心，也不更改真实 Tokenizer 只能在 HF CPU 执行的规定**。
+
+在 Mac 的 StoryForge 仓库工作树执行：
+
+```bash
+git switch r58/roleplay-sft-skill-v01
+git pull --ff-only origin r58/roleplay-sft-skill-v01
+bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --refresh-and-test
+```
+
+入口默认使用本文第四节现有的私人 RUN_DIR/STAGE 路径；可通过 `R58_RUN_DIR` 和 `R58_STAGE` 环境变量覆盖。执行前必须处于正确分支、包含基线提交 `9a65db38`、且 Git 工作树干净。刷新前后校验私人输入、Owner crosswalk 和既有 output 的字节一致性；连续刷新两次，第二次更新数必须为 0。若发现真实 GPU reviewer checkpoint，沿用原工具的拒绝覆盖逻辑。
+
+只运行不碰私人数据的合成测试：
+
+```bash
+bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --synthetic-only
+```
+
+三组测试涵盖共享核心、R58 HF CPU/GPU 适配器和 Skill 合约。该脚本不会提交 HF Job，不下载模型 Tokenizer，不启动 GPU，不产生 Token PASS 或训练准入；真正 HF CPU Token 预检仍需单独批准和执行。
+
 ## 五、下次使用前的最小决策
 
 先问：已有有效 SAFE 回执吗？对比原始输入、真实 prompt、模型 revision、Tokenizer/运行时版本、thinking、预算和核心代码。如果全一致，无须支付另一笔 HF CPU Job；若任何关键事实改变，先复算必要范围，不能仅因为脚本换了名字或换了机器就重跑。
