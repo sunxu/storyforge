@@ -23,7 +23,8 @@ def prep(repo, source, output):
     (output/"code").mkdir(mode=0o700)
     (output/"private").mkdir(mode=0o700)
     origins=(repo/"experiments/r58_quality/gold195_hf_review_cpu_worker.py",
-             repo/"experiments/r58_quality/gold195_hf_review_gpu_runner.py", source)
+             repo/"experiments/r58_quality/gold195_hf_review_gpu_runner.py",
+             repo/"experiments/r58_quality/gold195_hf_review_cpu_bootstrap.py", source)
     lines=[]
     for name, origin in zip(FILES, origins):
         raw=origin.read_bytes()
