@@ -152,3 +152,11 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 ### 已批准预算执行约束
 
 Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h、汇率 6.6568、总计不超过 2 小时估算）。前述两个启动失败约 8 秒和 4 秒，首轮实际评审约 104 秒。第二版 GPU Job 的 timeout 限为 117 分钟，连同前述运行时间，理论总时长不超过 2 小时。只运行 pilot 前两条；若 HOLD、失败或预算达到上限即停止，不自动扩大范围。
+
+### 2026-11-02 第二版 B Pilot 最终结果
+
+- Job `6ae76fef0e0338d1bb7d87ac` 使用 H200 + GLM-4-32B-0414，候选索引纠错 Runner。总运行约 109 秒后退出。
+- `checkpoint_00.private.json` 已写入。独立 HF CPU SAFE 审计通过原始输入和模型 revision 调用 `read_checkpoint` 复核：checkpoint identity PASS、exact quote validation PASS、decision=PASS、6 个评分维度、source/target quote 各 1 条。
+- 第 2 条未生成 checkpoint，SAFE reason `RESPONSE_SEVERE_MUST_REJECT`：模型输出的 severe flag 与 decision 不一致。未自动修改 decision，未降低门禁。
+- B Pilot 目前只有 1/2 checkpoint 有效，整体 HOLD；不执行剩余 11 条，不启动训练。A 两个 checkpoint 与旧 B 输出保持不变。
+- 本次 H200 Job 总耗时按 8.5s + 4.3s + 103.7s + 109.3s 估算为 225.8 秒；按 $5/h、汇率 6.6568，估算 GPU 费用约 ¥2.09（最终账单以 HF 为准），低于 Owner 批准的 ¥66.57 上限。到此停止本轮 GPU 重试，不自动追加 Job。
