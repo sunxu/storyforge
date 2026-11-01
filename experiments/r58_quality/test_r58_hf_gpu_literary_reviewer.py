@@ -203,16 +203,19 @@ class HFReviewerSyntheticTests(unittest.TestCase):
     def test_quote_candidate_repair_changes_only_failed_quote_field(self):
         row = source_rows()[0]
         original = completed_response(row)
-        original["specific_target_quotes"] = ["not-target-exact"]
-        error = QuoteValidationError("specific_target_quotes", 0, 1)
+        original["specific_source_quotes"] = ["not-source-exact"]
+        error = QuoteValidationError("specific_source_quotes", 0, 1)
         candidate = quote_candidates(row, error.field)[0]
         repaired = apply_quote_candidate(original, row, error, candidate)
-        self.assertEqual(repaired["specific_target_quotes"], [candidate])
-        self.assertEqual(repaired["specific_source_quotes"],
-                         original["specific_source_quotes"])
-        for key in REVIEW_KEYS - {"specific_target_quotes"}:
+        self.assertEqual(repaired["specific_source_quotes"], [candidate])
+        self.assertEqual(repaired["specific_target_quotes"],
+                         original["specific_target_quotes"])
+        for key in REVIEW_KEYS - {"specific_source_quotes"}:
             self.assertEqual(repaired[key], original[key])
-        self.assertIn(candidate, row["target_text"])
+        self.assertTrue(any(
+            candidate in m["content"] for m in row["messages"][1:]
+            if m["role"] in ("user", "assistant")
+        ))
 
     def test_one_bounded_quote_repair_saves_only_exact_valid_checkpoint(self):
         with tempfile.TemporaryDirectory() as td:
@@ -221,7 +224,7 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             rows = read_source(path)
             tokenizer = FakeTokenizer()
             first_bad = completed_response(rows[0])
-            first_bad["specific_source_quotes"] = ["not-source-exact"]
+            first_bad["specific_target_quotes"] = ["not-target-exact"]
             engine = FakeEngine([
                 json.dumps(first_bad, ensure_ascii=False),
                 json.dumps({"candidate_index": 0}),
@@ -242,17 +245,13 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             repair_messages = tokenizer.calls[2]
             self.assertEqual(repair_messages[-2]["role"], "assistant")
             self.assertEqual(repair_messages[-1]["role"], "user")
-            self.assertIn("specific_source_quotes", repair_messages[-1]["content"])
+            self.assertIn("specific_target_quotes", repair_messages[-1]["content"])
             self.assertIn("candidate_index", repair_messages[-1]["content"])
             self.assertIn("候选清单", repair_messages[-1]["content"])
             self.assertNotIn("只允许修改", repair_messages[-1]["content"])
             saved = read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0)
-            self.assertTrue(any(
-                saved["specific_source_quotes"][0] in m["content"]
-                for m in rows[0]["messages"][1:]
-                if m["role"] in ("user", "assistant")
-            ))
+            self.assertIn(saved["specific_target_quotes"][0], rows[0]["target_text"])
             self.assertIsNotNone(read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0))
             self.assertIsNotNone(read_checkpoint(
