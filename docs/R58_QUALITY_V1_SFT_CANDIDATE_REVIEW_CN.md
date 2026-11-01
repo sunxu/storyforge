@@ -12,7 +12,7 @@
 
 实现：experiments/r58_quality/quality_v1.py。19 个纯合成测试：experiments/r58_quality/test_quality_v1.py。
 
-本地读取经过 Owner 实际审核的 PRIVATE JSONL；校验 System/历史 User-Assistant 交替/当前 User、独立目标 Assistant 文本、消息和目标 SHA256、来源及保护隔离声明、两份盲审评分、严重越权和硬规则问题、批次重复与世界跨 Train/Validation。stdout 仅有 SAFE 汇总计数和固定错误类别。
+本地读取经过 Owner 实际审核的 PRIVATE JSONL；校验 System/历史 User-Assistant 交替（允许 User-first 或 Assistant-first）/当前 User、独立目标 Assistant 文本、消息和目标 SHA256、来源及保护隔离声明、两份盲审评分、严重越权和硬规则问题、批次重复与世界跨 Train/Validation。stdout 仅有 SAFE 汇总计数和固定错误类别。
 
 **PASS 仅表示结构和审查声明自洽，不代表脚本本身懂中文文学质量或独立证明保护集全覆盖。** 工具不访问 R50 测试正文、线上数据库、VPS、HF 或 Provider；不导出正文、不创建训练 JSONL、不启动推理或训练，永远输出 quality_dataset_admitted=0、training_authorized=false。
 
@@ -20,7 +20,7 @@
 
 - schema 固定为 storyforge-quality-v1-private-candidate-v1；case_id 私有、corpus=gold195 或 r58_round1、source_kind=original_gold、world_component_id、split=train/validation。
 - source_version_sha256、world_graph_sha256、input_messages_sha256、assistant_target_sha256 均为小写 64 位十六进制。前两个是来源身份声明，不会被本工具自动回读证实。
-- messages：首条 role=system；此后 User/Assistant 严格交替，末条 role=user；每条只有 role/content 两键。target_text 是独立的下一条 Assistant 监督目标，不重复追加到 messages。
+- messages：首条 role=system；此后 User/Assistant 严格交替，允许首条历史为 User 或 Assistant（Assistant-first 已由 R58 真正 ms-swift 132/132 验证）；末条 role=user；每条只有 role/content 两键。target_text 是独立的下一条 Assistant 监督目标，不重复追加到 messages。
 - evidence 中必须为 true：rights_attested、source_version_verified、context_is_coherent、context_no_future_leakage_reviewed、privacy_checked、world_component_reviewed、known_protected_metadata_checked、other_known_reserved_metadata_checked、final_heldout_metadata_checked、reviewers_blinded_and_independent_attested、owner_quality_approved。
 - evidence 中必须为 false：known_protected_overlap、final_heldout_overlap、protected_test_body_accessed。未知时不能填 false：应留空并保持 HOLD。不得打开 R50 密封题目正文。
 - reviews 恰好两个，含不同 reviewer_key、private_evidence_ref、decision、severe_flags、scores。三项严重标记为 serious_player_agency、hard_fact_or_ban、safety_exclusion；明确严重问题或 REJECT → REJECT，意见冲突 → HOLD。
