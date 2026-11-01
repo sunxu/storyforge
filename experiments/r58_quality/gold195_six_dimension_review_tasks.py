@@ -38,13 +38,16 @@ MAX_PRIVATE_BYTES = 60 * 1024 * 1024
 
 
 def check_history(messages):
+    # R58 actual ms-swift 4.5.3 label-mask + data_collator PASS 132/132
+    # on the frozen Assistant-first SFT probe. Source order is unchanged.
     if not isinstance(messages, list):
         return False
     for index, item in enumerate(messages):
         if (not isinstance(item, dict) or set(item) != {"role", "content"}
-                or item.get("role") != ("user" if index % 2 == 0 else "assistant")
+                or item.get("role") not in ("user", "assistant")
                 or not isinstance(item.get("content"), str)
-                or not item["content"].strip()):
+                or not item["content"].strip()
+                or (index > 0 and item["role"] == messages[index - 1]["role"])):
             return False
     return True
 
@@ -76,9 +79,8 @@ def prepare_row(row):
         raise ValueError("target digest changed")
     old = row.get("original_history")
     leading = row.get("source_history_starts_with_assistant")
-    if leading is True:
-        return None, "LEADING_ASSISTANT_CONTEXT_HOLD"
-    if leading is not False or not check_history(old):
+    if (type(leading) is not bool or not check_history(old)
+            or (bool(old) and (old[0]["role"] == "assistant") != leading)):
         return None, "HISTORY_INPUT_SHAPE_HOLD"
     messages = [
         {"role": "system", "content": card_bytes.decode("utf-8")},
@@ -95,6 +97,7 @@ def prepare_row(row):
         "card_source_kind": row.get("card_source_kind"),
         "input_design_status": "PROPOSED_OFFLINE_CARD_NOT_APPROVED",
         "messages": messages,
+        "source_history_starts_with_assistant": leading,
         "target_text": target,
         "input_messages_sha256": hashlib.sha256(canon(messages)).hexdigest(),
         "target_sha256": hashlib.sha256(target.encode("utf-8")).hexdigest(),
@@ -143,7 +146,9 @@ def build(path: Path, collect=False):
         if hold:
             counts[hold] += 1
         else:
-            counts["user_first_review_tasks_prepared"] += 1
+            counts["review_tasks_prepared"] += 1
+            counts["assistant_first_review_tasks_prepared" if task["source_history_starts_with_assistant"]
+                   else "user_first_review_tasks_prepared"] += 1
             if collect:
                 tasks.append(task)
     return {
