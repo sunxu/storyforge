@@ -43,12 +43,17 @@ def find_cards(source, name, items, metrics, depth=0):
                     find_cards(io.BytesIO(z.read(info)), name, items, metrics, depth + 1)
                 else:
                     metrics["oversize_nested_zip"] += 1
-            elif suffix == ".json":
+            elif suffix in (".json", ".jsonl"):
                 if info.file_size > MAX_JSON:
                     metrics["oversize_json"] += 1
                     continue
                 try:
-                    raw = json.loads(z.read(info))
+                    raw_bytes = z.read(info)
+                    if suffix == ".jsonl":
+                        raw_bytes = next((line for line in raw_bytes.splitlines() if line.strip()), b"")
+                    if not raw_bytes:
+                        continue
+                    raw = json.loads(raw_bytes)
                 except (ValueError, UnicodeError, RecursionError):
                     metrics["bad_json"] += 1
                     continue
