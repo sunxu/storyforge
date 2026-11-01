@@ -130,13 +130,14 @@ R58 Qwen Chat Template 运行环境还必须安装 Jinja2。Transformers 4.57.1 
 
 下次增加实验时优先扩展统一接口和自动缓存，而不是复制 R50/R53/R58 脚本。稳定共享核心应配合 synth 测试、失效缓存测试、Job 回收测试和冻结旧实现的兼容说明。
 
-## 六、未完成事项
+## 六、最新状态与未完成事项
 
-- 当前新共享路径的最新 GitHub CI 结果需确认（不能用旧成功 CI 冒充）。
-- **2026-11-01 R58 A/B 13 条真实 HF CPU Token 预检已完成**：A/B 各 13/13 PASS，超出 32,768 上下文预算均为 0；完整汇总见 `docs/evidence/R58_AB_TOKEN_PREFLIGHT_AGGREGATE_SAFE_20261101.json`。A/B SAFE 回执包含 PRIVATE 输入与 Prompt SHA，不提交 GitHub。
+- **2026-11-01 R58 A/B 13 条真实 HF CPU Token 预检已完成**：A/B 各 13/13 PASS，超出 32,768 上下文预算均为 0；完整汇总见 `docs/evidence/R58_AB_TOKEN_PREFLIGHT_AGGREGATE_SAFE_20261101.json`。PRIVATE 回执及输入指纹不提交 GitHub。
 - A：`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`；Transformers 4.57.1；Tokenizer `Qwen2TokenizerFast`；prompt min/median/p95/max = 5,732 / 11,883 / 27,615 / 27,615；最大总预算 30,015。
-- B：`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`；Transformers 4.57.1；Tokenizer `PreTrainedTokenizerFast`；prompt min/median/p95/max = 5,479 / 11,496 / 26,677 / 26,677；最大总预算 29,077。B 完整 SHA 由 HF Hub API 读取，并匹配此前记录的 `077b5c2f…cbd4a` 前后缀，不以当前 main 替代未知旧版本。
-- 两槽统一运行依赖：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。真实测试确认缺少 Jinja2 会导致 Chat Template ImportError；安装后两槽均通过。
-- 本轮只运行 CPU Tokenizer 编码；未加载模型权重、未推理、未提交 GPU、未授权训练，`quality_v1_admitted=0`。Token PASS 不代表文学质量或训练准入。
-- 两份 SAFE 回执已从 HF CPU 沙箱取回并生成私人本地副本；ChatGPT 连接无法挂载原 Bucket 的 RW 输出卷（403），因此**尚未同步回原 Bucket**。Owner 可在 Mac 使用本地 HF CLI 同步；同步完成后再做 `--cache-inventory` 来源/身份核验。
-- GPU Docker 的 Transformers/chat-template 与 HF CPU 的等价性尚未验证；更一般的跨案例增量缓存尚未实现。
+- B：`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`；Transformers 4.57.1；Tokenizer `PreTrainedTokenizerFast`；prompt min/median/p95/max = 5,479 / 11,496 / 26,677 / 26,677；最大总预算 29,077。完整 SHA 从 HF Hub API 获取，与先前记录的 `077b5c2f…cbd4a` 前后缀一致。
+- 两槽依赖：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。真实测试确认缺少 Jinja2 会导致 Chat Template ImportError；安装后两槽均通过。
+- **私人 SAFE 回执已同步并远端逐字节核验**：A/B Bucket 中的 JSON 大小与本地一致，读取远端内容后与本地文件逐字节相同；两个 PRIVATE 输入 SHA 也分别与各自 `source.private.jsonl` 实际 SHA 一致。输入 SHA 和 SAFE 回执 SHA 只保留在私人证据，不提交 GitHub。
+- **GPU Stage 实际 runner 的 Tokenization 等价性已验证**：A 的 staged runner 与预检代码 SHA 相同；B 的 staged runner 是较早版本，代码 SHA 不同，但 Prompt 模板 SHA 相同。A/B 分别使用实际 staged runner 与共享核心路径，对 13 条全部逐条比较，Token ID 序列均为 13/13 完全一致。B 仅 `flatten_token_ids` 与 `encode_one` 两个 Tokenization helper 不同；实测输出完全相同。此项只证明 Tokenization 等价，不证明 GPU 容器/runtime 等价或质量准入。
+- B 同步额外上传的 `.keep`（0 字节）与 `r58_rw_probe.txt`（24 字节，内容为 `HF PRIVATE RW SMOKE PASS`）均为 SAFE 辅助文件；远端 A/B 输出目录仅包含这两个文件及对应 SAFE JSON，没有上传 PRIVATE 原文或模型输出。
+- 本轮仅运行 CPU Tokenizer；未加载模型权重、未推理、未提交 GPU、未授权训练，`quality_v1_admitted=0`。Token PASS 不代表文学质量或训练准入。
+- 尚待：当前共享路径最新 GitHub CI 结果；GPU Docker 的 Transformers/Chat Template 与 HF CPU 等价性；更一般的跨案例增量缓存。
