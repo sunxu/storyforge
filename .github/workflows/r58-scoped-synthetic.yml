@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'experiments/r58_round1/**'
+      - 'experiments/r58_quality/**'
       - 'skills/storyforge-roleplay-sft/**'
       - '.github/workflows/r58-scoped-synthetic.yml'
   workflow_dispatch:
@@ -29,6 +30,7 @@ jobs:
           python3 --version
           ruff --version
           python3 -m unittest discover -s experiments/r58_round1 -p 'test_*.py' -q
+          python3 -m unittest discover -s experiments/r58_quality -p 'test_*.py' -q
           python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.py' -q
           python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
       - name: V0.2 pinned SAFE evidence remains HOLD
