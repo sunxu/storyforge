@@ -7,8 +7,13 @@ umask 077
 BRANCH='r58/roleplay-sft-skill-v01'
 MINIMUM_SHA='9a65db38dc7d8ddcd9e17c43f9e3e42fc45bbc47'
 MODE="${1:---refresh-and-test}"
+if (( $# > 0 )); then shift; fi
 if [[ "$MODE" != '--refresh-and-test' && "$MODE" != '--synthetic-only' && "$MODE" != '--cache-inventory' ]]; then
-  printf 'Usage: %s [--refresh-and-test|--synthetic-only|--cache-inventory]\n' "$0" >&2
+  printf 'Usage: %s [--refresh-and-test|--synthetic-only|--cache-inventory] [cache flags...]\n' "$0" >&2
+  exit 2
+fi
+if [[ "$MODE" != '--cache-inventory' && "$#" -gt 0 ]]; then
+  echo 'HOLD: additional flags only apply to --cache-inventory' >&2
   exit 2
 fi
 
@@ -30,7 +35,7 @@ fi
 export PYTHONPATH="$PWD/src${PYTHONPATH:+:$PYTHONPATH}"
 if [[ "$MODE" == '--cache-inventory' ]]; then
   export R58_STAGE="${R58_STAGE:-$HOME/.local/share/storyforge/r58/r58-hf-gpu-dual-review-stage-20261101T114557Z}"
-  exec python3 experiments/r58_quality/r58_hf_cpu_cache_inventory.py --stage-dir "$R58_STAGE"
+  exec python3 experiments/r58_quality/r58_hf_cpu_cache_inventory.py --stage-dir "$R58_STAGE" "$@"
 fi
 if [[ "$MODE" == '--refresh-and-test' ]]; then
   export R58_RUN_DIR="${R58_RUN_DIR:-$HOME/.local/share/storyforge/r58/r58-quality-pilot13-20261101T111719Z}"
