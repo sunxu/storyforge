@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.0",
-  "date": "2026-10-30",
-  "tests": "10 / 10 synthetic PASS",
+  "version": "0.1.1",
+  "date": "2026-11-01",
+  "tests": "v0.1.1 synthetic contract test added; full current CI pending",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "941485ca2f0a0ea2795ba86c156ce70428f02626605080e288250c50a9d33649",
-      "bytes": 659
+      "sha256": "5c858967183eafe11fa4310eb666df8b5111ae983085cc7ad5de6f93a5647142",
+      "bytes": 1652
     },
     {
       "path": "README.md",
-      "sha256": "560b31315b0537a0d2ceddcbae02d4390ed7bc81da4988b6b287c827f791d2ef",
-      "bytes": 1267
+      "sha256": "eea54599dabed85e8d87bb345568e6be3c147d5c158318758317e39164ee2351",
+      "bytes": 2771
     },
     {
       "path": "SKILL.md",
-      "sha256": "9c0d4c1c59f0f3c9c07b55f3f343db4e5c366653dc95e5874eadc9b721a5aea0",
-      "bytes": 5533
+      "sha256": "1cb3a1fe8b06fa7983acef9a8a068d55182e6d35b472a82dd7957ce69e32b666",
+      "bytes": 9105
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -38,13 +38,13 @@
     },
     {
       "path": "reference/R58_EXECUTION_PLAN_CN.md",
-      "sha256": "512b9fdbe82836a3240537f7e4b989b030b1dc1f74a0c551ded2b1182df3ddde",
-      "bytes": 2613
+      "sha256": "1a6048945aa6a7e096ade7f9b8bad66746d967751e9fe6b0762050da90f495ec",
+      "bytes": 3330
     },
     {
       "path": "reference/REVIEW_AND_TEACHER_POLICY_CN.md",
-      "sha256": "88e9418cf5bb167f88cce65db084c6778c693b38e54ccbcd27dafe1157104f73",
-      "bytes": 2706
+      "sha256": "bbe51338c931618f1e4f5a76c326f5990386a9752b2ec31a82320ab623dcd18e",
+      "bytes": 3307
     },
     {
       "path": "reference/ROLEPLAY_READONLY_BASELINE_CN.md",
@@ -53,13 +53,18 @@
     },
     {
       "path": "scripts/r58_intake.py",
-      "sha256": "0cd361735b93aae2778275f4d9bbfb0f9f523249dc1604c2855f6f79a1d19e93",
-      "bytes": 15759
+      "sha256": "0f71f79757f84066a7aedd569d4e855773a8cfc52316fac00427d198bd83ebaa",
+      "bytes": 15756
     },
     {
       "path": "tests/test_r58_intake.py",
-      "sha256": "88fd38e83c588356766500196ad133ecb0847c07669f5b51f919156872e54a20",
-      "bytes": 7112
+      "sha256": "3fa83c80f684ddc156859385d904c938f5f3f6e18dee12fe0cea1ad885a6a3af",
+      "bytes": 7124
+    },
+    {
+      "path": "tests/test_skill_token_reuse_contract.py",
+      "sha256": "f00f3b01f49868f91dd38a8892da8a21a9afadf21b3c53a6592ca9dc1c4735e7",
+      "bytes": 2150
     }
   ]
 }
