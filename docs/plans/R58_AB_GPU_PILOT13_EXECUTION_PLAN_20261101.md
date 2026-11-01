@@ -94,6 +94,14 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 - HF 私有输出目录已读取到 `checkpoint_00.private.json`（2226 字节）与 `checkpoint_01.private.json`（4773 字节）。HF CPU 只读沙箱调用与 GPU 原始 Runner 相同的 `read_checkpoint` 验证：两个 checkpoint 与 blind source、slot、模型、完整 revision 全部匹配；两个结果均 PASS；引用字段分别有 source 2/8 段、target 5/8 段。没有将私人引用原文写入日志或 GitHub；验证沙箱完成后已终止。
 - 此验收证明两条 checkpoint 的结构及机器引用契约完整，不代表独立文学质量裁定；B GPU Pilot 尚未提交，也未批准剩余 11 条。
 
+## B H200 Pilot 暂停与引用错误（2026-11-01）
+
+- B 组实际 Runner 返回 `R58_HF_GPU_REVIEW_HOLD`，SAFE 错误码 `RESPONSE_NONEXACT_QUOTE`；`quality_v1_admitted=0`、`training_authorized=false`、`private_text_emitted=false`。
+- 只读盘点 B 私人输出目录：仍只有 `.keep`、`r58_cpu_preflight_all13_safe.json`、`r58_rw_probe.txt`；不存在 `checkpoint_00.private.json` 或 `checkpoint_01.private.json`。因此 B **0/2 checkpoint，不能视为完成 Pilot**。
+- 原始校验器要求 `specific_source_quotes` 中每段引用必须是可见历史某一条 user/assistant 消息的连续原文子串；`specific_target_quotes` 必须是目标回复的连续原文子串。任何一个引用不匹配就抛出该错误，且在 `save_checkpoint` 前失败；无法据此推断文学分数好坏。
+- 在当前输出存储缺少失败模型原始响应的情况下，不能确定是哪段引用不匹配。不要补造引用、放松 exact quote 约束、把 B 标为 PASS，亦不要直接重跑付费 GPU。
+- 后续优先复用现有校验器设计 **仅 SAFE 的字段级诊断与最多一次受控纠错**，保持人工证据可审计；先完成合成测试和可重复 CPU 检查，再考虑在已有 2 条 Pilot 范围内进行受控重试。重试所需新的 GPU 费用应事前向 Owner 报告，不自动扩大原有预算或启动剩余 11 条。
+
 ## 7. 结果门禁
 
 1. 两个 Job 完成后先核验状态、时长、日志 SAFE 摘要与输出 Bucket 文件清单。
