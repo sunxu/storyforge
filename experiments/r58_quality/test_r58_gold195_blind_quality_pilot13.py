@@ -6,6 +6,7 @@ import unittest
 
 from r58_gold195_blind_quality_pilot13 import (
     CROSSWALK_SCHEMA, PILOT_SCHEMA, prepare, select_world_pilot,
+    safe_preflight,
 )
 from gold195_six_dimension_review_tasks import prepare_row
 from test_gold195_six_dimension_review_tasks import example
@@ -76,6 +77,49 @@ class Gold195BlindPilot13Tests(unittest.TestCase):
                 self.assertEqual((out / name).stat().st_mode & 0o777, 0o600)
             with self.assertRaises(ValueError):
                 prepare(source, out, Path(td) / "repo")
+
+    def test_safe_diagnostic_identifies_missing_input_and_permissions(self):
+        with tempfile.TemporaryDirectory() as td:
+            private = Path(td) / "private"
+            private.mkdir(mode=0o700)
+            output = private / "new-output"
+            absent = private / "missing.jsonl"
+            report = safe_preflight(absent, output, Path(td) / "repo")
+            self.assertEqual(report["reason_code"],
+                             "PRIVATE_INPUT_NOT_FOUND_OR_PATH_INVALID")
+            source = private / "source.jsonl"
+            source.write_text("\\n".join(json.dumps(x, ensure_ascii=False)
+                                         for x in self.source()) + "\\n")
+            source.chmod(0o644)
+            report = safe_preflight(source, output, Path(td) / "repo")
+            self.assertEqual(report["reason_code"], "PRIVATE_INPUT_PERMISSIONS_INVALID")
+            source.chmod(0o600)
+            report = safe_preflight(source, output, Path(td) / "repo")
+            self.assertEqual(report["reason_code"], "READY")
+            self.assertEqual(report["review_tasks_prepared"], 195)
+            self.assertEqual(report["source_world_count"], 13)
+            self.assertTrue(report["no_output_written"])
+            self.assertFalse(output.exists())
+            output.mkdir()
+            report = safe_preflight(source, output, Path(td) / "repo")
+            self.assertEqual(report["reason_code"], "OUTPUT_ALREADY_EXISTS")
+
+    def test_safe_diagnostic_rejects_incomplete_without_echoing_text(self):
+        with tempfile.TemporaryDirectory() as td:
+            private = Path(td) / "private"
+            private.mkdir(mode=0o700)
+            source = private / "source.jsonl"
+            rows = self.source()
+            rows[2]["original_history"][0]["role"] = "system"
+            source.write_text("\\n".join(json.dumps(x, ensure_ascii=False)
+                                         for x in rows) + "\\n")
+            source.chmod(0o600)
+            report = safe_preflight(source, private / "output", Path(td) / "repo")
+            self.assertEqual(report["reason_code"], "REVIEW_TASKS_INCOMPLETE")
+            self.assertEqual(report["source_rows_checked"], 195)
+            self.assertEqual(report["review_tasks_prepared"], 194)
+            self.assertNotIn("PRIVATE_", json.dumps(report))
+            self.assertFalse((private / "output").exists())
 
     def test_unresolved_and_duplicate_worlds_do_not_pass(self):
         prepared = [prepare_row(r)[0] for r in self.source()]
