@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from gold195_source_review_packet import (
-    ROOTS, INDEX, assemble, normalize_record, write_private,
+    ROOTS, INDEX, FALLBACK108, assemble, index108, normalize_record, write_private,
 )
 
 
@@ -68,6 +68,51 @@ class SourceReviewPacketTests(unittest.TestCase):
             self.assertIsNone(p["split"])
             self.assertEqual(p["system_source"], "UNRESOLVED")
             self.assertIn("LEADING_ASSISTANT_CONTEXT_UNRESOLVED", p["hold_reasons"])
+
+    def test_verified_source_fallback_resolves_missing_uuid(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            index_file = root / INDEX
+            with index_file.open(encoding="utf-8", newline="") as f:
+                original = list(csv.DictReader(f))
+            fallback = root / FALLBACK108
+            fallback.parent.mkdir(parents=True, exist_ok=True)
+            with fallback.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(
+                    f, fieldnames=["candidate_id", "story_id", "target_sha256"])
+                writer.writeheader()
+                for i, entry in enumerate(original):
+                    writer.writerow({
+                        "candidate_id": entry["candidate_id"],
+                        "story_id": "verified-world" if i < 3 else entry["story_id"],
+                        "target_sha256": entry["target_sha256"],
+                    })
+            first = index108(root)
+            self.assertEqual(first[original[0]["candidate_id"]]["story_id"], "verified-world")
+            result, _ = assemble(root)
+            self.assertEqual(result["counts"].get("story_uuid_hold", 0), 0)
+
+    def test_conflicting_fallback_target_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.fixture(root)
+            with (root / INDEX).open(encoding="utf-8", newline="") as f:
+                originals = list(csv.DictReader(f))
+            fallback = root / FALLBACK108
+            fallback.parent.mkdir(parents=True, exist_ok=True)
+            with fallback.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.DictWriter(
+                    f, fieldnames=["candidate_id", "story_id", "target_sha256"])
+                writer.writeheader()
+                for i, item in enumerate(originals):
+                    writer.writerow({
+                        "candidate_id": item["candidate_id"],
+                        "story_id": item["story_id"],
+                        "target_sha256": "0" * 64 if i == 0 else item["target_sha256"],
+                    })
+            with self.assertRaises(ValueError):
+                index108(root)
 
     def test_tampered_hash_rejected(self):
         row = {

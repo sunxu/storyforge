@@ -33,3 +33,7 @@ python3 experiments/r58_quality/gold195_source_review_packet.py \
 5. 对实际 Quality-v1 通过的派生版本执行 Qwen 16K / ms-swift `loss_scale: last_round` CPU 预检，再请求 GPU 单独授权。
 
 **注意：此包不是 Quality-v1 合同所需的最终 messages+target 训练候选，所有 195 条质量准入仍 HOLD。** 原始 Gold 不修改，R50 密封题不触碰，HF Job 不启动。
+
+## 同源目标哈希绑定的 UUID 补全
+
+Gold108 原索引缺失 UUID 时，可以从 Git 冻结的 R02 `candidate_card_version_evidence_108.csv` 读取已记录的 `story_id`，**仅在 candidate_id 和目标 SHA256 完整相等、全部 108 条一一对应、且不与非空主索引冲突时**补全派生内存索引，不改动任何原件。该 UUID 补全不等于语义世界隔离审批，未通过保护集检查者仍 HOLD。

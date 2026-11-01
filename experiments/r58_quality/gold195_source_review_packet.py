@@ -21,6 +21,8 @@ ROOTS = (
 )
 INDEX = "evaluations/v0.2/gold-quality-108/gold_108_index.csv"
 SCHEMA = "r58_gold195_source_faithful_review_packet_v1"
+FALLBACK108 = ("evaluations/v0.2/admission-audit-20261013/"
+               "r02-point-in-time-cards/candidate_card_version_evidence_108.csv")
 
 
 def sha(raw: bytes) -> str:
@@ -46,6 +48,30 @@ def index108(root: Path) -> dict:
     lookup = {x["candidate_id"]: x for x in rows}
     if len(rows) != 108 or len(lookup) != 108 or "" in lookup:
         raise ValueError("index cardinality")
+    # A distinct frozen R02 audit contains source_story_id fallback evidence.
+    # Resolve an empty index story_id only when candidate ID and target SHA match.
+    fallback = root / FALLBACK108
+    if fallback.is_file() and not fallback.is_symlink():
+        with fallback.open(encoding="utf-8-sig", newline="") as stream:
+            evidence = list(csv.DictReader(stream))
+        if len(evidence) != 108:
+            raise ValueError("fallback coverage mismatch")
+        verified = set()
+        for item in evidence:
+            key = item.get("candidate_id")
+            if not key or key in verified or key not in lookup:
+                raise ValueError("fallback identity mismatch")
+            verified.add(key)
+            original = lookup[key]
+            if item.get("target_sha256") != original["target_sha256"]:
+                raise ValueError("fallback target mismatch")
+            alternate = item.get("story_id")
+            primary = original.get("story_id")
+            if primary and alternate and primary != alternate:
+                raise ValueError("conflicting source story UUID")
+            if not primary and alternate:
+                original["story_id"] = alternate
+                original["story_id_resolution"] = "R02_SOURCE_BOUND_FALLBACK"
     return lookup
 
 
