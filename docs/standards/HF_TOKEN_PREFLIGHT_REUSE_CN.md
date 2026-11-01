@@ -72,7 +72,7 @@ bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --refresh-and
 bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --synthetic-only
 ```
 
-三组测试涵盖共享核心、R58 HF CPU/GPU 适配器和 Skill 合约。该脚本不会提交 HF Job，不下载模型 Tokenizer，不启动 GPU，不产生 Token PASS 或训练准入；真正 HF CPU Token 预检仍需单独批准和执行。
+三组测试涵盖共享核心、R58 HF CPU/GPU 适配器和 Skill 合约。该脚本不会提交 HF Job，不下载模型 Tokenizer，不启动 GPU，不产生 Token PASS 或训练准入；真实 HF CPU Token 预检仅在用户明确要求执行该工作流时提交最小必要 CPU Job，不需要逐 Job 费用授权。
 
 ### R58 A/B 私有 Token 回执只读盘点
 
@@ -102,7 +102,7 @@ bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --cache-inven
   --expected-transformers-b "$TRANSFORMERS_B"
 ```
 
-以上 CLI 期望值仍须对应事先批准的 GPU 计划，不能取自待核验的 SAFE JSON。可信 HF Job/PRIVATE sync-back 来源及未来 GPU runtime 等价性仍需单独核实。**禁止据此自动启动付费 CPU/GPU Job**。该盘点脚本为薄适配器，底层 Token 提取与统计只有一份共享实现。
+以上 CLI 期望值仍须对应已确定的 GPU 目标配置，不能取自待核验的 SAFE JSON。可信 HF Job/PRIVATE sync-back 来源及未来 GPU runtime 等价性仍需单独核实。盘点脚本本身始终只读、绝不提交 Job；若用户明确要求真实 CPU 预检，则可提交所需的最小 HF CPU Job，无需额外逐 Job 费用授权。GPU 推理/训练仍需单独明确授权。该盘点脚本为薄适配器，底层 Token 提取与统计只有一份共享实现。
 
 ## 五、下次使用前的最小决策
 
