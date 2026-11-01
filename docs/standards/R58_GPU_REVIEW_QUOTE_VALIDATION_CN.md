@@ -24,18 +24,22 @@ QuoteValidationError 只保存结构元数据，不保存失败引用文本：
 
 失败时 SAFE 输出允许包含上述字段和固定 reason code。严禁输出引用内容、原始模型响应、Prompt、Token ID、故事标识、私有文件路径或异常 traceback。
 
-## 3. 受控纠错流程
+## 3. 受控纠错流程：候选索引，不生成引用文本
 
 1. 对第一次 JSON 执行完整字段、评分、严重标记与严格引用校验。
 2. 只有 RESPONSE_NONEXACT_QUOTE 触发纠错；其他错误直接 HOLD。
-3. 将原评审 Prompt、第一次模型 JSON 和安全的失败字段/索引追加为纠错上下文。
-4. 要求模型重新输出完整 JSON，但明确只允许修改 specific_source_quotes 与 specific_target_quotes。
-5. 用同一 JSON Schema、同一模型、同一 SamplingParams 再生成一次；不递归、不循环、不自动重试。
-6. 用同一 validate_response 重新校验，并逐字段比较非引用字段。任何非引用字段变化均以 QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS HOLD。
-7. 对纠错 Prompt 重新计算实际 Token ID；若加上输出预留超过上下文预算，使用 QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED HOLD。
-8. 只有纠错结果完整通过全部校验后才写入原本应写入的 checkpoint。首次失败响应永不保存为 checkpoint。
+3. 程序根据失败字段构建候选句段：source quotes 仅从 visible_history 中单条 user/assistant 消息提取；target quotes 仅从 target_text 提取。永不读取 unapproved_card 作为引用来源。
+4. 候选必须是允许来源的严格连续子串，长度 8–300 字；去重后最多 128 个。候选不存在或超过上限时 HOLD，不截断候选集合。
+5. 将原评审 Prompt、首次响应和带索引的候选列表交给同一模型。纠错模型只能输出结构化 JSON {candidate_index: integer}，不得输出引用文本或重新评分。
+6. 使用同一模型、temperature=0、独立 JSON Schema 与 64-token 输出上限生成一次；纠错 Prompt 重新计算实际 Token ID，超过 max_model_len 预算即 HOLD。
+7. 程序验证索引类型必须为真正的整数（不接受 bool）且在候选范围内，然后从候选列表提取原文，只替换失败字段中对应的 quote_index。若 quote_index 为 null（列表结构错误），仅将该引用列表重置为选中的一条候选。
+8. 程序原样保留第一次响应的 decision、scores、severe_flags、卡片状态、文学评价和 uncertainty；纠错模型没有修改这些字段的接口。
+9. 对程序构造的结果执行完整 validate_response。若另一个引用仍失败或任何规则不满足，HOLD；不进行第二次纠错。
+10. 只有全部严格校验通过后才写 checkpoint。首次失败响应和候选索引 JSON 均不保存为 checkpoint。
 
-成功 SAFE 汇总增加 quote_repair_attempts 与 quote_repair_successes，不包含引用正文。
+候选句段按中文句末标点/分号/换行切分；超过 300 字的段落再按逗号边界切分。所有裁剪只去除候选两端空白，不修改内部字符。程序最终仍以原文连续子串校验作为唯一准入标准。
+
+SAFE 汇总只包含 quote_repair_attempts / quote_repair_successes，不包含候选文本或模型原始输出。
 
 ## 4. 固定失败码
 
@@ -45,7 +49,10 @@ QuoteValidationError 只保存结构元数据，不保存失败引用文本：
 | QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED | 纠错 Prompt 超出预算 |
 | QUOTE_REPAIR_GENERATION_INCOMPLETE | 纠错生成被截断或未正常结束 |
 | QUOTE_REPAIR_RESPONSE_INVALID | 纠错输出不是有效 JSON |
-| QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS | 纠错改变了评分或其他非引用字段 |
+| QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS | 历史兼容码；当前索引修复接口不允许修改非引用字段 |
+| QUOTE_REPAIR_SELECTION_INVALID | 候选索引 JSON 无效或索引越界 |
+| QUOTE_REPAIR_CANDIDATES_UNAVAILABLE | 允许来源中没有可用候选 |
+| QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE | 候选超过 128 项，直接 HOLD，不截断 |
 | RESPONSE_JSON_INVALID | 首次输出不是有效 JSON |
 
 诊断字段只帮助定位，不改变 HOLD/PASS/REJECT 语义。
@@ -58,16 +65,20 @@ experiments/r58_quality/test_r58_hf_gpu_literary_reviewer.py 必须覆盖：
 - 异常消息中不含失败引用原文。
 - 一次纠错成功后只保存严格校验通过的 checkpoint。
 - 纠错仍失败时不产生任何 checkpoint。
-- 纠错不得修改 decision、scores、flags、卡片状态、文学评价或 uncertainty。
+- 候选仅从允许来源生成；每个候选必须是原文严格连续子串。
+- 纠错模型只返回索引；程序只替换失败引用位置，其他所有评审字段完全保留。
+- 覆盖 target quote 与 source quote 的端到端成功路径、无效索引失败路径、Token 预算、候选边界和不写 checkpoint。
 - 既有 checkpoint 身份校验、不可覆盖、Token 预算及训练准入边界保持不变。
 
 测试使用虚构样本和 FakeTokenizer/FakeEngine，不访问真实故事、不加载模型权重、不调用 GPU。
 
 ## 6. B Pilot 当前状态
 
-2026-11-01 B 槽位报告 R58_HF_GPU_REVIEW_HOLD / RESPONSE_NONEXACT_QUOTE。SAFE 输出未包含私人文本；B 输出 Bucket 未发现两个 checkpoint。由于首次失败的原始生成内容没有被保存，无法从现有证据确定是哪一条引用不精确。
+2026-11-02 B 首次修复版 GPU 重试仅运行第 1 条，SAFE 为 R58_HF_GPU_REVIEW_HOLD / RESPONSE_NONEXACT_QUOTE，字段 specific_target_quotes、索引 0；一次自由文本纠错仍未通过。没有生成 checkpoint，第二条未执行。旧输入和输出均保留。
 
-本规范实现与合成测试通过后，仍需在 B 私有 STAGE 中升级 runner，并重新进行 CPU-only 预检。任何新的 B GPU Job 都是额外付费重试；在 Owner 明确批准新费用上限前不得提交。A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。
+随后将纠错改为候选索引选择：模型只输出 candidate_index，程序从 target_text 或 visible_history 的单条消息中抽取原文。合成测试 12/12 PASS；新 B v2 私有 STAGE 已完成 CPU-only Token 预检 PASS（planned=2），未加载模型权重、未推理。新 GPU Job 仍须在 Owner 已批准的总费用上限内执行，并且只能运行 pilot 前两条；不允许执行 remaining 11 条。
+
+A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。任何 HOLD 均不构成质量准入；本工作不授予训练授权。
 
 ## 7. 权威实现
 
