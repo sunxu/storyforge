@@ -58,8 +58,10 @@ def bind(p: dict, cards: dict):
     if card is None:
         return None, "TRUSTED_CARD_NOT_PROVIDED"
     history = p["frozen_messages"]
-    if history[0]["role"] != "user":
-        return None, "LEADING_ASSISTANT_NEEDS_CONTEXT_REVIEW"
+    # R58 CPU132 proved leading Assistant history compatible with the actual
+    # ms-swift 4.5.3 last_round and data_collator path. Keep it unmodified.
+    if history[0]["role"] not in ("user", "assistant"):
+        return None, "INVALID_HISTORY_START_ROLE"
     if history[-2]["role"] != "user" or history[-1]["role"] != "assistant":
         return None, "ROLE_BOUNDARY_INVALID"
     target = history[-1]["content"]
@@ -80,6 +82,7 @@ def bind(p: dict, cards: dict):
         "card_source_ref": card["source_ref"],
         "card_design": "EXPLICIT_OFFLINE_DERIVATIVE_NOT_ORIGINAL_PROVIDER_REQUEST",
         "messages": messages,
+        "source_history_starts_with_assistant": history[0]["role"] == "assistant",
         "target_text": target,
         "input_messages_sha256": sha(canon(messages)),
         "quality_status": "HOLD",
@@ -110,6 +113,8 @@ def audit(root: Path, manifest: Path | None = None, collect=False):
             c[reason] += 1
         else:
             c["structural_card_drafts"] += 1
+            c["assistant_first_drafts" if draft["source_history_starts_with_assistant"]
+              else "user_first_drafts"] += 1
             if collect:
                 drafts.append(draft)
     return {
