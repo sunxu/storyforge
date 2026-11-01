@@ -154,6 +154,26 @@ class HFCPUReviewPreflightTests(unittest.TestCase):
             self.assertNotIn("PRIVATE_PROMPT_DETAIL", str(caught.exception))
 
 
+    def test_template_exception_class_is_propagated_safely(self):
+        with tempfile.TemporaryDirectory() as td:
+            source, output = self.stage(Path(td))
+            args = self.args(source, output)
+
+            class TemplateError(Exception):
+                pass
+
+            class BrokenTokenizer(FakeTokenizer):
+                def apply_chat_template(self, messages, **kwargs):
+                    raise TemplateError("PRIVATE_TEMPLATE_DETAILS_MUST_NOT_ESCAPE")
+
+            with self.assertRaisesRegex(
+                ValueError, "^CHAT_TEMPLATE_RENDER_FAILED_CLASS_TEMPLATEERROR$"
+            ) as caught:
+                check_all(args, tokenizer_factory=lambda *x, **k: BrokenTokenizer(),
+                          package_version="4.57.1")
+            self.assertNotIn("PRIVATE_TEMPLATE_DETAILS", str(caught.exception))
+
+
 
 if __name__ == "__main__":
     unittest.main()
