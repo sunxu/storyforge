@@ -93,7 +93,7 @@ class FinalDispositionTests(unittest.TestCase):
         obj.update({
             "decision": "CONFIRMED_SEVERE",
             "decision_maker": "independent human",
-            "independent_reasoning": "这段回复的行为与明确禁止的角色决策规则相抵触，需要排除。",
+            "independent_reasoning": "这段回复的具体行动已经与来源卡中明确禁止替玩家进行关键选择的规则相抵触，应据此判断严重违规并排除。",
             "actual_source_evidence": ["明确规则冲突举证"],
             "gold_exact_quotes": [task(2)["target_text"][:10]],
             "decision_completed": True,
