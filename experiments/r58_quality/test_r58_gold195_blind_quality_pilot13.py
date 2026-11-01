@@ -88,8 +88,8 @@ class Gold195BlindPilot13Tests(unittest.TestCase):
             self.assertEqual(report["reason_code"],
                              "PRIVATE_INPUT_NOT_FOUND_OR_PATH_INVALID")
             source = private / "source.jsonl"
-            source.write_text("\\n".join(json.dumps(x, ensure_ascii=False)
-                                         for x in self.source()) + "\\n")
+            source.write_text("\n".join(json.dumps(x, ensure_ascii=False)
+                                         for x in self.source()) + "\n")
             source.chmod(0o644)
             report = safe_preflight(source, output, Path(td) / "repo")
             self.assertEqual(report["reason_code"], "PRIVATE_INPUT_PERMISSIONS_INVALID")
@@ -111,8 +111,8 @@ class Gold195BlindPilot13Tests(unittest.TestCase):
             source = private / "source.jsonl"
             rows = self.source()
             rows[2]["original_history"][0]["role"] = "system"
-            source.write_text("\\n".join(json.dumps(x, ensure_ascii=False)
-                                         for x in rows) + "\\n")
+            source.write_text("\n".join(json.dumps(x, ensure_ascii=False)
+                                         for x in rows) + "\n")
             source.chmod(0o600)
             report = safe_preflight(source, private / "output", Path(td) / "repo")
             self.assertEqual(report["reason_code"], "REVIEW_TASKS_INCOMPLETE")
