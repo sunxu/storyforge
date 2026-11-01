@@ -44,3 +44,7 @@ Owner 明确：**不需要把任何训练样本认证为原始生产 Provider �
 `G1=HOLD`（先前全局来源全集尚未证明）；`G2=HOLD`（原生产字节精确回放未证明，但已退出新训练目标）；`G3=NOT_STARTED`；`Train/Validation/Teacher=0`；`expansion_allowed=false`；当前未自动批准或运行新 SFT / HF Job。
 
 此处是**新目标和执行路线**，不是宣布旧门禁 PASS，也不是直接批准未审 R58 数据训练。历史 G1/G2 Git/Supabase/VPS 调查仅作归档，不继续开展部署、时间邻近、原始请求溯源。**今后应把时间投入高质量文本、审核、无泄漏数据拆分和训练对照。**
+
+## 5. 2026-11-01 Assistant-first 结构门禁修复
+
+R58 真实 CPU ms-swift 4.5.3 + Transformers 5.16.1 + last_round + data_collator 已对 132 条原历史首条为 Assistant 的工程探针取得 132/132 PASS（无模型训练、无卡片质量准入）。因此 Quality-v1 和 Gold195 card-first / six-dimension review 工具不再因历史首条为 Assistant 而拒绝候选。所有历史、Gold 目标保持原样；世界卡语义审核、独立双审、世界级隔离、R50 防污染以及冻结训练合同仍各自必须满足；此次通过不等于 Gold195 训练准入。
