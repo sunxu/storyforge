@@ -66,6 +66,20 @@ class SharedTokenPreflightTests(unittest.TestCase):
                         [{"role": "user", "content": "x" * 200}],
                         disable_thinking=True)
 
+    def test_template_exception_class_is_safe_and_specific(self):
+        class TemplateError(Exception):
+            pass
+
+        class BrokenTokenizer:
+            def apply_chat_template(self, messages, **kwargs):
+                raise TemplateError("PRIVATE_TEMPLATE_DETAILS_MUST_NOT_ESCAPE")
+
+        with self.assertRaisesRegex(
+            ValueError, "^CHAT_TEMPLATE_RENDER_FAILED_CLASS_TEMPLATEERROR$"
+        ) as caught:
+            encode_chat(BrokenTokenizer(), [{"role": "user", "content": "x" * 200}])
+        self.assertNotIn("PRIVATE_TEMPLATE_DETAILS", str(caught.exception))
+
     def test_invalid_template_output_has_safe_token_id_code(self):
         class InvalidOutputTokenizer:
             def apply_chat_template(self, messages, **kwargs):
