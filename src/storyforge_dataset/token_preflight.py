@@ -12,6 +12,7 @@ from collections.abc import Mapping, Sequence
 import hashlib
 import json
 import math
+import re
 
 
 def extract_input_ids(encoded, *, prompt_chars: int = 0) -> list[int]:
@@ -31,6 +32,22 @@ def extract_input_ids(encoded, *, prompt_chars: int = 0) -> list[int]:
     return encoded
 
 
+
+def _template_failure_code(exc: Exception) -> str:
+    """Expose only a bounded exception class label, never its message."""
+    common = {
+        TypeError: "TYPE_ERROR",
+        RuntimeError: "RUNTIME_ERROR",
+        ValueError: "VALUE_ERROR",
+    }
+    suffix = common.get(type(exc))
+    if suffix is None:
+        name = type(exc).__name__
+        suffix = ("CLASS_" + name.upper()
+                  if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", name, re.ASCII)
+                  else "OTHER")
+    return "CHAT_TEMPLATE_RENDER_FAILED_" + suffix
+
 def encode_chat(tokenizer, messages: list[dict], *, disable_thinking: bool = False) -> list[int]:
     """Use the model's own chat template; no artificial truncation."""
     if (not isinstance(messages, list) or not messages
@@ -46,28 +63,14 @@ def encode_chat(tokenizer, messages: list[dict], *, disable_thinking: bool = Fal
     except TypeError as exc:
         # Preserve older Transformers compatibility without exposing exception text.
         if not disable_thinking or "enable_thinking" not in str(exc):
-            code = ("CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR"
-                    if type(exc) is TypeError else "CHAT_TEMPLATE_RENDER_FAILED_OTHER")
-            raise ValueError(code) from None
+            raise ValueError(_template_failure_code(exc)) from None
         opts.pop("enable_thinking")
         try:
             encoded = tokenizer.apply_chat_template(messages, **opts)
         except Exception as fallback_exc:
-            code = ("CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR"
-                    if type(fallback_exc) is TypeError else
-                    "CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR"
-                    if type(fallback_exc) is RuntimeError else
-                    "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR"
-                    if type(fallback_exc) is ValueError else
-                    "CHAT_TEMPLATE_RENDER_FAILED_OTHER")
-            raise ValueError(code) from None
+            raise ValueError(_template_failure_code(fallback_exc)) from None
     except Exception as exc:
-        code = ("CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR"
-                if type(exc) is RuntimeError else
-                "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR"
-                if type(exc) is ValueError else
-                "CHAT_TEMPLATE_RENDER_FAILED_OTHER")
-        raise ValueError(code) from None
+        raise ValueError(_template_failure_code(exc)) from None
     chars = sum(len(m["content"]) for m in messages)
     return extract_input_ids(encoded, prompt_chars=chars)
 
