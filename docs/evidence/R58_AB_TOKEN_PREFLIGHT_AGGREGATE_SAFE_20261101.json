@@ -106,7 +106,8 @@
       "matches_preflight_reviewer_code": true,
       "staged_legacy_token_core_differs_from_current_shared_core": true,
       "exact_token_id_sequences_equal_across_all_13_cases": true,
-      "tokenizer_class": "Qwen2TokenizerFast"
+      "tokenizer_class": "Qwen2TokenizerFast",
+      "trust_remote_code": false
     },
     "B": {
       "staged_runner_sha256": "2da26de21ea0365000c2dec60b7558f2d2f9b7a84fcced2ef67b2391b7aed073",
@@ -114,11 +115,46 @@
       "prompt_constants_and_review_functions_match_except_tokenization_helpers": true,
       "tokenization_helpers": "flatten_token_ids and encode_one differ from current shared-core implementation",
       "exact_token_id_sequences_equal_across_all_13_cases": true,
-      "tokenizer_class": "PreTrainedTokenizerFast"
+      "tokenizer_class": "PreTrainedTokenizerFast",
+      "trust_remote_code": false
     },
     "tokenizer_weights_loaded": false,
     "model_weights_loaded": false,
     "inference_performed": false,
-    "interpretation": "Both actual staged runner/token-core paths reproduce the exact 13 token-ID sequences used for the recorded budgets. This verifies tokenization equivalence only; it is not GPU runtime equivalence or quality approval."
+    "interpretation": "Both actual staged runner/token-core paths reproduce the exact 13 token-ID sequences used for the recorded budgets. This verifies tokenization equivalence only; it is not GPU runtime equivalence or quality approval.",
+    "trust_remote_code": false
+  },
+  "vllm_image_api_cpu_check": {
+    "status": "R58_VLLM_IMAGE_API_IMPORT_PASS__CPU_ONLY",
+    "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+    "tag": "v0.32.0",
+    "vllm_version": "0.32.0",
+    "LLM_import": true,
+    "SamplingParams_import": true,
+    "StructuredOutputsParams_import": true,
+    "TokensPrompt_import": true,
+    "cuda_available": false,
+    "model_weights_loaded": false,
+    "inference_performed": false,
+    "sandbox_terminated_after_check": true
+  },
+  "gpu_pilot_plan": {
+    "status": "PREPARED_NOT_SUBMITTED__GPU_APPROVAL_REQUIRED",
+    "hardware_flavor": "h200",
+    "gpu_memory_gb": 141,
+    "hourly_price_usd": 5,
+    "jobs_in_pilot": 2,
+    "timeout_each_hours": 2,
+    "pilot_max_usd": 20,
+    "usd_cny_reference_rate": 6.6568,
+    "pilot_max_cny": 133.14,
+    "remaining_11_cases_require_separate_approval": true,
+    "full_13_case_ab_max_usd": 40,
+    "full_13_case_ab_max_cny": 266.27,
+    "image_digest": "sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+    "platform_timeout": "2h",
+    "container_process_timeout_seconds": 6600,
+    "paid_gpu_submitted": false,
+    "training_authorized": false
   }
 }
