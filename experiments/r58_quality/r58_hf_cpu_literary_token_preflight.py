@@ -125,6 +125,12 @@ SAFE_FAILURE_REASONS = {
 }
 
 
+def _safe_failure_reason(value: str) -> bool:
+    return (value in SAFE_FAILURE_REASONS or bool(re.fullmatch(
+        r"CHAT_TEMPLATE_RENDER_FAILED_CLASS_[A-Z][A-Z0-9_]{0,63}", value,
+    )))
+
+
 def check_all(args, tokenizer_factory=None, package_version=None):
     if (args.slot not in MODELS or args.model != MODELS[args.slot]
             or HEX40.fullmatch(args.revision) is None
@@ -182,7 +188,11 @@ def check_all(args, tokenizer_factory=None, package_version=None):
             "CHAT_TEMPLATE_RENDER_FAILED_OTHER",
             "TOKEN_IDS_INVALID", "CHAT_MESSAGES_INVALID",
         }
-        code = str(exc) if type(exc) is ValueError and str(exc) in known else "TOKENIZATION_FAILED"
+        code = str(exc) if type(exc) is ValueError and (
+            str(exc) in known or re.fullmatch(
+                r"CHAT_TEMPLATE_RENDER_FAILED_CLASS_[A-Z][A-Z0-9_]{0,63}", str(exc),
+            )
+        ) else "TOKENIZATION_FAILED"
         raise ValueError(code) from None
     if len(lengths) != 13:
         raise ValueError("EXPECTED_13")
@@ -259,14 +269,17 @@ def main():
             save_receipt(args.output_dir, receipt)
             code = 0 if receipt["status"] == MODE else 42
     except Exception as exc:
-        reason = str(exc) if type(exc) is ValueError and str(exc) in {
+        raw_reason = str(exc) if type(exc) is ValueError else ""
+        fixed_reasons = {
             "CONFIG_INVALID", "PRIVATE_INPUT_INVALID", "PRIVATE_OUTPUT_DIR_INVALID",
             "SAFE_RECEIPT_ALREADY_EXISTS", "TRANSFORMERS_VERSION_MISMATCH",
             "CHAT_TEMPLATE_MISSING", "EXPECTED_13",
             "CACHE_RECEIPT_MISSING_OR_UNSAFE", "CACHE_IDENTITY_MISMATCH",
-            "CACHE_BUDGET_INVALID",
-            *SAFE_FAILURE_REASONS,
-        } else "TOKENIZER_OR_PRIVATE_INPUT_ERROR"
+            "CACHE_BUDGET_INVALID", *SAFE_FAILURE_REASONS,
+        }
+        reason = raw_reason if raw_reason in fixed_reasons or re.fullmatch(
+            r"CHAT_TEMPLATE_RENDER_FAILED_CLASS_[A-Z][A-Z0-9_]{0,63}", raw_reason,
+        ) else "TOKENIZER_OR_PRIVATE_INPUT_ERROR"
         receipt = {
             "schema": SCHEMA, "status": HOLD, "reason_code": reason,
             "quality_v1_admitted": 0, "training_authorized": False,
