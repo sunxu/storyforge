@@ -1,13 +1,13 @@
 # R58 A/B 13 条 HF GPU 文学盲审执行方案（未提交）
 
 日期：2026-11-01  
-状态：`PREPARED_NOT_SUBMITTED__GPU_APPROVAL_REQUIRED`
+状态：`OWNER_APPROVED__HF_CONNECTOR_403_BLOCKED__NO_GPU_JOB_STARTED`
 
 ## 1. 目标与范围
 
 对已完成 CPU Token 预检的 R58 13 条 blind pilot，分别运行 A/B 模型的独立文学审查。A/B 使用不同私有输入目录、不同输出目录、不同 HF Job；不挂载 Owner crosswalk，不读 R50，不训练，不自动授予 Quality-v1 准入。
 
-本方案只授权准备与验证，不构成 GPU Job 启动授权。
+Owner 已在 2026-11-01 明确批准 A/B 两个 H200 Pilot Job（各前 2 条、每个最多 2 小时，合计 GPU 预算约 ¥133.14）；此批准不包含剩余 11 条或训练。ChatGPT HF 连接已实际尝试向 `adradar` 提交 A Job，但 HF 返回 `403 Forbidden`，未获得 Job ID；随后只读检查 `adradar` Job 列表，没有发现新 Pilot。B 未提交。本次状态是平台权限阻塞，**不是缺少用户授权**。请优先检查当前连接对 `adradar` 的 GPU Job 提交权限；可使用已有 Mac HF CLI 以相同批准范围和固定命令启动，不需要再次申请这两个 Pilot 的用户授权。
 
 每个槽位先运行 `--phase pilot` 的前 2 条。检查两条输出的结构、引用有效性和评审稳定性后，剩余 11 条必须另行审批，再运行 `--phase remaining`。不要把 13 条一次性提交。
 
@@ -56,7 +56,7 @@ HF Jobs 官方按分钟计费，Starting/Running 阶段计费，build 阶段不�
 
 ## 6. 试运行命令
 
-以下仅为待审批命令模板，**未执行**。A/B 分开运行；输入只读，输出 Bucket 可写。两个 Job 都只处理前 2 条。
+以下是 Owner 已批准的执行命令。ChatGPT 连接提交 A 失败（403），未启动 GPU；Mac HF CLI 可按相同命令继续。A/B 分开运行，输入只读，输出 Bucket 可写，每个 Job 仅处理前 2 条。提交成功后须先记录 Job ID 与状态，不可重复启动同一 slot。
 
 ### A — Qwen3-32B
 
