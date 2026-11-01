@@ -8,7 +8,7 @@ import unittest
 from r58_hf_gpu_literary_reviewer import (
     PILOT_SCHEMA, MODELS, canon, read_source, prompt_messages,
     response_schema, validate_response, run, save_checkpoint,
-    read_checkpoint, checkpoint_path,
+    read_checkpoint, checkpoint_path, flatten_token_ids,
 )
 from r58_gold195_blind_quality_pilot13 import blind_material
 from gold195_six_dimension_review_tasks import prepare_row
@@ -54,7 +54,7 @@ class FakeTokenizer:
         assert len(messages) == 2
         assert messages[0]["role"] == "system"
         assert "unapproved_card" in messages[1]["content"]
-        return {"input_ids": [[11, 13, 17, 19]]}
+        return {"input_ids": [list(range(64))], "attention_mask": [[1] * 64]}
 
 
 class HFReviewerSyntheticTests(unittest.TestCase):
@@ -116,6 +116,18 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         answer["uncertainty"] = ""
         with self.assertRaises(ValueError):
             validate_response(answer, row)
+
+    def test_batchencoding_field_count_is_not_token_count(self):
+        encoded = {"input_ids": [list(range(64))], "attention_mask": [[1] * 64]}
+        self.assertEqual(len(flatten_token_ids(encoded, prompt_chars=1000)), 64)
+        for malformed in (
+            {"input_ids": [[1, 2]], "attention_mask": [[1, 1]]},
+            {"attention_mask": [[1, 1]]},
+            {"input_ids": []},
+            {"input_ids": [[1, -2] * 20]},
+        ):
+            with self.assertRaises(ValueError):
+                flatten_token_ids(malformed, prompt_chars=1000)
 
     def test_preflight_without_vllm_or_gpu_then_pilot_resume(self):
         with tempfile.TemporaryDirectory() as td:
