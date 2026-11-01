@@ -8,6 +8,7 @@ This file has no external dependencies until inference/preflight begins.
 from __future__ import annotations
 
 import argparse
+import copy
 from collections import Counter
 import hashlib
 import json
@@ -158,34 +159,99 @@ class QuoteRepairFailure(ValueError):
         self.case_index = case_index
 
 
-def quote_repair_messages(row, previous_response_text, error):
+MAX_QUOTE_REPAIR_CANDIDATES = 128
+
+
+def _quote_segments(text):
+    if not isinstance(text, str):
+        return []
+    primary = re.split(r"(?<=[。！？!?；;])|[\\r\\n]+", text)
+    segments = []
+    for part in primary:
+        part = part.strip()
+        if len(part) > 300:
+            segments.extend(x.strip() for x in re.split(r"(?<=[，,])", part))
+        else:
+            segments.append(part)
+    return [x for x in segments if 8 <= len(x) <= 300]
+
+
+def quote_candidates(row, field):
+    if field == "specific_target_quotes":
+        bodies = [row["target_text"]]
+    elif field == "specific_source_quotes":
+        bodies = [
+            item["content"] for item in row["messages"][1:]
+            if item["role"] in ("user", "assistant")
+        ]
+    else:
+        raise ValueError("QUOTE_REPAIR_FIELD_INVALID")
+    candidates, seen = [], set()
+    for body in bodies:
+        for candidate in _quote_segments(body):
+            if candidate not in seen:
+                seen.add(candidate)
+                candidates.append(candidate)
+                if len(candidates) > MAX_QUOTE_REPAIR_CANDIDATES:
+                    raise ValueError("QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE")
+    if not candidates:
+        raise ValueError("QUOTE_REPAIR_CANDIDATES_UNAVAILABLE")
+    return candidates
+
+
+def quote_repair_schema(candidate_count):
+    if type(candidate_count) is not int or not 1 <= candidate_count <= MAX_QUOTE_REPAIR_CANDIDATES:
+        raise ValueError("QUOTE_REPAIR_CANDIDATE_COUNT_INVALID")
+    return {
+        "type": "object",
+        "additionalProperties": False,
+        "properties": {
+            "candidate_index": {
+                "type": "integer", "minimum": 0, "maximum": candidate_count - 1
+            }
+        },
+        "required": ["candidate_index"],
+    }
+
+
+def quote_repair_messages(row, previous_response_text, error, candidates):
     if not isinstance(previous_response_text, str) or not previous_response_text:
         raise ValueError("QUOTE_REPAIR_PRIOR_RESPONSE_INVALID")
+    candidate_payload = json.dumps(
+        [{"index": i, "text": text} for i, text in enumerate(candidates)],
+        ensure_ascii=False, separators=(",", ":"))
     return prompt_messages(row) + [
         {"role": "assistant", "content": previous_response_text},
         {"role": "user", "content": (
-            "上一份 JSON 的引用校验失败。请只修正引用字段，并重新输出完整 JSON。"
+            "上一份 JSON 的引用校验失败。现在只做一次精确引用选择，不重新评分。"
             "失败字段：" + error.field + "；列表索引（从 0 开始）：" +
             str(error.quote_index) + "。"
-            "specific_source_quotes 的每段必须逐字连续出现在 visible_history 的某一条 "
-            "user/assistant 消息中，不能从 unapproved_card 引用；"
-            "specific_target_quotes 的每段必须逐字连续出现在 target_text 中。"
-            "不得改写、拼接不同消息、增加省略号、引号或改动标点。"
-            "只允许修改 specific_source_quotes 和 specific_target_quotes；"
-            "decision、scores、severe_flags、卡片状态、literary_quality_notes、"
-            "uncertainty 必须与上一份 JSON 完全相同。"
-            "不得为了通过引用校验而降低评分或改变判断。"
+            "请从下方候选中选择最能支持原引用含义的一项，只输出 JSON："
+            "{\"candidate_index\": 整数}。"
+            "候选文本由程序从允许来源中逐字切取；不要复制、改写或生成任何文本。"
+            "来源引用候选只来自 visible_history 的单条 user/assistant 消息；"
+            "目标引用候选只来自 target_text；绝不包含 unapproved_card。"
+            "候选清单：" + candidate_payload
         )},
     ]
 
 
-def validate_quote_repair(original, repaired, row):
+def apply_quote_candidate(original, row, error, candidate):
+    if (not isinstance(candidate, str) or not candidate
+            or len(candidate) > 300):
+        raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+    repaired = copy.deepcopy(original)
+    field = error.field
+    quotes = repaired.get(field)
+    if error.quote_index is None:
+        repaired[field] = [candidate]
+    else:
+        if (not isinstance(quotes, list)
+                or not 0 <= error.quote_index < len(quotes)):
+            raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+        quotes[error.quote_index] = candidate
     validate_response(repaired, row)
-    quote_fields = {"specific_source_quotes", "specific_target_quotes"}
-    if any(original.get(key) != repaired.get(key)
-           for key in REVIEW_KEYS - quote_fields):
-        raise ValueError("QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS")
-    return repaired["decision"]
+    return repaired
 
 
 def response_schema():
@@ -393,29 +459,50 @@ def run(args, engine_factory=None, tokenizer_factory=None,
                     initial_error.case_index = i
                     initial_error.repair_attempted = True
                     quote_repair_attempts += 1
-                    repair_messages = quote_repair_messages(
-                        rows[i], generated.text, initial_error)
+                    try:
+                        candidates = quote_candidates(rows[i], initial_error.field)
+                        repair_messages = quote_repair_messages(
+                            rows[i], generated.text, initial_error, candidates)
+                    except ValueError as candidate_error:
+                        code = (str(candidate_error) if str(candidate_error) in {
+                            "QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE",
+                            "QUOTE_REPAIR_CANDIDATES_UNAVAILABLE",
+                        } else "QUOTE_REPAIR_SELECTION_INVALID")
+                        raise QuoteRepairFailure(code, initial_error, i) from None
                     repair_ids = _encode_chat(
                         tokenizer, repair_messages,
                         disable_thinking=(args.model == MODELS["A"]))
-                    if len(repair_ids) + args.max_output_tokens > args.max_model_len:
+                    repair_max_tokens = 64
+                    if len(repair_ids) + repair_max_tokens > args.max_model_len:
                         raise QuoteRepairFailure(
                             "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED", initial_error, i)
                     repair_prompt = (
                         TokensPrompt(prompt_token_ids=repair_ids)
                         if TokensPrompt else {"prompt_token_ids": repair_ids})
+                    repair_params = sampling_params_factory(
+                        temperature=0, max_tokens=repair_max_tokens,
+                        structured_outputs=structured_outputs_factory(
+                            json=quote_repair_schema(len(candidates))))
                     repaired_output = engine.generate(
-                        [repair_prompt], params, use_tqdm=False)[0].outputs[0]
+                        [repair_prompt], repair_params, use_tqdm=False)[0].outputs[0]
                     if repaired_output.finish_reason != "stop":
                         raise QuoteRepairFailure(
                             "QUOTE_REPAIR_GENERATION_INCOMPLETE", initial_error, i)
                     try:
-                        repaired = json.loads(repaired_output.text)
+                        selection = json.loads(repaired_output.text)
                     except (TypeError, json.JSONDecodeError):
                         raise QuoteRepairFailure(
                             "QUOTE_REPAIR_RESPONSE_INVALID", initial_error, i)
+                    if (not isinstance(selection, dict)
+                            or set(selection) != {"candidate_index"}
+                            or type(selection["candidate_index"]) is not int
+                            or not 0 <= selection["candidate_index"] < len(candidates)):
+                        raise QuoteRepairFailure(
+                            "QUOTE_REPAIR_SELECTION_INVALID", initial_error, i)
                     try:
-                        validate_quote_repair(response, repaired, rows[i])
+                        response = apply_quote_candidate(
+                            response, rows[i], initial_error,
+                            candidates[selection["candidate_index"]])
                     except QuoteValidationError as repair_error:
                         repair_error.case_index = i
                         repair_error.repair_attempted = True
@@ -423,9 +510,7 @@ def run(args, engine_factory=None, tokenizer_factory=None,
                             "RESPONSE_NONEXACT_QUOTE", repair_error, i) from None
                     except ValueError:
                         raise QuoteRepairFailure(
-                            "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS",
-                            initial_error, i) from None
-                    response = repaired
+                            "QUOTE_REPAIR_SELECTION_INVALID", initial_error, i) from None
                     quote_repair_successes += 1
                 save_checkpoint(args.output_dir, i, rows[i], response, args.slot,
                                 args.model, args.revision)
@@ -475,7 +560,8 @@ def safe_failure_result(exc):
         "RESPONSE_JSON_INVALID", "RESPONSE_PASS_MISSING_QUOTE",
         "RESPONSE_PASS_BELOW_FLOOR", "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED",
         "QUOTE_REPAIR_GENERATION_INCOMPLETE", "QUOTE_REPAIR_RESPONSE_INVALID",
-        "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS",
+        "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS", "QUOTE_REPAIR_SELECTION_INVALID",
+        "QUOTE_REPAIR_CANDIDATES_UNAVAILABLE", "QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE",
         "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
     }
     reason = (exc.code if isinstance(exc, QuoteRepairFailure)
