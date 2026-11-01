@@ -74,6 +74,24 @@ bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --synthetic-o
 
 三组测试涵盖共享核心、R58 HF CPU/GPU 适配器和 Skill 合约。该脚本不会提交 HF Job，不下载模型 Tokenizer，不启动 GPU，不产生 Token PASS 或训练准入；真正 HF CPU Token 预检仍需单独批准和执行。
 
+### R58 A/B 私有 Token 回执只读盘点
+
+在已完成 STAGE 代码刷新与合成测试之后，使用现有统一入口：
+
+```bash
+git switch r58/roleplay-sft-skill-v01
+git pull --ff-only origin r58/roleplay-sft-skill-v01
+bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --cache-inventory
+```
+
+此命令只访问此前 `STAGE/input_A,B/source.private.jsonl` 和 `STAGE/output_A,B/r58_cpu_preflight_all13_safe.json`，默认 STAGE 与第四节一致，必要时以 `R58_STAGE` 环境变量覆盖；**不运行模型 Tokenizer、不启动 HF Job、不重写私人文件**。内部复用 `r58_hf_cpu_literary_token_preflight.py::verify_reuse`；分别输出以下安全状态：
+
+- `MISSING`：本地未找到该 slot 的回执，不等于 Token 失败。
+- `LOCAL_MATCH_ORIGIN_UNVERIFIED`：本地输入、序列化 Prompt、代码 SHA、模型/版本/预算与现有回执匹配，但**不能由本地回执自证来源于真实 HF CPU Job、或等价于未来 GPU runtime**；仍不可当作正式 GPU 准入。
+- `HOLD`：路径/权限、回执格式或身份不匹配；不改写证据，不自动复算。命令退出码 42。
+
+本地复核只读检查自带的可信元数据，不能把从同一回执提取的 revision、Transformers 版本和预算当成独立批准配置；与计划 GPU 环境的版本匹配、可信 HF Job/PRIVATE sync-back 来源记录须另行核实。**禁止据此自动启动付费 CPU/GPU Job**。该盘点脚本为新薄适配器，底层 Token 提取和统计仍仅有一份共享实现。
+
 ## 五、下次使用前的最小决策
 
 先问：已有有效 SAFE 回执吗？对比原始输入、真实 prompt、模型 revision、Tokenizer/运行时版本、thinking、预算和核心代码。如果全一致，无须支付另一笔 HF CPU Job；若任何关键事实改变，先复算必要范围，不能仅因为脚本换了名字或换了机器就重跑。
