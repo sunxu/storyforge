@@ -110,13 +110,16 @@ python3 - "$DIR/R58_HF_CPU132_SAFE.json" <<'PY_VERIFY'
 import json,sys
 obj=json.load(open(sys.argv[1]))
 c=obj.get("counts",{})
-assert obj.get("schema")=="r58_hf_cpu132_tokenizer_safe_v1"
-assert obj.get("status")=="R58_HF_CPU132_TOKEN_LENGTHS_CHECKED__NO_INFERENCE"
+assert obj.get("schema")=="r58_hf_cpu132_tokenizer_safe_v2"
+assert obj.get("status")=="R58_HF_CPU132_REAL_TOKEN_IDS_VERIFIED__NO_INFERENCE"
 assert obj.get("source_rows_verified")==132
+assert obj.get("token_length_source")=="input_ids"
 assert obj.get("model_revision")=="9216db5781bf21249d130ec9da846c4624c16137"
 assert obj.get("quality_v1_admitted")==0
 assert obj.get("gpu_used") is False and obj.get("training_performed") is False
 assert c.get("cases_total")==132 and c.get("fits_context",0)+c.get("token_hold",0)==132
+assert type(c.get("prompt_tokens_min")) is int and c["prompt_tokens_min"]>=32
+assert c["prompt_tokens_min"]<=c["prompt_tokens_median"]<=c["prompt_tokens_p95"]<=c["prompt_tokens_max"]
 print(json.dumps({"status":"R58_HF_CPU132_SAFE_REPORT_VALIDATED__NOT_ADMITTED",
                   "counts":c,"quality_v1_admitted":0,"gpu_used":False,
                   "private_text_emitted":False},sort_keys=True))
