@@ -103,6 +103,21 @@ def verify_reuse(args):
 
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 
+SAFE_FAILURE_REASONS = {
+    "PRIVATE_INPUT_READ_FAILED",
+    "PRIVATE_INPUT_JSON_INVALID",
+    "PRIVATE_INPUT_VALIDATION_FAILED",
+    "PRIVATE_INPUT_SOURCE_PATH_INVALID",
+    "PRIVATE_INPUT_SOURCE_EXPECTED_13",
+    "PRIVATE_INPUT_SOURCE_UNREVIEWED_CONTRACT_INVALID",
+    "PRIVATE_INPUT_SOURCE_CHAT_INVALID",
+    "TOKENIZER_IMPORT_FAILED",
+    "TOKENIZER_LOAD_FAILED",
+    "TOKENIZATION_FAILED",
+    "TOKEN_BUDGET_SUMMARY_FAILED",
+    "PREFLIGHT_FINGERPRINT_FAILED",
+}
+
 
 def check_all(args, tokenizer_factory=None, package_version=None):
     if (args.slot not in MODELS or args.model != MODELS[args.slot]
@@ -118,29 +133,58 @@ def check_all(args, tokenizer_factory=None, package_version=None):
         raise ValueError("PRIVATE_OUTPUT_DIR_INVALID")
     if (args.output_dir / "r58_cpu_preflight_all13_safe.json").exists():
         raise ValueError("SAFE_RECEIPT_ALREADY_EXISTS")
-    rows = read_source(args.input)  # exactly 13 unreviewed blind cases
+    try:
+        rows = read_source(args.input)  # exactly 13 unreviewed blind cases
+    except OSError:
+        raise ValueError("PRIVATE_INPUT_READ_FAILED") from None
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise ValueError("PRIVATE_INPUT_JSON_INVALID") from None
+    except Exception as exc:
+        source_codes = {
+            "SOURCE_PATH_INVALID", "SOURCE_EXPECTED_13",
+            "SOURCE_UNREVIEWED_CONTRACT_INVALID", "SOURCE_CHAT_INVALID",
+        }
+        code = str(exc) if type(exc) is ValueError and str(exc) in source_codes else None
+        raise ValueError(
+            f"PRIVATE_INPUT_{code}" if code else "PRIVATE_INPUT_VALIDATION_FAILED"
+        ) from None
     if tokenizer_factory is None:
-        from transformers import AutoTokenizer, __version__ as transformers_version
-        tokenizer_factory = AutoTokenizer.from_pretrained
+        try:
+            from transformers import AutoTokenizer, __version__ as transformers_version
+            tokenizer_factory = AutoTokenizer.from_pretrained
+        except Exception:
+            raise ValueError("TOKENIZER_IMPORT_FAILED") from None
     else:
         transformers_version = package_version
     if transformers_version != args.transformers_version:
         raise ValueError("TRANSFORMERS_VERSION_MISMATCH")
-    tokenizer = tokenizer_factory(args.model, revision=args.revision,
-                                  trust_remote_code=False)
+    try:
+        tokenizer = tokenizer_factory(args.model, revision=args.revision,
+                                      trust_remote_code=False)
+    except Exception:
+        raise ValueError("TOKENIZER_LOAD_FAILED") from None
     template = getattr(tokenizer, "chat_template", None)
     if not isinstance(template, str) or not template:
         raise ValueError("CHAT_TEMPLATE_MISSING")
-    lengths = [len(encode_one(tokenizer, r, args.model)) for r in rows]
+    try:
+        lengths = [len(encode_one(tokenizer, r, args.model)) for r in rows]
+    except Exception:
+        raise ValueError("TOKENIZATION_FAILED") from None
     if len(lengths) != 13:
         raise ValueError("EXPECTED_13")
-    stats = describe_token_lengths(
-        lengths, max_model_len=args.max_model_len,
-        reserved_output_tokens=args.max_output_tokens, pilot_count=2,
-    )
+    try:
+        stats = describe_token_lengths(
+            lengths, max_model_len=args.max_model_len,
+            reserved_output_tokens=args.max_output_tokens, pilot_count=2,
+        )
+    except Exception:
+        raise ValueError("TOKEN_BUDGET_SUMMARY_FAILED") from None
     # Reuse identity covers the actual bytes AND serialized judge prompts.
     # Hashes are kept in the private receipt, not in stdout/log SAFE summary.
-    fingerprints = _private_fingerprints(rows, args.input)
+    try:
+        fingerprints = _private_fingerprints(rows, args.input)
+    except Exception:
+        raise ValueError("PREFLIGHT_FINGERPRINT_FAILED") from None
     payload = {
         "schema": SCHEMA,
         "status": MODE if stats["over_budget_count"] == 0 else HOLD,
@@ -207,6 +251,7 @@ def main():
             "CHAT_TEMPLATE_MISSING", "EXPECTED_13",
             "CACHE_RECEIPT_MISSING_OR_UNSAFE", "CACHE_IDENTITY_MISMATCH",
             "CACHE_BUDGET_INVALID",
+            *SAFE_FAILURE_REASONS,
         } else "TOKENIZER_OR_PRIVATE_INPUT_ERROR"
         receipt = {
             "schema": SCHEMA, "status": HOLD, "reason_code": reason,
