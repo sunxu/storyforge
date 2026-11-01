@@ -131,3 +131,24 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 ## 2026-11-02 B 更新 Runner 的 CPU-only 预检
 
 最新 GitHub Runner 与共享 Token 核心已在固定 vLLM 镜像中对 B 的 pilot 输入执行预检，模型 revision 固定为 077b5c2f5c43bd3239fd605a0600229e8facbd4a，结果 PASS，planned=2。该检查不加载权重、不执行推理、不产生 GPU 费用。B 输出目录仍无 checkpoint；任何付费 GPU 重试须另行取得 Owner 费用批准。
+
+## 2026-11-02 B 组首轮 GPU 重试与第二版引用修复
+
+### 首轮重试结果
+
+- Job `6ae76bc3c78863f9c62fb5c4` 因镜像内没有 `python` 命令启动失败；未执行评审。
+- Job `6ae76c010e0338d1bb7d8608` 因时间参数解析为 1 秒而超时；未执行评审。
+- 正式首轮 Job `6ae76c1e0e0338d1bb7d8614` 使用 H200、GLM-4-32B-0414 完成模型加载，并处理第 1 条。SAFE 返回 `R58_HF_GPU_REVIEW_HOLD`，字段 `specific_target_quotes`、quote index 0；自由文本纠错仍不精确。运行约 104 秒，未保存任何 checkpoint，第二条未执行。旧 B 输出和 A 两个 checkpoint 均未改动。
+
+### 第二版修复
+
+- 修复从自由文本重写改为受限候选索引：模型只能输出 `candidate_index`；程序只从目标回复或可见历史单条 user/assistant 消息中提取原文句段，并替换失败引用位置。
+- 候选最多 128 条，每条 8–300 字；不截断候选集合，不使用 unapproved_card；索引必须为有效整数。只允许一次纠错，最终仍执行原始严格连续子串校验。
+- HF CPU 合成测试 `test_r58_hf_gpu_literary_reviewer`：12/12 PASS，覆盖目标引用端到端修复、来源候选、字段隔离和无效索引 HOLD。
+- 新 B 私有输入与输出独立保存于 `hf://buckets/adradar/storyforge-r58-b-retry-20261102/input_B_retry2_20261102` 和 `.../output_B_retry2_20261102`。原始 674,509 字节输入与旧 B 输入字节一致；旧失败尝试目录保留。
+- 固定 vLLM 镜像中最新 B Runner CPU-only Token 预检 PASS，planned=2；未加载模型权重、未推理、未使用 GPU。
+- Skill 更新至 v0.1.4，技术规范已更新；本次修复不扩大评审范围、不启动剩余 11 条、不授予训练准入。
+
+### 已批准预算执行约束
+
+Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h、汇率 6.6568、总计不超过 2 小时估算）。前述两个启动失败约 8 秒和 4 秒，首轮实际评审约 104 秒。第二版 GPU Job 的 timeout 限为 117 分钟，连同前述运行时间，理论总时长不超过 2 小时。只运行 pilot 前两条；若 HOLD、失败或预算达到上限即停止，不自动扩大范围。
