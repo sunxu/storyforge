@@ -23,7 +23,7 @@ RECEIPT_NAME = "r58_cpu_preflight_all13_safe.json"
 SHA40 = re.compile(r"[a-f0-9]{40}\Z")
 SHA64 = re.compile(r"[a-f0-9]{64}\Z")
 VERSION = re.compile(r"\d+\.\d+\.\d+\Z")
-SCHEMA = "r58_hf_cpu_cache_inventory_safe_v1"
+SCHEMA = "r58_hf_cpu_cache_inventory_safe_v2"
 
 
 def private_directory(path: Path) -> bool:
@@ -38,7 +38,9 @@ def private_file(path: Path, max_bytes: int) -> bool:
             and 0 < path.stat().st_size <= max_bytes)
 
 
-def inspect_slot(stage: Path, slot: str) -> str:
+def inspect_slot(stage: Path, slot: str, *, expected_revision: str | None,
+                 expected_transformers: str | None, max_model_len: int,
+                 reserved_output_tokens: int) -> str:
     """MISSING / LOCAL_MATCH_ORIGIN_UNVERIFIED / HOLD. No private data returned."""
     incoming = stage / f"input_{slot}"
     outgoing = stage / f"output_{slot}"
@@ -56,6 +58,17 @@ def inspect_slot(stage: Path, slot: str) -> str:
         record = json.loads(receipt.read_bytes())
         if not isinstance(record, dict):
             return "HOLD"
+        # Expected settings must come from a separately reviewed plan/CLI,
+        # never from the receipt being verified (no self-attestation).
+        if (not isinstance(expected_revision, str)
+                or not SHA40.fullmatch(expected_revision)
+                or not isinstance(expected_transformers, str)
+                or not VERSION.fullmatch(expected_transformers)
+                or type(max_model_len) is not int
+                or not 4096 <= max_model_len <= 40960
+                or type(reserved_output_tokens) is not int
+                or not 1200 <= reserved_output_tokens <= 4096):
+            return "HOLD"
         model = record.get("model")
         revision = record.get("model_revision")
         runtime_version = record.get("transformers_version")
@@ -66,11 +79,10 @@ def inspect_slot(stage: Path, slot: str) -> str:
             (JUDGE_SYSTEM + JUDGE_USER).encode("utf-8")
         ).hexdigest()
         if (model != MODELS[slot]
-                or not isinstance(revision, str) or not SHA40.fullmatch(revision)
-                or not isinstance(runtime_version, str)
-                or not VERSION.fullmatch(runtime_version)
-                or type(max_length) is not int or not 4096 <= max_length <= 40960
-                or type(reserve) is not int or not 1200 <= reserve <= 4096
+                or revision != expected_revision
+                or runtime_version != expected_transformers
+                or max_length != max_model_len or type(max_length) is not int
+                or reserve != reserved_output_tokens or type(reserve) is not int
                 or not isinstance(record.get("tokenizer_class"), str)
                 or not record["tokenizer_class"]
                 or not isinstance(template_sha, str)
@@ -82,9 +94,10 @@ def inspect_slot(stage: Path, slot: str) -> str:
                 or record.get("quality_v1_admitted") != 0):
             return "HOLD"
         args = SimpleNamespace(
-            slot=slot, model=model, revision=revision,
-            transformers_version=runtime_version,
-            max_model_len=max_length, max_output_tokens=reserve,
+            slot=slot, model=MODELS[slot], revision=expected_revision,
+            transformers_version=expected_transformers,
+            max_model_len=max_model_len,
+            max_output_tokens=reserved_output_tokens,
             input=source, output_dir=outgoing,
         )
         verify_reuse(args)
@@ -95,11 +108,24 @@ def inspect_slot(stage: Path, slot: str) -> str:
         return "HOLD"
 
 
-def inspect(stage: Path) -> dict:
+def inspect(stage: Path, *, revisions: dict[str, str] | None = None,
+            transformers_versions: dict[str, str] | None = None,
+            max_model_len: int = 32768,
+            reserved_output_tokens: int = 2400) -> dict:
+    revisions = revisions or {}
+    transformers_versions = transformers_versions or {}
     if not private_directory(stage):
         states = {"A": "HOLD", "B": "HOLD"}
     else:
-        states = {slot: inspect_slot(stage, slot) for slot in ("A", "B")}
+        states = {
+            slot: inspect_slot(
+                stage, slot,
+                expected_revision=revisions.get(slot),
+                expected_transformers=transformers_versions.get(slot),
+                max_model_len=max_model_len,
+                reserved_output_tokens=reserved_output_tokens,
+            ) for slot in ("A", "B")
+        }
     counts = {key: sum(v == key for v in states.values())
               for key in ("MISSING", "LOCAL_MATCH_ORIGIN_UNVERIFIED", "HOLD")}
     return {
@@ -120,9 +146,24 @@ def inspect(stage: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--stage-dir", required=True, type=Path)
+    parser.add_argument("--expected-revision-a")
+    parser.add_argument("--expected-revision-b")
+    parser.add_argument("--expected-transformers-a")
+    parser.add_argument("--expected-transformers-b")
+    parser.add_argument("--max-model-len", type=int, default=32768)
+    parser.add_argument("--max-output-tokens", type=int, default=2400)
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    result = inspect(args.stage_dir)
+    result = inspect(
+        args.stage_dir,
+        revisions={"A": args.expected_revision_a, "B": args.expected_revision_b},
+        transformers_versions={
+            "A": args.expected_transformers_a,
+            "B": args.expected_transformers_b,
+        },
+        max_model_len=args.max_model_len,
+        reserved_output_tokens=args.max_output_tokens,
+    )
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 42 if result["status"] == "R58_CPU_CACHE_INVENTORY_HOLD" else 0
 
