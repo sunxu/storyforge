@@ -9,6 +9,7 @@ from r58_hf_gpu_literary_reviewer import (
     PILOT_SCHEMA, MODELS, canon, read_source, prompt_messages,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
+    QuoteValidationError, QuoteRepairFailure, validate_quote_repair,
 )
 from r58_gold195_blind_quality_pilot13 import blind_material
 from gold195_six_dimension_review_tasks import prepare_row
@@ -50,11 +51,33 @@ def completed_response(row, decision="PASS"):
 
 
 class FakeTokenizer:
+    def __init__(self):
+        self.calls = []
+
     def apply_chat_template(self, messages, **kwargs):
-        assert len(messages) == 2
+        self.calls.append(copy.deepcopy(messages))
         assert messages[0]["role"] == "system"
-        assert "unapproved_card" in messages[1]["content"]
+        self.assert_payload(messages)
         return {"input_ids": [list(range(64))], "attention_mask": [[1] * 64]}
+
+    @staticmethod
+    def assert_payload(messages):
+        assert len(messages) >= 2
+        assert "unapproved_card" in messages[1]["content"]
+
+
+class FakeEngine:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.calls = 0
+
+    def generate(self, prompts, params, use_tqdm=False):
+        self.calls += 1
+        if not self.responses:
+            raise AssertionError("unexpected generation call")
+        text = self.responses.pop(0)
+        return [SimpleNamespace(outputs=[
+            SimpleNamespace(finish_reason="stop", text=text)])]
 
 
 class HFReviewerSyntheticTests(unittest.TestCase):
@@ -116,6 +139,103 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         answer["uncertainty"] = ""
         with self.assertRaises(ValueError):
             validate_response(answer, row)
+
+    def test_quote_validation_diagnostic_is_safe_and_field_specific(self):
+        row = source_rows()[0]
+        bad = completed_response(row)
+        bad["specific_source_quotes"] = ["not-source-exact"]
+        with self.assertRaises(QuoteValidationError) as caught:
+            validate_response(bad, row)
+        error = caught.exception
+        self.assertEqual(error.field, "specific_source_quotes")
+        self.assertEqual(error.quote_index, 0)
+        self.assertGreater(error.source_candidate_count, 0)
+        self.assertNotIn("not-source-exact", str(error))
+        self.assertEqual(str(error), "RESPONSE_NONEXACT_QUOTE")
+
+        bad = completed_response(row)
+        bad["specific_target_quotes"] = ["not-target-exact"]
+        with self.assertRaises(QuoteValidationError) as caught:
+            validate_response(bad, row)
+        self.assertEqual(caught.exception.field, "specific_target_quotes")
+        self.assertEqual(caught.exception.quote_index, 0)
+        self.assertEqual(caught.exception.source_candidate_count, 1)
+
+    def test_quote_repair_cannot_change_nonquote_review_fields(self):
+        row = source_rows()[0]
+        original = completed_response(row)
+        repaired = copy.deepcopy(original)
+        repaired["specific_source_quotes"] = ["not-source-exact"]
+        with self.assertRaises(QuoteValidationError):
+            validate_quote_repair(original, repaired, row)
+
+        repaired = completed_response(row)
+        repaired["scores"]["chinese_prose"] = 5
+        with self.assertRaisesRegex(ValueError, "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS"):
+            validate_quote_repair(original, repaired, row)
+
+    def test_one_bounded_quote_repair_saves_only_exact_valid_checkpoint(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            path, out = self.stage(root)
+            rows = read_source(path)
+            tokenizer = FakeTokenizer()
+            first_bad = completed_response(rows[0])
+            first_bad["specific_source_quotes"] = ["not-source-exact"]
+            engine = FakeEngine([
+                json.dumps(first_bad, ensure_ascii=False),
+                json.dumps(completed_response(rows[0]), ensure_ascii=False),
+                json.dumps(completed_response(rows[1]), ensure_ascii=False),
+            ])
+            result = run(
+                self.args(path, out),
+                engine_factory=lambda **kwargs: engine,
+                tokenizer_factory=lambda *a, **k: tokenizer,
+                sampling_params_factory=lambda **kwargs: kwargs,
+                structured_outputs_factory=lambda **kwargs: kwargs,
+            )
+            self.assertEqual(result["decisions"]["PASS"], 2)
+            self.assertEqual(result["quote_repair_attempts"], 1)
+            self.assertEqual(result["quote_repair_successes"], 1)
+            self.assertEqual(engine.calls, 3)
+            self.assertEqual(len(tokenizer.calls), 3)
+            repair_messages = tokenizer.calls[2]
+            self.assertEqual(repair_messages[-2]["role"], "assistant")
+            self.assertEqual(repair_messages[-1]["role"], "user")
+            self.assertIn("specific_source_quotes", repair_messages[-1]["content"])
+            self.assertIn("只允许修改", repair_messages[-1]["content"])
+            self.assertIsNotNone(read_checkpoint(
+                checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0))
+            self.assertIsNotNone(read_checkpoint(
+                checkpoint_path(out, 1), rows[1], "A", MODELS["A"], REV, 1))
+
+    def test_failed_quote_repair_holds_without_checkpoint(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            path, out = self.stage(root)
+            rows = read_source(path)
+            tokenizer = FakeTokenizer()
+            first_bad = completed_response(rows[0])
+            first_bad["specific_source_quotes"] = ["not-source-exact"]
+            second_bad = copy.deepcopy(first_bad)
+            engine = FakeEngine([
+                json.dumps(first_bad, ensure_ascii=False),
+                json.dumps(second_bad, ensure_ascii=False),
+            ])
+            with self.assertRaises(QuoteRepairFailure) as caught:
+                run(
+                    self.args(path, out),
+                    engine_factory=lambda **kwargs: engine,
+                    tokenizer_factory=lambda *a, **k: tokenizer,
+                    sampling_params_factory=lambda **kwargs: kwargs,
+                    structured_outputs_factory=lambda **kwargs: kwargs,
+                )
+            self.assertEqual(caught.exception.code, "RESPONSE_NONEXACT_QUOTE")
+            self.assertEqual(caught.exception.case_index, 0)
+            self.assertEqual(caught.exception.quote_error.field, "specific_source_quotes")
+            self.assertEqual(caught.exception.quote_error.quote_index, 0)
+            self.assertFalse(checkpoint_path(out, 0).exists())
+            self.assertFalse(any(out.iterdir()))
 
     def test_batchencoding_field_count_is_not_token_count(self):
         encoded = {"input_ids": [list(range(64))], "attention_mask": [[1] * 64]}
