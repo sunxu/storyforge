@@ -33,6 +33,19 @@ jobs:
           python3 -m unittest discover -s experiments/r58_quality -p 'test_*.py' -q
           python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.py' -q
           python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
+      - name: Gold195 frozen-source count-only structural preflight
+        run: |
+          python3 experiments/r58_quality/gold195_preflight.py --repo-root "$PWD" > /tmp/r58_gold195_preflight_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/r58_gold195_preflight_safe.json').read_text())
+          assert result['status'] == 'READ_ONLY_DIAGNOSTIC_NOT_QUALITY_ADMISSION'
+          assert result['total_records'] == 195
+          assert result['training_admitted'] == 0
+          assert result['protected_test_accessed'] is False
+          print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+          PY
       - name: V0.2 pinned SAFE evidence remains HOLD
         run: |
           python3 skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py --repo-root "$PWD" > /tmp/r58_safe_preflight.json
