@@ -18,7 +18,7 @@ class SourceReviewPacketTests(unittest.TestCase):
         with ipath.open("w", newline="", encoding="utf-8") as output:
             writer = csv.DictWriter(output, fieldnames=["candidate_id", "target_sha256", "story_id"])
             writer.writeheader()
-            for cohort, (relative, count) in zip(("gold87", "gold108"), ROOTS):
+            for cohort, relative, count in ROOTS:
                 dest = root / relative
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 with dest.open("w", encoding="utf-8") as f:
