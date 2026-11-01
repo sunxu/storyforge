@@ -27,7 +27,7 @@ Owner 明确：**不需要把任何训练样本认证为原始生产 Provider �
 3. `STRUCTURE`：真实当前 User、正确角色顺序、足够的禁句/承诺/历史、规范 JSONL、末轮 Assistant 目标唯一、目标不使用未来剧情透视；Token 上限 16,384，按 Qwen 实际模板和 Collator 验证。
 4. `QUALITY`：两份相互独立、看不到模型身份的评审意见；记录硬事实/禁令、严重代写玩家、NPC 主动推进、中文自然度与剧情张力、角色一致性与重复表达；不单靠总分。严重越权/事实错误直接 REJECT，有争议 HOLD，优秀才 PASS。
 5. `FREEZE`：通过者冻结来源哈希、派生转换版本、训练标签掩码核验及 Train/Validation 世界分组；不把旧 DEV/已暴露 Test 当最终独立晋升测试，R50 保护保持隔离。
-6. `TRAINING`：只有正式批准的 dataset/config 和 CPU-only preflight 完成后，才请求一次明确的 GPU 运行授权。绝不自动触发 HF Job、付费资源或模型晋升。
+6. `TRAINING`：只有正式批准的 dataset/config 和 CPU-only preflight 完成后，才请求一次明确的 GPU 运行授权。不得自动触发未经用户明确要求的 HF Job；用户明确要求 CPU-only Token 预检时，可提交所需的最小 HF CPU Job，无需逐 Job 费用授权。GPU 推理/训练仍须单独明确授权；模型晋升也不得自动执行。
 
 旧 `skills/storyforge-roleplay-sft/scripts/r58_intake.py` 的 `history_replay_verified` / `target_time_canon_verified` 是**旧模式代码合同**，不能直接把它们写成 `true` 来绕过。新 Quality Gate 需要另立 schema 和独立测试，或者先获得 Owner 代码变更批准；在这之前不把任何 R58 样本送入 `freeze` 训练入库器。
 
