@@ -68,5 +68,57 @@
     "Jinja2 3.1.6 was explicitly installed; without it, apply_chat_template failed with ImportError.",
     "Token budget PASS is not literary quality approval, data admission, inference validation, or training authorization."
   ],
-  "execution_environment": "Hugging Face CPU Sandbox; both sandboxes terminated after receipt extraction"
+  "execution_environment": "Hugging Face CPU Sandbox; both sandboxes terminated after receipt extraction",
+  "receipt_sync_verification": {
+    "status": "R58_AB_SAFE_RECEIPTS_SYNCED_AND_REMOTE_VERIFIED",
+    "remote_bucket_paths": {
+      "A": "hf://buckets/adradar/jobs-artifacts/output_A-6c62913b",
+      "B": "hf://buckets/adradar/jobs-artifacts/output_B-4abd76e2"
+    },
+    "remote_receipts_present": true,
+    "remote_receipt_byte_sizes_match_local": true,
+    "remote_receipt_exact_byte_match_local": true,
+    "private_input_sha256_matches_each_slot_source_file": true,
+    "private_input_hashes_committed": false,
+    "remote_output_directory_inventory": {
+      "A": [
+        ".keep",
+        "r58_cpu_preflight_all13_safe.json",
+        "r58_rw_probe.txt"
+      ],
+      "B": [
+        ".keep",
+        "r58_cpu_preflight_all13_safe.json",
+        "r58_rw_probe.txt"
+      ]
+    },
+    "B_sync_uploaded_extra_safe_artifacts": {
+      ".keep": "0 bytes",
+      "r58_rw_probe.txt": "24 bytes; content is HF PRIVATE RW SMOKE PASS"
+    },
+    "no_private_source_or_model_output_uploaded_to_output_directories": true
+  },
+  "staged_runner_tokenization_equivalence": {
+    "status": "R58_AB_STAGED_RUNNER_TOKENIZATION_EQUIVALENCE_PASS",
+    "prompt_template_sha256_equal_to_preflight_receipts": true,
+    "A": {
+      "staged_runner_sha256": "0bf2a67482e361162e598cce1c154393057c5cf6547fb8baaa6248e12e9b9095",
+      "matches_preflight_reviewer_code": true,
+      "staged_legacy_token_core_differs_from_current_shared_core": true,
+      "exact_token_id_sequences_equal_across_all_13_cases": true,
+      "tokenizer_class": "Qwen2TokenizerFast"
+    },
+    "B": {
+      "staged_runner_sha256": "2da26de21ea0365000c2dec60b7558f2d2f9b7a84fcced2ef67b2391b7aed073",
+      "matches_preflight_reviewer_code": false,
+      "prompt_constants_and_review_functions_match_except_tokenization_helpers": true,
+      "tokenization_helpers": "flatten_token_ids and encode_one differ from current shared-core implementation",
+      "exact_token_id_sequences_equal_across_all_13_cases": true,
+      "tokenizer_class": "PreTrainedTokenizerFast"
+    },
+    "tokenizer_weights_loaded": false,
+    "model_weights_loaded": false,
+    "inference_performed": false,
+    "interpretation": "Both actual staged runner/token-core paths reproduce the exact 13 token-ID sequences used for the recorded budgets. This verifies tokenization equivalence only; it is not GPU runtime equivalence or quality approval."
+  }
 }
