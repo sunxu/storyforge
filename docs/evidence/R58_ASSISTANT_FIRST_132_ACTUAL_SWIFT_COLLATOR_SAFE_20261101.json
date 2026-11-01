@@ -1,0 +1,63 @@
+{
+  "schema": "r58_assistant_first_sft_probe_cpu_collator_safe_v1",
+  "date": "2026-11-01",
+  "status": "R58_ASSISTANT_FIRST_SFT_PROBE_132_ACTUAL_SWIFT_LABEL_MASK_PASS__NOT_ADMITTED",
+  "source": {
+    "namespace": "adradar",
+    "private_bucket": "storyforge-training",
+    "source_run_key": "r58-hfcpu132-20261101T082542Z-579309",
+    "source_rows": 132,
+    "source_type": "semantic_review132_private_not_training_dataset",
+    "source_manifest_verified_in_prior_CPU_preflight": true
+  },
+  "probe": {
+    "count": 132,
+    "assistant_first_preserved": 132,
+    "probe_sha256": "bff00672eb0379fc99699017cf7d1f88344ef5f1f8d35b008eba7a22d5a06ee1",
+    "private_bytes": 1389761,
+    "system_prompt": "experimental generic no-card prompt; not approved R52 frozen system",
+    "source_cards_included": false,
+    "history_truncation_performed": false,
+    "gold_target_text_unchanged": true,
+    "trainable_dataset_released": false
+  },
+  "audit": {
+    "engine": "actual ms-swift get_processor/get_template and label-mask audit",
+    "model": "Qwen/Qwen3.8-27B",
+    "model_revision_pinned_by_audit": false,
+    "ms_swift": "4.5.3",
+    "transformers": "5.16.1",
+    "loss_scale": "last_round",
+    "max_length": 16384,
+    "actual_label_mask_audit_pass": 132,
+    "actual_label_mask_audit_total": 132,
+    "input_tokens_min": 1087,
+    "input_tokens_median": 2120,
+    "input_tokens_p95": 3436,
+    "input_tokens_max": 5306,
+    "input_at_or_above_16384": 0,
+    "supervised_tokens_min": 137,
+    "supervised_tokens_median": 263,
+    "supervised_tokens_max": 514,
+    "history_assistant_supervised_tokens_total": 0,
+    "system_supervised_tokens_total": 0,
+    "user_supervised_tokens_total": 0,
+    "final_assistant_supervision_verified": true
+  },
+  "execution": {
+    "hf_sandbox_job_id": "6ae70b490e0338d1bb7d6a26",
+    "compute": "cpu-upgrade",
+    "gpu_used": false,
+    "training_performed": false,
+    "private_story_text_logged_to_GitHub": false,
+    "r50_accessed": false
+  },
+  "limits": {
+    "gold_quality_admission": false,
+    "world_card_snapshots_unverified": true,
+    "sft_training_authorized": false,
+    "independent_eval_not_run": true,
+    "pinned_revision_and_trainer_full_path_not_yet_verified": true
+  },
+  "next": "Prepare actual Gold quality gate, trustworthy card binding, frozen R52 prompt comparison and pinned-revision train/validation split; do not promote probe to training release."
+}
