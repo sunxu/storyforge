@@ -81,8 +81,15 @@ def input_is_valid(row: dict) -> bool:
             return False
         if not isinstance(m["content"], str) or not m["content"].strip():
             return False
-        if i and m["role"] != ("user" if i % 2 else "assistant"):
-            return False
+        # Both user-first and assistant-first historical windows are valid.
+        # Actual ms-swift 4.5.3 last_round + data_collator verified 132/132
+        # original assistant-first SFT probes (R58 CPU 2026-11-01).
+        # Never silently drop/insert a role merely to satisfy alternation.
+        if i:
+            if m["role"] not in ("user", "assistant"):
+                return False
+            if m["role"] == messages[i - 1]["role"]:
+                return False
     return (
         row.get("input_messages_sha256") == sha(canonical(messages))
         and row.get("assistant_target_sha256") == sha(target.encode("utf-8"))
