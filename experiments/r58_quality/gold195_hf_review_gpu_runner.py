@@ -73,6 +73,29 @@ def make_prompt(row):
     )
 
 
+
+def extract_token_ids(encoded, *, prompt_chars):
+    """Normalize HF tokenize=True return types; reject mapping-key len bugs.
+
+    Transformers versions may return BatchEncoding with input_ids and
+    attention_mask: len(BatchEncoding) counts fields, not tokens.
+    """
+    from collections.abc import Mapping
+    if isinstance(encoded, Mapping):
+        if "input_ids" not in encoded:
+            raise ValueError("tokenizer mapping missing input_ids")
+        encoded = encoded["input_ids"]
+    if hasattr(encoded, "tolist") and not isinstance(encoded, list):
+        encoded = encoded.tolist()
+    if isinstance(encoded, list) and len(encoded) == 1 and isinstance(encoded[0], list):
+        encoded = encoded[0]
+    if (not isinstance(encoded, list) or not encoded
+            or any(type(token) is not int or token < 0 for token in encoded)
+            or (prompt_chars >= 100 and len(encoded) < 32)):
+        raise ValueError("implausible or non-integer tokenizer output")
+    return encoded
+
+
 def parse_answer(text, row, model_id, revision):
     # Model output is untrusted; do not turn structural validity into approval.
     obj = json.loads(text.strip())
@@ -205,6 +228,7 @@ def main():
                     [{"role": "user", "content": prompt}],
                     tokenize=True, add_generation_prompt=True,
                 )
+            encoded = extract_token_ids(encoded, prompt_chars=len(prompt))
             if len(encoded) + a.max_output_tokens > a.max_model_len:
                 counts["token_hold"] += 1
                 # Never truncate privately sourced history to fit silently.
