@@ -87,10 +87,22 @@ bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --cache-inven
 此命令只访问此前 `STAGE/input_A,B/source.private.jsonl` 和 `STAGE/output_A,B/r58_cpu_preflight_all13_safe.json`，默认 STAGE 与第四节一致，必要时以 `R58_STAGE` 环境变量覆盖；**不运行模型 Tokenizer、不启动 HF Job、不重写私人文件**。内部复用 `r58_hf_cpu_literary_token_preflight.py::verify_reuse`；分别输出以下安全状态：
 
 - `MISSING`：本地未找到该 slot 的回执，不等于 Token 失败。
-- `LOCAL_MATCH_ORIGIN_UNVERIFIED`：本地输入、序列化 Prompt、代码 SHA、模型/版本/预算与现有回执匹配，但**不能由本地回执自证来源于真实 HF CPU Job、或等价于未来 GPU runtime**；仍不可当作正式 GPU 准入。
+- `LOCAL_MATCH_ORIGIN_UNVERIFIED`：本地输入、序列化 Prompt、代码 SHA，以及**独立提供的**模型 revision、Transformers 版本和评审预算与回执匹配；但**不能由本地回执自证来源于真实 HF CPU Job、或等价于未来 GPU runtime**，仍不可当作正式 GPU 准入。
 - `HOLD`：路径/权限、回执格式或身份不匹配；不改写证据，不自动复算。命令退出码 42。
 
-本地复核只读检查自带的可信元数据，不能把从同一回执提取的 revision、Transformers 版本和预算当成独立批准配置；与计划 GPU 环境的版本匹配、可信 HF Job/PRIVATE sync-back 来源记录须另行核实。**禁止据此自动启动付费 CPU/GPU Job**。该盘点脚本为新薄适配器，底层 Token 提取和统计仍仅有一份共享实现。
+2026-11-01 修正：测试发现旧盘点器错误地将回执里的预算值当成校验的期望值（2400 改成 2401 也可能误判本地匹配）。`v2` 改为**fail-closed**：对已有回执，必须另行提供已批准/已记录的各槽位不可变模型 revision 与 Transformers 版本，预算按真实 GPU 评审器的既定默认值 32768/2400（如经明确审批改变，则通过独立 CLI 参数传入），绝不能从正在检查的回执中推断期望值。未提供独立 pin 时，若回执存在则 `HOLD`；如果回执不存在仍返回 `MISSING`。
+
+已有回执并且已从**独立的评审配置记录**确定参数后，才能运行如下示例（尖括号仅是占位说明，执行时替换为真实 SHA 与版本，不要把示例值当成生产 pin）：
+
+```bash
+bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --cache-inventory \\
+  --expected-revision-a "$REV_A_40_HEX" \\
+  --expected-revision-b "$REV_B_40_HEX" \\
+  --expected-transformers-a "$TRANSFORMERS_A" \\
+  --expected-transformers-b "$TRANSFORMERS_B"
+```
+
+以上 CLI 期望值仍须对应事先批准的 GPU 计划，不能取自待核验的 SAFE JSON。可信 HF Job/PRIVATE sync-back 来源及未来 GPU runtime 等价性仍需单独核实。**禁止据此自动启动付费 CPU/GPU Job**。该盘点脚本为薄适配器，底层 Token 提取与统计只有一份共享实现。
 
 ## 五、下次使用前的最小决策
 
