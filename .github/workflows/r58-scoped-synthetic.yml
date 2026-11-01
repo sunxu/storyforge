@@ -46,6 +46,19 @@ jobs:
           assert result['protected_test_accessed'] is False
           print(json.dumps(result, ensure_ascii=False, sort_keys=True))
           PY
+      - name: Gold108 frozen dual-review index binding (SAFE counts only)
+        run: |
+          python3 experiments/r58_quality/gold108_review_binding.py --repo-root "$PWD" > /tmp/r58_gold108_legacy_binding.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/r58_gold108_legacy_binding.json').read_text())
+          assert data["status"] == "HISTORICAL_DUAL_REVIEW_INDEX_BINDING_ONLY__NO_QUALITY_V1_ADMISSION"
+          assert data["index_count"] == data["review_evidence_count"] == 108
+          assert data["training_admitted"] == 0
+          assert data["r50_body_accessed"] is False
+          print("Gold108 legacy double-review binding: 108/108 PASS; Quality-v1 admission=0")
+          PY
       - name: V0.2 pinned SAFE evidence remains HOLD
         run: |
           python3 skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py --repo-root "$PWD" > /tmp/r58_safe_preflight.json
