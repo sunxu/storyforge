@@ -11,7 +11,7 @@ from pathlib import Path
 import zipfile
 from gold195_archive_source_discovery import SOURCES, SOURCE_ROOT, digest_file
 
-MAX_JSON = 50_000_000
+MAX_JSON = 160_000_000
 MAX_NESTED = 90_000_000
 
 
