@@ -118,7 +118,7 @@ class HFCPUReviewPreflightTests(unittest.TestCase):
             source, output = self.stage(Path(td))
             rows = source_rows()
             rows[0]["schema"] = "invalid-private-schema"
-            source.write_bytes(b"".join(canon(row) + b"\\n" for row in rows))
+            source.write_bytes(b"".join(canon(row) + b"\n" for row in rows))
             args = self.args(source, output)
             with self.assertRaisesRegex(
                 ValueError, "^PRIVATE_INPUT_SOURCE_UNREVIEWED_CONTRACT_INVALID$"
