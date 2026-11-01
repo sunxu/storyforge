@@ -45,6 +45,17 @@ class CacheInventoryTests(unittest.TestCase):
         save_receipt(out, receipt)
         return out / RECEIPT_NAME
 
+    def planned(self, stage, **overrides):
+        # Planned values are independent of the receipt under inspection.
+        params = {
+            "revisions": {"A": "a" * 40, "B": "a" * 40},
+            "transformers_versions": {"A": "4.57.1", "B": "4.57.1"},
+            "max_model_len": 32768,
+            "reserved_output_tokens": 2400,
+        }
+        params.update(overrides)
+        return inspect(stage, **params)
+
     def test_no_receipts_reports_missing_not_pass(self):
         with tempfile.TemporaryDirectory() as td:
             stage = self.make_stage(td)
@@ -58,7 +69,7 @@ class CacheInventoryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             stage = self.make_stage(td)
             self.populate(stage, "A")
-            result = inspect(stage)
+            result = self.planned(stage)
             self.assertEqual(result["slots"]["A"], "LOCAL_MATCH_ORIGIN_UNVERIFIED")
             self.assertEqual(result["slots"]["B"], "MISSING")
             self.assertFalse(result["gpu_runtime_equivalence_proven"])
@@ -72,7 +83,7 @@ class CacheInventoryTests(unittest.TestCase):
             raw = json.loads(path.read_text())
             raw["reserved_output_tokens"] = 2401
             path.write_text(json.dumps(raw))
-            result = inspect(stage)
+            result = self.planned(stage)
             self.assertEqual(result["slots"]["B"], "HOLD")
             self.assertEqual(result["status"], "R58_CPU_CACHE_INVENTORY_HOLD")
 
@@ -82,17 +93,45 @@ class CacheInventoryTests(unittest.TestCase):
             target = stage / "output_A" / RECEIPT_NAME
             target.write_text("not json")
             target.chmod(0o600)
-            self.assertEqual(inspect(stage)["slots"]["A"], "HOLD")
+            self.assertEqual(self.planned(stage)["slots"]["A"], "HOLD")
 
     def test_symlink_or_unsafe_mode_fails_closed(self):
         with tempfile.TemporaryDirectory() as td:
             stage = self.make_stage(td)
             receipt = self.populate(stage, "A")
             receipt.chmod(0o644)
-            self.assertEqual(inspect(stage)["slots"]["A"], "HOLD")
+            self.assertEqual(self.planned(stage)["slots"]["A"], "HOLD")
             receipt.unlink()
             receipt.symlink_to(stage / "input_A" / "source.private.jsonl")
+            self.assertEqual(self.planned(stage)["slots"]["A"], "HOLD")
+
+    def test_receipt_cannot_supply_its_own_expected_pins(self):
+        with tempfile.TemporaryDirectory() as td:
+            stage = self.make_stage(td)
+            self.populate(stage, "A")
             self.assertEqual(inspect(stage)["slots"]["A"], "HOLD")
+            self.assertEqual(inspect(stage)["slots"]["B"], "MISSING")
+
+    def test_wrong_independent_revision_or_runtime_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            stage = self.make_stage(td)
+            self.populate(stage, "A")
+            wrong_revision = self.planned(
+                stage, revisions={"A": "b" * 40, "B": "a" * 40})
+            self.assertEqual(wrong_revision["slots"]["A"], "HOLD")
+            wrong_runtime = self.planned(
+                stage, transformers_versions={"A": "4.57.0", "B": "4.57.1"})
+            self.assertEqual(wrong_runtime["slots"]["A"], "HOLD")
+
+    def test_tampered_context_length_fails_closed(self):
+        with tempfile.TemporaryDirectory() as td:
+            stage = self.make_stage(td)
+            receipt = self.populate(stage, "A")
+            raw = json.loads(receipt.read_text())
+            raw["max_model_len"] = 32769
+            receipt.write_text(json.dumps(raw))
+            self.assertEqual(self.planned(stage)["slots"]["A"], "HOLD")
+
 
 
 if __name__ == "__main__":
