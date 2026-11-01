@@ -12,7 +12,7 @@ from pathlib import Path
 import re
 import sys
 
-from gold195_hf_review_gpu_runner import make_prompt, canon
+from gold195_hf_review_gpu_runner import make_prompt, canon, extract_token_ids
 
 MODEL = "Qwen/Qwen3-32B"
 MODEL_REVISION = "9216db5781bf21249d130ec9da846c4624c16137"
@@ -76,7 +76,8 @@ def preflight(rows, tokenizer, context=8192, reserve=1200):
             ids = tokenizer.apply_chat_template(
                 [{"role": "user", "content": prompt}],
                 tokenize=True, add_generation_prompt=True)
-        sizes.append(len(ids))
+        token_ids = extract_token_ids(ids, prompt_chars=len(prompt))
+        sizes.append(len(token_ids))
     sizes.sort()
     within = sum(x + reserve <= context for x in sizes)
     return {
@@ -115,11 +116,12 @@ def main():
             MODEL, revision=MODEL_REVISION, trust_remote_code=False)
         counts = preflight(rows, tokenizer)
         report = {
-            "schema": "r58_hf_cpu132_tokenizer_safe_v1",
-            "status": "R58_HF_CPU132_TOKEN_LENGTHS_CHECKED__NO_INFERENCE",
+            "schema": "r58_hf_cpu132_tokenizer_safe_v2",
+            "status": "R58_HF_CPU132_REAL_TOKEN_IDS_VERIFIED__NO_INFERENCE",
             "source_rows_verified": 132, "model": MODEL,
             "model_revision": MODEL_REVISION,
-            "counts": counts, "gpu_used": False, "training_performed": False,
+            "counts": counts, "token_length_source": "input_ids",
+            "gpu_used": False, "training_performed": False,
             "quality_v1_admitted": 0, "r50_accessed": False,
             "private_text_or_case_ids_emitted": False,
         }
