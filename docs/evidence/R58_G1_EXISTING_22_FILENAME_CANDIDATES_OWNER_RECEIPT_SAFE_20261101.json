@@ -1,0 +1,51 @@
+{
+  "schema": "r58_g1_existing_filename_candidates_review_sheet_safe_v1",
+  "status": "PRIOR_22_FILENAME_CANDIDATES_REUSED__OWNER_METADATA_SOURCE_SELECTION_PENDING",
+  "evidence_origin_SAFE": "OWNER_MAC_USER_SUPPLIED_STDOUT__NOT_AGENT_READ_PRIVATE_FILES",
+  "owner_synthetic_tests": {
+    "tests": 7,
+    "failures": 0,
+    "errors": 0,
+    "result": "OK"
+  },
+  "actual_source_index_contents_read": false,
+  "candidate_counts_by_scope": {
+    "other_protected_or_holdout": 0,
+    "prior_sft_exposure": 2,
+    "r50_protected_worlds": 0,
+    "r55_r57_dev_worlds": 19,
+    "semantic_world_graph": 8
+  },
+  "existing_private_inventory_modified": false,
+  "expansion_allowed": false,
+  "filename_hint_classes": {
+    "INDEX_AND_REPORT": 3,
+    "INDEX_HINT_ONLY": 8,
+    "OTHER_NAME_HINT": 6,
+    "REPORT_HINT_ONLY": 12
+  },
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "new_private_review_sheet_written_exclusive_0600": true,
+  "prior_autodiscovery_rerun": false,
+  "private_review_rows_owner_approved": 0,
+  "protected_r50_directories_scanned": false,
+  "raw_paths_uuids_or_candidate_source_names_exported": false,
+  "scope_candidate_rows": 29,
+  "source_registry_complete": false,
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "unique_private_candidate_path_count": 22,
+  "validation_admitted": 0,
+  "interpretation_SAFE": {
+    "29_scope_references_across_22_distinct_candidate_paths": true,
+    "filename_class_proves_metadata_only_or_completeness": false,
+    "candidate_files_opened_for_this_receipt": false,
+    "owner_approved_source_scopes": 0,
+    "next_gate": "OWNER_ONLY_LOCAL_REVIEW_OF_METADATA_SOURCE_PROVENANCE__NO_CANDIDATE_CONTENT_SCAN"
+  },
+  "provenance_paths_SAFE": {
+    "script": "experiments/r58_round1/r58_g1_existing_filename_candidates_review_sheet_safe_20261101.py",
+    "test": "experiments/r58_round1/test_r58_g1_existing_filename_candidates_review_sheet_safe_20261101.py"
+  }
+}
