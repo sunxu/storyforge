@@ -177,3 +177,17 @@ jobs:
           assert x["training_admitted"] == 0 and x["r50_read"] is False
           print(json.dumps(x, sort_keys=True))
           PY
+      - name: Verify Gold195 source-card snapshot candidates (SAFE count only)
+        run: |
+          python3 experiments/r58_quality/gold195_card_snapshot_candidates.py --repo-root "$PWD" > /tmp/r58_card_snapshot_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("/tmp/r58_card_snapshot_safe.json").read_text())
+          assert result["status"] == "SOURCE_CARD_CANDIDATES_IDENTIFIED__OWNER_REVIEW_REQUIRED"
+          assert result["gold_world_ids_matched"] == result["gold_world_ids"] == 13
+          assert result["gold_rows_with_card_candidates"] == 195
+          assert result["training_admitted"] == 0
+          assert result["private_candidate_file_written"] is False
+          print(json.dumps(result, sort_keys=True))
+          PY
