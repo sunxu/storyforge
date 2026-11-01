@@ -21,6 +21,7 @@ RUN_RE = re.compile(r"r58-hfcpu132-\d{8}T\d{6}Z-\d{6}\Z")
 FILES = (
     "code/gold195_hf_review_cpu_worker.py",
     "code/gold195_hf_review_gpu_runner.py",
+    "code/gold195_hf_review_cpu_bootstrap.py",
     "private/input132.private.jsonl",
 )
 
