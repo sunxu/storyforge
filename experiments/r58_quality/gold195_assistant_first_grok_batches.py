@@ -152,9 +152,13 @@ def private_write(path, payload):
         stream.write(payload)
 
 
-def export(tasks, n, folder, repo):
+def export(tasks, n, folder, repo, previous_folder=None, owner_release=False):
     if n > 1:
-        raise ValueError("later batches require prior batch validation and explicit owner release")
+        if not owner_release or previous_folder is None:
+            raise ValueError("previous validation and explicit owner release required")
+        gate = inspect(tasks, n - 1, previous_folder, repo)
+        if gate["status"] != "BATCH_VALIDATED__OWNER_GATE_REQUIRED":
+            raise ValueError("previous batch evidence unresolved, cannot export next")
     private_folder(folder, repo, create=True)
     for i, row in enumerate(batch_cases(tasks, n), 1):
         name = label(n, i)
@@ -276,6 +280,8 @@ def main():
     p.add_argument("--private-comparison-input", required=True, type=Path)
     p.add_argument("--private-full-tasks", required=True, type=Path)
     p.add_argument("--batch", required=True, type=int)
+    p.add_argument("--previous-batch-dir", type=Path)
+    p.add_argument("--owner-release-next-batch", action="store_true")
     mode = p.add_mutually_exclusive_group(required=True)
     mode.add_argument("--private-export-dir", type=Path)
     mode.add_argument("--private-validate-dir", type=Path)
@@ -285,10 +291,11 @@ def main():
         tasks = read_jsonl(a.private_full_tasks, 132)
         verify(tasks, comparison)
         if a.private_export_dir:
-            written = export(tasks, a.batch, a.private_export_dir, a.repo_root)
+            written = export(tasks, a.batch, a.private_export_dir, a.repo_root,
+                             a.previous_batch_dir, a.owner_release_next_batch)
             receipt = {
                 "schema": SAFE_SCHEMA,
-                "status": "BATCH01_PRIVATE_PACKETS_READY__NOT_SENT",
+                "status": "BATCH_PRIVATE_PACKETS_READY__NOT_SENT",
                 "batch": a.batch, "batch_size": PER_BATCH,
                 "total_batches": BATCHES,
                 "private_files_written": written,
