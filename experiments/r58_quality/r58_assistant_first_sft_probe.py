@@ -96,7 +96,7 @@ def prepare(source: Path, output: Path, repo: Path):
         raise ValueError("private output path invalid")
     rows = read_source(source)
     probes = convert(rows)
-    data = b"".join(canon(row) + b"\\n" for row in probes)
+    data = b"".join(canon(row) + b"\n" for row in probes)
     fd = os.open(output, os.O_CREAT | os.O_EXCL | os.O_WRONLY
                  | getattr(os, "O_NOFOLLOW", 0), 0o600)
     with os.fdopen(fd, "wb") as stream:
