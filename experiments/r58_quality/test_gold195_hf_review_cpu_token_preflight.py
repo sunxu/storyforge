@@ -30,7 +30,7 @@ class CPUPreflightTests(unittest.TestCase):
         self.assertEqual(DEFAULT_MODEL, "Qwen/Qwen3-32B")
 
     def test_overlong_is_explicit_hold(self):
-        result = count_lengths(self.source, DummyTokenizer(), 1024, 900)
+        result = count_lengths(self.source, DummyTokenizer(), 1024, 1000)
         self.assertEqual(result["token_hold"], 132)
 
     def test_no_omitted_or_reordered_private_rows(self):
