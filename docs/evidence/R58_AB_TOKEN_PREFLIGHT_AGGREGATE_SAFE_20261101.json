@@ -25,7 +25,9 @@
       "prompt_tokens_max": 27615,
       "max_total_tokens_including_output_reserve": 30015,
       "over_budget_count": 0,
-      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
+      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU",
+      "hf_sandbox_job_id": "6ae7522b0e0338d1bb7d7e8e",
+      "hf_sandbox_job_url": "https://huggingface.co/jobs/adradar/6ae7522b0e0338d1bb7d7e8e"
     },
     "B": {
       "model": "zai-org/GLM-4-32B-0414",
@@ -41,7 +43,9 @@
       "prompt_tokens_max": 26677,
       "max_total_tokens_including_output_reserve": 29077,
       "over_budget_count": 0,
-      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
+      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU",
+      "hf_sandbox_job_id": "6ae7578b0e0338d1bb7d7fd8",
+      "hf_sandbox_job_url": "https://huggingface.co/jobs/adradar/6ae7578b0e0338d1bb7d7fd8"
     }
   },
   "execution_boundary": {
@@ -63,5 +67,6 @@
     "Both slots were encoded using their actual model tokenizers and reviewer prompt serializer.",
     "Jinja2 3.1.6 was explicitly installed; without it, apply_chat_template failed with ImportError.",
     "Token budget PASS is not literary quality approval, data admission, inference validation, or training authorization."
-  ]
+  ],
+  "execution_environment": "Hugging Face CPU Sandbox; both sandboxes terminated after receipt extraction"
 }
