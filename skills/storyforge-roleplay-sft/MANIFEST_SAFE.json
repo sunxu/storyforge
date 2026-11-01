@@ -8,17 +8,17 @@
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "3ca8349c6413f0de8eec699803e4ed3215d5257847fb8df882a20c0b29972086",
+      "sha256": "5957da4a8a7e6404ca289dcc2d4664cef770fe0ba53285dd8bf6a907f34cc8d7",
       "bytes": 2200
     },
     {
       "path": "README.md",
-      "sha256": "ab576f2fbf4c7a4cca166c849314deaa00ccd4906bd6230294db7600427ab6eb",
+      "sha256": "c258cff87accb3dd7d64ca1433952a46486c8c79f06b478aa46f53156908dfd4",
       "bytes": 3072
     },
     {
       "path": "SKILL.md",
-      "sha256": "442e663762fbdfeb774e9127163d7ff78577a9dc39d1df3725633c62cd02230d",
+      "sha256": "0cc54cede546ceebb4683e2eef95cd879f9cfd2b6a9bc14de7ca567a77b88cc3",
       "bytes": 9597
     },
     {
