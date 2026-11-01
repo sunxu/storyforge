@@ -148,7 +148,7 @@ class HFCPUReviewPreflightTests(unittest.TestCase):
                 def apply_chat_template(self, messages, **kwargs):
                     raise RuntimeError("PRIVATE_PROMPT_DETAIL_MUST_NOT_ESCAPE")
 
-            with self.assertRaisesRegex(ValueError, "^TOKENIZATION_FAILED$") as caught:
+            with self.assertRaisesRegex(ValueError, "^CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR$") as caught:
                 check_all(args, tokenizer_factory=lambda *x, **k: BrokenTokenizer(),
                           package_version="4.57.1")
             self.assertNotIn("PRIVATE_PROMPT_DETAIL", str(caught.exception))
