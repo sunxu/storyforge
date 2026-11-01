@@ -85,7 +85,7 @@ class TestReportedCutoverWindows(unittest.TestCase):
         result = summarize(cases(times))
         blob = json.dumps(result, sort_keys=True)
         for forbidden in (*times, "AUTHOR", "CURRENT_PUBLIC", "OLD_PUBLIC",
-                          "story_id", "request_id", "target_message_id"):
+                          "story_id", "SYNTHETIC_SECRET_ID_123", "target_message_id"):
             with self.subTest(forbidden=forbidden):
                 self.assertNotIn(forbidden, blob)
         self.assertFalse(result["private_raw_timestamp_or_identity_exported"])
