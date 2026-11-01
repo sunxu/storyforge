@@ -138,6 +138,56 @@ def prompt_messages(row):
     ]
 
 
+class QuoteValidationError(ValueError):
+    """Safe quote failure metadata; never stores or prints the quote text."""
+    def __init__(self, field, quote_index, source_candidate_count):
+        super().__init__("RESPONSE_NONEXACT_QUOTE")
+        self.field = field
+        self.quote_index = quote_index
+        self.source_candidate_count = source_candidate_count
+        self.case_index = None
+        self.repair_attempted = False
+
+
+class QuoteRepairFailure(ValueError):
+    """A single bounded quote repair did not produce a valid checkpoint."""
+    def __init__(self, code, quote_error, case_index):
+        super().__init__(code)
+        self.code = code
+        self.quote_error = quote_error
+        self.case_index = case_index
+
+
+def quote_repair_messages(row, previous_response_text, error):
+    if not isinstance(previous_response_text, str) or not previous_response_text:
+        raise ValueError("QUOTE_REPAIR_PRIOR_RESPONSE_INVALID")
+    return prompt_messages(row) + [
+        {"role": "assistant", "content": previous_response_text},
+        {"role": "user", "content": (
+            "上一份 JSON 的引用校验失败。请只修正引用字段，并重新输出完整 JSON。"
+            "失败字段：" + error.field + "；列表索引（从 0 开始）：" +
+            str(error.quote_index) + "。"
+            "specific_source_quotes 的每段必须逐字连续出现在 visible_history 的某一条 "
+            "user/assistant 消息中，不能从 unapproved_card 引用；"
+            "specific_target_quotes 的每段必须逐字连续出现在 target_text 中。"
+            "不得改写、拼接不同消息、增加省略号、引号或改动标点。"
+            "只允许修改 specific_source_quotes 和 specific_target_quotes；"
+            "decision、scores、severe_flags、卡片状态、literary_quality_notes、"
+            "uncertainty 必须与上一份 JSON 完全相同。"
+            "不得为了通过引用校验而降低评分或改变判断。"
+        )},
+    ]
+
+
+def validate_quote_repair(original, repaired, row):
+    validate_response(repaired, row)
+    quote_fields = {"specific_source_quotes", "specific_target_quotes"}
+    if any(original.get(key) != repaired.get(key)
+           for key in REVIEW_KEYS - quote_fields):
+        raise ValueError("QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS")
+    return repaired["decision"]
+
+
 def response_schema():
     quote_list = {"type": "array", "items": {"type": "string", "maxLength": 300},
                   "maxItems": 12}
@@ -191,11 +241,12 @@ def validate_response(response, row):
         ("specific_target_quotes", [row["target_text"]]),
     ):
         quotes = response[field]
-        if (not isinstance(quotes, list) or len(quotes) > 12
-                or any(not isinstance(q, str) or not q.strip() or len(q) > 300
-                       or not any(q in body for body in sources)
-                       for q in quotes)):
-            raise ValueError("RESPONSE_NONEXACT_QUOTE")
+        if not isinstance(quotes, list) or len(quotes) > 12:
+            raise QuoteValidationError(field, None, len(sources))
+        for quote_index, quote in enumerate(quotes):
+            if (not isinstance(quote, str) or not quote.strip() or len(quote) > 300
+                    or not any(quote in body for body in sources)):
+                raise QuoteValidationError(field, quote_index, len(sources))
         if decision == "PASS" and not quotes:
             raise ValueError("RESPONSE_PASS_MISSING_QUOTE")
     if decision == "PASS" and (
@@ -265,7 +316,8 @@ def safe_counts(rows, out_dir, slot, model, revision, upto):
     return {key: counts[key] for key in ("PASS", "HOLD", "REJECT")}
 
 
-def run(args, engine_factory=None, tokenizer_factory=None):
+def run(args, engine_factory=None, tokenizer_factory=None,
+        sampling_params_factory=None, structured_outputs_factory=None):
     if (args.slot not in MODELS or args.model != MODELS[args.slot]
             or HEX40.fullmatch(args.revision) is None
             or args.max_model_len < 4096 or args.max_model_len > 40960
@@ -310,23 +362,71 @@ def run(args, engine_factory=None, tokenizer_factory=None):
                 dtype="bfloat16", max_model_len=args.max_model_len,
                 max_num_seqs=1, enforce_eager=True,
                 gpu_memory_utilization=0.80, disable_log_stats=True)
-            from vllm import SamplingParams
-            from vllm.sampling_params import StructuredOutputsParams
+            if sampling_params_factory is None:
+                from vllm import SamplingParams
+                sampling_params_factory = SamplingParams
+            if structured_outputs_factory is None:
+                from vllm.sampling_params import StructuredOutputsParams
+                structured_outputs_factory = StructuredOutputsParams
             try:
                 from vllm import TokensPrompt
             except ImportError:
                 TokensPrompt = None
-            params = SamplingParams(
+            params = sampling_params_factory(
                 temperature=0, max_tokens=args.max_output_tokens,
-                structured_outputs=StructuredOutputsParams(json=response_schema()))
+                structured_outputs=structured_outputs_factory(json=response_schema()))
+            quote_repair_attempts = 0
+            quote_repair_successes = 0
             for i in wanted:
                 prompt = (TokensPrompt(prompt_token_ids=encoded[i])
                           if TokensPrompt else {"prompt_token_ids": encoded[i]})
                 generated = engine.generate([prompt], params, use_tqdm=False)[0].outputs[0]
                 if generated.finish_reason != "stop":
                     raise ValueError("GENERATION_TRUNCATED_OR_INCOMPLETE")
-                response = json.loads(generated.text)
-                validate_response(response, rows[i])
+                try:
+                    response = json.loads(generated.text)
+                except (TypeError, json.JSONDecodeError):
+                    raise ValueError("RESPONSE_JSON_INVALID") from None
+                try:
+                    validate_response(response, rows[i])
+                except QuoteValidationError as initial_error:
+                    initial_error.case_index = i
+                    initial_error.repair_attempted = True
+                    quote_repair_attempts += 1
+                    repair_messages = quote_repair_messages(
+                        rows[i], generated.text, initial_error)
+                    repair_ids = _encode_chat(
+                        tokenizer, repair_messages,
+                        disable_thinking=(args.model == MODELS["A"]))
+                    if len(repair_ids) + args.max_output_tokens > args.max_model_len:
+                        raise QuoteRepairFailure(
+                            "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED", initial_error, i)
+                    repair_prompt = (
+                        TokensPrompt(prompt_token_ids=repair_ids)
+                        if TokensPrompt else {"prompt_token_ids": repair_ids})
+                    repaired_output = engine.generate(
+                        [repair_prompt], params, use_tqdm=False)[0].outputs[0]
+                    if repaired_output.finish_reason != "stop":
+                        raise QuoteRepairFailure(
+                            "QUOTE_REPAIR_GENERATION_INCOMPLETE", initial_error, i)
+                    try:
+                        repaired = json.loads(repaired_output.text)
+                    except (TypeError, json.JSONDecodeError):
+                        raise QuoteRepairFailure(
+                            "QUOTE_REPAIR_RESPONSE_INVALID", initial_error, i)
+                    try:
+                        validate_quote_repair(response, repaired, rows[i])
+                    except QuoteValidationError as repair_error:
+                        repair_error.case_index = i
+                        repair_error.repair_attempted = True
+                        raise QuoteRepairFailure(
+                            "RESPONSE_NONEXACT_QUOTE", repair_error, i) from None
+                    except ValueError:
+                        raise QuoteRepairFailure(
+                            "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS",
+                            initial_error, i) from None
+                    response = repaired
+                    quote_repair_successes += 1
                 save_checkpoint(args.output_dir, i, rows[i], response, args.slot,
                                 args.model, args.revision)
     if args.preflight_only:
@@ -355,6 +455,8 @@ def run(args, engine_factory=None, tokenizer_factory=None):
     return {"status": "R58_HF_GPU_REVIEW_PILOT_VALID" if args.phase == "pilot"
             else "R58_HF_GPU_REVIEW_13_COMPLETED__NO_ADMISSION",
             "phase": args.phase, "count": stop, "decisions": counts,
+            "quote_repair_attempts": locals().get("quote_repair_attempts", 0),
+            "quote_repair_successes": locals().get("quote_repair_successes", 0),
             "private_text_emitted": False, "quality_v1_admitted": 0,
             "training_authorized": False}
 
@@ -389,13 +491,33 @@ def main():
             "RESPONSE_SCORE_OR_FLAGS_INVALID", "RESPONSE_CARD_STATUS_INVALID",
             "RESPONSE_REASON_INVALID", "RESPONSE_HOLD_NEEDS_UNCERTAINTY",
             "RESPONSE_SEVERE_MUST_REJECT", "RESPONSE_NONEXACT_QUOTE",
-            "RESPONSE_PASS_MISSING_QUOTE", "RESPONSE_PASS_BELOW_FLOOR",
+            "RESPONSE_JSON_INVALID", "RESPONSE_PASS_MISSING_QUOTE",
+            "RESPONSE_PASS_BELOW_FLOOR", "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED",
+            "QUOTE_REPAIR_GENERATION_INCOMPLETE", "QUOTE_REPAIR_RESPONSE_INVALID",
+            "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS",
             "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
         }
-        reason = str(exc) if type(exc) is ValueError and str(exc) in allowed else "RUNTIME_FAILURE"
+        reason = (exc.code if isinstance(exc, QuoteRepairFailure)
+                  else str(exc) if type(exc) is ValueError and str(exc) in allowed
+                  else "RUNTIME_FAILURE")
         result = {"status": "R58_HF_GPU_REVIEW_HOLD", "reason_code": reason,
                   "training_authorized": False, "quality_v1_admitted": 0,
                   "private_text_emitted": False}
+        if isinstance(exc, QuoteValidationError):
+            result.update({
+                "case_index": exc.case_index, "quote_field": exc.field,
+                "quote_index": exc.quote_index,
+                "source_candidate_count": exc.source_candidate_count,
+                "quote_repair_attempted": exc.repair_attempted,
+            })
+        elif isinstance(exc, QuoteRepairFailure):
+            qe = exc.quote_error
+            result.update({
+                "case_index": exc.case_index, "quote_field": qe.field,
+                "quote_index": qe.quote_index,
+                "source_candidate_count": qe.source_candidate_count,
+                "quote_repair_attempted": True,
+            })
         status = 42
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return status
