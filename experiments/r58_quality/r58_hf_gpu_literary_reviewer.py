@@ -17,6 +17,21 @@ import re
 import stat
 import sys
 
+# Portable HF bundle: input/token_core.py is a byte-for-byte copy of
+# src/storyforge_dataset/token_preflight.py. Mac staging needs only stdlib.
+try:
+    from token_core import extract_input_ids as _extract_input_ids, encode_chat as _encode_chat
+except ModuleNotFoundError:
+    try:
+        from storyforge_dataset.token_preflight import (
+            extract_input_ids as _extract_input_ids, encode_chat as _encode_chat,
+        )
+    except ModuleNotFoundError:
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+        from storyforge_dataset.token_preflight import (
+            extract_input_ids as _extract_input_ids, encode_chat as _encode_chat,
+        )
+
 PILOT_SCHEMA = "r58_gold195_literary_pilot13_blind_private_v1"
 CHECKPOINT_SCHEMA = "r58_hf_gpu_pilot13_review_checkpoint_private_v1"
 REVIEW_KEYS = {
@@ -193,39 +208,14 @@ def validate_response(response, row):
 
 
 def flatten_token_ids(value, *, prompt_chars=0):
-    """Actual input_ids length, never len(BatchEncoding)'s field count.
-
-    Keep the proven R58 CPU132 fail-closed guard for implausibly short
-    encodings of long prompts, in both CPU and GPU reviewer paths.
-    """
-    from collections.abc import Mapping
-    if isinstance(value, Mapping):
-        if "input_ids" not in value:
-            raise ValueError("TOKEN_IDS_INVALID")
-        value = value["input_ids"]
-    if hasattr(value, "tolist") and not isinstance(value, list):
-        value = value.tolist()
-    if (isinstance(value, list) and len(value) == 1
-            and isinstance(value[0], list)):
-        value = value[0]
-    if (not isinstance(value, list) or not value
-            or any(type(t) is not int or t < 0 for t in value)
-            or (prompt_chars >= 100 and len(value) < 32)):
-        raise ValueError("TOKEN_IDS_INVALID")
-    return value
+    """Backward-compatible wrapper; shared core is the only implementation."""
+    return _extract_input_ids(value, prompt_chars=prompt_chars)
 
 
 def encode_one(tokenizer, row, model_id):
-    kwargs = {"tokenize": True, "add_generation_prompt": True}
-    if model_id == MODELS["A"]:
-        kwargs["enable_thinking"] = False
-    try:
-        value = tokenizer.apply_chat_template(prompt_messages(row), **kwargs)
-    except TypeError:
-        kwargs.pop("enable_thinking", None)
-        value = tokenizer.apply_chat_template(prompt_messages(row), **kwargs)
-    messages = prompt_messages(row)
-    return flatten_token_ids(value, prompt_chars=sum(len(m["content"]) for m in messages))
+    return _encode_chat(
+        tokenizer, prompt_messages(row), disable_thinking=(model_id == MODELS["A"])
+    )
 
 
 def checkpoint_path(out_dir, index):
