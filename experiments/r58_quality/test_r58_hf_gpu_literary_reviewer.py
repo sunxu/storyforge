@@ -87,7 +87,7 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         messages = prompt_messages(row)
         self.assertEqual(len(messages), 2)
         self.assertNotIn(row["blind_id"], json.dumps(messages, ensure_ascii=False))
-        payload = json.loads(messages[1]["content"].split("待审材料如下：\\n", 1)[1])
+        payload = json.loads(messages[1]["content"].split("待审材料如下：", 1)[1].strip())
         self.assertEqual(row["messages"][0]["content"], payload["unapproved_card"])
         self.assertEqual(row["messages"][1:], payload["visible_history"])
 
