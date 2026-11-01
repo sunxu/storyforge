@@ -181,7 +181,8 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         self.assertEqual(failed["reason_code"], "QUOTE_REPAIR_RESPONSE_INVALID")
         self.assertTrue(failed["quote_repair_attempted"])
         self.assertFalse(failed["quote_repair_succeeded"])
-        self.assertNotIn("private", json.dumps(failed))
+        self.assertNotIn("DO_NOT_LEAK_QUOTE_TEXT", json.dumps(failed))
+        self.assertNotIn("quote_text", json.dumps(failed))
 
     def test_quote_repair_cannot_change_nonquote_review_fields(self):
         row = source_rows()[0]
