@@ -7,6 +7,8 @@ description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT �
 
 # StoryForge RolePlay SFT · R58
 
+> **2026-11-01 质量优先主线修订：** Owner 的目标是训练高质量中文互动剧情 LoRA，**不要求**生产请求原始字节、历史服务器部署 SHA、Provider request_id 或历史运行时精确回放。这一决定优先于下述 v0.1 旧流程的 G2 回放要求；详见 `docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md` 与 `docs/R58_QUALITY_V1_SFT_CANDIDATE_REVIEW_CN.md`。新 `experiments/r58_quality/quality_v1.py` 是**独立、只读、非准入**的质量候选检查器；旧 `r58_intake.py` 的 G2 相关字段不得伪造为 true，旧代码/冻结合同尚未迁移。保留世界隔离、R50 密封保护、双审、last_round Collator 审计及 GPU 单独授权。
+
 ## 适用时机
 当用户要求从 RolePlay Supabase 构建 StoryForge SFT 数据、盘点世界与对话、开展 R58 数据审核或冻结 Dataset v0.4 时使用。
 
