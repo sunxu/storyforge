@@ -157,6 +157,21 @@ HF Job B: 13/13，模型 GLM-4-32B-0414，cpu-basic，独立私有输入输出�
 
 当前 CPU 版本明确锁为 Transformers 4.57.1。GPU vLLM Docker 镜像的 Transformers 实际版本与 chat-template 行为仍未在本轮实测；在真正的 H200 之前必须核对一致性，否则保持 HOLD，不把 CPU 结果误称为已验证 GPU 等效。两次 Token 预检均不训练、不运行推理、不读 R50。
 
-缓存复用：收到 HF sync-back 回执后，下次同一批输入再要求预检时，先用同一套参数加上 --verify-cache-only 在 Mac 执行**纯标准库的已有回执身份核对**（不加载 Tokenizer，不产生 HF 费用）。该模式校验原始输入 SHA、序列化 Prompt SHA、评审器和共享核心 SHA、模型 ID + revision、Transformers 版本、Token 预算以及 13 条完整覆盖；全部匹配才返回 R58_HF_CPU_TOKEN_PREFLIGHT_CACHED_PASS__NO_JOB，否则保持 HOLD。参见 docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md。
+缓存复用：收到 HF sync-back 回执后，下次同一批输入再要求预检时，先在 Mac 将本机 PRIVATE 回执权限设为 0600，再使用**完全相同的参数加上 --verify-cache-only**执行纯标准库身份核对，不加载 Tokenizer，不产生 HF 费用：
+
+    chmod 600 "$STAGE/output_A/r58_cpu_preflight_all13_safe.json" \
+              "$STAGE/output_B/r58_cpu_preflight_all13_safe.json"
+    python3 experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py \
+      --slot A --model Qwen/Qwen3-32B --revision "$QWEN_SHA" \
+      --input "$STAGE/input_A/source.private.jsonl" \
+      --output-dir "$STAGE/output_A" --transformers-version 4.57.1 \
+      --max-model-len 32768 --max-output-tokens 2400 --verify-cache-only
+    python3 experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py \
+      --slot B --model zai-org/GLM-4-32B-0414 --revision "$GLM_SHA" \
+      --input "$STAGE/input_B/source.private.jsonl" \
+      --output-dir "$STAGE/output_B" --transformers-version 4.57.1 \
+      --max-model-len 32768 --max-output-tokens 2400 --verify-cache-only
+
+预期两项均返回 R58_HF_CPU_TOKEN_PREFLIGHT_CACHED_PASS__NO_JOB。该模式校验原始输入 SHA、序列化 Prompt SHA、评审器和共享核心 SHA、模型 ID + revision、Transformers 版本、Token 预算以及 13 条完整覆盖；全部匹配才返回 R58_HF_CPU_TOKEN_PREFLIGHT_CACHED_PASS__NO_JOB，否则保持 HOLD。参见 docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md。
 
 注意：当前尚未完成真实 A/B 13 条 CPU 预检；不存在可复用的该批次全量 HF Token 回执。旧 R58 CPU132 结果使用不同 prompt，不能直接冒充 13 条评审结果。
