@@ -64,6 +64,20 @@ jobs:
           assert result["r50_accessed"] is False
           print("Gold195 source-target integrity: PASS; Quality-v1 admission 0")
           PY
+      - name: Gold195 source-faithful review packet readiness (SAFE counts)
+        run: |
+          python3 experiments/r58_quality/gold195_source_review_packet.py --repo-root "$PWD" > /tmp/r58_gold195_review_packet_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/r58_gold195_review_packet_safe.json').read_text())
+          assert data["status"] == "SOURCE_REVIEW_PACKET_PREFLIGHT_PASS__ALL_QUALITY_HOLD"
+          assert data["counts"]["source_rows_checked"] == 195
+          assert data["counts"]["target_hash_verified"] == 195
+          assert data["train_admitted"] == 0
+          assert data["private_review_packet_written"] is False
+          print(json.dumps(data, ensure_ascii=False, sort_keys=True))
+          PY
       - name: Gold108 frozen dual-review index binding (SAFE counts only)
         run: |
           set +e
