@@ -1,0 +1,67 @@
+{
+  "schema": "r58_ab_token_preflight_aggregate_safe_v1",
+  "date": "2026-11-01",
+  "status": "R58_AB_HF_CPU_TOKEN_PREFLIGHT_13_EACH_PASS__NO_GPU",
+  "runtime": {
+    "python": "3.12",
+    "transformers": "4.57.1",
+    "sentencepiece": "0.2.1",
+    "jinja2": "3.1.6",
+    "max_model_len": 32768,
+    "reserved_output_tokens": 2400
+  },
+  "slots": {
+    "A": {
+      "model": "Qwen/Qwen3-32B",
+      "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+      "revision_source": "Previously recorded immutable pin; used unchanged",
+      "tokenizer_class": "Qwen2TokenizerFast",
+      "cases_checked": 13,
+      "pilot_cases_checked": 2,
+      "remaining_cases_checked": 11,
+      "prompt_tokens_min": 5732,
+      "prompt_tokens_median": 11883,
+      "prompt_tokens_p95": 27615,
+      "prompt_tokens_max": 27615,
+      "max_total_tokens_including_output_reserve": 30015,
+      "over_budget_count": 0,
+      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
+    },
+    "B": {
+      "model": "zai-org/GLM-4-32B-0414",
+      "revision": "077b5c2f5c43bd3239fd605a0600229e8facbd4a",
+      "revision_source": "HF Hub model_info SHA; matches previously recorded abbreviated pin 077b5c2f...cbd4a",
+      "tokenizer_class": "PreTrainedTokenizerFast",
+      "cases_checked": 13,
+      "pilot_cases_checked": 2,
+      "remaining_cases_checked": 11,
+      "prompt_tokens_min": 5479,
+      "prompt_tokens_median": 11496,
+      "prompt_tokens_p95": 26677,
+      "prompt_tokens_max": 26677,
+      "max_total_tokens_including_output_reserve": 29077,
+      "over_budget_count": 0,
+      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
+    }
+  },
+  "execution_boundary": {
+    "tokenizer_loaded": true,
+    "model_weights_loaded": false,
+    "inference_performed": false,
+    "paid_gpu_submitted": false,
+    "training_authorized": false,
+    "quality_v1_admitted": 0,
+    "private_text_emitted": false,
+    "private_receipt_hashes_committed": false
+  },
+  "receipt_persistence": {
+    "safe_private_receipts_generated": true,
+    "original_hf_bucket_sync": "PENDING_OWNER_MAC_SYNC",
+    "reason": "ChatGPT HF sandbox RW bucket mount returned HTTP 403; read-only input mount and CPU execution succeeded"
+  },
+  "notes": [
+    "Both slots were encoded using their actual model tokenizers and reviewer prompt serializer.",
+    "Jinja2 3.1.6 was explicitly installed; without it, apply_chat_template failed with ImportError.",
+    "Token budget PASS is not literary quality approval, data admission, inference validation, or training authorization."
+  ]
+}
