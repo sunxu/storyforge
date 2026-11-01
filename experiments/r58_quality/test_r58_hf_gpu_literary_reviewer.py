@@ -9,7 +9,7 @@ from r58_hf_gpu_literary_reviewer import (
     PILOT_SCHEMA, MODELS, canon, read_source, prompt_messages,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
-    QuoteValidationError, QuoteRepairFailure, validate_quote_repair,
+    QuoteValidationError, QuoteRepairFailure, validate_quote_repair, safe_failure_result,
 )
 from r58_gold195_blind_quality_pilot13 import blind_material
 from gold195_six_dimension_review_tasks import prepare_row
@@ -160,6 +160,28 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         self.assertEqual(caught.exception.field, "specific_target_quotes")
         self.assertEqual(caught.exception.quote_index, 0)
         self.assertEqual(caught.exception.source_candidate_count, 1)
+
+    def test_safe_failure_summary_contains_only_allowlisted_quote_metadata(self):
+        error = QuoteValidationError("specific_source_quotes", 2, 7)
+        error.case_index = 1
+        error.repair_attempted = True
+        safe = safe_failure_result(error)
+        self.assertEqual(safe["reason_code"], "RESPONSE_NONEXACT_QUOTE")
+        self.assertEqual(safe["case_index"], 1)
+        self.assertEqual(safe["quote_field"], "specific_source_quotes")
+        self.assertEqual(safe["quote_index"], 2)
+        self.assertEqual(safe["source_candidate_count"], 7)
+        self.assertTrue(safe["quote_repair_attempted"])
+        self.assertFalse(safe["quote_repair_succeeded"])
+        self.assertFalse(safe["private_text_emitted"])
+        self.assertNotIn("quote_text", json.dumps(safe))
+
+        repair_failure = QuoteRepairFailure("QUOTE_REPAIR_RESPONSE_INVALID", error, 1)
+        failed = safe_failure_result(repair_failure)
+        self.assertEqual(failed["reason_code"], "QUOTE_REPAIR_RESPONSE_INVALID")
+        self.assertTrue(failed["quote_repair_attempted"])
+        self.assertFalse(failed["quote_repair_succeeded"])
+        self.assertNotIn("private", json.dumps(failed))
 
     def test_quote_repair_cannot_change_nonquote_review_fields(self):
         row = source_rows()[0]
