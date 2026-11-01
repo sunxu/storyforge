@@ -38,16 +38,16 @@ description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT �
 3. 在 HF 私有工作区使用 `python scripts/r58_intake.py shortlist --input stories.csv --output selected_private.jsonl --limit 30` 得到候选故事；此结果是 `SHORTLIST_ONLY`，**不是训练准入**。
 4. 由独立世界/分支图、历史 SFT 指纹索引与保护集**元数据证明**审查；在分割世界前不得查看潜在最终测试世界的对话正文。
 5. 对 Owner 已批准的训练候选按 `queries/03_private_session_export_template.sql` 使用参数化只读查询小批量导出。仅 HF 私有目录保留正文；不得直接把含用户数据的原始内容回传聊天或 GitHub。
-6. 重建单条回复产生时的确切 System、角色/世界快照、导演动态状态、分支父历史、完整 User/Assistant 顺序。**不能用今天的 `v2_data` 代替目标时点内容**。不能确定则 `HOLD_RUNTIME_REPLAY`。
+6. 逐案判断来源世界/角色卡作为离线训练上下文是否适用，结合可见历史、Gold、硬规则和人物关系审核；导出时卡片是待审快照，不应冒充原始生产 System。**Quality-v1 不要求历史生产请求字节或部署 SHA 精确重放**。无法确定关键事实时质量结论 HOLD，不伪造旧回放证据。
 7. 审核结果遵循 `reference/REVIEW_AND_TEACHER_POLICY_CN.md`，两位独立 Reviewer 均须给证据；Teacher 产物只能先作为候选。
-8. 运行 `python scripts/r58_intake.py gate --input reviewed_private.jsonl --output decision_private.jsonl --safe-output gate_safe.json`，只返回状态和证据完整性，不输出正文。
-9. 用经 Owner 确认的世界组件切分、经过门禁的完整私有输入执行 `python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decision_private.jsonl --output-dir NEW_PRIVATE_DIR --world-graph-sha SHA256`。失败不生成部分数据。输出标记 `CONTENT_FREEZE_ONLY__HF_CPU_PREFLIGHT_PENDING`。
-10. 在 Hugging Face CPU 使用原定 Qwen 修订、ms-swift 模板，检查 `last_round` 标签掩码、输入长度和 collator。通过后另由 Owner 对具体 GPU Job 及预算独立授权；本 Skill **不自动训练**。
+8. 使用 Quality-v1 质量评审和独立双审证据核验。旧 `r58_intake.py gate` 保留为历史 G2 旧合同的结构验证入口，**不能作为 Quality-v1 正式准入的替代**，也不能把未验证旧 G2 字段设为 true。
+9. 世界组件切分、训练集候选质量和 Owner 批准达到当前 Quality-v1 规则后，方可进入新冻结流程。旧 `r58_intake.py freeze` 依赖旧 G2 结构门禁，迁移之前不可直接用于新质量主线，也不得借用旧 Freeze 状态冒充正式准入。
+10. 优先核验能否复用已有真实 Token 预检回执；必要时在 HF CPU 使用目标任务完全相同的模型 revision、Tokenizer、Chat Template 和预算重算 `input_ids`。SFT 单独执行真实 ms-swift `last_round` 标签掩码和 Collator 审计。Owner 对 GPU Job 及预算另行授权；本 Skill **不自动训练**。
 
 ## Gate 定义
 - `G0`: 训练变量、输入配方、冻结模型与准入协议确认；`B_PROMPT` 与 `B_DATAFIX` 分开。
 - `G1`: 来源库存与故事级分池，来源授权 Owner 声明与历史训练曝光元数据、R50 隔离证明。
-- `G2`: 每一回复的精确目标时点 System/世界卡/历史重建、分支图与 SHA256 证据。
+- `G2`（旧版历史回放合同）：目标时点 System、世界卡和部署信息的精确复现要求保留在旧工具/冻结证据中，但**不是当前 Quality-v1 高质量 LoRA 的必需条件**；旧布尔字段不得臆造 PASS。当前主线独立审核可信卡片的离线适用性、可见历史和 Gold 一致性。
 - `G3`: 双独立 Reviewer 质量与安全审核；争议 HOLD；Teacher 来源可追踪；Owner 单独签核。
 - `G4`: 整个语义世界组件只允许落入一个 Train/Val/Protected 分区；候选与已曝光世界不得误标为新 Held-out。
 - `G5`: 私有 SFT JSONL 冻结、逐字节哈希、SAFE 回执；HF CPU tokenizer/collator 预检另行通过。
