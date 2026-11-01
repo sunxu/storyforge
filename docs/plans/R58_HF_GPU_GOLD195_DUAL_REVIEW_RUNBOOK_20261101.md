@@ -97,7 +97,7 @@ CLI 会显示对应的 HF 私有 Bucket sync 命令。Job 完成后按其输出�
 
 ## 7. 2026-11-01：HF CPU 全 13 条 A/B Token 预检（新规范）
 
-Owner 已验证 A/B 的 HF CPU 私有 RW 文件写入及 sync-back 均 PASS。本节取代此前要求 Mac 本地预检 Tokenizer 的做法。**所有实际 Tokenizer、Chat Template、Token 计数只在 Hugging Face CPU Job 运行**。不自动申请 GPU。CPU Job 仍需执行者批准其费用；以下命令不会自动执行。
+Owner 已验证 A/B 的 HF CPU 私有 RW 文件写入及 sync-back 均 PASS。本节取代此前要求 Mac 本地预检 Tokenizer 的做法。**所有实际 Tokenizer、Chat Template、Token 计数只在 Hugging Face CPU Job 运行**。用户明确要求执行本节 A/B Token 预检后，可直接提交所需的最小 CPU Job，无需逐 Job 费用授权。此规则不授权 GPU；任何 H200 推理/质量评审/训练仍需单独明确授权。
 
 使用已经通过隔离检查的实际目录；不要重新准备或覆盖任何 Gold、原始双审包或 Owner crosswalk。
 
