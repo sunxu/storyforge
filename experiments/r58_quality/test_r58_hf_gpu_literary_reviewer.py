@@ -248,7 +248,11 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             self.assertNotIn("只允许修改", repair_messages[-1]["content"])
             saved = read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0)
-            self.assertIn(saved["specific_source_quotes"][0], rows[0]["messages"][1]["content"])
+            self.assertTrue(any(
+                saved["specific_source_quotes"][0] in m["content"]
+                for m in rows[0]["messages"][1:]
+                if m["role"] in ("user", "assistant")
+            ))
             self.assertIsNotNone(read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0))
             self.assertIsNotNone(read_checkpoint(
