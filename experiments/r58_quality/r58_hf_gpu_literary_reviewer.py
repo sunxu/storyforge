@@ -192,16 +192,25 @@ def validate_response(response, row):
     return decision
 
 
-def flatten_token_ids(value):
+def flatten_token_ids(value, *, prompt_chars=0):
+    """Actual input_ids length, never len(BatchEncoding)'s field count.
+
+    Keep the proven R58 CPU132 fail-closed guard for implausibly short
+    encodings of long prompts, in both CPU and GPU reviewer paths.
+    """
     from collections.abc import Mapping
     if isinstance(value, Mapping):
+        if "input_ids" not in value:
+            raise ValueError("TOKEN_IDS_INVALID")
         value = value["input_ids"]
     if hasattr(value, "tolist") and not isinstance(value, list):
         value = value.tolist()
     if (isinstance(value, list) and len(value) == 1
             and isinstance(value[0], list)):
         value = value[0]
-    if not isinstance(value, list) or not value or not all(type(t) is int for t in value):
+    if (not isinstance(value, list) or not value
+            or any(type(t) is not int or t < 0 for t in value)
+            or (prompt_chars >= 100 and len(value) < 32)):
         raise ValueError("TOKEN_IDS_INVALID")
     return value
 
@@ -215,7 +224,8 @@ def encode_one(tokenizer, row, model_id):
     except TypeError:
         kwargs.pop("enable_thinking", None)
         value = tokenizer.apply_chat_template(prompt_messages(row), **kwargs)
-    return flatten_token_ids(value)
+    messages = prompt_messages(row)
+    return flatten_token_ids(value, prompt_chars=sum(len(m["content"]) for m in messages))
 
 
 def checkpoint_path(out_dir, index):
