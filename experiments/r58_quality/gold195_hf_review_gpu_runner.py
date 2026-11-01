@@ -96,6 +96,37 @@ def extract_token_ids(encoded, *, prompt_chars):
     return encoded
 
 
+
+def answer_json_schema():
+    """Constrain output shape; evidence authenticity remains a separate gate."""
+    quote_list = {"type": "array", "items": {"type": "string"},
+                  "maxItems": 12}
+    properties = {
+        "policy": {"type": "string", "enum": list(POLICIES)},
+        "judgments": {
+            "type": "object",
+            "properties": {
+                key: {"type": "string", "enum": ["YES", "NO", "UNCERTAIN"]}
+                for key in QUESTIONS
+            },
+            "required": list(QUESTIONS), "additionalProperties": False,
+        },
+        "leading_assistant_exact_quotes": quote_list,
+        "later_history_exact_quotes": quote_list,
+        "gold_exact_quotes": quote_list,
+        "reasoning": {"type": "string"},
+        "uncertainty": {"type": "string"},
+    }
+    return {"type": "object", "properties": properties,
+            "required": list(properties), "additionalProperties": False}
+
+
+SAFE_ERROR_REASONS = frozenset({
+    "invalid JSON schema", "invalid policy/judgments", "missing judgments",
+    "insufficient reasoning", "invalid uncertainty", "invalid source quote",
+    "no opening Assistant evidence", "drop unsupported",
+})
+
 def parse_answer(text, row, model_id, revision):
     # Model output is untrusted; do not turn structural validity into approval.
     obj = json.loads(text.strip())
@@ -192,6 +223,7 @@ def main():
         raise SystemExit("HOLD: insecure output folder")
     # Imported only after all safety and input guards passed.
     from vllm import LLM, SamplingParams, TokensPrompt
+    from vllm.sampling_params import StructuredOutputsParams
     from transformers import AutoTokenizer
     start = time.monotonic()
     tokenizer = AutoTokenizer.from_pretrained(
@@ -200,8 +232,11 @@ def main():
                  tokenizer_revision=a.model_revision, trust_remote_code=False,
                  max_model_len=a.max_model_len, gpu_memory_utilization=0.80,
                  enforce_eager=a.enforce_eager, max_num_seqs=1)
-    params = SamplingParams(temperature=0, max_tokens=a.max_output_tokens)
+    params = SamplingParams(temperature=0, max_tokens=a.max_output_tokens,
+                            structured_outputs=StructuredOutputsParams(
+                                json=answer_json_schema()))
     counts = {"valid": 0, "hold": 0, "already_done": 0, "token_hold": 0}
+    hold_reasons = {}
     for row in rows:
         if time.monotonic() - start >= a.max_wall_seconds:
             break
@@ -240,12 +275,16 @@ def main():
                                     a.model, a.model_revision)
             atomic_write(target, response)
             counts["valid"] += 1
-        except (ValueError, KeyError, IndexError, json.JSONDecodeError):
+        except (ValueError, KeyError, IndexError, json.JSONDecodeError) as exc:
             counts["hold"] += 1
+            reason = str(exc) if str(exc) in SAFE_ERROR_REASONS else type(exc).__name__
+            hold_reasons[reason] = hold_reasons.get(reason, 0) + 1
             # A failed case stays missing and must be reviewed/retried explicitly.
     print(json.dumps({
         "status": "HF_R58_PRIVATE_INFERENCE_ATTEMPT_FINISHED__NO_ADMISSION",
         "case_scope": len(rows), "counts": counts,
+        "hold_reasons": hold_reasons,
+        "structured_json": True,
         "quality_v1_admitted": 0,
         "history_truncation_approved": False,
         "r50_accessed": False, "private_text_emitted": False,
