@@ -84,7 +84,7 @@ hf jobs run --namespace adradar --name r58-b-pilot13 \
 
 Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回 `ERROR exit 127`，running_secs=3，错误为 `timeout: failed to run command 'python': No such file or directory`。**未运行模型推理；输出 Bucket 没有生成 checkpoint。**
 
-已在上述固定 digest 的真实 vLLM 容器、HF CPU Sandbox 核实：`python` 不存在，`/usr/bin/python3` 存在，`timeout` 存在；因此 A/B 命令统一使用 `python3`。还发现固定镜像中的 Transformers 为 `5.19.0`，不是 CPU 预检用的 4.57.1。使用实际 A staged `runner.py`、固定 Qwen revision 在该 vLLM 镜像中的 CPU-only `--preflight-only --phase pilot` 已返回 `R58_HF_GPU_REVIEW_TOKEN_PREFLIGHT_PASS__NO_GPU_INFERENCE`，并未加载 GPU 模型。不能因此认定推理/显存完整兼容或所有 13 条跨运行时 Token IDs 相同。
+已在上述固定 digest 的真实 vLLM 容器、HF CPU Sandbox 核实：`python` 不存在，`/usr/bin/python3` 存在，`timeout` 存在；因此 A/B 命令统一使用 `python3`。还发现固定镜像中的 Transformers 为 `5.19.0`，不是 CPU 预检用的 4.57.1。使用实际 A/B staged `runner.py`、分别固定 Qwen/GLM revision 在该 vLLM 镜像中的 CPU-only `--preflight-only --phase pilot` 均已返回 `R58_HF_GPU_REVIEW_TOKEN_PREFLIGHT_PASS__NO_GPU_INFERENCE`，并未加载 GPU 模型。不能因此认定推理/显存完整兼容或所有 13 条跨运行时 Token IDs 相同。
 
 **该错误修复不扩大 Owner 已批准的 A/B 两个 Pilot（2+2 条）范围。** 任何重新提交前需核对同槽位没有新 Job 在运行；现有错误 Job 不得冒充评审完成。费用仍以累计 GPU 使用时间衡量，不重复运行已成功生成的 checkpoint。
 
