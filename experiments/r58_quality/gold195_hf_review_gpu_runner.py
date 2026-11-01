@@ -170,6 +170,7 @@ def main():
     p.add_argument("--calibration-only", action="store_true")
     p.add_argument("--allow-full-run", action="store_true")
     p.add_argument("--confirm-paid-gpu", action="store_true")
+    p.add_argument("--enforce-eager", action="store_true", help="Avoid CUDA graph capture for bounded GPU calibration")
     p.add_argument("--max-wall-seconds", type=int, default=1200)
     p.add_argument("--max-model-len", type=int, default=8192)
     p.add_argument("--max-output-tokens", type=int, default=1200)
@@ -197,7 +198,8 @@ def main():
         a.model, revision=a.model_revision, trust_remote_code=False)
     engine = LLM(model=a.model, revision=a.model_revision,
                  tokenizer_revision=a.model_revision, trust_remote_code=False,
-                 max_model_len=a.max_model_len, gpu_memory_utilization=0.85)
+                 max_model_len=a.max_model_len, gpu_memory_utilization=0.80,
+                 enforce_eager=a.enforce_eager, max_num_seqs=1)
     params = SamplingParams(temperature=0, max_tokens=a.max_output_tokens)
     counts = {"valid": 0, "hold": 0, "already_done": 0, "token_hold": 0}
     for row in rows:
