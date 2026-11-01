@@ -113,6 +113,47 @@ class HFCPUReviewPreflightTests(unittest.TestCase):
                 check_all(args, tokenizer_factory=lambda *x, **k: BadTemplate(),
                           package_version="4.57.1")
 
+    def test_private_input_failure_has_safe_stage_code(self):
+        with tempfile.TemporaryDirectory() as td:
+            source, output = self.stage(Path(td))
+            rows = source_rows()
+            rows[0]["schema"] = "invalid-private-schema"
+            source.write_bytes(b"".join(canon(row) + b"\\n" for row in rows))
+            args = self.args(source, output)
+            with self.assertRaisesRegex(
+                ValueError, "^PRIVATE_INPUT_SOURCE_UNREVIEWED_CONTRACT_INVALID$"
+            ) as caught:
+                check_all(args, tokenizer_factory=lambda *x, **k: FakeTokenizer(),
+                          package_version="4.57.1")
+            self.assertNotIn("invalid-private-schema", str(caught.exception))
+
+    def test_tokenizer_load_failure_has_safe_stage_code(self):
+        with tempfile.TemporaryDirectory() as td:
+            source, output = self.stage(Path(td))
+            args = self.args(source, output)
+
+            def fail_load(*args, **kwargs):
+                raise RuntimeError("PRIVATE_TOKENIZER_DETAIL_MUST_NOT_ESCAPE")
+
+            with self.assertRaisesRegex(ValueError, "^TOKENIZER_LOAD_FAILED$") as caught:
+                check_all(args, tokenizer_factory=fail_load, package_version="4.57.1")
+            self.assertNotIn("PRIVATE_TOKENIZER_DETAIL", str(caught.exception))
+
+    def test_tokenization_failure_has_safe_stage_code(self):
+        with tempfile.TemporaryDirectory() as td:
+            source, output = self.stage(Path(td))
+            args = self.args(source, output)
+
+            class BrokenTokenizer(FakeTokenizer):
+                def apply_chat_template(self, messages, **kwargs):
+                    raise RuntimeError("PRIVATE_PROMPT_DETAIL_MUST_NOT_ESCAPE")
+
+            with self.assertRaisesRegex(ValueError, "^TOKENIZATION_FAILED$") as caught:
+                check_all(args, tokenizer_factory=lambda *x, **k: BrokenTokenizer(),
+                          package_version="4.57.1")
+            self.assertNotIn("PRIVATE_PROMPT_DETAIL", str(caught.exception))
+
+
 
 if __name__ == "__main__":
     unittest.main()
