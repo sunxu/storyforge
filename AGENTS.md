@@ -84,6 +84,19 @@ Prefer a project-local Python virtual environment.
 
 Do not use `sudo` unless it is strictly required and explicitly authorized.
 
+### 2.1 Hugging Face-only token preflight (mandatory)
+
+**All StoryForge model-tokenizer preflights MUST run in a Hugging Face environment, not on the user's Mac.** This includes token counts/length distribution, context-window checks, chat-template rendering, tokenizer/model-revision compatibility, and R58 Gold195 A/B blind-review prompt token-budget checks.
+
+- Prefer **Hugging Face CPU Jobs** for token-only preflights; use an HF Sandbox or other HF-hosted CPU runtime only when appropriate and authorized. A GPU is not required solely to tokenize or count tokens.
+- The Mac is for preparing, validating file integrity, securely staging/syncing private inputs, and retrieving SAFE receipts/results. **Do not instruct the user to install Transformers, download model tokenizers, or execute model-specific token preflights on the Mac.**
+- Pin the **exact model ID and immutable revision** and the relevant tokenizer/chat-template version; match the eventual inference or SFT runtime to avoid a misleading preflight.
+- Use HF-private storage/mounts for source text, world cards, blind-review packets, and derived prompts. Do not upload private content or Owner crosswalks to GitHub, expose them in Job logs or chat, or give reviewer A access to reviewer B's data.
+- Produce only SAFE aggregate receipts outside private storage (PASS/HOLD, counts, maximum token length, model/revision identifiers as appropriate). Never silently truncate history, rewrite the frozen Gold, or treat a preflight PASS as literary quality approval or training admission.
+- **Paid HF CPU execution needs the applicable cost authorization.** Never infer that approval for a CPU preflight authorizes a GPU Job; GPU inference/training requires separate explicit approval.
+
+For R58 Gold195 literary pilot13, perform A/B tokenizer checks on HF CPU against each reviewer's staged PRIVATE input and the same pinned model revision, chat template, and context budget planned for the corresponding GPU reviewer. Fail closed on a mismatch or over-budget prompt, and do not launch the GPU automatically.
+
 ### 3. Training gate
 
 Training is strictly staged.
@@ -126,7 +139,7 @@ storyforge-dataset validate \
 
 Then verify `data/compiled/v0.3` exists.
 
-Run:
+Run the following token analysis **in Hugging Face CPU (not on the Mac)**, using the corresponding private mounted inputs and pinned tokenizer revision:
 
 ```bash
 storyforge-dataset analyze \
