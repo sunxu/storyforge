@@ -177,7 +177,7 @@ def main():
     if (not a.confirm_paid_gpu or a.calibration_only == a.allow_full_run
             or not re.fullmatch(r"[0-9a-f]{40}", a.model_revision)
             or not 60 <= a.max_wall_seconds <= 14400
-            or not 1024 <= a.max_model_len <= 32768
+            or not 1024 <= a.max_model_len <= 40960
             or not 128 <= a.max_output_tokens <= 4096):
         raise SystemExit("HOLD: explicit paid-run mode, pinned SHA, and bounded limits required")
     rows = read_input(a.private_input)
@@ -190,7 +190,7 @@ def main():
     if stat.S_IMODE(folder.stat().st_mode) & 0o077:
         raise SystemExit("HOLD: insecure output folder")
     # Imported only after all safety and input guards passed.
-    from vllm import LLM, SamplingParams
+    from vllm import LLM, SamplingParams, TokensPrompt
     from transformers import AutoTokenizer
     start = time.monotonic()
     tokenizer = AutoTokenizer.from_pretrained(
@@ -233,7 +233,7 @@ def main():
                 counts["token_hold"] += 1
                 # Never truncate privately sourced history to fit silently.
                 continue
-            result = engine.generate([tokenizer.decode(encoded)], params, use_tqdm=False)
+            result = engine.generate([TokensPrompt(prompt_token_ids=encoded)], params, use_tqdm=False)
             response = parse_answer(result[0].outputs[0].text, row,
                                     a.model, a.model_revision)
             atomic_write(target, response)
