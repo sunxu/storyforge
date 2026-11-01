@@ -32,13 +32,13 @@ STAGE 必须是一个此前不存在的新私人目录。
 
 不要上传 RUN_DIR/owner_crosswalk.private.json。
 
-## 2. 模型 Revision 钉死
+## 2. 固定模型 SHA（Mac 只读公共元数据）
 
     QWEN_SHA="9216db5781bf21249d130ec9da846c4624c16137"
-    GLM_SHA="$(python3 -c 'from huggingface_hub import HfApi; print(HfApi().model_info("zai-org/GLM-4-32B-0414").sha)')"
+    GLM_SHA="$(curl -fsSL https://huggingface.co/api/models/zai-org/GLM-4-32B-0414 | jq -r '.sha')"
     [[ "$GLM_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo GLM_REVISION_HOLD; exit 42; }
 
-GLM 需要 Mac Python 安装 huggingface_hub；不能传 main 代替固定 SHA。GLM revision 属于该次校准的绑定信息，后续必须复用。
+这里的 Mac 操作只查询模型 SHA，不安装 Transformers，也不加载 Tokenizer。SHA 需用于对应 HF CPU 与 GPU 的相同评审器。
 
 ## 3. 使用廉价 CPU 检查本地目录 RW 挂载权限
 
@@ -92,3 +92,69 @@ CLI 会显示对应的 HF 私有 Bucket sync 命令。Job 完成后按其输出�
 
 已实现：A/B 安全分发、vLLM JSON schema、固定模型 revision 合同、原文引用核验、2+11 阶段、检查点恢复与训练禁入。
 尚未完成：Mac PRIVATE 数据分发、HF 本地 RW 回收测试、任何本次真实付费 GPU 推理。 
+
+
+
+## 7. 2026-11-01：HF CPU 全 13 条 A/B Token 预检（新规范）
+
+Owner 已验证 A/B 的 HF CPU 私有 RW 文件写入及 sync-back 均 PASS。本节取代此前要求 Mac 本地预检 Tokenizer 的做法。**所有实际 Tokenizer、Chat Template、Token 计数只在 Hugging Face CPU Job 运行**。不自动申请 GPU。CPU Job 仍需执行者批准其费用；以下命令不会自动执行。
+
+使用已经通过隔离检查的实际目录；不要重新准备或覆盖任何 Gold、原始双审包或 Owner crosswalk。
+
+    git switch r58/roleplay-sft-skill-v01
+    git pull --ff-only
+    umask 077
+    STAGE="/Users/keedle/.local/share/storyforge/r58/r58-hf-gpu-dual-review-stage-20261101T114557Z"
+    RUN_DIR="/Users/keedle/.local/share/storyforge/r58/r58-quality-pilot13-20261101T111719Z"
+    test -f "$RUN_DIR/owner_crosswalk.private.json" || { echo OWNER_CROSSWALK_MISSING; exit 42; }
+    for SLOT in A B; do
+      test -f "$STAGE/input_$SLOT/runner.py" || { echo PRIVATE_RUNNER_MISSING; exit 42; }
+      TARGET="$STAGE/input_$SLOT/token_preflight.py"
+      test ! -e "$TARGET" || { echo PREFLIGHT_ALREADY_EXISTS; exit 42; }
+      install -m 600 experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py "$TARGET" || exit 42
+    done
+    QWEN_SHA="9216db5781bf21249d130ec9da846c4624c16137"
+    GLM_SHA="$(curl -fsSL https://huggingface.co/api/models/zai-org/GLM-4-32B-0414 | jq -r '.sha')"
+    [[ "$GLM_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo GLM_REVISION_HOLD; exit 42; }
+
+HF Job A: 13/13，模型 Qwen3-32B，cpu-basic，私有独立输入 /input 与 RW /output：
+
+    hf jobs run --namespace adradar --flavor cpu-basic --timeout 15m --name r58-a-token-all13 \
+      -v "$STAGE/input_A:/input" -v "$STAGE/output_A:/output:rw" \
+      python:3.12 /bin/sh -lc \
+      "python3 -m pip install --quiet --disable-pip-version-check 'transformers==4.57.1' 'sentencepiece==0.2.1' && \
+       python3 /input/token_preflight.py --slot A --model Qwen/Qwen3-32B --revision '$QWEN_SHA' \
+       --input /input/source.private.jsonl --output-dir /output \
+       --transformers-version 4.57.1 --max-model-len 32768 --max-output-tokens 2400"
+
+HF Job B: 13/13，模型 GLM-4-32B-0414，cpu-basic，独立私有输入输出：
+
+    hf jobs run --namespace adradar --flavor cpu-basic --timeout 15m --name r58-b-token-all13 \
+      -v "$STAGE/input_B:/input" -v "$STAGE/output_B:/output:rw" \
+      python:3.12 /bin/sh -lc \
+      "python3 -m pip install --quiet --disable-pip-version-check 'transformers==4.57.1' 'sentencepiece==0.2.1' && \
+       python3 /input/token_preflight.py --slot B --model zai-org/GLM-4-32B-0414 --revision '$GLM_SHA' \
+       --input /input/source.private.jsonl --output-dir /output \
+       --transformers-version 4.57.1 --max-model-len 32768 --max-output-tokens 2400"
+
+每组应获得 R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU、cases_checked=13、over_budget_count=0，并在 RW 私人目录写入仅包含 SAFE 汇总的 r58_cpu_preflight_all13_safe.json。HF Job 返回 COMPLETED 不等于 Mac 文件落盘成功；按 Job CLI 显示的实际 hf buckets sync 命令分别同步回 output_A/B，并在 Mac 只检查 SAFE 回执。
+
+    python3 - <<'PY'
+    import json
+    from pathlib import Path
+    root = Path("/Users/keedle/.local/share/storyforge/r58/r58-hf-gpu-dual-review-stage-20261101T114557Z")
+    for slot in ("A", "B"):
+        path = root / f"output_{slot}/r58_cpu_preflight_all13_safe.json"
+        if not path.is_file():
+            print(f"R58_{slot}_CPU_PREFLIGHT_SYNC_HOLD")
+            raise SystemExit(42)
+        item = json.loads(path.read_text())
+        if (item.get("status") != "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
+                or item.get("cases_checked") != 13
+                or item.get("over_budget_count") != 0):
+            print(f"R58_{slot}_CPU_PREFLIGHT_CONTENT_HOLD")
+            raise SystemExit(42)
+        print(f"R58_{slot}_CPU_PREFLIGHT_SYNC_PASS max_total={item['max_total_tokens']}")
+    PY
+
+当前 CPU 版本明确锁为 Transformers 4.57.1。GPU vLLM Docker 镜像的 Transformers 实际版本与 chat-template 行为仍未在本轮实测；在真正的 H200 之前必须核对一致性，否则保持 HOLD，不把 CPU 结果误称为已验证 GPU 等效。两次 Token 预检均不训练、不运行推理、不读 R50。
