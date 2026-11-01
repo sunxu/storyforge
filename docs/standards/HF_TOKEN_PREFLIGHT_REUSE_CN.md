@@ -133,7 +133,10 @@ R58 Qwen Chat Template 运行环境还必须安装 Jinja2。Transformers 4.57.1 
 ## 六、未完成事项
 
 - 当前新共享路径的最新 GitHub CI 结果需确认（不能用旧成功 CI 冒充）。
-- HF CPU A/B 全 13 条真实预检尚未执行，也未收到真实 SAFE 结果。
-- GPU Docker 的 Transformers/chat-template 与 HF CPU 的等价性尚未实际验证。
-- 更一般的跨案例增量缓存尚未实现；当前严格复用同一批次的可信回执。
-- 本轮没有新 HF CPU/GPU 付费 Job，也没有训练授权。
+- **2026-11-01 R58 A/B 13 条真实 HF CPU Token 预检已完成**：A/B 各 13/13 PASS，超出 32,768 上下文预算均为 0；完整汇总见 `docs/evidence/R58_AB_TOKEN_PREFLIGHT_AGGREGATE_SAFE_20261101.json`。A/B SAFE 回执包含 PRIVATE 输入与 Prompt SHA，不提交 GitHub。
+- A：`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`；Transformers 4.57.1；Tokenizer `Qwen2TokenizerFast`；prompt min/median/p95/max = 5,732 / 11,883 / 27,615 / 27,615；最大总预算 30,015。
+- B：`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`；Transformers 4.57.1；Tokenizer `PreTrainedTokenizerFast`；prompt min/median/p95/max = 5,479 / 11,496 / 26,677 / 26,677；最大总预算 29,077。B 完整 SHA 由 HF Hub API 读取，并匹配此前记录的 `077b5c2f…cbd4a` 前后缀，不以当前 main 替代未知旧版本。
+- 两槽统一运行依赖：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。真实测试确认缺少 Jinja2 会导致 Chat Template ImportError；安装后两槽均通过。
+- 本轮只运行 CPU Tokenizer 编码；未加载模型权重、未推理、未提交 GPU、未授权训练，`quality_v1_admitted=0`。Token PASS 不代表文学质量或训练准入。
+- 两份 SAFE 回执已从 HF CPU 沙箱取回并生成私人本地副本；ChatGPT 连接无法挂载原 Bucket 的 RW 输出卷（403），因此**尚未同步回原 Bucket**。Owner 可在 Mac 使用本地 HF CLI 同步；同步完成后再做 `--cache-inventory` 来源/身份核验。
+- GPU Docker 的 Transformers/chat-template 与 HF CPU 的等价性尚未验证；更一般的跨案例增量缓存尚未实现。
