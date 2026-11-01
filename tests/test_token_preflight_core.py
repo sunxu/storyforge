@@ -51,9 +51,28 @@ class SharedTokenPreflightTests(unittest.TestCase):
         class BrokenTokenizer:
             def apply_chat_template(self, messages, **kwargs):
                 raise TypeError("unrelated template failure")
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(ValueError, "^CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR$"):
             encode_chat(BrokenTokenizer(), [{"role": "user", "content": "x" * 200}],
                         disable_thinking=True)
+
+    def test_chat_template_fallback_failure_is_safe(self):
+        class FallbackBrokenTokenizer:
+            def apply_chat_template(self, messages, **kwargs):
+                if "enable_thinking" in kwargs:
+                    raise TypeError("enable_thinking unsupported")
+                raise RuntimeError("private details must not escape")
+        with self.assertRaisesRegex(ValueError, "^CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR$"):
+            encode_chat(FallbackBrokenTokenizer(),
+                        [{"role": "user", "content": "x" * 200}],
+                        disable_thinking=True)
+
+    def test_invalid_template_output_has_safe_token_id_code(self):
+        class InvalidOutputTokenizer:
+            def apply_chat_template(self, messages, **kwargs):
+                return {"attention_mask": [[1] * 64]}
+        with self.assertRaisesRegex(ValueError, "^TOKEN_IDS_INVALID$"):
+            encode_chat(InvalidOutputTokenizer(),
+                        [{"role": "user", "content": "x" * 200}])
 
     def test_budget_stats_pilot_and_hold(self):
         lengths = list(range(100, 113))
