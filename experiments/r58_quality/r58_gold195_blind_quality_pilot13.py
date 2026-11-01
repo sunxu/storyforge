@@ -148,9 +148,9 @@ def prepare(private_input: Path, private_dir: Path, repo: Path):
     private_dir.mkdir(mode=0o700)
     payloads = {
         "reviewer_A.private.jsonl":
-            b"".join(canon(x) + b"\\n" for x in packets["A"]),
+            b"".join(canon(x) + b"\n" for x in packets["A"]),
         "reviewer_B.private.jsonl":
-            b"".join(canon(x) + b"\\n" for x in packets["B"]),
+            b"".join(canon(x) + b"\n" for x in packets["B"]),
         "owner_crosswalk.private.json":
             canon(owner),
     }
