@@ -44,11 +44,30 @@ def encode_chat(tokenizer, messages: list[dict], *, disable_thinking: bool = Fal
     try:
         encoded = tokenizer.apply_chat_template(messages, **opts)
     except TypeError as exc:
-        # Preserve older Transformers compatibility without hiding unrelated errors.
+        # Preserve older Transformers compatibility without exposing exception text.
         if not disable_thinking or "enable_thinking" not in str(exc):
-            raise
+            code = ("CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR"
+                    if type(exc) is TypeError else "CHAT_TEMPLATE_RENDER_FAILED_OTHER")
+            raise ValueError(code) from None
         opts.pop("enable_thinking")
-        encoded = tokenizer.apply_chat_template(messages, **opts)
+        try:
+            encoded = tokenizer.apply_chat_template(messages, **opts)
+        except Exception as fallback_exc:
+            code = ("CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR"
+                    if type(fallback_exc) is TypeError else
+                    "CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR"
+                    if type(fallback_exc) is RuntimeError else
+                    "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR"
+                    if type(fallback_exc) is ValueError else
+                    "CHAT_TEMPLATE_RENDER_FAILED_OTHER")
+            raise ValueError(code) from None
+    except Exception as exc:
+        code = ("CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR"
+                if type(exc) is RuntimeError else
+                "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR"
+                if type(exc) is ValueError else
+                "CHAT_TEMPLATE_RENDER_FAILED_OTHER")
+        raise ValueError(code) from None
     chars = sum(len(m["content"]) for m in messages)
     return extract_input_ids(encoded, prompt_chars=chars)
 
