@@ -104,6 +104,19 @@ bash experiments/r58_quality/r58_refresh_existing_private_stage.sh --cache-inven
 
 以上 CLI 期望值仍须对应已确定的 GPU 目标配置，不能取自待核验的 SAFE JSON。可信 HF Job/PRIVATE sync-back 来源及未来 GPU runtime 等价性仍需单独核实。盘点脚本本身始终只读、绝不提交 Job；若用户明确要求真实 CPU 预检，则可提交所需的最小 HF CPU Job，无需额外逐 Job 费用授权。GPU 推理/训练仍需单独明确授权。该盘点脚本为薄适配器，底层 Token 提取与统计只有一份共享实现。
 
+### CPU 预检失败诊断码（2026-11-01）
+
+CPU 预检只输出固定 SAFE 诊断码，不打印 Python 异常文本、文件内容、Prompt、token ID 或私人路径：
+
+- `PRIVATE_INPUT_SOURCE_*` / `PRIVATE_INPUT_JSON_INVALID`：输入 JSONL 或盲审契约校验失败。
+- `TOKENIZER_IMPORT_FAILED`：Transformers/Tokenizer 依赖导入失败。
+- `TOKENIZER_LOAD_FAILED`：指定模型 revision 的 Tokenizer 初始化/下载失败。
+- `CHAT_TEMPLATE_MISSING`：Tokenizer 没有可用 chat template。
+- `TOKENIZATION_FAILED`：Chat Template 编码失败。
+- `TOKEN_BUDGET_SUMMARY_FAILED` / `PREFLIGHT_FINGERPRINT_FAILED`：统计或身份指纹步骤失败。
+
+这些码只用于定位阶段，不会使 HOLD 自动转为 PASS。未知异常仍使用通用 `TOKENIZER_OR_PRIVATE_INPUT_ERROR`，绝不把异常消息原文输出到 Job 日志。诊断后应修复已识别原因，保留输入与预算不变，再运行同一共享预检核心。
+
 ## 五、下次使用前的最小决策
 
 先问：已有有效 SAFE 回执吗？对比原始输入、真实 prompt、模型 revision、Tokenizer/运行时版本、thinking、预算和核心代码。如果全一致，无须支付另一笔 HF CPU Job；若任何关键事实改变，先复算必要范围，不能仅因为脚本换了名字或换了机器就重跑。
