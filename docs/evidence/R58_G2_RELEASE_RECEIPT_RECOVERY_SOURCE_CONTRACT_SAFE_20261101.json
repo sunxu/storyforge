@@ -55,7 +55,8 @@
     "main_commits_dated_after_2026_10_29_0000_utc_seen": 2,
     "known_github_action_workflow_runs_created_2026_10_28_to_2026_11_02": 0,
     "zero_github_actions_proves_no_manual_deploy": false,
-    "repo_github_deployments_api_not_accessible": false
+    "github_deployments_endpoint_query_succeeded": false,
+    "github_deployments_endpoint_result_interpreted_as_no_deployments": false
   },
   "historical_gap": {
     "target_to_production_server_direct_link": false,
