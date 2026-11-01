@@ -45,11 +45,15 @@ class ReuseContractTests(unittest.TestCase):
         manifest = json.loads((SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["version"], "0.1.1")
         declared = {x["path"]: x for x in manifest["files"]}
+        # v02/ is a separate, unreleased preview; it is intentionally outside
+        # the frozen v0.1.1 package and must never enter this manifest.
+        self.assertFalse(any(name.startswith("v02/") for name in declared))
         expected = {
             str(path.relative_to(SKILL_ROOT))
             for path in SKILL_ROOT.rglob("*")
             if path.is_file() and path.name != "MANIFEST_SAFE.json"
             and "__pycache__" not in path.parts
+            and path.relative_to(SKILL_ROOT).parts[0] != "v02"
         }
         self.assertEqual(set(declared), expected)
         for name, record in declared.items():
