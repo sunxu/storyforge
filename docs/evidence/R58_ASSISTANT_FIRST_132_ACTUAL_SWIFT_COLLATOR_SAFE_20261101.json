@@ -42,7 +42,14 @@
     "history_assistant_supervised_tokens_total": 0,
     "system_supervised_tokens_total": 0,
     "user_supervised_tokens_total": 0,
-    "final_assistant_supervision_verified": true
+    "final_assistant_supervision_verified": true,
+    "actual_swift_data_collator_pass": 132,
+    "actual_swift_data_collator_total": 132,
+    "collator_input_ids_equal_encoded": true,
+    "collator_labels_equal_encoded": true,
+    "collator_cpu_script": "experiments/r58_quality/r58_assistant_first_sft_collator_cpu.py",
+    "collator_reproducibility_rerun_pass": true,
+    "label_mask_132_pass": true
   },
   "execution": {
     "hf_sandbox_job_id": "6ae70b490e0338d1bb7d6a26",
@@ -57,7 +64,8 @@
     "world_card_snapshots_unverified": true,
     "sft_training_authorized": false,
     "independent_eval_not_run": true,
-    "pinned_revision_and_trainer_full_path_not_yet_verified": true
+    "pinned_revision_and_trainer_full_path_not_yet_verified": true,
+    "pinned_model_revision_still_needed": true
   },
   "next": "Prepare actual Gold quality gate, trustworthy card binding, frozen R52 prompt comparison and pinned-revision train/validation split; do not promote probe to training release."
 }
