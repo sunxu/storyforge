@@ -1,4 +1,4 @@
-# R58 RolePlay→StoryForge SFT Skill v0.1.2
+# R58 RolePlay→StoryForge SFT Skill v0.1.3
 
 此目录是可移植的 **Skill 草案 + 已在合成数据上测试的离线工具**。它不会自动连接生产数据库、向 GitHub 写入、运行推理或启动付费 Hugging Face Job。需要安装到目标的 Skill 运行环境时，由 Owner 先检查 SKILL.md、SQL 和脚本；不要称其已安装或完成真实数据准入。
 
@@ -10,7 +10,7 @@ python scripts/r58_intake.py gate --input reviewed_private.jsonl --output decisi
 python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decision_private.jsonl --output-dir new-private-freeze-dir --world-graph-sha <SHA256>
 ```
 
-`tests/` 只使用虚构数据，在沙箱环境可离线运行。
+`tests/` 只使用虚构数据，在沙箱环境可离线运行。R58 GPU 文学评审的逐字引用诊断与一次受控纠错规则见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`；修复流程不会放宽引用标准，也不会自动提交 GPU Job。
 
 阶段差异：短名单无需正文；`gate` 需要外部完成的逐案证据，不替 Reviewer 判语义；`freeze` 仅冻结带完整已验证 System/历史的字节，不验证真实 runtime 本身。后续 HF CPU `collator` PASS 和 Owner GPU 授权属于额外门禁。
 
