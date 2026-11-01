@@ -1,5 +1,6 @@
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -29,6 +30,16 @@ class HFCPU132Tests(unittest.TestCase):
             self.assertEqual(data["cases_total"], 132)
             self.assertEqual(data["fits_context"] + data["token_hold"], 132)
             self.assertEqual(data["max_output_tokens"], 1200)
+
+    def test_shell_submission_script_syntax_and_guards(self):
+        shell=Path(__file__).resolve().parent / 'hf_cpu132.sh'
+        subprocess.run(['bash', '-n', str(shell)], check=True, capture_output=True)
+        content=shell.read_text()
+        self.assertIn('STORYFORGE_ALLOW_PAID_CPU', content)
+        self.assertIn('STORYFORGE_R58_CPU132_NO_GPU', content)
+        self.assertIn('--flavor cpu-upgrade', content)
+        self.assertIn('--timeout 90m', content)
+        self.assertNotIn('--flavor a100', content)
 
     def test_stage_manifest_guards(self):
         with tempfile.TemporaryDirectory() as td:
