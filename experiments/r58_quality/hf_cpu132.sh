@@ -94,7 +94,7 @@ if [[ "$ACTION" == submit ]]; then
    --flavor cpu-upgrade --timeout 90m -v "$BASE:/workspace:rw" \
    python:3.12-slim /bin/sh -lc \
    "set -eu; export CUDA_VISIBLE_DEVICES=''; export TOKENIZERS_PARALLELISM=false; \
-   P=/workspace/preflight/r58/hf-cpu132; R=$RUN_KEY; \
+   P=/workspace/preflight/r58/hf-cpu132; R=$RUN_KEY; mkdir -p \"\$P/results\"; \
    python \"\$P/runs/\$R/code/gold195_hf_review_cpu_worker.py\" \
      --stage \"\$P/runs/\$R\" --result-dir \"\$P/results/\$R\" --run-key \"\$R\"; \
    pip install --quiet 'transformers==5.16.1' 'huggingface_hub>=1.7,<3' 'jinja2>=3.1,<4'; \
