@@ -142,3 +142,27 @@ jobs:
           print(f'{action}: HOLD as required; no data written')
           PY
           done
+
+  r58-source-json-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Count-only original JSON field schema
+        run: |
+          python3 experiments/r58_quality/gold195_source_json_structure.py --repo-root "$PWD" > /tmp/r58_source_schema_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path("/tmp/r58_source_schema_safe.json").read_text())
+          assert value["status"] == "SOURCE_JSON_STRUCTURE_PASS__CARD_APPROVAL_ZERO"
+          assert value["training_admitted"] == 0
+          assert value["r50_accessed"] is False
+          print(json.dumps(value, sort_keys=True))
+          PY
