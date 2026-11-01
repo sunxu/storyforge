@@ -2,12 +2,10 @@
 """Synthetic-only checks for existing private filename receipt re-use."""
 from __future__ import annotations
 
-import copy
 import unittest
 
 from r58_g1_existing_filename_candidates_review_sheet_safe_20261101 import (
     EXPECTED_COUNTS,
-    SCOPES,
     SOURCE_BASE,
     Hold,
     make_review,
