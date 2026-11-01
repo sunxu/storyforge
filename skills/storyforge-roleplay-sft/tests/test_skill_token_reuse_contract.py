@@ -3,6 +3,8 @@
 No HF, GPU, tokenizer, production database or private data access.
 """
 from pathlib import Path
+import hashlib
+import json
 import unittest
 
 
@@ -38,6 +40,22 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
         self.assertTrue(changelog.startswith("# 0.1.1"))
         self.assertIn("不发起 Job", changelog)
+
+    def test_manifest_v011_file_hashes_match(self):
+        manifest = json.loads((SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest["version"], "0.1.1")
+        declared = {x["path"]: x for x in manifest["files"]}
+        expected = {
+            str(path.relative_to(SKILL_ROOT))
+            for path in SKILL_ROOT.rglob("*")
+            if path.is_file() and path.name != "MANIFEST_SAFE.json"
+            and "__pycache__" not in path.parts
+        }
+        self.assertEqual(set(declared), expected)
+        for name, record in declared.items():
+            payload = (SKILL_ROOT / name).read_bytes()
+            self.assertEqual(hashlib.sha256(payload).hexdigest(), record["sha256"], name)
+            self.assertEqual(len(payload), record["bytes"], name)
 
     def test_no_duplicate_core_in_skill(self):
         self.assertFalse((SKILL_ROOT / "scripts/token_preflight.py").exists())
