@@ -89,6 +89,30 @@ class QualityV1SyntheticTest(unittest.TestCase):
         a["target_text"] += "偷偷改变"
         self.assertEqual(decide(a), ("HOLD", "INPUT_TARGET_STRUCTURE_OR_HASH_MISMATCH"))
 
+    def test_assistant_first_history_passes_quality_structure_gate(self):
+        a = make_case()
+        a["messages"].insert(1, {
+            "role": "assistant", "content": "源历史首条 Assistant 的完整正文。"
+        })
+        a["input_messages_sha256"] = sha(canonical(a["messages"]))
+        self.assertEqual(decide(a)[0], "PASS")
+        self.assertEqual(a["messages"][1]["role"], "assistant")
+
+    def test_assistant_first_is_not_an_exception_to_role_order(self):
+        a = make_case()
+        a["messages"].insert(1, {
+            "role": "assistant", "content": "完整首条 Assistant。"
+        })
+        a["messages"][2]["role"] = "assistant"
+        a["input_messages_sha256"] = sha(canonical(a["messages"]))
+        self.assertEqual(decide(a), (
+            "HOLD", "INPUT_TARGET_STRUCTURE_OR_HASH_MISMATCH"
+        ))
+        a = make_case()
+        a["messages"].insert(1, {"role": "system", "content": "越界 System"})
+        a["input_messages_sha256"] = sha(canonical(a["messages"]))
+        self.assertEqual(decide(a)[0], "HOLD")
+
     def test_history_role_wrong_order_holds(self):
         a = make_case()
         a["messages"][2]["role"] = "user"
