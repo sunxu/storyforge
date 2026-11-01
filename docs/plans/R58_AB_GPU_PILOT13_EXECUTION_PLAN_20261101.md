@@ -88,6 +88,12 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 
 **该错误修复不扩大 Owner 已批准的 A/B 两个 Pilot（2+2 条）范围。** 任何重新提交前需核对同槽位没有新 Job 在运行；现有错误 Job 不得冒充评审完成。费用仍以累计 GPU 使用时间衡量，不重复运行已成功生成的 checkpoint。
 
+## A H200 Pilot 实际验收（2026-11-01）
+
+- A 组重试 Job：`6ae762910e0338d1bb7d82dc`，由 Owner 的 Mac HF CLI 提交，`--phase pilot` 仅前 2 条。运行器 SAFE 输出为 `R58_HF_GPU_REVIEW_PILOT_VALID`，决策 PASS 2、HOLD 0、REJECT 0；`quality_v1_admitted=0`、`training_authorized=false`。
+- HF 私有输出目录已读取到 `checkpoint_00.private.json`（2226 字节）与 `checkpoint_01.private.json`（4773 字节）。HF CPU 只读沙箱调用与 GPU 原始 Runner 相同的 `read_checkpoint` 验证：两个 checkpoint 与 blind source、slot、模型、完整 revision 全部匹配；两个结果均 PASS；引用字段分别有 source 2/8 段、target 5/8 段。没有将私人引用原文写入日志或 GitHub；验证沙箱完成后已终止。
+- 此验收证明两条 checkpoint 的结构及机器引用契约完整，不代表独立文学质量裁定；B GPU Pilot 尚未提交，也未批准剩余 11 条。
+
 ## 7. 结果门禁
 
 1. 两个 Job 完成后先核验状态、时长、日志 SAFE 摘要与输出 Bucket 文件清单。
