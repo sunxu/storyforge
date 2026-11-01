@@ -166,3 +166,14 @@ jobs:
           assert value["r50_accessed"] is False
           print(json.dumps(value, sort_keys=True))
           PY
+      - name: Count-only Gold195 card-source world coverage
+        run: |
+          python3 experiments/r58_quality/gold195_card_source_coverage.py --repo-root "$PWD" > /tmp/r58_card_source_coverage_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x = json.loads(Path("/tmp/r58_card_source_coverage_safe.json").read_text())
+          assert x["status"] == "CARD_SOURCE_COVERAGE_DIAGNOSTIC__QUALITY_HOLD"
+          assert x["training_admitted"] == 0 and x["r50_read"] is False
+          print(json.dumps(x, sort_keys=True))
+          PY
