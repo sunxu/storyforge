@@ -34,10 +34,18 @@ class CardFirstTests(unittest.TestCase):
         self.assertFalse(d["training_admitted"])
         self.assertIsNone(d["split"])
 
-    def test_leading_assistant_not_silently_removed(self):
-        d, e = bind(self.packet(leading=True), {"world-a": self.card()})
-        self.assertIsNone(d)
-        self.assertEqual(e, "LEADING_ASSISTANT_NEEDS_CONTEXT_REVIEW")
+    def test_leading_assistant_kept_in_review_draft_not_admitted(self):
+        original = self.packet(leading=True)
+        d, e = bind(original, {"world-a": self.card()})
+        self.assertIsNone(e)
+        self.assertEqual(d["messages"][0]["role"], "system")
+        self.assertEqual(d["messages"][1:], original["frozen_messages"][:-1])
+        self.assertEqual(d["messages"][1]["role"], "assistant")
+        self.assertTrue(d["source_history_starts_with_assistant"])
+        self.assertFalse(d["training_admitted"])
+        self.assertEqual(d["quality_status"], "HOLD")
+        self.assertIsNone(d["world_component_id"])
+        self.assertIsNone(d["split"])
 
     def test_missing_card_holds(self):
         d, e = bind(self.packet(), {})
