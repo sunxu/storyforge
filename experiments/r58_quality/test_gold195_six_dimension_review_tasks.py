@@ -33,7 +33,7 @@ def example(i=0, leading=False):
 
 
 class ReviewTasksTests(unittest.TestCase):
-    def test_63_review_tasks_preserve_history_without_passing_quality(self):
+    def test_195_review_tasks_preserve_both_history_starts_without_quality_admission(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "private.jsonl"
             with path.open("w") as f:
@@ -41,13 +41,19 @@ class ReviewTasksTests(unittest.TestCase):
                     f.write(json.dumps(example(i, leading=i >= 63)) + "\n")
             receipt, tasks = build(path, collect=True)
             self.assertEqual(receipt["counts"]["user_first_review_tasks_prepared"], 63)
-            self.assertEqual(receipt["counts"]["LEADING_ASSISTANT_CONTEXT_HOLD"], 132)
+            self.assertEqual(receipt["counts"]["assistant_first_review_tasks_prepared"], 132)
+            self.assertEqual(receipt["counts"]["review_tasks_prepared"], 195)
             self.assertEqual(receipt["quality_v1_admitted"], 0)
-            self.assertEqual(len(tasks), 63)
+            self.assertEqual(len(tasks), 195)
             self.assertEqual(tasks[0]["messages"][-1]["role"], "user")
             self.assertEqual(tasks[0]["messages"][1]["role"], "user")
             self.assertEqual(tasks[0]["target_text"], "PRIVATE_TARGET_0")
             self.assertEqual(tasks[0]["review_results"], [])
+            self.assertTrue(tasks[63]["source_history_starts_with_assistant"])
+            self.assertEqual(tasks[63]["messages"][1]["role"], "assistant")
+            self.assertEqual(tasks[63]["messages"][1]["content"], "old")
+            self.assertEqual(tasks[63]["review_status"], "UNREVIEWED")
+            self.assertFalse(tasks[63]["training_authorized"])
             self.assertNotIn("PRIVATE_NPC", json.dumps(receipt))
             self.assertNotIn("PRIVATE_TARGET", json.dumps(receipt))
 
@@ -57,10 +63,14 @@ class ReviewTasksTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             prepare_row(row)
 
-    def test_leading_assistant_never_silently_truncated(self):
+    def test_leading_assistant_kept_unmodified_and_review_pending(self):
         draft, reason = prepare_row(example(1, leading=True))
-        self.assertIsNone(draft)
-        self.assertEqual(reason, "LEADING_ASSISTANT_CONTEXT_HOLD")
+        self.assertIsNone(reason)
+        self.assertEqual(draft["messages"][1]["role"], "assistant")
+        self.assertEqual(draft["messages"][1]["content"], "old")
+        self.assertTrue(draft["source_history_starts_with_assistant"])
+        self.assertEqual(draft["review_results"], [])
+        self.assertFalse(draft["training_authorized"])
 
     def test_bad_history_is_hold(self):
         row = example()
@@ -72,7 +82,10 @@ class ReviewTasksTests(unittest.TestCase):
     def test_history_roles(self):
         self.assertTrue(check_history([]))
         self.assertTrue(check_history([{"role":"user","content":"ok"}]))
-        self.assertFalse(check_history([{"role":"assistant","content":"bad"}]))
+        self.assertTrue(check_history([{"role":"assistant","content":"start"}]))
+        self.assertFalse(check_history([{"role":"assistant","content":"first"},
+                                        {"role":"assistant","content":"again"}]))
+        self.assertFalse(check_history([{"role":"system","content":"hidden"}]))
 
     def test_private_output_not_in_checkout(self):
         with tempfile.TemporaryDirectory() as root:
