@@ -106,13 +106,11 @@ Owner 已验证 A/B 的 HF CPU 私有 RW 文件写入及 sync-back 均 PASS。�
     umask 077
     STAGE="/Users/keedle/.local/share/storyforge/r58/r58-hf-gpu-dual-review-stage-20261101T114557Z"
     RUN_DIR="/Users/keedle/.local/share/storyforge/r58/r58-quality-pilot13-20261101T111719Z"
-    test -f "$RUN_DIR/owner_crosswalk.private.json" || { echo OWNER_CROSSWALK_MISSING; exit 42; }
-    for SLOT in A B; do
-      test -f "$STAGE/input_$SLOT/runner.py" || { echo PRIVATE_RUNNER_MISSING; exit 42; }
-      TARGET="$STAGE/input_$SLOT/token_preflight.py"
-      test ! -e "$TARGET" || { echo PREFLIGHT_ALREADY_EXISTS; exit 42; }
-      install -m 600 experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py "$TARGET" || exit 42
-    done
+    python3 experiments/r58_quality/r58_hf_gpu_review_stage.py \
+      --pilot-dir "$RUN_DIR" --stage-dir "$STAGE" --repo-root "$PWD" --refresh-code
+
+期望 R58_A_B_PRIVATE_CODE_REFRESHED__SOURCES_UNCHANGED。已生成的旧私人 STAGE 不必重建；校验原始盲审包字节不变后，仅同步 runner.py、token_preflight.py、共享 token_core.py。对任何已存在的 GPU 评审检查点拒绝换代码。重复执行 code_files_updated=0。
+
     QWEN_SHA="9216db5781bf21249d130ec9da846c4624c16137"
     GLM_SHA="$(curl -fsSL https://huggingface.co/api/models/zai-org/GLM-4-32B-0414 | jq -r '.sha')"
     [[ "$GLM_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo GLM_REVISION_HOLD; exit 42; }
@@ -137,7 +135,7 @@ HF Job B: 13/13，模型 GLM-4-32B-0414，cpu-basic，独立私有输入输出�
        --input /input/source.private.jsonl --output-dir /output \
        --transformers-version 4.57.1 --max-model-len 32768 --max-output-tokens 2400"
 
-每组应获得 R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU、cases_checked=13、over_budget_count=0，并在 RW 私人目录写入仅包含 SAFE 汇总的 r58_cpu_preflight_all13_safe.json。HF Job 返回 COMPLETED 不等于 Mac 文件落盘成功；按 Job CLI 显示的实际 hf buckets sync 命令分别同步回 output_A/B，并在 Mac 只检查 SAFE 回执。
+每组应获得 R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU、cases_checked=13、over_budget_count=0，并在 RW 私人目录写入带输入/prompt/代码指纹的 PRIVATE 回执 r58_cpu_preflight_all13_safe.json；日志只输出剔除这些私人哈希的 SAFE 汇总。HF Job 返回 COMPLETED 不等于 Mac 文件落盘成功；按 Job CLI 显示的实际 hf buckets sync 命令分别同步回 output_A/B，并在 Mac 只检查 SAFE 回执。
 
     python3 - <<'PY'
     import json
@@ -158,3 +156,7 @@ HF Job B: 13/13，模型 GLM-4-32B-0414，cpu-basic，独立私有输入输出�
     PY
 
 当前 CPU 版本明确锁为 Transformers 4.57.1。GPU vLLM Docker 镜像的 Transformers 实际版本与 chat-template 行为仍未在本轮实测；在真正的 H200 之前必须核对一致性，否则保持 HOLD，不把 CPU 结果误称为已验证 GPU 等效。两次 Token 预检均不训练、不运行推理、不读 R50。
+
+缓存复用：收到 HF sync-back 回执后，下次同一批输入再要求预检时，先用同一套参数加上 --verify-cache-only 在 Mac 执行**纯标准库的已有回执身份核对**（不加载 Tokenizer，不产生 HF 费用）。该模式校验原始输入 SHA、序列化 Prompt SHA、评审器和共享核心 SHA、模型 ID + revision、Transformers 版本、Token 预算以及 13 条完整覆盖；全部匹配才返回 R58_HF_CPU_TOKEN_PREFLIGHT_CACHED_PASS__NO_JOB，否则保持 HOLD。参见 docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md。
+
+注意：当前尚未完成真实 A/B 13 条 CPU 预检；不存在可复用的该批次全量 HF Token 回执。旧 R58 CPU132 结果使用不同 prompt，不能直接冒充 13 条评审结果。
