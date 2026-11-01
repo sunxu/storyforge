@@ -479,6 +479,7 @@ def safe_failure_result(exc):
         "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
     }
     reason = (exc.code if isinstance(exc, QuoteRepairFailure)
+              else "RESPONSE_NONEXACT_QUOTE" if isinstance(exc, QuoteValidationError)
               else str(exc) if type(exc) is ValueError and str(exc) in allowed
               else "RUNTIME_FAILURE")
     result = {"status": "R58_HF_GPU_REVIEW_HOLD", "reason_code": reason,
