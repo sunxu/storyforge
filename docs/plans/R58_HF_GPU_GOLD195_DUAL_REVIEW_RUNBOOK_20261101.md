@@ -46,7 +46,7 @@ GLM 需要 Mac Python 安装 huggingface_hub；不能传 main 代替固定 SHA�
 
     hf jobs run --namespace adradar --flavor cpu-basic --timeout 3m \
       -v "$STAGE/input_A:/input" -v "$STAGE/output_A:/output:rw" \
-      python:3.12 -- python -c \
+      python:3.12 python -c \
       'from pathlib import Path; assert Path("/input/source.private.jsonl").is_file(); Path("/output/r58_rw_probe.txt").write_text("HF RW OK"); print("R58_PRIVATE_VOLUME_RW_SMOKE_PASS")'
 
 CLI 会显示对应的 HF 私有 Bucket sync 命令。Job 完成后按其输出的真实命令拉回 Mac，确认 STAGE/output_A/r58_rw_probe.txt 存在。随后还应对 B 使用相同方法测试其独立输出路径。任何 403 或回收失败立即 HOLD，不进入 GPU。
@@ -57,7 +57,7 @@ CLI 会显示对应的 HF 私有 Bucket sync 命令。Job 完成后按其输出�
 
     hf jobs run --namespace adradar --flavor h200 --timeout 45m \
       -v "$STAGE/input_A:/input" -v "$STAGE/output_A:/output:rw" \
-      vllm/vllm-openai:v0.11.0 -- python3 /input/runner.py \
+      vllm/vllm-openai:v0.11.0 python3 /input/runner.py \
       --slot A --model Qwen/Qwen3-32B --revision "$QWEN_SHA" \
       --input /input/source.private.jsonl --output-dir /output \
       --phase pilot --max-model-len 32768 --max-output-tokens 2400
@@ -66,7 +66,7 @@ CLI 会显示对应的 HF 私有 Bucket sync 命令。Job 完成后按其输出�
 
     hf jobs run --namespace adradar --flavor h200 --timeout 45m \
       -v "$STAGE/input_B:/input" -v "$STAGE/output_B:/output:rw" \
-      vllm/vllm-openai:v0.11.0 -- python3 /input/runner.py \
+      vllm/vllm-openai:v0.11.0 python3 /input/runner.py \
       --slot B --model zai-org/GLM-4-32B-0414 --revision "$GLM_SHA" \
       --input /input/source.private.jsonl --output-dir /output \
       --phase pilot --max-model-len 32768 --max-output-tokens 2400
