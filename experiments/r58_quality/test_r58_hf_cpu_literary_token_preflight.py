@@ -5,7 +5,7 @@ import tempfile
 import unittest
 
 from r58_hf_cpu_literary_token_preflight import (
-    SCHEMA, MODE, HOLD, check_all, save_receipt,
+    SCHEMA, MODE, HOLD, check_all, save_receipt, verify_reuse,
 )
 from r58_hf_gpu_literary_reviewer import MODELS, canon
 from test_r58_hf_gpu_literary_reviewer import source_rows
@@ -62,6 +62,19 @@ class HFCPUReviewPreflightTests(unittest.TestCase):
             path = output / "r58_cpu_preflight_all13_safe.json"
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             self.assertEqual(json.loads(path.read_text())["cases_checked"], 13)
+            cached = verify_reuse(a)
+            self.assertEqual(cached["status"], "R58_HF_CPU_TOKEN_PREFLIGHT_CACHED_PASS__NO_JOB")
+            self.assertEqual(cached["cases_checked"], 13)
+            self.assertNotIn("private_input_sha256", cached)
+            forged = self.args(source, output, max_output_tokens=2500)
+            with self.assertRaises(ValueError):
+                verify_reuse(forged)
+            tampered = json.loads(path.read_text())
+            tampered["serialized_prompt_batch_sha256"] = "0" * 64
+            path.write_text(json.dumps(tampered))
+            with self.assertRaises(ValueError):
+                verify_reuse(a)
+            path.write_text(json.dumps(result))
             with self.assertRaises(FileExistsError):
                 save_receipt(output, result)
             with self.assertRaises(ValueError):
