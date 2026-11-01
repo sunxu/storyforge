@@ -1,4 +1,4 @@
-# R58 RolePlay→StoryForge SFT Skill v0.1.3
+# R58 RolePlay→StoryForge SFT Skill v0.1.4
 
 此目录是可移植的 **Skill 草案 + 已在合成数据上测试的离线工具**。它不会自动连接生产数据库、向 GitHub 写入、运行推理或启动付费 Hugging Face Job。需要安装到目标的 Skill 运行环境时，由 Owner 先检查 SKILL.md、SQL 和脚本；不要称其已安装或完成真实数据准入。
 
@@ -10,7 +10,7 @@ python scripts/r58_intake.py gate --input reviewed_private.jsonl --output decisi
 python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decision_private.jsonl --output-dir new-private-freeze-dir --world-graph-sha <SHA256>
 ```
 
-`tests/` 只使用虚构数据，在沙箱环境可离线运行。R58 GPU 文学评审的逐字引用诊断与一次受控纠错规则见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`；修复流程不会放宽引用标准，也不会自动提交 GPU Job。
+`tests/` 只使用虚构数据，在沙箱环境可离线运行。R58 GPU 文学评审的逐字引用诊断与一次受控候选索引纠错规则见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`；模型只选索引，程序从允许来源提取精确原文，不允许模型改写引用，不放宽引用标准，也不会自动提交 GPU Job。
 
 阶段差异：短名单无需正文；`gate` 需要外部完成的逐案证据，不替 Reviewer 判语义；`freeze` 仅冻结带完整已验证 System/历史的字节，不验证真实 runtime 本身。后续 HF CPU `collator` PASS 和 Owner GPU 授权属于额外门禁。
 
@@ -26,3 +26,7 @@ python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decis
 - 用户明确要求 HF CPU Token 预检时，按范围提交最小必要 CPU Job，无需逐 Job 费用授权；GPU 推理/训练仍需单独明确授权。Token PASS 不代表中文文学质量、安全或训练准入。
 
 技术实现与历史工具清单以仓库文档为准，Skill 保留执行规则，不复制工具源码或另建一套真相来源。
+
+## v0.1.4 引用纠错
+
+引用修复改为候选索引选择：模型只返回一个整数索引，程序从可见历史或目标回复的原文句段中提取引用；仅替换失败字段对应位置，评分与其他判断字段不经过修复模型。最多一次；失败仍 HOLD。
