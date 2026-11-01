@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 import json
 from pathlib import Path
 
-from capture_priority3 import read_time
+from capture_priority3 import Hold as PrivateTimeHold, read_time
 
 SCHEMA = "r58_g2_frozen_target_release_doc_date_triage_safe_v1"
 FROZEN_NAME = "priority3_source_20261030_first_capture"
@@ -44,7 +44,7 @@ class ScopeHold(Exception):
 def bucket(value: str) -> str:
     try:
         moment = read_time(value, "frozen-target").astimezone(timezone.utc)
-    except (ValueError, TypeError, OverflowError, AttributeError):
+    except (PrivateTimeHold, ValueError, TypeError, OverflowError, AttributeError):
         raise ScopeHold("invalid target time") from None
     for i, bound in enumerate(CUTOFFS):
         if moment < bound:
