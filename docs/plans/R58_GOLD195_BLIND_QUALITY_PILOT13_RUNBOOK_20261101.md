@@ -76,3 +76,30 @@ python3 experiments/r58_quality/r58_gold195_blind_quality_pilot13.py \
 ```
 
 `reason_code=READY` 表示可以去掉 `--diagnose-only`、用**新的**目录路径正式生成包；`PRIVATE_INPUT_NOT_FOUND_OR_PATH_INVALID` 检查第一步审核包是否创建；`PRIVATE_INPUT_PERMISSIONS_INVALID` 检查文件 0600；`OUTPUT_PARENT_NOT_PRIVATE_0700` 检查输出父目录 0700；`OUTPUT_ALREADY_EXISTS` 使用全新的目录名（不要覆盖旧结果）；`REVIEW_TASKS_INCOMPLETE` 检查 `review_tasks_prepared`、`history_shape_hold`；`WORLD_COUNT_NOT_13` 需要检查来源故事 ID 绑定，不能编造或强行凑数；`PRIVATE_SOURCE_SCHEMA_OR_CARD_HASH_INVALID` 需要重新检查私有来源的构造与卡片哈希，而不是跳过验证。只共享 SAFE 回执。
+
+
+## A/B AI 审核结果回收及验证（2026-11-01）
+
+当 `GOLD195_BLIND_PILOT13_PREPARED__REVIEWS_NOT_PERFORMED` 返回成功时，**勿重新运行准备命令**。保留已经生成的试点目录，里面应包含：
+
+- `reviewer_A.private.jsonl`：仅交给评审 A
+- `reviewer_B.private.jsonl`：仅交给评审 B
+- `owner_crosswalk.private.json`：只由 Owner 保存，严禁交给评审 A/B
+
+使用两个独立 AI 对话或隔离的评审执行环境，各自独立阅读 13 条，**不共享评分、结论、身份对应表或另一份盲审包**。每位评审保留原始 JSONL 除 `response` 以外所有字段，在新文件 `reviewer_A.completed.private.jsonl` / `reviewer_B.completed.private.jsonl` 中填写本人的 `response`：`decision` 为 `PASS`、`HOLD` 或 `REJECT`，六维 `scores` 为 1–5；三项 `severe_flags` 明确标记；卡片是否适用、与历史冲突分别给出判断；`specific_source_quotes` 必须来自实际历史 User/Assistant 消息（不能只来自未批准的 System 卡），`specific_target_quotes` 必须来自目标回复；给出文学质量理由与不确定性。来源不充分时允许 HOLD，不得编造证据。
+
+**A/B 的完成文件必须分开保存，不要覆盖原始文件。** Owner 仅在两个评审全部冻结后用以下命令验证：
+
+```bash
+RUN_DIR="/ABSOLUTE/PATH/TO/EXISTING/r58-quality-pilot13-YYYYMMDDTHHMMSSZ"
+python3 experiments/r58_quality/r58_gold195_pilot13_dual_review_validate.py \
+  --reviewer-a-source "$RUN_DIR/reviewer_A.private.jsonl" \
+  --reviewer-a-completed "$RUN_DIR/reviewer_A.completed.private.jsonl" \
+  --reviewer-b-source "$RUN_DIR/reviewer_B.private.jsonl" \
+  --reviewer-b-completed "$RUN_DIR/reviewer_B.completed.private.jsonl" \
+  --owner-crosswalk "$RUN_DIR/owner_crosswalk.private.json"
+```
+
+要求 PRIVATE 完成文件为 0600 普通文件，不能是符号链接，不得上传到 GitHub。验证器检查 13/13 完整性、盲号交叉绑定、源记录未被改写、可见历史与目标逐字引用、评分范围、严重问题标记及 PASS 六维最低门槛，仅输出 SAFE 聚合计数与分歧总数。两位评审的独立性和审阅内容真伪**无法仅由脚本证明**。
+
+验证器始终返回 `quality_v1_admitted=0`、`training_authorized=false`；即使 13/13 双方均 PASS，也仍需卡片语义可信度、Protected/R50 世界隔离、Owner 最终确认和正式数据集冻结，才可考虑 SFT。
