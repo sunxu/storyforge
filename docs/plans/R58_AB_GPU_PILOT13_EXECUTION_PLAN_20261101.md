@@ -1,7 +1,7 @@
 # R58 A/B 13 条 HF GPU 文学盲审执行方案（未提交）
 
 日期：2026-11-01  
-状态：`OWNER_APPROVED__A_GPU_JOB_127_STARTUP_ERROR__CORRECTED_COMMAND_READY`
+状态：`A_PILOT_VALID__B_HOLD_NONEXACT_QUOTE__REPAIR_IMPLEMENTED__B_RETRY_APPROVAL_REQUIRED`
 
 ## 1. 目标与范围
 
@@ -101,6 +101,16 @@ Owner 使用 Mac HF CLI 提交 A，Job ID `6ae7615ac78863f9c62fb0de`；HF 返回
 - 原始校验器要求 `specific_source_quotes` 中每段引用必须是可见历史某一条 user/assistant 消息的连续原文子串；`specific_target_quotes` 必须是目标回复的连续原文子串。任何一个引用不匹配就抛出该错误，且在 `save_checkpoint` 前失败；无法据此推断文学分数好坏。
 - 在当前输出存储缺少失败模型原始响应的情况下，不能确定是哪段引用不匹配。不要补造引用、放松 exact quote 约束、把 B 标为 PASS，亦不要直接重跑付费 GPU。
 - 后续优先复用现有校验器设计 **仅 SAFE 的字段级诊断与最多一次受控纠错**，保持人工证据可审计；先完成合成测试和可重复 CPU 检查，再考虑在已有 2 条 Pilot 范围内进行受控重试。重试所需新的 GPU 费用应事前向 Owner 报告，不自动扩大原有预算或启动剩余 11 条。
+
+## 2026-11-02 引用诊断与一次受控纠错修复
+
+- B 的原始 SAFE 结果为 `R58_HF_GPU_REVIEW_HOLD` / `RESPONSE_NONEXACT_QUOTE`；B 输出 Bucket 没有两个 checkpoint。旧 Runner 未保存首次失败的原始生成响应，不能回溯确认具体哪段引用失败。
+- 新 Runner 已加入 `QuoteValidationError`：SAFE 仅记录 case index、quote field、quote index、允许搜索的 source candidate count 和是否尝试纠错；不保存或输出引用文本。
+- 仅引用精确性错误触发一次纠错。纠错 Prompt 使用同一原始评审输入和首次 JSON，重新计算 Token ID 与上下文预算；同一 Schema/模型/采样参数只再生成一次。纠错只允许修改两个引用列表，所有非引用字段逐字段保持完全一致。
+- 纠错再次失败、预算超限、输出截断、JSON 无效或其他字段变化时 HOLD；失败响应不保存 checkpoint，不放宽严格连续子串规则。
+- 新增 4 个合成测试，覆盖字段级诊断、隐私、单次纠错成功、纠错失败不写 checkpoint、非引用字段不可修改。HF CPU-only Sandbox 执行 `test_r58_hf_gpu_literary_reviewer`：10 tests，全部 PASS；未加载模型权重、未推理、未使用 GPU。
+- 新代码提交：`2e290484b92a660c75a32b2f11773ff03fd10f0b`；Skill v0.1.3、技术规范及 SAFE Manifest 已更新，Manifest 中四个变更文件 SHA256/bytes 已复核匹配。
+- B 私人 STAGE 尚未刷新，新 Runner 尚未进入 B GPU Job。刷新前仍须确认 B 没有新 checkpoint；A 已有的两个有效 checkpoint 不得覆盖。B 再次提交属于额外付费 GPU Job，之前 B Job 已发生过运行费用，因此须先向 Owner 明确报告新增费用上限并取得批准。剩余 11 条和训练均未获授权。
 
 ## 7. 结果门禁
 
