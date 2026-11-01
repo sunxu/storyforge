@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.0
+version: 0.1.1
 language: zh-CN
 description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT 候选、重放与审核、可选 Teacher 辅助、冻结 Dataset v0.4 并在 Hugging Face CPU 验证。严格保护 R50，不自动启用付费计算。
 ---
@@ -20,6 +20,18 @@ description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT �
 - R50 保护测试内容禁止访问，禁止从中做训练/开发集选择；已有 R55/R57 开发题不得冒充新独立评估集。
 - 任何 PRIVATE 原文、Owner Key、逐案标识、用户身份、模型原始输出不得推送普通 GitHub。只允许 SAFE 汇总和非敏感工具源码。
 
+## HF Token 预检复用（每次先检查）
+
+开始 SFT、Gold/文学双审、Held-out、Tokenizer 或 Collator 工作之前，必须先读取仓库 AGENTS.md 的第 2.1–2.2 节及 docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md，盘点已有脚本、历史 SAFE 回执与合成测试。不得仅因为轮次变化重新编写预检器或重复发起付费 HF CPU Job。
+
+1. 共享核心：src/storyforge_dataset/token_preflight.py 是 input_ids 提取、Chat Template 编码、Token 预算和 Prompt 指纹的唯一新代码权威。HF 私有目录使用经过字节核对的 token_core.py 副本。新项目写轻量数据和 Prompt 适配器，不复制底层算法。
+2. 已有入口：R58 13 条文学双审使用 experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py 与 r58_hf_gpu_literary_reviewer.py；先检索 R50、R53、R58 CPU132 的历史工具与证据。不同 Prompt 或模型不得借用旧轮次的 Token PASS。
+3. 缓存优先：仅当私有输入原始字节、完整序列化 Prompt、代码指纹、模型及不可变 revision、Tokenizer/Transformers 版本、Chat Template/思考模式、上下文及输出预留预算完全一致，才可复用此前可信 HF CPU 结果。使用 --verify-cache-only 做不加载 Tokenizer 的回执核验；不同则 HOLD 并按既有工具重算。当前 R58 实现仅支持整批 13 条缓存复用，不宣称已有跨样本增量缓存。
+4. 执行环境：真实 Tokenizer、Chat Template、input_ids 统计仅在 HF CPU 运行；Mac 只做分发、输入完整性、私人同步及 SAFE 回执核验。禁止使用 len(BatchEncoding) 的字段数代替 Token 数；禁止静默截断。
+5. 两种检查不能互相替代：通用模型 Token 数核验不是 ms-swift 实际 Collator / last_round 监督标签验证；Token PASS 也不是文学质量、卡片适用性或训练准入。
+6. 保留安全边界：HF CPU 付费执行需授权，GPU 另外单独授权；A/B 私有内容及结果各自隔离，Owner crosswalk 不进入任何评审 Job；日志和 GitHub 只允许 SAFE 汇总，不输出私人逐案正文。
+
+每次修复/新增工具应更新可复用共享模块或薄适配器、合成回归测试及使用文档，不更改历史冻结脚本或证据。若已有私人 STAGE 需要更新代码，使用 r58_hf_gpu_review_stage.py --refresh-code 的校验流程；已有 GPU 评审检查点时拒绝覆盖。
 ## 快速入口
 1. 先检查项目 ref、`transaction_read_only=on`、Schema 与表结构。参考 `queries/01_story_inventory.sql`。
 2. 通过 `queries/02_story_shortlist.sql` 得到无正文、无用户 ID 的故事统计 CSV。只选择少量故事，不直接导出所有聊天。
