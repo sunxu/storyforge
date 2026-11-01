@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.1
+version: 0.1.2
 language: zh-CN
 description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT 候选、重放与审核、可选 Teacher 辅助、冻结 Dataset v0.4 并在 Hugging Face CPU 验证。严格保护 R50；明确请求的 HF CPU 预检可执行，不自动启动 GPU。
 ---
@@ -29,7 +29,10 @@ description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT �
 3. 缓存优先：仅当私有输入原始字节、完整序列化 Prompt、代码指纹、模型及不可变 revision、Tokenizer/Transformers 版本、Chat Template/思考模式、上下文及输出预留预算完全一致，才可复用此前可信 HF CPU 结果。使用 --verify-cache-only 做不加载 Tokenizer 的回执核验；不同则 HOLD 并按既有工具重算。当前 R58 实现仅支持整批 13 条缓存复用，不宣称已有跨样本增量缓存。
 4. 执行环境：真实 Tokenizer、Chat Template、input_ids 统计仅在 HF CPU 运行；Mac 只做分发、输入完整性、私人同步及 SAFE 回执核验。禁止使用 len(BatchEncoding) 的字段数代替 Token 数；禁止静默截断。
 5. 两种检查不能互相替代：通用模型 Token 数核验不是 ms-swift 实际 Collator / last_round 监督标签验证；Token PASS 也不是文学质量、卡片适用性或训练准入。
-6. 保留安全边界：明确请求的 HF CPU 预检无需逐 Job 费用授权，按已请求范围执行；GPU 另外单独授权。A/B 私有内容及结果各自隔离，Owner crosswalk 不进入任何评审 Job；日志和 GitHub 只允许 SAFE 汇总，不输出私人逐案正文。
+6. 保留安全边界：用户明确要求 HF CPU 预检工作流时，按要求提交最小必要 CPU Job，无需逐 Job 费用授权；GPU 推理/训练仍需单独明确授权。A/B 私有内容及结果各自隔离，Owner crosswalk 不进入任何评审 Job；日志和 GitHub 只允许 SAFE 汇总，不输出私人逐案正文。
+
+
+7. 失败诊断：CPU 预检必须使用固定 SAFE 阶段码定位输入校验、Tokenizer 加载、Chat Template 渲染和 Token ID 解析；禁止输出原始异常消息、Prompt、Token ID 或私人路径。诊断码只定位失败，不自动改变 HOLD/PASS。
 
 每次修复/新增工具应更新可复用共享模块或薄适配器、合成回归测试及使用文档，不更改历史冻结脚本或证据。若已有私人 STAGE 需要更新代码，使用 r58_hf_gpu_review_stage.py --refresh-code 的校验流程；已有 GPU 评审检查点时拒绝覆盖。
 ## 快速入口
