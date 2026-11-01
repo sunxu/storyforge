@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import math
 import os
 from pathlib import Path
 import re
@@ -19,11 +18,19 @@ import sys
 try:
     # Repository test / development import.
     from r58_hf_gpu_literary_reviewer import (
-        MODELS, read_source, encode_one, JUDGE_SYSTEM, JUDGE_USER,
+        MODELS, read_source, encode_one, prompt_messages, JUDGE_SYSTEM, JUDGE_USER,
     )
 except ModuleNotFoundError:
     # Private staged HF mount contains runner.py, never another reviewer's input.
-    from runner import MODELS, read_source, encode_one, JUDGE_SYSTEM, JUDGE_USER
+    from runner import MODELS, read_source, encode_one, prompt_messages, JUDGE_SYSTEM, JUDGE_USER
+
+try:
+    from token_core import describe_token_lengths, digest_serialized_items
+except ModuleNotFoundError:
+    # Repository execution: reviewer.py resolves src/ without requiring Mac pip.
+    from storyforge_dataset.token_preflight import (
+        describe_token_lengths, digest_serialized_items,
+    )
 
 SCHEMA = "r58_hf_cpu_literary_token_preflight_all13_safe_v1"
 MODE = "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
@@ -61,13 +68,17 @@ def check_all(args, tokenizer_factory=None, package_version=None):
     lengths = [len(encode_one(tokenizer, r, args.model)) for r in rows]
     if len(lengths) != 13:
         raise ValueError("EXPECTED_13")
-    max_prompt = max(lengths)
-    total = [n + args.max_output_tokens for n in lengths]
-    over = sum(n > args.max_model_len for n in total)
-    sorted_lengths = sorted(lengths)
+    stats = describe_token_lengths(
+        lengths, max_model_len=args.max_model_len,
+        reserved_output_tokens=args.max_output_tokens, pilot_count=2,
+    )
+    # Reuse identity covers the actual bytes AND serialized judge prompts.
+    # Hashes are kept in the private receipt, not in stdout/log SAFE summary.
+    source_digest = hashlib.sha256(args.input.read_bytes()).hexdigest()
+    prompt_digest = digest_serialized_items([prompt_messages(row) for row in rows])
     payload = {
         "schema": SCHEMA,
-        "status": MODE if not over else HOLD,
+        "status": MODE if stats["over_budget_count"] == 0 else HOLD,
         "slot": args.slot,
         "model": args.model,
         "model_revision": args.revision,
@@ -76,18 +87,9 @@ def check_all(args, tokenizer_factory=None, package_version=None):
         "chat_template_sha256": hashlib.sha256(template.encode("utf-8")).hexdigest(),
         "reviewer_prompt_template_sha256": hashlib.sha256(
             (JUDGE_SYSTEM + JUDGE_USER).encode("utf-8")).hexdigest(),
-        "cases_checked": len(lengths),
-        "pilot_cases_checked": 2,
-        "remaining_cases_checked": 11,
-        "prompt_tokens_min": min(lengths),
-        "prompt_tokens_p95": sorted_lengths[math.ceil(0.95 * len(lengths)) - 1],
-        "prompt_tokens_max": max_prompt,
-        "pilot_prompt_tokens_max": max(lengths[:2]),
-        "remaining_prompt_tokens_max": max(lengths[2:]),
-        "reserved_output_tokens": args.max_output_tokens,
-        "max_total_tokens": max(total),
-        "max_model_len": args.max_model_len,
-        "over_budget_count": over,
+        **stats,
+        "private_input_sha256": source_digest,
+        "serialized_prompt_batch_sha256": prompt_digest,
         "inference_performed": False,
         "model_weights_loaded": False,
         "paid_gpu_submitted": False,
@@ -140,7 +142,10 @@ def main():
             "paid_gpu_submitted": False, "private_text_emitted": False,
         }
         code = 42
-    print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
+    # Only SAFE aggregate leaves the private output; never print source hashes.
+    public = {k: v for k, v in receipt.items()
+              if k not in ("private_input_sha256", "serialized_prompt_batch_sha256")}
+    print(json.dumps(public, ensure_ascii=False, sort_keys=True))
     return code
 
 
