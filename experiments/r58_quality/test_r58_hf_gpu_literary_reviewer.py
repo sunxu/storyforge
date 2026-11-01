@@ -6,7 +6,7 @@ import tempfile
 import unittest
 
 from r58_hf_gpu_literary_reviewer import (
-    PILOT_SCHEMA, MODELS, canon, read_source, prompt_messages,
+    PILOT_SCHEMA, MODELS, REVIEW_KEYS, canon, read_source, prompt_messages,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
     QuoteValidationError, QuoteRepairFailure, quote_candidates,
