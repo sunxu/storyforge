@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 
 from gold195_hf_review_batch import locked_read, SCHEMA
-from gold195_hf_review_gpu_runner import make_prompt
+from gold195_hf_review_gpu_runner import make_prompt, extract_token_ids
 
 DEFAULT_MODEL = "Qwen/Qwen3-32B"
 DEFAULT_REVISION = "9216db5781bf21249d130ec9da846c4624c16137"
@@ -53,7 +53,7 @@ def count_lengths(rows, tokenizer, max_model_len, max_output_tokens):
                 [{"role": "user", "content": prompt}],
                 tokenize=True, add_generation_prompt=True,
             )
-        size = len(ids)
+        size = len(extract_token_ids(ids, prompt_chars=len(prompt)))
         lengths.append(size)
         if size + max_output_tokens > max_model_len:
             exceeding += 1
