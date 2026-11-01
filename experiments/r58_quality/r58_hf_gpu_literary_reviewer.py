@@ -461,6 +461,49 @@ def run(args, engine_factory=None, tokenizer_factory=None,
             "training_authorized": False}
 
 
+def safe_failure_result(exc):
+    """Return only allowlisted failure metadata; never serialize exception text."""
+    allowed = {
+        "RUN_CONFIG_INVALID", "SOURCE_PATH_INVALID", "SOURCE_EXPECTED_13",
+        "SOURCE_UNREVIEWED_CONTRACT_INVALID", "SOURCE_CHAT_INVALID",
+        "OUTPUT_DIR_INVALID", "PILOT_CHECKPOINT_MISSING",
+        "PROMPT_TOKEN_BUDGET_EXCEEDED", "GENERATION_TRUNCATED_OR_INCOMPLETE",
+        "RESPONSE_FIELDS_INVALID", "RESPONSE_DECISION_INVALID",
+        "RESPONSE_SCORE_OR_FLAGS_INVALID", "RESPONSE_CARD_STATUS_INVALID",
+        "RESPONSE_REASON_INVALID", "RESPONSE_HOLD_NEEDS_UNCERTAINTY",
+        "RESPONSE_SEVERE_MUST_REJECT", "RESPONSE_NONEXACT_QUOTE",
+        "RESPONSE_JSON_INVALID", "RESPONSE_PASS_MISSING_QUOTE",
+        "RESPONSE_PASS_BELOW_FLOOR", "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED",
+        "QUOTE_REPAIR_GENERATION_INCOMPLETE", "QUOTE_REPAIR_RESPONSE_INVALID",
+        "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS",
+        "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
+    }
+    reason = (exc.code if isinstance(exc, QuoteRepairFailure)
+              else str(exc) if type(exc) is ValueError and str(exc) in allowed
+              else "RUNTIME_FAILURE")
+    result = {"status": "R58_HF_GPU_REVIEW_HOLD", "reason_code": reason,
+              "training_authorized": False, "quality_v1_admitted": 0,
+              "private_text_emitted": False}
+    if isinstance(exc, QuoteValidationError):
+        result.update({
+            "case_index": exc.case_index, "quote_field": exc.field,
+            "quote_index": exc.quote_index,
+            "source_candidate_count": exc.source_candidate_count,
+            "quote_repair_attempted": exc.repair_attempted,
+            "quote_repair_succeeded": False,
+        })
+    elif isinstance(exc, QuoteRepairFailure):
+        qe = exc.quote_error
+        result.update({
+            "case_index": exc.case_index, "quote_field": qe.field,
+            "quote_index": qe.quote_index,
+            "source_candidate_count": qe.source_candidate_count,
+            "quote_repair_attempted": True,
+            "quote_repair_succeeded": False,
+        })
+    return result
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--slot", choices=("A", "B"), required=True)
@@ -481,43 +524,7 @@ def main():
     try:
         result, status = run(args), 0
     except Exception as exc:
-        # Never print source/model-generated text, file paths, IDs or HF tracebacks.
-        allowed = {
-            "RUN_CONFIG_INVALID", "SOURCE_PATH_INVALID", "SOURCE_EXPECTED_13",
-            "SOURCE_UNREVIEWED_CONTRACT_INVALID", "SOURCE_CHAT_INVALID",
-            "OUTPUT_DIR_INVALID", "PILOT_CHECKPOINT_MISSING",
-            "PROMPT_TOKEN_BUDGET_EXCEEDED", "GENERATION_TRUNCATED_OR_INCOMPLETE",
-            "RESPONSE_FIELDS_INVALID", "RESPONSE_DECISION_INVALID",
-            "RESPONSE_SCORE_OR_FLAGS_INVALID", "RESPONSE_CARD_STATUS_INVALID",
-            "RESPONSE_REASON_INVALID", "RESPONSE_HOLD_NEEDS_UNCERTAINTY",
-            "RESPONSE_SEVERE_MUST_REJECT", "RESPONSE_NONEXACT_QUOTE",
-            "RESPONSE_JSON_INVALID", "RESPONSE_PASS_MISSING_QUOTE",
-            "RESPONSE_PASS_BELOW_FLOOR", "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED",
-            "QUOTE_REPAIR_GENERATION_INCOMPLETE", "QUOTE_REPAIR_RESPONSE_INVALID",
-            "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS",
-            "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
-        }
-        reason = (exc.code if isinstance(exc, QuoteRepairFailure)
-                  else str(exc) if type(exc) is ValueError and str(exc) in allowed
-                  else "RUNTIME_FAILURE")
-        result = {"status": "R58_HF_GPU_REVIEW_HOLD", "reason_code": reason,
-                  "training_authorized": False, "quality_v1_admitted": 0,
-                  "private_text_emitted": False}
-        if isinstance(exc, QuoteValidationError):
-            result.update({
-                "case_index": exc.case_index, "quote_field": exc.field,
-                "quote_index": exc.quote_index,
-                "source_candidate_count": exc.source_candidate_count,
-                "quote_repair_attempted": exc.repair_attempted,
-            })
-        elif isinstance(exc, QuoteRepairFailure):
-            qe = exc.quote_error
-            result.update({
-                "case_index": exc.case_index, "quote_field": qe.field,
-                "quote_index": qe.quote_index,
-                "source_candidate_count": qe.source_candidate_count,
-                "quote_repair_attempted": True,
-            })
+        result = safe_failure_result(exc)
         status = 42
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return status
