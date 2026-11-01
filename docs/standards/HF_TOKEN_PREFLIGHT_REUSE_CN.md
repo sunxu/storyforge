@@ -140,4 +140,5 @@ R58 Qwen Chat Template 运行环境还必须安装 Jinja2。Transformers 4.57.1 
 - **GPU Stage 实际 runner 的 Tokenization 等价性已验证**：A 的 staged runner 与预检代码 SHA 相同；B 的 staged runner 是较早版本，代码 SHA 不同，但 Prompt 模板 SHA 相同。A/B 分别使用实际 staged runner 与共享核心路径，对 13 条全部逐条比较，Token ID 序列均为 13/13 完全一致。B 仅 `flatten_token_ids` 与 `encode_one` 两个 Tokenization helper 不同；实测输出完全相同。此项只证明 Tokenization 等价，不证明 GPU 容器/runtime 等价或质量准入。
 - B 同步额外上传的 `.keep`（0 字节）与 `r58_rw_probe.txt`（24 字节，内容为 `HF PRIVATE RW SMOKE PASS`）均为 SAFE 辅助文件；远端 A/B 输出目录仅包含这两个文件及对应 SAFE JSON，没有上传 PRIVATE 原文或模型输出。
 - 本轮仅运行 CPU Tokenizer；未加载模型权重、未推理、未提交 GPU、未授权训练，`quality_v1_admitted=0`。Token PASS 不代表文学质量或训练准入。
+- **GPU Pilot 方案已准备但未提交**：vLLM 0.32.0 amd64 image digest 已固定，并在同一镜像的 CPU-only Sandbox 验证 `LLM` / `StructuredOutputsParams` / `TokensPrompt` 可导入；没有 CUDA、权重或推理。建议 H200 141 GB，A/B 各一个 Pilot Job，HF timeout 2h、容器内进程 timeout 110m；两 Job 最坏 GPU 费用约 ¥133.14。Pilot 后 11 条必须再次单独审批。方案见 `docs/plans/R58_AB_GPU_PILOT13_EXECUTION_PLAN_20261101.md`。
 - 尚待：当前共享路径最新 GitHub CI 结果；GPU Docker 的 Transformers/Chat Template 与 HF CPU 等价性；更一般的跨案例增量缓存。
