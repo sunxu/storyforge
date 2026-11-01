@@ -165,7 +165,7 @@ MAX_QUOTE_REPAIR_CANDIDATES = 128
 def _quote_segments(text):
     if not isinstance(text, str):
         return []
-    primary = re.split(r"(?<=[。！？!?；;])|[\\r\\n]+", text)
+    primary = re.split(r"(?<=[。！？!?；;])|[\r\n]+", text)
     segments = []
     for part in primary:
         part = part.strip()
