@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.3
+version: 0.1.4
 language: zh-CN
 description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT 候选、重放与审核、可选 Teacher 辅助、冻结 Dataset v0.4 并在 Hugging Face CPU 验证。严格保护 R50；明确请求的 HF CPU 预检可执行，不自动启动 GPU。
 ---
@@ -42,7 +42,7 @@ description: 只读盘点 RolePlay Supabase，按世界隔离筛选多轮 SFT �
 4. 更新 Skill 执行顺序及对应 `docs/standards/` 完整技术规范。
 5. 最后按私人 STAGE 刷新规则升级代码；已有真实 checkpoint 时拒绝覆盖，不自动提交 GPU。
 
-R58 文学评审遇到 `RESPONSE_NONEXACT_QUOTE` 时，先读取 SAFE 字段诊断和 checkpoint 清单。引用必须是来源单条消息或目标回复中的严格连续原文；只允许一次受控纠错，且仅可修改引用列表，其他评分与结论字段必须保持不变。纠错失败、超出 Token 预算、输出截断或改变其他字段，一律 HOLD，不保存 checkpoint，不放宽引用标准。SAFE 诊断不得包含引用原文、模型原始响应或私人路径。完整规范见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`。
+R58 文学评审遇到 `RESPONSE_NONEXACT_QUOTE` 时，先读取 SAFE 字段诊断和 checkpoint 清单。引用必须是来源单条消息或目标回复中的严格连续原文；只允许一次受控纠错。纠错模型只能返回候选索引，候选由程序从可见历史的单条 user/assistant 消息或 target_text 中切取，绝不从 unapproved_card 取值；程序只替换失败引用位置并再次执行完整严格校验。纠错模型不能修改评分或任何其他评审字段。候选缺失/过多、Token 超限、索引无效或最终校验失败，一律 HOLD，不保存 checkpoint，不放宽引用标准。SAFE 诊断不得包含引用原文、模型原始响应或私人路径。完整规范见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`。
 
 每次修复/新增工具应更新可复用共享模块或薄适配器、合成回归测试及使用文档，不更改历史冻结脚本或证据。若已有私人 STAGE 需要更新代码，使用 r58_hf_gpu_review_stage.py --refresh-code 的校验流程；已有 GPU 评审检查点时拒绝覆盖。
 ## 快速入口
