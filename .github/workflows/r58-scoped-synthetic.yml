@@ -78,6 +78,20 @@ jobs:
           assert data["private_review_packet_written"] is False
           print(json.dumps(data, ensure_ascii=False, sort_keys=True))
           PY
+      - name: Gold195 card-first source-bound draft preflight (no private cards)
+        run: |
+          python3 experiments/r58_quality/gold195_card_first.py --repo-root "$PWD" > /tmp/r58_card_first_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v = json.loads(Path('/tmp/r58_card_first_safe.json').read_text())
+          assert v["status"] == "CARD_FIRST_DRAFT_CHECK_ONLY__NO_TRAINING_ADMISSION"
+          assert v["counts"]["source_rows"] == 195
+          assert v["counts"]["structural_card_drafts"] == 0
+          assert v["quality_v1_admitted"] == 0
+          assert not v["private_output_written"]
+          print(json.dumps(v, ensure_ascii=False, sort_keys=True))
+          PY
       - name: Gold108 frozen dual-review index binding (SAFE counts only)
         run: |
           set +e
