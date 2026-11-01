@@ -59,7 +59,7 @@ class StageSafetyTests(unittest.TestCase):
                 for i, row in enumerate(records):
                     row["blind_id"] = f"{slot}_{i}"
                 item = pilot / f"reviewer_{slot}.private.jsonl"
-                item.write_bytes(b"".join(canon(x) + b"\\n" for x in records))
+                item.write_bytes(b"".join(canon(x) + bytes([10]) for x in records))
                 item.chmod(0o600)
             crosswalk = pilot / "owner_crosswalk.private.json"
             crosswalk.write_text('{"private": true}')
