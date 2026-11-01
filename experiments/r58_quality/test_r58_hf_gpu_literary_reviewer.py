@@ -87,7 +87,9 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         messages = prompt_messages(row)
         self.assertEqual(len(messages), 2)
         self.assertNotIn(row["blind_id"], json.dumps(messages, ensure_ascii=False))
-        self.assertIn(row["messages"][0]["content"], messages[1]["content"])
+        payload = json.loads(messages[1]["content"].split("待审材料如下：\\n", 1)[1])
+        self.assertEqual(row["messages"][0]["content"], payload["unapproved_card"])
+        self.assertEqual(row["messages"][1:], payload["visible_history"])
 
     def test_pass_and_holds_with_exact_quote_validation(self):
         row = source_rows()[0]
