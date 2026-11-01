@@ -7,6 +7,7 @@ import unittest
 
 from gold195_hf_review_cpu_stage import prep
 from gold195_hf_review_cpu_worker import verify_stage, load_rows, preflight
+from gold195_hf_review_gpu_runner import extract_token_ids
 from gold195_hf_review_batch import input_record
 from gold195_assistant_first_full132 import build
 from test_gold195_assistant_first_semantic_pilot import example
@@ -15,6 +16,21 @@ from test_gold195_assistant_first_semantic_pilot import example
 class DummyTokenizer:
     def apply_chat_template(self, messages, **kwargs):
         return [3] * (100 + len(messages[0]["content"]) // 40)
+
+
+class BatchEncodingLike(dict):
+    pass
+
+
+class MappingTokenizer:
+    def apply_chat_template(self, messages, **kwargs):
+        n = 100 + len(messages[0]['content']) // 40
+        return BatchEncodingLike(input_ids=list(range(n)), attention_mask=[1] * n)
+
+
+class BrokenTokenizer:
+    def apply_chat_template(self, messages, **kwargs):
+        return {'input_ids': [1, 2], 'attention_mask': [1, 1]}
 
 
 class HFCPU132Tests(unittest.TestCase):
@@ -30,6 +46,20 @@ class HFCPU132Tests(unittest.TestCase):
             self.assertEqual(data["cases_total"], 132)
             self.assertEqual(data["fits_context"] + data["token_hold"], 132)
             self.assertEqual(data["max_output_tokens"], 1200)
+
+    def test_batch_encoding_counts_input_ids_not_keys(self):
+        stats=preflight(self.rows, MappingTokenizer())
+        self.assertGreater(stats['prompt_tokens_min'], 32)
+        self.assertGreater(stats['prompt_tokens_max'], 32)
+        self.assertEqual(stats['cases_total'], 132)
+        self.assertEqual(extract_token_ids({'input_ids':[5,6,7]*40,'attention_mask':[1]*120}, prompt_chars=400), [5,6,7]*40)
+        self.assertEqual(len(extract_token_ids([[5]*40], prompt_chars=400)), 40)
+
+    def test_false_two_token_batch_encoding_rejected(self):
+        with self.assertRaises(ValueError):
+            preflight(self.rows, BrokenTokenizer())
+        with self.assertRaises(ValueError):
+            extract_token_ids({'input_ids':[1,2],'attention_mask':[1,1]}, prompt_chars=400)
 
     def test_shell_submission_script_syntax_and_guards(self):
         shell=Path(__file__).resolve().parent / 'hf_cpu132.sh'
