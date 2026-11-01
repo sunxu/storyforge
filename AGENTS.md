@@ -97,6 +97,22 @@ Do not use `sudo` unless it is strictly required and explicitly authorized.
 
 For R58 Gold195 literary pilot13, perform A/B tokenizer checks on HF CPU against each reviewer's staged PRIVATE input and the same pinned model revision, chat template, and context budget planned for the corresponding GPU reviewer. Fail closed on a mismatch or over-budget prompt, and do not launch the GPU automatically.
 
+### 2.2 Reuse existing HF token-preflight tooling (mandatory)
+
+**Never write a new one-off token-budget/tokenizer preflight for each StoryForge round.** Inventory and reuse existing code, tested HF CPU execution wrappers and SAFE receipts before creating a new script:
+
+- scripts/hf_cpu_preflight.py: SFT dataset, label flags, and training-config checks; **not** a real model-tokenizer length audit.
+- scripts/v03_r50_hf_cpu46_audit.py and R53 CPU40 worker: earlier HF CPU staging, source/version verification and result-recovery patterns.
+- experiments/r58_quality/hf_cpu132.sh + gold195_hf_review_cpu_worker.py: existing sync/submit/verify and genuine input_ids token-length measurement for 132 cases.
+- experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py: 13-case A/B literary-judge input adapter; reuse its exact GPU judge-prompt serializer, do not fork this path again.
+- Real ms-swift label-mask/data-collator checks are separate from generic tokenizer-only token counts; never substitute one for the other.
+
+**Reuse an existing valid preflight receipt** when private input bytes, serialized prompt/template, model ID and immutable revision, tokenizer/runtime version, thinking flag, max context, reserved output tokens and audit semantics are identical. A new round name or relocated file does not justify a new paid CPU run. If a material input or parameter changes, recompute only the affected cases and document the change.
+
+Centralize actual input_ids extraction and length/distribution checks instead of copying them into each reviewer/worker. NEVER use len(BatchEncoding) as the token count: it returns the number of encoding fields and previously produced a false 2-token result. Reject missing, malformed, zero or implausibly small token sequences; test both list and BatchEncoding-like mapping returns. Always check prompt tokens plus reserved output tokens, without silently truncating history.
+
+Preferred architecture: a small, **shared tokenizer/preflight core** used through format-specific input/prompt adapters, stable CLI, pinned model/runtime, and reusable SAFE receipts. Keep historical frozen scripts/evidence unchanged. Reuse does not imply approval to run HF CPU or GPU; paid execution and GPU authorization remain separate. Mac performs safe staging and SAFE receipt verification only; tokenizer work runs on HF CPU.
+
 ### 3. Training gate
 
 Training is strictly staged.
