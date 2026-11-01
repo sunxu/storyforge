@@ -58,3 +58,21 @@ python3 experiments/r58_quality/r58_gold195_blind_quality_pilot13.py \
 私有目录包含 `reviewer_A.private.jsonl`、`reviewer_B.private.jsonl` 和 `owner_crosswalk.private.json`。新审核的 JSON 不得直接覆盖源 Gold195，也不能将旧五维评分直接填为新六维。完成两份独立审核、世界卡语义校验以及世界级 Train/Validation/R50 隔离之前不进入正式训练。
 
 本轮不进行 HTTP 请求精确回放，不重复 Assistant-first GPU 审核，不创建 GPU Job。
+
+
+## HOLD 分类诊断（2026-11-01）
+
+旧版 `GOLD195_PILOT13_PRIVATE_SOURCE_OR_OUTPUT_INVALID__HOLD` 将不同错误折叠为一个状态。
+现在先更新分支，并在**原命令追加 `--diagnose-only`**。它只读源输入、校验权限与审核任务结构，并输出固定原因代码；**不创建目录、不打印私人文本或身份**。
+
+```bash
+git pull --ff-only
+PRIVATE="$HOME/storyforge-review-private"
+python3 experiments/r58_quality/r58_gold195_blind_quality_pilot13.py \
+  --repo-root "$PWD" \
+  --private-card-gold-review "$PRIVATE/gold195-card-gold-review-v1.jsonl" \
+  --private-output-dir "$PRIVATE/r58-quality-pilot13-$(date -u +%Y%m%dT%H%M%SZ)" \
+  --diagnose-only
+```
+
+`reason_code=READY` 表示可以去掉 `--diagnose-only`、用**新的**目录路径正式生成包；`PRIVATE_INPUT_NOT_FOUND_OR_PATH_INVALID` 检查第一步审核包是否创建；`PRIVATE_INPUT_PERMISSIONS_INVALID` 检查文件 0600；`OUTPUT_PARENT_NOT_PRIVATE_0700` 检查输出父目录 0700；`OUTPUT_ALREADY_EXISTS` 使用全新的目录名（不要覆盖旧结果）；`REVIEW_TASKS_INCOMPLETE` 检查 `review_tasks_prepared`、`history_shape_hold`；`WORLD_COUNT_NOT_13` 需要检查来源故事 ID 绑定，不能编造或强行凑数；`PRIVATE_SOURCE_SCHEMA_OR_CARD_HASH_INVALID` 需要重新检查私有来源的构造与卡片哈希，而不是跳过验证。只共享 SAFE 回执。
