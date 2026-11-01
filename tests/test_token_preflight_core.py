@@ -27,7 +27,7 @@ class SharedTokenPreflightTests(unittest.TestCase):
             {"input_ids": []},
             {"input_ids": [[1, -1] * 20]},
             {"input_ids": [[True] * 64]},
-            {"input_ids": [[1] * 64, [2] * 64},
+            {"input_ids": [[1] * 64, [2] * 64]},
         ):
             with self.assertRaises(ValueError):
                 extract_input_ids(bad, prompt_chars=500)
