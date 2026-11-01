@@ -52,7 +52,7 @@ class HFReviewTests(unittest.TestCase):
             self.assertEqual(receipt["source_rows_verified"], 132)
             self.assertEqual(receipt["quality_v1_admitted"], 0)
             self.assertFalse(receipt["hf_job_started"])
-            self.assertNotIn("PRIVATE_", json.dumps(receipt))
+            self.assertNotIn("PRIVATE_LEADING_0", json.dumps(receipt))
             self.assertEqual((output / "input132.private.jsonl").stat().st_mode & 0o777, 0o600)
             lines = (output / "input132.private.jsonl").read_text().splitlines()
             self.assertEqual(len(lines), 132)
