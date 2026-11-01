@@ -113,11 +113,14 @@ CPU 预检只输出固定 SAFE 诊断码，不打印 Python 异常文本、文�
 - `TOKENIZER_LOAD_FAILED`：指定模型 revision 的 Tokenizer 初始化/下载失败。
 - `CHAT_TEMPLATE_MISSING`：Tokenizer 没有可用 chat template。
 - `CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR`：模板调用参数或渲染触发 TypeError（包括不兼容的 thinking 参数回退失败）。
+- `CHAT_TEMPLATE_RENDER_FAILED_CLASS_*`：其他模板异常；仅输出经过字符白名单约束的异常类名，不输出异常消息。例如缺少 Jinja2 时会得到 `..._CLASS_IMPORTERROR`。
 - `CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR` / `..._VALUE_ERROR` / `..._OTHER`：模板渲染阶段发生对应类别的异常。
 - `TOKEN_IDS_INVALID`：模板返回结果不含有效的一维 input_ids，或长度/类型不符合共享核心约束。
 - `CHAT_MESSAGES_INVALID`：传入共享编码核心的消息结构无效。
 - `TOKENIZATION_FAILED`：上述安全子码无法归类的编码失败。
 - `TOKEN_BUDGET_SUMMARY_FAILED` / `PREFLIGHT_FINGERPRINT_FAILED`：统计或身份指纹步骤失败。
+
+R58 Qwen Chat Template 运行环境还必须安装 Jinja2。Transformers 4.57.1 不保证自动安装该可选依赖；缺失时 Tokenizer 本身可以加载，但 `apply_chat_template` 会失败。当前验证组合固定为 `transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。HF CPU Job 安装命令必须显式包含三者；若出现 `CHAT_TEMPLATE_RENDER_FAILED_CLASS_IMPORTERROR`，先检查可选模板依赖，不要重写 Tokenizer 或数据。
 
 共享核心只输出固定错误码，不暴露异常消息。预检适配器仅传播白名单中的安全子码；未知异常仍使用通用 `TOKENIZER_OR_PRIVATE_INPUT_ERROR`。这些码只用于定位阶段，不会使 HOLD 自动转为 PASS。诊断后应修复已识别原因，保留输入与预算不变，再运行同一共享预检核心。
 
