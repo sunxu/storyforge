@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import stat
 import re
 import sys
 
@@ -32,9 +33,74 @@ except ModuleNotFoundError:
         describe_token_lengths, digest_serialized_items,
     )
 
-SCHEMA = "r58_hf_cpu_literary_token_preflight_all13_safe_v1"
+SCHEMA = "r58_hf_cpu_literary_token_preflight_all13_safe_v2"
 MODE = "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU"
 HOLD = "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_HOLD"
+def _code_digests():
+    """Runtime source identity: code-only; never includes story bytes."""
+    try:
+        import runner as reviewer
+        import token_core as core
+    except ModuleNotFoundError:
+        import r58_hf_gpu_literary_reviewer as reviewer
+        from storyforge_dataset import token_preflight as core
+    return {
+        "reviewer_code_sha256": hashlib.sha256(Path(reviewer.__file__).read_bytes()).hexdigest(),
+        "token_core_sha256": hashlib.sha256(Path(core.__file__).read_bytes()).hexdigest(),
+    }
+
+
+def _private_fingerprints(rows, input_path):
+    return {
+        "private_input_sha256": hashlib.sha256(input_path.read_bytes()).hexdigest(),
+        "serialized_prompt_batch_sha256":
+            digest_serialized_items([prompt_messages(row) for row in rows]),
+        **_code_digests(),
+    }
+
+
+def verify_reuse(args):
+    """Mac-safe receipt integrity check. No Transformers/tokenizer or Job invoked."""
+    path = args.output_dir / "r58_cpu_preflight_all13_safe.json"
+    if (path.is_symlink() or not path.is_file()
+            or stat.S_IMODE(path.stat().st_mode) != 0o600
+            or path.stat().st_size > 32 * 1024):
+        raise ValueError("CACHE_RECEIPT_MISSING_OR_UNSAFE")
+    record = json.loads(path.read_bytes())
+    rows = read_source(args.input)
+    expected = {
+        "schema": SCHEMA,
+        "status": MODE,
+        "slot": args.slot,
+        "model": args.model,
+        "model_revision": args.revision,
+        "transformers_version": args.transformers_version,
+        "max_model_len": args.max_model_len,
+        "reserved_output_tokens": args.max_output_tokens,
+        "cases_checked": 13,
+        "over_budget_count": 0,
+        "pilot_cases_checked": 2,
+        "remaining_cases_checked": 11,
+        "private_text_emitted": False,
+        "training_authorized": False,
+        **_private_fingerprints(rows, args.input),
+    }
+    if not isinstance(record, dict) or any(record.get(k) != v for k, v in expected.items()):
+        raise ValueError("CACHE_IDENTITY_MISMATCH")
+    if (type(record.get("max_total_tokens")) is not int
+            or record["max_total_tokens"] > args.max_model_len
+            or type(record.get("prompt_tokens_max")) is not int
+            or not 32 <= record["prompt_tokens_max"] <= record["max_total_tokens"]):
+        raise ValueError("CACHE_BUDGET_INVALID")
+    return {
+        "schema": SCHEMA,
+        "status": "R58_HF_CPU_TOKEN_PREFLIGHT_CACHED_PASS__NO_JOB",
+        "cases_checked": 13, "slot": args.slot,
+        "paid_gpu_submitted": False, "private_text_emitted": False,
+        "training_authorized": False,
+    }
+
+
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 
 
@@ -74,8 +140,7 @@ def check_all(args, tokenizer_factory=None, package_version=None):
     )
     # Reuse identity covers the actual bytes AND serialized judge prompts.
     # Hashes are kept in the private receipt, not in stdout/log SAFE summary.
-    source_digest = hashlib.sha256(args.input.read_bytes()).hexdigest()
-    prompt_digest = digest_serialized_items([prompt_messages(row) for row in rows])
+    fingerprints = _private_fingerprints(rows, args.input)
     payload = {
         "schema": SCHEMA,
         "status": MODE if stats["over_budget_count"] == 0 else HOLD,
@@ -88,8 +153,7 @@ def check_all(args, tokenizer_factory=None, package_version=None):
         "reviewer_prompt_template_sha256": hashlib.sha256(
             (JUDGE_SYSTEM + JUDGE_USER).encode("utf-8")).hexdigest(),
         **stats,
-        "private_input_sha256": source_digest,
-        "serialized_prompt_batch_sha256": prompt_digest,
+        **fingerprints,
         "inference_performed": False,
         "model_weights_loaded": False,
         "paid_gpu_submitted": False,
@@ -121,20 +185,28 @@ def main():
     parser.add_argument("--transformers-version", required=True)
     parser.add_argument("--max-model-len", type=int, default=32768)
     parser.add_argument("--max-output-tokens", type=int, default=2400)
+    parser.add_argument("--verify-cache-only", action="store_true",
+                        help="Mac-safe integrity of previously synced private SAFE receipt")
     args = parser.parse_args()
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     os.environ["TOKENIZERS_PARALLELISM"] = "false"
     os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
     os.environ["TRANSFORMERS_VERBOSITY"] = "error"
     try:
-        receipt = check_all(args)
-        save_receipt(args.output_dir, receipt)
-        code = 0 if receipt["status"] == MODE else 42
+        if args.verify_cache_only:
+            receipt = verify_reuse(args)
+            code = 0
+        else:
+            receipt = check_all(args)
+            save_receipt(args.output_dir, receipt)
+            code = 0 if receipt["status"] == MODE else 42
     except Exception as exc:
         reason = str(exc) if type(exc) is ValueError and str(exc) in {
             "CONFIG_INVALID", "PRIVATE_INPUT_INVALID", "PRIVATE_OUTPUT_DIR_INVALID",
             "SAFE_RECEIPT_ALREADY_EXISTS", "TRANSFORMERS_VERSION_MISMATCH",
             "CHAT_TEMPLATE_MISSING", "EXPECTED_13",
+            "CACHE_RECEIPT_MISSING_OR_UNSAFE", "CACHE_IDENTITY_MISMATCH",
+            "CACHE_BUDGET_INVALID",
         } else "TOKENIZER_OR_PRIVATE_INPUT_ERROR"
         receipt = {
             "schema": SCHEMA, "status": HOLD, "reason_code": reason,
@@ -144,7 +216,8 @@ def main():
         code = 42
     # Only SAFE aggregate leaves the private output; never print source hashes.
     public = {k: v for k, v in receipt.items()
-              if k not in ("private_input_sha256", "serialized_prompt_batch_sha256")}
+              if k not in ("private_input_sha256", "serialized_prompt_batch_sha256",
+                           "reviewer_code_sha256", "token_core_sha256")}
     print(json.dumps(public, ensure_ascii=False, sort_keys=True))
     return code
 
