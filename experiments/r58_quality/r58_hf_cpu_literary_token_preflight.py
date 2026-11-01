@@ -114,6 +114,12 @@ SAFE_FAILURE_REASONS = {
     "TOKENIZER_IMPORT_FAILED",
     "TOKENIZER_LOAD_FAILED",
     "TOKENIZATION_FAILED",
+    "CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR",
+    "CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR",
+    "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR",
+    "CHAT_TEMPLATE_RENDER_FAILED_OTHER",
+    "TOKEN_IDS_INVALID",
+    "CHAT_MESSAGES_INVALID",
     "TOKEN_BUDGET_SUMMARY_FAILED",
     "PREFLIGHT_FINGERPRINT_FAILED",
 }
@@ -168,8 +174,16 @@ def check_all(args, tokenizer_factory=None, package_version=None):
         raise ValueError("CHAT_TEMPLATE_MISSING")
     try:
         lengths = [len(encode_one(tokenizer, r, args.model)) for r in rows]
-    except Exception:
-        raise ValueError("TOKENIZATION_FAILED") from None
+    except Exception as exc:
+        known = {
+            "CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR",
+            "CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR",
+            "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR",
+            "CHAT_TEMPLATE_RENDER_FAILED_OTHER",
+            "TOKEN_IDS_INVALID", "CHAT_MESSAGES_INVALID",
+        }
+        code = str(exc) if type(exc) is ValueError and str(exc) in known else "TOKENIZATION_FAILED"
+        raise ValueError(code) from None
     if len(lengths) != 13:
         raise ValueError("EXPECTED_13")
     try:
