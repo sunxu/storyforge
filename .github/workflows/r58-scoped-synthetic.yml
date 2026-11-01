@@ -184,6 +184,7 @@ jobs:
           import json
           from pathlib import Path
           result = json.loads(Path("/tmp/r58_card_snapshot_safe.json").read_text())
+          print(json.dumps(result, sort_keys=True))
           assert result["status"] == "SOURCE_CARD_CANDIDATES_IDENTIFIED__OWNER_REVIEW_REQUIRED"
           assert result["gold_world_ids_matched"] == result["gold_world_ids"] == 13
           assert result["gold_rows_with_card_candidates"] == 195
