@@ -34,6 +34,6 @@ python3 experiments/r58_quality/gold195_card_gold_review.py \
 
 每条私人记录包含源卡片快照、完整原始历史（含可能孤立的首条 Assistant）、当前 User、冻结目标 Assistant 和哈希。审查字段均为 `UNREVIEWED`，包括：人物关系、硬设定/禁令、时间线与未来信息、玩家自主权、中文文学质量/NPC 行动、年龄和安全边界，以及该快照是否适合用作新的离线设定。
 
-以历史 Assistant 开头的 132 条不自动剪除任何历史正文；新的卡片尚未经语义认可，不生成“已批准的 System”或伪造 Reviewer 分数。可在独立 AI 内容审查后据实标记问题，并由新输入设计明确首轮历史处理策略。
+以历史 Assistant 开头的 132 条保留完整历史并能进入六维质量审核任务；真实 ms-swift 已证明这种角色顺序兼容训练。新的卡片尚未经语义认可，不生成“已批准的 System”或伪造 Reviewer 分数。可在独立 AI 内容审查后据实标记问题，并由新输入设计明确首轮历史处理策略。
 
 **最终 Quality-v1 准入、Train/Val 世界组件隔离、Qwen 16K Token 和 ms-swift last_round Mask 全部是独立后续步骤。** R50 测试题不读，HF/GPU 不启动，无历史 Provider 精确回放要求。
