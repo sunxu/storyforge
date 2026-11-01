@@ -1,0 +1,92 @@
+{
+  "schema": "r58_g2_roleplay_late_oct_release_and_dynamic_runtime_events_safe_v1",
+  "as_of": "2026-11-01",
+  "status": "TWO_ADDITIONAL_RELEASE_GIT_COMMITS_SCOPED_BLOB_PARITY_VERIFIED__RUNTIME_CATALOG_EVENT_DOCUMENTED__DEPLOYMENT_HOLD",
+  "repository": "sunxu/RolePlay",
+  "source_pin": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+  "prior_13_catalog": "docs/evidence/R58_G2_ROLEPLAY_OCT_RELEASE_CODE_BLOB_PARITY_SAFE_20261101.json",
+  "owner_frozen_target_count": 3,
+  "owner_frozen_target_coarse_date_distribution": {
+    "2026-10-28_to_29_UTC": 2,
+    "2026-10-30_or_later_UTC": 1
+  },
+  "additional_release_candidates": [
+    {
+      "release_doc": ".claude/docs/site-incident-20261028.md",
+      "release_doc_blob": "47058da2a32c23305c6bc77b9e63cd74dbd4d793",
+      "claimed_cutover_utc": "2026-10-28T01:36:59Z",
+      "date_authority": "OWNER_GIT_DOC_REPORTED_SITE_INCIDENT_DEPLOYMENT_MARKER",
+      "claimed_git_commit": "6dc474b963f11921e0fc12e3695d9e85dfacd35a",
+      "commit_object_verified": true,
+      "git_author_date": "2026-10-27T12:45:02Z",
+      "git_commit_date": "2026-10-28T01:09:40Z",
+      "fixed_eight_chat_source_blobs_identical": true,
+      "actual_target_backend_or_runtime_proven": false
+    },
+    {
+      "release_doc": ".claude/docs/husband-enrollment-fix-20261029.md",
+      "release_doc_blob": "c0dc14a5665157d12ccd613551e95c7e64afc8e0",
+      "claimed_cutover_utc": "2026-10-29T04:07:06Z",
+      "date_authority": "OWNER_GIT_DOC_REPORTED_PRODUCTION_CUTOVER",
+      "claimed_git_commit": "a11d55f32c58059c3aa0cc6a9cea08bfcc49ed86",
+      "commit_object_verified": true,
+      "git_author_date": "2026-10-29T03:45:11Z",
+      "git_commit_date": "2026-10-29T03:45:11Z",
+      "fixed_eight_chat_source_blobs_identical": true,
+      "actual_target_backend_or_runtime_proven": false
+    }
+  ],
+  "preexisting_late_oct_claimed_cutover_events": [
+    {
+      "claimed_cutover_utc": "2026-10-28T07:28:16Z",
+      "claimed_git_commit": "9d45083f1e5961a231f4d383c7612ebebbdeddee",
+      "evidence": ".claude/docs/husband-reference-ui-release-20261028.md"
+    },
+    {
+      "claimed_cutover_utc": "2026-10-29T01:02:47Z",
+      "claimed_git_commit": "8f9e56266089101a2448da3cafed734329964442",
+      "evidence": ".claude/docs/husband-pixel-pages-release-20261029.md"
+    }
+  ],
+  "runtime_config_mutation_claim": {
+    "evidence_doc": ".claude/docs/model-delisting-20261028.md",
+    "evidence_doc_blob": "6c9d06170372b8f069c6d14ca3ebc5ac1f291d40",
+    "reported_mutation_utc": "2026-10-28T08:57:00Z",
+    "reported_change": "DYNAMIC_AI_MODEL_CATALOG_REVISION_9_TO_10__SCENE_ROUTING_REVISION_13_UNCHANGED",
+    "application_git_commit_deployment_required": false,
+    "exact_model_used_by_frozen_targets_verified": false,
+    "original_runtime_configuration_snapshot_authenticated": false,
+    "date_proximity_determines_model_or_request_parameters": false
+  },
+  "aggregate": {
+    "originally_cataloged_distinct_release_commits": 13,
+    "additional_distinct_git_commits": 2,
+    "total_distinct_scoped_git_release_candidate_commits": 15,
+    "newly_checked_eight_blob_identical_to_source_pin": 2,
+    "known_late_oct_claimed_cutover_event_count": 4,
+    "documented_runtime_model_catalog_mutation_count": 1,
+    "actual_target_times_in_2026_10_28_to_29_utc": 2,
+    "actual_target_times_2026_10_30_or_later_utc": 1,
+    "exact_case_to_release_correlation_performed": false,
+    "complete_actual_release_events_guaranteed": false,
+    "no_deploy_after_2026_10_29_proven": false
+  },
+  "verdict": {
+    "git_commit_and_scope_blob_identity": "STATIC_GIT_VERIFIED",
+    "historical_cutover_and_runtime": "OWNER_REPORT_NOT_INDEPENDENTLY_AUTHENTICATED",
+    "case_specific_deployed_sha": "UNPROVEN",
+    "case_specific_runtime_model": "UNPROVEN",
+    "case_specific_request_id": "UNPROVEN",
+    "provider_original_request_bytes": "UNPROVEN",
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "g3": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "private_source_or_r50_read": false,
+    "production_host_accessed": false,
+    "hf_job_started": false
+  }
+}
