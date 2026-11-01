@@ -183,20 +183,99 @@ def prepare(private_input: Path, private_dir: Path, repo: Path):
     }
 
 
+
+def safe_preflight(private_input: Path, private_dir: Path, repo: Path):
+    """Inspect validation stages without exposing private values or writing files."""
+    safe = {
+        "schema": "r58_gold195_literary_pilot13_safe_v1",
+        "status": "GOLD195_PILOT13_PREFLIGHT_HOLD",
+        "reason_code": "UNDETERMINED",
+        "source_rows_checked": 0,
+        "review_tasks_prepared": 0,
+        "pilot_cases": 0,
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+        "private_text_emitted": False,
+        "no_output_written": True,
+    }
+    if not private_input.is_absolute() or not private_input.is_file() or private_input.is_symlink():
+        safe["reason_code"] = "PRIVATE_INPUT_NOT_FOUND_OR_PATH_INVALID"
+        return safe
+    st = private_input.stat()
+    if stat.S_IMODE(st.st_mode) != 0o600 or st.st_nlink != 1:
+        safe["reason_code"] = "PRIVATE_INPUT_PERMISSIONS_INVALID"
+        return safe
+    if not private_dir.is_absolute() or private_dir.is_symlink():
+        safe["reason_code"] = "OUTPUT_PATH_INVALID"
+        return safe
+    if private_dir.exists():
+        safe["reason_code"] = "OUTPUT_ALREADY_EXISTS"
+        return safe
+    if not private_dir.parent.is_dir() or private_dir.parent.is_symlink():
+        safe["reason_code"] = "OUTPUT_PARENT_MISSING_OR_SYMLINK"
+        return safe
+    if stat.S_IMODE(private_dir.parent.stat().st_mode) & 0o077:
+        safe["reason_code"] = "OUTPUT_PARENT_NOT_PRIVATE_0700"
+        return safe
+    if repo.resolve() == private_dir.resolve() or repo.resolve() in private_dir.resolve().parents:
+        safe["reason_code"] = "OUTPUT_INSIDE_REPOSITORY"
+        return safe
+    try:
+        receipt, tasks = build(private_input, collect=True)
+    except (OSError, ValueError, KeyError, TypeError, UnicodeError, json.JSONDecodeError):
+        safe["reason_code"] = "PRIVATE_SOURCE_SCHEMA_OR_CARD_HASH_INVALID"
+        return safe
+    counts = receipt.get("counts", {})
+    safe["source_rows_checked"] = counts.get("source_rows_checked", 0)
+    safe["review_tasks_prepared"] = counts.get("review_tasks_prepared", 0)
+    safe["assistant_first_prepared"] = counts.get("assistant_first_review_tasks_prepared", 0)
+    safe["user_first_prepared"] = counts.get("user_first_review_tasks_prepared", 0)
+    if safe["source_rows_checked"] != EXPECTED_SOURCE:
+        safe["reason_code"] = "SOURCE_ROW_COUNT_MISMATCH"
+        return safe
+    if safe["review_tasks_prepared"] != EXPECTED_SOURCE:
+        safe["reason_code"] = "REVIEW_TASKS_INCOMPLETE"
+        safe["history_shape_hold"] = counts.get("HISTORY_INPUT_SHAPE_HOLD", 0)
+        return safe
+    safe["source_world_count"] = len({x.get("story_uuid") for x in tasks
+                                      if isinstance(x.get("story_uuid"), str)})
+    if safe["source_world_count"] != EXPECTED_WORLDS:
+        safe["reason_code"] = "WORLD_COUNT_NOT_13"
+        return safe
+    try:
+        selected = select_world_pilot(tasks)
+    except (ValueError, KeyError, TypeError):
+        safe["reason_code"] = "WORLD_SELECTION_OR_CARD_CONFLICT"
+        return safe
+    safe["pilot_cases"] = len(selected)
+    safe["status"] = "GOLD195_PILOT13_PREFLIGHT_READY__NO_OUTPUT"
+    safe["reason_code"] = "READY"
+    return safe
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--private-card-gold-review", type=Path, required=True)
     p.add_argument("--private-output-dir", type=Path, required=True)
     p.add_argument("--repo-root", type=Path, required=True)
+    p.add_argument("--diagnose-only", action="store_true",
+                   help="SAFE stage report; does not create review files")
     a = p.parse_args()
     try:
-        result = prepare(a.private_card_gold_review, a.private_output_dir,
-                         a.repo_root)
-        code = 0
+        preflight = safe_preflight(
+            a.private_card_gold_review, a.private_output_dir, a.repo_root)
+        if preflight["reason_code"] != "READY":
+            result, code = preflight, 42
+        elif a.diagnose_only:
+            result, code = preflight, 0
+        else:
+            result = prepare(a.private_card_gold_review, a.private_output_dir,
+                             a.repo_root)
+            code = 0
     except Exception:
         result = {
             "schema": "r58_gold195_literary_pilot13_safe_v1",
             "status": "GOLD195_PILOT13_PRIVATE_SOURCE_OR_OUTPUT_INVALID__HOLD",
+            "reason_code": "UNEXPECTED_WRITE_OR_RUNTIME_FAILURE",
             "training_authorized": False, "quality_v1_admitted": 0,
             "private_text_emitted": False,
         }
