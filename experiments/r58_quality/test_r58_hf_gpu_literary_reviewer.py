@@ -9,7 +9,9 @@ from r58_hf_gpu_literary_reviewer import (
     PILOT_SCHEMA, MODELS, canon, read_source, prompt_messages,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
-    QuoteValidationError, QuoteRepairFailure, validate_quote_repair, safe_failure_result,
+    QuoteValidationError, QuoteRepairFailure, quote_candidates,
+    quote_repair_messages, quote_repair_schema, apply_quote_candidate,
+    safe_failure_result,
 )
 from r58_gold195_blind_quality_pilot13 import blind_material
 from gold195_six_dimension_review_tasks import prepare_row
@@ -184,18 +186,33 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         self.assertNotIn("DO_NOT_LEAK_QUOTE_TEXT", json.dumps(failed))
         self.assertNotIn("quote_text", json.dumps(failed))
 
-    def test_quote_repair_cannot_change_nonquote_review_fields(self):
+    def test_quote_candidates_are_exact_and_exclude_unapproved_card(self):
+        row = source_rows()[0]
+        target = quote_candidates(row, "specific_target_quotes")
+        self.assertTrue(target)
+        self.assertTrue(all(q in row["target_text"] for q in target))
+        source = quote_candidates(row, "specific_source_quotes")
+        visible = [m["content"] for m in row["messages"][1:]
+                   if m["role"] in ("user", "assistant")]
+        self.assertTrue(source)
+        self.assertTrue(all(any(q in body for body in visible) for q in source))
+        self.assertLessEqual(len(source), 128)
+        self.assertEqual(quote_repair_schema(len(source))["properties"]
+                         ["candidate_index"]["maximum"], len(source) - 1)
+
+    def test_quote_candidate_repair_changes_only_failed_quote_field(self):
         row = source_rows()[0]
         original = completed_response(row)
-        repaired = copy.deepcopy(original)
-        repaired["specific_source_quotes"] = ["not-source-exact"]
-        with self.assertRaises(QuoteValidationError):
-            validate_quote_repair(original, repaired, row)
-
-        repaired = completed_response(row)
-        repaired["scores"]["chinese_prose"] = 5
-        with self.assertRaisesRegex(ValueError, "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS"):
-            validate_quote_repair(original, repaired, row)
+        original["specific_target_quotes"] = ["not-target-exact"]
+        error = QuoteValidationError("specific_target_quotes", 0, 1)
+        candidate = quote_candidates(row, error.field)[0]
+        repaired = apply_quote_candidate(original, row, error, candidate)
+        self.assertEqual(repaired["specific_target_quotes"], [candidate])
+        self.assertEqual(repaired["specific_source_quotes"],
+                         original["specific_source_quotes"])
+        for key in REVIEW_KEYS - {"specific_target_quotes"}:
+            self.assertEqual(repaired[key], original[key])
+        self.assertIn(candidate, row["target_text"])
 
     def test_one_bounded_quote_repair_saves_only_exact_valid_checkpoint(self):
         with tempfile.TemporaryDirectory() as td:
@@ -207,7 +224,7 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             first_bad["specific_source_quotes"] = ["not-source-exact"]
             engine = FakeEngine([
                 json.dumps(first_bad, ensure_ascii=False),
-                json.dumps(completed_response(rows[0]), ensure_ascii=False),
+                json.dumps({"candidate_index": 0}),
                 json.dumps(completed_response(rows[1]), ensure_ascii=False),
             ])
             result = run(
@@ -226,7 +243,12 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             self.assertEqual(repair_messages[-2]["role"], "assistant")
             self.assertEqual(repair_messages[-1]["role"], "user")
             self.assertIn("specific_source_quotes", repair_messages[-1]["content"])
-            self.assertIn("只允许修改", repair_messages[-1]["content"])
+            self.assertIn("candidate_index", repair_messages[-1]["content"])
+            self.assertIn("候选清单", repair_messages[-1]["content"])
+            self.assertNotIn("只允许修改", repair_messages[-1]["content"])
+            saved = read_checkpoint(
+                checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0)
+            self.assertIn(saved["specific_source_quotes"][0], rows[0]["messages"][1]["content"])
             self.assertIsNotNone(read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0))
             self.assertIsNotNone(read_checkpoint(
@@ -240,10 +262,9 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             tokenizer = FakeTokenizer()
             first_bad = completed_response(rows[0])
             first_bad["specific_source_quotes"] = ["not-source-exact"]
-            second_bad = copy.deepcopy(first_bad)
             engine = FakeEngine([
                 json.dumps(first_bad, ensure_ascii=False),
-                json.dumps(second_bad, ensure_ascii=False),
+                json.dumps({"candidate_index": 999}),
             ])
             with self.assertRaises(QuoteRepairFailure) as caught:
                 run(
@@ -253,7 +274,7 @@ class HFReviewerSyntheticTests(unittest.TestCase):
                     sampling_params_factory=lambda **kwargs: kwargs,
                     structured_outputs_factory=lambda **kwargs: kwargs,
                 )
-            self.assertEqual(caught.exception.code, "RESPONSE_NONEXACT_QUOTE")
+            self.assertEqual(caught.exception.code, "QUOTE_REPAIR_SELECTION_INVALID")
             self.assertEqual(caught.exception.case_index, 0)
             self.assertEqual(caught.exception.quote_error.field, "specific_source_quotes")
             self.assertEqual(caught.exception.quote_error.quote_index, 0)
