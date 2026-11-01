@@ -9,7 +9,8 @@ from gold195_hf_review_batch import (
     input_record, make_package, check_output, audit,
 )
 from gold195_hf_review_gpu_runner import (
-    make_prompt, parse_answer, atomic_write,
+    make_prompt, parse_answer, atomic_write, answer_json_schema,
+    QUESTIONS, POLICIES, SAFE_ERROR_REASONS,
 )
 from gold195_assistant_first_full132 import build
 from test_gold195_assistant_first_semantic_pilot import example
@@ -72,6 +73,18 @@ class HFReviewTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             parse_answer(json.dumps(altered), self.source, MODEL, REV)
         self.assertIn("PRIVATE_LEADING_0", make_prompt(self.source))
+
+    def test_guided_json_schema_exact_fields(self):
+        schema = answer_json_schema()
+        self.assertEqual(schema["type"], "object")
+        self.assertIs(schema["additionalProperties"], False)
+        self.assertEqual(set(schema["properties"]), set(schema["required"]))
+        self.assertEqual(set(schema["properties"]["judgments"]["required"]), set(QUESTIONS))
+        self.assertEqual(set(schema["properties"]["policy"]["enum"]), set(POLICIES))
+        for key in ("leading_assistant_exact_quotes", "later_history_exact_quotes",
+                    "gold_exact_quotes"):
+            self.assertEqual(schema["properties"][key]["type"], "array")
+        self.assertIn("invalid source quote", SAFE_ERROR_REASONS)
 
     def test_checkpoint_atomic_no_overwrite(self):
         with tempfile.TemporaryDirectory() as td:
