@@ -1,0 +1,48 @@
+"""Synthetic-only guard for the reusable HF Token skill contract.
+
+No HF, GPU, tokenizer, production database or private data access.
+"""
+from pathlib import Path
+import unittest
+
+
+SKILL_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = SKILL_ROOT.parents[1]
+
+
+class ReuseContractTests(unittest.TestCase):
+    def test_v011_skill_points_to_single_real_core(self):
+        source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("version: 0.1.1", source)
+        self.assertIn("## HF Token 预检复用", source)
+        self.assertIn("src/storyforge_dataset/token_preflight.py", source)
+        self.assertIn("docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md", source)
+        self.assertTrue((REPO_ROOT / "src/storyforge_dataset/token_preflight.py").is_file())
+        self.assertTrue((REPO_ROOT / "docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md").is_file())
+        self.assertTrue((REPO_ROOT / "experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py").is_file())
+
+    def test_cost_privacy_and_legacy_gates_remain_explicit(self):
+        source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        for phrase in (
+            "Owner crosswalk", "HF CPU", "last_round",
+            "Quality-v1", "G2", "--verify-cache-only",
+            "--refresh-code", "len(BatchEncoding)", "不得",
+        ):
+            self.assertIn(phrase, source)
+        self.assertIn("不是当前 Quality-v1 高质量 LoRA 的必需条件", source)
+
+    def test_readme_and_changelog_document_reuse(self):
+        readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
+        changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        self.assertIn("Skill v0.1.1", readme)
+        self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
+        self.assertTrue(changelog.startswith("# 0.1.1"))
+        self.assertIn("不发起 Job", changelog)
+
+    def test_no_duplicate_core_in_skill(self):
+        self.assertFalse((SKILL_ROOT / "scripts/token_preflight.py").exists())
+        self.assertFalse((SKILL_ROOT / "token_preflight.py").exists())
+
+
+if __name__ == "__main__":
+    unittest.main()
