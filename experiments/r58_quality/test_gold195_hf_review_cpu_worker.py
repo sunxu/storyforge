@@ -40,6 +40,8 @@ class HFCPU132Tests(unittest.TestCase):
         self.assertIn('--flavor cpu-upgrade', content)
         self.assertIn('--timeout 90m', content)
         self.assertNotIn('--flavor a100', content)
+        self.assertNotIn('/bin/sh -lc', content)
+        self.assertIn('gold195_hf_review_cpu_bootstrap.py', content)
 
     def test_stage_manifest_guards(self):
         with tempfile.TemporaryDirectory() as td:
@@ -52,7 +54,7 @@ class HFCPU132Tests(unittest.TestCase):
             source.chmod(0o600)
             output = private / "stage"
             prep(repo, source, output)
-            self.assertEqual(len(verify_stage(output)), 3)
+            self.assertEqual(len(verify_stage(output)), 4)
             self.assertTrue(all((output / f).stat().st_mode & 0o777 == 0o600
                                 for f in ("SHA256SUMS.txt", "private/input132.private.jsonl")))
             with self.assertRaises(ValueError):
