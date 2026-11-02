@@ -29,10 +29,12 @@ def build_scope(queue_path):
 
 
 def write_manifest(path, root, rows):
+    root_resolved = root.resolve()
+    parent_resolved = path.parent.resolve()
     if (not path.is_absolute() or path.is_symlink() or path.exists()
             or not path.parent.is_dir() or path.parent.is_symlink()
             or stat.S_IMODE(path.parent.stat().st_mode) & 0o077
-            or root == path.parent.resolve() or root in path.parent.resolve().parents):
+            or root_resolved == parent_resolved or root_resolved in parent_resolved.parents):
         raise ValueError("SCOPE_OUTPUT_INVALID")
     fd = os.open(
         path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600
