@@ -15,7 +15,7 @@
 
 私有恢复包 `StoryForge_R58_Reviewer_A_Recovered_Private_20261102.zip` 的五个 JSON 文件均由恢复器校验固定 SHA256。它们**不得提交到 GitHub**。其中包括 Reviewer B 的原始 case_id / target_sha256 私人映射，仅用于 Owner 本地对齐；不要向 Reviewer B 会话提供。
 
-恢复器要求本地 Manifest 先已有完整规范的 192 条 Reviewer B 记录，并检查私人映射的 target SHA256 集合与 B 完全一致，才可导入 79 个有评分的 Reviewer A 事件。输入文件、清单均不应位于 Git 仓库下。
+恢复器要求本地 Manifest 先已有完整规范的 192 条 Reviewer B 记录，并检查私人映射的 target SHA256 集合与 B 完全一致，才可导入 79 个有评分的 Reviewer A 事件，以及四条**无评分、独立类型**的历史 REJECT 证据事件（`HISTORICAL_REJECT_EVIDENCE`）。输入文件、清单均不应位于 Git 仓库下。
 
 ## Owner Mac 操作
 
@@ -40,7 +40,7 @@ storyforge-gold-quality reconcile-gold192 \
   --manifest "$PRIVATE_DIR/gold-quality-events.jsonl"
 ```
 
-预期首次导入 `events_appended=79`，重复导入 `events_appended=0`。配对结果应有 `paired_case_count=79`、`missing_reviewer_a=113`；这 113 包含三条已恢复的无评分 REJECT 及其余 110 条未恢复逐案记录，**不是 113 条从未判定**。
+已运行过旧版恢复器的 Manifest，升级后补充导入四条历史 REJECT 事件，应得到 `events_appended=4`；全新 Manifest 一次导入为 `events_appended=83`（79 条标准评分 + 4 条无评分 REJECT），重复导入 `events_appended=0`。配对结果应仍有 `paired_case_count=79`、`missing_reviewer_a=113`，但新增 `historical_a_reject_without_scores=4`、`historical_a_reject_b_pass_disagreement=4`；这 113 包含三条已恢复的无评分 REJECT 及其余 110 条未恢复逐案记录，**不是 113 条从未判定**。
 
 ## 不应做的事
 
@@ -49,3 +49,9 @@ storyforge-gold-quality reconcile-gold192 \
 - 不将被 A 拒绝的案例因缺少完整评分提升到 PASS。
 - 不认为 A/B 已配对就意味着审核者独立性证明、世界设定清理或 Quality-v1 准入完成。
 - 不读取 R50、不修改 Gold87/Gold108 冻结文件、不启动 GPU。
+
+## 统计语义
+
+`historical_a_reject_b_pass_disagreement=4` 代表通过私有 case_id→Target SHA-256 映射确认的历史 A 拒绝与规范 B 通过存在分歧；它们没有标准六维评分，因此**不计入** `paired_case_count`，也不会减少 `missing_reviewer_a`。`any_reject_hold_for_arbitration` 现在包含这些历史拒绝证据（按 Target SHA 去重），不能再忽略四条已知 A REJECT。
+
+11 条已知分歧（6 条 A PASS/B HOLD、1 条 A PASS/B REJECT、4 条历史 A REJECT/B PASS）需后续私有仲裁；均不自动准入。
