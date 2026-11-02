@@ -79,9 +79,11 @@ class Gold192IncrementalTriageTests(unittest.TestCase):
             self.assertNotIn("synthetic-world", json.dumps(result))
 
     def test_leading_flag_tamper_holds(self):
-        with tempfile.TemporaryDirectory() as td:
-            with self.assertRaisesRegex(ValueError, "TRIAGE_LEADING_FLAG_INVALID"):
-                inspect(*fixtures(Path(td), tamper="leading"))
+        with (
+            tempfile.TemporaryDirectory() as td,
+            self.assertRaisesRegex(ValueError, "TRIAGE_LEADING_FLAG_INVALID"),
+        ):
+            inspect(*fixtures(Path(td), tamper="leading"))
 
 
 if __name__ == "__main__":
