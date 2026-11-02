@@ -101,6 +101,11 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("find", reuse_spec)
         self.assertIn("THREE_CASE_GROK_WEB_PILOT_CLOSED__CASE02_HOLD", reuse_spec)
         self.assertIn("不得重新生成任务", reuse_spec)
+        self.assertIn(
+            "### 5.2 只读定位步骤（路径变化或未确认时）\n\n当前已确认路径见 5.1。",
+            reuse_spec,
+        )
+        self.assertNotIn("\\n\\n当前已确认路径见 5.1。", reuse_spec)
         self.assertTrue((REPO_ROOT / "docs/evidence/R58_GOLD195_PRIVATE_REVIEW_EVIDENCE_REUSE_SAFE_20261102.json").is_file())
         self.assertTrue((REPO_ROOT / "docs/evidence/R58_GOLD195_GROK_WEB_PILOT_CLOSURE_SAFE_20261102.json").is_file())
         reuse_receipt = json.loads((REPO_ROOT / "docs/evidence/R58_GOLD195_PRIVATE_REVIEW_EVIDENCE_REUSE_SAFE_20261102.json").read_text(encoding="utf-8"))
@@ -120,14 +125,14 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md", readme)
         self.assertIn("R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md", readme)
         self.assertIn("$HOME/.local/share/storyforge/r58/", readme)
-        self.assertTrue(changelog.startswith("# 0.1.11"))
+        self.assertTrue(changelog.startswith("# 0.1.12"))
         self.assertIn("AGENTS.md 只保留仓库通用规则", changelog)
 
     def test_manifest_hashes_and_file_inventory_match(self):
         manifest = json.loads(
             (SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(manifest["version"], "0.1.11")
+        self.assertEqual(manifest["version"], "0.1.12")
         declared = {item["path"]: item for item in manifest["files"]}
         self.assertFalse(any(name.startswith("v02/") for name in declared))
         expected = {
