@@ -9,9 +9,9 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from storyforge_gold_quality import recover_reviewer_a as module
 from storyforge_gold_quality.manifest import append_events, load_events, make_event
 from storyforge_gold_quality.reconcile import reconcile_gold192
-from storyforge_gold_quality import recover_reviewer_a as module
 
 SCORES = {name: 4 for name in (
     "chinese_prose", "character_consistency", "npc_initiative",
@@ -104,9 +104,9 @@ class ReviewerARecoveryTests(unittest.TestCase):
         events[0]["payload"]["target_sha256"] = "f" * 64
         self.manifest.write_text("".join(json.dumps(e) + "\n" for e in events),
                                  encoding="utf-8")
-        with patch.object(module, "FILES", self.pins):
-            with self.assertRaisesRegex(ValueError, "REVIEWER_A_B_TARGET_SET_MISMATCH"):
-                module.recover_reviewer_a(self.args)
+        with (patch.object(module, "FILES", self.pins),
+              self.assertRaisesRegex(ValueError, "REVIEWER_A_B_TARGET_SET_MISMATCH")):
+            module.recover_reviewer_a(self.args)
 
 
 if __name__ == "__main__":
