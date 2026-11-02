@@ -111,7 +111,7 @@ class ReviewerARecoveryTests(unittest.TestCase):
             scored_only = [e for e in all_events
                            if e["event_type"] != "HISTORICAL_REJECT_EVIDENCE"]
             self.manifest.write_text(
-                "".join(json.dumps(e) + "\\n" for e in scored_only),
+                "".join(json.dumps(e) + "\n" for e in scored_only),
                 encoding="utf-8")
             migration = module.recover_reviewer_a(self.args)
         self.assertEqual(original["events_appended"], 83)
