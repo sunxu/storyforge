@@ -165,11 +165,14 @@ def validate_manifest(events):
 
 def safe_report(events):
     summary = validate_manifest(events)
-    decisions, tiers = Counter(), Counter()
+    decisions, tiers, ai_arbitrations = Counter(), Counter(), Counter()
     for event in events:
         payload = event["payload"]
         decision = payload.get("decision")
-        if decision is not None:
+        if event["event_type"] == "AI_ARBITRATION":
+            if decision is not None:
+                ai_arbitrations[decision if decision in {"PASS", "HOLD"} else "OTHER"] += 1
+        elif decision is not None:
             decisions[decision if decision in PUBLIC_DECISIONS else "OTHER"] += 1
         tier = payload.get("evidence_tier")
         if tier is not None:
@@ -179,6 +182,7 @@ def safe_report(events):
         "status": "MANIFEST_VALID__ADMISSION_NOT_IMPLIED",
         **summary,
         "decision_counts": dict(sorted(decisions.items())),
+        "ai_arbitration_decision_counts": dict(sorted(ai_arbitrations.items())),
         "exposure_evidence_tiers": dict(sorted(tiers.items())),
         "quality_v1_admitted": 0,
         "training_authorized": False,
