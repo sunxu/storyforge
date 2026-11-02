@@ -1,3 +1,11 @@
+# 0.1.5 — 2026-11-02
+
+- 为 `RESPONSE_SEVERE_MUST_REJECT` 增加 SAFE 结构化诊断：case_index、model_decision、active_severe_flags、active_severe_flag_count。
+- SAFE 仅包含枚举值和白名单标记名，不包含模型原始响应、故事正文或引用文本。
+- 增加 PASS/HOLD 与严重标记组合的合成回归覆盖；12/12 PASS。
+- 明确旧 SAFE 回执缺少具体标记信息时不得推断根因；先诊断，再决定是否重试。
+- 不改变严重标记门槛，不自动把 PASS/HOLD 改成 REJECT，不扩大 GPU 样本范围或训练授权。
+
 # 0.1.4 — 2026-11-02
 
 - 将 R58 引用纠错从自由文本重写改为受限候选索引选择，模型只输出整数索引，程序从允许来源逐字切取原文。
