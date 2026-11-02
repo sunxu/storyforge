@@ -297,10 +297,14 @@ def main() -> int:
                               + '\n').encode())
         print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
         return 0
-    except Exception:  # noqa: BLE001 - avoid leaking private database exception details
+    except Exception as exc:  # noqa: BLE001 - emit only a non-sensitive reason code
+        reason = (str(exc) if isinstance(exc, ValueError)
+                  and re.fullmatch(r'[A-Z0-9_]+', str(exc))
+                  else type(exc).__name__)
         print(json.dumps({
             'schema': 'r59_gold192_supabase_extract_safe_v1',
             'status': 'SOURCE_EXTRACT_FAILED__HOLD',
+            'reason_code': reason,
             'quality_v1_admitted': 0, 'gpu_started': False,
             'private_values_emitted': False,
         }, sort_keys=True))
