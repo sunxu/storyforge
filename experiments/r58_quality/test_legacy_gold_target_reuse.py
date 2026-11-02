@@ -56,7 +56,7 @@ class ReuseTests(unittest.TestCase):
             tampered = json.loads(lines[0])
             tampered["target_text"] = "tampered synthetic target"
             lines[0] = json.dumps(tampered)
-            taskfile.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+            taskfile.write_text("\n".join(lines) + "\n", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "TASK_CONTENT_INVALID"):
                 inspect(base / "87.csv", base / "108.csv", taskfile)
 
