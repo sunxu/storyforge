@@ -33,6 +33,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .
           python -m pip install pytest ruff
+      - name: Resolve canonical test import ordering
+        run: |
+          ruff check --select I --fix tests/test_gold192_reviewer_b_import.py
+          git diff -- tests/test_gold192_reviewer_b_import.py
       - name: Lint unified pipeline
         run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py
       - name: Verify frozen source blob pins
