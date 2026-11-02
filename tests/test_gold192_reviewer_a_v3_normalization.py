@@ -38,7 +38,7 @@ def fixture():
     }
     supplement = {
         "schema": "r58_gold192_ai_review_minimum_supplement_private_v2",
-        "case_level_ai_reviews": scored,
+        "case_level_ai_reviews": [dict(row, scores_1_to_5=dict(row["scores_1_to_5"])) for row in scored],
         "case_level_hold_groups": [{
             "reason": "SYNTHETIC_HOLD",
             "story": "Synthetic story",
@@ -59,12 +59,22 @@ def fixture():
             "reject": 1,
         },
     }
-    b_decisions = (
-        ["PASS"] * 102 + ["HOLD"] * 6 + ["REJECT"]
-        + ["PASS"] * 28 + ["HOLD"] * 3
-        + ["PASS"] * 47 + ["HOLD"] * 3 + ["REJECT"]
-        + ["PASS"]
-    )
+    b_decisions = ["PASS"] * 192
+    for i, decision in zip(range(83, 185), ["PASS"] * 102):
+        b_decisions[i] = decision
+    for i, decision in zip(range(185, 191), ["HOLD"] * 6):
+        b_decisions[i] = decision
+    b_decisions[191] = "REJECT"
+    for i in range(28):
+        b_decisions[i] = "PASS"
+    for i in range(28, 31):
+        b_decisions[i] = "HOLD"
+    for i in range(31, 78):
+        b_decisions[i] = "PASS"
+    for i in range(78, 81):
+        b_decisions[i] = "HOLD"
+    b_decisions[81] = "REJECT"
+    b_decisions[82] = "PASS"
     b_cases = [{
         "target_sha256": f"{i + 1:064x}",
         "blind_case_id": f"RB-{i + 1:04d}",
