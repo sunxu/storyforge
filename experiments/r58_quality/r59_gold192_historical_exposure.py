@@ -86,8 +86,10 @@ def read_gold192_packets(path: Path) -> tuple[list[dict], dict]:
 
 def read_v03_test(repo: Path) -> tuple[set[str], str]:
     raw = frozen._read(repo, V03_TEST_PATH, frozen.MAX_SOURCE_BYTES)
-    if digest(raw) != V03_TEST_SHA256 or git_blob(raw) != V03_TEST_GIT_BLOB:
-        raise ValueError("V03_TEST_SOURCE_PIN_MISMATCH")
+    if digest(raw) != V03_TEST_SHA256:
+        raise ValueError("V03_TEST_SHA256_MISMATCH")
+    if git_blob(raw) != V03_TEST_GIT_BLOB:
+        raise ValueError("V03_TEST_GIT_BLOB_MISMATCH")
     rows = []
     for line in raw.splitlines():
         row = json.loads(line)
