@@ -159,7 +159,7 @@ def main():
             result["private_queue_written"] = True
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
-    except (OSError, ValueError, KeyError, TypeError, UnicodeError, json.JSONDecodeError, csv.Error):
+    except (OSError, ValueError, KeyError, TypeError, UnicodeError, csv.Error):
         print(json.dumps({"schema": "r58_legacy_gold_target_reuse_safe_v1",
                           "status": "INPUT_OR_BINDING_INVALID__HOLD",
                           "quality_v1_admitted": 0, "training_authorized": False,
