@@ -92,3 +92,14 @@ The final AI-only aggregate is now **188 semantic PASS-only / 1 HOLD / 3 REJECT*
 The 132 Assistant-first antecedents remain unverified; two independent blinded reviews remain incomplete; Quality-v1=0, training unauthorized, GPU not started, frozen Gold unchanged.
 
 SAFE receipt: `docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V5.json`. The updated detailed 51-case report and private supplement remain local/private.
+
+
+## 2026-11-02 final hard-rule classification update (v6; supersedes v5 aggregate)
+
+The final remaining HOLD, `s06-gold-t03930`, was reclassified as REJECT after checking the exact User turn and target: the player explicitly prohibited the character from using a particular form of address, but the target repeated it; the player also requested composure in front of students, while the target continued the public confrontation. This is an explicit language-ban and workplace-boundary violation, not an unresolved evidence question.
+
+Final AI-only aggregate: **188 semantic PASS-only / 0 HOLD / 4 REJECT**. The four rejected targets are: overriding the player's explicit request to keep the crane; blocking the player's explicit request to get up; ignoring the player's correction that the message was sent to Lily, not Claire; and repeating an explicitly forbidden form of address while disregarding a workplace boundary.
+
+All 192 cases now have a single-AI decision. This does **not** mean Quality-v1 admission: 132 Assistant-first antecedents remain unverified; export-time cards are not proven historical request-time System Prompts; the two-independent-blind-review requirement remains unmet. **Quality-v1=0; training unauthorized; GPU not started; frozen Gold unchanged.**
+
+SAFE receipt: `docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V6.json`. The detailed 51-case report and private supplement remain local/private.
