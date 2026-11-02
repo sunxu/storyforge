@@ -1,6 +1,4 @@
 """Synthetic-only tests for verified V3 Reviewer A normalization."""
-from __future__ import annotations
-
 import json
 import unittest
 
