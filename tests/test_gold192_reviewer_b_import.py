@@ -12,7 +12,6 @@ import unittest.mock
 from storyforge_gold_quality.cli import import_reviewer_b
 from storyforge_gold_quality.manifest import load_events
 
-
 SCORES = {
     "chinese_prose": 4,
     "character_consistency": 4,
