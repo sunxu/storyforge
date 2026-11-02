@@ -2,7 +2,7 @@
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
   "version": "0.1.7",
   "date": "2026-11-02",
-  "tests": "v0.1.7: HF CPU shared token core 8/8 PASS; R58 HF synthetic suites 31/31 PASS; skill contract tests pending final verification; Batch Quote Repair v2; checkpoint v3 binds repair version, prompt template/schema and limits; no GPU rerun yet",
+  "tests": "v0.1.7: HF CPU shared token core 8/8 PASS; R58 HF synthetic suites 31/31 PASS; Skill contract 5/5 and intake 10/10 PASS; Batch Quote Repair v2; checkpoint v3 binds repair version, prompt template/schema and limits; A/B v3 GPU pilot completed (A 2 PASS, B 1 PASS/1 HOLD); quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
