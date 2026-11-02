@@ -71,6 +71,8 @@ def main():
             raise ValueError("SCOPE_COUNT_INVALID")
         write_manifest(args.private_output, repo, rows)
         receipt["status"] = "GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD"
+        receipt["private_candidate_artifact_written"] = True
+        receipt["scope_receipt_only"] = False
         receipt["private_candidate_scope_written"] = True
         print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
         return 0
