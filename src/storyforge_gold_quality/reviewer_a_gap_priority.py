@@ -145,14 +145,9 @@ def main() -> int:
     try:
         source, source_sha = _read_private(args.reviewer_a)
         safe, cases = build_a_gap_priority(source, load_events(args.manifest))
-        payload = {
-            "schema": "r58_gold192_reviewer_a_gap_priority_private_v1",
-            "status": "PENDING_A_EVIDENCE_RECOVERY",
-            "reviewer_a_source_sha256": source_sha,
-            "case_count": len(cases),
-            "cases": cases,
-        }
-        write_private_queue(args.output, payload, args.repo_root)
+        for row in cases:
+            row["reviewer_a_source_sha256"] = source_sha
+        write_private_queue(args.output, cases, args.repo_root)
         print(json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2))
         return 0
     except (ManifestError, OSError, ValueError, TypeError) as exc:
