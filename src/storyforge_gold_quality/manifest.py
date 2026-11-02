@@ -123,25 +123,44 @@ def append_events(path, events, repo_root):
     return len(checked)
 
 
+PUBLIC_BATCHES = {"gold87", "gold108", "gold192", "gold195"}
+PUBLIC_DECISIONS = {"PASS", "PASS_ONLY", "HOLD", "REJECT", "ACCEPT", "UNKNOWN", "NOT_RUN"}
+PUBLIC_TIERS = {"OWNER_RETURNED_SAFE_AGGREGATE", "OWNER_PRIVATE_SOURCE_IMPORT",
+                "OWNER_LOCAL_FROZEN_BYTES__NOT_ALIAS_VERIFIED"}
+
+
+def public_batch(value):
+    return value if value in PUBLIC_BATCHES else "OTHER_PRIVATE_BATCHES"
+
+
 def validate_manifest(events):
-    if len({x["event_id"] for x in events}) != len(events):
-        raise ManifestError("DUPLICATE_EVENT_ID")
-    by_batch, cases, target_pins = defaultdict(Counter), defaultdict(set), {}
+    ids = set()
+    pins = {}
+    by_batch, cases = defaultdict(Counter), defaultdict(set)
     for event in events:
-        by_batch[event["batch_id"]][event["event_type"]] += 1
+        validate_event(event)
+        if event["event_id"] in ids:
+            raise ManifestError("DUPLICATE_EVENT_ID")
+        ids.add(event["event_id"])
+        batch = public_batch(event["batch_id"])
+        by_batch[batch][event["event_type"]] += 1
         payload = event["payload"]
         case = payload.get("case_id") or payload.get("case_ref")
+        digest = payload.get("target_sha256")
         if case:
-            cases[event["batch_id"]].add(case)
-            digest = payload.get("target_sha256")
+            cases[batch].add((event["batch_id"], case))
             if digest:
                 key = (event["batch_id"], case)
-                if key in target_pins and target_pins[key] != digest:
+                if key in pins and pins[key] != digest:
                     raise ManifestError("CASE_TARGET_HASH_CHANGED")
-                target_pins[key] = digest
-    return {"valid": True, "event_count": len(events), "batch_count": len(by_batch),
-            "case_counts": {k: len(v) for k, v in sorted(cases.items())},
-            "event_counts": {k: dict(sorted(v.items())) for k, v in sorted(by_batch.items())}}
+                pins[key] = digest
+    return {
+        "valid": True,
+        "event_count": len(events),
+        "batch_count": len({event["batch_id"] for event in events}),
+        "case_counts": {k: len(v) for k, v in sorted(cases.items())},
+        "event_counts": {k: dict(sorted(v.items())) for k, v in sorted(by_batch.items())},
+    }
 
 
 def safe_report(events):
@@ -149,13 +168,21 @@ def safe_report(events):
     decisions, tiers = Counter(), Counter()
     for event in events:
         payload = event["payload"]
-        if payload.get("decision"):
-            decisions[payload["decision"]] += 1
-        if payload.get("evidence_tier"):
-            tiers[payload["evidence_tier"]] += 1
-    return {"schema": "storyforge_gold_quality_safe_aggregate_v1",
-            "status": "MANIFEST_VALID__ADMISSION_NOT_IMPLIED",
-            **summary, "decision_counts": dict(sorted(decisions.items())),
-            "exposure_evidence_tiers": dict(sorted(tiers.items())),
-            "quality_v1_admitted": 0, "training_authorized": False,
-            "gpu_started": False, "r50_accessed": False, "private_values_emitted": False}
+        decision = payload.get("decision")
+        if decision is not None:
+            decisions[decision if decision in PUBLIC_DECISIONS else "OTHER"] += 1
+        tier = payload.get("evidence_tier")
+        if tier is not None:
+            tiers[tier if tier in PUBLIC_TIERS else "OTHER"] += 1
+    return {
+        "schema": "storyforge_gold_quality_safe_aggregate_v1",
+        "status": "MANIFEST_VALID__ADMISSION_NOT_IMPLIED",
+        **summary,
+        "decision_counts": dict(sorted(decisions.items())),
+        "exposure_evidence_tiers": dict(sorted(tiers.items())),
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+        "gpu_started": False,
+        "r50_accessed": False,
+        "private_values_emitted": False,
+    }
