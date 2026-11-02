@@ -54,3 +54,9 @@ R58 真实 CPU ms-swift 4.5.3 + Transformers 5.16.1 + last_round + data_collator
 Owner 已批准本轮**排除 3 条缺少可信世界身份的 Gold108 候选**，保留冻结 Gold195 原样。新的范围上限是 Gold192（Gold87 87 条 + Gold108 105 条）。此处是候选范围决策，不是 192 条 Quality-v1 PASS，也不是 GPU/训练授权。
 
 验证工具为 `experiments/r58_quality/gold192_scope_exclusion.py`，使用现有 Mac PRIVATE 任务和队列、默认只输出 SAFE 聚合。具体运行和版本边界参见 `docs/plans/R58_GOLD192_SCOPED_EXCLUSION_20261102.md`。后续优先补齐 Gold87 历史证据、审查世界卡和历史上下文，按世界隔离 Train/Validation 并继续排除密封评测泄漏。
+
+## 7. 2026-11-02 Gold192 per-world semantic review packet
+
+Owner SAFE triage: 192 scoped candidates, 3 excluded, 13 story UUIDs, no Gold87/Gold108 story overlap, 132 Assistant-first and 60 User-first. New experiments/r58_quality/gold192_story_review_packets.py groups the existing private six-dimension tasks by world and keeps one unapproved export-time card snapshot per story. It verifies target/input/card hashes, six-dimension review contract, no card conflict within a world, and no cross-cohort world overlap. It writes only a new PRIVATE JSONL with 13 story packets; no original task, frozen Gold, or existing private file is rewritten.
+
+Mac runbook: docs/plans/R58_GOLD192_STORY_REVIEW_PACKETS_20261102.md. This packet is still unreviewed; the 132 Assistant-first cases are P1 for context anchoring, 60 User-first are P2. Gold87 index/README A/B dual ACCEPT claims remain separate from the Gold87 JSONL metadata independent_gold_review=NOT_RUN / subjective curator score layer. Quality-v1=0; no training/GPU authorization.
