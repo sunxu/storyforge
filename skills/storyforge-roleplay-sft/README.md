@@ -1,4 +1,4 @@
-# R58 RolePlay→StoryForge SFT Skill v0.1.5
+# R58 RolePlay→StoryForge SFT Skill v0.1.6
 
 此目录是可移植的 **Skill 草案 + 已在合成数据上测试的离线工具**。它不会自动连接生产数据库、向 GitHub 写入、运行推理或启动付费 Hugging Face Job。需要安装到目标的 Skill 运行环境时，由 Owner 先检查 SKILL.md、SQL 和脚本；不要称其已安装或完成真实数据准入。
 
@@ -34,3 +34,7 @@ python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decis
 ## v0.1.5 严重标记诊断
 
 `RESPONSE_SEVERE_MUST_REJECT` 不能单独说明具体触发原因。新版 SAFE 只输出样本索引、decision 枚举值、触发的严重标记名称和数量；不输出原始模型响应或私人文本。旧回执缺少这些字段时不得猜测根因，应先增强诊断和合成测试，再决定是否重试未完成样本。
+
+## v0.1.6 严重标记阈值与 Prompt 身份
+
+严重玩家自主权只针对明确、实质性接管玩家关键行动/选择/台词/意愿/同意或拒绝；NPC 自身行动、心理、提问、改变话题或未等待回答不自动算越权。硬事实只依据可见历史明确规则，未认证卡片不能单独作为依据。checkpoint v2 绑定 `review_policy_version` 与 `prompt_sha256`；Prompt 变更后旧 checkpoint 不可复用，A/B 必须在同一 Prompt 版本下重新评估。
