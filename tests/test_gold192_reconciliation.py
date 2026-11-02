@@ -110,6 +110,13 @@ class ReconcileGold192Tests(unittest.TestCase):
         result = reconcile_gold192(events)
         self.assertEqual(result["counts"]["reviewer_a_reject_b_pass_disagreement"], 1)
 
+    def test_canonical_reviewer_b_is_counted(self):
+        event = review("RB-0001", "REVIEWER_B", "PASS", digest="e" * 64)
+        result = reconcile_gold192([event])
+        self.assertEqual(result["case_events_observed"], 1)
+        self.assertEqual(result["counts"]["missing_reviewer_a"], 1)
+        self.assertNotIn("superseded_or_unpinned_reviewer_b_events_ignored", result["counts"])
+
     def test_unpinned_old_reviewer_b_is_ignored(self):
         old = make_event("gold192", "BLIND_REVIEW", {
             "case_id": "old-b", "target_sha256": "d" * 64,
