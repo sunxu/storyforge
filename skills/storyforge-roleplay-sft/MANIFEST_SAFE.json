@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "date": "2026-11-02",
-  "tests": "v0.1.4: HF CPU synthetic quote-repair tests 12/12 PASS; candidate-index repair contract updated; package hashes refreshed",
+  "tests": "v0.1.5: HF CPU synthetic reviewer tests 12/12 PASS; severe mismatch SAFE metadata verified; no GPU rerun",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "32871fabb610903699fd82a2b237ac23134311174b62363081d8295939c63c86",
-      "bytes": 3492
+      "sha256": "b896b93bc30ab46746bb09c86c07a65f5fb01e6ec1193c4de76afc298cccdb7a",
+      "bytes": 4075
     },
     {
       "path": "README.md",
-      "sha256": "fb2becc29b75c1cf166ebb73bea534091056eab2c115b82777fcd48fba840f80",
-      "bytes": 3651
+      "sha256": "1ff19ec157d7a88ac1905e31d7dc515b5b0b74737a9d6a4df4caffef9e38cd01",
+      "bytes": 4019
     },
     {
       "path": "SKILL.md",
-      "sha256": "13c0234428a8627aea3188353e4c33e45901fac9ee10a91ab6254c5bc72fa8d9",
-      "bytes": 10883
+      "sha256": "ad22f5f4f2646d07d32bab5adea1e1015ee59af1a2754218b3dff6db3ac637ba",
+      "bytes": 11238
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,7 +63,7 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "a08c62cf99abfc6e7cd37ebf24490fe67b34ba41c1ca9299b4ac4f5ec64b720f",
+      "sha256": "6f05b0d331f1fdb6b5c9faeee1550d4fb3c3da1d9f1da415e14030b2060747da",
       "bytes": 3665
     }
   ]
