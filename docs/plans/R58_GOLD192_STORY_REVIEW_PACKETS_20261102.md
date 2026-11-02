@@ -103,3 +103,15 @@ Final AI-only aggregate: **188 semantic PASS-only / 0 HOLD / 4 REJECT**. The fou
 All 192 cases now have a single-AI decision. This does **not** mean Quality-v1 admission: 132 Assistant-first antecedents remain unverified; export-time cards are not proven historical request-time System Prompts; the two-independent-blind-review requirement remains unmet. **Quality-v1=0; training unauthorized; GPU not started; frozen Gold unchanged.**
 
 SAFE receipt: `docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V6.json`. The detailed 51-case report and private supplement remain local/private.
+
+
+## 2026-11-02 Reviewer B blind kit prepared (private; not yet reviewed)
+
+A second-review packet has been prepared locally for an independent Reviewer B pass over all 192 cases. It uses new blind IDs, shuffled story/case order, and excludes Reviewer A decisions, original case IDs, Gold87/Gold108 cohort labels, and legacy evidence status. The original-to-blind ID map is separate and Owner-only.
+
+Local files (not committed):
+- `R58_GOLD192_REVIEWER_B_BLIND_20261102.jsonl` — only data file to provide to Reviewer B.
+- `R58_GOLD192_REVIEWER_B_INSTRUCTIONS_20261102.md` — rubric, floors, blind protocol and output schema.
+- `R58_GOLD192_REVIEWER_B_ID_MAP_PRIVATE_20261102.json` — Owner-only reconciliation map; never provide to Reviewer B.
+
+Reviewer B has **not** run yet. The independent-blind-review gate remains open; no Quality-v1 admission, training authorization or GPU start.
