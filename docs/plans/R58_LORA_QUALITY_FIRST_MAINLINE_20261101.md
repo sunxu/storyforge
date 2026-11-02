@@ -60,3 +60,14 @@ Owner 已批准本轮**排除 3 条缺少可信世界身份的 Gold108 候选**�
 Owner SAFE triage: 192 scoped candidates, 3 excluded, 13 story UUIDs, no Gold87/Gold108 story overlap, 132 Assistant-first and 60 User-first. New experiments/r58_quality/gold192_story_review_packets.py groups the existing private six-dimension tasks by world and keeps one unapproved export-time card snapshot per story. It verifies target/input/card hashes, six-dimension review contract, no card conflict within a world, and no cross-cohort world overlap. It writes only a new PRIVATE JSONL with 13 story packets; no original task, frozen Gold, or existing private file is rewritten.
 
 Mac runbook: docs/plans/R58_GOLD192_STORY_REVIEW_PACKETS_20261102.md. This packet is still unreviewed; the 132 Assistant-first cases are P1 for context anchoring, 60 User-first are P2. Gold87 index/README A/B dual ACCEPT claims remain separate from the Gold87 JSONL metadata independent_gold_review=NOT_RUN / subjective curator score layer. Quality-v1=0; no training/GPU authorization.
+
+## 8. 2026-11-02 Gold192 semantic review after Owner attestations
+
+Prior Owner declarations were applied: all stories are original or rights-holder-authorized for intended AI training use, and all characters were previously attested as adults. Do not ask for these general attestations again. They do not imply case-level consent to every intimate action or relationship.
+
+The 31 cases previously pending after source-rights clearance (14 Snow Reunion and 17 Cohabitation) have now received a single-AI six-dimension review: all 31 meet the rubric floors (25 Assistant-first with antecedent unverified; 6 User-first). The one Zombie case held only for missing player-age metadata is also cleared under the prior adult attestation because no contradictory case-level age evidence exists.
+
+Current Gold192 AI-only classification: 140 semantic PASS-only / 51 HOLD / 1 REJECT. Remaining HOLD reasons: 12 character identity mapping, 15 biological-sibling romance boundary, 16 character-name mapping, 7 consent boundary, 1 continuity. War & Blood export-time card separately lists one age-17 character, conflicting with the general adult attestation; the card remains unapproved and must not be rewritten. This does not expand the unrelated 15 sibling-romance case HOLDs.
+
+132 Assistant-first antecedents remain unverified; export-time cards are not proven historical system prompts. Two independent blind reviews are not complete. Quality-v1=0; no training authorization; no GPU.
+SAFE receipt: docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V3.json. Detailed case-level review and supplement remain local/private.
