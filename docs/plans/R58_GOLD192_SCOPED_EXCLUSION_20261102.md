@@ -33,3 +33,24 @@ python3 experiments/r58_quality/gold192_scope_exclusion.py \
 ## 下一步
 
 先按这份冻结范围继续 Gold87 历史审核证据绑定、192 条上下文语义差异检查，再生成正式的训练资格名单与按世界隔离的 Train/Validation 分组；不以历史精确生产请求回放作为训练前置任务。
+
+## 私人范围清单（非训练数据）
+
+通过以上 SAFE 范围验证和 Ruff 后，再执行如下命令；目标文件必须不存在，工具拒绝覆盖：
+
+~~~bash
+python3 experiments/r58_quality/gold192_scope_manifest.py \
+  --repo-root "$PWD" \
+  --private-tasks "$HOME/.local/share/storyforge/r58/gold195-review-tasks-v1.jsonl" \
+  --private-queue "$HOME/.local/share/storyforge/r58/legacy-reuse-queue-v1.jsonl" \
+  --private-output "$HOME/.local/share/storyforge/r58/gold192-scope-v1.private.jsonl"
+~~~
+
+仅在私人文件中写 195 个匿名 case_id 和 scope_status：192 个 CANDIDATE_ONLY_QUALITY_HOLD，3 个 EXCLUDED_WORLD_ID_UNRESOLVED。该文件不包含故事正文、训练 messages 或 Gold 回复，不得提交 GitHub、外发或视为正式的训练/验证集。SAFE 控制台回执只显示聚合数量。
+
+合成测试：
+
+~~~bash
+python3 -m unittest discover -s experiments/r58_quality -p 'test_gold192_scope*.py' -v
+ruff check experiments/r58_quality/gold192_scope_exclusion.py experiments/r58_quality/gold192_scope_manifest.py experiments/r58_quality/test_gold192_scope_exclusion.py experiments/r58_quality/test_gold192_scope_manifest.py
+~~~
