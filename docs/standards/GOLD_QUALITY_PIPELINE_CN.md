@@ -61,3 +61,32 @@ storyforge-gold-quality run-check --check gold195-target-source --repo-root "$PW
 ### 测试与兼容
 
 专用 `.github/workflows/gold-quality-pipeline.yml` 校验新代码 Ruff、冻结 Git Blob pin、统一 CLI 合成测试、SAFE 适配器合成测试与 R57 回归测试。全仓历史 Ruff 失败单独报告，不篡改不相关旧源码。
+
+## Reviewer B 唯一有效版本（2026-11-02）
+
+当前 Owner 指定的 Reviewer B 原始结果通过 SHA-256 固定为：
+
+- 文件：`R58_GOLD192_REVIEWER_B_RESULTS_20261102(3).json`
+- SHA-256：`bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8`
+- Schema / 状态：`r58_gold192_reviewer_b_results_v1` / `REVIEW_COMPLETE`
+- 192 条；PASS 178、HOLD 12、REJECT 2；192 个 blind ID、target SHA 均唯一。
+
+只在 Owner 私有环境运行：
+
+```bash
+storyforge-gold-quality import-reviewer-b \
+  --input /private/path/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json \
+  --manifest /private/path/gold-quality-events.jsonl \
+  --repo-root "$PWD"
+
+storyforge-gold-quality reconcile-gold192 \
+  --manifest /private/path/gold-quality-events.jsonl
+```
+
+导入器仅接受上述精确 SHA、Schema、状态、192 条数量、决策计数、唯一 blind ID / target SHA、完整六维分数、severe_flags 和 evidence_summary。原始 evidence_summary 只写入权限受限的私有 Manifest；SAFE 导入回执不输出逐案 ID、目标哈希、分数或文本。相同来源重复运行是幂等的；部分导入会 HOLD。
+
+Reviewer A 与 B 的 blind ID 属于各自 reviewer 的局部编号，**不得假设相同**。统一仲裁按 target SHA-256 配对。所有缺少当前 canonical source SHA 的旧 Reviewer B 事件被标记为 superseded/unpinned 并排除在当前分歧计算之外；旧事件不会覆盖新版，也不会被解释成当前审核结论。
+
+新版文件的 12 HOLD、2 REJECT 均原样保留。任何历史 REJECT 仍需仲裁；Reviewer B 的 PASS 不会清除 Reviewer A 的 REJECT，也不直接产生 Quality-v1 准入。RB-0001 的年龄字段冲突属于额外 Owner 核对项，不因其 PASS 自动关闭。
+
+此流程只导入和核对审核证据；不验证角色卡在目标时点的生效版本，不完成世界身份/别名语义核验，不完成 Reviewer 独立性认证，不执行训练授权。
