@@ -160,3 +160,12 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - 第 2 条未生成 checkpoint，SAFE reason `RESPONSE_SEVERE_MUST_REJECT`：模型输出的 severe flag 与 decision 不一致。未自动修改 decision，未降低门禁。
 - B Pilot 目前只有 1/2 checkpoint 有效，整体 HOLD；不执行剩余 11 条，不启动训练。A 两个 checkpoint 与旧 B 输出保持不变。
 - 本次 H200 Job 总耗时按 8.5s + 4.3s + 103.7s + 109.3s 估算为 225.8 秒；按 $5/h、汇率 6.6568，估算 GPU 费用约 ¥2.09（最终账单以 HF 为准），低于 Owner 批准的 ¥66.57 上限。到此停止本轮 GPU 重试，不自动追加 Job。
+
+### 2026-11-02 下一步：严重标记 SAFE 诊断增强（CPU-only）
+
+- 只读检查确认，旧 Job 的 `RESPONSE_SEVERE_MUST_REJECT` 只表示至少一个 severe flag=true 且 decision!=REJECT；旧 SAFE 未保留具体 flag 名称和 decision，原始模型响应未持久化，无法从旧 Job 还原。
+- 原始 B 第 2 条输入的结构检查确认：三种严重标记名称传入 Prompt，但没有逐项阈值定义；该信息需要结合后续 SAFE 具体 flag 与样本证据判断，不能预先推断根因。
+- Runner 新增 `SevereDecisionMismatch`，SAFE 仅输出 `case_index`、`model_decision`、`active_severe_flags`、`active_severe_flag_count`；不输出任何原始模型文本或故事内容。
+- HF CPU 合成测试 12/12 PASS，覆盖 PASS/HOLD 与 active flag 的不一致、REJECT 与 active flag 的合法组合及 SAFE 隐私边界。
+- Skill 更新至 v0.1.5；完整规则更新至 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`。
+- 尚未创建新的私有 STAGE，尚未提交新 GPU Job；第 1 条 checkpoint 保留不动，剩余 11 条不启动，训练仍未授权。
