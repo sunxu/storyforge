@@ -63,7 +63,7 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
         # ambiguous until explicitly bound to a review round.
         state["reviews"].setdefault(role, []).append(decision)
 
-    # No source index was loaded here. The caller must independently bind
+    # The 192 review-scope candidates and three world-identity exclusions\n    # can be recorded together under the gold192 batch (195 total).\n    # No source index was loaded here. The caller must independently bind
     # these case identifiers to frozen Gold192 scope before any promotion.
     counts = Counter()
     for state in cases.values():
@@ -96,9 +96,9 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
                     counts["other_review_disagreement"] += 1
         if roles.get("OWNER_ARBITER"):
             counts["owner_arbitration_events_present"] += 1
-    if len(cases) > expected:
-        raise ManifestError("GOLD192_CASES_EXCEED_EXPECTED")
     eligible = len(cases) - counts["excluded_world_identity_hold"]
+    if eligible > expected or counts["excluded_world_identity_hold"] > 3:
+        raise ManifestError("GOLD192_SCOPE_COUNTS_EXCEED_EXPECTED")
     return {
         "schema": "storyforge_gold192_review_reconciliation_safe_v1",
         "status": "REVIEW_EVIDENCE_SUMMARIZED__SCOPE_AND_SEMANTIC_CLEARANCE_HOLD",
