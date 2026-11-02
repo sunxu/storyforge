@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from collections import Counter, defaultdict
 import fcntl
 import json
 import os
 import re
 import stat
 import uuid
+from collections import Counter, defaultdict
 
 SCHEMA = "storyforge_gold_quality_manifest_event_v1"
 EVENT_TYPES = {"SOURCE_FREEZE", "LEGACY_SELECTION_EVIDENCE", "LEGACY_REVIEW",
