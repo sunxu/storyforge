@@ -105,6 +105,21 @@ class ReuseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "LEGACY_87_WRAPPER_INVALID"):
                 index_rows(path, 87)
 
+    def test_gold108_missing_world_is_isolated(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "108.csv"
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            with path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["story_id", "target_sha256", "reviewer1_decision",
+                                 "reviewer2_decision", "candidate_id"])
+                for i in range(108):
+                    world = "" if i < 3 else f"world-{i}"
+                    writer.writerow([world, digest, "ACCEPT", "ACCEPT", f"c-{i}"])
+            indexed = index_rows(path, 108)
+            self.assertEqual(len(indexed), 108)
+            self.assertEqual(sum(not row[0] for row in indexed), 3)
+
     def test_duplicate_legacy_candidate_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "87.csv"
