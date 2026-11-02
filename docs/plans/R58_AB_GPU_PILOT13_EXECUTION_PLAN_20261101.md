@@ -177,3 +177,13 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - 内部可见文本核查未发现目标回复替玩家决定台词、意愿或关键行动；当前假设是模型可能把 NPC 自主结束话题误判为严重玩家自主权侵犯。由于原始模型解释未保存，该假设未被证实，不得修改本轮结果。
 - 本次 H200 运行约 109 秒；截至此 Job，本轮 H200 累计约 334.8 秒，按 $5/h、汇率 6.6568 估算约 ¥3.10（以 HF 最终账单为准），低于 Owner 批准的 ¥66.57 上限。
 - 不再对同一旧 Prompt 做自动重试。若要改变严重标记定义或 Prompt，必须先冻结新 Prompt 版本，并重新评估 A/B 的对应 pilot 样本，不能把不同 Prompt 的结果混为同一轮。当前 A/B 原结果和 B case0 checkpoint 保留；剩余 11 条不启动，训练未授权。
+
+### 2026-11-02 评审策略 v2 与 checkpoint v2（CPU-only）
+
+- B case2 SAFE 已确认 `decision=HOLD`、`active_severe_flags=[serious_player_agency]`。可见目标回复没有替玩家决定关键行动、台词或意愿；当前初步怀疑模型把 NPC 自主结束话题误判为严重玩家自主权侵犯，但该假设不能改写旧结果。
+- 新 Prompt 策略版本：`r58_literary_review_policy_v2`。明确 serious_player_agency、hard_fact_or_ban、safety_exclusion 三项阈值；NPC 自身行动/心理、提问、改变话题或未等待玩家回答不自动算玩家越权；硬事实必须依据可见历史明确规则。
+- Checkpoint schema 升级至 v2，增加 `review_policy_version` 与 `prompt_sha256`；prompt 或规则不同的旧 checkpoint 会 fail-closed，不能复用。
+- HF CPU 合成测试 `test_r58_hf_gpu_literary_reviewer`：13/13 PASS，包含 severe threshold 与 prompt fingerprint 篡改测试。
+- Skill 更新至 v0.1.6；技术规范更新 checkpoint v2 与 Prompt v2 规则。尚未进行新 Prompt GPU 推理，也未刷新私人 A/B Stage。
+- 旧 A/B checkpoint 与 B case0 PASS 只作为 Prompt v1 历史证据保留；若启动 v2，A/B 两边的 pilot 两条都必须使用相同 Prompt v2 重新评估，不能只重跑 B 或混合版本。
+- 原 ¥66.57 批准针对 B 组重试，不自动扩展为 A/B Prompt v2 重评预算。GPU 重评须另行确认范围和预算；剩余 11 条仍未授权，训练未授权。
