@@ -148,12 +148,12 @@ def import_history(args):
     if len(cases) != expected:
         raise ManifestError("HISTORY_UNIQUE_CASE_COUNT_INVALID")
     if args.batch == "gold87":
-        if sum(x["event_type"] == "SOURCE_METADATA" and x["payload"].get("case_id") for x in events) != 87:
+        if sum(1 for x in events if x["event_type"] == "SOURCE_METADATA" and x["payload"].get("case_id")) != 87:
             raise ManifestError("GOLD87_METADATA_INCOMPLETE")
         if not any(x["event_type"] == "LEGACY_SELECTION_EVIDENCE" for x in events):
             raise ManifestError("GOLD87_SELECTION_EVIDENCE_MISSING")
     if args.batch == "gold108":
-        if sum(x["event_type"] == "LEGACY_REVIEW" and x["payload"].get("case_id") for x in events) != 108:
+        if sum(1 for x in events if x["event_type"] == "LEGACY_REVIEW" and x["payload"].get("case_id")) != 108:
             raise ManifestError("GOLD108_REVIEW_BINDING_INCOMPLETE")
         if not any(x["event_type"] == "LEGACY_REVIEW" and x["payload"].get("binding_granularity") == "BATCH_LEVEL" for x in events):
             raise ManifestError("GOLD108_BINDING_RECEIPT_MISSING")
