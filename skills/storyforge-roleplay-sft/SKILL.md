@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.12
+version: 0.1.13
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -33,6 +33,17 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 4. **添加回归测试。** 在接入真实数据或 Job 前，使用合成数据覆盖正常路径、失败路径、边界、重试上限、隐私、幂等、不可覆盖和 checkpoint 身份。真实 Tokenizer/模板验证按 HF CPU 规则执行；测试通过不自动代表质量准入。
 5. **更新 Skill 和文档。** Skill 只记录 AI 的决策顺序、调用边界、门禁和权威文档入口；`docs/standards/` 保留完整技术规范、算法约束、Schema、失败码、版本和复现步骤。AGENTS.md 只记录跨项目通用规则，不复制项目实现。
 6. **验证并报告。** 检查差异、测试结果、文件清单和 SHA256 manifest；明确区分已验证、未验证、HOLD、PASS、授权与未授权。测试未实际运行时必须标记待验证，不能写成 PASS。
+
+## Unified Gold Quality Pipeline
+
+- 统一入口为 `storyforge-gold-quality`，技术合同见 `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。每轮先执行 `inventory` 与 `verify-source`，然后才允许导入。
+- 私有 append-only Manifest 必须位于 Git checkout 外；目录 0700、文件 0600。不得把逐案 Manifest、原文、UUID、别名、target hash 或评分提交到 GitHub。
+- Gold87 的 Reviewer A/B 批次级入选证据必须与 87 条 JSONL metadata 分层记录；`independent_gold_review=NOT_RUN` 不得提升为逐案独立双审。
+- Gold108 必须先复用 `gold108_review_binding.py` 并取得精确 SAFE PASS；只登记旧五维双 ACCEPT 绑定，不得标记为 Quality-v1。
+- Gold195 曝光若只有 SAFE aggregate，只导入 aggregate 并保持逐案状态 UNKNOWN；逐案导入必须同时具有 R57 原始私有 ledger 与同一次源字节 pin 校验 SAFE receipt。绝不从 aggregate 合成逐案记录。
+- 精确 target、历史 Train/Validation、story UUID 与语义 world-component 是不同证据层；任何一层不得冒充另一层。
+- Reviewer A、Reviewer B、AI 与 Owner 仲裁分别追加事件。分歧、HOLD、REJECT 和 3 条 unresolved-world exclusions 均保留，不覆盖、不平均、不删除。
+- `report-safe` 仅输出计数，不构成质量准入；Quality-v1 admission 保持 0，GPU 与训练保持未授权。
 
 ## 数据与质量主线
 
