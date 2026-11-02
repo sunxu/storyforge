@@ -26,5 +26,24 @@
   "training_authorized": false,
   "gpu_started": false,
   "r50_accessed": false,
-  "private_values_emitted": false
+  "private_values_emitted": false,
+  "source_integrity_verified": true,
+  "unique_blind_case_ids": 192,
+  "unique_target_sha256": 192,
+  "complete_six_dimension_scores": 192,
+  "evidence_summaries_present": 192,
+  "severe_flags_arrays_present": 192,
+  "decision_counts_verified": {
+    "PASS": 178,
+    "HOLD": 12,
+    "REJECT": 2
+  },
+  "severe_player_agency_reject_cases": 2,
+  "owner_followup_flags_in_pass_cases": 1,
+  "supersedes_all_prior_reviewer_b_versions": true,
+  "prior_reviewer_b_results_used_for_current_reconciliation": false,
+  "canonical_importer_implemented": true,
+  "pairing_key": "target_sha256",
+  "superseded_or_unpinned_reviewer_b_events_ignored": true,
+  "reviewer_independence_verified": false
 }
