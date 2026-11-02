@@ -166,11 +166,21 @@ def import_history(args):
 def import_exposure(args):
     data = read_json(args.input)
     if args.kind == "safe-aggregate":
-        if not isinstance(data, dict) or not isinstance(data.get("schema"), str):
+        if (not isinstance(data, dict) or
+            data.get("schema") != "storyforge-r57-g3-exact-target-exposure-count-only-v1"):
             raise ManifestError("EXPOSURE_AGGREGATE_INVALID")
-        fields = {k: data[k] for k in ("schema", "status", "gold_totals", "exposure", "counts",
-                  "evidence_tier", "source", "limits", "training_authorized", "r50_content_accessed") if k in data}
-        fields["evidence_tier"] = fields.get("evidence_tier", "OWNER_RETURNED_SAFE_AGGREGATE")
+        safe_fields = {
+            "schema", "as_of", "status", "gold195_rows", "by_gold_pool", "category_counts",
+            "historical_ever_train_exact", "historical_ever_validation_exact",
+            "no_exact_target_match", "source_byte_pins_verified_by_cli",
+            "world_alias_graph_verified", "semantic_novelty_verified",
+            "independent_rights_quality_safety_review_complete", "reviewer_admission_approved",
+            "dataset_v04_admitted", "r50_content_accessed", "training_authorized",
+        }
+        if set(data) - safe_fields:
+            raise ManifestError("EXPOSURE_AGGREGATE_HAS_UNSAFE_FIELDS")
+        fields = dict(data)
+        fields["evidence_tier"] = "OWNER_RETURNED_SAFE_AGGREGATE"
         event = make_event(args.batch, "TRAINING_EXPOSURE_AGGREGATE", fields, now())
         count = append_events(args.manifest, [event], args.repo_root)
         return {"schema": "storyforge_gold_quality_exposure_import_safe_v1", "status": "AGGREGATE_APPENDED",
