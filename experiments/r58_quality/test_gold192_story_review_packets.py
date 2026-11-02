@@ -77,6 +77,7 @@ def make_inputs(root, conflict=False):
                         "narrative_continuity": 4,
                     },
                     "two_independent_blinded_reviews_required": True,
+                    "source_world_card_is_unapproved": True,
                 },
                 "review_status": "UNREVIEWED",
                 "review_results": [],
