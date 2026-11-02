@@ -113,9 +113,12 @@ def inspect(gold87, gold108, tasks, evidence108=None):
         raise ValueError("LEGACY_EVIDENCE_ID_SET_MISMATCH")
     lookup = defaultdict(list)
     hashes = defaultdict(set)
+    missing_world_target_hashes = set()
     for row in legacy:
         if row[0]:
             lookup[row[:2]].append(row)
+        else:
+            missing_world_target_hashes.add(row[1])
         hashes[row[1]].add(row[0])
     counts = Counter(gold87_rows=87, gold108_rows=108, legacy_rows=195)
     counts["legacy_double_accept_indexed"] = sum(r[4] for r in legacy)
@@ -142,7 +145,8 @@ def inspect(gold87, gold108, tasks, evidence108=None):
                     or r.get("training_authorized") is not False):
                 raise ValueError("TASK_CONTENT_INVALID")
             matches = lookup.get((world, target), [])
-            if len(matches) > 1 or (not matches and target in hashes):
+            if (target in missing_world_target_hashes or len(matches) > 1
+                    or (not matches and target in hashes)):
                 reason = "WORLD_OR_TARGET_IDENTITY_HOLD"
             elif not matches:
                 reason = "NO_LEGACY_TARGET_MATCH"
