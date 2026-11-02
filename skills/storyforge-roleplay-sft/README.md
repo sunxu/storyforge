@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.10
+# R58 RolePlay → StoryForge SFT Skill v0.1.11
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -25,7 +25,7 @@
 ## 安全边界
 
 - RolePlay 数据库只读；PRIVATE 原文、Owner crosswalk、逐案标识和模型原始输出不得进入普通 GitHub、Job 日志或聊天。
-- R58 私人材料统一存放于 `$HOME/.local/share/storyforge/r58/`；具体任务/Manifest 路径见 R58 私人审核证据复用规范，旧 `~/storyforge-review-private` 不再使用。
+- R58 私人材料统一根目录为 `$HOME/.local/share/storyforge/r58/`；私人任务/Manifest 的实际路径必须先按技术规范只读定位，不能把历史预期路径当作已存在文件。
 - R50 密封测试正文不得访问或用于训练、开发、调参或 checkpoint 选择。
 - 模型 Tokenizer / Chat Template 预检在 HF CPU 执行；GPU 推理、评审和训练需要单独明确授权。
 - Token PASS、结构 PASS 或模型评审 PASS 均不自动构成 Quality-v1 训练准入。

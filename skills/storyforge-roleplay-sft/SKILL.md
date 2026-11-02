@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.10
+version: 0.1.11
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -66,7 +66,7 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - 只有案例标识、完整输入 SHA256 和目标 SHA256 全部一致，才允许把该案例列为历史证据复用候选；不匹配只 HOLD 对应案例。
 - 工具按 Manifest 实际案例数运行，不假定固定批次大小；SAFE 回执不包含私人正文、ID 或哈希。
 - 精确匹配不等于历史审核输出有效，也不证明审核者独立或文学质量通过；继续使用对应的历史输出验证器与结案工具。
-- R58 私人材料统一根目录为 `$HOME/.local/share/storyforge/r58/`；当前审核任务为 `gold195-review-tasks-v1.jsonl`，历史 Pilot Manifest 为 `grok-web-pilot-v1/review-manifest.private.json`。旧 `~/storyforge-review-private` 已退役，不得再使用或静默 fallback。
+- R58 私人材料统一根目录为 `$HOME/.local/share/storyforge/r58/`；Gold195 任务文件的历史生成路径在旧目录，迁移后实际位置尚未定位；Grok Pilot Manifest 的新路径也仅为预期位置、未验证存在。执行路径定位前不得运行复用核验、猜测路径或重新生成任务。详见 `docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md`。
 - 完整算法、Schema、失败码、文件权限、迁移记录与复现方式只维护在 `docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md`，Skill 不复制实现。
 
 ### 已验证的当前状态（2026-11-02）

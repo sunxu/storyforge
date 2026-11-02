@@ -89,26 +89,68 @@
 
 ### 5.1 R58 统一私人目录
 
-2026-11-01 历史会话确认：原 `~/storyforge-review-private` 已统一迁移至：
+用户确认，R58 私人材料统一根目录为：
 
 ```text
 $HOME/.local/share/storyforge/r58/
 ```
 
-仓库文档统一使用 `$HOME` 作为可移植写法。迁移约定为 `mv -n`、保留原文件名和目录结构、不覆盖已有文件；目录权限 0700，私人文件权限 0600。旧 `~/storyforge-review-private` 已退役，不再作为默认路径或静默 fallback。
+迁移约定为 `mv -n`、保留文件名和目录结构、不覆盖已有文件；目录权限 0700，私人文件权限 0600。旧 `~/storyforge-review-private` 是迁移前目录，不再作为正常工作目录或静默 fallback。
 
-按历史迁移清单，两个规范输入位置为：
+**Gold195 六维审核任务路径状态：HOLD / 尚未定位。**
 
-| 用途 | 相对统一根目录的路径 |
-|---|---|
-| 当前 Gold195 六维审核任务 | `gold195-review-tasks-v1.jsonl` |
-| 历史 Grok Web Pilot Manifest | `grok-web-pilot-v1/review-manifest.private.json` |
+历史会话记录的任务生成输出路径是：
 
-历史伴随材料还包括 `gold195-card-snapshots-v1.json`、`gold195-card-gold-review-v1.jsonl`、`gold195-review-tasks-user-first-v1.jsonl`、`case02-final-disposition-v1.json`，以及 `grok-web-pilot-v1/`、`grok-web-followup-v1/` 子目录中的初轮审核、仲裁和重审材料。该清单仅用于识别目录结构，不表示本核验器要读取这些文件。
+```text
+$HOME/storyforge-review-private/gold195-review-tasks-v1.jsonl
+```
 
-以上路径依据历史迁移约定记录；本次 GitHub 更新没有访问 Mac 文件系统，**未验证文件当前是否存在**。缺失时必须 HOLD，核对本地迁移结果；不得回退旧目录、猜测文件名或自动搬动文件。
+当时 SAFE 输出报告已准备 195 条任务、输出权限 0600。该记录证明任务曾按此路径写出，不证明它后来已迁移。2026-11-02 用户实际检查新目录下的 `$HOME/.local/share/storyforge/r58/gold195-review-tasks-v1.jsonl`，系统返回 `No such file or directory`。因此不得再把这个新路径写成已确认存在的文件，也不得仅因路径缺失就重新生成或覆盖审核任务。
 
-### 5.2 文件安全
+**Grok Web Pilot Manifest 路径状态：预期路径，未验证存在。**
+
+历史生成命令的输出目录为 `$HOME/storyforge-review-private/grok-web-pilot-v1/`，Manifest 文件名为 `review-manifest.private.json`。按目录迁移时保留结构的约定，其预期新路径是：
+
+```text
+$HOME/.local/share/storyforge/r58/grok-web-pilot-v1/review-manifest.private.json
+```
+
+但历史记录没有提供该文件迁移后的独立存在性检查；不得将预期路径表述为已验证路径。
+
+历史伴随材料还包括 `gold195-card-snapshots-v1.json`、`gold195-card-gold-review-v1.jsonl`、`gold195-review-tasks-user-first-v1.jsonl`、`case02-final-disposition-v1.json`，以及 `grok-web-pilot-v1/`、`grok-web-followup-v1/` 子目录中的初轮审核、仲裁和重审材料。该清单只作为历史文件名线索，不证明每个文件都已迁移或当前存在。
+
+### 5.2 只读定位步骤
+
+在执行身份复用核验前，先只读定位文件，不移动、不改名、不生成、不覆盖：
+
+~~~bash
+PRIVATE_R58_ROOT="$HOME/.local/share/storyforge/r58"
+OLD_PRIVATE_ROOT="$HOME/storyforge-review-private"
+
+echo "=== R58 unified root: Gold195 task ==="
+find "$PRIVATE_R58_ROOT" -type f -name 'gold195-review-tasks-v1.jsonl' -print
+find "$PRIVATE_R58_ROOT" -type f -iname '*review*tasks*.jsonl' -print
+
+echo "=== R58 unified root: Grok Pilot Manifest ==="
+find "$PRIVATE_R58_ROOT" -type f -path '*/grok-web-pilot-v1/review-manifest.private.json' -print
+
+if [ -d "$OLD_PRIVATE_ROOT" ]; then
+  echo "=== retired root: migration reconciliation only ==="
+  find "$OLD_PRIVATE_ROOT" -type f -name 'gold195-review-tasks-v1.jsonl' -print
+  find "$OLD_PRIVATE_ROOT" -type f -iname '*review*tasks*.jsonl' -print
+  find "$OLD_PRIVATE_ROOT" -type f -path '*/grok-web-pilot-v1/review-manifest.private.json' -print
+fi
+~~~
+
+解释结果时遵守以下规则：
+
+- 只在统一根目录找到唯一任务文件：记录实际路径，再检查普通文件、权限 0600、硬链接数 1、父目录权限及仓库外边界。
+- 只在旧根目录找到：保持 HOLD；这只是迁移遗漏线索，不得静默从旧目录读取或自动搬动。
+- 找到多个候选、没有候选、文件权限异常或路径存在符号链接：保持 HOLD，先由 Owner 确认正确文件。
+- 不得根据文件名相似、195 行数量或历史 SAFE 摘要推断文件内容相同；必须对实际文件运行身份核验。
+- 任务文件未定位前，不运行私人证据复用核验器，也不重新生成任务。
+
+### 5.3 文件安全
 
 - Manifest 和任务 JSONL 必须使用绝对路径，位于 Git 仓库之外。
 - 文件必须为普通文件、权限严格为 0600、硬链接数为 1；父目录不得为符号链接，且 group/other 不得有任何权限（通常 0700）。
@@ -118,25 +160,24 @@ $HOME/.local/share/storyforge/r58/
 
 ## 6. 使用方式
 
-在仓库根目录执行。使用 R58 统一私人目录的规范路径，不再使用旧目录：
+只有在第 5.2 节定位出唯一任务文件和唯一 Manifest，并完成权限检查后，才执行：
 
 ~~~bash
-PRIVATE_R58_ROOT="$HOME/.local/share/storyforge/r58"
-MANIFEST="$PRIVATE_R58_ROOT/grok-web-pilot-v1/review-manifest.private.json"
-TASKS="$PRIVATE_R58_ROOT/gold195-review-tasks-v1.jsonl"
+PRIVATE_MANIFEST="/absolute/path/confirmed/review-manifest.private.json"
+PRIVATE_TASKS="/absolute/path/confirmed/gold195-review-tasks-v1.jsonl"
 
-test -f "$MANIFEST" && test -f "$TASKS" || {
-  echo "HOLD: expected R58 private evidence files missing"
+test -f "$PRIVATE_MANIFEST" && test -f "$PRIVATE_TASKS" || {
+  echo "HOLD: private evidence input missing"
   exit 1
 }
 
 python3 experiments/r58_quality/private_review_evidence_reuse.py \
   --repo-root "$PWD" \
-  --private-manifest "$MANIFEST" \
-  --private-tasks "$TASKS"
+  --private-manifest "$PRIVATE_MANIFEST" \
+  --private-tasks "$PRIVATE_TASKS"
 ~~~
 
-如需对接另一套任务 Schema，可显式传入 --manifest-schema / --task-schema；字段合同仍必须满足本规范。容量限制可通过 --max-file-bytes 与 --max-records 调整，不能用增大限制来绕过异常文件或不完整输入。
+以上占位路径必须替换为第 5.2 节定位并由 Owner 确认的实际绝对路径，不得直接复制执行。不得回退旧目录，不得猜测替代文件名。容量限制可通过 `--max-file-bytes` 与 `--max-records` 调整，不能用增大限制来绕过异常文件或不完整输入。
 
 退出码：
 

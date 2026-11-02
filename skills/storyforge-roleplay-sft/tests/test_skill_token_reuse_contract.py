@@ -15,7 +15,7 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 class ReuseContractTests(unittest.TestCase):
     def test_skill_owns_execution_order_and_links_authoritative_specs(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.1.10", source)
+        self.assertIn("version: 0.1.11", source)
         for phrase in (
             "查找已有工具和证据",
             "优先复用",
@@ -95,27 +95,30 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("不得写死批次大小", reuse_spec)
         self.assertIn("EXACT_REUSE_MATCH__NO_QUALITY_ADMISSION", reuse_spec)
         self.assertIn("$HOME/.local/share/storyforge/r58", reuse_spec)
-        self.assertIn("gold195-review-tasks-v1.jsonl", reuse_spec)
-        self.assertIn("grok-web-pilot-v1/review-manifest.private.json", reuse_spec)
-        self.assertIn("storyforge-review-private", reuse_spec)
+        self.assertIn("HOLD / 尚未定位", reuse_spec)
+        self.assertIn("No such file or directory", reuse_spec)
+        self.assertIn("只读定位步骤", reuse_spec)
+        self.assertIn("find", reuse_spec)
+        self.assertIn("预期新路径", reuse_spec)
+        self.assertIn("不得重新生成任务", reuse_spec)
 
     def test_readme_and_changelog_document_the_new_responsibilities(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("v0.1.10", readme)
+        self.assertIn("v0.1.11", readme)
         self.assertIn("固定执行顺序", readme)
         self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
         self.assertIn("R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md", readme)
         self.assertIn("R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md", readme)
         self.assertIn("$HOME/.local/share/storyforge/r58/", readme)
-        self.assertTrue(changelog.startswith("# 0.1.10"))
+        self.assertTrue(changelog.startswith("# 0.1.11"))
         self.assertIn("AGENTS.md 只保留仓库通用规则", changelog)
 
     def test_manifest_hashes_and_file_inventory_match(self):
         manifest = json.loads(
             (SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(manifest["version"], "0.1.10")
+        self.assertEqual(manifest["version"], "0.1.11")
         declared = {item["path"]: item for item in manifest["files"]}
         self.assertFalse(any(name.startswith("v02/") for name in declared))
         expected = {

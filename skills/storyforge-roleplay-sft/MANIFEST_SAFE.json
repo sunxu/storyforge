@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "date": "2026-11-02",
-  "tests": "v0.1.10: generic private review evidence identity reuse checker; variable Manifest/task sizes; canonical R58 private root and historical input paths documented; migration preserved; 14 synthetic tests baseline unchanged; no local private files read; quality_v1_admitted=0; training_authorized=false",
+  "tests": "v0.1.11: private path evidence correction; historical task generation path distinguished from unverified migration; Manifest target marked expected/unverified; read-only discovery required; 14 synthetic tests baseline unchanged; no local private files read; quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "3abff3760b8b527bca733582e8e7a6df4097ef9c77105f7e091ae98b1741e456",
-      "bytes": 8237
+      "sha256": "85156ec4c771f2824ab8fedb175ca483f5fcea500131007cdc85b2c1228762c7",
+      "bytes": 9062
     },
     {
       "path": "README.md",
-      "sha256": "6cb02394586e352c1733b66e2c09b558133c82753d6fc369a43d4546a22d7248",
-      "bytes": 2755
+      "sha256": "6c9e6386548415df813da1051c4e23fba38142558005426f9bf1fb3c16049580",
+      "bytes": 2767
     },
     {
       "path": "SKILL.md",
-      "sha256": "c17e87bfafd5f823de2aeeb5a5db2530e6759766bcf8ff3a530dadd6fb0f5b5f",
-      "bytes": 9850
+      "sha256": "38474194079cd6bb4bf31671137bfed21b5e12a218c4777f404be066163f3201",
+      "bytes": 9951
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "f5e8113e43116d8c0e64596a7ab690f0b6611c81392ef3023262d0cd4c6d9f7e",
-      "bytes": 6297
+      "sha256": "77607fbafc27d42b50635f3471eca5d4d227638787cb34bbe30ce79258f1a80e",
+      "bytes": 6416
     }
   ]
 }
