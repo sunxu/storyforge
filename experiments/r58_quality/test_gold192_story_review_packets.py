@@ -28,7 +28,10 @@ def make_inputs(root, conflict=False, cross_cohort=False):
             status = "EXCLUDED_WORLD_ID_UNRESOLVED" if excluded else "CANDIDATE_ONLY_QUALITY_HOLD"
             world = (
                 f"synthetic-gold108-world-{i % 7}" if i < 108
-                else "synthetic-gold108-world-0" if cross_cohort
+                else (
+                    "synthetic-gold108-world-0" if i == 108
+                    else f"synthetic-gold87-world-{(i - 109) % 6}"
+                ) if cross_cohort
                 else f"synthetic-gold87-world-{i % 6}"
             )
             card = {"world": world, "rules": ["synthetic"]}
