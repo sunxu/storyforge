@@ -9,7 +9,7 @@ from r58_hf_gpu_literary_reviewer import (
     PILOT_SCHEMA, MODELS, REVIEW_KEYS, canon, read_source, prompt_messages,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
-    QuoteValidationError, QuoteRepairFailure, quote_candidates,
+    QuoteValidationError, QuoteRepairFailure, SevereDecisionMismatch, quote_candidates,
     quote_repair_messages, quote_repair_schema, apply_quote_candidate,
     safe_failure_result,
 )
@@ -134,8 +134,17 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             validate_response(bad, row)
         bad = copy.deepcopy(answer)
         bad["severe_flags"]["hard_fact_or_ban"] = True
-        with self.assertRaises(ValueError):
+        with self.assertRaises(SevereDecisionMismatch) as caught:
             validate_response(bad, row)
+        self.assertEqual(caught.exception.decision, "PASS")
+        self.assertEqual(caught.exception.active_flags, ("hard_fact_or_ban",))
+        safe = safe_failure_result(caught.exception)
+        self.assertEqual(safe["reason_code"], "RESPONSE_SEVERE_MUST_REJECT")
+        self.assertEqual(safe["model_decision"], "PASS")
+        self.assertEqual(safe["active_severe_flags"], ["hard_fact_or_ban"])
+        self.assertEqual(safe["active_severe_flag_count"], 1)
+        self.assertFalse(safe["private_text_emitted"])
+        self.assertNotIn("target_text", json.dumps(safe))
         answer = completed_response(row, "HOLD")
         self.assertEqual(validate_response(answer, row), "HOLD")
         answer["uncertainty"] = ""
