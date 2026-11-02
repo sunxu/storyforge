@@ -19,6 +19,7 @@ from pathlib import Path
 A_SHA = '641b71e10a14318b57e69cb0239172f7016fe5b9d2149923f876308f5e6fe1e4'
 B_SHA = 'bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8'
 EX_SHA = '9ca99432e08b680cb67b5a1f89d172a337cb91c9bd02af70b68356938c6c04ed'
+PACKETS_SHA = 'ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e'
 HEX = re.compile(r'^[a-f0-9]{64}$')
 
 
@@ -235,7 +236,7 @@ def main() -> int:
     try:
         if not (0 <= args.pilot <= 72 and args.max_history >= 12):
             raise ValueError('PARAMETERS_INVALID')
-        packets = read_jsonl(args.source_packets)
+        packets = read_jsonl(args.source_packets, PACKETS_SHA)
         packet_index = index_packets(packets)
         selected = select_candidates(read_json(args.reviewer_a, A_SHA),
                                      read_json(args.reviewer_b, B_SHA),
