@@ -10,7 +10,7 @@ from pathlib import Path
 
 from storyforge_gold_quality.import_ai_arbitration import import_ai_arbitration
 from storyforge_gold_quality.manifest import append_events, load_events, make_event, safe_report
-from storyforge_gold_quality.reconcile import reconcile_gold192, CANONICAL_REVIEWER_B_SHA256
+from storyforge_gold_quality.reconcile import CANONICAL_REVIEWER_B_SHA256, reconcile_gold192
 
 A_SOURCE = "r58_reviewer_a_recovered_v6_20261102"
 SCORES = {name: 4 for name in (
