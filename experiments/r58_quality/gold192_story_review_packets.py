@@ -65,6 +65,8 @@ def build_packets(tasks_path, queue_path, scope_path):
 
         messages = task.get("messages")
         if (not isinstance(messages, list) or len(messages) < 2
+                or not isinstance(messages[0], dict)
+                or not isinstance(messages[-1], dict)
                 or messages[0].get("role") != "system"
                 or messages[-1].get("role") != "user"
                 or any(not isinstance(m, dict) or set(m) != {"role", "content"}
@@ -187,6 +189,13 @@ def build_packets(tasks_path, queue_path, scope_path):
     if len(worlds) != 13:
         raise ValueError("PACKET_WORLD_COUNTS_INVALID")
     packets = list(worlds.values())
+    cross_cohort_worlds = sum(
+        any(case["cohort"] == "gold87" for case in packet["cases"])
+        and any(case["cohort"] == "gold108" for case in packet["cases"])
+        for packet in packets
+    )
+    if cross_cohort_worlds != 0:
+        raise ValueError("PACKET_CROSS_COHORT_WORLD_OVERLAP")
     for packet in packets:
         packet["cases"].sort(key=lambda x: (x["priority"], x["cohort"], x["case_id"]))
         packet["case_count"] = len(packet["cases"])
@@ -202,6 +211,7 @@ def build_packets(tasks_path, queue_path, scope_path):
         "candidate_cases": 192,
         "excluded_world_identity_unresolved": 3,
         "story_packets": len(packets),
+        "story_uuids_present_in_both_cohorts": cross_cohort_worlds,
         "gold87_cases": counts["gold87_cases"],
         "gold108_cases": counts["gold108_cases"],
         "assistant_first_cases": counts["assistant_first_cases"],
@@ -273,7 +283,7 @@ def main():
             "PACKET_HISTORY_ROLE_INVALID", "PACKET_HISTORY_START_INVALID",
             "PACKET_WORLD_CARD_CONFLICT", "PACKET_FINAL_COUNTS_INVALID",
             "PACKET_COHORT_COUNTS_INVALID", "PACKET_HISTORY_COUNTS_INVALID",
-            "PACKET_WORLD_COUNTS_INVALID", "PACKET_PRIVATE_OUTPUT_INVALID",
+            "PACKET_WORLD_COUNTS_INVALID", "PACKET_CROSS_COHORT_WORLD_OVERLAP", "PACKET_PRIVATE_OUTPUT_INVALID",
             "TRIAGE_NOT_READY",
         }
         reason = str(exc) if isinstance(exc, ValueError) and str(exc) in allowed else safe_reason(exc)
