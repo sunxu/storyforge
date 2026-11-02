@@ -206,11 +206,13 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - Job wall-clock elapsed 合计 228.621 秒（3 分 48.6 秒）；按 $5/H200-hour、USD/CNY=6.6568 估算约 ¥2.11，最终以 HF 账单为准。未超过原批准 ¥11.10；理论剩余上限约 ¥8.99。
 - 本轮 A=0/2、B=1/2 checkpoint，A/B 不能做完整双模型比较；B case0 PASS 仅是单条有效记录。训练仍未授权，质量准入数为 0。剩余 11 条未启动。
 
-### 2026-11-02 Prompt v2 A/B GPU 首轮结果（2+2 目标未完成）
 
-- A Job `6ae7f9d30e0338d1bb7dbd26`（Qwen3-32B，H200）运行 105.390 秒，最终 ERROR/exit 42。SAFE：case_index=0、field=`specific_source_quotes`、quote_index=1、source_candidate_count=12、quote_repair_attempted=true、quote_repair_succeeded=false、quality_v1_admitted=0、training_authorized=false。没有 checkpoint_00；case1 未执行。
-- B Job `6ae7f9d5c78863f9c62ffffb`（GLM-4-32B-0414，H200）运行 123.231 秒，最终 ERROR/exit 42。case_index=0 已生成 checkpoint_00，decision=PASS，三项 severe flags 均 false，checkpoint schema v2 / policy v2 / prompt SHA256 正确；case_index=1 SAFE：field=`specific_source_quotes`、quote_index=3、source_candidate_count=12、quote_repair_attempted=true、quote_repair_succeeded=false。没有 checkpoint_01。
-- 两边失败均为引用纠错后重新验证仍有非精确 source quote，Runner 按 exit 42 安全停止；不是 GPU 初始化/模型下载故障，也不是 severe flag 触发。SAFE 的 quote_index 是最终失败校验位置；原始首次失败位置没有保存在当前 SAFE 中。
-- 代码核查发现当前“一次纠错”只替换首个无效 quote，随后对整个 response 重新校验；若同一引用列表仍有其他无效 quote，便会 HOLD。建议下一版改为单次 repair call 批量选择所有无效 quote 的候选索引，仍不允许模型生成/改写引用正文，并把 repair prompt/schema/version 纳入 prompt fingerprint。
-- Job wall-clock elapsed 合计 228.621 秒（3 分 48.6 秒）；按 $5/H200-hour、USD/CNY=6.6568 估算约 ¥2.11，最终以 HF 账单为准。未超过原批准 ¥11.10；理论剩余上限约 ¥8.99。
-- 本轮 A=0/2、B=1/2 checkpoint，A/B 不能做完整双模型比较；B case0 PASS 仅是单条有效记录。训练仍未授权，质量准入数为 0。剩余 11 条未启动。
+### 2026-11-02 Batch Quote Repair v2 实现与 CPU 验证
+
+- 按 A/B Prompt v2 GPU 首轮失败诊断，确认旧实现仅修复首个无效 quote 后全量重验；同一列表仍有其他无效 quote 时会 HOLD。Gold195 原始输入、旧 A/B checkpoint 与既有输出目录均保留不变。
+- Runner 升级为 Batch Quote Repair v2：一次识别 source/target 两个列表的全部无效位置；模型只返回 `field / quote_index / candidate_index`；程序校验待修复位置无遗漏、无重复、无额外项，并逐字段验证候选索引后逐字替换。候选仍只能来自单条可见 user/assistant 消息或 target_text，严格连续子串校验未放宽。
+- 不支持的引用列表结构、候选集为空/超限、批量位置超过 24、Token 预算超限、索引错误或最终重验失败，均 HOLD 且不保存 checkpoint。SAFE 仅增加无效字段/数量元数据，不输出引用原文。
+- Checkpoint schema 升级 v3；Prompt SHA256 绑定 quote-repair version、纠错模板、Schema 模板、候选/位置上限。v1/v2 checkpoint 不得复用。
+- HF CPU Sandbox 合成测试 13/13 PASS，覆盖跨 source/target 三个无效位置的一次批量纠错、重复/遗漏位置拒绝、候选索引边界、非引用字段不变、checkpoint v3 身份校验。测试使用虚构样本与 FakeTokenizer/FakeEngine，无真实故事、模型权重或 GPU。
+- 已获 Owner 批准使用剩余 GPU 预算最多 ¥7.77，范围仅为 A/B 各前两条的 v3 Prompt/repair 协议重评；不启动其余 11 条，不训练。原 A/B v2 输出目录只读保留，不覆盖。
+- 下一步：建立新的隔离 A/B v3 私人 STAGE，保留两边原始 blind_id 与顺序，刷新 Runner/token_core，输出目录必须为空；复用已有 token-preflight 核心与 CPU wrapper 完成 A/B 两槽真实 Token 预检。只有双 PASS 才可并行提交两组 H200 Job，累计运行时间硬上限对应 ¥7.77。
