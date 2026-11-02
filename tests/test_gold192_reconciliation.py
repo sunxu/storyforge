@@ -162,6 +162,41 @@ class ReconcileGold192Tests(unittest.TestCase):
         with self.assertRaisesRegex(ManifestError, "SCOPE_COUNTS_EXCEED_EXPECTED"):
             reconcile_gold192(events)
 
+    def test_historical_unscored_reject_does_not_forge_scored_pair(self):
+        digest = "f" * 64
+        historic = make_event("gold192", "HISTORICAL_REJECT_EVIDENCE", {
+            "case_id": "reviewer-a:" + digest,
+            "target_sha256": digest,
+            "reviewer_role": "REVIEWER_A",
+            "reviewer_source": "r58_reviewer_a_recovered_v6_20261102",
+            "decision": "REJECT",
+            "score_state": "UNAVAILABLE_NOT_SYNTHESIZED",
+        }, "t")
+        result = reconcile_gold192([review("b", "REVIEWER_B", "PASS", digest=digest),
+                                    historic])
+        counts = result["counts"]
+        self.assertEqual(counts["historical_a_reject_without_scores"], 1)
+        self.assertEqual(counts["historical_a_reject_b_pass_disagreement"], 1)
+        self.assertEqual(counts["any_reject_hold_for_arbitration"], 1)
+        self.assertEqual(counts["missing_reviewer_a"], 1)
+        self.assertNotIn("paired_case_count", counts)
+        self.assertEqual(result["quality_v1_admitted"], 0)
+
+    def test_historical_reject_with_fake_scores_is_rejected(self):
+        digest = "f" * 64
+        event = make_event("gold192", "HISTORICAL_REJECT_EVIDENCE", {
+            "case_id": "reviewer-a:" + digest,
+            "target_sha256": digest,
+            "reviewer_role": "REVIEWER_A",
+            "reviewer_source": "r58_reviewer_a_recovered_v6_20261102",
+            "decision": "REJECT",
+            "score_state": "UNAVAILABLE_NOT_SYNTHESIZED",
+            "scores": SCORES,
+        }, "t")
+        with self.assertRaisesRegex(ManifestError,
+                                    "GOLD192_HISTORICAL_REJECT_EVIDENCE_INVALID"):
+            reconcile_gold192([event])
+
     def test_unknown_role_rejected(self):
         with self.assertRaisesRegex(ManifestError, "REVIEW_INVALID"):
             reconcile_gold192([review("c1", "PRIVATE_ROLE", "PASS")])
