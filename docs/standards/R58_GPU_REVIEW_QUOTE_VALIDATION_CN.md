@@ -1,7 +1,7 @@
 # R58 GPU 文学评审：严格引用诊断与批量纠错规范
 
-状态：Batch Quote Repair v2 已实现；HF CPU reviewer 合成测试 13/13 PASS。Prompt v2 首轮 GPU 结果为 A 0/2、B 1/2 checkpoint，均因 source quote 精确性问题 HOLD；新的 checkpoint v3 隔离 STAGE 尚待刷新与 CPU Token 预检，未启动 GPU 重评。
-状态：候选索引引用纠错与 SAFE 严重标记诊断均已实测；旧 Prompt B Pilot 为 1/2 checkpoint、整体 HOLD。新评审策略 v2 已明确严重标记阈值并将 Prompt SHA256 纳入 checkpoint v2；HF CPU 合成测试 13/13 PASS；A/B 两槽 Prompt v2 CPU Token 预检均 PASS（planned=2），尚未进行 v2 GPU 评审。
+状态：Batch Quote Repair v2 与 checkpoint v3 已完成；HF CPU 共享核心及 R58/Skill 合成回归共 54/54 PASS。A/B v3 Token 预检双 PASS；GPU pilot 已完成：A/Qwen 2/2 PASS，B/GLM 1 PASS + 1 HOLD；四个 checkpoint 均通过 CPU 身份/引用复核。仅一个内容匹配样本可配对比较；质量准入 0，训练未授权。
+
 
 ## 1. 目标与边界
 
@@ -162,6 +162,20 @@ Checkpoint schema 升级为 `r58_hf_gpu_pilot13_review_checkpoint_private_v3`。
 HF CPU synthetic tests：13/13 PASS，包含跨两个引用字段的三位置批量纠错、重复/遗漏位置拒绝、逐字段 candidate index 检查、只改引用字段、最终 checkpoint v3 身份验证。测试只使用虚构数据、FakeTokenizer/FakeEngine，无真实故事、无模型权重、无 GPU。
 
 下一步必须在独立私人 STAGE 中刷新 runner/token_core、保留原 A/B blind_id 与顺序、创建全新空输出目录，并在 HF CPU 完成两槽 Prompt Token 预检。只有两槽都 PASS 才能使用剩余已批准预算进行 A/B 各前两条 GPU 评审。
+
+
+
+### 2026-11-02 Batch Quote Repair v2 A/B GPU Pilot 结果
+
+- 新 v3 私人 STAGE：A/B 原始 13 条记录分别保持原始 blind_id 与顺序，A/B 盲审 ID 唯一且互不重叠；去除 blind_id 后两边完整 13 条记录集合相同。新输入仅刷新 runner、token_core 与 CPU 预检适配器；输出目录从空目录开始，旧 v1/v2 输出未覆盖。
+- HF CPU Token 预检：A/Qwen 与 B/GLM 均使用 Transformers 4.57.1、Jinja2 3.1.6、各自不可变 revision、32768 context、2400 reserved output。A prompt max 27943 / total 30343；B prompt max 26993 / total 29393；两槽 over_budget_count=0。SAFE 回执再次通过 `--verify-cache-only` 身份核验。CPU 预检未加载模型权重、未推理、未使用 GPU。
+- GPU Jobs：A `6ae802c5c78863f9c6300368`（Qwen3-32B）COMPLETED；B `6ae802c8c78863f9c630036a`（GLM-4-32B-0414）COMPLETED。两者使用同一固定 vLLM image digest、H200、Prompt/repair v2、checkpoint v3、每 Job 360 秒 timeout。
+- Runner SAFE：A count=2、PASS=2/HOLD=0/REJECT=0、quote_repair_attempts=2、successes=2；B count=2、PASS=1/HOLD=1/REJECT=0、quote_repair_attempts=1、successes=1。三次纠错全部成功，未再出现 RESPONSE_NONEXACT_QUOTE。
+- CPU 独立复核：四个 checkpoint 均通过 `read_checkpoint`，source/model/revision/slot/index/schema v3/review_policy_version/prompt_sha256 身份一致，全部引用重新通过严格连续子串校验。四条 severe flags 全部 false；card_suitable=true、card_conflict=false。B case1 仍为模型主动返回 HOLD，uncertainty 非空；不是引用校验或严重标记错误。不得把该 HOLD 改写为 PASS。
+- A 的两条六维分数依次为 (Chinese 5/4, Character 5/4, NPC initiative 4/4, Player agency 5/5, Rule fidelity 5/5, Continuity 5/5)。B 两条均为 (4,4,3,4,4,4)。分数仅是模型评审结果，不代表训练准入。
+- A/B 完整 13 条输入集合相同，但独立随机顺序导致两组 pilot 前两条只有 1 条内容匹配；该唯一配对样本 A 与 B 均 PASS，A 六维分数分别为 5/5/4/5/5/5，B 为 4/4/3/4/4/4。其余各有 1 条未配对样本。因此当前只能报告单条配对结果，不能据此断言模型整体优劣。
+- Job wall-clock elapsed：A 144.708 秒，B 126.437 秒，合计 271.145 秒；按 H200 $5/hour、USD/CNY 6.6568 估算约 ¥2.51（以 HF 账单为准），低于 ¥7.77 批准上限。未使用预算不自动授权扩大样本。
+- 最终状态：A 2/2 PASS，B 1/2 PASS、1/2 HOLD；quality_v1_admitted=0，training_authorized=false。剩余 11 条未启动，训练未启动。
 
 ## 7. 权威实现
 
