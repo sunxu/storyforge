@@ -224,8 +224,8 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 
 - Job A：`6ae802c5c78863f9c6300368`，Qwen3-32B，H200，COMPLETED，wall-clock 144.708 秒。SAFE：count=2，PASS=2/HOLD=0/REJECT=0，quote_repair_attempts=2，quote_repair_successes=2。
 - Job B：`6ae802c8c78863f9c630036a`，GLM-4-32B-0414，H200，COMPLETED，wall-clock 126.437 秒。SAFE：count=2，PASS=1/HOLD=1/REJECT=0，quote_repair_attempts=1，quote_repair_successes=1。
-- 两组共 4 个 checkpoint 均在 HF CPU Sandbox 使用 v3 Runner 的 `read_checkpoint` 独立复核：source/model/revision/slot/index/schema/policy/prompt SHA 身份通过，所有 source/target quote 严格连续子串校验通过。四条 severe flags 全 false；card_suitable=true、card_conflict=false。B case1 的 HOLD 是模型主动保留不确定性（uncertainty 非空），不是引用纠错失败或 severe flag。
+- 两组共 4 个 checkpoint 均在 HF CPU Sandbox 使用 v3 Runner 的 `read_checkpoint` 独立复核：source/model/revision/slot/index/schema/policy/prompt SHA 身份通过，所有 source/target quote 严格连续子串校验通过。四条 severe flags 全 false，四条 card_conflict 均 false；card_suitable 分别为 A case0=true、A case1=true、B case0=true、B case1=false。B case1 的 HOLD 是模型主动保留不确定性（uncertainty 非空），无法仅凭可见历史确认待审内容的角色身份、故事线与场景对应关系；不是引用纠错失败或 severe flag。
 - A 两条分数：case0 (Chinese 5, Character 5, NPC initiative 4, Player agency 5, Rule fidelity 5, Continuity 5)；case1 (4,4,4,5,5,5)。B 两条均为 (4,4,3,4,4,4)。模型分数不构成质量准入。
-- A/B 完整 13 条内容集合去除 blind_id 后相同，但因独立随机顺序，pilot 前两条只有 1 条内容匹配。该配对样本两边均 PASS，A (5,5,4,5,5,5)，B (4,4,3,4,4,4)；其余各有 1 条未配对。因此不能凭一个配对样本判定模型整体优劣。
+- A/B 完整 13 条内容集合去除 blind_id 后相同，但每槽独立生成 blind_id 且独立随机排序，pilot 前两条只有 1 条内容匹配。按内容哈希对齐：A case0 = B case0（共同配对，均 PASS；A (5,5,4,5,5,5)，B (4,4,3,4,4,4)）；A case1 = B case9（本轮只跑了 A）；B case1 = A case8（本轮只跑了 B，B 决策 HOLD）。因此本轮只有 1 条共同配对样本，不能凭此判定模型整体优劣；剩余未配对结果也不能横向比较。
 - Job wall-clock elapsed 合计 271.145 秒（4 分 31.1 秒）；按 $5/H200-hour、USD/CNY 6.6568 估算约 ¥2.51（以 HF 最终账单为准），低于 ¥7.77 批准上限。剩余预算不自动授权扩大样本。
 - 最终状态：A 2/2 PASS；B 1 PASS + 1 HOLD；四个 checkpoint v3 有效；quality_v1_admitted=0；training_authorized=false。剩余 11 条未启动，训练未启动。
