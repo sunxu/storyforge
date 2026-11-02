@@ -25,14 +25,14 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
     validate_manifest(events)
     if type(expected) is not int or not 1 <= expected <= 195:
         raise ManifestError("GOLD192_EXPECTED_COUNT_INVALID")
-    cases: dict[str, dict] = defaultdict(lambda: {"reviews": {}, "excluded": False})
+    cases: dict[str, dict] = defaultdict(lambda: {"reviews": {}, "historical_a_reject": False, "excluded": False})
     seen_exclusions = set()
     counts = Counter()
     for event in events:
         if event["batch_id"] != "gold192":
             continue
         kind, payload = event["event_type"], event["payload"]
-        if kind not in REVIEW_EVENTS | {"EXCLUSION"}:
+        if kind not in REVIEW_EVENTS | {"EXCLUSION", "HISTORICAL_REJECT_EVIDENCE"}:
             continue
         case = payload.get("case_id")
         digest = payload.get("target_sha256")
@@ -48,6 +48,15 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
             if payload.get("reason_code") != "WORLD_IDENTITY_UNRESOLVED":
                 raise ManifestError("GOLD192_EXCLUSION_INVALID")
             state["excluded"] = True
+            continue
+        if kind == "HISTORICAL_REJECT_EVIDENCE":
+            if (payload.get("reviewer_role") != "REVIEWER_A" or
+                    payload.get("reviewer_source") != "r58_reviewer_a_recovered_v6_20261102" or
+                    payload.get("decision") != "REJECT" or
+                    payload.get("score_state") != "UNAVAILABLE_NOT_SYNTHESIZED" or
+                    "scores" in payload or cases[digest]["historical_a_reject"]):
+                raise ManifestError("GOLD192_HISTORICAL_REJECT_EVIDENCE_INVALID")
+            cases[digest]["historical_a_reject"] = True
             continue
         role = payload.get("reviewer_role")
         if role == "REVIEWER_B" and payload.get("reviewer_source_sha256") != CANONICAL_REVIEWER_B_SHA256:
@@ -86,7 +95,16 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
             counts["missing_reviewer_a"] += 1
         if not b:
             counts["missing_reviewer_b"] += 1
-        if any("REJECT" in values for values in roles.values()):
+        historical_reject = state["historical_a_reject"]
+        if historical_reject:
+            counts["historical_a_reject_without_scores"] += 1
+            if b:
+                counts["historical_a_reject_b_review_present"] += 1
+                if len(b) == 1 and b[0] in {"PASS", "PASS_ONLY"}:
+                    counts["historical_a_reject_b_pass_disagreement"] += 1
+            if a:
+                counts["historical_a_reject_and_scored_a_collision"] += 1
+        if historical_reject or any("REJECT" in values for values in roles.values()):
             counts["any_reject_hold_for_arbitration"] += 1
         if a and b:
             counts["paired_case_count"] += 1
