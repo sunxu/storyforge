@@ -196,3 +196,12 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - A/B Token 预检均在同一 Prompt v2、相同上下文/输出预算、各自完整不可变模型 revision 下通过；未加载模型权重、未推理、未使用 GPU。
 - 新 A/B 输出目录为空，旧 Prompt v1 A/B checkpoint 与 B case0 PASS 仍完整保留。Checkpoint v2 会拒绝旧 schema v1，避免不同 Prompt 混用。
 - 下一步若要获得可比较的 v2 结果，需在同一策略版本下分别运行 A、B 各前 2 条；本次先前批准的 ¥66.57 仅覆盖 B 组旧 Prompt 重试，不自动授权新的 A/B v2 GPU Job。剩余 11 条和训练均不在本次范围。
+
+### 2026-11-02 Prompt v2 A/B GPU 首轮结果（2+2 目标未完成）
+
+- A Job `6ae7f9d30e0338d1bb7dbd26`（Qwen3-32B，H200）运行 105.390 秒，最终 ERROR/exit 42。SAFE：case_index=0、field=`specific_source_quotes`、quote_index=1、source_candidate_count=12、quote_repair_attempted=true、quote_repair_succeeded=false、quality_v1_admitted=0、training_authorized=false。没有 checkpoint_00；case1 未执行。
+- B Job `6ae7f9d5c78863f9c62ffffb`（GLM-4-32B-0414，H200）运行 123.231 秒，最终 ERROR/exit 42。case_index=0 已生成 checkpoint_00，decision=PASS，三项 severe flags 均 false，checkpoint schema v2 / policy v2 / prompt SHA256 正确；case_index=1 SAFE：field=`specific_source_quotes`、quote_index=3、source_candidate_count=12、quote_repair_attempted=true、quote_repair_succeeded=false。没有 checkpoint_01。
+- 两边失败均为引用纠错后重新验证仍有非精确 source quote，Runner 按 exit 42 安全停止；不是 GPU 初始化/模型下载故障，也不是 severe flag 触发。SAFE 的 quote_index 是最终失败校验位置；原始首次失败位置没有保存在当前 SAFE 中。
+- 代码核查发现当前“一次纠错”只替换首个无效 quote，随后对整个 response 重新校验；若同一引用列表仍有其他无效 quote，便会 HOLD。建议下一版改为单次 repair call 批量选择所有无效 quote 的候选索引，仍不允许模型生成/改写引用正文，并把 repair prompt/schema/version 纳入 prompt fingerprint。
+- 实际 H200 wall time 合计 228.621 秒（3 分 48.6 秒）；按 $5/H200-hour、USD/CNY=6.6568 估算约 ¥2.11，最终以 HF 账单为准。未超过原批准 ¥11.10；理论剩余上限约 ¥8.99。
+- 本轮 A=0/2、B=1/2 checkpoint，A/B 不能做完整双模型比较；B case0 PASS 仅是单条有效记录。训练仍未授权，质量准入数为 0。剩余 11 条未启动。
