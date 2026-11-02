@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
 import hashlib
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
-from .manifest import ManifestError, append_events, load_events, make_event, safe_report, validate_manifest
+from .manifest import (
+    ManifestError,
+    append_events,
+    load_events,
+    make_event,
+    safe_report,
+    validate_manifest,
+)
 
 SOURCE_PINS = {
     "gold87": ("evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
@@ -34,7 +41,7 @@ SCORES = {"chinese_prose", "character_consistency", "npc_initiative",
 
 
 def now():
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def read_json(path):
@@ -99,17 +106,17 @@ def import_history(args):
         if scope == "BATCH":
             if payload.get("case_count") != expected:
                 raise ManifestError("HISTORY_BATCH_COUNT_INVALID")
-            if args.batch == "gold87" and kind == "LEGACY_SELECTION_EVIDENCE":
-                if (payload.get("binding_granularity") != "BATCH_LEVEL" or
-                    payload.get("reviewer_independence_proven") is not False or
-                    payload.get("selection_outcome") != "DUAL_ACCEPT_RECORDED"):
-                    raise ManifestError("GOLD87_SELECTION_LAYER_INVALID")
-            if args.batch == "gold108" and kind == "LEGACY_REVIEW":
-                if (payload.get("binding_granularity") != "BATCH_LEVEL" or
-                    payload.get("binding_status") != "HISTORICAL_DUAL_REVIEW_INDEX_BINDING_ONLY__NO_QUALITY_V1_ADMISSION" or
-                    payload.get("reviewer_independence_proven") is not False or
-                    payload.get("old_review_dimensions") != 5):
-                    raise ManifestError("GOLD108_BINDING_RECEIPT_INVALID")
+            if (args.batch == "gold87" and kind == "LEGACY_SELECTION_EVIDENCE" and
+                (payload.get("binding_granularity") != "BATCH_LEVEL" or
+                 payload.get("reviewer_independence_proven") is not False or
+                 payload.get("selection_outcome") != "DUAL_ACCEPT_RECORDED")):
+                raise ManifestError("GOLD87_SELECTION_LAYER_INVALID")
+            if (args.batch == "gold108" and kind == "LEGACY_REVIEW" and
+                (payload.get("binding_granularity") != "BATCH_LEVEL" or
+                 payload.get("binding_status") != "HISTORICAL_DUAL_REVIEW_INDEX_BINDING_ONLY__NO_QUALITY_V1_ADMISSION" or
+                 payload.get("reviewer_independence_proven") is not False or
+                 payload.get("old_review_dimensions") != 5)):
+                raise ManifestError("GOLD108_BINDING_RECEIPT_INVALID")
         elif scope == "CASE":
             case, digest = payload.get("case_id"), payload.get("target_sha256")
             if not isinstance(case, str) or not case or not isinstance(digest, str) or len(digest) != 64:
@@ -124,12 +131,16 @@ def import_history(args):
             if key in typed:
                 raise ManifestError("HISTORY_DUPLICATE_TYPED_EVENT")
             typed.add(key)
-            if args.batch == "gold87" and kind == "SOURCE_METADATA":
-                if payload.get("independent_gold_review") != "NOT_RUN" or payload.get("scores_are_subjective_single_review") is not True:
-                    raise ManifestError("GOLD87_METADATA_LAYER_INVALID")
-            if args.batch == "gold108" and kind == "LEGACY_REVIEW":
-                if payload.get("rubric") != "FIVE_DIMENSION_LEGACY" or payload.get("new_quality_v1") is not False or payload.get("reviewer1_decision") != "ACCEPT" or payload.get("reviewer2_decision") != "ACCEPT":
-                    raise ManifestError("GOLD108_LEGACY_REVIEW_INVALID")
+            if (args.batch == "gold87" and kind == "SOURCE_METADATA" and
+                (payload.get("independent_gold_review") != "NOT_RUN" or
+                 payload.get("scores_are_subjective_single_review") is not True)):
+                raise ManifestError("GOLD87_METADATA_LAYER_INVALID")
+            if (args.batch == "gold108" and kind == "LEGACY_REVIEW" and
+                (payload.get("rubric") != "FIVE_DIMENSION_LEGACY" or
+                 payload.get("new_quality_v1") is not False or
+                 payload.get("reviewer1_decision") != "ACCEPT" or
+                 payload.get("reviewer2_decision") != "ACCEPT")):
+                raise ManifestError("GOLD108_LEGACY_REVIEW_INVALID")
         else:
             raise ManifestError("HISTORY_SCOPE_INVALID")
         payload["evidence_tier"] = payload.get("evidence_tier", "OWNER_PRIVATE_SOURCE_IMPORT")
