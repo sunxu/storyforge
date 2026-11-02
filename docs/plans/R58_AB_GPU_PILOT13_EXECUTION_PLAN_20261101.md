@@ -1,7 +1,7 @@
 # R58 A/B 13 条 HF GPU 文学盲审执行方案（未提交）
 
 日期：2026-11-01  
-状态：`A_PILOT_VALID__B_HOLD_NONEXACT_QUOTE__REPAIR_IMPLEMENTED__B_RETRY_APPROVAL_REQUIRED`
+状态：`PROMPT_V2_IMPLEMENTED__A_B_CPU_PREFLIGHT_PASS__GPU_REEVALUATION_APPROVAL_REQUIRED`
 
 ## 1. 目标与范围
 
@@ -187,3 +187,12 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - Skill 更新至 v0.1.6；技术规范更新 checkpoint v2 与 Prompt v2 规则。尚未进行新 Prompt GPU 推理，也未刷新私人 A/B Stage。
 - 旧 A/B checkpoint 与 B case0 PASS 只作为 Prompt v1 历史证据保留；若启动 v2，A/B 两边的 pilot 两条都必须使用相同 Prompt v2 重新评估，不能只重跑 B 或混合版本。
 - 原 ¥66.57 批准针对 B 组重试，不自动扩展为 A/B Prompt v2 重评预算。GPU 重评须另行确认范围和预算；剩余 11 条仍未授权，训练未授权。
+
+### 2026-11-02 A/B Prompt v2 私有 STAGE 与 CPU Token 预检
+
+- A/B 原始 13 条输入采用独立盲审 ID 与独立随机顺序。此前按数组索引比较导致误判；移除 blind_id 后按完整记录多重集合比较，A/B 13/13 内容集合完全一致，且 26 个 blind_id 全部唯一。原始 A/B 输入不修改。
+- 新建独立 Prompt v2 私有目录：`input_A_policyv2_20261102` / `output_A_policyv2_20261102`，以及 B 对应目录。分别保留 A/B 原始 blind_id 与顺序；输入各 674,509 字节；输出仅含空 `.keep`，没有旧 checkpoint。
+- 新 Runner 与唯一共享 Token 核心已写入两份私有输入目录；固定 vLLM digest 的 HF CPU Sandbox 对 A/Qwen 与 B/GLM 分别执行 `--phase pilot --preflight-only`，均返回 `R58_HF_GPU_REVIEW_TOKEN_PREFLIGHT_PASS__NO_GPU_INFERENCE`，planned=2。
+- A/B Token 预检均在同一 Prompt v2、相同上下文/输出预算、各自完整不可变模型 revision 下通过；未加载模型权重、未推理、未使用 GPU。
+- 新 A/B 输出目录为空，旧 Prompt v1 A/B checkpoint 与 B case0 PASS 仍完整保留。Checkpoint v2 会拒绝旧 schema v1，避免不同 Prompt 混用。
+- 下一步若要获得可比较的 v2 结果，需在同一策略版本下分别运行 A、B 各前 2 条；本次先前批准的 ¥66.57 仅覆盖 B 组旧 Prompt 重试，不自动授权新的 A/B v2 GPU Job。剩余 11 条和训练均不在本次范围。
