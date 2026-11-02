@@ -28,3 +28,36 @@ The private Manifest must live outside the Git checkout in a directory with mode
 ## Privacy and non-authorization
 
 SAFE output contains counts only; never emit case IDs, story UUIDs, prose, alias maps or row-level target hashes. Quality-v1 admission remains zero; training, GPU and R50 access remain false. Tokenizer preflight continues to reuse only `src/storyforge_dataset/token_preflight.py`.
+
+## 只读适配器：实际执行合同
+
+统一入口现在提供 `run-check` 子命令，**只允许三个不需要私人文件路径参数的 SAFE 检查**：
+
+| --check | 复用源码 | 只输出 |
+| --- | --- | --- |
+| `gold87-legacy-index` | `gold87_legacy_index_audit.py` | 已验证行数与身份数量 |
+| `gold108-legacy-binding` | `gold108_review_binding.py` | 旧双审索引与证据绑定数量 |
+| `gold195-target-source` | `gold195_target_source.py` | 目标结构验证数量 |
+
+```bash
+storyforge-gold-quality inventory
+storyforge-gold-quality verify-source --repo-root "$PWD"
+storyforge-gold-quality run-check --check gold108-legacy-binding --repo-root "$PWD"
+storyforge-gold-quality run-check --check gold195-target-source --repo-root "$PWD"
+```
+
+执行器使用固定的源码相对路径和固定参数，校验脚本不为 symlink 且仍位于该 Git checkout，限定执行时间、CLI 返回状态、Schema、状态字符串和整数计数。任何失败均 HOLD；既有脚本的 stdout/stderr 原文**不会直接透传**到统一输出。
+
+其余注册的 R57/R58 工具目前只是 *inventory 元数据*，不等于已接入可执行入口。涉及私人路径、逐案文本、审核写入、模型 Tokenizer 或冻结操作的工具，必须先定义显式输入与 SAFE 输出合同并单独增加回归测试；不能通过自由拼接任意命令运行。Tokenizer / Chat Template 预检只允许使用既有共享核心，并且真实模型特定工作只在 HF CPU 执行。
+
+### SAFE 输出边界
+
+- 已知批次仅输出 `gold87`、`gold108`、`gold192`、`gold195`；其他批次聚合为 `OTHER_PRIVATE_BATCHES`。
+- 未知 decision / evidence_tier 标签聚合为 `OTHER`，不得把任意标签直接当作 JSON key 输出。
+- SAFE 聚合不包含逐案 case_id、story UUID、target hash、原文、模型输出或自由文本。
+- Gold87 Index `ACCEPT` 仍只是历史登记，不等于逐案独立审核；Gold108 五维双审与 Quality-v1 六维双审不得混为一谈。
+- 目前没有任何私有数据导入，也没有使 Quality-v1 admission 非零。
+
+### 测试与兼容
+
+专用 `.github/workflows/gold-quality-pipeline.yml` 校验新代码 Ruff、冻结 Git Blob pin、统一 CLI 合成测试、SAFE 适配器合成测试与 R57 回归测试。全仓历史 Ruff 失败单独报告，不篡改不相关旧源码。
