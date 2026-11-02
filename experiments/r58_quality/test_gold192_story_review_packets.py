@@ -28,11 +28,11 @@ def make_inputs(root, conflict=False):
             status = "EXCLUDED_WORLD_UNRESOLVED" if excluded else "CANDIDATE_ONLY_QUALITY_HOLD"
             world = f"synthetic-world-{i % 13}"
             card = {"world": world, "rules": ["synthetic"]}
-            if conflict and i == 14:
+            if conflict and i == 27:
                 card = {"world": world, "rules": ["conflicting"]}
             card_text = json.dumps(card, ensure_ascii=False, sort_keys=True, indent=2)
             card_hash = hashlib.sha256(card_text.encode()).hexdigest()
-            assistant_first = bool(i % 2)
+            assistant_first = 3 <= i < 135
             history = (
                 [{"role": "assistant", "content": "synthetic orphan assistant"}]
                 if assistant_first else [
@@ -101,8 +101,8 @@ class Gold192StoryPacketTests(unittest.TestCase):
             receipt, packets = build_packets(*make_inputs(Path(td)))
             self.assertEqual(receipt["candidate_cases"], 192)
             self.assertEqual(receipt["story_packets"], 13)
-            self.assertEqual(receipt["assistant_first_cases"], 96)
-            self.assertEqual(receipt["user_first_cases"], 96)
+            self.assertEqual(receipt["assistant_first_cases"], 132)
+            self.assertEqual(receipt["user_first_cases"], 60)
             self.assertEqual(sum(p["case_count"] for p in packets), 192)
             self.assertTrue(all(not p["world_card_approved_for_system"] for p in packets))
             self.assertNotIn("synthetic target", json.dumps(receipt))
