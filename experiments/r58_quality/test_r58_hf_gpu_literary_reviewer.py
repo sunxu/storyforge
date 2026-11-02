@@ -6,7 +6,8 @@ import tempfile
 import unittest
 
 from r58_hf_gpu_literary_reviewer import (
-    PILOT_SCHEMA, MODELS, REVIEW_KEYS, canon, read_source, prompt_messages,
+    PILOT_SCHEMA, MODELS, REVIEW_KEYS, REVIEW_POLICY_VERSION, SEVERE_DEFINITIONS,
+    canon, read_source, prompt_messages, reviewer_prompt_sha256,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
     QuoteValidationError, QuoteRepairFailure, SevereDecisionMismatch, quote_candidates,
@@ -115,6 +116,21 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         payload = json.loads(messages[1]["content"].split("待审材料如下：", 1)[1].strip())
         self.assertEqual(row["messages"][0]["content"], payload["unapproved_card"])
         self.assertEqual(row["messages"][1:], payload["visible_history"])
+
+    def test_severe_flag_definitions_distinguish_npc_initiative_from_player_agency(self):
+        row = source_rows()[0]
+        payload = json.loads(
+            prompt_messages(row)[1]["content"].split("待审材料如下：", 1)[1]
+        )
+        self.assertEqual(payload["review_policy_version"], REVIEW_POLICY_VERSION)
+        self.assertEqual(set(payload["severe_flag_definitions"]), {
+            "serious_player_agency", "hard_fact_or_ban", "safety_exclusion"
+        })
+        agency = payload["severe_flag_definitions"]["serious_player_agency"]
+        self.assertIn("关键选择", agency)
+        self.assertIn("NPC 自己的行动", agency)
+        self.assertIn("不自动构成", agency)
+        self.assertEqual(len(reviewer_prompt_sha256()), 64)
 
     def test_pass_and_holds_with_exact_quote_validation(self):
         row = source_rows()[0]
@@ -375,9 +391,11 @@ class HFReviewerSyntheticTests(unittest.TestCase):
                             "A", MODELS["A"], REV)
             checkpoint = checkpoint_path(out, 0)
             content = json.loads(checkpoint.read_text())
-            content["source_sha256"] = "0" * 64
+            self.assertEqual(content["review_policy_version"], REVIEW_POLICY_VERSION)
+            self.assertEqual(content["prompt_sha256"], reviewer_prompt_sha256())
+            content["prompt_sha256"] = "0" * 64
             checkpoint.write_text(json.dumps(content))
-            with self.assertRaises(ValueError):
+            with self.assertRaisesRegex(ValueError, "CHECKPOINT_IDENTITY_MISMATCH"):
                 read_checkpoint(checkpoint, records[0], "A", MODELS["A"], REV, 0)
 
 
