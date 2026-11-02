@@ -8,17 +8,17 @@
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "9bf1cb3d0dae70fe7b75f84eb0d5331ff7e25adef7923e2067155a0f5672b4a4",
+      "sha256": "6f8eac1fd692cf6a5cbcb71407843edf6dfa7165cf58b79f0ae837eb5f72be4a",
       "bytes": 10503
     },
     {
       "path": "README.md",
-      "sha256": "5184a3f3c6eef9c66bdead7b77c124ac71b36ab7e00b6c1feb7d93e16549ee80",
+      "sha256": "76739b1e0bf829e0ad6d471bf12fd2f2ff98579deb6dd5b898019901f10961fb",
       "bytes": 3341
     },
     {
       "path": "SKILL.md",
-      "sha256": "c028955708d1c69b32e406d7b1f893232cd959541f64e60ced23cd562e8a5157",
+      "sha256": "9e1c2774732ba488d846382782dc2f07743d9fa00793be3c5412e35bea520ba0",
       "bytes": 12105
     },
     {
@@ -63,7 +63,7 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "6d05b17ac2fcccf4d9ab48d845fe22d6ef0edbd96d8ff687b7d31ae7fb70b683",
+      "sha256": "6bbc74fdedf5978fe34d7026615773f2df2f007508538e406d7c5fd1aca9c4a1",
       "bytes": 7695
     }
   ]
