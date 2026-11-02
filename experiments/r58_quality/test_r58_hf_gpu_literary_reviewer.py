@@ -296,7 +296,7 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             target = quote_candidates(rows[0], "specific_target_quotes")
             selection = {"repairs": [
                 {"field": "specific_source_quotes", "quote_index": 0, "candidate_index": 0},
-                {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 1},
+                {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 0},
                 {"field": "specific_target_quotes", "quote_index": 0, "candidate_index": 0},
             ]}
             engine = FakeEngine([
