@@ -16,6 +16,7 @@ SAFE_HOLD_CODES = frozenset({
     "PRIVATE_PARENT_INVALID", "PRIVATE_INSIDE_REPO", "PRIVATE_OUTPUT_INVALID",
     "LEGACY_INDEX_INVALID", "LEGACY_IDENTITY_INVALID", "LEGACY_DUPLICATE_ID",
     "LEGACY_87_COLUMN_INVALID", "LEGACY_108_COLUMN_INVALID",
+    "LEGACY_87_WRAPPER_INVALID",
     "LEGACY_87_ROW_COUNT_INVALID", "LEGACY_108_ROW_COUNT_INVALID",
     "LEGACY_EVIDENCE_INVALID", "LEGACY_EVIDENCE_COUNT_INVALID",
     "LEGACY_EVIDENCE_ID_SET_MISMATCH", "TASK_SCHEMA_OR_ID_INVALID",
@@ -55,6 +56,15 @@ def private_file(path, repo):
 
 def index_rows(path, cohort):
     with open(path, encoding="utf-8-sig", newline="") as f:
+        # The frozen Gold87 CSV includes two sheet-parser metadata lines.
+        # Remove only the exact known envelope, never alter the input file.
+        first = f.readline()
+        if cohort == 87 and first == "<PARSED TEXT FOR SHEET: 1 / 1 TABS\n":
+            second = f.readline()
+            if second != "TAB NAME: gold_87_index.csv>\n":
+                raise ValueError("LEGACY_87_WRAPPER_INVALID")
+        else:
+            f.seek(0)
         rows = list(csv.DictReader(f))
     cols = ("story_id", "sample_target_sha256", "review_A", "review_B", "sample_id") if cohort == 87 else (
         "story_id", "target_sha256", "reviewer1_decision", "reviewer2_decision", "candidate_id")
