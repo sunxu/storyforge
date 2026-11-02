@@ -113,15 +113,19 @@ def build_packets(tasks_path, queue_path, scope_path):
             raise ValueError("PACKET_HISTORY_START_INVALID")
         cohort = "gold108" if reason == GOLD108_REASON else "gold87"
         instructions = task.get("review_instructions")
-        expected_dimensions = {
-            "chinese_prose", "character_consistency", "npc_initiative",
-            "player_agency", "rule_fidelity", "narrative_continuity",
+        expected_floors = {
+            "chinese_prose": 4, "character_consistency": 4,
+            "npc_initiative": 3, "player_agency": 4,
+            "rule_fidelity": 4, "narrative_continuity": 4,
         }
         if (not isinstance(instructions, dict)
-                or set(instructions.get("dimensions", {})) != expected_dimensions
-                or set(instructions.get("dimension_floors", {})) != expected_dimensions
+                or set(instructions.get("dimensions", {})) != set(expected_floors)
+                or instructions.get("dimension_floors") != expected_floors
+                or instructions.get("score_range") != [1, 5]
                 or instructions.get("two_independent_blinded_reviews_required") is not True
-                or instructions.get("source_world_card_is_unapproved") is not True):
+                or instructions.get("source_world_card_is_unapproved") is not True
+                or instructions.get("check_card_gold_contradictions") is not True
+                or instructions.get("do_not_infer_missing_world_facts") is not True):
             raise ValueError("PACKET_REVIEW_RUBRIC_INVALID")
         legacy_state = (
             "GOLD108_BASIC_HISTORICAL_EVIDENCE_BOUND__NEW_CONTEXT_REVIEW_REQUIRED"
@@ -152,6 +156,8 @@ def build_packets(tasks_path, queue_path, scope_path):
             worlds[story] = group
         elif group["world_card_sha256"] != card_hash:
             raise ValueError("PACKET_WORLD_CARD_CONFLICT")
+        elif group["review_protocol"] != instructions:
+            raise ValueError("PACKET_REVIEW_RUBRIC_CONFLICT")
         case = {
             "case_id": case_id,
             "cohort": cohort,
@@ -279,7 +285,8 @@ def main():
             "PACKET_CANDIDATE_STATE_INVALID", "PACKET_MESSAGE_SHAPE_INVALID",
             "PACKET_INPUT_HASH_INVALID", "PACKET_TARGET_HASH_INVALID",
             "PACKET_CARD_JSON_INVALID", "PACKET_CARD_OR_REVIEW_STATE_INVALID",
-            "PACKET_REVIEW_RUBRIC_INVALID", "PACKET_WORLD_ID_INVALID", "PACKET_HISTORY_SYSTEM_INVALID",
+            "PACKET_REVIEW_RUBRIC_INVALID", "PACKET_REVIEW_RUBRIC_CONFLICT",
+            "PACKET_WORLD_ID_INVALID", "PACKET_HISTORY_SYSTEM_INVALID",
             "PACKET_HISTORY_ROLE_INVALID", "PACKET_HISTORY_START_INVALID",
             "PACKET_WORLD_CARD_CONFLICT", "PACKET_FINAL_COUNTS_INVALID",
             "PACKET_COHORT_COUNTS_INVALID", "PACKET_HISTORY_COUNTS_INVALID",
