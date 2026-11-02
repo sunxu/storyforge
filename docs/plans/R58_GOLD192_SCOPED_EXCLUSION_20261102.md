@@ -54,3 +54,9 @@ python3 experiments/r58_quality/gold192_scope_manifest.py \
 python3 -m unittest discover -s experiments/r58_quality -p 'test_gold192_scope*.py' -v
 ruff check experiments/r58_quality/gold192_scope_exclusion.py experiments/r58_quality/gold192_scope_manifest.py experiments/r58_quality/test_gold192_scope_exclusion.py experiments/r58_quality/test_gold192_scope_manifest.py
 ~~~
+
+## 2026-11-02 Owner 执行结果及 SAFE 回执修订
+
+Owner 已报告 `GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD`，`scoped_candidate_count=192`、`excluded_world_identity_unresolved=3`、`private_candidate_scope_written=true`。原 CLI 同时继承了范围预检的 `private_candidate_artifact_written=false` 和 `scope_receipt_only=true`，与已写入状态不一致；后续代码已修复并增加合成断言。**已创建的私人清单保持原状，不能因修复统计字段而重新执行创建、覆盖或重建。**
+
+SAFE 证明：`docs/evidence/R58_GOLD192_OWNER_PRIVATE_SCOPE_SAFE_20261102.json`。后续仅需运行测试检查新代码，用户没有必要重新执行 `--private-output`。候选范围完成不代表 Quality-v1 审核或训练准入。
