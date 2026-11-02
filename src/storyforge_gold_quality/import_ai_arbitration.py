@@ -61,7 +61,7 @@ def _review_index(events: list[dict]) -> dict[str, dict]:
 
 def import_ai_arbitration(args) -> dict:
     private, private_raw = _read_pinned(args.input)
-    safe, safe_raw = _read_pinned(args.safe_summary)
+    safe, _safe_raw = _read_pinned(args.safe_summary)
     queue, queue_raw = _read_pinned(args.queue)
     report_sha = hashlib.sha256(private_raw).hexdigest()
     queue_sha = hashlib.sha256(queue_raw).hexdigest()
