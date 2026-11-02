@@ -70,6 +70,7 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 
 ## 权威技术文档
 
+- 共享 Tokenizer 核心的唯一实现入口：`src/storyforge_dataset/token_preflight.py`；禁止在 Skill、worker、Job 或实验目录复制通用算法。
 - HF Tokenizer / Chat Template / SAFE cache / 共享核心 / 私有 STAGE：`docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`
 - R58 GPU 评审 / 严格引用 / Batch Quote Repair / checkpoint / severe flags：`docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`
 - Quality-v1 主线、数据优先级与门禁：`docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md`
