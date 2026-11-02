@@ -25,7 +25,7 @@ def make_inputs(root, conflict=False, cross_cohort=False):
                 else "CONTEXT_EQUIVALENCE_UNVERIFIED" if i < 108
                 else "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND"
             )
-            status = "EXCLUDED_WORLD_UNRESOLVED" if excluded else "CANDIDATE_ONLY_QUALITY_HOLD"
+            status = "EXCLUDED_WORLD_ID_UNRESOLVED" if excluded else "CANDIDATE_ONLY_QUALITY_HOLD"
             world = (
                 f"synthetic-gold108-world-{i % 7}" if i < 108
                 else "synthetic-gold108-world-0" if cross_cohort
