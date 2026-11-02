@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "437c839f5894f4bc818a5896e72ad9e169adbb930f457475aa4c7be57fc0ccb8",
-      "bytes": 3767
+      "sha256": "472c59e72746cdaea08beddb77a3337dbaea6b413b3fcb95d4fafac507518df1",
+      "bytes": 3773
     }
   ]
 }
