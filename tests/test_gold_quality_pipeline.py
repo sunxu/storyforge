@@ -132,6 +132,45 @@ class GoldQualityPipelineTests(unittest.TestCase):
                                          repo_root=self.repo, event_type="INCREMENTAL_REVIEW"))
         self.assertEqual(result["events_appended"], 1)
 
+    def test_r57_private_ledger_requires_195_rows_and_same_run_safe_receipt(self):
+        from argparse import Namespace
+        rows = []
+        for source, count in (("GOLD87", 87), ("GOLD108", 108)):
+            for ordinal in range(1, count + 1):
+                rows.append({
+                    "gold_source": source, "source_row_ordinal_1_based": ordinal,
+                    "target_sha256_private": f"{len(rows)+1:064x}",
+                    "source_story_uuid_private": f"world-{source}",
+                    "historical_exact_target_sources": [],
+                    "world_alias_graph_verified": False,
+                    "case_level_rights_quality_safety_verified": False,
+                    "dataset_v04_decision": "HOLD_NOT_REVIEWED",
+                })
+        ledger = self.private / "ledger.json"
+        ledger.write_text(json.dumps({
+            "schema": "storyforge-r57-g3-private-exact-target-exposure-ledger-v1",
+            "evidence_tier": "OWNER_LOCAL_FROZEN_BYTES__NOT_ALIAS_VERIFIED",
+            "training_authorized": False,
+            "source_content_protected_evaluation_accessed": False,
+            "rows": rows,
+        }), encoding="utf-8")
+        receipt = self.private / "ledger-safe.json"
+        receipt.write_text(json.dumps({
+            "schema": "storyforge-r57-g3-exact-target-exposure-count-only-v1",
+            "source_byte_pins_verified_by_cli": True,
+            "gold195_rows": 195,
+            "world_alias_graph_verified": False,
+            "semantic_novelty_verified": False,
+            "dataset_v04_admitted": 0,
+            "training_authorized": False,
+            "r50_content_accessed": False,
+        }), encoding="utf-8")
+        result = import_exposure(Namespace(kind="r57-private-ledger", input=ledger,
+                                           receipt=receipt, batch="gold195",
+                                           manifest=self.manifest, repo_root=self.repo))
+        self.assertEqual(result["case_level_rows_imported"], 195)
+        self.assertEqual(len(load_events(self.manifest)), 195)
+
 
 if __name__ == "__main__":
     unittest.main()
