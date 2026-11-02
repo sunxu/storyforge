@@ -111,11 +111,32 @@ class GoldQualityPipelineTests(unittest.TestCase):
     def test_safe_exposure_aggregate_does_not_create_fake_case_rows(self):
         from argparse import Namespace
         source = self.private / "exposure.json"
-        source.write_text(json.dumps({"schema":"r57-safe", "gold_totals":{"ever_train":66}}))
+        source.write_text(json.dumps({
+            "schema": "storyforge-r57-g3-exact-target-exposure-count-only-v1",
+            "status": "G3_EXACT_TARGET_MEMBERSHIP_REPLAY_PASS__ALL_195_REMAIN_HOLD",
+            "gold195_rows": 195,
+            "by_gold_pool": {"GOLD87": {"rows": 87}, "GOLD108": {"rows": 108}},
+            "category_counts": {"TRAIN_ONLY": 57, "VALIDATION_ONLY": 15,
+                                "BOTH_TRAIN_AND_VALIDATION": 9, "NO_EXACT_TARGET_IN_PRIOR_SFT": 47},
+            "historical_ever_train_exact": 66,
+            "historical_ever_validation_exact": 24,
+            "no_exact_target_match": 47,
+            "source_byte_pins_verified_by_cli": False,
+            "world_alias_graph_verified": False,
+            "semantic_novelty_verified": False,
+            "independent_rights_quality_safety_review_complete": False,
+            "reviewer_admission_approved": False,
+            "dataset_v04_admitted": 0,
+            "r50_content_accessed": False,
+            "training_authorized": False,
+        }))
         result = import_exposure(Namespace(kind="safe-aggregate", input=source, batch="gold195",
                                            manifest=self.manifest, repo_root=self.repo))
         self.assertEqual(result["case_level_rows_imported"], 0)
         self.assertEqual(result["case_level_state"], "UNKNOWN_NOT_IMPORTED")
+        event = load_events(self.manifest)[0]
+        self.assertEqual(event["payload"]["category_counts"]["TRAIN_ONLY"], 57)
+        self.assertEqual(event["payload"]["gold195_rows"], 195)
 
     def test_gold192_exclusions_are_three_append_only_events(self):
         from argparse import Namespace
