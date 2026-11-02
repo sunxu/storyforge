@@ -3,6 +3,7 @@ import unittest
 
 from experiments.r58_quality.r59_gold192_historical_exposure import (
     classify,
+    git_blob,
 )
 
 
@@ -33,5 +34,11 @@ class R59HistoricalExposureTest(unittest.TestCase):
         self.assertFalse(result["test_exposed"])
 
 
+    def test_git_blob_uses_nul_byte_header(self):
+        raw = b"gold192-test"
+        expected = hashlib.sha1(
+            b"blob " + str(len(raw)).encode("ascii") + b"\x00" + raw
+        ).hexdigest()
+        self.assertEqual(git_blob(raw), expected)
 if __name__ == "__main__":
     unittest.main()
