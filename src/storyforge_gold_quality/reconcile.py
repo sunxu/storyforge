@@ -26,6 +26,7 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
         raise ManifestError("GOLD192_EXPECTED_COUNT_INVALID")
     cases: dict[str, dict] = defaultdict(lambda: {"reviews": {}, "excluded": False})
     seen_exclusions = set()
+    counts = Counter()
     for event in events:
         if event["batch_id"] != "gold192":
             continue
@@ -65,7 +66,6 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
 
     # The 192 review-scope candidates and three world-identity exclusions\n    # can be recorded together under the gold192 batch (195 total).\n    # No source index was loaded here. The caller must independently bind
     # these case identifiers to frozen Gold192 scope before any promotion.
-    counts = Counter()
     for state in cases.values():
         if state["excluded"]:
             counts["excluded_world_identity_hold"] += 1
