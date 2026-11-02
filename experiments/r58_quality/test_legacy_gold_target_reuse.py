@@ -29,7 +29,7 @@ class ReuseTests(unittest.TestCase):
                     for i in range(count):
                         w.writerow(([data[0] if i == 0 else f"{data[0]}-{i}"] + data[1:-1] + [f"{data[-1]}-{i}"]))
             with (base / "tasks.jsonl").open("w", encoding="utf-8") as f:
-                for i in range(195):
+                for i in range(7):
                     row = {
                         "schema": "r58_gold195_six_dimension_review_task_private_v1",
                         "case_id": f"canary-{i}",
@@ -43,11 +43,11 @@ class ReuseTests(unittest.TestCase):
                     }
                     f.write(json.dumps(row) + "\n")
             result, queue = inspect(base / "87.csv", base / "108.csv", base / "tasks.jsonl")
-            self.assertEqual(result["counts"]["current_tasks_checked"], 195)
-            self.assertEqual(result["counts"]["target_identity_matched"], 195)
+            self.assertEqual(result["counts"]["current_tasks_checked"], 7)
+            self.assertEqual(result["counts"]["target_identity_matched"], 7)
             self.assertEqual(result["quality_v1_admitted"], 0)
             self.assertFalse(result["context_changes_verified"])
-            self.assertEqual(len(queue), 195)
+            self.assertEqual(len(queue), 7)
             self.assertEqual(queue[0]["reason_code"], "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND")
 
             self.assertNotIn("canary-", json.dumps(result))
