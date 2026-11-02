@@ -1,5 +1,6 @@
 """R58 Gold192 scoped exclusion: validate private queue and write SAFE receipt only."""
 import argparse
+import hashlib
 import json
 from collections import Counter
 from pathlib import Path
@@ -10,8 +11,6 @@ from legacy_gold_target_reuse import (
     private_file,
     safe_reason,
 )
-
-import hashlib
 
 ALLOWED = {
     "CONTEXT_EQUIVALENCE_UNVERIFIED",
