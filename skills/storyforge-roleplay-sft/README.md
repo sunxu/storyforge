@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.12
+# R58 RolePlay → StoryForge SFT Skill v0.1.13
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
