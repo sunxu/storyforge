@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "date": "2026-11-02",
-  "tests": "v0.1.7: HF CPU shared token core 8/8 PASS; R58 HF synthetic suites 31/31 PASS; Skill contract 5/5 and intake 10/10 PASS; Batch Quote Repair v2; checkpoint v3 binds repair version, prompt template/schema and limits; A/B v3 GPU pilot completed (A 2 PASS, B 1 PASS/1 HOLD); quality_v1_admitted=0; training_authorized=false",
+  "tests": "v0.1.8: HF CPU shared token core historical baseline 8/8 PASS; R58 synthetic historical baseline 31/31 PASS; Skill contract refactored to enforce document ownership and no duplicated algorithms (PR CI pending); Batch Quote Repair v2 and checkpoint v3; A/B v3 GPU pilot completed (A 2 PASS, B 1 PASS/1 HOLD); quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "7ff21e2b2d4939cfc87407f6c7ff3a1e1be5f49a6d289994ad654d96224c7ba5",
-      "bytes": 5512
+      "sha256": "3e645606ac06266fcdbf499bef883f26e3491967d1e31de347d7a77f594e4327",
+      "bytes": 6443
     },
     {
       "path": "README.md",
-      "sha256": "6c8e1b1375db42589179df0b45956b297be35172b747826d5ed69459a61106c6",
-      "bytes": 4950
+      "sha256": "81e03a9a20dc3ed9869ecce971b39c782d2ae59119459255f0d07d75669bed72",
+      "bytes": 2461
     },
     {
       "path": "SKILL.md",
-      "sha256": "1efb37018c79fa5d623d23ef3b8f578b26fc7fd3d10013d8a042d845757db141",
-      "bytes": 12130
+      "sha256": "3a59dcd72d1dc5b6fd7b3463780718826cbcf353fded37f8912f17014fdf6327",
+      "bytes": 8474
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "472c59e72746cdaea08beddb77a3337dbaea6b413b3fcb95d4fafac507518df1",
-      "bytes": 3773
+      "sha256": "1eb1a81a570f09be25f7910ab6e740bda78f1a5b3aca3f15be432aebd44a0873",
+      "bytes": 4973
     }
   ]
 }

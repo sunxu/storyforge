@@ -1,3 +1,12 @@
+# 0.1.8 — 2026-11-02
+
+- 收敛文件职责：AGENTS.md 只保留仓库通用规则；SKILL.md 只保留 AI 执行顺序、权限边界、门禁和权威文档入口。
+- Skill 不再复制 Token Preflight 算法、缓存细节、SAFE 诊断码或 Batch Quote Repair 的候选索引实现；完整技术约束分别维护在两份 `docs/standards/` 文档与唯一共享源码中。
+- 固化执行顺序：查找已有工具和证据 → 优先复用 → 必要时扩展共享核心 → 添加回归测试 → 更新 Skill 和文档。
+- 更新 R58 A/B v3 GPU Pilot 状态；明确 B case1 的 `card_suitable=false`、唯一共同配对样本及训练准入仍为 0。
+- 更新 Skill contract 测试以检查职责边界、技术规范链接、共享核心唯一性和 manifest 完整性。
+- 不修改私人输入、旧 checkpoint、历史评审输出或训练数据；不提交 GPU、不扩大样本、不授予训练准入。
+
 # 0.1.7 — 2026-11-02
 
 - 将 R58 引用纠错升级为 Batch Quote Repair v2：单次纠错批量覆盖 source/target 两个引用列表的所有无效位置。

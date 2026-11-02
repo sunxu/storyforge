@@ -1,4 +1,4 @@
-"""Synthetic-only guard for the reusable HF Token skill contract.
+"""Synthetic-only contract tests for the StoryForge Skill boundaries.
 
 No HF, GPU, tokenizer, production database or private data access.
 """
@@ -13,53 +13,93 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 
 
 class ReuseContractTests(unittest.TestCase):
-    def test_v011_skill_points_to_single_real_core(self):
+    def test_skill_owns_execution_order_and_links_authoritative_specs(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.1.7", source)
-        self.assertIn("## HF Token 预检复用", source)
-        self.assertIn("src/storyforge_dataset/token_preflight.py", source)
-        self.assertIn("docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md", source)
-        self.assertIn("固定 SAFE 阶段码", source)
-        self.assertIn("工具变更执行顺序", source)
-        self.assertIn("批量候选索引选择", source)
-        self.assertIn("prompt_sha256", source)
-        self.assertIn("review_policy_version", source)
-        self.assertTrue((REPO_ROOT / "docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md").is_file())
-        self.assertIn("无需逐 Job 费用授权", source)
-        self.assertTrue((REPO_ROOT / "src/storyforge_dataset/token_preflight.py").is_file())
-        self.assertTrue((REPO_ROOT / "docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md").is_file())
-        self.assertTrue((REPO_ROOT / "experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py").is_file())
-
-    def test_cost_privacy_and_legacy_gates_remain_explicit(self):
-        source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("version: 0.1.8", source)
         for phrase in (
-            "Owner crosswalk", "HF CPU", "last_round",
-            "Quality-v1", "G2", "--verify-cache-only",
-            "--refresh-code", "len(BatchEncoding)", "不得",
+            "查找已有工具和证据",
+            "优先复用",
+            "必要时扩展共享核心",
+            "添加回归测试",
+            "更新 Skill 和文档",
+            "docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md",
+            "docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md",
+            "src/storyforge_dataset/token_preflight.py",
+            "R50",
+            "Quality-v1",
+            "last_round",
+            "training_authorized=false",
         ):
             self.assertIn(phrase, source)
-        self.assertIn("不是当前 Quality-v1 高质量 LoRA 的必需条件", source)
+        self.assertTrue(
+            (REPO_ROOT / "docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md").is_file()
+        )
+        self.assertTrue(
+            (REPO_ROOT / "docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md").is_file()
+        )
+        self.assertTrue(
+            (REPO_ROOT / "src/storyforge_dataset/token_preflight.py").is_file()
+        )
 
-    def test_readme_and_changelog_document_reuse(self):
+    def test_skill_does_not_duplicate_technical_implementations(self):
+        source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        for implementation_detail in (
+            "candidate_index",
+            "quote_index",
+            "review_policy_version",
+            "prompt_sha256",
+            "len(BatchEncoding)",
+            "--verify-cache-only",
+            "--refresh-code",
+            "token_core.py",
+        ):
+            self.assertNotIn(implementation_detail, source)
+
+    def test_agents_keeps_general_policy_and_points_to_the_standard(self):
+        agents = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("HF CPU", agents)
+        self.assertIn("docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md", agents)
+        self.assertIn("src/storyforge_dataset/token_preflight.py", agents)
+        self.assertIn("GPU inference or training", agents)
+        self.assertNotIn("len(BatchEncoding)", agents)
+        self.assertNotIn("candidate_index", agents)
+
+    def test_technical_standards_own_algorithm_details(self):
+        token_spec = (REPO_ROOT / "docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md").read_text(
+            encoding="utf-8"
+        )
+        quote_spec = (
+            REPO_ROOT / "docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("extract_input_ids", token_spec)
+        self.assertIn("BatchEncoding", token_spec)
+        self.assertIn("SAFE 诊断码", token_spec)
+        self.assertIn("candidate_index", quote_spec)
+        self.assertIn("Checkpoint v3", quote_spec)
+        self.assertIn("QUOTE_REPAIR_SELECTION_INVALID", quote_spec)
+
+    def test_readme_and_changelog_document_the_new_responsibilities(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("Skill v0.1.7", readme)
+        self.assertIn("v0.1.8", readme)
+        self.assertIn("固定执行顺序", readme)
         self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
-        self.assertIn("无需逐 Job 费用授权", readme)
-        self.assertTrue(changelog.startswith("# 0.1.7"))
-        self.assertIn("不发起 Job", changelog)
+        self.assertIn("R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md", readme)
+        self.assertTrue(changelog.startswith("# 0.1.8"))
+        self.assertIn("AGENTS.md 只保留仓库通用规则", changelog)
 
-    def test_manifest_v011_file_hashes_match(self):
-        manifest = json.loads((SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "0.1.7")
-        declared = {x["path"]: x for x in manifest["files"]}
-        # v02/ is a separate, unreleased preview; it is intentionally outside
-        # the frozen v0.1.2 package and must never enter this manifest.
+    def test_manifest_hashes_and_file_inventory_match(self):
+        manifest = json.loads(
+            (SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(manifest["version"], "0.1.8")
+        declared = {item["path"]: item for item in manifest["files"]}
         self.assertFalse(any(name.startswith("v02/") for name in declared))
         expected = {
             str(path.relative_to(SKILL_ROOT))
             for path in SKILL_ROOT.rglob("*")
-            if path.is_file() and path.name != "MANIFEST_SAFE.json"
+            if path.is_file()
+            and path.name != "MANIFEST_SAFE.json"
             and "__pycache__" not in path.parts
             and path.relative_to(SKILL_ROOT).parts[0] != "v02"
         }
@@ -69,7 +109,7 @@ class ReuseContractTests(unittest.TestCase):
             self.assertEqual(hashlib.sha256(payload).hexdigest(), record["sha256"], name)
             self.assertEqual(len(payload), record["bytes"], name)
 
-    def test_no_duplicate_core_in_skill(self):
+    def test_no_duplicate_shared_token_core(self):
         self.assertFalse((SKILL_ROOT / "scripts/token_preflight.py").exists())
         self.assertFalse((SKILL_ROOT / "token_preflight.py").exists())
 

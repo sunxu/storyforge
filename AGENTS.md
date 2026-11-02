@@ -84,34 +84,22 @@ Prefer a project-local Python virtual environment.
 
 Do not use `sudo` unless it is strictly required and explicitly authorized.
 
-### 2.1 Hugging Face-only token preflight (mandatory)
+### 2.1 Hugging Face execution boundary
 
-**All StoryForge model-tokenizer preflights MUST run in a Hugging Face environment, not on the user's Mac.** This includes token counts/length distribution, context-window checks, chat-template rendering, tokenizer/model-revision compatibility, and R58 Gold195 A/B blind-review prompt token-budget checks.
+All model-specific Tokenizer, Chat Template, token-budget and tokenizer/model-revision preflights MUST run in a Hugging Face CPU environment, not on the user's Mac. The Mac may prepare files, verify file integrity, stage/sync private inputs and inspect SAFE receipts; do not instruct the user to run model-specific tokenization locally.
 
-- Prefer **Hugging Face CPU Jobs** for token-only preflights; use an HF Sandbox or other HF-hosted CPU runtime only when appropriate and authorized. A GPU is not required solely to tokenize or count tokens.
-- The Mac is for preparing, validating file integrity, securely staging/syncing private inputs, and retrieving SAFE receipts/results. **Do not instruct the user to install Transformers, download model tokenizers, or execute model-specific token preflights on the Mac.**
-- Pin the **exact model ID and immutable revision** and the relevant tokenizer/chat-template version; match the eventual inference or SFT runtime to avoid a misleading preflight.
-- Use HF-private storage/mounts for source text, world cards, blind-review packets, and derived prompts. Do not upload private content or Owner crosswalks to GitHub, expose them in Job logs or chat, or give reviewer A access to reviewer B's data.
-- Produce only SAFE aggregate receipts outside private storage (PASS/HOLD, counts, maximum token length, model/revision identifiers as appropriate). Never silently truncate history, rewrite the frozen Gold, or treat a preflight PASS as literary quality approval or training admission.
-- **HF CPU execution:** When the user explicitly requests a workflow that requires CPU tokenization/preflight, submit only the minimum necessary Hugging Face CPU Job without asking for separate per-Job cost authorization. Stay within the requested case count, CPU flavor, timeout, and documented scope. This does not authorize GPU use: GPU inference/training still requires separate explicit approval.
+- Pin the exact model ID, immutable revision and relevant runtime/template versions to the intended workload.
+- Keep source text, world cards, blind-review packets, derived prompts, Owner crosswalks and case-level receipts in private storage. Do not expose them in GitHub, Job logs or chat.
+- Outside private storage, emit only SAFE aggregate results. Never silently truncate history, modify frozen Gold, or treat Token PASS as literary quality approval or training admission.
+- When the user explicitly requests a workflow requiring CPU tokenization/preflight, use the minimum necessary HF CPU execution within the requested scope; no separate per-Job cost authorization is required. This does not authorize GPU inference or training, which still require separate explicit approval.
 
-For R58 Gold195 literary pilot13, perform A/B tokenizer checks on HF CPU against each reviewer's staged PRIVATE input and the same pinned model revision, chat template, and context budget planned for the corresponding GPU reviewer. Fail closed on a mismatch or over-budget prompt, and do not launch the GPU automatically.
+### 2.2 Shared tooling policy
 
-### 2.2 Reuse existing HF token-preflight tooling (mandatory)
+StoryForge has one shared Token preflight implementation: `src/storyforge_dataset/token_preflight.py`. New project-specific workflows must reuse it and keep differences in thin adapters; do not copy the shared algorithm into Skills, workers or round-specific scripts.
 
-**Never write a new one-off token-budget/tokenizer preflight for each StoryForge round.** Inventory and reuse existing code, tested HF CPU execution wrappers and SAFE receipts before creating a new script:
+The complete technical contract—including adapter boundaries, cache identity, SAFE diagnostics, staging, verification and historical compatibility—is maintained in `docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`. Follow the R58 Skill's execution order before changing tooling. Keep historical frozen scripts, private inputs, receipts and checkpoints unchanged.
 
-- scripts/hf_cpu_preflight.py: SFT dataset, label flags, and training-config checks; **not** a real model-tokenizer length audit.
-- scripts/v03_r50_hf_cpu46_audit.py and R53 CPU40 worker: earlier HF CPU staging, source/version verification and result-recovery patterns.
-- experiments/r58_quality/hf_cpu132.sh + gold195_hf_review_cpu_worker.py: existing sync/submit/verify and genuine input_ids token-length measurement for 132 cases.
-- experiments/r58_quality/r58_hf_cpu_literary_token_preflight.py: 13-case A/B literary-judge input adapter; reuse its exact GPU judge-prompt serializer, do not fork this path again.
-- Real ms-swift label-mask/data-collator checks are separate from generic tokenizer-only token counts; never substitute one for the other.
-
-**Reuse an existing valid preflight receipt** when private input bytes, serialized prompt/template, model ID and immutable revision, tokenizer/runtime version, thinking flag, max context, reserved output tokens and audit semantics are identical. A new round name or relocated file does not justify a new paid CPU run. If a material input or parameter changes, invalidate the affected cached result and document the change; recompute only affected cases **when an independently verified per-case incremental cache exists**, otherwise recompute the validated batch. Do not claim that the current R58 all-13 batch adapter supports incremental case-level reuse.
-
-Centralize actual input_ids extraction and length/distribution checks instead of copying them into each reviewer/worker. NEVER use len(BatchEncoding) as the token count: it returns the number of encoding fields and previously produced a false 2-token result. Reject missing, malformed, zero or implausibly small token sequences; test both list and BatchEncoding-like mapping returns. Always check prompt tokens plus reserved output tokens, without silently truncating history.
-
-**Shared implementation now exists:** `src/storyforge_dataset/token_preflight.py` provides the single `input_ids`, `encode_chat`, token-length summary, and serialized-prompt identity implementation. HF staging copies the exact bytes as PRIVATE `token_core.py`. R58 pilot13 CPU/GPU adapters reuse it; new experiments must extend these components rather than clone the algorithms. See `docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`. Keep historical frozen scripts/evidence unchanged. Reuse does not itself submit a Job. For an explicitly requested workflow, reuse valid receipts first and submit only the minimum necessary HF CPU Job if needed; no separate per-Job cost authorization is required. GPU inference/training still requires separate explicit approval. Mac performs safe staging and SAFE receipt verification only; tokenizer work runs on HF CPU.
+Generic tokenizer checks do not replace real ms-swift `last_round` / data-collator label-mask validation. Neither kind of PASS independently grants literary quality admission or training authorization.
 
 ### 3. Training gate
 
