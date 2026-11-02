@@ -48,3 +48,7 @@ python3 experiments/r58_quality/gold192_story_review_packets.py \
 如需由 ChatGPT 做内容审核，可由 Owner 选择性上传这个 PRIVATE 文件；可按故事逐包审查，审核结果只输出逐案 PASS/HOLD/REJECT 和简短证据，不把原文重新发布到 GitHub。不得将未经审核的卡片自动加入训练 System。
 
 \`quality_v1_admitted=0\`、\`training_authorized=false\`、\`gpu_started=false\` 保持不变。
+
+## Gold87 历史审核层次补充
+
+对冻结 \`gold_quality_accepted_87.jsonl\` 的 87 条 metadata 统计显示：\`independent_gold_review=NOT_RUN\` 87/87、\`scores_are_subjective_single_review=true\` 87/87、Curator 评分及评语存在 87/87。README 与 index 记载的 Reviewer A/B 双 ACCEPT 是另一层选择证据；不能将其与 JSONL 中的 independent Gold review 字段等同。SAFE 统计见 \`docs/evidence/R58_GOLD87_JSONL_METADATA_INVENTORY_SAFE_20261102.json\`。本轮仍不声称原始 A/B 评语已逐条绑定。
