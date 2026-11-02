@@ -215,4 +215,17 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - Checkpoint schema 升级 v3；Prompt SHA256 绑定 quote-repair version、纠错模板、Schema 模板、候选/位置上限。v1/v2 checkpoint 不得复用。
 - HF CPU Sandbox 合成测试 13/13 PASS，覆盖跨 source/target 三个无效位置的一次批量纠错、重复/遗漏位置拒绝、候选索引边界、非引用字段不变、checkpoint v3 身份校验。测试使用虚构样本与 FakeTokenizer/FakeEngine，无真实故事、模型权重或 GPU。
 - 已获 Owner 批准使用剩余 GPU 预算最多 ¥7.77，范围仅为 A/B 各前两条的 v3 Prompt/repair 协议重评；不启动其余 11 条，不训练。原 A/B v2 输出目录只读保留，不覆盖。
-- 下一步：建立新的隔离 A/B v3 私人 STAGE，保留两边原始 blind_id 与顺序，刷新 Runner/token_core，输出目录必须为空；复用已有 token-preflight 核心与 CPU wrapper 完成 A/B 两槽真实 Token 预检。只有双 PASS 才可并行提交两组 H200 Job，累计运行时间硬上限对应 ¥7.77。
+- v3 私人 STAGE 已建立：保留 A/B 原始 blind_id 与顺序，刷新 Runner/token_core/CPU 预检适配器，输出目录为空；A/B 两槽真实 Token 预检均 PASS，并通过 `--verify-cache-only` 复核。随后按 Owner 批准的 ¥7.77 上限并行提交 A/B 各前两条 H200 Job。
+
+
+
+
+### 2026-11-02 Batch Quote Repair v2 A/B GPU Pilot 完成
+
+- Job A：`6ae802c5c78863f9c6300368`，Qwen3-32B，H200，COMPLETED，wall-clock 144.708 秒。SAFE：count=2，PASS=2/HOLD=0/REJECT=0，quote_repair_attempts=2，quote_repair_successes=2。
+- Job B：`6ae802c8c78863f9c630036a`，GLM-4-32B-0414，H200，COMPLETED，wall-clock 126.437 秒。SAFE：count=2，PASS=1/HOLD=1/REJECT=0，quote_repair_attempts=1，quote_repair_successes=1。
+- 两组共 4 个 checkpoint 均在 HF CPU Sandbox 使用 v3 Runner 的 `read_checkpoint` 独立复核：source/model/revision/slot/index/schema/policy/prompt SHA 身份通过，所有 source/target quote 严格连续子串校验通过。四条 severe flags 全 false；card_suitable=true、card_conflict=false。B case1 的 HOLD 是模型主动保留不确定性（uncertainty 非空），不是引用纠错失败或 severe flag。
+- A 两条分数：case0 (Chinese 5, Character 5, NPC initiative 4, Player agency 5, Rule fidelity 5, Continuity 5)；case1 (4,4,4,5,5,5)。B 两条均为 (4,4,3,4,4,4)。模型分数不构成质量准入。
+- A/B 完整 13 条内容集合去除 blind_id 后相同，但因独立随机顺序，pilot 前两条只有 1 条内容匹配。该配对样本两边均 PASS，A (5,5,4,5,5,5)，B (4,4,3,4,4,4)；其余各有 1 条未配对。因此不能凭一个配对样本判定模型整体优劣。
+- Job wall-clock elapsed 合计 271.145 秒（4 分 31.1 秒）；按 $5/H200-hour、USD/CNY 6.6568 估算约 ¥2.51（以 HF 最终账单为准），低于 ¥7.77 批准上限。剩余预算不自动授权扩大样本。
+- 最终状态：A 2/2 PASS；B 1 PASS + 1 HOLD；四个 checkpoint v3 有效；quality_v1_admitted=0；training_authorized=false。剩余 11 条未启动，训练未启动。
