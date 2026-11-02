@@ -86,6 +86,8 @@ def verify_source(args):
 
 
 def import_history(args):
+    if not verify_source(argparse.Namespace(repo_root=args.repo_root))["all_sources_pass"]:
+        raise ManifestError("FROZEN_SOURCE_PINS_NOT_VERIFIED")
     rows = read_jsonl(args.input)
     expected = {"gold87": 87, "gold108": 108}[args.batch]
     cases, targets, typed, events = set(), {}, set(), []
@@ -172,6 +174,7 @@ def import_exposure(args):
         raise ManifestError("PRIVATE_EXPOSURE_LEDGER_INVALID")
     if (not isinstance(receipt, dict) or receipt.get("schema") != "storyforge-r57-g3-exact-target-exposure-count-only-v1" or
         receipt.get("source_byte_pins_verified_by_cli") is not True or receipt.get("gold195_rows") != 195 or
+        receipt.get("world_alias_graph_verified") is not False or receipt.get("semantic_novelty_verified") is not False or
         receipt.get("dataset_v04_admitted") != 0 or receipt.get("training_authorized") is not False or
         receipt.get("r50_content_accessed") is not False):
         raise ManifestError("PRIVATE_EXPOSURE_RECEIPT_INVALID")
@@ -188,7 +191,9 @@ def import_exposure(args):
         lineage = row.get("historical_exact_target_sources")
         if not isinstance(lineage, list) or len(lineage) != len(set(lineage)) or any(x not in valid_sources for x in lineage):
             raise ManifestError("PRIVATE_EXPOSURE_SPLIT_LINEAGE_INVALID")
-        if row.get("world_alias_graph_verified") is not False or row.get("case_level_rights_quality_safety_verified") is not False or row.get("dataset_v04_decision") != "HOLD_NOT_REVIEWED":
+        if (not isinstance(row.get("source_story_uuid_private"), str) or not row.get("source_story_uuid_private") or
+            row.get("world_alias_graph_verified") is not False or row.get("case_level_rights_quality_safety_verified") is not False or
+            row.get("dataset_v04_decision") != "HOLD_NOT_REVIEWED"):
             raise ManifestError("PRIVATE_EXPOSURE_GATE_INVALID")
         ref = f"{source}:{ordinal}"
         if ref in seen:
