@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """R59: bounded, read-only Supabase extraction for frozen Gold192.
 
 Only Gold192 story UUIDs and target turn numbers from the private review packets
@@ -9,13 +8,13 @@ No private text, identifiers, database errors or credentials are printed.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import stat
+from collections import Counter, defaultdict
+from pathlib import Path
 
 A_SHA = '641b71e10a14318b57e69cb0239172f7016fe5b9d2149923f876308f5e6fe1e4'
 B_SHA = 'bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8'
@@ -297,7 +296,7 @@ def main() -> int:
                               + '\n').encode())
         print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - avoid leaking private database exception details
         print(json.dumps({
             'schema': 'r59_gold192_supabase_extract_safe_v1',
             'status': 'SOURCE_EXTRACT_FAILED__HOLD',
