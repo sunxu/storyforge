@@ -75,8 +75,11 @@ def index_rows(path, cohort):
     out = []
     for row in rows:
         world, digest, a, b, ident = (row.get(k, "").strip() for k in cols)
-        if not world or not SHA.fullmatch(digest) or not ident:
+        if (not SHA.fullmatch(digest) or not ident
+                or (not world and cohort != 108)):
             raise ValueError("LEGACY_IDENTITY_INVALID")
+        # Existing Gold108 binder treats missing story_id as isolated world HOLD.
+        # Preserve its target hash without guessing the missing world identity.
         out.append((world, digest, cohort, ident, a == b == "ACCEPT"))
     if len({(r[2], r[3]) for r in out}) != len(out):
         raise ValueError("LEGACY_DUPLICATE_ID")
@@ -111,10 +114,12 @@ def inspect(gold87, gold108, tasks, evidence108=None):
     lookup = defaultdict(list)
     hashes = defaultdict(set)
     for row in legacy:
-        lookup[row[:2]].append(row)
+        if row[0]:
+            lookup[row[:2]].append(row)
         hashes[row[1]].add(row[0])
     counts = Counter(gold87_rows=87, gold108_rows=108, legacy_rows=195)
     counts["legacy_double_accept_indexed"] = sum(r[4] for r in legacy)
+    counts["legacy_world_identity_missing"] = sum(not r[0] for r in legacy)
     counts["legacy_duplicate_target_keys"] = sum(max(0, len(v)-1) for v in lookup.values())
     queue = []
     seen = set()
