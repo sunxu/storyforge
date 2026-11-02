@@ -1,6 +1,6 @@
 # R58 GPU 文学评审：严格引用诊断与单次纠错规范
 
-状态：候选索引引用纠错与 SAFE 严重标记诊断均已实测；旧 Prompt B Pilot 为 1/2 checkpoint、整体 HOLD。新评审策略 v2 已明确严重标记阈值并将 Prompt SHA256 纳入 checkpoint v2；HF CPU 合成测试 13/13 PASS，尚未进行 v2 GPU 评审。
+状态：候选索引引用纠错与 SAFE 严重标记诊断均已实测；旧 Prompt B Pilot 为 1/2 checkpoint、整体 HOLD。新评审策略 v2 已明确严重标记阈值并将 Prompt SHA256 纳入 checkpoint v2；HF CPU 合成测试 13/13 PASS；A/B 两槽 Prompt v2 CPU Token 预检均 PASS（planned=2），尚未进行 v2 GPU 评审。
 
 ## 1. 目标与边界
 
@@ -130,6 +130,11 @@ A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。B 的一�
 ### 2026-11-02 评审策略 v2 与 checkpoint v2
 
 HF CPU 合成测试现为 13/13 PASS，新增覆盖三个严重标记的显式阈值、NPC 自主行动与玩家自主权的区分，以及 checkpoint 的 `review_policy_version` / `prompt_sha256` 身份绑定。新策略 v2 尚未进行 GPU 评审。此前 A/B 结果和 B 的 1 个有效 checkpoint 均属于旧 Prompt v1，仅保留作历史证据；不得复制到 v2 输出目录或用于 v2 结果统计。
+
+
+### 2026-11-02 A/B Prompt v2 CPU 预检
+
+A/B 的盲审数据包按设计采用不同 blind_id 与独立随机顺序。去除 blind_id 后，A/B 的 13 条完整记录集合完全一致（13/13），26 个 blind_id 全部唯一；不能按数组索引比较。新 A/B Prompt v2 私有 STAGE 保留各自原始顺序和 blind_id，分别在固定 vLLM digest 的 HF CPU Sandbox 中完成 Token 预检，A/Qwen 与 B/GLM 均为 PASS、planned=2、无 GPU 推理。新输出目录为空；v1 checkpoint 不得复用。
 
 ## 7. 权威实现
 
