@@ -128,7 +128,7 @@ class Gold192StoryPacketTests(unittest.TestCase):
             private = base / "private"
             private.mkdir(mode=0o700)
             output = private / "packets.jsonl"
-            receipt, packets = build_packets(*make_inputs(base))
+            _receipt, packets = build_packets(*make_inputs(base))
             write_private(output, repo, packets)
             self.assertEqual(output.stat().st_mode & 0o777, 0o600)
             with self.assertRaises(ValueError):
