@@ -52,3 +52,15 @@ python3 experiments/r58_quality/gold192_story_review_packets.py \
 ## Gold87 历史审核层次补充
 
 对冻结 \`gold_quality_accepted_87.jsonl\` 的 87 条 metadata 统计显示：\`independent_gold_review=NOT_RUN\` 87/87、\`scores_are_subjective_single_review=true\` 87/87、Curator 评分及评语存在 87/87。README 与 index 记载的 Reviewer A/B 双 ACCEPT 是另一层选择证据；不能将其与 JSONL 中的 independent Gold review 字段等同。SAFE 统计见 \`docs/evidence/R58_GOLD87_JSONL_METADATA_INVENTORY_SAFE_20261102.json\`。本轮仍不声称原始 A/B 评语已逐条绑定。
+
+## 2026-11-02 semantic review update after prior Owner attestations
+
+The existing Owner declarations were retrieved and applied: all StoryForge stories are source-authorized for the intended AI training use (original or rights-holder-authorized), and all story characters were previously attested as adults. Do not re-request these general attestations. They do not establish case-level consent to every intimate action or relationship.
+
+The 31 cases previously held only for source-rights clearance (14 Snow Reunion, 17 Cohabitation) were reviewed individually against their visible history, current User turn, target Assistant response, and export-time card. All 31 meet the six-dimension score floors in this single-AI pass: 25 are Assistant-first (antecedent still unverified), 6 are User-first. They are AI semantic PASS-only, not Quality-v1 admission.
+
+The general adult attestation clears the one Zombie case held only because the player age field was missing; no contradictory age evidence was present for that case. The War & Blood export-time card separately contains an explicit age-17 character, which conflicts with the general adult attestation. Do not rewrite that card; the 15 sibling-romance cases remain held for their separate relationship boundary, and are not reclassified on the basis of the unrelated age-17 character.
+
+Updated aggregate: 140 AI semantic PASS-only, 51 HOLD, 1 REJECT. Remaining holds: 12 identity mapping, 15 biological-sibling romance boundary, 16 character-name mapping, 7 consent boundary, 1 continuity. 132 Assistant-first antecedents remain unverified. Two independent blinded reviews are still not complete; Quality-v1=0, training unauthorized, GPU not started.
+
+SAFE receipt: docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V3.json. The 31-case private review and detailed supplement remain local/private and are not committed.
