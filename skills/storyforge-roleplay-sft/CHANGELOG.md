@@ -1,3 +1,10 @@
+# 0.1.6 — 2026-11-02
+
+- 明确三个 severe flag 的阈值，特别区分 NPC 自主行动与严重玩家自主权侵犯。
+- 将 `review_policy_version` 与 `prompt_sha256` 纳入 checkpoint v2 身份，Prompt/规则变更后拒绝复用旧 checkpoint。
+- 增加严重标记定义与 Prompt 身份回归测试；HF CPU reviewer tests 13/13 PASS。
+- 不放宽 severe gate，不将旧 A/B checkpoint 混入新 Prompt 版本；新版本 A/B pilot 尚未获 GPU 重跑授权。
+
 # 0.1.5 — 2026-11-02
 
 - 为 `RESPONSE_SEVERE_MUST_REJECT` 增加 SAFE 结构化诊断：case_index、model_decision、active_severe_flags、active_severe_flag_count。
