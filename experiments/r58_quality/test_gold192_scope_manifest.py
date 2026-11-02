@@ -4,10 +4,27 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gold192_scope_manifest import build_scope, write_manifest
+from gold192_scope_manifest import build_scope, mark_written, write_manifest
 
 
 class TestGold192ScopeManifest(unittest.TestCase):
+    def test_written_receipt_flags_are_consistent(self):
+        original = {
+            "status": "GOLD192_SCOPE_VALIDATED__QUALITY_HOLD",
+            "private_candidate_artifact_written": False,
+            "scope_receipt_only": True,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+        }
+        written = mark_written(original)
+        self.assertEqual(written["status"], "GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD")
+        self.assertTrue(written["private_candidate_artifact_written"])
+        self.assertTrue(written["private_candidate_scope_written"])
+        self.assertFalse(written["scope_receipt_only"])
+        self.assertEqual(written["quality_v1_admitted"], 0)
+        self.assertFalse(written["training_authorized"])
+        self.assertFalse(original["private_candidate_artifact_written"])
+
     def test_statuses_do_not_approve_training(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
