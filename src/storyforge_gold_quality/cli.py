@@ -84,7 +84,7 @@ def verify_source(args):
             result[name] = {"status": "HOLD_SOURCE_MISSING_OR_SYMLINK"}
             continue
         raw = path.read_bytes()
-        actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\\0" + raw).hexdigest()
+        actual = hashlib.sha1(b"blob " + str(len(raw)).encode() + b"\0" + raw).hexdigest()
         result[name] = {"status": "PASS" if actual == expected else "HOLD_BLOB_PIN_MISMATCH",
                         "row_count_expected": count, "git_blob_pin_match": actual == expected}
     return {"schema": "storyforge_gold_quality_source_verification_v1", "sources": result,
