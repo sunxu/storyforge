@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 from storyforge_gold_quality.import_ai_arbitration import import_ai_arbitration
-from storyforge_gold_quality.manifest import append_events, load_events, make_event
+from storyforge_gold_quality.manifest import append_events, load_events, make_event, safe_report
 from storyforge_gold_quality.reconcile import reconcile_gold192, CANONICAL_REVIEWER_B_SHA256
 
 A_SOURCE = "r58_reviewer_a_recovered_v6_20261102"
@@ -123,6 +123,9 @@ class AIArbitrationImportTests(unittest.TestCase):
         self.assertEqual(result["counts"]["paired_case_count"], 7)
         self.assertEqual(result["quality_v1_admitted"], 0)
         self.assertFalse(result["training_authorized"])
+        safe = safe_report(events)
+        self.assertEqual(safe["decision_counts"], {"HOLD": 11, "PASS": 7})
+        self.assertEqual(safe["ai_arbitration_decision_counts"], {"HOLD": 5, "PASS": 6})
 
     def test_report_tampering_fails_before_append(self):
         self.input.write_text(self.input.read_text() + " ", encoding="utf-8")
