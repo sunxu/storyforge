@@ -138,8 +138,10 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             validate_response(bad, row)
         self.assertEqual(caught.exception.decision, "PASS")
         self.assertEqual(caught.exception.active_flags, ("hard_fact_or_ban",))
+        caught.exception.case_index = 1
         safe = safe_failure_result(caught.exception)
         self.assertEqual(safe["reason_code"], "RESPONSE_SEVERE_MUST_REJECT")
+        self.assertEqual(safe["case_index"], 1)
         self.assertEqual(safe["model_decision"], "PASS")
         self.assertEqual(safe["active_severe_flags"], ["hard_fact_or_ban"])
         self.assertEqual(safe["active_severe_flag_count"], 1)
