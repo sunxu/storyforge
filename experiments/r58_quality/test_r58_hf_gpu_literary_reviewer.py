@@ -259,14 +259,14 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         target = quote_candidates(row, "specific_target_quotes")
         selection = {"repairs": [
             {"field": "specific_source_quotes", "quote_index": 0, "candidate_index": 0},
-            {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 1},
+            {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 0},
             {"field": "specific_target_quotes", "quote_index": 0, "candidate_index": 0},
         ]}
         repaired = apply_quote_repairs(
             original, row, error,
             {"specific_source_quotes": source, "specific_target_quotes": target},
             selection)
-        self.assertEqual(repaired["specific_source_quotes"], [source[0], source[1]])
+        self.assertEqual(repaired["specific_source_quotes"], [source[0], source[0]])
         self.assertEqual(repaired["specific_target_quotes"], [target[0]])
         for key in REVIEW_KEYS - {"specific_source_quotes", "specific_target_quotes"}:
             self.assertEqual(repaired[key], original[key])
