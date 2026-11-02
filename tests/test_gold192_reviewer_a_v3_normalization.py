@@ -101,7 +101,7 @@ class NormalizeReviewerAV3Tests(unittest.TestCase):
             "case_level_scored_pass": 31,
             "explicit_hold_group_without_scores": 51,
             "explicit_reject_group_without_scores": 1,
-            "aggregate_complement_pass_pending_case_level_evidence": 109,
+            "aggregate_complement_pass_pending_case_evidence": 109,
         })
         self.assertEqual(report["strict_ab_score_comparison_eligible"], 31)
         self.assertEqual(safe["aggregate_only_b_nonpass_priority_count"], 7)
