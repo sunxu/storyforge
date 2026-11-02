@@ -44,6 +44,22 @@ jobs:
           assert result["private_values_emitted"] is False
           print("Gold87/Gold108 immutable Git blob pins: PASS")
           PY
+      - name: Exercise actual SAFE legacy adapters
+        run: |
+          for check in gold87-legacy-index gold108-legacy-binding gold195-target-source; do
+            storyforge-gold-quality run-check --repo-root "$PWD" --check "$check" > "/tmp/gold-adapter-${check}.json"
+            python - "$check" <<'PY'
+          import json, sys
+          from pathlib import Path
+          check = sys.argv[1]
+          report = json.loads(Path(f"/tmp/gold-adapter-{check}.json").read_text())
+          assert report["status"] == "READ_ONLY_SAFE_CHECK_PASS__NO_ADMISSION"
+          assert report["quality_v1_admitted"] == 0
+          assert report["training_authorized"] is False
+          assert report["private_values_emitted"] is False
+          print(f"{check}: SAFE PASS, no admission")
+          PY
+          done
       - name: Run unified pipeline synthetic tests
         run: python -m unittest discover -s tests -p 'test_gold_quality_pipeline.py' -v
       - name: Run SAFE adapter synthetic tests
