@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import pathlib
 import tempfile
+import types
 import unittest
-from pathlib import Path
-from unittest.mock import patch
-from types import SimpleNamespace
+import unittest.mock
 
 from storyforge_gold_quality.cli import import_reviewer_b
 from storyforge_gold_quality.manifest import load_events
@@ -48,7 +48,7 @@ def source_bytes():
 class ReviewerBImportTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
-        root = Path(self.temp.name)
+        root = pathlib.Path(self.temp.name)
         self.repo = root / "repo"
         self.repo.mkdir()
         self.private = root / "private"
@@ -58,7 +58,7 @@ class ReviewerBImportTests(unittest.TestCase):
         self.raw = source_bytes()
         self.source.write_bytes(self.raw)
         self.digest = hashlib.sha256(self.raw).hexdigest()
-        self.args = SimpleNamespace(
+        self.args = types.SimpleNamespace(
             input=self.source, manifest=self.manifest, repo_root=self.repo,
         )
 
@@ -66,7 +66,7 @@ class ReviewerBImportTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_imports_exactly_192_and_is_idempotent(self):
-        with patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", self.digest):
+        with unittest.mock.patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", self.digest):
             result = import_reviewer_b(self.args)
             again = import_reviewer_b(self.args)
         self.assertEqual(result["events_appended"], 192)
@@ -77,7 +77,7 @@ class ReviewerBImportTests(unittest.TestCase):
 
     def test_source_pin_mismatch_fails_closed(self):
         with (
-            patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", "0" * 64),
+            unittest.mock.patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", "0" * 64),
             self.assertRaisesRegex(ValueError, "REVIEWER_B_SOURCE_PIN_MISMATCH"),
         ):
             import_reviewer_b(self.args)
