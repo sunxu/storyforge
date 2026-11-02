@@ -169,3 +169,11 @@ Owner 已批准本次 B 组 H200 重试总预算上限 ¥66.57（按 H200 $5/h�
 - HF CPU 合成测试 12/12 PASS，覆盖 PASS/HOLD 与 active flag 的不一致、REJECT 与 active flag 的合法组合及 SAFE 隐私边界。
 - Skill 更新至 v0.1.5；完整规则更新至 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`。
 - 尚未创建新的私有 STAGE，尚未提交新 GPU Job；第 1 条 checkpoint 保留不动，剩余 11 条不启动，训练仍未授权。
+
+### 2026-11-02 第三版 B case2 SAFE 诊断 Job
+
+- Job `6ae7f327c78863f9c62ffcca` 仅处理 case_index=1；输入与输出为独立 retry3 目录，复用并重新验证 case0 的原始有效 checkpoint，不覆盖此前目录。
+- 新版 SAFE 成功输出：`case_index=1`、`model_decision=HOLD`、`active_severe_flags=[serious_player_agency]`、`active_severe_flag_count=1`。未写入 checkpoint_01，Job 按原规则 HOLD 退出。
+- 内部可见文本核查未发现目标回复替玩家决定台词、意愿或关键行动；当前假设是模型可能把 NPC 自主结束话题误判为严重玩家自主权侵犯。由于原始模型解释未保存，该假设未被证实，不得修改本轮结果。
+- 本次 H200 运行约 109 秒；截至此 Job，本轮 H200 累计约 334.8 秒，按 $5/h、汇率 6.6568 估算约 ¥3.10（以 HF 最终账单为准），低于 Owner 批准的 ¥66.57 上限。
+- 不再对同一旧 Prompt 做自动重试。若要改变严重标记定义或 Prompt，必须先冻结新 Prompt 版本，并重新评估 A/B 的对应 pilot 样本，不能把不同 Prompt 的结果混为同一轮。当前 A/B 原结果和 B case0 checkpoint 保留；剩余 11 条不启动，训练未授权。
