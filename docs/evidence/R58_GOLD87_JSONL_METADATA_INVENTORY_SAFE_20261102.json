@@ -1,0 +1,31 @@
+{
+  "schema": "r58_gold87_jsonl_metadata_inventory_safe_v1",
+  "date": "2026-11-02",
+  "source": "evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
+  "rows": 87,
+  "metadata_counts": {
+    "independent_gold_review_NOT_RUN": 87,
+    "scores_are_subjective_single_review_true": 87,
+    "training_admission_PENDING_NOT_APPROVED": 87,
+    "split_null": 87,
+    "review_notes_present": 87,
+    "curator_scores_present": 87
+  },
+  "story_card_status": {
+    "POSTHOC_SNAPSHOT_EXCLUDED__TARGET_TIME_VERSION_UNVERIFIED": 39,
+    "EXACT_TARGET_TIME_VERSION_UNVERIFIED__POSTHOC_STATE_EXCLUDED": 38,
+    "EXACT_TARGET_TIME_UNVERIFIED__POSTHOC_STATE_EXCLUDED": 10
+  },
+  "player_agency_check": {
+    "NO_NEW_SUBSTANTIVE_PLAYER_DECISION__LOCAL_ONLY": 18,
+    "NO_NEW_SUBSTANTIVE_PLAYER_DECISION": 21,
+    "NO_UNAUTHORIZED_MAJOR_PLAYER_DECISION__LOCAL_ONLY": 38,
+    "LOCAL_ONLY__INDEPENDENT_REVIEW_PENDING": 10
+  },
+  "interpretation": "README and gold_87_index record the selection basis as Reviewer A/B double ACCEPT. JSONL metadata records independent_gold_review=NOT_RUN and subjective single-review curator scores. These can represent distinct review layers; this inventory does not reconcile them or infer that A/B review was absent.",
+  "original_reviewer_a_b_text_bound": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "gpu_started": false,
+  "private_values_emitted": false
+}
