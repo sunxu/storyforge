@@ -6,6 +6,7 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
+from .adapters import available_checks, run_safe_check
 from .manifest import (
     ManifestError,
     append_events,
@@ -67,7 +68,8 @@ def read_jsonl(path):
 def inventory(_args):
     return {"schema": "storyforge_gold_quality_inventory_v1",
             "commands": ["inventory", "verify-source", "import-history", "import-exposure",
-                         "append-review", "append-exclusion", "validate", "report-safe"],
+                         "append-review", "append-exclusion", "run-check", "validate", "report-safe"],
+            "read_only_safe_checks": list(available_checks()),
             "registered_tools": [{"id": x[0], "path": x[1], "io_contract": x[2], "tests": x[3]}
                                  for x in TOOLS],
             "frozen_sources": {k: {"path": v[0], "git_blob_sha1": v[1], "rows": v[2]}
@@ -286,6 +288,11 @@ def main():
     verify_parser = sub.add_parser("verify-source")
     verify_parser.add_argument("--repo-root", type=Path, required=True)
     verify_parser.set_defaults(func=verify_source)
+
+    check_parser = sub.add_parser("run-check")
+    check_parser.add_argument("--check", choices=available_checks(), required=True)
+    check_parser.add_argument("--repo-root", type=Path, required=True)
+    check_parser.set_defaults(func=lambda a: run_safe_check(a.repo_root, a.check))
 
     commands = (("import-history", import_history), ("import-exposure", import_exposure),
                 ("append-review", append_review), ("append-exclusion", append_exclusion))
