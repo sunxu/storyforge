@@ -12,6 +12,7 @@ on:
       - "tests/test_gold192_reconciliation.py"
       - "tests/test_gold192_reviewer_b_import.py"
       - "tests/test_gold192_reviewer_a_recovery.py"
+      - "tests/test_gold192_arbitration_queue.py"
       - "scripts/r57_*.py"
       - "tests/test_r57_*.py"
       - "pyproject.toml"
@@ -35,7 +36,7 @@ jobs:
           python -m pip install -e .
           python -m pip install pytest ruff
       - name: Lint unified pipeline
-        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py
+        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py
       - name: Verify frozen source blob pins
         run: |
           storyforge-gold-quality verify-source --repo-root "$PWD" > /tmp/gold-quality-source-safe.json
@@ -73,5 +74,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_gold192_reviewer_b_import.py' -v
       - name: Run Reviewer A recovery synthetic tests
         run: python -m unittest discover -s tests -p 'test_gold192_reviewer_a_recovery.py' -v
+      - name: Run private arbitration queue synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_arbitration_queue.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v
