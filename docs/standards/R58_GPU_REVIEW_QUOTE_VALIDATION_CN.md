@@ -1,6 +1,6 @@
 # R58 GPU 文学评审：严格引用诊断与单次纠错规范
 
-状态：实现已提交；合成回归测试通过；B 槽位 GPU 重试尚未获新的费用批准。
+状态：候选索引引用纠错已实测成功；B Pilot 1/2 checkpoint 有效、整体 HOLD；严重标记 SAFE 诊断已增强并通过 HF CPU 合成测试，尚未对第二条重新推理。
 
 ## 1. 目标与边界
 
@@ -57,6 +57,19 @@ SAFE 汇总只包含 quote_repair_attempts / quote_repair_successes，不包含�
 
 诊断字段只帮助定位，不改变 HOLD/PASS/REJECT 语义。
 
+### 4.1 严重标记与 decision 不一致的 SAFE 诊断
+
+`RESPONSE_SEVERE_MUST_REJECT` 的触发条件是至少一个 `severe_flags` 值为 true，而 `decision` 不是 `REJECT`。旧版 SAFE 只记录错误码，不能据此知道是哪一个标记或模型给出了什么 decision；旧 Job 的原始模型响应未持久化，因此不得回推或猜测。
+
+新版 Runner 使用专用 `SevereDecisionMismatch`，SAFE 仅输出以下白名单元数据：
+
+- `case_index`：0-based 样本索引。
+- `model_decision`：仅允许 `PASS` / `HOLD` / `REJECT` 枚举值。
+- `active_severe_flags`：仅允许 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`。
+- `active_severe_flag_count`：上述标记数量。
+
+不得输出模型原始 JSON、文学评价、故事正文、引用或私人路径。该诊断不修改 decision，不清除 severe flag，不把 HOLD/PASS 自动升级为 REJECT。下一次有界推理若再次触发该错误，可用这组元数据判断具体是哪类标记造成不一致；之后仍需人工按原始质量标准解释，不能仅凭标记名称认定样本确实有严重缺陷。
+
 ## 5. 合成回归测试
 
 experiments/r58_quality/test_r58_hf_gpu_literary_reviewer.py 必须覆盖：
@@ -83,6 +96,11 @@ experiments/r58_quality/test_r58_hf_gpu_literary_reviewer.py 必须覆盖：
 **B Pilot 最终状态：1/2 checkpoint 有效，整体未完成，不能进入剩余 11 条。** Owner 批准的 ¥66.57 预算内，本次所有 H200 Job 累计约 225.8 秒（包括两次启动失败的短时运行），按 $5/h 与 6.6568 汇率估算约 ¥2.09；估算不等于最终账单。到此停止本次 GPU 重试，不再自动提交 Job。
 
 A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。B 的一个 PASS checkpoint 也不代表整个 Pilot PASS；任何 HOLD 均不构成质量准入；本工作不授予训练授权。
+
+
+### 2026-11-02 严重标记诊断增强
+
+第二条旧回执只包含 `RESPONSE_SEVERE_MUST_REJECT`，没有保留模型 decision 和 active flag 名称；原始输出未持久化，无法从旧 Job 还原。已在 Runner 中新增 `SevereDecisionMismatch`，仅把 case_index、model_decision、active_severe_flags、active_severe_flag_count 写入 SAFE。HF CPU 合成测试 12/12 PASS，覆盖 PASS/HOLD + active flag 应 HOLD、REJECT + active flag 可通过，以及 SAFE 不泄露正文。规则本身未放宽，尚未再次启动 GPU。
 
 ## 7. 权威实现
 
