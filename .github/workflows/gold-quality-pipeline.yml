@@ -9,6 +9,7 @@ on:
       - "src/storyforge_gold_quality/**"
       - "tests/test_gold_quality_pipeline.py"
       - "tests/test_gold_quality_adapters.py"
+      - "tests/test_gold192_reconciliation.py"
       - "scripts/r57_*.py"
       - "tests/test_r57_*.py"
       - "pyproject.toml"
@@ -32,7 +33,7 @@ jobs:
           python -m pip install -e .
           python -m pip install pytest ruff
       - name: Lint unified pipeline
-        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py
+        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py
       - name: Verify frozen source blob pins
         run: |
           storyforge-gold-quality verify-source --repo-root "$PWD" > /tmp/gold-quality-source-safe.json
@@ -64,5 +65,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_gold_quality_pipeline.py' -v
       - name: Run SAFE adapter synthetic tests
         run: python -m unittest discover -s tests -p 'test_gold_quality_adapters.py' -v
+      - name: Run Gold192 disagreement synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_reconciliation.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v
