@@ -168,7 +168,7 @@ def run(repo: Path, private_root: Path, packets_path: Path,
     if baseline_safe.get("historical_ever_validation_exact") != 24:
         raise ValueError("GOLD195_BASELINE_VALIDATION_EXPOSURE_MISMATCH")
 
-    train = set().union(*(r["target"] for r in parsed[name] for name in TRAIN_IDS))
+    train = set().union(*(r["target"] for name in TRAIN_IDS for r in parsed[name]))
     validation = set().union(*(r["target"] for name in VALIDATION_IDS for r in parsed[name]))
     test, test_sha = read_v03_test(repo)
 
