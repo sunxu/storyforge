@@ -110,6 +110,17 @@ def build_packets(tasks_path, queue_path, scope_path):
         if task.get("source_history_starts_with_assistant") is not assistant_first:
             raise ValueError("PACKET_HISTORY_START_INVALID")
         cohort = "gold108" if reason == GOLD108_REASON else "gold87"
+        instructions = task.get("review_instructions")
+        expected_dimensions = {
+            "chinese_prose", "character_consistency", "npc_initiative",
+            "player_agency", "rule_fidelity", "narrative_continuity",
+        }
+        if (not isinstance(instructions, dict)
+                or set(instructions.get("dimensions", {})) != expected_dimensions
+                or set(instructions.get("dimension_floors", {})) != expected_dimensions
+                or instructions.get("two_independent_blinded_reviews_required") is not True
+                or instructions.get("source_world_card_is_unapproved") is not True):
+            raise ValueError("PACKET_REVIEW_RUBRIC_INVALID")
         legacy_state = (
             "GOLD108_BASIC_HISTORICAL_EVIDENCE_BOUND__NEW_CONTEXT_REVIEW_REQUIRED"
             if cohort == "gold108"
@@ -127,6 +138,13 @@ def build_packets(tasks_path, queue_path, scope_path):
                 "world_card_approved_for_system": False,
                 "world_card_review_status": "UNREVIEWED",
                 "review_protocol": task.get("review_instructions"),
+                "review_protocol_addendum": {
+                    "card_is_export_snapshot_not_historical_request": True,
+                    "do_not_assume_card_was_available_at_target_time": True,
+                    "review_each_target_against_visible_history_and_card": True,
+                    "preserve_leading_assistant_context_without_silent_deletion": True,
+                    "world_card_approval_is_separate_from_sample_quality": True,
+                },
                 "cases": [],
             }
             worlds[story] = group
@@ -143,6 +161,17 @@ def build_packets(tasks_path, queue_path, scope_path):
             "target_assistant_text": target,
             "target_sha256": task["target_sha256"],
             "review_status": "UNREVIEWED",
+            "review_focus": (
+                [
+                    "Determine whether the leading Assistant message has a grounded antecedent",
+                    "Check whether the target relies on facts absent from the visible history or card",
+                    "Check player agency and whether the response invents player intent",
+                    "Do not delete, rewrite, or silently reclassify the leading Assistant message",
+                ] if assistant_first else [
+                    "Check target against current User input, visible history, and unapproved card",
+                    "Check character relationships, hard rules, chronology, and player agency",
+                ]
+            ),
         }
         group["cases"].append(case)
         counts[cohort + "_cases"] += 1
@@ -239,7 +268,7 @@ def main():
             "PACKET_SCOPE_BINDING_INVALID", "PACKET_EXCLUSION_REASON_INVALID",
             "PACKET_CANDIDATE_STATE_INVALID", "PACKET_MESSAGE_SHAPE_INVALID",
             "PACKET_INPUT_HASH_INVALID", "PACKET_TARGET_HASH_INVALID",
-            "PACKET_CARD_JSON_INVALID", "PACKET_CARD_OR_REVIEW_STATE_INVALID",
+            "PACKET_CARD_JSON_INVALID", "PACKET_CARD_OR_REVIEW_STATE_INVALID", "PACKET_REVIEW_RUBRIC_INVALID",
             "PACKET_WORLD_ID_INVALID", "PACKET_HISTORY_SYSTEM_INVALID",
             "PACKET_HISTORY_ROLE_INVALID", "PACKET_HISTORY_START_INVALID",
             "PACKET_WORLD_CARD_CONFLICT", "PACKET_FINAL_COUNTS_INVALID",
