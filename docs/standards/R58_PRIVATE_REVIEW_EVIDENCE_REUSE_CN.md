@@ -97,29 +97,41 @@ $HOME/.local/share/storyforge/r58/
 
 迁移约定为 `mv -n`、保留文件名和目录结构、不覆盖已有文件；目录权限 0700，私人文件权限 0600。旧 `~/storyforge-review-private` 是迁移前目录，不再作为正常工作目录或静默 fallback。
 
-**Gold195 六维审核任务路径状态：HOLD / 尚未定位。**
+**Gold195 六维审核任务路径：已由 Owner 本地只读核验确认（2026-11-02）。**
 
-历史会话记录的任务生成输出路径是：
+当前实际使用路径：
 
 ```text
-$HOME/storyforge-review-private/gold195-review-tasks-v1.jsonl
+$HOME/.local/share/storyforge/r58/gold195-review-tasks-v1.jsonl
 ```
 
-当时 SAFE 输出报告已准备 195 条任务、输出权限 0600。该记录证明任务曾按此路径写出，不证明它后来已迁移。2026-11-02 用户实际检查新目录下的 `$HOME/.local/share/storyforge/r58/gold195-review-tasks-v1.jsonl`，系统返回 `No such file or directory`。因此不得再把这个新路径写成已确认存在的文件，也不得仅因路径缺失就重新生成或覆盖审核任务。
+Owner 运行 `private_review_evidence_reuse.py` 成功读取该文件，核验了 195 条当前任务。历史生成路径曾为旧目录 `$HOME/storyforge-review-private/gold195-review-tasks-v1.jsonl`；本次不再将迁移后路径标记为未定位，也不据此重新生成任务。
 
-**Grok Web Pilot Manifest 路径状态：预期路径，未验证存在。**
+**Grok Web Pilot Manifest：已由同一次 Owner 本地只读核验确认（2026-11-02）。**
 
-历史生成命令的输出目录为 `$HOME/storyforge-review-private/grok-web-pilot-v1/`，Manifest 文件名为 `review-manifest.private.json`。按目录迁移时保留结构的约定，其预期新路径是：
+实际使用路径：
 
 ```text
 $HOME/.local/share/storyforge/r58/grok-web-pilot-v1/review-manifest.private.json
 ```
 
-但历史记录没有提供该文件迁移后的独立存在性检查；不得将预期路径表述为已验证路径。
+Manifest 含 3 个历史案例；3/3 均与当前 195 条任务精确匹配。历史审核输出由后续既有验证器/结案工具读取，不由身份复用核验器读取。
 
-历史伴随材料还包括 `gold195-card-snapshots-v1.json`、`gold195-card-gold-review-v1.jsonl`、`gold195-review-tasks-user-first-v1.jsonl`、`case02-final-disposition-v1.json`，以及 `grok-web-pilot-v1/`、`grok-web-followup-v1/` 子目录中的初轮审核、仲裁和重审材料。该清单只作为历史文件名线索，不证明每个文件都已迁移或当前存在。
+**Grok Follow-up 与 Case02 disposition：已由结案命令成功读取并验证（2026-11-02）。**
 
-### 5.2 只读定位步骤
+```text
+$HOME/.local/share/storyforge/r58/grok-web-followup-v1/
+$HOME/.local/share/storyforge/r58/case02-final-disposition-v1.json
+```
+
+以上路径状态仅表示 Owner 本地命令成功读取并完成对应 SAFE 校验；GitHub 仓库本身没有访问 Mac 私人文件系统。对应 SAFE 回执见：
+
+- `docs/evidence/R58_GOLD195_PRIVATE_REVIEW_EVIDENCE_REUSE_SAFE_20261102.json`
+- `docs/evidence/R58_GOLD195_GROK_WEB_PILOT_CLOSURE_SAFE_20261102.json`
+
+历史伴随材料还包括 `gold195-card-snapshots-v1.json`、`gold195-card-gold-review-v1.jsonl`、`gold195-review-tasks-user-first-v1.jsonl` 等。该清单只作为历史文件名线索，不证明每个伴随文件均已迁移或当前存在。
+
+### 5.2 只读定位步骤（路径变化或未确认时）\n\n当前已确认路径见 5.1。只有文件再次移动、权限变化或路径不再可用时，才重新执行以下只读定位；不得因为历史文档曾记录 HOLD 就重复迁移或生成任务。
 
 在执行身份复用核验前，先只读定位文件，不移动、不改名、不生成、不覆盖：
 
@@ -203,3 +215,42 @@ python3 experiments/r58_quality/private_review_evidence_reuse.py \
 以下边界仍列为后续测试合同，不得误报为当前已覆盖：符号链接输入、硬链接输入、父目录权限、文件大小上限、并发替换/读取竞态、Manifest Schema 与任务 Schema 的完整负例矩阵。
 
 测试不访问生产数据库、Grok、HF、GPU、R50 或真实私人文件。
+
+
+## 9. 2026-11-02 Owner 本地 SAFE 结果
+
+### 9.1 历史身份复用核验
+
+Owner 在 Mac 本地成功运行身份复用核验器，SAFE 回执：
+
+- `status=EXACT_REUSE_MATCH__NO_QUALITY_ADMISSION`
+- 历史 Manifest 案例：3；精确匹配：3；不匹配：0。
+- 当前任务：195；没有对应历史 Manifest 条目的当前任务：192。
+- 身份复用核验器没有读取历史 Reviewer 输出，没有重新验证评审判断，没有写文件或调用网络。
+- 192 条仅表示不在这份 3 案例 Grok Manifest 中，**不是 192 条质量失败，也不代表必须重新向 Grok 外发审核**。
+
+原始 SAFE 回执：`R58_GOLD195_PRIVATE_REVIEW_EVIDENCE_REUSE_SAFE_20261102.json`。
+
+### 9.2 三案 Grok Web Pilot 结案
+
+Owner 随后成功运行现有 `gold195_grok_web_pilot_closure.py`，状态：
+
+`THREE_CASE_GROK_WEB_PILOT_CLOSED__CASE02_HOLD`
+
+- 3 条 Gold；原始网页评审 6 份；定向后续评审 3 份。
+- Case01：`DUAL_PROVISIONAL_REVIEW_PASS__SEMANTIC_HOLD`。
+- Case02：`SEVERE_DISPUTE_UNRESOLVED__HOLD`。
+- Case03：`TWO_RETRIES_PROVISIONAL_PASS__SEMANTIC_HOLD`。
+- 双评审暂定通过：2 案；严重问题争议未决：1 案。
+- 初轮出现 2 份格式/引用有效性问题，Case03 两份后续输出通过结构和引用验证。
+- 原始评审未修改；没有证明评审者独立性、中文文学质量、世界卡语义或世界组件隔离。
+- `quality_v1_admitted=0`、`gpu_authorized=false`、`hf_job_started=false`、`r50_accessed=false`。
+
+原始 SAFE 回执：`R58_GOLD195_GROK_WEB_PILOT_CLOSURE_SAFE_20261102.json`。
+
+### 9.3 范围与下一步
+
+- 本轮仅覆盖原先获准的 3 条；其余 60 条 User-first 任务没有获得 Grok 外发授权。
+- 132 条 Assistant-first 的上下文语义策略仍未解决；运行时 Collator 兼容性通过不能替代对是否丢失必要历史事实的语义判断。
+- 不再为追求 3/3 暂定通过而重复 Grok 审核。
+- 下一项低成本工作应先盘点 Gold87 / Gold108 历史双审证据能否按 `story_id + target_sha256` 与当前任务建立**目标级、部分范围**对应。旧五维评分不能直接映射为当前六维 PASS，目标哈希匹配也不证明新离线卡片或完整输入上下文已审核。此盘点必须单独实现/验证，不能扩大现有三元组输入身份核验器的语义。

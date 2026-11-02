@@ -1,0 +1,21 @@
+{
+  "case_states": {
+    "EXACT_MATCH": 3
+  },
+  "current_tasks_checked": 195,
+  "exact_matches": 3,
+  "files_written": false,
+  "historical_cases_checked": 3,
+  "historical_review_outputs_read": false,
+  "literary_quality_verified": false,
+  "mismatches": 0,
+  "network_called": false,
+  "private_values_emitted": false,
+  "quality_v1_admitted": 0,
+  "r50_accessed": false,
+  "reviewer_judgment_revalidated": false,
+  "schema": "r58_private_review_evidence_reuse_safe_v1",
+  "status": "EXACT_REUSE_MATCH__NO_QUALITY_ADMISSION",
+  "training_authorized": false,
+  "unmatched_current_tasks": 192
+}

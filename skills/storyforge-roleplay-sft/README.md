@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.11
+# R58 RolePlay → StoryForge SFT Skill v0.1.12
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -42,4 +42,4 @@ python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.
 
 ## 当前 R58 状态（2026-11-02）
 
-Batch Quote Repair v2 / checkpoint v3 A/B GPU Pilot 已完成：A/Qwen 2/2 PASS，B/GLM 1 PASS + 1 HOLD；4 个 checkpoint 通过 CPU 身份和引用复核。只有一个共同配对样本，不能据此判断模型整体优劣。Quality-v1 admission=0，训练未授权。
+Batch Quote Repair v2 / checkpoint v3 A/B GPU Pilot 已完成：A/Qwen 2/2 PASS，B/GLM 1 PASS + 1 HOLD；4 个 checkpoint 通过 CPU 身份和引用复核。只有一个共同配对样本，不能据此判断模型整体优劣。Gold195 Grok Web 三案试点也已结案：2 案双审暂定通过但语义仍 HOLD，Case02 严重争议未决；3/3 历史 Manifest 身份匹配，192 条不在该 Manifest 中。未证明文学质量/审核者独立性/世界隔离；其余 60 条没有 Grok 外发授权，132 条 Assistant-first 语义策略未解决。Quality-v1 admission=0，训练未授权。

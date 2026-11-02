@@ -1,3 +1,11 @@
+# 0.1.12 — 2026-11-02
+
+- 根据 Owner 本地只读 SAFE 回执，将 Gold195 任务、Grok Pilot Manifest、Follow-up 和 Case02 disposition 路径从“未确认”更新为已由实际命令读取验证。
+- 记录历史 Manifest 3/3 精确匹配当前 195 条任务；192 条仅为该 Manifest 未覆盖项，不是质量失败或自动外发授权。
+- 记录三案 Grok Web Pilot 结案：Case01/03 双审暂定通过但语义 HOLD，Case02 严重问题争议未决；Quality-v1 admission 仍为 0。
+- 新增两份不含私人正文、ID 或哈希的 SAFE 证据回执；更新技术规范、Skill、README 与合成契约测试。
+- 没有读取 Mac 私人文件正文；只根据 Owner 提供的 SAFE 结果更新仓库记录。未修改原始评审、Gold、训练数据或 GPU Job；未访问 R50，未授权扩样或训练。
+
 # 0.1.11 — 2026-11-02
 
 - 纠正 v0.1.10 将 Gold195 任务迁移目标路径误写为已确认存在的问题。

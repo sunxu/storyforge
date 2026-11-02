@@ -15,7 +15,7 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 class ReuseContractTests(unittest.TestCase):
     def test_skill_owns_execution_order_and_links_authoritative_specs(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.1.11", source)
+        self.assertIn("version: 0.1.12", source)
         for phrase in (
             "查找已有工具和证据",
             "优先复用",
@@ -95,17 +95,26 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("不得写死批次大小", reuse_spec)
         self.assertIn("EXACT_REUSE_MATCH__NO_QUALITY_ADMISSION", reuse_spec)
         self.assertIn("$HOME/.local/share/storyforge/r58", reuse_spec)
-        self.assertIn("HOLD / 尚未定位", reuse_spec)
-        self.assertIn("No such file or directory", reuse_spec)
+        self.assertIn("Gold195 六维审核任务路径：已由 Owner 本地只读核验确认", reuse_spec)
+        self.assertIn("192 条仅表示不在这份 3 案例 Grok Manifest 中", reuse_spec)
         self.assertIn("只读定位步骤", reuse_spec)
         self.assertIn("find", reuse_spec)
-        self.assertIn("预期新路径", reuse_spec)
+        self.assertIn("THREE_CASE_GROK_WEB_PILOT_CLOSED__CASE02_HOLD", reuse_spec)
         self.assertIn("不得重新生成任务", reuse_spec)
+        self.assertTrue((REPO_ROOT / "docs/evidence/R58_GOLD195_PRIVATE_REVIEW_EVIDENCE_REUSE_SAFE_20261102.json").is_file())
+        self.assertTrue((REPO_ROOT / "docs/evidence/R58_GOLD195_GROK_WEB_PILOT_CLOSURE_SAFE_20261102.json").is_file())
+        reuse_receipt = json.loads((REPO_ROOT / "docs/evidence/R58_GOLD195_PRIVATE_REVIEW_EVIDENCE_REUSE_SAFE_20261102.json").read_text(encoding="utf-8"))
+        closure_receipt = json.loads((REPO_ROOT / "docs/evidence/R58_GOLD195_GROK_WEB_PILOT_CLOSURE_SAFE_20261102.json").read_text(encoding="utf-8"))
+        self.assertEqual(reuse_receipt["exact_matches"], 3)
+        self.assertEqual(reuse_receipt["current_tasks_checked"], 195)
+        self.assertEqual(reuse_receipt["unmatched_current_tasks"], 192)
+        self.assertEqual(closure_receipt["status"], "THREE_CASE_GROK_WEB_PILOT_CLOSED__CASE02_HOLD")
+        self.assertEqual(closure_receipt["quality_v1_admitted"], 0)
 
     def test_readme_and_changelog_document_the_new_responsibilities(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("v0.1.11", readme)
+        self.assertIn("v0.1.12", readme)
         self.assertIn("固定执行顺序", readme)
         self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
         self.assertIn("R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md", readme)
