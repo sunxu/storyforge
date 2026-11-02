@@ -51,7 +51,7 @@ SCORES = {
 SEVERE = ("serious_player_agency", "hard_fact_or_ban", "safety_exclusion")
 SEVERE_DEFINITIONS = {
     "serious_player_agency": (
-        "仅当目标回复明确、实质性地替玩家角色决定关键行动、核心选择、"
+        "仅当目标回复明确、实质性地替玩家角色决定关键行动、关键选择、"
         "台词、意愿、同意或拒绝时为 true。NPC 自己的行动、心理、提问、"
         "改变话题、结束自己的话题、没有等待玩家回答，或对玩家已表达内容"
         "作出反应，不自动构成玩家自主权侵犯。轻微问题或证据不确定时为 false；"
