@@ -18,6 +18,7 @@ from .manifest import (
     validate_manifest,
 )
 from .reconcile import reconcile_gold192
+from .import_ai_arbitration import import_ai_arbitration
 
 SOURCE_PINS = {
     "gold87": ("evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
@@ -71,7 +72,7 @@ def read_jsonl(path):
 def inventory(_args):
     return {"schema": "storyforge_gold_quality_inventory_v1",
             "commands": ["inventory", "verify-source", "import-history", "import-exposure",
-                         "append-review", "append-exclusion", "import-reviewer-b", "run-check", "reconcile-gold192", "validate", "report-safe"],
+                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "validate", "report-safe"],
             "read_only_safe_checks": list(available_checks()),
             "registered_tools": [{"id": x[0], "path": x[1], "io_contract": x[2], "tests": x[3]}
                                  for x in TOOLS],
@@ -415,6 +416,14 @@ def main():
                                   choices=("INCREMENTAL_REVIEW", "BLIND_REVIEW", "ADJUDICATION"),
                                   default="INCREMENTAL_REVIEW")
         command.set_defaults(func=func)
+
+    arbitration_parser = sub.add_parser("import-ai-arbitration")
+    arbitration_parser.add_argument("--input", type=Path, required=True)
+    arbitration_parser.add_argument("--safe-summary", type=Path, required=True)
+    arbitration_parser.add_argument("--queue", type=Path, required=True)
+    arbitration_parser.add_argument("--manifest", type=Path, required=True)
+    arbitration_parser.add_argument("--repo-root", type=Path, required=True)
+    arbitration_parser.set_defaults(func=import_ai_arbitration)
 
     review_parser = sub.add_parser("reconcile-gold192")
     review_parser.add_argument("--manifest", type=Path, required=True)
