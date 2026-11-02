@@ -84,11 +84,16 @@ class ReviewerARecoveryTests(unittest.TestCase):
             result = module.recover_reviewer_a(self.args)
             again = module.recover_reviewer_a(self.args)
         self.assertEqual(result["scored_pass_cases_imported"], 79)
-        self.assertEqual(result["events_appended"], 79)
+        self.assertEqual(result["events_appended"], 83)
+        self.assertEqual(result["historical_reject_evidence_imported"], 4)
         self.assertEqual(again["events_appended"], 0)
         report = reconcile_gold192(load_events(self.manifest))
         self.assertEqual(report["counts"]["paired_case_count"], 79)
         self.assertEqual(report["counts"]["missing_reviewer_a"], 113)
+        self.assertEqual(report["counts"]["historical_a_reject_without_scores"], 4)
+        self.assertEqual(report["counts"]["historical_a_reject_b_pass_disagreement"], 4)
+        self.assertEqual(report["counts"]["any_reject_hold_for_arbitration"], 4)
+        self.assertEqual(len(load_events(self.manifest)), 275)
         self.assertEqual(report["quality_v1_admitted"], 0)
 
     def test_recovery_rejects_tampered_private_file(self):
@@ -98,6 +103,20 @@ class ReviewerARecoveryTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "REVIEWER_A_SOURCE_PIN_MISMATCH"):
                 module.recover_reviewer_a(self.args)
         self.assertEqual(len(load_events(self.manifest)), 192)
+
+    def test_only_missing_reject_evidence_is_added_after_prior_scored_import(self):
+        with patch.object(module, "FILES", self.pins):
+            original = module.recover_reviewer_a(self.args)
+            all_events = load_events(self.manifest)
+            scored_only = [e for e in all_events
+                           if e["event_type"] != "HISTORICAL_REJECT_EVIDENCE"]
+            self.manifest.write_text(
+                "".join(json.dumps(e) + "\\n" for e in scored_only),
+                encoding="utf-8")
+            migration = module.recover_reviewer_a(self.args)
+        self.assertEqual(original["events_appended"], 83)
+        self.assertEqual(migration["events_appended"], 4)
+        self.assertEqual(len(load_events(self.manifest)), 275)
 
     def test_b_target_set_mismatch_fails_closed(self):
         events = load_events(self.manifest)
