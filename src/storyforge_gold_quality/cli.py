@@ -69,7 +69,7 @@ def read_jsonl(path):
 def inventory(_args):
     return {"schema": "storyforge_gold_quality_inventory_v1",
             "commands": ["inventory", "verify-source", "import-history", "import-exposure",
-                         "append-review", "append-exclusion", "run-check", "reconcile-gold192", "validate", "report-safe"],
+                         "append-review", "append-exclusion", "import-reviewer-b", "run-check", "reconcile-gold192", "validate", "report-safe"],
             "read_only_safe_checks": list(available_checks()),
             "registered_tools": [{"id": x[0], "path": x[1], "io_contract": x[2], "tests": x[3]}
                                  for x in TOOLS],
@@ -237,6 +237,102 @@ def import_exposure(args):
             "private_values_emitted": False, "training_authorized": False}
 
 
+
+REVIEWER_B_CANONICAL_SHA256 = "bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8"
+
+
+def import_reviewer_b(args):
+    if args.input.is_symlink() or not args.input.is_file():
+        raise ManifestError("INPUT_NOT_REGULAR_FILE")
+    raw = args.input.read_bytes()
+    source_sha = hashlib.sha256(raw).hexdigest()
+    if source_sha != REVIEWER_B_CANONICAL_SHA256:
+        raise ManifestError("REVIEWER_B_SOURCE_PIN_MISMATCH")
+    data = json.loads(raw.decode("utf-8"))
+    if (not isinstance(data, dict) or
+            data.get("schema") != "r58_gold192_reviewer_b_results_v1" or
+            data.get("reviewer") != "B" or data.get("status") != "REVIEW_COMPLETE"):
+        raise ManifestError("REVIEWER_B_SOURCE_SCHEMA_INVALID")
+    rows = data.get("cases")
+    if not isinstance(rows, list) or len(rows) != 192:
+        raise ManifestError("REVIEWER_B_CASE_COUNT_INVALID")
+    expected_counts = {"PASS": 178, "HOLD": 12, "REJECT": 2}
+    if data.get("counts") != expected_counts:
+        raise ManifestError("REVIEWER_B_DECLARED_COUNTS_INVALID")
+    seen_ids, seen_hashes, decisions, events = set(), set(), Counter(), []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ManifestError("REVIEWER_B_ROW_INVALID")
+        blind_id, digest = row.get("blind_case_id"), row.get("target_sha256")
+        if (not isinstance(blind_id, str) or not blind_id or blind_id in seen_ids or
+                not isinstance(digest, str) or
+                not re.fullmatch(r"[0-9a-f]{64}", digest) or digest in seen_hashes):
+            raise ManifestError("REVIEWER_B_IDENTITY_INVALID")
+        scores = row.get("scores_1_to_5")
+        if (not isinstance(scores, dict) or set(scores) != SCORES or
+                any(type(v) is not int or not 1 <= v <= 5 for v in scores.values())):
+            raise ManifestError("REVIEWER_B_SCORES_INVALID")
+        decision = row.get("decision")
+        if decision not in {"PASS", "HOLD", "REJECT"}:
+            raise ManifestError("REVIEWER_B_DECISION_INVALID")
+        flags, summary = row.get("severe_flags"), row.get("evidence_summary")
+        if (not isinstance(flags, list) or any(not isinstance(x, str) for x in flags) or
+                not isinstance(summary, str) or not summary.strip()):
+            raise ManifestError("REVIEWER_B_EVIDENCE_INVALID")
+        seen_ids.add(blind_id)
+        seen_hashes.add(digest)
+        decisions[decision] += 1
+        payload = {
+            "case_id": "reviewer-b:" + digest,
+            "blind_case_id": blind_id,
+            "target_sha256": digest,
+            "reviewer_role": "REVIEWER_B",
+            "reviewer_source_sha256": source_sha,
+            "decision": decision,
+            "scores": scores,
+            "severe_flags": flags,
+            "evidence_summary": summary,
+        }
+        events.append(make_event("gold192", "BLIND_REVIEW", payload, now()))
+    if len(seen_ids) != 192 or len(seen_hashes) != 192 or dict(decisions) != expected_counts:
+        raise ManifestError("REVIEWER_B_CONTENT_COUNTS_INVALID")
+    if args.manifest.exists():
+        existing = load_events(args.manifest)
+        prior = [e for e in existing if e["batch_id"] == "gold192" and
+                 e["event_type"] == "BLIND_REVIEW" and
+                 e["payload"].get("reviewer_role") == "REVIEWER_B" and
+                 e["payload"].get("reviewer_source_sha256") == source_sha]
+        if len(prior) == 192:
+            return {
+                "schema": "storyforge_gold192_reviewer_b_import_safe_v1",
+                "status": "CANONICAL_SOURCE_ALREADY_IMPORTED",
+                "cases_verified": 192,
+                "events_appended": 0,
+                "decision_counts": expected_counts,
+                "source_sha256": source_sha,
+                "private_values_emitted": False,
+                "quality_v1_admitted": 0,
+                "training_authorized": False,
+            }
+        if prior:
+            raise ManifestError("PARTIAL_CANONICAL_REVIEWER_B_IMPORT_PRESENT")
+    count = append_events(args.manifest, events, args.repo_root)
+    return {
+        "schema": "storyforge_gold192_reviewer_b_import_safe_v1",
+        "status": "CANONICAL_REVIEWER_B_IMPORTED",
+        "cases_verified": 192,
+        "events_appended": count,
+        "decision_counts": expected_counts,
+        "source_sha256": source_sha,
+        "superseded_reviewer_b_events_reconciled_as_ignored": True,
+        "private_values_emitted": False,
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+        "gpu_started": False,
+        "r50_accessed": False,
+    }
+
+
 def append_review(args):
     rows = read_jsonl(args.input)
     if not rows:
@@ -296,6 +392,7 @@ def main():
     check_parser.set_defaults(func=lambda a: run_safe_check(a.repo_root, a.check))
 
     commands = (("import-history", import_history), ("import-exposure", import_exposure),
+                ("import-reviewer-b", import_reviewer_b),
                 ("append-review", append_review), ("append-exclusion", append_exclusion))
     for name, func in commands:
         command = sub.add_parser(name)
