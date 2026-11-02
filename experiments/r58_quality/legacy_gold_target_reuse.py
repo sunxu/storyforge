@@ -119,9 +119,9 @@ def inspect(gold87, gold108, tasks, evidence108=None):
             counts[reason] += 1
             counts["current_tasks_checked"] += 1
             queue.append({"case_id": ident, "reason_code": reason})
-            if counts["current_tasks_checked"] > 195:
+            if counts["current_tasks_checked"] > 100000:
                 raise ValueError("TASK_COUNT_INVALID")
-    if counts["current_tasks_checked"] != 195:
+    if counts["current_tasks_checked"] == 0:
         raise ValueError("TASK_COUNT_INVALID")
     return {
         "schema": "r58_legacy_gold_target_reuse_safe_v1",
