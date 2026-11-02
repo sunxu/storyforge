@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
@@ -74,8 +75,9 @@ class GoldQualityPipelineTests(unittest.TestCase):
                          "scores_are_subjective_single_review":True})
         source = self.private / "gold87.jsonl"
         source.write_text("".join(json.dumps(x)+"\n" for x in rows), encoding="utf-8")
-        result = import_history(Namespace(batch="gold87", input=source, manifest=self.manifest,
-                                          repo_root=self.repo))
+        with patch("storyforge_gold_quality.cli.verify_source", return_value={"all_sources_pass": True}):
+            result = import_history(Namespace(batch="gold87", input=source, manifest=self.manifest,
+                                              repo_root=self.repo))
         self.assertEqual(result["unique_cases_imported"], 87)
         events = load_events(self.manifest)
         self.assertEqual(sum(x["event_type"] == "SOURCE_METADATA" for x in events), 87)
@@ -94,8 +96,9 @@ class GoldQualityPipelineTests(unittest.TestCase):
                          "reviewer2_decision":"ACCEPT"})
         source = self.private / "gold108.jsonl"
         source.write_text("".join(json.dumps(x)+"\n" for x in rows), encoding="utf-8")
-        result = import_history(Namespace(batch="gold108", input=source, manifest=self.manifest,
-                                          repo_root=self.repo))
+        with patch("storyforge_gold_quality.cli.verify_source", return_value={"all_sources_pass": True}):
+            result = import_history(Namespace(batch="gold108", input=source, manifest=self.manifest,
+                                              repo_root=self.repo))
         self.assertEqual(result["unique_cases_imported"], 108)
 
     def test_safe_exposure_aggregate_does_not_create_fake_case_rows(self):
