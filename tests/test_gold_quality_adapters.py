@@ -51,15 +51,15 @@ class SafeAdapterTests(unittest.TestCase):
             "schema": "storyforge_r58_gold108_legacy_review_binding_v1",
             "status": "HOLD", "index_count": 108, "review_evidence_count": 108,
         }), stderr="")
-        with patch("storyforge_gold_quality.adapters.subprocess.run", return_value=fake):
-            with self.assertRaisesRegex(ManifestError, "BAD_STATUS"):
-                run_safe_check(self.root, "gold108-legacy-binding")
+        with (patch("storyforge_gold_quality.adapters.subprocess.run", return_value=fake),
+              self.assertRaisesRegex(ManifestError, "BAD_STATUS")):
+            run_safe_check(self.root, "gold108-legacy-binding")
 
     def test_timeout_holds(self):
-        with patch("storyforge_gold_quality.adapters.subprocess.run",
-                   side_effect=subprocess.TimeoutExpired("tool", 60)):
-            with self.assertRaisesRegex(ManifestError, "EXECUTION_UNAVAILABLE"):
-                run_safe_check(self.root, "gold108-legacy-binding")
+        with (patch("storyforge_gold_quality.adapters.subprocess.run",
+                    side_effect=subprocess.TimeoutExpired("tool", 60)),
+              self.assertRaisesRegex(ManifestError, "EXECUTION_UNAVAILABLE")):
+            run_safe_check(self.root, "gold108-legacy-binding")
 
     def test_symlink_script_refused(self):
         self.script.unlink()
