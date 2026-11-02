@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .adapters import available_checks, run_safe_check
+from .import_ai_arbitration import import_ai_arbitration
 from .manifest import (
     ManifestError,
     append_events,
@@ -18,7 +19,6 @@ from .manifest import (
     validate_manifest,
 )
 from .reconcile import reconcile_gold192
-from .import_ai_arbitration import import_ai_arbitration
 
 SOURCE_PINS = {
     "gold87": ("evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
