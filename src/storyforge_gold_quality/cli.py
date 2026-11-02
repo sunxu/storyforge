@@ -196,7 +196,9 @@ def import_exposure(args):
         seen.add(ref)
         targets.add(digest)
         ordinals[source].add(ordinal)
-        payload = dict(row); payload["case_ref"] = ref; payload["target_sha256"] = digest
+        payload = dict(row)
+        payload["case_ref"] = ref
+        payload["target_sha256"] = digest
         events.append(make_event(args.batch, "TRAINING_EXPOSURE_ROW", payload, now()))
     if ordinals != {"GOLD87": set(range(1, 88)), "GOLD108": set(range(1, 109))}:
         raise ManifestError("PRIVATE_EXPOSURE_COVERAGE_INVALID")
