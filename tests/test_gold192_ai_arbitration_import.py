@@ -18,7 +18,7 @@ SCORES = {name: 4 for name in (
     "player_agency", "narrative_continuity", "rule_fidelity",
 )}
 TYPES = ["A_PASS_B_HOLD"] * 6 + ["A_PASS_B_REJECT"] + ["A_HISTORICAL_REJECT_B_PASS"] * 4
-DECISIONS = ["HOLD"] * 4 + ["PASS", "PASS", "PASS", "HOLD", "HOLD", "HOLD", "PASS"]
+DECISIONS = ["PASS"] * 6 + ["HOLD"] * 5
 
 
 class AIArbitrationImportTests(unittest.TestCase):
