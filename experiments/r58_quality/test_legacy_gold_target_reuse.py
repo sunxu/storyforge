@@ -27,7 +27,7 @@ class ReuseTests(unittest.TestCase):
                     w = csv.writer(f)
                     w.writerow(cols)
                     for i in range(count):
-                        w.writerow(([data[0] if i == 0 else f"{data[0]}-{i}"] + data[1:-1] + [f"{data[-1]}-{i}"]))
+                        w.writerow([data[0] if i == 0 else f"{data[0]}-{i}"] + data[1:-1] + [f"{data[-1]}-{i}"])
             with (base / "tasks.jsonl").open("w", encoding="utf-8") as f:
                 for i in range(7):
                     row = {
