@@ -125,7 +125,7 @@ python3 experiments/r58_quality/private_review_evidence_reuse.py \
 
 ## 8. 合成回归测试要求
 
-test_private_review_evidence_reuse.py 使用可变数量合成案例，覆盖：
+test_private_review_evidence_reuse.py 的当前回归覆盖可变数量、哈希、重复标识、部分匹配、权限与隐私；完整测试合同还要求逐步补齐以下边界：
 
 - 1、2、3、17 等不同批量大小；不写死任何 Gold195 数量。
 - 完全匹配、部分匹配、无匹配、额外当前任务、历史案例缺失。
