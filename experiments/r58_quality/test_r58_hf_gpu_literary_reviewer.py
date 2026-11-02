@@ -6,12 +6,12 @@ import tempfile
 import unittest
 
 from r58_hf_gpu_literary_reviewer import (
-    PILOT_SCHEMA, MODELS, REVIEW_KEYS, REVIEW_POLICY_VERSION, SEVERE_DEFINITIONS,
+    PILOT_SCHEMA, MODELS, REVIEW_KEYS, REVIEW_POLICY_VERSION, QUOTE_REPAIR_VERSION, SEVERE_DEFINITIONS,
     canon, read_source, prompt_messages, reviewer_prompt_sha256,
     response_schema, validate_response, run, save_checkpoint,
     read_checkpoint, checkpoint_path, flatten_token_ids,
     QuoteValidationError, QuoteRepairFailure, SevereDecisionMismatch, quote_candidates,
-    quote_repair_messages, quote_repair_schema, apply_quote_candidate,
+    quote_repair_messages, quote_repair_schema, apply_quote_repairs,
     safe_failure_result,
 )
 from r58_gold195_blind_quality_pilot13 import blind_material
@@ -233,37 +233,75 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         self.assertTrue(source)
         self.assertTrue(all(any(q in body for body in visible) for q in source))
         self.assertLessEqual(len(source), 128)
-        self.assertEqual(quote_repair_schema(len(source))["properties"]
-                         ["candidate_index"]["maximum"], len(source) - 1)
+        schema = quote_repair_schema(
+            {"specific_source_quotes": len(source), "specific_target_quotes": len(target)},
+            {"specific_source_quotes": [0, 2], "specific_target_quotes": [1]})
+        repairs = schema["properties"]["repairs"]
+        self.assertEqual(repairs["minItems"], 3)
+        self.assertEqual(repairs["maxItems"], 3)
+        self.assertEqual(
+            repairs["items"]["properties"]["candidate_index"]["maximum"],
+            max(len(source), len(target)) - 1)
+        self.assertEqual(QUOTE_REPAIR_VERSION, "r58_quote_repair_batch_v2")
 
-    def test_quote_candidate_repair_changes_only_failed_quote_field(self):
+    def test_quote_candidate_repair_changes_only_all_invalid_quote_positions(self):
         row = source_rows()[0]
         original = completed_response(row)
-        original["specific_source_quotes"] = ["not-source-exact"]
-        error = QuoteValidationError("specific_source_quotes", 0, 1)
-        candidate = quote_candidates(row, error.field)[0]
-        repaired = apply_quote_candidate(original, row, error, candidate)
-        self.assertEqual(repaired["specific_source_quotes"], [candidate])
-        self.assertEqual(repaired["specific_target_quotes"],
-                         original["specific_target_quotes"])
-        for key in REVIEW_KEYS - {"specific_source_quotes"}:
+        original["specific_source_quotes"] = ["not-source-exact-a", "not-source-exact-b"]
+        original["specific_target_quotes"] = ["not-target-exact"]
+        error = QuoteValidationError(
+            "specific_source_quotes", 0, 1,
+            invalid_quote_indices={
+                "specific_source_quotes": [0, 1],
+                "specific_target_quotes": [0],
+            })
+        source = quote_candidates(row, "specific_source_quotes")
+        target = quote_candidates(row, "specific_target_quotes")
+        selection = {"repairs": [
+            {"field": "specific_source_quotes", "quote_index": 0, "candidate_index": 0},
+            {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 1},
+            {"field": "specific_target_quotes", "quote_index": 0, "candidate_index": 0},
+        ]}
+        repaired = apply_quote_repairs(
+            original, row, error,
+            {"specific_source_quotes": source, "specific_target_quotes": target},
+            selection)
+        self.assertEqual(repaired["specific_source_quotes"], [source[0], source[1]])
+        self.assertEqual(repaired["specific_target_quotes"], [target[0]])
+        for key in REVIEW_KEYS - {"specific_source_quotes", "specific_target_quotes"}:
             self.assertEqual(repaired[key], original[key])
-        self.assertTrue(any(
-            candidate in m["content"] for m in row["messages"][1:]
-            if m["role"] in ("user", "assistant")
-        ))
+        self.assertEqual(original["specific_source_quotes"],
+                         ["not-source-exact-a", "not-source-exact-b"])
+        with self.assertRaises(ValueError):
+            apply_quote_repairs(
+                original, row, error,
+                {"specific_source_quotes": source, "specific_target_quotes": target},
+                {"repairs": selection["repairs"][:-1]})
+        with self.assertRaises(ValueError):
+            apply_quote_repairs(
+                original, row, error,
+                {"specific_source_quotes": source, "specific_target_quotes": target},
+                {"repairs": selection["repairs"] + [selection["repairs"][0]]})
 
-    def test_one_bounded_quote_repair_saves_only_exact_valid_checkpoint(self):
+    def test_one_bounded_batch_quote_repair_saves_only_exact_valid_checkpoint(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             path, out = self.stage(root)
             rows = read_source(path)
             tokenizer = FakeTokenizer()
             first_bad = completed_response(rows[0])
-            first_bad["specific_target_quotes"] = ["not-target-exact"]
+            first_bad["specific_source_quotes"] = ["bad-source-a", "bad-source-b"]
+            first_bad["specific_target_quotes"] = ["bad-target"]
+            source = quote_candidates(rows[0], "specific_source_quotes")
+            target = quote_candidates(rows[0], "specific_target_quotes")
+            selection = {"repairs": [
+                {"field": "specific_source_quotes", "quote_index": 0, "candidate_index": 0},
+                {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 1},
+                {"field": "specific_target_quotes", "quote_index": 0, "candidate_index": 0},
+            ]}
             engine = FakeEngine([
                 json.dumps(first_bad, ensure_ascii=False),
-                json.dumps({"candidate_index": 0}),
+                json.dumps(selection, ensure_ascii=False),
                 json.dumps(completed_response(rows[1]), ensure_ascii=False),
             ])
             result = run(
@@ -281,19 +319,22 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             repair_messages = tokenizer.calls[2]
             self.assertEqual(repair_messages[-2]["role"], "assistant")
             self.assertEqual(repair_messages[-1]["role"], "user")
+            self.assertIn("specific_source_quotes", repair_messages[-1]["content"])
             self.assertIn("specific_target_quotes", repair_messages[-1]["content"])
+            self.assertIn("quote_index", repair_messages[-1]["content"])
             self.assertIn("candidate_index", repair_messages[-1]["content"])
             self.assertIn("候选清单", repair_messages[-1]["content"])
             self.assertNotIn("只允许修改", repair_messages[-1]["content"])
             saved = read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0)
-            self.assertIn(saved["specific_target_quotes"][0], rows[0]["target_text"])
+            self.assertEqual(saved["specific_source_quotes"], [source[0], source[1]])
+            self.assertEqual(saved["specific_target_quotes"], [target[0]])
             self.assertIsNotNone(read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0))
             self.assertIsNotNone(read_checkpoint(
                 checkpoint_path(out, 1), rows[1], "A", MODELS["A"], REV, 1))
 
-    def test_failed_quote_repair_holds_without_checkpoint(self):
+    def test_failed_batch_quote_repair_holds_without_checkpoint(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             path, out = self.stage(root)
@@ -303,7 +344,10 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             first_bad["specific_source_quotes"] = ["not-source-exact"]
             engine = FakeEngine([
                 json.dumps(first_bad, ensure_ascii=False),
-                json.dumps({"candidate_index": 999}),
+                json.dumps({"repairs": [
+                    {"field": "specific_source_quotes", "quote_index": 0,
+                     "candidate_index": 999}
+                ]}),
             ])
             with self.assertRaises(QuoteRepairFailure) as caught:
                 run(
