@@ -64,3 +64,20 @@ The general adult attestation clears the one Zombie case held only because the p
 Updated aggregate: 140 AI semantic PASS-only, 51 HOLD, 1 REJECT. Remaining holds: 12 identity mapping, 15 biological-sibling romance boundary, 16 character-name mapping, 7 consent boundary, 1 continuity. 132 Assistant-first antecedents remain unverified. Two independent blinded reviews are still not complete; Quality-v1=0, training unauthorized, GPU not started.
 
 SAFE receipt: docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V3.json. The 31-case private review and detailed supplement remain local/private and are not committed.
+
+
+## 2026-11-02 final Gold192 AI semantic review update (v4; supersedes v3 aggregate)
+
+The remaining 51 HOLD candidates were reviewed individually against their current User turn, visible history, target Assistant response, and export-time card snapshot. This batch resulted in 46 AI semantic PASS-only, 3 HOLD, and 2 REJECT. Together with the earlier 140 PASS-only / 1 REJECT classification, all 192 cases are now accounted for:
+
+- **186 AI semantic PASS-only**
+- **3 HOLD**: one unsupported factual assertion about viewing identity documents; one target that invents the player's specific concerns and past experiences; one possessive response after the player explicitly sets a workplace boundary.
+- **3 REJECT**: one response overrides the player's explicit request to keep the crane; one response blocks the player's explicit request to get up; one response ignores the player's explicit correction that the message was sent to Lily, not Claire.
+
+Identity triage resolved two earlier groups. In the Jing-circle story, the same character-card object, mixed current/legacy name fields, and the creator note support the renamed-character mapping; 10 of 12 cases now pass semantic review, with two separate content holds remaining. In Noble Academy 6+1, four high-confidence correspondences were inferred from distinctive appearance/personality/behavior traits and two names match directly; all 16 cases now pass semantic review. These inferred aliases are review annotations, not formal alias fields in the source card.
+
+The 15 War & Blood cases previously held for the authored adult sibling-romance premise were reviewed individually and no longer carry case-level HOLDs. The export-time card still lists one character as age 17, which conflicts with the Owner's prior general adult attestation; the card remains unapproved as a training System Prompt and must not be silently rewritten. The Marshal Husband story's seven cases were separated by target: five PASS-only, one HOLD for an unresolved workplace-boundary response, and one REJECT for overriding the player's request to get up.
+
+132 Assistant-first cases still lack verified leading User antecedents. Export-time cards are not proven historical request-time System Prompts. The two-independent-blind-review requirement remains unmet. **Quality-v1=0; training unauthorized; GPU not started; frozen Gold unchanged.**
+
+SAFE receipt: `docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V4.json`. Detailed 51-case review and supplement remain local/private and are not committed.
