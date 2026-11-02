@@ -1,6 +1,6 @@
 # R58 GPU 文学评审：严格引用诊断与单次纠错规范
 
-状态：候选索引引用纠错已实测成功；B Pilot 1/2 checkpoint 有效、整体 HOLD；严重标记 SAFE 诊断已增强并通过 HF CPU 合成测试，尚未对第二条重新推理。
+状态：候选索引引用纠错与 SAFE 严重标记诊断均已实测；旧 Prompt B Pilot 为 1/2 checkpoint、整体 HOLD。新评审策略 v2 已明确严重标记阈值并将 Prompt SHA256 纳入 checkpoint v2；HF CPU 合成测试 13/13 PASS，尚未进行 v2 GPU 评审。
 
 ## 1. 目标与边界
 
@@ -59,6 +59,26 @@ SAFE 汇总只包含 quote_repair_attempts / quote_repair_successes，不包含�
 
 ### 4.1 严重标记与 decision 不一致的 SAFE 诊断
 
+### 4.2 评审策略 v2：严重标记阈值与 NPC 主动性边界
+
+旧 Prompt 只给出三个 severe flag 名称及概括性规则，没有逐项阈值。B case2 的 SAFE 已确认 `decision=HOLD`、`serious_player_agency=true`；可见目标回复未见替玩家决定关键行动、台词或意愿，初步疑似把 NPC 自主结束话题误判为严重越权。该结论是待验证的语义假设，不得回写旧评审结果。
+
+新策略 `r58_literary_review_policy_v2` 明确：
+
+- `serious_player_agency`：只有明确、实质性地替玩家决定关键行动、关键选择、台词、意愿、同意或拒绝时才为 true。NPC 自身行动、心理、提问、改变话题、结束自己的话题、未等待玩家回答或回应玩家已表达内容，不自动构成严重越权。
+- `hard_fact_or_ban`：只依据可见历史中清楚陈述的硬事实/禁令；未认证的 `unapproved_card` 不能作为唯一依据。推测、缺失或无法确认时不置严重标记，必要时 HOLD。
+- `safety_exclusion`：只有明确满足适用安全排除条件才为 true；单纯提及、讨论、模糊暗示或无法确认不自动触发。
+- 任何 severe flag 为 true 时 decision 必须 REJECT；不确定时使用 HOLD 且不置严重标记。不得清除已经明确成立的严重标记来换取 PASS。
+
+### 4.3 Checkpoint v2 必须绑定 Prompt 身份
+
+Checkpoint schema 升级为 `r58_hf_gpu_pilot13_review_checkpoint_private_v2`，除 source/model/revision/slot/index 外，必须包含：
+
+- `review_policy_version`：当前评审策略版本。
+- `prompt_sha256`：由 system prompt、user prompt、严重标记定义及 response schema 计算的 SHA256。
+
+`read_checkpoint` 必须逐项核验两者；缺失或不匹配即 `CHECKPOINT_IDENTITY_MISMATCH`。因此旧 v1 checkpoint 只能留作历史证据，不得被新策略 v2 复用。A/B 必须使用相同 Prompt 版本；Prompt 改变后，对应 A/B pilot 样本均需重新评估，禁止混用新旧 Prompt 结果。
+
 `RESPONSE_SEVERE_MUST_REJECT` 的触发条件是至少一个 `severe_flags` 值为 true，而 `decision` 不是 `REJECT`。旧版 SAFE 只记录错误码，不能据此知道是哪一个标记或模型给出了什么 decision；旧 Job 的原始模型响应未持久化，因此不得回推或猜测。
 
 新版 Runner 使用专用 `SevereDecisionMismatch`，SAFE 仅输出以下白名单元数据：
@@ -81,7 +101,7 @@ experiments/r58_quality/test_r58_hf_gpu_literary_reviewer.py 必须覆盖：
 - 候选仅从允许来源生成；每个候选必须是原文严格连续子串。
 - 纠错模型只返回索引；程序只替换失败引用位置，其他所有评审字段完全保留。
 - 覆盖 target quote 与 source quote 的端到端成功路径、无效索引失败路径、Token 预算、候选边界和不写 checkpoint。
-- 既有 checkpoint 身份校验、不可覆盖、Token 预算及训练准入边界保持不变。
+- checkpoint prompt fingerprint、评审策略版本绑定、身份篡改 fail-closed、不可覆盖、Token 预算及训练准入边界。
 
 测试使用虚构样本和 FakeTokenizer/FakeEngine，不访问真实故事、不加载模型权重、不调用 GPU。
 
@@ -105,6 +125,11 @@ A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。B 的一�
 第三版诊断 Job `6ae7f327c78863f9c62ffcca` 只处理 case_index=1；SAFE 返回 `model_decision=HOLD`、`active_severe_flags=[serious_player_agency]`。没有写入第二个 checkpoint。该元数据只能定位模型的标记/决策组合，不能证明严重越权事实成立。对可见目标回复与历史的独立文本核查未发现模型替玩家决定台词、意愿或关键行动；当前更像是把 NPC 自主结束话题误判为严重玩家自主权侵犯，但在没有原始模型解释的情况下仍保留为待确认假设。不得据此改写评审结果。
 
 本次诊断 Job 运行约 109 秒。B 组仍为 1/2 checkpoint，整体 HOLD；不启动剩余 11 条，不改写 A/B 已有 checkpoint，不训练。
+
+
+### 2026-11-02 评审策略 v2 与 checkpoint v2
+
+HF CPU 合成测试现为 13/13 PASS，新增覆盖三个严重标记的显式阈值、NPC 自主行动与玩家自主权的区分，以及 checkpoint 的 `review_policy_version` / `prompt_sha256` 身份绑定。新策略 v2 尚未进行 GPU 评审。此前 A/B 结果和 B 的 1 个有效 checkpoint 均属于旧 Prompt v1，仅保留作历史证据；不得复制到 v2 输出目录或用于 v2 结果统计。
 
 ## 7. 权威实现
 
