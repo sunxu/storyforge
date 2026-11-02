@@ -85,7 +85,30 @@
 
 异常只返回固定原因码，不打印异常文本或 traceback。
 
-## 5. 隐私与文件安全
+## 5. 私人目录、迁移记录与文件安全
+
+### 5.1 R58 统一私人目录
+
+2026-11-01 历史会话确认：原 `~/storyforge-review-private` 已统一迁移至：
+
+```text
+$HOME/.local/share/storyforge/r58/
+```
+
+仓库文档统一使用 `$HOME` 作为可移植写法。迁移约定为 `mv -n`、保留原文件名和目录结构、不覆盖已有文件；目录权限 0700，私人文件权限 0600。旧 `~/storyforge-review-private` 已退役，不再作为默认路径或静默 fallback。
+
+按历史迁移清单，两个规范输入位置为：
+
+| 用途 | 相对统一根目录的路径 |
+|---|---|
+| 当前 Gold195 六维审核任务 | `gold195-review-tasks-v1.jsonl` |
+| 历史 Grok Web Pilot Manifest | `grok-web-pilot-v1/review-manifest.private.json` |
+
+历史伴随材料还包括 `gold195-card-snapshots-v1.json`、`gold195-card-gold-review-v1.jsonl`、`gold195-review-tasks-user-first-v1.jsonl`、`case02-final-disposition-v1.json`，以及 `grok-web-pilot-v1/`、`grok-web-followup-v1/` 子目录中的初轮审核、仲裁和重审材料。该清单仅用于识别目录结构，不表示本核验器要读取这些文件。
+
+以上路径依据历史迁移约定记录；本次 GitHub 更新没有访问 Mac 文件系统，**未验证文件当前是否存在**。缺失时必须 HOLD，核对本地迁移结果；不得回退旧目录、猜测文件名或自动搬动文件。
+
+### 5.2 文件安全
 
 - Manifest 和任务 JSONL 必须使用绝对路径，位于 Git 仓库之外。
 - 文件必须为普通文件、权限严格为 0600、硬链接数为 1；父目录不得为符号链接，且 group/other 不得有任何权限（通常 0700）。
@@ -95,13 +118,22 @@
 
 ## 6. 使用方式
 
-在仓库根目录执行。路径由 Owner 按实际私有目录提供：
+在仓库根目录执行。使用 R58 统一私人目录的规范路径，不再使用旧目录：
 
 ~~~bash
+PRIVATE_R58_ROOT="$HOME/.local/share/storyforge/r58"
+MANIFEST="$PRIVATE_R58_ROOT/grok-web-pilot-v1/review-manifest.private.json"
+TASKS="$PRIVATE_R58_ROOT/gold195-review-tasks-v1.jsonl"
+
+test -f "$MANIFEST" && test -f "$TASKS" || {
+  echo "HOLD: expected R58 private evidence files missing"
+  exit 1
+}
+
 python3 experiments/r58_quality/private_review_evidence_reuse.py \
   --repo-root "$PWD" \
-  --private-manifest "$PRIVATE_REVIEW_DIR/review-manifest.private.json" \
-  --private-tasks "$PRIVATE_REVIEW_DIR/current-review-tasks.jsonl"
+  --private-manifest "$MANIFEST" \
+  --private-tasks "$TASKS"
 ~~~
 
 如需对接另一套任务 Schema，可显式传入 --manifest-schema / --task-schema；字段合同仍必须满足本规范。容量限制可通过 --max-file-bytes 与 --max-records 调整，不能用增大限制来绕过异常文件或不完整输入。
@@ -125,15 +157,8 @@ python3 experiments/r58_quality/private_review_evidence_reuse.py \
 
 ## 8. 合成回归测试要求
 
-test_private_review_evidence_reuse.py 的当前回归覆盖可变数量、哈希、重复标识、部分匹配、权限与隐私；完整测试合同还要求逐步补齐以下边界：
+当前 14 项合成测试覆盖可变数量、精确/部分/无匹配、输入/目标哈希变化、重复标识、重复 JSON key、哈希重算、审核/准入状态、文件权限与仓库边界、SAFE 隐私输出。
 
-- 1、2、3、17 等不同批量大小；不写死任何 Gold195 数量。
-- 完全匹配、部分匹配、无匹配、额外当前任务、历史案例缺失。
-- 输入哈希变化、目标哈希变化、两者同时变化。
-- Manifest/任务重复 case_id、重复 JSON key、Schema 错误、目标哈希与实际文本不一致。
-- 当前任务声明哈希与重新计算值不一致。
-- 已存在审核结果、质量准入或训练授权的任务拒绝。
-- 私人文件权限、硬链接、仓库内路径、符号链接与大小限制。
-- SAFE 回执不包含合成 case_id、输入正文、目标文本或哈希。
+以下边界仍列为后续测试合同，不得误报为当前已覆盖：符号链接输入、硬链接输入、父目录权限、文件大小上限、并发替换/读取竞态、Manifest Schema 与任务 Schema 的完整负例矩阵。
 
 测试不访问生产数据库、Grok、HF、GPU、R50 或真实私人文件。

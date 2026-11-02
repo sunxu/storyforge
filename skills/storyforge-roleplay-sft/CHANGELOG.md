@@ -1,3 +1,11 @@
+# 0.1.10 — 2026-11-02
+
+- 根据 2026-11-01 历史迁移约定，统一 R58 私人审核目录文档为 `$HOME/.local/share/storyforge/r58/`。
+- 固定当前 Gold195 任务文件与历史 Grok Pilot Manifest 的规范相对路径；明确旧 `~/storyforge-review-private` 已退役，不得静默 fallback。
+- 记录 Gold 卡片快照、Gold 审核记录、user-first 任务、Case02 disposition、Grok Pilot 与 Follow-up 子目录的历史布局。
+- 更新复用工具技术规范、Skill、README、契约测试与 SAFE Manifest；本次只更新 GitHub 文档，没有访问或移动 Mac 私人文件，也没有验证本地文件存在。
+- Quality-v1 admission 仍为 0；GPU / 训练授权状态不变。
+
 # 0.1.9 — 2026-11-02
 
 - 新增通用私人审核证据复用核验器：按 Manifest 实际案例数量工作，不固定 Gold195/3 条或其他批次大小。

@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "date": "2026-11-02",
-  "tests": "v0.1.9: generic private review evidence identity reuse checker; variable Manifest/task sizes; case_id + input_messages_sha256 + target_sha256 exact matching; partial mismatches remain per-case HOLD; 14 synthetic tests PASS locally; no real private inputs read; quality_v1_admitted=0; training_authorized=false",
+  "tests": "v0.1.10: generic private review evidence identity reuse checker; variable Manifest/task sizes; canonical R58 private root and historical input paths documented; migration preserved; 14 synthetic tests baseline unchanged; no local private files read; quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "567de7cc366e1343698d396ee93dc7718ba3c2a8cece96bc239cb1320e1bcef5",
-      "bytes": 7520
+      "sha256": "3abff3760b8b527bca733582e8e7a6df4097ef9c77105f7e091ae98b1741e456",
+      "bytes": 8237
     },
     {
       "path": "README.md",
-      "sha256": "76109bfa84c979a3d5fad611d57f8cad751b62ab81266c93bd958cf30daf143a",
-      "bytes": 2562
+      "sha256": "6cb02394586e352c1733b66e2c09b558133c82753d6fc369a43d4546a22d7248",
+      "bytes": 2755
     },
     {
       "path": "SKILL.md",
-      "sha256": "6e457a93b9f7e1e3581f1fde16a12ab24d8a657ec6be2c9b56c59a40711124f8",
-      "bytes": 9542
+      "sha256": "c17e87bfafd5f823de2aeeb5a5db2530e6759766bcf8ff3a530dadd6fb0f5b5f",
+      "bytes": 9850
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "22a9f7b711d7943ac051f944f8d6bdc2065d9ae960bb504d1958e57a7168c9ed",
-      "bytes": 5940
+      "sha256": "f5e8113e43116d8c0e64596a7ab690f0b6611c81392ef3023262d0cd4c6d9f7e",
+      "bytes": 6297
     }
   ]
 }
