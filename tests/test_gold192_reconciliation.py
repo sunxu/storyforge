@@ -12,7 +12,10 @@ from storyforge_gold_quality.manifest import (
     load_events,
     make_event,
 )
-from storyforge_gold_quality.reconcile import reconcile_gold192
+from storyforge_gold_quality.reconcile import (
+    CANONICAL_REVIEWER_B_SHA256,
+    reconcile_gold192,
+)
 
 SCORES = {
     "chinese_prose": 4,
@@ -25,13 +28,16 @@ SCORES = {
 
 
 def review(case, role, decision, kind="BLIND_REVIEW", digest=None):
-    return make_event("gold192", kind, {
+    payload = {
         "case_id": case,
         "target_sha256": digest or "a" * 64,
         "reviewer_role": role,
         "decision": decision,
         "scores": SCORES,
-    }, "2026-11-02T00:00:00Z")
+    }
+    if role == "REVIEWER_B":
+        payload["reviewer_source_sha256"] = CANONICAL_REVIEWER_B_SHA256
+    return make_event("gold192", kind, payload, "2026-11-02T00:00:00Z")
 
 
 class ReconcileGold192Tests(unittest.TestCase):
@@ -95,6 +101,24 @@ class ReconcileGold192Tests(unittest.TestCase):
         self.assertEqual(result["counts"]["excluded_world_identity_hold"], 3)
         self.assertEqual(result["coverage_unknown_or_missing"], 0)
         self.assertEqual(result["counts"]["missing_reviewer_b"], 192)
+
+    def test_pairing_uses_target_hash_not_reviewer_local_blind_id(self):
+        events = [
+            review("RA-0001", "REVIEWER_A", "REJECT", digest="c" * 64),
+            review("RB-0001", "REVIEWER_B", "PASS", digest="c" * 64),
+        ]
+        result = reconcile_gold192(events)
+        self.assertEqual(result["counts"]["reviewer_a_reject_b_pass_disagreement"], 1)
+
+    def test_unpinned_old_reviewer_b_is_ignored(self):
+        old = make_event("gold192", "BLIND_REVIEW", {
+            "case_id": "old-b", "target_sha256": "d" * 64,
+            "reviewer_role": "REVIEWER_B", "decision": "PASS",
+            "scores": SCORES,
+        }, "t")
+        result = reconcile_gold192([old])
+        self.assertEqual(result["case_events_observed"], 0)
+        self.assertEqual(result["counts"]["superseded_or_unpinned_reviewer_b_events_ignored"], 1)
 
     def test_bad_exclusion_reason_is_hold(self):
         event = make_event("gold192", "EXCLUSION", {
