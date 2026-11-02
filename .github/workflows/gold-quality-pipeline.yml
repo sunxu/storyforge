@@ -38,7 +38,7 @@ jobs:
           python -m pip install -e .
           python -m pip install pytest ruff
       - name: Lint unified pipeline
-        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py
+        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py
       - name: Verify frozen source blob pins
         run: |
           storyforge-gold-quality verify-source --repo-root "$PWD" > /tmp/gold-quality-source-safe.json
