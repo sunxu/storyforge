@@ -103,7 +103,7 @@ class AIArbitrationImportTests(unittest.TestCase):
             "arbitration_decision_counts": {"PASS": 6, "HOLD": 5},
             "prior_a_b_decisions_preserved": True,
             "quality_v1_admitted": 0, "training_authorized": False,
-            "gpu_started": False, "r50_accessed": False,
+            "gpu_started": False, "r50_accessed": False, "private_values_emitted": False,
         }
         self.safe.write_text(json.dumps(safe), encoding="utf-8")
         append_events(self.manifest, events, self.repo)
