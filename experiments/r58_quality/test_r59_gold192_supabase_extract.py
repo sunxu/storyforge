@@ -1,8 +1,8 @@
 """R59 bounded Supabase extraction identity and safety tests. No DB/network required."""
 import hashlib
-from pathlib import Path
 import tempfile
 import unittest
+from pathlib import Path
 
 from experiments.r58_quality import r59_gold192_supabase_extract as m
 
@@ -10,7 +10,7 @@ from experiments.r58_quality import r59_gold192_supabase_extract as m
 class R59Gold192ExtractTest(unittest.TestCase):
     def test_pilot_story_diversity(self):
         cases = [
-            dict(case_id=f's{i}-t{n:05d}', story_id=f's{i}', turn_index=n)
+            {'case_id': f's{i}-t{n:05d}', 'story_id': f's{i}', 'turn_index': n}
             for i in range(3) for n in (1, 900)
         ]
         selected = m.choose_pilot(cases, 5)
