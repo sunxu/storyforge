@@ -1,3 +1,12 @@
+# 0.1.7 — 2026-11-02
+
+- 将 R58 引用纠错升级为 Batch Quote Repair v2：单次纠错批量覆盖 source/target 两个引用列表的所有无效位置。
+- 模型仅返回 field / quote_index / candidate_index；程序验证位置集合无遗漏、无重复、无额外项，并从合法原文候选中逐字替换。
+- 保留严格连续子串校验；任何候选/结构/预算/索引/最终校验问题仍 HOLD，不保存 checkpoint，不放宽门槛。
+- Checkpoint schema 升级 v3，Prompt SHA256 纳入 quote-repair 版本、提示模板、Schema 模板与候选/修复数量上限；旧 v1/v2 checkpoint 不得复用。
+- HF CPU reviewer 合成测试 13/13 PASS，覆盖跨字段、多位置批量修复、重复/遗漏索引拒绝、仅修改引用字段及 checkpoint 保存。
+- 仅更新非敏感代码、Skill 与规范；Gold195 私有输入、旧 checkpoint 和既有 A/B 结果不变；GPU 重评须在新隔离 STAGE 中进行。
+
 # 0.1.6 — 2026-11-02
 
 - 明确三个 severe flag 的阈值，特别区分 NPC 自主行动与严重玩家自主权侵犯。
