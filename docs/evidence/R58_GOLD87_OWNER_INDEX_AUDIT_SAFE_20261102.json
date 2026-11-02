@@ -1,0 +1,45 @@
+{
+  "schema": "r58_gold87_owner_index_audit_safe_v1",
+  "date": "2026-11-02",
+  "origin": "Owner Mac local execution of gold87_legacy_index_audit.py",
+  "tests_reported": {
+    "passed": 3,
+    "failed": 0,
+    "ruff": "PASS"
+  },
+  "status": "GOLD87_INDEX_ATTESTATION_ONLY__REVIEW_EVIDENCE_UNBOUND",
+  "frozen_rows_checked": 87,
+  "target_world_identity_present": 87,
+  "historical_review_a_accept_indexed": 87,
+  "historical_review_b_accept_indexed": 87,
+  "historical_review_c_accept_indexed": 2,
+  "historical_review_c_not_reviewed": 85,
+  "owner_quality_selected_indexed": 87,
+  "citation_status_counts": {
+    "ORIGINAL_EXACT_OR_VALID_COMPRESSED_QUOTE": 80,
+    "SEGMENT_MATCH_ONLY__REQUOTE_RECOMMENDED": 1,
+    "STRICT_CONTIGUOUS_PASS": 6
+  },
+  "age_consent_status_counts": {
+    "NOT_REVALIDATED_AT_QUALITY_SELECTION": 77,
+    "TARGET_TIME_AGE_NOT_VERIFIED": 10
+  },
+  "historic_reviewer_independence_proven": false,
+  "historic_reviewer_text_and_scores_verified": false,
+  "historical_full_context_equivalence_proven": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "gpu_started": false,
+  "r50_read": false,
+  "private_values_emitted": false,
+  "repository_locator_notes": {
+    "readme_present": "evaluations/v0.2/gold-quality-87/README.md",
+    "index_present": "evaluations/v0.2/gold-quality-87/gold_87_index.csv",
+    "readme_referenced_paths_not_found_in_current_branch": [
+      "evaluations/v0.2/gold-quality-87/selection_manifest.json",
+      "evaluations/v0.2/gold-quality-87/verify_gold87.py",
+      "evaluations/v0.2/gold-quality-87/verification_report.json"
+    ],
+    "caveat": "Missing specified paths does not prove the historical reviewer evidence is unavailable elsewhere. No originals were fabricated or inferred."
+  }
+}
