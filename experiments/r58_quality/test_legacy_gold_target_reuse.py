@@ -6,10 +6,18 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from legacy_gold_target_reuse import canonical, index_rows, inspect
+from legacy_gold_target_reuse import canonical, index_rows, inspect, safe_reason
 
 
 class ReuseTests(unittest.TestCase):
+    def test_safe_hold_reason_codes_do_not_leak_private_text(self):
+        self.assertEqual(safe_reason(ValueError("PRIVATE_PERMISSION_INVALID")),
+                         "PRIVATE_PERMISSION_INVALID")
+        self.assertEqual(safe_reason(ValueError("secret/private/case-id")),
+                         "INPUT_SCHEMA_OR_JSON_INVALID")
+        self.assertEqual(safe_reason(FileNotFoundError("secret/private/path")),
+                         "INPUT_FILE_NOT_FOUND")
+
     def test_target_match_is_not_context_or_quality_pass(self):
         with tempfile.TemporaryDirectory() as td:
             base = Path(td)
