@@ -18,10 +18,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(ROOT / "scripts") not in sys.path:
+    sys.path.insert(0, str(ROOT / "scripts"))
 
-import scripts.r57_source_index_export as frozen
-import scripts.r57_trainer_exact_replay as exact
-from scripts.r57_g3_private_exposure_ledger import prepare_ledger
+import r57_source_index_export as frozen
+import r57_trainer_exact_replay as exact
+from r57_g3_private_exposure_ledger import prepare_ledger
 
 PACKETS_SHA256 = "ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e"
 V03_TEST_SHA256 = "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d"
