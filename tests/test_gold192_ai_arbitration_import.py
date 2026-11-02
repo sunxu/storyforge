@@ -124,7 +124,7 @@ class AIArbitrationImportTests(unittest.TestCase):
         self.assertEqual(result["quality_v1_admitted"], 0)
         self.assertFalse(result["training_authorized"])
         safe = safe_report(events)
-        self.assertEqual(safe["decision_counts"], {"HOLD": 11, "PASS": 7})
+        self.assertEqual(safe["decision_counts"], {"HOLD": 6, "PASS": 4, "PASS_ONLY": 7, "REJECT": 5})
         self.assertEqual(safe["ai_arbitration_decision_counts"], {"HOLD": 5, "PASS": 6})
 
     def test_report_tampering_fails_before_append(self):
