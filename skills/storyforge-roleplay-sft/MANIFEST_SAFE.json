@@ -2,7 +2,7 @@
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
   "version": "0.1.7",
   "date": "2026-11-02",
-  "tests": "v0.1.7: HF CPU reviewer synthetic tests 13/13 PASS; Batch Quote Repair v2 validates all source/target invalid positions in one bounded call; checkpoint v3 binds repair version, prompt template/schema and limits; no GPU rerun yet",
+  "tests": "v0.1.7: HF CPU shared token core 8/8 PASS; R58 HF synthetic suites 31/31 PASS; skill contract tests pending final verification; Batch Quote Repair v2; checkpoint v3 binds repair version, prompt template/schema and limits; no GPU rerun yet",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
@@ -13,13 +13,13 @@
     },
     {
       "path": "README.md",
-      "sha256": "ee8b4af4475d0182abd196902086c6d41b79328baf60dd98439e842902bc2612",
-      "bytes": 4519
+      "sha256": "6c8e1b1375db42589179df0b45956b297be35172b747826d5ed69459a61106c6",
+      "bytes": 4950
     },
     {
       "path": "SKILL.md",
-      "sha256": "cd3801db36e520ee9b679726bcb5423f6e234e78cbfa03521fa27f006fe0017f",
-      "bytes": 12100
+      "sha256": "1efb37018c79fa5d623d23ef3b8f578b26fc7fd3d10013d8a042d845757db141",
+      "bytes": 12130
     },
     {
       "path": "queries/01_story_inventory.sql",
