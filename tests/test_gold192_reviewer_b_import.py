@@ -83,7 +83,7 @@ class ReviewerBImportTests(unittest.TestCase):
             import_reviewer_b(self.args)
 
     def test_private_evidence_not_in_safe_import_receipt(self):
-        with patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", self.digest):
+        with unittest.mock.patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", self.digest):
             result = import_reviewer_b(self.args)
         rendered = json.dumps(result)
         self.assertNotIn("synthetic-only fixture", rendered)
