@@ -3,6 +3,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -396,7 +398,9 @@ def main():
                 ("append-review", append_review), ("append-exclusion", append_exclusion))
     for name, func in commands:
         command = sub.add_parser(name)
-        if name != "import-history":
+        if name == "import-reviewer-b":
+            pass
+        elif name != "import-history":
             command.add_argument("--batch", required=True)
         else:
             command.add_argument("--batch", choices=("gold87", "gold108"), required=True)
