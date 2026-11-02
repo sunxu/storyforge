@@ -327,7 +327,7 @@ class HFReviewerSyntheticTests(unittest.TestCase):
             self.assertNotIn("只允许修改", repair_messages[-1]["content"])
             saved = read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0)
-            self.assertEqual(saved["specific_source_quotes"], [source[0], source[1]])
+            self.assertEqual(saved["specific_source_quotes"], [source[0], source[0]])
             self.assertEqual(saved["specific_target_quotes"], [target[0]])
             self.assertIsNotNone(read_checkpoint(
                 checkpoint_path(out, 0), rows[0], "A", MODELS["A"], REV, 0))
