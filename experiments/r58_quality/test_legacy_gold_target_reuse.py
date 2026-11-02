@@ -77,7 +77,8 @@ class ReuseTests(unittest.TestCase):
             self.assertEqual(safe_reason(ValueError("LEGACY_87_COLUMN_INVALID")),
                              "LEGACY_87_COLUMN_INVALID")
             path.write_text(
-                "story_id,sample_target_sha256,review_A,review_B,sample_id\\n",
+                "story_id,sample_target_sha256,review_A,review_B,sample_id\n"
+                "world,hash,ACCEPT,ACCEPT,candidate\n",
                 encoding="utf-8",
             )
             with self.assertRaisesRegex(ValueError, "LEGACY_87_ROW_COUNT_INVALID"):
