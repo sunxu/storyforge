@@ -71,3 +71,44 @@ SAFE 报告：
 任一源 pin、基线数量或输入结构不符均 fail-closed，不生成准入结论。
 
 输出仅在 Owner 私有目录，create-only、0600；不改写 Gold 冻结源、审核文件或历史训练文件。不访问 R50、不连接 Supabase、不启动 HF Job/GPU。
+
+
+## SHA pin HOLD 排查
+
+如果返回 `V03_TEST_SHA256_MISMATCH` 或 `V03_TEST_GIT_BLOB_MISMATCH`，不要改写 Test 文件或放宽校验。先在 Owner Mac 执行以下只读诊断：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-gold-quality"
+P="data/compiled/v0.3/test.jsonl"
+
+echo "=== CHECKOUT ==="
+git branch --show-current
+git rev-parse HEAD
+git status --short -- "$P"
+
+echo "=== COMMITTED TREE BLOB ==="
+git ls-tree HEAD -- "$P"
+git show "HEAD:$P" | shasum -a 256
+
+echo "=== WORKTREE FILE ==="
+shasum -a 256 "$P"
+git hash-object "$P"
+
+echo "=== PIN CONSTANTS ==="
+grep -E '^V03_TEST_(SHA256|GIT_BLOB|PATH) =' \
+  experiments/r58_quality/r59_gold192_historical_exposure.py
+```
+
+当前 GitHub `gold-quality/unified-pipeline-v1` 已独立复核的权威值：
+- Git blob：`c17f225967b6b2f8cbaf3d82fadac1b4031d0654`
+- SHA256：`d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d`
+- 记录数：20
+
+判读：
+- `git ls-tree` 的 blob 不同：本地 HEAD 不是包含该冻结 Test 的版本，先核对分支与提交。
+- `git ls-tree` 正确但 `git show` 的 SHA 不同：本地 Git 对象或读取路径异常，先停止并调查。
+- `git show` 的 SHA 正确但工作区 SHA 不同：本地文件被修改、换行转换或过滤器改写；不要覆盖，先保留差异并查明来源。
+- 两个 SHA 都正确但脚本仍 HOLD：检查实际运行的脚本常量、`--repo-root` 指向和 Python 导入路径，避免执行另一份工作区代码。
+
+诊断只输出公开冻结文件的哈希与 Git 元数据，不要输出 JSONL 内容。确认工作区恢复到冻结字节后，再使用新的空输出目录重跑；旧输出若已存在，不要覆盖。
