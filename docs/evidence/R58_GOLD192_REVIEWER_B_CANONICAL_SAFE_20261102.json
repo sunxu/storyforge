@@ -1,0 +1,30 @@
+{
+  "schema": "storyforge_r58_gold192_reviewer_b_canonical_safe_v1",
+  "status": "OWNER_REPLACEMENT_SELECTED__PRIVATE_CASE_BINDING_NOT_VERIFIED",
+  "source_file_basename": "R58_GOLD192_REVIEWER_B_RESULTS_20261102(3).json",
+  "source_sha256": "bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8",
+  "reviewer": "B",
+  "source_schema": "r58_gold192_reviewer_b_results_v1",
+  "source_status": "REVIEW_COMPLETE",
+  "case_count": 192,
+  "decision_counts": {
+    "PASS": 178,
+    "HOLD": 12,
+    "REJECT": 2
+  },
+  "blind_case_ids_unique": true,
+  "target_sha256_unique": true,
+  "six_dimension_scores_present": 192,
+  "old_reviewer_b_results_superseded": true,
+  "old_results_usable_for_new_review": false,
+  "older_review_b_imports_allowed": false,
+  "replacement_is_owner_selected": true,
+  "independent_semantic_recheck_completed": false,
+  "case_to_gold192_scope_binding_verified": false,
+  "review_admission_approved": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "gpu_started": false,
+  "r50_accessed": false,
+  "private_values_emitted": false
+}
