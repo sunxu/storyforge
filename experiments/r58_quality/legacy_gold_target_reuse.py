@@ -11,6 +11,27 @@ from pathlib import Path
 
 SHA = re.compile(r"^[0-9a-f]{64}$")
 SCHEMA = "r58_gold195_six_dimension_review_task_private_v1"
+SAFE_HOLD_CODES = frozenset({
+    "PRIVATE_PATH_INVALID", "PRIVATE_PERMISSION_INVALID", "PRIVATE_TOO_LARGE",
+    "PRIVATE_PARENT_INVALID", "PRIVATE_INSIDE_REPO", "PRIVATE_OUTPUT_INVALID",
+    "LEGACY_INDEX_INVALID", "LEGACY_IDENTITY_INVALID", "LEGACY_DUPLICATE_ID",
+    "LEGACY_EVIDENCE_INVALID", "LEGACY_EVIDENCE_COUNT_INVALID",
+    "LEGACY_EVIDENCE_ID_SET_MISMATCH", "TASK_SCHEMA_OR_ID_INVALID",
+    "TASK_CONTENT_INVALID", "TASK_COUNT_INVALID",
+})
+
+def safe_reason(error):
+    # Never echo exception text containing a private filename, key or value.
+    if isinstance(error, ValueError) and str(error) in SAFE_HOLD_CODES:
+        return str(error)
+    if isinstance(error, FileNotFoundError):
+        return "INPUT_FILE_NOT_FOUND"
+    if isinstance(error, PermissionError):
+        return "INPUT_FILE_ACCESS_DENIED"
+    if isinstance(error, (OSError, UnicodeError, csv.Error)):
+        return "INPUT_IO_OR_ENCODING_INVALID"
+    return "INPUT_SCHEMA_OR_JSON_INVALID"
+
 
 def canonical(obj):
     return json.dumps(obj, ensure_ascii=False, sort_keys=True,
@@ -159,8 +180,8 @@ def main():
             result["private_queue_written"] = True
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
-    except (OSError, ValueError, KeyError, TypeError, UnicodeError, csv.Error):
-        print(json.dumps({"schema": "r58_legacy_gold_target_reuse_safe_v1",
+    except (OSError, ValueError, KeyError, TypeError, UnicodeError, csv.Error) as error:
+        print(json.dumps({"reason_code": safe_reason(error), "schema": "r58_legacy_gold_target_reuse_safe_v1",
                           "status": "INPUT_OR_BINDING_INVALID__HOLD",
                           "quality_v1_admitted": 0, "training_authorized": False,
                           "private_values_emitted": False}))
