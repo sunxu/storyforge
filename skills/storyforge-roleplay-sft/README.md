@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.8
+# R58 RolePlay → StoryForge SFT Skill v0.1.9
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -16,6 +16,7 @@
 - [AI 执行顺序与门禁](SKILL.md)
 - [HF Token Preflight 完整技术规范](../../docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md)
 - [R58 GPU Review / Batch Quote Repair 完整技术规范](../../docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md)
+- [R58 私人审核证据复用规范](../../docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md)
 - [Quality-v1 主线计划](../../docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md)
 - [唯一共享 Token 核心](../../src/storyforge_dataset/token_preflight.py)
 

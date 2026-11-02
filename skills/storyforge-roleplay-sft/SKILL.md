@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.8
+version: 0.1.9
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -60,6 +60,14 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - 遇到引用校验失败或严重标记诊断时，先读取 SAFE 回执和 checkpoint 身份，再按规范决定 HOLD / 重试；不得降低引用准确性门槛、擅自改写模型决策或覆盖 checkpoint。
 - A/B 比较必须按内容身份对齐，不得按 blind_id 或数组位置推断配对；样本不足以配对时不得声称模型整体优劣。
 
+### 私人审核证据复用
+
+- 复用既有网页/模型审核前，先用 `experiments/r58_quality/private_review_evidence_reuse.py` 对比历史 Manifest 与当前私人任务。
+- 只有案例标识、完整输入 SHA256 和目标 SHA256 全部一致，才允许把该案例列为历史证据复用候选；不匹配只 HOLD 对应案例。
+- 工具按 Manifest 实际案例数运行，不假定固定批次大小；SAFE 回执不包含私人正文、ID 或哈希。
+- 精确匹配不等于历史审核输出有效，也不证明审核者独立或文学质量通过；继续使用对应的历史输出验证器与结案工具。
+- 完整算法、Schema、失败码、文件权限与复现方式只维护在 `docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md`，Skill 不复制实现。
+
 ### 已验证的当前状态（2026-11-02）
 
 - Batch Quote Repair v2 与 checkpoint v3 已完成；A/B 新版 GPU Pilot 已完成。
@@ -73,6 +81,7 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - 共享 Tokenizer 核心的唯一实现入口：`src/storyforge_dataset/token_preflight.py`；禁止在 Skill、worker、Job 或实验目录复制通用算法。
 - HF Tokenizer / Chat Template / SAFE cache / 共享核心 / 私有 STAGE：`docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`
 - R58 GPU 评审 / 严格引用 / Batch Quote Repair / checkpoint / severe flags：`docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`
+- R58 私人审核 Manifest 与任务身份复用：`docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md`
 - Quality-v1 主线、数据优先级与门禁：`docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md`
 
 ## 状态语义

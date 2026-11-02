@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "date": "2026-11-02",
-  "tests": "v0.1.8: HF CPU shared token core historical baseline 8/8 PASS; R58 synthetic historical baseline 31/31 PASS; Skill contract refactored to enforce document ownership and no duplicated algorithms; Ruff import ordering corrected; Skill shared-core entrypoint contract aligned (latest CI repair pending); Batch Quote Repair v2 and checkpoint v3; A/B v3 GPU pilot completed (A 2 PASS, B 1 PASS/1 HOLD); quality_v1_admitted=0; training_authorized=false",
+  "tests": "v0.1.9: generic private review evidence identity reuse checker; variable Manifest/task sizes; case_id + input_messages_sha256 + target_sha256 exact matching; partial mismatches remain per-case HOLD; 14 synthetic tests PASS locally; no real private inputs read; quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "3e645606ac06266fcdbf499bef883f26e3491967d1e31de347d7a77f594e4327",
-      "bytes": 6443
+      "sha256": "567de7cc366e1343698d396ee93dc7718ba3c2a8cece96bc239cb1320e1bcef5",
+      "bytes": 7520
     },
     {
       "path": "README.md",
-      "sha256": "81e03a9a20dc3ed9869ecce971b39c782d2ae59119459255f0d07d75669bed72",
-      "bytes": 2461
+      "sha256": "76109bfa84c979a3d5fad611d57f8cad751b62ab81266c93bd958cf30daf143a",
+      "bytes": 2562
     },
     {
       "path": "SKILL.md",
-      "sha256": "e0c5d7c175beefa2e362dbed62fe561ef6b2d88e8a4c5a16781ae521b47ad035",
-      "bytes": 8637
+      "sha256": "6e457a93b9f7e1e3581f1fde16a12ab24d8a657ec6be2c9b56c59a40711124f8",
+      "bytes": 9542
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "818831d1ef21f10219808df438ea4357258f90eea91ad579c5dc5ba76ec2df56",
-      "bytes": 4973
+      "sha256": "22a9f7b711d7943ac051f944f8d6bdc2065d9ae960bb504d1958e57a7168c9ed",
+      "bytes": 5940
     }
   ]
 }
