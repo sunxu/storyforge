@@ -1,4 +1,5 @@
 """Synthetic-only tests for verified V3 Reviewer A normalization."""
+# ruff: noqa: I001
 import json
 import unittest
 
