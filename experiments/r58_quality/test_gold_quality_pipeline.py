@@ -1,20 +1,27 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import sys
 import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "src"))
 
-from storyforge_gold_quality.cli import (  # noqa: E402
-    append_exclusion, append_review, import_exposure, import_history,
+from storyforge_gold_quality.cli import (
+    append_exclusion,
+    append_review,
+    import_exposure,
+    import_history,
 )
-from storyforge_gold_quality.manifest import (  # noqa: E402
-    ManifestError, append_events, load_events, make_event, safe_report,
+from storyforge_gold_quality.manifest import (
+    ManifestError,
+    append_events,
+    load_events,
+    make_event,
+    safe_report,
 )
 
 
