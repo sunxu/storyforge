@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from legacy_gold_target_reuse import canonical, inspect
+from legacy_gold_target_reuse import canonical, index_rows, inspect
 
 
 class ReuseTests(unittest.TestCase):
@@ -49,7 +49,29 @@ class ReuseTests(unittest.TestCase):
             self.assertFalse(result["context_changes_verified"])
             self.assertEqual(len(queue), 195)
             self.assertEqual(queue[0]["reason_code"], "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND")
+
             self.assertNotIn("canary-", json.dumps(result))
+            taskfile = base / "tasks.jsonl"
+            lines = taskfile.read_text(encoding="utf-8").splitlines()
+            tampered = json.loads(lines[0])
+            tampered["target_text"] = "tampered synthetic target"
+            lines[0] = json.dumps(tampered)
+            taskfile.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "TASK_CONTENT_INVALID"):
+                inspect(base / "87.csv", base / "108.csv", taskfile)
+
+    def test_duplicate_legacy_candidate_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "87.csv"
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            with path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["story_id", "sample_target_sha256", "review_A",
+                                 "review_B", "sample_id"])
+                for i in range(87):
+                    writer.writerow([f"world-{i}", digest, "ACCEPT", "ACCEPT", "same"])
+            with self.assertRaisesRegex(ValueError, "LEGACY_DUPLICATE_ID"):
+                index_rows(path, 87)
 
 
 if __name__ == "__main__":
