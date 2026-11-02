@@ -5,7 +5,6 @@ from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path
-import sys
 
 from .manifest import ManifestError, append_events, load_events, make_event, safe_report, validate_manifest
 
@@ -194,7 +193,9 @@ def import_exposure(args):
         ref = f"{source}:{ordinal}"
         if ref in seen:
             raise ManifestError("PRIVATE_EXPOSURE_DUPLICATE_ROW")
-        seen.add(ref); targets.add(digest); ordinals[source].add(ordinal)
+        seen.add(ref)
+        targets.add(digest)
+        ordinals[source].add(ordinal)
         payload = dict(row); payload["case_ref"] = ref; payload["target_sha256"] = digest
         events.append(make_event(args.batch, "TRAINING_EXPOSURE_ROW", payload, now()))
     if ordinals != {"GOLD87": set(range(1, 88)), "GOLD108": set(range(1, 109))}:
@@ -250,26 +251,46 @@ def append_exclusion(args):
 def main():
     parser = argparse.ArgumentParser(prog="storyforge-gold-quality")
     sub = parser.add_subparsers(dest="command", required=True)
-    p = sub.add_parser("inventory"); p.set_defaults(func=inventory)
-    p = sub.add_parser("verify-source"); p.add_argument("--repo-root", type=Path, required=True); p.set_defaults(func=verify_source)
-    for name, func in (("import-history", import_history), ("import-exposure", import_exposure),
-                       ("append-review", append_review), ("append-exclusion", append_exclusion)):
-        p = sub.add_parser(name)
+
+    inventory_parser = sub.add_parser("inventory")
+    inventory_parser.set_defaults(func=inventory)
+
+    verify_parser = sub.add_parser("verify-source")
+    verify_parser.add_argument("--repo-root", type=Path, required=True)
+    verify_parser.set_defaults(func=verify_source)
+
+    commands = (("import-history", import_history), ("import-exposure", import_exposure),
+                ("append-review", append_review), ("append-exclusion", append_exclusion))
+    for name, func in commands:
+        command = sub.add_parser(name)
         if name != "import-history":
-            p.add_argument("--batch", required=True)
-        p.add_argument("--input", type=Path, required=True); p.add_argument("--manifest", type=Path, required=True)
-        p.add_argument("--repo-root", type=Path, required=True)
-        if name == "import-history":
-            p.add_argument("--batch", choices=("gold87", "gold108"), required=True)
+            command.add_argument("--batch", required=True)
+        else:
+            command.add_argument("--batch", choices=("gold87", "gold108"), required=True)
+        command.add_argument("--input", type=Path, required=True)
+        command.add_argument("--manifest", type=Path, required=True)
+        command.add_argument("--repo-root", type=Path, required=True)
         if name == "import-exposure":
-            p.add_argument("--kind", choices=("safe-aggregate", "r57-private-ledger"), required=True)
-            p.add_argument("--receipt", type=Path)
+            command.add_argument("--kind", choices=("safe-aggregate", "r57-private-ledger"), required=True)
+            command.add_argument("--receipt", type=Path)
         if name == "append-review":
-            p.add_argument("--event-type", choices=("INCREMENTAL_REVIEW", "BLIND_REVIEW", "ADJUDICATION"), default="INCREMENTAL_REVIEW")
-        p.set_defaults(func=func)
-    for name, func in (("validate", lambda a: {"schema":"storyforge_gold_quality_validation_safe_v1", **validate_manifest(load_events(a.manifest)), "quality_v1_admitted":0, "training_authorized":False}),
-                       ("report-safe", lambda a: safe_report(load_events(a.manifest)))):
-        p = sub.add_parser(name); p.add_argument("--manifest", type=Path, required=True); p.set_defaults(func=func)
+            command.add_argument("--event-type",
+                                  choices=("INCREMENTAL_REVIEW", "BLIND_REVIEW", "ADJUDICATION"),
+                                  default="INCREMENTAL_REVIEW")
+        command.set_defaults(func=func)
+
+    validate_parser = sub.add_parser("validate")
+    validate_parser.add_argument("--manifest", type=Path, required=True)
+    validate_parser.set_defaults(func=lambda a: {
+        "schema": "storyforge_gold_quality_validation_safe_v1",
+        **validate_manifest(load_events(a.manifest)),
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+    })
+    report_parser = sub.add_parser("report-safe")
+    report_parser.add_argument("--manifest", type=Path, required=True)
+    report_parser.set_defaults(func=lambda a: safe_report(load_events(a.manifest)))
+
     args = parser.parse_args()
     try:
         result = args.func(args)
@@ -277,12 +298,16 @@ def main():
         return 0
     except (ManifestError, OSError, ValueError, TypeError, json.JSONDecodeError) as exc:
         reason = str(exc) if isinstance(exc, ManifestError) else "INPUT_OR_IO_ERROR"
-        print(json.dumps({"schema":"storyforge_gold_quality_safe_error_v1", "status":"HOLD",
-                          "reason_code":reason, "private_values_emitted":False,
-                          "quality_v1_admitted":0, "training_authorized":False,
-                          "r50_accessed":False}, sort_keys=True))
+        print(json.dumps({
+            "schema": "storyforge_gold_quality_safe_error_v1",
+            "status": "HOLD",
+            "reason_code": reason,
+            "private_values_emitted": False,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+            "r50_accessed": False,
+        }, sort_keys=True))
         return 42
-
 
 if __name__ == "__main__":
     raise SystemExit(main())
