@@ -15,6 +15,8 @@ SAFE_HOLD_CODES = frozenset({
     "PRIVATE_PATH_INVALID", "PRIVATE_PERMISSION_INVALID", "PRIVATE_TOO_LARGE",
     "PRIVATE_PARENT_INVALID", "PRIVATE_INSIDE_REPO", "PRIVATE_OUTPUT_INVALID",
     "LEGACY_INDEX_INVALID", "LEGACY_IDENTITY_INVALID", "LEGACY_DUPLICATE_ID",
+    "LEGACY_87_COLUMN_INVALID", "LEGACY_108_COLUMN_INVALID",
+    "LEGACY_87_ROW_COUNT_INVALID", "LEGACY_108_ROW_COUNT_INVALID",
     "LEGACY_EVIDENCE_INVALID", "LEGACY_EVIDENCE_COUNT_INVALID",
     "LEGACY_EVIDENCE_ID_SET_MISMATCH", "TASK_SCHEMA_OR_ID_INVALID",
     "TASK_CONTENT_INVALID", "TASK_COUNT_INVALID",
@@ -56,8 +58,10 @@ def index_rows(path, cohort):
         rows = list(csv.DictReader(f))
     cols = ("story_id", "sample_target_sha256", "review_A", "review_B", "sample_id") if cohort == 87 else (
         "story_id", "target_sha256", "reviewer1_decision", "reviewer2_decision", "candidate_id")
-    if len(rows) != cohort or not rows or not set(cols).issubset(rows[0]):
-        raise ValueError("LEGACY_INDEX_INVALID")
+    if not rows or not set(cols).issubset(rows[0]):
+        raise ValueError(f"LEGACY_{cohort}_COLUMN_INVALID")
+    if len(rows) != cohort:
+        raise ValueError(f"LEGACY_{cohort}_ROW_COUNT_INVALID")
     out = []
     for row in rows:
         world, digest, a, b, ident = (row.get(k, "").strip() for k in cols)
