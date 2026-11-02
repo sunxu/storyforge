@@ -6,8 +6,8 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from storyforge_gold_quality.cli import import_reviewer_b
 from storyforge_gold_quality.manifest import load_events
@@ -76,9 +76,11 @@ class ReviewerBImportTests(unittest.TestCase):
         self.assertFalse(result["private_values_emitted"])
 
     def test_source_pin_mismatch_fails_closed(self):
-        with patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", "0" * 64):
-            with self.assertRaisesRegex(ValueError, "REVIEWER_B_SOURCE_PIN_MISMATCH"):
-                import_reviewer_b(self.args)
+        with (
+            patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", "0" * 64),
+            self.assertRaisesRegex(ValueError, "REVIEWER_B_SOURCE_PIN_MISMATCH"),
+        ):
+            import_reviewer_b(self.args)
 
     def test_private_evidence_not_in_safe_import_receipt(self):
         with patch("storyforge_gold_quality.cli.REVIEWER_B_CANONICAL_SHA256", self.digest):
