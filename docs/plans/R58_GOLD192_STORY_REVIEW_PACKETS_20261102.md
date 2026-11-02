@@ -81,3 +81,14 @@ The 15 War & Blood cases previously held for the authored adult sibling-romance 
 132 Assistant-first cases still lack verified leading User antecedents. Export-time cards are not proven historical request-time System Prompts. The two-independent-blind-review requirement remains unmet. **Quality-v1=0; training unauthorized; GPU not started; frozen Gold unchanged.**
 
 SAFE receipt: `docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V4.json`. Detailed 51-case review and supplement remain local/private and are not committed.
+
+
+## 2026-11-02 contextual recheck update (v5; supersedes v4 aggregate)
+
+A second full-history recheck cleared two additional Jing-circle HOLDs. The ID-document handling case is supported by the visible history establishing that identity documents were used for passport, transfer and trust procedures and handled by the characters; the target's statement is the NPC's admission about his own conduct. The concern-expression case is supported by the visible history of the player's departure from Beijing, refusal of financial assistance, plan to earn travel money in the tea town and eventual return north; the current User explicitly asked the NPC to state those concerns honestly and take several days to consider.
+
+The final AI-only aggregate is now **188 semantic PASS-only / 1 HOLD / 3 REJECT**, with all 192 cases accounted for. The sole remaining HOLD is one possessive response after the player sets a workplace boundary. The three REJECT cases remain: overriding the player's request to keep the crane; blocking the player's request to get up; and ignoring the player's correction that the message was sent to Lily, not Claire.
+
+The 132 Assistant-first antecedents remain unverified; two independent blinded reviews remain incomplete; Quality-v1=0, training unauthorized, GPU not started, frozen Gold unchanged.
+
+SAFE receipt: `docs/evidence/R58_GOLD192_AI_REVIEW_SAFE_20261102_V5.json`. The updated detailed 51-case report and private supplement remain local/private.
