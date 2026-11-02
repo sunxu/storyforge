@@ -28,6 +28,13 @@
     "Gold87 reviewer evidence not yet cryptographically bound",
     "Target-level SHA and world match do not establish full-input context equivalence",
     "The three Gold108 missing-world entries remain HOLD",
-    "No Quality-v1 review admission"
-  ]
+    "No Quality-v1 review admission",
+    "Owner confirms private queue was written; private queue itself was not accessed through GitHub"
+  ],
+  "private_queue_written": true,
+  "private_queue_record_count": 195,
+  "queue_contains_case_level_private_data": true,
+  "queue_retained_in_owner_private_storage": true,
+  "queue_uploaded_to_github": false,
+  "owner_queue_execution_result": "TARGET_IDENTITY_TRIAGE_ONLY__SEMANTIC_HOLD"
 }
