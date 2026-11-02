@@ -15,7 +15,7 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 class ReuseContractTests(unittest.TestCase):
     def test_v011_skill_points_to_single_real_core(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.1.4", source)
+        self.assertIn("version: 0.1.5", source)
         self.assertIn("## HF Token 预检复用", source)
         self.assertIn("src/storyforge_dataset/token_preflight.py", source)
         self.assertIn("docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md", source)
@@ -41,15 +41,15 @@ class ReuseContractTests(unittest.TestCase):
     def test_readme_and_changelog_document_reuse(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("Skill v0.1.4", readme)
+        self.assertIn("Skill v0.1.5", readme)
         self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
         self.assertIn("无需逐 Job 费用授权", readme)
-        self.assertTrue(changelog.startswith("# 0.1.4"))
+        self.assertTrue(changelog.startswith("# 0.1.5"))
         self.assertIn("不发起 Job", changelog)
 
     def test_manifest_v011_file_hashes_match(self):
         manifest = json.loads((SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8"))
-        self.assertEqual(manifest["version"], "0.1.4")
+        self.assertEqual(manifest["version"], "0.1.5")
         declared = {x["path"]: x for x in manifest["files"]}
         # v02/ is a separate, unreleased preview; it is intentionally outside
         # the frozen v0.1.2 package and must never enter this manifest.
