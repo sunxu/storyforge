@@ -23,6 +23,18 @@ class TestGold192ScopeManifest(unittest.TestCase):
             self.assertTrue(all(r["quality_v1_admitted"] is False for r in result))
             self.assertTrue(all(r["training_authorized"] is False for r in result))
 
+    def test_refuse_output_via_repo_symlink_alias(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            real_repo = base / "real-repo"
+            real_repo.mkdir()
+            alias = base / "repo-alias"
+            alias.symlink_to(real_repo, target_is_directory=True)
+            output = real_repo / "manifest.jsonl"
+            with self.assertRaisesRegex(ValueError, "SCOPE_OUTPUT_INVALID"):
+                write_manifest(output, alias, [])
+            self.assertFalse(output.exists())
+
     def test_refuse_output_inside_repo_and_existing_file(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
