@@ -21,6 +21,7 @@
 工具：`experiments/r58_quality/legacy_gold_target_reuse.py`。它按 `story_id / story_uuid + target_sha256` 进行**目标级**绑定，不证明上下文没有变化，不提供六维 Quality-v1 PASS，也不替代 `gold108_review_binding.py` 对历史五维双审证据的更严格核对。
 
 - Gold87 索引：`evaluations/v0.2/gold-quality-87/gold_87_index.csv`，哈希字段 `sample_target_sha256`。
+  - 该冻结文件实际含两行固定解析标记：`<PARSED TEXT FOR SHEET: 1 / 1 TABS` 和 `TAB NAME: gold_87_index.csv>`。解析器只识别这两个精确前缀，不改写原文件；不符合合同返回 `LEGACY_87_WRAPPER_INVALID` HOLD。
 - Gold108 索引：`evaluations/v0.2/gold-quality-108/gold_108_index.csv`，哈希字段 `target_sha256`。
 - Gold108 双审证据：`evaluations/v0.2/gold-quality-108/dual_accept_review_evidence_108.jsonl`。
 - 任务：`$HOME/.local/share/storyforge/r58/gold195-review-tasks-v1.jsonl`，本地私人文件，不上传仓库。
