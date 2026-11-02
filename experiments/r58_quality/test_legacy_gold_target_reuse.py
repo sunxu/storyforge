@@ -68,6 +68,21 @@ class ReuseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "TASK_CONTENT_INVALID"):
                 inspect(base / "87.csv", base / "108.csv", taskfile)
 
+    def test_index_failure_is_cohort_specific(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "index.csv"
+            path.write_text("unrecognized,columns\\nvalue,value\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "LEGACY_87_COLUMN_INVALID"):
+                index_rows(path, 87)
+            self.assertEqual(safe_reason(ValueError("LEGACY_87_COLUMN_INVALID")),
+                             "LEGACY_87_COLUMN_INVALID")
+            path.write_text(
+                "story_id,sample_target_sha256,review_A,review_B,sample_id\\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "LEGACY_87_ROW_COUNT_INVALID"):
+                index_rows(path, 87)
+
     def test_duplicate_legacy_candidate_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "87.csv"
