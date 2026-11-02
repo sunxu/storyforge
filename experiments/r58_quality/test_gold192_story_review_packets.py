@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from gold192_story_review_packets import build_packets
+from gold192_story_review_packets import build_packets, write_private
 from legacy_gold_target_reuse import canonical
 
 
@@ -107,10 +107,29 @@ class Gold192StoryPacketTests(unittest.TestCase):
             self.assertTrue(all(not p["world_card_approved_for_system"] for p in packets))
             self.assertNotIn("synthetic target", json.dumps(receipt))
 
-    def test_conflicting_card_snapshot_within_story_holds(self):
+
+    def test_private_packet_write_is_exclusive_and_outside_repo(self):
         with tempfile.TemporaryDirectory() as td:
-            with self.assertRaisesRegex(ValueError, "PACKET_WORLD_CARD_CONFLICT"):
-                build_packets(*make_inputs(Path(td), conflict=True))
+            base = Path(td)
+            repo = base / "repo"
+            repo.mkdir()
+            private = base / "private"
+            private.mkdir(mode=0o700)
+            output = private / "packets.jsonl"
+            receipt, packets = build_packets(*make_inputs(base))
+            write_private(output, repo, packets)
+            self.assertEqual(output.stat().st_mode & 0o777, 0o600)
+            with self.assertRaises(ValueError):
+                write_private(output, repo, packets)
+            with self.assertRaises(ValueError):
+                write_private(repo / "inside.jsonl", repo, packets)
+
+    def test_conflicting_card_snapshot_within_story_holds(self):
+        with (
+            tempfile.TemporaryDirectory() as td,
+            self.assertRaisesRegex(ValueError, "PACKET_WORLD_CARD_CONFLICT"),
+        ):
+            build_packets(*make_inputs(Path(td), conflict=True))
 
 
 if __name__ == "__main__":
