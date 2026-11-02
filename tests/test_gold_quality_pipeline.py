@@ -47,6 +47,18 @@ class GoldQualityPipelineTests(unittest.TestCase):
         append_events(self.manifest, [b], self.repo)
         self.assertEqual(len(load_events(self.manifest)), 2)
 
+    def test_safe_report_redacts_unknown_batch_and_labels(self):
+        event = make_event("PRIVATE_STORY_IDENTIFIER", "BLIND_REVIEW",
+                           {"case_id": "SECRET_CASE", "target_sha256": "e" * 64,
+                            "decision": "PRIVATE_DECISION",
+                            "evidence_tier": "SECRET_EVIDENCE_TIER"}, "t")
+        append_events(self.manifest, [event], self.repo)
+        report = json.dumps(safe_report(load_events(self.manifest)))
+        for secret in ("PRIVATE_STORY_IDENTIFIER", "SECRET_CASE",
+                       "PRIVATE_DECISION", "SECRET_EVIDENCE_TIER", "e" * 64):
+            self.assertNotIn(secret, report)
+        self.assertIn("OTHER_PRIVATE_BATCHES", report)
+
     def test_changed_target_is_rejected(self):
         a = make_event("gold192", "INCREMENTAL_REVIEW",
                        {"case_id":"c1", "target_sha256":"a"*64}, "t1")
