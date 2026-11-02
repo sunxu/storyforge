@@ -14,8 +14,7 @@ on:
       - "tests/test_gold192_reviewer_a_recovery.py"
       - "tests/test_gold192_arbitration_queue.py"
       - "tests/test_gold192_ai_arbitration_import.py"
-      - "tests/test_gold192_reviewer_a_normalization.py"
-      - "tests/test_gold192_reviewer_a_gap_priority.py"
+      - "tests/test_gold192_reviewer_a_v3_normalization.py"
       - "src/storyforge_gold_quality/import_ai_arbitration.py"
       - "scripts/r57_*.py"
       - "tests/test_r57_*.py"
@@ -40,7 +39,7 @@ jobs:
           python -m pip install -e .
           python -m pip install pytest ruff
       - name: Lint unified pipeline
-        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py tests/test_gold192_reviewer_a_normalization.py tests/test_gold192_reviewer_a_gap_priority.py
+        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py tests/test_gold192_reviewer_a_v3_normalization.py
       - name: Verify frozen source blob pins
         run: |
           storyforge-gold-quality verify-source --repo-root "$PWD" > /tmp/gold-quality-source-safe.json
@@ -82,9 +81,7 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_gold192_arbitration_queue.py' -v
       - name: Run AI arbitration import synthetic tests
         run: python -m unittest discover -s tests -p 'test_gold192_ai_arbitration_import.py' -v
-      - name: Run Reviewer A normalization synthetic tests
-        run: python -m unittest discover -s tests -p 'test_gold192_reviewer_a_normalization.py' -v
-      - name: Run seven-case A gap priority synthetic tests
-        run: python -m unittest discover -s tests -p 'test_gold192_reviewer_a_gap_priority.py' -v
+      - name: Run verified V3 Reviewer A normalization synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_reviewer_a_v3_normalization.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v
