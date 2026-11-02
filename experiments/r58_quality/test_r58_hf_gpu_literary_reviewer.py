@@ -145,6 +145,15 @@ class HFReviewerSyntheticTests(unittest.TestCase):
         self.assertEqual(safe["active_severe_flag_count"], 1)
         self.assertFalse(safe["private_text_emitted"])
         self.assertNotIn("target_text", json.dumps(safe))
+        hold_with_flag = completed_response(row, "HOLD")
+        hold_with_flag["severe_flags"]["serious_player_agency"] = True
+        with self.assertRaises(SevereDecisionMismatch) as hold_caught:
+            validate_response(hold_with_flag, row)
+        self.assertEqual(hold_caught.exception.decision, "HOLD")
+        self.assertEqual(hold_caught.exception.active_flags, ("serious_player_agency",))
+        reject_with_flag = completed_response(row, "REJECT")
+        reject_with_flag["severe_flags"]["hard_fact_or_ban"] = True
+        self.assertEqual(validate_response(reject_with_flag, row), "REJECT")
         answer = completed_response(row, "HOLD")
         self.assertEqual(validate_response(answer, row), "HOLD")
         answer["uncertainty"] = ""
