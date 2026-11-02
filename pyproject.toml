@@ -18,13 +18,14 @@ dev = ["pytest>=8.0", "ruff>=0.8", "PyYAML>=6.0"]
 
 [project.scripts]
 storyforge-dataset = "storyforge_dataset.cli:main"
+storyforge-gold-quality = "storyforge_gold_quality.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
+pythonpath = [".", "src"]
 
 [tool.ruff]
 target-version = "py311"

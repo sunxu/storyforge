@@ -1,3 +1,10 @@
+# 0.1.13 — 2026-11-02
+
+- 新增统一 Gold Quality Pipeline：私有 append-only Manifest、CLI、历史 Gold87/Gold108 分层证据导入、R57 Gold195 曝光导入及独立审核事件。
+- 新增 SAFE-only 计数报告、来源 pin 检查、私有目录/权限边界和合成回归测试；Tokenizer 预检继续复用唯一共享核心。
+- 明确旧批次证据不构成 Quality-v1 准入；Reviewer A/B、AI、Owner 仲裁与 REJECT/HOLD 分歧必须保留。
+- 本次仅创建独立 Draft PR；不修改冻结数据，不读取 R50，不启动 GPU/训练，不授予 Quality-v1 admission。
+
 # 0.1.12 — 2026-11-02
 
 - 根据 Owner 本地只读 SAFE 回执，将 Gold195 任务、Grok Pilot Manifest、Follow-up 和 Case02 disposition 路径从“未确认”更新为已由实际命令读取验证。

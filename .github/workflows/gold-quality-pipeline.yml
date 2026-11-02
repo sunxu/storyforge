@@ -1,0 +1,99 @@
+name: Gold Quality Pipeline (synthetic + R57 regression)
+
+on:
+  push:
+    branches:
+      - "gold-quality/**"
+  pull_request:
+    paths:
+      - "src/storyforge_gold_quality/**"
+      - "tests/test_gold_quality_pipeline.py"
+      - "tests/test_gold_quality_adapters.py"
+      - "tests/test_gold192_reconciliation.py"
+      - "tests/test_gold192_reviewer_b_import.py"
+      - "tests/test_gold192_reviewer_a_recovery.py"
+      - "tests/test_gold192_arbitration_queue.py"
+      - "tests/test_gold192_ai_arbitration_import.py"
+      - "tests/test_gold192_reviewer_a_v3_normalization.py"
+      - "src/storyforge_gold_quality/import_ai_arbitration.py"
+      - "scripts/r57_*.py"
+      - "tests/test_r57_*.py"
+      - "pyproject.toml"
+      - "experiments/r58_quality/r59_gold192_supabase_extract.py"
+      - "experiments/r58_quality/test_r59_gold192_supabase_extract.py"
+      - "experiments/r58_quality/r59_gold192_historical_exposure.py"
+      - "experiments/r58_quality/test_r59_gold192_historical_exposure.py"
+      - ".github/workflows/gold-quality-pipeline.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  synthetic-and-r57:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest ruff
+      - name: Lint unified pipeline
+        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py tests/test_gold192_reviewer_a_v3_normalization.py
+      - name: Verify frozen source blob pins
+        run: |
+          storyforge-gold-quality verify-source --repo-root "$PWD" > /tmp/gold-quality-source-safe.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("/tmp/gold-quality-source-safe.json").read_text())
+          assert result["all_sources_pass"] is True
+          assert result["private_values_emitted"] is False
+          print("Gold87/Gold108 immutable Git blob pins: PASS")
+          PY
+      - name: Exercise actual SAFE legacy adapters
+        run: |
+          for check in gold87-legacy-index gold108-legacy-binding gold195-target-source; do
+            storyforge-gold-quality run-check --repo-root "$PWD" --check "$check" > "/tmp/gold-adapter-${check}.json"
+            python - "$check" <<'PY'
+          import json, sys
+          from pathlib import Path
+          check = sys.argv[1]
+          report = json.loads(Path(f"/tmp/gold-adapter-{check}.json").read_text())
+          assert report["status"] == "READ_ONLY_SAFE_CHECK_PASS__NO_ADMISSION"
+          assert report["quality_v1_admitted"] == 0
+          assert report["training_authorized"] is False
+          assert report["private_values_emitted"] is False
+          print(f"{check}: SAFE PASS, no admission")
+          PY
+          done
+      - name: Run unified pipeline synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold_quality_pipeline.py' -v
+      - name: Run SAFE adapter synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold_quality_adapters.py' -v
+      - name: Run Gold192 disagreement synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_reconciliation.py' -v
+      - name: Run canonical Reviewer B importer tests
+        run: python -m unittest discover -s tests -p 'test_gold192_reviewer_b_import.py' -v
+      - name: Run Reviewer A recovery synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_reviewer_a_recovery.py' -v
+      - name: Run private arbitration queue synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_arbitration_queue.py' -v
+      - name: Run AI arbitration import synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_ai_arbitration_import.py' -v
+      - name: Run verified V3 Reviewer A normalization synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold192_reviewer_a_v3_normalization.py' -v
+      - name: Verify R59 bounded Gold192 source adapter
+        run: |
+          ruff check experiments/r58_quality/r59_gold192_supabase_extract.py experiments/r58_quality/test_r59_gold192_supabase_extract.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_gold192_supabase_extract.py' -v
+      - name: Verify R59 historical exposure adapter
+        run: |
+          ruff check experiments/r58_quality/r59_gold192_historical_exposure.py experiments/r58_quality/test_r59_gold192_historical_exposure.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_gold192_historical_exposure.py' -v
+      - name: Run imported R57 regression tests
+        run: python -m unittest discover -s tests -p 'test_r57_*.py' -v

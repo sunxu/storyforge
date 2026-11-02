@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.12
+# R58 RolePlay → StoryForge SFT Skill v0.1.13
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -19,8 +19,9 @@
 - [R58 私人审核证据复用规范](../../docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md)
 - [Quality-v1 主线计划](../../docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md)
 - [唯一共享 Token 核心](../../src/storyforge_dataset/token_preflight.py)
+- [统一 Gold Quality Pipeline Manifest / CLI](../../docs/standards/GOLD_QUALITY_PIPELINE_CN.md)
 
-完整算法、Schema、失败码、缓存身份、checkpoint 规则和复现步骤只维护在对应技术规范及共享源码中；不要在 Skill 或 README 复制实现。
+完整算法、Schema、失败码、缓存身份、checkpoint 规则和复现步骤只维护在对应技术规范及共享源码中；不要在 Skill 或 README 复制实现。统一 Gold Quality Manifest 仅作为私有 append-only 事件账本和编排入口，不替代来源、世界隔离、质量或训练准入门禁。
 
 ## 安全边界
 

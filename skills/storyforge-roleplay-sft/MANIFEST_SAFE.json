@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "date": "2026-11-02",
-  "tests": "v0.1.12: owner-run local private path verification; 3/3 historical Grok Manifest exact matches among 195 current tasks; three-case Grok pilot closed with Case02 HOLD; two SAFE receipts; no private text read by GitHub; quality_v1_admitted=0; training_authorized=false",
+  "tests": "v0.1.13: unified private append-only Gold Quality Manifest and CLI; layered Gold87/Gold108 history imports; R57 private exposure import requires same-run SAFE receipt; separate reviewer/adjudication/exclusion events; synthetic tests; no private values emitted; quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "200e0bbeaf22e69abc8f1aad77f8b6f2acd8493ab238d98d8248dcadfc77c35d",
-      "bytes": 9902
+      "sha256": "6f8eac1fd692cf6a5cbcb71407843edf6dfa7165cf58b79f0ae837eb5f72be4a",
+      "bytes": 10503
     },
     {
       "path": "README.md",
-      "sha256": "135e20a30bdf68f59358d471281a2554868414cb18478236dfad1cd2297347b1",
-      "bytes": 3093
+      "sha256": "76739b1e0bf829e0ad6d471bf12fd2f2ff98579deb6dd5b898019901f10961fb",
+      "bytes": 3341
     },
     {
       "path": "SKILL.md",
-      "sha256": "9b90f7300d7a8513f4d9b03e4fcf070f0344d9adb9e4a4ed8dc46ec61e0f7c02",
-      "bytes": 10709
+      "sha256": "9e1c2774732ba488d846382782dc2f07743d9fa00793be3c5412e35bea520ba0",
+      "bytes": 12105
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,7 +63,7 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "37c96502c7d294679bb14e9fb8c9550a1e4915b4f7aae4cd07a330a77f738794",
+      "sha256": "6bbc74fdedf5978fe34d7026615773f2df2f007508538e406d7c5fd1aca9c4a1",
       "bytes": 7695
     }
   ]
