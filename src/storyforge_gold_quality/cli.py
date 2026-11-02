@@ -254,10 +254,13 @@ def main():
     p = sub.add_parser("verify-source"); p.add_argument("--repo-root", type=Path, required=True); p.set_defaults(func=verify_source)
     for name, func in (("import-history", import_history), ("import-exposure", import_exposure),
                        ("append-review", append_review), ("append-exclusion", append_exclusion)):
-        p = sub.add_parser(name); p.add_argument("--batch", required=True)
+        p = sub.add_parser(name)
+        if name != "import-history":
+            p.add_argument("--batch", required=True)
         p.add_argument("--input", type=Path, required=True); p.add_argument("--manifest", type=Path, required=True)
         p.add_argument("--repo-root", type=Path, required=True)
-        if name == "import-history": p.add_argument("--batch", choices=("gold87", "gold108"), required=True)
+        if name == "import-history":
+            p.add_argument("--batch", choices=("gold87", "gold108"), required=True)
         if name == "import-exposure":
             p.add_argument("--kind", choices=("safe-aggregate", "r57-private-ledger"), required=True)
             p.add_argument("--receipt", type=Path)
