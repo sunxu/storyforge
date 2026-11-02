@@ -259,10 +259,10 @@ def quote_repair_schema(candidate_counts, invalid_quote_indices):
     if (set(invalid_quote_indices) - {"specific_source_quotes", "specific_target_quotes"}
             or set(invalid_quote_indices) - set(candidate_counts)):
         raise ValueError("QUOTE_REPAIR_FIELD_INVALID")
-    max_candidates = max(candidate_counts.values())
     if (any(type(v) is not int or not 1 <= v <= MAX_QUOTE_REPAIR_CANDIDATES
             for v in candidate_counts.values())):
         raise ValueError("QUOTE_REPAIR_CANDIDATE_COUNT_INVALID")
+    max_candidates = max(candidate_counts.values())
     for indices in invalid_quote_indices.values():
         if (not isinstance(indices, list) or not indices
                 or any(type(i) is not int or not 0 <= i < 12 for i in indices)
@@ -336,6 +336,7 @@ def apply_quote_repairs(original, row, error, candidates_by_field, selection):
     for item in repairs:
         if (not isinstance(item, dict)
                 or set(item) != {"field", "quote_index", "candidate_index"}
+                or not isinstance(item["field"], str)
                 or item["field"] not in candidates_by_field
                 or type(item["quote_index"]) is not int
                 or type(item["candidate_index"]) is not int):
