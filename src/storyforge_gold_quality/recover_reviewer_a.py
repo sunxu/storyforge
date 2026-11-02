@@ -1,8 +1,8 @@
 """Recover SHA-pinned Reviewer A evidence without inventing missing scores.
 
 Owner-only inputs must stay outside the Git worktree. This command imports
-only the 79 case-level records containing real six-dimensional scores.
-The four historical REJECT decisions remain a separate private evidence tier.
+79 case-level records with actual six-dimensional scores, plus four separate
+unscored historical REJECT evidence events. No scores are synthesized.
 """
 from __future__ import annotations
 
@@ -138,9 +138,26 @@ def recover_reviewer_a(args) -> dict:
             decision_counts != {"PASS_ONLY": 79, "REJECT_UNSCORED_NOT_IMPORTED": 3}):
         raise ManifestError("REVIEWER_A_RECOVERED_COUNTS_INVALID")
 
+    reject_events = [make_event("gold192", "HISTORICAL_REJECT_EVIDENCE", {
+        "case_id": "reviewer-a:" + ids_to_sha[case],
+        "target_sha256": ids_to_sha[case],
+        "reviewer_role": "REVIEWER_A",
+        "reviewer_source": SOURCE_ID,
+        "decision": "REJECT",
+        "score_state": "UNAVAILABLE_NOT_SYNTHESIZED",
+        "evidence_tier": ("RECOVERED_CASE_LEVEL_REJECT_UNSCORED_V6"
+                          if case in missing_scores else
+                          "FINAL_V6_REJECT_GROUP_ONLY"),
+    }, now()) for case in sorted(EXPECTED_REJECT_IDS)]
+
     existing = [
         e for e in old if e["batch_id"] == "gold192"
         and e["event_type"] == "INCREMENTAL_REVIEW"
+        and e["payload"].get("reviewer_role") == "REVIEWER_A"
+    ]
+    existing_rejects = [
+        e for e in old if e["batch_id"] == "gold192"
+        and e["event_type"] == "HISTORICAL_REJECT_EVIDENCE"
         and e["payload"].get("reviewer_role") == "REVIEWER_A"
     ]
     if existing:
@@ -151,16 +168,27 @@ def recover_reviewer_a(args) -> dict:
                 any(e["payload"].get("reviewer_source") != SOURCE_ID
                     for e in existing)):
             raise ManifestError("REVIEWER_A_EXISTING_EVENTS_CONFLICT")
-        status, appended = "RECOVERED_REVIEWER_A_ALREADY_IMPORTED", 0
-    else:
-        appended = append_events(args.manifest, events, args.repo_root)
-        status = "RECOVERED_REVIEWER_A_SCORED_CASES_IMPORTED"
+    if existing_rejects:
+        expected_rejects = {ids_to_sha[case] for case in EXPECTED_REJECT_IDS}
+        actual_rejects = {e["payload"].get("target_sha256") for e in existing_rejects}
+        if (len(existing_rejects) != 4 or actual_rejects != expected_rejects or
+                any(e["payload"].get("reviewer_source") != SOURCE_ID or
+                    e["payload"].get("decision") != "REJECT" or
+                    e["payload"].get("score_state") != "UNAVAILABLE_NOT_SYNTHESIZED" or
+                    "scores" in e["payload"] for e in existing_rejects)):
+            raise ManifestError("REVIEWER_A_EXISTING_REJECT_EVIDENCE_CONFLICT")
+    pending = ([] if existing else events) + ([] if existing_rejects else reject_events)
+    appended = append_events(args.manifest, pending, args.repo_root) if pending else 0
+    status = ("RECOVERED_REVIEWER_A_ALREADY_IMPORTED" if not pending else
+              "RECOVERED_REVIEWER_A_SCORED_AND_REJECT_EVIDENCE_IMPORTED")
     return {
         "schema": "storyforge_gold192_reviewer_a_recovery_safe_v1",
         "status": status,
         "case_level_records_recovered": 82,
         "scored_pass_cases_imported": 79,
-        "unscored_rejects_retained_as_external_private_evidence": 3,
+        "historical_reject_evidence_imported": 4,
+        "historical_rejects_without_scores": 4,
+        "unscored_rejects_recovered_at_case_level": 3,
         "other_historical_reject_without_case_level_review": 1,
         "unrecovered_case_level_records": 110,
         "events_appended": appended,
