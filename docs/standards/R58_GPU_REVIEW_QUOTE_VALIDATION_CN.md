@@ -100,7 +100,11 @@ A 已有两个有效 checkpoint，不得覆盖或用新代码重跑。B 的一�
 
 ### 2026-11-02 严重标记诊断增强
 
-第二条旧回执只包含 `RESPONSE_SEVERE_MUST_REJECT`，没有保留模型 decision 和 active flag 名称；原始输出未持久化，无法从旧 Job 还原。已在 Runner 中新增 `SevereDecisionMismatch`，仅把 case_index、model_decision、active_severe_flags、active_severe_flag_count 写入 SAFE。HF CPU 合成测试 12/12 PASS，覆盖 PASS/HOLD + active flag 应 HOLD、REJECT + active flag 可通过，以及 SAFE 不泄露正文。规则本身未放宽，尚未再次启动 GPU。
+第二条旧回执只包含 `RESPONSE_SEVERE_MUST_REJECT`，没有保留模型 decision 和 active flag 名称；原始输出未持久化，无法从旧 Job 还原。已在 Runner 中新增 `SevereDecisionMismatch`，仅把 case_index、model_decision、active_severe_flags、active_severe_flag_count 写入 SAFE。HF CPU 合成测试 12/12 PASS，覆盖 PASS/HOLD + active flag 的不一致、REJECT + active flag 的合法组合，以及 SAFE 不泄露正文。规则本身未放宽。
+
+第三版诊断 Job `6ae7f327c78863f9c62ffcca` 只处理 case_index=1；SAFE 返回 `model_decision=HOLD`、`active_severe_flags=[serious_player_agency]`。没有写入第二个 checkpoint。该元数据只能定位模型的标记/决策组合，不能证明严重越权事实成立。对可见目标回复与历史的独立文本核查未发现模型替玩家决定台词、意愿或关键行动；当前更像是把 NPC 自主结束话题误判为严重玩家自主权侵犯，但在没有原始模型解释的情况下仍保留为待确认假设。不得据此改写评审结果。
+
+本次诊断 Job 运行约 109 秒。B 组仍为 1/2 checkpoint，整体 HOLD；不启动剩余 11 条，不改写 A/B 已有 checkpoint，不训练。
 
 ## 7. 权威实现
 
