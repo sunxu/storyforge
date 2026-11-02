@@ -44,6 +44,17 @@ def write_manifest(path, root, rows):
             out.write(json.dumps(row, ensure_ascii=False, sort_keys=True) + "\n")
 
 
+
+def mark_written(receipt):
+    """Return a consistent SAFE receipt after exclusive private file creation."""
+    updated = dict(receipt)
+    updated["status"] = "GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD"
+    updated["private_candidate_artifact_written"] = True
+    updated["scope_receipt_only"] = False
+    updated["private_candidate_scope_written"] = True
+    return updated
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--repo-root", type=Path, required=True)
@@ -70,10 +81,7 @@ def main():
                 or sum(r["scope_status"] == "CANDIDATE_ONLY_QUALITY_HOLD" for r in rows) != 192):
             raise ValueError("SCOPE_COUNT_INVALID")
         write_manifest(args.private_output, repo, rows)
-        receipt["status"] = "GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD"
-        receipt["private_candidate_artifact_written"] = True
-        receipt["scope_receipt_only"] = False
-        receipt["private_candidate_scope_written"] = True
+        receipt = mark_written(receipt)
         print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
         return 0
     except (OSError, ValueError, KeyError, TypeError, UnicodeError) as exc:
