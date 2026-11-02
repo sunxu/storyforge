@@ -25,14 +25,14 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
     validate_manifest(events)
     if type(expected) is not int or not 1 <= expected <= 195:
         raise ManifestError("GOLD192_EXPECTED_COUNT_INVALID")
-    cases: dict[str, dict] = defaultdict(lambda: {"reviews": {}, "historical_a_reject": False, "excluded": False})
+    cases: dict[str, dict] = defaultdict(lambda: {"reviews": {}, "historical_a_reject": False, "ai_arbitrations": [], "excluded": False})
     seen_exclusions = set()
     counts = Counter()
     for event in events:
         if event["batch_id"] != "gold192":
             continue
         kind, payload = event["event_type"], event["payload"]
-        if kind not in REVIEW_EVENTS | {"EXCLUSION", "HISTORICAL_REJECT_EVIDENCE"}:
+        if kind not in REVIEW_EVENTS | {"EXCLUSION", "HISTORICAL_REJECT_EVIDENCE", "AI_ARBITRATION"}:
             continue
         case = payload.get("case_id")
         digest = payload.get("target_sha256")
@@ -48,6 +48,19 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
             if payload.get("reason_code") != "WORLD_IDENTITY_UNRESOLVED":
                 raise ManifestError("GOLD192_EXCLUSION_INVALID")
             state["excluded"] = True
+            continue
+        if kind == "AI_ARBITRATION":
+            if (payload.get("arbiter_type") != "AI_ARBITER"
+                    or payload.get("decision") not in {"PASS", "HOLD"}
+                    or not isinstance(payload.get("arbitration_source_sha256"), str)
+                    or len(payload["arbitration_source_sha256"]) != 64
+                    or payload.get("human_owner_approval") is not False
+                    or payload.get("quality_v1_admitted") is not False
+                    or not isinstance(payload.get("rationale_cn"), str)
+                    or not payload["rationale_cn"].strip()
+                    or cases[digest]["ai_arbitrations"]):
+                raise ManifestError("GOLD192_AI_ARBITRATION_INVALID")
+            cases[digest]["ai_arbitrations"].append(payload["decision"])
             continue
         if kind == "HISTORICAL_REJECT_EVIDENCE":
             if (payload.get("reviewer_role") != "REVIEWER_A" or
@@ -119,6 +132,10 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
                     counts["other_review_disagreement"] += 1
         if roles.get("OWNER_ARBITER"):
             counts["owner_arbitration_events_present"] += 1
+        ai_decisions = state["ai_arbitrations"]
+        if ai_decisions:
+            counts["ai_arbitration_events_present"] += 1
+            counts["ai_arbitration_" + ai_decisions[0].lower()] += 1
     eligible = len(cases) - counts["excluded_world_identity_hold"]
     if eligible > expected or counts["excluded_world_identity_hold"] > 3:
         raise ManifestError("GOLD192_SCOPE_COUNTS_EXCEED_EXPECTED")
