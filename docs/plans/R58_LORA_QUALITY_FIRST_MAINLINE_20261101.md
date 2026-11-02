@@ -48,3 +48,9 @@ Owner 明确：**不需要把任何训练样本认证为原始生产 Provider �
 ## 5. 2026-11-01 Assistant-first 结构门禁修复
 
 R58 真实 CPU ms-swift 4.5.3 + Transformers 5.16.1 + last_round + data_collator 已对 132 条原历史首条为 Assistant 的工程探针取得 132/132 PASS（无模型训练、无卡片质量准入）。因此 Quality-v1 和 Gold195 card-first / six-dimension review 工具不再因历史首条为 Assistant 而拒绝候选。所有历史、Gold 目标保持原样；世界卡语义审核、独立双审、世界级隔离、R50 防污染以及冻结训练合同仍各自必须满足；此次通过不等于 Gold195 训练准入。
+
+## 6. 2026-11-02 Owner 批准的 Gold192 范围更新
+
+Owner 已批准本轮**排除 3 条缺少可信世界身份的 Gold108 候选**，保留冻结 Gold195 原样。新的范围上限是 Gold192（Gold87 87 条 + Gold108 105 条）。此处是候选范围决策，不是 192 条 Quality-v1 PASS，也不是 GPU/训练授权。
+
+验证工具为 `experiments/r58_quality/gold192_scope_exclusion.py`，使用现有 Mac PRIVATE 任务和队列、默认只输出 SAFE 聚合。具体运行和版本边界参见 `docs/plans/R58_GOLD192_SCOPED_EXCLUSION_20261102.md`。后续优先补齐 Gold87 历史证据、审查世界卡和历史上下文，按世界隔离 Train/Validation 并继续排除密封评测泄漏。
