@@ -26,7 +26,8 @@ def make_inputs(root, conflict=False):
                 else "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND"
             )
             status = "EXCLUDED_WORLD_UNRESOLVED" if excluded else "CANDIDATE_ONLY_QUALITY_HOLD"
-            world = f"synthetic-world-{i % 13}"
+            world = (f"synthetic-gold108-world-{i % 7}" if i < 108
+                     else f"synthetic-gold87-world-{i % 6}")
             card = {"world": world, "rules": ["synthetic"]}
             if conflict and i == 27:
                 card = {"world": world, "rules": ["conflicting"]}
