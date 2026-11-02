@@ -159,6 +159,15 @@ class QuoteRepairFailure(ValueError):
         self.case_index = case_index
 
 
+class SevereDecisionMismatch(ValueError):
+    """Safe metadata for a severe flag paired with a non-REJECT decision."""
+    def __init__(self, decision, active_flags):
+        super().__init__("RESPONSE_SEVERE_MUST_REJECT")
+        self.code = "RESPONSE_SEVERE_MUST_REJECT"
+        self.decision = decision
+        self.active_flags = tuple(flag for flag in SEVERE if flag in active_flags)
+
+
 MAX_QUOTE_REPAIR_CANDIDATES = 128
 
 
@@ -298,8 +307,9 @@ def validate_response(response, row):
         raise ValueError("RESPONSE_REASON_INVALID")
     if decision == "HOLD" and not response["uncertainty"].strip():
         raise ValueError("RESPONSE_HOLD_NEEDS_UNCERTAINTY")
-    if any(flags.values()) and decision != "REJECT":
-        raise ValueError("RESPONSE_SEVERE_MUST_REJECT")
+    active_flags = [flag for flag in SEVERE if flags[flag] is True]
+    if active_flags and decision != "REJECT":
+        raise SevereDecisionMismatch(decision, active_flags)
     parts = row["messages"][1:]
     source_texts = [p["content"] for p in parts if p["role"] in ("user", "assistant")]
     for field, sources in (
@@ -564,14 +574,20 @@ def safe_failure_result(exc):
         "QUOTE_REPAIR_CANDIDATES_UNAVAILABLE", "QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE",
         "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
     }
-    reason = (exc.code if isinstance(exc, QuoteRepairFailure)
+    reason = (exc.code if isinstance(exc, (QuoteRepairFailure, SevereDecisionMismatch))
               else "RESPONSE_NONEXACT_QUOTE" if isinstance(exc, QuoteValidationError)
               else str(exc) if type(exc) is ValueError and str(exc) in allowed
               else "RUNTIME_FAILURE")
     result = {"status": "R58_HF_GPU_REVIEW_HOLD", "reason_code": reason,
               "training_authorized": False, "quality_v1_admitted": 0,
               "private_text_emitted": False}
-    if isinstance(exc, QuoteValidationError):
+    if isinstance(exc, SevereDecisionMismatch):
+        result.update({
+            "model_decision": exc.decision,
+            "active_severe_flags": list(exc.active_flags),
+            "active_severe_flag_count": len(exc.active_flags),
+        })
+    elif isinstance(exc, QuoteValidationError):
         result.update({
             "case_index": exc.case_index, "quote_field": exc.field,
             "quote_index": exc.quote_index,
