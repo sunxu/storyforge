@@ -1,4 +1,4 @@
-# R58 RolePlay→StoryForge SFT Skill v0.1.4
+# R58 RolePlay→StoryForge SFT Skill v0.1.5
 
 此目录是可移植的 **Skill 草案 + 已在合成数据上测试的离线工具**。它不会自动连接生产数据库、向 GitHub 写入、运行推理或启动付费 Hugging Face Job。需要安装到目标的 Skill 运行环境时，由 Owner 先检查 SKILL.md、SQL 和脚本；不要称其已安装或完成真实数据准入。
 
@@ -30,3 +30,7 @@ python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decis
 ## v0.1.4 引用纠错
 
 引用修复改为候选索引选择：模型只返回一个整数索引，程序从可见历史或目标回复的原文句段中提取引用；仅替换失败字段对应位置，评分与其他判断字段不经过修复模型。最多一次；失败仍 HOLD。
+
+## v0.1.5 严重标记诊断
+
+`RESPONSE_SEVERE_MUST_REJECT` 不能单独说明具体触发原因。新版 SAFE 只输出样本索引、decision 枚举值、触发的严重标记名称和数量；不输出原始模型响应或私人文本。旧回执缺少这些字段时不得猜测根因，应先增强诊断和合成测试，再决定是否重试未完成样本。
