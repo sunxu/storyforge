@@ -34,8 +34,9 @@ except ModuleNotFoundError:
         )
 
 PILOT_SCHEMA = "r58_gold195_literary_pilot13_blind_private_v1"
-CHECKPOINT_SCHEMA = "r58_hf_gpu_pilot13_review_checkpoint_private_v2"
+CHECKPOINT_SCHEMA = "r58_hf_gpu_pilot13_review_checkpoint_private_v3"
 REVIEW_POLICY_VERSION = "r58_literary_review_policy_v2"
+QUOTE_REPAIR_VERSION = "r58_quote_repair_batch_v2"
 REVIEW_KEYS = {
     "decision", "scores", "severe_flags",
     "card_snapshot_suitable_for_offline_training",
@@ -165,18 +166,25 @@ def prompt_messages(row):
 
 
 class QuoteValidationError(ValueError):
-    """Safe quote failure metadata; never stores or prints the quote text."""
-    def __init__(self, field, quote_index, source_candidate_count):
+    """Safe quote failure metadata; never stores or prints quote text."""
+    def __init__(self, field, quote_index, source_candidate_count,
+                 invalid_quote_indices=None, repairable=True):
         super().__init__("RESPONSE_NONEXACT_QUOTE")
         self.field = field
         self.quote_index = quote_index
         self.source_candidate_count = source_candidate_count
+        self.invalid_quote_indices = (
+            {field: [quote_index]} if invalid_quote_indices is None
+            and quote_index is not None else (invalid_quote_indices or {})
+        )
+        self.invalid_quote_count = sum(len(v) for v in self.invalid_quote_indices.values())
+        self.repairable = repairable
         self.case_index = None
         self.repair_attempted = False
 
 
 class QuoteRepairFailure(ValueError):
-    """A single bounded quote repair did not produce a valid checkpoint."""
+    """A single bounded batch quote repair did not produce a valid checkpoint."""
     def __init__(self, code, quote_error, case_index):
         super().__init__(code)
         self.code = code
@@ -195,6 +203,13 @@ class SevereDecisionMismatch(ValueError):
 
 
 MAX_QUOTE_REPAIR_CANDIDATES = 128
+MAX_QUOTE_REPAIR_ITEMS = 24
+QUOTE_REPAIR_PROMPT_TEMPLATE = (
+    "一次批量精确引用纠错；不重新评分。对每个指定 field/index 恰好返回一个候选索引；"
+    "不得增加、遗漏、重复或改写任何引用。候选文本只由程序逐字提供，来源引用只来自"
+    "visible_history 的单条 user/assistant 消息，目标引用只来自 target_text；"
+    "绝不使用 unapproved_card。"
+)
 
 
 def _quote_segments(text):
@@ -234,57 +249,119 @@ def quote_candidates(row, field):
     return candidates
 
 
-def quote_repair_schema(candidate_count):
-    if type(candidate_count) is not int or not 1 <= candidate_count <= MAX_QUOTE_REPAIR_CANDIDATES:
+def quote_repair_schema(candidate_counts, invalid_quote_indices):
+    if (not isinstance(candidate_counts, dict) or not candidate_counts
+            or not isinstance(invalid_quote_indices, dict) or not invalid_quote_indices):
         raise ValueError("QUOTE_REPAIR_CANDIDATE_COUNT_INVALID")
+    total = sum(len(v) for v in invalid_quote_indices.values())
+    if not 1 <= total <= MAX_QUOTE_REPAIR_ITEMS:
+        raise ValueError("QUOTE_REPAIR_ITEM_COUNT_INVALID")
+    if (set(invalid_quote_indices) - {"specific_source_quotes", "specific_target_quotes"}
+            or set(invalid_quote_indices) - set(candidate_counts)):
+        raise ValueError("QUOTE_REPAIR_FIELD_INVALID")
+    max_candidates = max(candidate_counts.values())
+    if (any(type(v) is not int or not 1 <= v <= MAX_QUOTE_REPAIR_CANDIDATES
+            for v in candidate_counts.values())):
+        raise ValueError("QUOTE_REPAIR_CANDIDATE_COUNT_INVALID")
+    for indices in invalid_quote_indices.values():
+        if (not isinstance(indices, list) or not indices
+                or any(type(i) is not int or not 0 <= i < 12 for i in indices)
+                or len(indices) != len(set(indices))):
+            raise ValueError("QUOTE_REPAIR_INDEX_INVALID")
     return {
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "candidate_index": {
-                "type": "integer", "minimum": 0, "maximum": candidate_count - 1
+            "repairs": {
+                "type": "array", "minItems": total, "maxItems": total,
+                "items": {
+                    "type": "object", "additionalProperties": False,
+                    "properties": {
+                        "field": {"type": "string",
+                                  "enum": list(invalid_quote_indices)},
+                        "quote_index": {"type": "integer", "minimum": 0, "maximum": 11},
+                        "candidate_index": {"type": "integer", "minimum": 0,
+                                            "maximum": max_candidates - 1},
+                    },
+                    "required": ["field", "quote_index", "candidate_index"],
+                },
             }
         },
-        "required": ["candidate_index"],
+        "required": ["repairs"],
     }
 
 
-def quote_repair_messages(row, previous_response_text, error, candidates):
+def quote_repair_messages(row, previous_response_text, error, candidates_by_field):
     if not isinstance(previous_response_text, str) or not previous_response_text:
         raise ValueError("QUOTE_REPAIR_PRIOR_RESPONSE_INVALID")
-    candidate_payload = json.dumps(
-        [{"index": i, "text": text} for i, text in enumerate(candidates)],
-        ensure_ascii=False, separators=(",", ":"))
+    if not error.repairable or not error.invalid_quote_indices:
+        raise ValueError("QUOTE_REPAIR_UNSUPPORTED_QUOTE_SHAPE")
+    candidate_payload = {
+        field: [{"index": i, "text": text} for i, text in enumerate(candidates)]
+        for field, candidates in candidates_by_field.items()
+    }
+    requested = [
+        {"field": field, "quote_index": index}
+        for field, indices in error.invalid_quote_indices.items()
+        for index in indices
+    ]
     return prompt_messages(row) + [
         {"role": "assistant", "content": previous_response_text},
         {"role": "user", "content": (
-            "上一份 JSON 的引用校验失败。现在只做一次精确引用选择，不重新评分。"
-            "失败字段：" + error.field + "；列表索引（从 0 开始）：" +
-            str(error.quote_index) + "。"
-            "请从下方候选中选择最能支持原引用含义的一项，只输出 JSON："
-            "{\"candidate_index\": 整数}。"
-            "候选文本由程序从允许来源中逐字切取；不要复制、改写或生成任何文本。"
-            "来源引用候选只来自 visible_history 的单条 user/assistant 消息；"
-            "目标引用候选只来自 target_text；绝不包含 unapproved_card。"
-            "候选清单：" + candidate_payload
+            QUOTE_REPAIR_PROMPT_TEMPLATE
+            + " 待修复位置：" + json.dumps(requested, ensure_ascii=False) + "。"
+            + "只输出 JSON，结构为 {\"repairs\":[{\"field\":\"...\","
+              "\"quote_index\":整数,\"candidate_index\":整数}]}。"
+            + "候选清单：" + json.dumps(
+                candidate_payload, ensure_ascii=False, separators=(",", ":"))
         )},
     ]
 
 
-def apply_quote_candidate(original, row, error, candidate):
-    if (not isinstance(candidate, str) or not candidate
-            or len(candidate) > 300):
+def apply_quote_repairs(original, row, error, candidates_by_field, selection):
+    if (not error.repairable or not isinstance(selection, dict)
+            or set(selection) != {"repairs"}
+            or not isinstance(selection["repairs"], list)):
         raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+    expected = {
+        (field, index)
+        for field, indices in error.invalid_quote_indices.items()
+        for index in indices
+    }
+    repairs = selection["repairs"]
+    if len(repairs) != len(expected):
+        raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+    actual = set()
     repaired = copy.deepcopy(original)
-    field = error.field
-    quotes = repaired.get(field)
-    if error.quote_index is None:
-        repaired[field] = [candidate]
-    else:
-        if (not isinstance(quotes, list)
-                or not 0 <= error.quote_index < len(quotes)):
+    for item in repairs:
+        if (not isinstance(item, dict)
+                or set(item) != {"field", "quote_index", "candidate_index"}
+                or item["field"] not in candidates_by_field
+                or type(item["quote_index"]) is not int
+                or type(item["candidate_index"]) is not int):
             raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
-        quotes[error.quote_index] = candidate
+        field, quote_index = item["field"], item["quote_index"]
+        pair = (field, quote_index)
+        candidates = candidates_by_field[field]
+        candidate_index = item["candidate_index"]
+        if (pair not in expected or pair in actual
+                or not 0 <= candidate_index < len(candidates)):
+            raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+        quotes = repaired[field]
+        if not isinstance(quotes, list) or len(quotes) > 12:
+            raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+        candidate = candidates[candidate_index]
+        if not isinstance(candidate, str) or not candidate or len(candidate) > 300:
+            raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+        if len(quotes) == 0 and quote_index == 0:
+            quotes.append(candidate)
+        elif 0 <= quote_index < len(quotes):
+            quotes[quote_index] = candidate
+        else:
+            raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
+        actual.add(pair)
+    if actual != expected:
+        raise ValueError("QUOTE_REPAIR_SELECTION_INVALID")
     validate_response(repaired, row)
     return repaired
 
@@ -338,19 +415,31 @@ def validate_response(response, row):
         raise SevereDecisionMismatch(decision, active_flags)
     parts = row["messages"][1:]
     source_texts = [p["content"] for p in parts if p["role"] in ("user", "assistant")]
+    invalid_quote_indices = {}
     for field, sources in (
         ("specific_source_quotes", source_texts),
         ("specific_target_quotes", [row["target_text"]]),
     ):
         quotes = response[field]
         if not isinstance(quotes, list) or len(quotes) > 12:
-            raise QuoteValidationError(field, None, len(sources))
-        for quote_index, quote in enumerate(quotes):
+            raise QuoteValidationError(
+                field, None, len(sources), invalid_quote_indices={}, repairable=False)
+        invalid = [
+            quote_index for quote_index, quote in enumerate(quotes)
             if (not isinstance(quote, str) or not quote.strip() or len(quote) > 300
-                    or not any(quote in body for body in sources)):
-                raise QuoteValidationError(field, quote_index, len(sources))
+                or not any(quote in body for body in sources))
+        ]
         if decision == "PASS" and not quotes:
-            raise ValueError("RESPONSE_PASS_MISSING_QUOTE")
+            invalid = [0]
+        if invalid:
+            invalid_quote_indices[field] = invalid
+    if invalid_quote_indices:
+        first_field = next(iter(invalid_quote_indices))
+        first_index = invalid_quote_indices[first_field][0]
+        source_count = len(source_texts) if first_field == "specific_source_quotes" else 1
+        raise QuoteValidationError(
+            first_field, first_index, source_count,
+            invalid_quote_indices=invalid_quote_indices)
     if decision == "PASS" and (
         any(scores[k] < lower for k, lower in SCORES.items())
         or response["card_snapshot_suitable_for_offline_training"] is not True
@@ -374,6 +463,13 @@ def encode_one(tokenizer, row, model_id):
 def reviewer_prompt_sha256():
     return sha(canon({
         "review_policy_version": REVIEW_POLICY_VERSION,
+        "quote_repair_version": QUOTE_REPAIR_VERSION,
+        "quote_repair_prompt_template": QUOTE_REPAIR_PROMPT_TEMPLATE,
+        "quote_repair_schema_template": {
+            "repairs": ["field", "quote_index", "candidate_index"],
+            "candidate_limit": MAX_QUOTE_REPAIR_CANDIDATES,
+            "repair_item_limit": MAX_QUOTE_REPAIR_ITEMS,
+        },
         "system": JUDGE_SYSTEM,
         "user": JUDGE_USER,
         "severe_flag_definitions": SEVERE_DEFINITIONS,
@@ -511,20 +607,32 @@ def run(args, engine_factory=None, tokenizer_factory=None,
                     initial_error.case_index = i
                     initial_error.repair_attempted = True
                     quote_repair_attempts += 1
+                    if not initial_error.repairable:
+                        raise QuoteRepairFailure(
+                            "QUOTE_REPAIR_UNSUPPORTED_QUOTE_SHAPE", initial_error, i)
                     try:
-                        candidates = quote_candidates(rows[i], initial_error.field)
+                        candidates_by_field = {
+                            field: quote_candidates(rows[i], field)
+                            for field in initial_error.invalid_quote_indices
+                        }
                         repair_messages = quote_repair_messages(
-                            rows[i], generated.text, initial_error, candidates)
+                            rows[i], generated.text, initial_error, candidates_by_field)
+                        repair_schema = quote_repair_schema(
+                            {field: len(candidates) for field, candidates
+                             in candidates_by_field.items()},
+                            initial_error.invalid_quote_indices)
                     except ValueError as candidate_error:
                         code = (str(candidate_error) if str(candidate_error) in {
                             "QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE",
                             "QUOTE_REPAIR_CANDIDATES_UNAVAILABLE",
+                            "QUOTE_REPAIR_ITEM_COUNT_INVALID",
+                            "QUOTE_REPAIR_UNSUPPORTED_QUOTE_SHAPE",
                         } else "QUOTE_REPAIR_SELECTION_INVALID")
                         raise QuoteRepairFailure(code, initial_error, i) from None
                     repair_ids = _encode_chat(
                         tokenizer, repair_messages,
                         disable_thinking=(args.model == MODELS["A"]))
-                    repair_max_tokens = 64
+                    repair_max_tokens = 256
                     if len(repair_ids) + repair_max_tokens > args.max_model_len:
                         raise QuoteRepairFailure(
                             "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED", initial_error, i)
@@ -533,8 +641,7 @@ def run(args, engine_factory=None, tokenizer_factory=None,
                         if TokensPrompt else {"prompt_token_ids": repair_ids})
                     repair_params = sampling_params_factory(
                         temperature=0, max_tokens=repair_max_tokens,
-                        structured_outputs=structured_outputs_factory(
-                            json=quote_repair_schema(len(candidates))))
+                        structured_outputs=structured_outputs_factory(json=repair_schema))
                     repaired_output = engine.generate(
                         [repair_prompt], repair_params, use_tqdm=False)[0].outputs[0]
                     if repaired_output.finish_reason != "stop":
@@ -545,16 +652,10 @@ def run(args, engine_factory=None, tokenizer_factory=None,
                     except (TypeError, json.JSONDecodeError):
                         raise QuoteRepairFailure(
                             "QUOTE_REPAIR_RESPONSE_INVALID", initial_error, i)
-                    if (not isinstance(selection, dict)
-                            or set(selection) != {"candidate_index"}
-                            or type(selection["candidate_index"]) is not int
-                            or not 0 <= selection["candidate_index"] < len(candidates)):
-                        raise QuoteRepairFailure(
-                            "QUOTE_REPAIR_SELECTION_INVALID", initial_error, i)
                     try:
-                        response = apply_quote_candidate(
+                        response = apply_quote_repairs(
                             response, rows[i], initial_error,
-                            candidates[selection["candidate_index"]])
+                            candidates_by_field, selection)
                     except QuoteValidationError as repair_error:
                         repair_error.case_index = i
                         repair_error.repair_attempted = True
@@ -612,8 +713,9 @@ def safe_failure_result(exc):
         "RESPONSE_JSON_INVALID", "RESPONSE_PASS_MISSING_QUOTE",
         "RESPONSE_PASS_BELOW_FLOOR", "QUOTE_REPAIR_TOKEN_BUDGET_EXCEEDED",
         "QUOTE_REPAIR_GENERATION_INCOMPLETE", "QUOTE_REPAIR_RESPONSE_INVALID",
-        "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS", "QUOTE_REPAIR_SELECTION_INVALID",
+        "QUOTE_REPAIR_CHANGED_NONQUOTE_FIELDS", "QUOTE_REPAIR_SELECTION_INVALID", "QUOTE_REPAIR_UNSUPPORTED_QUOTE_SHAPE",
         "QUOTE_REPAIR_CANDIDATES_UNAVAILABLE", "QUOTE_REPAIR_CANDIDATE_SET_TOO_LARGE",
+        "QUOTE_REPAIR_ITEM_COUNT_INVALID", "QUOTE_REPAIR_INDEX_INVALID",
         "CHECKPOINT_COVERAGE_INCOMPLETE", "CHECKPOINT_IDENTITY_MISMATCH",
     }
     reason = (exc.code if isinstance(exc, (QuoteRepairFailure, SevereDecisionMismatch))
@@ -637,6 +739,8 @@ def safe_failure_result(exc):
             "source_candidate_count": exc.source_candidate_count,
             "quote_repair_attempted": exc.repair_attempted,
             "quote_repair_succeeded": False,
+            "invalid_quote_count": exc.invalid_quote_count,
+            "invalid_quote_fields": list(exc.invalid_quote_indices),
         })
     elif isinstance(exc, QuoteRepairFailure):
         qe = exc.quote_error
@@ -646,6 +750,8 @@ def safe_failure_result(exc):
             "source_candidate_count": qe.source_candidate_count,
             "quote_repair_attempted": True,
             "quote_repair_succeeded": False,
+            "invalid_quote_count": qe.invalid_quote_count,
+            "invalid_quote_fields": list(qe.invalid_quote_indices),
         })
     return result
 
