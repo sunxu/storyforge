@@ -9,7 +9,7 @@ from gold192_story_review_packets import build_packets, write_private
 from legacy_gold_target_reuse import canonical
 
 
-def make_inputs(root, conflict=False):
+def make_inputs(root, conflict=False, cross_cohort=False):
     tasks_path = root / "tasks.jsonl"
     queue_path = root / "queue.jsonl"
     scope_path = root / "scope.jsonl"
@@ -26,8 +26,11 @@ def make_inputs(root, conflict=False):
                 else "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND"
             )
             status = "EXCLUDED_WORLD_UNRESOLVED" if excluded else "CANDIDATE_ONLY_QUALITY_HOLD"
-            world = (f"synthetic-gold108-world-{i % 7}" if i < 108
-                     else f"synthetic-gold87-world-{i % 6}")
+            world = (
+                f"synthetic-gold108-world-{i % 7}" if i < 108
+                else "synthetic-gold108-world-0" if cross_cohort
+                else f"synthetic-gold87-world-{i % 6}"
+            )
             card = {"world": world, "rules": ["synthetic"]}
             if conflict and i == 27:
                 card = {"world": world, "rules": ["conflicting"]}
@@ -76,8 +79,11 @@ def make_inputs(root, conflict=False):
                         "rule_fidelity": 4,
                         "narrative_continuity": 4,
                     },
+                    "score_range": [1, 5],
                     "two_independent_blinded_reviews_required": True,
                     "source_world_card_is_unapproved": True,
+                    "check_card_gold_contradictions": True,
+                    "do_not_infer_missing_world_facts": True,
                 },
                 "review_status": "UNREVIEWED",
                 "review_results": [],
@@ -103,6 +109,7 @@ class Gold192StoryPacketTests(unittest.TestCase):
             receipt, packets = build_packets(*make_inputs(Path(td)))
             self.assertEqual(receipt["candidate_cases"], 192)
             self.assertEqual(receipt["story_packets"], 13)
+            self.assertEqual(receipt["story_uuids_present_in_both_cohorts"], 0)
             self.assertEqual(receipt["assistant_first_cases"], 132)
             self.assertEqual(receipt["user_first_cases"], 60)
             self.assertEqual(sum(p["case_count"] for p in packets), 192)
@@ -125,6 +132,13 @@ class Gold192StoryPacketTests(unittest.TestCase):
                 write_private(output, repo, packets)
             with self.assertRaises(ValueError):
                 write_private(repo / "inside.jsonl", repo, packets)
+
+    def test_cross_cohort_world_overlap_holds(self):
+        with (
+            tempfile.TemporaryDirectory() as td,
+            self.assertRaisesRegex(ValueError, "PACKET_CROSS_COHORT_WORLD_OVERLAP"),
+        ):
+            build_packets(*make_inputs(Path(td), cross_cohort=True))
 
     def test_conflicting_card_snapshot_within_story_holds(self):
         with (
