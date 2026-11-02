@@ -2,7 +2,7 @@
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
   "version": "0.1.8",
   "date": "2026-11-02",
-  "tests": "v0.1.8: HF CPU shared token core historical baseline 8/8 PASS; R58 synthetic historical baseline 31/31 PASS; Skill contract refactored to enforce document ownership and no duplicated algorithms (PR CI pending); Batch Quote Repair v2 and checkpoint v3; A/B v3 GPU pilot completed (A 2 PASS, B 1 PASS/1 HOLD); quality_v1_admitted=0; training_authorized=false",
+  "tests": "v0.1.8: HF CPU shared token core historical baseline 8/8 PASS; R58 synthetic historical baseline 31/31 PASS; Skill contract refactored to enforce document ownership and no duplicated algorithms; Ruff import ordering corrected (PR CI pending); Batch Quote Repair v2 and checkpoint v3; A/B v3 GPU pilot completed (A 2 PASS, B 1 PASS/1 HOLD); quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
@@ -63,7 +63,7 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "1eb1a81a570f09be25f7910ab6e740bda78f1a5b3aca3f15be432aebd44a0873",
+      "sha256": "818831d1ef21f10219808df438ea4357258f90eea91ad579c5dc5ba76ec2df56",
       "bytes": 4973
     }
   ]
