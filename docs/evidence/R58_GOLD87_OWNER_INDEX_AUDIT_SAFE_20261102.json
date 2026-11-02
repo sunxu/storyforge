@@ -40,6 +40,20 @@
       "evaluations/v0.2/gold-quality-87/verify_gold87.py",
       "evaluations/v0.2/gold-quality-87/verification_report.json"
     ],
-    "caveat": "Missing specified paths does not prove the historical reviewer evidence is unavailable elsewhere. No originals were fabricated or inferred."
+    "caveat": "The four-file R45 checkout appears to contain the selected outputs, not the original A/B reviewer proof packages. README lists broader build inputs and outputs; it does not establish their presence in this directory. Only first two JSONL rows were structurally inspected.",
+    "owner_r45_checkout_directory_files": [
+      "README.md",
+      "gold_quality_accepted_87.jsonl",
+      "gold_87_index.csv",
+      "other_25_closed_without_gold.csv"
+    ],
+    "owner_r45_checkout_directory_confirmed": true,
+    "gold87_jsonl_first_two_records_inspected": true,
+    "gold87_jsonl_first_two_top_level_keys": [
+      "id",
+      "messages",
+      "metadata"
+    ],
+    "gold87_jsonl_first_two_have_separate_review_or_evidence_object": false
   }
 }
