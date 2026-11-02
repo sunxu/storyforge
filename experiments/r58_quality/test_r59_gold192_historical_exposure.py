@@ -2,7 +2,7 @@ import hashlib
 import unittest
 
 from experiments.r58_quality.r59_gold192_historical_exposure import (
-    classify, read_v03_test,
+    classify,
 )
 
 
