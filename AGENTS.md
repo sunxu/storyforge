@@ -304,6 +304,10 @@ Do not rewrite history or force-push.
 
 Do not modify `main` history destructively.
 
+### 5.1 Artifact delivery (GitHub first)
+
+For project code, tests, standards, runbooks and SAFE receipts, deliver changes through the existing GitHub feature branch / PR with commit SHA and validation status. Do not package tools as ZIP by default. ZIP is reserved for an explicit user request for compressed/offline handoff. Keep PRIVATE records and per-case review queues out of GitHub. See `docs/standards/PROJECT_ARTIFACT_DELIVERY_GITHUB_FIRST_CN.md`.
+
 ### 6. Decision rules
 
 If the remote GPU has less memory than expected, do NOT silently reduce `max_length` or change the dataset.
