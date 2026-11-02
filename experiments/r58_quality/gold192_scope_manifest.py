@@ -57,8 +57,15 @@ def main():
             raise ValueError("SCOPE_INPUTS_NOT_DISTINCT")
         receipt = inspect_scope(tasks, queue)
         rows = build_scope(queue)
-        if (len(rows) != 195
-                or sum(r["scope_status"] == "EXCLUDED_WORLD_ID_UNRESOLVED" for r in rows) != 3):
+        task_ids = set()
+        with open(tasks, encoding="utf-8") as source:
+            for line in source:
+                if line.strip():
+                    task_ids.add(json.loads(line)["case_id"])
+        if (len(rows) != 195 or len(task_ids) != 195
+                or {r["case_id"] for r in rows} != task_ids
+                or sum(r["scope_status"] == "EXCLUDED_WORLD_ID_UNRESOLVED" for r in rows) != 3
+                or sum(r["scope_status"] == "CANDIDATE_ONLY_QUALITY_HOLD" for r in rows) != 192):
             raise ValueError("SCOPE_COUNT_INVALID")
         write_manifest(args.private_output, repo, rows)
         receipt["status"] = "GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD"
