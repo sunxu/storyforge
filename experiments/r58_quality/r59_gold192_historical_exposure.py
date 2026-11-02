@@ -40,7 +40,7 @@ def digest(raw: bytes) -> str:
 
 
 def git_blob(raw: bytes) -> str:
-    return hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\\x00" + raw).hexdigest()
+    return hashlib.sha1(b"blob " + str(len(raw)).encode("ascii") + b"\x00" + raw).hexdigest()
 
 
 def canonical(value: object) -> bytes:
@@ -197,7 +197,7 @@ def run(repo: Path, private_root: Path, packets_path: Path,
     if stat.S_IMODE(output_dir.stat().st_mode) != 0o700:
         raise ValueError("OUTPUT_PERMISSIONS_INVALID")
 
-    private_payload = b"".join(canonical(row) + b"\\n" for row in rows)
+    private_payload = b"".join(canonical(row) + b"\n" for row in rows)
     private_sha = write_create_only(output_dir / "R59_GOLD192_HISTORICAL_EXPOSURE_PRIVATE.jsonl",
                                     private_payload)
     safe = {
@@ -230,7 +230,7 @@ def run(repo: Path, private_root: Path, packets_path: Path,
         "r50_accessed": False,
         "private_values_emitted": False,
     }
-    safe_payload = json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2).encode() + b"\\n"
+    safe_payload = json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2).encode() + b"\n"
     safe_sha = write_create_only(output_dir / "R59_GOLD192_HISTORICAL_EXPOSURE_SAFE.json", safe_payload)
     safe["safe_sha256"] = safe_sha
     return safe
