@@ -84,6 +84,27 @@ class ReuseTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "LEGACY_87_ROW_COUNT_INVALID"):
                 index_rows(path, 87)
 
+    def test_gold87_frozen_sheet_envelope(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "87.csv"
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            lines = [
+                "<PARSED TEXT FOR SHEET: 1 / 1 TABS",
+                "TAB NAME: gold_87_index.csv>",
+                "story_id,sample_target_sha256,review_A,review_B,sample_id",
+            ]
+            lines.extend(
+                f"world-{i},{digest},ACCEPT,ACCEPT,candidate-{i}"
+                for i in range(87)
+            )
+            path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+            self.assertEqual(len(index_rows(path, 87)), 87)
+            self.assertTrue(path.read_text(encoding="utf-8").startswith("<PARSED"))
+            lines[1] = "TAB NAME: unexpected.csv>"
+            path.write_text("\\n".join(lines) + "\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "LEGACY_87_WRAPPER_INVALID"):
+                index_rows(path, 87)
+
     def test_duplicate_legacy_candidate_id_is_rejected(self):
         with tempfile.TemporaryDirectory() as td:
             path = Path(td) / "87.csv"
