@@ -1,34 +1,26 @@
-# Gold192 Reviewer A：优先恢复 7 条缺失逐案证据
+# Gold192：7 条 Reviewer A 汇总级 PASS / Reviewer B 非 PASS 的优先补证
 
-这是一个**只读筛选**工具，不生成新的 Reviewer A 审核，不重审 Gold192，也不自动把 V6 汇总级 PASS_ONLY 当作逐案 PASS。
+本队列由 `normalize_reviewer_a_v3.py` 直接从已验证的 V3 原始文件和冻结 Gold192 packets 构建。它不读取不存在的 Remaining51 文件，也不依赖旧 V6 normalizer 或旧 Manifest A 事件。
 
-输入：
-- `R58_GOLD192_REVIEWER_A_RESULTS_20261102.json`：已经核验的 Reviewer A 192 条统一索引
-- `gold-quality-events.jsonl`：包含 192 条规范 Reviewer B、79 条 Reviewer A 完整评分、4 条历史无评分 REJECT 和 11 条 AI 仲裁的私有 Manifest
+## 选择规则
 
-输出：
-- Owner 私有优先补证队列，按 `target_sha256` 精确关联，含 `case_id`、Reviewer B 的既有理由及评分、A 的证据缺失状态
-- 仅包含计数的 SAFE 终端回执，不打印私人 ID、目标 SHA 或审核理由
+在 109 条只由 SAFE V3 汇总互补推导为 PASS_ONLY、尚无逐案 A 决策/评分的案例中，选择 Reviewer B 为 HOLD/REJECT 的案例：
+- Reviewer B HOLD：6
+- Reviewer B REJECT：1
+- Reviewer B PASS：102（暂不进入这轮优先队列）
 
-## 操作
+队列保留精确 `case_id + target_sha256`、Reviewer B 匿名 ID、评分、理由和 A 侧证据缺口。A 侧明确为 `reviewer_a_actual_case_level_decision=null`、`reviewer_a_scores_1_to_5=null`。这不是 A/B 正式分歧裁决，也不自动改变任何决策。
 
-```bash
-cd ~/workspace/storyforge-gold-quality
-git pull --ff-only
-source .venv/bin/activate
+另有 3 条 A 逐案六维 PASS / B HOLD，不属于这 7 条 aggregate-only 缺口，应单独保留为另一类已配对分歧。51 条 A HOLD 及 1 条 A REJECT 也必须按 V3 Supplement 的明确分组保留。
 
-PRIVATE_DIR="$HOME/.local/share/storyforge/r58/private"
-umask 077
+## 生成
 
-python -m storyforge_gold_quality.reviewer_a_gap_priority \
-  --reviewer-a "$PRIVATE_DIR/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
-  --manifest "$PRIVATE_DIR/gold-quality-events.jsonl" \
-  --output "$PRIVATE_DIR/gold192-reviewer-a-7-priority-gaps.private.json" \
-  --repo-root "$PWD"
-```
+该队列已由 V3 normalizer 与统一结果同时生成，无需再单独运行旧 `reviewer_a_gap_priority`：
 
-预期：`priority_case_count=7`、`priority_reviewer_b_decisions={"HOLD":6,"REJECT":1}`，其他 102 条暂不处理。输出目录必须权限 0700，生成的 PRIVATE JSON 权限 0600；已有文件不会被覆盖。
+`R58_GOLD192_A_AGGREGATE_ONLY_B_NONPASS_7_PRIVATE_20261102.json`
 
-注意：这 7 条的 `reported_final_decision=PASS_ONLY` 是基于 V6 总量及完整四条 REJECT 名单的**集合互补推导**，其 `reviewer_a_actual_case_level_decision=null`、`reviewer_a_scores_1_to_5=null`。下一步优先从历史 Reviewer A 文件中查找对应逐案原始记录，找不到再决定是否进行定向补审，不能填充臆造分数。
+## 历史 11 条 AI 仲裁的兼容性
 
-独立 AI 仲裁原先的 11 条判定仍保存在另一个证据层，本任务不会改动它们。Quality-v1 仍 0，GPU 和训练保持关闭，不访问 R50。
+既有 11 条 AI arbitration 队列使用的 Reviewer A evidence tier 指向 `V6`（包括 `RECOVERED_SCORED_CASE_LEVEL_V6` 和 `FINAL_V6_REJECT_GROUP_ONLY`）。当前已确认的 Reviewer A 来源是 V3，二者不能自动视为同一审核版本。旧事件应保留用于审计，但必须在 V3 重新关联后才能参与当前分歧处理；不得因为 Manifest 中已有 11 条 `AI_ARBITRATION` 事件，就宣称 V3 分歧已被解决。
+
+本阶段只恢复和对齐证据，不新增语义审核，不做 Owner 裁决。Quality-v1 仍为 0，训练未授权，GPU 未启动，R50 未访问。
