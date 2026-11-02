@@ -23,6 +23,7 @@
 - Gold87 索引：`evaluations/v0.2/gold-quality-87/gold_87_index.csv`，哈希字段 `sample_target_sha256`。
   - 该冻结文件实际含两行固定解析标记：`<PARSED TEXT FOR SHEET: 1 / 1 TABS` 和 `TAB NAME: gold_87_index.csv>`。解析器只识别这两个精确前缀，不改写原文件；不符合合同返回 `LEGACY_87_WRAPPER_INVALID` HOLD。
 - Gold108 索引：`evaluations/v0.2/gold-quality-108/gold_108_index.csv`，哈希字段 `target_sha256`。
+  - 冻结索引有 3 条记录缺少 `story_id`。按原 `gold108_review_binding.py` 的边界将其保留为世界身份缺口：不因其存在而阻断其余记录的目标级匹配，也不猜测世界身份；相关哈希出现时归入 `WORLD_OR_TARGET_IDENTITY_HOLD`。SAFE 汇总字段 `legacy_world_identity_missing` 记录缺口数量。
 - Gold108 双审证据：`evaluations/v0.2/gold-quality-108/dual_accept_review_evidence_108.jsonl`。
 - 任务：`$HOME/.local/share/storyforge/r58/gold195-review-tasks-v1.jsonl`，本地私人文件，不上传仓库。
 
