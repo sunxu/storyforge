@@ -136,6 +136,14 @@ HF CPU 合成测试现为 13/13 PASS，新增覆盖三个严重标记的显式�
 
 A/B 的盲审数据包按设计采用不同 blind_id 与独立随机顺序。去除 blind_id 后，A/B 的 13 条完整记录集合完全一致（13/13），26 个 blind_id 全部唯一；不能按数组索引比较。新 A/B Prompt v2 私有 STAGE 保留各自原始顺序和 blind_id，分别在固定 vLLM digest 的 HF CPU Sandbox 中完成 Token 预检，A/Qwen 与 B/GLM 均为 PASS、planned=2、无 GPU 推理。新输出目录为空；v1 checkpoint 不得复用。
 
+
+### 2026-11-02 Prompt v2 A/B GPU 首轮实测
+
+A/Qwen Job `6ae7f9d30e0338d1bb7dbd26` 运行 105.390 秒后按 SAFE exit 42 停止：case0 的 `specific_source_quotes` 引用纠错尝试后仍未通过精确子串校验，quote_index=1，无 checkpoint。B/GLM Job `6ae7f9d5c78863f9c62ffffb` 运行 123.231 秒后按 SAFE exit 42 停止：case0 checkpoint_00 PASS（severe flags 全 false、checkpoint v2/prompt fingerprint 正确）；case1 的 `specific_source_quotes` 纠错后仍未通过，quote_index=3，无 checkpoint_01。两边未出现 severe flag SAFE；A=0/2、B=1/2，质量准入仍为 0，不能比较模型文学能力。
+
+代码检查发现单次 repair 只替换第一个无效 quote，然后全量重验；同一列表的其他无效 quote 会继续阻断。后续改进应在一次结构化 repair call 中批量选择所有无效 quote 的候选索引，引用文本仍只能由程序从可见来源逐字提供。还应将 quote-repair prompt、schema 与 policy version 纳入 checkpoint prompt fingerprint，避免修复机制变化却复用旧 checkpoint。
+
+本轮 H200 wall time 合计 228.621 秒，按 $5/hour 与 6.6568 汇率估算约 ¥2.11（以最终账单为准）；未超过 ¥11.10 批准上限。
 ## 7. 权威实现
 
 - 运行器：experiments/r58_quality/r58_hf_gpu_literary_reviewer.py
