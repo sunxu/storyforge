@@ -10,9 +10,9 @@ import hashlib
 import json
 import re
 from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 
-from .cli import now
 from .manifest import ManifestError, append_events, load_events, make_event
 
 PASS_HOLD = {"PASS", "HOLD"}
@@ -20,6 +20,10 @@ CANONICAL_B = "bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8"
 A_SOURCE = "r58_reviewer_a_recovered_v6_20261102"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 EXPECTED = {"PASS": 6, "HOLD": 5}
+
+
+def now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def _read_pinned(path: Path) -> tuple[dict, bytes]:
@@ -76,7 +80,8 @@ def import_ai_arbitration(args) -> dict:
             or safe.get("quality_v1_admitted") != 0
             or safe.get("training_authorized") is not False
             or safe.get("gpu_started") is not False
-            or safe.get("r50_accessed") is not False):
+            or safe.get("r50_accessed") is not False
+            or safe.get("private_values_emitted") is not False):
         raise ManifestError("ARBITRATION_SAFE_RECEIPT_INVALID")
     cases = private.get("cases")
     queued = queue.get("cases")
@@ -119,7 +124,7 @@ def import_ai_arbitration(args) -> dict:
                 or queued_row.get("reviewer_a", {}).get("decision") != a_decision
                 or queued_row.get("reviewer_b", {}).get("decision") != b_decision):
             raise ManifestError("ARBITRATION_PRIOR_DECISION_MISMATCH")
-        if row.get("case_id") != queued_row.get("original_case_id") and row.get("case_id") is None:
+        if not isinstance(row.get("case_id"), str) or not row["case_id"]:
             raise ManifestError("ARBITRATION_CASE_ID_MISSING")
         rationale = row.get("rationale_cn")
         scope = row.get("scope_limit_cn")
