@@ -166,6 +166,7 @@ class SevereDecisionMismatch(ValueError):
         self.code = "RESPONSE_SEVERE_MUST_REJECT"
         self.decision = decision
         self.active_flags = tuple(flag for flag in SEVERE if flag in active_flags)
+        self.case_index = None
 
 
 MAX_QUOTE_REPAIR_CANDIDATES = 128
@@ -465,6 +466,9 @@ def run(args, engine_factory=None, tokenizer_factory=None,
                     raise ValueError("RESPONSE_JSON_INVALID") from None
                 try:
                     validate_response(response, rows[i])
+                except SevereDecisionMismatch as mismatch:
+                    mismatch.case_index = i
+                    raise
                 except QuoteValidationError as initial_error:
                     initial_error.case_index = i
                     initial_error.repair_attempted = True
@@ -583,6 +587,7 @@ def safe_failure_result(exc):
               "private_text_emitted": False}
     if isinstance(exc, SevereDecisionMismatch):
         result.update({
+            "case_index": exc.case_index,
             "model_decision": exc.decision,
             "active_severe_flags": list(exc.active_flags),
             "active_severe_flag_count": len(exc.active_flags),
