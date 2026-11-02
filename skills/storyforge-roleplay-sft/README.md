@@ -1,4 +1,4 @@
-# R58 RolePlay→StoryForge SFT Skill v0.1.6
+# R58 RolePlay→StoryForge SFT Skill v0.1.7
 
 此目录是可移植的 **Skill 草案 + 已在合成数据上测试的离线工具**。它不会自动连接生产数据库、向 GitHub 写入、运行推理或启动付费 Hugging Face Job。需要安装到目标的 Skill 运行环境时，由 Owner 先检查 SKILL.md、SQL 和脚本；不要称其已安装或完成真实数据准入。
 
@@ -10,7 +10,7 @@ python scripts/r58_intake.py gate --input reviewed_private.jsonl --output decisi
 python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decision_private.jsonl --output-dir new-private-freeze-dir --world-graph-sha <SHA256>
 ```
 
-`tests/` 只使用虚构数据，在沙箱环境可离线运行。R58 GPU 文学评审的逐字引用诊断与一次受控候选索引纠错规则见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`；模型只选索引，程序从允许来源提取精确原文，不允许模型改写引用，不放宽引用标准，也不会自动提交 GPU Job。
+`tests/` 只使用虚构数据，在沙箱环境可离线运行。R58 GPU 文学评审的逐字引用诊断与 Batch Quote Repair v2 批量候选索引纠错规则见 `docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`；模型一次返回所有无效位置的候选索引，程序校验位置集合并从允许来源提取精确原文；不允许模型改写引用，不放宽引用标准，也不会自动提交 GPU Job。
 
 阶段差异：短名单无需正文；`gate` 需要外部完成的逐案证据，不替 Reviewer 判语义；`freeze` 仅冻结带完整已验证 System/历史的字节，不验证真实 runtime 本身。后续 HF CPU `collator` PASS 和 Owner GPU 授权属于额外门禁。
 
@@ -35,6 +35,10 @@ python scripts/r58_intake.py freeze --input ready_private.jsonl --decision decis
 
 `RESPONSE_SEVERE_MUST_REJECT` 不能单独说明具体触发原因。新版 SAFE 只输出样本索引、decision 枚举值、触发的严重标记名称和数量；不输出原始模型响应或私人文本。旧回执缺少这些字段时不得猜测根因，应先增强诊断和合成测试，再决定是否重试未完成样本。
 
-## v0.1.6 严重标记阈值与 Prompt 身份
+## v0.1.7 严重标记阈值与 Prompt 身份
 
 严重玩家自主权只针对明确、实质性接管玩家关键行动/选择/台词/意愿/同意或拒绝；NPC 自身行动、心理、提问、改变话题或未等待回答不自动算越权。硬事实只依据可见历史明确规则，未认证卡片不能单独作为依据。checkpoint v2 绑定 `review_policy_version` 与 `prompt_sha256`；Prompt 变更后旧 checkpoint 不可复用，A/B 必须在同一 Prompt 版本下重新评估。
+
+## v0.1.7 Batch Quote Repair v2
+
+一次 repair call 批量修复 source/target 所有无效 quote 位置；模型只输出 field、quote_index、candidate_index。程序拒绝重复、遗漏、额外位置或逐字段候选越界。Checkpoint v3 的 Prompt SHA256 同时绑定纠错协议版本、模板、Schema 与上限；旧 v1/v2 checkpoint 不复用。
