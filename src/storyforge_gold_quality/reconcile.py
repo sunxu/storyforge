@@ -17,6 +17,7 @@ SCORE_FIELDS = {
     "player_agency", "narrative_continuity", "rule_fidelity",
 }
 EXPECTED = 192
+CANONICAL_REVIEWER_B_SHA256 = "bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8"
 
 
 def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
@@ -39,8 +40,8 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
             raise ManifestError("GOLD192_CASE_IDENTITY_INVALID")
         if not isinstance(digest, str) or len(digest) != 64:
             raise ManifestError("GOLD192_CASE_IDENTITY_INVALID")
-        state = cases[case]
         if kind == "EXCLUSION":
+            state = cases[digest]
             if case in seen_exclusions:
                 raise ManifestError("GOLD192_DUPLICATE_EXCLUSION")
             seen_exclusions.add(case)
@@ -49,6 +50,10 @@ def reconcile_gold192(events: list[dict], *, expected: int = EXPECTED) -> dict:
             state["excluded"] = True
             continue
         role = payload.get("reviewer_role")
+        if role == "REVIEWER_B" and payload.get("reviewer_source_sha256") != CANONICAL_REVIEWER_B_SHA256:
+            counts["superseded_or_unpinned_reviewer_b_events_ignored"] += 1
+            continue
+        state = cases[digest]
         decision = payload.get("decision")
         scores = payload.get("scores")
         if role not in ROLES or decision not in DECISIONS:
