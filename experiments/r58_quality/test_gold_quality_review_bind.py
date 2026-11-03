@@ -1,18 +1,18 @@
 """Synthetic-only coverage for Owner-local Gold192 review evidence binding."""
 from __future__ import annotations
 
-import copy
 import contextlib
-import io
+import copy
 import hashlib
+import io
 import json
 import os
 import stat
 import sys
 import tempfile
 import unittest
-from unittest import mock
 from pathlib import Path
+from unittest import mock
 
 import gold_quality_review_bind as binder
 from gold_source_context_stage import StageHold, stage_source
