@@ -72,7 +72,7 @@ Source Staging SAFE 不会回显 Story/Case ID 或任何正文；含原始文件
 
 ### Owner 证据输入合同
 
-由 Owner 创建权限 0600 的私有 `OWNER_CASE_EVIDENCE.jsonl`。每行对应一个已暂存的 `case_id`，只填写**实际已核验**的内容；不需要为全部 192 条填写，缺少记录的候选自动 HOLD。每行字段包括：
+由 Owner 创建权限 0600 的私有 `OWNER_CASE_EVIDENCE.jsonl`。可使用新增的 `experiments/r58_quality/r59_owner_evidence_template.py` 从 Staging + SAFE 自动生成空白身份模板，避免手工抄写 Case/Story/Session 对应关系。该工具只复制逐案身份与 Staging pin，所有 Owner 声明、来源版本、世界信息、Reviewer 引用和严重问题标记均为 `null`；输出状态严格为 `OWNER_EVIDENCE_TEMPLATE_CREATED__NOT_EVIDENCE`，**绝不构成证据或准入**。每行只填写**实际已核验**的内容；缺少记录的候选自动 HOLD。每行字段包括：
 
 - `case_id`, `target_sha256`, `story_id`, `session_id`：必须与 Staging 一致；
 - `staged_file_sha256`：`GOLD_SOURCE_STAGING_SAFE.json` 中的 `staged_file_sha256`；
@@ -84,6 +84,26 @@ Source Staging SAFE 不会回显 Story/Case ID 或任何正文；含原始文件
 - `evidence`：与 `quality_v1.py` 中 `EVIDENCE` 完全一致的 Owner 核实布尔字段（需明确为 `true`），另外 `known_protected_overlap`、`final_heldout_overlap`、`protected_test_body_accessed` 三项须经实际核实并明确为 `false`。不能因未知而填写通过值。
 
 证据不足时**应省略该 case 或填写真实 False**；脚本输出 HOLD 计数，不会代填缺失的证据。
+
+### 生成空白 Owner Evidence 模板（可复用）
+
+在确认 `$REVIEW_DIR` 已是权限 0700 的私有目录后执行；`OUT` 必须是此前不存在的新目录：
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE_DIR="$PRIVATE/source-staging-priority72-20261103"
+REVIEW_DIR="$PRIVATE/quality-v1"
+OUT="$REVIEW_DIR/owner-evidence-template-run2"
+
+test "$(stat -f '%Lp' "$REVIEW_DIR")" = 700
+test ! -e "$OUT"
+.venv/bin/python experiments/r58_quality/r59_owner_evidence_template.py \
+  --staged-jsonl "$STAGE_DIR/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --staging-safe "$STAGE_DIR/GOLD_SOURCE_STAGING_SAFE.json" \
+  --output-dir "$OUT"
+```
+
+将 `--owner-evidence-jsonl` 指向输出的 `OWNER_CASE_EVIDENCE_TEMPLATE_PRIVATE.jsonl` 即可直接运行 Binder，不必复制或改名。Owner 只能在本机私有文件中把 `null` 改成已核验的真实值；未知项继续保持 `null` 或不填写。严禁把模板 SAFE 的状态解释成 Owner Evidence 已完成。
 
 ### 本机运行顺序
 
