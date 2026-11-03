@@ -1,3 +1,11 @@
+# 0.1.14 — 2026-11-03
+
+- 新增可复用的只读历史上下文恢复核心：按目标消息时间、Session lineage、fork cutoff、summary cutoff 与历史故事版本恢复上下文。
+- 新增 Strict28 薄适配器，固定校验 28 条私有历史曝光 ledger 的 SHA256；只查询指定 story/session/turn，不进行全库扫描。
+- 新增合成回归，覆盖父 Session 分叉、未来消息、目标精确匹配、失败状态、摘要更新时间/cutoff、历史版本时间边界、循环 lineage、超限不截断和私有输出不可覆盖。
+- 明确历史故事卡快照不等于历史 Provider System Prompt；当前快照、未验证摘要与 Volume Memory 不得自动进入训练输入。
+- 更新 Quality Pipeline 技术规范、CI 和 Skill Manifest；不访问私人故事正文、不启动 GPU、不授予 Quality-v1 准入或训练授权。
+
 # 0.1.13 — 2026-11-02
 
 - 新增统一 Gold Quality Pipeline：私有 append-only Manifest、CLI、历史 Gold87/Gold108 分层证据导入、R57 Gold195 曝光导入及独立审核事件。
