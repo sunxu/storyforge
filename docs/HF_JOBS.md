@@ -249,6 +249,8 @@ training follows from this result.
 
 ### R59 16K context-window rebuild (engineering only)
 
+中文执行手册：`docs/R59_CONTEXT_WINDOW_CN.md`。
+
 The first five-row R59 token diagnostic measured 3/5 rows within 16,384 and
 2/5 over budget (median 13,660; p95 34,263; maximum 114,558). A CPU-only
 engineering probe then rebuilt complete recent suffixes for all five rows and
