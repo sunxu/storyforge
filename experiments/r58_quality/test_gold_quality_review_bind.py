@@ -122,10 +122,14 @@ class BindTests(unittest.TestCase):
         staged, a, b, exclusion, owners = fixture()
         two = copy.deepcopy(staged[0])
         two["case_id"] = "case-two"
-        two["target_sha256"] = f"{12:064x}"
         two["target_text"] = "另一个结尾"
+        two["target_sha256"] = sha(two["target_text"].encode())
+        two["messages"][-1]["content"] = "不同的玩家选择"
+        two["input_messages_sha256"] = sha(canonical(two["messages"]))
         staged.append(two)
         a["records"][12]["case_id"] = "case-two"
+        a["records"][12]["target_sha256"] = two["target_sha256"]
+        b["cases"][12]["target_sha256"] = two["target_sha256"]
         b["cases"][12]["decision"] = "PASS"
         owner2 = copy.deepcopy(owners[0])
         owner2["case_id"] = "case-two"
