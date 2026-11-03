@@ -19,10 +19,11 @@ class FakeCursor:
     def execute(self, query, params=()):
         self.query = query
         self.params = params
-        session_id, max_turn, limit = params
+        story_id, session_id, max_turn, limit = params
         self.rows = [
             event for event in self.events
-            if event["session_id"] == session_id
+            if event["story_id"] == story_id
+            and event["session_id"] == session_id
             and event["turn_index"] <= max_turn
         ][:limit]
 
@@ -78,10 +79,10 @@ class MessageLedgerTests(unittest.TestCase):
 
     def test_query_is_session_scoped_and_capped(self):
         cursor = FakeCursor(self.events)
-        rows = ledger.load_session_events(cursor, "s", 5, max_events=20)
+        rows = ledger.load_session_events(cursor, "story", "s", 5, max_events=20)
         self.assertEqual(len(rows), 4)
-        self.assertIn("WHERE session_id = %s AND turn_index <= %s", cursor.query)
-        self.assertEqual(cursor.params, ("s", 5, 21))
+        self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.query)
+        self.assertEqual(cursor.params, ("story", "s", 5, 21))
 
     def test_edited_after_target_uses_first_update_before_snapshot(self):
         events = self.events + [
@@ -153,7 +154,7 @@ class MessageLedgerTests(unittest.TestCase):
         with self.assertRaisesRegex(
             ledger.LedgerRecoveryError, "LEDGER_SESSION_EVENT_LIMIT_EXCEEDED"
         ):
-            ledger.load_session_events(cursor, "s", 5, max_events=2)
+            ledger.load_session_events(cursor, "story", "s", 5, max_events=2)
 
     def test_missing_target_boundary_holds(self):
         with self.assertRaisesRegex(
