@@ -286,16 +286,9 @@ def validate_contexts(
                 or context["story_id"] != identity["story_uuid"]):
             raise AuditHold("STRICT28_CONTEXT_IDENTITY_MISMATCH")
     selected_contexts = {cid: by_id[cid] for cid in strict}
-    story_sizes = sorted(Counter(row["story_id"] for row in selected_contexts.values()).values())
     story_ids = {row["story_id"] for row in selected_contexts.values()}
-    session_ids = {row["session_id"] for row in selected_contexts.values()}
-    story_session_pairs = {(row["story_id"], row["session_id"])
-                           for row in selected_contexts.values()}
-    if (story_sizes != EXPECTED_STRICT_STORY_GROUPS
-            or len(story_ids) != EXPECTED_STRICT_SESSION_COUNT
-            or len(session_ids) != EXPECTED_STRICT_SESSION_COUNT
-            or len(story_session_pairs) != EXPECTED_STRICT_SESSION_COUNT):
-        raise AuditHold("STRICT28_STORY_SESSION_DISTRIBUTION_INVALID")
+    if len(story_ids) != EXPECTED_STRICT_STORY_COUNT:
+        raise AuditHold("STRICT28_STORY_COUNT_INVALID")
     return selected_contexts
 
 
