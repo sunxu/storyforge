@@ -86,6 +86,11 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
            for target in targets):
         raise LedgerRecoveryError("LEDGER_TARGET_SCOPE_INVALID")
 
+    # Negative and zero physical turns are outside a positive-turn target
+    # history. Real ledger UPDATE events can carry negative turn_index; do not
+    # silently coerce them to positive turns. All included events still require
+    # exact locator and revision checks, and recovery does not claim a full
+    # transaction-level replay of out-of-scope events.
     # Read only compact event metadata in bulk. Large JSONB before-images are
     # fetched by primary key only for target boundaries and first post-target
     # events that can affect reconstruction.
@@ -96,7 +101,8 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
                role::text AS role, turn_index::integer AS turn_index,
                operation::text AS operation, recorded_at
         FROM public.v2_chat_message_ledger
-        WHERE story_id = %s AND session_id = %s AND turn_index <= %s
+        WHERE story_id = %s AND session_id = %s
+          AND turn_index BETWEEN 1 AND %s
         ORDER BY recorded_at, id
         LIMIT %s
         """,
