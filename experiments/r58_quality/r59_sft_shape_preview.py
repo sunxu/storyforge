@@ -80,6 +80,8 @@ def build_preview(staged_rows):
             raise PreviewHold("TARGET_IDENTITY_INVALID")
         messages = row.get("messages")
         history = _validate_history(messages)
+        if row.get("input_messages_sha256") != sha(canonical(messages)):
+            raise PreviewHold("INPUT_MESSAGES_HASH_MISMATCH")
         if history[0]["role"] == "assistant":
             assistant_first += 1
         history_messages += len(history)
