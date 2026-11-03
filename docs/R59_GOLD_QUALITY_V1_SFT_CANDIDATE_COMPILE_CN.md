@@ -83,7 +83,7 @@ Owner 本机 SAFE 回执确认 `GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl` 可�
 PRIVATE="$HOME/.local/share/storyforge/r59/private"
 STAGE="$PRIVATE/source-staging-priority72-20261103"
 QUALITY="$PRIVATE/quality-v1"
-OWNER_TEMPLATE="$(find "$QUALITY" -type f -name 'OWNER_CASE_EVIDENCE.jsonl' -print -quit)"
+OWNER_TEMPLATE="$(find "$PRIVATE" -type f -name 'OWNER_CASE_EVIDENCE.jsonl' -print -quit)"
 OUT="$QUALITY/owner-evidence-autolink-20261103"
 test -n "$OWNER_TEMPLATE"
 test "$(stat -f '%Lp' "$OWNER_TEMPLATE")" = 600
@@ -92,8 +92,8 @@ test ! -e "$OUT"
 .venv/bin/python experiments/r58_quality/r59_owner_evidence_autolink.py \
   --packet-jsonl "$PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
   --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
-  --reviewer-a "$PRIVATE/../r58/private/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
-  --reviewer-b "$PRIVATE/../r58/private/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
+  --reviewer-a "$HOME/.local/share/storyforge/r58/private/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
+  --reviewer-b "$HOME/.local/share/storyforge/r58/private/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
   --owner-template-jsonl "$OWNER_TEMPLATE" \
   --output-dir "$OUT"
 ```
