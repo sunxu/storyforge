@@ -179,22 +179,11 @@ def _write_create_only(path: Path, payload: bytes) -> None:
         raise
 
 
-def _is_inside_repository(path: Path, repository_root: Path | None = None) -> bool:
-    """Check against a detected checkout root, not the Job's process cwd."""
-    if repository_root is None:
-        source = Path(__file__).resolve()
-        repository_root = next(
-            (
-                parent for parent in source.parents
-                if (parent / ".git").exists()
-                and (parent / "pyproject.toml").is_file()
-            ),
-            None,
-        )
-    return bool(
-        repository_root is not None
-        and path.resolve().is_relative_to(repository_root.resolve())
-    )
+def _is_private_temp_path(path: Path, temp_root: Path | None = None) -> bool:
+    """Require private outputs to live under the operating system temp root."""
+    if temp_root is None:
+        temp_root = Path(tempfile.gettempdir())
+    return path.resolve().is_relative_to(temp_root.resolve())
 
 
 def run(private_input: Path, output_dir: Path):
@@ -209,7 +198,7 @@ def run(private_input: Path, output_dir: Path):
             or not output_dir.is_absolute() or not output_dir.parent.is_dir()
             or output_dir.parent.is_symlink()
             or stat.S_IMODE(output_dir.parent.stat().st_mode) != 0o700
-            or _is_inside_repository(output_dir)):
+            or not _is_private_temp_path(output_dir)):
         raise ValueError("OUTPUT_DIRECTORY_INVALID")
 
     try:
