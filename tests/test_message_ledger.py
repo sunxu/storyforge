@@ -129,7 +129,7 @@ class MessageLedgerTests(unittest.TestCase):
             snapshot(5, "u1", "s", 1, "user", "update_before", 11)
         ]
         with self.assertRaisesRegex(
-            ledger.LedgerRecoveryError, "LEDGER_SNAPSHOT_MISSING"
+            ledger.LedgerRecoveryError, "LEDGER_DETAIL_MISSING"
         ):
             ledger.load_session_events(
                 MissingSnapshotCursor(events), "story", "s", 5,
@@ -206,7 +206,7 @@ class MessageLedgerTests(unittest.TestCase):
         with self.assertRaisesRegex(
             ledger.LedgerRecoveryError, "LEDGER_SESSION_EVENT_LIMIT_EXCEEDED"
         ):
-            ledger.load_session_events(cursor, "story", "s", 5, max_events=2)
+            ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=2)
 
     def test_missing_target_boundary_holds(self):
         with self.assertRaisesRegex(
