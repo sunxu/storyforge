@@ -37,6 +37,8 @@ TOOLS = [
     ("r58.target-source", "experiments/r58_quality/gold195_target_source.py", "frozen Gold sources -> SAFE", "experiments/r58_quality/test_gold195_target_source.py"),
     ("r58.private-reuse", "experiments/r58_quality/private_review_evidence_reuse.py", "private manifest/tasks -> SAFE", "experiments/r58_quality/test_private_review_evidence_reuse.py"),
     ("r58.quality-v1", "experiments/r58_quality/quality_v1.py", "private reviewed rows -> SAFE", "experiments/r58_quality/test_quality_v1.py"),
+    ("r59.gold-source-stage", "experiments/r58_quality/gold_source_context_stage.py", "private Supabase context -> private review staging + SAFE", "experiments/r58_quality/test_gold_source_context_stage.py"),
+    ("r59.sft-candidates", "experiments/r58_quality/quality_v1_sft_candidates.py", "private reviewed rows -> SFT candidates + SAFE; no training admission", "experiments/r58_quality/test_quality_v1_sft_candidates.py"),
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
