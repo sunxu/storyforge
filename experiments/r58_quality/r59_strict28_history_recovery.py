@@ -19,6 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
 from storyforge_gold_quality.history_recovery import (  # noqa: E402
     HistoryRecoveryError,
@@ -55,6 +57,8 @@ def _private_read(path: Path) -> bytes:
     info = path.stat()
     if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600:
         raise ValueError("STRICT28_LEDGER_PERMISSIONS_INVALID")
+    if stat.S_IMODE(path.parent.stat().st_mode) != 0o700:
+        raise ValueError("STRICT28_LEDGER_PARENT_PERMISSIONS_INVALID")
     raw = path.read_bytes()
     if _sha(raw) != STRICT28_LEDGER_SHA256:
         raise ValueError("STRICT28_LEDGER_SHA256_MISMATCH")
