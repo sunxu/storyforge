@@ -72,6 +72,14 @@ class HuggingFaceJobGuardTests(unittest.TestCase):
                 "hf://buckets/adradar/storyforge-training/a/../secret:/input/file:ro"
             )
 
+    def test_input_output_source_prefix_overlap_rejected(self):
+        nested_output = (
+            "hf://buckets/adradar/storyforge-training/"
+            "preflight/r59/input.jsonl/reports:/output:rw"
+        )
+        with self.assertRaisesRegex(PolicyError, "INPUT_OUTPUT_SOURCE_COLLISION"):
+            self.valid(output_volume=nested_output)
+
     def test_duplicate_destinations_rejected(self):
         with self.assertRaisesRegex(PolicyError, "DUPLICATE_INPUT_DESTINATION"):
             self.valid(input_volumes=[INPUT, INPUT])
