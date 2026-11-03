@@ -105,10 +105,11 @@ class FakeCursor:
     def execute(self, query, params=()):
         self.rows, self.one = [], None
         if "FROM public.v2_chat_message_ledger" in query:
-            session_id, max_turn, limit = params
+            story_id, session_id, max_turn, limit = params
             self.rows = [
                 event for event in self.ledger_events
-                if event["session_id"] == session_id
+                if event["story_id"] == story_id
+                and event["session_id"] == session_id
                 and event["turn_index"] <= max_turn
             ][:limit]
         elif "FROM public.story_v2_sessions" in query:
