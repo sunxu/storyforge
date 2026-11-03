@@ -19,13 +19,24 @@ class FakeCursor:
     def execute(self, query, params=()):
         self.query = query
         self.params = params
+        if "WHERE id = ANY(%s)" in query:
+            ids = set(params[0])
+            self.rows = [
+                {"id": event["id"], "row_data": event["row_data"]}
+                for event in self.events if event["id"] in ids
+            ]
+            return
         story_id, session_id, max_turn, limit = params
-        self.rows = [
-            event for event in self.events
-            if event["story_id"] == story_id
-            and event["session_id"] == session_id
-            and event["turn_index"] <= max_turn
-        ][:limit]
+        self.rows = []
+        for source in self.events:
+            if (source["story_id"] == story_id
+                    and source["session_id"] == session_id
+                    and source["turn_index"] <= max_turn):
+                event = dict(source)
+                if event["operation"] in ledger.SNAPSHOTS:
+                    event["row_data"] = None
+                self.rows.append(event)
+        self.rows = self.rows[:limit]
 
     def fetchall(self):
         return list(self.rows)
@@ -79,7 +90,7 @@ class MessageLedgerTests(unittest.TestCase):
 
     def test_query_is_session_scoped_and_capped(self):
         cursor = FakeCursor(self.events)
-        rows = ledger.load_session_events(cursor, "story", "s", 5, max_events=20)
+        rows = ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=20)
         self.assertEqual(len(rows), 4)
         self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.query)
         self.assertEqual(cursor.params, ("story", "s", 5, 21))
