@@ -101,6 +101,34 @@ The complete technical contract—including adapter boundaries, cache identity, 
 
 Generic tokenizer checks do not replace real ms-swift `last_round` / data-collator label-mask validation. Neither kind of PASS independently grants literary quality admission or training authorization.
 
+### 2.2.1 R59 context-window rebuild policy
+
+The R59 16K context-window rebuild is a separate, explicit engineering step; the
+original shape-preview builder MUST continue preserving the complete source
+history. Never rewrite or overwrite the original Preview.
+
+- Pin `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` and
+  `max_length=16384`; measure in Hugging Face CPU with ms-swift, not on the Mac.
+- Keep the approved System Prompt and final target Assistant bytes unchanged.
+- If the full history does not fit, remove only a leading prefix and begin the
+  retained suffix at a complete User-message boundary. Preserve every later
+  message in its original order; never delete middle messages or truncate text.
+- Preserve the final User and target Assistant messages. Historical messages
+  remain `loss=false`; only the final target remains `loss=true`.
+- Preserve the original input-context SHA as provenance and recompute
+  `input_messages_sha256` over the retained context.
+- Use `experiments/r58_quality/r59_sft_context_window.py`; it reuses the
+  existing preview validator and actual ms-swift Collator, and uses the shared
+  `extract_input_ids` core. For standalone HF Jobs, mount the scripts directory
+  and provide `token_core.py` as an exact byte-for-byte copy of
+  `src/storyforge_dataset/token_preflight.py`.
+- Any sample whose current User + target or complete eligible suffix cannot fit
+  MUST HOLD. The operation is all-or-none for a batch and writes a new private
+  create-only output; it never mutates source input.
+- Context-window and actual Collator PASS are engineering checks only:
+  `quality_v1_admitted=0`, `dataset_frozen=false`,
+  `training_authorized=false`, `gpu_started=false` remain mandatory.
+
 ### 2.3 Hugging Face Jobs namespace and volume policy
 
 StoryForge Hugging Face Jobs MUST use the organization namespace `adradar` and the
