@@ -32,6 +32,8 @@ on:
       - "experiments/r58_quality/test_gold_quality_review_bind.py"
       - "experiments/r58_quality/r59_evidence_inventory.py"
       - "experiments/r58_quality/test_r59_evidence_inventory.py"
+      - "experiments/r58_quality/r59_owner_evidence_template.py"
+      - "experiments/r58_quality/test_r59_owner_evidence_template.py"
       - ".github/workflows/gold-quality-pipeline.yml"
 
 permissions:
@@ -122,5 +124,9 @@ jobs:
         run: |
           ruff check experiments/r58_quality/r59_evidence_inventory.py experiments/r58_quality/test_r59_evidence_inventory.py
           python -m unittest discover -s experiments/r58_quality -p 'test_r59_evidence_inventory.py' -v
+      - name: Verify R59 Owner Evidence template generator
+        run: |
+          ruff check experiments/r58_quality/r59_owner_evidence_template.py experiments/r58_quality/test_r59_owner_evidence_template.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_owner_evidence_template.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v
