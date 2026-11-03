@@ -59,6 +59,9 @@ def _private_read(path: Path) -> bytes:
         raise ValueError("STRICT28_LEDGER_PERMISSIONS_INVALID")
     if stat.S_IMODE(path.parent.stat().st_mode) != 0o700:
         raise ValueError("STRICT28_LEDGER_PARENT_PERMISSIONS_INVALID")
+    repo_root = ROOT.resolve(strict=True)
+    if repo_root == path.resolve(strict=True) or repo_root in path.resolve(strict=True).parents:
+        raise ValueError("STRICT28_LEDGER_MUST_REMAIN_PRIVATE")
     raw = path.read_bytes()
     if _sha(raw) != STRICT28_LEDGER_SHA256:
         raise ValueError("STRICT28_LEDGER_SHA256_MISMATCH")
@@ -133,8 +136,13 @@ def run(ledger_path: Path, output_dir: Path, dsn: str, *,
     if output_dir.exists() or output_dir.is_symlink():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
     if (not output_dir.parent.is_dir() or output_dir.parent.is_symlink()
-            or stat.S_IMODE(output_dir.parent.stat().st_mode) != 0o700):
+            or stat.S_IMODE(output_dir.parent.stat().st_mode) != 0o700
+            or any(parent.is_symlink() for parent in output_dir.parent.parents if parent.exists())):
         raise ValueError("OUTPUT_PARENT_PERMISSIONS_INVALID")
+    repo_root = ROOT.resolve(strict=True)
+    resolved_parent = output_dir.parent.resolve(strict=True)
+    if resolved_parent == repo_root or repo_root in resolved_parent.parents:
+        raise ValueError("OUTPUT_MUST_REMAIN_PRIVATE")
 
     try:
         import psycopg
@@ -159,7 +167,7 @@ def run(ledger_path: Path, output_dir: Path, dsn: str, *,
     if stat.S_IMODE(output_dir.stat().st_mode) != 0o700:
         raise ValueError("OUTPUT_PERMISSIONS_INVALID")
     private_payload = _jsonl(recovered)
-    private_sha = _create_only(
+    _create_only(
         output_dir / "R59_STRICT28_HISTORICAL_CONTEXT_PRIVATE.jsonl",
         private_payload,
     )
@@ -185,9 +193,7 @@ def run(ledger_path: Path, output_dir: Path, dsn: str, *,
         "private_artifact": {
             "file": "R59_STRICT28_HISTORICAL_CONTEXT_PRIVATE.jsonl",
             "records": len(recovered),
-            "sha256": private_sha,
         },
-        "source_ledger_sha256": STRICT28_LEDGER_SHA256,
         "quality_v1_admitted": 0,
         "training_authorized": False,
         "gpu_started": False,
