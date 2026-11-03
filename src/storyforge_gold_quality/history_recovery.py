@@ -136,7 +136,7 @@ def _target(cursor, case: dict) -> dict:
     return target
 
 
-def _lineage(cursor, story_id: str, leaf_session_id: str, target_turn: int,
+def _lineage(cursor, story_id: str, leaf_session_id: str,
              max_depth: int) -> list[dict]:
     if type(max_depth) is not int or not 1 <= max_depth <= 64:
         raise HistoryRecoveryError("LINEAGE_DEPTH_LIMIT_INVALID")
@@ -151,18 +151,20 @@ def _lineage(cursor, story_id: str, leaf_session_id: str, target_turn: int,
             raise HistoryRecoveryError("SESSION_LINEAGE_DEPTH_EXCEEDED")
         seen.add(current_id)
         node = _session(cursor, story_id, current_id)
-        if child is None:
-            cutoff = target_turn - 1
-            depth = 0
-        else:
-            cutoff = child.get("forked_from_turn")
-            depth = len(chain)
-            if type(cutoff) is not int or cutoff < 0:
-                raise HistoryRecoveryError("SESSION_FORK_CUTOFF_INVALID")
-        chain.append({"session": node, "turn_cutoff": cutoff, "lineage_depth": depth})
+        _timestamp(node["created_at"])
+        if child is not None:
+            if _datetime(node["created_at"]) > _datetime(child["created_at"]):
+                raise HistoryRecoveryError("SESSION_LINEAGE_TIME_ORDER_INVALID")
         parent_id = node.get("parent_session_id")
-        if parent_id is not None and (not isinstance(parent_id, str) or not parent_id):
-            raise HistoryRecoveryError("SESSION_PARENT_ID_INVALID")
+        if parent_id is not None:
+            if not isinstance(parent_id, str) or not parent_id:
+                raise HistoryRecoveryError("SESSION_PARENT_ID_INVALID")
+            # The database stores this as a story-turn number (not the
+            # physical v2_chat_messages.turn_index used by message queries).
+            fork_turn = node.get("forked_from_turn")
+            if type(fork_turn) is not int or fork_turn < 0:
+                raise HistoryRecoveryError("SESSION_FORK_CUTOFF_INVALID")
+        chain.append({"session": node, "lineage_depth": len(chain)})
         child = node
         current_id = parent_id
     return chain
@@ -207,15 +209,42 @@ def _history(cursor, story_id: str, segment: dict, target_time: Any) -> list[dic
     return output
 
 
-def _summary_snapshot(segment: dict, target_time: Any) -> dict:
-    session = segment["session"]
-    cutoff = segment["turn_cutoff"]
+def _summary_snapshot(session: dict, target_time: Any,
+                       target_turn_index: int) -> dict:
     updated_at = session.get("updated_at")
     if updated_at is None or not _before(updated_at, target_time):
         return {"status": "NOT_PROVEN_PRETARGET", "used": False, "fields": {}}
-    cutoffs = {key: session.get(key) for key in SUMMARY_CUTOFF_FIELDS}
-    if any(type(value) is not int or value > cutoff for value in cutoffs.values()):
+
+    last_summary_turn = session.get("last_summary_turn")
+    last_extract_turn = session.get("last_extract_turn")
+    if (type(last_summary_turn) is not int or type(last_extract_turn) is not int
+            or last_summary_turn < 0 or last_extract_turn < 0):
+        return {"status": "TURN_CUTOFF_NOT_PROVEN", "used": False, "fields": {}}
+
+    # last_*_turn are story-turn numbers. The summary_source/text *_index
+    # columns are physical message turn_index values. The DB's legacy
+    # fallback is last_summary_turn * 2; never compare these domains directly.
+    physical_cutoff = target_turn_index - 1
+    story_turn_cutoff = physical_cutoff // 2
+    legacy_end = last_summary_turn * 2
+    source_end = session.get("summary_source_end_index")
+    text_end = session.get("summary_text_end_index")
+    legacy_text_end = session.get("summary_legacy_text_end_index")
+    dependency_end = session.get("summary_source_dependency_end_index")
+
+    source_end = legacy_end if source_end is None else source_end
+    text_end = legacy_end if text_end is None else text_end
+    legacy_text_end = text_end if legacy_text_end is None else legacy_text_end
+    physical_cutoffs = (source_end, text_end, legacy_text_end)
+    if (any(type(value) is not int or value < 0 or value > physical_cutoff
+            for value in physical_cutoffs)
+            or (dependency_end is not None and
+                (type(dependency_end) is not int or dependency_end < 0
+                 or dependency_end > physical_cutoff))
+            or last_summary_turn > story_turn_cutoff
+            or last_extract_turn > story_turn_cutoff):
         return {"status": "CUTOFF_NOT_PROVEN", "used": False, "fields": {}}
+
     fields = {
         key: session.get(key)
         for key in ("memory_summary", "recent_summary", "rolling_outline")
@@ -227,7 +256,16 @@ def _summary_snapshot(segment: dict, target_time: Any) -> dict:
         "status": "PRETARGET_COVERAGE_VERIFIED",
         "used": True,
         "updated_at": _timestamp(updated_at),
-        "cutoffs": cutoffs,
+        "cutoffs": {
+            "physical_message_cutoff": physical_cutoff,
+            "story_turn_cutoff": story_turn_cutoff,
+            "last_summary_turn": last_summary_turn,
+            "last_extract_turn": last_extract_turn,
+            "summary_source_end_index": source_end,
+            "summary_source_dependency_end_index": dependency_end,
+            "summary_text_end_index": text_end,
+            "summary_legacy_text_end_index": legacy_text_end,
+        },
         "fields": fields,
     }
 
@@ -307,19 +345,26 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
 
     target = _target(cursor, case)
     chain = _lineage(cursor, case["story_id"], case["session_id"],
-                     case["turn_index"], max_lineage_depth)
-    segments = list(reversed(chain))
-    history = []
+                     max_lineage_depth)
+    leaf = chain[0]["session"]
+    # Fork/rewind materializes the inherited messages into the child session
+    # with new message IDs. Read that materialized child history once; merging
+    # parent messages would duplicate history and misread forked_from_turn,
+    # which is a story-turn number rather than a physical message index.
+    leaf_segment = {
+        "session": leaf,
+        "turn_cutoff": case["turn_index"] - 1,
+        "lineage_depth": 0,
+    }
+    history = _history(cursor, case["story_id"], leaf_segment, target["created_at"])
+    summary = _summary_snapshot(leaf, target["created_at"], case["turn_index"])
     summaries = []
-    for segment in segments:
-        history.extend(_history(cursor, case["story_id"], segment, target["created_at"]))
-        summary = _summary_snapshot(segment, target["created_at"])
-        if summary["used"]:
-            summaries.append({
-                "session_id": segment["session"]["session_id"],
-                "lineage_depth": segment["lineage_depth"],
-                **summary,
-            })
+    if summary["used"]:
+        summaries.append({
+            "session_id": leaf["session_id"],
+            "lineage_depth": 0,
+            **summary,
+        })
     history.sort(key=lambda row: (_datetime(row["created_at"]), row["message_id"]))
     message_ids = [row["message_id"] for row in history]
     if len(message_ids) != len(set(message_ids)):
@@ -345,19 +390,20 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
         },
         "history": history,
         "history_message_count": len(history),
+        "history_materialized_in_leaf_session": True,
         "session_lineage": [
             {
-                "session_id": segment["session"]["session_id"],
-                "parent_session_id": segment["session"].get("parent_session_id"),
-                "forked_from_turn": segment["session"].get("forked_from_turn"),
-                "turn_cutoff": segment["turn_cutoff"],
-                "lineage_depth": segment["lineage_depth"],
+                "session_id": node["session"]["session_id"],
+                "parent_session_id": node["session"].get("parent_session_id"),
+                "forked_from_turn_story_turn": node["session"].get("forked_from_turn"),
+                "lineage_depth": node["lineage_depth"],
+                "session_created_at": _timestamp(node["session"]["created_at"]),
                 "session_updated_at": (
-                    _timestamp(segment["session"]["updated_at"])
-                    if segment["session"].get("updated_at") is not None else None
+                    _timestamp(node["session"]["updated_at"])
+                    if node["session"].get("updated_at") is not None else None
                 ),
             }
-            for segment in segments
+            for node in chain
         ],
         "pretarget_summaries": summaries,
         "summary_status": (
