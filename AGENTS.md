@@ -101,6 +101,42 @@ The complete technical contract—including adapter boundaries, cache identity, 
 
 Generic tokenizer checks do not replace real ms-swift `last_round` / data-collator label-mask validation. Neither kind of PASS independently grants literary quality admission or training authorization.
 
+### 2.3 Hugging Face Jobs namespace and volume policy
+
+StoryForge Hugging Face Jobs MUST use the organization namespace `adradar` and the
+project bucket `hf://buckets/adradar/storyforge-training`. Do not silently fall back
+to the personal namespace `greenkeedle` after an organization submission error.
+
+For CPU jobs, use separate mounts:
+
+- Every source/input mount MUST be explicitly read-only (`:ro`), mounted below
+  `/input/` or `/scripts/`.
+- The output mount MUST be a separate project-bucket prefix mounted at `/output`
+  with explicit read-write mode (`:rw`).
+- Never mount the whole project bucket read-write as a shortcut.
+- Never make the output mount read-only; SAFE reports need a dedicated writable
+  destination.
+- Use a unique output prefix for each attempt to prevent overwriting prior receipts.
+
+Use `scripts/hf_job_guard.py` for CPU submissions. It enforces namespace
+`adradar`, CPU-only flavors, a bounded timeout, read-only inputs, one separate
+read-write output, and one attempt. Without `--submit`, it performs validation only.
+The tool does not fall back to a personal namespace, retry automatically, or submit
+GPU jobs.
+
+Known incident regression rules:
+
+- HTTP 403 with a read-write source/input mount: inspect mount mode and organization
+  permissions. The previously reproduced bucket-mount failure was resolved by
+  mounting the input prefix `:ro` and using a separate output prefix `:rw`.
+- HTTP 402 in the personal namespace: do not infer that the organization is out of
+  balance and do not switch billing namespaces. Check the intended organization
+  billing/permission state.
+- A 403/402 MUST NOT trigger automatic namespace fallback, permission broadening,
+  mount-mode broadening, retries, or GPU escalation.
+
+See `docs/HF_JOBS.md` for the verified incident record and invocation contract.
+
 ### 3. Training gate
 
 Training is strictly staged.
