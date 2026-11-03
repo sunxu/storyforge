@@ -11,6 +11,7 @@ import stat
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import gold_quality_review_bind as binder
@@ -164,7 +165,7 @@ class BindTests(unittest.TestCase):
         ]
         with (
             contextlib.redirect_stdout(output),
-            unittest.mock.patch.object(sys, "argv", argv),
+            mock.patch.object(sys, "argv", argv),
             unittest.mock.patch.object(
                 binder, "run", side_effect=binder.BindHold("PINNED_SOURCE_MISMATCH")
             ),
