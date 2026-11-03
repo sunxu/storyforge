@@ -169,6 +169,8 @@ R52/v0.3 的正式批准记录 `docs/evidence/V03_R52_NO_CARD_INPUT_DESIGN_APPRO
 
 R59 Source Stage SAFE 中的 `system_prompt_sha256` 与上述批准的 R27 字节 SHA 完全一致。因此无需重做 Source Stage 或重新编写 System Prompt。为避免把工程预检误写为质量准入，新增 `experiments/r58_quality/r59_sft_shape_preview.py`：它只消费已有 Staging 和 SAFE 回执，逐条校验 System SHA、目标 SHA、历史消息结构与顺序；保留 User-first / Assistant-first 历史，不插入世界卡，不删除历史消息；为历史消息标记 `loss=false`，并追加原始目标 Assistant `loss=true`。输出为私有工程预览，状态严格为 `R59_SFT_SHAPE_PREVIEW_BUILT__NOT_ADMITTED`，不产生质量准入、冻结集或训练授权。
 
+此外，新增 `experiments/r58_quality/r59_sft_collator_cpu.py`，供 Hugging Face **CPU** Job 在受控环境中执行真实 Qwen tokenizer + ms-swift `last_round` collator 检查。它只接受上述 preview JSONL，检查消息/loss 结构、目标 SHA、实际 token 长度和 collator labels；不加载模型权重，不执行 inference/training。该脚本只在 CPU Job 环境运行，Mac 不需要安装 transformers/ms-swift。CPU Job 的费用/资源须由 Owner 单独确认；没有明确授权不得提交付费 Job。当前 5 条的 CPU 实测结果尚未产生。
+
 本机运行（输出父目录必须为 0700，目标目录必须不存在）：
 
 ```bash
@@ -182,6 +184,15 @@ test ! -e "$OUT"
   --staging-safe "$STAGE/GOLD_SOURCE_STAGING_SAFE.json" \
   --output-dir "$OUT"
 ```
+
+HF CPU 检查输入文件名为 `R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl`，在 Job 内调用：
+
+```bash
+python experiments/r58_quality/r59_sft_collator_cpu.py \
+  --private-input /workspace/r59/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+```
+
+只有 SAFE 回执 `R59_ACTUAL_SWIFT_COLLATOR_PASS__NOT_ADMITTED` 才代表本批输入通过真实 tokenizer/collator 工程检查；仍不代表 Quality-v1 admission 或 GPU 训练授权。
 
 只回传 `R59_SFT_SHAPE_PREVIEW_SAFE.json`。私有 JSONL 仅供 Owner 在受控 HF CPU 工作区做真实 Qwen tokenizer / ms-swift Collator 检查；不得将其用于训练。若 tokenizer 长度超过 16,384 或 collator 标签不符合 last-assistant-only，保持 HOLD，不静默截断。
 
