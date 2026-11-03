@@ -49,6 +49,8 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 
 - 优先复用共享核心 `src/storyforge_gold_quality/history_recovery.py`，Strict28 的差异仅放在 `experiments/r58_quality/r59_strict28_history_recovery.py`。
 - 目标消息身份必须按 story/session/turn 和目标 SHA256 精确验证；上下文遵循 Session lineage、fork cutoff 与目标 created_at，禁止未来消息和静默截断。
+- Fork/rewind 已将继承消息复制到子 Session；只读取目标子 Session 的完整物化历史，父 Session 只用于 lineage 证明。`forked_from_turn` 是 story-turn，不是物理消息 `turn_index`。
+- 摘要覆盖同时区分 story-turn 与物理消息索引；source/text/legacy 物理索引缺失时不使用旧版 fallback，避免触发器失效后的摘要被误认为历史有效。
 - `memory_summary`、`recent_summary`、`rolling_outline` 只有在目标时点前更新时间及所有覆盖 cutoff 均可证明时才可用；历史卡片版本不能被称作历史 Provider System Prompt。
 - 具体 SQL、时间边界、版本选择、失败码、输入 pin、SAFE Schema 和复现步骤只维护在 `docs/R59_STRICT28_HISTORY_RECOVERY_CN.md` 与 `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。
 - 该步骤只补充 SOURCE 证据，不构成 Quality-v1 准入、HF CPU 预检或 GPU 授权。
