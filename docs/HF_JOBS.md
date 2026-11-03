@@ -43,11 +43,15 @@ python3 scripts/hf_job_guard.py \\
   --timeout-minutes 15 \\
   --input-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl:/input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl:ro' \\
   --input-volume 'hf://buckets/adradar/storyforge-training/scripts/r59_sft_collator_cpu.py:/scripts/r59_sft_collator_cpu.py:ro' \\
-  --output-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/reports/attempt-<unique-id>:/output:rw' \\
+  --output-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/reports/attempt-r59-cpu-02:/output:rw' \\
   --image python:3.11 \\
-  -- python3 /scripts/r59_sft_collator_cpu.py \\
-     --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \\
-     --output-safe /output/R59_ACTUAL_SWIFT_COLLATOR_SAFE.json
+  -- /bin/sh -lc 'set -eu
+export CUDA_VISIBLE_DEVICES=""
+export TOKENIZERS_PARALLELISM=false
+python3 -m pip install --no-cache-dir "ms-swift==4.5.3" "transformers==5.16.1"
+timeout --signal=TERM --kill-after=20s 780s python3 /scripts/r59_sft_collator_cpu.py \\
+  --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \\
+  --output-safe /output/R59_ACTUAL_SWIFT_COLLATOR_SAFE.json'
 ```
 
 For the R59 Qwen collator specifically, the worker must resolve only this
