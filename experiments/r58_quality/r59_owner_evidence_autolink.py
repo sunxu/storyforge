@@ -242,8 +242,12 @@ def main():
                    args.reviewer_b, args.owner_template_jsonl, args.output_dir)
         print(json.dumps(safe, sort_keys=True))
         return 0
-    except (AutoLinkHold, OSError):
-        reason = "OWNER_EVIDENCE_AUTOLINK_INPUT_OR_OUTPUT_HOLD"
+    except AutoLinkHold as exc:
+        # Exception messages are fixed reason codes; never include paths,
+        # identifiers, hashes, or source content in the SAFE receipt.
+        reason = str(exc) if re.fullmatch(r"[A-Z0-9_]{1,80}", str(exc)) else "OWNER_EVIDENCE_AUTOLINK_INPUT_HOLD"
+    except OSError:
+        reason = "OWNER_EVIDENCE_AUTOLINK_IO_HOLD"
     except Exception:  # noqa: BLE001 - no private exception text
         reason = "OWNER_EVIDENCE_AUTOLINK_INTERNAL_HOLD"
     print(json.dumps({
