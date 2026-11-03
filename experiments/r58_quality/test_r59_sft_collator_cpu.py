@@ -1,7 +1,6 @@
 import hashlib
 import json
 import unittest
-
 from r59_sft_collator_cpu import validate_preview_row
 
 
@@ -52,7 +51,7 @@ class R59SFTCollatorInputTests(unittest.TestCase):
         item = row()
         item["messages"][1]["loss"] = True
         with self.assertRaises(ValueError):
-            r59_sft_collator_cpu.validate_preview_row(item)
+            validate_preview_row(item)
 
     def test_rejects_nonfinal_target_loss(self):
         item = row()
