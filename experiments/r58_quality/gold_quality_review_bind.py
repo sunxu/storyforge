@@ -58,6 +58,28 @@ def _file(path, digest=None, *, label="SOURCE"):
         raise BindHold("SOURCE_JSON_INVALID") from None
 
 
+def _jsonl_or_json_file(path, digest, *, label):
+    raw = _private_input(path, label)
+    if sha(raw) != digest:
+        raise BindHold("PINNED_SOURCE_MISMATCH")
+    try:
+        try:
+            parsed = json.loads(raw)
+        except (ValueError, UnicodeError):
+            parsed = [
+                json.loads(line)
+                for line in raw.splitlines()
+                if line.strip()
+            ]
+        if not isinstance(parsed, list) or any(
+            not isinstance(row, dict) for row in parsed
+        ):
+            raise ValueError
+        return parsed
+    except (ValueError, UnicodeError):
+        raise BindHold(f"{label}_JSON_OR_JSONL_INVALID") from None
+
+
 def _owner_index(rows):
     indexed = {}
     for row in rows:
@@ -251,7 +273,7 @@ def run(stage_path, receipt_path, a_path, b_path, exclusion_path,
         raise BindHold("STAGING_RECEIPT_MISMATCH")
     a = _file(a_path, A_SHA, label="REVIEWER_A")
     b = _file(b_path, B_SHA, label="REVIEWER_B")
-    exclusions = _file(exclusion_path, EX_SHA, label="EXCLUSIONS")
+    exclusions = _jsonl_or_json_file(exclusion_path, EX_SHA, label="EXCLUSIONS")
     owner = _read_rows(_private_input(owner_path, "OWNER_EVIDENCE"))
     stage = _read_rows(raw)
     upstream = receipt.get("source_context_file_sha256")
