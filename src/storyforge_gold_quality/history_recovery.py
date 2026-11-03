@@ -1,0 +1,382 @@
+"""Shared, read-only historical context recovery primitives for StoryForge.
+
+The caller supplies a cursor and pinned case locators. This module never opens
+connections, reads credentials, writes files, or decides Quality-v1 admission.
+"""
+from __future__ import annotations
+
+import hashlib
+from collections.abc import Mapping
+from datetime import datetime
+from typing import Any
+
+SESSION_COLUMNS = (
+    "session_id", "parent_session_id", "forked_from_turn", "memory_summary",
+    "recent_summary", "rolling_outline", "last_summary_turn", "last_extract_turn",
+    "updated_at", "created_at", "summary_source_end_index",
+    "summary_source_dependency_end_index", "summary_text_end_index",
+    "summary_legacy_text_end_index",
+)
+TARGET_COLUMNS = (
+    "message_id", "story_id", "session_id", "turn_index", "role", "content",
+    "status", "created_at",
+)
+HISTORY_COLUMNS = (
+    "message_id", "story_id", "session_id", "turn_index", "role", "content",
+    "status", "created_at",
+)
+CONTENT_VERSION_COLUMNS = (
+    "id", "content_revision", "title", "description", "tags", "v2_data",
+    "source", "source_updated_at", "archived_at",
+)
+ADMIN_VERSION_COLUMNS = ("id", "content", "created_at", "updated_at")
+SUMMARY_CUTOFF_FIELDS = (
+    "last_summary_turn", "last_extract_turn", "summary_source_end_index",
+    "summary_source_dependency_end_index", "summary_text_end_index",
+    "summary_legacy_text_end_index",
+)
+
+
+class HistoryRecoveryError(ValueError):
+    """A source identity, temporal boundary, or lineage invariant failed."""
+
+
+def sha256_text(value: str) -> str:
+    if not isinstance(value, str):
+        raise HistoryRecoveryError("TEXT_VALUE_INVALID")
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def _dict_rows(rows: list[Any], columns: tuple[str, ...]) -> list[dict]:
+    result = []
+    for row in rows:
+        if isinstance(row, Mapping):
+            result.append(dict(row))
+        elif isinstance(row, (tuple, list)) and len(row) == len(columns):
+            result.append(dict(zip(columns, row, strict=True)))
+        else:
+            raise HistoryRecoveryError("DATABASE_ROW_SHAPE_INVALID")
+    return result
+
+
+def _fetchall(cursor, columns: tuple[str, ...]) -> list[dict]:
+    return _dict_rows(cursor.fetchall(), columns)
+
+
+def _fetchone(cursor, columns: tuple[str, ...]) -> dict | None:
+    rows = _dict_rows([row for row in [cursor.fetchone()] if row is not None], columns)
+    return rows[0] if rows else None
+
+
+def _timestamp(value: Any) -> str:
+    if isinstance(value, datetime):
+        if value.tzinfo is None:
+            raise HistoryRecoveryError("DATABASE_TIMESTAMP_TIMEZONE_MISSING")
+        return value.isoformat()
+    if isinstance(value, str) and value:
+        # Database adapters normally return aware datetime values. Accept ISO
+        # strings for deterministic offline tests, but reject naive timestamps.
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            raise HistoryRecoveryError("DATABASE_TIMESTAMP_INVALID") from None
+        if parsed.tzinfo is None:
+            raise HistoryRecoveryError("DATABASE_TIMESTAMP_TIMEZONE_MISSING")
+        return parsed.isoformat()
+    raise HistoryRecoveryError("DATABASE_TIMESTAMP_MISSING")
+
+
+def _before(left: Any, right: Any) -> bool:
+    return _timestamp(left) < _timestamp(right)
+
+
+def _session(cursor, story_id: str, session_id: str) -> dict:
+    cursor.execute(
+        """
+        SELECT session_id, parent_session_id, forked_from_turn,
+               memory_summary, recent_summary, rolling_outline,
+               last_summary_turn, last_extract_turn, updated_at, created_at,
+               summary_source_end_index, summary_source_dependency_end_index,
+               summary_text_end_index, summary_legacy_text_end_index
+        FROM public.story_v2_sessions
+        WHERE story_id = %s AND session_id = %s
+        """,
+        (story_id, session_id),
+    )
+    row = _fetchone(cursor, SESSION_COLUMNS)
+    if row is None or row["session_id"] != session_id:
+        raise HistoryRecoveryError("SESSION_LINEAGE_NODE_MISSING")
+    return row
+
+
+def _target(cursor, case: dict) -> dict:
+    cursor.execute(
+        """
+        SELECT id::text AS message_id, story_id::text AS story_id,
+               session_id, turn_index, role, content, status, created_at
+        FROM public.v2_chat_messages
+        WHERE story_id = %s AND session_id = %s AND turn_index = %s
+          AND role = 'assistant'
+        """,
+        (case["story_id"], case["session_id"], case["turn_index"]),
+    )
+    rows = _fetchall(cursor, TARGET_COLUMNS)
+    exact = [row for row in rows if sha256_text(row["content"]) == case["target_sha256"]]
+    if len(rows) != 1 or len(exact) != 1:
+        raise HistoryRecoveryError("TARGET_MESSAGE_IDENTITY_AMBIGUOUS")
+    target = exact[0]
+    if target["status"] != "completed":
+        raise HistoryRecoveryError("TARGET_MESSAGE_NOT_COMPLETED")
+    if target["story_id"] != case["story_id"] or target["session_id"] != case["session_id"]:
+        raise HistoryRecoveryError("TARGET_LOCATOR_MISMATCH")
+    if type(target["turn_index"]) is not int or target["turn_index"] != case["turn_index"]:
+        raise HistoryRecoveryError("TARGET_TURN_MISMATCH")
+    _timestamp(target["created_at"])
+    return target
+
+
+def _lineage(cursor, story_id: str, leaf_session_id: str, target_turn: int,
+             max_depth: int) -> list[dict]:
+    if type(max_depth) is not int or not 1 <= max_depth <= 64:
+        raise HistoryRecoveryError("LINEAGE_DEPTH_LIMIT_INVALID")
+    chain = []
+    seen = set()
+    current_id = leaf_session_id
+    child = None
+    while current_id:
+        if current_id in seen:
+            raise HistoryRecoveryError("SESSION_LINEAGE_CYCLE")
+        if len(chain) >= max_depth:
+            raise HistoryRecoveryError("SESSION_LINEAGE_DEPTH_EXCEEDED")
+        seen.add(current_id)
+        node = _session(cursor, story_id, current_id)
+        if child is None:
+            cutoff = target_turn - 1
+            depth = 0
+        else:
+            cutoff = child.get("forked_from_turn")
+            depth = len(chain)
+            if type(cutoff) is not int or cutoff < 0:
+                raise HistoryRecoveryError("SESSION_FORK_CUTOFF_INVALID")
+        chain.append({"session": node, "turn_cutoff": cutoff, "lineage_depth": depth})
+        parent_id = node.get("parent_session_id")
+        if parent_id is not None and (not isinstance(parent_id, str) or not parent_id):
+            raise HistoryRecoveryError("SESSION_PARENT_ID_INVALID")
+        child = node
+        current_id = parent_id
+    return chain
+
+
+def _history(cursor, story_id: str, segment: dict, target_time: Any) -> list[dict]:
+    session_id = segment["session"]["session_id"]
+    cursor.execute(
+        """
+        SELECT id::text AS message_id, story_id::text AS story_id,
+               session_id, turn_index, role, content, status, created_at
+        FROM public.v2_chat_messages
+        WHERE story_id = %s AND session_id = %s AND turn_index <= %s
+          AND created_at < %s AND role IN ('user', 'assistant')
+        ORDER BY created_at, id
+        """,
+        (story_id, session_id, segment["turn_cutoff"], target_time),
+    )
+    rows = _fetchall(cursor, HISTORY_COLUMNS)
+    output = []
+    for row in rows:
+        if row["status"] != "completed":
+            # Failed and streaming rows are not effective conversational input.
+            continue
+        if row["role"] not in {"user", "assistant"} or not isinstance(row["content"], str):
+            raise HistoryRecoveryError("HISTORY_MESSAGE_SHAPE_INVALID")
+        if type(row["turn_index"]) is not int or row["turn_index"] > segment["turn_cutoff"]:
+            raise HistoryRecoveryError("HISTORY_TURN_CUTOFF_VIOLATION")
+        if not _before(row["created_at"], target_time):
+            raise HistoryRecoveryError("HISTORY_FUTURE_TIMESTAMP")
+        output.append({
+            "message_id": row["message_id"],
+            "story_id": row["story_id"],
+            "session_id": row["session_id"],
+            "turn_index": row["turn_index"],
+            "role": row["role"],
+            "content": row["content"],
+            "status": row["status"],
+            "created_at": _timestamp(row["created_at"]),
+            "lineage_depth": segment["lineage_depth"],
+        })
+    return output
+
+
+def _summary_snapshot(segment: dict, target_time: Any) -> dict:
+    session = segment["session"]
+    cutoff = segment["turn_cutoff"]
+    updated_at = session.get("updated_at")
+    if updated_at is None or not _before(updated_at, target_time):
+        return {"status": "NOT_PROVEN_PRETARGET", "used": False, "fields": {}}
+    cutoffs = {key: session.get(key) for key in SUMMARY_CUTOFF_FIELDS}
+    if any(type(value) is not int or value > cutoff for value in cutoffs.values()):
+        return {"status": "CUTOFF_NOT_PROVEN", "used": False, "fields": {}}
+    fields = {
+        key: session.get(key)
+        for key in ("memory_summary", "recent_summary", "rolling_outline")
+        if isinstance(session.get(key), str) and session.get(key).strip()
+    }
+    if not fields:
+        return {"status": "NO_SUMMARY_CONTENT", "used": False, "fields": {}}
+    return {
+        "status": "PRETARGET_COVERAGE_VERIFIED",
+        "used": True,
+        "updated_at": _timestamp(updated_at),
+        "cutoffs": cutoffs,
+        "fields": fields,
+    }
+
+
+def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
+    cursor.execute(
+        """
+        SELECT id, content_revision, title, description, tags, v2_data,
+               source, source_updated_at, archived_at
+        FROM public.story_content_versions
+        WHERE story_id = %s AND source_updated_at < %s AND archived_at < %s
+        ORDER BY source_updated_at DESC, content_revision DESC, id DESC
+        LIMIT 1
+        """,
+        (story_id, target_time, target_time),
+    )
+    content = _fetchone(cursor, CONTENT_VERSION_COLUMNS)
+    if content is not None:
+        if not (_before(content["source_updated_at"], target_time)
+                and _before(content["archived_at"], target_time)):
+            raise HistoryRecoveryError("CONTENT_VERSION_TEMPORAL_BOUNDARY")
+        content = {
+            **content,
+            "source_updated_at": _timestamp(content["source_updated_at"]),
+            "archived_at": _timestamp(content["archived_at"]),
+            "temporal_status": "PRETARGET_SOURCE_AND_ARCHIVE",
+        }
+
+    cursor.execute(
+        """
+        SELECT id, content, created_at, updated_at
+        FROM public.story_admin_versions
+        WHERE story_id = %s AND created_at < %s AND updated_at < %s
+        ORDER BY updated_at DESC, created_at DESC, id DESC
+        LIMIT 1
+        """,
+        (story_id, target_time, target_time),
+    )
+    admin = _fetchone(cursor, ADMIN_VERSION_COLUMNS)
+    if admin is not None:
+        if not (_before(admin["created_at"], target_time)
+                and _before(admin["updated_at"], target_time)):
+            raise HistoryRecoveryError("ADMIN_VERSION_TEMPORAL_BOUNDARY")
+        admin = {
+            **admin,
+            "created_at": _timestamp(admin["created_at"]),
+            "updated_at": _timestamp(admin["updated_at"]),
+            "temporal_status": "PRETARGET_RECORD_AND_UPDATE",
+        }
+    return {
+        "story_content_version": content,
+        "story_content_version_status": (
+            "PRETARGET_VERSION_FOUND" if content else "NO_PRETARGET_VERSION_FOUND"
+        ),
+        "story_admin_version": admin,
+        "story_admin_version_status": (
+            "PRETARGET_VERSION_FOUND" if admin else "NO_PRETARGET_VERSION_FOUND"
+        ),
+        # An archived card snapshot is not proof of the exact historical
+        # provider System Prompt or request bytes.
+        "historical_system_prompt_verified": False,
+    }
+
+
+def recover_case(cursor, case: dict, *, max_history: int = 20000,
+                 max_lineage_depth: int = 16) -> dict:
+    required = ("case_id", "story_id", "session_id", "turn_index", "target_sha256")
+    if any(key not in case for key in required):
+        raise HistoryRecoveryError("CASE_LOCATOR_INCOMPLETE")
+    if (not isinstance(case["case_id"], str) or not case["case_id"]
+            or not isinstance(case["story_id"], str) or not case["story_id"]
+            or not isinstance(case["session_id"], str) or not case["session_id"]
+            or type(case["turn_index"]) is not int or case["turn_index"] <= 0
+            or not isinstance(case["target_sha256"], str)
+            or len(case["target_sha256"]) != 64):
+        raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
+
+    target = _target(cursor, case)
+    chain = _lineage(cursor, case["story_id"], case["session_id"],
+                     case["turn_index"], max_lineage_depth)
+    segments = list(reversed(chain))
+    history = []
+    summaries = []
+    for segment in segments:
+        history.extend(_history(cursor, case["story_id"], segment, target["created_at"]))
+        summary = _summary_snapshot(segment, target["created_at"])
+        if summary["used"]:
+            summaries.append({
+                "session_id": segment["session"]["session_id"],
+                "lineage_depth": segment["lineage_depth"],
+                **summary,
+            })
+    history.sort(key=lambda row: (row["created_at"], row["message_id"]))
+    message_ids = [row["message_id"] for row in history]
+    if len(message_ids) != len(set(message_ids)):
+        raise HistoryRecoveryError("HISTORY_DUPLICATE_MESSAGE_ID")
+    if len(history) > max_history:
+        raise HistoryRecoveryError("HISTORY_LIMIT_EXCEEDED")
+    if not history or history[-1]["role"] != "user":
+        raise HistoryRecoveryError("HISTORY_SUFFIX_NOT_USER")
+    if any(not _before(row["created_at"], target["created_at"]) for row in history):
+        raise HistoryRecoveryError("HISTORY_FUTURE_LEAKAGE")
+
+    versions = _story_versions(cursor, case["story_id"], target["created_at"])
+    return {
+        "case_id": case["case_id"],
+        "story_id": case["story_id"],
+        "session_id": case["session_id"],
+        "target_sha256": case["target_sha256"],
+        "target": {
+            "message_id": target["message_id"],
+            "turn_index": target["turn_index"],
+            "created_at": _timestamp(target["created_at"]),
+            "status": target["status"],
+        },
+        "history": history,
+        "history_message_count": len(history),
+        "session_lineage": [
+            {
+                "session_id": segment["session"]["session_id"],
+                "parent_session_id": segment["session"].get("parent_session_id"),
+                "forked_from_turn": segment["session"].get("forked_from_turn"),
+                "turn_cutoff": segment["turn_cutoff"],
+                "lineage_depth": segment["lineage_depth"],
+                "session_updated_at": (
+                    _timestamp(segment["session"]["updated_at"])
+                    if segment["session"].get("updated_at") is not None else None
+                ),
+            }
+            for segment in segments
+        ],
+        "pretarget_summaries": summaries,
+        "summary_status": (
+            "PRETARGET_SUMMARY_AVAILABLE" if summaries else "NO_VERIFIED_PRETARGET_SUMMARY"
+        ),
+        **versions,
+        "training_admitted": False,
+    }
+
+
+def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
+                  max_lineage_depth: int = 16) -> list[dict]:
+    if not cases:
+        raise HistoryRecoveryError("CASE_SET_EMPTY")
+    ids = [row.get("case_id") for row in cases]
+    targets = [row.get("target_sha256") for row in cases]
+    if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
+        raise HistoryRecoveryError("CASE_SET_DUPLICATE")
+    return [
+        recover_case(cursor, row, max_history=max_history,
+                     max_lineage_depth=max_lineage_depth)
+        for row in sorted(cases, key=lambda item: item["case_id"])
+    ]
