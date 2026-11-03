@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 MODEL = "Qwen/Qwen3.8-27B"
+MODEL_REVISION = "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 MODEL_LENGTH = 16384
 R27_SYSTEM_SHA256 = "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83"
 READ_LIMIT = 160 * 1024 * 1024
@@ -102,7 +103,7 @@ def run(private_input: Path, model: str = MODEL):
     from swift import get_processor, get_template
 
     template = get_template(
-        get_processor(model),
+        get_processor(model, revision=MODEL_REVISION),
         loss_scale="last_round",
         max_length=MODEL_LENGTH + 1,
         add_non_thinking_prefix=False,
@@ -138,7 +139,8 @@ def run(private_input: Path, model: str = MODEL):
         "checked": len(rows),
         "passed": passed,
         "model": model,
-        "model_revision_pinned": False,
+        "model_revision": MODEL_REVISION,
+        "model_revision_pinned": True,
         "loss_scale": "last_round",
         "max_length": MODEL_LENGTH,
         "token_min": ordered[0],
