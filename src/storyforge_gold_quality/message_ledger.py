@@ -154,11 +154,41 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
     for event in result:
         if event["id"] in details:
             event["row_data"] = details[event["id"]]
-            if event["operation"] in MARKERS and (
-                event["row_data"].get("_ledger_event") != "marker_v1"
-            ):
-                raise LedgerRecoveryError("LEDGER_MARKER_INVALID")
+            if event["operation"] in MARKERS:
+                _validate_business_event_detail(event)
     return result
+
+
+def _validate_business_event_detail(event):
+    """Accept a v1 marker or a validated legacy full after-image.
+
+    Before the sparse-marker migration, INSERT / UPDATE_AFTER events stored a
+    full row. Their schema may predate mutation_revision; validate identity
+    and business fields without promoting the historical row to a snapshot
+    usable for reconstructing a before-image.
+    """
+    data = event.get("row_data")
+    if not isinstance(data, dict):
+        raise LedgerRecoveryError("LEDGER_MARKER_INVALID")
+    if "_ledger_event" in data:
+        if data == {"_ledger_event": "marker_v1"}:
+            return "SPARSE_MARKER_V1"
+        raise LedgerRecoveryError("LEDGER_MARKER_INVALID")
+    required = ("id", "story_id", "session_id", "turn_index",
+                "role", "content", "status", "created_at")
+    if any(field not in data for field in required):
+        raise LedgerRecoveryError("LEDGER_LEGACY_DETAIL_FIELDS_INVALID")
+    if (str(data["id"]) != event["message_id"]
+            or data["story_id"] != event["story_id"]
+            or data["session_id"] != event["session_id"]
+            or data["turn_index"] != event["turn_index"]
+            or data["role"] != event["role"]):
+        raise LedgerRecoveryError("LEDGER_LEGACY_DETAIL_IDENTITY_MISMATCH")
+    if (not isinstance(data["content"], str)
+            or data["status"] not in {"completed", "streaming", "failed"}):
+        raise LedgerRecoveryError("LEDGER_LEGACY_DETAIL_VALUE_INVALID")
+    _dt(data["created_at"])
+    return "LEGACY_FULL_AFTER_IMAGE"
 
 
 def target_boundary(events, target):
