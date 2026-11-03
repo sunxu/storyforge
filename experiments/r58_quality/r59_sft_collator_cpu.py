@@ -100,6 +100,12 @@ def write_safe_report(path: Path, report: dict) -> None:
         raise
 
 
+def configure_cpu_hf_hub() -> None:
+    """Pin ms-swift model resolution to Hugging Face, not its ModelScope default."""
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    os.environ["USE_HF"] = "true"
+
+
 def run(private_input: Path, model: str = MODEL):
     if (not private_input.is_absolute() or private_input.is_symlink()
             or not private_input.is_file()):
@@ -117,8 +123,9 @@ def run(private_input: Path, model: str = MODEL):
         raise ValueError("input count or model")
     message_counts = [validate_preview_row(row) for row in rows]
 
-    # Force CPU before importing the model stack. No model weights are loaded.
-    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    # Force CPU and Hugging Face Hub before importing ms-swift.
+    # MODEL_REVISION is an immutable Hugging Face commit SHA, not a ModelScope revision.
+    configure_cpu_hf_hub()
     from swift import get_processor, get_template
 
     template = get_template(
@@ -160,6 +167,7 @@ def run(private_input: Path, model: str = MODEL):
         "model": model,
         "model_revision": MODEL_REVISION,
         "model_revision_pinned": True,
+        "hub_source": "huggingface",
         "loss_scale": "last_round",
         "max_length": MODEL_LENGTH,
         "token_min": ordered[0],
