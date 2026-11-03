@@ -15,6 +15,7 @@ from pathlib import Path
 
 MODEL = "Qwen/Qwen3.8-27B"
 MODEL_LENGTH = 16384
+R27_SYSTEM_SHA256 = "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83"
 READ_LIMIT = 160 * 1024 * 1024
 
 
@@ -34,8 +35,10 @@ def validate_preview_row(row):
     messages = row["messages"]
     if len(messages) < 4:
         raise ValueError("message count")
-    if messages[0].get("role") != "system":
-        raise ValueError("system position")
+    if (messages[0].get("role") != "system"
+            or hashlib.sha256(messages[0].get("content", "").encode("utf-8")).hexdigest()
+            != R27_SYSTEM_SHA256):
+        raise ValueError("approved system prompt pin")
     if messages[-1].get("role") != "assistant" or messages[-1].get("loss") is not True:
         raise ValueError("target position or loss")
     if messages[-2].get("role") != "user":
@@ -64,6 +67,16 @@ def validate_preview_row(row):
     actual_sha = hashlib.sha256(messages[-1]["content"].encode("utf-8")).hexdigest()
     if target_sha != actual_sha:
         raise ValueError("target hash")
+    original_messages = [
+        {"role": message["role"], "content": message["content"]}
+        for message in messages[:-1]
+    ]
+    input_digest = hashlib.sha256(json.dumps(
+        original_messages, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
+    if metadata.get("input_messages_sha256") != input_digest:
+        raise ValueError("input message hash")
     return len(messages)
 
 
@@ -113,8 +126,6 @@ def run(private_input: Path, model: str = MODEL):
         positions = [index for index, label in enumerate(labels) if label != -100]
         if not positions or any(labels[index] != ids[index] for index in positions):
             raise ValueError("supervision labels")
-        if labels[-1] == -100:
-            raise ValueError("target tail unsupervised")
         lengths.append(len(ids))
         supervised.append(len(positions))
         passed += 1
