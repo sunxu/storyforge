@@ -42,7 +42,8 @@ def _validate_history(messages):
             or sha(messages[0]["content"].encode("utf-8")) != R27_SYSTEM_SHA256):
         raise PreviewHold("APPROVED_GENERIC_SYSTEM_PIN_MISMATCH")
     history = messages[1:]
-    if (not history or not isinstance(history[-1], dict)\n            or history[-1].get("role") != "user"):
+    if (not history or not isinstance(history[-1], dict)
+            or history[-1].get("role") != "user"):
         raise PreviewHold("CURRENT_USER_MISSING")
     previous = None
     for message in history:
@@ -166,11 +167,11 @@ def run(staged_path: Path, receipt_path: Path, output_dir: Path):
         raise PreviewHold("OUTPUT_PARENT_INVALID")
     output_dir.mkdir(mode=0o700)
     try:
-        payload = b"".join(canonical(row) + b"\\n" for row in rows)
+        payload = b"".join(canonical(row) + b"\n" for row in rows)
         _create_only(output_dir / "R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl", payload)
         _create_only(
             output_dir / "R59_SFT_SHAPE_PREVIEW_SAFE.json",
-            json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2).encode() + b"\\n",
+            json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2).encode() + b"\n",
         )
     except BaseException:
         for item in output_dir.iterdir():
