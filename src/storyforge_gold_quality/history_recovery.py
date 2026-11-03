@@ -368,7 +368,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
     }
     if ledger_events is None:
         ledger_events = load_session_events(
-            cursor, case["session_id"], case["turn_index"],
+            cursor, case["story_id"], case["session_id"], case["turn_index"],
             max_events=max_ledger_events,
         )
     try:
@@ -453,23 +453,26 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
     # case and never a full-table scan. Each case applies its own turn cutoff.
     by_session = {}
     for case in cases:
+        story_id = case.get("story_id")
         session_id = case.get("session_id")
         turn_index = case.get("turn_index")
-        if (not isinstance(session_id, str) or type(turn_index) is not int
-                or turn_index <= 0):
+        if (not isinstance(story_id, str) or not story_id
+                or not isinstance(session_id, str) or not session_id
+                or type(turn_index) is not int or turn_index <= 0):
             raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
-        by_session[session_id] = max(by_session.get(session_id, 0), turn_index)
+        key = (story_id, session_id)
+        by_session[key] = max(by_session.get(key, 0), turn_index)
     ledger_by_session = {
-        session_id: load_session_events(
-            cursor, session_id, max_turn, max_events=max_ledger_events
+        key: load_session_events(
+            cursor, key[0], key[1], max_turn, max_events=max_ledger_events
         )
-        for session_id, max_turn in sorted(by_session.items())
+        for key, max_turn in sorted(by_session.items())
     }
     return [
         recover_case(
             cursor, row, max_history=max_history,
             max_lineage_depth=max_lineage_depth,
-            ledger_events=ledger_by_session[row["session_id"]],
+            ledger_events=ledger_by_session[(row["story_id"], row["session_id"])],
             max_ledger_events=max_ledger_events,
         )
         for row in sorted(cases, key=lambda item: item["case_id"])
