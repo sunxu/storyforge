@@ -221,9 +221,9 @@ def project_history(messages: list[dict], *, allow_system: bool = False) -> list
         if not isinstance(item, dict):
             raise AuditHold("MESSAGE_INVALID")
         role, content = item.get("role"), item.get("content")
-        if role == "system" and not allow_system:
+        if role in {"system", "developer"} and not allow_system:
             continue
-        if role not in {"system", "user", "assistant"} or not isinstance(content, str):
+        if role not in {"system", "developer", "user", "assistant"} or not isinstance(content, str):
             raise AuditHold("MESSAGE_ROLE_OR_CONTENT_INVALID")
         out.append({"role": role, "content": content})
     return out
