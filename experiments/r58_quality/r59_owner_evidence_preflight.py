@@ -62,6 +62,7 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
 
     matched = 0
     identity_mismatch = 0
+    complete_rows = 0
     checks = Counter()
     for stage in ready:
         owner = owners.get(stage.get("case_id"))
@@ -74,6 +75,7 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
             identity_mismatch += 1
             continue
         matched += 1
+        checks_before_row = checks.copy()
 
         flags = owner.get("owner_supplemental_severe_flags")
         flags_ok = (
@@ -107,6 +109,13 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
         checks["staged_file_pin_matches"] += int(owner.get("staged_file_sha256") == staged_sha)
         checks["source_context_pin_matches"] += int(owner.get("source_context_file_sha256") == source_context_sha)
 
+        # A row is field-complete only when every required presence/value check
+        # passes for this exact matched candidate. This is not evidence
+        # authenticity, independent reviewer proof, or Quality-v1 admission.
+        if all(checks[key] - checks_before_row[key] == 1 for key in checks):
+            complete_rows += 1
+
+    incomplete_rows = matched - complete_rows
     missing = {
         key: matched - value
         for key, value in sorted(checks.items())
@@ -116,16 +125,21 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
         matched == len(ready) and identity_mismatch == 0 and matched > 0
         and not missing
     )
+    partial = complete_rows > 0 and not complete
     return {
         "schema": SCHEMA,
         "status": (
             "OWNER_EVIDENCE_FIELDS_COMPLETE__BINDER_AND_OWNER_ATTESTATION_STILL_REQUIRED"
-            if complete else "OWNER_EVIDENCE_PREFLIGHT_HOLD"
+            if complete else
+            "OWNER_EVIDENCE_PARTIAL_FIELDS_PRESENT__BINDER_REVIEW_REQUIRED"
+            if partial else "OWNER_EVIDENCE_PREFLIGHT_HOLD"
         ),
         "staged_ready": len(ready),
         "owner_rows": len(owner_rows),
         "identity_matched": matched,
         "identity_missing_or_mismatched": identity_mismatch,
+        "rows_with_all_required_fields_present": complete_rows,
+        "rows_missing_one_or_more_required_fields": incomplete_rows,
         "field_checks_passed": dict(sorted(checks.items())),
         "field_checks_missing": missing,
         "reviewer_independence_independently_proven": False,
