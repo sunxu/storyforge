@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.15
+version: 0.1.16
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -55,6 +55,7 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - 消息历史恢复必须复用 `src/storyforge_gold_quality/message_ledger.py`；按 story/session/turn ceiling 有界读取稀疏账本，不得全表扫描。
 - 按账本真实语义区分 INSERT / UPDATE_AFTER marker 与 UPDATE_BEFORE / DELETE 旧快照；先定位目标边界，再恢复目标后的首个旧快照；`mutation_revision` 不匹配时 HOLD。
 - 账本 `recorded_at` 是事务时间而非提交时间；SAFE 必须保留 `ledger_commit_order_verified=false`，不得将其描述为严格提交顺序回放。
+- 当前 migration history 不足以证明 ledger trigger 全程连续启用；SAFE 同时保留 `ledger_trigger_continuity_verified=false`，不得用 mutation_revision 交叉核验替代独立 DDL/audit 证据。
 - `memory_summary`、`recent_summary`、`rolling_outline` 只有在目标时点前更新时间及所有覆盖 cutoff 均可证明时才可用；历史卡片版本不能被称作历史 Provider System Prompt。
 - 具体 SQL、时间边界、版本选择、失败码、输入 pin、SAFE Schema 和复现步骤只维护在 `docs/R59_STRICT28_HISTORY_RECOVERY_CN.md` 与 `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。
 - 该步骤只补充 SOURCE 证据，不构成 Quality-v1 准入、HF CPU 预检或 GPU 授权。
