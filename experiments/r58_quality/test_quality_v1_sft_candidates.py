@@ -10,7 +10,7 @@ import unittest
 from pathlib import Path
 
 import quality_v1_sft_candidates as packer
-from quality_v1 import EVIDENCE, FLOORS, SCHEMA, SCORES, SEVERE, canonical, sha
+from quality_v1 import EVIDENCE, FLOORS, SCHEMA, SCORES, SEVERE, canonical, review_verdict, sha
 
 
 def case(cid="case01", world="world01", split="train"):
@@ -52,6 +52,37 @@ def case(cid="case01", world="world01", split="train"):
 
 
 class CandidatePackTests(unittest.TestCase):
+    def test_owner_supplement_does_not_impersonate_missing_reviewer_a_flags(self):
+        row = case()
+        row["reviews"][0]["severe_flags"] = None
+        row["owner_supplemental_safety_review"] = {
+            "scope": "SUPPLEMENTAL_SEVERE_FLAG_SCREEN",
+            "decision": "PASS",
+            "severe_flags": {key: False for key in SEVERE},
+            "private_evidence_ref": "owner-private-evidence",
+        }
+        self.assertEqual(review_verdict(row), (
+            "PASS", "TWO_REVIEWERS_QUALITY_DECLARED_WITH_OWNER_SAFETY_SUPPLEMENT"
+        ))
+
+    def test_missing_owner_supplement_keeps_missing_reviewer_a_flags_on_hold(self):
+        row = case()
+        row["reviews"][0]["severe_flags"] = None
+        self.assertEqual(review_verdict(row), ("HOLD", "SERIOUS_FLAGS_UNVERIFIED"))
+
+    def test_positive_owner_supplement_is_rejected(self):
+        row = case()
+        row["reviews"][0]["severe_flags"] = None
+        row["owner_supplemental_safety_review"] = {
+            "scope": "SUPPLEMENTAL_SEVERE_FLAG_SCREEN",
+            "decision": "PASS",
+            "severe_flags": {**{key: False for key in SEVERE}, "safety_exclusion": True},
+            "private_evidence_ref": "owner-private-evidence",
+        }
+        self.assertEqual(review_verdict(row), (
+            "REJECT", "OWNER_SUPPLEMENTAL_SAFETY_REJECT"
+        ))
+
     def test_compiles_only_pass_and_exact_last_assistant_mask(self):
         a = case()
         b = case("case02", "world02", "validation")
