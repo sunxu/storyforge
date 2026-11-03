@@ -31,6 +31,28 @@ EXPECTED_CASES = 28
 EXPECTED_STORIES = 2
 CASE_TURN = re.compile(r"t(\d+)$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
+DB_STAGES = {
+    "CONNECT", "SET_READ_ONLY", "SET_STATEMENT_TIMEOUT",
+    "SET_LOCK_TIMEOUT", "RECOVERY_QUERIES", "ROLLBACK",
+}
+
+
+class DatabaseOperationError(RuntimeError):
+    """Safe database failure metadata; never stores exception messages."""
+
+    def __init__(self, stage: str, sqlstate: str | None):
+        self.stage = stage if stage in DB_STAGES else "UNKNOWN"
+        self.sqlstate = sqlstate
+        super().__init__("DATABASE_OPERATION_FAILED")
+
+
+def _safe_sqlstate(exc: Exception) -> str | None:
+    state = getattr(exc, "sqlstate", None)
+    if state is None:
+        state = getattr(getattr(exc, "diag", None), "sqlstate", None)
+    if isinstance(state, str) and re.fullmatch(r"[0-9A-Z]{5}", state):
+        return state
+    return None
 
 
 def _pairs(pairs):
@@ -185,17 +207,26 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
     except ImportError:
         raise ValueError("PSYCOPG_NOT_INSTALLED") from None
 
-    with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
-        db.execute("SET TRANSACTION READ ONLY")
-        db.execute("SET LOCAL statement_timeout = '90000ms'")
-        db.execute("SET LOCAL lock_timeout = '1000ms'")
-        with db.cursor() as cursor:
-            recovered = recover_cases(
-                cursor, cases, max_history=max_history,
-                max_lineage_depth=max_lineage_depth,
-                max_ledger_events=max_ledger_events,
-            )
-        db.rollback()
+    db_stage = "CONNECT"
+    try:
+        with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
+            db_stage = "SET_READ_ONLY"
+            db.execute("SET TRANSACTION READ ONLY")
+            db_stage = "SET_STATEMENT_TIMEOUT"
+            db.execute("SET LOCAL statement_timeout = '90000ms'")
+            db_stage = "SET_LOCK_TIMEOUT"
+            db.execute("SET LOCAL lock_timeout = '1000ms'")
+            db_stage = "RECOVERY_QUERIES"
+            with db.cursor() as cursor:
+                recovered = recover_cases(
+                    cursor, cases, max_history=max_history,
+                    max_lineage_depth=max_lineage_depth,
+                    max_ledger_events=max_ledger_events,
+                )
+            db_stage = "ROLLBACK"
+            db.rollback()
+    except psycopg.Error as exc:
+        raise DatabaseOperationError(db_stage, _safe_sqlstate(exc)) from None
 
     if len(recovered) != EXPECTED_CASES:
         raise HistoryRecoveryError("STRICT28_RECOVERY_COUNT_INVALID")
@@ -288,15 +319,25 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
     except Exception as exc:  # noqa: BLE001 - never echo private values or DB errors
-        reason = (
-            str(exc) if isinstance(exc, (ValueError, TypeError, HistoryRecoveryError))
-            and re.fullmatch(r"[A-Z0-9_]+", str(exc))
-            else type(exc).__name__
-        )
+        diagnostics = {}
+        if isinstance(exc, DatabaseOperationError):
+            reason = "DATABASE_OPERATION_FAILED"
+            diagnostics = {
+                "database_stage": exc.stage,
+                "database_sqlstate": exc.sqlstate,
+                "database_exception_type": "OperationalError",
+            }
+        else:
+            reason = (
+                str(exc) if isinstance(exc, (ValueError, TypeError, HistoryRecoveryError))
+                and re.fullmatch(r"[A-Z0-9_]+", str(exc))
+                else type(exc).__name__
+            )
         print(json.dumps({
             "schema": "r59_strict28_historical_context_safe_v1",
             "status": "STRICT28_HISTORICAL_CONTEXT_HOLD",
             "reason_code": reason,
+            **diagnostics,
             "quality_v1_admitted": 0,
             "training_authorized": False,
             "gpu_started": False,
