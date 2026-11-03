@@ -16,13 +16,13 @@ class FakeCursor:
         self.sessions = {
             "child": {
                 "session_id": "child", "parent_session_id": "parent",
-                "forked_from_turn": 5, "memory_summary": "child future summary",
+                "forked_from_turn": 3, "memory_summary": "child pretarget summary",
                 "recent_summary": "", "rolling_outline": "",
-                "last_summary_turn": 6, "last_extract_turn": 6,
-                "updated_at": dt(20), "created_at": dt(4),
-                "summary_source_end_index": 6,
-                "summary_source_dependency_end_index": 6,
-                "summary_text_end_index": 6, "summary_legacy_text_end_index": 6,
+                "last_summary_turn": 2, "last_extract_turn": 2,
+                "updated_at": dt(5), "created_at": dt(4),
+                "summary_source_end_index": 5,
+                "summary_source_dependency_end_index": None,
+                "summary_text_end_index": 5, "summary_legacy_text_end_index": 5,
             },
             "parent": {
                 "session_id": "parent", "parent_session_id": None,
@@ -44,6 +44,9 @@ class FakeCursor:
             self.msg("p1", "parent", 1, "user", "parent user", 1),
             self.msg("p2", "parent", 2, "assistant", "parent assistant", 2),
             self.msg("p5", "parent", 5, "user", "fork point user", 3),
+            self.msg("c1", "child", 1, "user", "parent user", 1),
+            self.msg("c2", "child", 2, "assistant", "parent assistant", 2),
+            self.msg("c5", "child", 5, "user", "fork point user", 3),
             self.msg("c6", "child", 6, "user", "current user", 4),
             self.target,
             self.msg("c8", "child", 8, "assistant", "future assistant", 11),
@@ -104,16 +107,17 @@ class HistoryRecoveryTests(unittest.TestCase):
             "target_sha256": h.sha256_text("exact target"),
         }
 
-    def test_reconstructs_parent_fork_history_and_pre_target_versions(self):
+    def test_reconstructs_materialized_fork_history_and_pre_target_versions(self):
         result = h.recover_case(self.cursor, self.case)
         self.assertEqual([x["message_id"] for x in result["history"]],
-                         ["p1", "p2", "p5", "c6"])
+                         ["c1", "c2", "c5", "c6"])
         self.assertEqual(result["history"][-1]["role"], "user")
         self.assertEqual(len(result["session_lineage"]), 2)
-        self.assertEqual(result["session_lineage"][0]["session_id"], "parent")
-        self.assertEqual(result["session_lineage"][1]["session_id"], "child")
+        self.assertEqual(result["session_lineage"][0]["session_id"], "child")
+        self.assertEqual(result["session_lineage"][1]["session_id"], "parent")
+        self.assertEqual(result["session_lineage"][0]["forked_from_turn_story_turn"], 3)
         self.assertEqual(len(result["pretarget_summaries"]), 1)
-        self.assertEqual(result["pretarget_summaries"][0]["session_id"], "parent")
+        self.assertEqual(result["pretarget_summaries"][0]["session_id"], "child")
         self.assertEqual(result["story_content_version_status"], "PRETARGET_VERSION_FOUND")
         self.assertEqual(result["story_admin_version_status"], "PRETARGET_VERSION_FOUND")
         self.assertFalse(result["historical_system_prompt_verified"])
@@ -135,15 +139,16 @@ class HistoryRecoveryTests(unittest.TestCase):
         )
         result = h.recover_case(self.cursor, self.case)
         self.assertNotIn("p6", [x["message_id"] for x in result["history"]])
+        self.assertNotIn("p1", [x["message_id"] for x in result["history"]])
 
     def test_summary_updated_after_target_is_not_used(self):
-        self.cursor.sessions["parent"]["updated_at"] = dt(12)
+        self.cursor.sessions["child"]["updated_at"] = dt(12)
         result = h.recover_case(self.cursor, self.case)
         self.assertEqual(result["pretarget_summaries"], [])
         self.assertEqual(result["summary_status"], "NO_VERIFIED_PRETARGET_SUMMARY")
 
     def test_summary_cutoff_after_fork_is_not_used(self):
-        self.cursor.sessions["parent"]["summary_source_end_index"] = 6
+        self.cursor.sessions["child"]["summary_source_end_index"] = 7
         result = h.recover_case(self.cursor, self.case)
         self.assertEqual(result["pretarget_summaries"], [])
 
