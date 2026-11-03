@@ -42,7 +42,8 @@ class OwnerEvidenceTemplateTests(unittest.TestCase):
         self.assertIsNone(row["split"])
         self.assertIsNone(row["reviewer_a_evidence_ref"])
         self.assertIsNone(row["reviewer_b_evidence_ref"])
-        self.assertEqual(row["reviewer_a_severe_flags"], {key: None for key in SEVERE_FLAGS})
+        self.assertEqual(row["owner_supplemental_severe_flags"], {key: None for key in SEVERE_FLAGS})
+        self.assertIsNone(row["owner_supplemental_severe_evidence_ref"])
         self.assertEqual(row["evidence"], {key: None for key in (*EVIDENCE, *NEGATIVE_EVIDENCE)})
 
     def test_duplicate_candidate_identity_holds(self):
