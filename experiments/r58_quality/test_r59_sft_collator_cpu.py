@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from r59_sft_collator_cpu import MODEL_REVISION, validate_preview_row, write_safe_report
+from r59_sft_collator_cpu import MODEL_REVISION, configure_cpu_hf_hub, validate_preview_row, write_safe_report
 
 SYSTEM = (
     "你是互动叙事模型。仅根据本次给出的可见历史对话与当前玩家输入继续故事。\n"
@@ -41,6 +41,23 @@ def row():
 
 
 class R59SFTCollatorInputTests(unittest.TestCase):
+    def test_hub_source_is_explicitly_huggingface(self):
+        old_use_hf = os.environ.get("USE_HF")
+        old_cuda = os.environ.get("CUDA_VISIBLE_DEVICES")
+        try:
+            configure_cpu_hf_hub()
+            self.assertEqual(os.environ["USE_HF"], "true")
+            self.assertEqual(os.environ["CUDA_VISIBLE_DEVICES"], "")
+        finally:
+            if old_use_hf is None:
+                os.environ.pop("USE_HF", None)
+            else:
+                os.environ["USE_HF"] = old_use_hf
+            if old_cuda is None:
+                os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            else:
+                os.environ["CUDA_VISIBLE_DEVICES"] = old_cuda
+
     def test_qwen_model_revision_is_immutable(self):
         self.assertEqual(
             MODEL_REVISION,
