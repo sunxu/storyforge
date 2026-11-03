@@ -128,6 +128,7 @@ history. Never rewrite or overwrite the original Preview.
 - Context-window and actual Collator PASS are engineering checks only:
   `quality_v1_admitted=0`, `dataset_frozen=false`,
   `training_authorized=false`, `gpu_started=false` remain mandatory.
+- Chinese execution runbook: `docs/R59_CONTEXT_WINDOW_CN.md`.
 
 ### 2.3 Hugging Face Jobs namespace and volume policy
 
