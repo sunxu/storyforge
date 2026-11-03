@@ -1,7 +1,8 @@
 import hashlib
 import json
 import unittest
-from r59_sft_collator_cpu import validate_preview_row  # noqa: I001
+
+from r59_sft_collator_cpu import validate_preview_row
 
 
 SYSTEM = (
