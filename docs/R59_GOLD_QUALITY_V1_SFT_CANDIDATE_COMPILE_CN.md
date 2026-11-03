@@ -66,6 +66,30 @@ Owner 本机 SAFE 回执确认 `GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl` 可�
 
 下一步先对 13 条 Packet 做本机 SAFE 结构盘点：只输出每层字段名、JSON 类型、数组长度分布、case 级记录数量及与当前 5 条 staged candidate 的匹配计数；不得输出 Packet 正文、ID、逐案哈希或私有路径。确认 Packet schema 后，再实现可复用 Assembler；不得猜测字段路径或把当前 Draft 快照当作历史 Gold 来源版本。
 
+结构盘点完成后，Packet schema 已确认：13 个 packet root 含 `cases` 列表，共 192 个 case 对象；每个 case 含 `case_id`、`target_sha256`、`history`、`current_user_text`、`target_assistant_text`；packet root 含 `world_card`、`world_card_sha256`、`world_card_source_kind`、`world_card_review_status`、`world_card_approved_for_system`、`review_protocol` 和 `review_protocol_addendum`。当前五条 staged candidate 精确匹配 5/5，分布于 2 个 packet。
+
+新增可复用工具 `experiments/r58_quality/r59_packet_evidence_inventory.py`，测试为 `test_r59_packet_evidence_inventory.py`。工具在本机验证 Packet/Stage JSONL、文件权限、case 结构和精确 `(case_id, target_sha256)` 关联，生成两个文件：
+
+- `R59_PACKET_EVIDENCE_ASSOCIATIONS_PRIVATE.json`：0600 私有映射，包含 packet 行号、case 数组索引、packet world-card 快照元数据和本机定位符；不得上传或发送到聊天。
+- `R59_PACKET_EVIDENCE_INVENTORY_SAFE.json`：只含聚合统计、world-card 审批/来源状态分布、review protocol 标记计数及固定 HOLD 声明。
+
+运行示例：
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE="$PRIVATE/source-staging-priority72-20261103"
+OUT="$PRIVATE/quality-v1/packet-evidence-inventory-20261103"
+mkdir -m 700 "$PRIVATE/quality-v1" 2>/dev/null || true
+test ! -e "$OUT"
+.venv/bin/python experiments/r58_quality/r59_packet_evidence_inventory.py \\
+  --packet-jsonl "$PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \\
+  --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \\
+  --output-dir "$OUT"
+```
+
+此工具只生成精确定位索引，不填入 Owner 的质量、安全、权益、来源版本、world graph、split 或保护集声明。Packet 内 `world_card` 是导出快照；review protocol 明确要求不得假设它在目标生成时已可用，并区分 world-card 审批与样本质量。因此 Packet 的 `world_card_sha256` 只能作为快照定位/指纹，不能代替历史 `source_version_sha256`，也不能单独证明 `world_graph_sha256`、组件隔离或可用时间。历史上下文以 Packet 的 `history` 为审阅依据；若其首条为 assistant，必须保留并审阅，不得静默删除。
+
+
 **执行策略**：先在本机识别已知属于 Strict28 的 3 条候选，优先完成这 3 条；不把候选身份发到聊天。每条证据不足就保留 null/HOLD。Owner Evidence Preflight 通过后，再运行现有 Review Bind；Review Bind 通过后才运行 SFT Candidate Compiler。当前 `quality_v1_admitted=0`、`training_authorized=false`，不得提交 HF GPU Job。
 
 ## 已交付代码
