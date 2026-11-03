@@ -43,7 +43,10 @@ class DatabaseOperationError(RuntimeError):
     def __init__(self, stage: str, sqlstate: str | None,
                  exception_type: str):
         self.stage = stage if stage in DB_STAGES else "UNKNOWN"
-        self.sqlstate = sqlstate
+        self.sqlstate = (
+            sqlstate if isinstance(sqlstate, str)
+            and re.fullmatch(r"[0-9A-Z]{5}", sqlstate) else None
+        )
         self.exception_type = (
             exception_type if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", exception_type)
             else "DatabaseError"
