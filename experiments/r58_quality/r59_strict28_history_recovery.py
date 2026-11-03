@@ -325,11 +325,16 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
     )
 
     ledger_sessions = {}
+    ledger_details = {}
     for row in recovered:
         key = (row["story_id"], row["session_id"])
         ledger_sessions[key] = max(
             ledger_sessions.get(key, 0),
             row["history_reconstruction"]["ledger_event_count"],
+        )
+        ledger_details[key] = max(
+            ledger_details.get(key, 0),
+            row["history_reconstruction"]["ledger_detail_rows_loaded"],
         )
     summary_counts = Counter(row["summary_status"] for row in recovered)
     content_counts = Counter(row["story_content_version_status"] for row in recovered)
@@ -344,6 +349,7 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
         "session_lineage_nodes_total": sum(len(row["session_lineage"]) for row in recovered),
         "ledger_sessions_read": len(ledger_sessions),
         "ledger_events_read_total": sum(ledger_sessions.values()),
+        "ledger_detail_rows_loaded_total": sum(ledger_details.values()),
         "ledger_event_order_basis": "recorded_at_then_id",
         "ledger_commit_order_verified": False,
         "ledger_trigger_continuity_verified": False,
