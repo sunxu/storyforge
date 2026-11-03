@@ -15,7 +15,7 @@ from unittest import mock
 from pathlib import Path
 
 import gold_quality_review_bind as binder
-from gold_source_context_stage import stage_source
+from gold_source_context_stage import StageHold, stage_source
 from quality_v1 import EVIDENCE, FLOORS, SCORES, SEVERE, canonical, sha
 
 
@@ -142,6 +142,16 @@ class BindTests(unittest.TestCase):
         owners.append(owner2)
         with self.assertRaisesRegex(binder.BindHold, "WORLD_OR_DUPLICATE_CANDIDATE_COLLISION"):
             bind(staged, a, b, exclusion, owners)
+
+    def test_private_input_hold_is_scoped_to_input_role(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "owner.jsonl"
+            path.write_text("{}")
+            os.chmod(path, 0o644)
+            with self.assertRaisesRegex(
+                binder.BindHold, "OWNER_EVIDENCE_SOURCE_PERMISSIONS_OR_SIZE"
+            ):
+                binder._private_input(path, "OWNER_EVIDENCE")
 
     def test_canonical_pinned_file_rejects_wrong_hash(self):
         with tempfile.TemporaryDirectory() as tmp:
