@@ -340,6 +340,7 @@ def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
 
 def recover_case(cursor, case: dict, *, max_history: int = 20000,
                  max_lineage_depth: int = 16,
+                 target: dict | None = None,
                  ledger_events: list[dict] | None = None,
                  max_ledger_events: int = 100000) -> dict:
     required = ("case_id", "story_id", "session_id", "turn_index", "target_sha256")
@@ -353,7 +354,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
             or len(case["target_sha256"]) != 64):
         raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
 
-    target = _target(cursor, case)
+    target = target if target is not None else _target(cursor, case)
     chain = _lineage(cursor, case["story_id"], case["session_id"],
                      max_lineage_depth)
     leaf = chain[0]["session"]
@@ -369,7 +370,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
     if ledger_events is None:
         ledger_events = load_session_events(
             cursor, case["story_id"], case["session_id"], case["turn_index"],
-            max_events=max_ledger_events,
+            targets=[target], max_events=max_ledger_events,
         )
     try:
         current_history = _history(
@@ -449,8 +450,10 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
     if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
         raise HistoryRecoveryError("CASE_SET_DUPLICATE")
 
-    # One indexed, bounded ledger read per target Session, not one query per
-    # case and never a full-table scan. Each case applies its own turn cutoff.
+    # Resolve targets first, then read one bounded ledger metadata stream per
+    # Session. Large before-image JSONB snapshots are fetched by primary key
+    # only when they are the first post-target event for a requested case.
+    targets_by_case = {}
     by_session = {}
     for case in cases:
         story_id = case.get("story_id")
@@ -460,18 +463,24 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
                 or not isinstance(session_id, str) or not session_id
                 or type(turn_index) is not int or turn_index <= 0):
             raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
+        target = _target(cursor, case)
+        targets_by_case[case["case_id"]] = target
         key = (story_id, session_id)
-        by_session[key] = max(by_session.get(key, 0), turn_index)
+        entry = by_session.setdefault(key, {"max_turn": 0, "targets": []})
+        entry["max_turn"] = max(entry["max_turn"], turn_index)
+        entry["targets"].append(target)
     ledger_by_session = {
         key: load_session_events(
-            cursor, key[0], key[1], max_turn, max_events=max_ledger_events
+            cursor, key[0], key[1], entry["max_turn"],
+            targets=entry["targets"], max_events=max_ledger_events,
         )
-        for key, max_turn in sorted(by_session.items())
+        for key, entry in sorted(by_session.items())
     }
     return [
         recover_case(
             cursor, row, max_history=max_history,
             max_lineage_depth=max_lineage_depth,
+            target=targets_by_case[row["case_id"]],
             ledger_events=ledger_by_session[(row["story_id"], row["session_id"])],
             max_ledger_events=max_ledger_events,
         )
