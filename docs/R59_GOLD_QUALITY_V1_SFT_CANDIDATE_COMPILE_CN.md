@@ -79,7 +79,7 @@ Owner 本机 SAFE 回执确认 `GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl` 可�
 PRIVATE="$HOME/.local/share/storyforge/r59/private"
 STAGE="$PRIVATE/source-staging-priority72-20261103"
 OUT="$PRIVATE/quality-v1/packet-evidence-inventory-20261103"
-mkdir -m 700 "$PRIVATE/quality-v1" 2>/dev/null || true
+test "$(stat -f %Lp "$PRIVATE/quality-v1")" = 700
 test ! -e "$OUT"
 .venv/bin/python experiments/r58_quality/r59_packet_evidence_inventory.py \\
   --packet-jsonl "$PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \\
