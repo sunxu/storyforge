@@ -81,8 +81,8 @@ broadening, mount-mode broadening, retries, or GPU escalation.
 
 The following configuration outcomes were observed in the prior troubleshooting:
 
-- `adradar` + `cpu-basic` without a Bucket mount: Job
-  `6ae6fc34c78863f9c62f8554` submitted successfully.
+- `adradar` + `cpu-basic` without a Bucket mount: the authenticated CPU Jobs
+  check completed with Job `6ae6f7710e0338d1bb7d6434`.
 - `adradar` + `cpu-basic` with a private Bucket mounted `:ro`: Job
   `6ae6fc3dc78863f9c62f8556` submitted successfully.
 - `adradar` + `cpu-upgrade` with a private Bucket mounted `:ro`: Job
