@@ -4,8 +4,8 @@ import stat
 import tempfile
 import unittest
 from pathlib import Path
-from r59_sft_collator_cpu import MODEL_REVISION, validate_preview_row, write_safe_report
 
+from r59_sft_collator_cpu import MODEL_REVISION, validate_preview_row, write_safe_report
 
 SYSTEM = (
     "你是互动叙事模型。仅根据本次给出的可见历史对话与当前玩家输入继续故事。\n"
