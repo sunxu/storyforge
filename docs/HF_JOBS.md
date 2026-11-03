@@ -217,6 +217,18 @@ expected file path before processing.
 A successful ChatGPT connector CPU submission does not imply that the RW
 mount capability is restored. Keep these capability checks separate.
 
+The first ChatGPT-side R59 collator execution (Job
+`6aea1084c78863f9c631e834`) resolved the pinned Hugging Face snapshot and
+initialized the Qwen3.5-family template after adding the required vision
+packages. A follow-up diagnostic (Job `6aea111fc78863f9c631e882`) reached
+`ENCODE_COLLATE` and raised `MaxLengthError` at `max_length=16385`. This is a
+data-length HOLD, not a submission, mount, or model-revision failure. Do not
+enable truncation or reduce history automatically. Measure over-limit counts
+and token lengths with an explicit SAFE diagnostic, then return to the
+approved context-window design before rebuilding the preview. No admission or
+training follows from this result.
+
+
 ### Failure handling
 
 | Result | Required response |
