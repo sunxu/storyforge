@@ -4,17 +4,34 @@ import unittest
 from r59_sft_collator_cpu import validate_preview_row
 
 
+SYSTEM = (
+    "你是互动叙事模型。仅根据本次给出的可见历史对话与当前玩家输入继续故事。\\n"
+    "保持已经在对话中出现的人物事实和关系、时间空间连续性、角色口吻与玩家自主权；不编造已确定的旧事，不提前使用未来剧情。\\n"
+    "不替玩家作出未表达的选择，不越过内容安全边界。若必要信息不足，在故事内自然保留未确定部分，不将假设写成既定事实。"
+)
+
+
 def row():
     target = "目标回复"
+    source_messages = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "assistant", "content": "history"},
+        {"role": "user", "content": "current"},
+    ]
+    input_digest = hashlib.sha256(json.dumps(
+        source_messages, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"),
+    ).encode()).hexdigest()
     return {
         "messages": [
-            {"role": "system", "content": "system", "loss": False},
+            {"role": "system", "content": SYSTEM, "loss": False},
             {"role": "assistant", "content": "history", "loss": False},
             {"role": "user", "content": "current", "loss": False},
             {"role": "assistant", "content": target, "loss": True},
         ],
         "metadata": {
             "source_target_sha256": hashlib.sha256(target.encode()).hexdigest(),
+            "input_messages_sha256": input_digest,
             "status": "ENGINEERING_PREVIEW_NOT_ADMITTED",
         },
     }
