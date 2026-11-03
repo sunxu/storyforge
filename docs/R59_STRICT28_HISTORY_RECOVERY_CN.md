@@ -30,7 +30,7 @@
 - `row_data`：插入/更新后为 `marker_v1` 轻量标记；更新前/删除前为完整旧行快照；
 - `recorded_at`：数据库事务时间戳。
 
-该表当前规模很大（统计估算约 4,004 万行），禁止全表扫描和全表聚合。共享核心只按 `story_id + session_id + turn_index ceiling` 查询，利用 `(session_id, recorded_at, id)` 索引；每个 Session 一次读取，默认最多 100,000 条，超过上限整批 HOLD。可用 `--max-ledger-events` 显式调整，上限 500,000。
+该表当前规模很大（2026-11-03 只读统计估算约 4,275 万行、总占用约 102 GB，其中 heap 约 17 GB），禁止全表扫描和全表聚合。共享核心只按 `story_id + session_id + turn_index ceiling` 查询，利用 `(session_id, recorded_at, id)` 索引；EXPLAIN 对照计划确认使用该 session 索引扫描，并对 story_id / turn_index 做过滤；每个 Session 一次读取，默认最多 100,000 条，超过上限整批 HOLD。可用 `--max-ledger-events` 显式调整，上限 500,000。该执行计划使用无匹配的合成定位值，不代表 28 个真实 Session 的实际耗时或扫描行数。
 
 重建规则：
 
@@ -59,11 +59,16 @@
 - `database_stage`：`CONNECT`、`SET_READ_ONLY`、`SET_STATEMENT_TIMEOUT`、`SET_LOCK_TIMEOUT`、`RECOVERY_QUERIES` 或 `ROLLBACK`。
 - `database_sqlstate`：仅在 PostgreSQL SQLSTATE 满足五位大写字母/数字格式时输出，否则为 null。
 - `database_exception_type`：只输出异常类名，不输出异常消息、DSN、主机、用户名或密码。
+- 当 `database_stage=RECOVERY_QUERIES` 时，额外输出：
+  - `database_operation`：`SESSION_LINEAGE_READ`、`TARGET_MESSAGE_READ`、`MESSAGE_LEDGER_READ`、`CURRENT_HISTORY_READ`、`STORY_CONTENT_VERSION_READ` 或 `STORY_ADMIN_VERSION_READ`；
+  - `database_query_ordinal`：本次恢复 cursor 内第几条查询，不包含 Session ID；
+  - `database_failure_phase`：`EXECUTE`、`FETCH_ONE` 或 `FETCH_ALL`。
+- 不输出 SQL 文本、查询参数、Session ID、Story ID 或原始异常消息。
 - `reason_code` 固定为 `DATABASE_OPERATION_FAILED`。
 
 数据库 schema 核验已确认所需的五张表和列存在；只读连接角色对这些表具有 SELECT 权限，且当前会话 `transaction_read_only=on`。这不能证明 Owner Mac 使用的 DSN、账号、网络链路或连接池状态相同，因此不能据此排除本机连接问题。
 
-重新运行前先更新到诊断修复提交，并确认上一次失败没有留下输出目录；使用新的、从未存在过的输出目录。保留原始只读 DSN，不要将其贴到聊天。将新 SAFE 中的 `database_stage` 和 `database_sqlstate` 返回即可。
+重新运行前先更新到最新诊断提交，并确认上一次失败没有留下输出目录；使用新的、从未存在过的输出目录。保留原始只读 DSN，不要将其贴到聊天。将新 SAFE 中的 `database_stage`、`database_operation`、`database_query_ordinal`、`database_failure_phase` 和 `database_sqlstate` 返回即可。
 
 
 
