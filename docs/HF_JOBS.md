@@ -46,7 +46,8 @@ python3 scripts/hf_job_guard.py \\
   --output-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/reports/attempt-<unique-id>:/output:rw' \\
   --image python:3.11 \\
   -- python3 /scripts/r59_sft_collator_cpu.py \\
-     --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+     --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \\
+     --output-safe /output/R59_ACTUAL_SWIFT_COLLATOR_SAFE.json
 ```
 
 For the R59 Qwen collator specifically, the worker must resolve only this
