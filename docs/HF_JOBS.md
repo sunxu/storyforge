@@ -217,6 +217,24 @@ expected file path before processing.
 A successful ChatGPT connector CPU submission does not imply that the RW
 mount capability is restored. Keep these capability checks separate.
 
+The follow-up SAFE token-length diagnostic (Job `6aea12470e0338d1bb7f5dec`)
+measured all five preview rows without truncation at a diagnostic ceiling of
+131072 tokens:
+
+- within 16384: 3
+- over 16384: 2
+- median: 13660
+- p95: 34263
+- maximum: 114558
+
+This confirms a real context-window issue in two of the five engineering-preview
+rows. The diagnostic ceiling is measurement-only; it does not change the
+accepted training budget. Do not truncate automatically or admit any row.
+Design an explicit suffix/context-retention policy, preserve message ordering
+and the final target, then rebuild a new preview and rerun the pinned CPU
+collator.
+
+
 The first ChatGPT-side R59 collator execution (Job
 `6aea1084c78863f9c631e834`) resolved the pinned Hugging Face snapshot and
 initialized the Qwen3.5-family template after adding the required vision
