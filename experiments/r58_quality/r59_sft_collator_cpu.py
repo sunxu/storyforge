@@ -31,7 +31,7 @@ def _array(value):
 
 def validate_preview_row(row):
     if not isinstance(row, dict) or not isinstance(row.get("messages"), list):
-        raise ValueError("row format")
+        raise TypeError("row format")
     messages = row["messages"]
     if len(messages) < 4:
         raise ValueError("message count")
