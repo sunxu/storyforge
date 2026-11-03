@@ -125,10 +125,12 @@ def _bind_one(stage, owner, a, b, excluded, pins):
                    or HEX.fullmatch(owner[key]) is None
                    for key in ("world_graph_sha256", "source_version_sha256"))):
         return None, "WORLD_SPLIT_OR_SOURCE_PIN_UNRESOLVED"
-    if owner["source_version_sha256"] != pins["staged_source_sha256"]:
-        # The version pin here is a version of the source CONTEXT evidence
-        # file; only this exact byte-level interpretation is supported.
-        return None, "SOURCE_VERSION_PIN_MISMATCH"
+    # These are distinct pins: the frozen original Gold source-version SHA is
+    # owner-provided, while staging/source-context file pins are byte-checked.
+    # They must never be substituted for one another.
+    if (owner.get("staged_file_sha256") != pins["staged_file_sha256"]
+            or owner.get("source_context_file_sha256") != pins["source_context_file_sha256"]):
+        return None, "OWNER_SOURCE_CONTEXT_PINS_MISMATCH"
     if (not isinstance(owner.get("reviewer_a_evidence_ref"), str)
             or not owner["reviewer_a_evidence_ref"]
             or not isinstance(owner.get("reviewer_b_evidence_ref"), str)
@@ -173,7 +175,8 @@ def _bind_one(stage, owner, a, b, excluded, pins):
     return row, None
 
 
-def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha):
+def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
+         source_context_sha):
     if (not isinstance(staged, list) or not 1 <= len(staged) <= 192
             or not isinstance(a_doc, dict) or not isinstance(b_doc, dict)
             or not isinstance(exclusions, list) or len(exclusions) != 11):
@@ -202,7 +205,8 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha):
             raise BindHold("STAGING_SOURCE_IDENTITY_INVALID")
         stage_ids.add(cid)
         item, reason = _bind_one(row, owner.get(cid), a[digest], b[digest], ex, {
-            "staged_source_sha256": staged_sha,
+            "staged_file_sha256": staged_sha,
+            "source_context_file_sha256": source_context_sha,
         })
         if item is None:
             reasons[reason] += 1
@@ -243,7 +247,10 @@ def run(stage_path, receipt_path, a_path, b_path, exclusion_path,
     a, b, exclusions = _file(a_path, A_SHA), _file(b_path, B_SHA), _file(exclusion_path, EX_SHA)
     owner = _read_rows(_private_file(owner_path, MAX_BYTES))
     stage = _read_rows(raw)
-    result, safe = bind(stage, a, b, exclusions, owner, sha(raw))
+    upstream = receipt.get("source_context_file_sha256")
+    if not isinstance(upstream, str) or HEX.fullmatch(upstream) is None:
+        raise BindHold("SOURCE_CONTEXT_RECEIPT_PIN_INVALID")
+    result, safe = bind(stage, a, b, exclusions, owner, sha(raw), upstream)
     if output_dir.exists() or output_dir.is_symlink():
         raise BindHold("OUTPUT_EXISTS")
     if output_dir.resolve().is_relative_to(Path.cwd().resolve()):
