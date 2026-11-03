@@ -1,4 +1,5 @@
 import hashlib
+import json
 import unittest
 
 from r59_sft_shape_preview import (
@@ -29,7 +30,7 @@ def stage(history=None):
         "target_sha256": hashlib.sha256(target.encode()).hexdigest(),
         "target_text": target,
         "messages": messages,
-        "input_messages_sha256": "a" * 64,
+        "input_messages_sha256": hashlib.sha256(json.dumps(messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
     }
 
 
