@@ -1,4 +1,5 @@
 """R59 Strict28 historical target/context exposure audit (Owner-local, CPU-only).
+# SAFE AUDIT ONLY: no GPU, model inference, or training.
 
 Authenticates the frozen Strict28 review intersection and pinned historical
 SFT/evaluation sources. Compares target SHA, exact dialogue history, last-12
