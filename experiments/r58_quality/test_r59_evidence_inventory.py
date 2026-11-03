@@ -5,7 +5,11 @@ import unittest
 from pathlib import Path
 
 from r59_evidence_inventory import (
-    STAGED_SCHEMA, STAGED_STATUS, InventoryHold, build_report, _read_private,
+    STAGED_SCHEMA,
+    STAGED_STATUS,
+    InventoryHold,
+    _read_private,
+    build_report,
 )
 
 
