@@ -119,3 +119,41 @@ test ! -e "$OUT"
 新输出：`OWNER_REVIEWED_GOLD_CANDIDATES.jsonl`（私有，0600）、`GOLD_REVIEW_BIND_SAFE.json`（只含聚合统计、原因码与候选文件 SHA，不含故事文本）。若 `review_bound_candidates > 0`，把第一个文件传给 `quality_v1_sft_candidates.py` 编译；输入为零时不要启动下游。
 
 **安全界限：** 即使全部字段一致，仍只是 `REVIEW_EVIDENCE_BOUND__CANDIDATES_NOT_ADMITTED`，不代表 Owner 证据已被独立证明。正式 Quality-v1 仍为 0，尚需真实性核实、冻结划分、HF CPU Token/Collator 预检和单独 GPU 授权。严格禁止合成 CI 生成的样本冒充真实训练数据。
+
+## R59 可复用证据库存与精确关联审计器
+
+新增 `experiments/r58_quality/r59_evidence_inventory.py`，将 R59 近期临时诊断沉淀为可重复运行的 Owner 本机工具。它只读取已导出的私有 JSONL，不访问 Supabase、R50、HF 或网络；只输出 SAFE 聚合结果，不输出 Case/Story/Message ID、正文或逐案哈希。
+
+功能边界：
+
+- 只按固定 staging schema + `SOURCE_CONTEXT_STAGED__QUALITY_REVIEW_PENDING` 识别候选；HOLD 行不计入候选。
+- Source Locator 与 Historical Exposure 必须同时精确匹配 `case_id + target_sha256`；重复配对直接 HOLD。
+- Story Draft 按 `story_id` 关联，分别统计候选故事数、草稿记录数、每故事多版本情况及 `updated_at` 覆盖。
+- 仅检查 `world/components/character/characters/director/opening/visual` 的存在性和 JSON 类型，不读取或输出设定正文，不宣称时间点有效或世界隔离通过。
+- 原样统计 Exposure status 与布尔字段；明确 `exposure_not_found_is_proof_of_non_exposure=false`。
+- 所有输入要求普通文件、非 symlink、0600；SAFE 输出 create-only、0600，父目录 0700，且输出路径必须位于仓库外。
+
+本工具不生成或填充 `OWNER_CASE_EVIDENCE.jsonl`，不替 Owner 认定来源版本、世界组件、Reviewer 独立性、保护集完整性或准入。它是 Inventory/Audit 工具，不是 Binder 或 Admission 工具。
+
+### 本机运行
+
+在项目 venv 和 PR 分支工作树中：
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE="$PRIVATE/source-staging-priority72-20261103"
+REVIEW="$PRIVATE/quality-v1"
+LOCATORS="/ABSOLUTE/PRIVATE/R59_SOURCE_LOCATORS_192.jsonl"
+DRAFTS="/ABSOLUTE/PRIVATE/R59_STORY_DRAFTS_PRIVATE.jsonl"
+EXPOSURE="/ABSOLUTE/PRIVATE/R59_GOLD192_HISTORICAL_EXPOSURE_PRIVATE.jsonl"
+OUT="$REVIEW/evidence-inventory-run1"
+test ! -e "$OUT"
+.venv/bin/python experiments/r58_quality/r59_evidence_inventory.py \
+  --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --source-locators-jsonl "$LOCATORS" \
+  --story-drafts-jsonl "$DRAFTS" \
+  --historical-exposure-jsonl "$EXPOSURE" \
+  --output-safe "$OUT/R59_EVIDENCE_INVENTORY_SAFE.json"
+```
+
+输入文件必须先由 Owner 确认所选副本一致；工具不自动挑选不同版本的副本。此工具的 SAFE 结果仍不是 Owner Evidence、Quality-v1 准入或训练授权。
