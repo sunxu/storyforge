@@ -99,6 +99,8 @@ jobs:
         run: |
           ruff check experiments/r58_quality/r59_gold192_historical_exposure.py experiments/r58_quality/test_r59_gold192_historical_exposure.py
           python -m unittest discover -s experiments/r58_quality -p 'test_r59_gold192_historical_exposure.py' -v
+      - name: Run existing Quality-v1 rubric synthetic regression
+        run: python -m unittest discover -s experiments/r58_quality -p 'test_quality_v1.py' -v
       - name: Verify Quality-v1 candidate-only SFT packaging
         run: |
           ruff check experiments/r58_quality/quality_v1_sft_candidates.py experiments/r58_quality/test_quality_v1_sft_candidates.py
