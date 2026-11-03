@@ -1,5 +1,6 @@
 import unittest
 
+from quality_v1 import EVIDENCE
 from r59_owner_evidence_template import (
     NEGATIVE_EVIDENCE,
     SEVERE_FLAGS,
@@ -8,7 +9,6 @@ from r59_owner_evidence_template import (
     TemplateHold,
     build_template,
 )
-from quality_v1 import EVIDENCE
 
 
 class OwnerEvidenceTemplateTests(unittest.TestCase):
