@@ -92,6 +92,27 @@ class BindTests(unittest.TestCase):
         self.assertFalse(safe["reviewer_independence_independently_proven"])
         self.assertEqual(result[0]["reviews"][0]["scores"]["chinese_prose"], 4)
 
+    def test_source_structure_hold_is_not_misreported_as_owner_evidence_hold(self):
+        staged, a, b, exclusions, owners = fixture()
+        source_hold = copy.deepcopy(staged[0])
+        source_hold["case_id"] = "source-structure-hold"
+        source_hold["target_sha256"] = f"{1:064x}"
+        source_hold["schema"] = None
+        source_hold["status"] = "SOURCE_STRUCTURE_HOLD"
+        source_hold["private_reason_code"] = "HISTORY_STRUCTURE_INVALID"
+        staged.append(source_hold)
+
+        result, safe = bind(staged, a, b, exclusions, owners)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(safe["input_staged"], 2)
+        self.assertEqual(safe["source_stage_ready"], 1)
+        self.assertEqual(safe["source_stage_held"], 1)
+        self.assertEqual(
+            safe["source_stage_hold_reasons"], {"HISTORY_STRUCTURE_INVALID": 1}
+        )
+        self.assertEqual(safe["review_candidate_held"], 0)
+        self.assertEqual(safe["hold_reasons"], {})
+
     def test_aggregate_a_pass_without_case_scores_holds(self):
         args = fixture()
         args[1]["records"][0]["scores_1_to_5"] = None
