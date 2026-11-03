@@ -10,8 +10,8 @@ import argparse
 import json
 import subprocess
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 BUCKET_PREFIX = "hf://buckets/adradar/storyforge-training/"
 NAMESPACE = "adradar"
