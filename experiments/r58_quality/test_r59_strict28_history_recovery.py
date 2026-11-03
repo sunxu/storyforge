@@ -42,28 +42,28 @@ class Strict28AdapterTests(unittest.TestCase):
         rows[1]["target_sha256"] = rows[0]["target_sha256"]
         raw = b"".join((json.dumps(row) + "\n").encode() for row in rows)
         with self.assertRaisesRegex(ValueError, "STRICT28_LEDGER_SCOPE_INVALID"):
-            adapter.validate_strict28_ledger(raw)
+            adapter.validate_strict28_ledger(raw, adapter._sha(raw))
 
     def test_story_uuid_must_match_resolved_story(self):
         rows = synthetic_rows()
         rows[0]["story_uuid"] = "different-story"
         raw = b"".join((json.dumps(row) + "\n").encode() for row in rows)
         with self.assertRaisesRegex(ValueError, "STRICT28_LEDGER_LOCATOR_INVALID"):
-            adapter.validate_strict28_ledger(raw)
+            adapter.validate_strict28_ledger(raw, adapter._sha(raw))
 
     def test_turn_index_must_be_encoded_in_case_id(self):
         rows = synthetic_rows()
         rows[0]["case_id"] = "case-without-turn"
         raw = b"".join((json.dumps(row) + "\n").encode() for row in rows)
         with self.assertRaisesRegex(ValueError, "STRICT28_LEDGER_LOCATOR_INVALID"):
-            adapter.validate_strict28_ledger(raw)
+            adapter.validate_strict28_ledger(raw, adapter._sha(raw))
 
     def test_duplicate_json_keys_hold(self):
         row = synthetic_rows()[0]
         raw_row = json.dumps(row).replace('"case_id":', '"case_id":"shadow","case_id":')
         raw = (raw_row + "\n").encode()
         with self.assertRaisesRegex(ValueError, "DUPLICATE_JSON_KEY"):
-            adapter.validate_strict28_ledger(raw)
+            adapter.validate_strict28_ledger(raw, adapter._sha(raw))
 
     def test_same_run_safe_receipt_binds_private_ledger(self):
         receipt = {
