@@ -29,6 +29,7 @@ class EvidenceInventoryTests(unittest.TestCase):
         }]
         self.drafts = [{
             "story_id": "private-story", "updated_at": "private-time",
+            "source_label": "CURRENT_V2_DATA_NOT_HISTORICAL",
             "v2_data": {
                 "world": {}, "components": {}, "character": {},
                 "characters": [], "director": {}, "opening": {}, "visual": {},
@@ -47,6 +48,13 @@ class EvidenceInventoryTests(unittest.TestCase):
         self.assertEqual(report["candidate_stories_with_draft"], 1)
         self.assertEqual(report["historical_exposure_exact_matches"], 1)
         self.assertEqual(report["world_field_presence"]["world"], 1)
+        self.assertEqual(
+            report["matched_draft_source_label_counts"],
+            {"CURRENT_V2_DATA_NOT_HISTORICAL": 1},
+        )
+        self.assertEqual(report["current_v2_snapshot_not_historical_count"], 1)
+        self.assertFalse(report["historical_snapshot_temporality_proven"])
+        self.assertFalse(report["source_version_verified"])
         self.assertFalse(report["exposure_not_found_is_proof_of_non_exposure"])
         self.assertEqual(report["quality_v1_admitted"], 0)
         self.assertFalse(report["private_values_emitted"])
