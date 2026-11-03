@@ -32,7 +32,7 @@ STRICT28_LEDGER_SHA256 = (
 )
 EXPECTED_CASES = 28
 EXPECTED_STORIES = 2
-CASE_TURN = re.compile(r"t(\\d+)$")
+CASE_TURN = re.compile(r"t(\d+)$")
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
