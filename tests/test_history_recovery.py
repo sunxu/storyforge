@@ -152,6 +152,16 @@ class HistoryRecoveryTests(unittest.TestCase):
         result = h.recover_case(self.cursor, self.case)
         self.assertEqual(result["pretarget_summaries"], [])
 
+    def test_legacy_null_summary_indexes_are_not_accepted(self):
+        self.cursor.sessions["child"]["summary_source_end_index"] = None
+        result = h.recover_case(self.cursor, self.case)
+        self.assertEqual(result["pretarget_summaries"], [])
+
+    def test_dependency_cutoff_after_target_is_not_accepted(self):
+        self.cursor.sessions["child"]["summary_source_dependency_end_index"] = 7
+        result = h.recover_case(self.cursor, self.case)
+        self.assertEqual(result["pretarget_summaries"], [])
+
     def test_lineage_cycle_holds(self):
         self.cursor.sessions["parent"]["parent_session_id"] = "child"
         with self.assertRaisesRegex(h.HistoryRecoveryError, "SESSION_LINEAGE_CYCLE"):
