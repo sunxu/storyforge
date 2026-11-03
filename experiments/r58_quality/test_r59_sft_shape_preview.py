@@ -3,8 +3,8 @@ import json
 import unittest
 
 from r59_sft_shape_preview import (
-    PreviewHold,
     R27_SYSTEM_SHA256,
+    PreviewHold,
     build_preview,
 )
 
