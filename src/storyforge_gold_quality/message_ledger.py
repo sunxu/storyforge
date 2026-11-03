@@ -35,8 +35,9 @@ def _key(event):
     return (_dt(event.get("recorded_at")), event["id"])
 
 
-def load_session_events(cursor, session_id, max_turn_index, max_events=100000):
-    if (not isinstance(session_id, str) or not session_id
+def load_session_events(cursor, story_id, session_id, max_turn_index, max_events=100000):
+    if (not isinstance(story_id, str) or not story_id
+            or not isinstance(session_id, str) or not session_id
             or type(max_turn_index) is not int or max_turn_index < 1
             or type(max_events) is not int or not 1 <= max_events <= 500000):
         raise LedgerRecoveryError("LEDGER_QUERY_SCOPE_INVALID")
@@ -45,11 +46,11 @@ def load_session_events(cursor, session_id, max_turn_index, max_events=100000):
         SELECT id, message_id::text AS message_id, story_id, session_id,
                role, turn_index, operation, row_data, recorded_at
         FROM public.v2_chat_message_ledger
-        WHERE session_id = %s AND turn_index <= %s
+        WHERE story_id = %s AND session_id = %s AND turn_index <= %s
         ORDER BY recorded_at, id
         LIMIT %s
         """,
-        (session_id, max_turn_index, max_events + 1),
+        (story_id, session_id, max_turn_index, max_events + 1),
     )
     result = []
     for row in cursor.fetchall():
@@ -60,6 +61,7 @@ def load_session_events(cursor, session_id, max_turn_index, max_events=100000):
         else:
             raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
         if (not isinstance(event.get("message_id"), str)
+                or event.get("story_id") != story_id
                 or event.get("session_id") != session_id
                 or type(event.get("turn_index")) is not int
                 or event["turn_index"] < 1
@@ -68,7 +70,10 @@ def load_session_events(cursor, session_id, max_turn_index, max_events=100000):
         _key(event)
         if event["operation"] in SNAPSHOTS and not isinstance(event.get("row_data"), dict):
             raise LedgerRecoveryError("LEDGER_SNAPSHOT_MISSING")
-        if event["operation"] in MARKERS and not isinstance(event.get("row_data"), dict):
+        if event["operation"] in MARKERS and (
+            not isinstance(event.get("row_data"), dict)
+            or event["row_data"].get("_ledger_event") != "marker_v1"
+        ):
             raise LedgerRecoveryError("LEDGER_MARKER_INVALID")
         result.append(event)
     if len(result) > max_events:
