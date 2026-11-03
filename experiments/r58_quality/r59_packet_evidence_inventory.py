@@ -70,8 +70,11 @@ def _jsonl(raw: bytes, reason: str) -> list[dict[str, Any]]:
 def _valid_case(case: Any) -> bool:
     if not isinstance(case, dict):
         return False
-    if any(not isinstance(case.get(key), str) or not case[key]
-           for key in ("case_id", "current_user_text", "target_assistant_text")):
+    if not isinstance(case.get("case_id"), str) or not case["case_id"]:
+        return False
+    if (not isinstance(case.get("current_user_text"), str)
+            or not isinstance(case.get("target_assistant_text"), str)
+            or not case["target_assistant_text"]):
         return False
     target = case.get("target_sha256")
     if HEX.fullmatch(target if isinstance(target, str) else "") is None:
