@@ -4,7 +4,7 @@
 
 本工具在既有 Strict28 历史曝光审计之后，恢复目标回复时点之前、可由数据库时间和 Session 分叉关系支持的上下文。它是来源证据工具，不是 Quality-v1 准入器、SFT 编译器或训练器。
 
-- 输入仅为 Owner 本机生成的 Strict28 历史曝光私有 ledger，按固定 SHA256 验证。
+- 输入为 Owner 本机同一次 PR #9 审计运行生成的 Strict28 私有 ledger 与 SAFE receipt；适配器从 SAFE receipt 的 `private_ledger.sha256` 读取预期摘要并重新校验 ledger 字节，不硬编码未经 Owner 核验的哈希。
 - 仅查询 ledger 明确列出的 28 个 `story_id / session_id / turn_index` 定位项。
 - 通过目标 Assistant 正文 SHA256 再次确认消息身份。
 - fork/rewind 会把继承消息物化复制到子 Session（生成新的 message ID）。恢复时以目标所在的子 Session 中已物化的历史为准；父 Session 只用于 lineage 证明，不再二次合并父消息，避免重复或误读分叉边界。`forked_from_turn` 存储的是 story-turn 编号，不是消息表的物理 `turn_index`。
@@ -66,11 +66,7 @@ python3 -m pip install 'psycopg[binary]'
 
 `R59_STRICT28_HISTORICAL_EXPOSURE_PRIVATE.jsonl`
 
-固定 SHA256：
-
-`b20334581981b0affd76e40c1b2dfe02cf4f610f0d13a666279cc805d48f4fbd`
-
-输入文件权限必须为 0600，父目录为 0700。运行示例：
+ledger 与 SAFE receipt 必须来自同一次 PR #9 运行、位于同一私有输出目录；SAFE receipt 必须为预期 Schema / 状态，28 条上下文核验通过、源字节 pin 已验证且训练未授权。适配器校验 receipt 内的 ledger SHA256 与实际字节。两个文件权限均为 0600，父目录为 0700。运行示例：
 
 ```bash
 python3 experiments/r58_quality/r59_strict28_history_recovery.py \
