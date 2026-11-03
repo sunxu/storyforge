@@ -71,7 +71,7 @@ ledger 与 SAFE receipt 必须来自同一次 PR #9 运行、位于同一私有�
 ```bash
 python3 experiments/r58_quality/r59_strict28_history_recovery.py \
   --strict28-ledger "/private/path/R59_STRICT28_HISTORICAL_EXPOSURE_PRIVATE.jsonl" \
-  --safe-report "/private/path/R59_STRICT28_HISTORICAL_EXPOSURE_SAFE.json" \\
+  --safe-report "/private/path/R59_STRICT28_HISTORICAL_EXPOSURE_SAFE.json" \
   --output-dir "/private/path/r59-strict28-history-recovery-v1"
 ```
 
