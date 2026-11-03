@@ -1,7 +1,8 @@
 import hashlib
 import json
-import r59_sft_collator_cpu
 import unittest
+
+import r59_sft_collator_cpu
 
 
 SYSTEM = (
