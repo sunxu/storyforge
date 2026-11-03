@@ -95,6 +95,40 @@ class MessageLedgerTests(unittest.TestCase):
         self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.query)
         self.assertEqual(cursor.params, ("story", "s", 5, 21))
 
+    def test_large_snapshot_jsonb_is_loaded_only_for_first_post_target_event(self):
+        events = self.events + [
+            snapshot(5, "u1", "s", 1, "user", "update_before", 11),
+            marker(6, "u1", "s", 1, "user", "update_after", 11),
+            snapshot(7, "u1", "s", 1, "user", "update_before", 12,
+                     content="intermediate", revision=1),
+        ]
+        cursor = FakeCursor(events)
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 5, [self.target], max_events=20
+        )
+        by_id = {event["id"]: event for event in rows}
+        self.assertEqual(by_id[5]["row_data"]["content"], "old")
+        self.assertIsNone(by_id[7]["row_data"])
+        self.assertIn("CASE WHEN operation IN ('insert', 'update_after')", cursor.query)
+
+    def test_snapshot_fetch_missing_row_holds(self):
+        class MissingSnapshotCursor(FakeCursor):
+            def execute(self, query, params=()):
+                super().execute(query, params)
+                if "WHERE id = ANY(%s)" in query:
+                    self.rows = []
+
+        events = self.events + [
+            snapshot(5, "u1", "s", 1, "user", "update_before", 11)
+        ]
+        with self.assertRaisesRegex(
+            ledger.LedgerRecoveryError, "LEDGER_SNAPSHOT_MISSING"
+        ):
+            ledger.load_session_events(
+                MissingSnapshotCursor(events), "story", "s", 5,
+                [self.target], max_events=20,
+            )
+
     def test_edited_after_target_uses_first_update_before_snapshot(self):
         events = self.events + [
             snapshot(5, "u1", "s", 1, "user", "update_before", 11),
