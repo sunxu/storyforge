@@ -41,8 +41,15 @@ def _index(rows, label, *, case_key=None):
     return result
 
 
-def _file(path, digest=None):
-    raw = _private_file(path, MAX_BYTES)
+def _private_input(path, label):
+    try:
+        return _private_file(path, MAX_BYTES)
+    except StageHold as exc:
+        raise BindHold(f"{label}_{exc}") from None
+
+
+def _file(path, digest=None, *, label="SOURCE"):
+    raw = _private_input(path, label)
     if digest is not None and sha(raw) != digest:
         raise BindHold("PINNED_SOURCE_MISMATCH")
     try:
@@ -237,13 +244,15 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
 
 def run(stage_path, receipt_path, a_path, b_path, exclusion_path,
         owner_path, output_dir):
-    raw = _private_file(stage_path, MAX_BYTES)
-    receipt = _file(receipt_path)
+    raw = _private_input(stage_path, "STAGED_JSONL")
+    receipt = _file(receipt_path, label="STAGING_SAFE")
     if (receipt.get("schema") != "storyforge-gold-quality-supabase-source-stage-safe-v1"
             or receipt.get("staged_file_sha256") != sha(raw)):
         raise BindHold("STAGING_RECEIPT_MISMATCH")
-    a, b, exclusions = _file(a_path, A_SHA), _file(b_path, B_SHA), _file(exclusion_path, EX_SHA)
-    owner = _read_rows(_private_file(owner_path, MAX_BYTES))
+    a = _file(a_path, A_SHA, label="REVIEWER_A")
+    b = _file(b_path, B_SHA, label="REVIEWER_B")
+    exclusions = _file(exclusion_path, EX_SHA, label="EXCLUSIONS")
+    owner = _read_rows(_private_input(owner_path, "OWNER_EVIDENCE"))
     stage = _read_rows(raw)
     upstream = receipt.get("source_context_file_sha256")
     if not isinstance(upstream, str) or HEX.fullmatch(upstream) is None:
