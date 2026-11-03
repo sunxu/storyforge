@@ -2,10 +2,13 @@
 from __future__ import annotations
 
 import copy
+import contextlib
+import io
 import hashlib
 import json
 import os
 import stat
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -146,6 +149,32 @@ class BindTests(unittest.TestCase):
             os.chmod(path, 0o600)
             with self.assertRaisesRegex(binder.BindHold, "PINNED_SOURCE_MISMATCH"):
                 binder._file(path, "0" * 64)
+
+    def test_cli_emits_fixed_safe_reason_code(self):
+        output = io.StringIO()
+        argv = [
+            "gold_quality_review_bind.py",
+            "--staged-jsonl", "/private/staged.jsonl",
+            "--staging-safe", "/private/staging-safe.json",
+            "--reviewer-a", "/private/a.json",
+            "--reviewer-b", "/private/b.json",
+            "--exclusions", "/private/exclusions.jsonl",
+            "--owner-evidence-jsonl", "/private/owner.jsonl",
+            "--output-dir", "/private/out",
+        ]
+        with (
+            contextlib.redirect_stdout(output),
+            unittest.mock.patch.object(sys, "argv", argv),
+            unittest.mock.patch.object(
+                binder, "run", side_effect=binder.BindHold("PINNED_SOURCE_MISMATCH")
+            ),
+        ):
+            code = binder.main()
+        payload = json.loads(output.getvalue())
+        self.assertEqual(code, 42)
+        self.assertEqual(payload["reason_code"], "PINNED_SOURCE_MISMATCH")
+        self.assertFalse(payload["private_values_emitted"])
+        self.assertEqual(payload["quality_v1_admitted"], 0)
 
     def test_secure_output_private_only(self):
         # Exercise IO with source fixtures pinned to local test bytes.
