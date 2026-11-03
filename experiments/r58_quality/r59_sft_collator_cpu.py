@@ -92,7 +92,7 @@ def write_safe_report(path: Path, report: dict) -> None:
     try:
         with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
             json.dump(report, stream, ensure_ascii=False, sort_keys=True)
-            stream.write("\\n")
+            stream.write("\n")
             stream.flush()
             os.fsync(stream.fileno())
     except OSError:
