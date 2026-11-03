@@ -60,6 +60,13 @@ class FakeCursor:
             "id": "admin-1", "content": {"characters": []},
             "created_at": dt(3), "updated_at": dt(7),
         }
+        self.ledger_events = [
+            self.ledger_marker(1, "c1", 1, "user", 1),
+            self.ledger_marker(2, "c2", 2, "assistant", 2),
+            self.ledger_marker(3, "c5", 5, "user", 3),
+            self.ledger_marker(4, "c6", 6, "user", 4),
+            self.ledger_marker(5, "target-id", 7, "assistant", 10),
+        ]
 
     @staticmethod
     def msg(mid, sid, turn, role, content, seconds):
@@ -67,11 +74,44 @@ class FakeCursor:
             "message_id": mid, "story_id": "story-a", "session_id": sid,
             "turn_index": turn, "role": role, "content": content,
             "status": "completed", "created_at": dt(seconds),
+            "mutation_revision": 0,
+        }
+
+    @staticmethod
+    def ledger_marker(event_id, message_id, turn, role, seconds):
+        return {
+            "id": event_id, "message_id": message_id, "story_id": "story-a",
+            "session_id": "child", "role": role, "turn_index": turn,
+            "operation": "insert", "row_data": {"_ledger_event": "marker_v1"},
+            "recorded_at": dt(seconds),
+        }
+
+    @staticmethod
+    def ledger_snapshot(event_id, message_id, turn, role, operation, seconds,
+                        content, revision=0):
+        return {
+            "id": event_id, "message_id": message_id, "story_id": "story-a",
+            "session_id": "child", "role": role, "turn_index": turn,
+            "operation": operation,
+            "row_data": {
+                "id": message_id, "story_id": "story-a", "session_id": "child",
+                "turn_index": turn, "role": role, "content": content,
+                "status": "completed", "created_at": dt(seconds - 10).isoformat(),
+                "mutation_revision": revision,
+            },
+            "recorded_at": dt(seconds),
         }
 
     def execute(self, query, params=()):
         self.rows, self.one = [], None
-        if "FROM public.story_v2_sessions" in query:
+        if "FROM public.v2_chat_message_ledger" in query:
+            session_id, max_turn, limit = params
+            self.rows = [
+                event for event in self.ledger_events
+                if event["session_id"] == session_id
+                and event["turn_index"] <= max_turn
+            ][:limit]
+        elif "FROM public.story_v2_sessions" in query:
             self.one = self.sessions.get(params[1])
         elif "FROM public.v2_chat_messages" in query and "AND role = 'assistant'" in query:
             self.rows = [self.target] if params[1] == "child" and params[2] == 7 else []
@@ -180,6 +220,43 @@ class HistoryRecoveryTests(unittest.TestCase):
     def test_naive_timestamp_is_rejected(self):
         self.cursor.target["created_at"] = datetime(2026, 1, 1)
         with self.assertRaisesRegex(h.HistoryRecoveryError, "DATABASE_TIMESTAMP_TIMEZONE_MISSING"):
+            h.recover_case(self.cursor, self.case)
+
+    def test_history_edit_after_target_uses_ledger_before_image(self):
+        current = next(row for row in self.cursor.messages if row["message_id"] == "c1")
+        current["content"] = "edited after target"
+        current["mutation_revision"] = 1
+        self.cursor.ledger_events.extend([
+            self.cursor.ledger_snapshot(
+                6, "c1", 1, "user", "update_before", 11, "parent user"
+            ),
+            self.cursor.ledger_marker(7, "c1", 1, "user", 11),
+        ])
+        result = h.recover_case(self.cursor, self.case)
+        first = next(row for row in result["history"] if row["message_id"] == "c1")
+        self.assertEqual(first["content"], "parent user")
+        self.assertEqual(
+            result["history_reconstruction"]["history_rows_restored_from_snapshot"], 1
+        )
+
+    def test_history_deleted_after_target_uses_ledger_delete_snapshot(self):
+        self.cursor.messages = [
+            row for row in self.cursor.messages if row["message_id"] != "c1"
+        ]
+        self.cursor.ledger_events.append(
+            self.cursor.ledger_snapshot(
+                6, "c1", 1, "user", "delete", 11, "parent user"
+            )
+        )
+        result = h.recover_case(self.cursor, self.case)
+        self.assertIn("c1", {row["message_id"] for row in result["history"]})
+
+    def test_unlogged_status_or_partial_mutation_holds(self):
+        current = next(row for row in self.cursor.messages if row["message_id"] == "c1")
+        current["mutation_revision"] = 1
+        with self.assertRaisesRegex(
+            h.HistoryRecoveryError, "LEDGER_MUTATION_REVISION_MISMATCH"
+        ):
             h.recover_case(self.cursor, self.case)
 
     def test_duplicate_case_set_fails(self):
