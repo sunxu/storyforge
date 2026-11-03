@@ -2,6 +2,99 @@
 
 Private bucket: `hf://buckets/adradar/storyforge-training`
 
+## CPU-only Jobs: namespace, permissions and mount policy
+
+All StoryForge Jobs use the organization namespace `adradar` and the private project
+bucket `hf://buckets/adradar/storyforge-training`. The authenticated user identity
+and the billing namespace are distinct: an account can authenticate as
+`greenkeedle` while submitting a Job to organization namespace `adradar`.
+
+### Required mount topology
+
+Do not mount the entire bucket read-write. Use a read-only source mount and a
+separate writable output prefix:
+
+```text
+hf://buckets/adradar/storyforge-training/<private-input-prefix>:/input/<filename>:ro
+hf://buckets/adradar/storyforge-training/<worker-script-prefix>:/scripts/<filename>:ro
+hf://buckets/adradar/storyforge-training/<unique-output-prefix>:/output:rw
+```
+
+- All input and worker-code mounts are explicitly `:ro`.
+- SAFE reports and logs go to a separate, unique `:rw` output prefix.
+- Never use the same source prefix for input and output.
+- Use a new output prefix for every attempt; do not overwrite earlier evidence.
+- Do not omit the mode suffix and rely on a default.
+- Use `--attempts 1`; retries require inspection and a deliberate new attempt.
+
+### Guarded CPU submission
+
+Use `scripts/hf_job_guard.py`. It is a policy gate and submit wrapper, not a
+credential manager. It runs `hf auth whoami` before a real submission and invokes
+the Hugging Face CLI with an argument array (not shell interpolation).
+
+Example preflight (no Job is created):
+
+```bash
+python3 scripts/hf_job_guard.py \\
+  --namespace adradar \\
+  --name storyforge-r59-cpu-collator \\
+  --flavor cpu-basic \\
+  --timeout-minutes 15 \\
+  --input-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl:/input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl:ro' \\
+  --input-volume 'hf://buckets/adradar/storyforge-training/scripts/r59_sft_collator_cpu.py:/scripts/r59_sft_collator_cpu.py:ro' \\
+  --output-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/reports/attempt-<unique-id>:/output:rw' \\
+  --image python:3.11 \\
+  -- python3 /scripts/r59_sft_collator_cpu.py \\
+     --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+```
+
+After reviewing the SAFE preflight result, add `--submit` before the `--`
+separator to create the CPU Job. The tool enforces:
+
+- namespace exactly `adradar`;
+- CPU flavor `cpu-basic` or `cpu-upgrade` only;
+- timeout between 1 and 120 minutes;
+- one or more read-only input/script mounts;
+- one separate read-write `/output` mount;
+- exactly one submission attempt;
+- no automatic personal-namespace fallback and no GPU selection.
+
+The caller is responsible for choosing a fresh output prefix and a command that
+writes SAFE-only output under `/output`. Private input text must not be printed
+to Job logs. A successful submission response is not proof that the Job completed;
+inspect its status, logs, and output receipt separately.
+
+### Failure handling
+
+| Result | Required response |
+|---|---|
+| HTTP 403 | Stop. Check organization permission and mount mode. Do not retry with broader permissions or an RW input mount. |
+| HTTP 402 | Stop. Check billing for the explicitly selected namespace. Do not switch to the personal namespace. |
+| CLI/authentication failure | Stop and repair authentication; do not change namespace as a workaround. |
+| Job runtime failure | Preserve the Job ID and logs. Correct the cause and use a new unique output prefix for a deliberate new attempt. |
+
+A failed submission must never trigger automatic namespace switching, permission
+broadening, mount-mode broadening, retries, or GPU escalation.
+
+### Verified regression history (2026-11-01)
+
+The following configuration outcomes were observed in the prior troubleshooting:
+
+- `adradar` + `cpu-basic` without a Bucket mount: Job
+  `6ae6fc34c78863f9c62f8554` submitted successfully.
+- `adradar` + `cpu-basic` with a private Bucket mounted `:ro`: Job
+  `6ae6fc3dc78863f9c62f8556` submitted successfully.
+- `adradar` + `cpu-upgrade` with a private Bucket mounted `:ro`: Job
+  `6ae6fc6cc78863f9c62f855c` submitted successfully.
+- The corresponding private Bucket `:rw` input-mount probe returned HTTP 403.
+- A separate authenticated CPU Jobs check in organization namespace `adradar`
+  completed with Job `6ae6f7710e0338d1bb7d6434`.
+
+These results establish the previously tested namespace/flavor/mount combinations;
+they do not guarantee current organization billing availability. The R59 CPU
+collator must use the same read-only-input/separate-writable-output topology.
+
 ## Local submission (GPU charges only after --submit)
 
 Install the Hugging Face CLI and log in first. On your Mac:
