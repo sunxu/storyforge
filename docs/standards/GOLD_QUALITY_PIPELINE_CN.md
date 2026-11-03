@@ -90,3 +90,12 @@ Reviewer A 与 B 的 blind ID 属于各自 reviewer 的局部编号，**不得�
 新版文件的 12 HOLD、2 REJECT 均原样保留。任何历史 REJECT 仍需仲裁；Reviewer B 的 PASS 不会清除 Reviewer A 的 REJECT，也不直接产生 Quality-v1 准入。RB-0001 的年龄字段冲突属于额外 Owner 核对项，不因其 PASS 自动关闭。
 
 此流程只导入和核对审核证据；不验证角色卡在目标时点的生效版本，不完成世界身份/别名语义核验，不完成 Reviewer 独立性认证，不执行训练授权。
+
+## R59 Quality-v1 SFT 数据工程主线（2026-11-03）
+
+原生产 Provider 请求精确回放、Supabase Ledger 完整事件重建已经从新 LoRA 研发的前置门禁移除，旧 HOLD 仍保留且不能视为通过。为避免重新从生产数据库抄录正文，本 Pipeline 提供两个已注册的私有本机适配器；这里只做工具登记，不允许 `run-check` 在没有私人路径输入合同的情况下执行：
+
+1. `r59.gold-source-stage`：使用 Owner 已导出的 `R59_SOURCE_CONTEXT_PRIVATE.jsonl`，搭配 SHA256 固定的 Owner 通用无卡 System Prompt。检查原始消息角色、完成状态与目标 SHA256，将上下文暂存为私有 `GOLD_SOURCE_STAGING_PRIVATE.jsonl`。世界组件、Review A/B、保护集证据均保持空缺，不能自动补 PASS。
+2. `r59.sft-candidates`：只接收 Owner 私有审核过的 `storyforge-quality-v1-private-candidate-v1` JSONL，复用 `quality_v1.py` 的原六维门槛、完整批次重复和世界隔离检查；仅为结构 PASS 的样本编译 last-assistant-only loss，生成私有候选 + SAFE 汇总，永远标记候选非准入。
+
+具体入口、权限、冻结限制和 SAFE 合同见 `docs/R59_GOLD_QUALITY_V1_SFT_CANDIDATE_COMPILE_CN.md`。现阶段不自动导出真正的 TRAIN / VALIDATION 冻结集；Reviewer 独立性、语义世界组件、来源证据和历史消息结构的 Owner 核对未完成时，`quality_v1_admitted=0`。实际 Qwen Tokenizer/Collator 仍只能在 HF CPU 使用共享预检工具；GPU 一律需要独立授权。
