@@ -1,3 +1,12 @@
+# 0.1.15 — 2026-11-03
+
+- 将稀疏 `v2_chat_message_ledger` 恢复纳入共享历史恢复核心；区分 INSERT / UPDATE_AFTER marker 与 UPDATE_BEFORE / DELETE 旧行快照。
+- 新增按 story/session/turn ceiling 的有界账本读取；每个 Session 一次查询，默认最多 100,000 条，禁止全表扫描。
+- 对目标后编辑、删除、插入和流式完成事件分别处理；用 `mutation_revision` 与 `update_after` 数量交叉核验，未记录的状态变更触发 HOLD。
+- 增加独立账本核心测试及历史恢复集成测试；覆盖编辑旧快照、删除恢复、目标后插入排除、revision 不匹配和事件数超限。
+- 明确 `recorded_at` 是事务时间而非提交时间；SAFE 保留 `ledger_commit_order_verified=false`，不宣称严格 commit-order 回放。
+- 更新 Gold Quality 技术规范、Skill 和 scoped CI；不访问私人 Strict28 正文、不启动 GPU、不授予 Quality-v1 准入或训练授权。
+
 # 0.1.14 — 2026-11-03
 
 - 新增可复用的只读历史上下文恢复核心：按目标消息时间、Session lineage、fork cutoff、summary cutoff 与历史故事版本恢复上下文。
