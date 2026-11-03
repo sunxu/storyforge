@@ -22,16 +22,28 @@ def packet_case():
     }
 
 
-def packet():
-    return {
-        "schema": "private-packet-v1",
-        "cases": [packet_case()],
-        "world_card": {"world": {"worldSentence": "private-world"}},
-        "world_card_sha256": PIN_C,
-        "world_card_source_kind": "EXPORT_TIME_SNAPSHOT_NOT_HISTORICAL_REQUEST",
-        "world_card_review_status": "UNREVIEWED",
-        "world_card_approved_for_system": False,
-    }
+def packets(include_candidate=True):
+    rows = []
+    for i in range(13):
+        rows.append({
+            "schema": "private-packet-v1",
+            "cases": [packet_case()] if i == 0 and include_candidate else [],
+            "world_card": {"world": {"worldSentence": "private-world"}},
+            "world_card_sha256": PIN_C,
+            "world_card_source_kind": "EXPORT_TIME_SNAPSHOT_NOT_HISTORICAL_REQUEST",
+            "world_card_review_status": "UNREVIEWED",
+            "world_card_approved_for_system": False,
+        })
+    return rows
+
+
+def reviewer_docs():
+    a = [{"case_id": f"private-case-{i}", "target_sha256": f"{i:064x}"}
+         for i in range(192)]
+    b = [{"target_sha256": f"{i:064x}"} for i in range(192)]
+    a[0] = {"case_id": "private-case-1", "target_sha256": PIN_A}
+    b[0] = {"target_sha256": PIN_A}
+    return {"records": a}, {"cases": b}
 
 
 def stage():
@@ -61,10 +73,9 @@ def owner():
 
 class OwnerEvidenceAutolinkTests(unittest.TestCase):
     def test_adds_exact_locators_without_owner_attestations(self):
-        a = {"records": [{"case_id": "private-case-1", "target_sha256": PIN_A}]}
-        b = {"cases": [{"target_sha256": PIN_A}]}
+        a, b = reviewer_docs()
         rows, safe = build(
-            [packet()], [stage()], a, b, [owner()],
+            packets(), [stage()], a, b, [owner()],
             PACKETS_SHA, "b" * 64, A_SHA, B_SHA,
         )
         row = rows[0]
@@ -86,24 +97,22 @@ class OwnerEvidenceAutolinkTests(unittest.TestCase):
         self.assertNotIn("private-history", rendered)
 
     def test_a_case_identity_mismatch_holds(self):
-        a = {"records": [{"case_id": "private-other", "target_sha256": PIN_A}]}
-        b = {"cases": [{"target_sha256": PIN_A}]}
+        a, b = reviewer_docs()
+        a["records"][0]["case_id"] = "private-other"
         with self.assertRaises(AutoLinkHold):
-            build([packet()], [stage()], a, b, [owner()],
+            build(packets(), [stage()], a, b, [owner()],
                   PACKETS_SHA, "b" * 64, A_SHA, B_SHA)
 
     def test_packet_missing_exact_case_holds(self):
-        a = {"records": [{"case_id": "private-case-1", "target_sha256": PIN_A}]}
-        b = {"cases": [{"target_sha256": PIN_A}]}
+        a, b = reviewer_docs()
         with self.assertRaises(AutoLinkHold):
-            build([], [stage()], a, b, [owner()],
+            build(packets(False), [stage()], a, b, [owner()],
                   PACKETS_SHA, "b" * 64, A_SHA, B_SHA)
 
     def test_duplicate_owner_case_holds(self):
-        a = {"records": [{"case_id": "private-case-1", "target_sha256": PIN_A}]}
-        b = {"cases": [{"target_sha256": PIN_A}]}
+        a, b = reviewer_docs()
         with self.assertRaises(AutoLinkHold):
-            build([packet()], [stage()], a, b, [owner(), owner()],
+            build(packets(), [stage()], a, b, [owner(), owner()],
                   PACKETS_SHA, "b" * 64, A_SHA, B_SHA)
 
 
