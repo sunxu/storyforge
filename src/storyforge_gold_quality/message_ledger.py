@@ -250,6 +250,9 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
     event = target_boundary(events, target)
     return output, {
         "ledger_event_count": len(events),
+        "ledger_detail_rows_loaded": sum(
+            event.get("row_data") is not None for event in events
+        ),
         "ledger_target_boundary_id": event["id"],
         "ledger_event_order_basis": "recorded_at_then_id",
         "ledger_commit_order_verified": False,
