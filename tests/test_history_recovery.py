@@ -1,12 +1,12 @@
 """Synthetic regression tests for read-only historical context recovery."""
 import unittest
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from storyforge_gold_quality import history_recovery as h
 
 
 def dt(seconds):
-    return datetime(2026, 1, 1, 0, 0, seconds, tzinfo=timezone.utc)
+    return datetime(2026, 1, 1, 0, 0, seconds, tzinfo=UTC)
 
 
 class FakeCursor:
