@@ -147,6 +147,10 @@ def build_report(staged, locator_rows, draft_rows, exposure_rows):
     stories_with_draft = sum(bool(drafts_by_story.get(s)) for s in matched_story_ids)
     multi_draft_stories = sum(len(drafts_by_story.get(s, [])) > 1 for s in matched_story_ids)
     updated_at_count = sum(bool(row.get("updated_at")) for row in distinct_drafts)
+    draft_source_labels = Counter(
+        row.get("source_label") for row in distinct_drafts
+        if isinstance(row.get("source_label"), str)
+    )
     v2_fingerprints = defaultdict(set)
     world_component_fingerprints = defaultdict(set)
     for draft in distinct_drafts:
@@ -184,6 +188,12 @@ def build_report(staged, locator_rows, draft_rows, exposure_rows):
         "candidate_stories_without_draft": len(matched_story_ids) - stories_with_draft,
         "candidate_stories_with_multiple_drafts": multi_draft_stories,
         "matched_draft_updated_at_present": updated_at_count,
+        "matched_draft_source_label_counts": dict(sorted(draft_source_labels.items())),
+        "current_v2_snapshot_not_historical_count": draft_source_labels[
+            "CURRENT_V2_DATA_NOT_HISTORICAL"
+        ],
+        "historical_snapshot_temporality_proven": False,
+        "source_version_verified": False,
         "stories_with_multiple_v2_snapshots": sum(
             len(values) > 1 for values in v2_fingerprints.values()
         ),
