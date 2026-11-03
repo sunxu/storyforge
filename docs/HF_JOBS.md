@@ -143,3 +143,13 @@ The job prepares separate train/validation copies with `loss: false` on all earl
 - Check the exact ms-swift arguments and CUDA dependency compatibility in the remote logs.
 - For lower costs, build a pinned Docker image and warm the base model/cache before repeated GPU training.
 - Running under HF Jobs has no guarantee that a terminated process will flush the last checkpoint. Save early and consider periodic syncing/verification.
+
+### GitHub Actions runner-allocation failures
+
+If a workflow job reports `runner_id: 0`, `steps: []`, and completes before any
+step starts, the runner was not allocated and the workflow did not execute the
+repository tests. Treat this as an infrastructure/runner-allocation failure,
+not a code PASS or a code-level test failure. Preserve the run URL and retry
+only after the GitHub Actions runner service is available. Do not use a failed
+pre-runner check as evidence that the change passed CI.
+
