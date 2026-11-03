@@ -1,7 +1,7 @@
 import hashlib
 import json
+import r59_sft_collator_cpu
 import unittest
-from r59_sft_collator_cpu import validate_preview_row
 
 
 SYSTEM = (
@@ -45,13 +45,13 @@ class R59SFTCollatorInputTests(unittest.TestCase):
         )
 
     def test_valid_assistant_first_preview_row(self):
-        self.assertEqual(validate_preview_row(row()), 4)
+        self.assertEqual(r59_sft_collator_cpu.validate_preview_row(row()), 4)
 
     def test_rejects_historical_supervision(self):
         item = row()
         item["messages"][1]["loss"] = True
         with self.assertRaises(ValueError):
-            validate_preview_row(item)
+            r59_sft_collator_cpu.validate_preview_row(item)
 
     def test_rejects_nonfinal_target_loss(self):
         item = row()
