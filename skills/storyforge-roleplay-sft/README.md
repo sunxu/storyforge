@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.15
+# R58 RolePlay → StoryForge SFT Skill v0.1.16
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -36,7 +36,7 @@
 
 ## 历史上下文恢复
 
-R59 的共享历史恢复核心与 Strict28 适配器按目标时点、Session lineage、fork cutoff、摘要覆盖范围和历史版本时间戳恢复上下文。它不重建历史 Provider System Prompt，不把当前故事快照当作历史版本，也不构成质量准入。 历史消息编辑/删除通过稀疏 ledger 旧快照恢复；查询按 story/session/turn ceiling 限定并设置上限，事务时间不等于提交时间，SAFE 保留 commit 顺序未验证标记。
+R59 的共享历史恢复核心与 Strict28 适配器按目标时点、Session lineage、fork cutoff、摘要覆盖范围和历史版本时间戳恢复上下文。它不重建历史 Provider System Prompt，不把当前故事快照当作历史版本，也不构成质量准入。 历史消息编辑/删除通过稀疏 ledger 旧快照恢复；查询按 story/session/turn ceiling 限定并设置上限，事务时间不等于提交时间，SAFE 保留 commit 顺序未验证标记。 账本触发器连续启用也尚未由独立 DDL/audit 证据证明。
 
 ## 合成测试
 
