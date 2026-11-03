@@ -392,6 +392,7 @@ def compare_one(current: dict, historical: list[dict]) -> dict:
     suffix_exact = []
     best_full = (0.0, 0.0, None)
     best_suffix = (0.0, 0.0, None)
+    near = False
     for sample in historical:
         history = sample["history"]
         full_match = current_full_sha == sha(canonical(history))
@@ -402,12 +403,14 @@ def compare_one(current: dict, historical: list[dict]) -> dict:
             suffix_exact.append(sample)
         full_jaccard, full_containment = similarity(current_history, history)
         suffix_jaccard, suffix_containment = similarity(current_suffix, history[-12:])
+        near = near or any((score >= threshold) for score, threshold in (
+            (full_jaccard, NEAR_JACCARD), (full_containment, NEAR_CONTAINMENT),
+            (suffix_jaccard, NEAR_JACCARD), (suffix_containment, NEAR_CONTAINMENT),
+        ))
         if (full_jaccard, full_containment) > best_full[:2]:
             best_full = (full_jaccard, full_containment, sample["sample_id"])
         if (suffix_jaccard, suffix_containment) > best_suffix[:2]:
             best_suffix = (suffix_jaccard, suffix_containment, sample["sample_id"])
-    near = any((jaccard >= NEAR_JACCARD or containment >= NEAR_CONTAINMENT)
-               for jaccard, containment, _ in (best_full, best_suffix))
     return {
         "history_exact": bool(full_exact),
         "history_exact_match_count": len(full_exact),
