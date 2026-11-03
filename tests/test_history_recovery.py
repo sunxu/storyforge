@@ -255,6 +255,9 @@ class HistoryRecoveryTests(unittest.TestCase):
         self.assertEqual(
             result["history_reconstruction"]["history_rows_restored_from_snapshot"], 1
         )
+        self.assertEqual(
+            result["history_reconstruction"]["ledger_detail_rows_loaded"], 2
+        )
 
     def test_history_deleted_after_target_uses_ledger_delete_snapshot(self):
         self.cursor.messages = [
