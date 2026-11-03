@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.14
+# R58 RolePlay → StoryForge SFT Skill v0.1.15
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -22,6 +22,7 @@
 - [统一 Gold Quality Pipeline Manifest / CLI](../../docs/standards/GOLD_QUALITY_PIPELINE_CN.md)
 - [R59 Strict28 历史上下文恢复](../../docs/R59_STRICT28_HISTORY_RECOVERY_CN.md)
 - [共享历史恢复核心](../../src/storyforge_gold_quality/history_recovery.py)
+- [稀疏消息账本恢复核心](../../src/storyforge_gold_quality/message_ledger.py)
 
 完整算法、Schema、失败码、缓存身份、checkpoint 规则和复现步骤只维护在对应技术规范及共享源码中；不要在 Skill 或 README 复制实现。统一 Gold Quality Manifest 仅作为私有 append-only 事件账本和编排入口，不替代来源、世界隔离、质量或训练准入门禁。
 
@@ -35,7 +36,7 @@
 
 ## 历史上下文恢复
 
-R59 的共享历史恢复核心与 Strict28 适配器按目标时点、Session lineage、fork cutoff、摘要覆盖范围和历史版本时间戳恢复上下文。它不重建历史 Provider System Prompt，不把当前故事快照当作历史版本，也不构成质量准入。
+R59 的共享历史恢复核心与 Strict28 适配器按目标时点、Session lineage、fork cutoff、摘要覆盖范围和历史版本时间戳恢复上下文。它不重建历史 Provider System Prompt，不把当前故事快照当作历史版本，也不构成质量准入。 历史消息编辑/删除通过稀疏 ledger 旧快照恢复；查询按 story/session/turn ceiling 限定并设置上限，事务时间不等于提交时间，SAFE 保留 commit 顺序未验证标记。
 
 ## 合成测试
 
