@@ -163,6 +163,12 @@ class HistoryRecoveryTests(unittest.TestCase):
         self.assertEqual(result["story_admin_version_status"], "PRETARGET_VERSION_FOUND")
         self.assertFalse(result["historical_system_prompt_verified"])
         self.assertFalse(result["training_admitted"])
+        self.assertFalse(
+            result["history_reconstruction"]["ledger_commit_order_verified"]
+        )
+        self.assertFalse(
+            result["history_reconstruction"]["ledger_trigger_continuity_verified"]
+        )
 
     def test_target_hash_mismatch_holds(self):
         self.case["target_sha256"] = "0" * 64
