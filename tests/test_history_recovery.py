@@ -104,14 +104,24 @@ class FakeCursor:
 
     def execute(self, query, params=()):
         self.rows, self.one = [], None
-        if "FROM public.v2_chat_message_ledger" in query:
-            story_id, session_id, max_turn, limit = params
+        if "WHERE id = ANY(%s)" in query:
+            ids = set(params[0])
             self.rows = [
-                event for event in self.ledger_events
-                if event["story_id"] == story_id
-                and event["session_id"] == session_id
-                and event["turn_index"] <= max_turn
-            ][:limit]
+                {"id": event["id"], "row_data": event["row_data"]}
+                for event in self.ledger_events if event["id"] in ids
+            ]
+        elif "FROM public.v2_chat_message_ledger" in query:
+            story_id, session_id, max_turn, limit = params
+            self.rows = []
+            for source in self.ledger_events:
+                if (source["story_id"] == story_id
+                        and source["session_id"] == session_id
+                        and source["turn_index"] <= max_turn):
+                    event = dict(source)
+                    if event["operation"] in {"update_before", "delete"}:
+                        event["row_data"] = None
+                    self.rows.append(event)
+            self.rows = self.rows[:limit]
         elif "FROM public.story_v2_sessions" in query:
             self.one = self.sessions.get(params[1])
         elif "FROM public.v2_chat_messages" in query and "AND role = 'assistant'" in query:
