@@ -222,19 +222,17 @@ def _summary_snapshot(session: dict, target_time: Any,
         return {"status": "TURN_CUTOFF_NOT_PROVEN", "used": False, "fields": {}}
 
     # last_*_turn are story-turn numbers. The summary_source/text *_index
-    # columns are physical message turn_index values. The DB's legacy
-    # fallback is last_summary_turn * 2; never compare these domains directly.
+    # columns are physical message turn_index values. Never compare these
+    # coordinate systems directly. The DB has a legacy fallback for NULL
+    # indexes, but this recovery gate deliberately refuses that fallback:
+    # trigger-invalidated/legacy coverage is not proven for training input.
     physical_cutoff = target_turn_index - 1
     story_turn_cutoff = physical_cutoff // 2
-    legacy_end = last_summary_turn * 2
     source_end = session.get("summary_source_end_index")
     text_end = session.get("summary_text_end_index")
     legacy_text_end = session.get("summary_legacy_text_end_index")
     dependency_end = session.get("summary_source_dependency_end_index")
 
-    source_end = legacy_end if source_end is None else source_end
-    text_end = legacy_end if text_end is None else text_end
-    legacy_text_end = text_end if legacy_text_end is None else legacy_text_end
     physical_cutoffs = (source_end, text_end, legacy_text_end)
     if (any(type(value) is not int or value < 0 or value > physical_cutoff
             for value in physical_cutoffs)
