@@ -116,7 +116,7 @@ class FakeCursor:
             for source in self.ledger_events:
                 if (source["story_id"] == story_id
                         and source["session_id"] == session_id
-                        and source["turn_index"] <= max_turn):
+                        and 1 <= source["turn_index"] <= max_turn):
                     event = dict(source)
                     if event["operation"] in {"update_before", "delete"}:
                         event["row_data"] = None
