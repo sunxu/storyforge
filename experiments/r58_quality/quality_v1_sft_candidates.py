@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Private Gold Quality-v1 SFT candidate packer; not a training admission gate.
 
 Uses the existing quality_v1 rubric and SHA contracts. Outputs are private,
@@ -8,13 +7,13 @@ Supabase, Hugging Face, or GPU. Run HF CPU preflight separately.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import stat
+from collections import Counter
+from pathlib import Path
 
 from quality_v1 import canonical, decide, read_private, sha, summarize
 
