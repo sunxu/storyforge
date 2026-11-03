@@ -40,9 +40,14 @@ DB_STAGES = {
 class DatabaseOperationError(RuntimeError):
     """Safe database failure metadata; never stores exception messages."""
 
-    def __init__(self, stage: str, sqlstate: str | None):
+    def __init__(self, stage: str, sqlstate: str | None,
+                 exception_type: str):
         self.stage = stage if stage in DB_STAGES else "UNKNOWN"
         self.sqlstate = sqlstate
+        self.exception_type = (
+            exception_type if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", exception_type)
+            else "DatabaseError"
+        )
         super().__init__("DATABASE_OPERATION_FAILED")
 
 
@@ -226,7 +231,9 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
             db_stage = "ROLLBACK"
             db.rollback()
     except psycopg.Error as exc:
-        raise DatabaseOperationError(db_stage, _safe_sqlstate(exc)) from None
+        raise DatabaseOperationError(
+            db_stage, _safe_sqlstate(exc), type(exc).__name__
+        ) from None
 
     if len(recovered) != EXPECTED_CASES:
         raise HistoryRecoveryError("STRICT28_RECOVERY_COUNT_INVALID")
@@ -325,7 +332,7 @@ def main() -> int:
             diagnostics = {
                 "database_stage": exc.stage,
                 "database_sqlstate": exc.sqlstate,
-                "database_exception_type": "OperationalError",
+                "database_exception_type": exc.exception_type,
             }
         else:
             reason = (
