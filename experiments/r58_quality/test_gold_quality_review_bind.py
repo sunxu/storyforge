@@ -115,7 +115,7 @@ class BindTests(unittest.TestCase):
         self.assertEqual(safe["hold_reasons"], {})
 
     def test_owner_safety_screen_is_separate_from_reviewer_a(self):
-        result, safe = bind(*fixture())
+        result, _safe = bind(*fixture())
         self.assertEqual(len(result), 1)
         self.assertIsNone(result[0]["reviews"][0]["severe_flags"])
         self.assertEqual(
