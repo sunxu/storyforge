@@ -37,8 +37,8 @@ DB_STAGES = {
 }
 DB_OPERATIONS = {
     "SESSION_LINEAGE_READ", "TARGET_MESSAGE_READ", "MESSAGE_LEDGER_READ",
-    "CURRENT_HISTORY_READ", "STORY_CONTENT_VERSION_READ",
-    "STORY_ADMIN_VERSION_READ", "UNKNOWN_QUERY",
+    "MESSAGE_LEDGER_SNAPSHOT_READ", "CURRENT_HISTORY_READ",
+    "STORY_CONTENT_VERSION_READ", "STORY_ADMIN_VERSION_READ", "UNKNOWN_QUERY",
 }
 DB_FAILURE_PHASES = {"EXECUTE", "FETCH_ONE", "FETCH_ALL"}
 
@@ -81,6 +81,8 @@ def _safe_sqlstate(exc: Exception) -> str | None:
 def _query_operation(query: str) -> str:
     normalized = " ".join(query.lower().split())
     if "from public.v2_chat_message_ledger" in normalized:
+        if "where id = any(" in normalized:
+            return "MESSAGE_LEDGER_SNAPSHOT_READ"
         return "MESSAGE_LEDGER_READ"
     if "from public.story_v2_sessions" in normalized:
         return "SESSION_LINEAGE_READ"
