@@ -314,7 +314,10 @@ python3 /scripts/r59_sft_context_window.py \
 ```
 
 The tool emits only SAFE aggregate diagnostics to stdout and creates private
-JSONL + SAFE JSON files with mode 0600 in the new output directory. If a
+JSONL + SAFE JSON files with mode 0600 in the new output directory. Its
+repository-write guard detects the checkout root from `.git` + `pyproject.toml`
+rather than using the process working directory: HF Jobs commonly start at `/`,
+so a `/tmp` output directory must not be misclassified as inside the repository. If a
 separate writable Bucket mount is available, copy these outputs to its unique
 attempt prefix only after the run succeeds. Do not retry a failed/uncertain
 submission without first inspecting the existing Job. ChatGPT connector RW
