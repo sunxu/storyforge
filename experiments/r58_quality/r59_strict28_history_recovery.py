@@ -231,6 +231,7 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
         "ledger_events_read_total": sum(ledger_sessions.values()),
         "ledger_event_order_basis": "recorded_at_then_id",
         "ledger_commit_order_verified": False,
+        "ledger_trigger_continuity_verified": False,
         "history_rows_restored_from_snapshot_total": sum(
             row["history_reconstruction"]["history_rows_restored_from_snapshot"]
             for row in recovered
