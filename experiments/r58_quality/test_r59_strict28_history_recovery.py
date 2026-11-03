@@ -96,6 +96,29 @@ class Strict28AdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "STRICT28_LEDGER_SHA256_MISMATCH"):
             adapter.validate_strict28_ledger(raw, "0" * 64)
 
+    def test_database_failure_diagnostic_is_sanitized(self):
+        class FakeDiag:
+            sqlstate = "08006"
+
+        class FakeError(Exception):
+            diag = FakeDiag()
+
+        state = adapter._safe_sqlstate(FakeError("password=must-not-escape"))
+        self.assertEqual(state, "08006")
+        error = adapter.DatabaseOperationError(
+            "CONNECT", state, "OperationalError"
+        )
+        self.assertEqual(str(error), "DATABASE_OPERATION_FAILED")
+        self.assertEqual(error.stage, "CONNECT")
+        self.assertEqual(error.sqlstate, "08006")
+        self.assertEqual(error.exception_type, "OperationalError")
+        invalid = adapter.DatabaseOperationError(
+            "dsn-secret", "not-a-state", "SomeError"
+        )
+        self.assertEqual(invalid.stage, "UNKNOWN")
+        self.assertIsNone(invalid.sqlstate)
+        self.assertEqual(invalid.exception_type, "SomeError")
+
     def test_output_is_create_only_and_private(self):
         import hashlib
         import tempfile
