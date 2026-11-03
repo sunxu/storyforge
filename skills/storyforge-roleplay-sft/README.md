@@ -33,7 +33,11 @@
 - 模型 Tokenizer / Chat Template 预检在 HF CPU 执行；GPU 推理、评审和训练需要单独明确授权。
 - Token PASS、结构 PASS 或模型评审 PASS 均不自动构成 Quality-v1 训练准入。
 
-## 历史上下文恢复\n\nR59 的共享历史恢复核心与 Strict28 适配器按目标时点、Session lineage、fork cutoff、摘要覆盖范围和历史版本时间戳恢复上下文。它不重建历史 Provider System Prompt，不把当前故事快照当作历史版本，也不构成质量准入。\n\n## 合成测试
+## 历史上下文恢复
+
+R59 的共享历史恢复核心与 Strict28 适配器按目标时点、Session lineage、fork cutoff、摘要覆盖范围和历史版本时间戳恢复上下文。它不重建历史 Provider System Prompt，不把当前故事快照当作历史版本，也不构成质量准入。
+
+## 合成测试
 
 在仓库根目录运行：
 
