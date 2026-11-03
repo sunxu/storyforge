@@ -68,26 +68,27 @@ def _fetchone(cursor, columns: tuple[str, ...]) -> dict | None:
     return rows[0] if rows else None
 
 
-def _timestamp(value: Any) -> str:
+def _datetime(value: Any) -> datetime:
     if isinstance(value, datetime):
-        if value.tzinfo is None:
-            raise HistoryRecoveryError("DATABASE_TIMESTAMP_TIMEZONE_MISSING")
-        return value.isoformat()
-    if isinstance(value, str) and value:
-        # Database adapters normally return aware datetime values. Accept ISO
-        # strings for deterministic offline tests, but reject naive timestamps.
+        parsed = value
+    elif isinstance(value, str) and value:
         try:
             parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
         except ValueError:
             raise HistoryRecoveryError("DATABASE_TIMESTAMP_INVALID") from None
-        if parsed.tzinfo is None:
-            raise HistoryRecoveryError("DATABASE_TIMESTAMP_TIMEZONE_MISSING")
-        return parsed.isoformat()
-    raise HistoryRecoveryError("DATABASE_TIMESTAMP_MISSING")
+    else:
+        raise HistoryRecoveryError("DATABASE_TIMESTAMP_MISSING")
+    if parsed.tzinfo is None:
+        raise HistoryRecoveryError("DATABASE_TIMESTAMP_TIMEZONE_MISSING")
+    return parsed
+
+
+def _timestamp(value: Any) -> str:
+    return _datetime(value).isoformat()
 
 
 def _before(left: Any, right: Any) -> bool:
-    return _timestamp(left) < _timestamp(right)
+    return _datetime(left) < _datetime(right)
 
 
 def _session(cursor, story_id: str, session_id: str) -> dict:
@@ -319,7 +320,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
                 "lineage_depth": segment["lineage_depth"],
                 **summary,
             })
-    history.sort(key=lambda row: (row["created_at"], row["message_id"]))
+    history.sort(key=lambda row: (_datetime(row["created_at"]), row["message_id"]))
     message_ids = [row["message_id"] for row in history]
     if len(message_ids) != len(set(message_ids)):
         raise HistoryRecoveryError("HISTORY_DUPLICATE_MESSAGE_ID")
