@@ -52,6 +52,20 @@
 
 目标回复本身仍须通过当前目标消息的精确 SHA256；若目标回复本身已被修改、删除或移动而无法按当前定位验证，本版本会 HOLD，不擅自从历史快照猜测目标身份。
 
+## OperationalError 安全诊断（R59.1）
+
+首次本机执行返回 `reason_code=OperationalError`，旧版 SAFE 只暴露异常类型，无法区分连接阶段和查询阶段。适配器现将 psycopg 数据库错误转换为不含原始异常消息的安全诊断：
+
+- `database_stage`：`CONNECT`、`SET_READ_ONLY`、`SET_STATEMENT_TIMEOUT`、`SET_LOCK_TIMEOUT`、`RECOVERY_QUERIES` 或 `ROLLBACK`。
+- `database_sqlstate`：仅在 PostgreSQL SQLSTATE 满足五位大写字母/数字格式时输出，否则为 null。
+- `database_exception_type`：只输出异常类名，不输出异常消息、DSN、主机、用户名或密码。
+- `reason_code` 固定为 `DATABASE_OPERATION_FAILED`。
+
+数据库 schema 核验已确认所需的五张表和列存在；只读连接角色对这些表具有 SELECT 权限，且当前会话 `transaction_read_only=on`。这不能证明 Owner Mac 使用的 DSN、账号、网络链路或连接池状态相同，因此不能据此排除本机连接问题。
+
+重新运行前先更新到诊断修复提交，并确认上一次失败没有留下输出目录；使用新的、从未存在过的输出目录。保留原始只读 DSN，不要将其贴到聊天。将新 SAFE 中的 `database_stage` 和 `database_sqlstate` 返回即可。
+
+
 
 ## Session summary 使用规则
 
