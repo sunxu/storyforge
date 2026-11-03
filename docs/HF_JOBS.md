@@ -324,11 +324,18 @@ attempt prefix only after the run succeeds. Do not retry a failed/uncertain
 submission without first inspecting the existing Job. ChatGPT connector RW
 403 remains distinct from the Mac-local CLI path.
 
-A successful result is
-`R59_CONTEXT_WINDOW_AND_COLLATOR_PASS__NOT_ADMITTED`; it is not a Quality-v1
-admission or dataset freeze. The formal tool must be synchronized to the
-private Bucket and re-run on the pinned HF CPU runtime before its output is
-used as a durable R59 artifact. No GPU, inference, or training is authorized.
+A formal CPU Job (`6aea1d8e0e0338d1bb7f6336`) executed the exact committed
+context-window adapter, existing Collator, and shared token-core source from
+PR #11 against the five-row read-only Preview. It returned
+`R59_CONTEXT_WINDOW_AND_COLLATOR_PASS__NOT_ADMITTED`: 5/5 rebuilt, 5/5 actual
+Collator PASS, with the pinned revision. The Job also verified the temporary
+output directory was 0700 and both private JSONL and SAFE JSON were 0600.
+Those files remained in the Job's temporary filesystem and were not synced to
+the Bucket; only SAFE aggregate logs were retained. For a durable R59 artifact,
+sync the exact worker files to the private Bucket and write the output to a
+unique writable prefix through the guarded Mac-local CLI route. This result is
+not a Quality-v1 admission or dataset freeze. No GPU, inference, or training
+is authorized.
 
 ### Failure handling
 
