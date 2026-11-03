@@ -62,3 +62,60 @@ test ! -e "$OUT"
 **注意：** 上面的 `SOURCE` 和 `SYSTEM` 是占位路径，不应在文件不存在时盲目运行。两份输入都必须是权限 0600 的私有非符号链接普通文件，输出父目录须是 0700 且位于 Git checkout 外。审核工作流的后续步骤必须基于真实的 Reviewer A/B 记录，单独绑定世界语义 ID、权益与隐私证据。不能把 `GOLD_SOURCE_STAGING_PRIVATE.jsonl` 直接改名为 `OWNER_REVIEWED_GOLD_CANDIDATES.jsonl`。
 
 Source Staging SAFE 不会回显 Story/Case ID 或任何正文；含原始文件 SHA256、System SHA256、结构 HOLD 统计、已成功暂存数量。对于交替角色不合规、非 completed 或末条非 User 的上下文，保留私有 HOLD 而不是静默删除或修复。此桥接只做数据工程，不执行 HF CPU 预检，也不执行 GPU 训练。
+
+
+## R59 Owner 本机 Reviewer A/B 证据绑定（新增）
+
+新增 `experiments/r58_quality/gold_quality_review_bind.py`，把 Source Staging 与**冻结 SHA256** 的原始 Reviewer A、Reviewer B 和 11 条排除记录对齐，再消费 Owner 逐案提供的证据，不访问 Supabase、R50 或 HF。
+
+重要：过去 A 的 192 条结果中部分 `PASS_ONLY` 为**集合级推断且没有逐案六维评分**；这些记录一律保持 HOLD。只有 A 真实的 `scores_1_to_5`/逐案评分、B 的 `scores_1_to_5` 均可核实并且明确通过，才可能进入候选。冻结源 SHA 来自既有 `r59_gold192_supabase_extract.py`：A `641b71e10a14318b57e69cb0239172f7016fe5b9d2149923f876308f5e6fe1e4`、B `bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8`、11 条排除 `9ca99432e08b680cb67b5a1f89d172a337cb91c9bd02af70b68356938c6c04ed`。使用原始字节文件，不能通过重排 JSON 字段来重新构造 pin。若本机 A 文档使用其他版本或上游记录格式变化，先确认其来源，不要伪造适配。
+
+### Owner 证据输入合同
+
+由 Owner 创建权限 0600 的私有 `OWNER_CASE_EVIDENCE.jsonl`。每行对应一个已暂存的 `case_id`，只填写**实际已核验**的内容；不需要为全部 192 条填写，缺少记录的候选自动 HOLD。每行字段包括：
+
+- `case_id`, `target_sha256`, `story_id`, `session_id`：必须与 Staging 一致；
+- `staged_file_sha256`：`GOLD_SOURCE_STAGING_SAFE.json` 中的 `staged_file_sha256`；
+- `source_context_file_sha256`：上述 SAFE 中的 `source_context_file_sha256`；
+- `source_version_sha256`：Owner 核实的冻结 Gold 来源版本 SHA256，**不能**以 Staging 文件 SHA 代替；`world_graph_sha256`、`world_component_id`：Owner 核实的世界隔离证据，不能由故事名称自动推断；
+- `split`：明确为 `train` 或 `validation`，跨世界组件拆分会整体 HOLD；
+- `reviewer_a_evidence_ref` / `reviewer_b_evidence_ref`：本机私有审核证据引用，引用不能为空（本工具不会凭字符串引用独立证明审核独立性）；
+- `reviewer_a_severe_flags`：三个布尔字段 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`，来源必须是真实审核证据；不要为了 PASS 默认填 `false`；
+- `evidence`：与 `quality_v1.py` 中 `EVIDENCE` 完全一致的 Owner 核实布尔字段（需明确为 `true`），另外 `known_protected_overlap`、`final_heldout_overlap`、`protected_test_body_accessed` 三项须经实际核实并明确为 `false`。不能因未知而填写通过值。
+
+证据不足时**应省略该 case 或填写真实 False**；脚本输出 HOLD 计数，不会代填缺失的证据。
+
+### 本机运行顺序
+
+```bash
+cd ~/workspace/storyforge-gold-quality
+git fetch origin gold-quality/quality-v1-sft-candidates
+git switch gold-quality/quality-v1-sft-candidates
+git merge --ff-only origin/gold-quality/quality-v1-sft-candidates
+
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE_DIR="$PRIVATE/source-staging-run1"
+REVIEW_DIR="$PRIVATE/quality-v1"
+OWNER="$REVIEW_DIR/OWNER_CASE_EVIDENCE.jsonl"
+A="/ABSOLUTE/PRIVATE/R59_REVIEWER_A_192_PRIVATE.json"
+B="/ABSOLUTE/PRIVATE/R58_GOLD192_REVIEWER_B_BLIND_20261102.json"
+EX="/ABSOLUTE/PRIVATE/QUALITY_V1_EXCLUDED_CASES.jsonl"
+OUT="$REVIEW_DIR/review-bind-run1"
+
+test -f "$STAGE_DIR/GOLD_SOURCE_STAGING_PRIVATE.jsonl"
+test -f "$STAGE_DIR/GOLD_SOURCE_STAGING_SAFE.json"
+test -f "$OWNER"
+test -f "$A" && test -f "$B" && test -f "$EX"
+test ! -e "$OUT"
+.venv/bin/python experiments/r58_quality/gold_quality_review_bind.py \
+  --staged-jsonl "$STAGE_DIR/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --staging-safe "$STAGE_DIR/GOLD_SOURCE_STAGING_SAFE.json" \
+  --reviewer-a "$A" --reviewer-b "$B" --exclusions "$EX" \
+  --owner-evidence-jsonl "$OWNER" --output-dir "$OUT"
+```
+
+示例 A/B/EX 路径均为**占位符**，需以 Owner 本机的真实冻结文件取代，不要把内容或本机绝对路径传到聊天。所有输入必须为非符号链接普通文件、0600 权限，输出父目录必须为 0700 且位于 Git checkout 外。
+
+新输出：`OWNER_REVIEWED_GOLD_CANDIDATES.jsonl`（私有，0600）、`GOLD_REVIEW_BIND_SAFE.json`（只含聚合统计、原因码与候选文件 SHA，不含故事文本）。若 `review_bound_candidates > 0`，把第一个文件传给 `quality_v1_sft_candidates.py` 编译；输入为零时不要启动下游。
+
+**安全界限：** 即使全部字段一致，仍只是 `REVIEW_EVIDENCE_BOUND__CANDIDATES_NOT_ADMITTED`，不代表 Owner 证据已被独立证明。正式 Quality-v1 仍为 0，尚需真实性核实、冻结划分、HF CPU Token/Collator 预检和单独 GPU 授权。严格禁止合成 CI 生成的样本冒充真实训练数据。
