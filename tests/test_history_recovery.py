@@ -276,6 +276,17 @@ class HistoryRecoveryTests(unittest.TestCase):
         ):
             h.recover_case(self.cursor, self.case)
 
+    def test_batch_prefetches_target_and_recovers_through_shared_ledger(self):
+        results = h.recover_cases(self.cursor, [self.case])
+        self.assertEqual(len(results), 1)
+        self.assertEqual(
+            [row["message_id"] for row in results[0]["history"]],
+            ["c1", "c2", "c5", "c6"],
+        )
+        self.assertEqual(
+            results[0]["history_reconstruction"]["ledger_event_count"], 5
+        )
+
     def test_duplicate_case_set_fails(self):
         with self.assertRaisesRegex(h.HistoryRecoveryError, "CASE_SET_DUPLICATE"):
             h.recover_cases(self.cursor, [self.case, self.case])
