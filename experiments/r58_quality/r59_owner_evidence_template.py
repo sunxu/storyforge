@@ -64,7 +64,8 @@ def build_template(staged_rows, staged_sha: str, source_context_sha: str):
             "split": None,
             "reviewer_a_evidence_ref": None,
             "reviewer_b_evidence_ref": None,
-            "reviewer_a_severe_flags": {key: None for key in SEVERE_FLAGS},
+            "owner_supplemental_severe_flags": {key: None for key in SEVERE_FLAGS},
+            "owner_supplemental_severe_evidence_ref": None,
             "evidence": {key: None for key in (*EVIDENCE, *NEGATIVE_EVIDENCE)},
         })
     if not rows:
