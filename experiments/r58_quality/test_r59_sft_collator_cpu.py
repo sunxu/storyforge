@@ -51,31 +51,31 @@ class R59SFTCollatorInputTests(unittest.TestCase):
         item = row()
         item["messages"][1]["loss"] = True
         with self.assertRaises(ValueError):
-            r59_sft_collator_cpu.validate_preview_row(item)
+            r59_sft_collator_cpu.r59_sft_collator_cpu.validate_preview_row(item)
 
     def test_rejects_nonfinal_target_loss(self):
         item = row()
         item["messages"][-1]["loss"] = False
         with self.assertRaises(ValueError):
-            validate_preview_row(item)
+            r59_sft_collator_cpu.validate_preview_row(item)
 
     def test_rejects_target_hash_mismatch(self):
         item = row()
         item["metadata"]["source_target_sha256"] = "0" * 64
         with self.assertRaises(ValueError):
-            validate_preview_row(item)
+            r59_sft_collator_cpu.validate_preview_row(item)
 
     def test_rejects_consecutive_roles(self):
         item = row()
         item["messages"][2]["role"] = "assistant"
         with self.assertRaises(ValueError):
-            validate_preview_row(item)
+            r59_sft_collator_cpu.validate_preview_row(item)
 
     def test_rejects_nonpreview_metadata(self):
         item = row()
         item["metadata"]["status"] = "ADMITTED"
         with self.assertRaises(ValueError):
-            validate_preview_row(item)
+            r59_sft_collator_cpu.validate_preview_row(item)
 
 
 if __name__ == "__main__":
