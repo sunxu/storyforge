@@ -77,6 +77,48 @@ class OwnerEvidencePreflightTests(unittest.TestCase):
         self.assertEqual(report["quality_v1_admitted"], 0)
         self.assertFalse(report["training_authorized"])
 
+    def test_partial_completion_reports_ready_row_count(self):
+        first_stage = stage_row()
+        second_stage = stage_row()
+        second_stage.update({
+            "case_id": "private-case-2",
+            "story_id": "private-story-2",
+            "session_id": "private-session-2",
+        })
+
+        complete = owner_row()
+        blank = owner_row()
+        blank.update({
+            "case_id": "private-case-2",
+            "story_id": "private-story-2",
+            "session_id": "private-session-2",
+            "source_version_sha256": None,
+            "world_graph_sha256": None,
+            "world_component_id": None,
+            "split": None,
+            "reviewer_a_evidence_ref": None,
+            "reviewer_b_evidence_ref": None,
+            "owner_supplemental_severe_flags": {
+                key: None for key in SEVERE
+            },
+            "owner_supplemental_severe_evidence_ref": None,
+            "evidence": {
+                key: None for key in (*EVIDENCE, *NEGATIVE)
+            },
+        })
+
+        report = preflight(
+            [first_stage, second_stage], [complete, blank], PIN_A, PIN_B
+        )
+        self.assertEqual(
+            report["status"],
+            "OWNER_EVIDENCE_PARTIAL_FIELDS_PRESENT__BINDER_REVIEW_REQUIRED",
+        )
+        self.assertEqual(report["rows_with_all_required_fields_present"], 1)
+        self.assertEqual(report["rows_missing_one_or_more_required_fields"], 1)
+        self.assertEqual(report["quality_v1_admitted"], 0)
+        self.assertFalse(report["training_authorized"])
+
     def test_identity_mismatch_is_aggregate_only(self):
         owner = owner_row()
         owner["target_sha256"] = "d" * 64
