@@ -56,6 +56,7 @@ NEAR_CONTAINMENT = 0.88
 NGRAM_SIZE = 3
 MIN_NGRAMS = 20
 MAX_SOURCE_LINE = 3 * 1024 * 1024
+MAX_CONTEXT_LINE = 16 * 1024 * 1024
 
 
 class AuditHold(ValueError):
@@ -95,13 +96,17 @@ def parse_json(raw: bytes, label: str) -> dict:
     return value
 
 
-def parse_jsonl(raw: bytes, label: str) -> list[dict]:
+def parse_jsonl(
+    raw: bytes, label: str, *, max_row_bytes: int = MAX_SOURCE_LINE
+) -> list[dict]:
+    if type(max_row_bytes) is not int or not 1 <= max_row_bytes <= MAX_CONTEXT_LINE:
+        raise AuditHold(label + "_ROW_LIMIT_INVALID")
     rows = []
     try:
         for line in raw.splitlines():
             if not line.strip():
                 continue
-            if len(line) > MAX_SOURCE_LINE:
+            if len(line) > max_row_bytes:
                 raise AuditHold(label + "_ROW_TOO_LARGE")
             row = json.loads(line)
             if not isinstance(row, dict):
@@ -463,7 +468,10 @@ def run(repo_root: Path, r57_private_root: Path, reconciled_path: Path,
     reviewer_b = parse_json(reviewer_b_raw, "REVIEWER_B")
     exclusions = parse_jsonl(exclusions_raw, "EXCLUSIONS")
     packets = parse_jsonl(private_read(packets_path, PACKETS_SHA256, "PACKETS"), "PACKETS")
-    contexts = parse_jsonl(private_read(context_path, CONTEXT_SHA256, "CONTEXT"), "CONTEXT")
+    contexts = parse_jsonl(
+        private_read(context_path, CONTEXT_SHA256, "CONTEXT"),
+        "CONTEXT", max_row_bytes=MAX_CONTEXT_LINE,
+    )
     drafts = parse_jsonl(private_read(drafts_path, DRAFTS_SHA256, "DRAFTS"), "DRAFTS")
     selected = select_strict28(reconciled, reviewer_b, exclusions, packets)
     current = validate_contexts(contexts, selected, drafts)

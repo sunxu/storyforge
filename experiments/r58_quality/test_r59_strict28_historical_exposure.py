@@ -6,11 +6,14 @@ import unittest
 from collections import Counter
 
 from r59_strict28_historical_exposure import (
+    MAX_CONTEXT_LINE,
+    MAX_SOURCE_LINE,
     PACKETS_SHA256,
     REVIEWER_B_SHA256,
     AuditHold,
     compare_one,
     normalize_for_ngrams,
+    parse_jsonl,
     select_strict28,
     similarity,
     validate_contexts,
@@ -83,6 +86,27 @@ class Strict28Tests(unittest.TestCase):
             "cases": b_rows,
         }
         return reconciled, reviewer_b, exclusions, packets
+
+    def test_context_row_limit_is_scoped_and_bounded(self):
+        oversized_default = (
+            b'{"payload":"' + b'x' * MAX_SOURCE_LINE + b'"}'
+        )
+        with self.assertRaisesRegex(AuditHold, "DEFAULT_ROW_TOO_LARGE"):
+            parse_jsonl(oversized_default, "DEFAULT")
+
+        parsed = parse_jsonl(
+            oversized_default, "CONTEXT", max_row_bytes=MAX_CONTEXT_LINE
+        )
+        self.assertEqual(len(parsed), 1)
+
+        oversized_context = (
+            b'{"payload":"' + b'x' * MAX_CONTEXT_LINE + b'"}'
+        )
+        with self.assertRaisesRegex(AuditHold, "CONTEXT_ROW_TOO_LARGE"):
+            parse_jsonl(
+                oversized_context, "CONTEXT",
+                max_row_bytes=MAX_CONTEXT_LINE,
+            )
 
     def test_selects_only_28_case_level_ab_passes_and_checks_exclusions(self):
         reconciled, reviewer_b, exclusions, packets = self.synthetic_reviews()
