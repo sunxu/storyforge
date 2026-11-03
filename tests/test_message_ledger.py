@@ -1,12 +1,12 @@
 """Synthetic regression tests for sparse v2 message-ledger reconstruction."""
 import unittest
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from storyforge_gold_quality import message_ledger as ledger
 
 
 def dt(seconds):
-    return datetime(2026, 1, 1, 0, 0, seconds, tzinfo=UTC)
+    return datetime(2026, 1, 1, tzinfo=UTC) + timedelta(seconds=seconds)
 
 
 class FakeCursor:
