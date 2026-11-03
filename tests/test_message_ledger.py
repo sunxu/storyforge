@@ -125,6 +125,69 @@ class MessageLedgerTests(unittest.TestCase):
                 ):
                     ledger._validate_event_locator(bad, "story", "s")
 
+    def test_legacy_full_insert_target_marker_is_accepted(self):
+        events = list(self.events)
+        old = events[-1].copy()
+        legacy = {
+            "id": "target", "story_id": "story", "session_id": "s",
+            "turn_index": 5, "role": "assistant", "content": "old reply",
+            "status": "completed", "created_at": dt(10).isoformat(),
+        }
+        old["row_data"] = legacy  # Historical schema has no mutation_revision.
+        events[-1] = old
+        rows = ledger.load_session_events(
+            FakeCursor(events), "story", "s", 5, [self.target], max_events=20
+        )
+        self.assertEqual(
+            ledger._validate_business_event_detail(rows[-1]),
+            "LEGACY_FULL_AFTER_IMAGE",
+        )
+
+    def test_legacy_full_update_after_is_accepted(self):
+        events = self.events + [
+            marker(5, "u1", "s", 1, "user", "update_after", 11)
+        ]
+        events[-1]["row_data"] = {
+            "id": "u1", "story_id": "story", "session_id": "s",
+            "turn_index": 1, "role": "user", "content": "historical text",
+            "status": "completed", "created_at": dt(1).isoformat(),
+        }
+        rows = ledger.load_session_events(
+            FakeCursor(events), "story", "s", 5, [self.target], max_events=20
+        )
+        self.assertEqual(
+            ledger._validate_business_event_detail(rows[-1]),
+            "LEGACY_FULL_AFTER_IMAGE",
+        )
+
+    def test_legacy_detail_mismatched_identity_is_rejected(self):
+        bad = marker(4, "target", "s", 5, "assistant", "insert", 10)
+        bad["row_data"] = {
+            "id": "other", "story_id": "story", "session_id": "s",
+            "turn_index": 5, "role": "assistant", "content": "x",
+            "status": "completed", "created_at": dt(10).isoformat(),
+        }
+        with self.assertRaisesRegex(
+            ledger.LedgerRecoveryError, "LEDGER_LEGACY_DETAIL_IDENTITY_MISMATCH"
+        ):
+            ledger._validate_business_event_detail(bad)
+
+    def test_legacy_detail_incomplete_is_rejected(self):
+        bad = marker(4, "target", "s", 5, "assistant", "insert", 10)
+        bad["row_data"] = {"id": "target", "content": "x"}
+        with self.assertRaisesRegex(
+            ledger.LedgerRecoveryError, "LEDGER_LEGACY_DETAIL_FIELDS_INVALID"
+        ):
+            ledger._validate_business_event_detail(bad)
+
+    def test_unknown_sparse_marker_version_is_rejected(self):
+        bad = marker(4, "target", "s", 5, "assistant", "insert", 10)
+        bad["row_data"] = {"_ledger_event": "marker_v2"}
+        with self.assertRaisesRegex(
+            ledger.LedgerRecoveryError, "LEDGER_MARKER_INVALID"
+        ):
+            ledger._validate_business_event_detail(bad)
+
     def test_large_snapshot_jsonb_is_loaded_only_for_first_post_target_event(self):
         events = self.events + [
             snapshot(5, "u1", "s", 1, "user", "update_before", 11),
