@@ -1,4 +1,4 @@
-""""Rebuild an R59 preview with a complete recent history suffix under 16K.
+"""Rebuild an R59 preview with a complete recent history suffix under 16K.
 
 This is an engineering-only adapter: the approved System Prompt and original
 final target remain byte-identical; only a leading prefix of history messages
