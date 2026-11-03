@@ -2,8 +2,10 @@ import copy
 import hashlib
 import json
 import unittest
+import tempfile
+from pathlib import Path
 
-from r59_sft_context_window import rebuild_preview_rows
+from r59_sft_context_window import _is_inside_repository, rebuild_preview_rows
 
 SYSTEM = "approved system prompt"
 
@@ -122,6 +124,17 @@ class ContextWindowTests(unittest.TestCase):
             rebuild_preview_rows(
                 [row], lambda candidate: 1, validate_row=validate_fixture
             )
+
+    def test_output_path_is_checked_against_repository_not_process_cwd(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "checkout"
+            root.mkdir()
+            private = root / "private"
+            private.mkdir()
+            external = Path(directory) / "outside"
+            external.mkdir()
+            self.assertTrue(_is_inside_repository(private, root))
+            self.assertFalse(_is_inside_repository(external, root))
 
 
 if __name__ == "__main__":
