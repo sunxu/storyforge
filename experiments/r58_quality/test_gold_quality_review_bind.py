@@ -114,6 +114,24 @@ class BindTests(unittest.TestCase):
         self.assertEqual(safe["review_candidate_held"], 0)
         self.assertEqual(safe["hold_reasons"], {})
 
+    def test_owner_safety_screen_is_separate_from_reviewer_a(self):
+        result, safe = bind(*fixture())
+        self.assertEqual(len(result), 1)
+        self.assertIsNone(result[0]["reviews"][0]["severe_flags"])
+        self.assertEqual(
+            result[0]["owner_supplemental_safety_review"]["scope"],
+            "SUPPLEMENTAL_SEVERE_FLAG_SCREEN",
+        )
+
+    def test_owner_safety_positive_flag_holds(self):
+        args = fixture()
+        args[4][0]["owner_supplemental_severe_flags"]["safety_exclusion"] = True
+        result, safe = bind(*args)
+        self.assertEqual(result, [])
+        self.assertEqual(safe["hold_reasons"], {
+            "OWNER_SUPPLEMENTAL_SEVERE_FLAG_PRESENT": 1
+        })
+
     def test_aggregate_a_pass_without_case_scores_holds(self):
         args = fixture()
         args[1]["records"][0]["scores_1_to_5"] = None
