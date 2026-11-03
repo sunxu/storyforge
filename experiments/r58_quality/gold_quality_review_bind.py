@@ -132,11 +132,19 @@ def _bind_one(stage, owner, a, b, excluded, pins):
         return None, "CASE_LEVEL_SCORES_MISSING"
     if b.get("severe_flags") != []:
         return None, "REVIEWER_B_SEVERE_OR_UNVERIFIED"
-    flags_a = owner.get("reviewer_a_severe_flags")
-    if (not isinstance(flags_a, dict) or set(flags_a) != set(SEVERE)
-            or any(type(v) is not bool for v in flags_a.values())
-            or any(flags_a.values())):
-        return None, "REVIEWER_A_SEVERE_FLAGS_UNVERIFIED"
+    owner_flags = owner.get("owner_supplemental_severe_flags")
+    owner_safety_ref = owner.get("owner_supplemental_severe_evidence_ref")
+    if (not isinstance(owner_flags, dict) or set(owner_flags) != set(SEVERE)
+            or any(type(v) is not bool for v in owner_flags.values())
+            or not isinstance(owner_safety_ref, str) or not owner_safety_ref.strip()):
+        return None, "OWNER_SUPPLEMENTAL_SEVERE_FLAGS_UNVERIFIED"
+    if any(owner_flags.values()):
+        return None, "OWNER_SUPPLEMENTAL_SEVERE_FLAG_PRESENT"
+    flags_a = a.get("severe_flags")
+    if flags_a is not None and (
+        not isinstance(flags_a, list) or flags_a
+    ):
+        return None, "REVIEWER_A_SEVERE_OR_UNVERIFIED"
     evidence = owner.get("evidence")
     if (not isinstance(evidence, dict)
             or any(evidence.get(k) is not True for k in EVIDENCE)
@@ -184,7 +192,10 @@ def _bind_one(stage, owner, a, b, excluded, pins):
                 "reviewer_key": "reviewer_a",
                 "decision": "PASS",
                 "scores": scores_a,
-                "severe_flags": flags_a,
+                "severe_flags": (
+                    {key: False for key in SEVERE}
+                    if isinstance(flags_a, list) and not flags_a else None
+                ),
                 "private_evidence_ref": owner["reviewer_a_evidence_ref"],
             },
             {
@@ -195,6 +206,12 @@ def _bind_one(stage, owner, a, b, excluded, pins):
                 "private_evidence_ref": owner["reviewer_b_evidence_ref"],
             },
         ],
+        "owner_supplemental_safety_review": {
+            "scope": "SUPPLEMENTAL_SEVERE_FLAG_SCREEN",
+            "decision": "PASS",
+            "severe_flags": owner_flags,
+            "private_evidence_ref": owner_safety_ref,
+        },
     }
     verdict, reason = decide(row)
     if verdict != "PASS":
