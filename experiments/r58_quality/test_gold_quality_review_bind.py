@@ -151,7 +151,7 @@ class BindTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "exclusions.jsonl"
             for payload in (
-                b"".join(canonical(row) + b"\\n" for row in rows),
+                b"".join(canonical(row) + b"\n" for row in rows),
                 canonical(rows),
             ):
                 path.write_bytes(payload)
