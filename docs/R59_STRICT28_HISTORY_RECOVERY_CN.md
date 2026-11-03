@@ -20,6 +20,39 @@
 
 共享核心只接受调用方提供的数据库 cursor 和已验证 case locator；不创建连接、不读取 DSN、不写文件、不访问网络，也不决定 Quality-v1 准入。其他批次可以复用 `recover_cases()`，由自己的薄适配器负责输入 pin、权限和 SAFE 输出。
 
+## 稀疏消息账本恢复（本轮新增）
+
+数据库核验确认 `public.v2_chat_message_ledger` 使用以下字段：
+
+- `id`：事件序号；
+- `message_id`、`story_id`、`session_id`、`turn_index`：消息定位；
+- `operation`：`insert`、`update_before`、`update_after`、`delete`；
+- `row_data`：插入/更新后为 `marker_v1` 轻量标记；更新前/删除前为完整旧行快照；
+- `recorded_at`：数据库事务时间戳。
+
+该表当前规模很大（统计估算约 4,004 万行），禁止全表扫描和全表聚合。共享核心只按 `story_id + session_id + turn_index ceiling` 查询，利用 `(session_id, recorded_at, id)` 索引；每个 Session 一次读取，默认最多 100,000 条，超过上限整批 HOLD。可用 `--max-ledger-events` 显式调整，上限 500,000。
+
+重建规则：
+
+1. 目标 Assistant 必须在账本中存在 `insert` 或 `update_after` 事件，作为该 Session 的目标边界；缺失则 HOLD。
+2. 对每条历史消息，找到严格晚于目标边界的第一条事件。
+3. 第一条事件为 `update_before` 或 `delete` 时，使用其旧行快照恢复目标时点状态；第一条事件为 `insert` 或 `update_after` 时，说明目标时点该消息尚不存在或尚无业务正文，排除。
+4. 没有目标后事件的消息才使用当前行。
+5. 对当前行或旧快照，核对 `mutation_revision` 与账本中此前的 `update_after` 数量。数据库的 revision 触发器还会记录 status / partial_content 变化，而稀疏账本触发器不一定为这些变化保存快照；计数不一致时 HOLD，不以当前正文替代历史正文。
+6. 历史消息删除、编辑或迁出目标 Session 后，若账本有可验证的目标后旧快照，仍可恢复；新插入、流式完成标记不会被误当成目标前历史。
+
+事件排序使用 `(recorded_at, id)`。注意：`recorded_at` 是事务时间，不是事务提交时间；当前账本没有提交 LSN，因此不能证明并发事务的真实 commit visibility 顺序。SAFE 明确输出 `ledger_commit_order_verified=false`。该限制必须保留，不能宣称为字节级或提交顺序级历史回放。
+
+共享实现与测试：
+
+- `src/storyforge_gold_quality/message_ledger.py`
+- `tests/test_message_ledger.py`
+- `src/storyforge_gold_quality/history_recovery.py` 集成调用
+- `tests/test_history_recovery.py` 编辑、删除及未记录 mutation revision 的集成回归
+
+目标回复本身仍须通过当前目标消息的精确 SHA256；若目标回复本身已被修改、删除或移动而无法按当前定位验证，本版本会 HOLD，不擅自从历史快照猜测目标身份。
+
+
 ## Session summary 使用规则
 
 允许考察的字段：
