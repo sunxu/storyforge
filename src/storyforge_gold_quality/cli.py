@@ -40,6 +40,8 @@ TOOLS = [
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
+    ("history.recovery", "src/storyforge_gold_quality/history_recovery.py", "read-only database cursor -> pre-target history/session/version recovery", "tests/test_history_recovery.py"),
+    ("r59.strict28-history", "experiments/r58_quality/r59_strict28_history_recovery.py", "pinned Strict28 private ledger + SAFE receipt", "experiments/r58_quality/test_r59_strict28_history_recovery.py"),
 ]
 SCORES = {"chinese_prose", "character_consistency", "npc_initiative",
           "player_agency", "narrative_continuity", "rule_fidelity"}
