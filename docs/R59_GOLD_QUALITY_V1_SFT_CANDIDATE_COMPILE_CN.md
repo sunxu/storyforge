@@ -66,6 +66,40 @@ Owner 本机 SAFE 回执确认 `GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl` 可�
 
 下一步先对 13 条 Packet 做本机 SAFE 结构盘点：只输出每层字段名、JSON 类型、数组长度分布、case 级记录数量及与当前 5 条 staged candidate 的匹配计数；不得输出 Packet 正文、ID、逐案哈希或私有路径。确认 Packet schema 后，再实现可复用 Assembler；不得猜测字段路径或把当前 Draft 快照当作历史 Gold 来源版本。
 
+
+### 2026-11-03 Reviewer/Packet 精确定位自动组装
+
+新增 `experiments/r58_quality/r59_owner_evidence_autolink.py` 及测试 `test_r59_owner_evidence_autolink.py`。它使用冻结 A/B 审核文件及 Gold192 Packet 的固定 SHA，按 staged candidate 的精确 `case_id + target_sha256` 关联来源，并为 Owner worksheet 自动生成：
+- Reviewer A/B 的文件 SHA + JSON 数组索引引用；
+- Packet case 的文件 SHA + packet 行号 + case 索引引用；
+- Packet case 的 canonical snapshot SHA；
+- world-card 快照 SHA、来源类别、审核状态和审批状态。
+
+自动组装只填入可机械验证的定位符，不会填任何 Owner 判断或把快照冒充历史来源。它不会填 `source_version_sha256`、`world_graph_sha256`、`world_component_id`、`split` 或 `evidence` 声明；不会证明 Reviewer 独立性、保护集完整性或世界卡目标时点可用性。Reviewer 引用是定位符，不是独立性证明。
+
+本机运行示例（OWNER_TEMPLATE 指向此前生成并由 Owner 创建的工作副本；输出目录必须不存在）：
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE="$PRIVATE/source-staging-priority72-20261103"
+QUALITY="$PRIVATE/quality-v1"
+OWNER_TEMPLATE="$(find "$QUALITY" -type f -name 'OWNER_CASE_EVIDENCE.jsonl' -print -quit)"
+OUT="$QUALITY/owner-evidence-autolink-20261103"
+test -n "$OWNER_TEMPLATE"
+test "$(stat -f '%Lp' "$OWNER_TEMPLATE")" = 600
+test ! -e "$OUT"
+
+.venv/bin/python experiments/r58_quality/r59_owner_evidence_autolink.py \
+  --packet-jsonl "$PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
+  --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --reviewer-a "$PRIVATE/../r58/private/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
+  --reviewer-b "$PRIVATE/../r58/private/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
+  --owner-template-jsonl "$OWNER_TEMPLATE" \
+  --output-dir "$OUT"
+```
+
+注意：如 Owner 工作副本实际文件名/位置不同，只调整 `OWNER_TEMPLATE`；不要修改冻结模板或覆盖已有证据。私有输出 `OWNER_CASE_EVIDENCE_AUTOLINKED_PRIVATE.jsonl` 供本机继续审核；仅回传 `OWNER_EVIDENCE_AUTOLINK_SAFE.json`。
+
 结构盘点完成后，Packet schema 已确认：13 个 packet root 含 `cases` 列表，共 192 个 case 对象；每个 case 含 `case_id`、`target_sha256`、`history`、`current_user_text`、`target_assistant_text`；packet root 含 `world_card`、`world_card_sha256`、`world_card_source_kind`、`world_card_review_status`、`world_card_approved_for_system`、`review_protocol` 和 `review_protocol_addendum`。当前五条 staged candidate 精确匹配 5/5，分布于 2 个 packet。
 
 新增可复用工具 `experiments/r58_quality/r59_packet_evidence_inventory.py`，测试为 `test_r59_packet_evidence_inventory.py`。工具在本机验证 Packet/Stage JSONL、文件权限、case 结构和精确 `(case_id, target_sha256)` 关联，生成两个文件：
