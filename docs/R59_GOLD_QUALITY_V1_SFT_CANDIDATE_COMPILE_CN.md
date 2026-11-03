@@ -58,6 +58,14 @@ OWNER="$PRIVATE/quality-v1/OWNER_CASE_EVIDENCE_20261103.jsonl"
 
 已有 Evidence Inventory 只能支持此前已报告的 5 条候选精确 locator 匹配、5 条 Draft 关联和 5 条历史 exposure 文件匹配；`NOT_FOUND_IN_PINNED_HISTORY` 不等于无历史曝光。它也没有证明保护集完整性、世界组件隔离或原始 Gold 目标时点版本。
 
+### Gold192 Story Review Packets 冻结副本核验（2026-11-03）
+
+Owner 本机 SAFE 回执确认 `GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl` 可完整解析为 13 条 JSONL 记录，且与交接包内同名冻结副本字节一致（1 个副本、1 个精确匹配）。这 13 条是 Story Review Packet 层级记录，不应误解为 Gold192 的逐案数量；Gold192 候选仍由各 Packet 内的 case 记录及其身份字段确定。当前 SAFE 只证明文件完整性和冻结副本一致，不自动证明每个 Packet 内的原始来源版本、世界卡时间点或保护集状态。
+
+同轮 Evidence Inventory：5 条 staged candidate 的 Source Locator、Story Draft 和 Historical Exposure 均精确关联；两条候选故事对应的 Draft 均标记 `CURRENT_V2_DATA_NOT_HISTORICAL`。因此 `source_version_verified=false`、`historical_snapshot_temporality_proven=false`、`world_component_isolation_proven=false`、`protected_set_completeness_proven=false`、`reviewer_independence_proven=false` 继续保持。历史 Exposure 的 `NOT_FOUND_IN_PINNED_HISTORY` 不得解释为无训练/验证/测试曝光。
+
+下一步先对 13 条 Packet 做本机 SAFE 结构盘点：只输出每层字段名、JSON 类型、数组长度分布、case 级记录数量及与当前 5 条 staged candidate 的匹配计数；不得输出 Packet 正文、ID、逐案哈希或私有路径。确认 Packet schema 后，再实现可复用 Assembler；不得猜测字段路径或把当前 Draft 快照当作历史 Gold 来源版本。
+
 **执行策略**：先在本机识别已知属于 Strict28 的 3 条候选，优先完成这 3 条；不把候选身份发到聊天。每条证据不足就保留 null/HOLD。Owner Evidence Preflight 通过后，再运行现有 Review Bind；Review Bind 通过后才运行 SFT Candidate Compiler。当前 `quality_v1_admitted=0`、`training_authorized=false`，不得提交 HF GPU Job。
 
 ## 已交付代码
