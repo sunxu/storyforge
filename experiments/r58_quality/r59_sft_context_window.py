@@ -214,8 +214,8 @@ def run(private_input: Path, output_dir: Path):
 
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     os.environ["USE_HF"] = "true"
-    from swift import get_processor, get_template
     from r59_sft_collator_cpu import run as run_actual_collator
+    from swift import get_processor, get_template
 
     processor = get_processor(MODEL, revision=MODEL_REVISION)
     template = get_template(
