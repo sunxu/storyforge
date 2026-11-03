@@ -73,7 +73,7 @@ def _datetime(value: Any) -> datetime:
         parsed = value
     elif isinstance(value, str) and value:
         try:
-            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+            parsed = datetime.fromisoformat(value)
         except ValueError:
             raise HistoryRecoveryError("DATABASE_TIMESTAMP_INVALID") from None
     else:
@@ -152,9 +152,9 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
         seen.add(current_id)
         node = _session(cursor, story_id, current_id)
         _timestamp(node["created_at"])
-        if child is not None:
-            if _datetime(node["created_at"]) > _datetime(child["created_at"]):
-                raise HistoryRecoveryError("SESSION_LINEAGE_TIME_ORDER_INVALID")
+        if (child is not None
+                and _datetime(node["created_at"]) > _datetime(child["created_at"])):
+            raise HistoryRecoveryError("SESSION_LINEAGE_TIME_ORDER_INVALID")
         parent_id = node.get("parent_session_id")
         if parent_id is not None:
             if not isinstance(parent_id, str) or not parent_id:
