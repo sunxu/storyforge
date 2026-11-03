@@ -49,6 +49,18 @@ python3 scripts/hf_job_guard.py \\
      --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
 ```
 
+For the R59 Qwen collator specifically, the worker must resolve only this
+immutable model revision:
+
+```text
+Qwen/Qwen3.8-27B
+1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0
+```
+
+The collator uses ms-swift `get_processor(..., revision=<SHA>)`; a SAFE report
+must state `model_revision_pinned: true`. A report that does not confirm the
+revision pin is a HOLD, not a successful preflight.
+
 After reviewing the SAFE preflight result, add `--submit` before the `--`
 separator to create the CPU Job. The tool enforces:
 
