@@ -36,6 +36,21 @@ def _key(event):
     return (_dt(event.get("recorded_at")), event["id"])
 
 
+def _validate_event_locator(event, story_id, session_id):
+    if not isinstance(event.get("message_id"), str) or not event["message_id"]:
+        raise LedgerRecoveryError("LEDGER_EVENT_MESSAGE_ID_INVALID")
+    if event.get("story_id") != story_id:
+        raise LedgerRecoveryError("LEDGER_EVENT_STORY_ID_MISMATCH")
+    if event.get("session_id") != session_id:
+        raise LedgerRecoveryError("LEDGER_EVENT_SESSION_ID_MISMATCH")
+    if type(event.get("turn_index")) is not int:
+        raise LedgerRecoveryError("LEDGER_EVENT_TURN_INDEX_TYPE_INVALID")
+    if event["turn_index"] < 1:
+        raise LedgerRecoveryError("LEDGER_EVENT_TURN_INDEX_NONPOSITIVE")
+    if event.get("operation") not in SNAPSHOTS | MARKERS:
+        raise LedgerRecoveryError("LEDGER_EVENT_OPERATION_INVALID")
+
+
 def _required_event_ids(events, targets):
     needed = set()
     for target in targets:
@@ -76,8 +91,10 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
     # events that can affect reconstruction.
     cursor.execute(
         """
-        SELECT id, message_id::text AS message_id, story_id, session_id,
-               role, turn_index, operation, recorded_at
+        SELECT id, message_id::text AS message_id,
+               story_id::text AS story_id, session_id::text AS session_id,
+               role::text AS role, turn_index::integer AS turn_index,
+               operation::text AS operation, recorded_at
         FROM public.v2_chat_message_ledger
         WHERE story_id = %s AND session_id = %s AND turn_index <= %s
         ORDER BY recorded_at, id
@@ -97,13 +114,7 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
             event = dict(zip(metadata_columns, row, strict=True))
         else:
             raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
-        if (not isinstance(event.get("message_id"), str)
-                or event.get("story_id") != story_id
-                or event.get("session_id") != session_id
-                or type(event.get("turn_index")) is not int
-                or event["turn_index"] < 1
-                or event.get("operation") not in SNAPSHOTS | MARKERS):
-            raise LedgerRecoveryError("LEDGER_EVENT_LOCATOR_INVALID")
+        _validate_event_locator(event, story_id, session_id)
         _key(event)
         event["row_data"] = None
         result.append(event)
