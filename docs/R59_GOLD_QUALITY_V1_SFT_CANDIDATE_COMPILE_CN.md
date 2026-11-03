@@ -81,12 +81,14 @@ Source Staging SAFE 不会回显 Story/Case ID 或任何正文；含原始文件
 - `split`：明确为 `train` 或 `validation`，跨世界组件拆分会整体 HOLD；
 - `reviewer_a_evidence_ref` / `reviewer_b_evidence_ref`：本机私有审核证据引用，引用不能为空（本工具不会凭字符串引用独立证明审核独立性）；
 
-- `reviewer_a_severe_flags`：Reviewer A 冻结结果中没有逐案严重问题字段时，Owner 必须基于可访问的原始逐案审核材料独立核实三项标记（`serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`）。这属于 Owner 的补充核验，不得写成 Reviewer A 曾经明确作出的结论；找不到足够材料时保留 `null`，候选继续 HOLD。
+- `owner_supplemental_severe_flags` 与 `owner_supplemental_severe_evidence_ref`：Reviewer A 冻结结果中没有逐案严重问题字段时，Owner 可基于可访问的原始逐案审核材料另行完成补充严重问题筛查。该记录明确归属于 Owner，不得写成 Reviewer A 的结论；三项标记为 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`。必须提供真实私有证据引用；证据不足时保留 `null`，候选继续 HOLD。
 - Source Stage 的 `SOURCE_STRUCTURE_HOLD` 行不是 Reviewer 候选。Review Bind 应单独统计 `source_stage_held` / `source_stage_hold_reasons`，不得将这些行误报为 Owner Evidence 身份缺失。只有 `SOURCE_CONTEXT_STAGED__QUALITY_REVIEW_PENDING` 的有效 Staging 行进入 Reviewer / Owner 绑定。
-- `reviewer_a_severe_flags`：三个布尔字段 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`，来源必须是真实审核证据；不要为了 PASS 默认填 `false`；
+- `owner_supplemental_severe_flags`：三个布尔字段 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`，必须有对应的 `owner_supplemental_severe_evidence_ref`。这是单独的 Owner 补充筛查，不回填 Reviewer A 原始审核；不要为了 PASS 默认填 `false`；
 - `evidence`：与 `quality_v1.py` 中 `EVIDENCE` 完全一致的 Owner 核实布尔字段（需明确为 `true`），另外 `known_protected_overlap`、`final_heldout_overlap`、`protected_test_body_accessed` 三项须经实际核实并明确为 `false`。不能因未知而填写通过值。
 
 证据不足时**应省略该 case 或填写真实 False**；脚本输出 HOLD 计数，不会代填缺失的证据。
+Quality-v1 候选中的 `reviews[reviewer_a].severe_flags` 保留为 `null`（当冻结 A 记录没有该字段时）；Owner 的补充筛查单独写入 `owner_supplemental_safety_review`，含 `scope=SUPPLEMENTAL_SEVERE_FLAG_SCREEN`、`decision`、`severe_flags` 与独立的私有证据引用。Quality-v1 只在这份 Owner 补充筛查完整且全部为 `false` 时允许缺失 A 严重标记的记录继续评估；任何 `true` 均拒绝，未知或缺证据仍 HOLD。这样不会把 Owner 判断冒充为 Reviewer A 的判断。
+
 
 ### 生成空白 Owner Evidence 模板（可复用）
 
