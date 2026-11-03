@@ -83,8 +83,13 @@ def validate_spec(
         raise PolicyError("DUPLICATE_INPUT_DESTINATION")
     if output.mode != "rw" or output.destination != "/output":
         raise PolicyError("SEPARATE_READ_WRITE_OUTPUT_REQUIRED")
-    if output.source in {volume.source for volume in inputs}:
-        raise PolicyError("INPUT_OUTPUT_SOURCE_COLLISION")
+    for volume in inputs:
+        input_source = volume.source.rstrip("/")
+        output_source = output.source.rstrip("/")
+        if (output_source == input_source
+                or output_source.startswith(input_source + "/")
+                or input_source.startswith(output_source + "/")):
+            raise PolicyError("INPUT_OUTPUT_SOURCE_COLLISION")
     return inputs, output
 
 
