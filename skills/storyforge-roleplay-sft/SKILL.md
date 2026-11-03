@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.13
+version: 0.1.14
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -44,6 +44,14 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - 精确 target、历史 Train/Validation、story UUID 与语义 world-component 是不同证据层；任何一层不得冒充另一层。
 - Reviewer A、Reviewer B、AI 与 Owner 仲裁分别追加事件。分歧、HOLD、REJECT 和 3 条 unresolved-world exclusions 均保留，不覆盖、不平均、不删除。
 - `report-safe` 仅输出计数，不构成质量准入；Quality-v1 admission 保持 0，GPU 与训练保持未授权。
+
+## R59 历史上下文恢复
+
+- 优先复用共享核心 `src/storyforge_gold_quality/history_recovery.py`，Strict28 的差异仅放在 `experiments/r58_quality/r59_strict28_history_recovery.py`。
+- 目标消息身份必须按 story/session/turn 和目标 SHA256 精确验证；上下文遵循 Session lineage、fork cutoff 与目标 created_at，禁止未来消息和静默截断。
+- `memory_summary`、`recent_summary`、`rolling_outline` 只有在目标时点前更新时间及所有覆盖 cutoff 均可证明时才可用；历史卡片版本不能被称作历史 Provider System Prompt。
+- 具体 SQL、时间边界、版本选择、失败码、输入 pin、SAFE Schema 和复现步骤只维护在 `docs/R59_STRICT28_HISTORY_RECOVERY_CN.md` 与 `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。
+- 该步骤只补充 SOURCE 证据，不构成 Quality-v1 准入、HF CPU 预检或 GPU 授权。
 
 ## 数据与质量主线
 
@@ -98,6 +106,7 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - HF Tokenizer / Chat Template / SAFE cache / 共享核心 / 私有 STAGE：`docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`
 - R58 GPU 评审 / 严格引用 / Batch Quote Repair / checkpoint / severe flags：`docs/standards/R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md`
 - R58 私人审核 Manifest 与任务身份复用：`docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md`
+- R59 Strict28 历史上下文恢复：`docs/R59_STRICT28_HISTORY_RECOVERY_CN.md`
 - Quality-v1 主线、数据优先级与门禁：`docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md`
 
 ## 状态语义
