@@ -73,7 +73,8 @@ def _valid_case(case: Any) -> bool:
     if any(not isinstance(case.get(key), str) or not case[key]
            for key in ("case_id", "current_user_text", "target_assistant_text")):
         return False
-    if HEX.fullmatch(case.get("target_sha256", "")) is None:
+    target = case.get("target_sha256")
+    if HEX.fullmatch(target if isinstance(target, str) else "") is None:
         return False
     history = case.get("history")
     if not isinstance(history, list):
