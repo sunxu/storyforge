@@ -201,6 +201,25 @@ class MessageLedgerTests(unittest.TestCase):
                 self.events, self.target, "story", "s", 4,
             )
 
+    def test_invalid_locator_fields_have_safe_specific_reasons(self):
+        cases = [
+            ("message_id", None, "LEDGER_EVENT_MESSAGE_ID_INVALID"),
+            ("story_id", "other-story", "LEDGER_EVENT_STORY_ID_MISMATCH"),
+            ("session_id", "other-session", "LEDGER_EVENT_SESSION_ID_MISMATCH"),
+            ("turn_index", 0, "LEDGER_EVENT_TURN_INDEX_NONPOSITIVE"),
+            ("turn_index", "1", "LEDGER_EVENT_TURN_INDEX_TYPE_INVALID"),
+            ("operation", "unknown", "LEDGER_EVENT_OPERATION_INVALID"),
+        ]
+        for field, value, reason in cases:
+            with self.subTest(field=field, reason=reason):
+                events = [dict(event) for event in self.events]
+                events[0][field] = value
+                with self.assertRaisesRegex(ledger.LedgerRecoveryError, reason):
+                    ledger.load_session_events(
+                        FakeCursor(events), "story", "s", 5,
+                        [self.target], max_events=20,
+                    )
+
     def test_event_limit_fails_closed(self):
         cursor = FakeCursor(self.events)
         with self.assertRaisesRegex(
