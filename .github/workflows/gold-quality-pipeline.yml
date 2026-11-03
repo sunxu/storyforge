@@ -25,6 +25,8 @@ on:
       - "experiments/r58_quality/test_r59_gold192_historical_exposure.py"
       - "experiments/r58_quality/quality_v1_sft_candidates.py"
       - "experiments/r58_quality/test_quality_v1_sft_candidates.py"
+      - "experiments/r58_quality/gold_source_context_stage.py"
+      - "experiments/r58_quality/test_gold_source_context_stage.py"
       - ".github/workflows/gold-quality-pipeline.yml"
 
 permissions:
@@ -101,5 +103,9 @@ jobs:
         run: |
           ruff check experiments/r58_quality/quality_v1_sft_candidates.py experiments/r58_quality/test_quality_v1_sft_candidates.py
           python -m unittest discover -s experiments/r58_quality -p 'test_quality_v1_sft_candidates.py' -v
+      - name: Verify Gold source context staging
+        run: |
+          ruff check experiments/r58_quality/gold_source_context_stage.py experiments/r58_quality/test_gold_source_context_stage.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_gold_source_context_stage.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v
