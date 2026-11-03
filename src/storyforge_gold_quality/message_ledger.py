@@ -36,10 +36,12 @@ def _key(event):
     return (_dt(event.get("recorded_at")), event["id"])
 
 
-def _snapshot_ids_needed(events, targets):
+def _required_event_ids(events, targets):
     needed = set()
     for target in targets:
-        boundary = _key(target_boundary(events, target))
+        boundary_event = target_boundary(events, target)
+        needed.add(boundary_event["id"])
+        boundary = _key(boundary_event)
         grouped = defaultdict(list)
         cutoff = target["turn_index"] - 1
         for event in events:
@@ -51,7 +53,7 @@ def _snapshot_ids_needed(events, targets):
                  if _key(event) > boundary),
                 None,
             )
-            if first is not None and first["operation"] in SNAPSHOTS:
+            if first is not None:
                 needed.add(first["id"])
     return sorted(needed)
 
@@ -69,16 +71,13 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
            for target in targets):
         raise LedgerRecoveryError("LEDGER_TARGET_SCOPE_INVALID")
 
-    # Read the compact event index first. Snapshot JSONB can be large and is
-    # fetched separately by primary key only when it is the first post-target
-    # event for at least one target in this Session.
+    # Read only compact event metadata in bulk. Large JSONB before-images are
+    # fetched by primary key only for target boundaries and first post-target
+    # events that can affect reconstruction.
     cursor.execute(
         """
         SELECT id, message_id::text AS message_id, story_id, session_id,
-               role, turn_index, operation,
-               CASE WHEN operation IN ('insert', 'update_after')
-                    THEN row_data ELSE NULL END AS row_data,
-               recorded_at
+               role, turn_index, operation, recorded_at
         FROM public.v2_chat_message_ledger
         WHERE story_id = %s AND session_id = %s AND turn_index <= %s
         ORDER BY recorded_at, id
@@ -87,11 +86,15 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
         (story_id, session_id, max_turn_index, max_events + 1),
     )
     result = []
+    metadata_columns = (
+        "id", "message_id", "story_id", "session_id", "role",
+        "turn_index", "operation", "recorded_at",
+    )
     for row in cursor.fetchall():
         if isinstance(row, Mapping):
             event = dict(row)
-        elif isinstance(row, (tuple, list)) and len(row) == len(COLUMNS):
-            event = dict(zip(COLUMNS, row, strict=True))
+        elif isinstance(row, (tuple, list)) and len(row) == len(metadata_columns):
+            event = dict(zip(metadata_columns, row, strict=True))
         else:
             raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
         if (not isinstance(event.get("message_id"), str)
@@ -102,19 +105,15 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
                 or event.get("operation") not in SNAPSHOTS | MARKERS):
             raise LedgerRecoveryError("LEDGER_EVENT_LOCATOR_INVALID")
         _key(event)
-        if event["operation"] in MARKERS and (
-            not isinstance(event.get("row_data"), dict)
-            or event["row_data"].get("_ledger_event") != "marker_v1"
-        ):
-            raise LedgerRecoveryError("LEDGER_MARKER_INVALID")
+        event["row_data"] = None
         result.append(event)
     if len(result) > max_events:
         raise LedgerRecoveryError("LEDGER_SESSION_EVENT_LIMIT_EXCEEDED")
 
-    snapshot_ids = _snapshot_ids_needed(result, targets)
-    snapshot_rows = {}
-    for start in range(0, len(snapshot_ids), 500):
-        batch = snapshot_ids[start:start + 500]
+    detail_ids = _required_event_ids(result, targets)
+    details = {}
+    for start in range(0, len(detail_ids), 500):
+        batch = detail_ids[start:start + 500]
         cursor.execute(
             """
             SELECT id, row_data
@@ -129,15 +128,19 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
             elif isinstance(row, (tuple, list)) and len(row) == 2:
                 event_id, row_data = row
             else:
-                raise LedgerRecoveryError("LEDGER_SNAPSHOT_ROW_SHAPE_INVALID")
+                raise LedgerRecoveryError("LEDGER_DETAIL_ROW_SHAPE_INVALID")
             if type(event_id) is not int or not isinstance(row_data, dict):
-                raise LedgerRecoveryError("LEDGER_SNAPSHOT_MISSING")
-            snapshot_rows[event_id] = row_data
-    if set(snapshot_ids) != set(snapshot_rows):
-        raise LedgerRecoveryError("LEDGER_SNAPSHOT_MISSING")
+                raise LedgerRecoveryError("LEDGER_DETAIL_MISSING")
+            details[event_id] = row_data
+    if set(detail_ids) != set(details):
+        raise LedgerRecoveryError("LEDGER_DETAIL_MISSING")
     for event in result:
-        if event["id"] in snapshot_rows:
-            event["row_data"] = snapshot_rows[event["id"]]
+        if event["id"] in details:
+            event["row_data"] = details[event["id"]]
+            if event["operation"] in MARKERS and (
+                event["row_data"].get("_ledger_event") != "marker_v1"
+            ):
+                raise LedgerRecoveryError("LEDGER_MARKER_INVALID")
     return result
 
 
