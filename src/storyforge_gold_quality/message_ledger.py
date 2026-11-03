@@ -191,6 +191,7 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
         "ledger_target_boundary_id": event["id"],
         "ledger_event_order_basis": "recorded_at_then_id",
         "ledger_commit_order_verified": False,
+        "ledger_trigger_continuity_verified": False,
         "history_rows_restored_from_snapshot": restored,
         "history_rows_excluded_by_post_target_marker": excluded,
         "history_rows_using_unchanged_current_state": unchanged,
