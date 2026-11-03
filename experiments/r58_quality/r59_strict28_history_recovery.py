@@ -35,13 +35,21 @@ DB_STAGES = {
     "CONNECT", "SET_READ_ONLY", "SET_STATEMENT_TIMEOUT",
     "SET_LOCK_TIMEOUT", "RECOVERY_QUERIES", "ROLLBACK",
 }
+DB_OPERATIONS = {
+    "SESSION_LINEAGE_READ", "TARGET_MESSAGE_READ", "MESSAGE_LEDGER_READ",
+    "CURRENT_HISTORY_READ", "STORY_CONTENT_VERSION_READ",
+    "STORY_ADMIN_VERSION_READ", "UNKNOWN_QUERY",
+}
+DB_FAILURE_PHASES = {"EXECUTE", "FETCH_ONE", "FETCH_ALL"}
 
 
 class DatabaseOperationError(RuntimeError):
     """Safe database failure metadata; never stores exception messages."""
 
     def __init__(self, stage: str, sqlstate: str | None,
-                 exception_type: str):
+                 exception_type: str, *, operation: str = "UNKNOWN_QUERY",
+                 query_ordinal: int | None = None,
+                 failure_phase: str | None = None):
         self.stage = stage if stage in DB_STAGES else "UNKNOWN"
         self.sqlstate = (
             sqlstate if isinstance(sqlstate, str)
@@ -50,6 +58,13 @@ class DatabaseOperationError(RuntimeError):
         self.exception_type = (
             exception_type if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", exception_type)
             else "DatabaseError"
+        )
+        self.operation = operation if operation in DB_OPERATIONS else "UNKNOWN_QUERY"
+        self.query_ordinal = (
+            query_ordinal if type(query_ordinal) is int and query_ordinal > 0 else None
+        )
+        self.failure_phase = (
+            failure_phase if failure_phase in DB_FAILURE_PHASES else None
         )
         super().__init__("DATABASE_OPERATION_FAILED")
 
@@ -61,6 +76,62 @@ def _safe_sqlstate(exc: Exception) -> str | None:
     if isinstance(state, str) and re.fullmatch(r"[0-9A-Z]{5}", state):
         return state
     return None
+
+
+def _query_operation(query: str) -> str:
+    normalized = " ".join(query.lower().split())
+    if "from public.v2_chat_message_ledger" in normalized:
+        return "MESSAGE_LEDGER_READ"
+    if "from public.story_v2_sessions" in normalized:
+        return "SESSION_LINEAGE_READ"
+    if "from public.v2_chat_messages" in normalized:
+        if "role = 'assistant'" in normalized:
+            return "TARGET_MESSAGE_READ"
+        return "CURRENT_HISTORY_READ"
+    if "from public.story_content_versions" in normalized:
+        return "STORY_CONTENT_VERSION_READ"
+    if "from public.story_admin_versions" in normalized:
+        return "STORY_ADMIN_VERSION_READ"
+    return "UNKNOWN_QUERY"
+
+
+class DiagnosingCursor:
+    """Cursor proxy that reports safe operation metadata, never SQL or params."""
+
+    def __init__(self, cursor, database_error_type):
+        self._cursor = cursor
+        self._database_error_type = database_error_type
+        self.query_ordinal = 0
+        self.operation = "UNKNOWN_QUERY"
+
+    def _raise_safe(self, phase: str, exc: Exception):
+        raise DatabaseOperationError(
+            "RECOVERY_QUERIES", _safe_sqlstate(exc), type(exc).__name__,
+            operation=self.operation, query_ordinal=self.query_ordinal,
+            failure_phase=phase,
+        ) from None
+
+    def execute(self, query, params=None):
+        self.query_ordinal += 1
+        self.operation = _query_operation(query)
+        try:
+            if params is None:
+                return self._cursor.execute(query)
+            return self._cursor.execute(query, params)
+        except self._database_error_type as exc:
+            self._raise_safe("EXECUTE", exc)
+
+    def fetchone(self):
+        try:
+            return self._cursor.fetchone()
+        except self._database_error_type as exc:
+            self._raise_safe("FETCH_ONE", exc)
+
+    def fetchall(self):
+        try:
+            return self._cursor.fetchall()
+        except self._database_error_type as exc:
+            self._raise_safe("FETCH_ALL", exc)
 
 
 def _pairs(pairs):
@@ -226,8 +297,9 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
             db.execute("SET LOCAL lock_timeout = '1000ms'")
             db_stage = "RECOVERY_QUERIES"
             with db.cursor() as cursor:
+                diagnostic_cursor = DiagnosingCursor(cursor, psycopg.Error)
                 recovered = recover_cases(
-                    cursor, cases, max_history=max_history,
+                    diagnostic_cursor, cases, max_history=max_history,
                     max_lineage_depth=max_lineage_depth,
                     max_ledger_events=max_ledger_events,
                 )
@@ -337,6 +409,12 @@ def main() -> int:
                 "database_sqlstate": exc.sqlstate,
                 "database_exception_type": exc.exception_type,
             }
+            if exc.stage == "RECOVERY_QUERIES":
+                diagnostics.update({
+                    "database_operation": exc.operation,
+                    "database_query_ordinal": exc.query_ordinal,
+                    "database_failure_phase": exc.failure_phase,
+                })
         else:
             reason = (
                 str(exc) if isinstance(exc, (ValueError, TypeError, HistoryRecoveryError))
