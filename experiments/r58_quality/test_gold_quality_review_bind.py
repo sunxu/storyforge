@@ -143,6 +143,24 @@ class BindTests(unittest.TestCase):
         with self.assertRaisesRegex(binder.BindHold, "WORLD_OR_DUPLICATE_CANDIDATE_COLLISION"):
             bind(staged, a, b, exclusion, owners)
 
+    def test_exclusions_accept_frozen_jsonl_and_json_array(self):
+        rows = [
+            {"target_sha256": "a" * 64, "exclusion_reason": "FROZEN"},
+            {"target_sha256": "b" * 64, "exclusion_reason": "FROZEN"},
+        ]
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "exclusions.jsonl"
+            for payload in (
+                b"".join(canonical(row) + b"\\n" for row in rows),
+                canonical(rows),
+            ):
+                path.write_bytes(payload)
+                os.chmod(path, 0o600)
+                self.assertEqual(
+                    binder._jsonl_or_json_file(path, sha(payload), label="EXCLUSIONS"),
+                    rows,
+                )
+
     def test_private_input_hold_is_scoped_to_input_role(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "owner.jsonl"
