@@ -25,6 +25,23 @@
 
 只有 Owner 在本机完成以上工作后，才运行 Review Bind。SAFE 回执只返回聚合数量和原因码；不得把逐案材料、私有路径、ID、剧情或哈希发到聊天。若五条中只有部分证据完整，允许部分进入后续候选；不得为凑满五条放宽门槛。
 
+### Owner Evidence 聚合预检（先于 Review Bind）
+
+新增 `experiments/r58_quality/r59_owner_evidence_preflight.py`。它读取本机 Source Stage、SAFE 回执和 Owner Evidence，按候选逐条检查必需字段是否完整，只输出聚合计数及缺失字段计数，不输出 Case ID、Story ID、剧情、路径或哈希。它不读取 Reviewer 原始文件、不判断 Reviewer 独立性、不证明保护集完整性，也不执行准入。
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE="$PRIVATE/source-staging-priority72-20261103"
+OWNER="$PRIVATE/quality-v1/OWNER_CASE_EVIDENCE_20261103.jsonl"
+
+.venv/bin/python experiments/r58_quality/r59_owner_evidence_preflight.py \
+  --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --staging-safe "$STAGE/GOLD_SOURCE_STAGING_SAFE.json" \
+  --owner-evidence-jsonl "$OWNER"
+```
+
+预检显示字段齐全只代表可以进入下一步 Review Bind；不代表审核独立性、保护集完整性、Quality-v1 准入或训练授权。若字段缺失，按 SAFE 中的 `field_checks_missing` 在本机补充真实证据；不得向聊天发送私有记录。
+
 ## 已交付代码
 
 - `experiments/r58_quality/quality_v1_sft_candidates.py`：直接调用冻结的 `quality_v1.py` 校验函数，不重新实现质量六维评分，不凭空生成 Reviewer / Owner 证据。
