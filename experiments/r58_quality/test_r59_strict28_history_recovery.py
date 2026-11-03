@@ -119,6 +119,75 @@ class Strict28AdapterTests(unittest.TestCase):
         self.assertIsNone(invalid.sqlstate)
         self.assertEqual(invalid.exception_type, "SomeError")
 
+    def test_query_operation_classifier_uses_only_safe_labels(self):
+        self.assertEqual(
+            adapter._query_operation(
+                "SELECT * FROM public.v2_chat_message_ledger WHERE session_id = %s"
+            ),
+            "MESSAGE_LEDGER_READ",
+        )
+        self.assertEqual(
+            adapter._query_operation(
+                "SELECT * FROM public.v2_chat_messages WHERE role = 'assistant'"
+            ),
+            "TARGET_MESSAGE_READ",
+        )
+        self.assertEqual(
+            adapter._query_operation(
+                "SELECT * FROM public.story_admin_versions WHERE story_id = %s"
+            ),
+            "STORY_ADMIN_VERSION_READ",
+        )
+        self.assertEqual(adapter._query_operation("SELECT 1"), "UNKNOWN_QUERY")
+
+    def test_diagnosing_cursor_reports_operation_without_sql_or_params(self):
+        class FakeDiag:
+            sqlstate = None
+
+        class FakeDatabaseError(Exception):
+            diag = FakeDiag()
+
+        class FakeCursor:
+            def execute(self, query, params=None):
+                raise FakeDatabaseError("password=do-not-emit")
+
+            def fetchall(self):
+                return []
+
+        cursor = adapter.DiagnosingCursor(FakeCursor(), FakeDatabaseError)
+        with self.assertRaises(adapter.DatabaseOperationError) as caught:
+            cursor.execute(
+                "SELECT row_data FROM public.v2_chat_message_ledger WHERE session_id=%s",
+                ("private-session-id",),
+            )
+        error = caught.exception
+        self.assertEqual(error.stage, "RECOVERY_QUERIES")
+        self.assertEqual(error.operation, "MESSAGE_LEDGER_READ")
+        self.assertEqual(error.query_ordinal, 1)
+        self.assertEqual(error.failure_phase, "EXECUTE")
+        self.assertIsNone(error.sqlstate)
+        self.assertNotIn("password", str(error))
+        self.assertNotIn("private-session-id", str(error))
+
+    def test_diagnosing_cursor_reports_fetch_failure_phase(self):
+        class FakeDatabaseError(Exception):
+            sqlstate = "08006"
+
+        class FakeCursor:
+            def execute(self, query, params=None):
+                return self
+
+            def fetchall(self):
+                raise FakeDatabaseError("connection closed")
+
+        cursor = adapter.DiagnosingCursor(FakeCursor(), FakeDatabaseError)
+        cursor.execute("SELECT * FROM public.story_content_versions")
+        with self.assertRaises(adapter.DatabaseOperationError) as caught:
+            cursor.fetchall()
+        self.assertEqual(caught.exception.operation, "STORY_CONTENT_VERSION_READ")
+        self.assertEqual(caught.exception.failure_phase, "FETCH_ALL")
+        self.assertEqual(caught.exception.sqlstate, "08006")
+
     def test_output_is_create_only_and_private(self):
         import hashlib
         import tempfile
