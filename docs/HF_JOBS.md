@@ -168,6 +168,46 @@ Verify the synchronized receipt locally before reporting PASS. Required result:
 not acceptance. No Quality-v1 admission, dataset freeze, inference or training
 is authorized by this CPU preflight.
 
+### ChatGPT connector submission regression (verified 2026-11-04)
+
+A fresh ChatGPT HF connector OAuth context authenticated as `greenkeedle`,
+showed organization `adradar` with role `write`, and successfully submitted
+CPU Jobs into `adradar`. Isolated probes established:
+
+- No-volume CPU Job submission: PASS.
+- Private project Bucket mounted read-only (`:ro`): PASS.
+- Private project Bucket mounted read-write (`:rw`) through the ChatGPT
+  connector: HTTP 403.
+- Therefore the current connector regression is specifically associated with
+  the RW Bucket mount path, not general Jobs authorization or RO access.
+
+For ChatGPT-side CPU preflights that produce SAFE-only aggregate receipts, use
+read-only Bucket mounts and print the SAFE JSON receipt to Job stdout/logs.
+Do not mount a writable Bucket solely to persist a SAFE aggregate. Do not print
+private sample text, prompts, identifiers, or token IDs. Retrieve logs using
+the connector's Jobs log operation with both `job_id` and
+`namespace="adradar"`. This is a temporary, evidence-backed workaround; it
+does not resolve the connector's RW mount 403.
+
+### Bucket subpath mount semantics (verified 2026-11-04)
+
+Mount a Bucket directory prefix, not a file path, when the worker expects a
+regular file below the mount point. For example:
+
+```text
+hf://buckets/adradar/storyforge-training/preflight/r59/20261103:/input:ro
+```
+
+The file is then available as
+`/input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl`. Do not use a source URL ending
+in the JSONL filename while assuming the destination path itself is a regular
+file: the observed mount exposed the destination as a directory and
+`cp` failed with "omitting directory". Always run `test -f` against the
+expected file path before processing.
+
+A successful ChatGPT connector CPU submission does not imply that the RW
+mount capability is restored. Keep these capability checks separate.
+
 ### Failure handling
 
 | Result | Required response |
