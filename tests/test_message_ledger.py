@@ -15,10 +15,14 @@ class FakeCursor:
         self.rows = []
         self.query = ""
         self.params = ()
+        self.queries = []
+        self.query_params = []
 
     def execute(self, query, params=()):
         self.query = query
         self.params = params
+        self.queries.append(query)
+        self.query_params.append(params)
         if "WHERE id = ANY(%s)" in query:
             ids = set(params[0])
             self.rows = [
@@ -92,8 +96,9 @@ class MessageLedgerTests(unittest.TestCase):
         cursor = FakeCursor(self.events)
         rows = ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=20)
         self.assertEqual(len(rows), 4)
-        self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.query)
-        self.assertEqual(cursor.params, ("story", "s", 5, 21))
+        self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.queries[0])
+        self.assertEqual(cursor.query_params[0], ("story", "s", 5, 21))
+        self.assertIn("WHERE id = ANY(%s)", cursor.queries[1])
 
     def test_large_snapshot_jsonb_is_loaded_only_for_first_post_target_event(self):
         events = self.events + [
@@ -109,7 +114,9 @@ class MessageLedgerTests(unittest.TestCase):
         by_id = {event["id"]: event for event in rows}
         self.assertEqual(by_id[5]["row_data"]["content"], "old")
         self.assertIsNone(by_id[7]["row_data"])
-        self.assertIn("CASE WHEN operation IN ('insert', 'update_after')", cursor.query)
+        self.assertNotIn("row_data", cursor.queries[0])
+        self.assertIn("WHERE id = ANY(%s)", cursor.queries[1])
+        self.assertEqual(cursor.query_params[1], ([4, 5],))
 
     def test_snapshot_fetch_missing_row_holds(self):
         class MissingSnapshotCursor(FakeCursor):
