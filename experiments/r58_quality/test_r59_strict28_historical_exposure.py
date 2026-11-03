@@ -125,7 +125,7 @@ class Strict28Tests(unittest.TestCase):
         self.assertEqual(jaccard, 1.0)
         self.assertEqual(containment, 1.0)
 
-    def test_valid_strict28_contexts_bind_two_story_sessions_15_plus_13(self):
+    def test_strict28_story_distribution_is_not_inferred_from_priority72(self):
         selected = []
         contexts = []
         for i in range(72):
