@@ -40,7 +40,7 @@
 
 1. 第一条查询只读取紧凑元数据：事件 ID、message ID、story/session、role、turn index、operation、recorded_at；不读取任何 `row_data` JSONB。保留目标前后的全部事件，以维持原有 revision 计数核验。
 2. 本地根据每个目标边界，只挑出目标 marker 和每条历史消息的第一个 post-target event；仅对这些事件按主键 `id = ANY(...)` 批量读取 `row_data`，每批最多 500 条。其余事件的大型 before-image 不再传输。
-3. 对读取到的 marker 仍验证 `marker_v1`；对实际用于恢复的 snapshot 仍执行完整字段、身份、revision 校验。SAFE 增加 `ledger_detail_rows_loaded_total`，只报告加载的 detail 行数，不输出任何正文或 ID。缺少任何所需 detail 都整批 HOLD。
+3. 对读取到的 marker 仍验证 `marker_v1`；对实际用于恢复的 snapshot 仍执行完整字段、身份、revision 校验。SAFE 增加 `ledger_detail_rows_loaded_total`，只报告加载的 detail 行数，不输出任何正文或 ID。元数据 locator 校验按字段给出不含值的安全原因码（message_id、story_id、session_id、turn_index、operation），不跳过、不规范化、不放宽任何异常事件；缺少任何所需 detail 或发现无效 locator 都整批 HOLD。
 
 这保留了原有历史恢复与 revision 检查，不降低准入标准；不增加索引、不修改数据库、不延长 90 秒超时。主键 detail 查询的 EXPLAIN 已确认使用 `v2_chat_message_ledger_pkey`。metadata 查询仍使用 session 索引并过滤 story/turn；真实 session 的执行耗时仍需 Owner 本机复测。
 
