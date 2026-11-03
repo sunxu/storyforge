@@ -7,6 +7,7 @@ world identity, prove reviewer independence, or infer non-exposure.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import stat
@@ -147,6 +148,29 @@ def build_report(staged, locator_rows, draft_rows, exposure_rows):
     stories_with_draft = sum(bool(drafts_by_story.get(s)) for s in matched_story_ids)
     multi_draft_stories = sum(len(drafts_by_story.get(s, [])) > 1 for s in matched_story_ids)
     updated_at_count = sum(bool(row.get("updated_at")) for row in distinct_drafts)
+    v2_fingerprints = defaultdict(set)
+    world_component_fingerprints = defaultdict(set)
+    for draft in distinct_drafts:
+        story_id = draft["story_id"]
+        data = draft.get("v2_data")
+        if isinstance(data, dict):
+            canonical = json.dumps(
+                data, ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False,
+            ).encode("utf-8")
+            v2_fingerprints[story_id].add(hashlib.sha256(canonical).hexdigest())
+            world_payload = {
+                key: data.get(key) for key in
+                ("world", "components", "character", "characters", "director")
+                if key in data
+            }
+            world_canonical = json.dumps(
+                world_payload, ensure_ascii=False, sort_keys=True,
+                separators=(",", ":"), allow_nan=False,
+            ).encode("utf-8")
+            world_component_fingerprints[story_id].add(
+                hashlib.sha256(world_canonical).hexdigest()
+            )
 
     return {
         "schema": SCHEMA,
@@ -161,6 +185,20 @@ def build_report(staged, locator_rows, draft_rows, exposure_rows):
         "candidate_stories_without_draft": len(matched_story_ids) - stories_with_draft,
         "candidate_stories_with_multiple_drafts": multi_draft_stories,
         "matched_draft_updated_at_present": updated_at_count,
+        "stories_with_multiple_v2_snapshots": sum(
+            len(values) > 1 for values in v2_fingerprints.values()
+        ),
+        "stories_with_multiple_world_component_snapshots": sum(
+            len(values) > 1 for values in world_component_fingerprints.values()
+        ),
+        "distinct_v2_snapshot_fingerprints": len({
+            digest for values in v2_fingerprints.values() for digest in values
+        }),
+        "distinct_world_component_fingerprints": len({
+            digest for values in world_component_fingerprints.values()
+            for digest in values
+        }),
+        "snapshot_fingerprints_emitted": False,
         "world_field_presence": {k: world_presence[k] for k in WORLD_FIELDS},
         "world_field_types": dict(sorted(world_types.items())),
         "historical_exposure_exact_matches": exposure_matched,
