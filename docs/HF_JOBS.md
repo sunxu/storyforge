@@ -247,6 +247,85 @@ approved context-window design before rebuilding the preview. No admission or
 training follows from this result.
 
 
+### R59 16K context-window rebuild (engineering only)
+
+The first five-row R59 token diagnostic measured 3/5 rows within 16,384 and
+2/5 over budget (median 13,660; p95 34,263; maximum 114,558). A CPU-only
+engineering probe then rebuilt complete recent suffixes for all five rows and
+ran the real ms-swift `last_round` Collator: 5/5 passed. The longest rebuilt
+rows were 16,384 and 16,288 tokens. That probe did not create a frozen dataset,
+Quality-v1 admission, or training authorization.
+
+The reusable implementation is
+`experiments/r58_quality/r59_sft_context_window.py`. It preserves the approved
+System Prompt and final target exactly. If the full history is too long, it
+removes only a leading history prefix and starts the retained suffix at a
+complete User-message boundary. It keeps every later message in order, marks
+all history `loss=false`, keeps only the final Assistant target `loss=true`,
+preserves the source input hash as provenance, and recomputes the retained
+input-context hash. A row that cannot fit without cutting the current User or
+target causes the entire batch to HOLD.
+
+The adapter uses the existing R59 preview validator and actual Collator, and
+reuses shared `extract_input_ids` from
+`src/storyforge_dataset/token_preflight.py`. When running as a standalone HF
+Job, the private scripts directory must contain:
+- `r59_sft_context_window.py`
+- `r59_sft_collator_cpu.py`
+- `token_core.py`, an exact byte-for-byte copy of
+  `src/storyforge_dataset/token_preflight.py`
+
+Do not create a divergent copy of token extraction or token statistics.
+
+#### HF CPU invocation contract
+
+Use a directory-prefix mount for each read-only input directory and the worker
+scripts directory; do not mount an assumed individual file path. Use a unique
+separate writable output prefix. Before reading, assert each expected file:
+
+```bash
+test -f /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+test -f /scripts/r59_sft_context_window.py
+test -f /scripts/r59_sft_collator_cpu.py
+test -f /scripts/token_core.py
+```
+
+Install the tested runtime and pin Hub resolution before importing Swift:
+
+```bash
+python3 -m pip install --no-cache-dir \
+  "ms-swift==4.5.3" "transformers==5.16.1" \
+  "qwen-vl-utils==0.0.14" decord "torchvision==0.29.2"
+export CUDA_VISIBLE_DEVICES=""
+export USE_HF=true
+export TOKENIZERS_PARALLELISM=false
+```
+
+Copy the mounted input to a private temporary regular file and run the tool
+against a new output directory whose parent has mode 0700:
+
+```bash
+cp /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+chmod 600 /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+mkdir -m 700 /tmp/r59-context-output-parent
+python3 /scripts/r59_sft_context_window.py \
+  --private-input /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \
+  --output-dir /tmp/r59-context-output-parent/attempt-01
+```
+
+The tool emits only SAFE aggregate diagnostics to stdout and creates private
+JSONL + SAFE JSON files with mode 0600 in the new output directory. If a
+separate writable Bucket mount is available, copy these outputs to its unique
+attempt prefix only after the run succeeds. Do not retry a failed/uncertain
+submission without first inspecting the existing Job. ChatGPT connector RW
+403 remains distinct from the Mac-local CLI path.
+
+A successful result is
+`R59_CONTEXT_WINDOW_AND_COLLATOR_PASS__NOT_ADMITTED`; it is not a Quality-v1
+admission or dataset freeze. The formal tool must be synchronized to the
+private Bucket and re-run on the pinned HF CPU runtime before its output is
+used as a durable R59 artifact. No GPU, inference, or training is authorized.
+
 ### Failure handling
 
 | Result | Required response |
