@@ -57,18 +57,6 @@ def _walk_dicts(value: Any):
             yield from _walk_dicts(child)
 
 
-def _unique_index(rows: list[dict[str, Any]], key: str) -> dict[str, dict[str, Any]]:
-    index: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        value = row.get(key)
-        if not isinstance(value, str) or not value:
-            continue
-        if value in index:
-            raise InventoryHold("DUPLICATE_SOURCE_IDENTITY")
-        index[value] = row
-    return index
-
-
 def _exact_pair_index(rows: list[dict[str, Any]]) -> dict[tuple[str, str], dict[str, Any]]:
     index = {}
     for row in rows:
@@ -108,7 +96,9 @@ def build_report(staged, locator_rows, draft_rows, exposure_rows):
     exposure_index = _exact_pair_index(
         [node for row in exposure_rows for node in _walk_dicts(row)]
     )
-    _unique_index(draft_rows, "story_id")
+    if any(not isinstance(row.get("story_id"), str) or not row["story_id"]
+           for row in draft_rows):
+        raise InventoryHold("DRAFT_STORY_ID_INVALID")
 
     locator_matched = 0
     exposure_matched = 0
