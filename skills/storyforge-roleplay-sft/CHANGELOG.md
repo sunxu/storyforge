@@ -4,6 +4,8 @@
 - 新增 Strict28 薄适配器，固定校验 28 条私有历史曝光 ledger 的 SHA256；只查询指定 story/session/turn，不进行全库扫描。
 - 新增合成回归，覆盖父 Session 分叉、未来消息、目标精确匹配、失败状态、摘要更新时间/cutoff、历史版本时间边界、循环 lineage、超限不截断和私有输出不可覆盖。
 - 明确历史故事卡快照不等于历史 Provider System Prompt；当前快照、未验证摘要与 Volume Memory 不得自动进入训练输入。
+- 根据数据库 fork/rewind 函数定义，纠正 lineage 恢复：继承消息已复制到子 Session，父消息不得二次拼接；`forked_from_turn` 是 story-turn。摘要物理索引与 story-turn 分开核验，缺少显式覆盖索引时拒绝 legacy fallback。
+- Strict28 输入不再使用未经 Owner 核验的固定 ledger digest；必须与同一次 PR #9 SAFE receipt 配对，并从其 `private_ledger.sha256` 重新校验实际字节。
 - 更新 Quality Pipeline 技术规范、CI 和 Skill Manifest；不访问私人故事正文、不启动 GPU、不授予 Quality-v1 准入或训练授权。
 
 # 0.1.13 — 2026-11-02
