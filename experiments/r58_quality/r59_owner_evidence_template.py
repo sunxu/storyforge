@@ -98,7 +98,7 @@ def run(staged_path: Path, receipt_path: Path, output_dir: Path):
     try:
         payload = b"".join(
             json.dumps(row, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode()
-            + b"\\n" for row in rows
+            + b"\n" for row in rows
         )
         digest = _create_only(output_dir / "OWNER_CASE_EVIDENCE_TEMPLATE_PRIVATE.jsonl", payload)
         safe = {
@@ -117,7 +117,7 @@ def run(staged_path: Path, receipt_path: Path, output_dir: Path):
         }
         _create_only(
             output_dir / "OWNER_EVIDENCE_TEMPLATE_SAFE.json",
-            json.dumps(safe, sort_keys=True, indent=2).encode() + b"\\n",
+            json.dumps(safe, sort_keys=True, indent=2).encode() + b"\n",
         )
     except BaseException:
         for item in output_dir.iterdir():
