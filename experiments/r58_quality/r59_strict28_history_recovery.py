@@ -27,9 +27,6 @@ from storyforge_gold_quality.history_recovery import (
     recover_cases,
 )
 
-STRICT28_LEDGER_SHA256 = (
-    "b20334581981b0affd76e40c1b2dfe02cf4f610f0d13a666279cc805d48f4fbd"
-)
 EXPECTED_CASES = 28
 EXPECTED_STORIES = 2
 CASE_TURN = re.compile(r"t(\d+)$")
@@ -49,26 +46,54 @@ def _sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def _private_read(path: Path) -> bytes:
+def _private_read(path: Path, label: str) -> bytes:
     if not path.is_absolute() or path.is_symlink() or not path.is_file():
-        raise ValueError("STRICT28_LEDGER_PATH_INVALID")
+        raise ValueError(f"{label}_PATH_INVALID")
     if any(parent.is_symlink() for parent in path.parents if parent.exists()):
-        raise ValueError("STRICT28_LEDGER_PARENT_SYMLINK")
+        raise ValueError(f"{label}_PARENT_SYMLINK")
     info = path.stat()
     if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600:
-        raise ValueError("STRICT28_LEDGER_PERMISSIONS_INVALID")
+        raise ValueError(f"{label}_PERMISSIONS_INVALID")
     if stat.S_IMODE(path.parent.stat().st_mode) != 0o700:
-        raise ValueError("STRICT28_LEDGER_PARENT_PERMISSIONS_INVALID")
+        raise ValueError(f"{label}_PARENT_PERMISSIONS_INVALID")
     repo_root = ROOT.resolve(strict=True)
-    if repo_root == path.resolve(strict=True) or repo_root in path.resolve(strict=True).parents:
-        raise ValueError("STRICT28_LEDGER_MUST_REMAIN_PRIVATE")
-    raw = path.read_bytes()
-    if _sha(raw) != STRICT28_LEDGER_SHA256:
+    resolved = path.resolve(strict=True)
+    if repo_root == resolved or repo_root in resolved.parents:
+        raise ValueError(f"{label}_MUST_REMAIN_PRIVATE")
+    return path.read_bytes()
+
+
+def validate_safe_receipt(safe: dict) -> str:
+    ledger = safe.get("private_ledger") if isinstance(safe, dict) else None
+    if (
+        safe.get("schema") != "r59_strict28_historical_exposure_safe_v1"
+        or safe.get("status") != (
+            "STRICT28_HISTORICAL_TARGET_AND_CONTEXT_EXPOSURE_CLASSIFIED__NO_ADMISSION"
+        )
+        or safe.get("strict28_cases") != EXPECTED_CASES
+        or safe.get("strict28_contexts_verified") != EXPECTED_CASES
+        or safe.get("review_intersection_verified") is not True
+        or safe.get("strict28_exclusions_overlap") != 0
+        or safe.get("historical_sources_byte_pinned") is not True
+        or safe.get("system_prompt_equivalence_proven") is not False
+        or safe.get("quality_v1_admitted") != 0
+        or safe.get("training_authorized") is not False
+        or safe.get("gpu_started") is not False
+        or safe.get("r50_accessed") is not False
+        or safe.get("private_values_emitted") is not False
+        or not isinstance(ledger, dict)
+        or ledger.get("records") != EXPECTED_CASES
+        or ledger.get("file") != "R59_STRICT28_HISTORICAL_EXPOSURE_PRIVATE.jsonl"
+        or not isinstance(ledger.get("sha256"), str)
+        or not HEX64.fullmatch(ledger["sha256"])
+    ):
+        raise ValueError("STRICT28_SAFE_RECEIPT_INVALID")
+    return ledger["sha256"]
+
+
+def validate_strict28_ledger(raw: bytes, expected_sha256: str) -> list[dict]:
+    if not HEX64.fullmatch(expected_sha256) or _sha(raw) != expected_sha256:
         raise ValueError("STRICT28_LEDGER_SHA256_MISMATCH")
-    return raw
-
-
-def validate_strict28_ledger(raw: bytes) -> list[dict]:
     cases = []
     try:
         for line in raw.splitlines():
@@ -129,10 +154,18 @@ def _create_only(path: Path, payload: bytes) -> str:
     return _sha(payload)
 
 
-def run(ledger_path: Path, output_dir: Path, dsn: str, *,
+def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *,
         max_history: int = 20000, max_lineage_depth: int = 16) -> dict:
-    raw = _private_read(ledger_path)
-    cases = validate_strict28_ledger(raw)
+    if ledger_path.parent.resolve(strict=True) != safe_report_path.parent.resolve(strict=True):
+        raise ValueError("STRICT28_INPUTS_NOT_SAME_RUN_DIRECTORY")
+    safe_raw = _private_read(safe_report_path, "STRICT28_SAFE_RECEIPT")
+    try:
+        safe_receipt = json.loads(safe_raw, object_pairs_hook=_pairs)
+    except (UnicodeError, json.JSONDecodeError):
+        raise ValueError("STRICT28_SAFE_RECEIPT_JSON_INVALID") from None
+    expected_ledger_sha = validate_safe_receipt(safe_receipt)
+    raw = _private_read(ledger_path, "STRICT28_LEDGER")
+    cases = validate_strict28_ledger(raw, expected_ledger_sha)
     if output_dir.exists() or output_dir.is_symlink():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
     if (not output_dir.parent.is_dir() or output_dir.parent.is_symlink()
@@ -209,6 +242,7 @@ def run(ledger_path: Path, output_dir: Path, dsn: str, *,
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--strict28-ledger", required=True, type=Path)
+    parser.add_argument("--safe-report", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--max-history", type=int, default=20000)
     parser.add_argument("--max-lineage-depth", type=int, default=16)
@@ -220,7 +254,7 @@ def main() -> int:
         if not dsn:
             raise ValueError("DB_CONNECTION_MISSING")
         result = run(
-            args.strict28_ledger, args.output_dir, dsn,
+            args.strict28_ledger, args.safe_report, args.output_dir, dsn,
             max_history=args.max_history,
             max_lineage_depth=args.max_lineage_depth,
         )
