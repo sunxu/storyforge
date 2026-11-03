@@ -158,3 +158,9 @@ mkdir -m 700 "$OUT"
 ```
 
 输入文件必须先由 Owner 确认所选副本一致；工具不自动挑选不同版本的副本。此工具的 SAFE 结果仍不是 Owner Evidence、Quality-v1 准入或训练授权。
+
+工具已登记在 `storyforge-gold-quality inventory` 的 registered_tools 中。合并前可在本机项目 venv 执行合成测试；GitHub Actions 支持手动触发：
+
+```bash
+gh workflow run gold-quality-pipeline.yml --ref gold-quality/quality-v1-sft-candidates
+```
