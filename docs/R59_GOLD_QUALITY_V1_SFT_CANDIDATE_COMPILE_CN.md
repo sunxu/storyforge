@@ -38,3 +38,27 @@ test ! -e "$OUT"
 `PRIVATE_SFT_CANDIDATES_BUILT__NOT_QUALITY_ADMITTED` **不等于** `QUALITY_V1_ADMITTED`。当前 `quality_v1_admitted=0`、`dataset_frozen=false`、`tokenizer_collator_checked=false`、`training_authorized=false`、`gpu_started=false`。必须后续逐条核实私有 Reviewer A/B 的来源独立性、上下文质量及世界隔离，生成经 Owner 核对的实际准入名单，然后冻结 Train/Validation，并在 HF CPU 做 Qwen tokenizer + ms-swift collator 的真实预检。禁用 R50 题文访问和自动 GPU 提交。
 
 不要强制要求复现原生产 System Prompt；现有无世界卡 System Prompt 方案可以用于明确标记的训练上下文编排，但本脚本只消费已准备并校验的 `messages`，不杜撰角色世界卡，也不写入生产数据库。
+
+## R59 Supabase → Review 输入桥接
+
+新增 `experiments/r58_quality/gold_source_context_stage.py`，用于将 Owner 现存的 `R59_SOURCE_CONTEXT_PRIVATE.jsonl` 转成私有的 Source Review Staging 包。它**不是**完整的 `quality_v1.py` 输入：特意将世界组件、Train/Validation、Reviewer 证据、source version pin 标记为未核实，不会伪造这些字段。它只帮助省去从现有 Supabase 提取文本再次人工粘贴到新审核格式的步骤。
+
+必须使用以前已经批准的**通用无世界卡 System Prompt** 原始文件，单独提供真实 SHA256 pin；脚本会校验文件内容与 pin，绝不自动构造世界卡或宣称该 Prompt 是历史生产时的 Prompt。
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+SOURCE="/ABSOLUTE/PRIVATE/R59_SOURCE_CONTEXT_PRIVATE.jsonl"
+SYSTEM="/ABSOLUTE/PRIVATE/APPROVED_GENERIC_SYSTEM_PROMPT.txt"
+SYSTEM_SHA256="$(shasum -a 256 "$SYSTEM" | awk '{print $1}')"
+OUT="$PRIVATE/source-staging-run1"
+test ! -e "$OUT"
+.venv/bin/python experiments/r58_quality/gold_source_context_stage.py \
+  --source-context-jsonl "$SOURCE" \
+  --system-prompt-file "$SYSTEM" \
+  --system-sha256 "$SYSTEM_SHA256" \
+  --output-dir "$OUT"
+```
+
+**注意：** 上面的 `SOURCE` 和 `SYSTEM` 是占位路径，不应在文件不存在时盲目运行。两份输入都必须是权限 0600 的私有非符号链接普通文件，输出父目录须是 0700 且位于 Git checkout 外。审核工作流的后续步骤必须基于真实的 Reviewer A/B 记录，单独绑定世界语义 ID、权益与隐私证据。不能把 `GOLD_SOURCE_STAGING_PRIVATE.jsonl` 直接改名为 `OWNER_REVIEWED_GOLD_CANDIDATES.jsonl`。
+
+Source Staging SAFE 不会回显 Story/Case ID 或任何正文；含原始文件 SHA256、System SHA256、结构 HOLD 统计、已成功暂存数量。对于交替角色不合规、非 completed 或末条非 User 的上下文，保留私有 HOLD 而不是静默删除或修复。此桥接只做数据工程，不执行 HF CPU 预检，也不执行 GPU 训练。
