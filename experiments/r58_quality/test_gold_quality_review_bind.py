@@ -15,7 +15,7 @@ from pathlib import Path
 from unittest import mock
 
 import gold_quality_review_bind as binder
-from gold_source_context_stage import StageHold, stage_source
+from gold_source_context_stage import stage_source
 from quality_v1 import EVIDENCE, FLOORS, SCORES, SEVERE, canonical, sha
 
 
