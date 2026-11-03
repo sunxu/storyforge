@@ -84,6 +84,14 @@
 
 
 
+## R59.3 非正数 turn_index 的边界
+
+本机返回 `LEDGER_EVENT_TURN_INDEX_NONPOSITIVE`。只读检查最近 1,000 条 Ledger 事件的有界样本发现，User/Assistant 的 `update_before`、`update_after` 确有负数 `turn_index`；尚未核实触发 Strict28 HOLD 的具体行。数据库没有禁止负数回合的 CHECK 约束。
+
+R59 的 SFT 输入按正数物理回合恢复，所以 metadata 查询明确限定 `turn_index BETWEEN 1 AND %s`，不将负数/零回合解释为合法训练消息，也不改写源数据。Python locator 校验仍拒绝意外混入的非正数事件。共享测试覆盖正/负/零回合并验证查询谓词。
+
+该范围不等于完整生产事件回放：若同一消息曾跨正、负回合移动，某些变更事件可能不在读取范围内；`mutation_revision` 不一致时仍 HOLD，不允许静默放宽。恢复数据只作 SOURCE 候选，不能据此自动准入 Quality-v1。
+
 ## Session summary 使用规则
 
 允许考察的字段：
