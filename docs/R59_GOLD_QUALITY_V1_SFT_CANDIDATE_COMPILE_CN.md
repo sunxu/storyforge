@@ -148,6 +148,7 @@ DRAFTS="/ABSOLUTE/PRIVATE/R59_STORY_DRAFTS_PRIVATE.jsonl"
 EXPOSURE="/ABSOLUTE/PRIVATE/R59_GOLD192_HISTORICAL_EXPOSURE_PRIVATE.jsonl"
 OUT="$REVIEW/evidence-inventory-run1"
 test ! -e "$OUT"
+mkdir -m 700 "$OUT"
 .venv/bin/python experiments/r58_quality/r59_evidence_inventory.py \
   --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
   --source-locators-jsonl "$LOCATORS" \
