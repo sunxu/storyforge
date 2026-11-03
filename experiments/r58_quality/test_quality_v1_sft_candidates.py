@@ -4,13 +4,13 @@ from __future__ import annotations
 import copy
 import json
 import os
-from pathlib import Path
 import stat
 import tempfile
 import unittest
+from pathlib import Path
 
-from quality_v1 import FLOORS, EVIDENCE, SCHEMA, SCORES, SEVERE, canonical, sha
 import quality_v1_sft_candidates as packer
+from quality_v1 import EVIDENCE, FLOORS, SCHEMA, SCORES, SEVERE, canonical, sha
 
 
 def case(cid="case01", world="world01", split="train"):
