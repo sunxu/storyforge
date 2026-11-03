@@ -13,7 +13,7 @@ import stat
 from collections import Counter
 from pathlib import Path
 
-from gold_source_context_stage import _create_only, _private_file, _read_rows
+from gold_source_context_stage import StageHold, _create_only, _private_file, _read_rows
 from quality_v1 import EVIDENCE, SCHEMA, SEVERE, canonical, decide, sha, summarize
 from r59_gold192_supabase_extract import A_SHA, B_SHA, EX_SHA
 
@@ -286,14 +286,21 @@ def main():
                    args.output_dir)
         print(json.dumps(safe, sort_keys=True))
         return 0
+    except (BindHold, StageHold) as exc:
+        # These are fixed internal reason codes, never paths or private values.
+        reason_code = str(exc)
+    except OSError:
+        reason_code = "INPUT_OR_OUTPUT_IO_ERROR"
     except Exception:  # noqa: BLE001 - never emit private exception strings
-        print(json.dumps({
-            "schema": SAFE_SCHEMA, "status": "REVIEW_BIND_HOLD",
-            "quality_v1_admitted": 0, "training_authorized": False,
-            "gpu_started": False, "r50_accessed": False,
-            "private_values_emitted": False,
-        }, sort_keys=True))
-        return 42
+        reason_code = "UNEXPECTED_INTERNAL_ERROR"
+    print(json.dumps({
+        "schema": SAFE_SCHEMA, "status": "REVIEW_BIND_HOLD",
+        "reason_code": reason_code,
+        "quality_v1_admitted": 0, "training_authorized": False,
+        "gpu_started": False, "r50_accessed": False,
+        "private_values_emitted": False,
+    }, sort_keys=True))
+    return 42
 
 
 if __name__ == "__main__":
