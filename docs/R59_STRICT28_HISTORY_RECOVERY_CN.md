@@ -81,7 +81,7 @@ python3 experiments/r58_quality/r59_strict28_history_recovery.py \
 输出目录必须尚不存在，父目录权限为 0700。输出包含：
 
 - `R59_STRICT28_HISTORICAL_CONTEXT_PRIVATE.jsonl`：逐案消息、Session lineage、已验证摘要及目标时点故事版本；
-- `R59_STRICT28_HISTORICAL_CONTEXT_SAFE.json`：仅计数、状态、SHA256 和非授权字段。
+- `R59_STRICT28_HISTORICAL_CONTEXT_SAFE.json`：仅计数、状态和非授权字段；不包含逐案 ID、私有正文、目标哈希或私有文件哈希。SAFE 文件自身的 SHA256 可在本机单独计算。
 
 ## 状态边界
 
