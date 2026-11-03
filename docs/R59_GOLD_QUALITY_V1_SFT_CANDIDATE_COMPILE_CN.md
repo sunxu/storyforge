@@ -42,6 +42,8 @@ OWNER="$PRIVATE/quality-v1/OWNER_CASE_EVIDENCE_20261103.jsonl"
 
 预检显示字段齐全只代表可以进入下一步 Review Bind；不代表审核独立性、保护集完整性、Quality-v1 准入或训练授权。若字段缺失，按 SAFE 中的 `field_checks_missing` 在本机补充真实证据；不得向聊天发送私有记录。
 
+预检支持部分候选先行：若 SAFE 状态为 `OWNER_EVIDENCE_PARTIAL_FIELDS_PRESENT__BINDER_REVIEW_REQUIRED`，并且 `rows_with_all_required_fields_present` 大于 0，可将该批次交给现有 Review Bind 做最终逐案证据关联；未完成的候选仍应由 Binder HOLD。该状态绝不是准入。若完整行数为 0，不要运行 Binder，继续补证或保留全部 HOLD。
+
 ### 2026-11-03 Owner Evidence 首次预检结果与补证顺序
 
 本次 Owner SAFE 回执显示：5/5 候选身份匹配，Staging SHA 与 Source Context SHA 均为 5/5 匹配；其余 Owner 证据字段均为 0/5。结论是输入绑定正确、Owner 证据尚未填写，不是来源审核失败，也不是候选质量 Reject。
