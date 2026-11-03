@@ -60,7 +60,8 @@ def fixture():
         "world_graph_sha256": "b" * 64,
         "world_component_id": "component-1",
         "split": "train", "evidence": evidence,
-        "reviewer_a_severe_flags": {k: False for k in SEVERE},
+        "owner_supplemental_severe_flags": {k: False for k in SEVERE},
+        "owner_supplemental_severe_evidence_ref": "owner-private-review",
         "reviewer_a_evidence_ref": "private-a-case",
         "reviewer_b_evidence_ref": "private-b-case",
     }]
