@@ -107,6 +107,14 @@ class PacketEvidenceInventoryTests(unittest.TestCase):
         self.assertFalse(safe["world_component_isolation_proven"])
         self.assertIs(private["associations"][0]["packet_world_card_approved_for_system"], False)
 
+    def test_empty_current_user_is_preserved_as_structural_string(self):
+        item = case()
+        item["current_user_text"] = ""
+        safe, _ = build_inventory(
+            [packet([item])], [staged()], PIN_A, PIN_B
+        )
+        self.assertEqual(safe["candidate_exact_matches"], 1)
+
     def test_invalid_history_message_holds(self):
         bad = case()
         bad["history"] = [{"role": "tool", "content": "private"}]
