@@ -81,6 +81,25 @@ def validate_preview_row(row):
     return len(messages)
 
 
+def write_safe_report(path: Path, report: dict) -> None:
+    if (not path.is_absolute() or path.is_symlink()
+            or not path.parent.is_dir() or path.parent.is_symlink()):
+        raise ValueError("safe report path")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    descriptor = os.open(path, flags, 0o600)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            json.dump(report, stream, ensure_ascii=False, sort_keys=True)
+            stream.write("\\n")
+            stream.flush()
+            os.fsync(stream.fileno())
+    except OSError:
+        path.unlink(missing_ok=True)
+        raise
+
+
 def run(private_input: Path, model: str = MODEL):
     if (not private_input.is_absolute() or private_input.is_symlink()
             or not private_input.is_file()):
@@ -163,6 +182,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--private-input", type=Path, required=True)
     parser.add_argument("--model", default=MODEL)
+    parser.add_argument("--output-safe", type=Path)
     args = parser.parse_args()
     try:
         report = run(args.private_input, args.model)
@@ -178,6 +198,23 @@ def main():
             "private_values_emitted": False,
         }
         code = 42
+    if args.output_safe is not None:
+        report["safe_report_written"] = True
+        try:
+            write_safe_report(args.output_safe, report)
+        except (OSError, ValueError):
+            report = {
+                "schema": "storyforge-r59-actual-swift-collator-safe-v1",
+                "status": "R59_ACTUAL_SWIFT_COLLATOR_HOLD",
+                "reason_code": "SAFE_REPORT_WRITE_FAILED",
+                "gpu_used": False,
+                "training_performed": False,
+                "quality_v1_admitted": 0,
+                "r50_accessed": False,
+                "private_values_emitted": False,
+                "safe_report_written": False,
+            }
+            code = 43
     print(json.dumps(report, ensure_ascii=False, sort_keys=True))
     return code
 
