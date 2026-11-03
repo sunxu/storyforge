@@ -10,8 +10,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from quality_v1 import sha
 from gold_source_context_stage import StageHold, run, stage_source
+from quality_v1 import sha
 
 
 def sample(cid="case-1"):
