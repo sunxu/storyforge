@@ -35,7 +35,7 @@ class FakeCursor:
         for source in self.events:
             if (source["story_id"] == story_id
                     and source["session_id"] == session_id
-                    and source["turn_index"] <= max_turn):
+                    and 1 <= source["turn_index"] <= max_turn):
                 event = dict(source)
                 if event["operation"] in ledger.SNAPSHOTS:
                     event["row_data"] = None
@@ -99,6 +99,31 @@ class MessageLedgerTests(unittest.TestCase):
         self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.queries[0])
         self.assertEqual(cursor.query_params[0], ("story", "s", 5, 21))
         self.assertIn("WHERE id = ANY(%s)", cursor.queries[1])
+
+    def test_nonpositive_turn_events_are_outside_positive_turn_query(self):
+        events = self.events + [
+            marker(5, "archived-user", "s", -3, "user", "update_after", 11),
+            snapshot(6, "archived-assistant", "s", -4, "assistant",
+                     "update_before", 12),
+            marker(7, "turn-zero", "s", 0, "user", "insert", 13),
+        ]
+        cursor = FakeCursor(events)
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 5, [self.target], max_events=20
+        )
+        self.assertEqual([row["id"] for row in rows], [1, 2, 3, 4])
+        self.assertIn("turn_index BETWEEN 1 AND %s", cursor.queries[0])
+        self.assertEqual(cursor.query_params[0], ("story", "s", 5, 21))
+
+    def test_nonpositive_locator_direct_validation_still_holds(self):
+        for value in (0, -3, -999):
+            with self.subTest(turn_index=value):
+                bad = marker(10, "bad", "s", value, "user", "update_after", 11)
+                with self.assertRaisesRegex(
+                    ledger.LedgerRecoveryError,
+                    "LEDGER_EVENT_TURN_INDEX_NONPOSITIVE",
+                ):
+                    ledger._validate_event_locator(bad, "story", "s")
 
     def test_large_snapshot_jsonb_is_loaded_only_for_first_post_target_event(self):
         events = self.events + [
