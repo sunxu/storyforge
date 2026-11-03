@@ -15,7 +15,23 @@ jobs:
           python-version: "3.11"
       - name: Install
         run: pip install -e ".[dev]"
-      - name: Ruff
+      # The repository currently has a large pre-existing Ruff backlog.
+      # PRs lint every changed Python file; main pushes retain the full-repo gate.
+      - name: Ruff (changed Python files on pull requests)
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch --no-tags --depth=1 origin \
+            "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+          mapfile -d '' changed_python < <(
+            git diff --name-only -z "origin/${{ github.base_ref }}...HEAD" -- '*.py'
+          )
+          if (( ${#changed_python[@]} )); then
+            ruff check "${changed_python[@]}"
+          else
+            echo "No changed Python files."
+          fi
+      - name: Ruff (full repository on main pushes)
+        if: github.event_name != 'pull_request'
         run: ruff check .
       - name: Tests
         run: pytest -q
