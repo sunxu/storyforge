@@ -1,3 +1,9 @@
+# 0.1.16 — 2026-11-03
+
+- SAFE 新增 `ledger_trigger_continuity_verified=false`，明确当前 migration history 不足以证明 ledger trigger 全程连续启用。
+- 将目标事件边界、mutation_revision 交叉核验与独立 DDL/audit 连续性证据区分，防止把局部一致性检查表述为完整审计。
+- 同步更新 R59 历史恢复规范、Gold Quality Pipeline 标准、Skill 与 README；不改变训练准入或 GPU 授权状态。
+
 # 0.1.15 — 2026-11-03
 
 - 将稀疏 `v2_chat_message_ledger` 恢复纳入共享历史恢复核心；区分 INSERT / UPDATE_AFTER marker 与 UPDATE_BEFORE / DELETE 旧行快照。
