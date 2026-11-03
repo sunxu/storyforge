@@ -25,7 +25,7 @@ class Strict28AdapterTests(unittest.TestCase):
         raw = b"".join(
             (json.dumps(row, sort_keys=True) + "\n").encode() for row in rows
         )
-        result = adapter.validate_strict28_ledger(raw)
+        result = adapter.validate_strict28_ledger(raw, adapter._sha(raw))
         self.assertEqual(len(result), 28)
         self.assertEqual({row["story_id"] for row in result}, {"story-a", "story-b"})
         self.assertEqual(result[0]["turn_index"], 1)
@@ -35,7 +35,7 @@ class Strict28AdapterTests(unittest.TestCase):
         rows = synthetic_rows()[:-1]
         raw = b"".join((json.dumps(row) + "\n").encode() for row in rows)
         with self.assertRaisesRegex(ValueError, "STRICT28_LEDGER_SCOPE_INVALID"):
-            adapter.validate_strict28_ledger(raw)
+            adapter.validate_strict28_ledger(raw, adapter._sha(raw))
 
     def test_duplicate_target_holds(self):
         rows = synthetic_rows()
@@ -64,6 +64,37 @@ class Strict28AdapterTests(unittest.TestCase):
         raw = (raw_row + "\n").encode()
         with self.assertRaisesRegex(ValueError, "DUPLICATE_JSON_KEY"):
             adapter.validate_strict28_ledger(raw)
+
+    def test_same_run_safe_receipt_binds_private_ledger(self):
+        receipt = {
+            "schema": "r59_strict28_historical_exposure_safe_v1",
+            "status": "STRICT28_HISTORICAL_TARGET_AND_CONTEXT_EXPOSURE_CLASSIFIED__NO_ADMISSION",
+            "strict28_cases": 28,
+            "strict28_contexts_verified": 28,
+            "review_intersection_verified": True,
+            "strict28_exclusions_overlap": 0,
+            "historical_sources_byte_pinned": True,
+            "system_prompt_equivalence_proven": False,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+            "gpu_started": False,
+            "r50_accessed": False,
+            "private_values_emitted": False,
+            "private_ledger": {
+                "records": 28,
+                "file": "R59_STRICT28_HISTORICAL_EXPOSURE_PRIVATE.jsonl",
+                "sha256": "a" * 64,
+            },
+        }
+        self.assertEqual(adapter.validate_safe_receipt(receipt), "a" * 64)
+        receipt["training_authorized"] = True
+        with self.assertRaisesRegex(ValueError, "STRICT28_SAFE_RECEIPT_INVALID"):
+            adapter.validate_safe_receipt(receipt)
+
+    def test_ledger_digest_must_match_same_run_safe_receipt(self):
+        raw = b'{"case_id":"not-a-full-ledger"}\\n'
+        with self.assertRaisesRegex(ValueError, "STRICT28_LEDGER_SHA256_MISMATCH"):
+            adapter.validate_strict28_ledger(raw, "0" * 64)
 
     def test_output_is_create_only_and_private(self):
         import hashlib
