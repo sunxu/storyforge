@@ -99,7 +99,7 @@ Reviewer A 与 B 的 blind ID 属于各自 reviewer 的局部编号，**不得�
 - Session lineage 按 `parent_session_id` 递归恢复，检测循环、缺失祖先和最大深度。Fork/rewind 会把继承消息复制到子 Session；历史消息只从目标所在的子 Session 读取一次，父 Session 仅用于 lineage 证明。`forked_from_turn` 是 story-turn 编号，不是消息表物理 `turn_index`，不得直接作为父消息过滤边界。
 - 目标 Assistant 必须在指定 story/session/turn 唯一存在，正文 SHA256 精确匹配且 `status=completed`。
 - 历史消息必须 `created_at < target.created_at`、位于对应 Session turn cutoff 内且 `status=completed`；不包含 system/developer 内容，不截断，末条必须是 User。
-- `memory_summary`、`recent_summary`、`rolling_outline` 仅在子 Session `updated_at` 严格早于目标时点、story-turn cutoff 和物理消息索引 cutoff 均验证通过时使用。`last_summary_turn` / `last_extract_turn` 是 story-turn；`summary_*_end_index` 是物理 `turn_index`。空值只按数据库既有 `last_summary_turn * 2` 兼容规则回退；超界即不使用。
+- `memory_summary`、`recent_summary`、`rolling_outline` 仅在子 Session `updated_at` 严格早于目标时点、story-turn cutoff 和物理消息索引 cutoff 均验证通过时使用。`last_summary_turn` / `last_extract_turn` 是 story-turn；`summary_*_end_index` 是物理 `turn_index`。数据库虽有 `last_summary_turn * 2` 旧兼容回退，但质量恢复门禁不接受空的 source/text/legacy 物理索引；只有显式覆盖索引完整且不越界时才使用摘要。dependency 索引可为空，非空时必须不越界。
 - `story_content_versions` 只接受 `source_updated_at` 和 `archived_at` 均早于目标的最新版本；`story_admin_versions` 只接受 `created_at` 和 `updated_at` 均早于目标的记录。没有版本时明确报告，不回退到当前 `user_stories` 快照。
 - 故事卡版本不等于历史 Provider System Prompt；所有适配器必须保持 `historical_system_prompt_verified=false`，不得将卡片快照伪装成生产 Prompt。
 - Volume memory 暂不自动纳入；若未来接入，必须单独定义生成时间、覆盖 turn、stale 状态与分叉继承规则。
