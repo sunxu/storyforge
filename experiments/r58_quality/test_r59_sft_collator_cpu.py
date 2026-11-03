@@ -1,8 +1,11 @@
 import hashlib
 import json
+import stat
+import tempfile
 import unittest
+from pathlib import Path
 
-from r59_sft_collator_cpu import validate_preview_row
+from r59_sft_collator_cpu import validate_preview_row, write_safe_report
 
 
 SYSTEM = (
@@ -77,6 +80,16 @@ class R59SFTCollatorInputTests(unittest.TestCase):
         item["metadata"]["status"] = "ADMITTED"
         with self.assertRaises(ValueError):
             validate_preview_row(item)
+
+    def test_safe_report_is_private_and_never_overwritten(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "safe.json"
+            report = {"status": "PASS", "private_values_emitted": False}
+            write_safe_report(path, report)
+            self.assertEqual(json.loads(path.read_text()), report)
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            with self.assertRaises(FileExistsError):
+                write_safe_report(path, report)
 
 
 if __name__ == "__main__":
