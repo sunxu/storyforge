@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """R59 private evidence inventory and exact-association audit.
 
 Inventories Owner-local exports only. It does not create attestations, infer
@@ -257,7 +256,7 @@ def main():
         report = run(args)
         print(json.dumps(report, ensure_ascii=False, sort_keys=True))
         return 0
-    except Exception:
+    except (InventoryHold, OSError, ValueError, TypeError):
         print(json.dumps({
             "schema": SCHEMA, "status": "EVIDENCE_INVENTORY_HOLD",
             "reason_code": "INPUT_OUTPUT_OR_IDENTITY_CHECK_FAILED",
