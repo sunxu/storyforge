@@ -49,7 +49,7 @@ python3 scripts/hf_job_guard.py \
 export CUDA_VISIBLE_DEVICES=""
 export USE_HF=true
 export TOKENIZERS_PARALLELISM=false
-python3 -m pip install --no-cache-dir "ms-swift==4.5.3" "transformers==5.16.1" "qwen-vl-utils>=0.0.14" decord
+python3 -m pip install --no-cache-dir "ms-swift==4.5.3" "transformers==5.16.1" "qwen-vl-utils==0.0.14" decord "torchvision==0.29.2"
 cp /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
 chmod 600 /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
 timeout --signal=TERM --kill-after=20s 780s python3 /scripts/r59_sft_collator_cpu.py \
@@ -63,7 +63,7 @@ revision below is a Hugging Face commit SHA. The 2026-11-04 ChatGPT CPU probe
 reproduced an `HTTPError` in `get_processor` when ms-swift attempted to resolve
 that SHA through ModelScope. Setting `USE_HF=true` resolved the exact 23.1 MB
 Hugging Face snapshot at the pinned SHA. The Qwen processor also requires
-`qwen-vl-utils>=0.0.14` and `decord` in the tested Python 3.11 environment.
+`qwen-vl-utils==0.0.14`, `decord`, and `torchvision==0.29.2` in the tested Python 3.11 environment. The Qwen processor import then has its required vision dependency without changing the pinned `torch` package selected by ms-swift.
 
 For the R59 Qwen collator specifically, the worker must resolve only this
 immutable model revision:
