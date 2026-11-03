@@ -212,13 +212,10 @@ class MessageLedgerTests(unittest.TestCase):
         ]
         for field, value, reason in cases:
             with self.subTest(field=field, reason=reason):
-                events = [dict(event) for event in self.events]
-                events[0][field] = value
+                event = dict(self.events[0])
+                event[field] = value
                 with self.assertRaisesRegex(ledger.LedgerRecoveryError, reason):
-                    ledger.load_session_events(
-                        FakeCursor(events), "story", "s", 5,
-                        [self.target], max_events=20,
-                    )
+                    ledger._validate_event_locator(event, "story", "s")
 
     def test_event_limit_fails_closed(self):
         cursor = FakeCursor(self.events)
