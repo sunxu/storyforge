@@ -152,8 +152,8 @@ regression and mount-semantics sections in `docs/HF_JOBS.md`.
 For the R59 Qwen3.8-27B ms-swift Python preflight, set
 `USE_HF=true` before importing Swift because the pinned revision is a
 Hugging Face commit SHA; ms-swift defaults to ModelScope otherwise. Install
-`qwen-vl-utils>=0.0.14` and `decord` for the Qwen processor. See the R59
-runtime contract in `docs/HF_JOBS.md`.
+`qwen-vl-utils==0.0.14`, `decord`, and `torchvision==0.29.2` for the
+Qwen processor. See the R59 runtime contract in `docs/HF_JOBS.md`.
 
 See `docs/HF_JOBS.md` for the verified incident record and invocation contract.
 
