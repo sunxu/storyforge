@@ -39,6 +39,12 @@ def row():
 
 
 class R59SFTCollatorInputTests(unittest.TestCase):
+    def test_prompt_fixture_matches_r27_pin(self):
+        self.assertEqual(
+            hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest(),
+            "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83",
+        )
+
     def test_valid_assistant_first_preview_row(self):
         self.assertEqual(validate_preview_row(row()), 4)
 
