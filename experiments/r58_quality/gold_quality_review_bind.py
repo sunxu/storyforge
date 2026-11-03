@@ -221,6 +221,8 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
     if len({x.get("case_id") for x in staged if isinstance(x, dict)}) != len(staged):
         raise BindHold("STAGING_CASE_ID_DUPLICATE")
     result, reasons = [], Counter()
+    source_stage_reasons = Counter()
+    stage_ready = 0
     stage_ids = set()
     for row in staged:
         if not isinstance(row, dict):
@@ -231,6 +233,11 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
                 or not isinstance(digest, str) or digest not in a):
             raise BindHold("STAGING_SOURCE_IDENTITY_INVALID")
         stage_ids.add(cid)
+        if (row.get("schema") != "storyforge-quality-v1-source-staging-private-v1"
+                or row.get("status") != "SOURCE_CONTEXT_STAGED__QUALITY_REVIEW_PENDING"):
+            source_stage_reasons[row.get("private_reason_code", "SOURCE_STAGE_NOT_READY")] += 1
+            continue
+        stage_ready += 1
         item, reason = _bind_one(row, owner.get(cid), a[digest], b[digest], ex, {
             "staged_file_sha256": staged_sha,
             "source_context_file_sha256": source_context_sha,
@@ -251,7 +258,11 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
         "schema": SAFE_SCHEMA,
         "status": "REVIEW_EVIDENCE_BOUND__CANDIDATES_NOT_ADMITTED",
         "input_staged": len(staged),
+        "source_stage_ready": stage_ready,
+        "source_stage_held": len(staged) - stage_ready,
+        "source_stage_hold_reasons": dict(sorted(source_stage_reasons.items())),
         "review_bound_candidates": len(result),
+        "review_candidate_held": stage_ready - len(result),
         "held": len(staged) - len(result),
         "hold_reasons": dict(sorted(reasons.items())),
         "reviewer_independence_independently_proven": False,
