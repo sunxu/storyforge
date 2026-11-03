@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Guard and optionally submit StoryForge CPU-only Hugging Face Jobs.
 
 The guard is deliberately narrow: organization namespace adradar, CPU flavors,
