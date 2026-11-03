@@ -138,6 +138,12 @@ class Strict28AdapterTests(unittest.TestCase):
             ),
             "STORY_ADMIN_VERSION_READ",
         )
+        self.assertEqual(
+            adapter._query_operation(
+                "SELECT id, row_data FROM public.v2_chat_message_ledger WHERE id = ANY(%s)"
+            ),
+            "MESSAGE_LEDGER_SNAPSHOT_READ",
+        )
         self.assertEqual(adapter._query_operation("SELECT 1"), "UNKNOWN_QUERY")
 
     def test_diagnosing_cursor_reports_operation_without_sql_or_params(self):
