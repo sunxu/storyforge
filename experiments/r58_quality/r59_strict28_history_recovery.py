@@ -65,7 +65,7 @@ def _private_read(path: Path, label: str) -> bytes:
 
 def validate_safe_receipt(safe: dict) -> str:
     if not isinstance(safe, dict):
-        raise ValueError("STRICT28_SAFE_RECEIPT_INVALID")
+        raise TypeError("STRICT28_SAFE_RECEIPT_INVALID")
     ledger = safe.get("private_ledger")
     if (
         safe.get("schema") != "r59_strict28_historical_exposure_safe_v1"
