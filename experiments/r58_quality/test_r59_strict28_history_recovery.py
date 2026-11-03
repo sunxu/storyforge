@@ -142,7 +142,7 @@ class Strict28AdapterTests(unittest.TestCase):
             adapter._query_operation(
                 "SELECT id, row_data FROM public.v2_chat_message_ledger WHERE id = ANY(%s)"
             ),
-            "MESSAGE_LEDGER_SNAPSHOT_READ",
+            "MESSAGE_LEDGER_DETAIL_READ",
         )
         self.assertEqual(adapter._query_operation("SELECT 1"), "UNKNOWN_QUERY")
 
