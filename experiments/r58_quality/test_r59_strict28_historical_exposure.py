@@ -130,7 +130,7 @@ class Strict28Tests(unittest.TestCase):
         contexts = []
         for i in range(72):
             if i < 28:
-                story_index = 0 if i < 15 else 1
+                story_index = 0 if i < 20 else 1
                 session_id = f"session-{story_index}"
                 story_id = f"story-{story_index}"
             else:
@@ -159,7 +159,7 @@ class Strict28Tests(unittest.TestCase):
         result = validate_contexts(contexts, selected, drafts)
         self.assertEqual(len(result), 28)
         group_sizes = sorted(Counter(row["story_id"] for row in result.values()).values())
-        self.assertEqual(group_sizes, [13, 15])
+        self.assertEqual(group_sizes, [8, 20])
         self.assertEqual(len({row["session_id"] for row in result.values()}), 2)
 
     def test_context_future_leakage_is_rejected(self):
