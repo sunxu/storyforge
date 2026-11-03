@@ -67,11 +67,15 @@ class EvidenceInventoryTests(unittest.TestCase):
     def test_multiple_historical_drafts_are_counted_not_rejected(self):
         second = dict(self.drafts[0])
         second["updated_at"] = "another-private-time"
+        second["v2_data"] = {"world": {"private": "different"}}
         report = build_report(
             self.staged, self.locators, self.drafts + [second], self.exposure
         )
         self.assertEqual(report["candidate_stories_with_multiple_drafts"], 1)
         self.assertEqual(report["story_draft_records_for_candidate_stories"], 2)
+        self.assertEqual(report["stories_with_multiple_v2_snapshots"], 1)
+        self.assertEqual(report["stories_with_multiple_world_component_snapshots"], 1)
+        self.assertFalse(report["snapshot_fingerprints_emitted"])
 
     def test_not_found_does_not_prove_non_exposure(self):
         report = build_report(self.staged, self.locators, self.drafts, self.exposure)
