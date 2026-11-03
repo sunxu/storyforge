@@ -32,7 +32,7 @@
 
 1. Session `updated_at` 严格早于目标 Assistant `created_at`；
 2. `last_summary_turn`、`last_extract_turn` 必须是 story-turn 整数；`summary_source_end_index`、`summary_source_dependency_end_index`、`summary_text_end_index`、`summary_legacy_text_end_index` 是物理消息 `turn_index`；
-3. story-turn 截止按 `(target_turn_index - 1) // 2` 计算；物理索引截止为 `target_turn_index - 1`。空的 source/text 索引只按数据库定义的旧兼容规则回退到 `last_summary_turn * 2`；非空 dependency 索引必须在物理截止内。
+3. story-turn 截止按 `(target_turn_index - 1) // 2` 计算；物理索引截止为 `target_turn_index - 1`。虽然数据库存在 `last_summary_turn * 2` 的旧兼容回退，但本恢复门禁不接受空的 source/text/legacy 索引；只有显式索引全部可验证时才使用摘要。dependency 索引可以为空；非空时必须在物理截止内。
 
 缺少更新时间、story-turn 或物理索引证据时，摘要只标记不可验证，不会被使用。当前子 Session 行的 `updated_at` 晚于目标时点时，当前摘要一律不作为历史上下文；父 Session 摘要不与子 Session 历史重复拼接。Volume memory 不在本版本自动纳入。
 
