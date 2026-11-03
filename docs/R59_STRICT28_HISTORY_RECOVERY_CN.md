@@ -84,6 +84,14 @@
 
 
 
+## R59.4 历史 Ledger 完整快照兼容
+
+本机恢复返回 `LEDGER_MARKER_INVALID`。只读检查确认 2026-09-08 的 `v2_chat_ledger_sparse_markers` 迁移将 `insert` / `update_after` 的 `row_data` 从完整行快照变为 `{"_ledger_event":"marker_v1"}`。最早 2,000 条 Ledger 有界样本中，240 个 insert 和 872 个 update_after 均为旧版完整快照，身份字段均匹配，且均不含后期新增的 `mutation_revision`；最近 2,000 条事件样本的同类操作则全部使用 `marker_v1`。这些聚合结果不能证明 Strict28 的具体触发事件，但已证实旧版格式确实存在。
+
+共享读取器现在仅对实际选中、按主键加载的 `insert` / `update_after` 明细接受两种格式：精确 `marker_v1` 对象，或包含 id/story/session/turn/role/content/status/created_at 且与 Ledger 事件定位完全一致的旧版完整行快照。旧版快照不要求不存在的 `mutation_revision`，但必须验证正文类型、状态、时间戳和身份；异常一律 HOLD。旧版 after-image 只用于证明事件，不自动提升为目标前的 before-image，不改变原有修订校验和训练准入状态。
+
+新增合成回归：旧版 insert、旧版 update_after、身份不一致、字段不全、未知 marker 版本。
+
 ## R59.3 非正数 turn_index 的边界
 
 本机返回 `LEDGER_EVENT_TURN_INDEX_NONPOSITIVE`。只读检查最近 1,000 条 Ledger 事件的有界样本发现，User/Assistant 的 `update_before`、`update_after` 确有负数 `turn_index`；尚未核实触发 Strict28 HOLD 的具体行。数据库没有禁止负数回合的 CHECK 约束。
