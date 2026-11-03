@@ -42,6 +42,22 @@ OWNER="$PRIVATE/quality-v1/OWNER_CASE_EVIDENCE_20261103.jsonl"
 
 预检显示字段齐全只代表可以进入下一步 Review Bind；不代表审核独立性、保护集完整性、Quality-v1 准入或训练授权。若字段缺失，按 SAFE 中的 `field_checks_missing` 在本机补充真实证据；不得向聊天发送私有记录。
 
+### 2026-11-03 Owner Evidence 首次预检结果与补证顺序
+
+本次 Owner SAFE 回执显示：5/5 候选身份匹配，Staging SHA 与 Source Context SHA 均为 5/5 匹配；其余 Owner 证据字段均为 0/5。结论是输入绑定正确、Owner 证据尚未填写，不是来源审核失败，也不是候选质量 Reject。
+
+按以下顺序在 Owner 本机处理，逐条允许 HOLD：
+
+1. **先做 Owner 补充安全审查**：逐条阅读实际训练输入上下文和最终目标，填写三项 `owner_supplemental_severe_flags`，并引用本机可定位的审核记录。不得用 Reviewer B 的空 flags 替代 Owner 审查，也不得把未知写成 false。
+2. **再定位 Reviewer A/B 原始证据**：从冻结的 Reviewer A/B 私有结果中建立逐案 `reviewer_a_evidence_ref`、`reviewer_b_evidence_ref`。A/B 文件存在和评分结构通过，只证明记录可读取；不自动证明盲审、独立性或现实身份独立。
+3. **核实原始 Gold 来源版本**：`source_version_sha256` 必须来自实际 Gold 来源版本字节或可信冻结版本记录。Source Context 文件 SHA、Staging 文件 SHA、模板 SHA、当前 Story Draft 快照 SHA 均不得代替它。
+4. **核实世界图与分配**：`world_graph_sha256`、`world_component_id`、`split` 必须来自可追溯的原始世界组件及数据集划分依据。当前 Draft 的 `v2_data` / `updated_at` 只能说明被观察到的快照，不能自动证明目标样本生成时的世界版本。
+5. **最后做质量、隐私及保护集检查**：11 项正向声明必须逐项有 Owner 可定位依据；`known_protected_overlap`、`final_heldout_overlap`、`protected_test_body_accessed` 必须由适当的完整元数据/访问记录支持。若保护集清单不完整，相关项保持未知，不能写 false。
+
+已有 Evidence Inventory 只能支持此前已报告的 5 条候选精确 locator 匹配、5 条 Draft 关联和 5 条历史 exposure 文件匹配；`NOT_FOUND_IN_PINNED_HISTORY` 不等于无历史曝光。它也没有证明保护集完整性、世界组件隔离或原始 Gold 目标时点版本。
+
+**执行策略**：先在本机识别已知属于 Strict28 的 3 条候选，优先完成这 3 条；不把候选身份发到聊天。每条证据不足就保留 null/HOLD。Owner Evidence Preflight 通过后，再运行现有 Review Bind；Review Bind 通过后才运行 SFT Candidate Compiler。当前 `quality_v1_admitted=0`、`training_authorized=false`，不得提交 HF GPU Job。
+
 ## 已交付代码
 
 - `experiments/r58_quality/quality_v1_sft_candidates.py`：直接调用冻结的 `quality_v1.py` 校验函数，不重新实现质量六维评分，不凭空生成 Reviewer / Owner 证据。
