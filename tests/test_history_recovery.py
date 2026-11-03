@@ -156,6 +156,12 @@ class HistoryRecoveryTests(unittest.TestCase):
         with self.assertRaisesRegex(h.HistoryRecoveryError, "HISTORY_LIMIT_EXCEEDED"):
             h.recover_case(self.cursor, self.case, max_history=3)
 
+    def test_timestamp_comparison_normalizes_timezone_offsets(self):
+        earlier = "2026-01-01T01:00:00+01:00"
+        later = "2026-01-01T00:30:00+00:00"
+        self.assertTrue(h._before(earlier, later))
+        self.assertFalse(h._before(later, earlier))
+
     def test_naive_timestamp_is_rejected(self):
         self.cursor.target["created_at"] = datetime(2026, 1, 1)
         with self.assertRaisesRegex(h.HistoryRecoveryError, "DATABASE_TIMESTAMP_TIMEZONE_MISSING"):
