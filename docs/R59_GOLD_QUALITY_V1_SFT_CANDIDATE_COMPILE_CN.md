@@ -2,6 +2,29 @@
 
 日期：2026-11-03。主线：高质量中文互动剧情 LoRA。历史 Supabase Ledger 的精确事件回放不再是新训练候选的前置条件；历史 R59 HOLD 保留归档，不能谎称历史来源审计 PASS。
 
+
+## 2026-11-03 执行检查点：Owner Evidence v2
+
+- 当前分支 HEAD：`e2d266a1966d18e407af8b34fcadf7fef871a055`。
+- 同一 HEAD 的 GitHub CI、Gold Quality Pipeline（synthetic + R57 regression）、R58 scoped synthetic（no training）均已通过；这些是代码/合成回归，不是私有 Gold 数据的审核通过。
+- 当前 Source Stage：72 行中 5 行可进入 Review Bind，67 行保持结构 HOLD。
+- 5 行候选均已与 A/B 冻结审核结构关联；此前 SAFE 核验确认其中 3 行命中 Strict28。Owner Evidence 模板已生成 5 行，但仍为空白：`attestations_populated=0`、`quality_v1_admitted=0`。
+- Owner 补充严重问题筛查现已单独归属 `owner_supplemental_safety_review`，不再伪装成 Reviewer A 的原始字段。旧模板字段不得沿用。
+- PR #11 仍为 Draft；当前代码通过不代表 PR 已合并或训练已获授权。
+
+### 当前唯一需要人工完成的步骤
+
+使用本机最近生成、SHA256 为 Owner 本地 SAFE 回执所对应的 `OWNER_CASE_EVIDENCE_TEMPLATE_PRIVATE.jsonl`，复制为新的 `OWNER_CASE_EVIDENCE.jsonl`（保留原始空白模板），逐案核验后只填写有真实证据支持的字段。不得将模板 SHA、Staging SHA、当前 Story Draft 快照 SHA 混作原始 Gold 来源版本 SHA。
+
+逐案检查：
+1. 读取该候选的完整历史上下文和最终 Assistant 目标，判断上下文连贯、没有未来信息泄漏、隐私合规；不要静默删消息或截断后声称原上下文完整。
+2. 逐项核对 Reviewer A/B 的真实私有审核材料和证据定位。只有确有盲审且相互独立的证据，才填写 `reviewers_blinded_and_independent_attested=true`；单凭两份文件或两份评分不能证明独立性。
+3. Owner 单独完成 `owner_supplemental_severe_flags` 三项筛查，并引用实际证据；任一项为 true 不得进入候选，未知保持 null。
+4. 核实原始 Gold 来源版本、世界图/组件身份及 Train/Validation 分配。当前 Story Draft 快照及 `updated_at` 不能单独证明目标时点的历史版本；找不到可靠原始版本时保持 null。
+5. 逐项核实全部 `EVIDENCE` 字段及三项保护集负面字段。未知不能填 true/false 来消除 HOLD；保护集缺少完整清单时不得声称已证明无重叠。
+
+只有 Owner 在本机完成以上工作后，才运行 Review Bind。SAFE 回执只返回聚合数量和原因码；不得把逐案材料、私有路径、ID、剧情或哈希发到聊天。若五条中只有部分证据完整，允许部分进入后续候选；不得为凑满五条放宽门槛。
+
 ## 已交付代码
 
 - `experiments/r58_quality/quality_v1_sft_candidates.py`：直接调用冻结的 `quality_v1.py` 校验函数，不重新实现质量六维评分，不凭空生成 Reviewer / Owner 证据。
