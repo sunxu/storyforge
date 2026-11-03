@@ -159,6 +159,8 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
         if parent_id is not None:
             if not isinstance(parent_id, str) or not parent_id:
                 raise HistoryRecoveryError("SESSION_PARENT_ID_INVALID")
+            if parent_id in seen:
+                raise HistoryRecoveryError("SESSION_LINEAGE_CYCLE")
             # The database stores this as a story-turn number (not the
             # physical v2_chat_messages.turn_index used by message queries).
             fork_turn = node.get("forked_from_turn")
