@@ -69,7 +69,7 @@
 
 - [ ] Document directory-prefix mounts and the exact shared-core bundle requirement.
 - [ ] Document that CPU PASS is not Quality-v1 admission or training authorization.
-- [ ] Run the focused tests, Ruff if available, and repository CI after the changes.
+- [x] Run focused unit tests (8/8 context-window; 10/10 existing Collator), Python compileall, and Ruff check (3 files).\n- [ ] GitHub Actions CI: retry attempted; runner still fails before steps start, so code has not been evaluated by Actions.
 
 ## Verification
 
