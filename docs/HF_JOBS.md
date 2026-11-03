@@ -49,8 +49,10 @@ python3 scripts/hf_job_guard.py \
 export CUDA_VISIBLE_DEVICES=""
 export TOKENIZERS_PARALLELISM=false
 python3 -m pip install --no-cache-dir "ms-swift==4.5.3" "transformers==5.16.1"
+cp /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+chmod 600 /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
 timeout --signal=TERM --kill-after=20s 780s python3 /scripts/r59_sft_collator_cpu.py \
-  --private-input /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \
+  --private-input /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \
   --output-safe /output/R59_ACTUAL_SWIFT_COLLATOR_SAFE.json'
 ```
 
