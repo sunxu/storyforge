@@ -30,7 +30,19 @@
 - `row_data`：插入/更新后为 `marker_v1` 轻量标记；更新前/删除前为完整旧行快照；
 - `recorded_at`：数据库事务时间戳。
 
-该表当前规模很大（2026-11-03 只读统计估算约 4,275 万行、总占用约 102 GB，其中 heap 约 17 GB），禁止全表扫描和全表聚合。共享核心只按 `story_id + session_id + turn_index ceiling` 查询，利用 `(session_id, recorded_at, id)` 索引；EXPLAIN 对照计划确认使用该 session 索引扫描，并对 story_id / turn_index 做过滤；每个 Session 一次读取，默认最多 100,000 条，超过上限整批 HOLD。可用 `--max-ledger-events` 显式调整，上限 500,000。该执行计划使用无匹配的合成定位值，不代表 28 个真实 Session 的实际耗时或扫描行数。
+该表当前规模很大（2026-11-03 只读统计估算约 4,275 万行、总占用约 102 GB，其中 heap 约 17 GB），禁止全表扫描和全表聚合。共享核心按 `story_id + session_id + turn_index ceiling` 做每 Session 一次有界读取，使用 `(session_id, recorded_at, id)` 索引，并保留完整事件元数据，以便精确核对 `mutation_revision` 与 `update_after` 计数。默认最多 100,000 条，超过上限整批 HOLD；可用 `--max-ledger-events` 显式调整，上限 500,000。
+
+### R59.2 Ledger JSONB 读取优化
+
+首次真实执行在第一条 `MESSAGE_LEDGER_READ` 的 `EXECUTE` 阶段收到 SQLSTATE `57014`（`QueryCanceled`），与 90 秒 statement timeout 相符。检查触发器后确认 `created_at` 和 `recorded_at` 均默认为 `now()`；但简单添加 `recorded_at >= target_created_at` 会跳过目标前 `update_after` 事件，破坏原有的精确 `mutation_revision` 交叉核验，因此**不采用时间下界来缩短元数据范围**。
+
+改为两阶段读取：
+
+1. 第一条查询只读取紧凑元数据：事件 ID、message ID、story/session、role、turn index、operation、recorded_at；不读取任何 `row_data` JSONB。保留目标前后的全部事件，以维持原有 revision 计数核验。
+2. 本地根据每个目标边界，只挑出目标 marker 和每条历史消息的第一个 post-target event；仅对这些事件按主键 `id = ANY(...)` 批量读取 `row_data`，每批最多 500 条。其余事件的大型 before-image 不再传输。
+3. 对读取到的 marker 仍验证 `marker_v1`；对实际用于恢复的 snapshot 仍执行完整字段、身份、revision 校验。缺少任何所需 detail 都整批 HOLD。
+
+这保留了原有历史恢复与 revision 检查，不降低准入标准；不增加索引、不修改数据库、不延长 90 秒超时。主键 detail 查询的 EXPLAIN 已确认使用 `v2_chat_message_ledger_pkey`。metadata 查询仍使用 session 索引并过滤 story/turn；真实 session 的执行耗时仍需 Owner 本机复测。
 
 重建规则：
 
@@ -60,7 +72,7 @@
 - `database_sqlstate`：仅在 PostgreSQL SQLSTATE 满足五位大写字母/数字格式时输出，否则为 null。
 - `database_exception_type`：只输出异常类名，不输出异常消息、DSN、主机、用户名或密码。
 - 当 `database_stage=RECOVERY_QUERIES` 时，额外输出：
-  - `database_operation`：`SESSION_LINEAGE_READ`、`TARGET_MESSAGE_READ`、`MESSAGE_LEDGER_READ`、`CURRENT_HISTORY_READ`、`STORY_CONTENT_VERSION_READ` 或 `STORY_ADMIN_VERSION_READ`；
+  - `database_operation`：`SESSION_LINEAGE_READ`、`TARGET_MESSAGE_READ`、`MESSAGE_LEDGER_READ`、`MESSAGE_LEDGER_DETAIL_READ`、`CURRENT_HISTORY_READ`、`STORY_CONTENT_VERSION_READ` 或 `STORY_ADMIN_VERSION_READ`；
   - `database_query_ordinal`：本次恢复 cursor 内第几条查询，不包含 Session ID；
   - `database_failure_phase`：`EXECUTE`、`FETCH_ONE` 或 `FETCH_ALL`。
 - 不输出 SQL 文本、查询参数、Session ID、Story ID 或原始异常消息。
