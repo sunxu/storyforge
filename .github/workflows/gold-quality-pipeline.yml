@@ -16,6 +16,14 @@ on:
       - "tests/test_gold192_ai_arbitration_import.py"
       - "tests/test_gold192_reviewer_a_v3_normalization.py"
       - "src/storyforge_gold_quality/import_ai_arbitration.py"
+      - "src/storyforge_gold_quality/history_recovery.py"
+      - "src/storyforge_gold_quality/message_ledger.py"
+      - "tests/test_history_recovery.py"
+      - "tests/test_message_ledger.py"
+      - "experiments/r58_quality/r59_strict28_history_recovery.py"
+      - "experiments/r58_quality/test_r59_strict28_history_recovery.py"
+      - "docs/R59_STRICT28_HISTORY_RECOVERY_CN.md"
+      - "skills/storyforge-roleplay-sft/**"
       - "scripts/r57_*.py"
       - "tests/test_r57_*.py"
       - "pyproject.toml"
@@ -95,5 +103,13 @@ jobs:
         run: |
           ruff check experiments/r58_quality/r59_gold192_historical_exposure.py experiments/r58_quality/test_r59_gold192_historical_exposure.py
           python -m unittest discover -s experiments/r58_quality -p 'test_r59_gold192_historical_exposure.py' -v
+      - name: Verify shared historical recovery core and Strict28 adapter
+        run: |
+          ruff check src/storyforge_gold_quality/history_recovery.py src/storyforge_gold_quality/message_ledger.py tests/test_history_recovery.py tests/test_message_ledger.py experiments/r58_quality/r59_strict28_history_recovery.py experiments/r58_quality/test_r59_strict28_history_recovery.py
+          python -m unittest discover -s tests -p 'test_message_ledger.py' -v
+          python -m unittest discover -s tests -p 'test_history_recovery.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_strict28_history_recovery.py' -v
+      - name: Verify Skill contract and manifest
+        run: python -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_skill_token_reuse_contract.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v

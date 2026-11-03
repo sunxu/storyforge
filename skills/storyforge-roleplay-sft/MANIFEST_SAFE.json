@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.13",
-  "date": "2026-11-02",
-  "tests": "v0.1.13: unified private append-only Gold Quality Manifest and CLI; layered Gold87/Gold108 history imports; R57 private exposure import requires same-run SAFE receipt; separate reviewer/adjudication/exclusion events; synthetic tests; no private values emitted; quality_v1_admitted=0; training_authorized=false",
+  "version": "0.1.16",
+  "date": "2026-11-03",
+  "tests": "v0.1.16: bounded sparse v2_chat_message_ledger reconstruction; old-snapshot recovery; mutation_revision consistency; transaction commit order and trigger continuity explicitly unverified; no private values emitted; quality_v1_admitted=0; training_authorized=false",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "6f8eac1fd692cf6a5cbcb71407843edf6dfa7165cf58b79f0ae837eb5f72be4a",
-      "bytes": 10503
+      "sha256": "344090dfa58a57bea935454504c646afb4a5781156be7a43d860a786df1bea92",
+      "bytes": 13262
     },
     {
       "path": "README.md",
-      "sha256": "76739b1e0bf829e0ad6d471bf12fd2f2ff98579deb6dd5b898019901f10961fb",
-      "bytes": 3341
+      "sha256": "21b029ed45adb35df6c36397d4a9533612b3a655f6f6b9f0e334b8c22e0332a3",
+      "bytes": 4183
     },
     {
       "path": "SKILL.md",
-      "sha256": "9e1c2774732ba488d846382782dc2f07743d9fa00793be3c5412e35bea520ba0",
-      "bytes": 12105
+      "sha256": "226c3779bf317191f9cef573c5871f2cbfb040734cb2d2cb8f14c2c8a6b67c62",
+      "bytes": 14239
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "6bbc74fdedf5978fe34d7026615773f2df2f007508538e406d7c5fd1aca9c4a1",
-      "bytes": 7695
+      "sha256": "f5e0df6947ba19e77313177661008415a7636d20a456569d06de46cf8857ce94",
+      "bytes": 8557
     }
   ]
 }
