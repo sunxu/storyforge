@@ -130,6 +130,7 @@ test ! -e "$OUT"
 - Source Locator 与 Historical Exposure 必须同时精确匹配 `case_id + target_sha256`；重复配对直接 HOLD。
 - Story Draft 按 `story_id` 关联，分别统计候选故事数、草稿记录数、每故事多版本情况及 `updated_at` 覆盖。
 - 仅检查 `world/components/character/characters/director/opening/visual` 的存在性和 JSON 类型，不读取或输出设定正文，不宣称时间点有效或世界隔离通过。
+- 汇总 Story Draft 的 `source_label`；若标记为 `CURRENT_V2_DATA_NOT_HISTORICAL`，SAFE 明确记录当前快照数量，并将历史时点有效性、来源版本验证保持为 false。`updated_at` 和本地 SHA256 指纹均不能单独证明历史版本。
 - 原样统计 Exposure status 与布尔字段；明确 `exposure_not_found_is_proof_of_non_exposure=false`。
 - 所有输入要求普通文件、非 symlink、0600；SAFE 输出 create-only、0600，父目录 0700，且输出路径必须位于仓库外。
 
