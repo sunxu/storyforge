@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from r59_sft_collator_cpu import validate_preview_row, write_safe_report
+from r59_sft_collator_cpu import MODEL_REVISION, validate_preview_row, write_safe_report
 
 
 SYSTEM = (
@@ -42,6 +42,12 @@ def row():
 
 
 class R59SFTCollatorInputTests(unittest.TestCase):
+    def test_qwen_model_revision_is_immutable(self):
+        self.assertEqual(
+            MODEL_REVISION,
+            "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+        )
+
     def test_prompt_fixture_matches_r27_pin(self):
         self.assertEqual(
             hashlib.sha256(SYSTEM.encode("utf-8")).hexdigest(),
