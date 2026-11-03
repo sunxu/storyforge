@@ -65,6 +65,7 @@ class ContextWindowTests(unittest.TestCase):
         self.assertEqual(messages[0], original["messages"][0])
         self.assertEqual(messages[-2:], original["messages"][-2:])
         self.assertEqual(messages[1]["role"], "user")
+        self.assertEqual(messages[1:-1], original["messages"][4:-1])
         self.assertEqual(messages[-1]["content"], original["messages"][-1]["content"])
         self.assertTrue(all(item["loss"] is False for item in messages[:-1]))
         self.assertTrue(messages[-1]["loss"])
