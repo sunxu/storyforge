@@ -22,7 +22,7 @@ if str(ROOT) not in sys.path:
 if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
-from storyforge_gold_quality.history_recovery import (  # noqa: E402
+from storyforge_gold_quality.history_recovery import (
     HistoryRecoveryError,
     recover_cases,
 )
@@ -76,7 +76,7 @@ def validate_strict28_ledger(raw: bytes) -> list[dict]:
                 continue
             row = json.loads(line, object_pairs_hook=_pairs)
             if not isinstance(row, dict):
-                raise ValueError("STRICT28_LEDGER_ROW_INVALID")
+                raise TypeError("STRICT28_LEDGER_ROW_INVALID")
             case_id = row.get("case_id")
             target = row.get("target_sha256")
             story_id = row.get("current_story_id")
@@ -228,7 +228,7 @@ def main() -> int:
         return 0
     except Exception as exc:  # noqa: BLE001 - never echo private values or DB errors
         reason = (
-            str(exc) if isinstance(exc, (ValueError, HistoryRecoveryError))
+            str(exc) if isinstance(exc, (ValueError, TypeError, HistoryRecoveryError))
             and re.fullmatch(r"[A-Z0-9_]+", str(exc))
             else type(exc).__name__
         )
