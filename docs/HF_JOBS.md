@@ -84,6 +84,90 @@ writes SAFE-only output under `/output`. Private input text must not be printed
 to Job logs. A successful submission response is not proof that the Job completed;
 inspect its status, logs, and output receipt separately.
 
+### Connector 403 versus Mac-local CLI (verified 2026-11-01)
+
+A 403 returned by the ChatGPT Hugging Face Jobs connector is not proof that
+the Mac-local Hugging Face CLI has the same failure. Keep the two submission
+identities and execution paths separate.
+
+The following Mac-local path was verified:
+
+- `hf auth whoami` authenticated the account with access to organization
+  namespace `adradar`.
+- A private Bucket read/write smoke Job completed as
+  `6ae727c70e0338d1bb7d7258` and wrote `HF PRIVATE RW SMOKE PASS`.
+- The output was synchronized back with `hf buckets sync` and verified locally.
+- Both A/B output sync-back checks passed.
+
+When the ChatGPT connector returns 403 for a private Bucket RW mount, do not
+repeatedly reconnect OAuth or retry the same connector request. Do not infer
+that local CLI submission is broken. Verify the local identity with
+`hf auth whoami`, list existing organization Jobs before submitting, then use the
+guarded local CLI route below. Never print tokens or credentials.
+
+#### R59 CPU Collator: Mac-local submission
+
+Run from the StoryForge repository root on the Mac. First verify the exact
+branch and local authentication:
+
+```bash
+set -euo pipefail
+test "$(git branch --show-current)" = "gold-quality/quality-v1-sft-candidates"
+hf auth whoami
+hf jobs ls -a --namespace adradar
+```
+
+Then submit one CPU-only attempt using the existing guard. Use a fresh output
+prefix for each deliberate attempt; this example is the 2026-11-04 first
+Mac-local attempt:
+
+```bash
+.venv/bin/python scripts/hf_job_guard.py \
+  --namespace adradar \
+  --name storyforge-r59-collator-cpu \
+  --flavor cpu-basic \
+  --timeout-minutes 15 \
+  --input-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261103/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl:/input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl:ro' \
+  --input-volume 'hf://buckets/adradar/storyforge-training/scripts/r59_sft_collator_cpu.py:/scripts/r59_sft_collator_cpu.py:ro' \
+  --output-volume 'hf://buckets/adradar/storyforge-training/preflight/r59/20261104/reports/collator-cpu-mac-01:/output:rw' \
+  --image python:3.11 \
+  --submit \
+  -- /bin/sh -lc 'set -eu
+export CUDA_VISIBLE_DEVICES=""
+export TOKENIZERS_PARALLELISM=false
+python3 -m pip install --no-cache-dir "ms-swift==4.5.3" "transformers==5.16.1"
+cp /input/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+chmod 600 /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl
+timeout --signal=TERM --kill-after=20s 780s python3 /scripts/r59_sft_collator_cpu.py \
+  --private-input /tmp/R59_SFT_SHAPE_PREVIEW_PRIVATE.jsonl \
+  --output-safe /output/R59_ACTUAL_SWIFT_COLLATOR_SAFE.json'
+```
+
+The guard invokes the Mac-local `hf` executable with one attempt and explicit
+`adradar` namespace. Do not resubmit if the command's outcome is uncertain;
+first inspect `hf jobs ls -a --namespace adradar` and locate the existing Job.
+
+After the Job completes, retrieve its logs and synchronize only the SAFE report:
+
+```bash
+hf jobs ls -a --namespace adradar
+# Replace JOB_ID with the ID returned by the successful submission.
+hf jobs logs adradar/JOB_ID
+
+mkdir -m 700 -p "$HOME/.local/share/storyforge/r59/private/collator-cpu-mac-01"
+hf buckets sync \
+  hf://buckets/adradar/storyforge-training/preflight/r59/20261104/reports/collator-cpu-mac-01 \
+  "$HOME/.local/share/storyforge/r59/private/collator-cpu-mac-01"
+chmod 600 "$HOME/.local/share/storyforge/r59/private/collator-cpu-mac-01/R59_ACTUAL_SWIFT_COLLATOR_SAFE.json"
+```
+
+Verify the synchronized receipt locally before reporting PASS. Required result:
+`R59_ACTUAL_SWIFT_COLLATOR_PASS__NOT_ADMITTED`, five checked/five passed,
+`model_revision_pinned: true`, `gpu_used: false`, and
+`training_performed: false`. A Job submission or successful exit alone is
+not acceptance. No Quality-v1 admission, dataset freeze, inference or training
+is authorized by this CPU preflight.
+
 ### Failure handling
 
 | Result | Required response |
