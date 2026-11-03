@@ -42,7 +42,7 @@ def _validate_history(messages):
             or sha(messages[0]["content"].encode("utf-8")) != R27_SYSTEM_SHA256):
         raise PreviewHold("APPROVED_GENERIC_SYSTEM_PIN_MISMATCH")
     history = messages[1:]
-    if not history or history[-1].get("role") != "user":
+    if (not history or not isinstance(history[-1], dict)\n            or history[-1].get("role") != "user"):
         raise PreviewHold("CURRENT_USER_MISSING")
     previous = None
     for message in history:
