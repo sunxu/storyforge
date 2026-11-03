@@ -141,6 +141,14 @@ and sync-back passed. For connector-only 403s, stop connector retries and use
 the documented guarded Mac-local CLI route in `docs/HF_JOBS.md`; never
 reconnect/retry blindly or change namespaces/mount permissions as a workaround.
 
+The 2026-11-04 ChatGPT HF connector probe verified that organization CPU
+submission and private Bucket RO mounts work, while private Bucket RW mounts
+still return HTTP 403. For SAFE-only CPU preflights, prefer RO inputs and emit
+only the SAFE aggregate receipt to Job stdout/logs; never print private sample
+content. Mount a Bucket directory prefix (not an assumed file mount), then
+assert the expected file with `test -f` before reading it. See the 2026-11-04
+regression and mount-semantics sections in `docs/HF_JOBS.md`.
+
 See `docs/HF_JOBS.md` for the verified incident record and invocation contract.
 
 ### 3. Training gate
