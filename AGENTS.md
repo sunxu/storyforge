@@ -135,6 +135,12 @@ Known incident regression rules:
 - A 403/402 MUST NOT trigger automatic namespace fallback, permission broadening,
   mount-mode broadening, retries, or GPU escalation.
 
+A 403 from the ChatGPT HF connector MUST NOT be treated as proof that the
+Mac-local HF CLI is broken. The 2026-11-01 Mac-local private Bucket RW smoke
+and sync-back passed. For connector-only 403s, stop connector retries and use
+the documented guarded Mac-local CLI route in `docs/HF_JOBS.md`; never
+reconnect/retry blindly or change namespaces/mount permissions as a workaround.
+
 See `docs/HF_JOBS.md` for the verified incident record and invocation contract.
 
 ### 3. Training gate
