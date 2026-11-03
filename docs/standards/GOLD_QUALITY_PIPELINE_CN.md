@@ -90,3 +90,18 @@ Reviewer A 与 B 的 blind ID 属于各自 reviewer 的局部编号，**不得�
 新版文件的 12 HOLD、2 REJECT 均原样保留。任何历史 REJECT 仍需仲裁；Reviewer B 的 PASS 不会清除 Reviewer A 的 REJECT，也不直接产生 Quality-v1 准入。RB-0001 的年龄字段冲突属于额外 Owner 核对项，不因其 PASS 自动关闭。
 
 此流程只导入和核对审核证据；不验证角色卡在目标时点的生效版本，不完成世界身份/别名语义核验，不完成 Reviewer 独立性认证，不执行训练授权。
+
+
+## 只读历史上下文恢复核心（R59）
+
+共享实现：`src/storyforge_gold_quality/history_recovery.py`。它只接收已验证 locator 和数据库 cursor，不负责 DSN、连接、文件写入、私有权限或质量准入。项目适配器必须自行验证输入 pin、限定查询范围、建立只读事务，并输出不含私人字段的 SAFE 回执。
+
+- Session lineage 按 `parent_session_id` 递归恢复，检测循环、缺失祖先和最大深度；父 Session 仅允许到子 Session 的 `forked_from_turn`。
+- 目标 Assistant 必须在指定 story/session/turn 唯一存在，正文 SHA256 精确匹配且 `status=completed`。
+- 历史消息必须 `created_at < target.created_at`、位于对应 Session turn cutoff 内且 `status=completed`；不包含 system/developer 内容，不截断，末条必须是 User。
+- `memory_summary`、`recent_summary`、`rolling_outline` 仅在 Session `updated_at` 严格早于目标时点、六个摘要 cutoff 字段全部存在且不超过当前 Session/父 Session 可见 turn cutoff 时使用。缺失或超界即不使用。
+- `story_content_versions` 只接受 `source_updated_at` 和 `archived_at` 均早于目标的最新版本；`story_admin_versions` 只接受 `created_at` 和 `updated_at` 均早于目标的记录。没有版本时明确报告，不回退到当前 `user_stories` 快照。
+- 故事卡版本不等于历史 Provider System Prompt；所有适配器必须保持 `historical_system_prompt_verified=false`，不得将卡片快照伪装成生产 Prompt。
+- Volume memory 暂不自动纳入；若未来接入，必须单独定义生成时间、覆盖 turn、stale 状态与分叉继承规则。
+
+Strict28 的输入 pin、字段映射、CLI、SAFE Schema 和 Owner 本机复现步骤见 [R59 Strict28 历史上下文恢复](../R59_STRICT28_HISTORY_RECOVERY_CN.md)。该适配器只为后续 Quality-v1 SOURCE / STRUCTURE 门禁提供证据，`quality_v1_admitted=0`，不授权训练或 GPU。
