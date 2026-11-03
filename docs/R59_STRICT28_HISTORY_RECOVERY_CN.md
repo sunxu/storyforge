@@ -7,7 +7,7 @@
 - 输入仅为 Owner 本机生成的 Strict28 历史曝光私有 ledger，按固定 SHA256 验证。
 - 仅查询 ledger 明确列出的 28 个 `story_id / session_id / turn_index` 定位项。
 - 通过目标 Assistant 正文 SHA256 再次确认消息身份。
-- 恢复当前 Session 和其父 Session 分叉前的消息；父 Session 仅纳入 `forked_from_turn` 及以前的消息。
+- fork/rewind 会把继承消息物化复制到子 Session（生成新的 message ID）。恢复时以目标所在的子 Session 中已物化的历史为准；父 Session 只用于 lineage 证明，不再二次合并父消息，避免重复或误读分叉边界。`forked_from_turn` 存储的是 story-turn 编号，不是消息表的物理 `turn_index`。
 - 只纳入 `created_at` 严格早于目标消息、状态为 `completed` 的 User / Assistant 消息。失败、流式中断、未来时间、超出分叉边界的消息不进入上下文。
 - 不截断历史。超过上限、历史末尾不是 User、身份不唯一、Session 祖先缺失或出现循环时整批 HOLD。
 
@@ -31,10 +31,10 @@
 只有同时满足以下条件才进入私有恢复结果：
 
 1. Session `updated_at` 严格早于目标 Assistant `created_at`；
-2. `last_summary_turn`、`last_extract_turn`、`summary_source_end_index`、`summary_source_dependency_end_index`、`summary_text_end_index`、`summary_legacy_text_end_index` 均为整数；
-3. 所有摘要截止位置均不超过该 Session 在目标时点可见的 turn cutoff；父 Session 的 cutoff 为子 Session 的 `forked_from_turn`。
+2. `last_summary_turn`、`last_extract_turn` 必须是 story-turn 整数；`summary_source_end_index`、`summary_source_dependency_end_index`、`summary_text_end_index`、`summary_legacy_text_end_index` 是物理消息 `turn_index`；
+3. story-turn 截止按 `(target_turn_index - 1) // 2` 计算；物理索引截止为 `target_turn_index - 1`。空的 source/text 索引只按数据库定义的旧兼容规则回退到 `last_summary_turn * 2`；非空 dependency 索引必须在物理截止内。
 
-缺少任一时间或 cutoff 证据时，摘要只标记不可验证，不会被使用。当前 Session 行的 `updated_at` 晚于目标时点时，当前摘要一律不作为历史上下文。Volume memory 不在本版本自动纳入。
+缺少更新时间、story-turn 或物理索引证据时，摘要只标记不可验证，不会被使用。当前子 Session 行的 `updated_at` 晚于目标时点时，当前摘要一律不作为历史上下文；父 Session 摘要不与子 Session 历史重复拼接。Volume memory 不在本版本自动纳入。
 
 ## 历史故事版本
 
