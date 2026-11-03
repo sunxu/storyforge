@@ -150,6 +150,7 @@ class MessageLedgerTests(unittest.TestCase):
         by_id = {row["message_id"]: row for row in rows}
         self.assertEqual(by_id["u1"]["content"], "old")
         self.assertEqual(report["history_rows_restored_from_snapshot"], 1)
+        self.assertEqual(report["ledger_detail_rows_loaded"], 2)
 
     def test_deleted_after_target_is_restored_from_delete_snapshot(self):
         events = self.events + [
