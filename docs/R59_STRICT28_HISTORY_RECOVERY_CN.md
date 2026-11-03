@@ -41,7 +41,7 @@
 5. 对当前行或旧快照，核对 `mutation_revision` 与账本中此前的 `update_after` 数量。数据库的 revision 触发器还会记录 status / partial_content 变化，而稀疏账本触发器不一定为这些变化保存快照；计数不一致时 HOLD，不以当前正文替代历史正文。
 6. 历史消息删除、编辑或迁出目标 Session 后，若账本有可验证的目标后旧快照，仍可恢复；新插入、流式完成标记不会被误当成目标前历史。
 
-事件排序使用 `(recorded_at, id)`。注意：`recorded_at` 是事务时间，不是事务提交时间；当前账本没有提交 LSN，因此不能证明并发事务的真实 commit visibility 顺序。SAFE 明确输出 `ledger_commit_order_verified=false`。该限制必须保留，不能宣称为字节级或提交顺序级历史回放。
+事件排序使用 `(recorded_at, id)`。注意：`recorded_at` 是事务时间，不是事务提交时间；当前账本没有提交 LSN，因此不能证明并发事务的真实 commit visibility 顺序。SAFE 明确输出 `ledger_commit_order_verified=false`。该限制必须保留，不能宣称为字节级或提交顺序级历史回放。 当前可见的 migration history 也不能证明 ledger trigger 从目标消息创建时起连续启用；虽然目标事件边界、每条消息的 `mutation_revision` 与事件计数会执行交叉核验，但这不是完整 DDL/trigger 连续性审计。SAFE 同时输出 `ledger_trigger_continuity_verified=false`。如果后续需要证明无触发器停用窗口，必须取得独立数据库 DDL/audit 证据，不能从当前表结构推断。
 
 共享实现与测试：
 
