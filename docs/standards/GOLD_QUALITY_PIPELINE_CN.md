@@ -115,4 +115,5 @@ Strict28 的输入 pin、字段映射、CLI、SAFE Schema 和 Owner 本机复现
 - 目标后的第一条消息事件若为 `update_before` / `delete`，恢复旧快照；若为 `insert` / `update_after`，排除该消息；无目标后事件才可使用当前行。
 - `mutation_revision` 必须与对应状态点之前的 `update_after` 事件数相符。由于 status / partial_content 的 mutation revision 可能没有对应稀疏快照，不匹配时必须 HOLD。
 - 当前账本按 `recorded_at, id` 排序，但 `recorded_at` 是事务时间而非提交时间；没有 commit LSN 证明时，必须在 SAFE 中保留 `ledger_commit_order_verified=false`，不得宣称严格提交顺序回放。
+- 当前 migration history 不能证明 ledger trigger 从每条消息创建时起连续启用；SAFE 还必须保留 `ledger_trigger_continuity_verified=false`。目标边界和 mutation revision 交叉核验不能替代独立 DDL/audit 连续性证据。
 - 账本历史恢复只提供 SOURCE 证据，不构成历史 Provider Prompt、Quality-v1 准入或训练授权。具体查询、上限、Schema 与失败码以 `docs/R59_STRICT28_HISTORY_RECOVERY_CN.md` 为准。
