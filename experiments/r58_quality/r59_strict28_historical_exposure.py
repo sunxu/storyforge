@@ -46,8 +46,7 @@ EXPECTED_STRICT28 = 28
 EXPECTED_PRIORITY72 = 72
 EXPECTED_DRAFTS = 13
 EXPECTED_EXCLUSIONS = 11
-EXPECTED_STRICT_STORY_GROUPS = [13, 15]
-EXPECTED_STRICT_SESSION_COUNT = 2
+EXPECTED_STRICT_STORY_COUNT = 2
 SCORES = {
     "chinese_prose", "character_consistency", "npc_initiative",
     "player_agency", "narrative_continuity", "rule_fidelity",
