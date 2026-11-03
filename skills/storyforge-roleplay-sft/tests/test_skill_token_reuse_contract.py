@@ -15,7 +15,7 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 class ReuseContractTests(unittest.TestCase):
     def test_skill_owns_execution_order_and_links_authoritative_specs(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.1.15", source)
+        self.assertIn("version: 0.1.16", source)
         for phrase in (
             "查找已有工具和证据",
             "优先复用",
@@ -35,6 +35,7 @@ class ReuseContractTests(unittest.TestCase):
             "docs/R59_STRICT28_HISTORY_RECOVERY_CN.md",
             "src/storyforge_gold_quality/message_ledger.py",
             "ledger_commit_order_verified=false",
+            "ledger_trigger_continuity_verified=false",
         ):
             self.assertIn(phrase, source)
         self.assertTrue(
@@ -123,14 +124,14 @@ class ReuseContractTests(unittest.TestCase):
     def test_readme_and_changelog_document_the_new_responsibilities(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("v0.1.15", readme)
+        self.assertIn("v0.1.16", readme)
         self.assertIn("固定执行顺序", readme)
         self.assertIn("HF_TOKEN_PREFLIGHT_REUSE_CN.md", readme)
         self.assertIn("R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md", readme)
         self.assertIn("R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md", readme)
         self.assertIn("R59_STRICT28_HISTORY_RECOVERY_CN.md", readme)
         self.assertIn("$HOME/.local/share/storyforge/r58/", readme)
-        self.assertTrue(changelog.startswith("# 0.1.15"))
+        self.assertTrue(changelog.startswith("# 0.1.16"))
         self.assertIn("AGENTS.md 只保留仓库通用规则", changelog)
         history_spec = (REPO_ROOT / "docs/R59_STRICT28_HISTORY_RECOVERY_CN.md").read_text(encoding="utf-8")
         self.assertIn("forked_from_turn", history_spec)
@@ -138,12 +139,14 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("update_before", history_spec)
         self.assertIn("recorded_at", history_spec)
         self.assertIn("commit visibility", history_spec)
+        self.assertIn("ledger trigger", history_spec)
+        self.assertIn("DDL/audit", history_spec)
 
     def test_manifest_hashes_and_file_inventory_match(self):
         manifest = json.loads(
             (SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(manifest["version"], "0.1.15")
+        self.assertEqual(manifest["version"], "0.1.16")
         declared = {item["path"]: item for item in manifest["files"]}
         self.assertFalse(any(name.startswith("v02/") for name in declared))
         expected = {
