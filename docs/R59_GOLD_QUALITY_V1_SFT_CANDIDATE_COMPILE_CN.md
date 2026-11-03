@@ -163,6 +163,28 @@ test ! -e "$OUT"
 
 不要强制要求复现原生产 System Prompt；现有无世界卡 System Prompt 方案可以用于明确标记的训练上下文编排，但本脚本只消费已准备并校验的 `messages`，不杜撰角色世界卡，也不写入生产数据库。
 
+## R59 no-card SFT 工程预检（非准入）
+
+R52/v0.3 的正式批准记录 `docs/evidence/V03_R52_NO_CARD_INPUT_DESIGN_APPROVAL_20261021.md` 冻结了 R27 generic no-card System Prompt：449 UTF-8 bytes，SHA256 `5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83`。该 SHA 与部分旧 R45 导出副本的字节相同；R45 文件名/历史状态不能替代审批范围判断。审批记录明确说明：该字符串来自原始 R27 私有归档，是新的合成训练指令，不是历史生产请求；批准仅覆盖 System + 原样可见历史 + 最终 Assistant-only loss 的输入设计，不覆盖样本准入、世界隔离、Tokenizer/Collator、GPU 或 R50。
+
+R59 Source Stage SAFE 中的 `system_prompt_sha256` 与上述批准的 R27 字节 SHA 完全一致。因此无需重做 Source Stage 或重新编写 System Prompt。为避免把工程预检误写为质量准入，新增 `experiments/r58_quality/r59_sft_shape_preview.py`：它只消费已有 Staging 和 SAFE 回执，逐条校验 System SHA、目标 SHA、历史消息结构与顺序；保留 User-first / Assistant-first 历史，不插入世界卡，不删除历史消息；为历史消息标记 `loss=false`，并追加原始目标 Assistant `loss=true`。输出为私有工程预览，状态严格为 `R59_SFT_SHAPE_PREVIEW_BUILT__NOT_ADMITTED`，不产生质量准入、冻结集或训练授权。
+
+本机运行（输出父目录必须为 0700，目标目录必须不存在）：
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE="$PRIVATE/source-staging-priority72-20261103"
+OUT="$PRIVATE/quality-v1/sft-shape-preview-20261103"
+
+test ! -e "$OUT"
+.venv/bin/python experiments/r58_quality/r59_sft_shape_preview.py \
+  --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --staging-safe "$STAGE/GOLD_SOURCE_STAGING_SAFE.json" \
+  --output-dir "$OUT"
+```
+
+只回传 `R59_SFT_SHAPE_PREVIEW_SAFE.json`。私有 JSONL 仅供 Owner 在受控 HF CPU 工作区做真实 Qwen tokenizer / ms-swift Collator 检查；不得将其用于训练。若 tokenizer 长度超过 16,384 或 collator 标签不符合 last-assistant-only，保持 HOLD，不静默截断。
+
 ## R59 Supabase → Review 输入桥接
 
 新增 `experiments/r58_quality/gold_source_context_stage.py`，用于将 Owner 现存的 `R59_SOURCE_CONTEXT_PRIVATE.jsonl` 转成私有的 Source Review Staging 包。它**不是**完整的 `quality_v1.py` 输入：特意将世界组件、Train/Validation、Reviewer 证据、source version pin 标记为未核实，不会伪造这些字段。它只帮助省去从现有 Supabase 提取文本再次人工粘贴到新审核格式的步骤。
