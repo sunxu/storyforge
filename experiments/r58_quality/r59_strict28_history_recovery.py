@@ -157,7 +157,8 @@ def _create_only(path: Path, payload: bytes) -> str:
 
 
 def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *,
-        max_history: int = 20000, max_lineage_depth: int = 16) -> dict:
+        max_history: int = 20000, max_lineage_depth: int = 16,
+        max_ledger_events: int = 100000) -> dict:
     if ledger_path.parent.resolve(strict=True) != safe_report_path.parent.resolve(strict=True):
         raise ValueError("STRICT28_INPUTS_NOT_SAME_RUN_DIRECTORY")
     safe_raw = _private_read(safe_report_path, "STRICT28_SAFE_RECEIPT")
@@ -192,6 +193,7 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
             recovered = recover_cases(
                 cursor, cases, max_history=max_history,
                 max_lineage_depth=max_lineage_depth,
+                max_ledger_events=max_ledger_events,
             )
         db.rollback()
 
@@ -207,6 +209,13 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
         private_payload,
     )
 
+    ledger_sessions = {}
+    for row in recovered:
+        key = (row["story_id"], row["session_id"])
+        ledger_sessions[key] = max(
+            ledger_sessions.get(key, 0),
+            row["history_reconstruction"]["ledger_event_count"],
+        )
     summary_counts = Counter(row["summary_status"] for row in recovered)
     content_counts = Counter(row["story_content_version_status"] for row in recovered)
     admin_counts = Counter(row["story_admin_version_status"] for row in recovered)
@@ -218,6 +227,18 @@ def run(ledger_path: Path, safe_report_path: Path, output_dir: Path, dsn: str, *
         "history_complete": sum(bool(row["history"]) for row in recovered),
         "history_message_count_total": sum(row["history_message_count"] for row in recovered),
         "session_lineage_nodes_total": sum(len(row["session_lineage"]) for row in recovered),
+        "ledger_sessions_read": len(ledger_sessions),
+        "ledger_events_read_total": sum(ledger_sessions.values()),
+        "ledger_event_order_basis": "recorded_at_then_id",
+        "ledger_commit_order_verified": False,
+        "history_rows_restored_from_snapshot_total": sum(
+            row["history_reconstruction"]["history_rows_restored_from_snapshot"]
+            for row in recovered
+        ),
+        "history_rows_excluded_by_post_target_marker_total": sum(
+            row["history_reconstruction"]["history_rows_excluded_by_post_target_marker"]
+            for row in recovered
+        ),
         "summary_status_counts": dict(sorted(summary_counts.items())),
         "cases_with_verified_pretarget_summaries": sum(bool(row["pretarget_summaries"]) for row in recovered),
         "story_content_version_status_counts": dict(sorted(content_counts.items())),
@@ -248,9 +269,11 @@ def main() -> int:
     parser.add_argument("--output-dir", required=True, type=Path)
     parser.add_argument("--max-history", type=int, default=20000)
     parser.add_argument("--max-lineage-depth", type=int, default=16)
+    parser.add_argument("--max-ledger-events", type=int, default=100000)
     args = parser.parse_args()
     try:
-        if args.max_history < 1 or not 1 <= args.max_lineage_depth <= 64:
+        if (args.max_history < 1 or not 1 <= args.max_lineage_depth <= 64
+                or not 1 <= args.max_ledger_events <= 500000):
             raise ValueError("PARAMETERS_INVALID")
         dsn = os.environ.get("STORYFORGE_SUPABASE_DSN")
         if not dsn:
@@ -259,6 +282,7 @@ def main() -> int:
             args.strict28_ledger, args.safe_report, args.output_dir, dsn,
             max_history=args.max_history,
             max_lineage_depth=args.max_lineage_depth,
+            max_ledger_events=args.max_ledger_events,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
