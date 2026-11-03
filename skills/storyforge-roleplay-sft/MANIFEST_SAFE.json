@@ -8,8 +8,8 @@
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "1cfb73bd6cf5b71ce5b6ea7661de3d5665412abf50ca23de9b667bf76b9b923d",
-      "bytes": 11377
+      "sha256": "edc6cb97e1a811dab4616aa9c1061f2f2989c7539ad17e0e8961b7df3f1fd94f",
+      "bytes": 11834
     },
     {
       "path": "README.md",
@@ -18,8 +18,8 @@
     },
     {
       "path": "SKILL.md",
-      "sha256": "665da00c32c1809002d3e1237b064d25bbfdfbb957f54a93d167fffae5807e96",
-      "bytes": 13087
+      "sha256": "985e8f52188edc5a0ca8a28c1dea4104d9b4c4e2df0d314ac22a0670460760f3",
+      "bytes": 13493
     },
     {
       "path": "queries/01_story_inventory.sql",
