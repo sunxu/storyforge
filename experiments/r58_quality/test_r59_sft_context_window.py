@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from r59_sft_context_window import _is_inside_repository, rebuild_preview_rows
+from r59_sft_context_window import _is_private_temp_path, rebuild_preview_rows
 
 SYSTEM = "approved system prompt"
 
@@ -125,16 +125,16 @@ class ContextWindowTests(unittest.TestCase):
                 [row], lambda candidate: 1, validate_row=validate_fixture
             )
 
-    def test_output_path_is_checked_against_repository_not_process_cwd(self):
+    def test_output_path_must_be_under_private_temp_root(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory) / "checkout"
+            root = Path(directory) / "private-temp"
             root.mkdir()
-            private = root / "private"
+            private = root / "attempt"
             private.mkdir()
             external = Path(directory) / "outside"
             external.mkdir()
-            self.assertTrue(_is_inside_repository(private, root))
-            self.assertFalse(_is_inside_repository(external, root))
+            self.assertTrue(_is_private_temp_path(private, root))
+            self.assertFalse(_is_private_temp_path(external, root))
 
 
 if __name__ == "__main__":
