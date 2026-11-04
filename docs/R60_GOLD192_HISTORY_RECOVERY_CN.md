@@ -69,6 +69,49 @@ SAFE 固定保留以下限制：
 **不要授予 `BYPASSRLS`，不要授予 `service_role`，不要将只读导出账号改成 superuser。**
 也不要通过 `SET request.jwt.claim.sub` 让数据库角色冒充任意用户；这会把 RLS 保护变成可自行伪造的身份声明。
 
+权限调整前，必须以 `r58_export_reader` 执行以下只读预检，覆盖共享恢复核心实际读取的全部表；
+不能只检查两张消息表：
+
+```sql
+WITH required(table_name) AS (
+  VALUES
+    ('v2_chat_messages'),
+    ('v2_chat_message_ledger'),
+    ('story_v2_sessions'),
+    ('story_content_versions'),
+    ('story_admin_versions'),
+    ('user_stories')
+)
+SELECT r.table_name,
+       c.relrowsecurity AS rls_enabled,
+       c.relforcerowsecurity AS rls_forced,
+       has_table_privilege(current_user, format('public.%I', r.table_name), 'SELECT')
+         AS can_select
+FROM required r
+LEFT JOIN pg_class c
+  ON c.relnamespace = 'public'::regnamespace
+ AND c.relname = r.table_name
+ AND c.relkind IN ('r', 'p')
+ORDER BY r.table_name;
+
+SELECT tablename, policyname, roles, cmd, qual, with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND tablename IN (
+    'v2_chat_messages', 'v2_chat_message_ledger', 'story_v2_sessions',
+    'story_content_versions', 'story_admin_versions', 'user_stories'
+  )
+ORDER BY tablename, policyname;
+
+SELECT rolname, rolsuper, rolbypassrls
+FROM pg_roles
+WHERE rolname = current_user;
+```
+
+若表缺少 SELECT 权限，只能在确认确有需要后授予该角色 SELECT；不得授予写权限。
+若 RLS 对该角色无适用策略，需逐表检查实际列、现有策略和 owner 关系，再设计最小范围策略。
+不能假定另外四张表具有与消息表相同的 `user_id` 列或相同 RLS 模型。
+
 如果实际 Pilot 因 RLS 返回零行，建议先只读确认 Gold192 的 13 个 story 是否全部属于同一个 owner `user_id`。
 只有 Owner 在 Supabase SQL Editor 中确认唯一 owner UUID 后，才考虑创建两条专用、SELECT-only、绑定固定 UUID 的策略，例如：
 
