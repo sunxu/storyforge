@@ -22,7 +22,7 @@ sys.path.insert(0, str(ROOT / "experiments" / "r58_quality"))
 from storyforge_gold_quality.history_recovery import recover_cases
 from r59_gold192_supabase_extract import (
     A_SHA, B_SHA, EX_SHA, PACKETS_SHA, choose_pilot, index_packets,
-    read_json, read_jsonl, select_candidates,
+    select_candidates,
 )
 
 HEX = re.compile(r"^[0-9a-f]{64}$")
