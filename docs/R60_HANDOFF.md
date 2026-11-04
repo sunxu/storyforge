@@ -127,14 +127,14 @@ test "$BASE_BLOB" = "$HEAD_BLOB"
 5. 使用独立 RW 输出目录，写入 R59 业务 SAFE 和 Runtime diagnostic SAFE 两个不同文件。
 6. 回收两个 SAFE，分别验证 Schema、业务状态、字节数和 SHA256。
 
-该 Job 只运行 CPU Tokenizer，不加载模型权重、不推理、不使用 GPU、不训练、不做 Quality-v1 admission。没有 R59 私有输入时保持 NOT RUN，不用合成输入冒充真实 Pilot8 结果。
+该 Job 只运行 CPU Tokenizer，不加载模型权重、不推理、不使用 GPU、不训练、不做 Quality-v1 admission。真实 R59 Pilot8 CPU Job 已运行；其业务结果是 HOLD，不得把 Runtime PASS 解释为预算 PASS。
 
 ## 仍然开放的问题
 
 - Python 3.11 容器镜像的实际 Digest 尚未由历史 Job 元数据证明；不能将 `python:3.11` Tag 当作不可变镜像。
-- 完整 HF CPU 依赖解析锁仍需单独完成；Runtime 核心本身无第三方运行时依赖。
+- HF CPU Tokenizer 依赖锁已完成 hash-verified clean install；Runtime 核心本身无第三方运行时依赖。
 - R58 scoped synthetic 的 `STAGING_RECEIPT_MISMATCH` 需独立调查。
-- R59 真实 CPU Tokenizer 与双 SAFE 回执回收尚未执行。
+- R59 真实 CPU Tokenizer 已执行；双 SAFE 已回收并验证 SHA256。
 - GPU authorization：NONE；不得推导为 GPU inference/training 授权。
 
 
