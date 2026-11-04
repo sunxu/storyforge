@@ -8,8 +8,8 @@ import json
 import os
 import secrets
 import stat
-from dataclasses import dataclass
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 
@@ -37,6 +37,17 @@ class OutputManager:
         if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
             raise ValueError("OUTPUT_PARENT_INVALID")
 
+    @staticmethod
+    def _unlink_if_identity(path: Path, identity: tuple[int, int]) -> bool:
+        try:
+            current = path.lstat()
+        except FileNotFoundError:
+            return True
+        if (current.st_dev, current.st_ino) != identity:
+            return False
+        path.unlink()
+        return True
+
     @classmethod
     def probe(cls, root: Path) -> OutputCapability:
         cls._check_root(root)
@@ -47,6 +58,7 @@ class OutputManager:
         fd = -1
         identity: tuple[int, int] | None = None
         cleaned = False
+        primary_error: ValueError | None = None
         try:
             fd = os.open(path, flags, 0o600)
             info = os.fstat(fd)
@@ -55,7 +67,8 @@ class OutputManager:
             info = os.fstat(fd)
             if stat.S_IMODE(info.st_mode) != 0o600:
                 raise ValueError("OUTPUT_VERIFY_FAILED")
-            os.write(fd, b"r60-probe")
+            if os.write(fd, b"r60-probe") != len(b"r60-probe"):
+                raise ValueError("OUTPUT_WRITE_FAILED")
             os.fsync(fd)
             os.close(fd)
             fd = -1
@@ -64,21 +77,26 @@ class OutputManager:
                 raise ValueError("OUTPUT_VERIFY_FAILED")
             path.unlink()
             cleaned = True
-            return OutputCapability(True, stat.S_IMODE(root.stat().st_mode), cleaned)
-        except ValueError:
-            raise
+        except ValueError as exc:
+            primary_error = exc
         except OSError as exc:
-            raise ValueError("OUTPUT_PROBE_FAILED") from exc
+            primary_error = ValueError("OUTPUT_PROBE_FAILED")
         finally:
             if fd >= 0:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError:
+                    primary_error = ValueError("OUTPUT_CLEANUP_FAILED")
             if not cleaned and identity is not None:
                 try:
-                    current = path.lstat()
-                    if identity == (current.st_dev, current.st_ino):
-                        path.unlink()
+                    cleaned = cls._unlink_if_identity(path, identity)
                 except OSError:
-                    pass
+                    primary_error = ValueError("OUTPUT_CLEANUP_FAILED")
+                if not cleaned and primary_error is None:
+                    primary_error = ValueError("OUTPUT_CLEANUP_FAILED")
+        if primary_error is not None:
+            raise primary_error
+        return OutputCapability(True, stat.S_IMODE(root.stat().st_mode), cleaned)
 
     @classmethod
     def write_safe(
@@ -99,14 +117,14 @@ class OutputManager:
         ).encode("utf-8")
         token = secrets.token_hex(12)
         temp_path = root / f".storyforge-tmp-{token}"
-        flags = os.O_RDWR | os.O_CREAT | os.O_EXCL
         if not hasattr(os, "O_NOFOLLOW"):
             raise ValueError("OUTPUT_CREATE_FAILED")
-        flags |= os.O_NOFOLLOW
+        flags = os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
         fd = -1
         temp_identity: tuple[int, int] | None = None
         published_identity: tuple[int, int] | None = None
         published = False
+        cleanup_failed = False
         try:
             fd = os.open(temp_path, flags, mode)
             created = os.fstat(fd)
@@ -167,18 +185,21 @@ class OutputManager:
             raise ValueError("OUTPUT_WRITE_FAILED") from exc
         finally:
             if fd >= 0:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError:
+                    cleanup_failed = True
             if temp_identity is not None:
                 try:
-                    current = temp_path.lstat()
-                    if (current.st_dev, current.st_ino) == temp_identity:
-                        temp_path.unlink()
+                    if not cls._unlink_if_identity(temp_path, temp_identity):
+                        cleanup_failed = True
                 except OSError:
-                    pass
+                    cleanup_failed = True
             if not published and published_identity is not None:
                 try:
-                    current = path.lstat()
-                    if (current.st_dev, current.st_ino) == published_identity:
-                        path.unlink()
+                    if not cls._unlink_if_identity(path, published_identity):
+                        cleanup_failed = True
                 except OSError:
-                    pass
+                    cleanup_failed = True
+            if cleanup_failed:
+                raise ValueError("OUTPUT_CLEANUP_FAILED")
