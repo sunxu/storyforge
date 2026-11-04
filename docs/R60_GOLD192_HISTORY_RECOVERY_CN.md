@@ -60,82 +60,25 @@ SAFE 固定保留以下限制：
 
 ## RLS / 数据库权限注意事项
 
-`r58_export_reader` 已具有两张消息表的 SELECT SQL 权限，但这不代表 RLS 允许读取行。
-已知核验显示：
-- `v2_chat_messages` 开启 RLS，现有策略只面向 `authenticated` 和 `service_role`；
-- `v2_chat_message_ledger` 开启 RLS，已核验输出未显示适用于 `r58_export_reader` 的策略；
-- `r58_export_reader` 没有 `BYPASSRLS`，不是 superuser，也未继承其他角色；
-- 该角色没有 JWT subject，且直接调用 `auth.uid()` 会触发 `permission denied for schema auth`。
+Owner 已决定采用简化的全库只读模型：`r58_export_reader` 对共享恢复所需六张表读取所有故事、
+所有 Owner 的记录，不再使用逐故事 allowlist 或单一 Owner 限制。
 
-**不要授予 `BYPASSRLS`，不要授予 `service_role`，不要将只读导出账号改成 superuser。**
-也不要通过 `SET request.jwt.claim.sub` 让数据库角色冒充任意用户；这会把 RLS 保护变成可自行伪造的身份声明。
+2026-11-05 已由 Owner 执行权限配置，并回传验证结果：
+- 六张表均存在 `r58_export_reader` 的 PERMISSIVE SELECT 策略，`USING (true)`；
+- 六张表均有 SELECT 权限；
+- 六张表 INSERT、UPDATE、DELETE 均为 false；
+- 角色 `rolsuper=false`、`rolbypassrls=false`；
+- 没有授予 `service_role`，没有关闭 RLS。
 
-权限调整前，必须以 `r58_export_reader` 执行以下只读预检，覆盖共享恢复核心实际读取的全部表；
-不能只检查两张消息表：
+该设计明确允许该角色读取六张表内所有故事和所有 Owner 的记录。它是受信任数据处理环境的广范围只读凭据，
+不是用户级隔离凭据。不得将 DSN 暴露给客户端、HF 训练容器或不受信任的第三方；只能在 Owner 控制的
+Source Recovery 环境使用。未来增加故事不需要修改这六张表的权限。
 
-```sql
-WITH required(table_name) AS (
-  VALUES
-    ('v2_chat_messages'),
-    ('v2_chat_message_ledger'),
-    ('story_v2_sessions'),
-    ('story_content_versions'),
-    ('story_admin_versions'),
-    ('user_stories')
-)
-SELECT r.table_name,
-       c.relrowsecurity AS rls_enabled,
-       c.relforcerowsecurity AS rls_forced,
-       has_table_privilege(current_user, format('public.%I', r.table_name), 'SELECT')
-         AS can_select
-FROM required r
-LEFT JOIN pg_class c
-  ON c.relnamespace = 'public'::regnamespace
- AND c.relname = r.table_name
- AND c.relkind IN ('r', 'p')
-ORDER BY r.table_name;
+权限与训练准入仍然独立：全库可读不意味着任何记录自动获得 Quality-v1 admission。
+每条候选仍需来源身份认证、历史恢复、审核和独立训练准入。
 
-SELECT tablename, policyname, roles, cmd, qual, with_check
-FROM pg_policies
-WHERE schemaname = 'public'
-  AND tablename IN (
-    'v2_chat_messages', 'v2_chat_message_ledger', 'story_v2_sessions',
-    'story_content_versions', 'story_admin_versions', 'user_stories'
-  )
-ORDER BY tablename, policyname;
-
-SELECT rolname, rolsuper, rolbypassrls
-FROM pg_roles
-WHERE rolname = current_user;
-```
-
-若表缺少 SELECT 权限，只能在确认确有需要后授予该角色 SELECT；不得授予写权限。
-若 RLS 对该角色无适用策略，需逐表检查实际列、现有策略和 owner 关系，再设计最小范围策略。
-不能假定另外四张表具有与消息表相同的 `user_id` 列或相同 RLS 模型。
-
-如果实际 Pilot 因 RLS 返回零行，先只读确认 Gold192 的 13 个 story 是否全部属于同一个 owner `user_id`。
-适配器本身也会执行该检查；根据已核实结构，它从 `user_stories.author_id` 读取 owner（该列为 UUID），
-而 story `id` 是 TEXT。任一 story 不可见、owner 缺失或出现多个 owner 都会 HOLD。
-
-**不要直接使用只按 owner UUID 放行的宽策略**：这会让导出角色读取该用户在其他故事中的消息。
-如需调整 RLS，必须同时绑定：
-1. Owner 已核实的固定 `user_id`；
-2. 冻结 Gold192 packets 中精确的 13 个 story UUID allowlist；
-3. 本次恢复实际需要的六张表，逐表按真实列结构设计策略。
-
-其中 `v2_chat_messages` 与 `v2_chat_message_ledger` 有 `user_id` 和 `story_id`，
-可同时校验 owner 与 story allowlist；`user_stories` 实际使用 `author_id + id`（不是 `user_id`）；
-`story_v2_sessions`、`story_content_versions`、`story_admin_versions` 应通过
-`EXISTS` 关联被 allowlist 限定的 `user_stories`，但必须先核实各表的列类型与 RLS 行为。
-不要把这六张表的策略混为一条，也不要把 13 个私有 UUID 写入 GitHub。
-
-权限调整 SQL 应由 Owner 在受信任的 Supabase SQL Editor 中根据本机冻结 packets 生成，
-策略表达式必须是固定 owner UUID 与 13 个 story allowlist 的交集。只授予所需表的 SELECT；
-不得授予 `BYPASSRLS`、`service_role`、superuser 或任何写权限。当前 PR 不包含、
-也没有执行任何数据库权限变更。
-
-策略变更后先重新检查 `pg_policies`、`has_table_privilege`、`rolbypassrls`、
-`rolsuper`，再以 `r58_export_reader` 执行小批量 Pilot。不得在权限验证前运行 72 条。
+后续连接必须继续使用 `SET TRANSACTION READ ONLY`、statement timeout 和 lock timeout。
+不得授予 `BYPASSRLS`、`service_role`、superuser 或任何写权限。
 
 ## 2026-11-05 schema / RLS 核验补充
 
