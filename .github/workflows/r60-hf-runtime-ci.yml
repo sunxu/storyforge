@@ -8,6 +8,8 @@ on:
       - 'tests/test_hf_runtime.py'
       - 'tests/test_hf_runtime_volume_edges.py'
       - 'tests/test_token_preflight_core.py'
+      - 'experiments/r60_hf_runtime/**'
+      - 'tests/test_r60_cpu_volume_smoke.py'
       - '.github/workflows/r60-hf-runtime-ci.yml'
   pull_request:
     paths:
