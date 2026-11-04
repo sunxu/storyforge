@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 PHASES = (
     "PREFLIGHT", "ENVIRONMENT", "BOOTSTRAP", "INPUT_SYNC", "INPUT_READ",
@@ -94,8 +94,7 @@ class DiagnosticReporter:
             environment=safe_environment,
         )
 
-    def write_safe(self, path: "Path") -> "WriteReceipt":
+    def write_safe(self, path: Path):
         from .outputs import OutputManager
-        from dataclasses import asdict
 
         return OutputManager.write_safe(path, asdict(self.to_safe_dict()))
