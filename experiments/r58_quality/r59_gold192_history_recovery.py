@@ -85,6 +85,9 @@ def validate_source_receipt(safe: dict, locators_raw: bytes) -> None:
 
 
 def validate_locators(rows: list[dict], packets: dict[str, dict]) -> dict[str, dict]:
+    case_ids = [row.get("case_id") for row in rows if isinstance(row, dict)]
+    if len(case_ids) != len(set(case_ids)):
+        raise ValueError("SOURCE_LOCATOR_IDENTITY_INVALID")
     if len(rows) != len(packets):
         raise ValueError("SOURCE_LOCATOR_COUNT_INVALID")
     indexed = {}
