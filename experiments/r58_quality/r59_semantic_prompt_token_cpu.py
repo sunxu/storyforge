@@ -52,13 +52,25 @@ def sha(raw: bytes) -> str:
 
 
 def read_private(path: Path) -> bytes:
-    if not path.is_absolute() or path.is_symlink() or not path.is_file():
-        raise ValueError("INPUT_INVALID")
-    info = path.stat()
-    if (not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600
-            or info.st_nlink != 1 or not 0 < info.st_size <= MAX_INPUT_BYTES):
-        raise ValueError("INPUT_INVALID")
-    return path.read_bytes()
+    # HF read-only volume mounts may normalize mode bits and inode link counts.
+    # Do not treat those mount metadata as the privacy boundary: the input is
+    # pinned by SHA256 immediately afterwards. Still reject symlinks, non-regular
+    # files, empty/oversized inputs, and protect the open against symlink swaps.
+    if not path.is_absolute():
+        raise ValueError("INPUT_PATH_INVALID")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError:
+        raise ValueError("INPUT_OPEN_FAILED") from None
+    with os.fdopen(fd, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= MAX_INPUT_BYTES:
+            raise ValueError("INPUT_FILE_METADATA_INVALID")
+        raw = stream.read(MAX_INPUT_BYTES + 1)
+    if not 0 < len(raw) <= MAX_INPUT_BYTES:
+        raise ValueError("INPUT_SIZE_INVALID")
+    return raw
 
 
 def load_prompts(raw: bytes, expected_sha: str, expected_fingerprint: str) -> list[dict]:
