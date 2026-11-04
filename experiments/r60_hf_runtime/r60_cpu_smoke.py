@@ -146,6 +146,15 @@ def run_smoke(
     checks: dict[str, str] = {}
     resource = ResourceGuard.check_cpu_only()
     checks["cpu_profile"] = resource.status
+    checks["hf_job_runtime"] = "PASS" if runtime.runtime == "HF_JOB" else "FAIL"
+    if runtime.runtime != "HF_JOB":
+        raise SmokeFailure(
+            _safe_report(
+                status="FAIL", checks=checks, input_sha256=None, input_size=None,
+                record_count=0, runtime=runtime, error_code="SMOKE_RUNTIME_NOT_HF_JOB",
+            ),
+            "SMOKE_RUNTIME_NOT_HF_JOB",
+        )
     checks["gpu_not_started"] = "PASS" if resource.gpu_started is False else "FAIL"
     checks["training_not_performed"] = (
         "PASS" if resource.training_performed is False else "FAIL"
@@ -222,7 +231,8 @@ def run_smoke(
             "INPUT_JSONL_INVALID", "INPUT_OPEN_FAILED", "INPUT_NOT_REGULAR_FILE",
             "INPUT_SYMLINK_REJECTED", "PATH_NOT_FOUND", "PATH_SYMLINK_REJECTED",
             "PATH_TYPE_INVALID", "OUTPUT_PARENT_INVALID", "OUTPUT_PROBE_FAILED",
-            "OUTPUT_ALREADY_EXISTS", "OUTPUT_CREATE_FAILED", "OUTPUT_WRITE_FAILED",
+            "OUTPUT_ALREADY_EXISTS", "OUTPUT_CREATE_FAILED",
+            "OUTPUT_ATOMIC_PUBLISH_UNSUPPORTED", "OUTPUT_WRITE_FAILED",
             "OUTPUT_FSYNC_FAILED", "OUTPUT_VERIFY_FAILED", "OUTPUT_CLEANUP_FAILED",
         }:
             code = "SMOKE_RUNTIME_FAILED"
