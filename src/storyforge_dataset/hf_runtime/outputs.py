@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -41,9 +42,7 @@ class OutputManager:
         cls._check_root(root)
         name = f".storyforge-probe-{secrets.token_hex(12)}"
         path = root / name
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
         fd = -1
         cleaned = False
         try:
@@ -59,17 +58,22 @@ class OutputManager:
             path.unlink()
             cleaned = True
             return OutputCapability(True, stat.S_IMODE(root.stat().st_mode), cleaned)
+        except ValueError:
+            raise
         except OSError as exc:
             raise ValueError("OUTPUT_PROBE_FAILED") from exc
         finally:
             if fd >= 0:
                 os.close(fd)
-            if path.exists() and not path.is_symlink():
+            if not cleaned:
                 try:
-                    path.unlink()
-                    cleaned = True
+                    current = path.lstat()
+                    if fd >= -1 and stat.S_ISREG(current.st_mode):
+                        path.unlink()
+                except FileNotFoundError:
+                    pass
                 except OSError:
-                    cleaned = False
+                    pass
 
     @classmethod
     def write_safe(
@@ -83,29 +87,69 @@ class OutputManager:
         cls._check_root(root)
         if path.is_symlink():
             raise ValueError("OUTPUT_SYMLINK_REJECTED")
-        data = (json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n").encode("utf-8")
+        data = (
+            json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n"
+        ).encode("utf-8")
+        token = secrets.token_hex(12)
+        temp_path = root / f".storyforge-tmp-{token}"
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
+        if not hasattr(os, "O_NOFOLLOW"):
+            raise ValueError("OUTPUT_CREATE_FAILED")
+        flags |= os.O_NOFOLLOW
         fd = -1
-        created_identity: tuple[int, int] | None = None
+        temp_identity: tuple[int, int] | None = None
+        published_identity: tuple[int, int] | None = None
+        published = False
         try:
-            fd = os.open(path, flags, mode)
+            fd = os.open(temp_path, flags, mode)
             created = os.fstat(fd)
-            created_identity = (created.st_dev, created.st_ino)
+            temp_identity = (created.st_dev, created.st_ino)
+            try:
+                os.fchmod(fd, mode)
+            except OSError as exc:
+                raise ValueError("OUTPUT_VERIFY_FAILED") from exc
             view = memoryview(data)
             while view:
                 written = os.write(fd, view)
                 if written <= 0:
                     raise ValueError("OUTPUT_WRITE_FAILED")
                 view = view[written:]
-            os.fsync(fd)
+            try:
+                os.fsync(fd)
+            except OSError as exc:
+                raise ValueError("OUTPUT_FSYNC_FAILED") from exc
             final = os.fstat(fd)
-            if not stat.S_ISREG(final.st_mode) or final.st_size != len(data):
+            actual_mode = stat.S_IMODE(final.st_mode)
+            if (
+                not stat.S_ISREG(final.st_mode)
+                or final.st_size != len(data)
+                or actual_mode != mode
+            ):
                 raise ValueError("OUTPUT_VERIFY_FAILED")
-            return WriteReceipt(len(data), hashlib.sha256(data).hexdigest(), stat.S_IMODE(final.st_mode))
-        except FileExistsError as exc:
-            raise ValueError("OUTPUT_ALREADY_EXISTS") from exc
+            # Hard-link publication is atomic and fails if the destination exists.
+            try:
+                os.link(temp_path, path, follow_symlinks=False)
+            except FileExistsError as exc:
+                raise ValueError("OUTPUT_ALREADY_EXISTS") from exc
+            except OSError as exc:
+                if exc.errno == errno.EEXIST:
+                    raise ValueError("OUTPUT_ALREADY_EXISTS") from exc
+                raise ValueError("OUTPUT_CREATE_FAILED") from exc
+            published_stat = path.lstat()
+            published_identity = (published_stat.st_dev, published_stat.st_ino)
+            if published_identity != temp_identity:
+                raise ValueError("OUTPUT_VERIFY_FAILED")
+            temp_path.unlink()
+            temp_identity = None
+            dir_fd = os.open(root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                os.fsync(dir_fd)
+            except OSError as exc:
+                raise ValueError("OUTPUT_FSYNC_FAILED") from exc
+            finally:
+                os.close(dir_fd)
+            published = True
+            return WriteReceipt(len(data), hashlib.sha256(data).hexdigest(), actual_mode)
         except ValueError:
             raise
         except OSError as exc:
@@ -113,10 +157,17 @@ class OutputManager:
         finally:
             if fd >= 0:
                 os.close(fd)
-            if created_identity is not None:
+            if temp_identity is not None:
+                try:
+                    current = temp_path.lstat()
+                    if (current.st_dev, current.st_ino) == temp_identity:
+                        temp_path.unlink()
+                except OSError:
+                    pass
+            if not published and published_identity is not None:
                 try:
                     current = path.lstat()
-                    if (current.st_dev, current.st_ino) == created_identity and current.st_size == 0:
+                    if (current.st_dev, current.st_ino) == published_identity:
                         path.unlink()
                 except OSError:
                     pass
