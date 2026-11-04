@@ -5,7 +5,7 @@ __version__ = "0.1.0"
 from .context import RuntimeContext
 from .diagnostics import DiagnosticReporter, ErrorCode
 from .inputs import InputManager, VerifiedInput
-from .outputs import OutputManager, OutputCapability, WriteReceipt
+from .outputs import OutputCapability, OutputManager, WriteReceipt
 from .paths import PathResolver, ResolvedPath
 from .receipts import ReceiptValidator, RuntimeReceipt
 from .resources import ResourceGuard, ResourceReport
@@ -18,9 +18,9 @@ __all__ = [
     "OutputManager",
     "PathResolver",
     "ReceiptValidator",
+    "ResolvedPath",
     "ResourceGuard",
     "ResourceReport",
-    "ResolvedPath",
     "RuntimeContext",
     "RuntimeReceipt",
     "VerifiedInput",
