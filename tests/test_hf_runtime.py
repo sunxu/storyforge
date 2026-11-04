@@ -39,7 +39,7 @@ def valid_receipt() -> dict[str, object]:
 
 
 def test_context_does_not_emit_environment_values() -> None:
-    context = RuntimeContext.detect(environ={"HF_JOB_ID": "private-job-id", "SECRET": "never"})
+    context = RuntimeContext.detect(environ={"JOB_ID": "private-job-id", "SECRET": "never"})
     safe = context.to_safe_dict()
     assert safe["hf_job_hint"] is True
     assert "SECRET" not in safe
