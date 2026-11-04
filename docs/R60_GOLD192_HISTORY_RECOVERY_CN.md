@@ -28,7 +28,8 @@
 输入 SHA256 沿用 `r59_gold192_supabase_extract.py` 中冻结的 A/B/排除/packets pins。
 Locator 文件必须与 SAFE receipt 中的文件 SHA256 一致。目标必须为 `EXACT_MATCH`，
 并具有唯一 message/session locator；无法证明身份的案例 HOLD，不采用“唯一根 Session”
-作为身份替代证明。
+作为身份替代证明。连接数据库后，适配器还会读取 13 个 story 的 owner `user_id`，要求全部可见且
+属于同一个 UUID；缺失或多 owner 一律 HOLD。
 
 所有输入文件必须是普通文件、权限 0600，直接父目录权限 0700。私有正文、ID 和哈希
 不得回传聊天、提交 GitHub 或写入 Actions 日志。
