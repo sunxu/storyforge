@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - "gold-quality/**"
+  workflow_dispatch:
   pull_request:
     paths:
       - "src/storyforge_gold_quality/**"
@@ -23,6 +24,32 @@ on:
       - "experiments/r58_quality/test_r59_gold192_supabase_extract.py"
       - "experiments/r58_quality/r59_gold192_historical_exposure.py"
       - "experiments/r58_quality/test_r59_gold192_historical_exposure.py"
+      - "experiments/r58_quality/quality_v1_sft_candidates.py"
+      - "experiments/r58_quality/test_quality_v1_sft_candidates.py"
+      - "experiments/r58_quality/gold_source_context_stage.py"
+      - "experiments/r58_quality/test_gold_source_context_stage.py"
+      - "experiments/r58_quality/gold_quality_review_bind.py"
+      - "experiments/r58_quality/test_gold_quality_review_bind.py"
+      - "experiments/r58_quality/r59_evidence_inventory.py"
+      - "experiments/r58_quality/test_r59_evidence_inventory.py"
+      - "experiments/r58_quality/r59_owner_evidence_template.py"
+      - "experiments/r58_quality/test_r59_owner_evidence_template.py"
+      - "experiments/r58_quality/r59_sft_shape_preview.py"
+      - "experiments/r58_quality/test_r59_sft_shape_preview.py"
+      - "experiments/r58_quality/r59_sft_collator_cpu.py"
+      - "experiments/r58_quality/test_r59_sft_collator_cpu.py"
+      - "experiments/r58_quality/r59_sft_context_window.py"
+      - "experiments/r58_quality/test_r59_sft_context_window.py"
+      - "experiments/r58_quality/r59_history_structure_diagnostic.py"
+      - "experiments/r58_quality/test_r59_history_structure_diagnostic.py"
+      - "experiments/r58_quality/r59_history_recovery_probe.py"
+      - "experiments/r58_quality/test_r59_history_recovery_probe.py"
+      - "experiments/r58_quality/r59_contiguous_suffix_probe.py"
+      - "experiments/r58_quality/test_r59_contiguous_suffix_probe.py"
+      - "experiments/r58_quality/r59_contiguous_suffix_stage.py"
+      - "experiments/r58_quality/test_r59_contiguous_suffix_stage.py"
+      - "experiments/r58_quality/r59_staging_receipt.py"
+      - "experiments/r58_quality/test_r59_staging_receipt.py"
       - ".github/workflows/gold-quality-pipeline.yml"
 
 permissions:
@@ -95,5 +122,62 @@ jobs:
         run: |
           ruff check experiments/r58_quality/r59_gold192_historical_exposure.py experiments/r58_quality/test_r59_gold192_historical_exposure.py
           python -m unittest discover -s experiments/r58_quality -p 'test_r59_gold192_historical_exposure.py' -v
+      - name: Run existing Quality-v1 rubric synthetic regression
+        run: python -m unittest discover -s experiments/r58_quality -p 'test_quality_v1.py' -v
+      - name: Verify Quality-v1 candidate-only SFT packaging
+        run: |
+          ruff check experiments/r58_quality/quality_v1_sft_candidates.py experiments/r58_quality/test_quality_v1_sft_candidates.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_quality_v1_sft_candidates.py' -v
+      - name: Verify Gold source context staging
+        run: |
+          ruff check experiments/r58_quality/gold_source_context_stage.py experiments/r58_quality/test_gold_source_context_stage.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_gold_source_context_stage.py' -v
+      - name: Diagnose R59 history structure with synthetic fixtures
+        run: |
+          ruff check experiments/r58_quality/r59_history_structure_diagnostic.py experiments/r58_quality/test_r59_history_structure_diagnostic.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_history_structure_diagnostic.py' -v
+      - name: Probe R59 blank unfinished history recovery (synthetic)
+        run: |
+          ruff check experiments/r58_quality/r59_history_recovery_probe.py experiments/r58_quality/test_r59_history_recovery_probe.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_history_recovery_probe.py' -v
+      - name: Probe R59 contiguous suffixes (synthetic)
+        run: |
+          ruff check experiments/r58_quality/r59_contiguous_suffix_probe.py experiments/r58_quality/test_r59_contiguous_suffix_probe.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_contiguous_suffix_probe.py' -v
+      - name: Stage R59 pinned contiguous suffixes (synthetic)
+        run: |
+          ruff check experiments/r58_quality/r59_contiguous_suffix_stage.py experiments/r58_quality/test_r59_contiguous_suffix_stage.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_contiguous_suffix_stage.py' -v
+      - name: Verify R59 suffix staging SAFE compatibility (synthetic)
+        run: |
+          ruff check experiments/r58_quality/r59_staging_receipt.py experiments/r58_quality/test_r59_staging_receipt.py experiments/r58_quality/r59_owner_evidence_template.py experiments/r58_quality/r59_owner_evidence_preflight.py experiments/r58_quality/gold_quality_review_bind.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_staging_receipt.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_owner_evidence_template.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_owner_evidence_preflight.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_gold_quality_review_bind.py' -v
+      - name: Verify Gold owner evidence binding
+        run: |
+          ruff check experiments/r58_quality/gold_quality_review_bind.py experiments/r58_quality/test_gold_quality_review_bind.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_gold_quality_review_bind.py' -v
+      - name: Verify R59 evidence inventory audit
+        run: |
+          ruff check experiments/r58_quality/r59_evidence_inventory.py experiments/r58_quality/test_r59_evidence_inventory.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_evidence_inventory.py' -v
+      - name: Verify R59 Owner Evidence template generator
+        run: |
+          ruff check experiments/r58_quality/r59_owner_evidence_template.py experiments/r58_quality/test_r59_owner_evidence_template.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_owner_evidence_template.py' -v
+      - name: Verify R59 no-card SFT shape preview
+        run: |
+          ruff check experiments/r58_quality/r59_sft_shape_preview.py experiments/r58_quality/test_r59_sft_shape_preview.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_sft_shape_preview.py' -v
+      - name: Verify R59 CPU collator input contract
+        run: |
+          ruff check experiments/r58_quality/r59_sft_collator_cpu.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_sft_collator_cpu.py' -v
+      - name: Verify R59 context-window rebuild
+        run: |
+          ruff check experiments/r58_quality/r59_sft_context_window.py experiments/r58_quality/test_r59_sft_context_window.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_sft_context_window.py' -v
       - name: Run imported R57 regression tests
         run: python -m unittest discover -s tests -p 'test_r57_*.py' -v

@@ -101,6 +101,91 @@ The complete technical contract—including adapter boundaries, cache identity, 
 
 Generic tokenizer checks do not replace real ms-swift `last_round` / data-collator label-mask validation. Neither kind of PASS independently grants literary quality admission or training authorization.
 
+### 2.2.1 R59 context-window rebuild policy
+
+The R59 16K context-window rebuild is a separate, explicit engineering step; the
+original shape-preview builder MUST continue preserving the complete source
+history. Never rewrite or overwrite the original Preview.
+
+- Pin `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` and
+  `max_length=16384`; measure in Hugging Face CPU with ms-swift, not on the Mac.
+- Keep the approved System Prompt and final target Assistant bytes unchanged.
+- If the full history does not fit, remove only a leading prefix and begin the
+  retained suffix at a complete User-message boundary. Preserve every later
+  message in its original order; never delete middle messages or truncate text.
+- Preserve the final User and target Assistant messages. Historical messages
+  remain `loss=false`; only the final target remains `loss=true`.
+- Preserve the original input-context SHA as provenance and recompute
+  `input_messages_sha256` over the retained context.
+- Use `experiments/r58_quality/r59_sft_context_window.py`; it reuses the
+  existing preview validator and actual ms-swift Collator, and uses the shared
+  `extract_input_ids` core. For standalone HF Jobs, mount the scripts directory
+  and provide `token_core.py` as an exact byte-for-byte copy of
+  `src/storyforge_dataset/token_preflight.py`.
+- Any sample whose current User + target or complete eligible suffix cannot fit
+  MUST HOLD. The operation is all-or-none for a batch and writes a new private
+  create-only output; it never mutates source input.
+- Context-window and actual Collator PASS are engineering checks only:
+  `quality_v1_admitted=0`, `dataset_frozen=false`,
+  `training_authorized=false`, `gpu_started=false` remain mandatory.
+- Chinese execution runbook: `docs/R59_CONTEXT_WINDOW_CN.md`.
+
+### 2.3 Hugging Face Jobs namespace and volume policy
+
+StoryForge Hugging Face Jobs MUST use the organization namespace `adradar` and the
+project bucket `hf://buckets/adradar/storyforge-training`. Do not silently fall back
+to the personal namespace `greenkeedle` after an organization submission error.
+
+For CPU jobs, use separate mounts:
+
+- Every source/input mount MUST be explicitly read-only (`:ro`), mounted below
+  `/input/` or `/scripts/`.
+- The output mount MUST be a separate project-bucket prefix mounted at `/output`
+  with explicit read-write mode (`:rw`).
+- Never mount the whole project bucket read-write as a shortcut.
+- Never make the output mount read-only; SAFE reports need a dedicated writable
+  destination.
+- Use a unique output prefix for each attempt to prevent overwriting prior receipts.
+
+Use `scripts/hf_job_guard.py` for CPU submissions. It enforces namespace
+`adradar`, CPU-only flavors, a bounded timeout, read-only inputs, one separate
+read-write output, and one attempt. Without `--submit`, it performs validation only.
+The tool does not fall back to a personal namespace, retry automatically, or submit
+GPU jobs.
+
+Known incident regression rules:
+
+- HTTP 403 with a read-write source/input mount: inspect mount mode and organization
+  permissions. The previously reproduced bucket-mount failure was resolved by
+  mounting the input prefix `:ro` and using a separate output prefix `:rw`.
+- HTTP 402 in the personal namespace: do not infer that the organization is out of
+  balance and do not switch billing namespaces. Check the intended organization
+  billing/permission state.
+- A 403/402 MUST NOT trigger automatic namespace fallback, permission broadening,
+  mount-mode broadening, retries, or GPU escalation.
+
+A 403 from the ChatGPT HF connector MUST NOT be treated as proof that the
+Mac-local HF CLI is broken. The 2026-11-01 Mac-local private Bucket RW smoke
+and sync-back passed. For connector-only 403s, stop connector retries and use
+the documented guarded Mac-local CLI route in `docs/HF_JOBS.md`; never
+reconnect/retry blindly or change namespaces/mount permissions as a workaround.
+
+The 2026-11-04 ChatGPT HF connector probe verified that organization CPU
+submission and private Bucket RO mounts work, while private Bucket RW mounts
+still return HTTP 403. For SAFE-only CPU preflights, prefer RO inputs and emit
+only the SAFE aggregate receipt to Job stdout/logs; never print private sample
+content. Mount a Bucket directory prefix (not an assumed file mount), then
+assert the expected file with `test -f` before reading it. See the 2026-11-04
+regression and mount-semantics sections in `docs/HF_JOBS.md`.
+
+For the R59 Qwen3.8-27B ms-swift Python preflight, set
+`USE_HF=true` before importing Swift because the pinned revision is a
+Hugging Face commit SHA; ms-swift defaults to ModelScope otherwise. Install
+`qwen-vl-utils==0.0.14`, `decord`, and `torchvision==0.29.2` for the
+Qwen processor. See the R59 runtime contract in `docs/HF_JOBS.md`.
+
+See `docs/HF_JOBS.md` for the verified incident record and invocation contract.
+
 ### 3. Training gate
 
 Training is strictly staged.

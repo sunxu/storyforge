@@ -110,14 +110,32 @@ def review_verdict(row: dict) -> tuple[str, str]:
         keys.append(key)
     if len(set(keys)) != 2:
         return "HOLD", "REVIEWER_NOT_DISTINCT"
+    owner_safety = row.get("owner_supplemental_safety_review")
+    owner_safety_valid = (
+        isinstance(owner_safety, dict)
+        and owner_safety.get("scope") == "SUPPLEMENTAL_SEVERE_FLAG_SCREEN"
+        and owner_safety.get("decision") == "PASS"
+        and isinstance(owner_safety.get("private_evidence_ref"), str)
+        and bool(owner_safety["private_evidence_ref"].strip())
+        and isinstance(owner_safety.get("severe_flags"), dict)
+        and set(owner_safety["severe_flags"]) == set(SEVERE)
+        and all(type(owner_safety["severe_flags"][k]) is bool for k in SEVERE)
+    )
+    if owner_safety_valid and any(owner_safety["severe_flags"].values()):
+        return "REJECT", "OWNER_SUPPLEMENTAL_SAFETY_REJECT"
     for review in reviews:
         decision = review.get("decision")
         flags = review.get("severe_flags")
         if not isinstance(flags, dict) or set(flags) != set(SEVERE):
+            # A's frozen review may lack case-level severe flags. Never fill
+            # those fields with an Owner judgment: require a separate,
+            # explicitly attributed supplemental Owner safety assessment.
+            if review.get("reviewer_key") != "reviewer_a" or not owner_safety_valid:
+                return "HOLD", "SERIOUS_FLAGS_UNVERIFIED"
+            flags = None
+        elif any(not isinstance(flags[k], bool) for k in SEVERE):
             return "HOLD", "SERIOUS_FLAGS_UNVERIFIED"
-        if any(not isinstance(flags[k], bool) for k in SEVERE):
-            return "HOLD", "SERIOUS_FLAGS_UNVERIFIED"
-        if any(flags.values()) or decision == "REJECT":
+        if flags is not None and any(flags.values()) or decision == "REJECT":
             return "REJECT", "REVIEW_SEVERE_OR_REJECT"
         if decision != "PASS":
             return "HOLD", "REVIEW_DISAGREEMENT"
@@ -132,7 +150,7 @@ def review_verdict(row: dict) -> tuple[str, str]:
             return "HOLD", "QUALITY_SCORES_INVALID"
         if any(scores[k] < FLOORS[k] for k in SCORES):
             return "HOLD", "QUALITY_BELOW_V1_FLOOR"
-    return "PASS", "TWO_REVIEWERS_QUALITY_DECLARED"
+    return "PASS", "TWO_REVIEWERS_QUALITY_DECLARED_WITH_OWNER_SAFETY_SUPPLEMENT"
 
 
 def decide(row: object) -> tuple[str, str]:

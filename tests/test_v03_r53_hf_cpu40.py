@@ -16,11 +16,13 @@ sys.path.insert(0, str(SCRIPTS))
 import v03_r53_hf_cpu40_audit as a
 
 class R53Workflow(unittest.TestCase):
+    @unittest.skipUnless(DATA.is_dir(), "R53 frozen private stage unavailable; set R53_TEST_PRIVATE_STAGE for owner-local integrity tests")
     def test_true_frozen_stage(self):
         rows, b = a.preflight(DATA)
         self.assertEqual({k:len(x) for k,x in rows.items()},a.COUNTS)
         self.assertEqual({k:a.sha(x) for k,x in b.items()},a.COMPILED_SHA)
 
+    @unittest.skipUnless(DATA.is_dir(), "R53 frozen private stage unavailable; set R53_TEST_PRIVATE_STAGE for owner-local integrity tests")
     def test_mutated_input_blocked(self):
         with tempfile.TemporaryDirectory() as t:
             p = pathlib.Path(t)
@@ -30,6 +32,7 @@ class R53Workflow(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'SHA mismatch'):
                 a.preflight(p)
 
+    @unittest.skipUnless(DATA.is_dir(), "R53 frozen private stage unavailable; set R53_TEST_PRIVATE_STAGE for owner-local integrity tests")
     def test_mutated_manifest_blocked(self):
         with tempfile.TemporaryDirectory() as t:
             p = pathlib.Path(t)
@@ -39,6 +42,7 @@ class R53Workflow(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'manifest SHA mismatch'):
                 a.preflight(p)
 
+    @unittest.skipUnless(DATA.is_dir(), "R53 frozen private stage unavailable; set R53_TEST_PRIVATE_STAGE for owner-local integrity tests")
     def test_final_target_marker_baked_into_compiled_sha(self):
         rows,_=a.preflight(DATA)
         sample=rows['train'][0]
@@ -96,6 +100,7 @@ class R53Workflow(unittest.TestCase):
             self.assertEqual(r.returncode,3)
             self.assertFalse(record.exists())
 
+    @unittest.skipUnless(DATA.is_dir(), "R53 frozen private stage unavailable; set R53_TEST_PRIVATE_STAGE for owner-local integrity tests")
     def test_verifier_rejects_fake_pass_missing_log(self):
         import v03_r53_hf_cpu40_verify as v
         with tempfile.TemporaryDirectory() as t:
