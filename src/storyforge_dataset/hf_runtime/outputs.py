@@ -164,13 +164,16 @@ class OutputManager:
                 if exc.errno == errno.EEXIST:
                     raise ValueError("OUTPUT_ALREADY_EXISTS") from exc
                 raise ValueError("OUTPUT_CREATE_FAILED") from exc
+            published_identity = temp_identity
             published_stat = path.lstat()
-            published_identity = (published_stat.st_dev, published_stat.st_ino)
-            if published_identity != temp_identity:
+            if published_identity != (published_stat.st_dev, published_stat.st_ino):
                 raise ValueError("OUTPUT_VERIFY_FAILED")
             temp_path.unlink()
             temp_identity = None
-            dir_fd = os.open(root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            try:
+                dir_fd = os.open(root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+            except OSError as exc:
+                raise ValueError("OUTPUT_FSYNC_FAILED") from exc
             try:
                 os.fsync(dir_fd)
             except OSError as exc:
