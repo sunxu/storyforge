@@ -99,13 +99,14 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
                 self.params = params
             def fetchall(self):
                 return [
-                    {"story_id": story, "user_id": owner}
+                    {"story_id": story, "owner_id": owner}
                     for story in self.params[0]
                 ]
         ids = [f"story-{index}" for index in range(13)]
         cursor = Cursor()
         adapter.verify_story_owner_scope(cursor, ids)
         self.assertIn("id::text = ANY(%s)", cursor.query)
+        self.assertIn("author_id::text AS owner_id", cursor.query)
 
     def test_owner_scope_rejects_multiple_owners(self):
         owner_a = "11111111-1111-4111-8111-111111111111"
@@ -115,7 +116,7 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
                 self.params = params
             def fetchall(self):
                 return [
-                    {"story_id": story, "user_id": owner_a if i < 12 else owner_b}
+                    {"story_id": story, "owner_id": owner_a if i < 12 else owner_b}
                     for i, story in enumerate(self.params[0])
                 ]
         ids = [f"story-{index}" for index in range(13)]
