@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -149,8 +150,8 @@ def write_safe(path: Path, report: dict, *, path_kind: str = "host") -> None:
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--input", required=True, type=Path)
-    p.add_argument("--input-sha256", required=True)
-    p.add_argument("--prompt-fingerprint", required=True)
+    p.add_argument("--input-sha256", default=os.environ.get("R59_INPUT_SHA256"))
+    p.add_argument("--prompt-fingerprint", default=os.environ.get("R59_PROMPT_FINGERPRINT"))
     p.add_argument("--model", required=True)
     p.add_argument("--revision", required=True)
     p.add_argument("--max-model-len", type=int, default=32768)
@@ -158,6 +159,8 @@ def main() -> int:
     p.add_argument("--output-safe", required=True, type=Path)
     p.add_argument("--runtime-diagnostic-safe", required=True, type=Path)
     args = p.parse_args()
+    if not args.input_sha256 or not args.prompt_fingerprint:
+        p.error("input identity must be supplied through protected HF secrets or explicit private arguments")
 
     reporter = DiagnosticReporter(profile="cpu")
     report = {"schema": SCHEMA, "status": "R59_PILOT8_HF_CPU_TOKEN_HOLD",
