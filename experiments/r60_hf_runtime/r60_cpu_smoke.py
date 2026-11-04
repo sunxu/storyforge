@@ -13,8 +13,6 @@ import json
 import os
 import re
 import secrets
-import stat
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -174,7 +172,10 @@ def run_smoke(
         verified = InputManager.open_verified(
             input_path, max_bytes=max_input_bytes, expected_sha256=expected_sha256
         )
-        records = InputManager.validate_jsonl(verified.read_bytes(), max_records=expected_records)
+        try:
+            records = InputManager.validate_jsonl(verified.read_bytes(), max_records=expected_records)
+        except TypeError:
+            raise ValueError("SMOKE_INPUT_SCHEMA_INVALID") from None
         _validate_synthetic_records(records, expected_records)
         checks["input_sha256"] = "PASS"
         checks["input_jsonl"] = "PASS"
