@@ -265,7 +265,7 @@ def main() -> int:
         reporter.start_phase("OUTPUT_WRITE")
         write_safe(args.output_safe, report)
         reporter.record_check("business_safe_written", "PASS")
-        if code == 0:
+        if report.get("tokenizer_checked") is True:
             reporter.start_phase("COMPLETION")
             reporter.record_check("tokenizer_checked", "PASS")
         reporter.write_safe(args.runtime_diagnostic_safe)
