@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import stat
 import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -56,14 +57,12 @@ class PathResolver:
         except OSError as exc:
             raise ValueError("PATH_NOT_FOUND") from exc
         if (
-            not root_info.st_mode
-            or not package_info.st_mode
-            or not init_info.st_mode
+            not stat.S_ISDIR(root_info.st_mode)
+            or not stat.S_ISDIR(package_info.st_mode)
+            or not stat.S_ISREG(init_info.st_mode)
             or path.is_symlink()
             or package.is_symlink()
             or (package / "__init__.py").is_symlink()
-            or not package.is_dir()
-            or not (package / "__init__.py").is_file()
         ):
             raise ValueError("PATH_TYPE_INVALID")
         if str(path) not in sys.path:
