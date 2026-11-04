@@ -19,12 +19,16 @@ try:
 except ModuleNotFoundError:
     try:
         from storyforge_dataset.token_preflight import (
-            describe_token_lengths, digest_serialized_items, encode_chat,
+            describe_token_lengths,
+            digest_serialized_items,
+            encode_chat,
         )
     except ModuleNotFoundError:
         sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
         from storyforge_dataset.token_preflight import (
-            describe_token_lengths, digest_serialized_items, encode_chat,
+            describe_token_lengths,
+            digest_serialized_items,
+            encode_chat,
         )
 
 SCHEMA = "storyforge-r59-pilot8-hf-cpu-review-token-safe-v1"
@@ -153,7 +157,8 @@ def main() -> int:
         raw = read_private(args.input)
         load_prompts(raw, args.input_sha256, args.prompt_fingerprint)
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
-        from transformers import AutoTokenizer, __version__ as version
+        from transformers import AutoTokenizer
+        from transformers import __version__ as version
         tokenizer = AutoTokenizer.from_pretrained(
             args.model, revision=args.revision, trust_remote_code=False,
         )
@@ -167,7 +172,9 @@ def main() -> int:
         )
         code = 0 if report["status"] == "R59_PILOT8_HF_CPU_TOKEN_PASS__NO_GPU" else 42
     except Exception:  # noqa: BLE001 - private inputs and exception strings are never logged
-        pass
+        report["status"] = "R59_PILOT8_HF_CPU_TOKEN_HOLD"
+        report["tokenizer_checked"] = False
+        code = 42
     try:
         write_safe(args.output_safe, report)
     except (OSError, ValueError):
