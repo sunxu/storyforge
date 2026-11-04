@@ -25,7 +25,7 @@
 - `R59_SOURCE_LOCATORS_192.jsonl`
 - 对应 `R59_SOURCE_SAFE.json`
 
-输入 SHA256 沿用 `r59_gold192_supabase_extract.py` 中冻结的 A/B/排除/packets pins。
+输入 SHA256 沿用 `r59_gold192_supabase_extract.py` 中冻结的 A/B/排除/packets pins。冻结 Source Pack 是 13 条故事级 JSONL 记录，适配器通过共享的 `index_packets()` 展开为 192 条 case 身份；不得把最外层行数误认为 case 数。
 Locator 文件必须与 SAFE receipt 中的文件 SHA256 一致。目标必须为 `EXACT_MATCH`，
 并具有唯一 message/session locator；无法证明身份的案例 HOLD，不采用“唯一根 Session”
 作为身份替代证明。连接数据库后，适配器还会通过 `user_stories.author_id` 核验 Gold192
