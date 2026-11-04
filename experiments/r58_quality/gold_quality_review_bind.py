@@ -14,9 +14,9 @@ from collections import Counter
 from pathlib import Path
 
 from gold_source_context_stage import StageHold, _create_only, _private_file, _read_rows
-from r59_staging_receipt import valid_staging_receipt
 from quality_v1 import EVIDENCE, SCHEMA, SEVERE, canonical, decide, sha, summarize
 from r59_gold192_supabase_extract import A_SHA, B_SHA, EX_SHA
+from r59_staging_receipt import valid_staging_receipt
 
 SAFE_SCHEMA = "storyforge-gold192-review-bind-safe-v1"
 HEX = re.compile(r"^[a-f0-9]{64}$")
