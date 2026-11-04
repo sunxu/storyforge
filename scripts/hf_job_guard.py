@@ -73,8 +73,11 @@ def validate_spec(
     if any(volume.mode != "ro" for volume in inputs):
         raise PolicyError("INPUT_MUST_BE_READ_ONLY")
     if any(
-        not (volume.destination.startswith("/input/") or
-             volume.destination.startswith("/scripts/"))
+        not (
+            volume.destination in {"/input", "/scripts"}
+            or volume.destination.startswith("/input/")
+            or volume.destination.startswith("/scripts/")
+        )
         for volume in inputs
     ):
         raise PolicyError("INPUT_DESTINATION_MUST_BE_INPUT_OR_SCRIPTS")
