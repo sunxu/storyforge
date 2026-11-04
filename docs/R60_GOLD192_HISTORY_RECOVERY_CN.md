@@ -28,8 +28,9 @@
 输入 SHA256 沿用 `r59_gold192_supabase_extract.py` 中冻结的 A/B/排除/packets pins。
 Locator 文件必须与 SAFE receipt 中的文件 SHA256 一致。目标必须为 `EXACT_MATCH`，
 并具有唯一 message/session locator；无法证明身份的案例 HOLD，不采用“唯一根 Session”
-作为身份替代证明。连接数据库后，适配器还会读取 13 个 story 的 owner `user_id`，要求全部可见且
-属于同一个 UUID；缺失或多 owner 一律 HOLD。
+作为身份替代证明。连接数据库后，适配器还会通过 `user_stories.author_id` 核验 Gold192
+故事的 Owner 元数据：所有故事必须可见且每个故事均有有效 Owner；允许多个 Owner，SAFE
+只报告不同 Owner 数量，不输出 UUID。
 
 所有输入文件必须是普通文件、权限 0600，直接父目录权限 0700。私有正文、ID 和哈希
 不得回传聊天、提交 GitHub 或写入 Actions 日志。
@@ -118,16 +119,44 @@ pytest -q tests/test_message_ledger.py tests/test_history_recovery.py \
 
 以上测试不需要 DSN，不连接 Supabase，不读取 Gold192 私有文件，不启动 HF/GPU。
 
-## Owner 本机 Pilot 命令
+## Owner 本机 Pilot8 命令
+
+必须先执行 Source Extract，再执行 Historical Context Recovery。此前 Pilot-7 曾发生
+`OperationalError`，没有确认成功的 Source Extract SAFE；不能把旧的 staging locator
+或其他来源文件冒充本流程的 `R59_SOURCE_SAFE.json`。本次使用全新的 `r59-source-pilot8`
+输出目录，避免覆盖任何既有私有证据。
+
+在 Owner 的 Mac 本机终端执行。先从本机私有凭据管理器设置
+`STORYFORGE_SUPABASE_DSN` 环境变量；不要将 DSN/token 放入命令文本、聊天、仓库或 HF Job。
+确保当前连接使用只读账号 `r58_export_reader`。脚本会自行执行
+`SET TRANSACTION READ ONLY`、statement timeout 和 lock timeout，并在成功后 ROLLBACK。
 
 ```bash
 set -euo pipefail
+umask 077
 cd ~/workspace/storyforge
 
 PRIVATE="$HOME/.local/share/storyforge/r58/private"
 R59_PRIVATE="$HOME/.local/share/storyforge/r59/private"
-SOURCE="$R59_PRIVATE/r59-source-pilot7"
+SOURCE="$R59_PRIVATE/r59-source-pilot8"
+HISTORY="$R59_PRIVATE/gold192-history-pilot8-v1"
 
+# 防止覆盖已有私有证据。
+test ! -e "$SOURCE"
+test ! -e "$HISTORY"
+
+# 1. Supabase Source Extract：校验冻结输入，读取 Gold192 全部 192 个 locator，
+#    并仅为 8 个优先候选导出历史上下文。不会写数据库。
+python3 experiments/r58_quality/r59_gold192_supabase_extract.py \
+  --reviewer-a "$PRIVATE/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
+  --reviewer-b "$PRIVATE/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
+  --exclusions "$PRIVATE/quality-v1/QUALITY_V1_EXCLUDED_CASES.jsonl" \
+  --source-packets "$R59_PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
+  --output-dir "$SOURCE" \
+  --pilot 8
+
+# 2. Historical Context Recovery Pilot8：使用刚生成的 locator + SAFE，
+#    恢复 8 条候选的 Ledger / Session 历史证据。
 python3 experiments/r58_quality/r59_gold192_history_recovery.py \
   --reviewer-a "$PRIVATE/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
   --reviewer-b "$PRIVATE/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
@@ -135,8 +164,12 @@ python3 experiments/r58_quality/r59_gold192_history_recovery.py \
   --source-packets "$R59_PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
   --source-locators "$SOURCE/R59_SOURCE_LOCATORS_192.jsonl" \
   --source-safe "$SOURCE/R59_SOURCE_SAFE.json" \
-  --output-dir "$R59_PRIVATE/gold192-history-pilot8-v1" \
+  --output-dir "$HISTORY" \
   --pilot 8
 ```
 
-仅回传 SAFE stdout，不回传 PRIVATE JSONL。Pilot 成功也不构成训练授权。
+执行后只回传两次命令各自的 SAFE stdout（JSON）。不得回传 DSN、私有 JSONL、
+故事正文、消息正文、message/session/story ID 或原始数据库日志。若任一步返回 HOLD，
+保留私有本地证据并先诊断 reason code；不得直接扩大到 72 条。
+
+Pilot 成功也不构成 Quality-v1 admission、SFT 编译或训练授权。GPU 不启动。
