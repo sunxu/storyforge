@@ -139,7 +139,7 @@ def verify_story_owner_scope(cursor, story_ids: list[str]) -> None:
         raise ValueError("STORY_SCOPE_INVALID")
     cursor.execute(
         """
-        SELECT id::text AS story_id, user_id::text AS user_id
+        SELECT id::text AS story_id, author_id::text AS owner_id
         FROM public.user_stories
         WHERE id::text = ANY(%s)
         """,
@@ -152,7 +152,7 @@ def verify_story_owner_scope(cursor, story_ids: list[str]) -> None:
     owners = set()
     for row in rows:
         if isinstance(row, dict):
-            story_id, user_id = row.get("story_id"), row.get("user_id")
+            story_id, user_id = row.get("story_id"), row.get("owner_id")
         elif isinstance(row, (tuple, list)) and len(row) == 2:
             story_id, user_id = row
         else:
