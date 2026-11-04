@@ -12,6 +12,12 @@ import pytest
 from experiments.r60_hf_runtime import r60_cpu_smoke as smoke
 
 
+@pytest.fixture(autouse=True)
+def _synthetic_hf_job_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("JOB_ID", "synthetic-r60-test-job")
+    monkeypatch.setenv("ACCELERATOR", "none")
+
+
 def _fixture(tmp_path: Path) -> tuple[Path, Path, str]:
     input_root = tmp_path / "input"
     output_root = tmp_path / "output"
@@ -73,6 +79,7 @@ def test_success_writes_create_only_safe_receipt(tmp_path: Path, monkeypatch: py
         expected_sha256=digest, expected_records=3,
     )
     assert result["status"] == "PASS"
+    assert result["checks"]["hf_job_runtime"] == "PASS"
     receipt = output_root / smoke.REPORT_NAME
     payload = json.loads(receipt.read_text(encoding="utf-8"))
     assert payload["schema"] == smoke.SCHEMA
