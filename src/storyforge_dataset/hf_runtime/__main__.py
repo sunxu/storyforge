@@ -10,7 +10,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 from .context import RuntimeContext
-from .diagnostics import DiagnosticReporter, ERROR_CODES
+from .diagnostics import ERROR_CODES, DiagnosticReporter
 from .outputs import OutputManager
 from .resources import ResourceGuard
 
