@@ -38,6 +38,33 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SOURCE_SAFE_RECEIPT_INVALID"):
             adapter.validate_source_receipt(safe, b"x")
 
+    def test_story_level_source_packets_expand_to_192_cases(self):
+        packets = []
+        remaining = 192
+        for story_index in range(13):
+            count = min(15, remaining)
+            if story_index == 12:
+                count = remaining
+            cases = []
+            for turn in range(1, count + 1):
+                target = f"synthetic target {story_index}-{turn}"
+                cases.append({
+                    "case_id": f"story-{story_index}-t{turn:05d}",
+                    "target_sha256": hashlib.sha256(target.encode()).hexdigest(),
+                    "target_assistant_text": target,
+                })
+            packets.append({
+                "story_uuid": f"story-{story_index}",
+                "cases": cases,
+            })
+            remaining -= count
+        self.assertEqual(sum(len(packet["cases"]) for packet in packets), 192)
+        indexed = adapter.index_source_packets(packets)
+        self.assertEqual(len(indexed), 192)
+        self.assertEqual(len({row["target_sha256"] for row in indexed.values()}), 192)
+        with self.assertRaisesRegex(ValueError, "SOURCE_PACKET_STORY_COUNT_INVALID"):
+            adapter.index_source_packets(packets[:-1])
+
     def test_locator_index_requires_complete_exact_identity_set(self):
         packets = {
             "case-a": {
