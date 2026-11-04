@@ -24,11 +24,18 @@ RUN="$HOME/.local/share/storyforge/r59/private/r60-pilot8-cpu-20261104T095803Z"
 INPUT="$RUN/input/R59_PILOT8_REVIEW_PROMPTS_PRIVATE.jsonl"
 TOKEN_SAFE="$RUN/output/R59_PILOT8_R60_CPU_TOKEN_SAFE.json"
 
+# Load identity pins from the Owner-private file; never print or commit them.
+set -a
+. "$RUN/secrets.env"
+set +a
+: "${R59_INPUT_SHA256:?missing R59_INPUT_SHA256 in private secrets.env}"
+: "${R59_PROMPT_FINGERPRINT:?missing R59_PROMPT_FINGERPRINT in private secrets.env}"
+
 PY="$HOME/.venvs/storyforge-r60/bin/python"
 "$PY" experiments/r59_history_density/r59_history_density.py \
   --input "$INPUT" \
-  --expected-sha256 5add3f7e2f09ddd210835722fa0578b11c7766b14754ab3980f403c063b8006f \
-  --expected-fingerprint 177f602331b06d90b68606bd796bd4705f90a7ee6dc7b260003075a9eeaa59c4 \
+  --expected-sha256 "$R59_INPUT_SHA256" \
+  --expected-fingerprint "$R59_PROMPT_FINGERPRINT" \
   --token-safe "$TOKEN_SAFE" \
   --output-dir "$RUN/history-density"
 
@@ -37,9 +44,7 @@ PY="$HOME/.venvs/storyforge-r60/bin/python"
   -p 'test_*.py' -v
 ```
 
-**Important:** the command above pins the input using its actual SHA256. Use the verified value from the R59 input manifest:
-`5add3f7e2f09ddd210835722fa0578b11c7766b14754ab3980f403c063b8006f`.
-The output directory must not already exist. Both generated files remain under the Owner's private local directory. Do not commit or upload either generated report or SAFE JSON to the public repository.
+**Important:** the input SHA256 and prompt fingerprint are loaded from the Owner-private `$RUN/secrets.env`; they are intentionally not embedded in this public README. Do not print, paste, commit, or upload those values. The output directory must not already exist. Both generated files remain under the Owner's private local directory. Do not commit or upload either generated report or SAFE JSON to the public repository.
 
 ## Test
 
