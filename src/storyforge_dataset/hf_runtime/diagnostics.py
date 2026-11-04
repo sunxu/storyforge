@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -18,17 +19,20 @@ ERROR_CODES = frozenset({
     "PATH_ROOT_NOT_ALLOWED", "PATH_KIND_AMBIGUOUS", "PATH_NOT_FOUND", "PATH_TYPE_INVALID",
     "INPUT_OPEN_FAILED", "INPUT_NOT_REGULAR_FILE", "INPUT_SYMLINK_REJECTED",
     "INPUT_SIZE_LIMIT_EXCEEDED", "INPUT_READ_FAILED", "INPUT_SHA256_MISMATCH",
-    "INPUT_JSON_INVALID", "INPUT_JSONL_INVALID",
-    "INPUT_DESCRIPTOR_CHANGED", "OUTPUT_PARENT_INVALID", "OUTPUT_PROBE_FAILED",
-    "OUTPUT_ALREADY_EXISTS", "OUTPUT_SYMLINK_REJECTED", "OUTPUT_CREATE_FAILED",
-    "OUTPUT_WRITE_FAILED", "OUTPUT_FSYNC_FAILED", "OUTPUT_VERIFY_FAILED",
-    "OUTPUT_CLEANUP_FAILED", "CPU_PROFILE_GPU_VISIBLE", "CPU_PROFILE_CUDA_DEVICE_DETECTED",
+    "INPUT_JSON_INVALID", "INPUT_JSONL_INVALID", "INPUT_DESCRIPTOR_CHANGED",
+    "OUTPUT_PARENT_INVALID", "OUTPUT_PROBE_FAILED", "OUTPUT_ALREADY_EXISTS",
+    "OUTPUT_SYMLINK_REJECTED", "OUTPUT_CREATE_FAILED", "OUTPUT_WRITE_FAILED",
+    "OUTPUT_FSYNC_FAILED", "OUTPUT_VERIFY_FAILED", "OUTPUT_CLEANUP_FAILED",
+    "CPU_PROFILE_GPU_VISIBLE", "CPU_PROFILE_CUDA_DEVICE_DETECTED",
     "CPU_PROFILE_RESOURCE_UNKNOWN", "RESOURCE_PROFILE_UNSUPPORTED", "RECEIPT_READ_FAILED",
     "RECEIPT_SCHEMA_UNKNOWN", "RECEIPT_SCHEMA_INVALID", "RECEIPT_FIELD_INVALID",
     "RECEIPT_DIGEST_INVALID", "RECEIPT_INVARIANT_FAILED", "RECEIPT_SIZE_LIMIT_EXCEEDED",
     "CLI_ARGUMENT_INVALID", "CLI_DOCTOR_FAILED", "RUNTIME_INTERNAL_ERROR",
 })
 ErrorCode = str
+_SAFE_VALUE = re.compile(r"^[A-Za-z0-9._+-]{1,64}$")
+_PYTHON_VERSION = re.compile(r"^\d{1,2}\.\d{1,2}(?:\.\d{1,3})?$")
+_SAFE_RUNTIME_VALUES = {"LOCAL", "CONTAINER", "HF_JOB", "TEST"}
 
 
 @dataclass(frozen=True)
@@ -79,11 +83,16 @@ class DiagnosticReporter:
         return self.to_safe_dict()
 
     def to_safe_dict(self) -> Diagnostic:
-        safe_environment = {
-            key: value for key, value in self.environment.items()
-            if key in {"runtime", "python_version", "operating_system", "platform_machine"}
-            and isinstance(value, (str, int, float, bool, type(None)))
-        }
+        safe_environment: dict[str, object] = {}
+        for key, value in self.environment.items():
+            if not isinstance(value, str) or not _SAFE_VALUE.fullmatch(value):
+                continue
+            if key == "runtime" and value in _SAFE_RUNTIME_VALUES:
+                safe_environment[key] = value
+            elif key == "python_version" and _PYTHON_VERSION.fullmatch(value):
+                safe_environment[key] = value
+            elif key in {"operating_system", "platform_machine"}:
+                safe_environment[key] = value
         return Diagnostic(
             schema="storyforge-hf-runtime-diagnostic-v1",
             runtime_version=self.runtime_version,
