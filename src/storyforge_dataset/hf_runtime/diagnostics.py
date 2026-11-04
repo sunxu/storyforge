@@ -87,11 +87,11 @@ class DiagnosticReporter:
         for key, value in self.environment.items():
             if not isinstance(value, str) or not _SAFE_VALUE.fullmatch(value):
                 continue
-            if key == "runtime" and value in _SAFE_RUNTIME_VALUES:
-                safe_environment[key] = value
-            elif key == "python_version" and _PYTHON_VERSION.fullmatch(value):
-                safe_environment[key] = value
-            elif key in {"operating_system", "platform_machine"}:
+            if (
+                (key == "runtime" and value in _SAFE_RUNTIME_VALUES)
+                or (key == "python_version" and _PYTHON_VERSION.fullmatch(value))
+                or key in {"operating_system", "platform_machine"}
+            ):
                 safe_environment[key] = value
         return Diagnostic(
             schema="storyforge-hf-runtime-diagnostic-v1",
