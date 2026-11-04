@@ -41,14 +41,19 @@ class OutputManager:
     def probe(cls, root: Path) -> OutputCapability:
         cls._check_root(root)
         path = root / f".storyforge-probe-{secrets.token_hex(12)}"
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        if not hasattr(os, "O_NOFOLLOW"):
+            raise ValueError("OUTPUT_PROBE_FAILED")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
         fd = -1
         identity: tuple[int, int] | None = None
         cleaned = False
         try:
             fd = os.open(path, flags, 0o600)
+            os.fchmod(fd, 0o600)
             info = os.fstat(fd)
             identity = (info.st_dev, info.st_ino)
+            if stat.S_IMODE(info.st_mode) != 0o600:
+                raise ValueError("OUTPUT_VERIFY_FAILED")
             os.write(fd, b"r60-probe")
             os.fsync(fd)
             os.close(fd)
