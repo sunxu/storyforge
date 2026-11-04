@@ -84,6 +84,16 @@ def validate_source_receipt(safe: dict, locators_raw: bytes) -> None:
         raise ValueError("SOURCE_LOCATOR_PIN_MISMATCH")
 
 
+def index_source_packets(rows: list[dict]) -> dict[str, dict]:
+    """Expand the frozen 13 story-level packet rows into 192 unique case identities."""
+    if len(rows) != 13:
+        raise ValueError("SOURCE_PACKET_STORY_COUNT_INVALID")
+    indexed = index_packets(rows)
+    if len(indexed) != 192:
+        raise ValueError("SOURCE_PACKET_COUNT_INVALID")
+    return indexed
+
+
 def validate_locators(rows: list[dict], packets: dict[str, dict]) -> dict[str, dict]:
     case_ids = [row.get("case_id") for row in rows if isinstance(row, dict)]
     if len(case_ids) != len(set(case_ids)):
@@ -227,11 +237,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     b = json.loads(inputs["REVIEWER_B"])
     excluded = [json.loads(line) for line in inputs["EXCLUSIONS"].splitlines() if line.strip()]
     packet_rows = parse_jsonl(inputs["SOURCE_PACKETS"], "SOURCE_PACKETS")
-    if len(packet_rows) != 192:
-        raise ValueError("SOURCE_PACKET_COUNT_INVALID")
-    packet_index = index_packets(packet_rows)
-    if len(packet_index) != 192:
-        raise ValueError("SOURCE_PACKET_IDENTITY_COUNT_INVALID")
+    packet_index = index_source_packets(packet_rows)
     selected = select_candidates(a, b, excluded, packet_index)
     priority = choose_pilot(selected, pilot)
     locator_index = validate_locators(
