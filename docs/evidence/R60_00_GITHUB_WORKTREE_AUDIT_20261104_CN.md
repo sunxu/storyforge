@@ -73,7 +73,7 @@ test ! -e "$TARGET"
 
 # Fetch and verify the newly created remote branch before adding its worktree.
 git -C "$REPO" fetch origin r60/hf-jobs-runtime
-test "$(git -C "$REPO" rev-parse FETCH_HEAD)" = "7e37622b66613cda432227c9e5b7f754a1890e49"
+test "$(git -C "$REPO" rev-parse FETCH_HEAD)" = "e61189c15dec45f84d3682a80e2527d4e56e5787"
 
 git -C "$REPO" worktree add -b r60/hf-jobs-runtime "$TARGET" FETCH_HEAD
 git -C "$TARGET" status --short --branch
