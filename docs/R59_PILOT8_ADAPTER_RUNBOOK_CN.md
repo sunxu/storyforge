@@ -4,7 +4,7 @@
 
 本交付仅用于**构造审核输入**；不提交 GPU，不执行模型推理，不证明文学质量、上下文语义、Reviewer 独立性、世界来源真实性、保护集隔离或 Quality-v1 准入。
 
-源输入：既有 suffix72 Source Stage（含 SAFE 回执）和已冻结 Pilot8 PRIVATE JSON。所有输入要求普通文件、权限 0600；新输出只允许创建在仓库外权限 0700 的父目录。所有私人正文只保留在 Owner 本机。
+源输入：既有 suffix72 Source Stage（含 SAFE 回执）和已冻结 Pilot8 PRIVATE JSON。Owner 本机的 PRIVATE 文件在 staging 阶段要求普通文件、权限 0600；新输出只允许创建在仓库外权限 0700 的父目录。HF RO Volume 挂载可能规范化 mode bits 与硬链接数，不能把挂载后的权限位当作内容完整性证明；远端读取统一使用 R60 InputManager 的 no-follow、descriptor、大小限制与 SHA256 验证。所有私人正文只保留在 Owner 本机或受控私有 Bucket。
 
 **重要限制：** 输入适配器保留 Stage 中完整可见历史，不自行裁剪长输入。这意味着某些样本可能远超评审模型的上下文，必须由后续 HF CPU Tokenizer 预检给出确切结果。不能用少量消息裁剪后的评审冒充完整审核，也不能将 R59 通用 System 当作 R58 的 `unapproved_card`。
 
