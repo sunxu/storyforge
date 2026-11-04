@@ -58,6 +58,8 @@ python3 -m pip install --no-cache-dir \
   "qwen-vl-utils==0.0.14" decord "torchvision==0.29.2"
 ```
 
+提交前保护工具 `scripts/hf_job_guard.py` 允许只读输入挂载到精确目录根 `/input`、`/scripts`，也允许其下的路径 `/input/...`、`/scripts/...`。此前版本只允许带末尾斜杠的子路径，导致目录前缀挂载在尚未提交 Job 时返回 `INPUT_DESTINATION_MUST_BE_INPUT_OR_SCRIPTS`。这属于 Guard 契约错误，不是 Bucket 数据或组织权限错误。已增加目录挂载及相似路径拒绝回归测试。只读输入 `:ro`、独立可写输出 `:rw` 等限制保持不变。
+
 输入、脚本使用目录前缀只读挂载，不要把文件路径误当成挂载目录：
 
 - 私有输入目录：`hf://buckets/adradar/storyforge-training/preflight/r59/20261103:/input:ro`
