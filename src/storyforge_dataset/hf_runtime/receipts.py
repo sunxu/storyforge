@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -11,7 +10,7 @@ from .diagnostics import ERROR_CODES, PHASES
 from .inputs import InputManager
 
 SCHEMA = "storyforge-hf-runtime-diagnostic-v1"
-SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+ENVIRONMENT_FIELDS = {"runtime", "python_version", "operating_system", "platform_machine"}
 
 
 @dataclass(frozen=True)
@@ -39,22 +38,29 @@ class ReceiptValidator:
             raise ValueError("RECEIPT_FIELD_INVALID")
         if value["profile"] != "cpu" or value["status"] not in {"PASS", "HOLD", "FAIL"}:
             raise ValueError("RECEIPT_FIELD_INVALID")
-        if value["phase"] not in PHASES:
+        if not isinstance(value["phase"], str) or value["phase"] not in PHASES:
             raise ValueError("RECEIPT_FIELD_INVALID")
         code = value["error_code"]
-        if code is not None and code not in ERROR_CODES:
+        if code is not None and (not isinstance(code, str) or code not in ERROR_CODES):
             raise ValueError("RECEIPT_FIELD_INVALID")
-        if not isinstance(value["checks"], dict) or any(
-            not isinstance(k, str) or v not in {"PASS", "FAIL", "UNKNOWN"}
-            for k, v in value["checks"].items()
+        checks = value["checks"]
+        if not isinstance(checks, dict) or any(
+            not isinstance(key, str) or not isinstance(status, str)
+            or status not in {"PASS", "FAIL", "UNKNOWN"}
+            for key, status in checks.items()
         ):
             raise ValueError("RECEIPT_FIELD_INVALID")
-        if not isinstance(value["environment"], dict):
+        environment = value["environment"]
+        if not isinstance(environment, dict) or not set(environment).issubset(ENVIRONMENT_FIELDS):
             raise ValueError("RECEIPT_FIELD_INVALID")
-        if value["private_values_emitted"] is not False or value["gpu_started"] is not False:
-            raise ValueError("RECEIPT_INVARIANT_FAILED")
-        if value["training_performed"] is not False:
-            raise ValueError("RECEIPT_INVARIANT_FAILED")
+        if any(
+            not isinstance(item, (str, int, float, bool)) and item is not None
+            for item in environment.values()
+        ):
+            raise ValueError("RECEIPT_FIELD_INVALID")
+        for field in ("private_values_emitted", "gpu_started", "training_performed"):
+            if type(value[field]) is not bool or value[field] is not False:
+                raise ValueError("RECEIPT_INVARIANT_FAILED")
         if value["status"] == "PASS" and code is not None:
             raise ValueError("RECEIPT_INVARIANT_FAILED")
         if value["status"] != "PASS" and code is None:
@@ -69,13 +75,15 @@ class ReceiptValidator:
         expected_schema: str,
         max_bytes: int = 32768,
     ) -> RuntimeReceipt:
+        if expected_schema != SCHEMA:
+            raise ValueError("RECEIPT_SCHEMA_UNKNOWN")
         try:
             verified = InputManager.open_verified(path, max_bytes=max_bytes)
             value = json.loads(verified.read_bytes())
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("RECEIPT_SCHEMA_INVALID") from exc
         except ValueError:
             raise
-        except (UnicodeDecodeError, json.JSONDecodeError, OSError) as exc:
+        except OSError as exc:
             raise ValueError("RECEIPT_READ_FAILED") from exc
-        if not isinstance(value, dict) or value.get("schema") != expected_schema:
-            raise ValueError("RECEIPT_SCHEMA_UNKNOWN")
         return cls.validate_runtime_receipt(value)
