@@ -131,10 +131,15 @@ def audit(raw: bytes, *, expected_sha: str, expected_fingerprint: str,
 
 
 def write_safe(path: Path, report: dict) -> None:
+    # HF Jobs RW volume mountpoints may be provisioned with platform-managed
+    # directory modes (not 0700). The SAFE file itself is always create-only,
+    # O_NOFOLLOW, and 0600; the output volume is unique to this Job.
     if (not path.is_absolute() or path.is_symlink() or not path.parent.is_dir()
-            or path.parent.is_symlink()
-            or stat.S_IMODE(path.parent.stat().st_mode) != 0o700):
+            or path.parent.is_symlink()):
         raise ValueError("OUTPUT_PATH_INVALID")
+    parent_info = path.parent.stat()
+    if not stat.S_ISDIR(parent_info.st_mode) or not parent_info.st_mode & stat.S_IWUSR:
+        raise ValueError("OUTPUT_DIRECTORY_NOT_OWNER_WRITABLE")
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     fd = os.open(path, flags, 0o600)
     with os.fdopen(fd, "wb") as stream:
