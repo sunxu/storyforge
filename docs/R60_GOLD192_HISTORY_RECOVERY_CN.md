@@ -114,7 +114,8 @@ WHERE rolname = current_user;
 不能假定另外四张表具有与消息表相同的 `user_id` 列或相同 RLS 模型。
 
 如果实际 Pilot 因 RLS 返回零行，先只读确认 Gold192 的 13 个 story 是否全部属于同一个 owner `user_id`。
-适配器本身也会执行该检查；任一 story 不可见、owner 缺失或出现多个 owner 都会 HOLD。
+适配器本身也会执行该检查；根据已核实结构，它从 `user_stories.author_id` 读取 owner（该列为 UUID），
+而 story `id` 是 TEXT。任一 story 不可见、owner 缺失或出现多个 owner 都会 HOLD。
 
 **不要直接使用只按 owner UUID 放行的宽策略**：这会让导出角色读取该用户在其他故事中的消息。
 如需调整 RLS，必须同时绑定：
@@ -123,7 +124,7 @@ WHERE rolname = current_user;
 3. 本次恢复实际需要的六张表，逐表按真实列结构设计策略。
 
 其中 `v2_chat_messages` 与 `v2_chat_message_ledger` 有 `user_id` 和 `story_id`，
-可同时校验 owner 与 story allowlist；`user_stories` 可按 `user_id + id` 限定；
+可同时校验 owner 与 story allowlist；`user_stories` 实际使用 `author_id + id`（不是 `user_id`）；
 `story_v2_sessions`、`story_content_versions`、`story_admin_versions` 应通过
 `EXISTS` 关联被 allowlist 限定的 `user_stories`，但必须先核实各表的列类型与 RLS 行为。
 不要把这六张表的策略混为一条，也不要把 13 个私有 UUID 写入 GitHub。
