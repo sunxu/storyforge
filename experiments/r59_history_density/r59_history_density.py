@@ -251,13 +251,19 @@ def _write_create_only(path: Path, raw: bytes) -> None:
         raise
     else:
         os.close(fd)
+    published = False
     try:
         os.link(temporary, path, follow_symlinks=False)
+        published = True
         dir_fd = os.open(path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
         try:
             os.fsync(dir_fd)
         finally:
             os.close(dir_fd)
+    except BaseException:
+        if published:
+            path.unlink(missing_ok=True)
+        raise
     finally:
         temporary.unlink(missing_ok=True)
 
