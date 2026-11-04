@@ -220,6 +220,19 @@ def test_resource_guard_denies_visible_gpu() -> None:
     assert report.training_performed is False
 
 
+def test_resource_guard_rejects_gpu_accelerator_even_without_device_nodes() -> None:
+    report = ResourceGuard.check_cpu_only(environ={"ACCELERATOR": "a100x4"})
+    assert report.status == "FAIL"
+    assert report.error_code == "CPU_PROFILE_GPU_VISIBLE"
+    assert report.checks["accelerator_profile"] == "FAIL"
+
+
+def test_resource_guard_accepts_explicit_cpu_accelerator() -> None:
+    report = ResourceGuard.check_cpu_only(environ={"ACCELERATOR": "none"})
+    assert report.status == "PASS"
+    assert report.checks["accelerator_profile"] == "PASS"
+
+
 def test_doctor_json_is_machine_readable_and_side_effect_bounded() -> None:
     env = dict(os.environ)
     env.pop("CUDA_VISIBLE_DEVICES", None)
