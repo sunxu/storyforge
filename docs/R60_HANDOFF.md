@@ -196,3 +196,21 @@ At the documentation/evidence-only branch head after the R59 integration record,
 All commits added after the R59 Job commit are documentation/evidence-only changes to the R60 report, handoff, and commit-parity evidence. No Runtime module, R59 adapter, tokenization core, frozen prompt, or private data changed after the R59 Job.
 
 R60-A scope decision: the four proposed peripheral tools are not being implemented in this PR. They remain future additive work after API overlap review; only a concrete defect blocking the approved Runtime contract can justify expanding R60 scope.
+
+## 2026-11-04 Owner Mac post-fix regression — confirmed
+
+Owner supplied the following results after the macOS host-path compatibility fix:
+
+- Ruff: PASS.
+- R60 Runtime / Volume / Skill tests: 48 passed, 2 skipped.
+- R59 Pilot8 Runtime adapter tests: 7/7 passed.
+- Shared `token_preflight` regression tests: 8/8 passed.
+- CPU Doctor (`python -m storyforge_dataset.hf_runtime doctor --profile cpu --json`): PASS.
+- Local CPU tokenizer environment: Python 3.11.15 / macOS arm64; Transformers 5.16.1, Tokenizers 0.23.3, Hugging Face Hub 1.33.0, Jinja2 3.1.6, NumPy 2.4.6; PyTorch not installed.
+- Local/HF aggregate token parity: PASS across all 8 frozen cases. Business outcome remains HOLD: 2/8 cases over budget; maximum prompt length 106,839 tokens.
+
+The real R59 CPU Job result and both recovered SAFE receipt SHA256 values are documented above and in the commit-parity evidence. The R59 Job ran on commit `96cdb76d4b7e61d2a34216d70d45396e66163e2a`. The later R60 branch commits changed documentation/evidence only; no Runtime module, R59 adapter, shared tokenization core, frozen prompt, or private source input changed after that Job.
+
+No GPU, inference, training, prompt truncation, or Quality-v1 admission occurred. GPU authorization remains NONE.
+
+The independent R58 scoped synthetic workflow failure remains a separate HOLD; it is not counted as an R60 Runtime failure or PASS. PR #12 remains Draft pending final review and explicit Owner merge approval.
