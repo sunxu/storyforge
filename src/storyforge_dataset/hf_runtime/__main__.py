@@ -36,15 +36,17 @@ def main() -> int:
             reporter.record_check(name, status)
         if resource.status != "PASS":
             reporter.fail(resource.error_code or "CPU_PROFILE_RESOURCE_UNKNOWN", phase="PREFLIGHT")
-
-        reporter.start_phase("OUTPUT_VALIDATION")
-        # Doctor probes an isolated temporary directory only. It never inspects
-        # project/private mounts or creates a persistent report.
-        with tempfile.TemporaryDirectory(prefix="storyforge-r60-doctor-") as tmp:
-            OutputManager.probe(Path(tmp))
-        reporter.record_check("temporary_output_probe", "PASS")
-    except ValueError as exc:
-        code = str(exc)
+        else:
+            reporter.start_phase("OUTPUT_VALIDATION")
+            # Doctor probes an isolated temporary directory only. It never inspects
+            # project/private mounts or creates a persistent report.
+            with tempfile.TemporaryDirectory(prefix="storyforge-r60-doctor-") as tmp:
+                OutputManager.probe(Path(tmp))
+            reporter.record_check("temporary_output_probe", "PASS")
+            reporter.start_phase("COMPLETION")
+            reporter.record_check("doctor_completed", "PASS")
+    except Exception as exc:  # noqa: BLE001 - public output must not expose exception details
+        code = str(exc) if isinstance(exc, ValueError) else "RUNTIME_INTERNAL_ERROR"
         if code not in ERROR_CODES:
             code = "CLI_DOCTOR_FAILED"
         reporter.fail(code)
