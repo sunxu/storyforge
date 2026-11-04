@@ -6,6 +6,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import ClassVar
 
 from .diagnostics import ERROR_CODES, PHASES
 from .inputs import InputManager
@@ -28,11 +29,11 @@ class RuntimeReceipt:
 
 
 class ReceiptValidator:
-    REQUIRED = {
+    REQUIRED: ClassVar[frozenset[str]] = frozenset({
         "schema", "runtime_version", "profile", "status", "phase", "error_code",
         "checks", "environment", "private_values_emitted", "gpu_started",
         "training_performed",
-    }
+    })
 
     @classmethod
     def validate_runtime_receipt(cls, value: object) -> RuntimeReceipt:
