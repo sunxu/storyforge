@@ -85,7 +85,7 @@ def validate_source_receipt(safe: dict, locators_raw: bytes) -> None:
 
 
 def validate_locators(rows: list[dict], packets: dict[str, dict]) -> dict[str, dict]:
-    if len(rows) != 192:
+    if len(rows) != len(packets):
         raise ValueError("SOURCE_LOCATOR_COUNT_INVALID")
     indexed = {}
     for row in rows:
@@ -223,7 +223,11 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     b = json.loads(inputs["REVIEWER_B"])
     excluded = [json.loads(line) for line in inputs["EXCLUSIONS"].splitlines() if line.strip()]
     packet_rows = parse_jsonl(inputs["SOURCE_PACKETS"], "SOURCE_PACKETS")
+    if len(packet_rows) != 192:
+        raise ValueError("SOURCE_PACKET_COUNT_INVALID")
     packet_index = index_packets(packet_rows)
+    if len(packet_index) != 192:
+        raise ValueError("SOURCE_PACKET_IDENTITY_COUNT_INVALID")
     selected = select_candidates(a, b, excluded, packet_index)
     priority = choose_pilot(selected, pilot)
     locator_index = validate_locators(
