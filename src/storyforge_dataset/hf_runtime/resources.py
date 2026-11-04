@@ -39,7 +39,11 @@ class ResourceGuard:
         checks: dict[str, str] = {}
         accelerator = env.get("ACCELERATOR")
         if accelerator is not None:
-            if accelerator.strip().lower() not in {"", "none"}:
+            cpu_accelerators = {
+                "", "none", "cpu", "cpu-basic", "cpu-upgrade",
+                "cpu-performance", "cpu-xl",
+            }
+            if accelerator.strip().lower() not in cpu_accelerators:
                 checks["accelerator_profile"] = "FAIL"
                 code = "CPU_PROFILE_GPU_VISIBLE"
             else:
