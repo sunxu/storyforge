@@ -72,7 +72,7 @@ class SuffixStageTests(unittest.TestCase):
             meta.update({
                 "source_context_file_sha256": hashlib.sha256(src_bytes).hexdigest(),
                 "staged_file_sha256": hashlib.sha256(old_bytes).hexdigest(),
-                "system_prompt_sha256": sha("固定 System".encode("utf-8")),
+                "system_prompt_sha256": sha("固定 System".encode()),
             })
             safe.write_text(json.dumps(meta), encoding="utf-8")
             for file in (src, prev, safe):
