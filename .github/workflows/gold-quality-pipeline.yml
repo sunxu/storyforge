@@ -42,6 +42,8 @@ on:
       - "experiments/r58_quality/test_r59_sft_context_window.py"
       - "experiments/r58_quality/r59_history_structure_diagnostic.py"
       - "experiments/r58_quality/test_r59_history_structure_diagnostic.py"
+      - "experiments/r58_quality/r59_history_recovery_probe.py"
+      - "experiments/r58_quality/test_r59_history_recovery_probe.py"
       - ".github/workflows/gold-quality-pipeline.yml"
 
 permissions:
@@ -128,6 +130,10 @@ jobs:
         run: |
           ruff check experiments/r58_quality/r59_history_structure_diagnostic.py experiments/r58_quality/test_r59_history_structure_diagnostic.py
           python -m unittest discover -s experiments/r58_quality -p 'test_r59_history_structure_diagnostic.py' -v
+      - name: Probe R59 blank unfinished history recovery (synthetic)
+        run: |
+          ruff check experiments/r58_quality/r59_history_recovery_probe.py experiments/r58_quality/test_r59_history_recovery_probe.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_history_recovery_probe.py' -v
       - name: Verify Gold owner evidence binding
         run: |
           ruff check experiments/r58_quality/gold_quality_review_bind.py experiments/r58_quality/test_gold_quality_review_bind.py
