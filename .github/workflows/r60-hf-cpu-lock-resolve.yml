@@ -27,7 +27,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install pinned lock compiler
-        run: python -m pip install 'pip-tools==7.5.0'
+        run: |
+          python -m pip install 'pip==24.3.1'
+          python -m pip install 'pip-tools==7.5.0'
       - name: Resolve hash-pinned CPU tokenizer lock
         run: |
           pip-compile \
