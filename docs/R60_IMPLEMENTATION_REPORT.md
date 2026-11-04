@@ -176,3 +176,67 @@ Latest GitHub validation at this commit:
 - R58 scoped synthetic Run `41808603506`: FAILURE at its existing Environment and scoped test baselines step; remains separately held and must not be treated as an R60 regression without inspecting that job's log.
 
 Owner must pull this fix and rerun the local commands. Real R59 Pilot8 CPU Tokenizer Job remains NOT RUN until that local rerun passes.
+
+
+## 2026-11-04 R59 Pilot8 CPU Tokenizer integration — superseding status
+
+This section supersedes earlier statements in this report that the real R59 Pilot8 CPU Job had not run.
+
+### Executed Job
+
+- Job ID: `6aeb0f8f0e0338d1bb7fb6c1`
+- Flavor: `cpu-basic`
+- Runtime: Python 3.11.18, Linux x86_64, `HF_JOB`
+- Image: `python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72123ec319415c9eb49ff16fff`
+- Executed commit: `96cdb76d4b7e61d2a34216d70d45396e66163e2a`
+- Current R60 branch HEAD at this update: same full commit
+- Commit parity evidence: [R60_R59_COMMIT_PARITY_20261104.md](evidence/R60_R59_COMMIT_PARITY_20261104.md)
+
+### Runtime result
+
+Runtime diagnostic status: `PASS`, phase `COMPLETION`.
+
+Checks passed: CPU accelerator profile, input open verification, prompt contract, RuntimeContext, CPU-only resource checks, tokenizer dependency import, tokenizer load, tokenization completion, and business SAFE write.
+
+- `gpu_started=false`
+- `training_performed=false`
+- `private_values_emitted=false`
+- `r50_accessed=false`
+- `quality_v1_admitted=0`
+
+### Business Tokenizer result — HOLD
+
+The tokenizer completed all 8 frozen Pilot8 cases using `Qwen/Qwen3-32B`, pinned revision `9216db5781bf21249d130ec9da846c4624c16137`, Transformers `5.16.1`, max model length 32,768, and reserved output 2,400 tokens.
+
+- Prompt token min: 3,460
+- Median: 7,139
+- P95: 106,839
+- Maximum: 106,839
+- Over-budget cases: 2 of 8
+- Maximum total tokens including reserved output: 109,239
+- Business status: `R59_PILOT8_HF_CPU_TOKEN_OVER_BUDGET__HOLD`
+
+This is a successful Runtime execution and a HOLD business result. It is not a Runtime failure and does not authorize prompt truncation, candidate admission, or training.
+
+### Recovered SAFE receipts
+
+Both output files were synchronized back to the Owner's Mac and their SHA256 values were recorded:
+
+| Receipt | SHA256 |
+|---|---|
+| `R59_PILOT8_R60_CPU_TOKEN_SAFE.json` | `72909e5d33fe08724ec857d2e9ccd08d855d2070662c6d40e25d1eb412778e55` |
+| `R59_PILOT8_R60_RUNTIME_DIAGNOSTIC_SAFE.json` | `5763eefcdaeaf21c59b5bf83d5736d4bf4e683d945cac08677ba1207474ea0f8` |
+
+Private prompt contents, private input SHA256, prompt fingerprint, and per-case text are intentionally omitted from this public report.
+
+### Updated status
+
+- R59 real CPU Tokenizer Job: `COMPLETED`
+- Runtime diagnostic: `PASS`
+- Business token budget: `HOLD` (2/8 over budget)
+- Dual SAFE recovery: `PASS`
+- Commit parity: `PASS`
+- GPU / inference / training: `NOT PERFORMED`
+- Quality-v1 admission: `0`
+
+Earlier statements that the R59 CPU Job and dual SAFE recovery were NOT RUN / NOT TESTED are superseded by this section.
