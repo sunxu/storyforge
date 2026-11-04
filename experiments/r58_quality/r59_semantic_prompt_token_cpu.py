@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 from storyforge_dataset.hf_runtime import (
-    DiagnosticReporter, InputManager, OutputManager, ReceiptValidator,
+    DiagnosticReporter, InputManager, OutputManager, PathResolver, ReceiptValidator,
     ResourceGuard, RuntimeContext,
 )
 from storyforge_dataset.hf_runtime.diagnostics import ERROR_CODES
@@ -55,7 +55,10 @@ def sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def read_private(path: Path) -> bytes:
+def read_private(path: Path, *, path_kind: str = "host") -> bytes:
+    resolved = PathResolver.resolve(path, kind=path_kind)
+    path = Path(str(resolved.value))
+    PathResolver.validate_input_root(path.parent)
     verified = InputManager.open_verified(path, max_bytes=MAX_INPUT_BYTES)
     if verified.size_bytes <= 0:
         raise ValueError("INPUT_SIZE_LIMIT_EXCEEDED")
@@ -131,7 +134,10 @@ def audit(raw: bytes, *, expected_sha: str, expected_fingerprint: str,
     }
 
 
-def write_safe(path: Path, report: dict) -> None:
+def write_safe(path: Path, report: dict, *, path_kind: str = "host") -> None:
+    resolved = PathResolver.resolve(path, kind=path_kind)
+    path = Path(str(resolved.value))
+    PathResolver.validate_output_root(path.parent)
     try:
         OutputManager.write_safe(path, report, mode=0o600)
     except ValueError as exc:
@@ -181,7 +187,7 @@ def main() -> int:
 
         phase = "INPUT_READ"
         reporter.start_phase("INPUT_READ")
-        raw = read_private(args.input)
+        raw = read_private(args.input, path_kind="container")
         reporter.record_check("input_open_verified", "PASS")
 
         phase = "PROMPT_VALIDATION"
@@ -263,7 +269,15 @@ def main() -> int:
 
     try:
         reporter.start_phase("OUTPUT_WRITE")
-        write_safe(args.output_safe, report)
+        if args.output_safe == args.runtime_diagnostic_safe:
+            raise ValueError("PATH_KIND_AMBIGUOUS")
+        if args.output_safe.parent != args.runtime_diagnostic_safe.parent:
+            raise ValueError("PATH_KIND_AMBIGUOUS")
+        PathResolver.resolve(args.output_safe, kind="container")
+        PathResolver.resolve(args.runtime_diagnostic_safe, kind="container")
+        PathResolver.validate_output_root(args.output_safe.parent)
+        OutputManager.probe(args.output_safe.parent)
+        write_safe(args.output_safe, report, path_kind="container")
         reporter.record_check("business_safe_written", "PASS")
         if report.get("tokenizer_checked") is True:
             reporter.start_phase("COMPLETION")
