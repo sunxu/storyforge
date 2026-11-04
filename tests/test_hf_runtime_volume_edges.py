@@ -5,6 +5,7 @@ from __future__ import annotations
 import errno
 import json
 import os
+import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -116,19 +117,66 @@ def test_directory_fsync_failure_removes_uncommitted_publication(
     assert _temporary_outputs(tmp_path) == []
 
 
-def test_unsupported_hardlink_publication_fails_closed(
+def test_hardlink_and_noreplace_rename_unsupported_fails_closed(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    destination = tmp_path / "no-hardlink-safe.json"
+    destination = tmp_path / "no-atomic-publish-safe.json"
 
-    def unsupported_link(*_args: object, **_kwargs: object) -> None:
+    def unsupported(*_args: object, **_kwargs: object) -> None:
         raise OSError(errno.EOPNOTSUPP, "synthetic filesystem limitation")
 
-    monkeypatch.setattr(outputs_module.os, "link", unsupported_link)
-    with pytest.raises(ValueError, match="OUTPUT_CREATE_FAILED"):
-        OutputManager.write_safe(destination, {"synthetic": "no-hardlink"})
+    monkeypatch.setattr(outputs_module.os, "link", unsupported)
+    monkeypatch.setattr(outputs_module.OutputManager, "_rename_noreplace", unsupported)
+    with pytest.raises(ValueError, match="OUTPUT_ATOMIC_PUBLISH_UNSUPPORTED"):
+        OutputManager.write_safe(destination, {"synthetic": "no-atomic-publish"})
 
     assert not destination.exists()
+    assert _temporary_outputs(tmp_path) == []
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="renameat2 is Linux-specific")
+def test_hardlink_unsupported_falls_back_to_atomic_noreplace_rename(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "renameat2-safe.json"
+
+    def unsupported_link(*_args: object, **_kwargs: object) -> None:
+        raise OSError(errno.EOPNOTSUPP, "synthetic hardlink limitation")
+
+    monkeypatch.setattr(outputs_module.os, "link", unsupported_link)
+    receipt = OutputManager.write_safe(destination, {"synthetic": "renameat2"})
+    assert destination.is_file()
+    assert receipt.sha256
+    assert destination.stat().st_mode & 0o777 == 0o600
+    assert _temporary_outputs(tmp_path) == []
+    with pytest.raises(ValueError, match="OUTPUT_ALREADY_EXISTS"):
+        OutputManager.write_safe(destination, {"synthetic": "must-not-overwrite"})
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="renameat2 is Linux-specific")
+def test_concurrent_renameat2_publication_has_exactly_one_winner(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    destination = tmp_path / "concurrent-renameat2-safe.json"
+
+    def unsupported_link(*_args: object, **_kwargs: object) -> None:
+        raise OSError(errno.EOPNOTSUPP, "synthetic hardlink limitation")
+
+    monkeypatch.setattr(outputs_module.os, "link", unsupported_link)
+
+    def publish(value: int) -> str:
+        try:
+            OutputManager.write_safe(destination, {"winner": value})
+            return "PASS"
+        except ValueError as exc:
+            return str(exc)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(publish, (1, 2)))
+
+    assert results.count("PASS") == 1
+    assert results.count("OUTPUT_ALREADY_EXISTS") == 1
+    assert json.loads(destination.read_text(encoding="utf-8"))["winner"] in {1, 2}
     assert _temporary_outputs(tmp_path) == []
 
 
