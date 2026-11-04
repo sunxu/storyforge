@@ -117,7 +117,7 @@ class InputManager:
             except json.JSONDecodeError as exc:
                 raise ValueError("INPUT_JSONL_INVALID") from exc
             if not isinstance(value, dict):
-                raise ValueError("INPUT_JSONL_INVALID")
+                raise TypeError("INPUT_JSONL_INVALID")
             records.append(value)
         if not records:
             raise ValueError("INPUT_JSONL_INVALID")
