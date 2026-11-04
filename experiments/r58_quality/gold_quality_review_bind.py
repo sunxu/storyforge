@@ -14,6 +14,7 @@ from collections import Counter
 from pathlib import Path
 
 from gold_source_context_stage import StageHold, _create_only, _private_file, _read_rows
+from r59_staging_receipt import valid_staging_receipt
 from quality_v1 import EVIDENCE, SCHEMA, SEVERE, canonical, decide, sha, summarize
 from r59_gold192_supabase_extract import A_SHA, B_SHA, EX_SHA
 
@@ -296,8 +297,7 @@ def run(stage_path, receipt_path, a_path, b_path, exclusion_path,
         owner_path, output_dir):
     raw = _private_input(stage_path, "STAGED_JSONL")
     receipt = _file(receipt_path, label="STAGING_SAFE")
-    if (receipt.get("schema") != "storyforge-gold-quality-supabase-source-stage-safe-v1"
-            or receipt.get("staged_file_sha256") != sha(raw)):
+    if not valid_staging_receipt(receipt, sha(raw)):
         raise BindHold("STAGING_RECEIPT_MISMATCH")
     a = _file(a_path, A_SHA, label="REVIEWER_A")
     b = _file(b_path, B_SHA, label="REVIEWER_B")
