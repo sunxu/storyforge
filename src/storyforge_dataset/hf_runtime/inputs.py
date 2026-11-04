@@ -1,13 +1,15 @@
-"""Bounded, no-follow input reads with descriptor identity and SHA256 checks."""
+"""Bounded, no-follow input reads, SHA256 checks and JSON structure validation."""
 
 from __future__ import annotations
 
 import errno
 import hashlib
+import json
 import os
 import stat
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -65,8 +67,12 @@ class InputManager:
                 digest.update(chunk)
                 chunks.append(chunk)
             after = os.fstat(fd)
-            identity_before = (before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns)
-            identity_after = (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+            identity_before = (
+                before.st_dev, before.st_ino, before.st_size, before.st_mtime_ns, before.st_ctime_ns
+            )
+            identity_after = (
+                after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns, after.st_ctime_ns
+            )
             if identity_before != identity_after or total != after.st_size:
                 raise ValueError("INPUT_DESCRIPTOR_CHANGED")
             actual = digest.hexdigest()
@@ -84,3 +90,35 @@ class InputManager:
             raise ValueError("INPUT_READ_FAILED") from exc
         finally:
             os.close(fd)
+
+    @staticmethod
+    def validate_json(data: bytes) -> Any:
+        try:
+            return json.loads(data)
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise ValueError("INPUT_JSON_INVALID") from exc
+
+    @staticmethod
+    def validate_jsonl(data: bytes, *, max_records: int) -> list[dict[str, object]]:
+        if max_records < 1:
+            raise ValueError("INPUT_SIZE_LIMIT_EXCEEDED")
+        try:
+            text = data.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError("INPUT_JSONL_INVALID") from exc
+        records: list[dict[str, object]] = []
+        for line in text.splitlines():
+            if not line.strip():
+                continue
+            if len(records) >= max_records:
+                raise ValueError("INPUT_SIZE_LIMIT_EXCEEDED")
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError("INPUT_JSONL_INVALID") from exc
+            if not isinstance(value, dict):
+                raise ValueError("INPUT_JSONL_INVALID")
+            records.append(value)
+        if not records:
+            raise ValueError("INPUT_JSONL_INVALID")
+        return records
