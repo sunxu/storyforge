@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+import ctypes
 import errno
 import hashlib
 import json
 import os
 import secrets
 import stat
+import sys
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -28,6 +30,26 @@ class WriteReceipt:
 
 
 class OutputManager:
+    @staticmethod
+    def _rename_noreplace(source: Path, target: Path) -> None:
+        """Atomically rename without replacing an existing target on Linux."""
+        if not sys.platform.startswith("linux"):
+            raise OSError(errno.EOPNOTSUPP, "atomic no-replace rename unavailable")
+        libc = ctypes.CDLL(None, use_errno=True)
+        renameat2 = getattr(libc, "renameat2", None)
+        if renameat2 is None:
+            raise OSError(errno.EOPNOTSUPP, "renameat2 unavailable")
+        renameat2.argtypes = [
+            ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint
+        ]
+        renameat2.restype = ctypes.c_int
+        result = renameat2(
+            -100, os.fsencode(source), -100, os.fsencode(target), 1
+        )  # AT_FDCWD, RENAME_NOREPLACE
+        if result != 0:
+            error = ctypes.get_errno()
+            raise OSError(error, os.strerror(error), str(target))
+
     @staticmethod
     def _check_root(root: Path) -> None:
         try:
@@ -160,16 +182,37 @@ class OutputManager:
                 os.link(temp_path, path, follow_symlinks=False)
             except FileExistsError as exc:
                 raise ValueError("OUTPUT_ALREADY_EXISTS") from exc
-            except OSError as exc:
-                if exc.errno == errno.EEXIST:
+            except OSError as link_error:
+                if link_error.errno == errno.EEXIST:
+                    raise ValueError("OUTPUT_ALREADY_EXISTS") from link_error
+                unsupported_link = {
+                    errno.EPERM, errno.EOPNOTSUPP, errno.ENOTSUP,
+                    errno.EXDEV, errno.ENOSYS,
+                }
+                if link_error.errno not in unsupported_link:
+                    raise ValueError("OUTPUT_CREATE_FAILED") from link_error
+                try:
+                    cls._rename_noreplace(temp_path, path)
+                except FileExistsError as exc:
                     raise ValueError("OUTPUT_ALREADY_EXISTS") from exc
-                raise ValueError("OUTPUT_CREATE_FAILED") from exc
-            published_identity = temp_identity
+                except OSError as rename_error:
+                    if rename_error.errno == errno.EEXIST:
+                        raise ValueError("OUTPUT_ALREADY_EXISTS") from rename_error
+                    unsupported_rename = {
+                        errno.EPERM, errno.EOPNOTSUPP, errno.ENOTSUP,
+                        errno.EXDEV, errno.ENOSYS, errno.EINVAL,
+                    }
+                    if rename_error.errno in unsupported_rename:
+                        raise ValueError("OUTPUT_ATOMIC_PUBLISH_UNSUPPORTED") from rename_error
+                    raise ValueError("OUTPUT_CREATE_FAILED") from rename_error
+                temp_identity = None
+            published_identity = (created.st_dev, created.st_ino)
             published_stat = path.lstat()
             if published_identity != (published_stat.st_dev, published_stat.st_ino):
                 raise ValueError("OUTPUT_VERIFY_FAILED")
-            temp_path.unlink()
-            temp_identity = None
+            if temp_identity is not None:
+                temp_path.unlink()
+                temp_identity = None
             try:
                 dir_fd = os.open(root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
             except OSError as exc:
