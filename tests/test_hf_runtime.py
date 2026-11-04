@@ -225,6 +225,11 @@ def test_doctor_json_is_machine_readable_and_side_effect_bounded() -> None:
     env.pop("CUDA_VISIBLE_DEVICES", None)
     env.pop("NVIDIA_VISIBLE_DEVICES", None)
     env["STORYFORGE_RUNTIME_TEST"] = "1"
+    source_root = str(Path(__file__).parents[1] / "src")
+    existing_pythonpath = env.get("PYTHONPATH")
+    env["PYTHONPATH"] = (
+        source_root if not existing_pythonpath else f"{source_root}{os.pathsep}{existing_pythonpath}"
+    )
     result = subprocess.run(
         [
             sys.executable,
@@ -240,13 +245,16 @@ def test_doctor_json_is_machine_readable_and_side_effect_bounded() -> None:
         text=True,
         env=env,
     )
+    assert result.returncode == 0, (
+        "doctor subprocess failed without exposing private input; "
+        f"stderr={result.stderr!r}"
+    )
     payload = json.loads(result.stdout)
     assert payload["schema"] == "storyforge-hf-runtime-diagnostic-v1"
     assert payload["private_values_emitted"] is False
     assert payload["gpu_started"] is False
     assert payload["training_performed"] is False
     assert payload["environment"]["runtime"] == "TEST"
-    assert result.returncode == 0
 
 
 def test_runtime_source_has_no_network_or_training_imports() -> None:
