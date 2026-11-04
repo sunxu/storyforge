@@ -137,6 +137,20 @@ WHERE rolname = current_user;
 策略变更后先重新检查 `pg_policies`、`has_table_privilege`、`rolbypassrls`、
 `rolsuper`，再以 `r58_export_reader` 执行小批量 Pilot。不得在权限验证前运行 72 条。
 
+## 2026-11-05 schema / RLS 核验补充
+
+Owner 提供的元数据结果确认：
+- `user_stories.id` 为 TEXT，owner 字段是 UUID `author_id`，不是 `user_id`；
+- `story_v2_sessions`、`v2_chat_messages`、`v2_chat_message_ledger` 使用 UUID `user_id`；
+- `story_content_versions` 使用 UUID `author_id`，`story_id` 为 TEXT；
+- 已有策略中，`v2_chat_messages` 与 `story_v2_sessions` 的用户策略只面向 `authenticated`；
+- `v2_chat_message_ledger` 与 `story_content_versions` 的策略查询结果没有列出任何策略；
+- `story_admin_versions` 只列出 service_role 策略，且本次 information_schema.columns 输出没有返回它的列定义，必须单独确认；
+- `user_stories` 存在 PUBLIC permissive `true` 策略；另有面向 anon/authenticated 的 restrictive moderation guard。自定义导出角色不能假定受该 guard 约束。
+
+适配器 owner 预检已修正为从 `user_stories.author_id` 读取 owner UUID，保留 story ID TEXT 的比较方式。
+本次只修改 GitHub 分支代码与测试，不执行数据库权限变更。
+
 ## CPU 合成测试
 
 ```bash
