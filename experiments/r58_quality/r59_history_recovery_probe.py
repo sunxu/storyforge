@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 from collections import Counter
+from itertools import pairwise
 from pathlib import Path
 
 from gold_source_context_stage import _private_file, _read_rows
@@ -71,7 +72,7 @@ def probe(rows: list[dict]) -> dict:
             cases["requires_other_semantic_or_structure_review"] += 1
         elif not filtered or filtered[-1].get("role") != "user":
             cases["filtered_boundary_invalid"] += 1
-        elif any(a["role"] == b["role"] for a, b in zip(filtered, filtered[1:])):
+        elif any(a["role"] == b["role"] for a, b in pairwise(filtered)):
             cases["filtered_repeated_roles"] += 1
         else:
             cases["potentially_recoverable_by_blank_unfinished_exclusion"] += 1
