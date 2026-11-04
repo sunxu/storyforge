@@ -48,6 +48,8 @@ on:
       - "experiments/r58_quality/test_r59_contiguous_suffix_probe.py"
       - "experiments/r58_quality/r59_contiguous_suffix_stage.py"
       - "experiments/r58_quality/test_r59_contiguous_suffix_stage.py"
+      - "experiments/r58_quality/r59_staging_receipt.py"
+      - "experiments/r58_quality/test_r59_staging_receipt.py"
       - ".github/workflows/gold-quality-pipeline.yml"
 
 permissions:
@@ -146,6 +148,13 @@ jobs:
         run: |
           ruff check experiments/r58_quality/r59_contiguous_suffix_stage.py experiments/r58_quality/test_r59_contiguous_suffix_stage.py
           python -m unittest discover -s experiments/r58_quality -p 'test_r59_contiguous_suffix_stage.py' -v
+      - name: Verify R59 suffix staging SAFE compatibility (synthetic)
+        run: |
+          ruff check experiments/r58_quality/r59_staging_receipt.py experiments/r58_quality/test_r59_staging_receipt.py experiments/r58_quality/r59_owner_evidence_template.py experiments/r58_quality/r59_owner_evidence_preflight.py experiments/r58_quality/gold_quality_review_bind.py
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_staging_receipt.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_owner_evidence_template.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_r59_owner_evidence_preflight.py' -v
+          python -m unittest discover -s experiments/r58_quality -p 'test_gold_quality_review_bind.py' -v
       - name: Verify Gold owner evidence binding
         run: |
           ruff check experiments/r58_quality/gold_quality_review_bind.py experiments/r58_quality/test_gold_quality_review_bind.py
