@@ -130,6 +130,10 @@ history. Never rewrite or overwrite the original Preview.
   `training_authorized=false`, `gpu_started=false` remain mandatory.
 - Chinese execution runbook: `docs/R59_CONTEXT_WINDOW_CN.md`.
 
+### 2.2.2 HF Jobs Runtime Skill
+
+Before creating or changing any HF Job Runner, read `skills/storyforge-hf-jobs/SKILL.md` and its relevant references. Use `storyforge_dataset.hf_runtime` for shared context, paths, input/output, diagnostics, resources and receipt validation. Business-specific behavior belongs in thin adapters. Keep `src/storyforge_dataset/token_preflight.py` unchanged and reuse it as the only tokenizer core. The complete operational standard is `docs/standards/HF_JOBS_ENGINEERING.md`.
+
 ### 2.3 Hugging Face Jobs namespace and volume policy
 
 StoryForge Hugging Face Jobs MUST use the organization namespace `adradar` and the

@@ -10,6 +10,12 @@ on:
       - 'tests/test_token_preflight_core.py'
       - 'experiments/r60_hf_runtime/**'
       - 'tests/test_r60_cpu_volume_smoke.py'
+      - 'tests/test_r60_hf_skill_contract.py'
+      - 'experiments/r58_quality/r59_semantic_prompt_token_cpu.py'
+      - 'experiments/r58_quality/test_r59_semantic_prompt_token_cpu.py'
+      - 'skills/storyforge-hf-jobs/**'
+      - 'docs/standards/HF_JOBS_ENGINEERING.md'
+      - 'docs/R59_PILOT8_ADAPTER_RUNBOOK_CN.md'
       - '.github/workflows/r60-hf-runtime-ci.yml'
   pull_request:
     paths:
@@ -42,13 +48,17 @@ jobs:
           python -m pip install 'setuptools==80.9.0' 'pytest==8.4.2' 'ruff==0.14.3'
           python -m pip install -e . --no-build-isolation
       - name: Runtime lint
-        run: ruff check src/storyforge_dataset/hf_runtime tests/test_hf_runtime.py tests/test_hf_runtime_volume_edges.py experiments/r60_hf_runtime/r60_cpu_smoke.py tests/test_r60_cpu_volume_smoke.py
+        run: ruff check src/storyforge_dataset/hf_runtime tests/test_hf_runtime.py tests/test_hf_runtime_volume_edges.py experiments/r60_hf_runtime/r60_cpu_smoke.py tests/test_r60_cpu_volume_smoke.py tests/test_r60_hf_skill_contract.py experiments/r58_quality/r59_semantic_prompt_token_cpu.py experiments/r58_quality/test_r59_semantic_prompt_token_cpu.py
       - name: Python compile
-        run: python -m compileall -q src/storyforge_dataset/hf_runtime tests/test_hf_runtime.py tests/test_hf_runtime_volume_edges.py experiments/r60_hf_runtime/r60_cpu_smoke.py tests/test_r60_cpu_volume_smoke.py
+        run: python -m compileall -q src/storyforge_dataset/hf_runtime tests/test_hf_runtime.py tests/test_hf_runtime_volume_edges.py experiments/r60_hf_runtime/r60_cpu_smoke.py tests/test_r60_cpu_volume_smoke.py tests/test_r60_hf_skill_contract.py experiments/r58_quality/r59_semantic_prompt_token_cpu.py experiments/r58_quality/test_r59_semantic_prompt_token_cpu.py
       - name: Runtime synthetic tests
         run: pytest -q tests/test_hf_runtime.py tests/test_hf_runtime_volume_edges.py
       - name: R60 CPU volume smoke adapter tests
         run: pytest -q tests/test_r60_cpu_volume_smoke.py
+      - name: R60 Skill contract tests
+        run: pytest -q tests/test_r60_hf_skill_contract.py
+      - name: R59 Pilot8 adapter regression (synthetic only)
+        run: PYTHONPATH=experiments/r58_quality python -m unittest discover -s experiments/r58_quality -p 'test_r59_semantic_prompt_token_cpu.py' -q
       - name: Shared token preflight regression (unchanged source)
         run: python -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
       - name: Verify no training or network dependencies in Runtime package
