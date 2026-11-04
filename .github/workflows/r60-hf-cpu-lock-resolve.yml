@@ -5,6 +5,8 @@ on:
     branches: [r60/hf-jobs-runtime]
     paths:
       - 'requirements/hf-cpu-tokenizer.in'
+      - 'requirements/hf-cpu-tokenizer.lock'
+      - 'requirements/README.md'
       - '.github/workflows/r60-hf-cpu-lock-resolve.yml'
   pull_request:
     paths:
@@ -42,9 +44,19 @@ jobs:
             --no-emit-index-url \
             --output-file=/tmp/hf-cpu-tokenizer.lock \
             requirements/hf-cpu-tokenizer.in
-      - name: Verify locked installation and CPU-only dependency boundary
+      - name: Verify committed lock matches generated resolution
         run: |
-          python -m pip install --no-cache-dir --require-hashes -r /tmp/hf-cpu-tokenizer.lock
+          python - <<'PY'
+          from pathlib import Path
+          def normalized(path):
+              return [line.rstrip() for line in Path(path).read_text().splitlines()
+                      if line.strip() and not line.lstrip().startswith("#")]
+          assert normalized("/tmp/hf-cpu-tokenizer.lock") == normalized("requirements/hf-cpu-tokenizer.lock")
+          print("Committed lock matches hash-pinned resolution: PASS")
+          PY
+      - name: Verify committed locked installation and CPU-only dependency boundary
+        run: |
+          python -m pip install --no-cache-dir --require-hashes -r requirements/hf-cpu-tokenizer.lock
           python -m pip check
           python - <<'PY'
           import importlib.util
@@ -62,5 +74,5 @@ jobs:
               "torch_installed": False,
           })
           PY
-      - name: Print generated lock for reviewed source-control capture
-        run: cat /tmp/hf-cpu-tokenizer.lock
+      - name: Record lock digest
+        run: sha256sum requirements/hf-cpu-tokenizer.lock
