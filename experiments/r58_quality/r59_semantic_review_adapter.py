@@ -182,6 +182,12 @@ def create_only(path: Path, blob: bytes) -> None:
         raise
 
 
+def is_inside_git_checkout(path: Path) -> bool:
+    """Reject output beneath any checkout, independent of the current cwd."""
+    resolved = path.resolve()
+    return any((parent / ".git").exists() for parent in (resolved, *resolved.parents))
+
+
 def run(stage_path: Path, stage_safe_path: Path, pilot_path: Path, output_dir: Path) -> dict:
     raw = read_private(stage_path)
     stage_sha = sha(raw)
@@ -191,7 +197,7 @@ def run(stage_path: Path, stage_safe_path: Path, pilot_path: Path, output_dir: P
     pilot_raw = read_private(pilot_path)
     pilot = json.loads(pilot_raw)
     rows, safe = make_rows(jsonl(raw), pilot, stage_sha, sha(pilot_raw))
-    if output_dir.exists() or output_dir.is_symlink() or output_dir.resolve().is_relative_to(Path.cwd().resolve()):
+    if output_dir.exists() or output_dir.is_symlink() or is_inside_git_checkout(output_dir):
         raise Hold("OUTPUT_INVALID_OR_EXISTS")
     parent = output_dir.parent
     if (parent.is_symlink() or not parent.is_dir()
