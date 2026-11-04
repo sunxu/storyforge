@@ -55,7 +55,7 @@ class ReceiptTests(unittest.TestCase):
             root.mkdir(mode=0o700)
             stage_file = root / "staged.jsonl"
             safe_file = root / "staged-safe.json"
-            payload = b"".join(canonical(row) + b"\\n" for row in staged)
+            payload = b"".join(canonical(row) + b"\n" for row in staged)
             stage_file.write_bytes(payload)
             safe_file.write_text(json.dumps({
                 "schema": NEW_SCHEMA,
