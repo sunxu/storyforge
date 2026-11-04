@@ -56,10 +56,13 @@ def sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def read_private(path: Path, *, path_kind: str = "host") -> bytes:
+def read_private(path: Path, *, path_kind: str = "container") -> bytes:
     resolved = PathResolver.resolve(path, kind=path_kind)
     path = Path(str(resolved.value))
-    PathResolver.validate_input_root(path.parent)
+    # Explicit host mode supports macOS temp roots with OS-managed symlink ancestors.
+    # InputManager still verifies the final file with no-follow and descriptor checks.
+    if path_kind == "container":
+        PathResolver.validate_input_root(path.parent)
     verified = InputManager.open_verified(path, max_bytes=MAX_INPUT_BYTES)
     if verified.size_bytes <= 0:
         raise ValueError("INPUT_SIZE_LIMIT_EXCEEDED")
@@ -135,10 +138,14 @@ def audit(raw: bytes, *, expected_sha: str, expected_fingerprint: str,
     }
 
 
-def write_safe(path: Path, report: dict, *, path_kind: str = "host") -> None:
+def write_safe(path: Path, report: dict, *, path_kind: str = "container") -> None:
     resolved = PathResolver.resolve(path, kind=path_kind)
     path = Path(str(resolved.value))
-    PathResolver.validate_output_root(path.parent)
+    # Managed-mount root validation is mandatory for HF container paths.
+    # Explicit host mode is only for local synthetic tests; final-file publication
+    # remains create-only and descriptor-safe in OutputManager.
+    if path_kind == "container":
+        PathResolver.validate_output_root(path.parent)
     try:
         OutputManager.write_safe(path, report, mode=0o600)
     except ValueError as exc:

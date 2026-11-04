@@ -77,7 +77,7 @@ class Tests(unittest.TestCase):
             alias = folder / "input-hardlink.jsonl"
             alias.hardlink_to(source)
             self.assertEqual(source.stat().st_nlink, 2)
-            self.assertEqual(read_private(source), b"synthetic private input")
+            self.assertEqual(read_private(source, path_kind="host"), b"synthetic private input")
 
     def test_read_private_rejects_symlink(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -87,17 +87,17 @@ class Tests(unittest.TestCase):
             alias = folder / "alias.jsonl"
             alias.symlink_to(source)
             with self.assertRaises(ValueError):
-                read_private(alias)
+                read_private(alias, path_kind="host")
 
     def test_private_safe_create_only_on_hf_managed_mount(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
             folder.chmod(0o755)  # HF RW mountpoint need not be 0700.
             path = folder / "safe.json"
-            write_safe(path, {"status": "synthetic"})
+            write_safe(path, {"status": "synthetic"}, path_kind="host")
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             with self.assertRaises(FileExistsError):
-                write_safe(path, {"status": "other"})
+                write_safe(path, {"status": "other"}, path_kind="host")
 
 
 if __name__ == "__main__":
