@@ -40,20 +40,21 @@ class OutputManager:
     @classmethod
     def probe(cls, root: Path) -> OutputCapability:
         cls._check_root(root)
-        name = f".storyforge-probe-{secrets.token_hex(12)}"
-        path = root / name
+        path = root / f".storyforge-probe-{secrets.token_hex(12)}"
         flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
         fd = -1
+        identity: tuple[int, int] | None = None
         cleaned = False
         try:
             fd = os.open(path, flags, 0o600)
+            info = os.fstat(fd)
+            identity = (info.st_dev, info.st_ino)
             os.write(fd, b"r60-probe")
             os.fsync(fd)
-            info = os.fstat(fd)
             os.close(fd)
             fd = -1
             current = path.lstat()
-            if (info.st_dev, info.st_ino) != (current.st_dev, current.st_ino):
+            if identity != (current.st_dev, current.st_ino):
                 raise ValueError("OUTPUT_VERIFY_FAILED")
             path.unlink()
             cleaned = True
@@ -65,13 +66,11 @@ class OutputManager:
         finally:
             if fd >= 0:
                 os.close(fd)
-            if not cleaned:
+            if not cleaned and identity is not None:
                 try:
                     current = path.lstat()
-                    if fd >= -1 and stat.S_ISREG(current.st_mode):
+                    if identity == (current.st_dev, current.st_ino):
                         path.unlink()
-                except FileNotFoundError:
-                    pass
                 except OSError:
                     pass
 
@@ -85,6 +84,8 @@ class OutputManager:
     ) -> WriteReceipt:
         root = path.parent
         cls._check_root(root)
+        if mode != 0o600:
+            raise ValueError("OUTPUT_VERIFY_FAILED")
         if path.is_symlink():
             raise ValueError("OUTPUT_SYMLINK_REJECTED")
         data = (
@@ -120,13 +121,8 @@ class OutputManager:
                 raise ValueError("OUTPUT_FSYNC_FAILED") from exc
             final = os.fstat(fd)
             actual_mode = stat.S_IMODE(final.st_mode)
-            if (
-                not stat.S_ISREG(final.st_mode)
-                or final.st_size != len(data)
-                or actual_mode != mode
-            ):
+            if not stat.S_ISREG(final.st_mode) or final.st_size != len(data) or actual_mode != mode:
                 raise ValueError("OUTPUT_VERIFY_FAILED")
-            # Hard-link publication is atomic and fails if the destination exists.
             try:
                 os.link(temp_path, path, follow_symlinks=False)
             except FileExistsError as exc:
