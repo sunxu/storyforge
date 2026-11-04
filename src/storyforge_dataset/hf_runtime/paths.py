@@ -1,8 +1,9 @@
-"""Explicit host/container path representation and root validation."""
+"""Explicit host/container path representation and Runner module bootstrap."""
 
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Literal
@@ -41,6 +42,33 @@ class PathResolver:
         if ".." in value.parts:
             raise ValueError("PATH_TRAVERSAL_REJECTED")
         return ResolvedPath(kind="host", value=value)
+
+    @staticmethod
+    def bootstrap_module_root(path: Path) -> Path:
+        """Explicitly add a verified source root containing storyforge_dataset."""
+        if not path.is_absolute() or ".." in path.parts:
+            raise ValueError("PATH_NOT_ABSOLUTE")
+        try:
+            root_info = path.lstat()
+            package = path / "storyforge_dataset"
+            package_info = package.lstat()
+            init_info = (package / "__init__.py").lstat()
+        except OSError as exc:
+            raise ValueError("PATH_NOT_FOUND") from exc
+        if (
+            not root_info.st_mode
+            or not package_info.st_mode
+            or not init_info.st_mode
+            or path.is_symlink()
+            or package.is_symlink()
+            or (package / "__init__.py").is_symlink()
+            or not package.is_dir()
+            or not (package / "__init__.py").is_file()
+        ):
+            raise ValueError("PATH_TYPE_INVALID")
+        if str(path) not in sys.path:
+            sys.path.insert(0, str(path))
+        return path
 
     @staticmethod
     def _validate_root(path: Path) -> Path:
