@@ -44,9 +44,11 @@ class RecoveryProbeTests(unittest.TestCase):
             {"history": [msg("assistant", "", "completed"), msg("user", "行动")]},
         ])
         c = r["case_category_counts"]
-        self.assertEqual(c["filtered_boundary_invalid"], 1)
-        self.assertEqual(c["requires_other_semantic_or_structure_review"], 1)
-        self.assertEqual(c["invalid_without_unfinished_blank"], 1)
+        self.assertEqual(c, {
+            "filtered_boundary_invalid": 1,
+            "has_unfinished_blank": 1,
+            "invalid_without_unfinished_blank": 1,
+        })
         self.assertNotIn("potentially_recoverable_by_blank_unfinished_exclusion", c)
         self.assertEqual(r["quality_v1_admitted"], 0)
 
