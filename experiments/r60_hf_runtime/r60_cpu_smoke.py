@@ -146,6 +146,7 @@ def run_smoke(
     checks: dict[str, str] = {}
     resource = ResourceGuard.check_cpu_only()
     checks["cpu_profile"] = resource.status
+    checks.update(resource.checks)
     checks["hf_job_runtime"] = "PASS" if runtime.runtime == "HF_JOB" else "FAIL"
     if runtime.runtime != "HF_JOB":
         raise SmokeFailure(
