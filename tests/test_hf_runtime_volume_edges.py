@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from storyforge_dataset.hf_runtime import OutputManager
 import storyforge_dataset.hf_runtime.outputs as outputs_module
+from storyforge_dataset.hf_runtime import OutputManager
 
 
 def _temporary_outputs(root: Path) -> list[Path]:
@@ -136,7 +136,6 @@ def test_cleanup_failure_is_reported_instead_of_silently_ignored(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     destination = tmp_path / "cleanup-safe.json"
-    original_write = outputs_module.os.write
     original_unlink = Path.unlink
 
     def fail_write(_fd: int, _data: bytes | memoryview) -> int:
