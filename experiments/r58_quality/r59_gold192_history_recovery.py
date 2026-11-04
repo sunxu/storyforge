@@ -170,6 +170,9 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         if locator.get("source_status") != "EXACT_MATCH":
             held_source[str(locator.get("source_status", "SOURCE_STATUS_MISSING"))] += 1
             continue
+        if locator.get("matched_message_count") != 1:
+            held_source["SOURCE_MATCH_COUNT_NOT_UNIQUE"] += 1
+            continue
         session_id = locator.get("session_id")
         message_id = locator.get("message_id")
         if not isinstance(session_id, str) or not session_id or not isinstance(message_id, str) or not message_id:
