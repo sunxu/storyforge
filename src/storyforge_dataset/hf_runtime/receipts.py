@@ -36,7 +36,7 @@ class ReceiptValidator:
             raise ValueError("RECEIPT_SCHEMA_UNKNOWN")
         if not isinstance(value["runtime_version"], str) or not isinstance(value["profile"], str):
             raise ValueError("RECEIPT_FIELD_INVALID")
-        if value["profile"] != "cpu" or value["status"] not in {"PASS", "HOLD", "FAIL"}:
+        if value["profile"] != "cpu" or not isinstance(value["status"], str) or value["status"] not in {"PASS", "HOLD", "FAIL"}:
             raise ValueError("RECEIPT_FIELD_INVALID")
         if not isinstance(value["phase"], str) or value["phase"] not in PHASES:
             raise ValueError("RECEIPT_FIELD_INVALID")
@@ -82,7 +82,9 @@ class ReceiptValidator:
             value = json.loads(verified.read_bytes())
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
             raise ValueError("RECEIPT_SCHEMA_INVALID") from exc
-        except ValueError:
+        except ValueError as exc:
+            if str(exc) == "INPUT_SIZE_LIMIT_EXCEEDED":
+                raise ValueError("RECEIPT_SIZE_LIMIT_EXCEEDED") from exc
             raise
         except OSError as exc:
             raise ValueError("RECEIPT_READ_FAILED") from exc
