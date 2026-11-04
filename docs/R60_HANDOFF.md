@@ -193,6 +193,6 @@ At the documentation/evidence-only branch head after the R59 integration record,
 - R60 HF CPU tokenizer dependency lock Run `41833120402`: SUCCESS.
 - R58 scoped synthetic Run `41833120375`: FAILURE; remains a separately scoped R58 HOLD and is not relabeled as an R60 pass.
 
-The nine commits after the R59 Job commit change only `docs/R60_HANDOFF.md`, `docs/R60_IMPLEMENTATION_REPORT.md`, and the new commit-parity evidence file. No Runtime module, R59 adapter, tokenization core, frozen prompt, or private data changed after the R59 Job.
+All commits added after the R59 Job commit are documentation/evidence-only changes to the R60 report, handoff, and commit-parity evidence. No Runtime module, R59 adapter, tokenization core, frozen prompt, or private data changed after the R59 Job.
 
 R60-A scope decision: the four proposed peripheral tools are not being implemented in this PR. They remain future additive work after API overlap review; only a concrete defect blocking the approved Runtime contract can justify expanding R60 scope.
