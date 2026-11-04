@@ -155,3 +155,30 @@ Latest GitHub validation at this commit:
 - R58 scoped synthetic Run `41808603506`: FAILURE at its existing Environment and scoped test baselines step; remains separately held and must not be treated as an R60 regression without inspecting that job's log.
 
 Owner must pull this fix and rerun the local commands. Real R59 Pilot8 CPU Tokenizer Job remains NOT RUN until that local rerun passes.
+
+
+## 2026-11-04 R59 real CPU integration — superseding status
+
+The earlier NOT RUN / NOT TESTED statements above are superseded by this section.
+
+- R59 Pilot8 Job: `6aeb0f8f0e0338d1bb7fb6c1`, `cpu-basic`.
+- Executed commit: `96cdb76d4b7e61d2a34216d70d45396e66163e2a`.
+- Current R60 branch HEAD at this update: same commit; GitHub compare is `identical`, 0 ahead / 0 behind.
+- Seven Runtime modules and the R59 adapter were fetched at that commit and their Git blob IDs recorded in [R60_R59_COMMIT_PARITY_20261104.md](evidence/R60_R59_COMMIT_PARITY_20261104.md).
+- `token_preflight.py` Git blob SHA is unchanged from Architecture Baseline: `9ea7596c2151ee10aa1394beedc36ffeb9a7fca8`.
+
+Runtime diagnostic: `PASS`, phase `COMPLETION`. All recorded runtime checks passed; GPU was not started and training was not performed.
+
+Business tokenizer outcome: `R59_PILOT8_HF_CPU_TOKEN_OVER_BUDGET__HOLD`.
+- 8 cases checked; 2 over budget.
+- Prompt tokens: min 3,460; median 7,139; P95 / max 106,839.
+- Model `Qwen/Qwen3-32B`, pinned revision `9216db5781bf21249d130ec9da846c4624c16137`.
+- Max model length 32,768; reserved output 2,400.
+
+Both SAFE receipts were recovered and hashed:
+- Business SAFE: `72909e5d33fe08724ec857d2e9ccd08d855d2070662c6d40e25d1eb412778e55`.
+- Runtime diagnostic SAFE: `5763eefcdaeaf21c59b5bf83d5736d4bf4e683d945cac08677ba1207474ea0f8`.
+
+This integration proves the shared Runtime can execute the frozen R59 CPU Tokenizer path and recover both receipts. It does not pass the R59 business budget gate. No prompt truncation, data modification, Quality-v1 admission, GPU, inference, or training is authorized.
+
+The R58 scoped synthetic workflow remains a separate HOLD; its failure is not represented as R60 success or failure without a dedicated diagnosis.
