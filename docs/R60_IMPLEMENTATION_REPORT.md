@@ -140,3 +140,20 @@ R59 真实 Tokenizer Job 不得在 Owner 本地合成回归通过前执行；执
 4. 记录镜像 Digest 或明确其无法固定的限制。
 5. 单独定位 R58 `STAGING_RECEIPT_MISMATCH`，不得通过降低数据质量门槛处理。
 6. 完成最终安全审查后再请求 Owner 审批 PR；不自动合并。
+
+
+## 7. 2026-11-04 追加：CPU 依赖锁与镜像策略
+
+CPU Tokenizer 依赖配置已新增：
+- `requirements/hf-cpu-tokenizer.in`
+- `requirements/hf-cpu-tokenizer.lock`（30 个直接/传递依赖固定版本，包含 SHA256 hashes）
+- `requirements/README.md`
+- `.github/workflows/r60-hf-cpu-lock-resolve.yml`
+
+Lock SHA256：`a48957b2337d703f4629206663e74d9986482c6905e63013a46dc8662204cfba`。
+
+锁文件工作流 Run `41807222164` PASS：重新解析与提交锁内容一致；在无 pip cache 条件下执行 `pip install --require-hashes`；`pip check` PASS；实际导入 Transformers 5.16.1、Tokenizers 0.23.3、huggingface-hub 1.33.0、Jinja2 3.1.6；确认 PyTorch 未安装。该 profile 不安装 ms-swift、vLLM、torchvision、decord 或 CUDA。
+
+Docker 官方镜像当前 `python:3.11` 标签对应 Python 3.11.18-trixie。当前 Linux/amd64 manifest digest 为 `sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`，index digest 为 `sha256:390127d66a75154671aa02f62a49aa7f83c386f33cdc84a8e8f060650e2e19f8`。来源：[Docker Hub python:3.11 manifest](https://hub.docker.com/layers/library/python/3.11/images/sha256-aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff)。
+
+历史 R60 Smoke Job 元数据没有提供 resolved digest，不能将当前查询结果冒充为历史实际镜像证明。后续 Linux/amd64 Job 应使用 platform-specific digest pin：`python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`。

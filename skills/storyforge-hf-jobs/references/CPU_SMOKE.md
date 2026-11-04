@@ -29,3 +29,13 @@ Job 页面显示 COMPLETED 仅表示进程结束，不等于业务 PASS。任何
 ## 费用与停止条件
 
 仅当本地门禁全绿、真实托管 Volume/Tokenizer 行为确实无法本地证明时才使用付费 CPU Job。一次失败先分析日志和 SAFE 回执；不得连续盲目提交。CPU 授权不包括 GPU、推理和训练。
+
+## 固定容器镜像
+
+历史 Job 若只记录 image Tag，不能追溯证明 resolved digest。新 Linux/amd64 HF CPU Job 应使用 platform-specific digest pin：
+
+```text
+python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff
+```
+
+该 manifest 对应 Python 3.11.18-trixie；Docker Hub 同时列出 index digest `sha256:390127d66a75154671aa02f62a49aa7f83c386f33cdc84a8e8f060650e2e19f8`。仅将其作为后续任务的 pinned image，不用于追认之前使用 Tag 的 Job。参见 [Docker Hub manifest](https://hub.docker.com/layers/library/python/3.11/images/sha256-aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff)。

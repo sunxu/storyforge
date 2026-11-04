@@ -23,3 +23,12 @@ python -m pip check
 Do not install this profile for Runtime-only jobs. It intentionally excludes PyTorch, ms-swift, vLLM, torchvision, decord and CUDA packages. The tokenizer-only Runner uses `AutoTokenizer`; it does not load model weights or execute inference.
 
 To regenerate the lock, use the dedicated `.github/workflows/r60-hf-cpu-lock-resolve.yml` workflow. Review changes to every direct and transitive pin before committing; do not update dependencies automatically.
+
+
+当前 lock SHA256：
+
+```text
+a48957b2337d703f4629206663e74d9986482c6905e63013a46dc8662204cfba
+```
+
+GitHub Actions lock resolution Run `41807222164`：提交锁与新解析结果一致，clean hash-verified install、`pip check` 通过，且 `torch` 不存在。

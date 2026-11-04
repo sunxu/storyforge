@@ -7,6 +7,7 @@ PR：[#12 — R60 shared HF Jobs Runtime](https://github.com/sunxu/storyforge/pu
 ## 当前结论
 
 - R60-00 至 R60-06：核心 Runtime、真实 HF CPU Volume Smoke、CI 已验证。
+- R60-06：CPU Tokenizer requirements lock 已生成并通过 hash-verified clean install。
 - R60-07：`skills/storyforge-hf-jobs/` 已建立，工程标准与 AGENTS 路由已更新。
 - R60-08：R59 Pilot8 Tokenizer Runner 已迁移到公共 Runtime；合成测试 PASS，真实 R59 CPU Tokenizer Job 尚未运行。
 - R60-09：未完成；PR 保持 Draft，不自动合并。
@@ -25,7 +26,7 @@ PR：[#12 — R60 shared HF Jobs Runtime](https://github.com/sunxu/storyforge/pu
 ### GitHub CI
 
 最新 R60 专项 CI：
-- Run：`41805972661`
+- Run：`41807222182`
 - 37 Runtime/Volume tests passed
 - 10 CPU Smoke adapter tests passed
 - 3 Skill contract tests passed
@@ -34,8 +35,8 @@ PR：[#12 — R60 shared HF Jobs Runtime](https://github.com/sunxu/storyforge/pu
 - Ruff、Compile、dependency boundary PASS
 
 全仓 CI：
-- Run：`41805972620`
-- 670 passed，5 skipped，24 subtests passed
+- Run：`41807222067`
+- 671 passed，5 skipped，24 subtests passed
 
 独立 R58 scoped synthetic workflow：
 - Run：`41805972728`
