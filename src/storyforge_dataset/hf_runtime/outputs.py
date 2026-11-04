@@ -79,7 +79,7 @@ class OutputManager:
             cleaned = True
         except ValueError as exc:
             primary_error = exc
-        except OSError as exc:
+        except OSError:
             primary_error = ValueError("OUTPUT_PROBE_FAILED")
         finally:
             if fd >= 0:
