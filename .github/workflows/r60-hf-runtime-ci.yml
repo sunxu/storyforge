@@ -45,7 +45,7 @@ jobs:
         run: pytest -q tests/test_hf_runtime.py tests/test_hf_runtime_volume_edges.py
       - name: Shared token preflight regression (unchanged source)
         run: python -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
-      - name: Verify no training or network dependencies in Runtime package
+      - name: R60 CPU volume smoke adapter tests\n        run: pytest -q tests/test_r60_cpu_volume_smoke.py\n      - name: Verify no training or network dependencies in Runtime package
         run: |
           python - <<'PY'
           from pathlib import Path
