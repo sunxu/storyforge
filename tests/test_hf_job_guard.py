@@ -45,10 +45,14 @@ class HuggingFaceJobGuardTests(unittest.TestCase):
     def test_directory_prefix_mounts_are_allowed(self):
         inputs, output = self.valid(
             input_volumes=[
-                "hf://buckets/adradar/storyforge-training/"
-                "preflight/r59/20261103:/input:ro",
-                "hf://buckets/adradar/storyforge-training/"
-                "scripts/r59-context-window-20261104-a62b247:/scripts:ro",
+                (
+                    "hf://buckets/adradar/storyforge-training/"
+                    "preflight/r59/20261103:/input:ro"
+                ),
+                (
+                    "hf://buckets/adradar/storyforge-training/"
+                    "scripts/r59-context-window-20261104-a62b247:/scripts:ro"
+                ),
             ],
         )
         self.assertEqual([v.destination for v in inputs], ["/input", "/scripts"])
@@ -56,16 +60,15 @@ class HuggingFaceJobGuardTests(unittest.TestCase):
 
     def test_similar_non_root_destinations_are_rejected(self):
         for bad in ("/inputs", "/scripts-old", "/input-other"):
-            with self.subTest(destination=bad):
-                with self.assertRaisesRegex(
-                    PolicyError, "INPUT_DESTINATION_MUST_BE_INPUT_OR_SCRIPTS"
-                ):
-                    self.valid(
-                        input_volumes=[
-                            "hf://buckets/adradar/storyforge-training/"
-                            "preflight/r59/20261103:" + bad + ":ro",
-                        ],
-                    )
+            with self.subTest(destination=bad), self.assertRaisesRegex(
+                PolicyError, "INPUT_DESTINATION_MUST_BE_INPUT_OR_SCRIPTS"
+            ):
+                self.valid(
+                    input_volumes=[
+                        "hf://buckets/adradar/storyforge-training/"
+                        "preflight/r59/20261103:" + bad + ":ro",
+                    ],
+                )
 
     def test_personal_namespace_fallback_rejected(self):
         with self.assertRaisesRegex(PolicyError, "NAMESPACE_MUST_BE_ADRADAR"):
