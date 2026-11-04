@@ -13,6 +13,7 @@ from collections import Counter
 from pathlib import Path
 
 from gold_source_context_stage import _private_file, _read_rows
+from r59_staging_receipt import valid_staging_receipt
 from quality_v1 import EVIDENCE, SEVERE, sha
 
 SCHEMA = "storyforge-r59-owner-evidence-preflight-safe-v1"
@@ -160,8 +161,7 @@ def run(staged_path: Path, receipt_path: Path, owner_path: Path):
         receipt = json.loads(receipt_raw)
     except (ValueError, UnicodeError):
         raise PreflightHold("STAGING_RECEIPT_INVALID") from None
-    if (receipt.get("schema") != "storyforge-gold-quality-supabase-source-stage-safe-v1"
-            or receipt.get("staged_file_sha256") != sha(staged_raw)):
+    if not valid_staging_receipt(receipt, sha(staged_raw)):
         raise PreflightHold("STAGING_RECEIPT_MISMATCH")
     upstream = receipt.get("source_context_file_sha256")
     if not isinstance(upstream, str) or HEX.fullmatch(upstream) is None:
