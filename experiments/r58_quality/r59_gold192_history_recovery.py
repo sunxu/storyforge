@@ -140,7 +140,7 @@ def verify_story_owner_scope(cursor, story_ids: list[str]) -> None:
         """
         SELECT id::text AS story_id, user_id::text AS user_id
         FROM public.user_stories
-        WHERE id = ANY(%s)
+        WHERE id::text = ANY(%s)
         """,
         (story_ids,),
     )
