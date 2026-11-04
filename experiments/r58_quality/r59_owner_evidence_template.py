@@ -14,6 +14,7 @@ from pathlib import Path
 
 from gold_source_context_stage import _create_only, _private_file, _read_rows
 from quality_v1 import EVIDENCE, sha
+from r59_staging_receipt import valid_staging_receipt
 
 SCHEMA = "storyforge-r59-owner-evidence-template-safe-v1"
 STAGE_SCHEMA = "storyforge-quality-v1-source-staging-private-v1"
@@ -82,8 +83,7 @@ def run(staged_path: Path, receipt_path: Path, output_dir: Path):
     except (ValueError, UnicodeError):
         raise TemplateHold("STAGING_RECEIPT_INVALID") from None
     staged_sha = sha(staged_raw)
-    if (receipt.get("schema") != "storyforge-gold-quality-supabase-source-stage-safe-v1"
-            or receipt.get("staged_file_sha256") != staged_sha):
+    if not valid_staging_receipt(receipt, staged_sha):
         raise TemplateHold("STAGING_RECEIPT_MISMATCH")
     source_context_sha = receipt.get("source_context_file_sha256")
     rows = build_template(_read_rows(staged_raw), staged_sha, source_context_sha)
