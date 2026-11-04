@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import errno
 import hashlib
 import os
 import stat
@@ -35,12 +36,13 @@ class InputManager:
         if max_bytes < 0:
             raise ValueError("INPUT_SIZE_LIMIT_EXCEEDED")
         flags = os.O_RDONLY
-        if hasattr(os, "O_NOFOLLOW"):
-            flags |= os.O_NOFOLLOW
+        if not hasattr(os, "O_NOFOLLOW"):
+            raise ValueError("INPUT_SYMLINK_REJECTED")
+        flags |= os.O_NOFOLLOW
         try:
             fd = os.open(path, flags)
         except OSError as exc:
-            if getattr(exc, "errno", None) in {getattr(os, "ELOOP", 40)}:
+            if exc.errno == errno.ELOOP:
                 raise ValueError("INPUT_SYMLINK_REJECTED") from exc
             raise ValueError("INPUT_OPEN_FAILED") from exc
 
