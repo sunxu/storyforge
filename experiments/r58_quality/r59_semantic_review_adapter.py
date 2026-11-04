@@ -12,6 +12,7 @@ import json
 import os
 import stat
 from collections import Counter
+from itertools import pairwise
 from pathlib import Path
 
 SCHEMA = "storyforge-r59-semantic-review-input-private-v1"
@@ -78,7 +79,7 @@ def validate_messages(messages: object) -> bool:
         return False
     if any(x["role"] == "system" for x in messages[1:]):
         return False
-    return all(a["role"] != b["role"] for a, b in zip(messages[1:], messages[2:]))
+    return all(a["role"] != b["role"] for a, b in pairwise(messages[1:]))
 
 
 def make_rows(stage_rows: list[dict], pilot: dict, stage_sha: str, pilot_sha: str):
@@ -227,7 +228,7 @@ def main() -> int:
     try:
         print(json.dumps(run(args.staged_jsonl, args.staging_safe, args.pilot_json, args.output_dir), sort_keys=True))
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - fail closed without leaking private inputs
         print(json.dumps({
             "schema": SAFE_SCHEMA,
             "status": "R59_PILOT8_REVIEW_INPUT_HOLD",
