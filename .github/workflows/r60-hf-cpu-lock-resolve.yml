@@ -11,6 +11,8 @@ on:
   pull_request:
     paths:
       - 'requirements/hf-cpu-tokenizer.in'
+      - 'requirements/hf-cpu-tokenizer.lock'
+      - 'requirements/README.md'
       - '.github/workflows/r60-hf-cpu-lock-resolve.yml'
   workflow_dispatch:
 
