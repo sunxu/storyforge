@@ -149,6 +149,21 @@ Owner 提供的元数据结果确认：
 - `user_stories` 存在 PUBLIC permissive `true` 策略；另有面向 anon/authenticated 的 restrictive moderation guard。自定义导出角色不能假定受该 guard 约束。
 
 适配器 owner 预检已修正为从 `user_stories.author_id` 读取 owner UUID，保留 story ID TEXT 的比较方式。
+权限设计（待执行，尚未变更）：
+- `user_stories`：已有 PUBLIC permissive `true`，必须给 `r58_export_reader` 增加
+  RESTRICTIVE SELECT 策略，条件为固定 owner `author_id` 与 13 个 story ID 的交集。
+  仅增加 permissive 策略不能收窄 PUBLIC 的 `true`。
+- `story_v2_sessions`：新增针对导出角色的 SELECT permissive 策略，
+  同时匹配 `user_id`、`story_id`。
+- `v2_chat_messages`、`v2_chat_message_ledger`：同样同时匹配 `user_id`、`story_id`。
+- `story_content_versions`：匹配 `author_id` 与 `story_id`。
+- `story_admin_versions`：表无 owner 列，只能通过精确 `story_id` allowlist，
+  并以 `EXISTS` 关联 `user_stories(id, author_id)` 验证固定 owner。
+- 仅 `story_admin_versions` 需要新增 SELECT GRANT；其余五张表已具备 SQL SELECT 权限。
+
+所有 allowlist 值必须由 Owner 在本机从冻结 packets 取得，owner UUID 必须与数据库查询核对；
+不得把这些私有标识提交 GitHub 或粘贴到聊天。创建策略前还应确认没有同名策略，并在事务中
+执行后检查 `pg_policies`、`has_table_privilege`、角色属性和策略定义。
 本次只修改 GitHub 分支代码与测试，不执行数据库权限变更。
 
 ## CPU 合成测试
