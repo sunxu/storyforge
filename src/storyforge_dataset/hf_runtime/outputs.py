@@ -49,9 +49,10 @@ class OutputManager:
         cleaned = False
         try:
             fd = os.open(path, flags, 0o600)
-            os.fchmod(fd, 0o600)
             info = os.fstat(fd)
             identity = (info.st_dev, info.st_ino)
+            os.fchmod(fd, 0o600)
+            info = os.fstat(fd)
             if stat.S_IMODE(info.st_mode) != 0o600:
                 raise ValueError("OUTPUT_VERIFY_FAILED")
             os.write(fd, b"r60-probe")
