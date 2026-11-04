@@ -227,8 +227,9 @@ def test_resource_guard_rejects_gpu_accelerator_even_without_device_nodes() -> N
     assert report.checks["accelerator_profile"] == "FAIL"
 
 
-def test_resource_guard_accepts_explicit_cpu_accelerator() -> None:
-    report = ResourceGuard.check_cpu_only(environ={"ACCELERATOR": "none"})
+@pytest.mark.parametrize("accelerator", ["none", "cpu", "cpu-basic", "cpu-upgrade", "cpu-performance", "cpu-xl"])
+def test_resource_guard_accepts_cpu_accelerator_flavors(accelerator: str) -> None:
+    report = ResourceGuard.check_cpu_only(environ={"ACCELERATOR": accelerator})
     assert report.status == "PASS"
     assert report.checks["accelerator_profile"] == "PASS"
 
