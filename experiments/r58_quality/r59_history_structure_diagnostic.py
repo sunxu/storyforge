@@ -61,9 +61,7 @@ def diagnose(rows: list[dict]) -> dict:
                 else:
                     status_values["other_type"] += 1
                     issues.add("STATUS_NOT_COMPLETED")
-            if isinstance(history[-1], dict) and history[-1].get("role") != "user":
-                issues.add("HISTORY_LAST_ROLE_NOT_USER")
-            elif not isinstance(history[-1], dict):
+            if not isinstance(history[-1], dict) or history[-1].get("role") != "user":
                 issues.add("HISTORY_LAST_ROLE_NOT_USER")
         if issues:
             cases_with_violations += 1
