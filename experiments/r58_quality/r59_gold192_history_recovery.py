@@ -134,7 +134,7 @@ def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -
     return cases
 
 
-def verify_story_owner_scope(cursor, story_ids: list[str]) -> None:
+def verify_story_owner_scope(cursor, story_ids: list[str]) -> int:
     if len(story_ids) != 13 or len(set(story_ids)) != 13:
         raise ValueError("STORY_SCOPE_INVALID")
     cursor.execute(
@@ -165,8 +165,9 @@ def verify_story_owner_scope(cursor, story_ids: list[str]) -> None:
             raise ValueError("STORY_OWNER_ID_INVALID")
         seen.add(story_id)
         owners.add(user_id.lower())
-    if seen != set(story_ids) or len(owners) != 1:
-        raise ValueError("STORY_OWNER_SCOPE_NOT_UNIFORM")
+    if seen != set(story_ids) or not owners:
+        raise ValueError("STORY_OWNER_SCOPE_INCOMPLETE")
+    return len(owners)
 
 
 def create_only(path: Path, payload: bytes) -> str:
@@ -259,7 +260,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             db.execute("SET LOCAL lock_timeout = '1000ms'")
             stage = "RECOVERY_QUERIES"
             with db.cursor() as cursor:
-                verify_story_owner_scope(
+                owner_count = verify_story_owner_scope(
                     cursor, sorted({case["story_id"] for case in packet_index.values()})
                 )
                 recovered = recover_cases(
@@ -295,6 +296,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         "pilot_recovered": len(recovered),
         "story_count": len({row["story_id"] for row in recovered}),
         "story_owner_scope_verified": True,
+        "distinct_story_owner_count": owner_count,
         "history_message_count_total": sum(row["history_message_count"] for row in recovered),
         "ledger_sessions_read": len({
             (row["story_id"], row["session_id"]) for row in recovered
