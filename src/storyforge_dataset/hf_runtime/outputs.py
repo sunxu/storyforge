@@ -43,7 +43,7 @@ class OutputManager:
         path = root / f".storyforge-probe-{secrets.token_hex(12)}"
         if not hasattr(os, "O_NOFOLLOW"):
             raise ValueError("OUTPUT_PROBE_FAILED")
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        flags = os.O_RDWR | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
         fd = -1
         identity: tuple[int, int] | None = None
         cleaned = False
@@ -99,7 +99,7 @@ class OutputManager:
         ).encode("utf-8")
         token = secrets.token_hex(12)
         temp_path = root / f".storyforge-tmp-{token}"
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        flags = os.O_RDWR | os.O_CREAT | os.O_EXCL
         if not hasattr(os, "O_NOFOLLOW"):
             raise ValueError("OUTPUT_CREATE_FAILED")
         flags |= os.O_NOFOLLOW
@@ -128,6 +128,15 @@ class OutputManager:
             final = os.fstat(fd)
             actual_mode = stat.S_IMODE(final.st_mode)
             if not stat.S_ISREG(final.st_mode) or final.st_size != len(data) or actual_mode != mode:
+                raise ValueError("OUTPUT_VERIFY_FAILED")
+            os.lseek(fd, 0, os.SEEK_SET)
+            readback = bytearray()
+            while len(readback) < len(data):
+                chunk = os.read(fd, min(1024 * 1024, len(data) - len(readback)))
+                if not chunk:
+                    break
+                readback.extend(chunk)
+            if bytes(readback) != data:
                 raise ValueError("OUTPUT_VERIFY_FAILED")
             try:
                 os.link(temp_path, path, follow_symlinks=False)
