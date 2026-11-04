@@ -8,11 +8,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
-import stat
 import sys
 from pathlib import Path
+
+from storyforge_dataset.hf_runtime import (
+    DiagnosticReporter, InputManager, OutputManager, ReceiptValidator,
+    ResourceGuard, RuntimeContext,
+)
+from storyforge_dataset.hf_runtime.diagnostics import ERROR_CODES
 
 # HF Jobs uploads the entry script separately under /data, while the
 # read-only local input volume is mounted at /job. Resolve the shared core
@@ -52,25 +56,10 @@ def sha(raw: bytes) -> str:
 
 
 def read_private(path: Path) -> bytes:
-    # HF read-only volume mounts may normalize mode bits and inode link counts.
-    # Do not treat those mount metadata as the privacy boundary: the input is
-    # pinned by SHA256 immediately afterwards. Still reject symlinks, non-regular
-    # files, empty/oversized inputs, and protect the open against symlink swaps.
-    if not path.is_absolute():
-        raise ValueError("INPUT_PATH_INVALID")
-    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
-    try:
-        fd = os.open(path, flags)
-    except OSError:
-        raise ValueError("INPUT_OPEN_FAILED") from None
-    with os.fdopen(fd, "rb") as stream:
-        info = os.fstat(stream.fileno())
-        if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= MAX_INPUT_BYTES:
-            raise ValueError("INPUT_FILE_METADATA_INVALID")
-        raw = stream.read(MAX_INPUT_BYTES + 1)
-    if not 0 < len(raw) <= MAX_INPUT_BYTES:
-        raise ValueError("INPUT_SIZE_INVALID")
-    return raw
+    verified = InputManager.open_verified(path, max_bytes=MAX_INPUT_BYTES)
+    if verified.size_bytes <= 0:
+        raise ValueError("INPUT_SIZE_LIMIT_EXCEEDED")
+    return verified.read_bytes()
 
 
 def load_prompts(raw: bytes, expected_sha: str, expected_fingerprint: str) -> list[dict]:
@@ -143,21 +132,12 @@ def audit(raw: bytes, *, expected_sha: str, expected_fingerprint: str,
 
 
 def write_safe(path: Path, report: dict) -> None:
-    # HF Jobs RW volume mountpoints may be provisioned with platform-managed
-    # directory modes (not 0700). The SAFE file itself is always create-only,
-    # O_NOFOLLOW, and 0600; the output volume is unique to this Job.
-    if (not path.is_absolute() or path.is_symlink() or not path.parent.is_dir()
-            or path.parent.is_symlink()):
-        raise ValueError("OUTPUT_PATH_INVALID")
-    parent_info = path.parent.stat()
-    if not stat.S_ISDIR(parent_info.st_mode) or not parent_info.st_mode & stat.S_IWUSR:
-        raise ValueError("OUTPUT_DIRECTORY_NOT_OWNER_WRITABLE")
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
-    fd = os.open(path, flags, 0o600)
-    with os.fdopen(fd, "wb") as stream:
-        stream.write(json.dumps(report, sort_keys=True, ensure_ascii=False).encode() + b"\n")
-        stream.flush()
-        os.fsync(stream.fileno())
+    try:
+        OutputManager.write_safe(path, report, mode=0o600)
+    except ValueError as exc:
+        if str(exc) == "OUTPUT_ALREADY_EXISTS":
+            raise FileExistsError("OUTPUT_ALREADY_EXISTS") from None
+        raise
 
 
 def main() -> int:
@@ -170,7 +150,10 @@ def main() -> int:
     p.add_argument("--max-model-len", type=int, default=32768)
     p.add_argument("--reserved-output-tokens", type=int, default=2400)
     p.add_argument("--output-safe", required=True, type=Path)
+    p.add_argument("--runtime-diagnostic-safe", required=True, type=Path)
     args = p.parse_args()
+
+    reporter = DiagnosticReporter(profile="cpu")
     report = {"schema": SCHEMA, "status": "R59_PILOT8_HF_CPU_TOKEN_HOLD",
               "tokenizer_checked": False, "gpu_started": False,
               "training_authorized": False, "quality_v1_admitted": 0,
@@ -178,22 +161,50 @@ def main() -> int:
     code = 42
     phase = "CONFIG_VALIDATION"
     try:
-        # No model weights or torch/vllm imports.
+        phase = "ENVIRONMENT"
+        reporter.start_phase("ENVIRONMENT")
+        runtime = RuntimeContext.detect(profile="cpu")
+        reporter.environment = runtime.to_safe_dict()
+        reporter.record_check("runtime_context", "PASS")
+        if runtime.runtime != "HF_JOB":
+            raise ValueError("RUNTIME_ENVIRONMENT_UNKNOWN")
+
+        phase = "PREFLIGHT"
+        reporter.start_phase("PREFLIGHT")
+        resource = ResourceGuard.check_cpu_only()
+        for name, status in resource.checks.items():
+            reporter.record_check(name, status)
+        if resource.status != "PASS":
+            raise ValueError(resource.error_code or "CPU_PROFILE_RESOURCE_UNKNOWN")
         if HEX40.fullmatch(args.revision) is None:
-            raise ValueError("CONFIG_INVALID")
+            raise ValueError("CLI_ARGUMENT_INVALID")
+
         phase = "INPUT_READ"
+        reporter.start_phase("INPUT_READ")
         raw = read_private(args.input)
+        reporter.record_check("input_open_verified", "PASS")
+
         phase = "PROMPT_VALIDATION"
+        reporter.start_phase("INPUT_VALIDATION")
         load_prompts(raw, args.input_sha256, args.prompt_fingerprint)
-        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        reporter.record_check("prompt_contract", "PASS")
+
+        # Tokenizer-only path: no model weights, inference, torch or vLLM imports.
         phase = "TOKENIZER_IMPORT"
+        reporter.start_phase("DEPENDENCY_IMPORT")
         from transformers import AutoTokenizer
         from transformers import __version__ as version
+        reporter.record_check("tokenizer_dependency_import", "PASS")
+
         phase = "TOKENIZER_LOAD"
+        reporter.start_phase("TOKENIZER_LOAD")
         tokenizer = AutoTokenizer.from_pretrained(
             args.model, revision=args.revision, trust_remote_code=False,
         )
+        reporter.record_check("tokenizer_loaded", "PASS")
+
         phase = "TOKENIZATION"
+        reporter.start_phase("TOKENIZATION")
         report = audit(
             raw, expected_sha=args.input_sha256,
             expected_fingerprint=args.prompt_fingerprint,
@@ -202,29 +213,74 @@ def main() -> int:
             reserved_output_tokens=args.reserved_output_tokens,
             tokenizer=tokenizer, transformers_version=version,
         )
+        post_resource = ResourceGuard.check_cpu_only()
+        for name, status in post_resource.checks.items():
+            reporter.record_check(name, status)
+        if post_resource.status != "PASS":
+            raise ValueError(post_resource.error_code or "CPU_PROFILE_RESOURCE_UNKNOWN")
+        reporter.record_check("tokenization_completed", "PASS")
         code = 0 if report["status"] == "R59_PILOT8_HF_CPU_TOKEN_PASS__NO_GPU" else 42
+
     except Exception as exc:  # noqa: BLE001 - never log exception messages or private values
+        failed_phase = phase
+        business_reason = {
+            "ENVIRONMENT": "RUNTIME_ENVIRONMENT_UNKNOWN",
+            "PREFLIGHT": "CPU_PROFILE_RESOURCE_UNKNOWN",
+            "INPUT_READ": "INPUT_READ_OR_MODE_INVALID",
+            "PROMPT_VALIDATION": "PROMPT_CONTRACT_INVALID",
+            "TOKENIZER_IMPORT": "TOKENIZER_DEPENDENCY_IMPORT_FAILED",
+            "TOKENIZER_LOAD": "TOKENIZER_LOAD_FAILED",
+            "TOKENIZATION": "CHAT_TEMPLATE_OR_ENCODING_FAILED",
+        }.get(failed_phase, "PREFLIGHT_VALIDATION_FAILED")
         report.update({
             "status": "R59_PILOT8_HF_CPU_TOKEN_HOLD",
             "tokenizer_checked": False,
-            "failure_phase": phase,
-            "reason_code": {
-                "INPUT_READ": "INPUT_READ_OR_MODE_INVALID",
-                "PROMPT_VALIDATION": "PROMPT_CONTRACT_INVALID",
-                "TOKENIZER_IMPORT": "TOKENIZER_DEPENDENCY_IMPORT_FAILED",
-                "TOKENIZER_LOAD": "TOKENIZER_LOAD_FAILED",
-                "TOKENIZATION": "CHAT_TEMPLATE_OR_ENCODING_FAILED",
-            }.get(phase, "PREFLIGHT_VALIDATION_FAILED"),
+            "failure_phase": failed_phase,
+            "reason_code": business_reason,
             "exception_type": type(exc).__name__,
         })
+        raw_code = str(exc) if isinstance(exc, ValueError) else ""
+        if raw_code not in ERROR_CODES:
+            raw_code = {
+                "PROMPT_CONTRACT_INVALID": "INPUT_JSONL_INVALID",
+                "RUNTIME_ENVIRONMENT_UNKNOWN": "RUNTIME_ENVIRONMENT_UNKNOWN",
+                "TOKENIZER_DEPENDENCY_IMPORT_FAILED": "RUNTIME_INTERNAL_ERROR",
+                "TOKENIZER_LOAD_FAILED": "RUNTIME_INTERNAL_ERROR",
+                "CHAT_TEMPLATE_OR_ENCODING_FAILED": "RUNTIME_INTERNAL_ERROR",
+                "PREFLIGHT_VALIDATION_FAILED": "RUNTIME_INTERNAL_ERROR",
+            }.get(business_reason, "RUNTIME_INTERNAL_ERROR")
+        runtime_phase = {
+            "ENVIRONMENT": "ENVIRONMENT",
+            "PREFLIGHT": "PREFLIGHT",
+            "INPUT_READ": "INPUT_READ",
+            "PROMPT_VALIDATION": "INPUT_VALIDATION",
+            "TOKENIZER_IMPORT": "DEPENDENCY_IMPORT",
+            "TOKENIZER_LOAD": "TOKENIZER_LOAD",
+            "TOKENIZATION": "TOKENIZATION",
+        }.get(failed_phase, "BUSINESS_LOGIC")
+        reporter.fail(raw_code, phase=runtime_phase)
         code = 42
+
     try:
+        reporter.start_phase("OUTPUT_WRITE")
         write_safe(args.output_safe, report)
+        reporter.record_check("business_safe_written", "PASS")
+        if code == 0:
+            reporter.start_phase("COMPLETION")
+            reporter.record_check("tokenizer_checked", "PASS")
+        reporter.write_safe(args.runtime_diagnostic_safe)
+        ReceiptValidator.verify_file(
+            args.runtime_diagnostic_safe,
+            expected_schema="storyforge-hf-runtime-diagnostic-v1",
+        )
     except (OSError, ValueError):
         code = 43
+        if reporter.status == "PASS":
+            reporter.fail("OUTPUT_CREATE_FAILED", phase="OUTPUT_WRITE")
         report = {"schema": SCHEMA, "status": "R59_PILOT8_HF_CPU_SAFE_WRITE_HOLD",
                   "gpu_started": False, "training_authorized": False,
                   "quality_v1_admitted": 0, "private_values_emitted": False}
+
     print(json.dumps(report, sort_keys=True))
     return code
 
