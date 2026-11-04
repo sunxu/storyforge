@@ -5,8 +5,8 @@ from __future__ import annotations
 import os
 import platform
 import sys
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
-from typing import Mapping
 
 from . import __version__
 
@@ -29,7 +29,7 @@ class RuntimeContext:
         *,
         profile: str = "cpu",
         environ: Mapping[str, str] | None = None,
-    ) -> "RuntimeContext":
+    ) -> RuntimeContext:
         if profile not in {"cpu"}:
             raise ValueError("RUNTIME_PROFILE_INVALID")
         env = os.environ if environ is None else environ
