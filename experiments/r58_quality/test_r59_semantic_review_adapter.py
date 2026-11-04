@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 from r59_semantic_review_adapter import (
-    Hold, SCHEMA, STAGE_SCHEMA, STAGE_STATUS, canon, make_rows, run, sha,
+    Hold, SCHEMA, STAGE_SCHEMA, STAGE_STATUS, canon, is_inside_git_checkout, make_rows, run, sha,
 )
 
 
@@ -75,6 +75,16 @@ class Tests(unittest.TestCase):
         pilot["cases"][1]["review_priority"] = "FULL_HISTORY_REVIEW"
         with self.assertRaises(Hold):
             make_rows(stage, pilot, "a" * 64, "b" * 64)
+
+    def test_checkout_block_independent_of_working_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertFalse(is_inside_git_checkout(root / "outside"))
+            checkout = root / "repo"
+            checkout.mkdir()
+            (checkout / ".git").write_text("gitdir: /tmp/synthetic")
+            self.assertTrue(is_inside_git_checkout(checkout / "private"))
+            self.assertTrue(is_inside_git_checkout(checkout / "nested" / "private"))
 
     def test_create_only_and_file_modes(self):
         stage, pilot = fixtures()
