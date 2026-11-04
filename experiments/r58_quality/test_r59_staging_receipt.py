@@ -11,7 +11,6 @@ from pathlib import Path
 from gold_source_context_stage import stage_source
 from quality_v1 import canonical
 from r59_owner_evidence_template import run as build_owner_template
-
 from r59_staging_receipt import NEW_SCHEMA, NEW_STATUS, OLD_SCHEMA, valid_staging_receipt
 
 
