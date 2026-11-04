@@ -9,8 +9,8 @@ import os
 import secrets
 import stat
 from dataclasses import dataclass
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Mapping
 
 
 @dataclass(frozen=True)
