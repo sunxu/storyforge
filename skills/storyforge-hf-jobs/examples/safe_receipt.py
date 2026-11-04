@@ -1,6 +1,6 @@
 """Create-only SAFE receipt example; no private text or overwrite."""
 from pathlib import Path
-from storyforge_dataset.hf_runtime import OutputManager, ReceiptValidator
+from storyforge_dataset.hf_runtime import OutputManager
 
 def publish(path: Path, payload: dict[str, object]) -> str:
     OutputManager.probe(path.parent)

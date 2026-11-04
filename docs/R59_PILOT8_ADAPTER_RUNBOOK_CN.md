@@ -45,3 +45,18 @@ python experiments/r58_quality/r59_semantic_review_adapter.py \
 ## 验收记录
 
 当前生成环境合成单元测试：7/7 PASS；`ruff` 未安装，静态检查 **待 Mac 运行**。未使用真实私有材料，未运行 HF CPU、GPU 或 Quality-v1 准入。
+## R60 Runtime 集成（CPU Tokenizer Runner）
+
+R60 迁移后，`r59_semantic_prompt_token_cpu.py` 使用公共 Runtime 执行环境识别、CPU 资源检查、输入 no-follow/限长读取、SAFE create-only 原子写入和 Runtime 诊断回执校验；Tokenization 算法仍唯一复用 `src/storyforge_dataset/token_preflight.py`，不复制核心。
+
+HF Job 必须先安装与 Runner 同一 Commit 的 StoryForge 源码包，使 `storyforge_dataset.hf_runtime` 可导入；独立挂载的 `token_core.py` 必须与 `src/storyforge_dataset/token_preflight.py` 字节一致。Runner 必须识别为 `HF_JOB`，并由 `ResourceGuard` 在 Tokenizer 导入前后检查 CPU profile。
+
+新增必需参数：`--runtime-diagnostic-safe`，写出独立的 `storyforge-hf-runtime-diagnostic-v1` 回执。原有 R59 业务 SAFE Schema 不变；两个 SAFE 文件均 create-only，输出到独立私有 RW 目录。下载后分别校验业务回执和 Runtime 回执，不能以其中一个代替另一个。
+
+合成回归命令：
+
+```bash
+PYTHONPATH=experiments/r58_quality python -m unittest -v test_r59_semantic_prompt_token_cpu
+```
+
+此迁移不访问真实 R59 私有输入，不改变冻结 Prompt、Pilot8 选择、模型 Revision 或预算；真实 R59 Tokenizer CPU Job 仍需单独通过本地门禁后执行。
