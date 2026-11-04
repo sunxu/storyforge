@@ -68,10 +68,10 @@ class Tests(unittest.TestCase):
         with self.assertRaises(ValueError):
             load_prompts(bad, sha(bad), fp)
 
-    def test_private_safe_create_only(self):
+    def test_private_safe_create_only_on_hf_managed_mount(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
-            folder.chmod(0o700)
+            folder.chmod(0o755)  # HF RW mountpoint need not be 0700.
             path = folder / "safe.json"
             write_safe(path, {"status": "synthetic"})
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
