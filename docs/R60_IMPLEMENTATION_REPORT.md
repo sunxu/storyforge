@@ -175,7 +175,7 @@ Latest GitHub validation at this commit:
 - CPU tokenizer dependency lock Run `41808603081`: SUCCESS.
 - R58 scoped synthetic Run `41808603506`: FAILURE at its existing Environment and scoped test baselines step; remains separately held and must not be treated as an R60 regression without inspecting that job's log.
 
-Owner must pull this fix and rerun the local commands. Real R59 Pilot8 CPU Tokenizer Job remains NOT RUN until that local rerun passes.
+Owner pulled the fix, reran the local regression, and completed the real R59 Pilot8 CPU Tokenizer Job. Its Runtime diagnostic passed; the business token-budget result is HOLD (2 of 8 over budget).
 
 
 ## 2026-11-04 R59 Pilot8 CPU Tokenizer integration — superseding status
