@@ -59,6 +59,38 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "SOURCE_LOCATOR_IDENTITY_INVALID"):
             adapter.validate_locators([bad], packets)
 
+    def test_root_fallback_with_multiple_exact_matches_is_held(self):
+        priority = [{
+            "case_id": "case-a", "story_id": "story-a",
+            "turn_index": 12, "target_sha256": "a" * 64,
+        }]
+        locator = {
+            "case_id": "case-a", "source_status": "EXACT_MATCH",
+            "matched_message_count": 2, "message_id": "message-root",
+            "session_id": "root-session",
+        }
+        with self.assertRaisesRegex(ValueError, "PILOT_SOURCE_IDENTITY_HOLD"):
+            adapter.build_recovery_cases(priority, {"case-a": locator})
+
+    def test_unique_exact_match_is_accepted(self):
+        priority = [{
+            "case_id": "case-a", "story_id": "story-a",
+            "turn_index": 12, "target_sha256": "a" * 64,
+        }]
+        locator = {
+            "case_id": "case-a", "source_status": "EXACT_MATCH",
+            "matched_message_count": 1, "message_id": "message-a",
+            "session_id": "session-a",
+        }
+        self.assertEqual(
+            adapter.build_recovery_cases(priority, {"case-a": locator}),
+            [{
+                "case_id": "case-a", "story_id": "story-a",
+                "session_id": "session-a", "turn_index": 12,
+                "target_sha256": "a" * 64,
+            }],
+        )
+
     def test_locator_index_rejects_duplicates(self):
         packets = {
             "case-a": {
