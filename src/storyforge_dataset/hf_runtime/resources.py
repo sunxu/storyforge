@@ -37,6 +37,16 @@ class ResourceGuard:
             raise ValueError("RESOURCE_PROFILE_UNSUPPORTED")
         env = os.environ if environ is None else environ
         checks: dict[str, str] = {}
+        accelerator = env.get("ACCELERATOR")
+        if accelerator is not None:
+            if accelerator.strip().lower() not in {"", "none"}:
+                checks["accelerator_profile"] = "FAIL"
+                code = "CPU_PROFILE_GPU_VISIBLE"
+            else:
+                checks["accelerator_profile"] = "PASS"
+                code = None
+        else:
+            code = None
         cuda_visible = env.get("CUDA_VISIBLE_DEVICES")
         nvidia_visible = env.get("NVIDIA_VISIBLE_DEVICES")
         forbidden = {"none", "void", "-1"}
@@ -45,7 +55,6 @@ class ResourceGuard:
             code = "CPU_PROFILE_GPU_VISIBLE"
         else:
             checks["cuda_visibility"] = "PASS"
-            code = None
         if nvidia_visible is not None and nvidia_visible.strip().lower() not in {"", *forbidden}:
             checks["nvidia_visibility"] = "FAIL"
             code = "CPU_PROFILE_GPU_VISIBLE"
