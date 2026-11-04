@@ -27,7 +27,9 @@ class RecoveryProbeTests(unittest.TestCase):
         r = probe([
             {"history": [msg("assistant", "开场"), msg("user", "", "error"),
                          msg("assistant", "结束"), msg("user", "行动")]},
-            {"history": [msg("assistant", "开场"), msg("user", "未完成内容", "pending")]},
+            {"history": [msg("assistant", "开场"), msg("user", "", "canceled"),
+                         msg("assistant", "未完成内容", "pending"),
+                         msg("user", "行动")]},
             {"history": [msg("assistant", "开场"), msg("user", "行动")]},
         ])
         c = r["case_category_counts"]
@@ -37,13 +39,15 @@ class RecoveryProbeTests(unittest.TestCase):
 
     def test_boundary_and_completed_blank_are_not_auto_accepted(self):
         r = probe([
-            {"history": [msg("user", "行动"), msg("assistant", "", "failed")]},
+            {"history": [msg("user", "行动"), msg("assistant", "", "failed"),
+                         msg("assistant", "结束")]},
             {"history": [msg("assistant", "", "completed"), msg("user", "行动")]},
         ])
         c = r["case_category_counts"]
-        self.assertEqual(c.get("filtered_boundary_invalid", 0), 0)
+        self.assertEqual(c["filtered_boundary_invalid"], 1)
         self.assertEqual(c["requires_other_semantic_or_structure_review"], 1)
         self.assertEqual(c["invalid_without_unfinished_blank"], 1)
+        self.assertNotIn("potentially_recoverable_by_blank_unfinished_exclusion", c)
         self.assertEqual(r["quality_v1_admitted"], 0)
 
 
