@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import tempfile
 from dataclasses import asdict
+from pathlib import Path
 
 from .context import RuntimeContext
-from .diagnostics import DiagnosticReporter
+from .diagnostics import DiagnosticReporter, ERROR_CODES
 from .outputs import OutputManager
 from .resources import ResourceGuard
 
@@ -33,20 +35,17 @@ def main() -> int:
         for name, status in resource.checks.items():
             reporter.record_check(name, status)
         if resource.status != "PASS":
-            reporter.fail("CPU_PROFILE_GPU_VISIBLE", phase="PREFLIGHT")
+            reporter.fail(resource.error_code or "CPU_PROFILE_RESOURCE_UNKNOWN", phase="PREFLIGHT")
 
         reporter.start_phase("OUTPUT_VALIDATION")
-        # Doctor probes the system temporary directory only; it does not inspect
-        # project/private mounts or create a persistent report.
-        import tempfile
-        from pathlib import Path
-
+        # Doctor probes an isolated temporary directory only. It never inspects
+        # project/private mounts or creates a persistent report.
         with tempfile.TemporaryDirectory(prefix="storyforge-r60-doctor-") as tmp:
             OutputManager.probe(Path(tmp))
         reporter.record_check("temporary_output_probe", "PASS")
     except ValueError as exc:
         code = str(exc)
-        if code not in __import__("storyforge_dataset.hf_runtime.diagnostics", fromlist=["ERROR_CODES"]).ERROR_CODES:
+        if code not in ERROR_CODES:
             code = "CLI_DOCTOR_FAILED"
         reporter.fail(code)
 
