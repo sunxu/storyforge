@@ -13,8 +13,8 @@ from collections import Counter
 from pathlib import Path
 
 from gold_source_context_stage import _private_file, _read_rows
-from r59_staging_receipt import valid_staging_receipt
 from quality_v1 import EVIDENCE, SEVERE, sha
+from r59_staging_receipt import valid_staging_receipt
 
 SCHEMA = "storyforge-r59-owner-evidence-preflight-safe-v1"
 HEX = re.compile(r"^[0-9a-f]{64}$")
