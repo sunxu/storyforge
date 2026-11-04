@@ -20,7 +20,6 @@ from storyforge_dataset.hf_runtime import (
     ResourceGuard,
     RuntimeContext,
 )
-from storyforge_dataset.hf_runtime.diagnostics import SCHEMA if False else PHASES
 
 
 def valid_receipt() -> dict[str, object]:
@@ -201,7 +200,7 @@ def test_doctor_json_is_machine_readable_and_side_effect_bounded() -> None:
     assert payload["gpu_started"] is False
     assert payload["training_performed"] is False
     assert payload["environment"]["runtime"] == "TEST"
-    assert result.returncode in {0, 2, 3}
+    assert result.returncode == 0
 
 
 def test_runtime_source_has_no_network_or_training_imports() -> None:
