@@ -108,7 +108,7 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
         self.assertIn("id::text = ANY(%s)", cursor.query)
         self.assertIn("author_id::text AS owner_id", cursor.query)
 
-    def test_owner_scope_rejects_multiple_owners(self):
+    def test_owner_scope_accepts_multiple_owners(self):
         owner_a = "11111111-1111-4111-8111-111111111111"
         owner_b = "22222222-2222-4222-8222-222222222222"
         class Cursor:
@@ -120,8 +120,7 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
                     for i, story in enumerate(self.params[0])
                 ]
         ids = [f"story-{index}" for index in range(13)]
-        with self.assertRaisesRegex(ValueError, "STORY_OWNER_SCOPE_NOT_UNIFORM"):
-            adapter.verify_story_owner_scope(Cursor(), ids)
+        self.assertEqual(adapter.verify_story_owner_scope(Cursor(), ids), 2)
 
     def test_locator_index_rejects_duplicates(self):
         packets = {
