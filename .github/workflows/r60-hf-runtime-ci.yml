@@ -25,6 +25,12 @@ on:
       - 'tests/test_token_preflight_core.py'
       - 'experiments/r60_hf_runtime/**'
       - 'tests/test_r60_cpu_volume_smoke.py'
+      - 'tests/test_r60_hf_skill_contract.py'
+      - 'experiments/r58_quality/r59_semantic_prompt_token_cpu.py'
+      - 'experiments/r58_quality/test_r59_semantic_prompt_token_cpu.py'
+      - 'skills/storyforge-hf-jobs/**'
+      - 'docs/standards/HF_JOBS_ENGINEERING.md'
+      - 'docs/R59_PILOT8_ADAPTER_RUNBOOK_CN.md'
       - '.github/workflows/r60-hf-runtime-ci.yml'
       - 'docs/standards/R60_HF_JOBS_RUNTIME_ARCHITECTURE_V1_CN.md'
 
