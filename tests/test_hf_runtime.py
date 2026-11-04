@@ -68,7 +68,7 @@ def test_runner_module_bootstrap_uses_explicit_source_root(
     source_root = tmp_path / "mounted-data"
     package = source_root / "storyforge_dataset"
     package.mkdir(parents=True)
-    (package / "__init__.py").write_text('"""synthetic package"""\\n', encoding="utf-8")
+    (package / "__init__.py").write_text('"""synthetic package"""\n', encoding="utf-8")
     monkeypatch.setattr(sys, "path", list(sys.path))
     resolved = PathResolver.bootstrap_module_root(source_root)
     assert resolved == source_root
@@ -110,16 +110,16 @@ def test_input_permissions_are_not_mistaken_for_content_integrity(
     tmp_path: Path, mode: int
 ) -> None:
     source = tmp_path / f"mode-{mode:o}.jsonl"
-    source.write_bytes(b'{"ok":true}\\n')
+    source.write_bytes(b'{"ok":true}\n')
     source.chmod(mode)
     result = InputManager.open_verified(source, max_bytes=100)
-    assert result.read_bytes() == b'{"ok":true}\\n'
+    assert result.read_bytes() == b'{"ok":true}\n'
 
 
 def test_input_manager_accepts_multiple_hardlinks_with_verified_bytes(tmp_path: Path) -> None:
     source = tmp_path / "source.jsonl"
     alias = tmp_path / "alias.jsonl"
-    source.write_bytes(b'{"synthetic":1}\\n')
+    source.write_bytes(b'{"synthetic":1}\n')
     os.link(source, alias)
     assert source.stat().st_nlink == 2
     result = InputManager.open_verified(alias, max_bytes=100)
@@ -128,14 +128,14 @@ def test_input_manager_accepts_multiple_hardlinks_with_verified_bytes(tmp_path: 
 
 def test_input_manager_validates_json_and_jsonl_structure() -> None:
     assert InputManager.validate_json(b'{"x":1}') == {"x": 1}
-    rows = InputManager.validate_jsonl(b'{"x":1}\\n{"x":2}\\n', max_records=2)
+    rows = InputManager.validate_jsonl(b'{"x":1}\n{"x":2}\n', max_records=2)
     assert rows == [{"x": 1}, {"x": 2}]
     with pytest.raises(ValueError, match="INPUT_JSON_INVALID"):
         InputManager.validate_json(b'{')
     with pytest.raises(ValueError, match="INPUT_JSONL_INVALID"):
-        InputManager.validate_jsonl(b'{"x":1}\\nnot-json\\n', max_records=5)
+        InputManager.validate_jsonl(b'{"x":1}\nnot-json\n', max_records=5)
     with pytest.raises(ValueError, match="INPUT_SIZE_LIMIT_EXCEEDED"):
-        InputManager.validate_jsonl(b'{"x":1}\\n{"x":2}\\n', max_records=1)
+        InputManager.validate_jsonl(b'{"x":1}\n{"x":2}\n', max_records=1)
 
 
 def test_input_manager_rejects_symlink(tmp_path: Path) -> None:
