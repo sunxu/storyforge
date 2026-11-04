@@ -164,18 +164,24 @@ def main() -> int:
               "training_authorized": False, "quality_v1_admitted": 0,
               "r50_accessed": False, "private_values_emitted": False}
     code = 42
+    phase = "CONFIG_VALIDATION"
     try:
         # No model weights or torch/vllm imports.
         if HEX40.fullmatch(args.revision) is None:
             raise ValueError("CONFIG_INVALID")
+        phase = "INPUT_READ"
         raw = read_private(args.input)
+        phase = "PROMPT_VALIDATION"
         load_prompts(raw, args.input_sha256, args.prompt_fingerprint)
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        phase = "TOKENIZER_IMPORT"
         from transformers import AutoTokenizer
         from transformers import __version__ as version
+        phase = "TOKENIZER_LOAD"
         tokenizer = AutoTokenizer.from_pretrained(
             args.model, revision=args.revision, trust_remote_code=False,
         )
+        phase = "TOKENIZATION"
         report = audit(
             raw, expected_sha=args.input_sha256,
             expected_fingerprint=args.prompt_fingerprint,
@@ -185,9 +191,20 @@ def main() -> int:
             tokenizer=tokenizer, transformers_version=version,
         )
         code = 0 if report["status"] == "R59_PILOT8_HF_CPU_TOKEN_PASS__NO_GPU" else 42
-    except Exception:  # noqa: BLE001 - private inputs and exception strings are never logged
-        report["status"] = "R59_PILOT8_HF_CPU_TOKEN_HOLD"
-        report["tokenizer_checked"] = False
+    except Exception as exc:  # noqa: BLE001 - never log exception messages or private values
+        report.update({
+            "status": "R59_PILOT8_HF_CPU_TOKEN_HOLD",
+            "tokenizer_checked": False,
+            "failure_phase": phase,
+            "reason_code": {
+                "INPUT_READ": "INPUT_READ_OR_MODE_INVALID",
+                "PROMPT_VALIDATION": "PROMPT_CONTRACT_INVALID",
+                "TOKENIZER_IMPORT": "TOKENIZER_DEPENDENCY_IMPORT_FAILED",
+                "TOKENIZER_LOAD": "TOKENIZER_LOAD_FAILED",
+                "TOKENIZATION": "CHAT_TEMPLATE_OR_ENCODING_FAILED",
+            }.get(phase, "PREFLIGHT_VALIDATION_FAILED"),
+            "exception_type": type(exc).__name__,
+        })
         code = 42
     try:
         write_safe(args.output_safe, report)
