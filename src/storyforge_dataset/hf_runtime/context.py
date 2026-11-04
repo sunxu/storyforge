@@ -33,7 +33,7 @@ class RuntimeContext:
         if profile not in {"cpu"}:
             raise ValueError("RUNTIME_PROFILE_INVALID")
         env = os.environ if environ is None else environ
-        hf_hint = bool(env.get("HF_JOB_ID") or env.get("HF_JOB_NAME"))
+        hf_hint = bool(env.get("JOB_ID") or env.get("HF_JOB_ID") or env.get("HF_JOB_NAME"))
         container_hint = os.path.exists("/.dockerenv") or bool(env.get("container"))
         runtime = "HF_JOB" if hf_hint else "CONTAINER" if container_hint else "LOCAL"
         if env.get("STORYFORGE_RUNTIME_TEST") == "1":
