@@ -11,19 +11,16 @@ import json
 import os
 import re
 import stat
-import sys
 from collections import Counter
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / "src"))
-sys.path.insert(0, str(ROOT / "experiments" / "r58_quality"))
-
-from storyforge_gold_quality.history_recovery import recover_cases
-from r59_gold192_supabase_extract import (
+from experiments.r58_quality.r59_gold192_supabase_extract import (
     A_SHA, B_SHA, EX_SHA, PACKETS_SHA, choose_pilot, index_packets,
     select_candidates,
 )
+from storyforge_gold_quality.history_recovery import recover_cases
+
+ROOT = Path(__file__).resolve().parents[2]
 
 HEX = re.compile(r"^[0-9a-f]{64}$")
 MAX_INPUT_BYTES = 160 * 1024 * 1024
