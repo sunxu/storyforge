@@ -1,0 +1,47 @@
+# R59 Pilot8 语义审核输入适配器（CPU-only）
+
+## 状态及约束
+
+本交付仅用于**构造审核输入**；不提交 GPU，不执行模型推理，不证明文学质量、上下文语义、Reviewer 独立性、世界来源真实性、保护集隔离或 Quality-v1 准入。
+
+源输入：既有 suffix72 Source Stage（含 SAFE 回执）和已冻结 Pilot8 PRIVATE JSON。所有输入要求普通文件、权限 0600；新输出只允许创建在仓库外权限 0700 的父目录。所有私人正文只保留在 Owner 本机。
+
+**重要限制：** 输入适配器保留 Stage 中完整可见历史，不自行裁剪长输入。这意味着某些样本可能远超评审模型的上下文，必须由后续 HF CPU Tokenizer 预检给出确切结果。不能用少量消息裁剪后的评审冒充完整审核，也不能将 R59 通用 System 当作 R58 的 `unapproved_card`。
+
+## 集成位置
+
+将两个 Python 文件放在 `experiments/r58_quality/` 下：
+
+- `r59_semantic_review_adapter.py`
+- `test_r59_semantic_review_adapter.py`
+
+本工具与 R58 原有 `r58_hf_gpu_literary_reviewer.py` **尚未连接**。R58 的 13 条输入和 `unapproved_card` 合同不兼容 R59，因此不能直接提交旧 Reviewer。下一步应设计含完整历史覆盖状态的 Prompt 及其独立 fingerprint/checkpoint，复用 R58 严格引用校验的公共逻辑，并先以 HF CPU 测量输入长度。
+
+## Mac 命令
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-gold-quality
+ruff check experiments/r58_quality/r59_semantic_review_adapter.py experiments/r58_quality/test_r59_semantic_review_adapter.py
+PYTHONPATH=experiments/r58_quality python -m unittest -v test_r59_semantic_review_adapter
+
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+STAGE="$PRIVATE/source-staging-suffix72-20261104-v1"
+PILOT="$PRIVATE/quality-v1/semantic-pilot8-suffix72-20261104-v1/R59_SEMANTIC_PILOT8_PRIVATE.json"
+OUT="$PRIVATE/quality-v1/semantic-pilot8-review-input-20261104-v1"
+test ! -e "$OUT"
+python experiments/r58_quality/r59_semantic_review_adapter.py \
+  --staged-jsonl "$STAGE/GOLD_SOURCE_STAGING_PRIVATE.jsonl" \
+  --staging-safe "$STAGE/GOLD_SOURCE_STAGING_SAFE.json" \
+  --pilot-json "$PILOT" \
+  --output-dir "$OUT"
+```
+
+仅向聊天回传 SAFE stdout。工具固定状态 `R59_PILOT8_FULL_HISTORY_INPUT_BUILT__TOKEN_PREFLIGHT_PENDING`，输出：
+
+- `R59_SEMANTIC_PILOT8_REVIEW_INPUT_PRIVATE.jsonl`，权限 0600，不得上传公共 GitHub 或发送聊天。
+- `R59_SEMANTIC_PILOT8_REVIEW_INPUT_SAFE.json`，权限 0600，只含计数与私人数据文件 SHA256；如需回传，优先仅回传 stdout 的聚合字段。
+
+## 验收记录
+
+当前生成环境合成单元测试：6/6 PASS；`ruff` 未安装，静态检查 **待 Mac 运行**。未使用真实私有材料，未运行 HF CPU、GPU 或 Quality-v1 准入。
