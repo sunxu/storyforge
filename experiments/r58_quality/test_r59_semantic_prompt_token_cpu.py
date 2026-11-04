@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from r59_semantic_prompt_token_cpu import audit, load_prompts, sha, write_safe
+from r59_semantic_prompt_token_cpu import audit, load_prompts, read_private, sha, write_safe
 
 
 class FakeTokenizer:
@@ -67,6 +67,27 @@ class Tests(unittest.TestCase):
         bad = b"".join(json.dumps(r).encode() + b"\n" for r in rows)
         with self.assertRaises(ValueError):
             load_prompts(bad, sha(bad), fp)
+
+    def test_read_private_accepts_hf_normalized_mode_and_link_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            source = folder / "input.jsonl"
+            source.write_bytes(b"synthetic private input")
+            source.chmod(0o644)
+            alias = folder / "input-hardlink.jsonl"
+            alias.hardlink_to(source)
+            self.assertEqual(source.stat().st_nlink, 2)
+            self.assertEqual(read_private(source), b"synthetic private input")
+
+    def test_read_private_rejects_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp)
+            source = folder / "source.jsonl"
+            source.write_bytes(b"synthetic private input")
+            alias = folder / "alias.jsonl"
+            alias.symlink_to(source)
+            with self.assertRaises(ValueError):
+                read_private(alias)
 
     def test_private_safe_create_only_on_hf_managed_mount(self):
         with tempfile.TemporaryDirectory() as tmp:
