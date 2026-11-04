@@ -28,7 +28,7 @@ The target branch was created on GitHub from the exact approved commit. The firs
 
 The blob SHA of `src/storyforge_dataset/token_preflight.py` at the approved base and on the R60 branch is identical:
 
-`9ea7596c2151ee10aa1394beed8ab363a584aeb1`
+`9ea7596c2151ee10aa1394beedc36ffeb9a7fca8`
 
 Therefore the shared token preflight source was not modified by R60-00.
 
