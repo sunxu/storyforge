@@ -14,22 +14,31 @@ import stat
 import sys
 from pathlib import Path
 
+# HF Jobs uploads the entry script separately under /data, while the
+# read-only local input volume is mounted at /job. Resolve the shared core
+# from that mount before trying repository-local development imports.
+_JOB_VOLUME = Path("/job")
+if _JOB_VOLUME.is_dir():
+    sys.path.insert(0, str(_JOB_VOLUME))
+
 try:
     from token_core import describe_token_lengths, digest_serialized_items, encode_chat
 except ModuleNotFoundError:
-    try:
-        from storyforge_dataset.token_preflight import (
-            describe_token_lengths,
-            digest_serialized_items,
-            encode_chat,
-        )
-    except ModuleNotFoundError:
-        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-        from storyforge_dataset.token_preflight import (
-            describe_token_lengths,
-            digest_serialized_items,
-            encode_chat,
-        )
+    # Local development fallback: find the repository's src directory without
+    # assuming a fixed depth (HF's /data/runner.py has no such ancestor).
+    _SOURCE_ROOT = next(
+        (parent / "src" for parent in Path(__file__).resolve().parents
+         if (parent / "src" / "storyforge_dataset" / "token_preflight.py").is_file()),
+        None,
+    )
+    if _SOURCE_ROOT is None:
+        raise
+    sys.path.insert(0, str(_SOURCE_ROOT))
+    from storyforge_dataset.token_preflight import (
+        describe_token_lengths,
+        digest_serialized_items,
+        encode_chat,
+    )
 
 SCHEMA = "storyforge-r59-pilot8-hf-cpu-review-token-safe-v1"
 PROMPT_SCHEMA = "storyforge-r59-semantic-review-prompt-private-v1"
