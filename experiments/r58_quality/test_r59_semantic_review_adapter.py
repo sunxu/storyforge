@@ -6,7 +6,15 @@ import unittest
 from pathlib import Path
 
 from r59_semantic_review_adapter import (
-    Hold, SCHEMA, STAGE_SCHEMA, STAGE_STATUS, canon, is_inside_git_checkout, make_rows, run, sha,
+    SCHEMA,
+    STAGE_SCHEMA,
+    STAGE_STATUS,
+    Hold,
+    canon,
+    is_inside_git_checkout,
+    make_rows,
+    run,
+    sha,
 )
 
 
