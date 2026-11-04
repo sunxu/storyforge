@@ -102,6 +102,37 @@ def validate_locators(rows: list[dict], packets: dict[str, dict]) -> dict[str, d
     return indexed
 
 
+def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -> list[dict]:
+    cases = []
+    held_source = Counter()
+    for case in priority:
+        locator = locator_index[case["case_id"]]
+        if locator.get("source_status") != "EXACT_MATCH":
+            held_source[str(locator.get("source_status", "SOURCE_STATUS_MISSING"))] += 1
+            continue
+        if locator.get("matched_message_count") != 1:
+            held_source["SOURCE_MATCH_COUNT_NOT_UNIQUE"] += 1
+            continue
+        session_id = locator.get("session_id")
+        message_id = locator.get("message_id")
+        if (not isinstance(session_id, str) or not session_id
+                or not isinstance(message_id, str) or not message_id):
+            held_source["SOURCE_LOCATOR_INCOMPLETE"] += 1
+            continue
+        cases.append({
+            "case_id": case["case_id"], "story_id": case["story_id"],
+            "session_id": session_id, "turn_index": case["turn_index"],
+            "target_sha256": case["target_sha256"],
+        })
+    if held_source:
+        raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+    if len(cases) != len(priority):
+        raise ValueError("PILOT_CASE_COUNT_INVALID")
+    if len({(row["story_id"], row["session_id"], row["turn_index"]) for row in cases}) != len(cases):
+        raise ValueError("PILOT_TARGET_LOCATOR_DUPLICATE")
+    return cases
+
+
 def create_only(path: Path, payload: bytes) -> str:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     fd = os.open(path, flags, 0o600)
@@ -163,32 +194,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         parse_jsonl(inputs["SOURCE_LOCATORS"], "SOURCE_LOCATORS"), packet_index
     )
 
-    cases = []
-    held_source = Counter()
-    for case in priority:
-        locator = locator_index[case["case_id"]]
-        if locator.get("source_status") != "EXACT_MATCH":
-            held_source[str(locator.get("source_status", "SOURCE_STATUS_MISSING"))] += 1
-            continue
-        if locator.get("matched_message_count") != 1:
-            held_source["SOURCE_MATCH_COUNT_NOT_UNIQUE"] += 1
-            continue
-        session_id = locator.get("session_id")
-        message_id = locator.get("message_id")
-        if not isinstance(session_id, str) or not session_id or not isinstance(message_id, str) or not message_id:
-            held_source["SOURCE_LOCATOR_INCOMPLETE"] += 1
-            continue
-        cases.append({
-            "case_id": case["case_id"], "story_id": case["story_id"],
-            "session_id": session_id, "turn_index": case["turn_index"],
-            "target_sha256": case["target_sha256"],
-        })
-    if held_source:
-        raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
-    if len(cases) != len(priority):
-        raise ValueError("PILOT_CASE_COUNT_INVALID")
-    if len({(row["story_id"], row["session_id"], row["turn_index"]) for row in cases}) != len(cases):
-        raise ValueError("PILOT_TARGET_LOCATOR_DUPLICATE")
+    cases = build_recovery_cases(priority, locator_index)
 
     if output_dir.exists() or output_dir.is_symlink():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
