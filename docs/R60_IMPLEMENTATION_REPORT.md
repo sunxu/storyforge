@@ -113,14 +113,14 @@ Job：`r58-synthetic`
 
 | 项目 | 状态 | 说明 |
 |---|---|---|
-| Owner Mac 最新 R60/R59 回归 | PENDING | 需在最新 HEAD 上复跑本地命令 |
-| R59 真实 Pilot8 CPU Tokenizer Job | NOT RUN | 尚未读取/挂载 R59 私有输入 |
-| R59 双 SAFE 回执回收 | NOT TESTED | 依赖真实 R59 CPU Job |
+| Owner Mac R60/R59 regression | PASS (reported) | Runtime, volume, Skill, adapter, shared token_preflight and doctor checks passed before the real CPU Job |
+| R59 真实 Pilot8 CPU Tokenizer Job | COMPLETED / BUSINESS HOLD | 8 cases tokenized; 2 over budget; see 2026-11-04 integration addendum |
+| R59 双 SAFE 回执回收 | PASS | Both SAFE files recovered locally and SHA256 recorded |
 | Docker 镜像 Digest | PENDING | HF Job 元数据只暴露 `python:3.11` Tag |
 | R58 scoped synthetic | HOLD | `STAGING_RECEIPT_MISMATCH` |
 | PR 最终合并 | PENDING | PR #12 仍为 Draft |
 
-R59 真实 Tokenizer Job 不得在 Owner 本地合成回归通过前执行；执行时必须使用冻结 Prompt、固定模型 Revision、私有输入、protected secrets 和独立 RW 输出路径。CPU 授权不包含 GPU 或训练。
+R59 真实 Tokenizer Job 已按 Owner 授权执行；后续重复执行仍须先通过 Owner 本地合成回归；执行时必须使用冻结 Prompt、固定模型 Revision、私有输入、protected secrets 和独立 RW 输出路径。CPU 授权不包含 GPU 或训练。
 
 ## 5. 安全与授权核对
 
@@ -156,7 +156,7 @@ Lock SHA256：`a48957b2337d703f4629206663e74d9986482c6905e63013a46dc8662204cfba`
 
 Docker 官方镜像当前 `python:3.11` 标签对应 Python 3.11.18-trixie。当前 Linux/amd64 manifest digest 为 `sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`，index digest 为 `sha256:390127d66a75154671aa02f62a49aa7f83c386f33cdc84a8e8f060650e2e19f8`。来源：[Docker Hub python:3.11 manifest](https://hub.docker.com/layers/library/python/3.11/images/sha256-aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff)。
 
-历史 R60 Smoke Job 元数据没有提供 resolved digest，不能将当前查询结果冒充为历史实际镜像证明。后续 Linux/amd64 Job 应使用 platform-specific digest pin：`python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`。
+R60 初始 Volume Smoke 的历史 Job 元数据没有提供 resolved digest；本次 R59 Pilot8 Job 使用了 platform-specific digest pin：`python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`。
 
 
 ## 2026-11-04 macOS host-path compatibility fix
@@ -189,7 +189,7 @@ This section supersedes earlier statements in this report that the real R59 Pilo
 - Runtime: Python 3.11.18, Linux x86_64, `HF_JOB`
 - Image: `python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72123ec319415c9eb49ff16fff`
 - Executed commit: `96cdb76d4b7e61d2a34216d70d45396e66163e2a`
-- Current R60 branch HEAD at this update: same full commit
+- R60 branch HEAD at Job execution: same full commit; subsequent branch commits in this update are documentation/evidence-only
 - Commit parity evidence: [R60_R59_COMMIT_PARITY_20261104.md](evidence/R60_R59_COMMIT_PARITY_20261104.md)
 
 ### Runtime result
