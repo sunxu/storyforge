@@ -9,7 +9,7 @@ PR：[#12 — R60 shared HF Jobs Runtime](https://github.com/sunxu/storyforge/pu
 - R60-00 至 R60-06：核心 Runtime、真实 HF CPU Volume Smoke、CI 已验证。
 - R60-06：CPU Tokenizer requirements lock 已生成并通过 hash-verified clean install。
 - R60-07：`skills/storyforge-hf-jobs/` 已建立，工程标准与 AGENTS 路由已更新。
-- R60-08：R59 Pilot8 Tokenizer Runner 已迁移到公共 Runtime；合成测试 PASS，真实 R59 CPU Tokenizer Job 尚未运行。
+- R60-08：R59 Pilot8 Tokenizer Runner 已迁移到公共 Runtime；合成测试 PASS，真实 R59 CPU Tokenizer Job 已完成，Runtime Diagnostic PASS，业务预算 HOLD（8 条中 2 条超预算），双 SAFE 已回收。
 - R60-09：未完成；PR 保持 Draft，不自动合并。
 
 ## 最新证据
@@ -154,7 +154,7 @@ Latest GitHub validation at this commit:
 - CPU tokenizer dependency lock Run `41808603081`: SUCCESS.
 - R58 scoped synthetic Run `41808603506`: FAILURE at its existing Environment and scoped test baselines step; remains separately held and must not be treated as an R60 regression without inspecting that job's log.
 
-Owner must pull this fix and rerun the local commands. Real R59 Pilot8 CPU Tokenizer Job remains NOT RUN until that local rerun passes.
+Owner has pulled the fix, rerun the local regression, and completed the real R59 Pilot8 CPU Tokenizer Job. Runtime Diagnostic PASS; business token-budget HOLD (2 of 8 over budget).
 
 
 ## 2026-11-04 R59 real CPU integration — superseding status
