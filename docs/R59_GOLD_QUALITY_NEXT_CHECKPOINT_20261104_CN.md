@@ -47,3 +47,25 @@
 - 如有 AutoLink SAFE，报告 `reviewer_a_exact_matches`、`reviewer_b_exact_matches`、`packet_exact_matches`，并明确定位符不等于独立审核证明。
 
 以上回执决定下一步是 Review Bind、可恢复结构修复，还是补充真实 Owner 审核。此检查点不更改既有审核准入策略。
+
+## 6. 2026-11-04 新回执：67 条共享 HISTORY_STRUCTURE_INVALID
+
+Owner 报告 Source Stage SAFE：`source_rows=72`、`context_staged=5`、`context_structure_hold=67`，结构 HOLD 原因全为 `HISTORY_STRUCTURE_INVALID`。Owner Evidence 预检：`identity_matched=5`、`rows_with_all_required_fields_present=0`，Owner 必填字段全部未核实；本阶段不执行 Review Bind。
+
+检查 `gold_source_context_stage.py::_history` 后确认，此错误码把以下多个条件合并在一起：消息必须为对象、角色只允许 user/assistant、角色不可连续相同、文本非空、`status == "completed"`。从现有聚合结果**无法断言**是哪一项触发 67 条 HOLD。
+
+新工具 `r59_history_structure_diagnostic.py` 在本机只读原始 R59 Source Context，按违规原因聚合**涉及的候选数量**，另统计消息状态大类。一次候选可同时计入多个原因，故计数不能相加为 67。不会打印私有文本、ID、源路径或完整 status 原始字符串。
+
+在 PR #11 最新代码的仓库根目录下运行：
+
+```bash
+set -euo pipefail
+PRIVATE="$HOME/.local/share/storyforge/r59/private"
+SOURCE="$(find "$PRIVATE" -type f -name 'R59_SOURCE_CONTEXT_PRIVATE.jsonl' -print -quit)"
+test -n "$SOURCE"
+.venv/bin/ruff check experiments/r58_quality/r59_history_structure_diagnostic.py experiments/r58_quality/test_r59_history_structure_diagnostic.py
+.venv/bin/python -m unittest discover -s experiments/r58_quality -p 'test_r59_history_structure_diagnostic.py' -v
+.venv/bin/python experiments/r58_quality/r59_history_structure_diagnostic.py --source-context-jsonl "$SOURCE"
+```
+
+只有在看到诊断分布后才能决定是否修改 Stage。若 67 条主要是 status 非 `completed`，要查明该状态的实际业务含义，并确保只选合法完成消息；不得直接剥离 status 或自动批准未完成对话。若主要为 `REPEATED_ROLE`，不得静默合并/删去消息；应回源检查消息流和边界是否确实有合法的原样历史。所有修改仅限明确可验证的结构等价变换，并需回归测试。诊断本身不能提高 `quality_v1_admitted`。
