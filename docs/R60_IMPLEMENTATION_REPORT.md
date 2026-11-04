@@ -157,3 +157,22 @@ Lock SHA256：`a48957b2337d703f4629206663e74d9986482c6905e63013a46dc8662204cfba`
 Docker 官方镜像当前 `python:3.11` 标签对应 Python 3.11.18-trixie。当前 Linux/amd64 manifest digest 为 `sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`，index digest 为 `sha256:390127d66a75154671aa02f62a49aa7f83c386f33cdc84a8e8f060650e2e19f8`。来源：[Docker Hub python:3.11 manifest](https://hub.docker.com/layers/library/python/3.11/images/sha256-aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff)。
 
 历史 R60 Smoke Job 元数据没有提供 resolved digest，不能将当前查询结果冒充为历史实际镜像证明。后续 Linux/amd64 Job 应使用 platform-specific digest pin：`python:3.11@sha256:aa24d1f30c72a360c82754ec26aa72437ee72152123ec319415c9eb49ff16fff`。
+
+
+## 2026-11-04 macOS host-path compatibility fix
+
+Owner's first local run passed Ruff, 48 Runtime/Volume/Skill tests, shared token_preflight 8/8, CPU doctor, and immutable-core comparison. Two R59 adapter tests failed because macOS temporary paths traverse an OS-managed symlink ancestor (commonly `/var -> /private/var`), which the HF managed-mount root validator correctly rejects.
+
+Fix commit: `ddf2ea3419fb2f0a1b772e0ff0c54aed065fe5c0`.
+- R59 helper defaults now use strict `path_kind="container"`.
+- Managed mount root validation remains mandatory for container input/output paths.
+- Local synthetic tests explicitly pass `path_kind="host"`; this skips only the managed-mount root check. Final input still uses InputManager no-follow/descriptor/size verification, and final SAFE publication still uses OutputManager create-only atomic writing.
+- Symlinked final input files remain rejected.
+
+Latest GitHub validation at this commit:
+- R60 HF Runtime CI Run `41808603414`: SUCCESS; Ruff, Compile, Runtime, Volume, Skill and R59 adapter tests all passed.
+- Repository CI Run `41808603086`: SUCCESS; tests and Evidence Integrity passed.
+- CPU tokenizer dependency lock Run `41808603081`: SUCCESS.
+- R58 scoped synthetic Run `41808603506`: FAILURE at its existing Environment and scoped test baselines step; remains separately held and must not be treated as an R60 regression without inspecting that job's log.
+
+Owner must pull this fix and rerun the local commands. Real R59 Pilot8 CPU Tokenizer Job remains NOT RUN until that local rerun passes.

@@ -136,3 +136,22 @@ test "$BASE_BLOB" = "$HEAD_BLOB"
 - R58 scoped synthetic 的 `STAGING_RECEIPT_MISMATCH` 需独立调查。
 - R59 真实 CPU Tokenizer 与双 SAFE 回执回收尚未执行。
 - GPU authorization：NONE；不得推导为 GPU inference/training 授权。
+
+
+## 2026-11-04 macOS host-path compatibility fix
+
+Owner's first local run passed Ruff, 48 Runtime/Volume/Skill tests, shared token_preflight 8/8, CPU doctor, and immutable-core comparison. Two R59 adapter tests failed because macOS temporary paths traverse an OS-managed symlink ancestor (commonly `/var -> /private/var`), which the HF managed-mount root validator correctly rejects.
+
+Fix commit: `ddf2ea3419fb2f0a1b772e0ff0c54aed065fe5c0`.
+- R59 helper defaults now use strict `path_kind="container"`.
+- Managed mount root validation remains mandatory for container input/output paths.
+- Local synthetic tests explicitly pass `path_kind="host"`; this skips only the managed-mount root check. Final input still uses InputManager no-follow/descriptor/size verification, and final SAFE publication still uses OutputManager create-only atomic writing.
+- Symlinked final input files remain rejected.
+
+Latest GitHub validation at this commit:
+- R60 HF Runtime CI Run `41808603414`: SUCCESS; Ruff, Compile, Runtime, Volume, Skill and R59 adapter tests all passed.
+- Repository CI Run `41808603086`: SUCCESS; tests and Evidence Integrity passed.
+- CPU tokenizer dependency lock Run `41808603081`: SUCCESS.
+- R58 scoped synthetic Run `41808603506`: FAILURE at its existing Environment and scoped test baselines step; remains separately held and must not be treated as an R60 regression without inspecting that job's log.
+
+Owner must pull this fix and rerun the local commands. Real R59 Pilot8 CPU Tokenizer Job remains NOT RUN until that local rerun passes.
