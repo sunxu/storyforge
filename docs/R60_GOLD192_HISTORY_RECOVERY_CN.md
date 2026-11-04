@@ -113,25 +113,25 @@ WHERE rolname = current_user;
 若 RLS 对该角色无适用策略，需逐表检查实际列、现有策略和 owner 关系，再设计最小范围策略。
 不能假定另外四张表具有与消息表相同的 `user_id` 列或相同 RLS 模型。
 
-如果实际 Pilot 因 RLS 返回零行，建议先只读确认 Gold192 的 13 个 story 是否全部属于同一个 owner `user_id`。
-只有 Owner 在 Supabase SQL Editor 中确认唯一 owner UUID 后，才考虑创建两条专用、SELECT-only、绑定固定 UUID 的策略，例如：
+如果实际 Pilot 因 RLS 返回零行，先只读确认 Gold192 的 13 个 story 是否全部属于同一个 owner `user_id`。
+适配器本身也会执行该检查；任一 story 不可见、owner 缺失或出现多个 owner 都会 HOLD。
 
-```sql
--- OWNER_UUID 必须由 Owner 在受信任环境核实；不可使用聊天中猜测的值。
-CREATE POLICY r58_gold192_reader_own_messages
-ON public.v2_chat_messages
-FOR SELECT TO r58_export_reader
-USING (user_id = 'OWNER_UUID'::uuid);
+**不要直接使用只按 owner UUID 放行的宽策略**：这会让导出角色读取该用户在其他故事中的消息。
+如需调整 RLS，必须同时绑定：
+1. Owner 已核实的固定 `user_id`；
+2. 冻结 Gold192 packets 中精确的 13 个 story UUID allowlist；
+3. 本次恢复实际需要的六张表，逐表按真实列结构设计策略。
 
-CREATE POLICY r58_gold192_reader_own_ledger
-ON public.v2_chat_message_ledger
-FOR SELECT TO r58_export_reader
-USING (user_id = 'OWNER_UUID'::uuid);
-```
+其中 `v2_chat_messages` 与 `v2_chat_message_ledger` 有 `user_id` 和 `story_id`，
+可同时校验 owner 与 story allowlist；`user_stories` 可按 `user_id + id` 限定；
+`story_v2_sessions`、`story_content_versions`、`story_admin_versions` 应通过
+`EXISTS` 关联被 allowlist 限定的 `user_stories`，但必须先核实各表的列类型与 RLS 行为。
+不要把这六张表的策略混为一条，也不要把 13 个私有 UUID 写入 GitHub。
 
-这只是待 Owner 核验后的策略模板，不是已执行的数据库变更。策略只允许读取固定 owner 的行，
-不授予 INSERT/UPDATE/DELETE，也不绕过 RLS。执行前必须验证所有 13 个 story 的 `user_id`
-一致；若不一致，不得使用该模板，应按明确的最小故事范围重新设计并审核策略。
+权限调整 SQL 应由 Owner 在受信任的 Supabase SQL Editor 中根据本机冻结 packets 生成，
+策略表达式必须是固定 owner UUID 与 13 个 story allowlist 的交集。只授予所需表的 SELECT；
+不得授予 `BYPASSRLS`、`service_role`、superuser 或任何写权限。当前 PR 不包含、
+也没有执行任何数据库权限变更。
 
 策略变更后先重新检查 `pg_policies`、`has_table_privilege`、`rolbypassrls`、
 `rolsuper`，再以 `r58_export_reader` 执行小批量 Pilot。不得在权限验证前运行 72 条。
