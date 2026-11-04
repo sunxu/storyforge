@@ -44,4 +44,4 @@ python experiments/r58_quality/r59_semantic_review_adapter.py \
 
 ## 验收记录
 
-当前生成环境合成单元测试：6/6 PASS；`ruff` 未安装，静态检查 **待 Mac 运行**。未使用真实私有材料，未运行 HF CPU、GPU 或 Quality-v1 准入。
+当前生成环境合成单元测试：7/7 PASS；`ruff` 未安装，静态检查 **待 Mac 运行**。未使用真实私有材料，未运行 HF CPU、GPU 或 Quality-v1 准入。
