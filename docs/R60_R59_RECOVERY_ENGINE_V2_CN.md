@@ -88,3 +88,19 @@ SAFE 增加：
 - `ledger_trigger_continuity_verified=false`
 
 RECOVERED 仅表示现有机械重建完成；Reviewer 决定、Owner 审批、历史时序认证、Quality-v1 准入是彼此独立的门槛。
+
+
+### 2.5 LedgerEventIndex：每个 Session 只建立一次事件索引
+
+对同一 Session 的多目标恢复，原逻辑会在每个 Case 重复：
+
+- 遍历 Ledger 事件；
+- 按 message_id 分组；
+- 对各消息事件排序；
+- 查找目标边界之后的首个相关事件。
+
+现在 `LedgerEventIndex` 在每个 Session 的 Ledger 元数据读取后建立一次，缓存 message_id 分组、排序后的事件和排序键。每个目标使用二分定位目标边界之后的位置，再按 turn cutoff 选择首个有效事件。
+
+`_required_event_ids` 与 `reconstruct_history` 复用同一索引；恢复主路径不会为每个 Case 重新分组和排序完整 Ledger。索引只在单次恢复事务/调用内使用，不跨运行持久化。
+
+该优化只改变重复计算方式，不改变 `recorded_at, id` 的比较规则，也不证明跨事务提交顺序。
