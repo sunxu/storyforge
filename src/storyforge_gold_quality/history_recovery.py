@@ -18,7 +18,6 @@ from .message_ledger import (
     _key,
     load_session_events,
     reconstruct_history,
-    target_boundary,
 )
 
 SESSION_COLUMNS = (
