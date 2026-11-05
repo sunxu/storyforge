@@ -504,6 +504,113 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
 
 
 
+def recover_cases_independently(cursor, cases: list[dict], *,
+                                max_history: int = 20000,
+                                max_lineage_depth: int = 16,
+                                max_ledger_events: int = 100000) -> tuple[list[dict], list[dict]]:
+    """Recover each case independently; one evidence HOLD never aborts other cases."""
+    if not cases:
+        raise HistoryRecoveryError("CASE_SET_EMPTY")
+    ids = [row.get("case_id") for row in cases]
+    targets = [row.get("target_sha256") for row in cases]
+    if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
+        raise HistoryRecoveryError("CASE_SET_DUPLICATE")
+
+    by_session = {}
+    for case in cases:
+        story_id = case.get("story_id")
+        session_id = case.get("session_id")
+        turn_index = case.get("turn_index")
+        if (not isinstance(story_id, str) or not story_id
+                or not isinstance(session_id, str) or not session_id
+                or type(turn_index) is not int or turn_index <= 0):
+            raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
+        entry = by_session.setdefault(
+            (story_id, session_id), {"max_turn": 0, "cases": []}
+        )
+        entry["max_turn"] = max(entry["max_turn"], turn_index)
+        entry["cases"].append(case)
+
+    targets_by_case = {}
+    ledger_by_session = {}
+    holds_by_case = {}
+
+    for key, entry in sorted(by_session.items()):
+        story_id, session_id = key
+        session_cases = entry["cases"]
+        turns = sorted({case["turn_index"] for case in session_cases})
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s
+              AND turn_index = ANY(%s) AND role = 'assistant'
+            """,
+            (story_id, session_id, turns),
+        )
+        rows = _fetchall(cursor, TARGET_COLUMNS)
+        by_turn = {}
+        for row in rows:
+            by_turn.setdefault(row["turn_index"], []).append(row)
+
+        valid_targets = []
+        for case in session_cases:
+            try:
+                target = _validate_target_rows(
+                    case, by_turn.get(case["turn_index"], [])
+                )
+                targets_by_case[case["case_id"]] = target
+                valid_targets.append(target)
+            except HistoryRecoveryError as exc:
+                holds_by_case[case["case_id"]] = str(exc)
+
+        if not valid_targets:
+            continue
+        try:
+            ledger_by_session[key] = load_session_events(
+                cursor, story_id, session_id, entry["max_turn"],
+                targets=valid_targets, max_events=max_ledger_events,
+            )
+        except LedgerRecoveryError as exc:
+            for case in session_cases:
+                if case["case_id"] in targets_by_case:
+                    holds_by_case[case["case_id"]] = str(exc)
+                    targets_by_case.pop(case["case_id"], None)
+
+    session_cache = {}
+    lineage_cache = {}
+    story_version_cache = {}
+    recovered = []
+    for case in sorted(cases, key=lambda item: item["case_id"]):
+        case_id = case["case_id"]
+        if case_id in holds_by_case:
+            continue
+        key = (case["story_id"], case["session_id"])
+        try:
+            result = recover_case(
+                cursor, case, max_history=max_history,
+                max_lineage_depth=max_lineage_depth,
+                target=targets_by_case[case_id],
+                ledger_events=ledger_by_session[key],
+                max_ledger_events=max_ledger_events,
+                session_cache=session_cache,
+                lineage_cache=lineage_cache,
+                story_version_cache=story_version_cache,
+            )
+            recovered.append(result)
+        except HistoryRecoveryError as exc:
+            holds_by_case[case_id] = str(exc)
+
+    holds = [
+        {"case_id": case["case_id"], "reason_code": holds_by_case[case["case_id"]]}
+        for case in cases if case["case_id"] in holds_by_case
+    ]
+    if len(recovered) + len(holds) != len(cases):
+        raise HistoryRecoveryError("RECOVERY_CASE_ACCOUNTING_INVALID")
+    return recovered, holds
+
+
 def diagnose_history_suffixes(cursor, cases: list[dict], *,
                               max_history: int = 20000,
                               max_lineage_depth: int = 16,
