@@ -25,7 +25,9 @@ from experiments.r58_quality.r59_gold192_supabase_extract import (  # noqa: E402
     A_SHA, B_SHA, EX_SHA, PACKETS_SHA, choose_pilot, index_packets,
     select_candidates,
 )
-from storyforge_gold_quality.history_recovery import recover_cases  # noqa: E402
+from storyforge_gold_quality.history_recovery import (  # noqa: E402
+    diagnose_history_suffixes, recover_cases,
+)
 
 MAX_INPUT_BYTES = 160 * 1024 * 1024
 
@@ -431,7 +433,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         max_history: int = 20000, max_lineage_depth: int = 16,
         max_ledger_events: int = 100000, diagnostic_only: bool = False,
         diagnose_duplicate_index: int | None = None,
-        diagnose_ledger_event_counts: bool = False) -> dict:
+        diagnose_ledger_event_counts: bool = False,
+        diagnose_history_suffix: bool = False) -> dict:
     inputs = {
         "REVIEWER_A": private_bytes(reviewer_a, "REVIEWER_A"),
         "REVIEWER_B": private_bytes(reviewer_b, "REVIEWER_B"),
@@ -467,7 +470,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     )
 
     if sum((diagnostic_only, diagnose_duplicate_index is not None,
-            diagnose_ledger_event_counts)) > 1:
+            diagnose_ledger_event_counts, diagnose_history_suffix)) > 1:
         raise ValueError("DIAGNOSTIC_MODE_CONFLICT")
     if diagnostic_only:
         cases = build_recovery_cases(priority, locator_index)
@@ -477,6 +480,85 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             "pilot_requested": len(priority),
             "pilot_identity_valid": len(cases),
             "database_connected": False,
+            "database_modified": False,
+            "private_values_emitted": False,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+            "gpu_started": False,
+            "r50_accessed": False,
+        }
+
+    if diagnose_history_suffix:
+        import psycopg
+
+        stage = "CONNECT"
+        tracked_cursor = None
+        try:
+            with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
+                stage = "SET_READ_ONLY"
+                db.execute("SET TRANSACTION READ ONLY")
+                stage = "SET_STATEMENT_TIMEOUT"
+                db.execute("SET LOCAL statement_timeout = '90000ms'")
+                stage = "SET_LOCK_TIMEOUT"
+                db.execute("SET LOCAL lock_timeout = '1000ms'")
+                stage = "VERIFY_READ_ONLY_ROLE"
+                with db.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT current_user, current_setting('transaction_read_only'),
+                               current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                        FROM pg_roles AS r WHERE r.rolname = current_user
+                        """
+                    )
+                    role = cursor.fetchone()
+                    if (role is None or role[0] != "r58_export_reader"
+                            or role[1] != "on" or role[2] != "on"
+                            or role[3] is not False or role[4] is not False):
+                        raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+                    tracked_cursor = RecoveryStageCursor(cursor)
+                    owner_count = verify_story_owner_scope(
+                        tracked_cursor,
+                        sorted({case["story_id"] for case in packet_index.values()})
+                    )
+                    verified_duplicate_indices = set()
+                    for pilot_index, case in enumerate(priority):
+                        locator = locator_index[case["case_id"]]
+                        match_count = locator.get("matched_message_count")
+                        if isinstance(match_count, int) and not isinstance(match_count, bool) and match_count == 1:
+                            continue
+                        if not isinstance(match_count, int) or isinstance(match_count, bool) or match_count < 2:
+                            raise ValueError("SOURCE_MATCH_COUNT_INVALID")
+                        proof = diagnose_duplicate_source(
+                            tracked_cursor, case, locator, max_lineage_depth
+                        )
+                        if proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
+                            raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+                        verified_duplicate_indices.add(pilot_index)
+                    cases = build_recovery_cases(
+                        priority, locator_index, verified_duplicate_indices
+                    )
+                    results = diagnose_history_suffixes(
+                        tracked_cursor, cases, max_history=max_history,
+                        max_lineage_depth=max_lineage_depth,
+                        max_ledger_events=max_ledger_events,
+                    )
+                stage = "ROLLBACK"
+                db.rollback()
+        except psycopg.Error as exc:
+            sqlstate = getattr(exc, "sqlstate", None)
+            if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
+                sqlstate = None
+            failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
+            raise DatabaseFailure(failure_stage, sqlstate, type(exc).__name__) from None
+        return {
+            "schema": "r59_gold192_history_suffix_recovery_diagnostic_safe_v1",
+            "status": "HISTORY_SUFFIX_DIAGNOSTIC_COMPLETE",
+            "pilot_requested": len(priority),
+            "case_results": results,
+            "database_role_verified": "r58_export_reader",
+            "transaction_read_only": True,
+            "row_security": True,
+            "role_bypassrls": False,
             "database_modified": False,
             "private_values_emitted": False,
             "quality_v1_admitted": 0,
@@ -792,6 +874,10 @@ def main() -> int:
         help="inspect one duplicated Pilot index using the approved read-only DB role",
     )
     diagnostics.add_argument(
+        "--diagnose-history-suffix", action="store_true",
+        help="recover each Pilot history independently and emit aggregate-only suffix diagnostics",
+    )
+    diagnostics.add_argument(
         "--diagnose-ledger-event-counts", action="store_true",
         help="count scoped Pilot ledger events per Session without reading event payloads",
     )
@@ -814,6 +900,7 @@ def main() -> int:
             diagnostic_only=args.diagnose_source_only,
             diagnose_duplicate_index=args.diagnose_duplicate_source_index,
             diagnose_ledger_event_counts=args.diagnose_ledger_event_counts,
+            diagnose_history_suffix=args.diagnose_history_suffix,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
