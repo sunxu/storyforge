@@ -48,6 +48,17 @@ Locator 文件必须与 SAFE receipt 中的文件 SHA256 一致。目标必须�
 最多 16 层 Session lineage。Ledger 单 Session 事件参数允许显式提高，但硬上限为
 1,000,000；默认值不变，超限或证据不完整时整批 HOLD，不静默截断。
 
+2026-11-05 针对 606,860 条事件 Session 的元数据读取增加稳定 Keyset Pagination：
+- 每页最多读取 10,000 条轻量元数据，按 `(recorded_at, id)` 严格递增续读；
+- 分页游标与现有 `idx_v2_chat_message_ledger_session(session_id, recorded_at, id)`
+  的排序键一致，避免一次性 `fetchall()` 数十万条记录；
+- 仍按原始 story、session、positive-turn 条件读取，不跳过、不合并事件；
+- 每页读取结果继续执行 locator、事件 ID、时间戳和 operation 校验；
+- 全部页面累计事件数仍受 `--max-ledger-events` 控制，超过上限仍整批 HOLD；
+- 快照 JSONB 仍仅对历史重建所需的事件按主键分批读取。
+
+分页是读取实现优化，不改变事件语义、恢复边界、历史快照要求或准入结论。
+
 2026-11-05 Pilot8 只读诊断发现一个 Session 在目标正 turn 范围内有 606,860 条事件。
 按数据库真实小写 operation 分类：`update_after` 314,355、`update_before` 290,605、
 `insert` 1,507、`delete` 393。此前用大写 operation 名称统计导致误报为 0，现已更正。
