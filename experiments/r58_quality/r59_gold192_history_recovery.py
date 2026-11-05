@@ -213,6 +213,52 @@ def verify_story_owner_scope(cursor, story_ids: list[str]) -> int:
     return len(owners)
 
 
+def recovery_query_stage(query: str) -> str:
+    """Classify a recovery SQL statement without exposing SQL or parameters."""
+    sql = query.lower()
+    if "from public.user_stories" in sql:
+        return "OWNER_SCOPE_QUERY"
+    if "from public.v2_chat_message_ledger" in sql:
+        return ("LEDGER_DETAIL_QUERY" if "row_data" in sql
+                else "LEDGER_METADATA_QUERY")
+    if "from public.v2_chat_messages" in sql:
+        if "mutation_revision" in sql:
+            return "CURRENT_HISTORY_QUERY"
+        if "role = 'assistant'" in sql:
+            return "TARGET_MESSAGE_QUERY"
+        return "MESSAGE_QUERY"
+    if "public.story_v2_sessions" in sql:
+        return "SESSION_LINEAGE_QUERY"
+    if "from public.story_content_versions" in sql:
+        return "STORY_VERSION_QUERY"
+    if "from public.story_admin_versions" in sql:
+        return "ADMIN_VERSION_QUERY"
+    return "RECOVERY_QUERY_OTHER"
+
+
+class RecoveryStageCursor:
+    """Track the last SQL phase, including failures raised while fetching rows."""
+
+    def __init__(self, cursor):
+        self._cursor = cursor
+        self.stage = "RECOVERY_QUERY_OTHER"
+
+    def execute(self, query, params=None):
+        self.stage = recovery_query_stage(str(query))
+        if params is None:
+            return self._cursor.execute(query)
+        return self._cursor.execute(query, params)
+
+    def fetchone(self):
+        return self._cursor.fetchone()
+
+    def fetchall(self):
+        return self._cursor.fetchall()
+
+    def __getattr__(self, name):
+        return getattr(self._cursor, name)
+
+
 def create_only(path: Path, payload: bytes) -> str:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     fd = os.open(path, flags, 0o600)
@@ -615,6 +661,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     import psycopg
 
     stage = "CONNECT"
+    tracked_cursor = None
     try:
         with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
             stage = "SET_READ_ONLY"
@@ -625,8 +672,9 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             db.execute("SET LOCAL lock_timeout = '1000ms'")
             stage = "RECOVERY_QUERIES"
             with db.cursor() as cursor:
+                tracked_cursor = RecoveryStageCursor(cursor)
                 owner_count = verify_story_owner_scope(
-                    cursor, sorted({case["story_id"] for case in packet_index.values()})
+                    tracked_cursor, sorted({case["story_id"] for case in packet_index.values()})
                 )
                 for pilot_index, case in enumerate(priority):
                     locator = locator_index[case["case_id"]]
@@ -638,7 +686,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                             or match_count < 2):
                         raise ValueError("SOURCE_MATCH_COUNT_INVALID")
                     duplicate_proof = diagnose_duplicate_source(
-                        cursor, case, locator, max_lineage_depth
+                        tracked_cursor, case, locator, max_lineage_depth
                     )
                     if duplicate_proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
                         raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
@@ -647,7 +695,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                     priority, locator_index, verified_duplicate_indices
                 )
                 recovered = recover_cases(
-                    cursor, cases, max_history=max_history,
+                    tracked_cursor, cases, max_history=max_history,
                     max_lineage_depth=max_lineage_depth,
                     max_ledger_events=max_ledger_events,
                 )
@@ -657,7 +705,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         sqlstate = getattr(exc, "sqlstate", None)
         if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
             sqlstate = None
-        raise DatabaseFailure(stage, sqlstate, type(exc).__name__) from None
+        failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
+        raise DatabaseFailure(failure_stage, sqlstate, type(exc).__name__) from None
 
     if len(recovered) != len(cases):
         raise ValueError("RECOVERY_COUNT_INVALID")
