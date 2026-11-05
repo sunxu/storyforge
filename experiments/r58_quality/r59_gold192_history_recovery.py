@@ -471,11 +471,11 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             raise DatabaseFailure(stage, sqlstate, type(exc).__name__) from None
         return {
             "schema": "r59_gold192_duplicate_source_diagnostic_safe_v1",
+            **diagnostic,
             "status": ("DUPLICATE_SOURCE_CANONICAL_ROOT_PROVEN__NO_ADMISSION"
                        if diagnostic["status"] == "UNIQUE_ROOT_CANONICAL_MATCH"
                        else "DUPLICATE_SOURCE_LINEAGE_HOLD"),
             "pilot_index": diagnose_duplicate_index,
-            **diagnostic,
             "database_role_verified": "r58_export_reader",
             "transaction_read_only": True,
             "row_security": True,
