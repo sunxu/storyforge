@@ -1,0 +1,115 @@
+{
+  "schema": "r58_g1_r57_bprompt_case_source_binding_gap_safe_v1",
+  "as_of": "2026-11-01",
+  "status": "R57_BPROMPT_CASE_LEVEL_SOURCE_PROVENANCE_NOT_PUBLICLY_VERIFIABLE__G1_HOLD",
+  "repository": "sunxu/storyforge",
+  "branch": "r58/roleplay-sft-skill-v01",
+  "evidence_method": "GITHUB_PINNED_SAFE_RECEIPT_AND_TWO_BRANCH_TREE_READONLY",
+  "authoritative_findings": [
+    {
+      "id": "R55_DEV20_CANONICAL_SOURCE",
+      "scope": "R55_GOLD5_V1_V2",
+      "canonical_dev_cases": 20,
+      "canonical_worlds": 2,
+      "canonical_source_test_sha256": "d8eee6db5882d85dce7ffc01256e7c5b9b46e133bdb2cf8591259112b92e980d",
+      "canonical_prompt_manifest_git_blob": "f4e39196c6aa0a87b095d7de5cae4acd8b2fca63",
+      "pinned_git_contract_owner_safe": "docs/evidence/R58_G1_R55_R57_DEV20_OWNER_GIT_CONTRACT_SAFE_20261101.json",
+      "claimed_frozen_scope_supported": true,
+      "r57_real_case_provenance_join_proven": false
+    },
+    {
+      "id": "R57_BPROMPT_ARCHIVE",
+      "safe_json": "docs/evidence/R57_BPROMPT_DEV20_FINAL_SAFE_20261028.json",
+      "safe_json_git_blob": "15dd3b6b6e64f3b637673df4cac613d96519cf93",
+      "safe_markdown": "docs/evidence/R57_BPROMPT_DEV20_FINAL_SAFE_20261028.md",
+      "safe_markdown_git_blob": "4487eb1d266829c0927ea98dd1301fa5373ed593",
+      "owner_reported_worlds": 2,
+      "owner_reported_pairs": 20,
+      "owner_reported_responses": 40,
+      "owner_reported_serious_subset_cases": 10,
+      "owner_reported_static_checks_pass": 19,
+      "archived_private_bundle_sha256_publicly_reported": true,
+      "independent_original_owner_key_mapping_verified": false,
+      "original_owner_key_raw_seen_by_auditor": false,
+      "actual_per_case_prompt_source_binding_verified": false,
+      "bprompt_source_code_in_git_snapshots_verified": false,
+      "archived_private_bundle_bytes_read_for_this_task": false
+    },
+    {
+      "id": "GIT_TREE_PRESENCE_SCOPE",
+      "scanned_branches": [
+        {
+          "branch": "r57/v03b-data-design",
+          "commit": "4dd144d9aac0d164a07dff14086e1321fcf48dc7",
+          "tree_items": 678
+        },
+        {
+          "branch": "r58/roleplay-sft-skill-v01",
+          "commit": "317a63d1a1607a1d6af687ae4d0b666ac972e18e",
+          "tree_items": 870
+        }
+      ],
+      "bprompt_generator_or_original_case_mapping_code_found_in_these_snapshots": false,
+      "bprompt_safe_report_found_in_r58_snapshot": true,
+      "absence_in_scanned_snapshots_proves_never_existed_elsewhere": false
+    }
+  ],
+  "missing_proof_minimum_metadata_only_contract": {
+    "canonical_source": "PINNED_V01_TEST_20_PROMPT_MANIFEST",
+    "expected_cases": 20,
+    "distinct_source_case_identifiers": 20,
+    "expected_source_worlds": 2,
+    "expected_match": "ONE_TO_ONE_SET_EQUALITY_OF_CASE_ID_AND_CANONICAL_SOURCE_PROMPT_SHA256",
+    "each_case_fields_needed": [
+      "canonical_case_id",
+      "canonical_base_prompt_sha256",
+      "r57_bprompt_record_immutable_identity",
+      "a_input_origin_binding",
+      "b_input_origin_binding"
+    ],
+    "runtime_comparison_boundaries": [
+      "SAME_CANONICAL_SOURCE_HISTORY_AND_CURRENT_USER_MESSAGE",
+      "ONLY_EXPLICIT_SYSTEM_SUFFIX_CHANGED",
+      "R57_INPUT_TRANSFORM_CONTRACT_PINNED"
+    ],
+    "authoritative_production_provenance": "FROZEN_R57_ORIGINAL_PRIVATE_ARCHIVE_BYTES_OR_VERIFIED_METADATA_ONLY_EXPORT_WHOSE_GENERATOR_AND_DIGEST_BIND_TO_ORIGINAL_ARCHIVE",
+    "evidence_levels_to_separate": [
+      "OWNER_DECLARED_CASE_MAPPING",
+      "ORIGINAL_SOURCE_TO_R57_CASE_BINDING_INDEPENDENTLY_VERIFIED"
+    ],
+    "prohibit_using_unbound_20_CASE_COUNT_AS_20_CASE_EQUALITY_PROOF": true,
+    "do_not_export_case_id_or_prompt_digest_to_chat_or_git": true,
+    "no_private_source_read_without_explicit_owner_scope": true
+  },
+  "current_action": {
+    "further_github_filename_scans_not_recommended": true,
+    "repetitive_DEV20_Git_checks_not_recommended": true,
+    "new_local_provenance_verifier_should_wait_for_authentic_metadata_only_source_schema": true,
+    "no_local_command_required_now": true,
+    "no_hf_job_requested": true,
+    "private_r57_package_read": false,
+    "existing_bprompt_owner_report_kept_as_scoped_development_evidence": true
+  },
+  "pending_universes": [
+    "r55_r57_other_dev",
+    "other_reserved_heldout",
+    "other_historical_training"
+  ],
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "known_historical_exposure_excluded_worlds": 1,
+    "remaining_fixed_worlds_hold": 4,
+    "original_unclassified_hf_jobs_pending": 60,
+    "source_registry_complete": false,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "protected_r50_content_read": false,
+    "historical_job_commands_or_logs_read": false,
+    "private_candidate_or_review_content_read": false,
+    "hf_job_started": false
+  }
+}

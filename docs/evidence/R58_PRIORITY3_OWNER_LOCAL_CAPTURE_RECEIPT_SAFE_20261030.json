@@ -1,0 +1,64 @@
+{
+  "schema": "storyforge-r58-priority3-owner-local-source-capture-safe-v1",
+  "date": "2026-10-30",
+  "evidence_origin": "Owner provided CLI stdout in current conversation; assistant has not accessed private source files",
+  "owner_reported": {
+    "capture_response": {
+      "records": 3,
+      "runtime_byte_exact_pass": 0,
+      "status": "PRIVATE_CAPTURE_COMPLETE_NOT_TRAIN_ADMITTED"
+    },
+    "validation_stdout": [
+      "R58_SOURCE_CAPTURE: PASS",
+      "SHA256_VERIFICATION: PASS",
+      "SOURCE_RECORDS: 3",
+      "TRAINING_ADMISSION: HOLD"
+    ],
+    "private_recheck": {
+      "case_fingerprints_verified": 12,
+      "private_file_permissions": "PASS",
+      "private_source_file_sha256": "PASS",
+      "records": 3,
+      "runtime_request_byte_exact": "HOLD",
+      "status": "R58_OWNER_LOCAL_PRIVATE_CAPTURE_RECHECK_PASS",
+      "training_admission": "HOLD"
+    }
+  },
+  "assessment": {
+    "mac_source_capture": "PASS_OWNER_REPORTED",
+    "mac_file_sha256_verification": "PASS_OWNER_REPORTED",
+    "local_source_bytes_sealed": "PASS_OWNER_REPORTED",
+    "full_private_source_recheck": "PASS_OWNER_REPORTED",
+    "full_runtime_prompt_parity": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0
+  },
+  "storage": {
+    "owner_local_only": true,
+    "exact_path_not_verified_by_assistant": true,
+    "hf_bucket_upload_verified": false,
+    "private_case_ids_shared": false,
+    "private_story_text_shared": false,
+    "private_manifest_shared": false
+  },
+  "new_code": {
+    "verifier": "experiments/r58_roleplay_replay/verify_priority3_private.py",
+    "synthetic_tests": "experiments/r58_roleplay_replay/test_verify_priority3_private.py",
+    "new_synthetic_test_count": 9,
+    "synthetic_test_run_by_owner": false,
+    "independent_run_verified": false,
+    "history_preflight": "experiments/r58_roleplay_replay/preflight_priority3_history.py",
+    "history_preflight_synthetic_tests": "experiments/r58_roleplay_replay/test_preflight_priority3_history.py",
+    "history_preflight_synthetic_test_count": 10,
+    "history_preflight_run_by_owner": false
+  },
+  "limits": [
+    "The reported file-level checksum is a self-consistency check of local data and manifest, not independent timestamped external attestation",
+    "Capture is only source evidence; source card, checkpoint, history and target are not original provider request bytes",
+    "Runtime dynamic memories, deployment code commit and original prompt/request ID remain unproven",
+    "Do not re-query and replace the sealed local source selection",
+    "Do not export source.private.jsonl or manifest.private.json to GitHub or chat",
+    "9 new verifier tests are committed but not yet run on owner Mac"
+  ],
+  "status": "OWNER_LOCAL_12_PER_CASE_HASH_PASS__CONDITIONAL_HISTORY_PREFLIGHT_PENDING__RUNTIME_REPLAY_HOLD"
+}

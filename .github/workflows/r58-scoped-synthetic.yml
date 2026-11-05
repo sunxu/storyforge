@@ -1,0 +1,197 @@
+name: R58 scoped synthetic (no training)
+
+on:
+  pull_request:
+    paths:
+      - 'experiments/r58_round1/**'
+      - 'experiments/r58_quality/**'
+      - 'src/storyforge_dataset/token_preflight.py'
+      - 'tests/test_token_preflight_core.py'
+      - 'skills/storyforge-roleplay-sft/**'
+      - '.github/workflows/r58-scoped-synthetic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  r58-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dev-only test dependencies
+        run: pip install -e '.[dev]'
+      - name: Environment and scoped test baselines
+        run: |
+          python3 --version
+          ruff --version
+          python3 -m unittest discover -s experiments/r58_round1 -p 'test_*.py' -q
+          python3 -m unittest discover -s experiments/r58_quality -p 'test_*.py' -q
+          python3 -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
+          python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.py' -q
+          python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q
+      - name: Gold195 frozen-source count-only structural preflight
+        run: |
+          python3 experiments/r58_quality/gold195_preflight.py --repo-root "$PWD" > /tmp/r58_gold195_preflight_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/r58_gold195_preflight_safe.json').read_text())
+          assert result['status'] == 'READ_ONLY_DIAGNOSTIC_NOT_QUALITY_ADMISSION'
+          assert result['total_records'] == 195
+          assert result['training_admitted'] == 0
+          assert result['protected_test_accessed'] is False
+          print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+          PY
+      - name: Gold195 frozen targets and user boundaries (SAFE)
+        run: |
+          set +e
+          python3 experiments/r58_quality/gold195_target_source.py --repo-root "$PWD" > /tmp/r58_gold195_target_source.json
+          exit_code=$?
+          set -e
+          cat /tmp/r58_gold195_target_source.json
+          if [ "$exit_code" -ne 0 ]; then echo "Gold195 source-target preflight HOLD"; exit "$exit_code"; fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path('/tmp/r58_gold195_target_source.json').read_text())
+          assert result["all_target_hashes_verified"] is True
+          assert result["records_checked"] == 195
+          assert result["quality_v1_admitted"] == 0
+          assert result["r50_accessed"] is False
+          print("Gold195 source-target integrity: PASS; Quality-v1 admission 0")
+          PY
+      - name: Gold195 source-faithful review packet readiness (SAFE counts)
+        run: |
+          python3 experiments/r58_quality/gold195_source_review_packet.py --repo-root "$PWD" > /tmp/r58_gold195_review_packet_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/r58_gold195_review_packet_safe.json').read_text())
+          assert data["status"] == "SOURCE_REVIEW_PACKET_PREFLIGHT_PASS__ALL_QUALITY_HOLD"
+          assert data["counts"]["source_rows_checked"] == 195
+          assert data["counts"]["target_hash_verified"] == 195
+          assert data["train_admitted"] == 0
+          assert data["private_review_packet_written"] is False
+          print(json.dumps(data, ensure_ascii=False, sort_keys=True))
+          PY
+      - name: Gold195 card-first source-bound draft preflight (no private cards)
+        run: |
+          python3 experiments/r58_quality/gold195_card_first.py --repo-root "$PWD" > /tmp/r58_card_first_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          v = json.loads(Path('/tmp/r58_card_first_safe.json').read_text())
+          assert v["status"] == "CARD_FIRST_DRAFT_CHECK_ONLY__NO_TRAINING_ADMISSION"
+          assert v["counts"]["source_rows"] == 195
+          assert v["counts"].get("structural_card_drafts", 0) == 0
+          assert v["quality_v1_admitted"] == 0
+          assert not v["private_output_written"]
+          print(json.dumps(v, ensure_ascii=False, sort_keys=True))
+          PY
+      - name: Gold108 frozen dual-review index binding (SAFE counts only)
+        run: |
+          set +e
+          python3 experiments/r58_quality/gold108_review_binding.py --repo-root "$PWD" > /tmp/r58_gold108_legacy_binding.json
+          exit_code=$?
+          set -e
+          cat /tmp/r58_gold108_legacy_binding.json
+          if [ "$exit_code" -ne 0 ]; then echo "Gold108 evidence contract: HOLD (exit $exit_code)"; exit "$exit_code"; fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/r58_gold108_legacy_binding.json').read_text())
+          assert data["status"] == "HISTORICAL_DUAL_REVIEW_INDEX_BINDING_ONLY__NO_QUALITY_V1_ADMISSION"
+          assert data["index_count"] == data["review_evidence_count"] == 108
+          assert data["training_admitted"] == 0
+          assert data["r50_body_accessed"] is False
+          print("Gold108 legacy double-review binding: 108/108 PASS; Quality-v1 admission=0")
+          PY
+      - name: V0.2 pinned SAFE evidence remains HOLD
+        run: |
+          python3 skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py --repo-root "$PWD" > /tmp/r58_safe_preflight.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          record = json.loads(Path('/tmp/r58_safe_preflight.json').read_text())
+          assert record['g1_clearance'] == 'HOLD'
+          assert record['g2_clearance'] == 'HOLD'
+          assert record['training_admitted'] == 0
+          assert record['expansion_allowed'] is False
+          print('SAFE preflight: G1=HOLD G2=HOLD admitted=0')
+          PY
+      - name: V0.2 gate/freeze both refuse without private inputs
+        run: |
+          for action in gate freeze; do
+            set +e
+            python3 skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py "$action" --repo-root "$PWD" > "/tmp/r58_${action}.json"
+            code=$?
+            set -e
+            if [ "$code" -ne 42 ]; then echo "Expected refusal exit 42 for $action, got $code"; exit 1; fi
+            python3 - "$action" <<'PY'
+          import json, sys
+          from pathlib import Path
+          action = sys.argv[1]
+          record = json.loads(Path(f'/tmp/r58_{action}.json').read_text())
+          assert record['status'] == 'HOLD_G1_G2_UNPROVEN__NO_V01_EXECUTION'
+          assert record['output_data_written'] is False
+          assert record['train_admitted'] == 0
+          print(f'{action}: HOLD as required; no data written')
+          PY
+          done
+
+  r58-source-json-structure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Count-only original JSON field schema
+        run: |
+          python3 experiments/r58_quality/gold195_source_json_structure.py --repo-root "$PWD" > /tmp/r58_source_schema_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          value = json.loads(Path("/tmp/r58_source_schema_safe.json").read_text())
+          assert value["status"] == "SOURCE_JSON_STRUCTURE_PASS__CARD_APPROVAL_ZERO"
+          assert value["training_admitted"] == 0
+          assert value["r50_accessed"] is False
+          print(json.dumps(value, sort_keys=True))
+          PY
+      - name: Count-only Gold195 card-source world coverage
+        run: |
+          python3 experiments/r58_quality/gold195_card_source_coverage.py --repo-root "$PWD" > /tmp/r58_card_source_coverage_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          x = json.loads(Path("/tmp/r58_card_source_coverage_safe.json").read_text())
+          assert x["status"] == "CARD_SOURCE_COVERAGE_DIAGNOSTIC__QUALITY_HOLD"
+          assert x["training_admitted"] == 0 and x["r50_read"] is False
+          print(json.dumps(x, sort_keys=True))
+          PY
+      - name: Verify Gold195 source-card snapshot candidates (SAFE count only)
+        run: |
+          python3 experiments/r58_quality/gold195_card_snapshot_candidates.py --repo-root "$PWD" > /tmp/r58_card_snapshot_safe.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          result = json.loads(Path("/tmp/r58_card_snapshot_safe.json").read_text())
+          print(json.dumps(result, sort_keys=True))
+          assert result["status"] == "SOURCE_CARD_CANDIDATES_IDENTIFIED__OWNER_REVIEW_REQUIRED"
+          assert result["gold_world_ids_matched"] == result["gold_world_ids"] == 13
+          assert result["gold_rows_with_card_candidates"] == 195
+          assert result["training_admitted"] == 0
+          assert result["private_candidate_file_written"] is False
+          print(json.dumps(result, sort_keys=True))
+          PY

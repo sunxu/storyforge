@@ -1,0 +1,53 @@
+{
+  "schema": "r58_owner_v02_80_pass_ruff_zero_postfix_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_ASSISTANT_INDEPENDENT_RERUN",
+  "scope": "skills/storyforge-roleplay-sft/v02",
+  "previous_issue_receipt": "docs/evidence/R58_OWNER_V02_80_PASS_RUFF2_FIXED_PENDING_SAFE_20261031.json",
+  "tested_revision_association": {
+    "branch": "r58/roleplay-sft-skill-v01",
+    "source_at_last_owner_git_pull": "71e0afec7cb1d16bb31853c3957581f078bdf7ac",
+    "fix_commit": "24c52f48b075bece1b2635b601173e2edde84c55",
+    "branch_head_before_receipt": "a42d5624bbb17f91e764a9a97f3cabf97830a25d",
+    "owner_explicit_git_sha_in_latest_test_message": "NOT_REPORTED",
+    "note": "Prior Owner pull/fix context establishes candidate version; exact git rev-parse not printed alongside this validation."
+  },
+  "owner_validation": {
+    "test_command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q",
+    "tests_run": 80,
+    "errors": 0,
+    "failures": 0,
+    "seconds_reported": 0.014,
+    "test_status": "PASS_OWNER_REPORTED",
+    "ruff_command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics && echo RUFF_V02_PASS",
+    "ruff_terminal_marker": "RUFF_V02_PASS",
+    "ruff_status": "PASS_OWNER_REPORTED",
+    "ruff_errors_reported": 0,
+    "postfix_up017_ruf007": "NO_LONGER_REPORTED"
+  },
+  "source_fix_git_blob": "474ad029f8686c8aa692bd1c55dc5f4262e612cc",
+  "evidence_semantics": {
+    "full_v02_scoped_tests_and_ruff": "OWNER_MAC_PASS",
+    "github_actions": "NOT_EVALUATED",
+    "actual_private_g1_universe_complete": false,
+    "actual_g2_historical_deployment_authenticated": false,
+    "original_provider_dispatch_bytes_verified": false,
+    "does_not_approve_training": true
+  },
+  "gate": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "hf_new_job_started": false,
+    "production_server_accessed": false,
+    "r50_protected_test_read": false,
+    "private_ids_exported": false,
+    "training_data_modified": false
+  }
+}

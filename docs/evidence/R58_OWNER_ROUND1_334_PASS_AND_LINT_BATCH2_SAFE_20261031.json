@@ -1,0 +1,54 @@
+{
+  "schema": "storyforge-r58-owner-round1-lint-batch2-safe-v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_PASTED_TERMINAL_OUTPUT",
+  "verified_owner_before_batch": {
+    "branch_fast_forward_to": "7415175a7de029aab5742d15224c7f5178047f3a",
+    "python_unittest": {
+      "tests_run": 334,
+      "result": "OK",
+      "elapsed_seconds_reported": 0.255,
+      "expected_negative_path_stderr": true
+    },
+    "ruff_round1": {
+      "errors": 126,
+      "safe_fixable": 70
+    },
+    "ruff_repository": {
+      "errors": 358,
+      "safe_fixable": 188
+    }
+  },
+  "low_risk_followup_commits": [
+    "83c5c472e0a701404c1964bc899f5633ab1a3374",
+    "d78dbe7a041d7b084ac37e8821e818776e32ed36"
+  ],
+  "changes": {
+    "files": 10,
+    "previous_ruff_issues_targeted": 20,
+    "categories": {
+      "I001": 10,
+      "F401": 2,
+      "F841": 1,
+      "FURB167": 7
+    },
+    "source_only_import_unused_binding_and_regex_flag_edit": true
+  },
+  "expected_remaining_errors_if_all_targeted_lints_eliminated": {
+    "round1": 106,
+    "repository": 338
+  },
+  "after_change_mac_unittest_result": "PENDING",
+  "after_change_mac_ruff_result": "PENDING",
+  "ci_green": "NOT_VERIFIED",
+  "hold": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train": 0,
+    "validation": 0,
+    "teacher": 0,
+    "expansion_allowed": false
+  },
+  "private_content_exported": false,
+  "paid_hf_job_started": false
+}

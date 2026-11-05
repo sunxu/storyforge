@@ -1,0 +1,178 @@
+{
+  "schema": "r58_g1_one_canceled_gpu_tensorboard_logging_crosscheck_safe_v1",
+  "date": "2026-11-01",
+  "status": "TARGET_TENSORBOARD_AND_LOGGING_SCALARS_10_OF_10_MATCH__OPTIMIZER_AND_HISTORICAL_EXPOSURE_HOLD",
+  "provenance": {
+    "tensorboard": "OWNER_MAC_SAFE_REPORT_FROM_READ_ONLY_SCOPED_TFRECORD_CRC32C_SCALAR_PARSER",
+    "logging": "DIRECT_READ_ONLY_HF_BUCKET_CAT_OF_ONE_AUTHORIZED_LOGGING_JSONL",
+    "comparison": "COMPUTED_FROM_OWNER_PASTED_SAFE_SCALAR_FIELDS_AND_GITHUB_FROZEN_LOGGING_RECEIPT",
+    "evidence_source_file": "docs/evidence/R58_G1_CANCELED_GPU_EXACT_LOGGING_STEPS_DIRECT_SAFE_20261101.json",
+    "evidence_current_input_file": "docs/evidence/R58_G1_CANCELED_GPU_OWNER_CURRENT_INPUT_SHA256_MATCH_SAFE_20261101.json",
+    "agent_independently_reparsed_tensorboard_binary": false,
+    "owner_mac_decoder_synthetic_tests_reported": true,
+    "scope": "SINGLE_OWNER_PINNED_CANCELED_GPU_JOB"
+  },
+  "tensorboard_owner_report": {
+    "event_size_bytes": 10252,
+    "hf_bucket_event_binary_read": true,
+    "event_records_crc32c_verified": 13,
+    "summary_event_count": 12,
+    "summary_values_seen": 12,
+    "approved_scalar_sample_count": 10,
+    "event_steps_observed": [
+      1,
+      2
+    ],
+    "approved_metrics": {
+      "train/epoch": [
+        {
+          "step": 1,
+          "value": 0.06153846
+        },
+        {
+          "step": 2,
+          "value": 0.12307692
+        }
+      ],
+      "train/grad_norm": [
+        {
+          "step": 1,
+          "value": 1.40553129
+        },
+        {
+          "step": 2,
+          "value": 1.90299881
+        }
+      ],
+      "train/learning_rate": [
+        {
+          "step": 1,
+          "value": 0.0001
+        },
+        {
+          "step": 2,
+          "value": 0.00005
+        }
+      ],
+      "train/loss": [
+        {
+          "step": 1,
+          "value": 1.62866712
+        },
+        {
+          "step": 2,
+          "value": 1.72333097
+        }
+      ],
+      "train/token_acc": [
+        {
+          "step": 1,
+          "value": 0.59574467
+        },
+        {
+          "step": 2,
+          "value": 0.56887633
+        }
+      ]
+    },
+    "private_job_id_or_raw_event_exported": false,
+    "new_hf_job_started": false
+  },
+  "exact_logging_crosscheck": {
+    "logging_record_count": 2,
+    "logging_global_step_max_steps": [
+      "1/3",
+      "2/3"
+    ],
+    "logging_records_used": [
+      {
+        "step": 1,
+        "loss": 1.62866712,
+        "grad_norm": 1.40553129,
+        "learning_rate": 0.0001,
+        "epoch": 0.06153846,
+        "token_acc": 0.59574468
+      },
+      {
+        "step": 2,
+        "loss": 1.72333097,
+        "grad_norm": 1.90299881,
+        "learning_rate": 0.00005,
+        "epoch": 0.12307692,
+        "token_acc": 0.56887635
+      }
+    ],
+    "metrics_checked": 5,
+    "point_values_checked": 10,
+    "abs_difference_tolerance": 5e-8,
+    "maximum_abs_difference_all_points": 1.9999999989472883e-8,
+    "all_values_within_tolerance": true,
+    "metrics": {
+      "train/epoch": {
+        "pairs": 2,
+        "maximum_abs_delta": 0,
+        "within_tolerance_5e_minus_8": true
+      },
+      "train/grad_norm": {
+        "pairs": 2,
+        "maximum_abs_delta": 0,
+        "within_tolerance_5e_minus_8": true
+      },
+      "train/learning_rate": {
+        "pairs": 2,
+        "maximum_abs_delta": 0,
+        "within_tolerance_5e_minus_8": true
+      },
+      "train/loss": {
+        "pairs": 2,
+        "maximum_abs_delta": 0,
+        "within_tolerance_5e_minus_8": true
+      },
+      "train/token_acc": {
+        "pairs": 2,
+        "maximum_abs_delta": 1.9999999989472883e-8,
+        "within_tolerance_5e_minus_8": true
+      }
+    },
+    "numeric_note": "train/token_acc rounding differences up to approx 2e-8; other compared values identical"
+  },
+  "interpretation": {
+    "logged_training_progress_through_step_2_of_3_supported": true,
+    "separate_serialization_formats_agree": true,
+    "independent_optimizer_update_direct_observation": false,
+    "single_common_event_producer_not_excluded": true,
+    "tfrecord_crc32c_proves_historical_origin_authenticity": false,
+    "actual_optimizer_step_called_directly_proven": false,
+    "actual_weight_update_independently_proven": false,
+    "confirmed_no_weight_update": false,
+    "historical_training_input_consumption_proven": false,
+    "owner_reported_current_bucket_train_validation_match_v01_derived_compiled": true,
+    "historical_training_source_registry_complete": false,
+    "cohort_of_other_unclassified_jobs_cleared": false
+  },
+  "safety": {
+    "raw_tensorboard_binary_read_by_assistant": false,
+    "raw_event_exported": false,
+    "raw_job_id_or_private_digest_exported": false,
+    "other_logs_or_job_commands_read": false,
+    "training_examples_or_protected_tests_read": false,
+    "hf_job_started": false,
+    "existing_frozen_candidates_modified": false,
+    "main_changed": false
+  },
+  "next_priority": {
+    "stop_duplicate_metric_probes": true,
+    "focus": "AUTHENTICATED_OPTIMIZER_STEP_OR_PERSISTED_MODEL_UPDATE_ARTIFACT_AND_HISTORICAL_RUNNER_INPUT_READ_EVIDENCE",
+    "stop_condition": "NO_EXISTING_PRIMARY_TRAINER_ARTIFACT_OR_RUNTIME_CONSUMPTION_RECEIPT__KEEP_HOLD_AND_RESUME_HISTORICAL_UNCLASSIFIED_JOB_UNIVERSE_REVIEW",
+    "avoid": "NO_MORE_LOG_SIGNAL_SCANS_OR_SYNTHETIC_TESTS_AS_PROGRESS"
+  },
+  "gates": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  }
+}

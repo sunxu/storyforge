@@ -1,0 +1,60 @@
+{
+  "schema": "storyforge_r58_owner_round1_334_pass_lint_batch3_safe_v1",
+  "date": "2026-10-31",
+  "origin": "OWNER_MAC_PASTED_TERMINAL_SUMMARY_NOT_INDEPENDENT_CI",
+  "verified_before_batch": {
+    "source_head": "8fbff0fab530f374d8aeb8ee3c32f4525fefbd1b",
+    "branch_fast_forward_verified_by_owner": true,
+    "tests": {
+      "scope": "experiments/r58_round1",
+      "count": 334,
+      "result": "OK",
+      "seconds_reported": 0.279,
+      "negative_test_stderr_expected": [
+        "R58_G1_SFT_SIX_SOURCE: HOLD",
+        "R58_G1_GITHUB_SOURCES: HOLD"
+      ]
+    },
+    "ruff": {
+      "round1_errors": 107,
+      "repository_errors": 339,
+      "round1_autofixable": 51,
+      "repository_autofixable": 169
+    }
+  },
+  "changes": {
+    "commits": [
+      "1e97be184ea7f6139a9cbdc439532320c01795bf",
+      "cb4839ad87aae263f3bd8c4d94b3c2d4a3e8e6f7"
+    ],
+    "files": 10,
+    "scope": "experiments/r58_round1/test_*.py",
+    "rules_targeted": {
+      "I001": 10,
+      "F401": 6
+    },
+    "changes_imports_only": true,
+    "frozen_inputs_modified": false,
+    "private_sources_touched": false
+  },
+  "estimated_after_batch": {
+    "round1_errors": 91,
+    "repository_errors": 323,
+    "independently_verified": false
+  },
+  "tests_after_batch": {
+    "run_on_owner_mac": false,
+    "ci_green": false,
+    "status": "PENDING"
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  },
+  "hf_job_started": false,
+  "pr7_draft_expected": true
+}

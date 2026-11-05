@@ -1,0 +1,63 @@
+{
+  "schema": "r58_g1_known_five_current_primary_inputs_aggregate_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "CROSSCHECK_OF_OWNER_MAC_SAFE_RECEIPTS_AND_GITHUB_FROZEN_MANIFEST_NOT_DIRECT_HF_ATTESTATION",
+  "status": "FIVE_KNOWN_UPDATE_JOB_CURRENT_INPUT_OBJECTS_MATCH_PINS__HISTORICAL_EXPOSURE_G1_HOLD",
+  "references": {
+    "github_known_split_index": "docs/evidence/R58_G1_GITHUB_HISTORICAL_TRAINING_SOURCES_SAFE_20261031.json",
+    "github_known_split_owner_verified": "docs/evidence/R58_G1_GITHUB_KNOWN_SOURCES_OWNER_MAC_SAFE_RECEIPT_20261031.json",
+    "v01_owner_bucket_verified": "docs/evidence/R58_G1_V01_HF_PRIMARY_INPUT_OWNER_MAC_SAFE_RECEIPT_20261031.json",
+    "r46_r54_owner_bucket_verified": "docs/evidence/R58_G1_R46_R54_HF_PRIMARY_INPUT_OWNER_MAC_SAFE_RECEIPT_20261031.json"
+  },
+  "known_parameter_update_jobs_documented": 5,
+  "current_input_paths_matched_for_known_jobs": 5,
+  "v01": {
+    "job_count": 3,
+    "shared_source_bucket_objects_matched": 2,
+    "job_compiled_input_objects_matched": 6,
+    "per_job_split_placements_not_unique": 240,
+    "derived_compiled_train_sha256": "68a535fcb0fd9249c630d31e2623a9708f700b9ece27388f4a34fd5166ab84af",
+    "derived_compiled_validation_sha256": "138f3cbff7914337db2e2d438f335573c5c4d770f0e390186e4bc9f70b085557"
+  },
+  "r46": {
+    "job_count": 1,
+    "current_compiled_input_objects_matched": 2,
+    "split_placements_not_unique": 64,
+    "train_rows": 49,
+    "validation_rows": 15
+  },
+  "r54": {
+    "job_count": 1,
+    "current_staged_input_objects_matched": 2,
+    "split_placements_not_unique": 40,
+    "train_rows": 31,
+    "validation_rows": 9
+  },
+  "totals": {
+    "bucket_objects_compared": 12,
+    "of_which_shared_v01_source_objects": 2,
+    "job_associated_input_objects_compared": 10,
+    "known_job_associated_split_placements_not_unique": 344,
+    "six_known_frozen_split_placements_not_unique": 184,
+    "known_train_placements_across_three_distinct_datasets": 145,
+    "known_validation_placements_across_three_distinct_datasets": 39
+  },
+  "limitations": {
+    "current_bucket_equals_frozen_inputs": true,
+    "historical_job_read_bytes_immutability_proven": false,
+    "all_examples_received_gradients_proven": false,
+    "r50_protected_content_absence_proven": false,
+    "all_historical_hf_jobs_classified": false,
+    "prior_other_jobs_unclassified": 60,
+    "all_actual_sft_runs_and_input_sources_proven_complete": false,
+    "source_registry_complete": false
+  },
+  "private_world_uuids_or_narratives_exported": false,
+  "raw_remote_uris_or_source_bytes_exported": false,
+  "new_HF_job_started": false,
+  "g1_clearance": "HOLD",
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "teacher_admitted": 0,
+  "expansion_allowed": false
+}

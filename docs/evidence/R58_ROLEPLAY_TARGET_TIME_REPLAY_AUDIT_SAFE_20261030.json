@@ -1,0 +1,73 @@
+{
+  "schema": "storyforge-r58-roleplay-target-time-replay-audit-safe-v1",
+  "date": "2026-10-30",
+  "permission": "Supabase SELECT ONLY; GitHub R58 draft PR evidence writes; no source texts emitted",
+  "selection": {
+    "reference": "docs/evidence/R58_ROLEPLAY_POST_CHECKPOINT_PILOT_QUERY_SAFE_20261030.sql",
+    "candidate_stories": 24,
+    "root_sessions": 45,
+    "post_checkpoint_assistant_positions": 135,
+    "positions_with_prior_story_version_source_record": 133,
+    "remaining_positions_not_prior_version_candidate": 2
+  },
+  "triggers_replayed": {
+    "maintain_v2_message_mutation_revision": "INSERT=0; UPDATE on role/content/status/metadata/partial_content change increments; unrelated updates preserve counter",
+    "capture_v2_chat_message_ledger": "business changes: old row_data saved update_before; marker update_after; deletions saved; incomplete lifecycle possible",
+    "archive_story_content_version": "OLD v2 story content is archived before changes with OLD.updated_at source timestamp; retains only last 30 per story",
+    "capture_v2_checkpoint_snapshot_v2": "captures character/director/memory and session state; no complete system prompt or full messages",
+    "attach_v2_event_runtime_to_checkpoint": "assistant physical turn <= checkpoint logical turn * 2, indicates turn index unit conversion"
+  },
+  "source_version": {
+    "prior_source_records": 133,
+    "archive_time_interval_candidates": 17,
+    "current_story_last_update_predates_target": 116,
+    "not_certified_effective_runtime_card": 133,
+    "exact_runtime_prompt_replay_pass": 0,
+    "known_risks": [
+      "public_v2_data vs v2_data selection unverified",
+      "app source revision and prompt assembler not accessible",
+      "archived history retention limited to latest 30 revisions"
+    ]
+  },
+  "checkpoint": {
+    "prior_v2_snapshots": 133,
+    "director_state_key": 133,
+    "memory_facts_key": 133,
+    "event_runtime_key": 132,
+    "summary_source_cursor_key": 118,
+    "within_5_logical_turns": 80,
+    "within_20_logical_turns": 128,
+    "gap_over50": 3,
+    "longest_gap_logical_turns": 1957,
+    "stored_full_system_prompt": 0,
+    "stored_full_messages": 0,
+    "exact_input_replay_pass": 0
+  },
+  "mutation": {
+    "nonzero_mutation_revision": 129,
+    "with_ledger_events": 133,
+    "with_before_image": 107,
+    "visible_old_content_different_from_current": 0,
+    "complete_from_creation_lifecycle_not_proven": true
+  },
+  "source_code": {
+    "connected_github_roleplay_project_located": false,
+    "postgres_functions_inspected": true,
+    "full_application_prompt_assembly_verified": false,
+    "blocking_detail": "RolePlay application runtime source and historical deployed commit/prompt revision are not accessible through current GitHub connection"
+  },
+  "quality": {
+    "user_licensed_owner_attested": true,
+    "case_quality_reviews": 0,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_generated": 0,
+    "r50_accessed": false,
+    "hf_job_started": false
+  },
+  "status": "DATABASE_STRUCTURAL_REPLAY_EVIDENCE_PASS__APP_RUNTIME_PROMPT_AND_PRECISE_INPUT_HOLD__NO_DATASET_ADMISSION",
+  "query_reference": {
+    "path": "docs/evidence/R58_ROLEPLAY_TARGET_TIME_REPLAY_AUDIT_QUERY_SAFE_20261030.sql",
+    "git_blob_sha1": "7c59a8d6d4aa75292b9489673af1ddaa26885df0"
+  }
+}

@@ -1,0 +1,138 @@
+"""Synthetic-only tests for Gold87/108 target-level reuse. No private data."""
+import csv
+import hashlib
+import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from legacy_gold_target_reuse import canonical, index_rows, inspect, safe_reason
+
+
+class ReuseTests(unittest.TestCase):
+    def test_safe_hold_reason_codes_do_not_leak_private_text(self):
+        self.assertEqual(safe_reason(ValueError("PRIVATE_PERMISSION_INVALID")),
+                         "PRIVATE_PERMISSION_INVALID")
+        self.assertEqual(safe_reason(ValueError("secret/private/case-id")),
+                         "INPUT_SCHEMA_OR_JSON_INVALID")
+        self.assertEqual(safe_reason(FileNotFoundError("secret/private/path")),
+                         "INPUT_FILE_NOT_FOUND")
+
+    def test_target_match_is_not_context_or_quality_pass(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            target = "synthetic target"
+            digest = hashlib.sha256(target.encode()).hexdigest()
+            messages = [{"role": "user", "content": "synthetic prompt"}]
+            for filename, cols, data, count in (
+                ("87.csv", ["story_id", "sample_target_sha256", "review_A", "review_B", "sample_id"],
+                 ["story-1", digest, "ACCEPT", "ACCEPT", "a"], 87),
+                ("108.csv", ["story_id", "target_sha256", "reviewer1_decision",
+                             "reviewer2_decision", "candidate_id"],
+                 ["story-2", hashlib.sha256(b"another").hexdigest(), "ACCEPT", "ACCEPT", "b"], 108),
+            ):
+                with (base / filename).open("w", encoding="utf-8", newline="") as f:
+                    w = csv.writer(f)
+                    w.writerow(cols)
+                    for i in range(count):
+                        w.writerow([data[0] if i == 0 else f"{data[0]}-{i}"] + data[1:-1] + [f"{data[-1]}-{i}"])
+            with (base / "tasks.jsonl").open("w", encoding="utf-8") as f:
+                for i in range(7):
+                    row = {
+                        "schema": "r58_gold195_six_dimension_review_task_private_v1",
+                        "case_id": f"canary-{i}",
+                        "story_uuid": "story-1",
+                        "target_sha256": digest,
+                        "target_text": target,
+                        "messages": messages,
+                        "input_messages_sha256": hashlib.sha256(canonical(messages)).hexdigest(),
+                        "quality_v1_admitted": False,
+                        "training_authorized": False,
+                    }
+                    f.write(json.dumps(row) + "\n")
+            result, queue = inspect(base / "87.csv", base / "108.csv", base / "tasks.jsonl")
+            self.assertEqual(result["counts"]["current_tasks_checked"], 7)
+            self.assertEqual(result["counts"]["target_identity_matched"], 7)
+            self.assertEqual(result["quality_v1_admitted"], 0)
+            self.assertFalse(result["context_changes_verified"])
+            self.assertEqual(len(queue), 7)
+            self.assertEqual(queue[0]["reason_code"], "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND")
+
+            self.assertNotIn("canary-", json.dumps(result))
+            taskfile = base / "tasks.jsonl"
+            lines = taskfile.read_text(encoding="utf-8").splitlines()
+            tampered = json.loads(lines[0])
+            tampered["target_text"] = "tampered synthetic target"
+            lines[0] = json.dumps(tampered)
+            taskfile.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "TASK_CONTENT_INVALID"):
+                inspect(base / "87.csv", base / "108.csv", taskfile)
+
+    def test_index_failure_is_cohort_specific(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "index.csv"
+            path.write_text("unrecognized,columns\\nvalue,value\\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "LEGACY_87_COLUMN_INVALID"):
+                index_rows(path, 87)
+            self.assertEqual(safe_reason(ValueError("LEGACY_87_COLUMN_INVALID")),
+                             "LEGACY_87_COLUMN_INVALID")
+            path.write_text(
+                "story_id,sample_target_sha256,review_A,review_B,sample_id\n"
+                "world,hash,ACCEPT,ACCEPT,candidate\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "LEGACY_87_ROW_COUNT_INVALID"):
+                index_rows(path, 87)
+
+    def test_gold87_frozen_sheet_envelope(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "87.csv"
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            lines = [
+                "<PARSED TEXT FOR SHEET: 1 / 1 TABS",
+                "TAB NAME: gold_87_index.csv>",
+                "story_id,sample_target_sha256,review_A,review_B,sample_id",
+            ]
+            lines.extend(
+                f"world-{i},{digest},ACCEPT,ACCEPT,candidate-{i}"
+                for i in range(87)
+            )
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            self.assertEqual(len(index_rows(path, 87)), 87)
+            self.assertTrue(path.read_text(encoding="utf-8").startswith("<PARSED"))
+            lines[1] = "TAB NAME: unexpected.csv>"
+            path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "LEGACY_87_WRAPPER_INVALID"):
+                index_rows(path, 87)
+
+    def test_gold108_missing_world_is_isolated(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "108.csv"
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            with path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["story_id", "target_sha256", "reviewer1_decision",
+                                 "reviewer2_decision", "candidate_id"])
+                for i in range(108):
+                    world = "" if i < 3 else f"world-{i}"
+                    writer.writerow([world, digest, "ACCEPT", "ACCEPT", f"c-{i}"])
+            indexed = index_rows(path, 108)
+            self.assertEqual(len(indexed), 108)
+            self.assertEqual(sum(not row[0] for row in indexed), 3)
+
+    def test_duplicate_legacy_candidate_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "87.csv"
+            digest = hashlib.sha256(b"synthetic").hexdigest()
+            with path.open("w", encoding="utf-8", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(["story_id", "sample_target_sha256", "review_A",
+                                 "review_B", "sample_id"])
+                for i in range(87):
+                    writer.writerow([f"world-{i}", digest, "ACCEPT", "ACCEPT", "same"])
+            with self.assertRaisesRegex(ValueError, "LEGACY_DUPLICATE_ID"):
+                index_rows(path, 87)
+
+
+if __name__ == "__main__":
+    unittest.main()

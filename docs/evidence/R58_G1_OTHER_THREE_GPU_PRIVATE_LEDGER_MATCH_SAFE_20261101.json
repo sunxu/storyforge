@@ -1,0 +1,32 @@
+{
+  "additional_bucket_job_directories": 3,
+  "additional_job_hardware_all_gpu": true,
+  "additional_job_private_ledger_exact_matches": 3,
+  "additional_job_stages": {
+    "CANCELED": 1,
+    "ERROR": 2
+  },
+  "additional_jobs_removed_from_pending": 0,
+  "expansion_allowed": false,
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "hf_job_started": false,
+  "historical_input_consumption_proven_for_additional_jobs": false,
+  "historical_universe_complete": false,
+  "job_ids_or_private_sha256_exported": false,
+  "logs_commands_environment_training_bytes_read": false,
+  "namespace": "adradar",
+  "observed_run_and_capacity_job_directories": 6,
+  "optimizer_step_proven_for_additional_jobs": false,
+  "original_unknown_cpu": 42,
+  "original_unknown_gpu": 18,
+  "original_unknown_jobs": 60,
+  "priority_job_also_matches_original_60": true,
+  "private_ledgers_modified": false,
+  "schema": "r58_g1_other_three_gpu_jobs_private_ledger_membership_safe_v1",
+  "source_registry_complete": false,
+  "status": "THREE_OTHER_GPU_BUCKET_JOBS_MATCH_FROZEN_60_UNKNOWN_LEDGER__ALL_STILL_PENDING",
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "validation_admitted": 0
+}

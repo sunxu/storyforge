@@ -1,0 +1,62 @@
+{
+  "schema": "r58_owner_v02_existing_priority_61_pass_safe_v1",
+  "date": "2026-10-31",
+  "source": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_INDEPENDENT_ASSISTANT_RERUN",
+  "code_branch": "r58/roleplay-sft-skill-v01",
+  "code_head_from_fast_forward": "8eda16ac6050adf4e351ca2bcdc700aa1a376f9b",
+  "owner_exact_git_rev_parse_in_paste": "NOT_PRINTED",
+  "tests": {
+    "scope": "skills/storyforge-roleplay-sft/v02",
+    "ran": 61,
+    "errors": 0,
+    "failures": 0,
+    "time_seconds_reported": 0.012,
+    "verification": "PASS_OWNER_REPORTED"
+  },
+  "ruff": {
+    "scope": "skills/storyforge-roleplay-sft/v02",
+    "owner_terminal_marker": "RUFF_V02_PASS",
+    "status": "PASS_OWNER_REPORTED"
+  },
+  "existing_metadata_crosslink": {
+    "schema": "r58_existing_priority_metadata_crosscheck_safe_v1",
+    "status": "EXISTING_PRIORITY_METADATA_CROSSLINK_VERIFIED__PARAMETER_AND_INPUT_HOLD",
+    "existing_private_receipt_reused": true,
+    "hf_api_called": false,
+    "job_id_and_log_sha_match_private_priority": true,
+    "provider_stage": "CANCELED",
+    "provider_started_at_present": true,
+    "provider_finished_at_present": false,
+    "provider_metadata_evidence_present": true,
+    "command_intent_class": "NOT_ACCESSED_NO_OWNER_OPT_IN",
+    "actual_optimizer_update_proven": false,
+    "confirmed_no_optimizer_update": false,
+    "actual_training_input_sha256_verified": false,
+    "historical_training_universe_complete": false,
+    "private_job_ids_or_hashes_exported": false,
+    "private_metadata_written": false,
+    "r50_content_read": false
+  },
+  "evidence_semantics": {
+    "current_result": "EXISTING_PRIVATE_RECEIPTS_INTERNALLY_CONSISTENT_ONLY",
+    "provider_original_job_artifact_examined_this_turn": false,
+    "independent_training_update_or_nonupdate_proven": false,
+    "complete_source_universe_proven": false,
+    "final_r58_admission": "NOT_AUTHORIZED"
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "hf_new_job_started": false,
+    "historical_logs_read_this_turn": false,
+    "source_stories_or_protected_tests_read": false,
+    "new_private_data_written": false
+  }
+}

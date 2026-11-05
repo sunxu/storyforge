@@ -1,0 +1,293 @@
+{
+  "schema": "storyforge-r58-priority3-prompt-gap-matrix-safe-v1",
+  "date": "2026-10-30",
+  "source_pin": {
+    "repository": "sunxu/RolePlay",
+    "commit": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "deployed_commit_verified": false
+  },
+  "evidence_origin": "Pinned source inspection + Owner-supplied SAFE aggregate receipts, no private stories or message IDs inspected",
+  "cases": [
+    "AUTHOR",
+    "CURRENT_PUBLIC",
+    "OLD_PUBLIC"
+  ],
+  "legend": {
+    "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN": "Branch exists in pinned code; target-time inputs/activation unverified",
+    "OWNER_REPORT_VERIFIED_SOURCE_ONLY": "Frozen owner capture and integrity reported, not exact runtime prompt",
+    "OWNER_PARTIAL_AND_RUNTIME_UNKNOWN": "Only partial owner evidence and code path",
+    "OWNER_REPORT_CONDITIONAL_3_OF_3": "Conditional eleven-row structure matches, request-time bytes not proven",
+    "PINNED_CODE_INACTIVE_ONLY": "Inactive in pinned source; historical deployed commit not proven",
+    "MISSING_RUNTIME_EVIDENCE": "Essential historical evidence unavailable",
+    "MISSING_DIRECT_LINK": "No proven target-message to request ID mapping"
+  },
+  "summary": {
+    "components": 19,
+    "blocking_byte_exact_components": 17,
+    "direct_request_link_verified": false,
+    "conditioned_history_count": 11,
+    "history_cohorts_pass": 3,
+    "current_ledger_parity_messages": 33,
+    "ledger_operations_classified": 53,
+    "remaining_soft_request_candidates": {
+      "AUTHOR": 2,
+      "CURRENT_PUBLIC": 4,
+      "OLD_PUBLIC": 2
+    },
+    "training_admission": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0
+  },
+  "rows": [
+    {
+      "id": "DEPLOY",
+      "component": "historical_deployed_code",
+      "layer": "environment",
+      "status": "MISSING_RUNTIME_EVIDENCE",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:1-8"
+      ],
+      "evidence": "Pinned repository source is available; historical production deployed commit is not authenticated.",
+      "missing": "Deployment SHA, release/runtime version tied to each target request.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "CARD",
+      "component": "approved_source_story_card",
+      "layer": "source",
+      "status": "OWNER_REPORT_VERIFIED_SOURCE_ONLY",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:1675-1728"
+      ],
+      "evidence": "Three approved historical source-card records and private case fingerprints frozen (Owner reported).",
+      "missing": "Proof the selected localized/effective draft exactly matched this card when target was generated.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "LOCALIZE",
+      "component": "story_reader_localization_opening",
+      "layer": "draft",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:1675-1731"
+      ],
+      "evidence": "Story passes localizeStoryForReader(outputLocale); selected opening may depend on body.openingIndex.",
+      "missing": "Historical outputLocale, translation cache/version and openingIndex for each target.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "PERSONA",
+      "component": "effective_persona_mask_and_player_identity",
+      "layer": "draft",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2135-2154",
+        "src/app/api/chat/v2/route.ts:2620-2637"
+      ],
+      "evidence": "Effective persona mask may modify draft; player identity authority adds constraint.",
+      "missing": "As-of target time active persona mask, successful load and player identity resolution.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "BASE",
+      "component": "runtime_system_base_components_tail",
+      "layer": "system",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2490-2533",
+        "src/lib/story-v2/prompts/index.ts:220-231",
+        "src/lib/story-v2/prompts/runtime-rollout.ts:37-64"
+      ],
+      "evidence": "Base+components+tail followed by language constraint; legacy/native base rollout is based on session/model and runtime flags.",
+      "missing": "Deployed prompt template version, rollout env and bucket/model, effective draft, actual part bytes.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "GLOBAL",
+      "component": "v2_global_system_prompt",
+      "layer": "system",
+      "status": "PINNED_CODE_INACTIVE_ONLY",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2233-2236",
+        "src/app/api/chat/v2/route.ts:2511-2521"
+      ],
+      "evidence": "Pinned V2 code does not prefix the old globalSystemPrompt.",
+      "missing": "Deployment commit parity before assuming this was true historically.",
+      "gate": "DEPENDENT_ON_DEPLOY"
+    },
+    {
+      "id": "DIRECTOR",
+      "component": "director_pending_and_event_runtime",
+      "layer": "system",
+      "status": "OWNER_PARTIAL_AND_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2177-2190",
+        "src/app/api/chat/v2/route.ts:2462-2473",
+        "src/app/api/chat/v2/route.ts:2650-2665"
+      ],
+      "evidence": "Owner reported Reader event before/after structural equivalence 2/2; Author metadata absent; pending director and event directive dynamic.",
+      "missing": "Request-time pending_directive, event selection/mode, session runtime and physical turn claim.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "MEMORY",
+      "component": "rolling_outline_recent_summary_legacy_summary",
+      "layer": "system",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/lib/story-v2/context-builder.ts:375-414",
+        "src/app/api/chat/v2/route.ts:2194-2225"
+      ],
+      "evidence": "Live session summary fields and optional legacy fallback feed memory injection.",
+      "missing": "As-of session snapshot including exact summary strings/cursor and build results.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "RETRIEVAL",
+      "component": "rag_entity_volume_retrieval",
+      "layer": "system",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/lib/story-v2/context-builder.ts:264-338"
+      ],
+      "evidence": "Parallel retrieval with timeouts and volume/entity/last-parts sources changes injection.",
+      "missing": "Target-time retrieval outputs, retrieved IDs, source version, timeouts and exact text.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "COMPANION",
+      "component": "companion_instructions_status_components",
+      "layer": "system",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2134-2140",
+        "src/app/api/chat/v2/route.ts:2609-2638"
+      ],
+      "evidence": "User companion instruction snapshot may append to systemContent; status and player identity can alter final messages.",
+      "missing": "Historical preference snapshot, active/locked instructions and success/failure of fetch.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "HISTORY",
+      "component": "conditional_history_window",
+      "layer": "history",
+      "status": "OWNER_REPORT_CONDITIONAL_3_OF_3",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2275-2371",
+        "src/lib/story-v2/summary-history-window.ts:1-28"
+      ],
+      "evidence": "Owner verified conditional last-11 structure for all three frozen cases; ledger current-source parity for 33/33.",
+      "missing": "Live session.last_summary_turn at request; prior DB read, auto regeneration/resume/continue variants.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "SCRUB",
+      "component": "policy_repeat_degenerate_structured_history_scrub",
+      "layer": "history",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2378-2453",
+        "src/app/api/chat/v2/route.ts:2585-2608"
+      ],
+      "evidence": "Pinned code scrubs structured tags, policy refusals, degenerate and repeated assistants; anti-repeat can alter memory.",
+      "missing": "Actual scrub counts and post-scrub 11 message contents for each request.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "FLAGS",
+      "component": "continue_regenerate_resume_meta_time_skip",
+      "layer": "request",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2299-2335",
+        "src/app/api/chat/v2/route.ts:2448-2477",
+        "src/app/api/chat/v2/route.ts:2637-2665"
+      ],
+      "evidence": "Request flags can replace history, append continue instruction, or add warnings and constraints.",
+      "missing": "Actual body flags, last user message, generation attempt/retry mapping.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "LAST_USER",
+      "component": "last_user_language_named_speaker_and_inline",
+      "layer": "request",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2742-2809"
+      ],
+      "evidence": "Pinned code adds inline suggestions contract based on client kind and rollout, then locale and named speaker instruction to last user in model-only copy.",
+      "missing": "Actual locale, client fingerprint, inline switches, optionStyle, named speaker and injected text.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "MODEL",
+      "component": "selected_model_temperature_max_tokens_and_transport",
+      "layer": "provider",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:1592-1620",
+        "src/app/api/chat/v2/route.ts:2965-3038",
+        "src/app/api/chat/v2/route.ts:3525-3548"
+      ],
+      "evidence": "Model can fall back/resolve from available models; completion and stream paths use model/options; auto-continue can issue more calls.",
+      "missing": "Direct target-to-request id, model/version/provider, effective generation options, retries and transport transformations.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "CACHE",
+      "component": "explicit_gemini_cached_content",
+      "layer": "provider",
+      "status": "PINNED_CODE_INACTIVE_ONLY",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2668-2693"
+      ],
+      "evidence": "Pinned source sets cacheEnabled=false for explicit cachedContent path; independent of provider implicit caching.",
+      "missing": "Actual historical deployment SHA and provider-side prompt/cache evidence.",
+      "gate": "DEPENDENT_ON_DEPLOY"
+    },
+    {
+      "id": "PROVIDER_SANITIZE",
+      "component": "provider_preflight_message_sanitization",
+      "layer": "provider",
+      "status": "SOURCE_CODE_VERIFIED_RUNTIME_UNKNOWN",
+      "source_refs": [
+        "src/lib/ai/index.ts:1553-1574",
+        "src/lib/ai/index.ts:1617-1639",
+        "src/lib/ai/sanitize.ts:13-53"
+      ],
+      "evidence": "Both completion and streaming paths call sanitizeRequest immediately before provider dispatch; it strips defined emoji/variation/ZWJ character ranges from all message content.",
+      "missing": "Target-time effective provider dispatch, pre- and post-sanitize message content, and any additional provider-side serialization/transformations.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "REQ_LINK",
+      "component": "target_assistant_to_api_request_id",
+      "layer": "provenance",
+      "status": "MISSING_DIRECT_LINK",
+      "source_refs": [
+        "src/lib/db/v2-chat-request-event-service.ts:1-47",
+        "src/app/api/chat/v2/route.ts:1050-1068"
+      ],
+      "evidence": "Owner found candidate counts 2/4/2 after soft filters; 21 known request key checks false; event↔metric request IDs match, target↔request remains unproven.",
+      "missing": "Independent target physical message or turn/attempt to API request identifier mapping.",
+      "gate": "BLOCK_BYTE_EXACT"
+    },
+    {
+      "id": "PROMPT_BYTES",
+      "component": "actual_provider_request_bytes",
+      "layer": "provenance",
+      "status": "MISSING_RUNTIME_EVIDENCE",
+      "source_refs": [
+        "src/app/api/chat/v2/route.ts:2965-3038"
+      ],
+      "evidence": "No original provider request payload/bytes captured in current SAFE evidence.",
+      "missing": "Trusted original request envelope or log, provider transformations, final effective messages and model settings.",
+      "gate": "BLOCK_BYTE_EXACT"
+    }
+  ],
+  "stop_rule": "No authenticated request bytes, historical deployment+runtime inputs or direct target-request proof: retain provider input byte-exact HOLD; final provider sanitize and serialization may differ from route messages.",
+  "safe_only": true,
+  "private_source_untouched": true,
+  "skill_v01_untouched": true
+}

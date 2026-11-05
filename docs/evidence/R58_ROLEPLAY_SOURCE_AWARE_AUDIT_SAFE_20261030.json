@@ -1,0 +1,80 @@
+{
+  "schema": "storyforge-r58-roleplay-source-code-aware-audit-safe-v1",
+  "date": "2026-10-30",
+  "provenance": {
+    "roleplay_repo": "sunxu/RolePlay",
+    "roleplay_source_commit": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "source_commit_date_utc": "2026-10-29T04:10:44Z",
+    "target_repo": "sunxu/storyforge",
+    "target_branch": "r58/roleplay-sft-skill-v01",
+    "stage": "CODE_PATH_INSPECTED__TARGET_TIME_BYTE_REPLAY_HOLD"
+  },
+  "corpus": {
+    "original_pilot": 135,
+    "prior_story_version_metadata_targets": 133,
+    "other_candidates_source_evidence_hold": 2,
+    "cohort_is_not_immutable": true
+  },
+  "source_route": {
+    "reader_approved_public_projection": 130,
+    "author_current_story_draft": 3,
+    "reader_current_public_timestamp_not_after_target": 113,
+    "reader_current_public_timestamp_after_target": 17,
+    "author_current_draft_timestamp_not_after_target": 3,
+    "reader_old_public_projection_byte_snapshot_verified": 0,
+    "source_card_runtime_byte_verified": 0
+  },
+  "prompt_assembly": {
+    "v2_route": "src/app/api/chat/v2/route.ts",
+    "draft_source_rule": "author gets getStoryById current v2_data; other reader gets getPublicStoryById projecting public_v2_data; frozen unlisted special case",
+    "localization": "localizeStoryForReader may substitute cached translated draft and stale cache for non-zh-Hans; outputLocale and historical cached contents unavailable",
+    "base": "buildV2RuntimePromptParts(draft,{baseMode:rollout.mode}); baseMode native/legacy per session/model/env allowlist",
+    "prompt_tail": "base + components + hardConstraintTail + language constraint + dynamic memory + companion instructions + player identity + optional repeat, command, retry, event, voice directives",
+    "history": "normal chat from DB getRecentMessages(..., effectivePruneMaxKeep*2, user_id); default PRUNE_MAX_KEEP_MESSAGES=12; summary-aware prune, regeneration omission, content cleanup and repeat scrub; new user content has synthesized reminders",
+    "provider": "generateCompletion/handleStreaming receive composed messages, provider-specific transformations not byte-verified",
+    "exact_system_prompt_logged_in_db": false
+  },
+  "snapshot_and_ledger": {
+    "prior_v2_checkpoints": 133,
+    "with_runtime_before_metadata": 106,
+    "with_runtime_after_metadata": 106,
+    "prior_checkpoint_has_full_system_prompt": 0,
+    "prior_checkpoint_has_full_messages": 0,
+    "nonzero_mutation_revision": 129,
+    "with_visible_old_business_snapshot": 107,
+    "visible_old_content_differing_from_current": 0
+  },
+  "blockers": [
+    "HISTORICAL_DEPLOYED_COMMIT_UNPINNED",
+    "HISTORICAL_APPROVED_PUBLIC_PROJECTION_VERSION_MISSING_FOR_17",
+    "OUTPUT_LOCALE_AND_STALE_TRANSLATION_SNAPSHOT_UNKNOWN",
+    "HISTORICAL_SESSION_AND_MEMORY_STATE_REPLAY_NOT_PROVEN",
+    "PROMPT_ROLLOUT_MODEL_ENV_AND_PROVIDER_SERIALIZATION_UNKNOWN",
+    "NO_ORIGINAL_REQUEST_BYTES_OR_HASH_FOR_EXACT_PARITY",
+    "R50_AND_OTHER_EXPOSURE_WORLD_COMPONENT_CERTIFICATES_PENDING",
+    "CONTENT_QUALITY_DUAL_REVIEW_NOT_RUN"
+  ],
+  "status": {
+    "source_routing_logic": "PASS_CODE_PATH",
+    "source_card_timing": "PARTIAL_116_TIMESTAMP_COMPATIBLE__17_OLDER_PUBLIC_PROJECTION_HOLD",
+    "mutation_revision_semantics": "PASS_DB_TRIGGER",
+    "exact_prompt_replay": "HOLD_0_OF_133",
+    "train_admission": 0,
+    "validation_admission": 0,
+    "teacher_generated": 0,
+    "r50_read": false,
+    "db_writes": false,
+    "hf_jobs": false
+  },
+  "code_paths": [
+    "src/app/api/chat/v2/route.ts",
+    "src/lib/db/story-v2-service.ts",
+    "src/lib/db/story-v2-helpers.ts",
+    "src/lib/story-v2/prompts/index.ts",
+    "src/lib/story-v2/prompts/runtime-rollout.ts",
+    "src/lib/story-v2/context-builder.ts",
+    "src/lib/db/v2-message-service.ts",
+    "src/lib/story-v2/localize-story.ts"
+  ],
+  "sql": "docs/evidence/R58_ROLEPLAY_SOURCE_AWARE_COHORT_QUERY_SAFE_20261030.sql"
+}

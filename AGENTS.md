@@ -84,6 +84,23 @@ Prefer a project-local Python virtual environment.
 
 Do not use `sudo` unless it is strictly required and explicitly authorized.
 
+### 2.1 Hugging Face execution boundary
+
+All model-specific Tokenizer, Chat Template, token-budget and tokenizer/model-revision preflights MUST run in a Hugging Face CPU environment, not on the user's Mac. The Mac may prepare files, verify file integrity, stage/sync private inputs and inspect SAFE receipts; do not instruct the user to run model-specific tokenization locally.
+
+- Pin the exact model ID, immutable revision and relevant runtime/template versions to the intended workload.
+- Keep source text, world cards, blind-review packets, derived prompts, Owner crosswalks and case-level receipts in private storage. Do not expose them in GitHub, Job logs or chat.
+- Outside private storage, emit only SAFE aggregate results. Never silently truncate history, modify frozen Gold, or treat Token PASS as literary quality approval or training admission.
+- When the user explicitly requests a workflow requiring CPU tokenization/preflight, use the minimum necessary HF CPU execution within the requested scope; no separate per-Job cost authorization is required. This does not authorize GPU inference or training, which still require separate explicit approval.
+
+### 2.2 Shared tooling policy
+
+StoryForge has one shared Token preflight implementation: `src/storyforge_dataset/token_preflight.py`. New project-specific workflows must reuse it and keep differences in thin adapters; do not copy the shared algorithm into Skills, workers or round-specific scripts.
+
+The complete technical contract—including adapter boundaries, cache identity, SAFE diagnostics, staging, verification and historical compatibility—is maintained in `docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md`. Follow the R58 Skill's execution order before changing tooling. Keep historical frozen scripts, private inputs, receipts and checkpoints unchanged.
+
+Generic tokenizer checks do not replace real ms-swift `last_round` / data-collator label-mask validation. Neither kind of PASS independently grants literary quality admission or training authorization.
+
 ### 3. Training gate
 
 Training is strictly staged.
@@ -126,7 +143,7 @@ storyforge-dataset validate \
 
 Then verify `data/compiled/v0.3` exists.
 
-Run:
+Run the following token analysis **in Hugging Face CPU (not on the Mac)**, using the corresponding private mounted inputs and pinned tokenizer revision:
 
 ```bash
 storyforge-dataset analyze \
@@ -286,6 +303,10 @@ before committing code changes.
 Do not rewrite history or force-push.
 
 Do not modify `main` history destructively.
+
+### 5.1 Artifact delivery (GitHub first)
+
+For project code, tests, standards, runbooks and SAFE receipts, deliver changes through the existing GitHub feature branch / PR with commit SHA and validation status. Do not package tools as ZIP by default. ZIP is reserved for an explicit user request for compressed/offline handoff. Keep PRIVATE records and per-case review queues out of GitHub. See `docs/standards/PROJECT_ARTIFACT_DELIVERY_GITHUB_FIRST_CN.md`.
 
 ### 6. Decision rules
 

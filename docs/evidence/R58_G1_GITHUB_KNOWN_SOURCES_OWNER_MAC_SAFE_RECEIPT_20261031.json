@@ -1,0 +1,60 @@
+{
+  "schema": "r58_g1_github_known_sources_owner_mac_intake_safe_v1",
+  "event_date": "2026-10-31",
+  "provenance": "OWNER_MAC_SHARED_SAFE_STDOUT_NOT_INDEPENDENT_REMOTE_REEXECUTION",
+  "reference_manifest": "docs/evidence/R58_G1_GITHUB_HISTORICAL_TRAINING_SOURCES_SAFE_20261031.json",
+  "reference_verifier": "experiments/r58_round1/verify_github_historical_training_sources.py",
+  "github_branch": "r58/roleplay-sft-skill-v01",
+  "owner_test_suite": {
+    "tests_run": 299,
+    "reported_result": "OK",
+    "time_seconds_reported": 0.261
+  },
+  "owner_safe_verification": {
+    "all_actual_sft_runs_and_input_sources_proven_complete": false,
+    "expansion_allowed": false,
+    "five_known_parameter_update_jobs_documented": true,
+    "g1_clearance": "HOLD",
+    "historical_other_job_classification_complete": false,
+    "known_split_source_records_reconciled": 184,
+    "pinned_git_source_objects_verified": 11,
+    "private_world_uuids_or_narratives_exported": false,
+    "r46_report_receipt_hash_contract_verified": true,
+    "r50_protected_content_accessed": false,
+    "r54_runner_release_hash_contract_verified": true,
+    "remote_training_primary_input_bytes_rehashed_this_step": false,
+    "schema": "r58_g1_github_historical_training_sources_verification_safe_v1",
+    "source_registry_complete": false,
+    "status": "R58_G1_GITHUB_KNOWN_TRAINING_SOURCES_VERIFIED__REMOTE_AND_OTHER_HOLD",
+    "teacher_admitted": 0,
+    "train_admitted": 0,
+    "v01_compiled_data_sha256_verified": true,
+    "v01_train_validation_world_overlap": 0,
+    "v01_train_world_count": 15,
+    "v01_validation_world_count": 2,
+    "validation_admitted": 0
+  },
+  "source_exposure_scope": {
+    "six_known_split_placements": 184,
+    "known_train_placements": 145,
+    "known_validation_placements": 39,
+    "known_split_placements_are_not_unique_samples": true,
+    "known_unique_worlds_reconciled_in_prior_private_owner_audit": 27,
+    "private_world_ids_committed": false
+  },
+  "unresolved": {
+    "r46_r54_remote_primary_bytes_independently_rehashed_in_this_run": false,
+    "v01_smoke_capacity_baseline_actual_runtime_input_bytes_rehashed_in_this_run": false,
+    "all_historical_hf_job_training_uses_classified": false,
+    "protection_of_other_worlds_complete": false,
+    "r50_source_examined": false
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "new_paid_hf_job_authorized": false
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "schema": "r58_owner_v02_80_pass_ruff_two_style_fixes_pending_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_PASTE__NOT_INDEPENDENT_ASSISTANT_LOCAL_RERUN",
+  "tested_head": "71e0afec7cb1d16bb31853c3957581f078bdf7ac",
+  "owner_validation": {
+    "v02_tests": {
+      "count": 80,
+      "errors": 0,
+      "failures": 0,
+      "seconds_reported": 0.015,
+      "status": "PASS_OWNER_REPORTED"
+    },
+    "ruff": {
+      "command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics",
+      "status": "FAIL_OWNER_REPORTED",
+      "total_errors": 2,
+      "codes": [
+        "UP017",
+        "RUF007"
+      ],
+      "zero_errors": false
+    }
+  },
+  "fix": {
+    "commit": "24c52f48b075bece1b2635b601173e2edde84c55",
+    "path": "skills/storyforge-roleplay-sft/v02/r58_deployment_interval_audit.py",
+    "source_git_blob": "474ad029f8686c8aa692bd1c55dc5f4262e612cc",
+    "changes": [
+      "datetime.timezone.utc_to_datetime.UTC",
+      "zip_adjacent_pair_to_itertools.pairwise"
+    ],
+    "logic": "NO_G2_ADMISSION_OR_PROOF_CHANGE",
+    "owner_post_fix_tests": "NOT_REPORTED",
+    "owner_post_fix_ruff": "NOT_REPORTED",
+    "expected_test_count": 80
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "no_hf_jobs_started": true,
+    "no_production_ssh": true,
+    "no_r50_protected_data_read": true,
+    "no_private_ids_exported": true
+  }
+}

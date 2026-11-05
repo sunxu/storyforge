@@ -1,0 +1,28 @@
+{
+  "schema": "r58_owner_source_rights_attestation_safe_v1",
+  "date": "2026-11-02",
+  "scope": "All StoryForge stories, including all 13 Gold192 story packets",
+  "owner_statement": "All stories have clear source authorization: either original works or works authorized by the relevant rights holders.",
+  "intended_ai_training_use": "OWNER_ATTESTED",
+  "independent_contract_or_license_review": "NOT_PERFORMED",
+  "operational_effect": "SOURCE_RIGHTS_HOLD_CLEARED_BY_OWNER_ATTESTATION",
+  "gold192_effect": {
+    "source_rights_hold_cleared": 31,
+    "stories_affected": [
+      "我会在雪停之前等待和你重逢。",
+      "同居日常"
+    ],
+    "semantic_quality_review_completed_for_these_31": false
+  },
+  "non_effects": {
+    "historical_context_equivalence_verified": false,
+    "world_card_semantically_approved": false,
+    "quality_v1_admitted": 0,
+    "training_authorized": false,
+    "gpu_started": false
+  },
+  "privacy": {
+    "private_case_ids_included": false,
+    "private_story_text_included": false
+  }
+}

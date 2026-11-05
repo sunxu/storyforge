@@ -1,0 +1,20 @@
+{
+  "schema": "r58_g1_gpu7_r57_and_git_document_refs_safe_v1",
+  "status": "GPU7_R57_OR_FROZEN_DOC_METADATA_UNAVAILABLE__G1_HOLD",
+  "expansion_allowed": false,
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "hf_job_started": false,
+  "raw_job_ids_or_private_paths_exported": false,
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "evidence_origin_SAFE": "OWNER_MAC_STDOUT_USER_SUPPLIED__NOT_AGENT_INDEPENDENT_REEXECUTION",
+  "actual_failure_stage_verified_SAFE": false,
+  "previous_4_of_7_owner_receipt_not_revoked_SAFE": true,
+  "previous_3_of_7_no_reference_owner_receipt_not_revoked_SAFE": true,
+  "original_60_unknown_jobs_still_pending_SAFE": true,
+  "optimizer_update_and_historical_input_consumption_unproven_SAFE": true,
+  "diagnostic_follow_up_SAFE": "SCOPED_READ_ONLY_STAGE_DIAGNOSTIC_REQUIRED__NO_PRIVATE_LEDGER_UPLOAD",
+  "original_script_SAFE": "experiments/r58_round1/r58_g1_gpu7_r57_and_git_doc_links_readonly_20261101.py"
+}

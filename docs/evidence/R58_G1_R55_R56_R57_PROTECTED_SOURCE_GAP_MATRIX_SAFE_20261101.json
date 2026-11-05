@@ -1,0 +1,123 @@
+{
+  "schema": "r58_g1_r55_r56_r57_protected_source_gap_matrix_safe_v1",
+  "date": "2026-11-01",
+  "status": "KNOWN_R55_R56_R57_SOURCE_REUSE_RECONCILED__AUTHORITATIVE_DEV_PROTECTED_UNIVERSE_HOLD",
+  "source_level": "GITHUB_PINNED_SAFE_DOCUMENTS_AND_OWNER_PRIOR_AGGREGATE_ONLY",
+  "scope": "R58_ROUND1_FIXED_5_WORLD_ORIGINAL_QUEUE__NO_NEW_ADMISSION",
+  "owner_world_identity_policy": "ONE_ROLEPLAY_STORY_UUID_PER_WORLD",
+  "known_source_reuse": [
+    {
+      "id": "R55_OLD_DEV20",
+      "observed_worlds": 2,
+      "known_scope": "V01_TEST_DEV20_TWO_EXPOSED_WORLDS_REUSED_R47_R48_R55",
+      "evidence": "docs/R55_GOLD5_DEV20_OWNER_RUN_CN.md",
+      "git_blob_sha": "97d45959e9f7136adb99e7c4947b8a0e6d2e0c0f",
+      "complete_for_all_r55_dev_material": false,
+      "requires_extra_unseal": false,
+      "counts_only": true
+    },
+    {
+      "id": "R56_STAGE7_FIVE_SOURCE_SCOPE",
+      "observed_rows": 5,
+      "existing_gold195_uuid_rows": 5,
+      "new_uuid_candidate_rows": 0,
+      "known_scope": "OWNER_5_ROWS_IN_STAGE7_ALL_OLD_GOLD195_STORIES_01_TO_05",
+      "evidence": "docs/r56/R56_STAGE7_GOLD_ONLY_SCOPE_DIAGNOSIS_20261022.md",
+      "git_blob_sha": "6f1c2a77d820005e2b87d14327ed9189001f6058",
+      "complete_for_all_r56_review_material": false,
+      "no_new_worlds_proven_outside_five_scanned_rows": false
+    },
+    {
+      "id": "R56_NO_EXTRA_ORIGINALS_OWNER_DECISION",
+      "known_scope": "NO_ADDITIONAL_OWNER_PROVIDED_ORIGINALS_AT_2026_10_22__OLD_GOLD_AND_DEVELOPMENT_LANES_ONLY",
+      "evidence": "docs/r56/R56_NO_EXTRA_ORIGINALS_EVAL_ROUTE_20261022.md",
+      "git_blob_sha": "7aefb93e17af6dd677fc2ec4a0d8293554c105c0",
+      "proves_no_other_historical_protected_or_dev_sources": false,
+      "original_r56_24_formal_admitted": 0
+    },
+    {
+      "id": "R57_EIGHT_FROZEN_SOURCE_GROUPS",
+      "known_scope": "GOLD87_GOLD108_AND_SIX_V01_R46_R54_TRAIN_VAL_SPLITS_OWNER_REPLAY",
+      "group_count": 8,
+      "total_gold_rows": 195,
+      "source_groups": {
+        "GOLD87": 87,
+        "GOLD108": 108,
+        "V01_TRAIN": 65,
+        "V01_VALIDATION": 15,
+        "R46_TRAIN": 49,
+        "R46_VALIDATION": 15,
+        "R54_TRAIN": 31,
+        "R54_VALIDATION": 9
+      },
+      "evidence_repo_branch": "r57/v03b-data-design",
+      "evidence": "docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json",
+      "git_blob_sha": "817b6561361e84ad4da7ebc8556d8fe8a83d25cc",
+      "source_world_counts": {
+        "GOLD87": 5,
+        "GOLD108": 8
+      },
+      "all_dev_and_reserved_worlds_proven_complete": false,
+      "trainer_input_full_historical_job_universe_proven": false
+    },
+    {
+      "id": "R50_KNOWN_FIVE_PROTECTED",
+      "observed_protected_worlds": 5,
+      "owner_reported_remaining_4_worlds_exact_uuid_intersection": 0,
+      "evidence": "docs/evidence/R58_G1_G2_SKILL_V02_READINESS_MATRIX_SAFE_20261031.json",
+      "git_blob_sha": "a9a0773959e86ef856ff120ec43aba6eb093c27e",
+      "full_authoritative_protected_registry_proven": false,
+      "r50_content_accessed": false
+    }
+  ],
+  "covered_scoped_uuid_contract_labels": [
+    "known_historical_sft",
+    "r50_known_protected",
+    "gold195_source",
+    "legacy_dev20",
+    "r04_non_gold"
+  ],
+  "unresolved_scoped_uuid_contract_labels": [
+    "r55_r57_other_dev",
+    "other_reserved_heldout",
+    "other_historical_training"
+  ],
+  "unresolved_source_authority": [
+    "R55_R56_R57_OTHER_DEV_ARBITRATION_WORLD_UUID_ONLY_ROSTER_WITH_AUTHORITATIVE_CUTOFF",
+    "OTHER_RESERVED_AND_HELDOUT_WORLD_UUID_ONLY_COMPLETE_AUTHORITY",
+    "ACTUAL_HISTORICAL_TRAINING_AND_TEACHER_INPUT_SOURCE_UNIVERSE_ALL_JOBS_PLATFORMS"
+  ],
+  "preexisting_tools": {
+    "private_source_inventory_template": "experiments/r58_round1/G1_METADATA_EVIDENCE_INVENTORY_BLANK.csv",
+    "inventory_presence_preflight": "experiments/r58_round1/audit_g1_index_readiness.py",
+    "eight_scope_uuid_only_contract": "skills/storyforge-roleplay-sft/v02/r58_g1_scope_reconcile.py",
+    "eight_scope_entrypoint": "skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py g1-audit",
+    "contract_guide": "docs/evidence/R58_G1_SCOPED_UUID_CONTRACT_RUNBOOK_SAFE_20261031.md"
+  },
+  "next_action": {
+    "priority": "CHECK_EXISTING_OWNER_PRIVATE_FIVE_SCOPE_SOURCE_INVENTORY_READINESS_ONLY",
+    "output": "SAFE_AGGREGATE_SCOPE_READINESS",
+    "if_inventory_missing": "NO_SOURCE_INVENTORY_AVAILABLE__DO_NOT_AUTOCREATE_OR_SCAN_PROTECTED_CONTENT",
+    "stop_criteria": "UNKNOWN_COVERAGE_OR_MISSING_AUTHORITATIVE_SOURCE__REMAIN_HOLD",
+    "duplicated_uuid_checkers_to_generate": 0,
+    "repeated_gpu_path_name_scans": 0
+  },
+  "evidence_limits": {
+    "owner_attested_no_more_fresh_originals_proves_historical_world_exposure_universe_complete": false,
+    "counts_or_sha256_alone_establish_complete_source_coverage": false,
+    "uuid_intersection_zero_establish_protected_universe_complete": false,
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "historical_job_universe_complete": false,
+    "source_registry_complete": false,
+    "protected_test_text_accessed": false,
+    "new_hf_job_started": false,
+    "candidate_queue_modified": false,
+    "skill_changed": false
+  }
+}

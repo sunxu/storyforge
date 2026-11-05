@@ -1,0 +1,48 @@
+{
+  "schema": "r58_g1_r46_r54_owner_remote_sha_intake_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_SAFE_STDOUT_THIS_CONVERSATION_NOT_INDEPENDENT_REHASH_IN_CHAT",
+  "verifier": "experiments/r58_round1/check_hf_primary_input_bytes.py",
+  "verifier_scope": "R46 and R54 pinned original run paths only",
+  "owner_safe_result": {
+    "all_actual_sft_runs_and_input_sources_proven_complete": false,
+    "current_bucket_equality_proves_historical_job_read_these_bytes": false,
+    "expansion_allowed": false,
+    "g1_clearance": "HOLD",
+    "hf_bucket_objects_read": 4,
+    "historical_bucket_object_immutability_proven": false,
+    "known_primary_split_placements_verified_here": 104,
+    "new_job_started": false,
+    "other_hf_jobs_reviewed": false,
+    "owner_opt_in_private_bucket_byte_read": true,
+    "private_world_uuids_exported": false,
+    "r46_original_run_compiled_train_validation_bytes_verified": true,
+    "r46_split_rows_verified": 64,
+    "r50_protected_content_absence_proven": false,
+    "r50_text_decoded_or_inspected": false,
+    "r54_original_run_staged_release_train_validation_bytes_verified": true,
+    "r54_split_rows_verified": 40,
+    "schema": "r58_g1_hf_primary_input_byte_audit_safe_v1",
+    "source_bytes_or_remote_uris_exported": false,
+    "source_registry_complete": false,
+    "status": "R58_G1_R46_R54_CURRENT_REMOTE_INPUT_BYTES_MATCH_GITHUB_PINS__HISTORY_AND_OTHER_HOLD",
+    "teacher_admitted": 0,
+    "train_admitted": 0,
+    "validation_admitted": 0
+  },
+  "source_reference": "docs/evidence/R58_G1_GITHUB_HISTORICAL_TRAINING_SOURCES_SAFE_20261031.json",
+  "intake_evidence_limits": {
+    "currently_accessible_remote_bytes_match_frozen_sha256": true,
+    "historical_job_input_immutability_confirmed": false,
+    "historical_job_read_time_byte_equality_confirmed": false,
+    "all_actual_job_provenance_complete": false,
+    "r50_protected_content_absence_confirmed": false
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  }
+}

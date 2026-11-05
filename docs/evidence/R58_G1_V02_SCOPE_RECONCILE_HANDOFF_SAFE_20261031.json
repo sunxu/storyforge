@@ -1,0 +1,80 @@
+{
+  "schema": "r58_g1_v02_scope_reconcile_handoff_safe_v1",
+  "date": "2026-10-31",
+  "status": "IMPLEMENTED_SYNTHETIC_VERIFIED__OWNER_PRIVATE_AUDIT_PENDING__G1_G2_HOLD",
+  "project_branch": "r58/roleplay-sft-skill-v01",
+  "owner_previous_baseline": {
+    "tested_head": "1f77d3b5e10f5e445ac5efa6abf6d53c11f34f4e",
+    "v02_unittest_24": "PASS_OWNER_REPORTED",
+    "ruff_v02_zero": "PASS_OWNER_REPORTED"
+  },
+  "new_artifacts": {
+    "script": "skills/storyforge-roleplay-sft/v02/r58_g1_scope_reconcile.py",
+    "script_git_blob_sha": "f23b36a7043f50d372a4b4ba464117f3f3ef13c4",
+    "tests": "skills/storyforge-roleplay-sft/v02/test_r58_g1_scope_reconcile.py",
+    "tests_git_blob_sha": "31c855601efe3a31c51e42ee0946aec4898a7f98",
+    "bridge": "skills/storyforge-roleplay-sft/v02/r58_pipeline_bridge.py",
+    "bridge_git_blob_sha": "f2b669c055d16d35bfc9392056c32aa2128c31c0",
+    "runbook": "docs/evidence/R58_G1_SCOPED_UUID_CONTRACT_RUNBOOK_SAFE_20261031.md"
+  },
+  "local_synthetic": {
+    "g1_scope_cases": 19,
+    "passes": 19,
+    "source_git_blob_exact_match": true,
+    "bridge_mirror_cases": 13,
+    "bridge_mirror_passes": 13,
+    "bridge_mirror_test_blob_exact_match": false,
+    "owner_full_v02_tests_after_new_code": "NOT_REPORTED",
+    "owner_new_v02_ruff": "NOT_REPORTED"
+  },
+  "scope_contract": {
+    "scopes": [
+      "known_historical_sft",
+      "r50_known_protected",
+      "gold195_source",
+      "legacy_dev20",
+      "r04_non_gold",
+      "r55_r57_other_dev",
+      "other_reserved_heldout",
+      "other_historical_training"
+    ],
+    "known_scoped_roster_counts": {
+      "known_historical_sft": 27,
+      "r50_known_protected": 5,
+      "gold195_source": 13,
+      "legacy_dev20": 2,
+      "r04_non_gold": 2
+    },
+    "input_only": "authorized_prepared_uuid_metadata_owner_private_root",
+    "existing_fixed_prior_sft_ledger_required": true,
+    "expected_frozen_candidates": 5,
+    "prior_sft_excluded": 1,
+    "remaining_held": 4,
+    "output_only": "fixed SAFE aggregate counts; no UUIDs, IDs, paths, text, or hashes",
+    "roster_hash_authenticates_source": false,
+    "owner_coverage_claim_is_independent_proof": false,
+    "offline_report_success_authorizes_training": false
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "g3": "NOT_STARTED",
+    "g4": "HOLD",
+    "g5": "NOT_STARTED",
+    "g6": "NOT_AUTHORIZED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "privacy": {
+    "r50_test_content_read": false,
+    "private_story_uuid_exported": false,
+    "private_source_file_read_this_turn": false,
+    "hf_cpu_or_gpu_job_started": false,
+    "dataset_modified": false,
+    "v01_frozen_skill_modified": false
+  },
+  "limitations": "The code compares already supplied metadata, not historical training-run completeness, source snapshots, protected universe authenticity or exact runtime Provider bytes."
+}

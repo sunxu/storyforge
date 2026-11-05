@@ -1,0 +1,52 @@
+{
+  "schema": "r58_owner_skill_v02_44_pass_scoped_preflight_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_INDEPENDENT_REEXECUTION",
+  "source_branch": "r58/roleplay-sft-skill-v01",
+  "source_head": "a7302355d278b60818b4543b4cf137f5fd8fd7b9",
+  "owner_tests": {
+    "command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q",
+    "count": 44,
+    "failures": 0,
+    "errors": 0,
+    "seconds_reported": 0.005,
+    "status": "PASS_OWNER_REPORTED"
+  },
+  "owner_preflight": {
+    "schema": "storyforge-r58-skill-v02-evidence-preflight-safe-v1",
+    "status": "G1_G2_SAFE_EVIDENCE_RECONCILED__BOTH_HOLD",
+    "known_update_jobs_current_inputs_matched": 5,
+    "hf_bucket_objects_owner_reported_matched": 12,
+    "known_frozen_split_placements": 184,
+    "remaining_candidate_worlds_held": 4,
+    "scoped_g1_inventory_rows": 8,
+    "g2_blocking_byte_exact_components": 17,
+    "direct_target_request_link_proven": false,
+    "historical_training_universe_complete": false,
+    "other_protected_universe_complete": false,
+    "training_admitted": 0,
+    "expansion_allowed": false,
+    "status_interpretation": "SAFE_METADATA_CONSISTENCY_ONLY__NOT_G1_OR_G2_PASS"
+  },
+  "ruff_v02": {
+    "command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics",
+    "owner_terminal_result_in_this_message": "NOT_PRESENT",
+    "exit_status_independently_confirmed": false,
+    "claim_zero_errors": false
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "round1_completed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "no_new_paid_hf_job": true,
+    "no_r50_test_content_read": true,
+    "no_private_uuid_or_story_content_uploaded": true
+  }
+}

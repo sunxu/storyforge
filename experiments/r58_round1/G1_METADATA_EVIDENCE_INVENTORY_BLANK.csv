@@ -1,0 +1,6 @@
+scope,private_source_reference,source_revision,coverage_status,world_identity_namespace,independent_review_status
+semantic_world_graph,,,UNKNOWN,,PENDING
+r50_protected_worlds,,,UNKNOWN,,PENDING
+prior_sft_exposure,,,UNKNOWN,,PENDING
+r55_r57_dev_worlds,,,UNKNOWN,,PENDING
+other_protected_or_holdout,,,UNKNOWN,,PENDING
