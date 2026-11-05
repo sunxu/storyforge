@@ -312,6 +312,24 @@ class MessageLedgerTests(unittest.TestCase):
         ):
             ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=2)
 
+    def test_explicit_event_limit_can_exceed_legacy_500k_ceiling(self):
+        cursor = FakeCursor(self.events)
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 5, [self.target], max_events=700000
+        )
+        self.assertEqual(len(rows), 4)
+        self.assertEqual(cursor.query_params[0][-1], 700001)
+
+    def test_event_limit_remains_hard_bounded_at_one_million(self):
+        cursor = FakeCursor(self.events)
+        with self.assertRaisesRegex(
+            ledger.LedgerRecoveryError, "LEDGER_QUERY_SCOPE_INVALID"
+        ):
+            ledger.load_session_events(
+                cursor, "story", "s", 5, [self.target], max_events=1000001
+            )
+        self.assertEqual(cursor.queries, [])
+
     def test_missing_target_boundary_holds(self):
         with self.assertRaisesRegex(
             ledger.LedgerRecoveryError, "TARGET_LEDGER_BOUNDARY_MISSING"
