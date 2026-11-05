@@ -14,6 +14,8 @@ from .message_ledger import (
     LedgerRecoveryError,
     load_session_events,
     reconstruct_history,
+    target_boundary,
+    _key,
 )
 
 SESSION_COLUMNS = (
@@ -445,7 +447,7 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                               max_history: int = 20000,
                               max_lineage_depth: int = 16,
                               max_ledger_events: int = 100000) -> list[dict]:
-    """Return per-case aggregate-only recovery outcomes without emitting content."""
+    """Return aggregate-only current-vs-reconstructed suffix evidence per case."""
     if not cases:
         raise HistoryRecoveryError("CASE_SET_EMPTY")
     ids = [row.get("case_id") for row in cases]
@@ -455,7 +457,7 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
 
     targets_by_case = {}
     by_session = {}
-    for index, case in enumerate(cases):
+    for case in cases:
         story_id = case.get("story_id")
         session_id = case.get("session_id")
         turn_index = case.get("turn_index")
@@ -479,35 +481,108 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
     }
     results = []
     for index, case in enumerate(cases):
+        base = {"safe_index": index}
         try:
+            target = targets_by_case[case["case_id"]]
+            chain = _lineage(
+                cursor, case["story_id"], case["session_id"], max_lineage_depth
+            )
+            leaf = chain[0]["session"]
+            segment = {
+                "session": leaf,
+                "turn_cutoff": case["turn_index"] - 1,
+                "lineage_depth": 0,
+            }
+            current_history = _history(
+                cursor, case["story_id"], segment, target["created_at"]
+            )
+            events = ledger_by_session[(case["story_id"], case["session_id"])]
+            history, reconstruction = reconstruct_history(
+                current_history, events, target, case["story_id"],
+                case["session_id"], case["turn_index"] - 1,
+            )
+            history.sort(
+                key=lambda row: (_datetime(row["created_at"]), row["message_id"])
+            )
+            current_history.sort(
+                key=lambda row: (_datetime(row["created_at"]), row["message_id"])
+            )
+            current_suffix = current_history[-1] if current_history else None
+            recovered_suffix = history[-1] if history else None
+            boundary = _key(target_boundary(events, target))
+            suffix_operation = None
+            if current_suffix is not None:
+                later_suffix_events = sorted(
+                    (
+                        event for event in events
+                        if event["message_id"] == current_suffix["message_id"]
+                        and _key(event) > boundary
+                    ),
+                    key=_key,
+                )
+                if later_suffix_events:
+                    suffix_operation = later_suffix_events[0]["operation"]
+
+            suffix_fields = {
+                "current_history_message_count": len(current_history),
+                "current_history_suffix_role": (
+                    current_suffix["role"] if current_suffix else None
+                ),
+                "current_history_suffix_turn": (
+                    current_suffix["turn_index"] if current_suffix else None
+                ),
+                "reconstructed_history_message_count": len(history),
+                "history_suffix_role": (
+                    recovered_suffix["role"] if recovered_suffix else None
+                ),
+                "history_suffix_turn": (
+                    recovered_suffix["turn_index"] if recovered_suffix else None
+                ),
+                "current_suffix_first_post_target_operation": suffix_operation,
+                "ledger_event_count": reconstruction["ledger_event_count"],
+                "history_rows_restored": reconstruction[
+                    "history_rows_restored_from_snapshot"
+                ],
+                "history_rows_excluded": reconstruction[
+                    "history_rows_excluded_by_post_target_marker"
+                ],
+            }
+            if not history or recovered_suffix["role"] != "user":
+                results.append({
+                    **base, "result": "HOLD",
+                    "reason_code": "HISTORY_SUFFIX_NOT_USER",
+                    **suffix_fields,
+                })
+                continue
+
             recovered = recover_case(
                 cursor, case, max_history=max_history,
                 max_lineage_depth=max_lineage_depth,
-                target=targets_by_case[case["case_id"]],
-                ledger_events=ledger_by_session[(case["story_id"], case["session_id"])],
+                target=target, ledger_events=events,
                 max_ledger_events=max_ledger_events,
             )
-            reconstruction = recovered["history_reconstruction"]
             results.append({
-                "safe_index": index,
+                **base,
                 "result": "RECOVERED",
                 "history_message_count": recovered["history_message_count"],
-                "history_suffix_role": (
-                    recovered["history"][-1]["role"] if recovered["history"] else None
-                ),
+                "history_suffix_role": recovered["history"][-1]["role"],
                 "ledger_event_count": reconstruction["ledger_event_count"],
-                "history_rows_restored": reconstruction["history_rows_restored_from_snapshot"],
-                "history_rows_excluded": reconstruction["history_rows_excluded_by_post_target_marker"],
+                "history_rows_restored": reconstruction[
+                    "history_rows_restored_from_snapshot"
+                ],
+                "history_rows_excluded": reconstruction[
+                    "history_rows_excluded_by_post_target_marker"
+                ],
+                "current_history_suffix_role": suffix_fields[
+                    "current_history_suffix_role"
+                ],
+                "current_suffix_first_post_target_operation": suffix_operation,
             })
         except HistoryRecoveryError as exc:
             reason = str(exc)
             if not reason or not reason.replace("_", "").isalnum() or reason.upper() != reason:
                 reason = "RECOVERY_CASE_HOLD"
-            results.append({
-                "safe_index": index,
-                "result": "HOLD",
-                "reason_code": reason,
-            })
+            results.append({**base, "result": "HOLD", "reason_code": reason})
     return results
 
 
