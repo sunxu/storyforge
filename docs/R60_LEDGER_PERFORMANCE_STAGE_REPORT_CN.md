@@ -272,3 +272,28 @@ Connector 对当前 History superset SQL 的普通 EXPLAIN（无 ANALYZE）观�
 - Planner Total Cost 约 11.23，Plan Rows 估算 1
 
 该结果仅是计划结构观察，不能代表实际返回行数、磁盘读取或 wall time；当前 History 仍需独立只读 Pilot 测量收益。
+
+
+
+## 11. T5 补充：WAL 与构建配置只读观察（2026-11-05）
+
+Connector 额外读取：
+
+- `pg_stat_wal.stats_reset`：2026-07-27
+- WAL cumulative bytes：约 1.88 TB（自 stats_reset 起的累计值，不是近期速率）
+- `max_wal_size`：4,096 MB
+- `min_wal_size`：1,024 MB
+- `wal_keep_size`：0 MB
+- `maintenance_work_mem`：512 MB
+- `max_parallel_maintenance_workers`：1
+- 当前可见 `pg_replication_slots`：0
+- 当前可见 `pg_stat_replication` rows：0
+
+解释限制：
+
+1. WAL 累计量缺少可用于索引构建窗口的短期时间序列，不能推算峰值 WAL 生成速率。
+2. replication slots / pg_stat_replication 的 0 行不能证明 Supabase 平台不存在托管副本或外部复制链路。
+3. SQL catalog 无法证明宿主文件系统剩余磁盘空间、索引构建临时峰值、云盘自动扩容状态或服务商保留空间。
+4. `max_wal_size` 是 PostgreSQL 配置目标，不是 WAL 磁盘可用容量。
+
+因此这些信息增加了构建配置背景，但没有解除 T5 HOLD。需要 DBA/平台侧磁盘余量、近期 WAL 时间序列、复制延迟和写入负载监控。
