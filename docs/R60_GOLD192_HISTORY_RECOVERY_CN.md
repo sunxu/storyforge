@@ -180,6 +180,26 @@ python3 experiments/r58_quality/r59_gold192_history_recovery.py \
   --pilot 8
 ```
 
+如果正式 Recovery 返回 `LEDGER_SESSION_EVENT_LIMIT_EXCEEDED`，
+先运行 `--diagnose-ledger-event-counts`。该模式仅对 Pilot8 已选中的 Session
+按 Recovery 完全相同的 story/session/positive-turn 范围执行 `COUNT(*)`，
+不读取事件 payload，不恢复历史，不写文件。SAFE 输出每个 Session 对应的 Pilot
+安全序号、事件数量、当前上限和是否超限。只有明确得到数量后，才决定是否在
+CLI 允许范围内调整 `--max-ledger-events`；不得盲目提高上限或截断事件。
+
+```bash
+python3 experiments/r58_quality/r59_gold192_history_recovery.py \
+  --reviewer-a "$PRIVATE/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
+  --reviewer-b "$PRIVATE/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
+  --exclusions "$PRIVATE/quality-v1/QUALITY_V1_EXCLUDED_CASES.jsonl" \
+  --source-packets "$R59_PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
+  --source-locators "$SOURCE/R59_SOURCE_LOCATORS_192.jsonl" \
+  --source-safe "$SOURCE/R59_SOURCE_SAFE.json" \
+  --output-dir "$HISTORY" \
+  --pilot 8 \
+  --diagnose-ledger-event-counts
+```
+
 如果 `--diagnose-source-only` 返回 `SOURCE_MATCH_COUNT_NOT_UNIQUE`，
 使用下面的定点诊断。它只允许通过本机 DSN 连接 `r58_export_reader`，
 并会在连接后强制检查 `transaction_read_only=on`、`row_security=on`、
