@@ -57,6 +57,39 @@ INCLUDE (turn_index, message_id, role, operation);
 
 相关环境观测：Ledger total 约 110.0 GB；WAL `max_wal_size=4096 MB`，`maintenance_work_mem=512 MB`，`max_parallel_maintenance_workers=1`。`pg_stat_replication` / `pg_replication_slots` 当前查询均未返回活动数据；这不代表托管环境没有副本或 WAL 风险。
 
+## 2A. 2026-11-05 Owner Dashboard 磁盘截图核验（已获取）
+
+Owner 提供 Supabase Dashboard **Disk** 截图，显示 primary database：
+
+| 指标 | 截图观察值 |
+|---|---:|
+| Provisioned disk | 219 GB |
+| Used | 191.39 GB |
+| Free（计算值） | 27.61 GB |
+| Used ratio（计算值） | 87.39% |
+| B2 预计最终占用 | 约 11.68 GiB / 12.54 GB |
+| 不扩容、仅计索引体积的预计剩余 | 约 15.07 GB |
+| 不扩容、仅计索引体积的预计使用率 | 约 93.12% |
+
+**容量 Gate 结论：HOLD。** 本截图 **不能**标记 `R60_B2_DISK_APPROVED=YES`。现有空余 27.61 GB 不满足前述至少 36 GiB（约 38.65 GB）初步人工余量要求，更不足以覆盖 B2 最终空间、构建临时数据、WAL、持续写入及平台其他空间需求。
+
+建议在 Supabase Database Settings / Infrastructure 主动**扩容到 300 GB**（可接受的较低成本备选 280 GB，但需 DBA 明确确认负载余量）。300 GB 情况下，仅计当前已用与 B2 最终体积，估算剩余约 96.07 GB；这仍非真实构建峰值可用空间的证明。
+
+扩容前应核对 Supabase 实际计费预览。gp3 额外 provisioned disk 按 $0.125/GB/月近似，219 → 300 GB 增加 81 GB，约多 $10.13/月；不含其他费用。Supabase 付费项目约 90% 使用率时可触发自动扩容；95% 有进入只读状态的风险；每次磁盘修改后存在约四小时冷却。**不要依赖并发建索引过程中自动扩容救场**。
+
+行动顺序：
+
+1. Owner 在 Dashboard 将 Disk size 调至建议值，确认费用与变更。
+2. 只有 Dashboard 显示扩容完成、provisioned / used / free 已更新且没有剩余磁盘修改中的状态，才重新判定磁盘 Gate。
+3. DBA 审核此前的 15m / 1h / 24h WAL、复制、IO 和写入峰值；必要时增加预留，不足则继续 HOLD。
+4. 使用独立生产 Owner 可写**直连或会话保持**的主机与数据库身份，在低峰窗口执行脚本；不得把写入 DSN 发给 ChatGPT。
+5. 构建后再由 Owner 只读校验新索引有效、应用写入正常以及计划改善。
+
+官方依据：
+- https://supabase.com/docs/guides/platform/database-size
+- https://supabase.com/docs/guides/platform/compute-and-disk
+- https://supabase.com/docs/guides/platform/manage-your-usage/disk-size
+
 ## 3. 执行前必须在 Supabase 平台侧验证
 
 由 DBA/项目 Owner 在 Supabase Dashboard `Database Settings` / `Infrastructure` 检查：
