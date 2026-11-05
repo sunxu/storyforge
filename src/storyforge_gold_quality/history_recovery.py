@@ -147,9 +147,13 @@ def _target(cursor, case: dict) -> dict:
 
 
 def _lineage(cursor, story_id: str, leaf_session_id: str,
-             max_depth: int) -> list[dict]:
+             max_depth: int, *, session_cache: dict | None = None,
+             lineage_cache: dict | None = None) -> list[dict]:
     if type(max_depth) is not int or not 1 <= max_depth <= 64:
         raise HistoryRecoveryError("LINEAGE_DEPTH_LIMIT_INVALID")
+    cache_key = (story_id, leaf_session_id, max_depth)
+    if lineage_cache is not None and cache_key in lineage_cache:
+        return lineage_cache[cache_key]
     chain = []
     seen = set()
     current_id = leaf_session_id
@@ -160,7 +164,13 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
         if len(chain) >= max_depth:
             raise HistoryRecoveryError("SESSION_LINEAGE_DEPTH_EXCEEDED")
         seen.add(current_id)
-        node = _session(cursor, story_id, current_id)
+        session_key = (story_id, current_id)
+        if session_cache is not None and session_key in session_cache:
+            node = session_cache[session_key]
+        else:
+            node = _session(cursor, story_id, current_id)
+            if session_cache is not None:
+                session_cache[session_key] = node
         _timestamp(node["created_at"])
         if (child is not None
                 and _datetime(node["created_at"]) > _datetime(child["created_at"])):
@@ -179,6 +189,8 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
         chain.append({"session": node, "lineage_depth": len(chain)})
         child = node
         current_id = parent_id
+    if lineage_cache is not None:
+        lineage_cache[cache_key] = chain
     return chain
 
 
@@ -282,7 +294,11 @@ def _summary_snapshot(session: dict, target_time: Any,
     }
 
 
-def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
+def _story_versions(cursor, story_id: str, target_time: Any,
+                    cache: dict | None = None) -> dict:
+    cache_key = (story_id, _timestamp(target_time))
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
     cursor.execute(
         """
         SELECT id, content_revision, title, description, tags, v2_data,
@@ -327,7 +343,7 @@ def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
             "updated_at": _timestamp(admin["updated_at"]),
             "temporal_status": "PRETARGET_RECORD_AND_UPDATE",
         }
-    return {
+    result = {
         "story_content_version": content,
         "story_content_version_status": (
             "PRETARGET_VERSION_FOUND" if content else "NO_PRETARGET_VERSION_FOUND"
@@ -340,13 +356,19 @@ def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
         # provider System Prompt or request bytes.
         "historical_system_prompt_verified": False,
     }
+    if cache is not None:
+        cache[cache_key] = result
+    return result
 
 
 def recover_case(cursor, case: dict, *, max_history: int = 20000,
                  max_lineage_depth: int = 16,
                  target: dict | None = None,
                  ledger_events: list[dict] | None = None,
-                 max_ledger_events: int = 100000) -> dict:
+                 max_ledger_events: int = 100000,
+                 session_cache: dict | None = None,
+                 lineage_cache: dict | None = None,
+                 story_version_cache: dict | None = None) -> dict:
     required = ("case_id", "story_id", "session_id", "turn_index", "target_sha256")
     if any(key not in case for key in required):
         raise HistoryRecoveryError("CASE_LOCATOR_INCOMPLETE")
@@ -359,8 +381,10 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
         raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
 
     target = target if target is not None else _target(cursor, case)
-    chain = _lineage(cursor, case["story_id"], case["session_id"],
-                     max_lineage_depth)
+    chain = _lineage(
+        cursor, case["story_id"], case["session_id"], max_lineage_depth,
+        session_cache=session_cache, lineage_cache=lineage_cache,
+    )
     leaf = chain[0]["session"]
     # Fork/rewind materializes the inherited messages into the child session
     # with new message IDs. Read that materialized child history once; merging
@@ -405,7 +429,9 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
     if any(not _before(row["created_at"], target["created_at"]) for row in history):
         raise HistoryRecoveryError("HISTORY_FUTURE_LEAKAGE")
 
-    versions = _story_versions(cursor, case["story_id"], target["created_at"])
+    versions = _story_versions(
+        cursor, case["story_id"], target["created_at"], story_version_cache
+    )
     return {
         "case_id": case["case_id"],
         "story_id": case["story_id"],
@@ -661,6 +687,12 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
         )
         for key, entry in sorted(by_session.items())
     }
+    # Share immutable read results across cases in this single DB transaction.
+    # These caches remove repeated session-lineage queries without changing
+    # target boundaries, history selection, or admission decisions.
+    session_cache = {}
+    lineage_cache = {}
+    story_version_cache = {}
     return [
         recover_case(
             cursor, row, max_history=max_history,
@@ -668,6 +700,9 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
             target=targets_by_case[row["case_id"]],
             ledger_events=ledger_by_session[(row["story_id"], row["session_id"])],
             max_ledger_events=max_ledger_events,
+            session_cache=session_cache,
+            lineage_cache=lineage_cache,
+            story_version_cache=story_version_cache,
         )
         for row in sorted(cases, key=lambda item: item["case_id"])
     ]
