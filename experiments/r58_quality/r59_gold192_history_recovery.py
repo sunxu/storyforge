@@ -215,7 +215,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         source_packets: Path, source_locators: Path, source_safe: Path,
         output_dir: Path, dsn: str, pilot: int = 8,
         max_history: int = 20000, max_lineage_depth: int = 16,
-        max_ledger_events: int = 100000) -> dict:
+        max_ledger_events: int = 100000, diagnostic_only: bool = False) -> dict:
     inputs = {
         "REVIEWER_A": private_bytes(reviewer_a, "REVIEWER_A"),
         "REVIEWER_B": private_bytes(reviewer_b, "REVIEWER_B"),
@@ -251,6 +251,21 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     )
 
     cases = build_recovery_cases(priority, locator_index)
+
+    if diagnostic_only:
+        return {
+            "schema": "r59_gold192_source_identity_diagnostic_safe_v1",
+            "status": "PILOT_SOURCE_IDENTITY_PREFLIGHT_PASS__NO_DATABASE",
+            "pilot_requested": len(priority),
+            "pilot_identity_valid": len(cases),
+            "database_connected": False,
+            "database_modified": False,
+            "private_values_emitted": False,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+            "gpu_started": False,
+            "r50_accessed": False,
+        }
 
     if output_dir.exists() or output_dir.is_symlink():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
@@ -361,6 +376,10 @@ def main() -> int:
     parser.add_argument("--max-history", type=int, default=20000)
     parser.add_argument("--max-lineage-depth", type=int, default=16)
     parser.add_argument("--max-ledger-events", type=int, default=100000)
+    parser.add_argument(
+        "--diagnose-source-only", action="store_true",
+        help="validate the selected source locators and exit before any database connection",
+    )
     args = parser.parse_args()
     try:
         if (args.pilot < 0 or args.pilot > 72 or args.max_history < 1
@@ -368,7 +387,7 @@ def main() -> int:
                 or not 1 <= args.max_ledger_events <= 500000):
             raise ValueError("PARAMETERS_INVALID")
         dsn = os.environ.get("STORYFORGE_SUPABASE_DSN")
-        if not dsn:
+        if not dsn and not args.diagnose_source_only:
             raise ValueError("DB_CONNECTION_MISSING")
         result = run(
             reviewer_a=args.reviewer_a, reviewer_b=args.reviewer_b,
@@ -377,6 +396,7 @@ def main() -> int:
             output_dir=args.output_dir, dsn=dsn, pilot=args.pilot,
             max_history=args.max_history, max_lineage_depth=args.max_lineage_depth,
             max_ledger_events=args.max_ledger_events,
+            diagnostic_only=args.diagnose_source_only,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
