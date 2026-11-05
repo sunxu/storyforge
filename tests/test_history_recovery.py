@@ -396,6 +396,53 @@ class HistoryRecoveryTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(cursor.execute_count, 2)
 
+    def test_independent_batch_keeps_valid_case_when_another_target_holds(self):
+        bad_case = {
+            "case_id": "story-a-t00009", "story_id": "story-a",
+            "session_id": "child", "turn_index": 9,
+            "target_sha256": h.sha256_text("missing target"),
+        }
+        recovered, holds = h.recover_cases_independently(
+            self.cursor, [self.case, bad_case]
+        )
+        self.assertEqual(len(recovered), 1)
+        self.assertEqual(recovered[0]["case_id"], self.case["case_id"])
+        self.assertEqual(
+            holds,
+            [{
+                "case_id": bad_case["case_id"],
+                "reason_code": "TARGET_MESSAGE_IDENTITY_AMBIGUOUS",
+            }],
+        )
+
+    def test_independent_batch_preserves_suffix_hold_without_aborting_other_cases(self):
+        class OneCaseHoldCursor(FakeCursor):
+            pass
+
+        cursor = OneCaseHoldCursor()
+        cursor.messages = [
+            row for row in cursor.messages
+            if row["message_id"] != "c6"
+        ]
+        # The first case is independently held by the suffix gate. A second
+        # target identity is intentionally absent and is also held separately.
+        recovered, holds = h.recover_cases_independently(
+            cursor,
+            [
+                self.case,
+                {
+                    "case_id": "story-a-t00009", "story_id": "story-a",
+                    "session_id": "child", "turn_index": 9,
+                    "target_sha256": h.sha256_text("missing target"),
+                },
+            ],
+        )
+        self.assertEqual(recovered, [])
+        self.assertEqual(
+            {row["reason_code"] for row in holds},
+            {"HISTORY_SUFFIX_NOT_USER", "TARGET_MESSAGE_IDENTITY_AMBIGUOUS"},
+        )
+
     def test_duplicate_case_set_fails(self):
         with self.assertRaisesRegex(h.HistoryRecoveryError, "CASE_SET_DUPLICATE"):
             h.recover_cases(self.cursor, [self.case, self.case])
