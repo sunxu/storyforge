@@ -209,17 +209,19 @@ def target_boundary(events, target):
 def _snapshot(event):
     data = event.get("row_data")
     fields = ("id", "story_id", "session_id", "turn_index", "role",
-              "content", "status", "created_at", "mutation_revision")
+              "content", "status", "created_at")
     if not isinstance(data, dict) or any(k not in data for k in fields):
         raise LedgerRecoveryError("LEDGER_SNAPSHOT_FIELDS_INCOMPLETE")
+    revision_present = "mutation_revision" in data
+    revision = data.get("mutation_revision")
+    if revision_present and (type(revision) is not int or revision < 0):
+        raise LedgerRecoveryError("LEDGER_SNAPSHOT_MUTATION_REVISION_INVALID")
     if (str(data["id"]) != event["message_id"]
             or data["story_id"] != event["story_id"]
             or data["session_id"] != event["session_id"]
             or data["role"] != event["role"]
             or data["turn_index"] != event["turn_index"]
             or type(data["turn_index"]) is not int
-            or type(data["mutation_revision"]) is not int
-            or data["mutation_revision"] < 0
             or not isinstance(data["content"], str)
             or not isinstance(data["status"], str)):
         raise LedgerRecoveryError("LEDGER_SNAPSHOT_IDENTITY_MISMATCH")
@@ -229,7 +231,7 @@ def _snapshot(event):
         "session_id": data["session_id"], "turn_index": data["turn_index"],
         "role": data["role"], "content": data["content"],
         "status": data["status"], "created_at": data["created_at"],
-        "mutation_revision": data["mutation_revision"],
+        "mutation_revision": revision,
     }
 
 
@@ -250,17 +252,22 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
 
     output = []
     restored = excluded = unchanged = 0
+    legacy_snapshot_revision_missing = 0
+    snapshot_revision_present = 0
     for mid in sorted(set(current) | set(grouped)):
         message_events = grouped.get(mid, [])
         later = [e for e in message_events if _key(e) > boundary]
         first = later[0] if later else None
         if first and first["operation"] in SNAPSHOTS:
             state = _snapshot(first)
-            expected_revision = sum(
-                e["operation"] == "update_after" and _key(e) < _key(first)
-                for e in message_events
-            )
             restored += 1
+            if state["mutation_revision"] is None:
+                # Historical to_jsonb(OLD) snapshots predate the mutation_revision
+                # column. Their complete business fields remain usable, but the
+                # missing revision must be reported rather than inferred from event counts.
+                legacy_snapshot_revision_missing += 1
+            else:
+                snapshot_revision_present += 1
         elif first and first["operation"] in MARKERS:
             excluded += 1
             continue
@@ -268,13 +275,13 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
             state = current.get(mid)
             if state is None:
                 continue
-            expected_revision = sum(
-                e["operation"] == "update_after" for e in message_events
-            )
             unchanged += 1
         revision = state.get("mutation_revision")
-        if type(revision) is not int or revision != expected_revision:
-            raise LedgerRecoveryError("LEDGER_MUTATION_REVISION_MISMATCH")
+        if revision is None:
+            if not (first and first["operation"] in SNAPSHOTS):
+                raise LedgerRecoveryError("LEDGER_MUTATION_REVISION_INVALID")
+        elif type(revision) is not int or revision < 0:
+            raise LedgerRecoveryError("LEDGER_MUTATION_REVISION_INVALID")
         if (state.get("story_id") != story_id
                 or state.get("session_id") != session_id
                 or type(state.get("turn_index")) is not int
@@ -305,6 +312,15 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
         "ledger_commit_order_verified": False,
         "ledger_trigger_continuity_verified": False,
         "history_rows_restored_from_snapshot": restored,
+        "history_rows_restored_with_revision_snapshot": snapshot_revision_present,
+        "history_rows_restored_from_legacy_snapshot_without_revision": (
+            legacy_snapshot_revision_missing
+        ),
+        "mutation_revision_evidence_state": (
+            "LEGACY_SNAPSHOT_REVISION_UNAVAILABLE"
+            if legacy_snapshot_revision_missing
+            else "REVISION_FIELD_TYPE_AND_RANGE_VALIDATED"
+        ),
         "history_rows_excluded_by_post_target_marker": excluded,
         "history_rows_using_unchanged_current_state": unchanged,
     }
