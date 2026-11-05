@@ -13,6 +13,7 @@ from typing import Any
 from .message_ledger import (
     MARKERS,
     SNAPSHOTS,
+    LedgerEventIndex,
     LedgerRecoveryError,
     _key,
     load_session_events,
@@ -398,6 +399,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
                  max_lineage_depth: int = 16,
                  target: dict | None = None,
                  ledger_events: list[dict] | None = None,
+                 ledger_event_index: LedgerEventIndex | None = None,
                  max_ledger_events: int = 100000,
                  session_cache: dict | None = None,
                  lineage_cache: dict | None = None,
@@ -440,6 +442,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
         history, history_reconstruction = reconstruct_history(
             current_history, ledger_events, target,
             case["story_id"], case["session_id"], case["turn_index"] - 1,
+            event_index=ledger_event_index,
         )
     except LedgerRecoveryError as exc:
         raise HistoryRecoveryError(str(exc)) from None
@@ -533,6 +536,7 @@ def recover_cases_independently(cursor, cases: list[dict], *,
 
     targets_by_case = {}
     ledger_by_session = {}
+    ledger_index_by_session = {}
     holds_by_case = {}
 
     for key, entry in sorted(by_session.items()):
@@ -572,6 +576,7 @@ def recover_cases_independently(cursor, cases: list[dict], *,
                 cursor, story_id, session_id, entry["max_turn"],
                 targets=valid_targets, max_events=max_ledger_events,
             )
+            ledger_index_by_session[key] = LedgerEventIndex(ledger_by_session[key])
         except LedgerRecoveryError as exc:
             for case in session_cases:
                 if case["case_id"] in targets_by_case:
@@ -593,6 +598,7 @@ def recover_cases_independently(cursor, cases: list[dict], *,
                 max_lineage_depth=max_lineage_depth,
                 target=targets_by_case[case_id],
                 ledger_events=ledger_by_session[key],
+                ledger_event_index=ledger_index_by_session[key],
                 max_ledger_events=max_ledger_events,
                 session_cache=session_cache,
                 lineage_cache=lineage_cache,
@@ -823,6 +829,9 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
         )
         for key, entry in sorted(by_session.items())
     }
+    ledger_index_by_session = {
+        key: LedgerEventIndex(events) for key, events in ledger_by_session.items()
+    }
     # Share immutable read results across cases in this single DB transaction.
     # These caches remove repeated session-lineage queries without changing
     # target boundaries, history selection, or admission decisions.
@@ -835,6 +844,7 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
             max_lineage_depth=max_lineage_depth,
             target=targets_by_case[row["case_id"]],
             ledger_events=ledger_by_session[(row["story_id"], row["session_id"])],
+            ledger_event_index=ledger_index_by_session[(row["story_id"], row["session_id"])],
             max_ledger_events=max_ledger_events,
             session_cache=session_cache,
             lineage_cache=lineage_cache,
