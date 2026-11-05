@@ -101,6 +101,14 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
         self.assertEqual(
             caught.exception.counts, {"SOURCE_MATCH_COUNT_NOT_UNIQUE": 1}
         )
+        self.assertEqual(
+            caught.exception.safe_indices,
+            [{
+                "pilot_index": 0,
+                "reason": "SOURCE_MATCH_COUNT_NOT_UNIQUE",
+                "matched_message_count": 2,
+            }],
+        )
 
     def test_unique_exact_match_is_accepted(self):
         priority = [{

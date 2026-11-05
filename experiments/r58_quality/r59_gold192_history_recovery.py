@@ -117,27 +117,40 @@ def validate_locators(rows: list[dict], packets: dict[str, dict]) -> dict[str, d
 
 
 class PilotSourceIdentityHold(ValueError):
-    def __init__(self, counts: Counter):
+    def __init__(self, counts: Counter, safe_indices: list[dict]):
         self.counts = dict(sorted(counts.items()))
+        self.safe_indices = safe_indices
         super().__init__("PILOT_SOURCE_IDENTITY_HOLD")
 
 
 def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -> list[dict]:
     cases = []
     held_source = Counter()
-    for case in priority:
+    held_indices = []
+    for pilot_index, case in enumerate(priority):
         locator = locator_index[case["case_id"]]
         if locator.get("source_status") != "EXACT_MATCH":
-            held_source[str(locator.get("source_status", "SOURCE_STATUS_MISSING"))] += 1
+            reason = str(locator.get("source_status", "SOURCE_STATUS_MISSING"))
+            held_source[reason] += 1
+            held_indices.append({"pilot_index": pilot_index, "reason": reason})
             continue
         if locator.get("matched_message_count") != 1:
             held_source["SOURCE_MATCH_COUNT_NOT_UNIQUE"] += 1
+            held_indices.append({
+                "pilot_index": pilot_index,
+                "reason": "SOURCE_MATCH_COUNT_NOT_UNIQUE",
+                "matched_message_count": locator.get("matched_message_count"),
+            })
             continue
         session_id = locator.get("session_id")
         message_id = locator.get("message_id")
         if (not isinstance(session_id, str) or not session_id
                 or not isinstance(message_id, str) or not message_id):
             held_source["SOURCE_LOCATOR_INCOMPLETE"] += 1
+            held_indices.append({
+                "pilot_index": pilot_index,
+                "reason": "SOURCE_LOCATOR_INCOMPLETE",
+            })
             continue
         cases.append({
             "case_id": case["case_id"], "story_id": case["story_id"],
@@ -145,7 +158,7 @@ def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -
             "target_sha256": case["target_sha256"],
         })
     if held_source:
-        raise PilotSourceIdentityHold(held_source)
+        raise PilotSourceIdentityHold(held_source, held_indices)
     if len(cases) != len(priority):
         raise ValueError("PILOT_CASE_COUNT_INVALID")
     if len({(row["story_id"], row["session_id"], row["turn_index"]) for row in cases}) != len(cases):
@@ -411,7 +424,10 @@ def main() -> int:
             }
         elif isinstance(exc, PilotSourceIdentityHold):
             reason = "PILOT_SOURCE_IDENTITY_HOLD"
-            diagnostics = {"pilot_source_identity_counts": exc.counts}
+            diagnostics = {
+                "pilot_source_identity_counts": exc.counts,
+                "pilot_source_identity_safe_indices": exc.safe_indices,
+            }
         else:
             reason = (str(exc) if isinstance(exc, (ValueError, TypeError))
                       and re.fullmatch(r"[A-Z0-9_]+", str(exc))
