@@ -9,6 +9,7 @@ COLUMNS = ("id", "message_id", "story_id", "session_id", "role",
            "turn_index", "operation", "row_data", "recorded_at")
 SNAPSHOTS = {"update_before", "delete"}
 MARKERS = {"insert", "update_after"}
+LEDGER_METADATA_BATCH_SIZE = 10000
 
 
 class LedgerRecoveryError(ValueError):
@@ -75,7 +76,6 @@ def _required_event_ids(events, targets):
 
 def load_session_events(cursor, story_id, session_id, max_turn_index,
                         targets, max_events=100000):
-    metadata_batch_size = 10000
     if (not isinstance(story_id, str) or not story_id
             or not isinstance(session_id, str) or not session_id
             or type(max_turn_index) is not int or max_turn_index < 1
@@ -102,7 +102,7 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
     )
     last_key = None
     while len(result) <= max_events:
-        page_limit = min(metadata_batch_size, max_events + 1 - len(result))
+        page_limit = min(LEDGER_METADATA_BATCH_SIZE, max_events + 1 - len(result))
         if last_key is None:
             query = """
                 SELECT id, message_id::text AS message_id,
