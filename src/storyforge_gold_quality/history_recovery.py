@@ -644,19 +644,19 @@ def recover_cases_independently(cursor, cases: list[dict], *,
             # Safe fallback: original per-case SQL, with no partial superset.
             continue
         for case in active_cases:
-            target_time = targets_by_case[case["case_id"]]["created_at"]
-            cutoff = case["turn_index"] - 1
-            eligible_rows = [
-                row for row in superset_rows
-                if row["turn_index"] <= cutoff
-                and _before(row["created_at"], target_time)
-            ]
-            segment = {
-                "session": leaf,
-                "turn_cutoff": cutoff,
-                "lineage_depth": 0,
-            }
             try:
+                target_time = targets_by_case[case["case_id"]]["created_at"]
+                cutoff = case["turn_index"] - 1
+                eligible_rows = [
+                    row for row in superset_rows
+                    if row["turn_index"] <= cutoff
+                    and _before(row["created_at"], target_time)
+                ]
+                segment = {
+                    "session": leaf,
+                    "turn_cutoff": cutoff,
+                    "lineage_depth": 0,
+                }
                 current_history_by_case[case["case_id"]] = _history(
                     cursor, story_id, segment, target_time, rows=eligible_rows,
                 )
