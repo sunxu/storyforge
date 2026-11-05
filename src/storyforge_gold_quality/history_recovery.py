@@ -11,8 +11,8 @@ from datetime import datetime
 from typing import Any
 
 from .message_ledger import (
-    _key,
     LedgerRecoveryError,
+    _key,
     MARKERS,
     SNAPSHOTS,
     load_session_events,
