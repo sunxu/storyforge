@@ -96,8 +96,11 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
             "matched_message_count": 2, "message_id": "message-root",
             "session_id": "root-session",
         }
-        with self.assertRaisesRegex(ValueError, "PILOT_SOURCE_IDENTITY_HOLD"):
+        with self.assertRaisesRegex(ValueError, "PILOT_SOURCE_IDENTITY_HOLD") as caught:
             adapter.build_recovery_cases(priority, {"case-a": locator})
+        self.assertEqual(
+            caught.exception.counts, {"SOURCE_MATCH_COUNT_NOT_UNIQUE": 1}
+        )
 
     def test_unique_exact_match_is_accepted(self):
         priority = [{
