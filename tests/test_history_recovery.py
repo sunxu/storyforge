@@ -422,7 +422,7 @@ class HistoryRecoveryTests(unittest.TestCase):
         cursor = OneCaseHoldCursor()
         cursor.messages = [
             row for row in cursor.messages
-            if row["message_id"] != "c6"
+            if row["message_id"] not in {"c5", "c6"}
         ]
         # The first case is independently held by the suffix gate. A second
         # target identity is intentionally absent and is also held separately.
