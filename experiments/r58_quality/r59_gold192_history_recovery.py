@@ -372,7 +372,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         source_packets: Path, source_locators: Path, source_safe: Path,
         output_dir: Path, dsn: str, pilot: int = 8,
         max_history: int = 20000, max_lineage_depth: int = 16,
-        max_ledger_events: int = 100000, diagnostic_only: bool = False) -> dict:
+        max_ledger_events: int = 100000, diagnostic_only: bool = False,
+        diagnose_duplicate_index: int | None = None) -> dict:
     inputs = {
         "REVIEWER_A": private_bytes(reviewer_a, "REVIEWER_A"),
         "REVIEWER_B": private_bytes(reviewer_b, "REVIEWER_B"),
@@ -407,9 +408,10 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         parse_jsonl(inputs["SOURCE_LOCATORS"], "SOURCE_LOCATORS"), packet_index
     )
 
-    cases = build_recovery_cases(priority, locator_index)
-
+    if diagnostic_only and diagnose_duplicate_index is not None:
+        raise ValueError("DIAGNOSTIC_MODE_CONFLICT")
     if diagnostic_only:
+        cases = build_recovery_cases(priority, locator_index)
         return {
             "schema": "r59_gold192_source_identity_diagnostic_safe_v1",
             "status": "PILOT_SOURCE_IDENTITY_PREFLIGHT_PASS__NO_DATABASE",
@@ -423,6 +425,70 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             "gpu_started": False,
             "r50_accessed": False,
         }
+
+    if diagnose_duplicate_index is not None:
+        if not 0 <= diagnose_duplicate_index < len(priority):
+            raise ValueError("DUPLICATE_DIAGNOSTIC_INDEX_INVALID")
+        case = priority[diagnose_duplicate_index]
+        locator = locator_index[case["case_id"]]
+        if locator.get("matched_message_count", 0) < 2:
+            raise ValueError("DUPLICATE_SOURCE_NOT_PRESENT")
+        import psycopg
+
+        stage = "CONNECT"
+        try:
+            with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
+                stage = "SET_READ_ONLY"
+                db.execute("SET TRANSACTION READ ONLY")
+                stage = "SET_STATEMENT_TIMEOUT"
+                db.execute("SET LOCAL statement_timeout = '90000ms'")
+                stage = "SET_LOCK_TIMEOUT"
+                db.execute("SET LOCAL lock_timeout = '1000ms'")
+                stage = "VERIFY_READ_ONLY_ROLE"
+                with db.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT current_user, current_setting('transaction_read_only'),
+                               current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                        FROM pg_roles AS r WHERE r.rolname = current_user
+                        """
+                    )
+                    role = cursor.fetchone()
+                    if (role is None or role[0] != "r58_export_reader"
+                            or role[1] != "on" or role[2] != "on"
+                            or role[3] is not False or role[4] is not False):
+                        raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+                    stage = "DUPLICATE_LINEAGE_DIAGNOSTIC"
+                    diagnostic = diagnose_duplicate_source(
+                        cursor, case, locator, max_lineage_depth
+                    )
+                stage = "ROLLBACK"
+                db.rollback()
+        except psycopg.Error as exc:
+            sqlstate = getattr(exc, "sqlstate", None)
+            if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
+                sqlstate = None
+            raise DatabaseFailure(stage, sqlstate, type(exc).__name__) from None
+        return {
+            "schema": "r59_gold192_duplicate_source_diagnostic_safe_v1",
+            "status": ("DUPLICATE_SOURCE_CANONICAL_ROOT_PROVEN__NO_ADMISSION"
+                       if diagnostic["status"] == "UNIQUE_ROOT_CANONICAL_MATCH"
+                       else "DUPLICATE_SOURCE_LINEAGE_HOLD"),
+            "pilot_index": diagnose_duplicate_index,
+            **diagnostic,
+            "database_role_verified": "r58_export_reader",
+            "transaction_read_only": True,
+            "row_security": True,
+            "role_bypassrls": False,
+            "database_modified": False,
+            "private_values_emitted": False,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+            "gpu_started": False,
+            "r50_accessed": False,
+        }
+
+    cases = build_recovery_cases(priority, locator_index)
 
     if output_dir.exists() or output_dir.is_symlink():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
@@ -533,9 +599,14 @@ def main() -> int:
     parser.add_argument("--max-history", type=int, default=20000)
     parser.add_argument("--max-lineage-depth", type=int, default=16)
     parser.add_argument("--max-ledger-events", type=int, default=100000)
-    parser.add_argument(
+    diagnostics = parser.add_mutually_exclusive_group()
+    diagnostics.add_argument(
         "--diagnose-source-only", action="store_true",
         help="validate the selected source locators and exit before any database connection",
+    )
+    diagnostics.add_argument(
+        "--diagnose-duplicate-source-index", type=int,
+        help="inspect one duplicated Pilot index using the approved read-only DB role",
     )
     args = parser.parse_args()
     try:
@@ -554,6 +625,7 @@ def main() -> int:
             max_history=args.max_history, max_lineage_depth=args.max_lineage_depth,
             max_ledger_events=args.max_ledger_events,
             diagnostic_only=args.diagnose_source_only,
+            diagnose_duplicate_index=args.diagnose_duplicate_source_index,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
