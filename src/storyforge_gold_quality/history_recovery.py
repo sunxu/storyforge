@@ -120,18 +120,7 @@ def _session(cursor, story_id: str, session_id: str) -> dict:
     return row
 
 
-def _target(cursor, case: dict) -> dict:
-    cursor.execute(
-        """
-        SELECT id::text AS message_id, story_id::text AS story_id,
-               session_id, turn_index, role, content, status, created_at
-        FROM public.v2_chat_messages
-        WHERE story_id = %s AND session_id = %s AND turn_index = %s
-          AND role = 'assistant'
-        """,
-        (case["story_id"], case["session_id"], case["turn_index"]),
-    )
-    rows = _fetchall(cursor, TARGET_COLUMNS)
+def _validate_target_rows(case: dict, rows: list[dict]) -> dict:
     exact = [row for row in rows if sha256_text(row["content"]) == case["target_sha256"]]
     if len(rows) != 1 or len(exact) != 1:
         raise HistoryRecoveryError("TARGET_MESSAGE_IDENTITY_AMBIGUOUS")
@@ -144,6 +133,50 @@ def _target(cursor, case: dict) -> dict:
         raise HistoryRecoveryError("TARGET_TURN_MISMATCH")
     _timestamp(target["created_at"])
     return target
+
+
+def _target(cursor, case: dict) -> dict:
+    cursor.execute(
+        """
+        SELECT id::text AS message_id, story_id::text AS story_id,
+               session_id, turn_index, role, content, status, created_at
+        FROM public.v2_chat_messages
+        WHERE story_id = %s AND session_id = %s AND turn_index = %s
+          AND role = 'assistant'
+        """,
+        (case["story_id"], case["session_id"], case["turn_index"]),
+    )
+    return _validate_target_rows(case, _fetchall(cursor, TARGET_COLUMNS))
+
+
+def _targets_for_cases(cursor, cases: list[dict]) -> dict[str, dict]:
+    """Fetch target rows once per Session, then validate each pinned target hash."""
+    grouped = {}
+    for case in cases:
+        key = (case["story_id"], case["session_id"])
+        grouped.setdefault(key, []).append(case)
+    targets = {}
+    for (story_id, session_id), session_cases in sorted(grouped.items()):
+        turns = sorted({case["turn_index"] for case in session_cases})
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s
+              AND turn_index = ANY(%s) AND role = 'assistant'
+            """,
+            (story_id, session_id, turns),
+        )
+        rows = _fetchall(cursor, TARGET_COLUMNS)
+        by_turn = {}
+        for row in rows:
+            by_turn.setdefault(row["turn_index"], []).append(row)
+        for case in session_cases:
+            targets[case["case_id"]] = _validate_target_rows(
+                case, by_turn.get(case["turn_index"], [])
+            )
+    return targets
 
 
 def _lineage(cursor, story_id: str, leaf_session_id: str,
@@ -483,7 +516,7 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
     if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
         raise HistoryRecoveryError("CASE_SET_DUPLICATE")
 
-    targets_by_case = {}
+    targets_by_case = _targets_for_cases(cursor, cases)
     by_session = {}
     for case in cases:
         story_id = case.get("story_id")
@@ -493,12 +526,10 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                 or not isinstance(session_id, str) or not session_id
                 or type(turn_index) is not int or turn_index <= 0):
             raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
-        target = _target(cursor, case)
-        targets_by_case[case["case_id"]] = target
         key = (story_id, session_id)
         entry = by_session.setdefault(key, {"max_turn": 0, "targets": []})
         entry["max_turn"] = max(entry["max_turn"], turn_index)
-        entry["targets"].append(target)
+        entry["targets"].append(targets_by_case[case["case_id"]])
 
     ledger_by_session = {
         key: load_session_events(
@@ -664,7 +695,7 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
     # Resolve targets first, then read one bounded ledger metadata stream per
     # Session. Large before-image JSONB snapshots are fetched by primary key
     # only when they are the first post-target event for a requested case.
-    targets_by_case = {}
+    targets_by_case = _targets_for_cases(cursor, cases)
     by_session = {}
     for case in cases:
         story_id = case.get("story_id")
@@ -674,12 +705,10 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
                 or not isinstance(session_id, str) or not session_id
                 or type(turn_index) is not int or turn_index <= 0):
             raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
-        target = _target(cursor, case)
-        targets_by_case[case["case_id"]] = target
         key = (story_id, session_id)
         entry = by_session.setdefault(key, {"max_turn": 0, "targets": []})
         entry["max_turn"] = max(entry["max_turn"], turn_index)
-        entry["targets"].append(target)
+        entry["targets"].append(targets_by_case[case["case_id"]])
     ledger_by_session = {
         key: load_session_events(
             cursor, key[0], key[1], entry["max_turn"],
