@@ -45,7 +45,16 @@ Locator 文件必须与 SAFE receipt 中的文件 SHA256 一致。目标必须�
 
 恢复调用 `storyforge_gold_quality.history_recovery.recover_cases()`，并复用稀疏 Ledger
 两阶段读取。默认最多 100,000 个 Session Ledger 事件、最多 20,000 条历史消息、
-最多 16 层 Session lineage。超限或证据不完整时整批 HOLD，不静默截断。
+最多 16 层 Session lineage。Ledger 单 Session 事件参数允许显式提高，但硬上限为
+1,000,000；默认值不变，超限或证据不完整时整批 HOLD，不静默截断。
+
+2026-11-05 Pilot8 只读诊断发现一个 Session 在目标正 turn 范围内有 606,860 条事件。
+按数据库真实小写 operation 分类：`update_after` 314,355、`update_before` 290,605、
+`insert` 1,507、`delete` 393。此前用大写 operation 名称统计导致误报为 0，现已更正。
+`update_before` 和 `delete` 是恢复历史所需快照，`insert` 和 `update_after` 是标记；
+不得丢弃或合并这些事件。该 Session 若执行 Pilot8 Recovery，显式设置
+`--max-ledger-events 700000`，只是在已测得 606,860 条后提供有限余量，不改变
+默认上限，也不放宽事件完整性、时间顺序、快照字段或 mutation_revision 检查。
 
 SAFE 固定保留以下限制：
 - `ledger_commit_order_verified=false`
