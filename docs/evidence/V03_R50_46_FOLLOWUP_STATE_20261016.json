@@ -1,0 +1,32 @@
+{
+  "schema": "storyforge-r50-46-ai-only-followup-status-v1",
+  "date": "2026-10-16",
+  "original_50_mutated": false,
+  "selection_count": 46,
+  "world_count": 5,
+  "excluded_count": 4,
+  "candidate_sha256": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2",
+  "r45_original_hash_verified": true,
+  "r45_vs_visible_46_40_codepoint_hit_count": 0,
+  "r45_vs_visible_46_64_codepoint_hit_count": 0,
+  "shared_history_pairs": 4,
+  "strong_shared_context_clusters": [
+    [
+      "SFH50-W17-009",
+      "SFH50-W17-010"
+    ]
+  ],
+  "source_five_story_complete_check": "RUNNER_PROVIDED__NOT_EXECUTED_IN_CURRENT_ENV__HOLD",
+  "qwen_revision_exists_on_huggingface": true,
+  "actual_tokenizer_cpu_preflight": "NOT_RUN_LOCAL_SNAPSHOT_MISSING",
+  "evaluation_contract": "DRAFT_NOT_APPROVED",
+  "heldout_final_seal": "NOT_PERFORMED",
+  "previous_five_regressions": "PASS_5_5",
+  "new_four_regressions": "PASS_4_4",
+  "github_pr_2": "OPEN_DRAFT_NOT_MERGED",
+  "github_audit_head": "92828ac0e47c8f7f7307851b8e171f564fd065ed",
+  "gpu_used": false,
+  "hf_job_used": false,
+  "model_replies_generated": false,
+  "full_admission": "HOLD"
+}

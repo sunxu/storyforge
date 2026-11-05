@@ -1,0 +1,25 @@
+{
+  "schema": "storyforge-r50-git-receipt-crosscheck-v1",
+  "checked_on": "2026-10-15",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "receipt_path": "docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json",
+  "source_root": "evaluations/v0.2/source-archives/16-20",
+  "method": "Compare every receipt path, Git blob SHA-1 and byte size against GitHub's recursive committed tree at frozen source_commit; no raw source download.",
+  "expected_file_count": 35,
+  "observed_file_count": 35,
+  "matching_files": 35,
+  "total_bytes": 70383383,
+  "missing_files": [],
+  "changed_files": [],
+  "status": "GIT_METADATA_RECEIPT_MATCH_35_OF_35",
+  "not_yet_verified": [
+    "byte-wise SHA256 of all 35 source files",
+    "semantic/world alias separation from Train/Val/old Test",
+    "fresh independent prompt creation",
+    "40-60 prompt intake and SHA256 sealing",
+    "manual content review",
+    "evaluation contract owner approval"
+  ],
+  "billable_gpu_launched": false,
+  "model_promotion": false
+}

@@ -1,0 +1,25 @@
+name: R52 All 21 World Graph Ledger (synthetic)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_reconcile_full21_world_graph.py
+      - tests/test_v03_r52_reconcile_full21_world_graph.py
+      - .github/workflows/r52-world-graph-ledger.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_reconcile_full21_world_graph.py
+      - tests/test_v03_r52_reconcile_full21_world_graph.py
+      - .github/workflows/r52-world-graph-ledger.yml
+  workflow_dispatch:
+jobs:
+  fake-sources:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test seven-source original graph, pair coverage and malicious citations
+        run: python -m unittest discover -s tests -p 'test_v03_r52_reconcile_full21_world_graph.py' -v

@@ -64,3 +64,28 @@ temp/
 *.tar.gz
 *.tgz
 
+
+# Prospective independent Held-out: keep test originals and private mappings out of Git
+/evaluations/v0.3/heldout/incoming/
+/evaluations/v0.3/heldout/sealed/
+/evaluations/v0.3/heldout/private/
+/evaluations/v0.3/heldout/results/private/
+/evaluations/v0.3/heldout/reviewers/
+
+# R45/R50 extracted private originals, reviewer evidence and per-case mappings.
+# Keep these outside ordinary Git history (including this private repository).
+**/R50_FRESH_HELDOUT_50.jsonl
+**/R50_CASE_PROVENANCE_50.jsonl
+**/R50_CANDIDATE_46_PRESEAL_PRIVATE.jsonl
+**/R50_PROVENANCE_46_PRESEAL_PRIVATE.jsonl
+**/R45_TRAIN_FROZEN_CANDIDATE_49_NOT_APPROVED.jsonl
+**/R45_VALIDATION_FROZEN_CANDIDATE_15_NOT_APPROVED.jsonl
+**/R45_71_EXACT_SOURCE_AND_SCOPED_DECISIONS_PRIVATE.jsonl
+**/R45_7_PERSONA_PROMISE_WITNESSES_PRIVATE.json
+**/R43_HF_RUNTIME_REPORT_PRIVATE_v2.json
+**/R50_46_PRESEAL_SELECTION_MANIFEST_PRIVATE.json
+**/R50_46_STATIC_INPUT_PREFLIGHT_PRIVATE.json
+**/R50_46_SHORT_FRAGMENT_AND_CLUSTERS_PRIVATE.json
+**/R45_SYSTEM_CANDIDATE_64_OF_64_NOT_APPROVED_PRIVATE.txt
+**/R50_46_DRAFT_FOUR_ARM_INPUT_RECEIPTS_PRIVATE.json
+**/R50_PRIVATE_HUMAN_REVIEW_KIT_20261016.zip

@@ -1,0 +1,16 @@
+{
+  "schema": "storyforge-r50-w17-private-workpaper-preflight-diagnostic-v1",
+  "as_of": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "owner_reported_error": "R50_W17_SEVEN_GAP_WORKPAPER_HOLD: ValueError PRIVATE_WORKPAPER_NOT_SAFE",
+  "verification_level": "FILE_PRECHECK_FAILURE_ONLY__PRIVATE_FILE_NOT_ACCESSED",
+  "interpreted_cause": "ONE_OF_MISSING_SYMLINK_NONREGULAR_GIT_PATH_OR_PERMISSIONS__NOT_DISAMBIGUATED_YET",
+  "pinned_manifest_sha256": "b4e08232bdd12d9401d78fe6e0ab945a6f5156938c88ef811da9bf52a9b41a3b",
+  "private_ai_workpaper_received": false,
+  "private_ai_review_success_claimed": false,
+  "privacy": "No local absolute paths, original narratives, role-card contents or reviewer answers committed",
+  "original_46_cases_changed": false,
+  "global_semantic_world_gate": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "no_model_run_by_this_fix": true
+}

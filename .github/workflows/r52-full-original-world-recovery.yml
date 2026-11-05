@@ -1,0 +1,26 @@
+name: R52 Full Original World Recovery (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_full_original_world_recovery.py
+      - tests/test_v03_r52_full_original_world_recovery.py
+      - .github/workflows/r52-full-original-world-recovery.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_full_original_world_recovery.py
+      - tests/test_v03_r52_full_original_world_recovery.py
+      - .github/workflows/r52-full-original-world-recovery.yml
+  workflow_dispatch:
+
+jobs:
+  test-recovery:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run synthetic source and three-priority-pair tests
+        run: python -m unittest discover -s tests -p 'test_v03_r52_full_original_world_recovery.py' -v

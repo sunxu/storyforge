@@ -1,0 +1,28 @@
+{
+  "schema": "storyforge-r50-w17-private-ai-review-kit-code-readiness-v1",
+  "prepared": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "source_receipt": "docs/evidence/V03_R50_W17_LITERAL_EXPOSURE_46_OWNER_VERIFIED_20261016.json",
+  "status": "GIT_NATIVE_PRIVATE_KIT_BUILDER_ONLY__REAL_SOURCE_RUN_AND_AI_VERDICT_PENDING",
+  "scoped_worlds": {
+    "old": [
+      2,
+      4,
+      7,
+      10
+    ],
+    "new": [
+      17
+    ]
+  },
+  "required_original_lfs_payloads": 2,
+  "expected_shared_literal_normalized_codepoints": 322,
+  "export_card_temporal_limit": "DO_NOT_ASSUME_VALID_AT_PROMPT_CUTOFF",
+  "local_output": "OUTSIDE_GIT_0600_OR_FAIL",
+  "full_world_semantic_gate": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "model_generation": false,
+  "gpu": false,
+  "paid_hf_job": false,
+  "privacy": "Only builder source, synthetic tests and instructions in Git. No raw literal or original source identities in this record."
+}

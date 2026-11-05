@@ -1,0 +1,20 @@
+{
+  "schema": "storyforge-r50-old14-rank-collision-parser-fix-v1",
+  "date": "2026-10-16",
+  "user_reported_failure": "R50_LFS_SOURCE_INVENTORY_HOLD: ValueError OLD14_RANK_COLLISION",
+  "cause_in_code": "old14_data formerly rejected any second root member with the same NN- prefix before assessing whether entries were alternative representations",
+  "actual_zip_member_listing_verified": false,
+  "policy": "Only equivalently identified JSON/JSONL chat variants for the same story rank are allowed; exact sequence of role/content must match",
+  "negative_cases": [
+    "OLD14_VARIANTS_DIVERGE",
+    "OLD14_VARIANT_ID_MISMATCH",
+    "OLD14_SOURCE_MALFORMED_MESSAGE"
+  ],
+  "previous_r45_source_sha256_unchanged": true,
+  "originals_modified": false,
+  "fixed_code_remote_real_zip_test": "PENDING",
+  "semantics_gate": "HOLD",
+  "no_gpu_job": true,
+  "no_model_inference": true,
+  "no_final_heldout_seal": true
+}

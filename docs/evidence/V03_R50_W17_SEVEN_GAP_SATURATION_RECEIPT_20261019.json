@@ -1,0 +1,38 @@
+{
+  "schema": "storyforge-r50-w17-seven-gap-lexical-coverage-owner-receipt-v1",
+  "as_of": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "provenance": "OWNER_LOCAL_VERIFIED_PINNED_INDEX_AGGREGATE_ONLY",
+  "verified_status": "R50_W17_SEVEN_GAP_INDEX_COVERAGE_VERIFIED__SEMANTIC_HOLD",
+  "input_index_sha256": "4ef2ba639183311b62c3b755bfd12f58176294734fea6259ae71fef327782694",
+  "source_ranks": [
+    2,
+    4,
+    7,
+    10,
+    17
+  ],
+  "gap_count": 7,
+  "sources_per_gap": 5,
+  "maximum_candidates_per_source_gap": 2,
+  "candidates_reported_by_each_gap": [
+    10,
+    10,
+    10,
+    10,
+    10,
+    10,
+    10
+  ],
+  "total_bounded_lexical_candidates": 70,
+  "all_35_rank_gap_cells_at_retrieval_cap": true,
+  "meaning_of_cap": "100% saturation of top-two retrieval; no evidence completeness or independent review can be inferred",
+  "evidence_adjudication": "UNREVIEWED",
+  "actual_private_index_read_by_assistant": false,
+  "source_world_semantic_graph": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "no_model_inference": true,
+  "no_gpu": true,
+  "no_hf_job": true,
+  "no_raw_requirements_or_source_text_in_git": true
+}

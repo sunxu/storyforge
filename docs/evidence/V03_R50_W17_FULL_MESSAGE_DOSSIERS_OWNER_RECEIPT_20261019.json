@@ -1,0 +1,24 @@
+{
+  "schema": "storyforge-r50-w17-complete-message-dossiers-owner-build-v1",
+  "date": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "owner_terminal_marker": "R50_W17_SEVEN_GAP_FULL_MESSAGE_DOSSIERS_BUILT__AI_REVIEW_PENDING",
+  "private_full_manifest_sha256": "189f84e0e2891499723ba7e9e14cc866c057c9ab5ead727ff4c192e717510476",
+  "private_prior_workpaper_sha256": "6507ac6caec72aa031e9c70004a3d96781e7de8c0373976036c716aa9c884d9a",
+  "gap_count": 7,
+  "source_ranks": [
+    2,
+    4,
+    7,
+    10,
+    17
+  ],
+  "full_original_messages_extracted_by_owner": "REPORTED_SUCCESS__NOT_INDEPENDENTLY_READ_BY_ASSISTANT",
+  "meaningful_world_identity_review": "NOT_PERFORMED",
+  "historical_card_correction": "PENDING",
+  "raw_story_or_private_reasoning_committed": false,
+  "semantic_world_graph_gate": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "gpu_run": false,
+  "hf_job": false
+}

@@ -1,0 +1,157 @@
+{
+  "schema": "storyforge-r50-ai-semantic-world-candidate-review-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "evidence_scope": "R45 frozen Train49/Val15 snippets vs 46 R50 prompt-only cases; nine private source-story IDs × five new source worlds",
+  "source_hashes": {
+    "r45_train49": "e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742",
+    "r45_val15": "5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963",
+    "r50_46_candidate": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2"
+  },
+  "input_provenance": "Byte-exact private uploaded R45 and R50 ZIP inputs used in a one-off read-only local audit; this Git record is aggregate only",
+  "sample_counts": {
+    "r45_frozen_rows": 64,
+    "r45_distinct_source_worlds": 9,
+    "r45_non_system_messages_len_at_least_12": 669,
+    "r50_retained_cases": 46,
+    "r50_distinct_source_worlds": 5,
+    "cross_world_pairs": 45
+  },
+  "method": {
+    "text_normalization": "Unicode NFKC, casefold, whitespace collapse",
+    "vectorization": "sklearn TfidfVectorizer(char 2–4 gram, sublinear_tf=True, max_features=200000), fit on 669 R45 messages + 46 new input + 46 world-card + 46 joined-rule texts",
+    "pair_comparison": "Each R50 new user input compared to R45 messages grouped by original source_story_id; report max cosine per 9×5 world pair",
+    "r45_ordinals": "1–9 sorted source_story_id internally; source UUIDs and names deliberately omitted from Git",
+    "heuristics_only": true,
+    "manual_ai_scope": "Selected 18 distinctive names/aliases/organization/setting phrases from new world-card descriptions and checked against R45 non-System text; inspected representative R45 messages by nine source groups and all five R50 world-card summaries",
+    "owner_policy": "AI-only R50 content review accepted; this is a scoped AI semantic screening, not a full corpus identity certificate"
+  },
+  "results": {
+    "r45_r50_exact_source_uuid_collision_count": 0,
+    "direct_identifying_anchor_terms_examined": 18,
+    "direct_identifying_anchor_hits_in_r45_snippets": 0,
+    "reviewed_pair_count": 45,
+    "confirmed_shared_identity_or_unique_event_in_reviewed_scope": 0,
+    "pairwise_new_user_input_max_cosine_table": [
+      {
+        "r45_private_world_ordinal": 1,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.03181,
+          0.02161,
+          0.01923,
+          0.07825,
+          0.01829
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 2,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.0343,
+          0.04229,
+          0.03421,
+          0.0219,
+          0.07641
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 3,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.03681,
+          0.03325,
+          0.098,
+          0.02236,
+          0.04357
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 4,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.0134,
+          0.02562,
+          0.07205,
+          0.0238,
+          0.01724
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 5,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.02945,
+          0.03493,
+          0.0424,
+          0.03315,
+          0.02688
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 6,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.0291,
+          0.01577,
+          0.02704,
+          0.01226,
+          0.01297
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 7,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.03716,
+          0.03949,
+          0.0461,
+          0.05208,
+          0.02858
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 8,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.02893,
+          0.03879,
+          0.01422,
+          0.02704,
+          0.02109
+        ]
+      },
+      {
+        "r45_private_world_ordinal": 9,
+        "r50_world16_17_18_19_20_max_new_input_similarity": [
+          0.06278,
+          0.03249,
+          0.03803,
+          0.03097,
+          0.01991
+        ]
+      }
+    ],
+    "max_of_all_45_pair_scores": 0.098,
+    "pairs_at_or_above_0_30": 0,
+    "classification": "NO_DIRECT_LINK_EVIDENCE_IN_SCOPED_REVIEW__NOT_COMPLETE_SEMANTIC_ISOLATION"
+  },
+  "known_prior_world_graph_limitation": {
+    "source": "R45_SCOPED_WORLD_COMPONENT_REVIEW.json in private R45 frozen ZIP",
+    "historical_linked_04_07_component_exists": true,
+    "full_global_alias_graph_certified": false,
+    "implication": "Exact UUID difference is insufficient evidence of transitive world independence"
+  },
+  "limitations": [
+    "R45 comparison comprises 64 frozen train/validation rows, not complete original narratives and all historical aliases",
+    "Only representative R45 passages were semantically read; no full-by-world human-readable narrative proof",
+    "Character renaming, transliteration, paraphrased shared events, generic genre similarity and hidden cross-world relationship can evade anchor/TF-IDF screens",
+    "R50 50/50 timepoint card interval replay is a separate prior gate; this review does not certify every point-in-time card-field fact",
+    "Five source UUIDs do not imply five independently connected world components until graph closure"
+  ],
+  "admission": {
+    "ai_only_content_46": "PASS",
+    "r45_exact_full_five_source_gate": "OWNER_REPORTED_PASS",
+    "cpu_tokenizer": "PRIVATE_46_ROW_AGGREGATE_VERIFIED",
+    "scoped_semantic_review": "NO_LINK_FOUND_WITHIN_AVAILABLE_R45_FROZEN_SNIPPETS",
+    "full_world_alias_and_paraphrase_closure": "HOLD",
+    "owner_four_arm_contract": "DRAFT_UNAPPROVED",
+    "final_heldout_seal": "NOT_PERFORMED",
+    "paid_hf_job_run_now": false,
+    "model_generation": false,
+    "model_promotion": false
+  },
+  "privacy": "No original prompts, story text, character names, R45 source UUIDs, per-case provenance, HF secrets or answer keys in this Git report"
+}

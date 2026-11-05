@@ -1,0 +1,25 @@
+name: R52 Seven-world UUID Preflight (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_world_exact_isolation.py
+      - tests/test_v03_r52_world_exact_isolation.py
+      - .github/workflows/r52-world-exact-isolation.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_world_exact_isolation.py
+      - tests/test_v03_r52_world_exact_isolation.py
+      - .github/workflows/r52-world-exact-isolation.yml
+  workflow_dispatch:
+jobs:
+  synthetic-world-preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run fake-only seven-world integrity tests
+        run: python -m unittest discover -s tests -p 'test_v03_r52_world_exact_isolation.py' -v

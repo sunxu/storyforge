@@ -1,0 +1,117 @@
+name: R51 Gold195 Original Readiness (no GPU)
+
+on:
+  push:
+    branches:
+      - audit/r49-r50-source-intake-20261015
+    paths:
+      - .github/workflows/v03-r51-gold195-readiness.yml
+      - scripts/v03_r51_gold195_readiness.py
+      - tests/test_v03_r51_gold195_readiness.py
+      - scripts/v03_r51_gold195_private_triage.py
+      - tests/test_v03_r51_gold195_private_triage.py
+      - scripts/v03_r51_gold195_source_replay.py
+      - tests/test_v03_r51_gold195_source_replay.py
+      - scripts/v03_r51_prepare_private_review_packets.py
+      - tests/test_v03_r51_prepare_private_review_packets.py
+      - scripts/v03_r51_independent_source_reviews.py
+      - tests/test_v03_r51_independent_source_reviews.py
+      - evaluations/v0.2/gold-quality-87/**
+      - evaluations/v0.2/gold-quality-108/**
+  pull_request:
+    paths:
+      - .github/workflows/v03-r51-gold195-readiness.yml
+      - scripts/v03_r51_gold195_readiness.py
+      - tests/test_v03_r51_gold195_readiness.py
+      - scripts/v03_r51_gold195_private_triage.py
+      - tests/test_v03_r51_gold195_private_triage.py
+      - scripts/v03_r51_gold195_source_replay.py
+      - tests/test_v03_r51_gold195_source_replay.py
+      - scripts/v03_r51_prepare_private_review_packets.py
+      - tests/test_v03_r51_prepare_private_review_packets.py
+      - scripts/v03_r51_independent_source_reviews.py
+      - tests/test_v03_r51_independent_source_reviews.py
+      - evaluations/v0.2/gold-quality-87/**
+      - evaluations/v0.2/gold-quality-108/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  original-candidate-integrity:
+    name: Gold195 frozen-original check only
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify R51 fail-closed synthetic checks
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_readiness.py' -v
+      - name: Verify R51 private HOLD worksheet on synthetic-only fixtures
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_private_triage.py' -v
+      - name: Verify all 195 real Git-pinned original Gold candidates
+        run: |
+          python3 scripts/v03_r51_gold195_readiness.py --repo .
+      - name: Verify real 195-row metadata intersections without saving private workpapers
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          import v03_r51_gold195_readiness as base
+          import v03_r51_gold195_private_triage as triage
+          root = Path('.')
+          a = base.read_pinned_rows(root, base.GOLD87, 87, blob_sha1=base.EXPECTED_GIT_SHA1_87)
+          b = base.read_pinned_rows(root, base.GOLD108, 108, sha256_digest=base.EXPECTED_SHA256_108)
+          i = base.read_gold108_index(root)
+          _, counts = triage.make_rows(a, b, i)
+          assert counts['explicit_card_unverified'] == 171
+          assert counts['source_index_metadata_absent'] == 22
+          assert counts['age_unspecified'] == 10
+          assert counts['flag_intersections'] == {
+              'card_only': 161, 'card_and_age': 10,
+              'pointer_only': 22, 'none_of_these_three': 2,
+              'other_patterns': 0,
+          }
+          assert counts['train_admitted'] == counts['validation_admitted'] == 0
+          print('R51_REAL_GOLD195_METADATA_TRIAGE_PASS__ADMISSION_HOLD')
+          PY
+      - name: Validate 22 original missing-index records against prior R02 audit
+        run: |
+          python3 - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "scripts")
+          import v03_r51_gold195_readiness as base
+          import v03_r51_gold195_private_triage as triage
+          repo = Path(".")
+          a = base.read_pinned_rows(repo, base.GOLD87, 87, blob_sha1=base.EXPECTED_GIT_SHA1_87)
+          b = base.read_pinned_rows(repo, base.GOLD108, 108, sha256_digest=base.EXPECTED_SHA256_108)
+          i = base.read_gold108_index(repo)
+          work, _ = triage.make_rows(a, b, i)
+          receipt = triage.owner_v2_crosslink(work, triage.prior_r02_index(repo))
+          assert receipt["prior_r02_missing_pointer_anchor_links"] == 22
+          assert receipt["prior_r02_card_snapshot_postdates_target"] == 9
+          assert receipt["prior_r02_source_story_id_fallback"] == 3
+          assert receipt["pointer_gaps_by_story_rank"] == {
+              "6": 5, "8": 4, "9": 7, "10": 3, "13": 3,
+          }
+          assert receipt["source_pointer_gaps_cleared"] == 0
+          print("R51_R02_22_METADATA_CROSSLINK_PASS__RAW_SOURCE_AND_ADMISSION_HOLD")
+          PY
+      - name: Verify private raw replay parser on synthetic archives only
+        run: python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_source_replay.py'
+
+      - name: Verify private source-context packet preparation on synthetic text only
+        run: python3 -m unittest discover -s tests -p 'test_v03_r51_prepare_private_review_packets.py'
+
+      - name: Verify two independent review task protocol with synthetic text only
+        run: python3 -m unittest discover -s tests -p 'test_v03_r51_independent_source_reviews.py'
+
+      # No model inference, GPU, HF connection, artifact uploads, raw data
+      # printing, case-level ID disclosure or training admission by this CI.

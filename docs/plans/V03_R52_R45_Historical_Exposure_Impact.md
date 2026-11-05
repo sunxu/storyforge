@@ -1,0 +1,129 @@
+# StoryForge R52 — R45 historical exposure impact by world and target
+
+**2026-10-20 — Strong R45 source-overlap evidence; no world signoff or admission.**
+
+Owner R52 seven-world historical exposure screen, including the immutable private original R45 ZIP, returned `R52_SEVEN_WORLD_HISTORICAL_EXPOSURE_SCREEN_COMPLETED__SEMANTIC_HOLD` with:
+
+- **29** R45 Train49 and **13** R45 Validation15 *rows* exactly sharing an R52 story UUID. They are not 42 distinct worlds.
+- **537** normalized text evidence witnesses: **273** exact long messages, **264** sampled 120-codepoint fragment witnesses. They are not 537 separate contaminated training examples.
+- Verified R45 Train SHA256 `e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742`; Validation SHA256 `5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963`; original ZIP SHA256 `da4b7718f1c1cbd0429553b684eeaf70f207fd2e41aae4e8fe0a52a11b647b9e`.
+- Gold87 and v0.1 Train/Val/Test had zero identical story UUIDs and zero long-text witnesses in their separate limited screen. This does **not** prove semantic independence.
+- **21/21** independent full-source inter-R52 world-pair reviews finished (87 citations) but seven-world owner graph remains **HOLD**.
+- **46** R52 no-card target-quality first-pass possibles; **16** quality-HOLD cases; **Train 0 / Val 0 / No GPU**, R50 sealed.
+
+## Next: deduplicate 537 witnesses and quantify the 46-case exposure
+
+The new `scripts/v03_r52_r45_exposure_impact.py` performs an owner-local, read-only evidence reconciliation. It:
+
+1. Revalidates existing 21-pair graph and historical-exposure safe receipts, frozen original R45 ZIP SHA, all seven original story body SHA hashes and the exact **537** indexed historical witness records.
+2. Ephemerally extracts R45 Train49/Val15 JSONLs into a temporary 0700 directory after validating their immutable exact-file SHA and number of records; replay-computes the R45-only 537 witnesses from scratch and demands byte-for-byte JSON object equality with the previous witness set.
+3. Computes distinct **world UUIDs** appearing in R45 Train, Validation, both and neither; preserves historical row ordinal citations privately.
+4. Deduplicates text witnesses by message pair even when both long exact-message and fragment methods identified the same pair.
+5. Maps the immutable **46** preliminary positive R52 target candidates to overlapping R45 world UUIDs; separately compares the SHA256 of each selected R52 target to the literal **last assistant target** from R45 Train/Validation when available.
+6. Keeps model execution proof explicitly **false**. Even a Train49 UUID overlap doesn't prove which exact R45 records were in the R46 optimizer stream. To establish that, inspect actual frozen R46 source loader, dataset hash and run/job manifest.
+
+On the Mac (source branch, all previously generated private files retained):
+
+```bash
+cd ~/workspace/storyforge
+git switch audit/r49-r50-source-intake-20261015
+git pull --ff-only
+
+d="$HOME/.local/share/storyforge"
+R45_ORIGINAL_ZIP="/absolute/private/path/to/owner-preserved-r45-original.zip"
+install -d -m 700 "$d/r52/r45_impact"
+
+python3 scripts/v03_r52_r45_exposure_impact.py \
+  --source-zip "$d/r52/remaining18/R52_REMAINING_18_FULL_ORIGINAL_WORLD_REVIEW_PRIVATE.zip" \
+  --r45-original-zip "$R45_ORIGINAL_ZIP" \
+  --history-dir "$d/r52/history_exposure_with_r45" \
+  --graph21-dir "$d/r52/graph21" \
+  --post-quality-dir "$d/r52/post_quality" \
+  --out-dir "$d/r52/r45_impact"
+```
+
+Expected only upon successful actual Mac source replay:
+
+`R52_R45_HISTORICAL_WORLD_IMPACT_RECONCILED__SEMANTIC_AND_MODEL_LINEAGE_HOLD`.
+
+Private outputs (all **0600** under owner-local **0700** directory; do not commit):
+
+- `R52_PRIVATE_07_R45_WORLD_EXPOSURE_IMPACT.jsonl`: each world UUID, 29/13 source-row ordinals as appropriate, exact source-message evidence counts and missing signoffs.
+- `R52_PRIVATE_46_R45_CASE_EXPOSURE_IMPACT.jsonl`: 46 frozen candidate identifiers/target SHA256 values, whole-story R45 source split overlap risk, and literal target-SHA reuse flags. Every row still `PENDING_NOT_APPROVED`; no assigned Train/Val.
+- `R52_R45_WORLD_EXPOSURE_IMPACT_SAFE_AGGREGATE.json`: **safe count-only summary** (distinct Train/Val/union worlds, 46 target risk bins, deduplicated text message hits, exact target SHA matches and hard HOLD declarations).
+
+No trained model, R50 sealed answers or network services are accessed. A long fragment match and identical dialogue from the same R45 source record may be recorded as two witnesses but only **one** unique pair in the impact report. A world overlap with R45 Validation is an evaluation exposure risk, not proof of R46 training exposure. Source scan positives are a reason to review the historical lineage and new heldout suitability, not automatic rejection of author-owned training data.
+
+**Next after the safe result:** decide which worlds are already in the actual trained model's data ancestry, which are only past evaluation sources, and which could qualify as truly independent new validation worlds. Independently review human character-alias/setting ties and 46 candidate final quality/safety. R50 remains sealed. Absolutely no Train/Val/GPU without explicit subsequent owner signing.
+
+Synthetic-only code CI: https://github.com/sunxu/storyforge/actions/runs/39413586965
+
+
+## Owner-local diagnostic — R45 archive outer SHA mismatch (2026-10-20)
+
+If `R52_R45_IMPACT_HOLD__R45_ORIGINAL_ZIP_HASH_CHANGED` occurs with the original impact script, the failure happens **before** the 537-witness replay, not after substantive target comparisons. The original error combined a missing/symlinked path and a mismatched whole-ZIP SHA256. Updated implementation distinguishes `R45_ORIGINAL_ZIP_MISSING_OR_SYMLINK` and `R45_ORIGINAL_OUTER_ZIP_SHA256_NOT_PINNED`. It continues to **require the same immutable original ZIP SHA256**, `da4b7718f1c1cbd0429553b684eeaf70f207fd2e41aae4e8fe0a52a11b647b9e`. Train49/Val15 *members* additionally must match their frozen SHA256. A re-packaged ZIP is **not automatically authorized** merely because its filename looks right.
+
+Safe local check:
+
+```bash
+R45_ORIGINAL_ZIP="/path/to/the/exact-original-R45-zip-used-in-the-prior-successful-screen"
+if [[ ! -f "$R45_ORIGINAL_ZIP" || -L "$R45_ORIGINAL_ZIP" ]]; then
+  echo "R45_ZIP_MISSING_OR_SYMLINK"
+else
+  shasum -a 256 "$R45_ORIGINAL_ZIP"
+fi
+```
+
+Copy the *exact unchanged original* R45 ZIP path from the previous `--r45-original-zip` command to the impact invocation; do not change the expected hash or edit/repackage the archive just to turn HOLD into a pass. If the original ZIP cannot be recovered, preserve HOLD and first compare frozen member SHA256 against an alternative archive as a separate explicit source-provenance action.
+
+The latest fix also compares all 537 original witness dicts as a canonical multiset, not a process-dependent list ordering: Python hash-set iteration can vary between the two separate commands, but unchanged content must validate. Synthetic regression suite: https://github.com/sunxu/storyforge/actions/runs/39414475982.
+
+
+## Owner-validated R45 source impact and R46 training archive cross-check — 2026-10-20
+
+Owner-local validation returned:
+`R52_R45_HISTORICAL_WORLD_IMPACT_RECONCILED__SEMANTIC_AND_MODEL_LINEAGE_HOLD`.
+
+Frozen source verification: R45 original ZIP SHA256 `da4b7718f1c1cbd0429553b684eeaf70f207fd2e41aae4e8fe0a52a11b647b9e`; all **537** full-original text witnesses independently rehashed against the source; normalized unique historical/R52 message pairs **273**, unique R52 source messages with witnesses **265**.
+
+| Exposure relation to R52 seven story sources | Distinct worlds | R52 preliminary candidate targets | Literal target SHA matches |
+|---|---:|---:|---:|
+| R45 Train49 exact story UUID | **4** | **22** | **15** |
+| R45 Validation15 exact story UUID | **2** | **14** | **9** |
+| No R45 exact story UUID overlap observed | **1** | **10** | not proven independent |
+| Total | **7** | **46** | **24** |
+
+Train-overlap and validation-overlap world groups are disjoint (both-split worlds = 0). Historical overlapping R45 records themselves: **29** Train49 rows and **13** Validation15 rows, representing the above six distinct worlds, not 42 worlds. Exact target SHA counts here relate specifically to the 46 preliminary-quality candidates and the *final assistant target* in each historic R45 row, not to all 20,577 original source messages.
+
+**R46 historical evidence is stronger than "possible past use":** existing `docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json` records completed R46 exploratory QLoRA job `6acf29e4c66288145223871b`, run `r46-20261014T070529Z-248172`, Train49/Val15 input SHA256 equal to the pinned R45 source bytes, **independently reproduced compiled train/validation dataset SHA256**, training started/finished, 7 optimizer steps, and adapter reload PASS. The compiled Train dataset SHA256 is `a028bf9fb28b12b4a3fa352d6a60281bd9e1ef5773ebfdfecc7ac80eb2cba517`; compiled Val SHA256 is `cc8d647471423f4969149f8cabdea980aad15d8bd4424d9dd98da3313c639f3c`. `scripts/v02_r46_gpu_runner.py` explicitly invokes `swift sft` with these paths. Source: [R46 experimental engineering acceptance](../../docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.md).
+
+**Provenance boundary:** the completed-run data and optimizer status come from an owner-uploaded HF worker report, cross-checked with immutable compiled inputs; the original report itself notes `full_trainer_state_independently_inspected=false` and `full_runtime_audit_log_independently_inspected=false`. Thus archival evidence **strongly establishes the intended and reported R46 Train49 input**, without pretending an external reviewer personally inspected every GPU optimizer input at runtime. The R52 impact tool intentionally emits `actual_r46_model_training_exposure_verified=false` under that stricter independent-runtime standard; this flag does not negate the historical R46 evidence.
+
+**Assessment for future tests:**
+- Four R45-train-overlap story worlds (22 preliminary R52 targets, including 15 literal repeated targets) are not eligible to be called *unseen* by the R46 adapter merely because R52 later shortlisted them.
+- Two R45-validation-overlap story worlds (14 preliminary targets including 9 literal repeats) were used for R46 validation/evaluation, not necessarily parameter-gradient training. They should not be reused as **fresh independent heldout**, even if one would permit a diagnostic familiar-source validation.
+- Only **one** R52 story world (10 preliminary targets) has no R45 exact UUID overlap observed; absence of sampled long-text matches to v0.1/Gold87 and R45 still cannot certify independent character/setting origins or prove the entire world unexposed.
+- An honest fresh blind evaluation needs new, genuinely independent source worlds, preferably independently authored and sealed **before model outputs are seen**. Do not relabel Gold195 or reuse R45 validation rows as independent heldout.
+
+Still `PENDING_NOT_APPROVED` for all 46. Owner rights attestation, R52 source/citation integrity and R45 lineage do **not** substitute for world-component and 46-case content/safety owner signoff or explicit later admission. **Train0 / Val0 / No GPU / R50 sealed set unopened.**
+
+
+## R52 — Frozen 46-case R45 source-exposure review priority handoff
+
+On 2026-10-20, independently ingested owner's `R52_PRIVATE_46_R45_CASE_EXPOSURE_IMPACT.jsonl` (SHA256 `fc5a883e39b93191a521ab764596ac4176f61f31c971d31cff1fae011901a10e`): **46 valid rows, 46 unique candidate IDs, 46 unique target SHA256 values, seven source worlds**. Preserved all original records byte-semantically, maintaining `PENDING_NOT_APPROVED`, `split=null`, no component signatures or final content/safety signoffs.
+
+The **audit work queue**, with mutually exclusive primary risk categories:
+
+| Audit priority | Historical source relation | Candidates | Interpretation |
+|---|---|---:|---|
+| P0 | Exact target SHA reused in R45 **Train** | **15** | First resolve R46 known train source reuse; not fresh R46 heldout |
+| P1 | R45 **Train** world UUID overlap, different target | **7** | Prior learned world likely; a new target is not a new world |
+| P2 | Exact target SHA reused in R45 **Validation** | **9** | Historical evaluation source reuse; not fresh R46 heldout |
+| P3 | R45 **Validation** world UUID overlap, different target | **5** | Prior evaluation-world exposure; not necessarily gradient input |
+| P4 | No exact R45 UUID or target SHA overlap | **10** | One source world only; semantic alias & Gold87/v0.1 still unresolved |
+
+Totals: 22 cases in four R45-train-overlap worlds; 14 cases in two R45-validation-overlap worlds; 10 cases in one no-R45-exact-UUID-overlap world. The priority is **investigation order** and does not imply quality rank or any sample being admitted to Train/Validation. Existing R46 training evidence has matching compiled Train49/Val15 digests and completed owner-reported run, but full GPU runtime was not independently audited. Do not mark the original strict `model_training_exposure_confirmed=false` field as true.
+
+Private derived handoff: 46 source-record-preserving JSONL priorities, optional CSV for manual review and case-level evidentiary requirements; never commit candidate UUIDs/target hashes or private risk justifications. Count-only derived safe artifact SHA256 `6f6b4fa1d5d21a8c9ffe228a81ffa05b882076f62856afa64ac7a76c2c0e6685`. No model output was generated and no target content, target-time card, agency, safety or semantic alias decisions were claimed from this metadata-only input.
+
+**Next review:** address P0/P2 exact target reuse as known historical comparators, distinguish P1/P3 entire-world prior exposure, and independently resolve P4 semantic story identity. Separately review all 46 frozen target texts under their original model-visible histories for final content/safety release gates. **All remains HOLD; Train 0 / Val 0 / No GPU / R50 sealed.**

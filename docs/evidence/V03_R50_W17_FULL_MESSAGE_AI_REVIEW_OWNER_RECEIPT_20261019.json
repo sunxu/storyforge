@@ -1,0 +1,66 @@
+{
+  "schema": "storyforge-r50-w17-seven-gap-full-message-ai-review-owner-validated-v1",
+  "as_of": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "source": "OWNER_LOCAL_PRIVATE_FULL_SOURCE_AI_VALIDATOR_OUTPUT",
+  "verification_level": "OWNER_LOCAL_SOURCE_REFERENCES_SCHEMA_AND_DIGEST_VALIDATED__PRIVATE_REASONING_NOT_INDEPENDENTLY_READ_BY_ASSISTANT",
+  "input_full_dossier_manifest_sha256": "189f84e0e2891499723ba7e9e14cc866c057c9ab5ead727ff4c192e717510476",
+  "private_full_workpaper_sha256": "6482dd02b27d80f72763b23b848cf7c0b2765853f09ef0beb2ae4961d50b7ce3",
+  "original_private_workpaper_sha256": "6507ac6caec72aa031e9c70004a3d96781e7de8c0373976036c716aa9c884d9a",
+  "gap_count": 7,
+  "total_full_message_entries_in_dossiers": 344,
+  "assessment_counts": {
+    "INSUFFICIENT_CONTEXT": 7,
+    "SUPPORTED_IN_FULL_MESSAGE_SCOPE": 0,
+    "NOT_SUPPORTED_IN_REVIEWED_SCOPE": 0,
+    "SOURCE_UNAVAILABLE": 0
+  },
+  "source_citation_counts_by_gap": [
+    11,
+    11,
+    11,
+    10,
+    11,
+    11,
+    10
+  ],
+  "total_scoped_citations": 75,
+  "referenced_world_counts_by_gap": [
+    5,
+    4,
+    3,
+    2,
+    4,
+    4,
+    5
+  ],
+  "historical_card_timings_by_gap": [
+    "NOT_CHECKED",
+    "NOT_CHECKED",
+    "NOT_CHECKED",
+    "NOT_CHECKED",
+    "NOT_CHECKED",
+    "NOT_CHECKED",
+    "NOT_CHECKED"
+  ],
+  "remaining_evidence_requirement_counts_by_gap": [
+    2,
+    3,
+    3,
+    3,
+    3,
+    3,
+    3
+  ],
+  "total_requirement_mentions": 20,
+  "distinct_requirement_count": "UNKNOWN_MAY_INCLUDE_DUPLICATES",
+  "exact_inference_card_snapshot_verified": false,
+  "old_04_to_07_transitive_component_resolved": false,
+  "reviewer_independence_verified_by_assistant": false,
+  "private_stories_committed": false,
+  "r50_cases_changed": false,
+  "world_graph_gate": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "no_gpu": true,
+  "no_model_inference_by_assistant": true
+}

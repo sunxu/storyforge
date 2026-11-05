@@ -1,0 +1,55 @@
+{
+  "schema": "storyforge-r50-w17-independent-ai-review-owner-validated-receipt-v1",
+  "date": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "verification_level": "OWNER_REPORTED_LOCAL_VALIDATOR_PASS__AI_VERDICT_NOT_INDEPENDENTLY_RECHECKED_BY_ASSISTANT",
+  "owner_local_status": "R50_W17_PRIVATE_AI_DECISIONS_SCHEMA_VALIDATED__SEMANTIC_HOLD",
+  "owner_local_git_status": "DRY_RUN_NO_GIT_WRITE__USE_PUSH_ONLY_AFTER_REVIEW",
+  "pinned_private_kit_sha256": "0c1dccd8de0926ab416a85ccb77f474e668138938171f0419eb43ce582a99cc3",
+  "private_decision_sha256": "UNAVAILABLE_FROM_SANITIZED_TERMINAL_OUTPUT__USE_ORIGINAL_VALIDATOR_PUSH",
+  "private_decision_file_content_available_to_github_connector": false,
+  "private_decision_independence_or_reasoning_verified_by_assistant": false,
+  "screened_source_world_pairs": 50,
+  "shared_literal_type": {
+    "reviewed_label": "PLATFORM_TEMPLATE",
+    "attribution": "INDEPENDENT_AI_LOCAL_REVIEW_OUTPUT",
+    "assistant_substantive_confirmation": "NOT_INDEPENDENTLY_READ"
+  },
+  "reviewed_pairs": [
+    {
+      "old_rank": 2,
+      "new_rank": 17,
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "evidence_pointer_count": 9
+    },
+    {
+      "old_rank": 4,
+      "new_rank": 17,
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "evidence_pointer_count": 9
+    },
+    {
+      "old_rank": 10,
+      "new_rank": 17,
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "evidence_pointer_count": 8
+    }
+  ],
+  "evidence_pointers_validated_total": 26,
+  "known_old_world_link": [
+    4,
+    7
+  ],
+  "possible_transitive_link_to_w17": "INSUFFICIENT_EVIDENCE",
+  "remaining_evidence_item_count": 7,
+  "known_literal_input_exposure_to_retained_w17_cases": "PASS_ZERO_MATCHES_PREVIOUSLY_VERIFIED",
+  "semantic_world_alias_independence": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "r50_case_count_retained": 46,
+  "cases_mutated_by_this_receipt": false,
+  "data_admission_or_model_promotion": false,
+  "no_hf_job": true,
+  "no_model_inference": true,
+  "no_gpu": true,
+  "privacy": "No story text, source aliases, full reviewer reasoning, private evidence paths or missing-evidence strings."
+}

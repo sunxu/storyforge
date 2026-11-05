@@ -1,0 +1,27 @@
+{
+  "schema": "storyforge-r50-old14-unexpected-rank-fix-v1",
+  "date": "2026-10-16",
+  "report": "R50_LFS_SOURCE_INVENTORY_HOLD: ValueError OLD14_UNEXPECTED_SOURCE_RANK",
+  "root_cause": "Code assumed 14 raw source exports correspond exactly to numeric story ranks 01..14.",
+  "fixed_required_rank_set": [
+    2,
+    4,
+    6,
+    7,
+    8,
+    9,
+    10,
+    12,
+    14
+  ],
+  "rank_15_verification": "Separate 06-15 LFS source; if rank15 exists in old14, require exact same identity and messages",
+  "extra_source_ranks": "Parsed and emitted as aggregate rank numbers; source ID collisions against R50 flagged",
+  "archive_contents_fully_verified_here": false,
+  "original_lfs_hashes_unchanged": true,
+  "tests_added": 4,
+  "workflow_synthetic_test_added": true,
+  "semantic_world_alias_gate": "HOLD",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "gpu_used": false,
+  "hf_job_started": false
+}
