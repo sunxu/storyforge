@@ -30,16 +30,25 @@ class FakeCursor:
                 for event in self.events if event["id"] in ids
             ]
             return
-        story_id, session_id, max_turn, limit = params
+        story_id, session_id, max_turn = params[:3]
+        if len(params) == 4:
+            last_key = None
+            limit = params[3]
+        else:
+            last_key = (params[3], params[4])
+            limit = params[5]
         self.rows = []
         for source in self.events:
             if (source["story_id"] == story_id
                     and source["session_id"] == session_id
-                    and 1 <= source["turn_index"] <= max_turn):
+                    and 1 <= source["turn_index"] <= max_turn
+                    and (last_key is None or
+                         (source["recorded_at"], source["id"]) > last_key)):
                 event = dict(source)
                 if event["operation"] in ledger.SNAPSHOTS:
                     event["row_data"] = None
                 self.rows.append(event)
+        self.rows.sort(key=lambda event: (event["recorded_at"], event["id"]))
         self.rows = self.rows[:limit]
 
     def fetchall(self):
@@ -344,6 +353,29 @@ class MessageLedgerTests(unittest.TestCase):
         self.assertEqual(
             report["history_rows_using_unchanged_current_state"], 3
         )
+
+    def test_metadata_reads_use_stable_keyset_pages(self):
+        from unittest.mock import patch
+
+        events = list(self.events) + [
+            marker(5, "late-user", "s", 1, "user", "update_after", 11),
+            marker(6, "late-assistant", "s", 2, "assistant", "update_after", 12),
+        ]
+        cursor = FakeCursor(events)
+        with patch.object(ledger, "LEDGER_METADATA_BATCH_SIZE", 2, create=True):
+            rows = ledger.load_session_events(
+                cursor, "story", "s", 5, [self.target], max_events=20
+            )
+        self.assertEqual([row["id"] for row in rows], [1, 2, 3, 4, 5, 6])
+        metadata_queries = [
+            (query, params) for query, params in zip(
+                cursor.queries, cursor.query_params, strict=True
+            ) if "FROM public.v2_chat_message_ledger" in query
+            and "WHERE id = ANY(%s)" not in query
+        ]
+        self.assertGreaterEqual(len(metadata_queries), 3)
+        self.assertIn("(recorded_at, id) > (%s, %s)", metadata_queries[1][0])
+        self.assertEqual(metadata_queries[1][1][4], 1)
 
     def test_event_limit_fails_closed(self):
         cursor = FakeCursor(self.events)
