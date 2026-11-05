@@ -1,6 +1,7 @@
 """Sparse message-ledger historical reconstruction (read-only)."""
 from __future__ import annotations
 
+from bisect import bisect_right
 from collections import defaultdict
 from collections.abc import Mapping
 from datetime import datetime
@@ -54,21 +55,14 @@ def _validate_event_locator(event, story_id, session_id):
 
 def _required_event_ids(events, targets):
     needed = set()
+    index = LedgerEventIndex(events)
     for target in targets:
-        boundary_event = target_boundary(events, target)
+        boundary_event = index.target_boundary(target)
         needed.add(boundary_event["id"])
         boundary = _key(boundary_event)
-        grouped = defaultdict(list)
         cutoff = target["turn_index"] - 1
-        for event in events:
-            if event["turn_index"] <= cutoff:
-                grouped[event["message_id"]].append(event)
-        for message_events in grouped.values():
-            first = next(
-                (event for event in sorted(message_events, key=_key)
-                 if _key(event) > boundary),
-                None,
-            )
+        for message_id in index.by_message_id:
+            first = index.first_post_boundary_event(message_id, boundary, cutoff)
             if first is not None:
                 needed.add(first["id"])
     return sorted(needed)
@@ -218,6 +212,46 @@ def _validate_business_event_detail(event):
     return "LEGACY_FULL_AFTER_IMAGE"
 
 
+
+class LedgerEventIndex:
+    """Per-Session immutable event index reused across target reconstructions."""
+
+    def __init__(self, events):
+        self.events = events
+        grouped = defaultdict(list)
+        for event in events:
+            grouped[event["message_id"]].append(event)
+        self.by_message_id = {}
+        self.keys_by_message_id = {}
+        for message_id, rows in grouped.items():
+            rows.sort(key=_key)
+            self.by_message_id[message_id] = rows
+            self.keys_by_message_id[message_id] = [_key(row) for row in rows]
+
+    def target_boundary(self, target):
+        rows = self.by_message_id.get(target.get("message_id"), ())
+        matches = [
+            event for event in rows
+            if event.get("story_id") == target.get("story_id")
+            and event.get("session_id") == target.get("session_id")
+            and event.get("turn_index") == target.get("turn_index")
+            and event.get("role") == "assistant"
+            and event.get("operation") in MARKERS
+        ]
+        if not matches:
+            raise LedgerRecoveryError("TARGET_LEDGER_BOUNDARY_MISSING")
+        return matches[0]
+
+    def first_post_boundary_event(self, message_id, boundary, cutoff):
+        rows = self.by_message_id.get(message_id, ())
+        keys = self.keys_by_message_id.get(message_id, ())
+        start = bisect_right(keys, boundary)
+        for event in rows[start:]:
+            if event["turn_index"] <= cutoff:
+                return event
+        return None
+
+
 def target_boundary(events, target):
     matches = [
         event for event in events
@@ -262,29 +296,23 @@ def _snapshot(event):
     }
 
 
-def reconstruct_history(current_rows, events, target, story_id, session_id, cutoff):
-    boundary = _key(target_boundary(events, target))
+def reconstruct_history(current_rows, events, target, story_id, session_id, cutoff,
+                       event_index=None):
+    event_index = event_index or LedgerEventIndex(events)
+    boundary_event = event_index.target_boundary(target)
+    boundary = _key(boundary_event)
     current = {}
     for row in current_rows:
         mid = row.get("message_id")
         if not isinstance(mid, str) or mid in current:
             raise LedgerRecoveryError("CURRENT_HISTORY_IDENTITY_INVALID")
         current[mid] = row
-    grouped = defaultdict(list)
-    for event in events:
-        if event["turn_index"] <= cutoff:
-            grouped[event["message_id"]].append(event)
-    for group in grouped.values():
-        group.sort(key=_key)
-
     output = []
     restored = excluded = unchanged = 0
     legacy_snapshot_revision_missing = 0
     snapshot_revision_present = 0
-    for mid in sorted(set(current) | set(grouped)):
-        message_events = grouped.get(mid, [])
-        later = [e for e in message_events if _key(e) > boundary]
-        first = later[0] if later else None
+    for mid in sorted(set(current) | set(event_index.by_message_id)):
+        first = event_index.first_post_boundary_event(mid, boundary, cutoff)
         if first and first["operation"] in SNAPSHOTS:
             state = _snapshot(first)
             restored += 1
@@ -331,7 +359,7 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
     output.sort(key=lambda r: (r["created_at"], r["message_id"]))
     if len({r["message_id"] for r in output}) != len(output):
         raise LedgerRecoveryError("LEDGER_RECONSTRUCTED_DUPLICATE_MESSAGE")
-    event = target_boundary(events, target)
+    event = boundary_event
     return output, {
         "ledger_event_count": len(events),
         "ledger_detail_rows_loaded": sum(
