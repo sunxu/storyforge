@@ -651,6 +651,9 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
         )
         for key, entry in sorted(by_session.items())
     }
+    ledger_index_by_session = {
+        key: LedgerEventIndex(events) for key, events in ledger_by_session.items()
+    }
     results = []
     for index, case in enumerate(cases):
         base = {"safe_index": index}
@@ -669,9 +672,11 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                 cursor, case["story_id"], segment, target["created_at"]
             )
             events = ledger_by_session[(case["story_id"], case["session_id"])]
+            event_index = ledger_index_by_session[(case["story_id"], case["session_id"])]
             history, reconstruction = reconstruct_history(
                 current_history, events, target, case["story_id"],
                 case["session_id"], case["turn_index"] - 1,
+                event_index=event_index,
             )
             history.sort(
                 key=lambda row: (_datetime(row["created_at"]), row["message_id"])
@@ -681,23 +686,19 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
             )
             current_suffix = current_history[-1] if current_history else None
             recovered_suffix = history[-1] if history else None
-            boundary = _key(target_boundary(events, target))
+            boundary = _key(event_index.target_boundary(target))
             suffix_operation = None
             if current_suffix is not None:
-                later_suffix_events = sorted(
-                    (
-                        event for event in events
-                        if event["message_id"] == current_suffix["message_id"]
-                        and _key(event) > boundary
-                    ),
-                    key=_key,
+                later_suffix_events = event_index.by_message_id.get(
+                    current_suffix["message_id"], []
                 )
-                if later_suffix_events:
-                    suffix_operation = later_suffix_events[0]["operation"]
+                suffix_operation = next(
+                    (event["operation"] for event in later_suffix_events
+                     if _key(event) > boundary),
+                    None,
+                )
 
-            events_by_message = {}
-            for event in events:
-                events_by_message.setdefault(event["message_id"], []).append(event)
+            events_by_message = event_index.by_message_id
             first_operation_counts = {}
             excluded_with_prior_snapshot = 0
             excluded_without_prior_snapshot = 0
