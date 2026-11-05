@@ -384,7 +384,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         output_dir: Path, dsn: str, pilot: int = 8,
         max_history: int = 20000, max_lineage_depth: int = 16,
         max_ledger_events: int = 100000, diagnostic_only: bool = False,
-        diagnose_duplicate_index: int | None = None) -> dict:
+        diagnose_duplicate_index: int | None = None,
+        diagnose_ledger_event_counts: bool = False) -> dict:
     inputs = {
         "REVIEWER_A": private_bytes(reviewer_a, "REVIEWER_A"),
         "REVIEWER_B": private_bytes(reviewer_b, "REVIEWER_B"),
@@ -419,7 +420,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         parse_jsonl(inputs["SOURCE_LOCATORS"], "SOURCE_LOCATORS"), packet_index
     )
 
-    if diagnostic_only and diagnose_duplicate_index is not None:
+    if sum((diagnostic_only, diagnose_duplicate_index is not None,
+            diagnose_ledger_event_counts)) > 1:
         raise ValueError("DIAGNOSTIC_MODE_CONFLICT")
     if diagnostic_only:
         cases = build_recovery_cases(priority, locator_index)
@@ -429,6 +431,106 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             "pilot_requested": len(priority),
             "pilot_identity_valid": len(cases),
             "database_connected": False,
+            "database_modified": False,
+            "private_values_emitted": False,
+            "quality_v1_admitted": 0,
+            "training_authorized": False,
+            "gpu_started": False,
+            "r50_accessed": False,
+        }
+
+    if diagnose_ledger_event_counts:
+        import psycopg
+
+        stage = "CONNECT"
+        try:
+            with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
+                stage = "SET_READ_ONLY"
+                db.execute("SET TRANSACTION READ ONLY")
+                stage = "SET_STATEMENT_TIMEOUT"
+                db.execute("SET LOCAL statement_timeout = '90000ms'")
+                stage = "SET_LOCK_TIMEOUT"
+                db.execute("SET LOCAL lock_timeout = '1000ms'")
+                stage = "VERIFY_READ_ONLY_ROLE"
+                with db.cursor() as cursor:
+                    cursor.execute(
+                        """
+                        SELECT current_user, current_setting('transaction_read_only'),
+                               current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                        FROM pg_roles AS r WHERE r.rolname = current_user
+                        """
+                    )
+                    role = cursor.fetchone()
+                    if (role is None or role[0] != "r58_export_reader"
+                            or role[1] != "on" or role[2] != "on"
+                            or role[3] is not False or role[4] is not False):
+                        raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+                    verified_duplicate_indices = set()
+                    for pilot_index, case in enumerate(priority):
+                        locator = locator_index[case["case_id"]]
+                        match_count = locator.get("matched_message_count")
+                        if (isinstance(match_count, int) and not isinstance(match_count, bool)
+                                and match_count == 1):
+                            continue
+                        if (not isinstance(match_count, int) or isinstance(match_count, bool)
+                                or match_count < 2):
+                            raise ValueError("SOURCE_MATCH_COUNT_INVALID")
+                        proof = diagnose_duplicate_source(
+                            cursor, case, locator, max_lineage_depth
+                        )
+                        if proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
+                            raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+                        verified_duplicate_indices.add(pilot_index)
+                    cases = build_recovery_cases(
+                        priority, locator_index, verified_duplicate_indices
+                    )
+                    grouped = {}
+                    for pilot_index, case in enumerate(priority):
+                        locator = locator_index[case["case_id"]]
+                        key = (case["story_id"], locator["session_id"])
+                        entry = grouped.setdefault(key, {"max_turn": 0, "pilot_indices": []})
+                        entry["max_turn"] = max(entry["max_turn"], case["turn_index"])
+                        entry["pilot_indices"].append(pilot_index)
+                    session_counts = []
+                    for (story_id, session_id), entry in sorted(grouped.items()):
+                        cursor.execute(
+                            """
+                            SELECT count(*)::bigint
+                            FROM public.v2_chat_message_ledger
+                            WHERE story_id = %s AND session_id = %s
+                              AND turn_index BETWEEN 1 AND %s
+                            """,
+                            (story_id, session_id, entry["max_turn"]),
+                        )
+                        count_row = cursor.fetchone()
+                        if (not count_row or type(count_row[0]) is not int
+                                or count_row[0] < 0):
+                            raise ValueError("LEDGER_EVENT_COUNT_INVALID")
+                        session_counts.append({
+                            "pilot_indices": sorted(entry["pilot_indices"]),
+                            "ledger_event_count": count_row[0],
+                            "configured_limit": max_ledger_events,
+                            "within_limit": count_row[0] <= max_ledger_events,
+                        })
+                stage = "ROLLBACK"
+                db.rollback()
+        except psycopg.Error as exc:
+            sqlstate = getattr(exc, "sqlstate", None)
+            if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
+                sqlstate = None
+            raise DatabaseFailure(stage, sqlstate, type(exc).__name__) from None
+        return {
+            "schema": "r59_gold192_ledger_event_count_diagnostic_safe_v1",
+            "status": ("LEDGER_EVENT_COUNTS_WITHIN_LIMIT"
+                       if all(row["within_limit"] for row in session_counts)
+                       else "LEDGER_EVENT_COUNT_LIMIT_EXCEEDED"),
+            "session_count": len(session_counts),
+            "session_counts": session_counts,
+            "duplicate_source_roots_reverified": len(verified_duplicate_indices),
+            "database_role_verified": "r58_export_reader",
+            "transaction_read_only": True,
+            "row_security": True,
+            "role_bypassrls": False,
             "database_modified": False,
             "private_values_emitted": False,
             "quality_v1_admitted": 0,
@@ -640,6 +742,10 @@ def main() -> int:
         "--diagnose-duplicate-source-index", type=int,
         help="inspect one duplicated Pilot index using the approved read-only DB role",
     )
+    diagnostics.add_argument(
+        "--diagnose-ledger-event-counts", action="store_true",
+        help="count scoped Pilot ledger events per Session without reading event payloads",
+    )
     args = parser.parse_args()
     try:
         if (args.pilot < 0 or args.pilot > 72 or args.max_history < 1
@@ -658,6 +764,7 @@ def main() -> int:
             max_ledger_events=args.max_ledger_events,
             diagnostic_only=args.diagnose_source_only,
             diagnose_duplicate_index=args.diagnose_duplicate_source_index,
+            diagnose_ledger_event_counts=args.diagnose_ledger_event_counts,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
