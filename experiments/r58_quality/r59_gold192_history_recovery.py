@@ -116,6 +116,12 @@ def validate_locators(rows: list[dict], packets: dict[str, dict]) -> dict[str, d
     return indexed
 
 
+class PilotSourceIdentityHold(ValueError):
+    def __init__(self, counts: Counter):
+        self.counts = dict(sorted(counts.items()))
+        super().__init__("PILOT_SOURCE_IDENTITY_HOLD")
+
+
 def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -> list[dict]:
     cases = []
     held_source = Counter()
@@ -139,7 +145,7 @@ def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -
             "target_sha256": case["target_sha256"],
         })
     if held_source:
-        raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+        raise PilotSourceIdentityHold(held_source)
     if len(cases) != len(priority):
         raise ValueError("PILOT_CASE_COUNT_INVALID")
     if len({(row["story_id"], row["session_id"], row["turn_index"]) for row in cases}) != len(cases):
@@ -383,6 +389,9 @@ def main() -> int:
                 "database_sqlstate": exc.sqlstate,
                 "database_exception_type": exc.exception_type,
             }
+        elif isinstance(exc, PilotSourceIdentityHold):
+            reason = "PILOT_SOURCE_IDENTITY_HOLD"
+            diagnostics = {"pilot_source_identity_counts": exc.counts}
         else:
             reason = (str(exc) if isinstance(exc, (ValueError, TypeError))
                       and re.fullmatch(r"[A-Z0-9_]+", str(exc))
