@@ -190,6 +190,8 @@ class HistoryRecoveryTests(unittest.TestCase):
             "ledger_event_count": 5,
             "history_rows_restored": 0,
             "history_rows_excluded": 0,
+            "current_history_suffix_role": "user",
+            "current_suffix_first_post_target_operation": None,
         }])
 
     def test_per_case_suffix_diagnostic_identifies_marker_exclusion(self):
@@ -204,6 +206,16 @@ class HistoryRecoveryTests(unittest.TestCase):
             "safe_index": 0,
             "result": "HOLD",
             "reason_code": "HISTORY_SUFFIX_NOT_USER",
+            "current_history_message_count": 4,
+            "current_history_suffix_role": "user",
+            "current_history_suffix_turn": 6,
+            "reconstructed_history_message_count": 2,
+            "history_suffix_role": "assistant",
+            "history_suffix_turn": 2,
+            "current_suffix_first_post_target_operation": "update_after",
+            "ledger_event_count": 7,
+            "history_rows_restored": 0,
+            "history_rows_excluded": 2,
         }])
 
     def test_target_hash_mismatch_holds(self):
