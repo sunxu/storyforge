@@ -97,6 +97,8 @@ class SessionHistoryReuseTests(unittest.TestCase):
         case_b, target_b = _target("case-b", 8, 20)
         rows = [
             _message("m1", 2, 5),
+            _message("m_turn_cutoff", 5, 8),
+            _message("m_equal_time", 3, 10),
             _message("m2", 5, 12),
             _message("m3", 7, 18),
         ]
@@ -113,7 +115,7 @@ class SessionHistoryReuseTests(unittest.TestCase):
         )
         self.assertEqual(
             [row["message_id"] for row in captured["case-b"]],
-            ["m1", "m2", "m3"],
+            ["m1", "m_turn_cutoff", "m_equal_time", "m2", "m3"],
         )
         self.assertEqual(len(recovered), 2)
         self.assertEqual(holds, [])
