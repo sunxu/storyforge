@@ -54,7 +54,22 @@ Locator 文件必须与 SAFE receipt 中的文件 SHA256 一致。目标必须�
 `update_before` 和 `delete` 是恢复历史所需快照，`insert` 和 `update_after` 是标记；
 不得丢弃或合并这些事件。该 Session 若执行 Pilot8 Recovery，显式设置
 `--max-ledger-events 700000`，只是在已测得 606,860 条后提供有限余量，不改变
-默认上限，也不放宽事件完整性、时间顺序、快照字段或 mutation_revision 检查。
+默认上限，也不放宽事件完整性、时间顺序或快照业务字段检查。
+
+同一只读检查还发现：该 Session 的 290,955 条 `update_before` / `delete` 快照均有
+恢复所需的八个核心业务字段，但均没有 `mutation_revision`。数据库触发器定义确认，
+Ledger 会记录 turn_index、client_msg_id、platform 等业务变更，而
+`mutation_revision` 只对 role/content/status/metadata/partial_content 的变化递增；
+因此 `update_after` 数量不能等同于 revision 数量。恢复器现已调整为：
+- 旧快照缺少 revision 时，仍严格验证身份、正文、状态、时间和 turn 字段，并在 SAFE
+  单独计数为 `LEGACY_SNAPSHOT_REVISION_UNAVAILABLE`；
+- 新快照若含 revision，必须为非负整数；
+- 当前消息行的 revision 必须为非负整数；
+- 不再用 update_after 事件数量推算 revision，也不伪造缺失值。
+
+这不会证明历史触发器从未漏记；SAFE 继续将
+`ledger_commit_order_verified=false` 与 `ledger_trigger_continuity_verified=false`
+作为明确限制。若实际快照缺少任何核心业务字段，仍然整批 HOLD。
 
 SAFE 固定保留以下限制：
 - `ledger_commit_order_verified=false`
