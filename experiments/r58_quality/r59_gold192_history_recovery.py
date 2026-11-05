@@ -505,6 +505,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     if parent == repo_root or repo_root in parent.parents:
         raise ValueError("OUTPUT_MUST_REMAIN_PRIVATE")
 
+    verified_duplicate_indices: set[int] = set()
     import psycopg
 
     stage = "CONNECT"
@@ -521,7 +522,6 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                 owner_count = verify_story_owner_scope(
                     cursor, sorted({case["story_id"] for case in packet_index.values()})
                 )
-                verified_duplicate_indices = set()
                 for pilot_index, case in enumerate(priority):
                     locator = locator_index[case["case_id"]]
                     if locator.get("matched_message_count") == 1:
@@ -580,6 +580,10 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         ),
         "ledger_detail_rows_loaded_total": sum(
             row["history_reconstruction"]["ledger_detail_rows_loaded"] for row in recovered
+        ),
+        "duplicate_source_roots_reverified": len(verified_duplicate_indices),
+        "duplicate_source_root_reverification_pilot_indices": sorted(
+            verified_duplicate_indices
         ),
         "ledger_commit_order_verified": False,
         "ledger_trigger_continuity_verified": False,
