@@ -180,6 +180,32 @@ class HistoryRecoveryTests(unittest.TestCase):
             result["history_reconstruction"]["ledger_trigger_continuity_verified"]
         )
 
+    def test_per_case_suffix_diagnostic_reports_recovered_case(self):
+        results = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(results, [{
+            "safe_index": 0,
+            "result": "RECOVERED",
+            "history_message_count": 4,
+            "history_suffix_role": "user",
+            "ledger_event_count": 5,
+            "history_rows_restored": 0,
+            "history_rows_excluded": 0,
+        }])
+
+    def test_per_case_suffix_diagnostic_identifies_marker_exclusion(self):
+        self.cursor.ledger_events.extend([
+            self.cursor.ledger_marker(6, "c5", 5, "user", 11),
+            self.cursor.ledger_marker(7, "c6", 6, "user", 12),
+        ])
+        self.cursor.ledger_events[-2]["operation"] = "update_after"
+        self.cursor.ledger_events[-1]["operation"] = "update_after"
+        results = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(results, [{
+            "safe_index": 0,
+            "result": "HOLD",
+            "reason_code": "HISTORY_SUFFIX_NOT_USER",
+        }])
+
     def test_target_hash_mismatch_holds(self):
         self.case["target_sha256"] = "0" * 64
         with self.assertRaisesRegex(h.HistoryRecoveryError, "TARGET_MESSAGE_IDENTITY_AMBIGUOUS"):
