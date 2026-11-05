@@ -1,0 +1,116 @@
+{
+  "schema": "storyforge-r57-g2-owner-target-anchored-uuid-aggregate-safe-v1",
+  "date": "2026-10-26",
+  "evidence_tier": "OWNER_RETURNED_MAC_BYTE_PINNED_EIGHT_SOURCE_CLI_OUTPUT__NOT_INDEPENDENT_PROVIDER_ATTESTATION",
+  "source_cli_schema": "storyforge-r57-g2-target-anchored-world-uuid-count-only-v1",
+  "original_status": "EIGHT_SOURCE_TARGET_ANCHORED_STORY_UUID_REPLAY_PASS__SEMANTIC_ALIAS_HOLD",
+  "owner_cli_byte_pins_verified": true,
+  "assistant_read_owner_private_trainer_bytes": false,
+  "collections": {
+    "GOLD87": 87,
+    "GOLD108": 108,
+    "V01_TRAIN": 65,
+    "V01_VALIDATION": 15,
+    "R46_TRAIN": 49,
+    "R46_VALIDATION": 15,
+    "R54_TRAIN": 31,
+    "R54_VALIDATION": 9
+  },
+  "observed_distinct_story_uuids": {
+    "GOLD87": 5,
+    "GOLD108": 8,
+    "V01_TRAIN": 15,
+    "V01_VALIDATION": 2,
+    "R46_TRAIN": 6,
+    "R46_VALIDATION": 3,
+    "R54_TRAIN": 5,
+    "R54_VALIDATION": 2
+  },
+  "target_anchored_private_compiled_rows_uniquely_linked": {
+    "R46_TRAIN": 49,
+    "R46_VALIDATION": 15,
+    "R54_TRAIN": 31,
+    "R54_VALIDATION": 9
+  },
+  "golds_with_no_exact_target": {
+    "total": 114,
+    "GOLD87": {
+      "rows": 67,
+      "shares_any_historical_sft_uuid": 35,
+      "shares_historical_train_uuid": 35,
+      "shares_historical_validation_uuid": 0,
+      "no_shared_historical_sft_uuid": 32
+    },
+    "GOLD108": {
+      "rows": 47,
+      "shares_any_historical_sft_uuid": 47,
+      "shares_historical_train_uuid": 35,
+      "shares_historical_validation_uuid": 31,
+      "shares_both_train_val_world_uuid": 19,
+      "no_shared_historical_sft_uuid": 0
+    },
+    "shares_any_historical_sft_uuid": 82,
+    "no_shared_historical_sft_uuid": 32,
+    "historical_train_uuid_rows": 70,
+    "historical_validation_uuid_rows": 31,
+    "train_and_validation_uuid_rows": 19
+  },
+  "gold_world_uuid_exposure": {
+    "GOLD87": {
+      "historical_v01_train_shared_uuid_count": 1,
+      "gold_rows_sharing_v01_train_uuid": 21,
+      "historical_r46_train_shared_uuid_count": 2,
+      "gold_rows_sharing_r46_train_uuid": 34,
+      "all_previous_sft_any_uuid_rows": 55,
+      "no_previous_sft_any_uuid_rows": 32
+    },
+    "GOLD108": {
+      "all_previous_sft_any_uuid_rows": 108,
+      "no_previous_sft_any_uuid_rows": 0
+    },
+    "exact_target_membership": {
+      "TRAIN_ONLY": 57,
+      "VALIDATION_ONLY": 15,
+      "BOTH_TRAIN_AND_VALIDATION": 9,
+      "NO_EXACT_TARGET_IN_PRIOR_SFT": 114
+    }
+  },
+  "same_run_train_val_world_uuid_overlaps": {
+    "V01": 0,
+    "R46": 0,
+    "R54": 0
+  },
+  "cross_run_findings": {
+    "R46_TRAIN_R54_VALIDATION": {
+      "shared_uuid_count": 1,
+      "r46_train_rows_in_shared_uuid": 1,
+      "r54_validation_rows_in_shared_uuid": 2,
+      "exact_target_overlap": 0
+    },
+    "R46_TRAIN_R54_TRAIN": {
+      "shared_uuid_count": 3,
+      "r46_train_rows_in_shared_uuid": 28,
+      "r54_train_rows_in_shared_uuid": 18
+    },
+    "R46_VALIDATION_R54_TRAIN": {
+      "shared_uuid_count": 2,
+      "r46_validation_rows_in_shared_uuid": 13,
+      "r54_train_rows_in_shared_uuid": 13
+    }
+  },
+  "limits": {
+    "source_uuid_match_is_not_semantic_alias_verification": true,
+    "target_matched_rows_do_not_imply_message_context_match": true,
+    "no_target_match_does_not_establish_clean_train_or_validation": true,
+    "cross_uuid_alias_graph_verified": false,
+    "world_isolation_certified": false,
+    "semantic_near_duplicate_verified": false,
+    "independent_admission_review_completed": false,
+    "v04_admitted": 0,
+    "r50_content_accessed": false,
+    "training_authorized": false,
+    "gpu_or_hf_job_started": false,
+    "r55_four_holds_unchanged": true
+  },
+  "status": "R57_G2_OWNER_TARGET_ANCHORED_EXACT_UUID_MAPPING_PASS__114_TARGET_UNMATCHED_82_WORLD_EXPOSED_32_UUID_UNMATCHED__ALIAS_HOLD"
+}

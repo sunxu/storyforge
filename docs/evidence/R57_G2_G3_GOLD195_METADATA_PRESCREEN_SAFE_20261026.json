@@ -1,0 +1,84 @@
+{
+  "schema": "storyforge-r57-g2-g3-gold195-four-blob-prescreen-safe-v1",
+  "as_of": "2026-10-26",
+  "evidence_level": "GITHUB_PINNED_FOUR_BLOB_DIRECT_READ__SHA256_RECOMPUTED_IN_MEMORY__NOT_ALL_EIGHT_SOURCE_OR_WORLD_ALIAS_CERTIFICATION",
+  "sources": [
+    {
+      "id": "GOLD87",
+      "git_blob_sha1": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+      "rows": 87,
+      "observed_uuid_worlds": 5,
+      "target_digest_verified": 87,
+      "target_digest_missing": 0,
+      "target_digest_mismatch": 0,
+      "training_admission_pending": 87,
+      "independent_gold_review_not_run": 87,
+      "qwen_token_length_not_run": 87,
+      "metadata_story_id_rows": 87
+    },
+    {
+      "id": "GOLD108",
+      "git_blob_sha1": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+      "rows": 108,
+      "observed_uuid_worlds": 8,
+      "target_digest_verified": 108,
+      "target_digest_missing": 0,
+      "target_digest_mismatch": 0,
+      "training_admission_pending": 108,
+      "explicit_independent_ab_review_not_run": 71,
+      "independent_ab_review_field_missing": 37,
+      "qwen_token_length_not_run": 71,
+      "qwen_token_length_field_missing": 37,
+      "metadata_story_id_and_target_sha256_rows": 90,
+      "metadata_source_story_id_and_target_content_sha256_rows": 3,
+      "alternate_three_with_new_uuid": 0,
+      "metadata_story_id_and_target_sha256_utf8_rows": 15
+    },
+    {
+      "id": "V01_TRAIN",
+      "git_blob_sha1": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+      "rows": 65,
+      "observed_uuid_worlds": 15,
+      "recomputed_unique_target_sha256": 65,
+      "per_target_sha_in_original_metadata": 0
+    },
+    {
+      "id": "V01_VALIDATION",
+      "git_blob_sha1": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+      "rows": 15,
+      "observed_uuid_worlds": 2,
+      "recomputed_unique_target_sha256": 15,
+      "per_target_sha_in_original_metadata": 0
+    }
+  ],
+  "gold195": {
+    "total_candidates": 195,
+    "recomputed_unique_target_sha256": 195,
+    "declared_target_sha256_match": 195,
+    "declared_target_sha256_mismatch": 0,
+    "distinct_story_uuid": 13,
+    "training_admission_pending_not_approved": 195,
+    "dataset_v04_admitted": 0,
+    "g3_actual_sampled": 0
+  },
+  "pairwise": {
+    "exact_target_sha256_matches_across_all_six_pairs": 0,
+    "exact_role_content_full_message_matches_across_all_six_pairs": 0,
+    "exact_role_content_preceding_history_matches_across_all_six_pairs": 0,
+    "world_uuid_overlap_gold87_v01_train": 1,
+    "other_five_pairwise_world_uuid_overlaps": 0
+  },
+  "limits": {
+    "source_file_git_blob_sha1_independently_recomputed": false,
+    "actual_r46_r54_trainer_source_read": false,
+    "full_eight_source_lineage_complete": false,
+    "alias_world_component_graph_verified": false,
+    "near_duplicate_analysis_complete": false,
+    "independent_review_complete": false,
+    "age_consent_case_review_complete": false,
+    "protected_r50_content_accessed": false,
+    "train_or_gpu_started": false,
+    "model_promoted": false
+  },
+  "release_status": "G2_FOUR_BLOBS_TARGET_HASH_195_PASS__G3_METADATA_GAPS_PRESCREEN_ONLY__NO_DATA_ADMISSION__FULL_G2_HOLD"
+}
