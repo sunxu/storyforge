@@ -246,7 +246,8 @@ class LedgerEventIndex:
         rows = self.by_message_id.get(message_id, ())
         keys = self.keys_by_message_id.get(message_id, ())
         start = bisect_right(keys, boundary)
-        for event in rows[start:]:
+        for position in range(start, len(rows)):
+            event = rows[position]
             if event["turn_index"] <= cutoff:
                 return event
         return None
