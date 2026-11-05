@@ -6,6 +6,109 @@ from experiments.r58_quality import r59_gold192_history_recovery as adapter
 
 
 class Gold192HistoryAdapterTests(unittest.TestCase):
+    def test_duplicate_exact_match_with_one_root_canonical_is_proven(self):
+        locator = {
+            "matched_message_count": 2,
+            "message_id": "root-message",
+            "session_id": "root-session",
+        }
+        result = adapter.summarize_duplicate_identity(
+            locator,
+            [
+                {"message_id": "root-message", "session_id": "root-session"},
+                {"message_id": "fork-message", "session_id": "fork-session"},
+            ],
+            [
+                {"session_id": "root-session", "parent_session_id": None},
+                {"session_id": "fork-session", "parent_session_id": "root-session"},
+            ],
+            16,
+        )
+        self.assertEqual(result["status"], "UNIQUE_ROOT_CANONICAL_MATCH")
+        self.assertTrue(result["canonical_locator_matches_root"])
+        self.assertEqual(result["exact_matches_in_root_session"], 1)
+
+    def test_duplicate_exact_matches_in_root_session_are_held(self):
+        locator = {
+            "matched_message_count": 2,
+            "message_id": "root-message-a",
+            "session_id": "root-session",
+        }
+        result = adapter.summarize_duplicate_identity(
+            locator,
+            [
+                {"message_id": "root-message-a", "session_id": "root-session"},
+                {"message_id": "root-message-b", "session_id": "root-session"},
+            ],
+            [{"session_id": "root-session", "parent_session_id": None}],
+            16,
+        )
+        self.assertEqual(result["status"], "HOLD")
+        self.assertEqual(result["exact_matches_in_root_session"], 2)
+
+    def test_duplicate_exact_matches_with_multiple_roots_are_held(self):
+        locator = {
+            "matched_message_count": 2,
+            "message_id": "root-message-a",
+            "session_id": "root-session-a",
+        }
+        result = adapter.summarize_duplicate_identity(
+            locator,
+            [
+                {"message_id": "root-message-a", "session_id": "root-session-a"},
+                {"message_id": "root-message-b", "session_id": "root-session-b"},
+            ],
+            [
+                {"session_id": "root-session-a", "parent_session_id": None},
+                {"session_id": "root-session-b", "parent_session_id": None},
+            ],
+            16,
+        )
+        self.assertEqual(result["status"], "HOLD")
+        self.assertEqual(result["unique_root_session_count"], 2)
+
+    def test_duplicate_exact_matches_with_missing_lineage_are_held(self):
+        locator = {
+            "matched_message_count": 2,
+            "message_id": "root-message",
+            "session_id": "root-session",
+        }
+        result = adapter.summarize_duplicate_identity(
+            locator,
+            [
+                {"message_id": "root-message", "session_id": "root-session"},
+                {"message_id": "fork-message", "session_id": "fork-session"},
+            ],
+            [
+                {"session_id": "root-session", "parent_session_id": None},
+                {"session_id": "fork-session", "parent_session_id": "missing-parent"},
+            ],
+            16,
+        )
+        self.assertEqual(result["status"], "HOLD")
+        self.assertFalse(result["lineage_complete"])
+
+    def test_duplicate_exact_matches_with_lineage_cycle_are_held(self):
+        locator = {
+            "matched_message_count": 2,
+            "message_id": "root-message",
+            "session_id": "root-session",
+        }
+        result = adapter.summarize_duplicate_identity(
+            locator,
+            [
+                {"message_id": "root-message", "session_id": "root-session"},
+                {"message_id": "fork-message", "session_id": "fork-session"},
+            ],
+            [
+                {"session_id": "root-session", "parent_session_id": "fork-session"},
+                {"session_id": "fork-session", "parent_session_id": "root-session"},
+            ],
+            16,
+        )
+        self.assertEqual(result["status"], "HOLD")
+        self.assertTrue(result["lineage_cycle_detected"])
+
     def test_source_receipt_requires_exact_locator_bytes(self):
         raw = b'{"case_id":"safe-only"}\n'
         safe = {
