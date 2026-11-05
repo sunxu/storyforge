@@ -440,6 +440,77 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
     }
 
 
+
+def diagnose_history_suffixes(cursor, cases: list[dict], *,
+                              max_history: int = 20000,
+                              max_lineage_depth: int = 16,
+                              max_ledger_events: int = 100000) -> list[dict]:
+    """Return per-case aggregate-only recovery outcomes without emitting content."""
+    if not cases:
+        raise HistoryRecoveryError("CASE_SET_EMPTY")
+    ids = [row.get("case_id") for row in cases]
+    targets = [row.get("target_sha256") for row in cases]
+    if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
+        raise HistoryRecoveryError("CASE_SET_DUPLICATE")
+
+    targets_by_case = {}
+    by_session = {}
+    for index, case in enumerate(cases):
+        story_id = case.get("story_id")
+        session_id = case.get("session_id")
+        turn_index = case.get("turn_index")
+        if (not isinstance(story_id, str) or not story_id
+                or not isinstance(session_id, str) or not session_id
+                or type(turn_index) is not int or turn_index <= 0):
+            raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
+        target = _target(cursor, case)
+        targets_by_case[case["case_id"]] = target
+        key = (story_id, session_id)
+        entry = by_session.setdefault(key, {"max_turn": 0, "targets": []})
+        entry["max_turn"] = max(entry["max_turn"], turn_index)
+        entry["targets"].append(target)
+
+    ledger_by_session = {
+        key: load_session_events(
+            cursor, key[0], key[1], entry["max_turn"],
+            targets=entry["targets"], max_events=max_ledger_events,
+        )
+        for key, entry in sorted(by_session.items())
+    }
+    results = []
+    for index, case in enumerate(cases):
+        try:
+            recovered = recover_case(
+                cursor, case, max_history=max_history,
+                max_lineage_depth=max_lineage_depth,
+                target=targets_by_case[case["case_id"]],
+                ledger_events=ledger_by_session[(case["story_id"], case["session_id"])],
+                max_ledger_events=max_ledger_events,
+            )
+            reconstruction = recovered["history_reconstruction"]
+            results.append({
+                "safe_index": index,
+                "result": "RECOVERED",
+                "history_message_count": recovered["history_message_count"],
+                "history_suffix_role": (
+                    recovered["history"][-1]["role"] if recovered["history"] else None
+                ),
+                "ledger_event_count": reconstruction["ledger_event_count"],
+                "history_rows_restored": reconstruction["history_rows_restored_from_snapshot"],
+                "history_rows_excluded": reconstruction["history_rows_excluded_by_post_target_marker"],
+            })
+        except HistoryRecoveryError as exc:
+            reason = str(exc)
+            if not reason or not reason.replace("_", "").isalnum() or reason.upper() != reason:
+                reason = "RECOVERY_CASE_HOLD"
+            results.append({
+                "safe_index": index,
+                "result": "HOLD",
+                "reason_code": reason,
+            })
+    return results
+
+
 def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
                   max_lineage_depth: int = 16,
                   max_ledger_events: int = 100000) -> list[dict]:
