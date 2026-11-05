@@ -6,6 +6,42 @@ from experiments.r58_quality import r59_gold192_history_recovery as adapter
 
 
 class Gold192HistoryAdapterTests(unittest.TestCase):
+    def test_recovery_query_stage_classifies_database_operations(self):
+        cases = {
+            "SELECT id FROM public.user_stories": "OWNER_SCOPE_QUERY",
+            "SELECT id FROM public.v2_chat_messages WHERE role = 'assistant'":
+                "TARGET_MESSAGE_QUERY",
+            "SELECT mutation_revision FROM public.v2_chat_messages":
+                "CURRENT_HISTORY_QUERY",
+            "SELECT id FROM public.story_v2_sessions": "SESSION_LINEAGE_QUERY",
+            "SELECT id FROM public.v2_chat_message_ledger":
+                "LEDGER_METADATA_QUERY",
+            "SELECT row_data FROM public.v2_chat_message_ledger":
+                "LEDGER_DETAIL_QUERY",
+            "SELECT id FROM public.story_content_versions": "STORY_VERSION_QUERY",
+            "SELECT id FROM public.story_admin_versions": "ADMIN_VERSION_QUERY",
+        }
+        for query, expected in cases.items():
+            with self.subTest(expected=expected):
+                self.assertEqual(adapter.recovery_query_stage(query), expected)
+
+    def test_recovery_stage_cursor_tracks_execute_and_delegates_fetch(self):
+        class Cursor:
+            def execute(self, query, params=None):
+                self.query = query
+                self.params = params
+            def fetchone(self):
+                return ("ok",)
+            def fetchall(self):
+                return [("ok",)]
+
+        raw = Cursor()
+        tracked = adapter.RecoveryStageCursor(raw)
+        tracked.execute("SELECT row_data FROM public.v2_chat_message_ledger", ())
+        self.assertEqual(tracked.stage, "LEDGER_DETAIL_QUERY")
+        self.assertEqual(tracked.fetchone(), ("ok",))
+        self.assertEqual(tracked.fetchall(), [("ok",)])
+
     def test_duplicate_exact_match_with_one_root_canonical_is_proven(self):
         locator = {
             "matched_message_count": 2,
