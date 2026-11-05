@@ -263,9 +263,19 @@ class BindTests(unittest.TestCase):
             owner[0]["staged_file_sha256"] = stage_pin
             inputs["owner.jsonl"] = b"".join(canonical(x) + b"\n" for x in owner)
             receipt = {
-                "schema": "storyforge-gold-quality-supabase-source-stage-safe-v1",
+                "schema": "storyforge-r59-contiguous-suffix-stage-safe-v1",
+                "status": "CONTIGUOUS_SUFFIX_SOURCE_STAGE_BUILT__NOT_QUALITY_ADMITTED",
+                "source_rows": 1,
+                "context_staged": 1,
+                "context_structure_hold": 0,
                 "staged_file_sha256": stage_pin,
                 "source_context_file_sha256": source_pin,
+                "previous_staged_file_sha256": "e" * 64,
+                "source_histories_mutated": False,
+                "original_staging_mutated": False,
+                "quality_v1_admitted": 0,
+                "training_authorized": False,
+                "gpu_started": False,
             }
             inputs["safe.json"] = canonical(receipt)
             paths = {}
