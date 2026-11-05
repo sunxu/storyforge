@@ -101,6 +101,38 @@ class MessageLedgerTests(unittest.TestCase):
             marker(4, "target", "s", 5, "assistant", "insert", 10),
         ]
 
+    def test_indexed_reconstruction_matches_legacy_reconstruction(self):
+        events = list(self.events) + [
+            snapshot(5, "u1", "s", 1, "user", "update_before", 11, content="old user"),
+            marker(6, "u1", "s", 1, "user", "update_after", 11),
+            marker(7, "future", "s", 9, "user", "insert", 12),
+        ]
+        rows = [
+            current("u1", "s", 1, "user", "current user"),
+            current("a2", "s", 2, "assistant", "current assistant"),
+            current("u3", "s", 3, "user", "current third"),
+        ]
+        index = ledger.LedgerEventIndex(events)
+        plain, plain_report = ledger.reconstruct_history(
+            rows, events, self.target, "story", "s", 4
+        )
+        indexed, indexed_report = ledger.reconstruct_history(
+            rows, events, self.target, "story", "s", 4, event_index=index
+        )
+        self.assertEqual(indexed, plain)
+        self.assertEqual(indexed_report, plain_report)
+
+    def test_event_index_target_boundary_and_cutoff(self):
+        events = list(self.events) + [
+            marker(5, "u1", "s", 9, "user", "update_after", 11),
+            marker(6, "u1", "s", 1, "user", "update_after", 12),
+        ]
+        index = ledger.LedgerEventIndex(events)
+        boundary = index.target_boundary(self.target)
+        first = index.first_post_boundary_event("u1", ledger._key(boundary), 4)
+        self.assertIsNotNone(first)
+        self.assertEqual(first["id"], 6)
+
     def test_query_is_session_scoped_and_capped(self):
         cursor = FakeCursor(self.events)
         rows = ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=20)
