@@ -192,6 +192,10 @@ class HistoryRecoveryTests(unittest.TestCase):
             "history_rows_excluded": 0,
             "current_history_suffix_role": "user",
             "current_suffix_first_post_target_operation": None,
+            "first_post_target_operation_counts": {},
+            "excluded_rows_with_preboundary_snapshot": 0,
+            "excluded_rows_without_preboundary_snapshot": 0,
+            "excluded_rows_prior_snapshot_same_timestamp_as_boundary": 0,
         }])
 
     def test_per_case_suffix_diagnostic_identifies_marker_exclusion(self):
@@ -216,6 +220,10 @@ class HistoryRecoveryTests(unittest.TestCase):
             "ledger_event_count": 7,
             "history_rows_restored": 0,
             "history_rows_excluded": 2,
+            "first_post_target_operation_counts": {"update_after": 2},
+            "excluded_rows_with_preboundary_snapshot": 0,
+            "excluded_rows_without_preboundary_snapshot": 2,
+            "excluded_rows_prior_snapshot_same_timestamp_as_boundary": 0,
         }])
 
     def test_target_hash_mismatch_holds(self):
