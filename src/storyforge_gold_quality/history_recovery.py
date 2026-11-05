@@ -632,7 +632,14 @@ def recover_cases_independently(cursor, cases: list[dict], *,
             """,
             (story_id, session_id, max_cutoff, max_target_time, max_history + 1),
         )
-        superset_rows = _fetchall(cursor, HISTORY_COLUMNS)
+        try:
+            superset_rows = _fetchall(cursor, HISTORY_COLUMNS)
+        except HistoryRecoveryError as exc:
+            # A malformed superset cannot be safely partitioned by target.
+            # Isolate the failure to this Session; other Sessions continue.
+            for case in active_cases:
+                holds_by_case[case["case_id"]] = str(exc)
+            continue
         if len(superset_rows) > max_history:
             # Safe fallback: original per-case SQL, with no partial superset.
             continue
@@ -649,9 +656,12 @@ def recover_cases_independently(cursor, cases: list[dict], *,
                 "turn_cutoff": cutoff,
                 "lineage_depth": 0,
             }
-            current_history_by_case[case["case_id"]] = _history(
-                cursor, story_id, segment, target_time, rows=eligible_rows,
-            )
+            try:
+                current_history_by_case[case["case_id"]] = _history(
+                    cursor, story_id, segment, target_time, rows=eligible_rows,
+                )
+            except HistoryRecoveryError as exc:
+                holds_by_case[case["case_id"]] = str(exc)
 
     recovered = []
     for case in sorted(cases, key=lambda item: item["case_id"]):
