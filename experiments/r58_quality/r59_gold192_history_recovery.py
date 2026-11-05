@@ -12,6 +12,7 @@ import os
 import re
 import stat
 import sys
+import time
 from collections import Counter
 from pathlib import Path
 
@@ -239,23 +240,72 @@ def recovery_query_stage(query: str) -> str:
 
 
 class RecoveryStageCursor:
-    """Track the last SQL phase, including failures raised while fetching rows."""
+    """Track query/fetch cost by safe query class without retaining SQL or values."""
 
     def __init__(self, cursor):
         self._cursor = cursor
         self.stage = "RECOVERY_QUERY_OTHER"
+        self._metrics = {}
+
+    def _metric(self):
+        return self._metrics.setdefault(self.stage, {
+            "query_count": 0, "execute_ms": 0.0,
+            "fetch_count": 0, "fetch_ms": 0.0, "rows_fetched": 0,
+        })
 
     def execute(self, query, params=None):
         self.stage = recovery_query_stage(str(query))
-        if params is None:
-            return self._cursor.execute(query)
-        return self._cursor.execute(query, params)
+        metric = self._metric()
+        metric["query_count"] += 1
+        started = time.perf_counter()
+        try:
+            if params is None:
+                return self._cursor.execute(query)
+            return self._cursor.execute(query, params)
+        finally:
+            metric["execute_ms"] += (time.perf_counter() - started) * 1000
 
     def fetchone(self):
-        return self._cursor.fetchone()
+        metric = self._metric()
+        metric["fetch_count"] += 1
+        started = time.perf_counter()
+        try:
+            row = self._cursor.fetchone()
+            metric["rows_fetched"] += int(row is not None)
+            return row
+        finally:
+            metric["fetch_ms"] += (time.perf_counter() - started) * 1000
 
     def fetchall(self):
-        return self._cursor.fetchall()
+        metric = self._metric()
+        metric["fetch_count"] += 1
+        started = time.perf_counter()
+        try:
+            rows = self._cursor.fetchall()
+            metric["rows_fetched"] += len(rows)
+            return rows
+        finally:
+            metric["fetch_ms"] += (time.perf_counter() - started) * 1000
+
+    def safe_metrics(self):
+        return {
+            "query_classes": {
+                key: {
+                    "query_count": value["query_count"],
+                    "execute_ms": round(value["execute_ms"], 3),
+                    "fetch_count": value["fetch_count"],
+                    "fetch_ms": round(value["fetch_ms"], 3),
+                    "rows_fetched": value["rows_fetched"],
+                }
+                for key, value in sorted(self._metrics.items())
+            },
+            "total_query_count": sum(v["query_count"] for v in self._metrics.values()),
+            "total_execute_ms": round(sum(v["execute_ms"] for v in self._metrics.values()), 3),
+            "total_fetch_ms": round(sum(v["fetch_ms"] for v in self._metrics.values()), 3),
+            "total_rows_fetched": sum(v["rows_fetched"] for v in self._metrics.values()),
+            "sql_text_retained": False,
+            "sql_parameters_retained": False,
+        }
 
     def __getattr__(self, name):
         return getattr(self._cursor, name)
@@ -821,6 +871,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         "ledger_detail_rows_loaded_total": sum(
             row["history_reconstruction"]["ledger_detail_rows_loaded"] for row in recovered
         ),
+        "performance_metrics": tracked_cursor.safe_metrics(),
         "duplicate_source_roots_reverified": len(verified_duplicate_indices),
         "duplicate_source_root_reverification_pilot_indices": sorted(
             verified_duplicate_indices
