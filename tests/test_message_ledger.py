@@ -305,6 +305,46 @@ class MessageLedgerTests(unittest.TestCase):
                 with self.assertRaisesRegex(ledger.LedgerRecoveryError, reason):
                     ledger._validate_event_locator(event, "story", "s")
 
+    def test_legacy_snapshot_without_mutation_revision_is_accepted_and_reported(self):
+        events = self.events + [
+            snapshot(5, "u1", "s", 1, "user", "update_before", 11),
+            marker(6, "u1", "s", 1, "user", "update_after", 11),
+        ]
+        del events[-2]["row_data"]["mutation_revision"]
+        rows, report = ledger.reconstruct_history(
+            [current("u1", "s", 1, "user", "edited", 1),
+             current("a2", "s", 2, "assistant", "reply"),
+             current("u3", "s", 3, "user", "next")],
+            events, self.target, "story", "s", 4,
+        )
+        self.assertEqual(
+            next(row for row in rows if row["message_id"] == "u1")["content"],
+            "old",
+        )
+        self.assertEqual(
+            report["history_rows_restored_from_legacy_snapshot_without_revision"], 1
+        )
+        self.assertEqual(
+            report["mutation_revision_evidence_state"],
+            "LEGACY_SNAPSHOT_REVISION_UNAVAILABLE",
+        )
+
+    def test_non_revision_ledger_updates_do_not_increment_revision_assumption(self):
+        events = self.events + [
+            marker(5, "u1", "s", 1, "user", "update_after", 4),
+            marker(6, "u1", "s", 1, "user", "update_after", 5),
+        ]
+        rows, report = ledger.reconstruct_history(
+            [current("u1", "s", 1, "user", "current", 0),
+             current("a2", "s", 2, "assistant", "reply"),
+             current("u3", "s", 3, "user", "next")],
+            events, self.target, "story", "s", 4,
+        )
+        self.assertIn("u1", {row["message_id"] for row in rows})
+        self.assertEqual(
+            report["history_rows_using_unchanged_current_state"], 3
+        )
+
     def test_event_limit_fails_closed(self):
         cursor = FakeCursor(self.events)
         with self.assertRaisesRegex(
@@ -338,7 +378,7 @@ class MessageLedgerTests(unittest.TestCase):
 
     def test_incomplete_snapshot_holds(self):
         bad = snapshot(5, "u1", "s", 1, "user", "delete", 11)
-        del bad["row_data"]["mutation_revision"]
+        del bad["row_data"]["content"]
         with self.assertRaisesRegex(
             ledger.LedgerRecoveryError, "LEDGER_SNAPSHOT_FIELDS_INCOMPLETE"
         ):
