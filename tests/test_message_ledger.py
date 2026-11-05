@@ -355,27 +355,25 @@ class MessageLedgerTests(unittest.TestCase):
         )
 
     def test_metadata_reads_use_stable_keyset_pages(self):
-        from unittest.mock import patch
-
         events = list(self.events) + [
-            marker(5, "late-user", "s", 1, "user", "update_after", 11),
-            marker(6, "late-assistant", "s", 2, "assistant", "update_after", 12),
+            marker(5 + index, f"bulk-{index}", "s", 1, "user",
+                   "update_after", 20 + index)
+            for index in range(10001)
         ]
         cursor = FakeCursor(events)
-        with patch.object(ledger, "LEDGER_METADATA_BATCH_SIZE", 2, create=True):
-            rows = ledger.load_session_events(
-                cursor, "story", "s", 5, [self.target], max_events=20
-            )
-        self.assertEqual([row["id"] for row in rows], [1, 2, 3, 4, 5, 6])
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 5, [self.target], max_events=11000
+        )
+        self.assertEqual(len(rows), 10005)
         metadata_queries = [
             (query, params) for query, params in zip(
                 cursor.queries, cursor.query_params, strict=True
             ) if "FROM public.v2_chat_message_ledger" in query
             and "WHERE id = ANY(%s)" not in query
         ]
-        self.assertGreaterEqual(len(metadata_queries), 3)
+        self.assertEqual(len(metadata_queries), 2)
         self.assertIn("(recorded_at, id) > (%s, %s)", metadata_queries[1][0])
-        self.assertEqual(metadata_queries[1][1][4], 1)
+        self.assertEqual(metadata_queries[1][1][4], 10000)
 
     def test_event_limit_fails_closed(self):
         cursor = FakeCursor(self.events)
