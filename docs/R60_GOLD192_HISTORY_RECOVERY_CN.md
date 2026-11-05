@@ -266,3 +266,13 @@ Recovery 采用唯一根消息的方案；本诊断本身不改变准入规则�
 保留私有本地证据并先诊断 reason code；不得直接扩大到 72 条。
 
 Pilot 成功也不构成 Quality-v1 admission、SFT 编译或训练授权。GPU 不启动。
+
+
+## Gold192 部分历史恢复与逐案准入原则（Owner 确认，2026-11-05）
+
+Gold192 不要求 192 条全部恢复或全部通过，不设最低准入数量。完整 Session 历史不是硬门槛；目标前可信的连续有限窗口可以进入后续审核，但窗口内每条消息的历史版本、身份、顺序和时间边界必须可验证，且不得跳过窗口内部缺失消息。
+
+具体分类、硬性证据门槛、Ledger 事件边界及工作顺序见
+[ R60 Gold192 部分历史恢复与逐案准入原则 ](R60_GOLD192_PARTIAL_HISTORY_ADMISSION_POLICY_CN.md)。
+
+该原则不自动改变审核决定或训练准入。有限窗口模式在实现、SAFE schema 和回归测试完成前，不得作为已支持的运行结果。当前仍保持 `quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
