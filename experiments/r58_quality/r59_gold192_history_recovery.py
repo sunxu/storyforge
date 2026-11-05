@@ -887,6 +887,21 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         "distinct_story_owner_count": owner_count,
         "history_message_count_total": sum(row["history_message_count"] for row in recovered),
         "ledger_sessions_read": len(ledger_session_keys),
+        # Per-case attribution may count the same Session event more than once
+        # when multiple target cases share a Session. Keep those totals explicit.
+        "ledger_events_attributed_to_recovered_cases_total": sum(
+            row["history_reconstruction"]["ledger_event_count"] for row in recovered
+        ),
+        "ledger_detail_rows_attributed_to_recovered_cases_total": sum(
+            row["history_reconstruction"]["ledger_detail_rows_loaded"] for row in recovered
+        ),
+        # These are unique rows returned by the actual batched SQL fetches.
+        "ledger_metadata_rows_fetched_total": performance_metrics["query_classes"].get(
+            "LEDGER_METADATA_QUERY", {}
+        ).get("rows_fetched", 0),
+        "ledger_detail_rows_fetched_total": performance_metrics["query_classes"].get(
+            "LEDGER_DETAIL_QUERY", {}
+        ).get("rows_fetched", 0),
         "ledger_events_read_total": sum(
             row["history_reconstruction"]["ledger_event_count"] for row in recovered
         ),
