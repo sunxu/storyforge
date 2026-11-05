@@ -276,6 +276,9 @@ def reconstruct_history(current_rows, events, target, story_id, session_id, cuto
             if state is None:
                 continue
             unchanged += 1
+        # update_after also records non-revision business changes such as turn
+        # compaction/client metadata. It is not a mutation_revision counter.
+        # Legacy to_jsonb(OLD) snapshots may predate the revision column entirely.
         revision = state.get("mutation_revision")
         if revision is None:
             if not (first and first["operation"] in SNAPSHOTS):
