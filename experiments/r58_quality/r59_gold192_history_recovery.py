@@ -139,7 +139,11 @@ def build_recovery_cases(
             held_indices.append({"pilot_index": pilot_index, "reason": reason})
             continue
         match_count = locator.get("matched_message_count")
-        if match_count != 1 and not (
+        is_single_match = (
+            isinstance(match_count, int) and not isinstance(match_count, bool)
+            and match_count == 1
+        )
+        if not is_single_match and not (
             match_count >= 2 and pilot_index in verified_duplicate_indices
         ):
             held_source["SOURCE_MATCH_COUNT_NOT_UNIQUE"] += 1
@@ -524,9 +528,12 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                 )
                 for pilot_index, case in enumerate(priority):
                     locator = locator_index[case["case_id"]]
-                    if locator.get("matched_message_count") == 1:
+                    match_count = locator.get("matched_message_count")
+                    if (isinstance(match_count, int) and not isinstance(match_count, bool)
+                            and match_count == 1):
                         continue
-                    if locator.get("matched_message_count", 0) < 2:
+                    if (not isinstance(match_count, int) or isinstance(match_count, bool)
+                            or match_count < 2):
                         raise ValueError("SOURCE_MATCH_COUNT_INVALID")
                     duplicate_proof = diagnose_duplicate_source(
                         cursor, case, locator, max_lineage_depth
