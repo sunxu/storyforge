@@ -44,14 +44,18 @@ def test_r60_b2_fails_closed_without_explicit_approvals():
 
 def test_r60_b2_has_no_automatic_destructive_or_privilege_actions():
     source = SCRIPT.read_text()
-    assert "CREATE INDEX CONCURRENTLY idx_v2_chat_message_ledger_r60_b2" in source
-    assert "INCLUDE (turn_index, message_id, role, operation)" in source
-    assert "IF NOT EXISTS" not in source
-    # A failed build must never auto-drop or auto-reindex other objects.
-    assert "DROP INDEX" not in source
-    assert "REINDEX" not in source
-    assert "ALTER ROLE" not in source
-    assert "GRANT " not in source
+    statements = "\n".join(
+        line for line in source.splitlines()
+        if not line.lstrip().startswith("#")
+    )
+    assert "CREATE INDEX CONCURRENTLY idx_v2_chat_message_ledger_r60_b2" in statements
+    assert "INCLUDE (turn_index, message_id, role, operation)" in statements
+    assert "IF NOT EXISTS" not in statements
+    # Ignore explanatory comments when checking for executable SQL actions.
+    assert "DROP INDEX" not in statements
+    assert "REINDEX" not in statements
+    assert "ALTER ROLE" not in statements
+    assert "GRANT " not in statements
     assert "R60_B2_DISK_APPROVED" in source
     assert "R60_B2_WAL_APPROVED" in source
     assert "R60_B2_WINDOW_APPROVED" in source
