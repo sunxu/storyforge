@@ -826,11 +826,13 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                 cases = build_recovery_cases(
                     priority, locator_index, verified_duplicate_indices
                 )
+                recovery_started = time.perf_counter()
                 recovered, case_holds = recover_cases_independently(
                     tracked_cursor, cases, max_history=max_history,
                     max_lineage_depth=max_lineage_depth,
                     max_ledger_events=max_ledger_events,
                 )
+                recovery_wall_ms = (time.perf_counter() - recovery_started) * 1000
             stage = "ROLLBACK"
             db.rollback()
     except psycopg.Error as exc:
@@ -852,6 +854,18 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     summary_counts = Counter(row["summary_status"] for row in recovered)
     content_counts = Counter(row["story_content_version_status"] for row in recovered)
     hold_reason_counts = Counter(row["reason_code"] for row in case_holds)
+    recovered_case_ids = {row["case_id"] for row in recovered}
+    hold_reason_by_case = {
+        row["case_id"]: row["reason_code"] for row in case_holds
+    }
+    ledger_session_keys = {
+        (case["story_id"], case["session_id"])
+        for case in cases
+        if (case["case_id"] in recovered_case_ids
+            or not hold_reason_by_case.get(case["case_id"], "").startswith("TARGET_"))
+    }
+    performance_metrics = tracked_cursor.safe_metrics()
+    performance_metrics["recovery_wall_ms"] = round(recovery_wall_ms, 3)
     safe = {
         "schema": "r59_gold192_historical_context_safe_v1",
         "status": (
@@ -864,20 +878,22 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         "pilot_recovered": len(recovered),
         "pilot_held": len(case_holds),
         "case_hold_reason_counts": dict(sorted(hold_reason_counts.items())),
-        "story_count": len({row["story_id"] for row in recovered}),
+        "story_count": len({case["story_id"] for case in cases}),
+        "recovered_story_count": len({row["story_id"] for row in recovered}),
+        "candidate_session_count": len({
+            (case["story_id"], case["session_id"]) for case in cases
+        }),
         "story_owner_scope_verified": True,
         "distinct_story_owner_count": owner_count,
         "history_message_count_total": sum(row["history_message_count"] for row in recovered),
-        "ledger_sessions_read": len({
-            (row["story_id"], row["session_id"]) for row in recovered
-        }),
+        "ledger_sessions_read": len(ledger_session_keys),
         "ledger_events_read_total": sum(
             row["history_reconstruction"]["ledger_event_count"] for row in recovered
         ),
         "ledger_detail_rows_loaded_total": sum(
             row["history_reconstruction"]["ledger_detail_rows_loaded"] for row in recovered
         ),
-        "performance_metrics": tracked_cursor.safe_metrics(),
+        "performance_metrics": performance_metrics,
         "duplicate_source_roots_reverified": len(verified_duplicate_indices),
         "duplicate_source_root_reverification_pilot_indices": sorted(
             verified_duplicate_indices
