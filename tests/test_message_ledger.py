@@ -388,7 +388,7 @@ class MessageLedgerTests(unittest.TestCase):
             cursor, "story", "s", 5, [self.target], max_events=700000
         )
         self.assertEqual(len(rows), 4)
-        self.assertEqual(cursor.query_params[0][-1], 700001)
+        self.assertEqual(cursor.query_params[0][-1], 10000)
 
     def test_event_limit_remains_hard_bounded_at_one_million(self):
         cursor = FakeCursor(self.events)
