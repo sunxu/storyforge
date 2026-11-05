@@ -155,8 +155,20 @@ python3 experiments/r58_quality/r59_gold192_supabase_extract.py \
   --output-dir "$SOURCE" \
   --pilot 8
 
-# 2. Historical Context Recovery Pilot8：使用刚生成的 locator + SAFE，
-#    恢复 8 条候选的 Ledger / Session 历史证据。
+# 2. 先做无数据库身份诊断：只读本地文件，输出聚合 HOLD 原因；
+#    即使全部通过也会在连接数据库前退出。
+python3 experiments/r58_quality/r59_gold192_history_recovery.py \
+  --reviewer-a "$PRIVATE/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
+  --reviewer-b "$PRIVATE/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
+  --exclusions "$PRIVATE/quality-v1/QUALITY_V1_EXCLUDED_CASES.jsonl" \
+  --source-packets "$R59_PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
+  --source-locators "$SOURCE/R59_SOURCE_LOCATORS_192.jsonl" \
+  --source-safe "$SOURCE/R59_SOURCE_SAFE.json" \
+  --output-dir "$HISTORY" \
+  --pilot 8 \
+  --diagnose-source-only
+
+# 3. 只有在无数据库诊断 PASS 后，才执行数据库只读历史恢复。
 python3 experiments/r58_quality/r59_gold192_history_recovery.py \
   --reviewer-a "$PRIVATE/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
   --reviewer-b "$PRIVATE/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
