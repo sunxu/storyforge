@@ -1,0 +1,50 @@
+{
+  "schema": "storyforge-v02-r40-corrective-checkpoint-v1",
+  "date": "2026-10-14",
+  "r37_source_sha256": "f108c2b85ae096fd00e49e23e50d00b1cf0cf779682793ea6e3951e700b9e7c9",
+  "r39_source_zip_sha256": "0a4f2086dbaeb5fd3fc1f7f24d4930a27399e0d69ed64d7aacbf57fcb1b68c95",
+  "raw_candidates": 82,
+  "quality_only_quarantined_ids": [
+    "na-gold-t0029",
+    "s10-gold-r04-t01717",
+    "sf14-gold-t02236"
+  ],
+  "remaining_conditional": 79,
+  "split_analysis_only": [
+    {
+      "name": "R37_OLD",
+      "train": 62,
+      "validation": 17
+    },
+    {
+      "name": "BALANCED_A",
+      "train": 62,
+      "validation": 17,
+      "validation_sizes": [
+        8,
+        7,
+        2
+      ]
+    },
+    {
+      "name": "DIVERSE_B",
+      "train": 64,
+      "validation": 15
+    },
+    {
+      "name": "FOUR_STORY",
+      "train": 61,
+      "validation": 18
+    }
+  ],
+  "world_alias_cleared": false,
+  "rights_source_story_groups_signed": 0,
+  "scene_age_content_signed": 0,
+  "independent_heldout_received": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "paid_gpu_authorized": false,
+  "paid_gpu_started": false,
+  "release": "BLOCKED_BY_EXTERNAL_EVIDENCE",
+  "private_source_targets_added_to_git": false
+}
