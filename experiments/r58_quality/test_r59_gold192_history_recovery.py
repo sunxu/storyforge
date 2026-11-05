@@ -213,6 +213,22 @@ class Gold192HistoryAdapterTests(unittest.TestCase):
             }],
         )
 
+    def test_duplicate_exact_match_requires_verified_unique_root(self):
+        priority = [{
+            "case_id": "case-a", "story_id": "story-a",
+            "turn_index": 12, "target_sha256": "a" * 64,
+        }]
+        locator = {
+            "case_id": "case-a", "source_status": "EXACT_MATCH",
+            "matched_message_count": 2, "message_id": "root-message",
+            "session_id": "root-session",
+        }
+        cases = adapter.build_recovery_cases(
+            priority, {"case-a": locator}, verified_duplicate_indices={0}
+        )
+        self.assertEqual(cases[0]["session_id"], "root-session")
+        self.assertEqual(cases[0]["turn_index"], 12)
+
     def test_unique_exact_match_is_accepted(self):
         priority = [{
             "case_id": "case-a", "story_id": "story-a",
