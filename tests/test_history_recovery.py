@@ -271,11 +271,11 @@ class HistoryRecoveryTests(unittest.TestCase):
         result = h.recover_case(self.cursor, self.case)
         self.assertIn("c1", {row["message_id"] for row in result["history"]})
 
-    def test_unlogged_status_or_partial_mutation_holds(self):
+    def test_negative_current_mutation_revision_holds(self):
         current = next(row for row in self.cursor.messages if row["message_id"] == "c1")
-        current["mutation_revision"] = 1
+        current["mutation_revision"] = -1
         with self.assertRaisesRegex(
-            h.HistoryRecoveryError, "LEDGER_MUTATION_REVISION_MISMATCH"
+            h.HistoryRecoveryError, "LEDGER_MUTATION_REVISION_INVALID"
         ):
             h.recover_case(self.cursor, self.case)
 
