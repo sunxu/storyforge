@@ -200,3 +200,55 @@ Ledger commit-order 与 trigger-continuity 仍未认证；因此不得把 `recor
 2. 对 B2 继续做更多查询形态的计划回归检查；成本改善不能替代生产负载回归。
 3. 由 DBA/Owner 提供可用磁盘、WAL、replica lag、写入负载的安全聚合证据后，再决定是否形成正式索引变更申请。
 4. Pilot8 v3 仍需单独授权。
+
+
+## 10. 后续增量：Current History Session 级复用实现（2026-11-05）
+
+上一版第 5.4 节中的方案已实现为受限优化，不再只是设计候选。
+
+实现位置：`src/storyforge_gold_quality/history_recovery.py`
+
+行为：
+
+1. 在 `recover_cases_independently` 中按 `(story_id, session_id)` 分组。
+2. 对有效目标取最大物理 Turn cutoff 与最大 target `created_at`，读取一次有界 superset。
+3. SQL 保留 Story、Session、Turn、时间和 role 条件，并按 `created_at, id` 排序。
+4. 每个 Case 在内存中重新应用自己的 `created_at < target_time` 与 `turn_index <= target_turn - 1`。
+5. 每个 Case 仍走原有 `_history` 行验证、Ledger 重建、排序、去重、history limit 和 suffix 检查。
+6. superset 使用 `LIMIT max_history + 1`。若结果超过 `max_history`，不使用部分数据，自动回退原有逐 Case 查询。
+7. 不同 Story/Session 不共享；单 Case API 不改变行为。
+
+新增测试：`tests/test_current_history_session_reuse.py`
+
+- 同 Session 双目标只发出一次 superset SQL。
+- 较早目标不读取较晚目标时间之后的消息。
+- 较早目标不读取其 Turn cutoff 之后的消息。
+- 超大 superset 不截断，传入 `None` 触发原逐案查询回退。
+
+同步更新 `tests/test_history_recovery.py` FakeCursor，以识别新查询形态。
+
+### CI 结果
+
+修复首轮 Ruff 和 FakeCursor 兼容性失败后，最新 CI：
+
+- GitHub Actions CI：PASS
+- Ruff changed Python files：PASS
+- pytest：723 passed, 5 skipped, 33 subtests passed
+- Gold Quality Pipeline：PASS（178 tests）
+
+CI run：
+- CI #2005：`42005980101`
+- Gold Quality Pipeline #927：`42005980282`
+
+### 性能解释边界
+
+本轮没有生产 Current History v3 重跑，因此尚无新的数据库 wall-time 数值。代码层面同 Session 的 Current History 查询数从每 Case 一次降为每 Session 一次（仅在 superset 不超过 max_history 时）；超限则安全回退。实际收益必须通过单独批准的只读 Pilot 验证。
+
+### 安全语义
+
+- 不改变 Ledger `(recorded_at, id)` 顺序。
+- 不改变 UPDATE_BEFORE / UPDATE_AFTER、snapshot、marker 或 target boundary 逻辑。
+- 不改变历史时间边界、Story / Session 身份、fork child materialized history 规则。
+- 不改变 `HISTORY_SUFFIX_NOT_USER` 逐案 HOLD。
+- 不修改数据库，不创建真实索引，不执行 ANALYZE / GRANT / REVOKE。
+- 无 GPU、无训练、无 Quality-v1 admission。
