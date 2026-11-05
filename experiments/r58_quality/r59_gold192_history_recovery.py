@@ -750,7 +750,7 @@ def main() -> int:
     try:
         if (args.pilot < 0 or args.pilot > 72 or args.max_history < 1
                 or not 1 <= args.max_lineage_depth <= 64
-                or not 1 <= args.max_ledger_events <= 500000):
+                or not 1 <= args.max_ledger_events <= 1000000):
             raise ValueError("PARAMETERS_INVALID")
         dsn = os.environ.get("STORYFORGE_SUPABASE_DSN")
         if not dsn and not args.diagnose_source_only:
