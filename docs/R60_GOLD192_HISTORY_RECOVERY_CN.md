@@ -180,7 +180,33 @@ python3 experiments/r58_quality/r59_gold192_history_recovery.py \
   --pilot 8
 ```
 
-执行后只回传两次命令各自的 SAFE stdout（JSON）。不得回传 DSN、私有 JSONL、
+如果 `--diagnose-source-only` 返回 `SOURCE_MATCH_COUNT_NOT_UNIQUE`，
+使用下面的定点诊断。它只允许通过本机 DSN 连接 `r58_export_reader`，
+并会在连接后强制检查 `transaction_read_only=on`、`row_security=on`、
+`rolsuper=false`、`rolbypassrls=false`。若角色不符合要求，立即拒绝查询。
+该模式只读取指定 Pilot 序号对应的一组 story/turn 消息与其 Session parent lineage，
+不写文件、不恢复历史、不生成训练候选。
+
+```bash
+python3 experiments/r58_quality/r59_gold192_history_recovery.py \
+  --reviewer-a "$PRIVATE/R58_GOLD192_REVIEWER_A_RESULTS_20261102.json" \
+  --reviewer-b "$PRIVATE/R58_GOLD192_REVIEWER_B_RESULTS_20261102.json" \
+  --exclusions "$PRIVATE/quality-v1/QUALITY_V1_EXCLUDED_CASES.jsonl" \
+  --source-packets "$R59_PRIVATE/GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl" \
+  --source-locators "$SOURCE/R59_SOURCE_LOCATORS_192.jsonl" \
+  --source-safe "$SOURCE/R59_SOURCE_SAFE.json" \
+  --output-dir "$HISTORY" \
+  --pilot 8 \
+  --diagnose-duplicate-source-index 4
+```
+
+这里只允许使用 Owner 本机私有凭据管理器中的 `STORYFORGE_SUPABASE_DSN`，
+不得使用具有 `BYPASSRLS` 的 ChatGPT/管理连接。SAFE 只输出 Pilot 序号、匹配数量、
+不同消息/Session 数量、根 Session 数量及 lineage 完整性，不输出任何 ID 或正文。
+若结果证明唯一根消息且所有重复匹配均位于该根的后代 Session，可进一步评估
+Recovery 采用唯一根消息的方案；本诊断本身不改变准入规则，不能直接放行。
+
+执行后只回传各命令的 SAFE stdout（JSON）。不得回传 DSN、私有 JSONL、
 故事正文、消息正文、message/session/story ID 或原始数据库日志。若任一步返回 HOLD，
 保留私有本地证据并先诊断 reason code；不得直接扩大到 72 条。
 
