@@ -27,7 +27,7 @@ from experiments.r58_quality.r59_gold192_supabase_extract import (  # noqa: E402
     select_candidates,
 )
 from storyforge_gold_quality.history_recovery import (  # noqa: E402
-    diagnose_history_suffixes, recover_cases,
+    diagnose_history_suffixes, recover_cases_independently,
 )
 
 MAX_INPUT_BYTES = 160 * 1024 * 1024
@@ -826,7 +826,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                 cases = build_recovery_cases(
                     priority, locator_index, verified_duplicate_indices
                 )
-                recovered = recover_cases(
+                recovered, case_holds = recover_cases_independently(
                     tracked_cursor, cases, max_history=max_history,
                     max_lineage_depth=max_lineage_depth,
                     max_ledger_events=max_ledger_events,
@@ -840,7 +840,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
         raise DatabaseFailure(failure_stage, sqlstate, type(exc).__name__) from None
 
-    if len(recovered) != len(cases):
+    if len(recovered) + len(case_holds) != len(cases):
         raise ValueError("RECOVERY_COUNT_INVALID")
     output_dir.mkdir(mode=0o700, parents=False)
     if stat.S_IMODE(output_dir.stat().st_mode) != 0o700:
@@ -851,13 +851,19 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     private_sha = create_only(output_dir / private_name, private_payload)
     summary_counts = Counter(row["summary_status"] for row in recovered)
     content_counts = Counter(row["story_content_version_status"] for row in recovered)
+    hold_reason_counts = Counter(row["reason_code"] for row in case_holds)
     safe = {
         "schema": "r59_gold192_historical_context_safe_v1",
-        "status": "GOLD192_HISTORICAL_CONTEXT_RECOVERED__NOT_ADMITTED",
+        "status": (
+            "GOLD192_HISTORICAL_CONTEXT_PARTIAL__NOT_ADMITTED"
+            if case_holds else "GOLD192_HISTORICAL_CONTEXT_RECOVERED__NOT_ADMITTED"
+        ),
         "gold192_total": 192,
         "reviewer_ab_priority_total": len(selected),
         "pilot_requested": len(priority),
         "pilot_recovered": len(recovered),
+        "pilot_held": len(case_holds),
+        "case_hold_reason_counts": dict(sorted(hold_reason_counts.items())),
         "story_count": len({row["story_id"] for row in recovered}),
         "story_owner_scope_verified": True,
         "distinct_story_owner_count": owner_count,
