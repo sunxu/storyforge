@@ -12,10 +12,10 @@ from typing import Any
 
 from .message_ledger import (
     LedgerRecoveryError,
+    _key,
     load_session_events,
     reconstruct_history,
     target_boundary,
-    _key,
 )
 
 SESSION_COLUMNS = (
