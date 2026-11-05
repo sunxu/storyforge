@@ -336,6 +336,54 @@ class HistoryRecoveryTests(unittest.TestCase):
             results[0]["history_reconstruction"]["ledger_event_count"], 5
         )
 
+    def test_lineage_cache_avoids_reloading_same_session_chain(self):
+        class CountingCursor:
+            def __init__(self, inner):
+                self.inner = inner
+                self.execute_count = 0
+
+            def execute(self, *args, **kwargs):
+                self.execute_count += 1
+                return self.inner.execute(*args, **kwargs)
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+        cursor = CountingCursor(self.cursor)
+        session_cache = {}
+        lineage_cache = {}
+        first = h._lineage(
+            cursor, "story-a", "child", 16,
+            session_cache=session_cache, lineage_cache=lineage_cache,
+        )
+        second = h._lineage(
+            cursor, "story-a", "child", 16,
+            session_cache=session_cache, lineage_cache=lineage_cache,
+        )
+        self.assertEqual(first, second)
+        self.assertEqual(cursor.execute_count, 2)
+        self.assertEqual(set(session_cache), {("story-a", "child"), ("story-a", "parent")})
+
+    def test_story_version_cache_avoids_duplicate_version_queries(self):
+        class CountingCursor:
+            def __init__(self, inner):
+                self.inner = inner
+                self.execute_count = 0
+
+            def execute(self, *args, **kwargs):
+                self.execute_count += 1
+                return self.inner.execute(*args, **kwargs)
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+        cursor = CountingCursor(self.cursor)
+        cache = {}
+        first = h._story_versions(cursor, "story-a", dt(10), cache)
+        second = h._story_versions(cursor, "story-a", dt(10), cache)
+        self.assertEqual(first, second)
+        self.assertEqual(cursor.execute_count, 2)
+
     def test_duplicate_case_set_fails(self):
         with self.assertRaisesRegex(h.HistoryRecoveryError, "CASE_SET_DUPLICATE"):
             h.recover_cases(self.cursor, [self.case, self.case])
