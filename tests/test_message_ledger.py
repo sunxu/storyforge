@@ -278,12 +278,12 @@ class MessageLedgerTests(unittest.TestCase):
         )
         self.assertNotIn("stream", {row["message_id"] for row in rows})
 
-    def test_unlogged_mutation_revision_mismatch_holds(self):
+    def test_negative_current_mutation_revision_holds(self):
         with self.assertRaisesRegex(
-            ledger.LedgerRecoveryError, "LEDGER_MUTATION_REVISION_MISMATCH"
+            ledger.LedgerRecoveryError, "LEDGER_MUTATION_REVISION_INVALID"
         ):
             ledger.reconstruct_history(
-                [current("u1", "s", 1, "user", "changed", 1),
+                [current("u1", "s", 1, "user", "changed", -1),
                  current("a2", "s", 2, "assistant", "reply"),
                  current("u3", "s", 3, "user", "next")],
                 self.events, self.target, "story", "s", 4,
