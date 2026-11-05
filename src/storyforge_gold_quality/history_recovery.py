@@ -616,8 +616,8 @@ def recover_cases_independently(cursor, cases: list[dict], *,
         leaf = chain[0]["session"]
         max_cutoff = max(case["turn_index"] - 1 for case in active_cases)
         max_target_time = max(
-            (_datetime(targets_by_case[case["case_id"]]["created_at"])
-             for case in active_cases)
+            _datetime(targets_by_case[case["case_id"]]["created_at"])
+            for case in active_cases
         )
         cursor.execute(
             """
