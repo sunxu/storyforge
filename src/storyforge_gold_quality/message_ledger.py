@@ -75,6 +75,7 @@ def _required_event_ids(events, targets):
 
 def load_session_events(cursor, story_id, session_id, max_turn_index,
                         targets, max_events=100000):
+    metadata_batch_size = 10000
     if (not isinstance(story_id, str) or not story_id
             or not isinstance(session_id, str) or not session_id
             or type(max_turn_index) is not int or max_turn_index < 1
@@ -94,38 +95,64 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
     # Read only compact event metadata in bulk. Large JSONB before-images are
     # fetched by primary key only for target boundaries and first post-target
     # events that can affect reconstruction.
-    cursor.execute(
-        """
-        SELECT id, message_id::text AS message_id,
-               story_id::text AS story_id, session_id::text AS session_id,
-               role::text AS role, turn_index::integer AS turn_index,
-               operation::text AS operation, recorded_at
-        FROM public.v2_chat_message_ledger
-        WHERE story_id = %s AND session_id = %s
-          AND turn_index BETWEEN 1 AND %s
-        ORDER BY recorded_at, id
-        LIMIT %s
-        """,
-        (story_id, session_id, max_turn_index, max_events + 1),
-    )
     result = []
     metadata_columns = (
         "id", "message_id", "story_id", "session_id", "role",
         "turn_index", "operation", "recorded_at",
     )
-    for row in cursor.fetchall():
-        if isinstance(row, Mapping):
-            event = dict(row)
-        elif isinstance(row, (tuple, list)) and len(row) == len(metadata_columns):
-            event = dict(zip(metadata_columns, row, strict=True))
+    last_key = None
+    while len(result) <= max_events:
+        page_limit = min(metadata_batch_size, max_events + 1 - len(result))
+        if last_key is None:
+            query = """
+                SELECT id, message_id::text AS message_id,
+                       story_id::text AS story_id, session_id::text AS session_id,
+                       role::text AS role, turn_index::integer AS turn_index,
+                       operation::text AS operation, recorded_at
+                FROM public.v2_chat_message_ledger
+                WHERE story_id = %s AND session_id = %s
+                  AND turn_index BETWEEN 1 AND %s
+                ORDER BY recorded_at, id
+                LIMIT %s
+            """
+            params = (story_id, session_id, max_turn_index, page_limit)
         else:
-            raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
-        _validate_event_locator(event, story_id, session_id)
-        _key(event)
-        event["row_data"] = None
-        result.append(event)
-    if len(result) > max_events:
-        raise LedgerRecoveryError("LEDGER_SESSION_EVENT_LIMIT_EXCEEDED")
+            query = """
+                SELECT id, message_id::text AS message_id,
+                       story_id::text AS story_id, session_id::text AS session_id,
+                       role::text AS role, turn_index::integer AS turn_index,
+                       operation::text AS operation, recorded_at
+                FROM public.v2_chat_message_ledger
+                WHERE story_id = %s AND session_id = %s
+                  AND turn_index BETWEEN 1 AND %s
+                  AND (recorded_at, id) > (%s, %s)
+                ORDER BY recorded_at, id
+                LIMIT %s
+            """
+            params = (
+                story_id, session_id, max_turn_index,
+                last_key[0], last_key[1], page_limit,
+            )
+        cursor.execute(query, params)
+        page = cursor.fetchall()
+        if not page:
+            break
+        for row in page:
+            if isinstance(row, Mapping):
+                event = dict(row)
+            elif isinstance(row, (tuple, list)) and len(row) == len(metadata_columns):
+                event = dict(zip(metadata_columns, row, strict=True))
+            else:
+                raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
+            _validate_event_locator(event, story_id, session_id)
+            _key(event)
+            event["row_data"] = None
+            result.append(event)
+        if len(result) > max_events:
+            raise LedgerRecoveryError("LEDGER_SESSION_EVENT_LIMIT_EXCEEDED")
+        last_key = (result[-1]["recorded_at"], result[-1]["id"])
+        if len(page) < page_limit:
+            break
 
     detail_ids = _required_event_ids(result, targets)
     details = {}
