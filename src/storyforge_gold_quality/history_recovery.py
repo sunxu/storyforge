@@ -11,10 +11,10 @@ from datetime import datetime
 from typing import Any
 
 from .message_ledger import (
+    _key,
     LedgerRecoveryError,
     MARKERS,
     SNAPSHOTS,
-    _key,
     load_session_events,
     reconstruct_history,
     target_boundary,
