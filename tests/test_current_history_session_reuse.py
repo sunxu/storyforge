@@ -120,6 +120,25 @@ class SessionHistoryReuseTests(unittest.TestCase):
         self.assertEqual(len(recovered), 2)
         self.assertEqual(holds, [])
 
+    def test_invalid_row_holds_only_targets_whose_boundary_includes_it(self):
+        case_a, target_a = _target("case-a", 5, 10)
+        case_b, target_b = _target("case-b", 8, 20)
+        invalid = _message("bad-row", 5, 12)
+        invalid["role"] = "system"
+        rows = [_message("m1", 2, 5), invalid]
+        cursor, captured, recovered, holds = self._run_recovery(
+            [case_a, case_b], [target_a, target_b], rows
+        )
+
+        self.assertEqual(
+            [row["message_id"] for row in captured["case-a"]], ["m1"]
+        )
+        self.assertNotIn("case-b", captured)
+        self.assertEqual([row["case_id"] for row in recovered], ["case-a"])
+        self.assertEqual(
+            holds, [{"case_id": "case-b", "reason_code": "HISTORY_MESSAGE_SHAPE_INVALID"}]
+        )
+
     def test_oversized_superset_uses_original_per_case_fallback(self):
         case_a, target_a = _target("case-a", 5, 10)
         case_b, target_b = _target("case-b", 8, 20)
