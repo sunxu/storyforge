@@ -12,6 +12,8 @@ from typing import Any
 
 from .message_ledger import (
     LedgerRecoveryError,
+    MARKERS,
+    SNAPSHOTS,
     _key,
     load_session_events,
     reconstruct_history,
@@ -523,6 +525,35 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                 if later_suffix_events:
                     suffix_operation = later_suffix_events[0]["operation"]
 
+            events_by_message = {}
+            for event in events:
+                events_by_message.setdefault(event["message_id"], []).append(event)
+            first_operation_counts = {}
+            excluded_with_prior_snapshot = 0
+            excluded_without_prior_snapshot = 0
+            excluded_prior_snapshot_same_timestamp = 0
+            for row in current_history:
+                row_events = events_by_message.get(row["message_id"], [])
+                later_events = sorted(
+                    (event for event in row_events if _key(event) > boundary),
+                    key=_key,
+                )
+                if not later_events:
+                    continue
+                operation = later_events[0]["operation"]
+                first_operation_counts[operation] = first_operation_counts.get(operation, 0) + 1
+                if operation in MARKERS:
+                    prior_snapshots = [
+                        event for event in row_events
+                        if event["operation"] in SNAPSHOTS and _key(event) <= boundary
+                    ]
+                    if prior_snapshots:
+                        excluded_with_prior_snapshot += 1
+                        if _key(max(prior_snapshots, key=_key))[0] == boundary[0]:
+                            excluded_prior_snapshot_same_timestamp += 1
+                    else:
+                        excluded_without_prior_snapshot += 1
+
             suffix_fields = {
                 "current_history_message_count": len(current_history),
                 "current_history_suffix_role": (
@@ -546,6 +577,10 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                 "history_rows_excluded": reconstruction[
                     "history_rows_excluded_by_post_target_marker"
                 ],
+                "first_post_target_operation_counts": dict(sorted(first_operation_counts.items())),
+                "excluded_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
+                "excluded_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
+                "excluded_rows_prior_snapshot_same_timestamp_as_boundary": excluded_prior_snapshot_same_timestamp,
             }
             if not history or recovered_suffix["role"] != "user":
                 results.append({
@@ -577,6 +612,10 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                     "current_history_suffix_role"
                 ],
                 "current_suffix_first_post_target_operation": suffix_operation,
+                "first_post_target_operation_counts": suffix_fields["first_post_target_operation_counts"],
+                "excluded_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
+                "excluded_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
+                "excluded_rows_prior_snapshot_same_timestamp_as_boundary": excluded_prior_snapshot_same_timestamp,
             })
         except HistoryRecoveryError as exc:
             reason = str(exc)
