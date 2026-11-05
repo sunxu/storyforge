@@ -13,6 +13,7 @@ class FakeCursor:
     def __init__(self):
         self.rows = []
         self.one = None
+        self.queries = []
         self.sessions = {
             "child": {
                 "session_id": "child", "parent_session_id": "parent",
@@ -103,6 +104,7 @@ class FakeCursor:
         }
 
     def execute(self, query, params=()):
+        self.queries.append(query)
         self.rows, self.one = [], None
         if "WHERE id = ANY(%s)" in query:
             ids = set(params[0])
@@ -125,7 +127,14 @@ class FakeCursor:
         elif "FROM public.story_v2_sessions" in query:
             self.one = self.sessions.get(params[1])
         elif "FROM public.v2_chat_messages" in query and "AND role = 'assistant'" in query:
-            self.rows = [self.target] if params[1] == "child" and params[2] == 7 else []
+            if "turn_index = ANY(%s)" in query:
+                self.rows = (
+                    [self.target]
+                    if params[1] == "child" and self.target["turn_index"] in params[2]
+                    else []
+                )
+            else:
+                self.rows = [self.target] if params[1] == "child" and params[2] == 7 else []
         elif "FROM public.v2_chat_messages" in query:
             story_id, session_id, cutoff, target_time = params
             self.rows = [
@@ -334,6 +343,9 @@ class HistoryRecoveryTests(unittest.TestCase):
         )
         self.assertEqual(
             results[0]["history_reconstruction"]["ledger_event_count"], 5
+        )
+        self.assertEqual(
+            sum("turn_index = ANY(%s)" in query for query in self.cursor.queries), 1
         )
 
     def test_lineage_cache_avoids_reloading_same_session_chain(self):
