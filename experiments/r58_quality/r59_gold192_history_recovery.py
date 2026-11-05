@@ -123,8 +123,12 @@ class PilotSourceIdentityHold(ValueError):
         super().__init__("PILOT_SOURCE_IDENTITY_HOLD")
 
 
-def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -> list[dict]:
+def build_recovery_cases(
+    priority: list[dict], locator_index: dict[str, dict],
+    verified_duplicate_indices: set[int] | None = None,
+) -> list[dict]:
     cases = []
+    verified_duplicate_indices = verified_duplicate_indices or set()
     held_source = Counter()
     held_indices = []
     for pilot_index, case in enumerate(priority):
@@ -134,12 +138,15 @@ def build_recovery_cases(priority: list[dict], locator_index: dict[str, dict]) -
             held_source[reason] += 1
             held_indices.append({"pilot_index": pilot_index, "reason": reason})
             continue
-        if locator.get("matched_message_count") != 1:
+        match_count = locator.get("matched_message_count")
+        if match_count != 1 and not (
+            match_count >= 2 and pilot_index in verified_duplicate_indices
+        ):
             held_source["SOURCE_MATCH_COUNT_NOT_UNIQUE"] += 1
             held_indices.append({
                 "pilot_index": pilot_index,
                 "reason": "SOURCE_MATCH_COUNT_NOT_UNIQUE",
-                "matched_message_count": locator.get("matched_message_count"),
+                "matched_message_count": match_count,
             })
             continue
         session_id = locator.get("session_id")
@@ -488,8 +495,6 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             "r50_accessed": False,
         }
 
-    cases = build_recovery_cases(priority, locator_index)
-
     if output_dir.exists() or output_dir.is_symlink():
         raise ValueError("OUTPUT_ALREADY_EXISTS")
     if (not output_dir.parent.is_dir() or output_dir.parent.is_symlink()
@@ -515,6 +520,22 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             with db.cursor() as cursor:
                 owner_count = verify_story_owner_scope(
                     cursor, sorted({case["story_id"] for case in packet_index.values()})
+                )
+                verified_duplicate_indices = set()
+                for pilot_index, case in enumerate(priority):
+                    locator = locator_index[case["case_id"]]
+                    if locator.get("matched_message_count") == 1:
+                        continue
+                    if locator.get("matched_message_count", 0) < 2:
+                        raise ValueError("SOURCE_MATCH_COUNT_INVALID")
+                    duplicate_proof = diagnose_duplicate_source(
+                        cursor, case, locator, max_lineage_depth
+                    )
+                    if duplicate_proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
+                        raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+                    verified_duplicate_indices.add(pilot_index)
+                cases = build_recovery_cases(
+                    priority, locator_index, verified_duplicate_indices
                 )
                 recovered = recover_cases(
                     cursor, cases, max_history=max_history,
