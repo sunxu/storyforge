@@ -17,14 +17,14 @@
 
 ## 2. T0：代码基线与审计范围
 
-工作分支相对 `r60/gold192-ledger-diagnostics` ahead 2 / behind 0；本轮读取的共享代码文件 Blob SHA：
+工作分支以 `r60/gold192-ledger-diagnostics` 为基线；初始 T0 审计读取的共享代码文件 Blob SHA：
 
 | 文件 | Blob SHA |
 |---|---|
 | `src/storyforge_gold_quality/message_ledger.py` | `b72cf37dbc0d9f57c9a219b23fd370b51f79ed08` |
 | `src/storyforge_gold_quality/history_recovery.py` | `6be6a42e3de564a6da465fd5ee9c0a16a8ee2906` |
 
-本轮未修改共享 Ledger / Recovery 核心。
+初始 T0 审计阶段未修改共享 Ledger / Recovery 核心；后续第 10 节记录了 Current History 读取路径的受限优化，未修改 Ledger 事件重建实现。
 
 ## 3. T1：Supabase Connector 核验
 
@@ -252,3 +252,23 @@ CI run：
 - 不改变 `HISTORY_SUFFIX_NOT_USER` 逐案 HOLD。
 - 不修改数据库，不创建真实索引，不执行 ANALYZE / GRANT / REVOKE。
 - 无 GPU、无训练、无 Quality-v1 admission。
+
+
+### 10.1 边界与 HOLD 隔离补充
+
+新增回归覆盖：
+
+- 与目标 `created_at` 完全相等的消息仍被排除（严格小于，不是小于等于）。
+- 目标 Turn cutoff 之后、但时间早于目标的消息仍被排除。
+- 某条消息只落入较晚目标的边界且存在非法 role 时，只对该目标产生 `HISTORY_MESSAGE_SHAPE_INVALID`；同 Session 较早目标仍可独立恢复。
+- 无法安全解析的 superset row shape 会对该 Session 的活动 Case fail-closed，不影响其他 Session。
+
+Connector 对当前 History superset SQL 的普通 EXPLAIN（无 ANALYZE）观察到：
+
+- `Limit -> Sort -> Index Scan`
+- 使用既有 `idx_v2_messages_lineage_match`
+- Sort Key：`created_at, id`
+- `created_at < target_time` 仍作为 Filter
+- Planner Total Cost 约 11.23，Plan Rows 估算 1
+
+该结果仅是计划结构观察，不能代表实际返回行数、磁盘读取或 wall time；当前 History 仍需独立只读 Pilot 测量收益。
