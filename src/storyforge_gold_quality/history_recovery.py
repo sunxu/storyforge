@@ -577,10 +577,10 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                 "history_rows_excluded": reconstruction[
                     "history_rows_excluded_by_post_target_marker"
                 ],
-                "first_post_target_operation_counts": dict(sorted(first_operation_counts.items())),
-                "excluded_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
-                "excluded_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
-                "excluded_rows_prior_snapshot_same_timestamp_as_boundary": excluded_prior_snapshot_same_timestamp,
+                "current_history_first_post_target_operation_counts": dict(sorted(first_operation_counts.items())),
+                "current_marker_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
+                "current_marker_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
+                "current_marker_prior_snapshot_same_timestamp_as_boundary": excluded_prior_snapshot_same_timestamp,
             }
             if not history or recovered_suffix["role"] != "user":
                 results.append({
@@ -612,10 +612,10 @@ def diagnose_history_suffixes(cursor, cases: list[dict], *,
                     "current_history_suffix_role"
                 ],
                 "current_suffix_first_post_target_operation": suffix_operation,
-                "first_post_target_operation_counts": suffix_fields["first_post_target_operation_counts"],
-                "excluded_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
-                "excluded_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
-                "excluded_rows_prior_snapshot_same_timestamp_as_boundary": excluded_prior_snapshot_same_timestamp,
+                "current_history_first_post_target_operation_counts": suffix_fields["current_history_first_post_target_operation_counts"],
+                "current_marker_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
+                "current_marker_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
+                "current_marker_prior_snapshot_same_timestamp_as_boundary": excluded_prior_snapshot_same_timestamp,
             })
         except HistoryRecoveryError as exc:
             reason = str(exc)
