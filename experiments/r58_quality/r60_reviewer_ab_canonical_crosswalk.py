@@ -16,14 +16,17 @@ from typing import Any
 
 try:
     from .r60_gold192_canonical_a_v3 import (
-        A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
-        B_SHA as B_SHA256, validate_reviewer_a_v3,
+        A_REPORT_SHA256,
+        B_SCHEMA,
+        B_SHA as B_SHA256,
+        validate_reviewer_a_v3,
     )
 except ImportError:
     from r60_gold192_canonical_a_v3 import (
         A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
         B_SHA as B_SHA256, validate_reviewer_a_v3,
     )
+
 STAGE_SCHEMA = "storyforge-quality-v1-source-staging-private-v1"
 STAGE_STATUS = "SOURCE_CONTEXT_STAGED__QUALITY_REVIEW_PENDING"
 RECEIPT_SCHEMA = "storyforge-r59-contiguous-suffix-stage-safe-v1"
