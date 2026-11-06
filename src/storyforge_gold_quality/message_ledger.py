@@ -57,7 +57,14 @@ def _required_event_ids(events, targets):
     needed = set()
     index = LedgerEventIndex(events)
     for target in targets:
-        boundary_event = index.target_boundary(target)
+        try:
+            boundary_event = index.target_boundary(target)
+        except LedgerRecoveryError as exc:
+            if str(exc) == "TARGET_LEDGER_BOUNDARY_MISSING":
+                # A missing boundary is a per-target HOLD, not a reason to
+                # discard other targets that share this Session.
+                continue
+            raise
         needed.add(boundary_event["id"])
         boundary = _key(boundary_event)
         cutoff = target["turn_index"] - 1
