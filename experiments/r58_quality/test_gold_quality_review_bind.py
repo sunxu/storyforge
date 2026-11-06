@@ -252,6 +252,8 @@ class BindTests(unittest.TestCase):
         owner2["case_id"] = "case-two"
         owner2["target_sha256"] = two["target_sha256"]
         owner2["split"] = "validation"
+        owner2["reviewer_a_evidence_ref"] = f"sha256:{A_SHA}#records[12]"
+        owner2["reviewer_b_evidence_ref"] = f"sha256:{B_SHA}#cases[12]"
         owners.append(owner2)
         with self.assertRaisesRegex(binder.BindHold, "WORLD_OR_DUPLICATE_CANDIDATE_COLLISION"):
             bind(staged, a, b, exclusion, owners)
