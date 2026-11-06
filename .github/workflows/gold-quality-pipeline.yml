@@ -70,6 +70,10 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .
           python -m pip install pytest ruff
+      - name: Diagnose Skill contract import ordering
+        run: |
+          ruff check --fix skills/storyforge-roleplay-sft/tests/test_skill_token_reuse_contract.py || true
+          git diff -- skills/storyforge-roleplay-sft/tests/test_skill_token_reuse_contract.py
       - name: Lint unified pipeline
         run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold_quality_review_reconciliation.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py tests/test_gold192_reviewer_a_v3_normalization.py
       - name: Verify frozen source blob pins
