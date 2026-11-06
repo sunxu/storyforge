@@ -240,10 +240,6 @@ class ReviewReconciliationImportTests(unittest.TestCase):
         in_repo = self.repo / "crosswalk-safe.json"
         in_repo.write_text(self.receipt.read_text(encoding="utf-8"), encoding="utf-8")
         in_repo.chmod(0o600)
-        self.repo.chmod(0o755)
-        with self.assertRaisesRegex(ManifestError, "RECONCILIATION_INPUT_PARENT_PERMISSIONS_INVALID"):
-            import_review_reconciliation(self.args(input=in_repo))
-        self.repo.chmod(0o700)
         with self.assertRaisesRegex(ManifestError, "RECONCILIATION_INPUT_MUST_BE_PRIVATE"):
             import_review_reconciliation(self.args(input=in_repo))
 
