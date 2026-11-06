@@ -1,6 +1,8 @@
 """Synthetic-only tests for the private Gold72 Reviewer C packet builder."""
 from __future__ import annotations
 
+import hashlib
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -236,7 +238,7 @@ class ReviewerCPacketTests(unittest.TestCase):
             self.assertEqual(template["reviewer"], "C")
             self.assertEqual(template["status"], "PENDING_INDEPENDENT_REVIEW_EXECUTION")
             self.assertEqual(safe["execution_receipt_template_sha256"],
-                             __import__("hashlib").sha256(
+                             hashlib.sha256(
                                  (output / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json").read_bytes()
                              ).hexdigest())
             with self.assertRaisesRegex(PackageHold, "OUTPUT_DIR_INVALID_OR_EXISTS"):
