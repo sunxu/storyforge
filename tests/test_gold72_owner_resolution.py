@@ -5,12 +5,14 @@ import json
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from argparse import Namespace
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
+from storyforge_gold_quality import gold72_owner_resolution as owner_resolution
 from storyforge_gold_quality.gold72_owner_resolution import (
     OwnerResolutionHold,
     import_owner_resolution,
@@ -34,6 +36,13 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         self.private.mkdir(mode=0o700)
         self.paths = {}
         self._build_fixtures()
+        pin_patch = patch.multiple(
+            owner_resolution,
+            CANONICAL_A_V3_SHA256=hashlib.sha256(self.a_report_path.read_bytes()).hexdigest(),
+            CANONICAL_B2_RESULTS_SHA256=hashlib.sha256(self.b2_result_path.read_bytes()).hexdigest(),
+        )
+        pin_patch.start()
+        self.addCleanup(pin_patch.stop)
 
     def tearDown(self):
         self.tmp.cleanup()
