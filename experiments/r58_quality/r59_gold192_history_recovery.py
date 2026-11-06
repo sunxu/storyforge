@@ -27,7 +27,8 @@ from experiments.r58_quality.r59_gold192_supabase_extract import (  # noqa: E402
     select_candidates,
 )
 from storyforge_gold_quality.history_recovery import (  # noqa: E402
-    diagnose_history_suffixes, recover_cases_independently,
+    diagnose_history_suffixes, evaluate_history_suffix_diagnostics,
+    prepare_history_suffix_diagnostics, recover_cases_independently,
 )
 
 MAX_INPUT_BYTES = 160 * 1024 * 1024
@@ -861,8 +862,10 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                     session_started = time.perf_counter()
                     session_verified_duplicates = set()
                     session_results = []
+                    session_prepared = None
                     session_metrics = {}
                     session_owner_count = None
+                    tracked_cursor = None
                     stage = "SESSION_TRANSACTION_BEGIN"
                     try:
                         with db.transaction():
@@ -923,8 +926,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                                     session_priority, locator_index,
                                     verified_duplicate_indices=local_verified_indices,
                                 )
-                                stage = "HISTORY_SUFFIX_DIAGNOSTIC"
-                                session_results = diagnose_history_suffixes(
+                                stage = "HISTORY_SUFFIX_DATABASE_READ"
+                                session_prepared = prepare_history_suffix_diagnostics(
                                     tracked_cursor, session_cases,
                                     max_history=max_history,
                                     max_lineage_depth=max_lineage_depth,
@@ -939,6 +942,26 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                         raise DatabaseFailure(
                             failure_stage, sqlstate, type(exc).__name__
                         ) from None
+
+                    emit_progress(
+                        "session_database_reads_completed",
+                        session_index=session_number,
+                        session_count=session_count,
+                        case_count=len(entries),
+                        total_query_count=session_metrics.get("total_query_count", 0),
+                        total_fetch_ms=session_metrics.get("total_fetch_ms", 0.0),
+                        total_rows_fetched=session_metrics.get("total_rows_fetched", 0),
+                    )
+                    emit_progress(
+                        "session_local_reconstruction_started",
+                        session_index=session_number,
+                        session_count=session_count,
+                        case_count=len(entries),
+                    )
+                    session_results = evaluate_history_suffix_diagnostics(
+                        session_prepared, progress_callback=emit_progress
+                    )
+                    del session_prepared
 
                     for row in session_results:
                         local_index = row.get("safe_index")
