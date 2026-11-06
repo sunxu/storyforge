@@ -87,6 +87,14 @@ def _scores_valid(value: Any) -> bool:
     )
 
 
+def _a_decision_for_comparison(row: dict[str, Any]) -> str:
+    decision = row.get("reported_final_decision")
+    mapping = {"PASS_ONLY": "PASS", "HOLD": "HOLD", "REJECT": "REJECT"}
+    if decision not in mapping:
+        raise AuditHold("A_DECISION_LABEL_INVALID")
+    return mapping[decision]
+
+
 def _a_class(row: dict[str, Any]) -> str:
     granularity = row.get("evidence_granularity")
     decision = row.get("reported_final_decision")
@@ -183,6 +191,7 @@ def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str,
     b_score_count = 0
     b_empty_severe_count = 0
     a_b_disagreement_count = 0
+    a_b_raw_token_inequality_count = 0
     a_case_level_b_pass = 0
     a_aggregate_b_pass = 0
     a_nonpass_b_pass = 0
@@ -212,6 +221,8 @@ def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str,
         a_decision = a.get("reported_final_decision")
         if a.get("decision_for_strict_ab_decision_comparison") is not None:
             if a_decision != b_decision:
+                a_b_raw_token_inequality_count += 1
+            if _a_decision_for_comparison(a) != b_decision:
                 a_b_disagreement_count += 1
         if a_class == "CASE_LEVEL_SCORED_PASS" and b_decision == "PASS" and severe == []:
             a_case_level_b_pass += 1
@@ -247,6 +258,12 @@ def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str,
         "reviewer_b_scores_complete": b_score_count,
         "reviewer_b_empty_severe_flags": b_empty_severe_count,
         "a_b_decision_disagreements_on_comparable_rows": a_b_disagreement_count,
+        "a_b_raw_decision_token_inequalities": a_b_raw_token_inequality_count,
+        "a_b_decision_label_normalization": {"PASS_ONLY": "PASS"},
+        "reviewer_a_two_independent_blinded_reviews_met": False,
+        "reviewer_b_independent_semantic_recheck_completed": False,
+        "reviewer_b_case_to_gold192_scope_binding_verified": False,
+        "reviewer_b_independence_verified": False,
         "a_case_level_scored_pass_and_b_pass_no_severe_flags": a_case_level_b_pass,
         "a_aggregate_only_pass_and_b_pass_no_severe_flags": a_aggregate_b_pass,
         "a_explicit_nonpass_b_pass": a_nonpass_b_pass,
