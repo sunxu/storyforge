@@ -12,8 +12,9 @@ import re
 import secrets
 import stat
 from collections import Counter, defaultdict
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from . import r60_reviewer_ab2_gold72_crosswalk as crosswalk
 from . import r60_reviewer_ab_canonical_crosswalk as canonical
