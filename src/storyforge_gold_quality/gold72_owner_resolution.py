@@ -796,10 +796,7 @@ def _validate_safe(data: Any) -> dict[str, Any]:
         or dict(sorted(matrix_pairs.items())) != EXPECTED_PAIRS
     ):
         raise OwnerResolutionHold("OWNER_RESOLUTION_SAFE_MATRIX_MARGINAL_MISMATCH")
-    metadata_sha = data.get("execution_metadata_sha256")
-    if metadata_sha is not None and (
-        not isinstance(metadata_sha, str) or not HEX64.fullmatch(metadata_sha)
-    ):
+    if data.get("execution_metadata_sha256") is not None:
         raise OwnerResolutionHold("OWNER_RESOLUTION_SAFE_METADATA_SHA_INVALID")
     required_false = {
         "execution_record_available": False,
