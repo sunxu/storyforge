@@ -28,7 +28,8 @@
 set -euo pipefail
 umask 077
 
-REPO="$HOME/workspace/storyforge"
+REPO="${REPO:-$HOME/workspace/storyforge}"
+test -d "$REPO/.git"
 ROOT="$HOME/.local/share/storyforge"
 PRIVATE="$ROOT/r59/private"
 EXPECTED_SOURCE="ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e"
