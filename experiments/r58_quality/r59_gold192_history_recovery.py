@@ -504,12 +504,64 @@ def _load_session_checkpoint(path: Path, *, fingerprint: str,
         raise ValueError("SESSION_CHECKPOINT_CONTEXT_MISMATCH")
     _validate_checkpoint_case_results(payload.get("case_results"), pilot_indices)
     metrics = payload.get("performance_metrics")
-    if not isinstance(metrics, dict) or metrics.get("sql_text_retained") is not False:
+    if not isinstance(metrics, dict):
         raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
-    if type(payload.get("duplicate_source_roots_reverified")) is not int:
+    metric_keys = {
+        "query_classes", "total_query_count", "total_execute_ms",
+        "total_fetch_ms", "total_rows_fetched",
+        "sql_text_retained", "sql_parameters_retained",
+    }
+    if set(metrics) != metric_keys or (
+        metrics.get("sql_text_retained") is not False
+        or metrics.get("sql_parameters_retained") is not False
+    ):
+        raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    allowed_query_classes = {
+        "OWNER_SCOPE_QUERY", "TARGET_MESSAGE_QUERY", "CURRENT_HISTORY_QUERY",
+        "SESSION_LINEAGE_QUERY", "LEDGER_METADATA_QUERY", "LEDGER_DETAIL_QUERY",
+        "MESSAGE_QUERY", "STORY_VERSION_QUERY", "ADMIN_VERSION_QUERY",
+        "RECOVERY_QUERY_OTHER",
+    }
+    classes = metrics.get("query_classes")
+    if not isinstance(classes, dict) or set(classes) - allowed_query_classes:
+        raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    for values in classes.values():
+        if not isinstance(values, dict) or set(values) != {
+            "query_count", "execute_ms", "fetch_count", "fetch_ms", "rows_fetched"
+        }:
+            raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+        for key in ("query_count", "fetch_count", "rows_fetched"):
+            if type(values[key]) is not int or values[key] < 0:
+                raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+        for key in ("execute_ms", "fetch_ms"):
+            value = values[key]
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not (0 <= value < float("inf"))):
+                raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    for key in ("total_query_count", "total_rows_fetched"):
+        if type(metrics.get(key)) is not int or metrics[key] < 0:
+            raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    for key in ("total_execute_ms", "total_fetch_ms"):
+        value = metrics.get(key)
+        if (isinstance(value, bool) or not isinstance(value, (int, float))
+                or not (0 <= value < float("inf"))):
+            raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    duplicate_indices = payload.get("duplicate_source_reverification_pilot_indices")
+    duplicate_count = payload.get("duplicate_source_roots_reverified")
+    if (not isinstance(duplicate_indices, list)
+            or any(type(value) is not int or value not in pilot_indices
+                   for value in duplicate_indices)
+            or len(duplicate_indices) != len(set(duplicate_indices))
+            or type(duplicate_count) is not int or duplicate_count < 0
+            or len(duplicate_indices) != duplicate_count):
         raise ValueError("SESSION_CHECKPOINT_DUPLICATE_COUNT_INVALID")
-    if type(payload.get("distinct_story_owner_count")) is not int:
+    owner_count = payload.get("distinct_story_owner_count")
+    if type(owner_count) is not int or owner_count < 1:
         raise ValueError("SESSION_CHECKPOINT_OWNER_COUNT_INVALID")
+    elapsed = payload.get("session_elapsed_ms")
+    if (isinstance(elapsed, bool) or not isinstance(elapsed, (int, float))
+            or not (0 <= elapsed < float("inf"))):
+        raise ValueError("SESSION_CHECKPOINT_ELAPSED_INVALID")
     return payload
 
 
@@ -813,7 +865,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                 keepalives=1, keepalives_idle=30,
                 keepalives_interval=10, keepalives_count=3,
             ) as db:
-                for session_number, (session_key, entries) in enumerate(ordered_groups, 1):
+                for session_number, (_session_key, entries) in enumerate(ordered_groups, 1):
                     global_indices = [index for index, _case in entries]
                     expected_indices = sorted(global_indices)
                     checkpoint_path = checkpoint_dir / (
@@ -833,6 +885,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                                 or any(type(value) is not int
                                        or value not in expected_indices
                                        for value in duplicate_indices)
+                                or len(duplicate_indices) != len(set(duplicate_indices))
                                 or len(duplicate_indices) != checkpoint[
                                     "duplicate_source_roots_reverified"
                                 ]):
