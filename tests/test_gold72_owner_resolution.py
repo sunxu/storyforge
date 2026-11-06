@@ -111,6 +111,98 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
                 "evidence_summary": f"synthetic evidence summary {i}",
             })
 
+        a_records = []
+        b2_rows = []
+        for i, owner_row in enumerate(owner_rows):
+            digest = owner_row["target_sha256"]
+            is_scored = owner_row["reviewer_a_evidence_class"] == "CASE_LEVEL_SCORED_PASS"
+            a_decision = "PASS_ONLY" if is_scored else "HOLD"
+            a_scores = {
+                "chinese_prose": 4, "character_consistency": 4,
+                "npc_initiative": 3, "player_agency": 4,
+                "narrative_continuity": 4, "rule_fidelity": 4,
+            } if is_scored else None
+            a_records.append({
+                "target_sha256": digest,
+                "case_id": owner_row["original_case_id"],
+                "reported_final_decision": a_decision,
+                "decision_for_strict_ab_decision_comparison": a_decision,
+                "case_level_scored_review_present": is_scored,
+                "aggregate_complement_only": False,
+                "evidence_granularity": "CASE_LEVEL_SCORED_REVIEW" if is_scored else "CASE_ID_IN_EXPLICIT_HOLD_GROUP",
+                "scores_1_to_5": a_scores,
+            })
+            b2_rows.append({
+                "blind_case_id": owner_row["prior_b2_blind_case_id"],
+                "target_sha256": digest,
+                "decision": owner_row["reviewer_b2_decision"],
+                "scores_1_to_5": {
+                    "chinese_prose": 4, "character_consistency": 4,
+                    "npc_initiative": 3, "player_agency": 4,
+                    "narrative_continuity": 4, "rule_fidelity": 4,
+                },
+                "severe_flags": [],
+                "evidence_summary": f"synthetic B2 evidence {i}",
+            })
+
+        for i in range(32):
+            digest = sha(f"agreement-{i}")
+            is_scored = i < 21
+            decision = "PASS_ONLY" if is_scored else "HOLD"
+            b_decision = "PASS" if is_scored else "HOLD"
+            a_records.append({
+                "target_sha256": digest,
+                "case_id": f"agreement-case-{i:02d}",
+                "reported_final_decision": decision,
+                "decision_for_strict_ab_decision_comparison": decision,
+                "case_level_scored_review_present": is_scored,
+                "aggregate_complement_only": False,
+                "evidence_granularity": "CASE_LEVEL_SCORED_REVIEW" if is_scored else "CASE_ID_IN_EXPLICIT_HOLD_GROUP",
+                "scores_1_to_5": {
+                    "chinese_prose": 4, "character_consistency": 4,
+                    "npc_initiative": 3, "player_agency": 4,
+                    "narrative_continuity": 4, "rule_fidelity": 4,
+                } if is_scored else None,
+            })
+            b2_rows.append({
+                "blind_case_id": f"B2-AGREEMENT-{i:02d}",
+                "target_sha256": digest,
+                "decision": b_decision,
+                "scores_1_to_5": {
+                    "chinese_prose": 4, "character_consistency": 4,
+                    "npc_initiative": 3, "player_agency": 4,
+                    "narrative_continuity": 4, "rule_fidelity": 4,
+                },
+                "severe_flags": [],
+                "evidence_summary": f"synthetic B2 agreement evidence {i}",
+            })
+        for i in range(120):
+            a_records.append({
+                "target_sha256": sha(f"other-a-record-{i}"),
+                "case_id": f"other-a-case-{i:03d}",
+                "reported_final_decision": "PASS_ONLY",
+                "decision_for_strict_ab_decision_comparison": "PASS_ONLY",
+                "case_level_scored_review_present": True,
+                "aggregate_complement_only": False,
+                "evidence_granularity": "CASE_LEVEL_SCORED_REVIEW",
+                "scores_1_to_5": {
+                    "chinese_prose": 4, "character_consistency": 4,
+                    "npc_initiative": 3, "player_agency": 4,
+                    "narrative_continuity": 4, "rule_fidelity": 4,
+                },
+            })
+        self.a_report = {
+            "schema": "r58_gold192_reviewer_a_results_v3_reconciled_private_v1",
+            "status": "V3_SOURCES_NORMALIZED__192_IDENTITIES_VERIFIED__EVIDENCE_GRANULARITY_EXPLICIT",
+            "records": a_records,
+        }
+        self.b2_result = {
+            "schema": "r60_gold72_reviewer_b2_results_v1",
+            "reviewer": "B2",
+            "status": "REVIEW_COMPLETE",
+            "counts": {"PASS": 51, "HOLD": 16, "REJECT": 5},
+            "cases": b2_rows,
+        }
         self.blind_raw = (
             json.dumps({
                 "schema": "r60_gold72_reviewer_c_blind_story_packet_v1",
@@ -210,6 +302,27 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
             "private_values_emitted": False,
         }
         self.results_only_path = self.json_file("results-only-safe.json", self.results_only_safe)
+        self.a_report_path = self.json_file("a-v3.json", self.a_report)
+        self.b2_result_path = self.json_file("b2-results.json", self.b2_result)
+        self.crosswalk_safe = {
+            "schema": "r60_gold72_reviewer_a_b2_crosswalk_safe_v1",
+            "status": "A_B2_CROSSWALK_COMPLETE__ADMISSION_HOLD",
+            "candidate_count": 72,
+            "a_b2_comparable_decision_cases": 72,
+            "a_b2_semantic_decision_disagreements": 40,
+            "a_b2_semantic_decision_agreements": 32,
+            "reviewer_a_v3_report_sha256": hashlib.sha256(self.a_report_path.read_bytes()).hexdigest(),
+            "reviewer_b2_result_sha256": hashlib.sha256(self.b2_result_path.read_bytes()).hexdigest(),
+            "a_b2_pair_counts": {
+                "CASE_LEVEL_SCORED_PASS__B2_PASS": 21,
+                "CASE_LEVEL_SCORED_PASS__B2_HOLD": 5,
+                "CASE_LEVEL_SCORED_PASS__B2_REJECT": 2,
+                "EXPLICIT_HOLD__B2_PASS": 30,
+                "EXPLICIT_HOLD__B2_HOLD": 11,
+                "EXPLICIT_HOLD__B2_REJECT": 3,
+            },
+        }
+        self.crosswalk_safe_path = self.json_file("crosswalk-safe.json", self.crosswalk_safe)
 
     def common_args(self, **extra):
         values = {
@@ -221,6 +334,9 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
             "result": self.result_path,
             "results_only_safe": self.results_only_path,
             "resolution_template": self.resolution_template_path,
+            "reviewer_a_v3": self.a_report_path,
+            "b2_results": self.b2_result_path,
+            "crosswalk_safe": self.crosswalk_safe_path,
             "repo_root": self.repo,
         }
         values.update(extra)
