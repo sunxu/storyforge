@@ -107,13 +107,69 @@ cd "$REPO"
 
 ## 5. Reviewer C 返回后
 
-当前分支只提供**盲审包生成器**。在收到 Reviewer C Results 和真实执行记录之前，不生成完成 Receipt、不做最终 Audit、不写入 Manifest。
+当前工具链提供盲审包生成、Receipt 和 Audit。Reviewer C 尚未执行；只有收到完整 Results 和真实执行记录后才能继续。
 
-后续必须单独实现并通过 synthetic-only CI：
-1. Reviewer C 的 40 条结果/输入/Owner Map 绑定 Audit；
-2. fail-closed C Execution Receipt Builder；
-3. Owner 对 40 条逐案证据决定的私有记录格式；
-4. 只追加聚合 SAFE 的 Gold72 resolution Manifest importer。
+### 5.1 保存 Reviewer C 返回材料
+
+将 Reviewer C 返回的完整 JSON 和真实执行转录/提供方记录保存到 Owner 私有输出目录：
+
+- `R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json`
+- `R60_GOLD72_REVIEWER_C_EXECUTION_RECORD_PRIVATE`
+
+使用 create-only 方式保存，不覆盖旧文件；文件权限 0600，父目录 0700。不得用 Results 复制品充当执行记录，不得编造 session/provider/model/timestamps。
+
+### 5.2 只读预检并生成 Receipt
+
+```bash
+set -euo pipefail
+umask 077
+
+REPO="$HOME/workspace/storyforge-r60-ledger-diagnostics"
+PYTHON="$HOME/.venvs/storyforge-r60/bin/python"
+C_OUT="$HOME/.local/share/storyforge/r59/private/reviewer-c-runs/gold72-c-20261106-v1"
+
+ARGS=(
+  --package-safe "$C_OUT/R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json"
+  --receipt-template "$C_OUT/R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json"
+  --blind-input "$C_OUT/R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl"
+  --instructions "$C_OUT/R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md"
+  --owner-map "$C_OUT/R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json"
+  --result "$C_OUT/R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json"
+  --execution-record "$C_OUT/R60_GOLD72_REVIEWER_C_EXECUTION_RECORD_PRIVATE"
+  --output "$C_OUT/R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_COMPLETED.json"
+  --repo-root "$REPO"
+)
+
+cd "$REPO"
+"$PYTHON" -m experiments.r58_quality.r60_reviewer_c_receipt_builder "${ARGS[@]}" --validate-only
+```
+
+预检 PASS 后，且 Owner 已实际打开检查完整执行记录，才运行交互式 Receipt Builder：
+
+```bash
+"$PYTHON" -m experiments.r58_quality.r60_reviewer_c_receipt_builder "${ARGS[@]}"
+```
+
+必须真实填写 provider、model、可见 session/request 标识、开始/结束时间。六项独立性声明和四项 Owner 验证逐项回答 YES / NO / UNKNOWN。只有元数据有效且十项全部 YES 时，才会 create-only 生成 `EXECUTION_COMPLETE` Receipt；否则失败关闭，不得声称完成。临时聊天未暴露 session ID 时使用 `NOT_EXPOSED_BY_PROVIDER` 并保留限制说明。
+
+### 5.3 Owner-only Audit
+
+```bash
+"$PYTHON" -m experiments.r58_quality.r60_reviewer_c_audit \
+  --blind-input "$C_OUT/R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl" \
+  --instructions "$C_OUT/R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md" \
+  --owner-map "$C_OUT/R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json" \
+  --result "$C_OUT/R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json" \
+  --execution-receipt "$C_OUT/R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_COMPLETED.json" \
+  --execution-record "$C_OUT/R60_GOLD72_REVIEWER_C_EXECUTION_RECORD_PRIVATE" \
+  --safe-output "$C_OUT/R60_GOLD72_REVIEWER_C_AUDIT_SAFE.json"
+```
+
+C Audit 检查 40/40 blind-ID / Owner Map / Results 绑定、target SHA、六维评分、PASS 门槛、决策计数、四个输入哈希、六项执行声明和四项 Owner 核验。其 SAFE 仍将 Reviewer C 独立性和密码学证明标为未验证。
+
+### 5.4 Owner 决策与 Manifest
+
+Reviewer C Audit 通过后，40 条仍不是最终裁决。下一步还需要 Owner-only 逐案决策账本和 aggregate-only Gold72 resolution importer；在这两项工具完成并通过 synthetic-only CI 之前，不生成最终 Owner 决策，不追加 Manifest 事件，不进行 Quality-v1 准入。
 
 不得把 Reviewer C 结果自动转成最终 Owner 决定。40 条未决期间保持 HOLD。
 
