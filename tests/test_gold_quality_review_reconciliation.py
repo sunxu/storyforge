@@ -128,6 +128,8 @@ class ReviewReconciliationImportTests(unittest.TestCase):
         report = json.dumps(safe_report(load_events(self.manifest)), sort_keys=True)
         self.assertIn('"gold72"', report)
         self.assertIn('"decision_disagreements": 12', report)
+        self.assertIn('"score_comparison_by_dimension"', report)
+        self.assertIn('"chinese_prose"', report)
         for secret in ("source_receipt_sha256", "staging_sha256", "1" * 64, "7" * 64):
             self.assertNotIn(secret, report)
 
@@ -257,6 +259,12 @@ class ReviewReconciliationImportTests(unittest.TestCase):
         link.symlink_to(self.receipt)
         with self.assertRaisesRegex(ManifestError, "RECONCILIATION_INPUT_NOT_REGULAR_FILE"):
             import_review_reconciliation(self.args(input=link))
+
+    def test_oversized_receipt_is_rejected_before_json_parse(self):
+        self.receipt.write_bytes(b"x" * (2 * 1024 * 1024 + 1))
+        self.receipt.chmod(0o600)
+        with self.assertRaisesRegex(ManifestError, "RECONCILIATION_INPUT_SIZE_INVALID"):
+            import_review_reconciliation(self.args())
 
     def test_duplicate_json_keys_are_rejected(self):
         self.receipt.write_text('{"schema":"x","schema":"y"}', encoding="utf-8")
