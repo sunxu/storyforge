@@ -27,6 +27,8 @@ BLIND_SCHEMA = "r60_gold72_reviewer_c_blind_story_packet_v1"
 PACKAGE_SCHEMA = "r60_gold72_reviewer_c_disagreement_package_safe_v1"
 PACKAGE_STATUS = "REVIEWER_C_DISAGREEMENT_PACKAGE_BUILT__AWAITING_INDEPENDENT_REVIEW"
 RECEIPT_SCHEMA = "r60_gold72_reviewer_c_execution_receipt_v1"
+CANONICAL_A_V3_SHA256 = "b0356782963dd3c4f85c210bf0f1c69dc01211d818011c16754ea95e9a4fbdb8"
+CANONICAL_B2_RESULTS_SHA256 = "62648e5fbbadf5cdb23a0eb4ace7cac2b819aaf74791e16d60f14e92151a5594"
 EVENT_TYPE = "GOLD72_OWNER_RESOLUTION"
 RESOLUTION_TYPE = "GOLD72_REVIEWER_C_OWNER_RESOLUTION"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -229,7 +231,7 @@ def _load_inputs(args: Any) -> dict[str, Any]:
     return values
 
 
-def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict], dict]:
+def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str, dict], dict[str, dict], dict[str, dict], dict[str, dict], dict]:
     raw = values["raw"]
     package = values["package_safe"]
     template = values["receipt_template"]
@@ -272,8 +274,10 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
         or crosswalk.get("a_b2_comparable_decision_cases") != 72
         or crosswalk.get("a_b2_semantic_decision_disagreements") != 40
         or crosswalk.get("a_b2_semantic_decision_agreements") != 32
-        or crosswalk.get("reviewer_a_v3_report_sha256") != _sha(raw["reviewer_a_v3"])
-        or crosswalk.get("reviewer_b2_result_sha256") != _sha(raw["b2_results"])
+        or _sha(raw["reviewer_a_v3"]) != CANONICAL_A_V3_SHA256
+        or _sha(raw["b2_results"]) != CANONICAL_B2_RESULTS_SHA256
+        or crosswalk.get("reviewer_a_v3_report_sha256") != CANONICAL_A_V3_SHA256
+        or crosswalk.get("reviewer_b2_result_sha256") != CANONICAL_B2_RESULTS_SHA256
         or crosswalk.get("a_b2_pair_counts") != {
             "CASE_LEVEL_SCORED_PASS__B2_PASS": 21,
             "CASE_LEVEL_SCORED_PASS__B2_HOLD": 5,
@@ -502,7 +506,7 @@ def _source_pins(values: dict[str, Any]) -> dict[str, str]:
 
 def prepare_owner_resolution(args) -> dict[str, Any]:
     values = _load_inputs(args)
-    blind_idx, owner_idx, result_idx, a_idx, b2_idx, counts = _validate_sources(values)
+    _blind_idx, owner_idx, result_idx, a_idx, b2_idx, counts = _validate_sources(values)
     cases = []
     for blind_id, owner_row in sorted(owner_idx.items()):
         result = result_idx[blind_id]
