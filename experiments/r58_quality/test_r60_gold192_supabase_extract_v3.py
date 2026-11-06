@@ -8,10 +8,10 @@ from pathlib import Path
 
 try:
     from . import r60_gold192_supabase_extract_v3 as m
-    from .r60_gold192_canonical_a_v3 import A_SCHEMA, A_STATUS, A_SOURCE_PINS
+    from .r60_gold192_canonical_a_v3 import A_SCHEMA, A_SOURCE_PINS, A_STATUS
 except ImportError:
     import r60_gold192_supabase_extract_v3 as m
-    from r60_gold192_canonical_a_v3 import A_SCHEMA, A_STATUS, A_SOURCE_PINS
+    from r60_gold192_canonical_a_v3 import A_SCHEMA, A_SOURCE_PINS, A_STATUS
 
 
 SCORES = {
@@ -152,8 +152,8 @@ class R60Gold192ExtractV3Test(unittest.TestCase):
     def test_rejects_superseded_a_schema(self):
         report = {
             "schema": "superseded-r59-a-schema",
-            "status": m.A_STATUS,
-            "source_pins": dict(m.A_SOURCE_PINS),
+            "status": A_STATUS,
+            "source_pins": dict(A_SOURCE_PINS),
             "records": [],
         }
         with self.assertRaisesRegex(ValueError, "CANONICAL_A_V3_REQUIRED"):
