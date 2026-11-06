@@ -336,3 +336,86 @@ Reviewer refs 是定位符，不是独立性证明。World-card snapshot 不是 
 **`STRICT_STAGE_VERIFIED__OWNER_TEMPLATE_CREATED__AUTOLINK_VERIFIED__OWNER_EVIDENCE_PENDING`**
 
 不得重跑 Stage、Template 或 AutoLink；不得提前运行 Preflight / Binder；不触碰 R50，不修改生产 B2，不执行 DDL/DML，不启动 GPU，不自动合并 PR。
+
+
+## 11. 2026-11-07 Owner 声明证据可用；下一阶段执行计划
+
+Owner 已明确反馈：五条 Strict READY 案例所需的原始 Gold 来源、世界图谱登记资料、Reviewer A/B 原始审核过程记录均可找到。此处是 Owner 对材料可用性的声明，**不是材料内容、完整性、身份映射或真实性已通过独立核验的结论**。
+
+### 11.1 当前门禁保持不变
+
+- Strict Stage：72 total / 5 READY / 67 HOLD，字节及 receipt pin 已在 Owner Mac 核验。
+- Owner Template：5 rows，仍是空白模板，不是审批。
+- AutoLink：Packet / Reviewer A / Reviewer B locator 均 5/5；Owner attestations = 0。
+- Owner Evidence complete rows：尚未运行新 Preflight，当前不能宣称有 complete row。
+- Quality-v1 admission = 0；training_authorized = false；gpu_started = false；r50_accessed = false；database_modified = false。
+
+### 11.2 阶段 A：五条 READY 的证据索引与原始来源核验
+
+Owner 在本机为每条 READY 建立独立证据索引，至少包含：
+
+1. 原始 Gold archive / source 文件的稳定私有引用、原始版本 SHA256、版本/归档元数据。
+2. 能将该原始版本精确映射到当前 case / target 的 provenance 证据；不能只凭相似文本或 Stage SHA 关联。
+3. 来源版本创建/冻结时间与对话、审核时间的时间顺序证据。
+4. 原始 world graph 文件/快照的版本 SHA256、world_component_id，以及从 case 到 component 的可复核映射。
+5. Train/Validation split 的原始登记依据和完整组件级冲突检查。
+6. Reviewer A/B 原始身份/角色、独立分派记录、盲审访问边界、提交时间、修改历史或审计记录。
+7. Gold / reserved / protected / final-heldout registries 的版本与完整性依据；检查 metadata overlap，且确认没有读取 protected test body。
+
+历史 `R59_GOLD192_SOURCE_INVENTORY_SAFE.json` 曾有 5/5 pins found，但当时 `archive_inspection=false` 且 verification HOLD。不得将旧的 pin discovery 当成原始归档真实性证明；必须完成 archive inspection 与 case-level provenance 核验。
+
+阶段 A 输出仅为本地私有 evidence index / manifest 与不含案例 ID、路径、正文或原始 SHA 的 SAFE 聚合报告。任何 source version、world mapping、历史时间或 Reviewer 独立性不明的案例继续 HOLD。
+
+### 11.3 阶段 B：Owner 对 5 条案例逐项实质审查
+
+只对阶段 A 中有足够来源证据的案例进行 Owner review。每个案例分别核验：
+
+- 权利与使用授权；
+- 原始来源版本真实性；
+- 上下文连贯性和 future leakage；
+- 隐私与安全；
+- world component 与 split；
+- known protected / reserved / final-heldout metadata overlap；
+- protected test body access boundary；
+- 11 项正向 evidence；
+- 3 项负向 evidence；
+- Owner supplemental severe flags：`serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`；
+- 对应的专项审核 evidence ref。
+
+未知不得填默认值。正向 evidence 只有在证据支持时填 true；负向 overlap/access 项只有在有核查证据支持时填 false；严重问题 flag 必须由 Owner 逐项判断，不能用缺少记录推断 false。发现任何严重问题时按真实结果记录，不能为了让 Binder 通过而把 true 改为 false。
+
+Reviewer A/B 的原始过程记录用于验证实际主体、独立分派、盲审和时间线；AutoLink refs 仅是定位符。若两人共享了彼此的评分/结论，或无法证明审核时互不可见，则 `reviewers_blinded_and_independent_attested` 不得填 true。
+
+### 11.4 阶段 C：Owner 工作副本、Preflight 与复核
+
+- 冻结 Stage、Template、AutoLink 原件；只编辑 AutoLink JSONL 的独立 Owner work copy。
+- 每个 Owner 字段必须能回指本地 evidence index 中的真实证据。
+- 核验 5 条 case identity、target SHA、story/session identity、staged-file SHA、source-context SHA 与当前 Strict Stage 精确匹配。
+- 运行 `r59_owner_evidence_preflight.py`，只回传 SAFE 聚合字段。
+- Preflight 的 `rows_with_all_required_fields_present > 0` 是考虑 Binder 的必要条件，不是证据真实性或准入结论。
+- 若完整行数为 0，依据 `field_checks_missing` 补充真实证据或保持 HOLD；不得填默认值。
+- Preflight 声明 `reviewer_independence_independently_proven=false` 与 `protected_set_completeness_independently_proven=false`，这两项必须由独立证据审查另行解决。
+
+### 11.5 阶段 D：Review Bind 与 Quality-v1
+
+仅在 Owner 证据已经完整、Preflight 至少有 complete row，且 Reviewer independence 与 protected registry completeness 有独立证据支持后，才进入 Binder 评估。Binder 必须按代码固定 SHA 验证 Reviewer A、Reviewer B、11 条 Exclusions 的冻结输入、192 条 A/B 覆盖、case-level scores、Reviewer B PASS / severe flags、Owner severe screen、source/world/split/evidence 与 Stage pins。
+
+Binder 的候选输出状态是 `REVIEW_EVIDENCE_BOUND__CANDIDATES_NOT_ADMITTED`，不等于 Quality-v1 admission。随后 Quality-v1 只执行结构评估；其自身明确不能认证 Reviewer 身份、不能判断文学质量、不能证明 protected-world registry 完整。任何 HOLD / REJECT 均按原样保留。
+
+### 11.6 本阶段需要 Owner 提供的唯一回传
+
+每轮只回传：
+- evidence inventory 的 SAFE 聚合统计；
+- 每类证据的 verified / unresolved 数量；
+- 5 条案例的 source/world/split/reviewer coverage 计数；
+- Owner severe flags 的 PASS/HOLD/REJECT 聚合；
+- Preflight field_checks_passed / field_checks_missing 聚合；
+- 保护状态字段。
+
+不回传案例 ID、故事正文、原始 SHA、私有路径、Reviewer 个人身份信息、DSN 或 Token。必要时只用稳定的本地私有 evidence refs 在本机关联。
+
+### 11.7 不变的硬约束
+
+不重跑 Gold72；不修改 Strict Stage / Template / AutoLink 原件；不触碰 R50；不修改生产 B2；不执行 DDL/DML；不启动 GPU；不自动合并 PR。每个证据未知、来源不明、时间关系不明、世界冲突未排除、Reviewer independence 不明、protected-set completeness 不明的案例保持 HOLD。
+
+**下一阶段门禁：** `OWNER_EVIDENCE_SOURCE_WORLD_REVIEWER_INVENTORY_PENDING`。
