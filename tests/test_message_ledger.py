@@ -178,7 +178,8 @@ class MessageLedgerTests(unittest.TestCase):
             ([0], [5], [dt(10)], [4], "story", "s"),
         )
         self.assertNotIn("LIMIT", cursor.queries[1])
-        self.assertEqual(len(cursor.queries), 2)
+        self.assertIn("WHERE id = ANY(%s)", cursor.queries[2])
+        self.assertEqual(len(cursor.queries), 3)
 
     def test_nonpositive_turn_events_are_outside_positive_turn_query(self):
         events = self.events + [
