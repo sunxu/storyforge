@@ -258,3 +258,81 @@ command output 比已经成功创建的模板文件晚约 11 分 59 秒。结合
 7. 不触碰 R50，不修改生产 B2，不执行 DDL/DML，不启动 GPU，不自动合并 PR。
 
 **当前门禁：** `STRICT_STAGE_VERIFIED__OWNER_TEMPLATE_CREATED__AUTOLINK_PENDING`。
+
+
+## 10. 2026-11-07 Owner Evidence AutoLink 验收续记
+
+本节记录 Owner Mac 对已存在 AutoLink 目录的只读核验。没有重新运行 AutoLink，也没有修改任何私有文件。
+
+### 10.1 已存在产物验收通过
+
+AutoLink 目录不是符号链接，目录权限为 0700。其两个产物均为 regular file、非 symlink、mode 0600、nlink 1：
+
+- `OWNER_EVIDENCE_AUTOLINK_SAFE.json`
+- `OWNER_CASE_EVIDENCE_AUTOLINKED_PRIVATE.jsonl`
+
+SAFE 聚合结果：
+
+| 指标 | 结果 |
+|---|---:|
+| status | `OWNER_EVIDENCE_LOCATORS_AUTOLINKED__OWNER_REVIEW_STILL_REQUIRED` |
+| staged_candidates | 5 |
+| packet_exact_matches | 5 |
+| reviewer_a_exact_matches | 5 |
+| reviewer_b_exact_matches | 5 |
+| owner_attestations_created | 0 |
+| source_version_verified | false |
+| historical_snapshot_temporality_proven | false |
+| reviewer_independence_proven | false |
+| world_component_isolation_proven | false |
+| protected_set_completeness_proven | false |
+| quality_v1_admitted | 0 |
+| training_authorized | false |
+
+JSONL 只读检查：5 rows、5 unique case IDs，Reviewer A / Reviewer B / Packet 三类 evidence locator 均存在。
+
+### 10.2 前一轮 shell 为什么停止
+
+前一轮 `run.sh` 在 `test ! -e "$AUTOLINK"` 处停止，是因为 AutoLink 输出目录已经存在。该命令在 AutoLink 程序启动前执行；这次只读检查发现该目录内已有完整 SAFE 和 JSONL，且两者相互符合 SAFE 所述的 5 条关联结果。
+
+因此，前一轮脚本停止不代表 AutoLink 失败。**现有 AutoLink 结果验收通过，不得再次运行 AutoLink，不得删除或覆盖其输出。**
+
+### 10.3 AutoLink 的语义边界
+
+AutoLink 只为 Strict READY 的 5 个案例建立冻结 Packet、Reviewer A、Reviewer B 的精确证据定位符，并记录 Packet case / world-card snapshot 指纹。它明确不证明：
+
+- Packet snapshot 是历史原始 source version；
+- 审核快照的时间真实性或历史时点；
+- Reviewer A/B 的身份独立性或盲审独立性；
+- World component 的完整隔离；
+- protected / held-out 集合完整性；
+- Owner 对严重问题、版权、隐私、来源版本或质量的审批。
+
+Reviewer refs 是定位符，不是独立性证明。World-card snapshot 不是 historical source version。不得把这些 locator 或 snapshot fingerprint 当作 Owner attestation。
+
+### 10.4 Owner 真实证据补充字段
+
+后续 Owner 只能根据真实可追溯证据填写 AutoLink JSONL 的副本，不能修改冻结 Stage、Template 或 AutoLink 原件。至少需要逐案例核实：
+
+1. `source_version_sha256`：原始 Gold source version 的 SHA，不得用 Source Context / Stage / Packet SHA 代替。
+2. `world_graph_sha256`、`world_component_id`：实际世界图谱版本和组件归属。
+3. `split`：只能是 `train` 或 `validation`，必须有来源证据和跨世界冲突检查。
+4. `owner_supplemental_severe_flags`：`serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion` 三项均由 Owner 逐项判断为布尔值；不得将未知写成 false。
+5. `owner_supplemental_severe_evidence_ref`：Owner 严重问题专项检查的私有证据定位符。
+6. `evidence` 正向项全部需要真实证据支持为 true：`rights_attested`、`source_version_verified`、`context_is_coherent`、`context_no_future_leakage_reviewed`、`privacy_checked`、`world_component_reviewed`、`known_protected_metadata_checked`、`other_known_reserved_metadata_checked`、`final_heldout_metadata_checked`、`reviewers_blinded_and_independent_attested`、`owner_quality_approved`。
+7. 以下负向风险字段必须由核查证据支持为 false：`known_protected_overlap`、`final_heldout_overlap`、`protected_test_body_accessed`。未知状态不得填 false。
+8. Reviewer A/B refs 已由 AutoLink 提供，但仍需单独取得独立性证据；不能仅凭两个不同文件或两个不同 locator 声称 independent。
+
+### 10.5 Preflight 与 Binder 的门禁边界
+
+- Preflight 是字段完整性门禁，不验证证据真实性，也不证明 Reviewer independence / protected-set completeness。
+- 只有 Preflight `rows_with_all_required_fields_present > 0` 才可考虑 Review Bind；如果为 0，继续 HOLD。
+- Binder 还会独立检查冻结 A/B 与 exclusions 的 SHA pin、192 条 A/B 覆盖、11 条 exclusions、case-level A/B 分数、Reviewer B PASS / severe flags、Owner supplemental severe screen、来源与世界版本 pin、split、正向/负向 evidence 以及 Stage/Source pins。
+- Binder 输出即使有 `review_bound_candidates > 0`，也只是 `REVIEW_EVIDENCE_BOUND__CANDIDATES_NOT_ADMITTED`，Quality-v1 admission 仍为 0。
+- Quality-v1 自身声明不能判断文学质量、不能认证 Reviewer 身份，也不能证明 protected-world registry 完整。不能因为脚本结构 PASS 就自动授权训练。
+
+### 10.6 当前门禁
+
+**`STRICT_STAGE_VERIFIED__OWNER_TEMPLATE_CREATED__AUTOLINK_VERIFIED__OWNER_EVIDENCE_PENDING`**
+
+不得重跑 Stage、Template 或 AutoLink；不得提前运行 Preflight / Binder；不触碰 R50，不修改生产 B2，不执行 DDL/DML，不启动 GPU，不自动合并 PR。
