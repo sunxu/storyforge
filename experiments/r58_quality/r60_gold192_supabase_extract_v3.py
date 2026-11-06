@@ -268,7 +268,7 @@ def main() -> int:
     p.add_argument('--max-history', type=int, default=20000)
     p.add_argument('--dsn-env', default='STORYFORGE_SUPABASE_DSN')
     p.add_argument('--identity-only', action='store_true',
-                   help='Validate 192/72/11 without connecting to Supabase')
+                   help='Validate canonical A V3 identities and 11 exclusions without connecting to Supabase')
     args = p.parse_args()
     try:
         if not (0 <= args.pilot <= 192 and args.max_history >= 12):
