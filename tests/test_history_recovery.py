@@ -112,18 +112,56 @@ class FakeCursor:
                 {"id": event["id"], "row_data": event["row_data"]}
                 for event in self.ledger_events if event["id"] in ids
             ]
-        elif "FROM public.v2_chat_message_ledger" in query:
-            story_id, session_id, max_turn, limit = params
-            self.rows = []
-            for source in self.ledger_events:
-                if (source["story_id"] == story_id
-                        and source["session_id"] == session_id
-                        and 1 <= source["turn_index"] <= max_turn):
-                    event = dict(source)
-                    if event["operation"] in {"update_before", "delete"}:
-                        event["row_data"] = None
-                    self.rows.append(event)
-            self.rows = self.rows[:limit]
+        elif "message_id = ANY(%s::uuid[])" in query:
+            story_id, session_id, message_ids, turn_indices = params
+            self.rows = [
+                {
+                    key: event[key]
+                    for key in (
+                        "id", "message_id", "story_id", "session_id",
+                        "role", "turn_index", "operation", "recorded_at",
+                    )
+                }
+                for event in self.ledger_events
+                if event["story_id"] == story_id
+                and event["session_id"] == session_id
+                and event["message_id"] in message_ids
+                and event["turn_index"] in turn_indices
+                and event["role"] == "assistant"
+                and event["operation"] in {"insert", "update_after"}
+            ]
+        elif "WITH targets AS" in query:
+            ordinals, turns, boundary_times, boundary_ids, story_id, session_id = params
+            selected = {}
+            for ordinal, turn, boundary_time, boundary_id in zip(
+                ordinals, turns, boundary_times, boundary_ids, strict=True
+            ):
+                boundary_key = (boundary_time, boundary_id)
+                first_by_message = {}
+                for source in self.ledger_events:
+                    key = (source["recorded_at"], source["id"])
+                    if (source["story_id"] != story_id
+                            or source["session_id"] != session_id
+                            or not 1 <= source["turn_index"] < turn
+                            or key <= boundary_key):
+                        continue
+                    previous = first_by_message.get(source["message_id"])
+                    if previous is None or key < (
+                        previous["recorded_at"], previous["id"]
+                    ):
+                        first_by_message[source["message_id"]] = source
+                for event in first_by_message.values():
+                    selected[event["id"]] = {
+                        key: event[key]
+                        for key in (
+                            "id", "message_id", "story_id", "session_id",
+                            "role", "turn_index", "operation", "recorded_at",
+                        )
+                    }
+            self.rows = sorted(
+                selected.values(),
+                key=lambda event: (event["recorded_at"], event["id"]),
+            )
         elif "FROM public.story_v2_sessions" in query:
             self.one = self.sessions.get(params[1])
         elif "FROM public.v2_chat_messages" in query and "AND role = 'assistant'" in query:
@@ -206,7 +244,7 @@ class HistoryRecoveryTests(unittest.TestCase):
             "result": "RECOVERED",
             "history_message_count": 4,
             "history_suffix_role": "user",
-            "ledger_event_count": 5,
+            "ledger_event_count": 1,
             "history_rows_restored": 0,
             "history_rows_excluded": 0,
             "current_history_suffix_role": "user",
@@ -216,6 +254,38 @@ class HistoryRecoveryTests(unittest.TestCase):
             "current_marker_rows_without_preboundary_snapshot": 0,
             "current_marker_prior_snapshot_same_timestamp_as_boundary": 0,
         }])
+
+    def test_suffix_diagnostic_evaluates_after_database_reads_are_complete(self):
+        prepared = h.prepare_history_suffix_diagnostics(
+            self.cursor, [self.case]
+        )
+        query_count_after_prepare = len(self.cursor.queries)
+        progress = []
+        results = h.evaluate_history_suffix_diagnostics(
+            prepared,
+            progress_callback=lambda event, **fields: progress.append((event, fields)),
+        )
+        self.assertEqual(len(self.cursor.queries), query_count_after_prepare)
+        self.assertEqual(results[0]["result"], "RECOVERED")
+        self.assertEqual(
+            progress,
+            [("case_completed", {
+                "safe_index": 0,
+                "result": "RECOVERED",
+                "reason_code": None,
+            })],
+        )
+
+    def test_suffix_diagnostic_wrapper_preserves_marker_hold_result(self):
+        self.cursor.ledger_events.extend([
+            self.cursor.ledger_marker(6, "c5", 5, "user", 11),
+            self.cursor.ledger_marker(7, "c6", 6, "user", 12),
+        ])
+        self.cursor.ledger_events[-2]["operation"] = "update_after"
+        self.cursor.ledger_events[-1]["operation"] = "update_after"
+        direct = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(direct[0]["result"], "HOLD")
+        self.assertEqual(direct[0]["reason_code"], "HISTORY_SUFFIX_NOT_USER")
 
     def test_per_case_suffix_diagnostic_identifies_marker_exclusion(self):
         self.cursor.ledger_events.extend([
@@ -236,7 +306,7 @@ class HistoryRecoveryTests(unittest.TestCase):
             "history_suffix_role": "assistant",
             "history_suffix_turn": 2,
             "current_suffix_first_post_target_operation": "update_after",
-            "ledger_event_count": 7,
+            "ledger_event_count": 3,
             "history_rows_restored": 0,
             "history_rows_excluded": 2,
             "current_history_first_post_target_operation_counts": {"update_after": 2},
@@ -352,7 +422,7 @@ class HistoryRecoveryTests(unittest.TestCase):
             ["c1", "c2", "c5", "c6"],
         )
         self.assertEqual(
-            results[0]["history_reconstruction"]["ledger_event_count"], 5
+            results[0]["history_reconstruction"]["ledger_event_count"], 1
         )
         self.assertEqual(
             sum("turn_index = ANY(%s)" in query for query in self.cursor.queries), 1

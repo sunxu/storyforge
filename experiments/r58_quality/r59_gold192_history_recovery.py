@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import stat
@@ -27,7 +28,8 @@ from experiments.r58_quality.r59_gold192_supabase_extract import (  # noqa: E402
     select_candidates,
 )
 from storyforge_gold_quality.history_recovery import (  # noqa: E402
-    diagnose_history_suffixes, recover_cases_independently,
+    diagnose_history_suffixes, evaluate_history_suffix_diagnostics,
+    prepare_history_suffix_diagnostics, recover_cases_independently,
 )
 
 MAX_INPUT_BYTES = 160 * 1024 * 1024
@@ -239,13 +241,132 @@ def recovery_query_stage(query: str) -> str:
     return "RECOVERY_QUERY_OTHER"
 
 
-class RecoveryStageCursor:
-    """Track query/fetch cost by safe query class without retaining SQL or values."""
+def safe_explain_plan_summary(payload):
+    """Reduce EXPLAIN JSON to a SAFE plan shape without retaining SQL literals."""
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+    if isinstance(payload, dict) and "QUERY PLAN" in payload:
+        payload = payload["QUERY PLAN"]
+    if isinstance(payload, list):
+        if not payload or not isinstance(payload[0], dict):
+            raise ValueError("EXPLAIN_PLAN_SHAPE_INVALID")
+        payload = payload[0]
+    if not isinstance(payload, dict) or not isinstance(payload.get("Plan"), dict):
+        raise ValueError("EXPLAIN_PLAN_SHAPE_INVALID")
 
-    def __init__(self, cursor):
+    root = payload["Plan"]
+    node_types = []
+    index_names = set()
+    boundary_index_condition = False
+    sort_count = unique_count = 0
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if not isinstance(node, dict):
+            raise ValueError("EXPLAIN_PLAN_NODE_INVALID")
+        node_type = node.get("Node Type")
+        if not isinstance(node_type, str) or not node_type:
+            raise ValueError("EXPLAIN_PLAN_NODE_INVALID")
+        node_types.append(node_type)
+        if node_type in {"Sort", "Incremental Sort"}:
+            sort_count += 1
+        if node_type == "Unique":
+            unique_count += 1
+        index_name = node.get("Index Name")
+        if index_name is not None:
+            if not isinstance(index_name, str) or not re.fullmatch(
+                r"[A-Za-z0-9_]+", index_name
+            ):
+                raise ValueError("EXPLAIN_PLAN_INDEX_NAME_INVALID")
+            index_names.add(index_name)
+        index_cond = node.get("Index Cond", "")
+        if not isinstance(index_cond, str):
+            raise ValueError("EXPLAIN_PLAN_INDEX_CONDITION_INVALID")
+        if ("recorded_at" in index_cond and "boundary_recorded_at" in index_cond
+                and "id" in index_cond and "boundary_id" in index_cond):
+            boundary_index_condition = True
+        children = node.get("Plans", [])
+        if not isinstance(children, list):
+            raise ValueError("EXPLAIN_PLAN_CHILDREN_INVALID")
+        stack.extend(reversed(children))
+
+    estimated_rows = root.get("Plan Rows", 0)
+    estimated_cost = root.get("Total Cost", 0.0)
+    if (isinstance(estimated_rows, bool) or not isinstance(estimated_rows, (int, float))
+            or estimated_rows < 0
+            or isinstance(estimated_cost, bool)
+            or not isinstance(estimated_cost, (int, float))
+            or not math.isfinite(float(estimated_cost)) or estimated_cost < 0):
+        raise ValueError("EXPLAIN_PLAN_ESTIMATE_INVALID")
+    return {
+        "query_class": "LEDGER_METADATA_QUERY",
+        "plan_capture_status": "CAPTURED",
+        "node_types": node_types,
+        "index_names": sorted(index_names),
+        "b2_selected": "idx_v2_chat_message_ledger_r60_b2" in index_names,
+        "index_only_scan": "Index Only Scan" in node_types,
+        "boundary_range_in_index_condition": boundary_index_condition,
+        "sort_node_count": sort_count,
+        "unique_node_count": unique_count,
+        "estimated_plan_rows": estimated_rows,
+        "estimated_total_cost": round(float(estimated_cost), 3),
+        "plan_capture_ms": 0.0,
+    }
+
+
+class RecoveryStageCursor:
+    """Track query/fetch cost and emit aggregate-only progress events."""
+
+    def __init__(self, cursor, progress_callback=None):
         self._cursor = cursor
         self.stage = "RECOVERY_QUERY_OTHER"
         self._metrics = {}
+        self._progress_callback = progress_callback
+        self._operation_ordinal = 0
+        self._query_plan_summaries = []
+
+    def _capture_plan(self, query, params):
+        started = time.perf_counter()
+        try:
+            self._cursor.execute("SAVEPOINT storyforge_plan_capture")
+            self._cursor.execute("EXPLAIN (FORMAT JSON) " + str(query), params)
+            row = self._cursor.fetchone()
+            if row is None:
+                raise ValueError("EXPLAIN_PLAN_RESULT_EMPTY")
+            if isinstance(row, dict):
+                payload = next(iter(row.values()))
+            elif isinstance(row, (tuple, list)) and row:
+                payload = row[0]
+            else:
+                raise ValueError("EXPLAIN_PLAN_RESULT_SHAPE_INVALID")
+            summary = safe_explain_plan_summary(payload)
+        except Exception:
+            self._cursor.execute("ROLLBACK TO SAVEPOINT storyforge_plan_capture")
+            self._cursor.execute("RELEASE SAVEPOINT storyforge_plan_capture")
+            summary = {
+                "query_class": "LEDGER_METADATA_QUERY",
+                "plan_capture_status": "EXPLAIN_UNAVAILABLE",
+                "node_types": [],
+                "index_names": [],
+                "b2_selected": False,
+                "index_only_scan": False,
+                "boundary_range_in_index_condition": False,
+                "sort_node_count": 0,
+                "unique_node_count": 0,
+                "estimated_plan_rows": 0,
+                "estimated_total_cost": 0.0,
+                "plan_capture_ms": 0.0,
+            }
+        else:
+            self._cursor.execute("RELEASE SAVEPOINT storyforge_plan_capture")
+        summary["plan_capture_ms"] = round(
+            (time.perf_counter() - started) * 1000, 3
+        )
+        self._query_plan_summaries.append(summary)
+
+    def _emit(self, event, **fields):
+        if self._progress_callback is not None:
+            self._progress_callback(event, **fields)
 
     def _metric(self):
         return self._metrics.setdefault(self.stage, {
@@ -255,37 +376,69 @@ class RecoveryStageCursor:
 
     def execute(self, query, params=None):
         self.stage = recovery_query_stage(str(query))
+        if ("WITH targets AS" in str(query)
+                and "DISTINCT ON (e.message_id)" in str(query)
+                and "public.v2_chat_message_ledger" in str(query)):
+            self._capture_plan(query, params)
         metric = self._metric()
         metric["query_count"] += 1
+        self._operation_ordinal += 1
+        ordinal = self._operation_ordinal
+        self._emit("query_started", query_class=self.stage,
+                   operation="execute", operation_ordinal=ordinal)
         started = time.perf_counter()
         try:
             if params is None:
                 return self._cursor.execute(query)
             return self._cursor.execute(query, params)
         finally:
-            metric["execute_ms"] += (time.perf_counter() - started) * 1000
+            elapsed = (time.perf_counter() - started) * 1000
+            metric["execute_ms"] += elapsed
+            self._emit("query_completed", query_class=self.stage,
+                       operation="execute", operation_ordinal=ordinal,
+                       elapsed_ms=round(elapsed, 3))
 
     def fetchone(self):
         metric = self._metric()
         metric["fetch_count"] += 1
+        self._operation_ordinal += 1
+        ordinal = self._operation_ordinal
+        self._emit("query_started", query_class=self.stage,
+                   operation="fetchone", operation_ordinal=ordinal)
         started = time.perf_counter()
+        row = None
         try:
             row = self._cursor.fetchone()
             metric["rows_fetched"] += int(row is not None)
             return row
         finally:
-            metric["fetch_ms"] += (time.perf_counter() - started) * 1000
+            elapsed = (time.perf_counter() - started) * 1000
+            metric["fetch_ms"] += elapsed
+            self._emit("query_completed", query_class=self.stage,
+                       operation="fetchone", operation_ordinal=ordinal,
+                       elapsed_ms=round(elapsed, 3),
+                       rows_fetched=int(row is not None))
 
     def fetchall(self):
         metric = self._metric()
         metric["fetch_count"] += 1
+        self._operation_ordinal += 1
+        ordinal = self._operation_ordinal
+        self._emit("query_started", query_class=self.stage,
+                   operation="fetchall", operation_ordinal=ordinal)
         started = time.perf_counter()
+        rows = []
         try:
             rows = self._cursor.fetchall()
             metric["rows_fetched"] += len(rows)
             return rows
         finally:
-            metric["fetch_ms"] += (time.perf_counter() - started) * 1000
+            elapsed = (time.perf_counter() - started) * 1000
+            metric["fetch_ms"] += elapsed
+            self._emit("query_completed", query_class=self.stage,
+                       operation="fetchall", operation_ordinal=ordinal,
+                       elapsed_ms=round(elapsed, 3),
+                       rows_fetched=len(rows))
 
     def safe_metrics(self):
         return {
@@ -305,10 +458,39 @@ class RecoveryStageCursor:
             "total_rows_fetched": sum(v["rows_fetched"] for v in self._metrics.values()),
             "sql_text_retained": False,
             "sql_parameters_retained": False,
+            "query_plan_summaries": list(self._query_plan_summaries),
         }
 
     def __getattr__(self, name):
         return getattr(self._cursor, name)
+
+
+class SafeProgressWriter:
+    """Create-only, private JSONL progress log containing aggregate metadata only."""
+
+    def __init__(self, path: Path, output_dir: Path):
+        output_root = output_dir.resolve(strict=True)
+        if (path.parent.resolve(strict=True) != output_root
+                or path.name in {"", ".", ".."}
+                or stat.S_IMODE(output_root.stat().st_mode) != 0o700):
+            raise ValueError("PROGRESS_FILE_SCOPE_INVALID")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(path, flags, 0o600)
+        self._stream = os.fdopen(fd, "w", encoding="utf-8")
+
+    def emit(self, event, **fields):
+        payload = {
+            "schema": "r59_gold192_history_progress_safe_v1",
+            "event": event,
+            **fields,
+        }
+        self._stream.write(json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ) + "\n")
+        self._stream.flush()
+
+    def close(self):
+        self._stream.close()
 
 
 def create_only(path: Path, payload: bytes) -> str:
@@ -323,6 +505,241 @@ def create_only(path: Path, payload: bytes) -> str:
         path.unlink(missing_ok=True)
         raise
     return digest(payload)
+
+
+def merge_safe_metrics(metrics_rows: list[dict]) -> dict:
+    merged = {}
+    for metrics in metrics_rows:
+        for query_class, values in metrics.get("query_classes", {}).items():
+            target = merged.setdefault(query_class, {
+                "query_count": 0, "execute_ms": 0.0,
+                "fetch_count": 0, "fetch_ms": 0.0, "rows_fetched": 0,
+            })
+            for key in target:
+                target[key] += values.get(key, 0)
+    return {
+        "query_classes": {
+            key: {
+                "query_count": value["query_count"],
+                "execute_ms": round(value["execute_ms"], 3),
+                "fetch_count": value["fetch_count"],
+                "fetch_ms": round(value["fetch_ms"], 3),
+                "rows_fetched": value["rows_fetched"],
+            }
+            for key, value in sorted(merged.items())
+        },
+        "total_query_count": sum(v["query_count"] for v in merged.values()),
+        "total_execute_ms": round(sum(v["execute_ms"] for v in merged.values()), 3),
+        "total_fetch_ms": round(sum(v["fetch_ms"] for v in merged.values()), 3),
+        "total_rows_fetched": sum(v["rows_fetched"] for v in merged.values()),
+        "sql_text_retained": False,
+        "sql_parameters_retained": False,
+        "query_plan_summaries": [
+            summary for metrics in metrics_rows
+            for summary in metrics.get("query_plan_summaries", [])
+        ],
+    }
+
+
+def _validate_checkpoint_case_results(rows, expected_indices):
+    if not isinstance(rows, list) or len(rows) != len(expected_indices):
+        raise ValueError("SESSION_CHECKPOINT_CASE_COUNT_INVALID")
+    allowed = {
+        "safe_index", "result", "reason_code",
+        "current_history_message_count", "current_history_suffix_role",
+        "current_history_suffix_turn", "reconstructed_history_message_count",
+        "history_suffix_role", "history_suffix_turn",
+        "current_suffix_first_post_target_operation", "ledger_event_count",
+        "history_rows_restored", "history_rows_excluded",
+        "current_history_first_post_target_operation_counts",
+        "current_marker_rows_with_preboundary_snapshot",
+        "current_marker_rows_without_preboundary_snapshot",
+        "current_marker_prior_snapshot_same_timestamp_as_boundary",
+        "history_message_count", "current_history_suffix_role",
+    }
+    seen = set()
+    count_fields = {
+        "safe_index", "current_history_message_count",
+        "current_history_suffix_turn", "reconstructed_history_message_count",
+        "history_suffix_turn", "ledger_event_count", "history_rows_restored",
+        "history_rows_excluded", "history_message_count",
+        "current_marker_rows_with_preboundary_snapshot",
+        "current_marker_rows_without_preboundary_snapshot",
+        "current_marker_prior_snapshot_same_timestamp_as_boundary",
+    }
+    for row in rows:
+        if not isinstance(row, dict) or set(row) - allowed:
+            raise ValueError("SESSION_CHECKPOINT_CASE_SHAPE_INVALID")
+        index = row.get("safe_index")
+        if type(index) is not int or index not in expected_indices or index in seen:
+            raise ValueError("SESSION_CHECKPOINT_INDEX_INVALID")
+        seen.add(index)
+        if row.get("result") not in {"HOLD", "RECOVERED"}:
+            raise ValueError("SESSION_CHECKPOINT_RESULT_INVALID")
+        reason = row.get("reason_code")
+        if reason is not None and (
+            not isinstance(reason, str) or not re.fullmatch(r"[A-Z0-9_]+", reason)
+        ):
+            raise ValueError("SESSION_CHECKPOINT_REASON_INVALID")
+        for key in count_fields & row.keys():
+            value = row[key]
+            if value is not None and (type(value) is not int or value < 0):
+                raise ValueError("SESSION_CHECKPOINT_COUNT_INVALID")
+        for key in ("current_history_suffix_role", "history_suffix_role"):
+            if row.get(key) not in {None, "user", "assistant"}:
+                raise ValueError("SESSION_CHECKPOINT_ROLE_INVALID")
+        operations = row.get("current_history_first_post_target_operation_counts", {})
+        if (not isinstance(operations, dict)
+                or any(key not in {"insert", "update_after", "update_before", "delete"}
+                       or type(value) is not int or value < 0
+                       for key, value in operations.items())):
+            raise ValueError("SESSION_CHECKPOINT_OPERATION_COUNTS_INVALID")
+    if seen != set(expected_indices):
+        raise ValueError("SESSION_CHECKPOINT_INDEX_SET_INVALID")
+
+
+def _load_session_checkpoint(path: Path, *, fingerprint: str,
+                             session_index: int, session_count: int,
+                             pilot_indices: list[int]) -> dict:
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("SESSION_CHECKPOINT_FILE_INVALID")
+    info = path.stat()
+    if stat.S_IMODE(info.st_mode) != 0o600 or info.st_size > 5 * 1024 * 1024:
+        raise ValueError("SESSION_CHECKPOINT_PERMISSIONS_INVALID")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        raise ValueError("SESSION_CHECKPOINT_PARSE_INVALID") from None
+    if not isinstance(payload, dict):
+        raise ValueError("SESSION_CHECKPOINT_SHAPE_INVALID")
+    checkpoint_sha = payload.pop("checkpoint_sha256", None)
+    actual_sha = digest(json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8"))
+    if checkpoint_sha != actual_sha:
+        raise ValueError("SESSION_CHECKPOINT_DIGEST_INVALID")
+    if (payload.get("schema") != "r59_gold192_history_session_checkpoint_v1"
+            or payload.get("status") != "SESSION_DIAGNOSTIC_COMPLETE"
+            or payload.get("run_fingerprint") != fingerprint
+            or payload.get("session_index") != session_index
+            or payload.get("session_count") != session_count
+            or payload.get("pilot_indices") != pilot_indices):
+        raise ValueError("SESSION_CHECKPOINT_CONTEXT_MISMATCH")
+    _validate_checkpoint_case_results(payload.get("case_results"), pilot_indices)
+    metrics = payload.get("performance_metrics")
+    if not isinstance(metrics, dict):
+        raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    metric_keys = {
+        "query_classes", "total_query_count", "total_execute_ms",
+        "total_fetch_ms", "total_rows_fetched",
+        "sql_text_retained", "sql_parameters_retained",
+        "query_plan_summaries",
+    }
+    if set(metrics) != metric_keys or (
+        metrics.get("sql_text_retained") is not False
+        or metrics.get("sql_parameters_retained") is not False
+    ):
+        raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    plan_summaries = metrics.get("query_plan_summaries")
+    if not isinstance(plan_summaries, list):
+        raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+    plan_keys = {
+        "query_class", "plan_capture_status", "node_types", "index_names",
+        "b2_selected", "index_only_scan", "boundary_range_in_index_condition",
+        "sort_node_count", "unique_node_count", "estimated_plan_rows",
+        "estimated_total_cost", "plan_capture_ms",
+    }
+    for summary in plan_summaries:
+        if not isinstance(summary, dict) or set(summary) != plan_keys:
+            raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        if (summary.get("query_class") != "LEDGER_METADATA_QUERY"
+                or summary.get("plan_capture_status") not in {
+                    "CAPTURED", "EXPLAIN_UNAVAILABLE"
+                }
+                or not isinstance(summary.get("node_types"), list)
+                or not isinstance(summary.get("index_names"), list)
+                or any(not isinstance(value, str) for value in (
+                    summary["node_types"] + summary["index_names"]
+                ))
+                or any(type(summary.get(key)) is not bool for key in (
+                    "b2_selected", "index_only_scan",
+                    "boundary_range_in_index_condition",
+                ))):
+            raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        for key in ("sort_node_count", "unique_node_count", "estimated_plan_rows"):
+            value = summary.get(key)
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or value < 0):
+                raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        for key in ("estimated_total_cost", "plan_capture_ms"):
+            value = summary.get(key)
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value)) or value < 0):
+                raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        if summary["plan_capture_status"] == "EXPLAIN_UNAVAILABLE" and (
+            summary["node_types"] or summary["index_names"]
+            or summary["b2_selected"] or summary["index_only_scan"]
+            or summary["boundary_range_in_index_condition"]
+        ):
+            raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+    allowed_query_classes = {
+        "OWNER_SCOPE_QUERY", "TARGET_MESSAGE_QUERY", "CURRENT_HISTORY_QUERY",
+        "SESSION_LINEAGE_QUERY", "LEDGER_METADATA_QUERY", "LEDGER_DETAIL_QUERY",
+        "MESSAGE_QUERY", "STORY_VERSION_QUERY", "ADMIN_VERSION_QUERY",
+        "RECOVERY_QUERY_OTHER",
+    }
+    classes = metrics.get("query_classes")
+    if not isinstance(classes, dict) or set(classes) - allowed_query_classes:
+        raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    for values in classes.values():
+        if not isinstance(values, dict) or set(values) != {
+            "query_count", "execute_ms", "fetch_count", "fetch_ms", "rows_fetched"
+        }:
+            raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+        for key in ("query_count", "fetch_count", "rows_fetched"):
+            if type(values[key]) is not int or values[key] < 0:
+                raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+        for key in ("execute_ms", "fetch_ms"):
+            value = values[key]
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not (0 <= value < float("inf"))):
+                raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    for key in ("total_query_count", "total_rows_fetched"):
+        if type(metrics.get(key)) is not int or metrics[key] < 0:
+            raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    for key in ("total_execute_ms", "total_fetch_ms"):
+        value = metrics.get(key)
+        if (isinstance(value, bool) or not isinstance(value, (int, float))
+                or not (0 <= value < float("inf"))):
+            raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    duplicate_indices = payload.get("duplicate_source_reverification_pilot_indices")
+    duplicate_count = payload.get("duplicate_source_roots_reverified")
+    if (not isinstance(duplicate_indices, list)
+            or any(type(value) is not int or value not in pilot_indices
+                   for value in duplicate_indices)
+            or len(duplicate_indices) != len(set(duplicate_indices))
+            or type(duplicate_count) is not int or duplicate_count < 0
+            or len(duplicate_indices) != duplicate_count):
+        raise ValueError("SESSION_CHECKPOINT_DUPLICATE_COUNT_INVALID")
+    owner_count = payload.get("distinct_story_owner_count")
+    if type(owner_count) is not int or owner_count < 1:
+        raise ValueError("SESSION_CHECKPOINT_OWNER_COUNT_INVALID")
+    elapsed = payload.get("session_elapsed_ms")
+    if (isinstance(elapsed, bool) or not isinstance(elapsed, (int, float))
+            or not (0 <= elapsed < float("inf"))):
+        raise ValueError("SESSION_CHECKPOINT_ELAPSED_INVALID")
+    return payload
+
+
+def _write_session_checkpoint(path: Path, payload: dict) -> str:
+    checkpoint_sha = digest(json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8"))
+    complete = {**payload, "checkpoint_sha256": checkpoint_sha}
+    raw = (json.dumps(
+        complete, ensure_ascii=False, sort_keys=True, indent=2
+    ) + "\n").encode("utf-8")
+    return create_only(path, raw)
 
 
 def jsonl_bytes(rows: list[dict]) -> bytes:
@@ -484,7 +901,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         max_ledger_events: int = 100000, diagnostic_only: bool = False,
         diagnose_duplicate_index: int | None = None,
         diagnose_ledger_event_counts: bool = False,
-        diagnose_history_suffix: bool = False) -> dict:
+        diagnose_history_suffix: bool = False,
+        progress_file: Path | None = None) -> dict:
     inputs = {
         "REVIEWER_A": private_bytes(reviewer_a, "REVIEWER_A"),
         "REVIEWER_B": private_bytes(reviewer_b, "REVIEWER_B"),
@@ -541,76 +959,330 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     if diagnose_history_suffix:
         import psycopg
 
+        if output_dir.is_symlink() or not output_dir.is_dir():
+            raise ValueError("OUTPUT_DIRECTORY_INVALID")
+        if stat.S_IMODE(output_dir.stat().st_mode) != 0o700:
+            raise ValueError("OUTPUT_PERMISSIONS_INVALID")
+        progress_writer = (
+            SafeProgressWriter(progress_file, output_dir)
+            if progress_file is not None else None
+        )
+
+        def emit_progress(event, **fields):
+            payload = {
+                "schema": "r59_gold192_history_progress_safe_v1",
+                "event": event,
+                **fields,
+            }
+            if progress_writer is not None:
+                progress_writer.emit(event, **fields)
+            else:
+                print(json.dumps(
+                    payload, ensure_ascii=False, sort_keys=True,
+                    separators=(",", ":")
+                ), file=sys.stderr, flush=True)
+
+        checkpoint_dir = output_dir / "history-suffix-checkpoints"
+        try:
+            checkpoint_dir.mkdir(mode=0o700)
+        except FileExistsError:
+            pass
+        if (checkpoint_dir.is_symlink() or not checkpoint_dir.is_dir()
+                or stat.S_IMODE(checkpoint_dir.stat().st_mode) != 0o700):
+            if progress_writer is not None:
+                progress_writer.close()
+            raise ValueError("SESSION_CHECKPOINT_DIRECTORY_INVALID")
+
+        groups = {}
+        for pilot_index, case in enumerate(priority):
+            locator = locator_index[case["case_id"]]
+            key = (case["story_id"], locator["session_id"])
+            groups.setdefault(key, []).append((pilot_index, case))
+        ordered_groups = sorted(groups.items())
+        input_fingerprint = digest(json.dumps({
+            "input_sha256": {
+                key: digest(value) for key, value in sorted(inputs.items())
+            },
+            "pilot": len(priority),
+            "max_history": max_history,
+            "max_lineage_depth": max_lineage_depth,
+            "max_ledger_events": max_ledger_events,
+            "algorithm_version": "sessionized-v3-target-specific-sql-first-event",
+            "schema": "r59_gold192_history_session_checkpoint_v1",
+        }, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+
+        all_results = []
+        all_metrics = []
+        verified_duplicate_indices = set()
+        session_checkpoints_reused = 0
+        session_checkpoints_created = 0
+        owner_count = None
         stage = "CONNECT"
         tracked_cursor = None
+        session_count = len(ordered_groups)
+        emit_progress(
+            "run_started", pilot_count=len(priority),
+            session_count=session_count, max_ledger_events=max_ledger_events,
+        )
         try:
-            with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
-                stage = "SET_READ_ONLY"
-                db.execute("SET TRANSACTION READ ONLY")
-                stage = "SET_STATEMENT_TIMEOUT"
-                db.execute("SET LOCAL statement_timeout = '90000ms'")
-                stage = "SET_LOCK_TIMEOUT"
-                db.execute("SET LOCAL lock_timeout = '1000ms'")
-                stage = "VERIFY_READ_ONLY_ROLE"
-                with db.cursor() as cursor:
-                    cursor.execute(
-                        """
-                        SELECT current_user, current_setting('transaction_read_only'),
-                               current_setting('row_security'), r.rolsuper, r.rolbypassrls
-                        FROM pg_roles AS r WHERE r.rolname = current_user
-                        """
+            with psycopg.connect(
+                dsn, autocommit=True, connect_timeout=15,
+                application_name="storyforge-r60-history-diagnostic",
+                keepalives=1, keepalives_idle=30,
+                keepalives_interval=10, keepalives_count=3,
+            ) as db:
+                # Verify the exact read-only role even when every session is resumed
+                # from a previously completed SAFE checkpoint.
+                with db.transaction():
+                    db.execute(
+                        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
                     )
-                    role = cursor.fetchone()
-                    if (role is None or role[0] != "r58_export_reader"
-                            or role[1] != "on" or role[2] != "on"
-                            or role[3] is not False or role[4] is not False):
-                        raise ValueError("DATABASE_ROLE_NOT_APPROVED")
-                    tracked_cursor = RecoveryStageCursor(cursor)
-                    owner_count = verify_story_owner_scope(
-                        tracked_cursor,
-                        sorted({case["story_id"] for case in packet_index.values()})
-                    )
-                    verified_duplicate_indices = set()
-                    for pilot_index, case in enumerate(priority):
-                        locator = locator_index[case["case_id"]]
-                        match_count = locator.get("matched_message_count")
-                        if isinstance(match_count, int) and not isinstance(match_count, bool) and match_count == 1:
-                            continue
-                        if not isinstance(match_count, int) or isinstance(match_count, bool) or match_count < 2:
-                            raise ValueError("SOURCE_MATCH_COUNT_INVALID")
-                        proof = diagnose_duplicate_source(
-                            tracked_cursor, case, locator, max_lineage_depth
+                    db.execute("SET LOCAL statement_timeout = '90000ms'")
+                    db.execute("SET LOCAL lock_timeout = '1000ms'")
+                    with db.cursor() as cursor:
+                        cursor.execute(
+                            """
+                            SELECT current_user, current_setting('transaction_read_only'),
+                                   current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                            FROM pg_roles AS r WHERE r.rolname = current_user
+                            """
                         )
-                        if proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
-                            raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
-                        verified_duplicate_indices.add(pilot_index)
-                    cases = build_recovery_cases(
-                        priority, locator_index, verified_duplicate_indices
+                        role = cursor.fetchone()
+                        if (role is None or role[0] != "r58_export_reader"
+                                or role[1] != "on" or role[2] != "on"
+                                or role[3] is not False or role[4] is not False):
+                            raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+                        owner_count = verify_story_owner_scope(
+                            cursor,
+                            sorted({case["story_id"] for case in packet_index.values()}),
+                        )
+
+                for session_number, (_session_key, entries) in enumerate(ordered_groups, 1):
+                    global_indices = [index for index, _case in entries]
+                    expected_indices = sorted(global_indices)
+                    checkpoint_path = checkpoint_dir / (
+                        f"session-{session_number:04d}-{input_fingerprint[:16]}.safe.json"
                     )
-                    results = diagnose_history_suffixes(
-                        tracked_cursor, cases, max_history=max_history,
-                        max_lineage_depth=max_lineage_depth,
-                        max_ledger_events=max_ledger_events,
+                    if checkpoint_path.exists() or checkpoint_path.is_symlink():
+                        checkpoint = _load_session_checkpoint(
+                            checkpoint_path, fingerprint=input_fingerprint,
+                            session_index=session_number,
+                            session_count=session_count,
+                            pilot_indices=expected_indices,
+                        )
+                        duplicate_indices = checkpoint.get(
+                            "duplicate_source_reverification_pilot_indices"
+                        )
+                        if (not isinstance(duplicate_indices, list)
+                                or any(type(value) is not int
+                                       or value not in expected_indices
+                                       for value in duplicate_indices)
+                                or len(duplicate_indices) != len(set(duplicate_indices))
+                                or len(duplicate_indices) != checkpoint[
+                                    "duplicate_source_roots_reverified"
+                                ]):
+                            raise ValueError("SESSION_CHECKPOINT_DUPLICATE_INDICES_INVALID")
+                        all_results.extend(checkpoint["case_results"])
+                        all_metrics.append(checkpoint["performance_metrics"])
+                        verified_duplicate_indices.update(duplicate_indices)
+                        if owner_count is None:
+                            owner_count = checkpoint["distinct_story_owner_count"]
+                        elif owner_count != checkpoint["distinct_story_owner_count"]:
+                            raise ValueError("STORY_OWNER_SCOPE_DRIFT")
+                        session_checkpoints_reused += 1
+                        emit_progress(
+                            "session_checkpoint_reused",
+                            session_index=session_number,
+                            session_count=session_count,
+                            case_count=len(entries),
+                            pilot_indices=expected_indices,
+                        )
+                        continue
+
+                    emit_progress(
+                        "session_started", session_index=session_number,
+                        session_count=session_count, case_count=len(entries),
+                        pilot_indices=expected_indices,
                     )
-                stage = "ROLLBACK"
-                db.rollback()
+                    session_started = time.perf_counter()
+                    session_verified_duplicates = set()
+                    session_results = []
+                    session_prepared = None
+                    session_metrics = {}
+                    session_owner_count = None
+                    tracked_cursor = None
+                    stage = "SESSION_TRANSACTION_BEGIN"
+                    try:
+                        with db.transaction():
+                            db.execute(
+                                "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
+                            )
+                            db.execute("SET LOCAL statement_timeout = '90000ms'")
+                            db.execute("SET LOCAL lock_timeout = '1000ms'")
+                            with db.cursor() as cursor:
+                                tracked_cursor = RecoveryStageCursor(
+                                    cursor, progress_callback=emit_progress
+                                )
+                                stage = "VERIFY_READ_ONLY_ROLE"
+                                tracked_cursor.execute(
+                                    """
+                                    SELECT current_user, current_setting('transaction_read_only'),
+                                           current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                                    FROM pg_roles AS r WHERE r.rolname = current_user
+                                    """
+                                )
+                                role = tracked_cursor.fetchone()
+                                if (role is None or role[0] != "r58_export_reader"
+                                        or role[1] != "on" or role[2] != "on"
+                                        or role[3] is not False or role[4] is not False):
+                                    raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+
+                                stage = "VERIFY_STORY_OWNER_SCOPE"
+                                session_owner_count = verify_story_owner_scope(
+                                    tracked_cursor,
+                                    sorted({case["story_id"] for case in packet_index.values()}),
+                                )
+                                if owner_count is not None and owner_count != session_owner_count:
+                                    raise ValueError("STORY_OWNER_SCOPE_DRIFT")
+
+                                session_priority = [case for _index, case in entries]
+                                local_verified_indices = set()
+                                for local_index, (global_index, case) in enumerate(entries):
+                                    locator = locator_index[case["case_id"]]
+                                    match_count = locator.get("matched_message_count")
+                                    if (isinstance(match_count, int)
+                                            and not isinstance(match_count, bool)
+                                            and match_count == 1):
+                                        continue
+                                    if (not isinstance(match_count, int)
+                                            or isinstance(match_count, bool)
+                                            or match_count < 2):
+                                        raise ValueError("SOURCE_MATCH_COUNT_INVALID")
+                                    stage = "DUPLICATE_SOURCE_REVERIFICATION"
+                                    proof = diagnose_duplicate_source(
+                                        tracked_cursor, case, locator, max_lineage_depth
+                                    )
+                                    if proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
+                                        raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+                                    local_verified_indices.add(local_index)
+                                    session_verified_duplicates.add(global_index)
+
+                                session_cases = build_recovery_cases(
+                                    session_priority, locator_index,
+                                    verified_duplicate_indices=local_verified_indices,
+                                )
+                                stage = "HISTORY_SUFFIX_DATABASE_READ"
+                                session_prepared = prepare_history_suffix_diagnostics(
+                                    tracked_cursor, session_cases,
+                                    max_history=max_history,
+                                    max_lineage_depth=max_lineage_depth,
+                                    max_ledger_events=max_ledger_events,
+                                )
+                                session_metrics = tracked_cursor.safe_metrics()
+                    except psycopg.Error as exc:
+                        sqlstate = getattr(exc, "sqlstate", None)
+                        if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
+                            sqlstate = None
+                        failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
+                        raise DatabaseFailure(
+                            failure_stage, sqlstate, type(exc).__name__
+                        ) from None
+
+                    emit_progress(
+                        "session_database_reads_completed",
+                        session_index=session_number,
+                        session_count=session_count,
+                        case_count=len(entries),
+                        total_query_count=session_metrics.get("total_query_count", 0),
+                        total_fetch_ms=session_metrics.get("total_fetch_ms", 0.0),
+                        total_rows_fetched=session_metrics.get("total_rows_fetched", 0),
+                    )
+                    emit_progress(
+                        "session_local_reconstruction_started",
+                        session_index=session_number,
+                        session_count=session_count,
+                        case_count=len(entries),
+                    )
+                    session_results = evaluate_history_suffix_diagnostics(
+                        session_prepared, progress_callback=emit_progress
+                    )
+                    del session_prepared
+
+                    for row in session_results:
+                        local_index = row.get("safe_index")
+                        if (type(local_index) is not int
+                                or not 0 <= local_index < len(global_indices)):
+                            raise ValueError("SESSION_RESULT_INDEX_INVALID")
+                        row["safe_index"] = global_indices[local_index]
+                    _validate_checkpoint_case_results(session_results, expected_indices)
+                    session_elapsed_ms = round(
+                        (time.perf_counter() - session_started) * 1000, 3
+                    )
+                    checkpoint_payload = {
+                        "schema": "r59_gold192_history_session_checkpoint_v1",
+                        "status": "SESSION_DIAGNOSTIC_COMPLETE",
+                        "run_fingerprint": input_fingerprint,
+                        "session_index": session_number,
+                        "session_count": session_count,
+                        "pilot_indices": expected_indices,
+                        "case_results": session_results,
+                        "performance_metrics": session_metrics,
+                        "duplicate_source_roots_reverified": len(session_verified_duplicates),
+                        "duplicate_source_reverification_pilot_indices": sorted(
+                            session_verified_duplicates
+                        ),
+                        "distinct_story_owner_count": session_owner_count,
+                        "session_elapsed_ms": session_elapsed_ms,
+                    }
+                    _write_session_checkpoint(checkpoint_path, checkpoint_payload)
+                    all_results.extend(session_results)
+                    all_metrics.append(session_metrics)
+                    verified_duplicate_indices.update(session_verified_duplicates)
+                    if owner_count is None:
+                        owner_count = session_owner_count
+                    session_checkpoints_created += 1
+                    emit_progress(
+                        "session_completed", session_index=session_number,
+                        session_count=session_count, case_count=len(entries),
+                        pilot_indices=expected_indices,
+                        elapsed_ms=session_elapsed_ms,
+                        recovered_count=sum(row["result"] == "RECOVERED" for row in session_results),
+                        hold_count=sum(row["result"] == "HOLD" for row in session_results),
+                        total_query_count=session_metrics.get("total_query_count", 0),
+                        total_fetch_ms=session_metrics.get("total_fetch_ms", 0.0),
+                    )
         except psycopg.Error as exc:
             sqlstate = getattr(exc, "sqlstate", None)
             if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
                 sqlstate = None
             failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
             raise DatabaseFailure(failure_stage, sqlstate, type(exc).__name__) from None
+        finally:
+            if progress_writer is not None:
+                progress_writer.close()
+
+        all_results.sort(key=lambda row: row["safe_index"])
+        if len(all_results) != len(priority):
+            raise ValueError("SESSION_RESULT_COUNT_INVALID")
         return {
             "schema": "r59_gold192_history_suffix_recovery_diagnostic_safe_v1",
             "status": "HISTORY_SUFFIX_DIAGNOSTIC_COMPLETE",
             "pilot_requested": len(priority),
-            "case_results": results,
+            "case_results": all_results,
+            "session_count": session_count,
+            "session_checkpoints_created": session_checkpoints_created,
+            "session_checkpoints_reused": session_checkpoints_reused,
+            "transaction_scope": "REPEATABLE_READ_READ_ONLY_PER_SESSION",
+            "cross_session_snapshot_consistency_proven": False,
             "database_role_verified": "r58_export_reader",
             "transaction_read_only": True,
             "row_security": True,
             "role_bypassrls": False,
             "database_modified": False,
             "private_values_emitted": False,
+            "performance_metrics": merge_safe_metrics(all_metrics),
+            "duplicate_source_roots_reverified": len(verified_duplicate_indices),
+            "distinct_story_owner_count": owner_count,
             "quality_v1_admitted": 0,
             "training_authorized": False,
             "gpu_started": False,
@@ -952,6 +1624,7 @@ def main() -> int:
     parser.add_argument("--max-history", type=int, default=20000)
     parser.add_argument("--max-lineage-depth", type=int, default=16)
     parser.add_argument("--max-ledger-events", type=int, default=100000)
+    parser.add_argument("--progress-file", type=Path)
     diagnostics = parser.add_mutually_exclusive_group()
     diagnostics.add_argument(
         "--diagnose-source-only", action="store_true",
@@ -989,6 +1662,7 @@ def main() -> int:
             diagnose_duplicate_index=args.diagnose_duplicate_source_index,
             diagnose_ledger_event_counts=args.diagnose_ledger_event_counts,
             diagnose_history_suffix=args.diagnose_history_suffix,
+            progress_file=args.progress_file,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
