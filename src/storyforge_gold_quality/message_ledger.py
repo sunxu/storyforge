@@ -118,7 +118,7 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
     target_pairs = {
         (target["message_id"], target["turn_index"]) for target in targets
     }
-    matching_boundaries = []
+    boundary_by_pair = {}
     for row in boundary_rows:
         if isinstance(row, Mapping):
             event = dict(row)
@@ -132,80 +132,100 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
             raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
         _validate_event_locator(event, story_id, session_id)
         _key(event)
-        if (event["message_id"], event["turn_index"]) in target_pairs:
-            matching_boundaries.append(event)
+        pair = (event["message_id"], event["turn_index"])
+        if pair in target_pairs:
+            previous = boundary_by_pair.get(pair)
+            if previous is None or _key(event) < _key(previous):
+                boundary_by_pair[pair] = event
 
-    earliest_boundary = (
-        min(matching_boundaries, key=_key) if matching_boundaries else None
-    )
-    if earliest_boundary is None:
-        # Preserve per-case failure isolation: evaluate_history_suffix_diagnostics
-        # will report TARGET_LEDGER_BOUNDARY_MISSING for each target independently.
+    # Keep each target's own boundary and cutoff. A single Session-wide
+    # earliest boundary is only a safe lower bound; it is not sufficient to
+    # choose the first post-boundary event for every target.
+    target_boundaries = []
+    for ordinal, target in enumerate(targets):
+        pair = (target["message_id"], target["turn_index"])
+        boundary = boundary_by_pair.get(pair)
+        if boundary is not None:
+            target_boundaries.append((ordinal, target, boundary))
+    if not target_boundaries:
+        # Missing boundaries remain isolated per-case HOLDs in local evaluation.
         return []
 
-    result = []
+    ordinals = [ordinal for ordinal, _, _ in target_boundaries]
+    boundary_turns = [target["turn_index"] for _, target, _ in target_boundaries]
+    boundary_times = [boundary["recorded_at"] for _, _, boundary in target_boundaries]
+    boundary_ids = [boundary["id"] for _, _, boundary in target_boundaries]
+
+    # Push first-event selection into PostgreSQL. For every target and message,
+    # choose the first event after that target's own (recorded_at, id) boundary
+    # whose turn_index is within that target's historical cutoff. The union of
+    # those rows is sufficient for the existing Python reconstruction semantics:
+    # an event selected for another target cannot precede an eligible event for
+    # this target without also being eligible and selected for this target.
+    cursor.execute(
+        """
+        WITH targets AS (
+            SELECT target_ordinal, turn_index, boundary_recorded_at, boundary_id
+            FROM unnest(
+                %s::integer[], %s::integer[], %s::timestamptz[], %s::bigint[]
+            ) AS t(target_ordinal, turn_index, boundary_recorded_at, boundary_id)
+        ),
+        first_events AS (
+            SELECT DISTINCT ON (t.target_ordinal, e.message_id)
+                   e.id, e.message_id::text AS message_id,
+                   e.story_id::text AS story_id, e.session_id::text AS session_id,
+                   e.role::text AS role, e.turn_index::integer AS turn_index,
+                   e.operation::text AS operation, e.recorded_at
+            FROM targets t
+            JOIN public.v2_chat_message_ledger e
+              ON e.story_id = %s AND e.session_id = %s
+             AND e.turn_index BETWEEN 1 AND (t.turn_index - 1)
+             AND (e.recorded_at, e.id) > (t.boundary_recorded_at, t.boundary_id)
+            ORDER BY t.target_ordinal, e.message_id, e.recorded_at, e.id
+        )
+        SELECT id, message_id, story_id, session_id, role, turn_index,
+               operation, recorded_at
+        FROM first_events
+        ORDER BY recorded_at, id
+        """,
+        (ordinals, boundary_turns, boundary_times, boundary_ids, story_id, session_id),
+    )
     metadata_columns = (
         "id", "message_id", "story_id", "session_id", "role",
         "turn_index", "operation", "recorded_at",
     )
-    last_key = None
-    while len(result) <= max_events:
-        page_limit = min(LEDGER_METADATA_BATCH_SIZE, max_events + 1 - len(result))
-        if last_key is None:
-            query = """
-                SELECT id, message_id::text AS message_id,
-                       story_id::text AS story_id, session_id::text AS session_id,
-                       role::text AS role, turn_index::integer AS turn_index,
-                       operation::text AS operation, recorded_at
-                FROM public.v2_chat_message_ledger
-                WHERE story_id = %s AND session_id = %s
-                  AND turn_index BETWEEN 1 AND %s
-                  AND (recorded_at, id) >= (%s, %s)
-                ORDER BY recorded_at, id
-                LIMIT %s
-            """
-            params = (
-                story_id, session_id, max_turn_index,
-                earliest_boundary["recorded_at"], earliest_boundary["id"],
-                page_limit,
-            )
+    events_by_id = {}
+    for row in cursor.fetchall():
+        if isinstance(row, Mapping):
+            event = dict(row)
+        elif isinstance(row, (tuple, list)) and len(row) == len(metadata_columns):
+            event = dict(zip(metadata_columns, row, strict=True))
         else:
-            query = """
-                SELECT id, message_id::text AS message_id,
-                       story_id::text AS story_id, session_id::text AS session_id,
-                       role::text AS role, turn_index::integer AS turn_index,
-                       operation::text AS operation, recorded_at
-                FROM public.v2_chat_message_ledger
-                WHERE story_id = %s AND session_id = %s
-                  AND turn_index BETWEEN 1 AND %s
-                  AND (recorded_at, id) > (%s, %s)
-                ORDER BY recorded_at, id
-                LIMIT %s
-            """
-            params = (
-                story_id, session_id, max_turn_index,
-                last_key[0], last_key[1], page_limit,
-            )
-        cursor.execute(query, params)
-        page = cursor.fetchall()
-        if not page:
-            break
-        for row in page:
-            if isinstance(row, Mapping):
-                event = dict(row)
-            elif isinstance(row, (tuple, list)) and len(row) == len(metadata_columns):
-                event = dict(zip(metadata_columns, row, strict=True))
-            else:
-                raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
-            _validate_event_locator(event, story_id, session_id)
-            _key(event)
-            event["row_data"] = None
-            result.append(event)
-        if len(result) > max_events:
+            raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
+        _validate_event_locator(event, story_id, session_id)
+        _key(event)
+        event["row_data"] = None
+        previous = events_by_id.get(event["id"])
+        if previous is not None and any(
+            previous[field] != event[field] for field in metadata_columns[1:]
+        ):
+            raise LedgerRecoveryError("LEDGER_EVENT_IDENTITY_CONFLICT")
+        events_by_id[event["id"]] = event
+        if len(events_by_id) > max_events:
             raise LedgerRecoveryError("LEDGER_SESSION_EVENT_LIMIT_EXCEEDED")
-        last_key = (result[-1]["recorded_at"], result[-1]["id"])
-        if len(page) < page_limit:
-            break
+    result = sorted(events_by_id.values(), key=_key)
+    boundary_events_by_id = {event["id"]: event for _, _, event in target_boundaries}
+    for event_id, event in boundary_events_by_id.items():
+        previous = events_by_id.get(event_id)
+        if previous is not None and any(
+            previous[field] != event[field] for field in metadata_columns[1:]
+        ):
+            raise LedgerRecoveryError("LEDGER_EVENT_IDENTITY_CONFLICT")
+        if previous is None:
+            result.append({**event, "row_data": None})
+    result.sort(key=_key)
+    if len(result) > max_events:
+        raise LedgerRecoveryError("LEDGER_SESSION_EVENT_LIMIT_EXCEEDED")
 
     detail_ids = _required_event_ids(result, targets)
     details = {}
