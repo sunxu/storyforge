@@ -198,7 +198,7 @@ def audit(
         raise AuditHold("B2_PASS_GATE_VIOLATION")
 
     receipt = _json(receipt_raw, "B2_EXECUTION_RECEIPT_INVALID")
-    if receipt.get("schema") != EXECUTION_SCHEMA or receipt.get("reviewer") != "B2":
+    if (receipt.get("schema") != EXECUTION_SCHEMA or receipt.get("reviewer") != "B2"\n            or receipt.get("status") != "EXECUTION_COMPLETE"):
         raise AuditHold("B2_EXECUTION_RECEIPT_SCHEMA_INVALID")
     if (
         receipt.get("blind_input_sha256") != _sha(blind_raw)
