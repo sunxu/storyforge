@@ -107,6 +107,8 @@ def _validate_staging(
         or staging_safe.get("original_staging_mutated") is not False
         or staging_safe.get("quality_v1_admitted") != 0
         or staging_safe.get("training_authorized") is not False
+        or staging_safe.get("gpu_started") is not False
+        or staging_safe.get("r50_accessed") is not False
         or not isinstance(source_sha, str)
         or not HEX64.fullmatch(source_sha)
     ):
@@ -284,6 +286,8 @@ def audit(
             raise CrosswalkHold("B2_OWNER_MAP_CASE_ID_MISMATCH")
 
         a_row = a_idx[digest]
+        if a_row.get("case_id") != staged_idx[digest].get("case_id"):
+            raise CrosswalkHold("A_TO_GOLD72_CASE_ID_MISMATCH")
         a_class = canonical._a_class(a_row)
         a_classes[a_class] += 1
         b_decision = b2_row.get("decision")
