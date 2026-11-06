@@ -240,12 +240,18 @@ def recovery_query_stage(query: str) -> str:
 
 
 class RecoveryStageCursor:
-    """Track query/fetch cost by safe query class without retaining SQL or values."""
+    """Track query/fetch cost and emit aggregate-only progress events."""
 
-    def __init__(self, cursor):
+    def __init__(self, cursor, progress_callback=None):
         self._cursor = cursor
         self.stage = "RECOVERY_QUERY_OTHER"
         self._metrics = {}
+        self._progress_callback = progress_callback
+        self._operation_ordinal = 0
+
+    def _emit(self, event, **fields):
+        if self._progress_callback is not None:
+            self._progress_callback(event, **fields)
 
     def _metric(self):
         return self._metrics.setdefault(self.stage, {
@@ -257,35 +263,63 @@ class RecoveryStageCursor:
         self.stage = recovery_query_stage(str(query))
         metric = self._metric()
         metric["query_count"] += 1
+        self._operation_ordinal += 1
+        ordinal = self._operation_ordinal
+        self._emit("query_started", query_class=self.stage,
+                   operation="execute", operation_ordinal=ordinal)
         started = time.perf_counter()
         try:
             if params is None:
                 return self._cursor.execute(query)
             return self._cursor.execute(query, params)
         finally:
-            metric["execute_ms"] += (time.perf_counter() - started) * 1000
+            elapsed = (time.perf_counter() - started) * 1000
+            metric["execute_ms"] += elapsed
+            self._emit("query_completed", query_class=self.stage,
+                       operation="execute", operation_ordinal=ordinal,
+                       elapsed_ms=round(elapsed, 3))
 
     def fetchone(self):
         metric = self._metric()
         metric["fetch_count"] += 1
+        self._operation_ordinal += 1
+        ordinal = self._operation_ordinal
+        self._emit("query_started", query_class=self.stage,
+                   operation="fetchone", operation_ordinal=ordinal)
         started = time.perf_counter()
+        row = None
         try:
             row = self._cursor.fetchone()
             metric["rows_fetched"] += int(row is not None)
             return row
         finally:
-            metric["fetch_ms"] += (time.perf_counter() - started) * 1000
+            elapsed = (time.perf_counter() - started) * 1000
+            metric["fetch_ms"] += elapsed
+            self._emit("query_completed", query_class=self.stage,
+                       operation="fetchone", operation_ordinal=ordinal,
+                       elapsed_ms=round(elapsed, 3),
+                       rows_fetched=int(row is not None))
 
     def fetchall(self):
         metric = self._metric()
         metric["fetch_count"] += 1
+        self._operation_ordinal += 1
+        ordinal = self._operation_ordinal
+        self._emit("query_started", query_class=self.stage,
+                   operation="fetchall", operation_ordinal=ordinal)
         started = time.perf_counter()
+        rows = []
         try:
             rows = self._cursor.fetchall()
             metric["rows_fetched"] += len(rows)
             return rows
         finally:
-            metric["fetch_ms"] += (time.perf_counter() - started) * 1000
+            elapsed = (time.perf_counter() - started) * 1000
+            metric["fetch_ms"] += elapsed
+            self._emit("query_completed", query_class=self.stage,
+                       operation="fetchall", operation_ordinal=ordinal,
+                       elapsed_ms=round(elapsed, 3),
+                       rows_fetched=len(rows))
 
     def safe_metrics(self):
         return {
@@ -311,6 +345,34 @@ class RecoveryStageCursor:
         return getattr(self._cursor, name)
 
 
+class SafeProgressWriter:
+    """Create-only, private JSONL progress log containing aggregate metadata only."""
+
+    def __init__(self, path: Path, output_dir: Path):
+        output_root = output_dir.resolve(strict=True)
+        if (path.parent.resolve(strict=True) != output_root
+                or path.name in {"", ".", ".."}
+                or stat.S_IMODE(output_root.stat().st_mode) != 0o700):
+            raise ValueError("PROGRESS_FILE_SCOPE_INVALID")
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+        fd = os.open(path, flags, 0o600)
+        self._stream = os.fdopen(fd, "w", encoding="utf-8")
+
+    def emit(self, event, **fields):
+        payload = {
+            "schema": "r59_gold192_history_progress_safe_v1",
+            "event": event,
+            **fields,
+        }
+        self._stream.write(json.dumps(
+            payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ) + "\n")
+        self._stream.flush()
+
+    def close(self):
+        self._stream.close()
+
+
 def create_only(path: Path, payload: bytes) -> str:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     fd = os.open(path, flags, 0o600)
@@ -323,6 +385,142 @@ def create_only(path: Path, payload: bytes) -> str:
         path.unlink(missing_ok=True)
         raise
     return digest(payload)
+
+
+def merge_safe_metrics(metrics_rows: list[dict]) -> dict:
+    merged = {}
+    for metrics in metrics_rows:
+        for query_class, values in metrics.get("query_classes", {}).items():
+            target = merged.setdefault(query_class, {
+                "query_count": 0, "execute_ms": 0.0,
+                "fetch_count": 0, "fetch_ms": 0.0, "rows_fetched": 0,
+            })
+            for key in target:
+                target[key] += values.get(key, 0)
+    return {
+        "query_classes": {
+            key: {
+                "query_count": value["query_count"],
+                "execute_ms": round(value["execute_ms"], 3),
+                "fetch_count": value["fetch_count"],
+                "fetch_ms": round(value["fetch_ms"], 3),
+                "rows_fetched": value["rows_fetched"],
+            }
+            for key, value in sorted(merged.items())
+        },
+        "total_query_count": sum(v["query_count"] for v in merged.values()),
+        "total_execute_ms": round(sum(v["execute_ms"] for v in merged.values()), 3),
+        "total_fetch_ms": round(sum(v["fetch_ms"] for v in merged.values()), 3),
+        "total_rows_fetched": sum(v["rows_fetched"] for v in merged.values()),
+        "sql_text_retained": False,
+        "sql_parameters_retained": False,
+    }
+
+
+def _validate_checkpoint_case_results(rows, expected_indices):
+    if not isinstance(rows, list) or len(rows) != len(expected_indices):
+        raise ValueError("SESSION_CHECKPOINT_CASE_COUNT_INVALID")
+    allowed = {
+        "safe_index", "result", "reason_code",
+        "current_history_message_count", "current_history_suffix_role",
+        "current_history_suffix_turn", "reconstructed_history_message_count",
+        "history_suffix_role", "history_suffix_turn",
+        "current_suffix_first_post_target_operation", "ledger_event_count",
+        "history_rows_restored", "history_rows_excluded",
+        "current_history_first_post_target_operation_counts",
+        "current_marker_rows_with_preboundary_snapshot",
+        "current_marker_rows_without_preboundary_snapshot",
+        "current_marker_prior_snapshot_same_timestamp_as_boundary",
+        "history_message_count", "current_history_suffix_role",
+    }
+    seen = set()
+    count_fields = {
+        "safe_index", "current_history_message_count",
+        "current_history_suffix_turn", "reconstructed_history_message_count",
+        "history_suffix_turn", "ledger_event_count", "history_rows_restored",
+        "history_rows_excluded", "history_message_count",
+        "current_marker_rows_with_preboundary_snapshot",
+        "current_marker_rows_without_preboundary_snapshot",
+        "current_marker_prior_snapshot_same_timestamp_as_boundary",
+    }
+    for row in rows:
+        if not isinstance(row, dict) or set(row) - allowed:
+            raise ValueError("SESSION_CHECKPOINT_CASE_SHAPE_INVALID")
+        index = row.get("safe_index")
+        if type(index) is not int or index not in expected_indices or index in seen:
+            raise ValueError("SESSION_CHECKPOINT_INDEX_INVALID")
+        seen.add(index)
+        if row.get("result") not in {"HOLD", "RECOVERED"}:
+            raise ValueError("SESSION_CHECKPOINT_RESULT_INVALID")
+        reason = row.get("reason_code")
+        if reason is not None and (
+            not isinstance(reason, str) or not re.fullmatch(r"[A-Z0-9_]+", reason)
+        ):
+            raise ValueError("SESSION_CHECKPOINT_REASON_INVALID")
+        for key in count_fields & row.keys():
+            value = row[key]
+            if value is not None and (type(value) is not int or value < 0):
+                raise ValueError("SESSION_CHECKPOINT_COUNT_INVALID")
+        for key in ("current_history_suffix_role", "history_suffix_role"):
+            if row.get(key) not in {None, "user", "assistant"}:
+                raise ValueError("SESSION_CHECKPOINT_ROLE_INVALID")
+        operations = row.get("current_history_first_post_target_operation_counts", {})
+        if (not isinstance(operations, dict)
+                or any(key not in {"insert", "update_after", "update_before", "delete"}
+                       or type(value) is not int or value < 0
+                       for key, value in operations.items())):
+            raise ValueError("SESSION_CHECKPOINT_OPERATION_COUNTS_INVALID")
+    if seen != set(expected_indices):
+        raise ValueError("SESSION_CHECKPOINT_INDEX_SET_INVALID")
+
+
+def _load_session_checkpoint(path: Path, *, fingerprint: str,
+                             session_index: int, session_count: int,
+                             pilot_indices: list[int]) -> dict:
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("SESSION_CHECKPOINT_FILE_INVALID")
+    info = path.stat()
+    if stat.S_IMODE(info.st_mode) != 0o600 or info.st_size > 5 * 1024 * 1024:
+        raise ValueError("SESSION_CHECKPOINT_PERMISSIONS_INVALID")
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        raise ValueError("SESSION_CHECKPOINT_PARSE_INVALID") from None
+    if not isinstance(payload, dict):
+        raise ValueError("SESSION_CHECKPOINT_SHAPE_INVALID")
+    checkpoint_sha = payload.pop("checkpoint_sha256", None)
+    actual_sha = digest(json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8"))
+    if checkpoint_sha != actual_sha:
+        raise ValueError("SESSION_CHECKPOINT_DIGEST_INVALID")
+    if (payload.get("schema") != "r59_gold192_history_session_checkpoint_v1"
+            or payload.get("status") != "SESSION_DIAGNOSTIC_COMPLETE"
+            or payload.get("run_fingerprint") != fingerprint
+            or payload.get("session_index") != session_index
+            or payload.get("session_count") != session_count
+            or payload.get("pilot_indices") != pilot_indices):
+        raise ValueError("SESSION_CHECKPOINT_CONTEXT_MISMATCH")
+    _validate_checkpoint_case_results(payload.get("case_results"), pilot_indices)
+    metrics = payload.get("performance_metrics")
+    if not isinstance(metrics, dict) or metrics.get("sql_text_retained") is not False:
+        raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    if type(payload.get("duplicate_source_roots_reverified")) is not int:
+        raise ValueError("SESSION_CHECKPOINT_DUPLICATE_COUNT_INVALID")
+    if type(payload.get("distinct_story_owner_count")) is not int:
+        raise ValueError("SESSION_CHECKPOINT_OWNER_COUNT_INVALID")
+    return payload
+
+
+def _write_session_checkpoint(path: Path, payload: dict) -> str:
+    checkpoint_sha = digest(json.dumps(
+        payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8"))
+    complete = {**payload, "checkpoint_sha256": checkpoint_sha}
+    raw = (json.dumps(
+        complete, ensure_ascii=False, sort_keys=True, indent=2
+    ) + "\n").encode("utf-8")
+    return create_only(path, raw)
 
 
 def jsonl_bytes(rows: list[dict]) -> bytes:
@@ -484,7 +682,8 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
         max_ledger_events: int = 100000, diagnostic_only: bool = False,
         diagnose_duplicate_index: int | None = None,
         diagnose_ledger_event_counts: bool = False,
-        diagnose_history_suffix: bool = False) -> dict:
+        diagnose_history_suffix: bool = False,
+        progress_file: Path | None = None) -> dict:
     inputs = {
         "REVIEWER_A": private_bytes(reviewer_a, "REVIEWER_A"),
         "REVIEWER_B": private_bytes(reviewer_b, "REVIEWER_B"),
@@ -952,6 +1151,7 @@ def main() -> int:
     parser.add_argument("--max-history", type=int, default=20000)
     parser.add_argument("--max-lineage-depth", type=int, default=16)
     parser.add_argument("--max-ledger-events", type=int, default=100000)
+    parser.add_argument("--progress-file", type=Path)
     diagnostics = parser.add_mutually_exclusive_group()
     diagnostics.add_argument(
         "--diagnose-source-only", action="store_true",
@@ -989,6 +1189,7 @@ def main() -> int:
             diagnose_duplicate_index=args.diagnose_duplicate_source_index,
             diagnose_ledger_event_counts=args.diagnose_ledger_event_counts,
             diagnose_history_suffix=args.diagnose_history_suffix,
+            progress_file=args.progress_file,
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 0
