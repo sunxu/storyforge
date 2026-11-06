@@ -42,6 +42,7 @@ TOOLS = [
     ("r59.gold-review-bind", "experiments/r58_quality/gold_quality_review_bind.py", "private pinned A/B/exclusions + owner evidence -> Quality-v1 candidate input + SAFE", "experiments/r58_quality/test_gold_quality_review_bind.py"),
     ("r59.evidence-inventory", "experiments/r58_quality/r59_evidence_inventory.py", "private staged/locator/draft/exposure exports -> aggregate SAFE exact-association audit", "experiments/r58_quality/test_r59_evidence_inventory.py"),
     ("r59.sft-candidates", "experiments/r58_quality/quality_v1_sft_candidates.py", "private reviewed rows -> SFT candidates + SAFE; no training admission", "experiments/r58_quality/test_quality_v1_sft_candidates.py"),
+    ("quality.review-reconciliation", "src/storyforge_gold_quality/review_reconciliation.py", "private aggregate crosswalk SAFE -> append-only batch event", "tests/test_gold_quality_review_reconciliation.py"),
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
