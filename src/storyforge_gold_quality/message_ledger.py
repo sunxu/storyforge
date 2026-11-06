@@ -172,24 +172,25 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
             FROM unnest(
                 %s::integer[], %s::integer[], %s::timestamptz[], %s::bigint[]
             ) AS t(target_ordinal, turn_index, boundary_recorded_at, boundary_id)
-        ),
-        first_events AS (
-            SELECT DISTINCT ON (t.target_ordinal, e.message_id)
+        )
+        SELECT first_event.id, first_event.message_id,
+               first_event.story_id, first_event.session_id,
+               first_event.role, first_event.turn_index,
+               first_event.operation, first_event.recorded_at
+        FROM targets t
+        CROSS JOIN LATERAL (
+            SELECT DISTINCT ON (e.message_id)
                    e.id, e.message_id::text AS message_id,
                    e.story_id::text AS story_id, e.session_id::text AS session_id,
                    e.role::text AS role, e.turn_index::integer AS turn_index,
                    e.operation::text AS operation, e.recorded_at
-            FROM targets t
-            JOIN public.v2_chat_message_ledger e
-              ON e.story_id = %s AND e.session_id = %s
-             AND e.turn_index BETWEEN 1 AND (t.turn_index - 1)
-             AND (e.recorded_at, e.id) > (t.boundary_recorded_at, t.boundary_id)
-            ORDER BY t.target_ordinal, e.message_id, e.recorded_at, e.id
-        )
-        SELECT id, message_id, story_id, session_id, role, turn_index,
-               operation, recorded_at
-        FROM first_events
-        ORDER BY recorded_at, id
+            FROM public.v2_chat_message_ledger e
+            WHERE e.story_id = %s AND e.session_id = %s
+              AND e.turn_index BETWEEN 1 AND (t.turn_index - 1)
+              AND (e.recorded_at, e.id) > (t.boundary_recorded_at, t.boundary_id)
+            ORDER BY e.message_id, e.recorded_at, e.id
+        ) AS first_event
+        ORDER BY first_event.recorded_at, first_event.id
         """,
         (ordinals, boundary_turns, boundary_times, boundary_ids, story_id, session_id),
     )
