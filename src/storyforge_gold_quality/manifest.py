@@ -118,6 +118,7 @@ def validate_event(event):
             "package_safe_sha256", "receipt_template_sha256", "blind_input_sha256",
             "instructions_sha256", "owner_map_sha256", "result_sha256",
             "results_only_safe_sha256", "resolution_template_sha256",
+            "reviewer_a_v3_sha256", "b2_results_sha256", "crosswalk_safe_sha256",
             "owner_resolution_sha256",
         }
         expected_pairs = {
