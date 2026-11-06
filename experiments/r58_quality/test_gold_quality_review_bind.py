@@ -20,11 +20,23 @@ from quality_v1 import EVIDENCE, FLOORS, SCORES, SEVERE, canonical, sha
 
 try:
     from .r60_gold192_canonical_a_v3 import (
-        A_SHA, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SHA, B_SCHEMA, B_COUNTS,
+        A_SCHEMA,
+        A_SHA,
+        A_SOURCE_PINS,
+        A_STATUS,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
     )
 except ImportError:
     from r60_gold192_canonical_a_v3 import (
-        A_SHA, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SHA, B_SCHEMA, B_COUNTS,
+        A_SCHEMA,
+        A_SHA,
+        A_SOURCE_PINS,
+        A_STATUS,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
     )
 
 
