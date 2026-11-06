@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import stat
@@ -240,6 +241,79 @@ def recovery_query_stage(query: str) -> str:
     return "RECOVERY_QUERY_OTHER"
 
 
+def safe_explain_plan_summary(payload):
+    """Reduce EXPLAIN JSON to a SAFE plan shape without retaining SQL literals."""
+    if isinstance(payload, str):
+        payload = json.loads(payload)
+    if isinstance(payload, dict) and "QUERY PLAN" in payload:
+        payload = payload["QUERY PLAN"]
+    if isinstance(payload, list):
+        if not payload or not isinstance(payload[0], dict):
+            raise ValueError("EXPLAIN_PLAN_SHAPE_INVALID")
+        payload = payload[0]
+    if not isinstance(payload, dict) or not isinstance(payload.get("Plan"), dict):
+        raise ValueError("EXPLAIN_PLAN_SHAPE_INVALID")
+
+    root = payload["Plan"]
+    node_types = []
+    index_names = set()
+    boundary_index_condition = False
+    sort_count = unique_count = 0
+    stack = [root]
+    while stack:
+        node = stack.pop()
+        if not isinstance(node, dict):
+            raise ValueError("EXPLAIN_PLAN_NODE_INVALID")
+        node_type = node.get("Node Type")
+        if not isinstance(node_type, str) or not node_type:
+            raise ValueError("EXPLAIN_PLAN_NODE_INVALID")
+        node_types.append(node_type)
+        if node_type in {"Sort", "Incremental Sort"}:
+            sort_count += 1
+        if node_type == "Unique":
+            unique_count += 1
+        index_name = node.get("Index Name")
+        if index_name is not None:
+            if not isinstance(index_name, str) or not re.fullmatch(
+                r"[A-Za-z0-9_]+", index_name
+            ):
+                raise ValueError("EXPLAIN_PLAN_INDEX_NAME_INVALID")
+            index_names.add(index_name)
+        index_cond = node.get("Index Cond", "")
+        if not isinstance(index_cond, str):
+            raise ValueError("EXPLAIN_PLAN_INDEX_CONDITION_INVALID")
+        if ("recorded_at" in index_cond and "boundary_recorded_at" in index_cond
+                and "id" in index_cond and "boundary_id" in index_cond):
+            boundary_index_condition = True
+        children = node.get("Plans", [])
+        if not isinstance(children, list):
+            raise ValueError("EXPLAIN_PLAN_CHILDREN_INVALID")
+        stack.extend(reversed(children))
+
+    estimated_rows = root.get("Plan Rows", 0)
+    estimated_cost = root.get("Total Cost", 0.0)
+    if (isinstance(estimated_rows, bool) or not isinstance(estimated_rows, (int, float))
+            or estimated_rows < 0
+            or isinstance(estimated_cost, bool)
+            or not isinstance(estimated_cost, (int, float))
+            or not math.isfinite(float(estimated_cost)) or estimated_cost < 0):
+        raise ValueError("EXPLAIN_PLAN_ESTIMATE_INVALID")
+    return {
+        "query_class": "LEDGER_METADATA_QUERY",
+        "plan_capture_status": "CAPTURED",
+        "node_types": node_types,
+        "index_names": sorted(index_names),
+        "b2_selected": "idx_v2_chat_message_ledger_r60_b2" in index_names,
+        "index_only_scan": "Index Only Scan" in node_types,
+        "boundary_range_in_index_condition": boundary_index_condition,
+        "sort_node_count": sort_count,
+        "unique_node_count": unique_count,
+        "estimated_plan_rows": estimated_rows,
+        "estimated_total_cost": round(float(estimated_cost), 3),
+        "plan_capture_ms": 0.0,
+    }
+
+
 class RecoveryStageCursor:
     """Track query/fetch cost and emit aggregate-only progress events."""
 
@@ -249,6 +323,46 @@ class RecoveryStageCursor:
         self._metrics = {}
         self._progress_callback = progress_callback
         self._operation_ordinal = 0
+        self._query_plan_summaries = []
+
+    def _capture_plan(self, query, params):
+        started = time.perf_counter()
+        try:
+            self._cursor.execute("SAVEPOINT storyforge_plan_capture")
+            self._cursor.execute("EXPLAIN (FORMAT JSON) " + str(query), params)
+            row = self._cursor.fetchone()
+            if row is None:
+                raise ValueError("EXPLAIN_PLAN_RESULT_EMPTY")
+            if isinstance(row, dict):
+                payload = next(iter(row.values()))
+            elif isinstance(row, (tuple, list)) and row:
+                payload = row[0]
+            else:
+                raise ValueError("EXPLAIN_PLAN_RESULT_SHAPE_INVALID")
+            summary = safe_explain_plan_summary(payload)
+        except Exception:
+            self._cursor.execute("ROLLBACK TO SAVEPOINT storyforge_plan_capture")
+            self._cursor.execute("RELEASE SAVEPOINT storyforge_plan_capture")
+            summary = {
+                "query_class": "LEDGER_METADATA_QUERY",
+                "plan_capture_status": "EXPLAIN_UNAVAILABLE",
+                "node_types": [],
+                "index_names": [],
+                "b2_selected": False,
+                "index_only_scan": False,
+                "boundary_range_in_index_condition": False,
+                "sort_node_count": 0,
+                "unique_node_count": 0,
+                "estimated_plan_rows": 0,
+                "estimated_total_cost": 0.0,
+                "plan_capture_ms": 0.0,
+            }
+        else:
+            self._cursor.execute("RELEASE SAVEPOINT storyforge_plan_capture")
+        summary["plan_capture_ms"] = round(
+            (time.perf_counter() - started) * 1000, 3
+        )
+        self._query_plan_summaries.append(summary)
 
     def _emit(self, event, **fields):
         if self._progress_callback is not None:
@@ -262,6 +376,10 @@ class RecoveryStageCursor:
 
     def execute(self, query, params=None):
         self.stage = recovery_query_stage(str(query))
+        if ("WITH targets AS" in str(query)
+                and "DISTINCT ON (e.message_id)" in str(query)
+                and "public.v2_chat_message_ledger" in str(query)):
+            self._capture_plan(query, params)
         metric = self._metric()
         metric["query_count"] += 1
         self._operation_ordinal += 1
@@ -340,6 +458,7 @@ class RecoveryStageCursor:
             "total_rows_fetched": sum(v["rows_fetched"] for v in self._metrics.values()),
             "sql_text_retained": False,
             "sql_parameters_retained": False,
+            "query_plan_summaries": list(self._query_plan_summaries),
         }
 
     def __getattr__(self, name):
@@ -415,6 +534,10 @@ def merge_safe_metrics(metrics_rows: list[dict]) -> dict:
         "total_rows_fetched": sum(v["rows_fetched"] for v in merged.values()),
         "sql_text_retained": False,
         "sql_parameters_retained": False,
+        "query_plan_summaries": [
+            summary for metrics in metrics_rows
+            for summary in metrics.get("query_plan_summaries", [])
+        ],
     }
 
 
@@ -510,12 +633,55 @@ def _load_session_checkpoint(path: Path, *, fingerprint: str,
         "query_classes", "total_query_count", "total_execute_ms",
         "total_fetch_ms", "total_rows_fetched",
         "sql_text_retained", "sql_parameters_retained",
+        "query_plan_summaries",
     }
     if set(metrics) != metric_keys or (
         metrics.get("sql_text_retained") is not False
         or metrics.get("sql_parameters_retained") is not False
     ):
         raise ValueError("SESSION_CHECKPOINT_METRICS_INVALID")
+    plan_summaries = metrics.get("query_plan_summaries")
+    if not isinstance(plan_summaries, list):
+        raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+    plan_keys = {
+        "query_class", "plan_capture_status", "node_types", "index_names",
+        "b2_selected", "index_only_scan", "boundary_range_in_index_condition",
+        "sort_node_count", "unique_node_count", "estimated_plan_rows",
+        "estimated_total_cost", "plan_capture_ms",
+    }
+    for summary in plan_summaries:
+        if not isinstance(summary, dict) or set(summary) != plan_keys:
+            raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        if (summary.get("query_class") != "LEDGER_METADATA_QUERY"
+                or summary.get("plan_capture_status") not in {
+                    "CAPTURED", "EXPLAIN_UNAVAILABLE"
+                }
+                or not isinstance(summary.get("node_types"), list)
+                or not isinstance(summary.get("index_names"), list)
+                or any(not isinstance(value, str) for value in (
+                    summary["node_types"] + summary["index_names"]
+                ))
+                or any(type(summary.get(key)) is not bool for key in (
+                    "b2_selected", "index_only_scan",
+                    "boundary_range_in_index_condition",
+                ))):
+            raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        for key in ("sort_node_count", "unique_node_count", "estimated_plan_rows"):
+            value = summary.get(key)
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or value < 0):
+                raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        for key in ("estimated_total_cost", "plan_capture_ms"):
+            value = summary.get(key)
+            if (isinstance(value, bool) or not isinstance(value, (int, float))
+                    or not math.isfinite(float(value)) or value < 0):
+                raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
+        if summary["plan_capture_status"] == "EXPLAIN_UNAVAILABLE" and (
+            summary["node_types"] or summary["index_names"]
+            or summary["b2_selected"] or summary["index_only_scan"]
+            or summary["boundary_range_in_index_condition"]
+        ):
+            raise ValueError("SESSION_CHECKPOINT_PLAN_SUMMARIES_INVALID")
     allowed_query_classes = {
         "OWNER_SCOPE_QUERY", "TARGET_MESSAGE_QUERY", "CURRENT_HISTORY_QUERY",
         "SESSION_LINEAGE_QUERY", "LEDGER_METADATA_QUERY", "LEDGER_DETAIL_QUERY",
@@ -841,7 +1007,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             "max_history": max_history,
             "max_lineage_depth": max_lineage_depth,
             "max_ledger_events": max_ledger_events,
-            "algorithm_version": "sessionized-v2-target-boundary-window",
+            "algorithm_version": "sessionized-v3-target-specific-sql-first-event",
             "schema": "r59_gold192_history_session_checkpoint_v1",
         }, sort_keys=True, separators=(",", ":")).encode("utf-8"))
 
