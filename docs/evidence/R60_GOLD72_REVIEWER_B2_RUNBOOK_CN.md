@@ -127,7 +127,7 @@ ARGS=(
   --owner-map "$OUT/R60_GOLD72_REVIEWER_B2_ID_MAP_PRIVATE.json"
   --result "$OUT/R60_GOLD72_REVIEWER_B2_RESULTS_PRIVATE.json"
   --execution-record "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECORD_PRIVATE"
-  --output "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE.json"
+  --output "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE_COMPLETED.json"
   --repo-root "$REPO"
 )
 python3 "$REPO/experiments/r58_quality/r60_reviewer_b2_receipt_builder.py" "${ARGS[@]}" --validate-only
@@ -155,7 +155,7 @@ python3 "$REPO/experiments/r58_quality/r60_reviewer_b2_audit.py" \
   --instructions "$OUT/R60_GOLD72_REVIEWER_B2_INSTRUCTIONS_CN.md" \
   --owner-map "$OUT/R60_GOLD72_REVIEWER_B2_ID_MAP_PRIVATE.json" \
   --result "$OUT/R60_GOLD72_REVIEWER_B2_RESULTS_PRIVATE.json" \
-  --execution-receipt "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE.json" \
+  --execution-receipt "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE_COMPLETED.json" \
   --execution-record "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECORD_PRIVATE" \
   --safe-output "$OUT/R60_GOLD72_REVIEWER_B2_AUDIT_SAFE.json"
 ```
@@ -171,13 +171,19 @@ python3 "$REPO/experiments/r58_quality/r60_reviewer_b2_audit.py" \
 
 SAFE 仍明确区分“Owner 已核验执行材料”与“密码学证明 reviewer 独立”。即使通过，也不会自动准入 Quality-v1。
 
-## 6. 当前状态与禁止事项
+## 6. 实际执行结果与后续门禁
 
-- B2 package builder / audit 工具：代码与合成测试。
-- 实际 72 条盲审：待 Owner 本机生成后，在独立执行环境完成。
-- Quality-v1 admission：0。
-- Training authorization：false。
-- GPU：未启动。
-- R50：未访问。
+截至 2026-11-06，Owner 已完成 B2 独立执行、Receipt 生成和 Owner-only Audit：
+
+- Blind Input / Owner Map / Results：72/72 逐案绑定。
+- 六维评分：72/72 完整；PASS 门槛违规：0。
+- B2 决策：51 PASS / 16 HOLD / 5 REJECT。
+- 六项执行声明：6/6；四项 Owner 验证：4/4。
+- Audit status：`B2_RESULT_BINDING_VALID__EXECUTION_ATTESTATION_PRESENT_NOT_PROVEN`。
+- 执行声明属于 self-attestation；密码学独立性证明和 reviewer independence verification 仍为 false。
+
+下一步是运行 `R60_GOLD72_REVIEWER_A_B2_CROSSWALK_RUNBOOK_CN.md`，将 B2 与 canonical Reviewer A V3 做 Gold72 逐案交叉分析。交叉分析完成也不自动准入 Quality-v1。
+
+永久门禁：Quality-v1 admission：0；training authorization：false；GPU 未启动；R50 未访问。
 
 不要把私有盲 ID 映射、原始案例、审核结果或执行转录提交到 GitHub。只提交代码、说明和聚合 SAFE。
