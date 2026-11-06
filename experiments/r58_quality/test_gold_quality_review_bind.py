@@ -337,7 +337,6 @@ class BindTests(unittest.TestCase):
             b_pin = sha(inputs["b.json"])
             owner[0]["reviewer_a_evidence_ref"] = f"sha256:{a_pin}#records[0]"
             owner[0]["reviewer_b_evidence_ref"] = f"sha256:{b_pin}#cases[0]"
-            inputs["owner.jsonl"] = b"".join(canonical(x) + b"\\n" for x in owner)
             source_pin = "d" * 64
             stage_pin = sha(inputs["stage.jsonl"])
             owner[0]["staged_file_sha256"] = stage_pin
