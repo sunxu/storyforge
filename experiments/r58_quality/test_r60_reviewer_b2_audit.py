@@ -78,6 +78,7 @@ def fixture():
         "result_sha256": hashlib.sha256(result_raw).hexdigest(),
         "transcript_or_provider_record_sha256": hashlib.sha256(execution_raw).hexdigest(),
         "attestations": {key: True for key in m.ATTESTATIONS},
+        "owner_verification": {key: True for key in m.OWNER_VERIFICATION},
     }
     receipt_raw = json.dumps(receipt, sort_keys=True).encode()
     return blind_raw, instructions_raw, map_raw, result_raw, receipt_raw, execution_raw
@@ -93,6 +94,8 @@ class ReviewerB2AuditTests(unittest.TestCase):
         self.assertEqual(result["blind_input_to_owner_map_matches"], 72)
         self.assertEqual(result["owner_map_to_result_matches"], 72)
         self.assertEqual(result["scores_complete"], 72)
+        self.assertTrue(result["owner_verification_complete"])
+        self.assertTrue(result["reviewer_b2_independence_owner_attested"])
         self.assertFalse(result["cryptographic_independence_proven"])
         self.assertFalse(result["reviewer_b2_independence_verified"])
         self.assertEqual(result["quality_v1_admitted"], 0)
@@ -125,6 +128,14 @@ class ReviewerB2AuditTests(unittest.TestCase):
         receipt["result_sha256"] = hashlib.sha256(values[3]).hexdigest()
         values[4] = json.dumps(receipt).encode()
         with self.assertRaisesRegex(m.AuditHold, "B2_PASS_GATE_VIOLATION"):
+            m.audit(*values)
+
+    def test_owner_record_inspection_is_required(self):
+        values = list(fixture())
+        receipt = json.loads(values[4])
+        receipt["owner_verification"]["execution_record_inspected"] = False
+        values[4] = json.dumps(receipt).encode()
+        with self.assertRaisesRegex(m.AuditHold, "B2_OWNER_VERIFICATION_INCOMPLETE"):
             m.audit(*values)
 
     def test_missing_independence_attestation_fails_closed(self):
