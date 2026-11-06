@@ -237,6 +237,20 @@ class ReviewerCPacketTests(unittest.TestCase):
             template = json.loads((output / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json").read_text())
             self.assertEqual(template["reviewer"], "C")
             self.assertEqual(template["status"], "PENDING_INDEPENDENT_REVIEW_EXECUTION")
+            resolution = json.loads(
+                (output / "R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json").read_text()
+            )
+            self.assertEqual(resolution["case_count"], 40)
+            self.assertTrue(all(row["reviewer_c_decision"] is None
+                                and row["owner_decision"] is None
+                                and row["owner_signoff"] is False
+                                for row in resolution["cases"]))
+            self.assertEqual(
+                safe["owner_resolution_template_sha256"],
+                hashlib.sha256(
+                    (output / "R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json").read_bytes()
+                ).hexdigest(),
+            )
             self.assertEqual(safe["execution_receipt_template_sha256"],
                              hashlib.sha256(
                                  (output / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json").read_bytes()
