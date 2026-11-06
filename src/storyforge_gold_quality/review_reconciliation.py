@@ -216,6 +216,8 @@ def import_review_reconciliation(args) -> dict[str, Any]:
         if (not stat.S_ISREG(info.st_mode) or info.st_mode & 0o777 != 0o600
                 or info.st_nlink != 1):
             raise ManifestError("RECONCILIATION_INPUT_PERMISSIONS_INVALID")
+        if not 0 < info.st_size <= 2 * 1024 * 1024:
+            raise ManifestError("RECONCILIATION_INPUT_SIZE_INVALID")
         raw = b""
         while True:
             chunk = os.read(fd, 1024 * 1024)
@@ -224,8 +226,8 @@ def import_review_reconciliation(args) -> dict[str, Any]:
             raw += chunk
     finally:
         os.close(fd)
-    if not 0 < len(raw) <= 2 * 1024 * 1024:
-        raise ManifestError("RECONCILIATION_INPUT_SIZE_INVALID")
+    if len(raw) != info.st_size:
+        raise ManifestError("RECONCILIATION_INPUT_CHANGED_DURING_READ")
     try:
         data = json.loads(raw.decode("utf-8"), object_pairs_hook=_pairs)
     except (UnicodeError, json.JSONDecodeError):
