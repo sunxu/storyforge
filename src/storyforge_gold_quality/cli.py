@@ -20,6 +20,7 @@ from .manifest import (
 )
 from .reconcile import reconcile_gold192
 from .review_reconciliation import import_review_reconciliation
+from .gold72_owner_resolution import import_owner_resolution, prepare_owner_resolution, validate_owner_resolution
 
 SOURCE_PINS = {
     "gold87": ("evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
@@ -78,7 +79,7 @@ def read_jsonl(path):
 def inventory(_args):
     return {"schema": "storyforge_gold_quality_inventory_v1",
             "commands": ["inventory", "verify-source", "import-history", "import-exposure",
-                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "import-review-reconciliation", "validate", "report-safe"],
+                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "import-review-reconciliation", "prepare-gold72-owner-resolution", "validate-gold72-owner-resolution", "import-gold72-owner-resolution", "validate", "report-safe"],
             "read_only_safe_checks": list(available_checks()),
             "registered_tools": [{"id": x[0], "path": x[1], "io_contract": x[2], "tests": x[3]}
                                  for x in TOOLS],
@@ -444,6 +445,33 @@ def main():
     reconciliation_parser.add_argument("--manifest", type=Path, required=True)
     reconciliation_parser.add_argument("--repo-root", type=Path, required=True)
     reconciliation_parser.set_defaults(func=import_review_reconciliation)
+
+    owner_prepare = sub.add_parser("prepare-gold72-owner-resolution")
+    for name in (
+        "package-safe", "receipt-template", "blind-input", "instructions",
+        "owner-map", "result", "results-only-safe", "resolution-template",
+    ):
+        owner_prepare.add_argument("--" + name, type=Path, required=True)
+    owner_prepare.add_argument("--output", type=Path, required=True)
+    owner_prepare.add_argument("--repo-root", type=Path, required=True)
+    owner_prepare.set_defaults(func=prepare_owner_resolution)
+
+    owner_validate = sub.add_parser("validate-gold72-owner-resolution")
+    for name in (
+        "package-safe", "receipt-template", "blind-input", "instructions",
+        "owner-map", "result", "results-only-safe", "resolution-template",
+    ):
+        owner_validate.add_argument("--" + name, type=Path, required=True)
+    owner_validate.add_argument("--owner-resolution", type=Path, required=True)
+    owner_validate.add_argument("--safe-output", type=Path, required=True)
+    owner_validate.add_argument("--repo-root", type=Path, required=True)
+    owner_validate.set_defaults(func=validate_owner_resolution)
+
+    owner_import = sub.add_parser("import-gold72-owner-resolution")
+    owner_import.add_argument("--input", type=Path, required=True)
+    owner_import.add_argument("--manifest", type=Path, required=True)
+    owner_import.add_argument("--repo-root", type=Path, required=True)
+    owner_import.set_defaults(func=import_owner_resolution)
 
     validate_parser = sub.add_parser("validate")
     validate_parser.add_argument("--manifest", type=Path, required=True)
