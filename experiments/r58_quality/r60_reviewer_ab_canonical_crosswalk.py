@@ -16,6 +16,7 @@ from typing import Any
 
 A_SCHEMA = "r58_gold192_reviewer_a_results_v3_reconciled_private_v1"
 A_STATUS = "V3_SOURCES_NORMALIZED__192_IDENTITIES_VERIFIED__EVIDENCE_GRANULARITY_EXPLICIT"
+A_REPORT_SHA256 = "b0356782963dd3c4f85c210bf0f1c69dc01211d818011c16754ea95e9a4fbdb8"
 B_SCHEMA = "r58_gold192_reviewer_b_results_v1"
 B_SHA256 = "bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8"
 A_SOURCE_PINS = {
@@ -116,7 +117,8 @@ def _a_class(row: dict[str, Any]) -> str:
 
 
 def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str, Any]],
-          a_report: dict[str, Any], b_report: dict[str, Any], b_raw: bytes) -> dict[str, Any]:
+          a_report: dict[str, Any], a_raw: bytes, b_report: dict[str, Any],
+          b_raw: bytes) -> dict[str, Any]:
     staged_sha = hashlib.sha256(staged_raw).hexdigest()
     source_sha = receipt.get("source_context_file_sha256")
     if (receipt.get("schema") != RECEIPT_SCHEMA
@@ -131,6 +133,8 @@ def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str,
             or receipt.get("training_authorized") is not False
             or not isinstance(source_sha, str) or not HEX64.fullmatch(source_sha)):
         raise AuditHold("STAGING_RECEIPT_INVALID")
+    if hashlib.sha256(a_raw).hexdigest() != A_REPORT_SHA256:
+        raise AuditHold("REVIEWER_A_V3_REPORT_PIN_MISMATCH")
     if hashlib.sha256(b_raw).hexdigest() != B_SHA256:
         raise AuditHold("REVIEWER_B_SOURCE_PIN_MISMATCH")
     if (a_report.get("schema") != A_SCHEMA or a_report.get("status") != A_STATUS
@@ -268,10 +272,11 @@ def main() -> int:
         staged_raw = _read(args.staged_jsonl)
         receipt = _json(_read(args.staging_safe, 2 * 1024 * 1024))
         owner_rows = _jsonl(_read(args.owner_evidence_jsonl))
-        a_report = _json(_read(args.reviewer_a_v3_json))
+        a_raw = _read(args.reviewer_a_v3_json)
+        a_report = _json(a_raw)
         b_raw = _read(args.reviewer_b_json)
         b_report = _json(b_raw)
-        result = audit(staged_raw, receipt, owner_rows, a_report, b_report, b_raw)
+        result = audit(staged_raw, receipt, owner_rows, a_report, a_raw, b_report, b_raw)
         print(json.dumps(result, ensure_ascii=False, sort_keys=True, indent=2))
         return 0
     except (AuditHold, OSError, ValueError, TypeError, KeyError) as exc:
