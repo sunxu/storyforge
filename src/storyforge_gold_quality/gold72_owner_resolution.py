@@ -650,6 +650,35 @@ def _validate_safe(data: Any) -> dict[str, Any]:
         raise OwnerResolutionHold("OWNER_RESOLUTION_SAFE_MATRIX_INVALID")
     if type(data.get("owner_evidence_reference_count")) is not int or data["owner_evidence_reference_count"] < 40:
         raise OwnerResolutionHold("OWNER_RESOLUTION_SAFE_EVIDENCE_COUNT_INVALID")
+    matrix_a: Counter[str] = Counter()
+    matrix_b: Counter[str] = Counter()
+    matrix_c: Counter[str] = Counter()
+    matrix_owner: Counter[str] = Counter()
+    matrix_pairs: Counter[str] = Counter()
+    matrix_pattern = re.compile(
+        r"A_(PASS|HOLD|REJECT)__B2_(PASS|HOLD|REJECT)__C_(PASS|HOLD|REJECT)__OWNER_(PASS|HOLD|REJECT)"
+    )
+    for key, count in matrix.items():
+        match = matrix_pattern.fullmatch(key)
+        a, b, c, owner = match.groups()
+        matrix_a[a] += count
+        matrix_b[b] += count
+        matrix_c[c] += count
+        matrix_owner[owner] += count
+        a_class = {"PASS": "CASE_LEVEL_SCORED_PASS", "HOLD": "EXPLICIT_HOLD"}.get(a)
+        if a_class is None:
+            raise OwnerResolutionHold("OWNER_RESOLUTION_SAFE_MATRIX_A_CLASS_INVALID")
+        matrix_pairs[f"{a_class}__B2_{b}"] += count
+    def same_counts(left: Counter[str], right: dict[str, int]) -> bool:
+        return all(left.get(key, 0) == right.get(key, 0) for key in ("PASS", "HOLD", "REJECT"))
+    if (
+        not same_counts(matrix_a, normalized["reviewer_a_decisions"])
+        or not same_counts(matrix_b, normalized["reviewer_b2_decisions"])
+        or not same_counts(matrix_c, normalized["reviewer_c_decisions"])
+        or not same_counts(matrix_owner, normalized["owner_decisions"])
+        or dict(sorted(matrix_pairs.items())) != EXPECTED_PAIRS
+    ):
+        raise OwnerResolutionHold("OWNER_RESOLUTION_SAFE_MATRIX_MARGINAL_MISMATCH")
     metadata_sha = data.get("execution_metadata_sha256")
     if metadata_sha is not None and (
         not isinstance(metadata_sha, str) or not HEX64.fullmatch(metadata_sha)
