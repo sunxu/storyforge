@@ -1,7 +1,6 @@
 """Synthetic-only tests for Canonical A V3 Owner evidence AutoLink."""
 from __future__ import annotations
 
-import copy
 import json
 import unittest
 
