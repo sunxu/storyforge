@@ -18,6 +18,15 @@ import gold_quality_review_bind as binder
 from gold_source_context_stage import stage_source
 from quality_v1 import EVIDENCE, FLOORS, SCORES, SEVERE, canonical, sha
 
+try:
+    from .r59_gold192_canonical_a import (
+        A_SHA, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SHA, B_SCHEMA, B_COUNTS,
+    )
+except ImportError:
+    from r59_gold192_canonical_a import (
+        A_SHA, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SHA, B_SCHEMA, B_COUNTS,
+    )
+
 
 def fixture():
     target = "她把信递给玩家，等待回应。"
@@ -100,16 +109,9 @@ def fixture():
         "split": "train", "evidence": evidence,
         "owner_supplemental_severe_flags": {k: False for k in SEVERE},
         "owner_supplemental_severe_evidence_ref": "owner-private-review",
-        "reviewer_a_evidence_ref": "private-a-case",
-        "reviewer_b_evidence_ref": "private-b-case",
+        "reviewer_a_evidence_ref": f"sha256:{A_SHA}#records[0]",
+        "reviewer_b_evidence_ref": f"sha256:{B_SHA}#cases[0]",
     }]
-    # The strict 192/11 contract is exercised with real synthetic identities.
-    aa = a["records"][0]
-    bb = b["cases"][0]
-    for i in range(1, 192):
-        fake_hash = f"{i:064x}"
-        a["records"].append({**aa, "case_id": f"synthetic-{i}", "target_sha256": fake_hash})
-        b["cases"].append({**bb, "target_sha256": fake_hash})
     exclusions = [
         {"target_sha256": f"{i:064x}",
          "exclusion_reason": "EXCLUDED_FROM_TRAINING_DISAGREEMENT"}
@@ -222,6 +224,16 @@ class BindTests(unittest.TestCase):
         result, safe = bind(*args)
         self.assertFalse(result)
         self.assertEqual(safe["hold_reasons"], {"OWNER_SOURCE_CONTEXT_PINS_MISMATCH": 1})
+
+    def test_superseded_or_wrong_reviewer_a_locator_holds(self):
+        args = fixture()
+        args[4][0]["reviewer_a_evidence_ref"] = (
+            "sha256:641b71e10a14318b57e69cb0239172f7016fe5b9d2149923f876308f5e6fe1e4"
+            "#records[0]"
+        )
+        result, safe = bind(*args)
+        self.assertFalse(result)
+        self.assertEqual(safe["hold_reasons"], {"REVIEWER_EVIDENCE_REF_MISMATCH": 1})
 
     def test_world_overlap_in_candidate_set_holds(self):
         staged, a, b, exclusion, owners = fixture()
