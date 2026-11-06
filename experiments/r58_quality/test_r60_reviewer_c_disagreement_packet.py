@@ -188,7 +188,7 @@ class ReviewerCPacketTests(unittest.TestCase):
 
     def test_missing_context_field_holds(self):
         staged, a, blind, owner, result = self.sources
-        del blind[0]["cases"][1]["target_assistant_text"]
+        del blind[0]["cases"][21]["target_assistant_text"]
         with self.assertRaisesRegex(PackageHold, "BLIND_CASE_CONTEXT_FIELD_MISSING"):
             build(staged, a, blind, owner, result,
                   token_factory=self.token, shuffle=self.no_shuffle)
