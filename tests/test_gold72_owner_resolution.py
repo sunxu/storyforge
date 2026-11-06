@@ -286,6 +286,9 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         self.map["mapping"][0]["target_sha256"] = "f" * 64
         self.owner_map.write_text(json.dumps(self.map))
         self.owner_map.chmod(0o600)
+        self.package_safe["owner_map_sha256"] = hashlib.sha256(self.owner_map.read_bytes()).hexdigest()
+        self.package_safe_path.write_text(json.dumps(self.package_safe))
+        self.package_safe_path.chmod(0o600)
         with self.assertRaisesRegex(OwnerResolutionHold, "BLIND_OWNER_MAP_SET_MISMATCH"):
             prepare_owner_resolution(self.common_args(output=self.private / "never.json"))
 
