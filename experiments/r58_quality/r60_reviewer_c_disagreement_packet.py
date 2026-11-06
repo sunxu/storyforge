@@ -372,17 +372,42 @@ def _create_package(
         "limitations": ["Execution attestations are self-reported and do not prove cryptographic independence."],
     }
     template_raw = (json.dumps(template, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    resolution_template = {
+        "schema": "r60_gold72_owner_disagreement_resolution_private_v1",
+        "status": "PENDING_REVIEWER_C_AND_OWNER_DECISION",
+        "case_count": 40,
+        "cases": [
+            {
+                **row,
+                "reviewer_c_decision": None,
+                "reviewer_c_scores_1_to_5": None,
+                "reviewer_c_severe_flags": None,
+                "reviewer_c_evidence_summary": None,
+                "owner_decision": None,
+                "owner_rationale_cn": None,
+                "owner_evidence_refs": [],
+                "owner_decided_at_utc": None,
+                "owner_signoff": False,
+            }
+            for row in private_map["mapping"]
+        ],
+    }
+    resolution_raw = (
+        json.dumps(resolution_template, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+    ).encode("utf-8")
     safe.update({
         "blind_input_sha256": _sha(packet_raw),
         "instructions_sha256": _sha(instructions_raw),
         "owner_map_sha256": _sha(map_raw),
         "execution_receipt_template_sha256": _sha(template_raw),
+        "owner_resolution_template_sha256": _sha(resolution_raw),
     })
     safe_raw = (json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl", packet_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json", map_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md", instructions_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json", template_raw)
+    _write_exclusive(output_dir / "R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json", resolution_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json", safe_raw)
 
 
