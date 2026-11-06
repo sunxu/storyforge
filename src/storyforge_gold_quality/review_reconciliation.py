@@ -9,7 +9,7 @@ import hashlib
 import json
 import re
 import stat
-from collections import Counter
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +61,10 @@ def _pairs(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
             raise ManifestError("RECONCILIATION_DUPLICATE_JSON_KEY")
         result[key] = value
     return result
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def _sha(raw: bytes) -> str:
@@ -256,7 +260,7 @@ def import_review_reconciliation(args) -> dict[str, Any]:
         "gpu_started": False,
         "r50_accessed": False,
     }
-    event = make_event(args.batch, EVENT_TYPE, payload, args.recorded_at)
+    event = make_event(args.batch, EVENT_TYPE, payload, _now())
     appended = append_events(args.manifest, [event], args.repo_root)
     return _safe_result("CANONICAL_RECONCILIATION_APPENDED", data, appended=appended)
 
