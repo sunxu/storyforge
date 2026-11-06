@@ -102,7 +102,7 @@ def _validate_safe(data: Any) -> dict[str, Any]:
     )
     pair_allowed = {
         f"{a_class}__B2_{decision}"
-        for a_class in A_CLASSES for decision in {"PASS", "HOLD", "REJECT"}
+        for a_class in A_CLASSES for decision in ("PASS", "HOLD", "REJECT")
     }
     pair_counts = _count_map(
         data.get("a_b2_pair_counts"), pair_allowed,
