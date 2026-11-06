@@ -97,32 +97,52 @@ cat "$OUT/R60_GOLD72_REVIEWER_B2_PACKAGE_SAFE.json"
 
 B2 结果必须覆盖全部 72 条，并返回 instructions 中规定的 JSON。若模型上下文不足，不要截断历史或让模型自行挑选子集；应停止并返回 HOLD，再设计分批无状态执行和结果合并。
 
-## 4. 执行回执
+## 4. 执行回执（使用 fail-closed Receipt Builder）
 
-Owner 将 B2 的完整结果保存为：
-
-`R60_GOLD72_REVIEWER_B2_RESULTS_PRIVATE.json`
-
-将独立执行的完整转录或提供方执行记录保存为：
-
-`R60_GOLD72_REVIEWER_B2_EXECUTION_RECORD_PRIVATE`
-
-复制模板：
+Owner 的 Results 原始文件已报告为 `/private/tmp/r60_b2_independent_20261106/R60_GOLD72_REVIEWER_B2_RESULTS.json`。此位置仅是 Owner 报告，必须在本机核对。
 
 ```bash
-cp "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json" \
-   "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE.json"
-chmod 600 "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE.json"
+set -euo pipefail
+umask 077
+REPO="${REPO:-$HOME/workspace/storyforge}"
+OUT="$HOME/.local/share/storyforge/r59/private/reviewer-b2-runs/gold72-b2-20261106-v1"
+SRC="/private/tmp/r60_b2_independent_20261106/R60_GOLD72_REVIEWER_B2_RESULTS.json"
+DEST="$OUT/R60_GOLD72_REVIEWER_B2_RESULTS_PRIVATE.json"
+test -f "$SRC" && test ! -L "$SRC"
+test -d "$OUT" && test ! -L "$OUT"
+test ! -e "$DEST" && test ! -L "$DEST"
+install -m 600 "$SRC" "$DEST"  # create only; 保留原件
 ```
 
-按实际执行情况填写，并将 status 从模板的 `PENDING_INDEPENDENT_REVIEW_EXECUTION` 改为 `EXECUTION_COMPLETE`：
-- `execution_mode`：`STATELESS_API` 或 `CHATGPT_TEMPORARY_CHAT`
-- provider、model_id、session_or_request_id、UTC 开始/完成时间
-- blind input、instructions、result、execution record 的 SHA256
-- 六项独立执行声明：只有确实做到时才能填 `true`
-- Owner 验证项：只有重新核对哈希、检查完整执行记录、确认结果绑定后才能填 `true`
+随后另行保存**真实的**完整独立审核转录或提供方执行记录为 `$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECORD_PRIVATE`，并设置 `chmod 600`。不得复制 Results 充当执行记录，也不得凭空补造 session、model backend ID、执行时间或独立性声明。若记录缺失或不完整，应停止并保留 HOLD。
 
-不要编造会话 ID、模型版本、API request ID 或执行记录。若平台不能提供精确模型 ID，应在 model_id 中如实标注“UI model label only / backend ID unavailable”。
+以下命令先只读验证 72 条绑定与文件哈希（不会生成最终 Receipt）：
+
+```bash
+ARGS=(
+  --package-safe "$OUT/R60_GOLD72_REVIEWER_B2_PACKAGE_SAFE.json"
+  --receipt-template "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json"
+  --blind-input "$OUT/R60_GOLD72_REVIEWER_B2_BLIND_PACKETS.jsonl"
+  --instructions "$OUT/R60_GOLD72_REVIEWER_B2_INSTRUCTIONS_CN.md"
+  --owner-map "$OUT/R60_GOLD72_REVIEWER_B2_ID_MAP_PRIVATE.json"
+  --result "$OUT/R60_GOLD72_REVIEWER_B2_RESULTS_PRIVATE.json"
+  --execution-record "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECORD_PRIVATE"
+  --output "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE.json"
+  --repo-root "$REPO"
+)
+python3 "$REPO/experiments/r58_quality/r60_reviewer_b2_receipt_builder.py" "${ARGS[@]}" --validate-only
+```
+
+只有预检 PASS，且 Owner 已实际检查 Execution Record 后才执行交互生成：
+
+```bash
+python3 "$REPO/experiments/r58_quality/r60_reviewer_b2_receipt_builder.py" "${ARGS[@]}" \
+  --draft-output "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_DRAFT_PRIVATE.json"
+```
+
+程序会收集真实 provider/model/session/timestamps，并要求六项执行者独立性声明和四项 Owner verification **分别回答 YES / NO / UNKNOWN**。仅全部 YES 且元数据真实有效时，才 create-only 写入正式 `EXECUTION_COMPLETE` Receipt。NO、UNKNOWN、缺失时间、缺少记录时均不得声称完成；已有输出不得覆盖。
+
+临时聊天未公开 session ID 时，只能使用 `NOT_EXPOSED_BY_PROVIDER`，并记录 limitation；该哨兵值不代表真实 session ID。执行者自我声明仍不是密码学独立性证明。
 
 ## 5. Owner-only 结果验收
 
