@@ -81,14 +81,57 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
            for target in targets):
         raise LedgerRecoveryError("LEDGER_TARGET_SCOPE_INVALID")
 
-    # Negative and zero physical turns are outside a positive-turn target
-    # history. Real ledger UPDATE events can carry negative turn_index; do not
-    # silently coerce them to positive turns. All included events still require
-    # exact locator and revision checks, and recovery does not claim a full
-    # transaction-level replay of out-of-scope events.
-    # Read only compact event metadata in bulk. Large JSONB before-images are
-    # fetched by primary key only for target boundaries and first post-target
-    # events that can affect reconstruction.
+    # Only ledger events at/after the earliest target boundary can affect any
+    # target's historical reconstruction. Locate the small set of target
+    # boundary markers first, then keyset-page forward from the earliest one.
+    # This avoids transferring the entire pre-target ledger history.
+    target_message_ids = sorted({target["message_id"] for target in targets})
+    target_turn_indices = sorted({target["turn_index"] for target in targets})
+    cursor.execute(
+        """
+        SELECT id, message_id::text AS message_id,
+               story_id::text AS story_id, session_id::text AS session_id,
+               role::text AS role, turn_index::integer AS turn_index,
+               operation::text AS operation, recorded_at
+        FROM public.v2_chat_message_ledger
+        WHERE story_id = %s AND session_id = %s
+          AND message_id = ANY(%s::uuid[])
+          AND turn_index = ANY(%s::integer[])
+          AND role = 'assistant'
+          AND operation IN ('insert', 'update_after')
+        ORDER BY recorded_at, id
+        """,
+        (story_id, session_id, target_message_ids, target_turn_indices),
+    )
+    boundary_rows = cursor.fetchall()
+    target_pairs = {
+        (target["message_id"], target["turn_index"]) for target in targets
+    }
+    matching_boundaries = []
+    for row in boundary_rows:
+        if isinstance(row, Mapping):
+            event = dict(row)
+        elif isinstance(row, (tuple, list)) and len(row) == 8:
+            event = dict(zip(
+                ("id", "message_id", "story_id", "session_id", "role",
+                 "turn_index", "operation", "recorded_at"),
+                row, strict=True,
+            ))
+        else:
+            raise LedgerRecoveryError("LEDGER_ROW_SHAPE_INVALID")
+        _validate_event_locator(event, story_id, session_id)
+        _key(event)
+        if (event["message_id"], event["turn_index"]) in target_pairs:
+            matching_boundaries.append(event)
+
+    earliest_boundary = (
+        min(matching_boundaries, key=_key) if matching_boundaries else None
+    )
+    if earliest_boundary is None:
+        # Preserve per-case failure isolation: evaluate_history_suffix_diagnostics
+        # will report TARGET_LEDGER_BOUNDARY_MISSING for each target independently.
+        return []
+
     result = []
     metadata_columns = (
         "id", "message_id", "story_id", "session_id", "role",
@@ -106,10 +149,15 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
                 FROM public.v2_chat_message_ledger
                 WHERE story_id = %s AND session_id = %s
                   AND turn_index BETWEEN 1 AND %s
+                  AND (recorded_at, id) >= (%s, %s)
                 ORDER BY recorded_at, id
                 LIMIT %s
             """
-            params = (story_id, session_id, max_turn_index, page_limit)
+            params = (
+                story_id, session_id, max_turn_index,
+                earliest_boundary["recorded_at"], earliest_boundary["id"],
+                page_limit,
+            )
         else:
             query = """
                 SELECT id, message_id::text AS message_id,
