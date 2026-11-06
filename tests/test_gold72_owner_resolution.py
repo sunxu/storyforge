@@ -6,7 +6,6 @@ import sys
 import tempfile
 import unittest
 from argparse import Namespace
-from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -427,7 +426,7 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         value["owner_decisions"] = {"PASS": 37, "HOLD": 2, "REJECT": 1}
         safe_path.write_text(json.dumps(value))
         safe_path.chmod(0o600)
-        with self.assertRaisesRegex(OwnerResolutionHold, "GOLD72_OWNER_RESOLUTION_SAFE_FIELDS_INVALID|GOLD72_OWNER_RESOLUTION_SAFE"):
+        with self.assertRaisesRegex(OwnerResolutionHold, "OWNER_RESOLUTION_SAFE_MATRIX_MARGINAL_MISMATCH"):
             import_owner_resolution(args)
 
     def test_manifest_event_rejects_independence_promotion(self):
