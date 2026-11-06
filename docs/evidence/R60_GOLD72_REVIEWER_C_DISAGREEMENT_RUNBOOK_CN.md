@@ -1,7 +1,7 @@
 # R60 Gold72 Reviewer C 分歧盲审包 — Owner Runbook
 
 日期：2026-11-06  
-状态：工具合成测试待 CI；本文件不代表 Reviewer C 已执行。
+状态：Reviewer C Results-only 结构验收完成；执行记录不可获得，独立性未验证。Owner 逐案裁决和 aggregate-only Manifest 导入仍待执行。
 
 ## 1. 目的与边界
 
@@ -174,6 +174,84 @@ C Audit 检查 40/40 blind-ID / Owner Map / Results 绑定、target SHA、六维
 Reviewer C Audit 通过后，40 条仍不是最终裁决。Owner-only `R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json` 已随盲审包生成，40 条的 Reviewer C 与 Owner 决策字段均为空。仍需实现并验证逐案决策完整性校验器和 aggregate-only Gold72 resolution importer；在这两项工具完成并通过 synthetic-only CI 之前，不把模板标记为完成，不追加 Manifest 事件，不进行 Quality-v1 准入。
 
 不得把 Reviewer C 结果自动转成最终 Owner 决定。40 条未决期间保持 HOLD。
+
+### 5.5 Owner 三方对照与逐案裁决
+
+Reviewer C Results-only SAFE 可以证明结构绑定，不证明独立执行。当前 execution_record_available=false、execution_metadata_sha256=null，因此不生成伪造的 EXECUTION_COMPLETE Receipt，也不运行正式 C Audit。Owner 裁决仍可在明确保留该限制的前提下继续。
+
+Owner 工具会重新绑定冻结的 canonical A V3、B2 Results、A/B2 Crosswalk SAFE、C Results、C Owner Map 和 C blind input。A V3 与 B2 Results 必须分别匹配本任务已冻结的 SHA256；40 条逐案只按 target SHA256 连接。输出仅留在 Owner 私有目录。
+
+\`\`\`bash
+set -euo pipefail
+umask 077
+
+REPO="$HOME/workspace/storyforge-r60-ledger-diagnostics"
+PYTHON="$HOME/.venvs/storyforge-r60/bin/python"
+B2_OUT="$HOME/.local/share/storyforge/r59/private/reviewer-b2-runs/gold72-b2-20261106-v1"
+C_OUT="$HOME/.local/share/storyforge/r59/private/reviewer-c-runs/gold72-c-20261106-v1"
+
+A_V3="$HOME/.local/share/storyforge/r58/private/quality-v1/reviewer-a-v3-normalization-20261103/R58_GOLD192_REVIEWER_A_RESULTS_V3_RECONCILED.json"
+B2_RESULTS="$B2_OUT/R60_GOLD72_REVIEWER_B2_RESULTS_PRIVATE.json"
+CROSSWALK="$B2_OUT/R60_GOLD72_REVIEWER_A_B2_CROSSWALK_SAFE.json"
+
+COMMON=(
+  --package-safe "$C_OUT/R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json"
+  --receipt-template "$C_OUT/R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json"
+  --blind-input "$C_OUT/R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl"
+  --instructions "$C_OUT/R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md"
+  --owner-map "$C_OUT/R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json"
+  --result "$C_OUT/R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json"
+  --results-only-safe "$C_OUT/R60_GOLD72_REVIEWER_C_RESULTS_ONLY_AUDIT_SAFE.json"
+  --resolution-template "$C_OUT/R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json"
+  --reviewer-a-v3 "$A_V3"
+  --b2-results "$B2_RESULTS"
+  --crosswalk-safe "$CROSSWALK"
+  --repo-root "$REPO"
+)
+
+cd "$REPO"
+"$PYTHON" -m storyforge_gold_quality.cli prepare-gold72-owner-resolution \
+  "\${COMMON[@]}" \
+  --output "$C_OUT/R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json"
+\`\`\`
+
+生成的私有逐案表包含：
+- A：规范化决策、原始决策标签、证据粒度、可用的六维评分；
+- B2：决策、六维评分、严重问题标记、证据摘要；
+- C：决策、六维评分、严重问题标记、证据摘要；
+- Owner：最终决定、决定依据、中文理由、证据引用、带时区时间和逐案签署。
+
+必须由 Owner 逐案阅读 A/B2/C 原始证据后填写。不得把 C 的 38 个 PASS 批量复制成 Owner PASS，也不得采用多数票。
+
+每条 Owner 记录必须填写：
+- owner_decision：PASS / HOLD / REJECT；
+- owner_decision_basis：A_EVIDENCE_CONTROLS、B2_EVIDENCE_CONTROLS、C_EVIDENCE_CONTROLS、CROSS_REVIEWER_SYNTHESIS、SOURCE_RECHECK、INSUFFICIENT_EVIDENCE_HOLD 之一；
+- owner_rationale_cn：至少 20 个字符，写明本案实际理由；
+- owner_evidence_refs：至少一条可定位的证据引用，不允许绝对路径、URL 或路径穿越；
+- owner_decided_at_utc：带时区 ISO8601；
+- owner_signoff：必须为 true。INSUFFICIENT_EVIDENCE_HOLD 只能搭配 HOLD。
+
+Owner 完成全部 40 条后，执行只读校验并生成聚合 SAFE：
+
+\`\`\`bash
+"$PYTHON" -m storyforge_gold_quality.cli validate-gold72-owner-resolution \
+  "\${COMMON[@]}" \
+  --owner-resolution "$C_OUT/R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json" \
+  --safe-output "$C_OUT/R60_GOLD72_OWNER_RESOLUTION_SAFE.json"
+\`\`\`
+
+SAFE 只包含 A/B2/C/Owner 决策计数、四维交叉矩阵、源文件 SHA256 和安全门禁；不会包含案例身份、原始文本、Owner 理由或证据引用。
+
+**Manifest 导入是独立的写操作。** 只有 Owner 已逐案确认 SAFE、并明确批准追加时，才运行：
+
+\`\`\`bash
+"$PYTHON" -m storyforge_gold_quality.cli import-gold72-owner-resolution \
+  --input "$C_OUT/R60_GOLD72_OWNER_RESOLUTION_SAFE.json" \
+  --manifest "$HOME/.local/share/storyforge/r58/private/gold-quality-events.jsonl" \
+  --repo-root "$REPO"
+\`\`\`
+
+Importer 仅追加一条 aggregate-only GOLD72_OWNER_RESOLUTION 事件，具备精确 SAFE 哈希幂等保护；不同 SAFE 不得覆盖已固定事件。它不会导入任何逐案行，也不会把 C 独立性升级为已验证，不会进行 Quality-v1 准入或训练。
 
 ## 6. 永久门禁
 
