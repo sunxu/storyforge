@@ -376,7 +376,12 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         self.assertEqual(value["candidate_count"], 40)
         self.assertEqual(value["status"], "PENDING_OWNER_DECISIONS")
         self.assertEqual(value["source_pins"]["result_sha256"], hashlib.sha256(self.result_path.read_bytes()).hexdigest())
+        self.assertEqual(value["source_pins"]["reviewer_a_v3_sha256"], hashlib.sha256(self.a_report_path.read_bytes()).hexdigest())
+        self.assertEqual(value["source_pins"]["b2_results_sha256"], hashlib.sha256(self.b2_result_path.read_bytes()).hexdigest())
         self.assertEqual([row["reviewer_c_decision"] for row in value["cases"]].count("PASS"), 38)
+        self.assertIn("reviewer_a_scores_1_to_5", value["cases"][0])
+        self.assertIn("reviewer_b2_scores_1_to_5", value["cases"][0])
+        self.assertIn("reviewer_b2_evidence_summary", value["cases"][0])
         self.assertTrue(all(row["owner_decision"] is None and row["owner_signoff"] is False for row in value["cases"]))
         self.assertEqual(output.stat().st_mode & 0o777, 0o600)
         self.assertFalse(value["reviewer_c_independence_verified"])
@@ -391,6 +396,20 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         self.package_safe_path.write_text(json.dumps(self.package_safe))
         self.package_safe_path.chmod(0o600)
         with self.assertRaisesRegex(OwnerResolutionHold, "PACKAGE_PIN_MISMATCH"):
+            prepare_owner_resolution(self.common_args(output=self.private / "never.json"))
+
+    def test_prepare_rejects_noncanonical_a_v3_bytes(self):
+        self.a_report["records"][0]["case_id"] = "tampered"
+        self.a_report_path.write_text(json.dumps(self.a_report))
+        self.a_report_path.chmod(0o600)
+        with self.assertRaisesRegex(OwnerResolutionHold, "CANONICAL_A_B2_CROSSWALK_PIN_OR_COHORT_INVALID"):
+            prepare_owner_resolution(self.common_args(output=self.private / "never.json"))
+
+    def test_prepare_rejects_noncanonical_b2_result_bytes(self):
+        self.b2_result["cases"][0]["evidence_summary"] = "tampered"
+        self.b2_result_path.write_text(json.dumps(self.b2_result))
+        self.b2_result_path.chmod(0o600)
+        with self.assertRaisesRegex(OwnerResolutionHold, "CANONICAL_A_B2_CROSSWALK_PIN_OR_COHORT_INVALID"):
             prepare_owner_resolution(self.common_args(output=self.private / "never.json"))
 
     def test_prepare_rejects_results_only_safe_with_promoted_independence(self):
