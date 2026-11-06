@@ -372,6 +372,9 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
             or any(type(v) is not int or not 1 <= v <= 5 for v in b2_scores.values())
             or not isinstance(b2_flags, list) or any(not isinstance(v, str) for v in b2_flags)
             or not isinstance(b2_summary, str) or not b2_summary.strip()
+            or (b2_row.get("decision") == "PASS" and (
+                b2_flags or any(b2_scores[key] < floor for key, floor in SCORE_FLOORS.items())
+            ))
             or (a_class == "CASE_LEVEL_SCORED_PASS" and (
                 not isinstance(a_scores, dict) or set(a_scores) != set(SCORE_FLOORS)
                 or any(type(v) is not int or not 1 <= v <= 5 for v in a_scores.values())
