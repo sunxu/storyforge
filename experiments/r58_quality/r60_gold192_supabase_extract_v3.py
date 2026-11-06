@@ -28,7 +28,12 @@ try:
     )
 except ImportError:
     from r60_gold192_canonical_a_v3 import (
-        A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, PACKETS_SHA,
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        EX_SHA,
+        PACKETS_SHA,
         validate_reviewer_a_v3,
     )
 
