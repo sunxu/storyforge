@@ -1,8 +1,6 @@
 """Synthetic-only tests for the private Gold72 Reviewer C packet builder."""
 from __future__ import annotations
 
-import json
-import os
 import tempfile
 import unittest
 from pathlib import Path
