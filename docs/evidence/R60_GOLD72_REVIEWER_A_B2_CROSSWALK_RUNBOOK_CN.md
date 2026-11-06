@@ -112,22 +112,24 @@ test "$(stat -f '%Lp' "$MANIFEST")" = "600"
 test "$(stat -f '%Lp' "$(dirname "$MANIFEST")")" = "700"
 
 PYTHON="$HOME/.venvs/storyforge-r60/bin/python"
+CLI="$HOME/.venvs/storyforge-r60/bin/storyforge-gold-quality"
 test -x "$PYTHON"
 test -d "$REPO/src/storyforge_gold_quality"
 
-# 把当前分支的 CLI 安装为该 venv 的 editable package，避免调用其他 worktree 的旧入口脚本。
+# 把当前分支安装为该 venv 的 editable package。
 "$PYTHON" -m pip install --no-deps --editable "$REPO"
 
-# 明确验证解释器导入的是当前 REPO 的代码，且子命令确实存在。
+# 固定使用该 venv 自己的 console script，避免 PATH 命中其他 worktree/venv。
+test -x "$CLI"
 "$PYTHON" -c 'import storyforge_gold_quality.cli as c; print(c.__file__)'
-storyforge-gold-quality import-review-reconciliation --help
+"$CLI" import-review-reconciliation --help
 
 # 记录追加前账本指纹；失败时停止，不运行空路径 report-safe。
 test -n "$MANIFEST"
 BEFORE_SHA="$(shasum -a 256 "$MANIFEST" | awk '{print $1}')"
 BEFORE_LINES="$(wc -l < "$MANIFEST" | tr -d ' ')"
 
-storyforge-gold-quality import-review-reconciliation \
+"$CLI" import-review-reconciliation \
   --batch gold72 \
   --kind reviewer-a-b2-gold72 \
   --input "$SAFE" \
@@ -135,12 +137,12 @@ storyforge-gold-quality import-review-reconciliation \
   --repo-root "$REPO"
 
 # 导入成功后再检查统一账本。
-storyforge-gold-quality validate --manifest "$MANIFEST"
-storyforge-gold-quality report-safe --manifest "$MANIFEST"
+"$CLI" validate --manifest "$MANIFEST"
+"$CLI" report-safe --manifest "$MANIFEST"
 
 AFTER_SHA="$(shasum -a 256 "$MANIFEST" | awk '{print $1}')"
 AFTER_LINES="$(wc -l < "$MANIFEST" | tr -d ' ')"
-printf 'MANIFEST_BEFORE_SHA256=%s\\nMANIFEST_AFTER_SHA256=%s\\nLINES_BEFORE=%s\\nLINES_AFTER=%s\\n' \
+printf 'MANIFEST_BEFORE_SHA256=%s\nMANIFEST_AFTER_SHA256=%s\nLINES_BEFORE=%s\nLINES_AFTER=%s\n' \
   "$BEFORE_SHA" "$AFTER_SHA" "$BEFORE_LINES" "$AFTER_LINES"
 ~~~
 
