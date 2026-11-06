@@ -331,6 +331,11 @@ class BindTests(unittest.TestCase):
                 "ex.json": canonical(exclusions),
                 "owner.jsonl": b"".join(canonical(x) + b"\n" for x in owner),
             }
+            a_pin = sha(inputs["a.json"])
+            b_pin = sha(inputs["b.json"])
+            owner[0]["reviewer_a_evidence_ref"] = f"sha256:{a_pin}#records[0]"
+            owner[0]["reviewer_b_evidence_ref"] = f"sha256:{b_pin}#cases[0]"
+            inputs["owner.jsonl"] = b"".join(canonical(x) + b"\\n" for x in owner)
             source_pin = "d" * 64
             stage_pin = sha(inputs["stage.jsonl"])
             owner[0]["staged_file_sha256"] = stage_pin
@@ -359,8 +364,8 @@ class BindTests(unittest.TestCase):
                 paths[name] = p
             # Patch canonical pins for synthetic-only IO test.
             from unittest.mock import patch
-            with (patch.object(binder, "A_SHA", sha(inputs["a.json"])),
-                  patch.object(binder, "B_SHA", sha(inputs["b.json"])),
+            with (patch.object(binder, "A_SHA", a_pin),
+                  patch.object(binder, "B_SHA", b_pin),
                   patch.object(binder, "EX_SHA", sha(inputs["ex.json"]))):
                 out = private / "out"
                 safe = binder.run(
