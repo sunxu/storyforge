@@ -78,6 +78,10 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
         raise LedgerRecoveryError("LEDGER_QUERY_SCOPE_INVALID")
     if any(target.get("story_id") != story_id
            or target.get("session_id") != session_id
+           or not isinstance(target.get("message_id"), str)
+           or not target.get("message_id")
+           or type(target.get("turn_index")) is not int
+           or target["turn_index"] < 1
            for target in targets):
         raise LedgerRecoveryError("LEDGER_TARGET_SCOPE_INVALID")
 
