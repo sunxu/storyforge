@@ -5,7 +5,7 @@
 目标表：`public.v2_chat_message_ledger`  
 变更类别：单个 **非唯一** B-tree 索引，在线并发创建  
 对应代码：`ops/r60/build_b2_index_prod.sh`  
-状态：**准备就绪，实际执行 HOLD（容量、WAL/副本、变更窗口与具有 DDL 权限的生产连接待核验）**。
+状态：**2026-11-06 生产 B2 索引存在、定义正确、可用性有效（CATALOG PASS）**；实际业务查询性能收益尚待生产只读对照。前述容量/上线门禁记录是构建前历史决策，不再表示当前索引尚未创建。
 
 ## 0. 绝对边界
 
@@ -164,6 +164,59 @@ DROP INDEX CONCURRENTLY public.idx_v2_chat_message_ledger_r60_b2;
 ## 8. 交付状态和必要人工门禁
 
 - 生产脚本：已准备，必须经 DBA 执行。
-- 真实生产索引：**尚未创建**。
+- 真实生产索引：**2026-11-06 已经由用户侧完成创建，Agent 通过只读系统 Catalog 核验 PASS**；请勿再次执行建索引脚本。
 - 该次生产变更范围仅为 **单一 B2 索引**，绝不自动扩展至其他表/索引。
 - Owner 用户的“尽快完成生产索引落地”确认了推进目标，但并不能自动证明平台空间充足或 DBA 写入身份已授权。任何缺少第 3 节证据的执行均保持 HOLD。
+
+
+## 9. 2026-11-06 生产上线后独立只读验收
+
+本节覆盖上文建索引前的 HOLD 状态。用户报告生产 B2 已创建，Agent 随后**只通过 Supabase 只读连接器**核实：
+
+| 核验项目 | 结果 |
+|---|---|
+| 当前数据库 | `postgres` |
+| 当前查询身份 | `supabase_read_only_user` |
+| 连接器只读 | `transaction_read_only=on` |
+| RLS GUC | `row_security=on`；连接器角色本身 `rolbypassrls=true`，仅使用 Catalog/EXPLAIN 元数据，不读取生产业务正文 |
+| 生产索引 | `public.idx_v2_chat_message_ledger_r60_b2` 存在 |
+| 所属表 | `public.v2_chat_message_ledger` |
+| B-tree KEY | `(session_id, story_id, recorded_at, id)` 精确匹配 |
+| INCLUDE | `(turn_index, message_id, role, operation)` 精确匹配 |
+| 唯一/部分/表达式索引 | 全部为否，符合设计 |
+| `indisvalid` | true |
+| `indisready` | true |
+| `indislive` | true |
+| 目标表仍在创建的索引 | 0 |
+| 原有索引 | 原有 5 个仍存在，合计 6 个 |
+| 实际大小 | 7,520,067,584 bytes，约 7.00 GiB |
+| 旧版 HypoPG 估算 | 约 11.68 GiB（实际约低 40%） |
+| `pg_stat_user_indexes.idx_scan` | 0（采样时观测值，不能证明此索引无效或永远不会被使用） |
+
+采样时刻：`2026-11-06 03:38:59 UTC`（约北京时间 11:38:59）。
+
+### 9.1 非执行性 EXPLAIN 结构复核
+
+使用**明确不存在的合成** `session_id/story_id` 常量和普通 `EXPLAIN (FORMAT JSON)`，不使用 `ANALYZE`、不读取业务数据、不产生消息正文：
+
+- 首页 Metadata：`Limit -> Index Only Scan`
+- Keyset 下一页 Metadata：`Limit -> Index Only Scan`
+- 两者的 `Index Name` 都是 `idx_v2_chat_message_ledger_r60_b2`
+- 首页 `Index Cond` 使用 `session_id` 和 `story_id`；翻页还下推 `(recorded_at,id) > (:cursor_time,:cursor_id)`
+- `turn_index BETWEEN` 仍为 Filter；这不代表范围条件错误
+- 两个计划的估算 `Total Cost` 均约 2.92；**由于采用不存在的合成值，不能外推到真实业务 Session 的耗时、估算行数或选择率**
+
+### 9.2 最终状态
+
+- `PRODUCTION_INDEX_CREATED_AND_VALID = PASS`
+- `INDEX_DEFINITION_EXACT_MATCH = PASS`
+- `NO_INVALID_RESIDUAL_INDEX = PASS`
+- `SYNTHETIC_EXPLAIN_B2_SELECTED = PASS`
+- `REAL_WORKLOAD_PLAN_AND_WALL_TIME = PENDING`
+- `POST_BUILD_DISK_WAL_REPLICATION_MONITORING = PENDING`
+- `QUALITY_V1_ADMISSION = 0`（本次无变更）
+
+**严禁再次执行** `ops/r60/build_b2_index_prod.sh`，该脚本的同名索引 guard 正常情况下应拒绝第二次创建。
+
+下个动作：Owner/DBA 在原私有 Pilot8 Session 上，通过只读非 ANALYZE 的 EXPLAIN 与新旧 wall-time SAFE 统计检查索引是否被真实目标查询使用，同时核实 Supabase 新的 provisioned / used / free disk、WAL 和复制/写入健康指标。没有新的运行时证据前，不能声称已经获得百分比加速。
+
