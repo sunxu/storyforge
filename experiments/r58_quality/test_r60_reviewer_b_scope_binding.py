@@ -155,7 +155,7 @@ class ReviewerBScopeBindingTests(unittest.TestCase):
         result["cases"][0]["target_sha256"] = "f" * 64
         values[4] = json.dumps(result, sort_keys=True).encode()
         values[5]["B_RESULTS_SHA256"] = hashlib.sha256(values[4]).hexdigest()
-        with self.assertRaisesRegex(m.AuditHold, "B_RESULT_TARGET_SHA_INVALID"):
+        with self.assertRaisesRegex(m.AuditHold, "B_RESULT_OWNER_MAP_SET_MISMATCH"):
             self._audit_with_pins(tuple(values))
 
     def test_missing_score_fails_closed(self):
