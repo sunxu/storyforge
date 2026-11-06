@@ -61,11 +61,10 @@ umask 077
 REPO="$HOME/workspace/storyforge-r60-ledger-diagnostics"
 OUT="$HOME/.local/share/storyforge/r59/private/reviewer-b2-runs/gold72-b2-20261106-v1"
 
-# 由 Owner 从既有 staging / Owner evidence / A V3 归档中指定确切文件。
-: "\${STAGED:?请设置冻结 Gold72 staging JSONL 的绝对路径}"
-: "\${STAGING_SAFE:?请设置对应 staging SAFE 的绝对路径}"
-: "\${OWNER_EVIDENCE:?请设置 Gold72 Owner evidence JSONL 的绝对路径}"
-: "\${A_V3:?请设置 canonical Reviewer A V3 report 的绝对路径}"
+STAGED="$HOME/.local/share/storyforge/r59/private/source-staging-suffix72-20261104-v1/GOLD_SOURCE_STAGING_PRIVATE.jsonl"
+STAGING_SAFE="$HOME/.local/share/storyforge/r59/private/source-staging-suffix72-20261104-v1/GOLD_SOURCE_STAGING_SAFE.json"
+OWNER_EVIDENCE="$HOME/.local/share/storyforge/r59/private/quality-v1/owner-autolink-suffix72-20261104-v1/OWNER_CASE_EVIDENCE_AUTOLINKED_PRIVATE.jsonl"
+A_V3="$HOME/.local/share/storyforge/r58/private/quality-v1/reviewer-a-v3-normalization-20261103/R58_GOLD192_REVIEWER_A_RESULTS_V3_RECONCILED.json"
 
 test "$(git -C "$REPO" branch --show-current)" = "r60/reviewer-ab-canonical-crosswalk"
 test -f "$STAGED" && test ! -L "$STAGED"
@@ -97,6 +96,32 @@ python3 "$REPO/experiments/r58_quality/r60_reviewer_ab2_gold72_crosswalk.py" \
 ~~~
 
 若正式 Receipt 实际文件名与上方示例不同，Owner 必须先通过本机只读检查确认实际文件，再调整参数；不得将旧 PENDING 模板作为执行回执。
+
+### 3.1 导入共享 Quality Pipeline
+
+交叉分析器完成后，再把聚合 SAFE 导入既有私有 append-only Manifest。先从 Owner 私有目录只读定位现有 Manifest；不要为了本次导入擅自新建第二份账本。
+
+~~~bash
+find "$HOME/.local/share/storyforge" -type f -name 'gold-quality-events.jsonl' -print
+~~~
+
+确认唯一现有 Manifest 后设置其绝对路径：
+
+~~~bash
+: "\${MANIFEST:?请设置已存在的 Owner 私有 Gold Quality Manifest 绝对路径}"
+test -f "$MANIFEST" && test ! -L "$MANIFEST"
+
+storyforge-gold-quality import-review-reconciliation \
+  --batch gold72 \
+  --kind reviewer-a-b2-gold72 \
+  --input "$SAFE" \
+  --manifest "$MANIFEST" \
+  --repo-root "$REPO"
+
+storyforge-gold-quality report-safe --manifest "$MANIFEST"
+~~~
+
+同一 Receipt 可安全重复导入；不同 Receipt 若已占用 Gold72 canonical slot 会 HOLD。导入事件只保存批次级统计和私有来源 pins，不导入逐案行，不产生 Quality-v1 准入。
 
 ## 4. 预期 SAFE 与解释
 
