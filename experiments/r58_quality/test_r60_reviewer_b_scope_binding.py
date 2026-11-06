@@ -137,7 +137,7 @@ class ReviewerBScopeBindingTests(unittest.TestCase):
         mapping["mapping"][0]["target_sha256"] = "f" * 64
         values[1] = json.dumps(mapping, sort_keys=True).encode()
         values[5]["B_ID_MAP_SHA256"] = hashlib.sha256(values[1]).hexdigest()
-        with self.assertRaisesRegex(m.AuditHold, "BLIND_INPUT_OWNER_MAP_TARGET_MISMATCH"):
+        with self.assertRaisesRegex(m.AuditHold, "BLIND_INPUT_OWNER_MAP_SET_MISMATCH"):
             self._audit_with_pins(tuple(values))
 
     def test_owner_map_source_case_mismatch_fails_closed(self):
