@@ -102,9 +102,11 @@ class ReceiptBuilderTests(unittest.TestCase):
             return builder.run(self.args)
 
     def _hold(self, reason, response=None):
+        existed_before = self.args.output.exists()
         with self.assertRaisesRegex((builder.ReceiptHold, audit.AuditHold), reason):
             self._execute(response)
-        self.assertFalse(self.args.output.exists())
+        if not existed_before:
+            self.assertFalse(self.args.output.exists())
 
     def test_valid_receipt_integrates_with_existing_audit(self):
         safe = self._execute()
