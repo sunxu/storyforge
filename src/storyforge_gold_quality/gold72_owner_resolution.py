@@ -336,7 +336,38 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
     }
     pair_counts: Counter[str] = Counter()
     for blind_id, row in owner_idx.items():
+        digest = row.get("target_sha256")
+        a_row = a_idx.get(digest)
+        b2_row = b2_idx.get(digest)
+        a_reported = a_row.get("reported_final_decision") if a_row else None
+        a_normalized = {"PASS_ONLY": "PASS", "HOLD": "HOLD", "REJECT": "REJECT"}.get(a_reported)
         a_class = row.get("reviewer_a_evidence_class")
+        a_granularity = {
+            "CASE_LEVEL_SCORED_PASS": "CASE_LEVEL_SCORED_REVIEW",
+            "EXPLICIT_HOLD": "CASE_ID_IN_EXPLICIT_HOLD_GROUP",
+        }.get(a_class)
+        a_scores = a_row.get("scores_1_to_5") if a_row else None
+        b2_scores = b2_row.get("scores_1_to_5") if b2_row else None
+        b2_flags = b2_row.get("severe_flags") if b2_row else None
+        b2_summary = b2_row.get("evidence_summary") if b2_row else None
+        if (
+            a_row is None or b2_row is None
+            or a_row.get("case_id") != row.get("original_case_id")
+            or a_normalized != row.get("reviewer_a_decision")
+            or a_row.get("evidence_granularity") != a_granularity
+            or b2_row.get("blind_case_id") != row.get("prior_b2_blind_case_id")
+            or b2_row.get("decision") != row.get("reviewer_b2_decision")
+            or not isinstance(b2_scores, dict) or set(b2_scores) != set(SCORE_FLOORS)
+            or any(type(v) is not int or not 1 <= v <= 5 for v in b2_scores.values())
+            or not isinstance(b2_flags, list) or any(not isinstance(v, str) for v in b2_flags)
+            or not isinstance(b2_summary, str) or not b2_summary.strip()
+            or (a_class == "CASE_LEVEL_SCORED_PASS" and (
+                not isinstance(a_scores, dict) or set(a_scores) != set(SCORE_FLOORS)
+                or any(type(v) is not int or not 1 <= v <= 5 for v in a_scores.values())
+            ))
+            or (a_class == "EXPLICIT_HOLD" and a_scores is not None)
+        ):
+            raise OwnerResolutionHold("CANONICAL_A_B2_CASE_EVIDENCE_BINDING_INVALID")
         a_decision = row.get("reviewer_a_decision")
         b_decision = row.get("reviewer_b2_decision")
         expected_a = {
@@ -449,7 +480,7 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
                 or row.get("owner_decided_at_utc") is not None
                 or row.get("owner_signoff") is not False):
             raise OwnerResolutionHold("OWNER_RESOLUTION_TEMPLATE_PREPOPULATED")
-    return blind_idx, owner_idx, result_idx, counts
+    return blind_idx, owner_idx, result_idx, a_idx, b2_idx, counts
 
 
 def _source_pins(values: dict[str, Any]) -> dict[str, str]:
