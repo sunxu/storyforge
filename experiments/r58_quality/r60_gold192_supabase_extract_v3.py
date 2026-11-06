@@ -38,19 +38,27 @@ def sha_text(value: str) -> str:
     return hash_bytes(value.encode('utf-8'))
 
 
-def read_json(path: Path, expected: str | None = None):
-    if not path.is_file() or path.is_symlink():
+def read_private(path: Path) -> bytes:
+    if path.is_symlink() or not path.is_file():
         raise ValueError('INPUT_MISSING_OR_LINK')
-    raw = path.read_bytes()
+    info = path.stat()
+    parent = path.parent
+    if (stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1
+            or parent.is_symlink() or not parent.is_dir()
+            or stat.S_IMODE(parent.stat().st_mode) != 0o700):
+        raise ValueError('INPUT_PERMISSION_OR_LINK_COUNT_INVALID')
+    return path.read_bytes()
+
+
+def read_json(path: Path, expected: str | None = None):
+    raw = read_private(path)
     if expected is not None and hash_bytes(raw) != expected:
         raise ValueError('INPUT_SHA_MISMATCH')
     return json.loads(raw)
 
 
 def read_jsonl(path: Path, expected: str | None = None):
-    if not path.is_file() or path.is_symlink():
-        raise ValueError('INPUT_MISSING_OR_LINK')
-    raw = path.read_bytes()
+    raw = read_private(path)
     if expected is not None and hash_bytes(raw) != expected:
         raise ValueError('INPUT_SHA_MISMATCH')
     return [json.loads(line) for line in raw.splitlines() if line.strip()]
@@ -288,7 +296,7 @@ def main() -> int:
                 'candidate_policy': 'EXPLICIT_CASE_LEVEL_SCORED_A_V3_PASS_AND_B_PASS_MINUS_11_EXCLUSIONS',
                 'aggregate_complement_passes_eligible': False,
                 'pilot_requested': len(priority), 'quality_v1_admitted': 0,
-                'gpu_started': False, 'private_values_emitted': False,
+                'gpu_started': False, 'database_modified': False, 'private_values_emitted': False,
             }, sort_keys=True))
             return 0
         dsn = os.environ.get(args.dsn_env)
@@ -297,11 +305,16 @@ def main() -> int:
         import psycopg
         with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
             db.execute('SET TRANSACTION READ ONLY')
+            db.execute("SET LOCAL statement_timeout = '90000ms'")
+            db.execute("SET LOCAL lock_timeout = '1000ms'")
             locators, contexts, drafts = execute(db, priority, packet_index, args.max_history)
             db.rollback()
         root = args.output_dir
         if root.exists() or root.is_symlink():
             raise ValueError('OUTPUT_EXISTS')
+        if (not root.parent.is_dir() or root.parent.is_symlink()
+                or stat.S_IMODE(root.parent.stat().st_mode) != 0o700):
+            raise ValueError('OUTPUT_PARENT_PERMISSIONS')
         root.mkdir(mode=0o700, parents=False)
         if stat.S_IMODE(root.stat().st_mode) != 0o700:
             raise ValueError('OUTPUT_PERMISSIONS')
@@ -330,7 +343,7 @@ def main() -> int:
             'current_story_snapshot_is_historical': False,
             'historical_exposure_fully_checked': False,
             'quality_v1_admitted': 0, 'training_authorized': False,
-            'gpu_started': False, 'r50_accessed': False,
+            'gpu_started': False, 'r50_accessed': False, 'database_modified': False,
             'private_values_emitted': False,
         }
         atomic_private_write(root / 'R60_SOURCE_SAFE.json',
@@ -346,7 +359,7 @@ def main() -> int:
             'schema': 'r60_gold192_supabase_extract_v3_safe_v1',
             'status': 'SOURCE_EXTRACT_FAILED__HOLD',
             'reason_code': reason,
-            'quality_v1_admitted': 0, 'gpu_started': False,
+            'quality_v1_admitted': 0, 'gpu_started': False, 'database_modified': False,
             'private_values_emitted': False,
         }, sort_keys=True))
         return 42
