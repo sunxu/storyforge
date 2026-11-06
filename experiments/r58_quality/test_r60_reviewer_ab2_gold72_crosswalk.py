@@ -114,6 +114,8 @@ def fixture():
         "original_staging_mutated": False,
         "quality_v1_admitted": 0,
         "training_authorized": False,
+        "gpu_started": False,
+        "r50_accessed": False,
     }
     staging_safe_raw = encoded(staging_safe)
     blind_raw = encoded({
@@ -255,6 +257,16 @@ class ReviewerAB2Gold72CrosswalkTests(unittest.TestCase):
         with patch.object(
             m.canonical, "A_REPORT_SHA256", hashlib.sha256(values["a_raw"]).hexdigest()
         ), self.assertRaisesRegex(b2.AuditHold, "B2_EXECUTION_HASH_BINDING_MISMATCH"):
+            run(values)
+
+    def test_a_case_id_target_binding_mismatch_fails_closed(self):
+        values = fixture()
+        report = json.loads(values["a_raw"])
+        report["records"][0]["case_id"] = "wrong-case"
+        values["a_raw"] = encoded(report)
+        with patch.object(
+            m.canonical, "A_REPORT_SHA256", hashlib.sha256(values["a_raw"]).hexdigest()
+        ), self.assertRaisesRegex(m.CrosswalkHold, "A_TO_GOLD72_CASE_ID_MISMATCH"):
             run(values)
 
     def test_a_report_pin_mismatch_fails_closed(self):
