@@ -442,7 +442,7 @@ class MessageLedgerTests(unittest.TestCase):
             query for query in cursor.queries if "WITH targets AS" in query
         ]
         self.assertEqual(len(metadata_queries), 1)
-        self.assertIn("DISTINCT ON (t.target_ordinal, e.message_id)", metadata_queries[0])
+        self.assertIn("DISTINCT ON (e.message_id)", metadata_queries[0])
         self.assertIn("ORDER BY e.message_id, e.recorded_at, e.id",
                       metadata_queries[0])
 
