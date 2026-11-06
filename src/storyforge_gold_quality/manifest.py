@@ -47,15 +47,48 @@ def validate_event(event):
             "candidate_count", "comparable_decision_cases", "decision_agreements",
             "decision_disagreements", "score_comparable_cases",
         )
-        if (payload.get("reconciliation_type") != "REVIEWER_A_B2_CROSSWALK"
+        required_reconciliation_fields = {
+            "reconciliation_type", "source_receipt_sha256", "source_pins",
+            "candidate_count", "reviewer_a_evidence_granularity",
+            "reviewer_b2_decisions", "a_b2_pair_counts",
+            "comparable_decision_cases", "decision_agreements",
+            "decision_disagreements", "score_comparable_cases",
+            "score_comparison_by_dimension",
+            "reviewer_a_two_independent_blinded_reviews_met",
+            "reviewer_b2_execution_attestation_self_reported",
+            "reviewer_b2_independence_verified", "cryptographic_independence_proven",
+            "evidence_tier", "quality_v1_admitted", "training_authorized",
+            "gpu_started", "r50_accessed",
+        }
+        source_pin_fields = {
+            "staging_sha256", "source_context_sha256", "reviewer_a_v3_report_sha256",
+            "reviewer_b2_blind_input_sha256", "reviewer_b2_instructions_sha256",
+            "reviewer_b2_owner_map_sha256", "reviewer_b2_result_sha256",
+            "reviewer_b2_execution_record_sha256",
+        }
+        a_counts = payload.get("reviewer_a_evidence_granularity")
+        b_counts = payload.get("reviewer_b2_decisions")
+        pair_counts = payload.get("a_b2_pair_counts")
+        score_metrics = payload.get("score_comparison_by_dimension")
+        if (event["batch_id"] != "gold72"
+                or not required_reconciliation_fields.issubset(payload)
+                or payload.get("reconciliation_type") != "REVIEWER_A_B2_CROSSWALK"
                 or not isinstance(payload.get("source_receipt_sha256"), str)
                 or not HEX64.fullmatch(payload["source_receipt_sha256"])
-                or not isinstance(source_pins, dict) or len(source_pins) != 8
+                or not isinstance(source_pins, dict) or set(source_pins) != source_pin_fields
                 or any(not isinstance(value, str) or not HEX64.fullmatch(value)
                        for value in source_pins.values())
                 or any(type(payload.get(key)) is not int or not 0 <= payload[key] <= 72
                        for key in counts)
                 or payload.get("candidate_count") != 72
+                or not isinstance(a_counts, dict) or sum(a_counts.values()) != 72
+                or not isinstance(b_counts, dict) or sum(b_counts.values()) != 72
+                or not isinstance(pair_counts, dict) or sum(pair_counts.values()) != 72
+                or not isinstance(score_metrics, dict)
+                or set(score_metrics) != {
+                    "chinese_prose", "character_consistency", "npc_initiative",
+                    "player_agency", "narrative_continuity", "rule_fidelity",
+                }
                 or payload.get("decision_agreements", 0)
                    + payload.get("decision_disagreements", 0)
                    != payload.get("comparable_decision_cases")
@@ -63,6 +96,7 @@ def validate_event(event):
                 or payload.get("reviewer_b2_execution_attestation_self_reported") is not True
                 or payload.get("reviewer_b2_independence_verified") is not False
                 or payload.get("cryptographic_independence_proven") is not False
+                or payload.get("evidence_tier") != "OWNER_RETURNED_SAFE_AGGREGATE"
                 or payload.get("quality_v1_admitted") is not False
                 or payload.get("training_authorized") is not False
                 or payload.get("gpu_started") is not False
