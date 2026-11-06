@@ -125,7 +125,7 @@ class ReceiptBuilderTests(unittest.TestCase):
                                self.args.output.read_bytes(), self.data["execution_record"])
         self.assertEqual(accepted["status"], "C_RESULT_BINDING_VALID__EXECUTION_ATTESTATION_PRESENT_NOT_PROVEN")
         self.assertFalse(accepted["cryptographic_independence_proven"])
-        self.assertFalse(accepted["reviewer_b2_independence_verified"])
+        self.assertFalse(accepted["reviewer_c_independence_verified"])
         self.assertEqual(accepted["quality_v1_admitted"], 0)
         self.assertEqual(self.args.output.parent.stat().st_mode & 0o777, 0o700)
 
