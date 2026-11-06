@@ -598,7 +598,13 @@ def validate_owner_resolution(args) -> dict[str, Any]:
     resolution_raw = _read(args.owner_resolution, repo, 16 * 1024 * 1024, private=True)
     resolution = _json(resolution_raw, "OWNER_RESOLUTION_JSON_INVALID")
     expected_pins = _source_pins(values)
-    if (resolution.get("schema") != RESOLUTION_SCHEMA
+    expected_resolution_fields = {
+        "schema", "status", "candidate_count", "source_pins",
+        "execution_record_available", "execution_metadata_sha256",
+        "reviewer_c_independence_verified", "cryptographic_independence_proven", "cases",
+    }
+    if (set(resolution) != expected_resolution_fields
+            or resolution.get("schema") != RESOLUTION_SCHEMA
             or resolution.get("status") != "OWNER_DECISIONS_COMPLETE_PENDING_IMPORT"
             or resolution.get("candidate_count") != 40
             or resolution.get("source_pins") != expected_pins
@@ -623,6 +629,17 @@ def validate_owner_resolution(args) -> dict[str, Any]:
     for blind_id, row in row_idx.items():
         owner = owner_idx[blind_id]
         c_result = result_idx[blind_id]
+        expected_case_fields = set(owner) | {
+            "reviewer_a_reported_final_decision", "reviewer_a_evidence_granularity",
+            "reviewer_a_scores_1_to_5", "reviewer_b2_scores_1_to_5",
+            "reviewer_b2_severe_flags", "reviewer_b2_evidence_summary",
+            "reviewer_c_decision", "reviewer_c_scores_1_to_5",
+            "reviewer_c_severe_flags", "reviewer_c_evidence_summary",
+            "owner_decision", "owner_decision_basis", "owner_rationale_cn",
+            "owner_evidence_refs", "owner_decided_at_utc", "owner_signoff",
+        }
+        if set(row) != expected_case_fields:
+            raise OwnerResolutionHold("OWNER_RESOLUTION_CASE_FIELDS_INVALID")
         for key in (
             "original_case_id", "original_story_uuid", "target_sha256",
             "reviewer_a_decision", "reviewer_b2_decision",
