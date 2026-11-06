@@ -135,6 +135,16 @@ class FakeCursor:
                 )
             else:
                 self.rows = [self.target] if params[1] == "child" and params[2] == 7 else []
+        elif "FROM public.v2_chat_messages" in query and "LIMIT %s" in query:
+            story_id, session_id, cutoff, target_time, limit = params
+            self.rows = [
+                row for row in self.messages
+                if row["story_id"] == story_id and row["session_id"] == session_id
+                and row["turn_index"] <= cutoff and row["created_at"] < target_time
+                and row["role"] in {"user", "assistant"}
+            ]
+            self.rows.sort(key=lambda row: (row["created_at"], row["message_id"]))
+            self.rows = self.rows[:limit]
         elif "FROM public.v2_chat_messages" in query:
             story_id, session_id, cutoff, target_time = params
             self.rows = [

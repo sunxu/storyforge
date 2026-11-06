@@ -227,21 +227,23 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
     return chain
 
 
-def _history(cursor, story_id: str, segment: dict, target_time: Any) -> list[dict]:
+def _history(cursor, story_id: str, segment: dict, target_time: Any,
+             *, rows: list[dict] | None = None) -> list[dict]:
     session_id = segment["session"]["session_id"]
-    cursor.execute(
-        """
-        SELECT id::text AS message_id, story_id::text AS story_id,
-               session_id, turn_index, role, content, status, created_at,
-               mutation_revision
-        FROM public.v2_chat_messages
-        WHERE story_id = %s AND session_id = %s AND turn_index <= %s
-          AND created_at < %s AND role IN ('user', 'assistant')
-        ORDER BY created_at, id
-        """,
-        (story_id, session_id, segment["turn_cutoff"], target_time),
-    )
-    rows = _fetchall(cursor, HISTORY_COLUMNS)
+    if rows is None:
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at,
+                   mutation_revision
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s AND turn_index <= %s
+              AND created_at < %s AND role IN ('user', 'assistant')
+            ORDER BY created_at, id
+            """,
+            (story_id, session_id, segment["turn_cutoff"], target_time),
+        )
+        rows = _fetchall(cursor, HISTORY_COLUMNS)
     output = []
     for row in rows:
         if row["status"] != "completed":
@@ -399,6 +401,7 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
                  target: dict | None = None,
                  ledger_events: list[dict] | None = None,
                  ledger_event_index: LedgerEventIndex | None = None,
+                 current_history: list[dict] | None = None,
                  max_ledger_events: int = 100000,
                  session_cache: dict | None = None,
                  lineage_cache: dict | None = None,
@@ -435,9 +438,10 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
             targets=[target], max_events=max_ledger_events,
         )
     try:
-        current_history = _history(
-            cursor, case["story_id"], leaf_segment, target["created_at"]
-        )
+        if current_history is None:
+            current_history = _history(
+                cursor, case["story_id"], leaf_segment, target["created_at"]
+            )
         history, history_reconstruction = reconstruct_history(
             current_history, ledger_events, target,
             case["story_id"], case["session_id"], case["turn_index"] - 1,
@@ -585,6 +589,80 @@ def recover_cases_independently(cursor, cases: list[dict], *,
     session_cache = {}
     lineage_cache = {}
     story_version_cache = {}
+
+    # Read a bounded history superset once per Session. Each case is then
+    # filtered against its own target timestamp and physical turn cutoff.
+    # If the superset exceeds max_history, fall back to the original per-case
+    # query path rather than truncating or changing any case's evidence.
+    current_history_by_case = {}
+    for (key, entry) in sorted(by_session.items()):
+        story_id, session_id = key
+        active_cases = [
+            case for case in entry["cases"]
+            if case["case_id"] in targets_by_case
+            and case["case_id"] not in holds_by_case
+        ]
+        if not active_cases:
+            continue
+        try:
+            chain = _lineage(
+                cursor, story_id, session_id, max_lineage_depth,
+                session_cache=session_cache, lineage_cache=lineage_cache,
+            )
+        except HistoryRecoveryError as exc:
+            for case in active_cases:
+                holds_by_case[case["case_id"]] = str(exc)
+            continue
+        leaf = chain[0]["session"]
+        max_cutoff = max(case["turn_index"] - 1 for case in active_cases)
+        max_target_time = max(
+            _datetime(targets_by_case[case["case_id"]]["created_at"])
+            for case in active_cases
+        )
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at,
+                   mutation_revision
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s AND turn_index <= %s
+              AND created_at < %s AND role IN ('user', 'assistant')
+            ORDER BY created_at, id
+            LIMIT %s
+            """,
+            (story_id, session_id, max_cutoff, max_target_time, max_history + 1),
+        )
+        try:
+            superset_rows = _fetchall(cursor, HISTORY_COLUMNS)
+        except HistoryRecoveryError as exc:
+            # A malformed superset cannot be safely partitioned by target.
+            # Isolate the failure to this Session; other Sessions continue.
+            for case in active_cases:
+                holds_by_case[case["case_id"]] = str(exc)
+            continue
+        if len(superset_rows) > max_history:
+            # Safe fallback: original per-case SQL, with no partial superset.
+            continue
+        for case in active_cases:
+            try:
+                target_time = targets_by_case[case["case_id"]]["created_at"]
+                cutoff = case["turn_index"] - 1
+                eligible_rows = [
+                    row for row in superset_rows
+                    if row["turn_index"] <= cutoff
+                    and _before(row["created_at"], target_time)
+                ]
+                segment = {
+                    "session": leaf,
+                    "turn_cutoff": cutoff,
+                    "lineage_depth": 0,
+                }
+                current_history_by_case[case["case_id"]] = _history(
+                    cursor, story_id, segment, target_time, rows=eligible_rows,
+                )
+            except HistoryRecoveryError as exc:
+                holds_by_case[case["case_id"]] = str(exc)
+
     recovered = []
     for case in sorted(cases, key=lambda item: item["case_id"]):
         case_id = case["case_id"]
@@ -598,6 +676,7 @@ def recover_cases_independently(cursor, cases: list[dict], *,
                 target=targets_by_case[case_id],
                 ledger_events=ledger_by_session[key],
                 ledger_event_index=ledger_index_by_session[key],
+                current_history=current_history_by_case.get(case_id),
                 max_ledger_events=max_ledger_events,
                 session_cache=session_cache,
                 lineage_cache=lineage_cache,
