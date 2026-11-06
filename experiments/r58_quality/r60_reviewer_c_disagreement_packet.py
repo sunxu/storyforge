@@ -128,6 +128,25 @@ def _walk_keys(value: Any):
             yield from _walk_keys(child)
 
 
+def validate_crosswalk_safe(crosswalk_safe: dict[str, Any], fresh: dict[str, Any]) -> None:
+    comparable = (
+        "candidate_count", "staging_sha256", "source_context_sha256",
+        "reviewer_a_v3_report_sha256", "reviewer_b2_blind_input_sha256",
+        "reviewer_b2_instructions_sha256", "reviewer_b2_owner_map_sha256",
+        "reviewer_b2_result_sha256", "reviewer_b2_execution_record_sha256",
+        "reviewer_a_evidence_granularity", "reviewer_b2_decisions",
+        "a_b2_pair_counts", "a_b2_comparable_decision_cases",
+        "a_b2_semantic_decision_disagreements",
+        "a_b2_semantic_decision_agreements",
+    )
+    if (crosswalk_safe.get("schema") != crosswalk.SAFE_SCHEMA
+            or crosswalk_safe.get("status") != crosswalk.SAFE_STATUS
+            or any(crosswalk_safe.get(key) != fresh.get(key) for key in comparable)
+            or fresh.get("a_b2_semantic_decision_disagreements") != 40
+            or fresh.get("a_b2_semantic_decision_agreements") != 32):
+        raise PackageHold("CROSSWALK_SAFE_STALE_OR_MISMATCH")
+
+
 def build(
     staged_rows: list[dict[str, Any]],
     a_report: dict[str, Any],
@@ -361,21 +380,7 @@ def main() -> int:
             raw["b2-execution-record"], raw["b2-audit-safe"],
         )
         crosswalk_safe = _json(_read_private(args.crosswalk_safe, 2 * 1024 * 1024), "CROSSWALK_SAFE_INVALID")
-        comparable = (
-            "candidate_count", "staging_sha256", "source_context_sha256",
-            "reviewer_a_v3_report_sha256", "reviewer_b2_blind_input_sha256",
-            "reviewer_b2_instructions_sha256", "reviewer_b2_owner_map_sha256",
-            "reviewer_b2_result_sha256", "reviewer_b2_execution_record_sha256",
-            "reviewer_a_evidence_granularity", "reviewer_b2_decisions",
-            "a_b2_pair_counts", "a_b2_comparable_decision_cases",
-            "a_b2_semantic_decision_disagreements", "a_b2_semantic_decision_agreements",
-        )
-        if (crosswalk_safe.get("schema") != crosswalk.SAFE_SCHEMA
-                or crosswalk_safe.get("status") != crosswalk.SAFE_STATUS
-                or any(crosswalk_safe.get(key) != fresh.get(key) for key in comparable)
-                or fresh.get("a_b2_semantic_decision_disagreements") != 40
-                or fresh.get("a_b2_semantic_decision_agreements") != 32):
-            raise PackageHold("CROSSWALK_SAFE_STALE_OR_MISMATCH")
+        validate_crosswalk_safe(crosswalk_safe, fresh)
         staged_rows = _jsonl(raw["staged-jsonl"], "STAGED_JSONL_INVALID")
         a_report = _json(raw["reviewer-a-v3-json"], "A_REPORT_INVALID")
         blind_packets = _jsonl(raw["b2-blind-jsonl"], "B2_BLIND_INPUT_INVALID")
