@@ -18,6 +18,7 @@ from typing import Any
 
 from . import r60_reviewer_ab2_gold72_crosswalk as crosswalk
 from . import r60_reviewer_ab_canonical_crosswalk as canonical
+from . import r60_reviewer_c_audit as c_audit
 
 SAFE_SCHEMA = "r60_gold72_reviewer_c_disagreement_package_safe_v1"
 SAFE_STATUS = "REVIEWER_C_DISAGREEMENT_PACKAGE_BUILT__AWAITING_INDEPENDENT_REVIEW"
@@ -336,6 +337,12 @@ def _write_exclusive(path: Path, raw: bytes) -> None:
     path.chmod(0o600)
 
 
+def _sha(raw: bytes) -> str:
+    import hashlib
+
+    return hashlib.sha256(raw).hexdigest()
+
+
 def _create_package(
     output_dir: Path,
     packets: list[dict[str, Any]],
@@ -355,10 +362,28 @@ def _create_package(
         for packet in packets
     )
     map_raw = (json.dumps(private_map, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    template = {
+        "schema": c_audit.EXECUTION_SCHEMA,
+        "reviewer": "C",
+        "status": "PENDING_INDEPENDENT_REVIEW_EXECUTION",
+        "blind_input_sha256": _sha(packet_raw),
+        "instructions_sha256": _sha(instructions_raw),
+        "attestations": {key: None for key in c_audit.ATTESTATIONS},
+        "owner_verification": {key: False for key in c_audit.OWNER_VERIFICATION},
+        "limitations": ["Execution attestations are self-reported and do not prove cryptographic independence."],
+    }
+    template_raw = (json.dumps(template, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
+    safe.update({
+        "blind_input_sha256": _sha(packet_raw),
+        "instructions_sha256": _sha(instructions_raw),
+        "owner_map_sha256": _sha(map_raw),
+        "execution_receipt_template_sha256": _sha(template_raw),
+    })
     safe_raw = (json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode("utf-8")
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl", packet_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json", map_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md", instructions_raw)
+    _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json", template_raw)
     _write_exclusive(output_dir / "R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json", safe_raw)
 
 
