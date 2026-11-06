@@ -15,17 +15,17 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .r60_gold192_canonical_a_v3 import (
-        A_REPORT_SHA256,
-        B_SCHEMA,
-        B_SHA as B_SHA256,
-        validate_reviewer_a_v3,
-    )
+    from . import r60_gold192_canonical_a_v3 as canonical
 except ImportError:
-    from r60_gold192_canonical_a_v3 import (
-        A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
-        B_SHA as B_SHA256, validate_reviewer_a_v3,
-    )
+    import r60_gold192_canonical_a_v3 as canonical
+
+A_SCHEMA = canonical.A_SCHEMA
+A_STATUS = canonical.A_STATUS
+A_SOURCE_PINS = canonical.A_SOURCE_PINS
+A_REPORT_SHA256 = canonical.A_REPORT_SHA256
+B_SCHEMA = canonical.B_SCHEMA
+B_SHA256 = canonical.B_SHA
+validate_reviewer_a_v3 = canonical.validate_reviewer_a_v3
 
 STAGE_SCHEMA = "storyforge-quality-v1-source-staging-private-v1"
 STAGE_STATUS = "SOURCE_CONTEXT_STAGED__QUALITY_REVIEW_PENDING"
