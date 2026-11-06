@@ -1,4 +1,4 @@
-"""Owner-only audit of R60 Gold40 Reviewer C result and execution receipt.
+"""Owner-only audit of R60 Gold72 Reviewer C result and execution receipt.
 
 Verifies exact input/instruction/result/transcript hashes and all 40 blind-ID
 to target-SHA joins against the private Owner map. Execution declarations are
@@ -15,11 +15,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-BLIND_SCHEMA = "r60_gold40_reviewer_c_blind_story_packet_v1"
-MAP_SCHEMA = "r60_gold40_reviewer_c_private_id_map_v1"
-EXECUTION_SCHEMA = "r60_gold40_reviewer_c_execution_receipt_v1"
-RESULT_SCHEMA = "r60_gold40_reviewer_c_results_v1"
-SAFE_SCHEMA = "r60_gold40_reviewer_c_audit_safe_v1"
+BLIND_SCHEMA = "r60_gold72_reviewer_c_blind_story_packet_v1"
+MAP_SCHEMA = "r60_gold72_reviewer_c_private_id_map_v1"
+EXECUTION_SCHEMA = "r60_gold72_reviewer_c_execution_receipt_v1"
+RESULT_SCHEMA = "r60_gold72_reviewer_c_results_v1"
+SAFE_SCHEMA = "r60_gold72_reviewer_c_audit_safe_v1"
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 SCORE_FLOORS = {
     "chinese_prose": 4,
