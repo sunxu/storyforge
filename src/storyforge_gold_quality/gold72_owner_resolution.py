@@ -192,7 +192,8 @@ def _unique(rows: list[dict[str, Any]], key: str, reason: str) -> dict[str, dict
     result: dict[str, dict[str, Any]] = {}
     for row in rows:
         value = row.get(key)
-        if not isinstance(value, str) or not value or value in result:
+        if (not isinstance(value, str) or not value or value in result
+                or (key == "target_sha256" and not HEX64.fullmatch(value))):
             raise OwnerResolutionHold(reason)
         result[value] = row
     return result
@@ -306,8 +307,12 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
     ):
         raise OwnerResolutionHold("CANONICAL_B2_RESULTS_INVALID")
     b2_idx = _unique(b2_result["cases"], "target_sha256", "B2_RESULT_TARGET_SHA_DUPLICATE")
-    if len(b2_idx) != 72:
-        raise OwnerResolutionHold("B2_RESULT_TARGET_COUNT_INVALID")
+    b2_blind_idx = _unique(b2_result["cases"], "blind_case_id", "B2_RESULT_BLIND_ID_DUPLICATE")
+    b2_counts: Counter[str] = Counter(row.get("decision") for row in b2_result["cases"])
+    if (len(b2_idx) != 72 or len(b2_blind_idx) != 72
+            or dict(b2_counts) != {"PASS": 51, "HOLD": 16, "REJECT": 5}
+            or crosswalk.get("reviewer_b2_decisions") != {"PASS": 51, "HOLD": 16, "REJECT": 5}):
+        raise OwnerResolutionHold("B2_RESULT_TARGET_OR_DECISION_COUNTS_INVALID")
 
     blind_rows = []
     for packet in values["blind_packets"]:
@@ -331,6 +336,9 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
         raise OwnerResolutionHold("OWNER_MAP_COUNT_INVALID")
     owner_idx = _unique(owner_rows, "blind_case_id", "OWNER_MAP_BLIND_ID_DUPLICATE")
     owner_sha = _unique(owner_rows, "target_sha256", "OWNER_MAP_TARGET_SHA_DUPLICATE")
+    prior_b2_ids = _unique(owner_rows, "prior_b2_blind_case_id", "OWNER_MAP_PRIOR_B2_ID_DUPLICATE")
+    if len(prior_b2_ids) != 40:
+        raise OwnerResolutionHold("OWNER_MAP_PRIOR_B2_ID_COUNT_INVALID")
     if set(owner_idx) != set(blind_idx) or set(owner_sha) != set(blind_sha):
         raise OwnerResolutionHold("BLIND_OWNER_MAP_SET_MISMATCH")
     expected_map_fields = {
