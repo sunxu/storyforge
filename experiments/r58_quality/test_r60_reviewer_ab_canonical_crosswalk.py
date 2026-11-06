@@ -83,6 +83,7 @@ def fixture():
         "counts": {"PASS": 178, "HOLD": 12, "REJECT": 2},
         "cases": b_cases,
     }
+    selected_indices = list(range(31)) + list(range(83, 124))
     staged_rows = [
         {
             "schema": m.STAGE_SCHEMA,
@@ -90,7 +91,7 @@ def fixture():
             "case_id": f"case-{i:03d}",
             "target_sha256": f"{i + 1:064x}",
         }
-        for i in range(72)
+        for i in selected_indices
     ]
     staged_raw = b"".join(
         json.dumps(row, sort_keys=True).encode() + b"\n" for row in staged_rows
@@ -118,7 +119,7 @@ def fixture():
             "source_context_file_sha256": source_sha,
             "evidence": {"reviewers_blinded_and_independent_attested": None},
         }
-        for i in range(72)
+        for i in selected_indices
     ]
     b_raw = json.dumps(b_report, sort_keys=True).encode()
     return staged_raw, receipt, owner_rows, a_report, b_report, b_raw
