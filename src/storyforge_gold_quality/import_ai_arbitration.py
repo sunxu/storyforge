@@ -53,9 +53,9 @@ def _review_index(events: list[dict]) -> dict[str, dict]:
             elif (role == "REVIEWER_B" and
                   p.get("reviewer_source_sha256") == CANONICAL_B):
                 state["b"].append(p)
-        elif kind == "HISTORICAL_REJECT_EVIDENCE":
-            if p.get("reviewer_source") == A_SOURCE:
-                state["historical"].append(p)
+        elif (kind == "HISTORICAL_REJECT_EVIDENCE"
+              and p.get("reviewer_source") == A_SOURCE):
+            state["historical"].append(p)
     return index
 
 
