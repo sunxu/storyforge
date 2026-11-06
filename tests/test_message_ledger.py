@@ -162,7 +162,7 @@ class MessageLedgerTests(unittest.TestCase):
     def test_query_is_session_scoped_and_capped(self):
         cursor = FakeCursor(self.events)
         rows = ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=20)
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(rows), 1)
         self.assertIn("message_id = ANY(%s::uuid[])", cursor.queries[0])
         self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.queries[1])
         self.assertIn("(recorded_at, id) >= (%s, %s)", cursor.queries[1])
@@ -425,7 +425,7 @@ class MessageLedgerTests(unittest.TestCase):
         rows = ledger.load_session_events(
             cursor, "story", "s", 5, [self.target], max_events=11000
         )
-        self.assertEqual(len(rows), 10005)
+        self.assertEqual(len(rows), 10002)
         metadata_queries = [
             (query, params) for query, params in zip(
                 cursor.queries, cursor.query_params, strict=True
@@ -482,6 +482,11 @@ class MessageLedgerTests(unittest.TestCase):
 
     def test_event_limit_fails_closed(self):
         cursor = FakeCursor(self.events)
+        events = list(self.events) + [
+            marker(5, "after-1", "s", 1, "user", "update_after", 11),
+            marker(6, "after-2", "s", 1, "user", "update_after", 12),
+        ]
+        cursor = FakeCursor(events)
         with self.assertRaisesRegex(
             ledger.LedgerRecoveryError, "LEDGER_SESSION_EVENT_LIMIT_EXCEEDED"
         ):
@@ -492,7 +497,7 @@ class MessageLedgerTests(unittest.TestCase):
         rows = ledger.load_session_events(
             cursor, "story", "s", 5, [self.target], max_events=700000
         )
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(rows), 1)
         self.assertEqual(cursor.query_params[1][-1], 10000)
 
     def test_event_limit_remains_hard_bounded_at_one_million(self):
