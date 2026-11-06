@@ -27,7 +27,12 @@ try:
     )
 except ImportError:
     from r60_gold192_canonical_a_v3 import (
-        A_SHA, B_SHA, B_SCHEMA, B_COUNTS, PACKETS_SHA, validate_reviewer_a_v3,
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        PACKETS_SHA,
+        validate_reviewer_a_v3,
     )
 
 SCHEMA = "storyforge-r60-owner-evidence-autolink-v3-safe-v1"
