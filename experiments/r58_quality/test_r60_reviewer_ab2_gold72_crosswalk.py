@@ -6,8 +6,8 @@ import json
 import unittest
 from unittest.mock import patch
 
-from experiments.r58_quality import r60_reviewer_b2_audit as b2
 from experiments.r58_quality import r60_reviewer_ab2_gold72_crosswalk as m
+from experiments.r58_quality import r60_reviewer_b2_audit as b2
 
 
 SCORES = {
