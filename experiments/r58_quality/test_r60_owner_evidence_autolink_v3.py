@@ -6,7 +6,13 @@ import unittest
 
 try:
     from .r60_gold192_canonical_a_v3 import (
-        A_SHA, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SHA, B_SCHEMA, B_COUNTS,
+        A_SCHEMA,
+        A_SHA,
+        A_SOURCE_PINS,
+        A_STATUS,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
         PACKETS_SHA,
     )
     from .r60_owner_evidence_autolink_v3 import AutoLinkHold, build
