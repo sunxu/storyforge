@@ -865,6 +865,32 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
                 keepalives=1, keepalives_idle=30,
                 keepalives_interval=10, keepalives_count=3,
             ) as db:
+                # Verify the exact read-only role even when every session is resumed
+                # from a previously completed SAFE checkpoint.
+                with db.transaction():
+                    db.execute(
+                        "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
+                    )
+                    db.execute("SET LOCAL statement_timeout = '90000ms'")
+                    db.execute("SET LOCAL lock_timeout = '1000ms'")
+                    with db.cursor() as cursor:
+                        cursor.execute(
+                            """
+                            SELECT current_user, current_setting('transaction_read_only'),
+                                   current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                            FROM pg_roles AS r WHERE r.rolname = current_user
+                            """
+                        )
+                        role = cursor.fetchone()
+                        if (role is None or role[0] != "r58_export_reader"
+                                or role[1] != "on" or role[2] != "on"
+                                or role[3] is not False or role[4] is not False):
+                            raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+                        owner_count = verify_story_owner_scope(
+                            cursor,
+                            sorted({case["story_id"] for case in packet_index.values()}),
+                        )
+
                 for session_number, (_session_key, entries) in enumerate(ordered_groups, 1):
                     global_indices = [index for index, _case in entries]
                     expected_indices = sorted(global_indices)
