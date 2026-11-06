@@ -83,7 +83,7 @@ def fixture():
         "counts": {"PASS": 178, "HOLD": 12, "REJECT": 2},
         "cases": b_cases,
     }
-    selected_indices = list(range(31)) + list(range(83, 124))
+    selected_indices = list(range(28)) + list(range(31, 75))
     staged_rows = [
         {
             "schema": m.STAGE_SCHEMA,
@@ -144,11 +144,18 @@ class CanonicalCrosswalkTests(unittest.TestCase):
             result = m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw)
         self.assertEqual(result["status"], "CANONICAL_CROSSWALK_COMPLETE__ADMISSION_HOLD")
         self.assertEqual(result["reviewer_a_evidence_granularity"], {
-            "AGGREGATE_COMPLEMENT_PASS_ONLY": 41,
-            "CASE_LEVEL_SCORED_PASS": 31,
+            "CASE_LEVEL_SCORED_PASS": 28,
+            "EXPLICIT_HOLD": 44,
         })
         self.assertEqual(result["reviewer_b_decisions"], {"PASS": 72})
+        self.assertEqual(result["a_b_decision_disagreements_on_comparable_rows"], 44)
+        self.assertEqual(result["a_b_raw_decision_token_inequalities"], 72)
+        self.assertEqual(result["a_b_decision_label_normalization"], {"PASS_ONLY": "PASS"})
         self.assertEqual(result["owner_independent_blind_attestation"], {"MISSING": 72})
+        self.assertFalse(result["reviewer_a_two_independent_blinded_reviews_met"])
+        self.assertFalse(result["reviewer_b_independent_semantic_recheck_completed"])
+        self.assertFalse(result["reviewer_b_case_to_gold192_scope_binding_verified"])
+        self.assertFalse(result["reviewer_b_independence_verified"])
         self.assertFalse(result["reviewer_independence_proven"])
         self.assertEqual(result["quality_v1_admitted"], 0)
 
