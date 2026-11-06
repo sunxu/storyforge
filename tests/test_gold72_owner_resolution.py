@@ -322,6 +322,7 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
             "a_b2_semantic_decision_agreements": 32,
             "reviewer_a_v3_report_sha256": hashlib.sha256(self.a_report_path.read_bytes()).hexdigest(),
             "reviewer_b2_result_sha256": hashlib.sha256(self.b2_result_path.read_bytes()).hexdigest(),
+            "reviewer_b2_decisions": {"PASS": 51, "HOLD": 16, "REJECT": 5},
             "a_b2_pair_counts": {
                 "CASE_LEVEL_SCORED_PASS__B2_PASS": 21,
                 "CASE_LEVEL_SCORED_PASS__B2_HOLD": 5,
@@ -598,7 +599,7 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         path = self.private / "bad.json"
         path.write_text('{"schema":"a","schema":"b"}')
         path.chmod(0o600)
-        with self.assertRaisesRegex(OwnerResolutionHold, "PACKAGE_SAFE_JSON_INVALID"):
+        with self.assertRaisesRegex(OwnerResolutionHold, "DUPLICATE_JSON_KEY"):
             prepare_owner_resolution(self.common_args(
                 package_safe=path, output=self.private / "never.json"
             ))
