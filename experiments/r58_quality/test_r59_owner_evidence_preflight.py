@@ -119,6 +119,26 @@ class OwnerEvidencePreflightTests(unittest.TestCase):
         self.assertEqual(report["quality_v1_admitted"], 0)
         self.assertFalse(report["training_authorized"])
 
+    def test_declared_severe_flag_is_counted_separately_from_field_completeness(self):
+        owner = owner_row()
+        owner["owner_supplemental_severe_flags"]["serious_player_agency"] = True
+        report = preflight([stage_row()], [owner], PIN_A, PIN_B)
+        # All fields are populated, but this is not a Binder PASS.
+        self.assertEqual(report["rows_with_all_required_fields_present"], 1)
+        self.assertEqual(report["rows_with_all_severe_flags_false"], 0)
+        self.assertEqual(report["rows_with_declared_severe_flag"], 1)
+        self.assertEqual(report["quality_v1_admitted"], 0)
+        self.assertFalse(report["training_authorized"])
+
+    def test_unverified_severe_flag_is_neither_clear_nor_declared(self):
+        owner = owner_row()
+        owner["owner_supplemental_severe_flags"]["hard_fact_or_ban"] = None
+        report = preflight([stage_row()], [owner], PIN_A, PIN_B)
+        self.assertEqual(report["rows_with_all_required_fields_present"], 0)
+        self.assertEqual(report["rows_with_all_severe_flags_false"], 0)
+        self.assertEqual(report["rows_with_declared_severe_flag"], 0)
+        self.assertEqual(report["field_checks_missing"]["supplemental_severe_flags_complete"], 1)
+
     def test_identity_mismatch_is_aggregate_only(self):
         owner = owner_row()
         owner["target_sha256"] = "d" * 64
