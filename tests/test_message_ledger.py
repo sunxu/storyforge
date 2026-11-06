@@ -172,7 +172,7 @@ class MessageLedgerTests(unittest.TestCase):
         rows = ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=20)
         self.assertEqual(len(rows), 1)
         self.assertIn("message_id = ANY(%s::uuid[])", cursor.queries[0])
-        self.assertIn("DISTINCT ON (t.target_ordinal, e.message_id)", cursor.queries[1])
+        self.assertIn("DISTINCT ON (e.message_id)", cursor.queries[1])
         self.assertEqual(
             cursor.query_params[1],
             ([0], [5], [dt(10)], [4], "story", "s"),
@@ -442,7 +442,7 @@ class MessageLedgerTests(unittest.TestCase):
         ]
         self.assertEqual(len(metadata_queries), 1)
         self.assertIn("DISTINCT ON (t.target_ordinal, e.message_id)", metadata_queries[0])
-        self.assertIn("ORDER BY t.target_ordinal, e.message_id, e.recorded_at, e.id",
+        self.assertIn("ORDER BY e.message_id, e.recorded_at, e.id",
                       metadata_queries[0])
 
     def test_repeated_events_for_same_message_are_reduced_to_first_event(self):
