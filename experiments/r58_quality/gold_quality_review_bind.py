@@ -251,6 +251,9 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
     aa, bb = a_doc.get("records"), b_doc.get("cases")
     if not isinstance(aa, list) or not isinstance(bb, list):
         raise BindHold("REVIEW_STRUCTURE_INVALID")
+    if (any(not isinstance(row, dict) for row in bb)
+            or dict(Counter(row.get("decision") for row in bb)) != B_COUNTS):
+        raise BindHold("CANONICAL_REVIEWER_B_COUNTS_INVALID")
     a = _index(aa, "A", case_key="case_id", include_position=True)
     b = _index(bb, "B", include_position=True)
     ex = _index(exclusions, "EX")
