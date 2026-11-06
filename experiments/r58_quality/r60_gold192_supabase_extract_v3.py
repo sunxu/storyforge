@@ -18,7 +18,12 @@ from pathlib import Path
 
 try:
     from .r60_gold192_canonical_a_v3 import (
-        A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, PACKETS_SHA,
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        EX_SHA,
+        PACKETS_SHA,
         validate_reviewer_a_v3,
     )
 except ImportError:
@@ -93,7 +98,7 @@ def select_candidates(a: dict, b: dict, exclusions: list[dict], packets: dict) -
     """
     a_idx = validate_reviewer_a_v3(a)
     if not isinstance(b, dict):
-        raise ValueError('REVIEW_STRUCTURE_INVALID')
+        raise TypeError('REVIEW_STRUCTURE_INVALID')
     bb = b.get('cases')
     if (b.get('schema') != B_SCHEMA or b.get('counts') != B_COUNTS
             or not isinstance(bb, list) or len(bb) != 192 or len(exclusions) != 11):
