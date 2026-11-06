@@ -26,6 +26,32 @@ A 的 PASS_ONLY 在比较时规范化为 PASS。AGGREGATE_COMPLEMENT_ONLY 没有
 
 ## 3. Owner 本机执行
 
+先使用此前已经归档的文件，不重新生成 Gold72、不重新审核 A/B2。以下是已记录的 Owner 本机路径；$HOME 对应 /Users/keedle：
+
+~~~bash
+set -euo pipefail
+umask 077
+
+STAGED="$HOME/.local/share/storyforge/r59/private/source-staging-suffix72-20261104-v1/GOLD_SOURCE_STAGING_PRIVATE.jsonl"
+STAGING_SAFE="$HOME/.local/share/storyforge/r59/private/source-staging-suffix72-20261104-v1/GOLD_SOURCE_STAGING_SAFE.json"
+OWNER_EVIDENCE="$HOME/.local/share/storyforge/r59/private/quality-v1/owner-autolink-suffix72-20261104-v1/OWNER_CASE_EVIDENCE_AUTOLINKED_PRIVATE.jsonl"
+A_V3="$HOME/.local/share/storyforge/r58/private/quality-v1/reviewer-a-v3-normalization-20261103/R58_GOLD192_REVIEWER_A_RESULTS_V3_RECONCILED.json"
+
+for f in "$STAGED" "$STAGING_SAFE" "$OWNER_EVIDENCE" "$A_V3"; do
+  test -f "$f"
+  test ! -L "$f"
+done
+
+test "$(wc -l < "$STAGED" | tr -d ' ')" = "72"
+test "$(wc -l < "$OWNER_EVIDENCE" | tr -d ' ')" = "72"
+test "$(shasum -a 256 "$A_V3" | awk '{print $1}')" = \
+  "b0356782963dd3c4f85c210bf0f1c69dc01211d818011c16754ea95e9a4fbdb8"
+
+printf '%s\n' "GOLD72_INPUT_PATHS_PRESENT_AND_BASIC_COUNTS_MATCH"
+~~~
+
+该检查只验证文件存在、不是符号链接、两份 JSONL 行数和 Reviewer A 固定 SHA；它不替代交叉分析器的 Schema、内容及逐案绑定检查。若任一 test 失败，停止并只读定位现有归档，不得重建或覆盖。
+
 使用现有工作区，不切换或新建 Worktree：
 
 ~~~bash
