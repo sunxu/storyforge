@@ -29,7 +29,7 @@ SCORE_FLOORS = {
     "narrative_continuity": 4,
     "rule_fidelity": 4,
 }
-ATTESTATIONS = {
+OWNER_VERIFICATION = {\n    "input_hashes_rechecked",\n    "execution_record_inspected",\n    "result_hash_rechecked",\n    "case_binding_rechecked",\n}\nATTESTATIONS = {
     "reviewer_a_materials_not_provided",
     "reviewer_b1_materials_not_provided",
     "owner_id_map_not_provided",
