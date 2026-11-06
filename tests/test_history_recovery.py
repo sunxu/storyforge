@@ -130,22 +130,38 @@ class FakeCursor:
                 and event["role"] == "assistant"
                 and event["operation"] in {"insert", "update_after"}
             ]
-        elif "FROM public.v2_chat_message_ledger" in query:
-            story_id, session_id, max_turn, boundary_time, boundary_id, limit = params
-            boundary_key = (boundary_time, boundary_id)
-            self.rows = []
-            for source in self.ledger_events:
-                key = (source["recorded_at"], source["id"])
-                if (source["story_id"] == story_id
-                        and source["session_id"] == session_id
-                        and 1 <= source["turn_index"] <= max_turn
-                        and key >= boundary_key):
-                    event = dict(source)
-                    if event["operation"] in {"update_before", "delete"}:
-                        event["row_data"] = None
-                    self.rows.append(event)
-            self.rows.sort(key=lambda event: (event["recorded_at"], event["id"]))
-            self.rows = self.rows[:limit]
+        elif "WITH targets AS" in query:
+            ordinals, turns, boundary_times, boundary_ids, story_id, session_id = params
+            selected = {}
+            for ordinal, turn, boundary_time, boundary_id in zip(
+                ordinals, turns, boundary_times, boundary_ids, strict=True
+            ):
+                boundary_key = (boundary_time, boundary_id)
+                first_by_message = {}
+                for source in self.ledger_events:
+                    key = (source["recorded_at"], source["id"])
+                    if (source["story_id"] != story_id
+                            or source["session_id"] != session_id
+                            or not 1 <= source["turn_index"] < turn
+                            or key <= boundary_key):
+                        continue
+                    previous = first_by_message.get(source["message_id"])
+                    if previous is None or key < (
+                        previous["recorded_at"], previous["id"]
+                    ):
+                        first_by_message[source["message_id"]] = source
+                for event in first_by_message.values():
+                    selected[event["id"]] = {
+                        key: event[key]
+                        for key in (
+                            "id", "message_id", "story_id", "session_id",
+                            "role", "turn_index", "operation", "recorded_at",
+                        )
+                    }
+            self.rows = sorted(
+                selected.values(),
+                key=lambda event: (event["recorded_at"], event["id"]),
+            )
         elif "FROM public.story_v2_sessions" in query:
             self.one = self.sessions.get(params[1])
         elif "FROM public.v2_chat_messages" in query and "AND role = 'assistant'" in query:
