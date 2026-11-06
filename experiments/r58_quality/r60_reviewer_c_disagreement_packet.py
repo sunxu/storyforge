@@ -6,6 +6,7 @@ source reviews, write the Quality Manifest, or admit training data.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -338,8 +339,6 @@ def _write_exclusive(path: Path, raw: bytes) -> None:
 
 
 def _sha(raw: bytes) -> str:
-    import hashlib
-
     return hashlib.sha256(raw).hexdigest()
 
 
