@@ -4,9 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 import unittest
-from unittest.mock import patch
-
 from importlib import import_module
+from unittest.mock import patch
 
 m = import_module("experiments.r58_quality.r60_reviewer_ab2_gold72_crosswalk")
 b2 = import_module("experiments.r58_quality.r60_reviewer_b2_audit")
