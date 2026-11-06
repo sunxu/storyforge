@@ -14,18 +14,16 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-A_SCHEMA = "r58_gold192_reviewer_a_results_v3_reconciled_private_v1"
-A_STATUS = "V3_SOURCES_NORMALIZED__192_IDENTITIES_VERIFIED__EVIDENCE_GRANULARITY_EXPLICIT"
-A_REPORT_SHA256 = "b0356782963dd3c4f85c210bf0f1c69dc01211d818011c16754ea95e9a4fbdb8"
-B_SCHEMA = "r58_gold192_reviewer_b_results_v1"
-B_SHA256 = "bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8"
-A_SOURCE_PINS = {
-    "safe_v3": "e9009984fb5c223dd179b9f9920ff0fb083e26f7241bda4b2c3b0f16de6ae2ac",
-    "cases31": "734ae5ccfc5ce06ff8c5fec3a98798273c1b75b2496289173bf212203de3deaf",
-    "supplement_v3": "84ea6170aa13532093ebb611b3541c73d28f6add3271ab0c7c8ad22a0ee2af02",
-    "packets": "ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e",
-    "reviewer_b": B_SHA256,
-}
+try:
+    from .r59_gold192_canonical_a import (
+        A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
+        B_SHA as B_SHA256, validate_reviewer_a_v3,
+    )
+except ImportError:
+    from r59_gold192_canonical_a import (
+        A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
+        B_SHA as B_SHA256, validate_reviewer_a_v3,
+    )
 STAGE_SCHEMA = "storyforge-quality-v1-source-staging-private-v1"
 STAGE_STATUS = "SOURCE_CONTEXT_STAGED__QUALITY_REVIEW_PENDING"
 RECEIPT_SCHEMA = "storyforge-r59-contiguous-suffix-stage-safe-v1"
@@ -145,10 +143,10 @@ def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str,
         raise AuditHold("REVIEWER_A_V3_REPORT_PIN_MISMATCH")
     if hashlib.sha256(b_raw).hexdigest() != B_SHA256:
         raise AuditHold("REVIEWER_B_SOURCE_PIN_MISMATCH")
-    if (a_report.get("schema") != A_SCHEMA or a_report.get("status") != A_STATUS
-            or a_report.get("source_pins") != A_SOURCE_PINS
-            or len(a_report.get("records", [])) != 192):
-        raise AuditHold("CANONICAL_REVIEWER_A_V3_REQUIRED")
+    try:
+        validate_reviewer_a_v3(a_report)
+    except ValueError as exc:
+        raise AuditHold(str(exc)) from None
     if (b_report.get("schema") != B_SCHEMA
             or len(b_report.get("cases", [])) != 192
             or b_report.get("counts") != {"PASS": 178, "HOLD": 12, "REJECT": 2}):
