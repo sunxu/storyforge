@@ -121,22 +121,27 @@ def fixture():
         }
         for i in selected_indices
     ]
+    a_raw = json.dumps(a_report, sort_keys=True).encode()
     b_raw = json.dumps(b_report, sort_keys=True).encode()
-    return staged_raw, receipt, owner_rows, a_report, b_report, b_raw
+    return staged_raw, receipt, owner_rows, a_report, a_raw, b_report, b_raw
 
 
 class CanonicalCrosswalkTests(unittest.TestCase):
     def test_crosswalk_distinguishes_case_level_and_aggregate_pass(self):
-        staged_raw, receipt, owners, a, b, b_raw = fixture()
+        staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
         digest = hashlib.sha256(b_raw).hexdigest()
+        a_digest = hashlib.sha256(a_raw).hexdigest()
         pins = dict(m.A_SOURCE_PINS)
         pins["reviewer_b"] = digest
         a["source_pins"] = dict(pins)
+        a_raw = json.dumps(a, sort_keys=True).encode()
+        a_digest = hashlib.sha256(a_raw).hexdigest()
         with (
             patch.object(m, "B_SHA256", digest),
+            patch.object(m, "A_REPORT_SHA256", a_digest),
             patch.dict(m.A_SOURCE_PINS, pins, clear=True),
         ):
-            result = m.audit(staged_raw, receipt, owners, a, b, b_raw)
+            result = m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw)
         self.assertEqual(result["status"], "CANONICAL_CROSSWALK_COMPLETE__ADMISSION_HOLD")
         self.assertEqual(result["reviewer_a_evidence_granularity"], {
             "AGGREGATE_COMPLEMENT_PASS_ONLY": 41,
@@ -162,23 +167,26 @@ class CanonicalCrosswalkTests(unittest.TestCase):
             m.audit(staged_raw, receipt, owners, a, b, b_raw)
 
     def test_owner_identity_or_staging_pin_mismatch_fails_closed(self):
-        staged_raw, receipt, owners, a, b, b_raw = fixture()
+        staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
         owners[0]["staged_file_sha256"] = "0" * 64
         digest = hashlib.sha256(b_raw).hexdigest()
         pins = dict(m.A_SOURCE_PINS)
         pins["reviewer_b"] = digest
         a["source_pins"] = dict(pins)
+        a_raw = json.dumps(a, sort_keys=True).encode()
+        a_digest = hashlib.sha256(a_raw).hexdigest()
         with (
             patch.object(m, "B_SHA256", digest),
+            patch.object(m, "A_REPORT_SHA256", a_digest),
             patch.dict(m.A_SOURCE_PINS, pins, clear=True),
             self.assertRaisesRegex(m.AuditHold, "OWNER_STAGING_IDENTITY_OR_PIN_MISMATCH"),
         ):
-            m.audit(staged_raw, receipt, owners, a, b, b_raw)
+            m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw)
 
     def test_b_source_pin_mismatch_fails_closed(self):
-        staged_raw, receipt, owners, a, b, b_raw = fixture()
-        with self.assertRaisesRegex(m.AuditHold, "REVIEWER_B_SOURCE_PIN_MISMATCH"):
-            m.audit(staged_raw, receipt, owners, a, b, b_raw + b"tampered")
+        staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
+        with self.assertRaisesRegex(m.AuditHold, "REVIEWER_A_V3_REPORT_PIN_MISMATCH"):
+            m.audit(staged_raw, receipt, owners, a, a_raw + b"tampered", b, b_raw)
 
 
 if __name__ == "__main__":
