@@ -443,6 +443,7 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
             or result_safe.get("decision_counts") != counts
             or result_safe.get("package_pins_rechecked") is not True
             or result_safe.get("execution_record_available") is not False
+            or result_safe.get("execution_metadata_sha256") is not None
             or result_safe.get("execution_attestation_complete") is not False
             or result_safe.get("reviewer_c_independence_verified") is not False
             or result_safe.get("cryptographic_independence_proven") is not False
