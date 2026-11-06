@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import stat
 from datetime import UTC, datetime
@@ -196,18 +197,33 @@ def import_review_reconciliation(args) -> dict[str, Any]:
         raise ManifestError("RECONCILIATION_KIND_NOT_ALLOWLISTED")
 
     path: Path = args.input
-    if path.is_symlink() or not path.is_file():
+    if any(part.is_symlink() for part in (path, *path.parents)):
         raise ManifestError("RECONCILIATION_INPUT_NOT_REGULAR_FILE")
-    info = path.stat()
-    if not stat.S_ISREG(info.st_mode) or info.st_mode & 0o077:
-        raise ManifestError("RECONCILIATION_INPUT_PERMISSIONS_INVALID")
-    if path.parent.is_symlink() or path.parent.stat().st_mode & 0o077:
-        raise ManifestError("RECONCILIATION_INPUT_PARENT_PERMISSIONS_INVALID")
     repo = args.repo_root.resolve(strict=True)
     resolved = path.resolve(strict=True)
     if resolved == repo or repo in resolved.parents:
         raise ManifestError("RECONCILIATION_INPUT_MUST_BE_PRIVATE")
-    raw = path.read_bytes()
+    parent_mode = path.parent.stat().st_mode & 0o777
+    if parent_mode != 0o700:
+        raise ManifestError("RECONCILIATION_INPUT_PARENT_PERMISSIONS_INVALID")
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(path, flags)
+    except OSError:
+        raise ManifestError("RECONCILIATION_INPUT_NOT_REGULAR_FILE") from None
+    try:
+        info = os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_mode & 0o777 != 0o600
+                or info.st_nlink != 1):
+            raise ManifestError("RECONCILIATION_INPUT_PERMISSIONS_INVALID")
+        raw = b""
+        while True:
+            chunk = os.read(fd, 1024 * 1024)
+            if not chunk:
+                break
+            raw += chunk
+    finally:
+        os.close(fd)
     if not 0 < len(raw) <= 2 * 1024 * 1024:
         raise ManifestError("RECONCILIATION_INPUT_SIZE_INVALID")
     try:
