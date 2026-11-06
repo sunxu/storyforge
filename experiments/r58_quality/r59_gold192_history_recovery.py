@@ -841,7 +841,7 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
             "max_history": max_history,
             "max_lineage_depth": max_lineage_depth,
             "max_ledger_events": max_ledger_events,
-            "algorithm_version": "sessionized-v1",
+            "algorithm_version": "sessionized-v2-target-boundary-window",
             "schema": "r59_gold192_history_session_checkpoint_v1",
         }, sort_keys=True, separators=(",", ":")).encode("utf-8"))
 
