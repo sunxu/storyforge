@@ -15,14 +15,26 @@ from pathlib import Path
 
 from gold_source_context_stage import StageHold, _create_only, _private_file, _read_rows
 from quality_v1 import EVIDENCE, SCHEMA, SEVERE, canonical, decide, sha, summarize
+
 try:
     from .r60_gold192_canonical_a_v3 import (
-        A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, validate_reviewer_a_v3,
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        EX_SHA,
+        validate_reviewer_a_v3,
     )
 except ImportError:
     from r60_gold192_canonical_a_v3 import (
-        A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, validate_reviewer_a_v3,
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        EX_SHA,
+        validate_reviewer_a_v3,
     )
+
 from r59_staging_receipt import valid_staging_receipt
 
 SAFE_SCHEMA = "storyforge-gold192-review-bind-safe-v1"
