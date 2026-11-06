@@ -149,7 +149,7 @@ def validate_event(event):
         ))
         marginals_valid = False
         if matrix_valid and maps_valid:
-            a_counts, b_counts, c_counts, owner_counts = {}, {}, {}, {}
+            a_counts, b_counts, c_counts, owner_counts, pair_counts = {}, {}, {}, {}, {}
             for key, count in matrix.items():
                 match = matrix_pattern.fullmatch(key)
                 a, b, c, owner = match.groups()
@@ -157,15 +157,22 @@ def validate_event(event):
                     (a_counts, a), (b_counts, b), (c_counts, c), (owner_counts, owner)
                 ):
                     target[decision] = target.get(decision, 0) + count
-            marginals_valid = all(
-                {key: value.get(key, 0) for key in ("PASS", "HOLD", "REJECT")}
-                == {key: payload[target].get(key, 0) for key in ("PASS", "HOLD", "REJECT")}
-                for value, target in (
-                    (a_counts, "reviewer_a_decisions"),
-                    (b_counts, "reviewer_b2_decisions"),
-                    (c_counts, "reviewer_c_decisions"),
-                    (owner_counts, "owner_decisions"),
+                a_class = {"PASS": "CASE_LEVEL_SCORED_PASS", "HOLD": "EXPLICIT_HOLD"}.get(a)
+                if a_class is not None:
+                    pair = f"{a_class}__B2_{b}"
+                    pair_counts[pair] = pair_counts.get(pair, 0) + count
+            marginals_valid = (
+                all(
+                    {key: value.get(key, 0) for key in ("PASS", "HOLD", "REJECT")}
+                    == {key: payload[target].get(key, 0) for key in ("PASS", "HOLD", "REJECT")}
+                    for value, target in (
+                        (a_counts, "reviewer_a_decisions"),
+                        (b_counts, "reviewer_b2_decisions"),
+                        (c_counts, "reviewer_c_decisions"),
+                        (owner_counts, "owner_decisions"),
+                    )
                 )
+                and pair_counts == expected_pairs
             )
         metadata_sha = payload.get("execution_metadata_sha256")
         if (
