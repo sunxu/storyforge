@@ -4,8 +4,8 @@ No HF, GPU, tokenizer, production database or private data access.
 """
 import hashlib
 import json
-import unittest
 from pathlib import Path
+import unittest
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
