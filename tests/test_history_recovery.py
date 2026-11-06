@@ -13,6 +13,7 @@ class FakeCursor:
     def __init__(self):
         self.rows = []
         self.one = None
+        self.queries = []
         self.sessions = {
             "child": {
                 "session_id": "child", "parent_session_id": "parent",
@@ -103,6 +104,7 @@ class FakeCursor:
         }
 
     def execute(self, query, params=()):
+        self.queries.append(query)
         self.rows, self.one = [], None
         if "WHERE id = ANY(%s)" in query:
             ids = set(params[0])
@@ -110,22 +112,77 @@ class FakeCursor:
                 {"id": event["id"], "row_data": event["row_data"]}
                 for event in self.ledger_events if event["id"] in ids
             ]
-        elif "FROM public.v2_chat_message_ledger" in query:
-            story_id, session_id, max_turn, limit = params
-            self.rows = []
-            for source in self.ledger_events:
-                if (source["story_id"] == story_id
-                        and source["session_id"] == session_id
-                        and 1 <= source["turn_index"] <= max_turn):
-                    event = dict(source)
-                    if event["operation"] in {"update_before", "delete"}:
-                        event["row_data"] = None
-                    self.rows.append(event)
-            self.rows = self.rows[:limit]
+        elif "message_id = ANY(%s::uuid[])" in query:
+            story_id, session_id, message_ids, turn_indices = params
+            self.rows = [
+                {
+                    key: event[key]
+                    for key in (
+                        "id", "message_id", "story_id", "session_id",
+                        "role", "turn_index", "operation", "recorded_at",
+                    )
+                }
+                for event in self.ledger_events
+                if event["story_id"] == story_id
+                and event["session_id"] == session_id
+                and event["message_id"] in message_ids
+                and event["turn_index"] in turn_indices
+                and event["role"] == "assistant"
+                and event["operation"] in {"insert", "update_after"}
+            ]
+        elif "WITH targets AS" in query:
+            ordinals, turns, boundary_times, boundary_ids, story_id, session_id = params
+            selected = {}
+            for ordinal, turn, boundary_time, boundary_id in zip(
+                ordinals, turns, boundary_times, boundary_ids, strict=True
+            ):
+                boundary_key = (boundary_time, boundary_id)
+                first_by_message = {}
+                for source in self.ledger_events:
+                    key = (source["recorded_at"], source["id"])
+                    if (source["story_id"] != story_id
+                            or source["session_id"] != session_id
+                            or not 1 <= source["turn_index"] < turn
+                            or key <= boundary_key):
+                        continue
+                    previous = first_by_message.get(source["message_id"])
+                    if previous is None or key < (
+                        previous["recorded_at"], previous["id"]
+                    ):
+                        first_by_message[source["message_id"]] = source
+                for event in first_by_message.values():
+                    selected[event["id"]] = {
+                        key: event[key]
+                        for key in (
+                            "id", "message_id", "story_id", "session_id",
+                            "role", "turn_index", "operation", "recorded_at",
+                        )
+                    }
+            self.rows = sorted(
+                selected.values(),
+                key=lambda event: (event["recorded_at"], event["id"]),
+            )
         elif "FROM public.story_v2_sessions" in query:
             self.one = self.sessions.get(params[1])
         elif "FROM public.v2_chat_messages" in query and "AND role = 'assistant'" in query:
-            self.rows = [self.target] if params[1] == "child" and params[2] == 7 else []
+            if "turn_index = ANY(%s)" in query:
+                self.rows = (
+                    [self.target]
+                    if params[1] == "child" and self.target["turn_index"] in params[2]
+                    else []
+                )
+            else:
+                self.rows = [self.target] if params[1] == "child" and params[2] == 7 else []
+        elif "FROM public.v2_chat_messages" in query and "LIMIT %s" in query:
+            story_id, session_id, cutoff, target_time, limit = params
+            self.rows = [
+                row for row in self.messages
+                if row["story_id"] == story_id and row["session_id"] == session_id
+                and row["turn_index"] <= cutoff and row["created_at"] < target_time
+                and row["role"] in {"user", "assistant"}
+            ]
+            self.rows.sort(key=lambda row: (row["created_at"], row["message_id"]))
+            self.rows = self.rows[:limit]
         elif "FROM public.v2_chat_messages" in query:
             story_id, session_id, cutoff, target_time = params
             self.rows = [
@@ -179,6 +236,84 @@ class HistoryRecoveryTests(unittest.TestCase):
         self.assertFalse(
             result["history_reconstruction"]["ledger_trigger_continuity_verified"]
         )
+
+    def test_per_case_suffix_diagnostic_reports_recovered_case(self):
+        results = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(results, [{
+            "safe_index": 0,
+            "result": "RECOVERED",
+            "history_message_count": 4,
+            "history_suffix_role": "user",
+            "ledger_event_count": 1,
+            "history_rows_restored": 0,
+            "history_rows_excluded": 0,
+            "current_history_suffix_role": "user",
+            "current_suffix_first_post_target_operation": None,
+            "current_history_first_post_target_operation_counts": {},
+            "current_marker_rows_with_preboundary_snapshot": 0,
+            "current_marker_rows_without_preboundary_snapshot": 0,
+            "current_marker_prior_snapshot_same_timestamp_as_boundary": 0,
+        }])
+
+    def test_suffix_diagnostic_evaluates_after_database_reads_are_complete(self):
+        prepared = h.prepare_history_suffix_diagnostics(
+            self.cursor, [self.case]
+        )
+        query_count_after_prepare = len(self.cursor.queries)
+        progress = []
+        results = h.evaluate_history_suffix_diagnostics(
+            prepared,
+            progress_callback=lambda event, **fields: progress.append((event, fields)),
+        )
+        self.assertEqual(len(self.cursor.queries), query_count_after_prepare)
+        self.assertEqual(results[0]["result"], "RECOVERED")
+        self.assertEqual(
+            progress,
+            [("case_completed", {
+                "safe_index": 0,
+                "result": "RECOVERED",
+                "reason_code": None,
+            })],
+        )
+
+    def test_suffix_diagnostic_wrapper_preserves_marker_hold_result(self):
+        self.cursor.ledger_events.extend([
+            self.cursor.ledger_marker(6, "c5", 5, "user", 11),
+            self.cursor.ledger_marker(7, "c6", 6, "user", 12),
+        ])
+        self.cursor.ledger_events[-2]["operation"] = "update_after"
+        self.cursor.ledger_events[-1]["operation"] = "update_after"
+        direct = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(direct[0]["result"], "HOLD")
+        self.assertEqual(direct[0]["reason_code"], "HISTORY_SUFFIX_NOT_USER")
+
+    def test_per_case_suffix_diagnostic_identifies_marker_exclusion(self):
+        self.cursor.ledger_events.extend([
+            self.cursor.ledger_marker(6, "c5", 5, "user", 11),
+            self.cursor.ledger_marker(7, "c6", 6, "user", 12),
+        ])
+        self.cursor.ledger_events[-2]["operation"] = "update_after"
+        self.cursor.ledger_events[-1]["operation"] = "update_after"
+        results = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(results, [{
+            "safe_index": 0,
+            "result": "HOLD",
+            "reason_code": "HISTORY_SUFFIX_NOT_USER",
+            "current_history_message_count": 4,
+            "current_history_suffix_role": "user",
+            "current_history_suffix_turn": 6,
+            "reconstructed_history_message_count": 2,
+            "history_suffix_role": "assistant",
+            "history_suffix_turn": 2,
+            "current_suffix_first_post_target_operation": "update_after",
+            "ledger_event_count": 3,
+            "history_rows_restored": 0,
+            "history_rows_excluded": 2,
+            "current_history_first_post_target_operation_counts": {"update_after": 2},
+            "current_marker_rows_with_preboundary_snapshot": 0,
+            "current_marker_rows_without_preboundary_snapshot": 2,
+            "current_marker_prior_snapshot_same_timestamp_as_boundary": 0,
+        }])
 
     def test_target_hash_mismatch_holds(self):
         self.case["target_sha256"] = "0" * 64
@@ -287,7 +422,105 @@ class HistoryRecoveryTests(unittest.TestCase):
             ["c1", "c2", "c5", "c6"],
         )
         self.assertEqual(
-            results[0]["history_reconstruction"]["ledger_event_count"], 5
+            results[0]["history_reconstruction"]["ledger_event_count"], 1
+        )
+        self.assertEqual(
+            sum("turn_index = ANY(%s)" in query for query in self.cursor.queries), 1
+        )
+
+    def test_lineage_cache_avoids_reloading_same_session_chain(self):
+        class CountingCursor:
+            def __init__(self, inner):
+                self.inner = inner
+                self.execute_count = 0
+
+            def execute(self, *args, **kwargs):
+                self.execute_count += 1
+                return self.inner.execute(*args, **kwargs)
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+        cursor = CountingCursor(self.cursor)
+        session_cache = {}
+        lineage_cache = {}
+        first = h._lineage(
+            cursor, "story-a", "child", 16,
+            session_cache=session_cache, lineage_cache=lineage_cache,
+        )
+        second = h._lineage(
+            cursor, "story-a", "child", 16,
+            session_cache=session_cache, lineage_cache=lineage_cache,
+        )
+        self.assertEqual(first, second)
+        self.assertEqual(cursor.execute_count, 2)
+        self.assertEqual(set(session_cache), {("story-a", "child"), ("story-a", "parent")})
+
+    def test_story_version_cache_avoids_duplicate_version_queries(self):
+        class CountingCursor:
+            def __init__(self, inner):
+                self.inner = inner
+                self.execute_count = 0
+
+            def execute(self, *args, **kwargs):
+                self.execute_count += 1
+                return self.inner.execute(*args, **kwargs)
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+        cursor = CountingCursor(self.cursor)
+        cache = {}
+        first = h._story_versions(cursor, "story-a", dt(10), cache)
+        second = h._story_versions(cursor, "story-a", dt(10), cache)
+        self.assertEqual(first, second)
+        self.assertEqual(cursor.execute_count, 2)
+
+    def test_independent_batch_keeps_valid_case_when_another_target_holds(self):
+        bad_case = {
+            "case_id": "story-a-t00009", "story_id": "story-a",
+            "session_id": "child", "turn_index": 9,
+            "target_sha256": h.sha256_text("missing target"),
+        }
+        recovered, holds = h.recover_cases_independently(
+            self.cursor, [self.case, bad_case]
+        )
+        self.assertEqual(len(recovered), 1)
+        self.assertEqual(recovered[0]["case_id"], self.case["case_id"])
+        self.assertEqual(
+            holds,
+            [{
+                "case_id": bad_case["case_id"],
+                "reason_code": "TARGET_MESSAGE_IDENTITY_AMBIGUOUS",
+            }],
+        )
+
+    def test_independent_batch_preserves_suffix_hold_without_aborting_other_cases(self):
+        class OneCaseHoldCursor(FakeCursor):
+            pass
+
+        cursor = OneCaseHoldCursor()
+        cursor.messages = [
+            row for row in cursor.messages
+            if row["message_id"] not in {"c5", "c6"}
+        ]
+        # The first case is independently held by the suffix gate. A second
+        # target identity is intentionally absent and is also held separately.
+        recovered, holds = h.recover_cases_independently(
+            cursor,
+            [
+                self.case,
+                {
+                    "case_id": "story-a-t00009", "story_id": "story-a",
+                    "session_id": "child", "turn_index": 9,
+                    "target_sha256": h.sha256_text("missing target"),
+                },
+            ],
+        )
+        self.assertEqual(recovered, [])
+        self.assertEqual(
+            {row["reason_code"] for row in holds},
+            {"HISTORY_SUFFIX_NOT_USER", "TARGET_MESSAGE_IDENTITY_AMBIGUOUS"},
         )
 
     def test_duplicate_case_set_fails(self):

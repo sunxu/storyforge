@@ -12,7 +12,7 @@ SCHEMA = "storyforge_gold_quality_manifest_event_v1"
 EVENT_TYPES = {"SOURCE_FREEZE", "LEGACY_SELECTION_EVIDENCE", "LEGACY_REVIEW",
                "SOURCE_METADATA", "TRAINING_EXPOSURE_AGGREGATE", "TRAINING_EXPOSURE_ROW",
                "WORLD_IDENTITY_REVIEW", "INCREMENTAL_REVIEW", "BLIND_REVIEW",
-               "ADJUDICATION", "AI_ARBITRATION", "HISTORICAL_REJECT_EVIDENCE", "STRUCTURE_VALIDATION", "TOKEN_PREFLIGHT", "FREEZE", "EXCLUSION"}
+               "ADJUDICATION", "AI_ARBITRATION", "HISTORICAL_REJECT_EVIDENCE", "STRUCTURE_VALIDATION", "TOKEN_PREFLIGHT", "FREEZE", "EXCLUSION", "REVIEW_RECONCILIATION"}
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -40,6 +40,68 @@ def validate_event(event):
     digest = event["payload"].get("target_sha256")
     if digest is not None and (not isinstance(digest, str) or not HEX64.fullmatch(digest)):
         raise ManifestError("TARGET_HASH_INVALID")
+    if event["event_type"] == "REVIEW_RECONCILIATION":
+        payload = event["payload"]
+        source_pins = payload.get("source_pins")
+        counts = (
+            "candidate_count", "comparable_decision_cases", "decision_agreements",
+            "decision_disagreements", "score_comparable_cases",
+        )
+        required_reconciliation_fields = {
+            "reconciliation_type", "source_receipt_sha256", "source_pins",
+            "candidate_count", "reviewer_a_evidence_granularity",
+            "reviewer_b2_decisions", "a_b2_pair_counts",
+            "comparable_decision_cases", "decision_agreements",
+            "decision_disagreements", "score_comparable_cases",
+            "score_comparison_by_dimension",
+            "reviewer_a_two_independent_blinded_reviews_met",
+            "reviewer_b2_execution_attestation_self_reported",
+            "reviewer_b2_independence_verified", "cryptographic_independence_proven",
+            "evidence_tier", "quality_v1_admitted", "training_authorized",
+            "gpu_started", "r50_accessed",
+        }
+        source_pin_fields = {
+            "staging_sha256", "source_context_sha256", "reviewer_a_v3_report_sha256",
+            "reviewer_b2_blind_input_sha256", "reviewer_b2_instructions_sha256",
+            "reviewer_b2_owner_map_sha256", "reviewer_b2_result_sha256",
+            "reviewer_b2_execution_record_sha256",
+        }
+        a_counts = payload.get("reviewer_a_evidence_granularity")
+        b_counts = payload.get("reviewer_b2_decisions")
+        pair_counts = payload.get("a_b2_pair_counts")
+        score_metrics = payload.get("score_comparison_by_dimension")
+        if (event["batch_id"] != "gold72"
+                or not required_reconciliation_fields.issubset(payload)
+                or payload.get("reconciliation_type") != "REVIEWER_A_B2_CROSSWALK"
+                or not isinstance(payload.get("source_receipt_sha256"), str)
+                or not HEX64.fullmatch(payload["source_receipt_sha256"])
+                or not isinstance(source_pins, dict) or set(source_pins) != source_pin_fields
+                or any(not isinstance(value, str) or not HEX64.fullmatch(value)
+                       for value in source_pins.values())
+                or any(type(payload.get(key)) is not int or not 0 <= payload[key] <= 72
+                       for key in counts)
+                or payload.get("candidate_count") != 72
+                or not isinstance(a_counts, dict) or sum(a_counts.values()) != 72
+                or not isinstance(b_counts, dict) or sum(b_counts.values()) != 72
+                or not isinstance(pair_counts, dict) or sum(pair_counts.values()) != 72
+                or not isinstance(score_metrics, dict)
+                or set(score_metrics) != {
+                    "chinese_prose", "character_consistency", "npc_initiative",
+                    "player_agency", "narrative_continuity", "rule_fidelity",
+                }
+                or payload.get("decision_agreements", 0)
+                   + payload.get("decision_disagreements", 0)
+                   != payload.get("comparable_decision_cases")
+                or payload.get("reviewer_a_two_independent_blinded_reviews_met") is not False
+                or payload.get("reviewer_b2_execution_attestation_self_reported") is not True
+                or payload.get("reviewer_b2_independence_verified") is not False
+                or payload.get("cryptographic_independence_proven") is not False
+                or payload.get("evidence_tier") != "OWNER_RETURNED_SAFE_AGGREGATE"
+                or payload.get("quality_v1_admitted") is not False
+                or payload.get("training_authorized") is not False
+                or payload.get("gpu_started") is not False
+                or payload.get("r50_accessed") is not False):
+            raise ManifestError("REVIEW_RECONCILIATION_EVENT_INVALID")
     return event
 
 
@@ -123,7 +185,7 @@ def append_events(path, events, repo_root):
     return len(checked)
 
 
-PUBLIC_BATCHES = {"gold87", "gold108", "gold192", "gold195"}
+PUBLIC_BATCHES = {"gold87", "gold108", "gold192", "gold195", "gold72"}
 PUBLIC_DECISIONS = {"PASS", "PASS_ONLY", "HOLD", "REJECT", "ACCEPT", "UNKNOWN", "NOT_RUN"}
 PUBLIC_TIERS = {"OWNER_RETURNED_SAFE_AGGREGATE", "OWNER_PRIVATE_SOURCE_IMPORT",
                 "OWNER_LOCAL_FROZEN_BYTES__NOT_ALIAS_VERIFIED"}
@@ -166,7 +228,10 @@ def validate_manifest(events):
 def safe_report(events):
     summary = validate_manifest(events)
     decisions, tiers, ai_arbitrations = Counter(), Counter(), Counter()
+    reconciliations = defaultdict(list)
     for event in events:
+        if event["event_type"] == "REVIEW_RECONCILIATION":
+            reconciliations[event["batch_id"]].append(event["payload"])
         payload = event["payload"]
         decision = payload.get("decision")
         if event["event_type"] == "AI_ARBITRATION":
@@ -184,6 +249,26 @@ def safe_report(events):
         "decision_counts": dict(sorted(decisions.items())),
         "ai_arbitration_decision_counts": dict(sorted(ai_arbitrations.items())),
         "exposure_evidence_tiers": dict(sorted(tiers.items())),
+        "review_reconciliation_summary": {
+            batch: {
+                "receipt_count": len(payloads),
+                "candidate_count": sum(item["candidate_count"] for item in payloads),
+                "comparable_decision_cases": sum(item["comparable_decision_cases"] for item in payloads),
+                "decision_agreements": sum(item["decision_agreements"] for item in payloads),
+                "decision_disagreements": sum(item["decision_disagreements"] for item in payloads),
+                "score_comparable_cases": sum(item["score_comparable_cases"] for item in payloads),
+                "reviewer_a_evidence_granularity": payloads[0]["reviewer_a_evidence_granularity"],
+                "reviewer_b2_decisions": payloads[0]["reviewer_b2_decisions"],
+                "a_b2_pair_counts": payloads[0]["a_b2_pair_counts"],
+                "score_comparison_by_dimension": payloads[0]["score_comparison_by_dimension"],
+                "reviewer_b2_independence_verified": all(
+                    item["reviewer_b2_independence_verified"] for item in payloads
+                ),
+                "quality_v1_admitted": 0,
+                "training_authorized": False,
+            }
+            for batch, payloads in sorted(reconciliations.items())
+        },
         "quality_v1_admitted": 0,
         "training_authorized": False,
         "gpu_started": False,

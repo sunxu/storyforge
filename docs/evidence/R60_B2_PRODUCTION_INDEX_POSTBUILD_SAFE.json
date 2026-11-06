@@ -1,0 +1,52 @@
+{
+  "schema": "storyforge-r60-b2-production-index-catalog-safe-v1",
+  "checked_at_utc": "2026-11-06T03:38:59Z",
+  "status": "PRODUCTION_B2_INDEX_CATALOG_VALID__RUNTIME_PERFORMANCE_PENDING",
+  "database": "postgres",
+  "index": "public.idx_v2_chat_message_ledger_r60_b2",
+  "table": "public.v2_chat_message_ledger",
+  "index_method": "btree",
+  "key_columns": [
+    "session_id",
+    "story_id",
+    "recorded_at",
+    "id"
+  ],
+  "include_columns": [
+    "turn_index",
+    "message_id",
+    "role",
+    "operation"
+  ],
+  "valid": true,
+  "ready": true,
+  "live": true,
+  "unique": false,
+  "partial": false,
+  "expression": false,
+  "index_bytes": 7520067584,
+  "planned_hypopg_estimate_gib": 11.68,
+  "existing_indexes_preserved": true,
+  "table_index_count": 6,
+  "concurrent_index_build_count": 0,
+  "current_connector_role": "supabase_read_only_user",
+  "connector_transaction_read_only": true,
+  "connector_row_security_setting_on": true,
+  "connector_bypassrls": true,
+  "connector_access_scope": "metadata_and_explain_only",
+  "business_data_read": false,
+  "synthetic_first_page_plan": "Limit -> Index Only Scan (B2)",
+  "synthetic_keyset_page_plan": "Limit -> Index Only Scan (B2)",
+  "real_parameters_plan_verified": false,
+  "real_execution_latency_verified": false,
+  "postbuild_disk_health_verified": false,
+  "database_modified_by_this_audit": false,
+  "private_values_emitted": false,
+  "index_rebuild_required": false,
+  "notes": [
+    "Synthetic plan uses known-nonexistent Story/Session values and is not representative of real Session selectivity.",
+    "HypoPG size and cost estimates are not real execution timings.",
+    "idx_scan was 0 in pg_stat_user_indexes at one sampling point; index creation and validity are verified by pg_index.",
+    "Do not rerun the manual CREATE INDEX CONCURRENTLY deployment script after successful creation."
+  ]
+}

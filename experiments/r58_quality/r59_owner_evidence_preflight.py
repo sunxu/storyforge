@@ -64,6 +64,8 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
     matched = 0
     identity_mismatch = 0
     complete_rows = 0
+    no_declared_severe_rows = 0
+    declared_severe_rows = 0
     checks = Counter()
     for stage in ready:
         owner = owners.get(stage.get("case_id"))
@@ -84,6 +86,11 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
             and all(type(flags[k]) is bool for k in SEVERE)
         )
         checks["supplemental_severe_flags_complete"] += int(flags_ok)
+        if flags_ok:
+            if any(flags.values()):
+                declared_severe_rows += 1
+            else:
+                no_declared_severe_rows += 1
         checks["supplemental_severe_evidence_ref_present"] += int(
             _valid_ref(owner.get("owner_supplemental_severe_evidence_ref"))
         )
@@ -140,6 +147,8 @@ def preflight(staged, owner_rows, staged_sha, source_context_sha):
         "identity_matched": matched,
         "identity_missing_or_mismatched": identity_mismatch,
         "rows_with_all_required_fields_present": complete_rows,
+        "rows_with_all_severe_flags_false": no_declared_severe_rows,
+        "rows_with_declared_severe_flag": declared_severe_rows,
         "rows_missing_one_or_more_required_fields": incomplete_rows,
         "field_checks_passed": dict(sorted(checks.items())),
         "field_checks_missing": missing,

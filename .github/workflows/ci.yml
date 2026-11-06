@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -20,8 +22,9 @@ jobs:
       - name: Ruff (changed Python files on pull requests)
         if: github.event_name == 'pull_request'
         run: |
-          git fetch --no-tags --depth=1 origin \
+          git fetch --no-tags origin \
             "+refs/heads/${{ github.base_ref }}:refs/remotes/origin/${{ github.base_ref }}"
+          git merge-base "origin/${{ github.base_ref }}" HEAD >/dev/null
           mapfile -d '' changed_python < <(
             git diff --name-only -z "origin/${{ github.base_ref }}...HEAD" -- '*.py'
           )

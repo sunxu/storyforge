@@ -1,11 +1,147 @@
 """Synthetic, database-free tests for the Gold192 history adapter."""
 import hashlib
+import json
+import os
+import stat
+import tempfile
 import unittest
+from pathlib import Path
 
 from experiments.r58_quality import r59_gold192_history_recovery as adapter
 
 
 class Gold192HistoryAdapterTests(unittest.TestCase):
+    def test_recovery_query_stage_classifies_database_operations(self):
+        cases = {
+            "SELECT id FROM public.user_stories": "OWNER_SCOPE_QUERY",
+            "SELECT id FROM public.v2_chat_messages WHERE role = 'assistant'":
+                "TARGET_MESSAGE_QUERY",
+            "SELECT mutation_revision FROM public.v2_chat_messages":
+                "CURRENT_HISTORY_QUERY",
+            "SELECT id FROM public.story_v2_sessions": "SESSION_LINEAGE_QUERY",
+            "SELECT id FROM public.v2_chat_message_ledger":
+                "LEDGER_METADATA_QUERY",
+            "SELECT row_data FROM public.v2_chat_message_ledger":
+                "LEDGER_DETAIL_QUERY",
+            "SELECT id FROM public.story_content_versions": "STORY_VERSION_QUERY",
+            "SELECT id FROM public.story_admin_versions": "ADMIN_VERSION_QUERY",
+        }
+        for query, expected in cases.items():
+            with self.subTest(expected=expected):
+                self.assertEqual(adapter.recovery_query_stage(query), expected)
+
+    def test_recovery_stage_cursor_emits_safe_progress_without_sql_or_params(self):
+        events = []
+
+        class Cursor:
+            def execute(self, query, params=None):
+                self.query = query
+                self.params = params
+            def fetchall(self):
+                return [("row",)]
+
+        tracked = adapter.RecoveryStageCursor(
+            Cursor(),
+            progress_callback=lambda event, **fields: events.append((event, fields)),
+        )
+        tracked.execute(
+            "SELECT row_data FROM public.v2_chat_message_ledger WHERE id = %s",
+            ("private-id",),
+        )
+        self.assertEqual(tracked.fetchall(), [("row",)])
+        self.assertEqual(
+            [event for event, _fields in events],
+            ["query_started", "query_completed", "query_started", "query_completed"],
+        )
+        serialized = json.dumps(events)
+        self.assertNotIn("private-id", serialized)
+        self.assertNotIn("SELECT", serialized)
+        self.assertEqual(events[0][1]["query_class"], "LEDGER_DETAIL_QUERY")
+        self.assertEqual(events[-1][1]["rows_fetched"], 1)
+
+    def test_safe_progress_writer_is_private_create_only_and_aggregate_only(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            os.chmod(root, 0o700)
+            path = root / "progress.safe.jsonl"
+            writer = adapter.SafeProgressWriter(path, root)
+            writer.emit(
+                "query_completed", query_class="LEDGER_METADATA_QUERY",
+                operation="fetchall", operation_ordinal=1,
+                elapsed_ms=12.5, rows_fetched=10000,
+            )
+            writer.close()
+            self.assertEqual(stat.S_IMODE(path.stat().st_mode), 0o600)
+            payload = json.loads(path.read_text())
+            self.assertEqual(payload["event"], "query_completed")
+            self.assertNotIn("private-id", path.read_text())
+            with self.assertRaises(FileExistsError):
+                adapter.SafeProgressWriter(path, root)
+
+    def test_merge_safe_metrics_sums_session_metrics(self):
+        merged = adapter.merge_safe_metrics([
+            {
+                "query_classes": {
+                    "LEDGER_METADATA_QUERY": {
+                        "query_count": 2, "execute_ms": 3.0,
+                        "fetch_count": 2, "fetch_ms": 5.0, "rows_fetched": 100,
+                    }
+                }
+            },
+            {
+                "query_classes": {
+                    "LEDGER_METADATA_QUERY": {
+                        "query_count": 1, "execute_ms": 7.0,
+                        "fetch_count": 1, "fetch_ms": 11.0, "rows_fetched": 50,
+                    },
+                    "CURRENT_HISTORY_QUERY": {
+                        "query_count": 1, "execute_ms": 2.0,
+                        "fetch_count": 1, "fetch_ms": 4.0, "rows_fetched": 8,
+                    },
+                }
+            },
+        ])
+        self.assertEqual(merged["total_query_count"], 4)
+        self.assertEqual(merged["total_rows_fetched"], 158)
+        self.assertEqual(
+            merged["query_classes"]["LEDGER_METADATA_QUERY"]["fetch_ms"], 16.0
+        )
+        self.assertFalse(merged["sql_text_retained"])
+        self.assertFalse(merged["sql_parameters_retained"])
+
+    def test_checkpoint_case_results_reject_private_or_unknown_fields(self):
+        valid = [{
+            "safe_index": 0,
+            "result": "HOLD",
+            "reason_code": "HISTORY_SUFFIX_NOT_USER",
+            "current_history_message_count": 4,
+            "current_history_suffix_role": "assistant",
+            "current_history_first_post_target_operation_counts": {
+                "update_after": 4,
+            },
+        }]
+        adapter._validate_checkpoint_case_results(valid, [0])
+        invalid = [{**valid[0], "message_id": "private-message-id"}]
+        with self.assertRaisesRegex(ValueError, "SESSION_CHECKPOINT_CASE_SHAPE_INVALID"):
+            adapter._validate_checkpoint_case_results(invalid, [0])
+
+    def test_recovery_stage_cursor_tracks_execute_and_delegates_fetch(self):
+        class Cursor:
+            def execute(self, query, params=None):
+                self.query = query
+                self.params = params
+            def fetchone(self):
+                return ("ok",)
+            def fetchall(self):
+                return [("ok",)]
+
+        raw = Cursor()
+        tracked = adapter.RecoveryStageCursor(raw)
+        tracked.execute("SELECT row_data FROM public.v2_chat_message_ledger", ())
+        self.assertEqual(tracked.stage, "LEDGER_DETAIL_QUERY")
+        self.assertEqual(tracked.fetchone(), ("ok",))
+        self.assertEqual(tracked.fetchall(), [("ok",)])
+
     def test_duplicate_exact_match_with_one_root_canonical_is_proven(self):
         locator = {
             "matched_message_count": 2,

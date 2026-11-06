@@ -11,7 +11,11 @@ from datetime import datetime
 from typing import Any
 
 from .message_ledger import (
+    MARKERS,
+    SNAPSHOTS,
+    LedgerEventIndex,
     LedgerRecoveryError,
+    _key,
     load_session_events,
     reconstruct_history,
 )
@@ -116,18 +120,7 @@ def _session(cursor, story_id: str, session_id: str) -> dict:
     return row
 
 
-def _target(cursor, case: dict) -> dict:
-    cursor.execute(
-        """
-        SELECT id::text AS message_id, story_id::text AS story_id,
-               session_id, turn_index, role, content, status, created_at
-        FROM public.v2_chat_messages
-        WHERE story_id = %s AND session_id = %s AND turn_index = %s
-          AND role = 'assistant'
-        """,
-        (case["story_id"], case["session_id"], case["turn_index"]),
-    )
-    rows = _fetchall(cursor, TARGET_COLUMNS)
+def _validate_target_rows(case: dict, rows: list[dict]) -> dict:
     exact = [row for row in rows if sha256_text(row["content"]) == case["target_sha256"]]
     if len(rows) != 1 or len(exact) != 1:
         raise HistoryRecoveryError("TARGET_MESSAGE_IDENTITY_AMBIGUOUS")
@@ -142,10 +135,58 @@ def _target(cursor, case: dict) -> dict:
     return target
 
 
+def _target(cursor, case: dict) -> dict:
+    cursor.execute(
+        """
+        SELECT id::text AS message_id, story_id::text AS story_id,
+               session_id, turn_index, role, content, status, created_at
+        FROM public.v2_chat_messages
+        WHERE story_id = %s AND session_id = %s AND turn_index = %s
+          AND role = 'assistant'
+        """,
+        (case["story_id"], case["session_id"], case["turn_index"]),
+    )
+    return _validate_target_rows(case, _fetchall(cursor, TARGET_COLUMNS))
+
+
+def _targets_for_cases(cursor, cases: list[dict]) -> dict[str, dict]:
+    """Fetch target rows once per Session, then validate each pinned target hash."""
+    grouped = {}
+    for case in cases:
+        key = (case["story_id"], case["session_id"])
+        grouped.setdefault(key, []).append(case)
+    targets = {}
+    for (story_id, session_id), session_cases in sorted(grouped.items()):
+        turns = sorted({case["turn_index"] for case in session_cases})
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s
+              AND turn_index = ANY(%s) AND role = 'assistant'
+            """,
+            (story_id, session_id, turns),
+        )
+        rows = _fetchall(cursor, TARGET_COLUMNS)
+        by_turn = {}
+        for row in rows:
+            by_turn.setdefault(row["turn_index"], []).append(row)
+        for case in session_cases:
+            targets[case["case_id"]] = _validate_target_rows(
+                case, by_turn.get(case["turn_index"], [])
+            )
+    return targets
+
+
 def _lineage(cursor, story_id: str, leaf_session_id: str,
-             max_depth: int) -> list[dict]:
+             max_depth: int, *, session_cache: dict | None = None,
+             lineage_cache: dict | None = None) -> list[dict]:
     if type(max_depth) is not int or not 1 <= max_depth <= 64:
         raise HistoryRecoveryError("LINEAGE_DEPTH_LIMIT_INVALID")
+    cache_key = (story_id, leaf_session_id, max_depth)
+    if lineage_cache is not None and cache_key in lineage_cache:
+        return lineage_cache[cache_key]
     chain = []
     seen = set()
     current_id = leaf_session_id
@@ -156,7 +197,13 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
         if len(chain) >= max_depth:
             raise HistoryRecoveryError("SESSION_LINEAGE_DEPTH_EXCEEDED")
         seen.add(current_id)
-        node = _session(cursor, story_id, current_id)
+        session_key = (story_id, current_id)
+        if session_cache is not None and session_key in session_cache:
+            node = session_cache[session_key]
+        else:
+            node = _session(cursor, story_id, current_id)
+            if session_cache is not None:
+                session_cache[session_key] = node
         _timestamp(node["created_at"])
         if (child is not None
                 and _datetime(node["created_at"]) > _datetime(child["created_at"])):
@@ -175,24 +222,28 @@ def _lineage(cursor, story_id: str, leaf_session_id: str,
         chain.append({"session": node, "lineage_depth": len(chain)})
         child = node
         current_id = parent_id
+    if lineage_cache is not None:
+        lineage_cache[cache_key] = chain
     return chain
 
 
-def _history(cursor, story_id: str, segment: dict, target_time: Any) -> list[dict]:
+def _history(cursor, story_id: str, segment: dict, target_time: Any,
+             *, rows: list[dict] | None = None) -> list[dict]:
     session_id = segment["session"]["session_id"]
-    cursor.execute(
-        """
-        SELECT id::text AS message_id, story_id::text AS story_id,
-               session_id, turn_index, role, content, status, created_at,
-               mutation_revision
-        FROM public.v2_chat_messages
-        WHERE story_id = %s AND session_id = %s AND turn_index <= %s
-          AND created_at < %s AND role IN ('user', 'assistant')
-        ORDER BY created_at, id
-        """,
-        (story_id, session_id, segment["turn_cutoff"], target_time),
-    )
-    rows = _fetchall(cursor, HISTORY_COLUMNS)
+    if rows is None:
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at,
+                   mutation_revision
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s AND turn_index <= %s
+              AND created_at < %s AND role IN ('user', 'assistant')
+            ORDER BY created_at, id
+            """,
+            (story_id, session_id, segment["turn_cutoff"], target_time),
+        )
+        rows = _fetchall(cursor, HISTORY_COLUMNS)
     output = []
     for row in rows:
         if row["status"] != "completed":
@@ -278,7 +329,11 @@ def _summary_snapshot(session: dict, target_time: Any,
     }
 
 
-def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
+def _story_versions(cursor, story_id: str, target_time: Any,
+                    cache: dict | None = None) -> dict:
+    cache_key = (story_id, _timestamp(target_time))
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
     cursor.execute(
         """
         SELECT id, content_revision, title, description, tags, v2_data,
@@ -323,7 +378,7 @@ def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
             "updated_at": _timestamp(admin["updated_at"]),
             "temporal_status": "PRETARGET_RECORD_AND_UPDATE",
         }
-    return {
+    result = {
         "story_content_version": content,
         "story_content_version_status": (
             "PRETARGET_VERSION_FOUND" if content else "NO_PRETARGET_VERSION_FOUND"
@@ -336,13 +391,21 @@ def _story_versions(cursor, story_id: str, target_time: Any) -> dict:
         # provider System Prompt or request bytes.
         "historical_system_prompt_verified": False,
     }
+    if cache is not None:
+        cache[cache_key] = result
+    return result
 
 
 def recover_case(cursor, case: dict, *, max_history: int = 20000,
                  max_lineage_depth: int = 16,
                  target: dict | None = None,
                  ledger_events: list[dict] | None = None,
-                 max_ledger_events: int = 100000) -> dict:
+                 ledger_event_index: LedgerEventIndex | None = None,
+                 current_history: list[dict] | None = None,
+                 max_ledger_events: int = 100000,
+                 session_cache: dict | None = None,
+                 lineage_cache: dict | None = None,
+                 story_version_cache: dict | None = None) -> dict:
     required = ("case_id", "story_id", "session_id", "turn_index", "target_sha256")
     if any(key not in case for key in required):
         raise HistoryRecoveryError("CASE_LOCATOR_INCOMPLETE")
@@ -355,8 +418,10 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
         raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
 
     target = target if target is not None else _target(cursor, case)
-    chain = _lineage(cursor, case["story_id"], case["session_id"],
-                     max_lineage_depth)
+    chain = _lineage(
+        cursor, case["story_id"], case["session_id"], max_lineage_depth,
+        session_cache=session_cache, lineage_cache=lineage_cache,
+    )
     leaf = chain[0]["session"]
     # Fork/rewind materializes the inherited messages into the child session
     # with new message IDs. Read that materialized child history once; merging
@@ -373,12 +438,14 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
             targets=[target], max_events=max_ledger_events,
         )
     try:
-        current_history = _history(
-            cursor, case["story_id"], leaf_segment, target["created_at"]
-        )
+        if current_history is None:
+            current_history = _history(
+                cursor, case["story_id"], leaf_segment, target["created_at"]
+            )
         history, history_reconstruction = reconstruct_history(
             current_history, ledger_events, target,
             case["story_id"], case["session_id"], case["turn_index"] - 1,
+            event_index=ledger_event_index,
         )
     except LedgerRecoveryError as exc:
         raise HistoryRecoveryError(str(exc)) from None
@@ -401,7 +468,9 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
     if any(not _before(row["created_at"], target["created_at"]) for row in history):
         raise HistoryRecoveryError("HISTORY_FUTURE_LEAKAGE")
 
-    versions = _story_versions(cursor, case["story_id"], target["created_at"])
+    versions = _story_versions(
+        cursor, case["story_id"], target["created_at"], story_version_cache
+    )
     return {
         "case_id": case["case_id"],
         "story_id": case["story_id"],
@@ -440,6 +509,462 @@ def recover_case(cursor, case: dict, *, max_history: int = 20000,
     }
 
 
+
+def recover_cases_independently(cursor, cases: list[dict], *,
+                                max_history: int = 20000,
+                                max_lineage_depth: int = 16,
+                                max_ledger_events: int = 100000) -> tuple[list[dict], list[dict]]:
+    """Recover each case independently; one evidence HOLD never aborts other cases."""
+    if not cases:
+        raise HistoryRecoveryError("CASE_SET_EMPTY")
+    ids = [row.get("case_id") for row in cases]
+    targets = [row.get("target_sha256") for row in cases]
+    if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
+        raise HistoryRecoveryError("CASE_SET_DUPLICATE")
+
+    by_session = {}
+    for case in cases:
+        story_id = case.get("story_id")
+        session_id = case.get("session_id")
+        turn_index = case.get("turn_index")
+        if (not isinstance(story_id, str) or not story_id
+                or not isinstance(session_id, str) or not session_id
+                or type(turn_index) is not int or turn_index <= 0):
+            raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
+        entry = by_session.setdefault(
+            (story_id, session_id), {"max_turn": 0, "cases": []}
+        )
+        entry["max_turn"] = max(entry["max_turn"], turn_index)
+        entry["cases"].append(case)
+
+    targets_by_case = {}
+    ledger_by_session = {}
+    ledger_index_by_session = {}
+    holds_by_case = {}
+
+    for key, entry in sorted(by_session.items()):
+        story_id, session_id = key
+        session_cases = entry["cases"]
+        turns = sorted({case["turn_index"] for case in session_cases})
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s
+              AND turn_index = ANY(%s) AND role = 'assistant'
+            """,
+            (story_id, session_id, turns),
+        )
+        rows = _fetchall(cursor, TARGET_COLUMNS)
+        by_turn = {}
+        for row in rows:
+            by_turn.setdefault(row["turn_index"], []).append(row)
+
+        valid_targets = []
+        for case in session_cases:
+            try:
+                target = _validate_target_rows(
+                    case, by_turn.get(case["turn_index"], [])
+                )
+                targets_by_case[case["case_id"]] = target
+                valid_targets.append(target)
+            except HistoryRecoveryError as exc:
+                holds_by_case[case["case_id"]] = str(exc)
+
+        if not valid_targets:
+            continue
+        try:
+            ledger_by_session[key] = load_session_events(
+                cursor, story_id, session_id, entry["max_turn"],
+                targets=valid_targets, max_events=max_ledger_events,
+            )
+            ledger_index_by_session[key] = LedgerEventIndex(ledger_by_session[key])
+        except LedgerRecoveryError as exc:
+            for case in session_cases:
+                if case["case_id"] in targets_by_case:
+                    holds_by_case[case["case_id"]] = str(exc)
+                    targets_by_case.pop(case["case_id"], None)
+
+    session_cache = {}
+    lineage_cache = {}
+    story_version_cache = {}
+
+    # Read a bounded history superset once per Session. Each case is then
+    # filtered against its own target timestamp and physical turn cutoff.
+    # If the superset exceeds max_history, fall back to the original per-case
+    # query path rather than truncating or changing any case's evidence.
+    current_history_by_case = {}
+    for (key, entry) in sorted(by_session.items()):
+        story_id, session_id = key
+        active_cases = [
+            case for case in entry["cases"]
+            if case["case_id"] in targets_by_case
+            and case["case_id"] not in holds_by_case
+        ]
+        if not active_cases:
+            continue
+        try:
+            chain = _lineage(
+                cursor, story_id, session_id, max_lineage_depth,
+                session_cache=session_cache, lineage_cache=lineage_cache,
+            )
+        except HistoryRecoveryError as exc:
+            for case in active_cases:
+                holds_by_case[case["case_id"]] = str(exc)
+            continue
+        leaf = chain[0]["session"]
+        max_cutoff = max(case["turn_index"] - 1 for case in active_cases)
+        max_target_time = max(
+            _datetime(targets_by_case[case["case_id"]]["created_at"])
+            for case in active_cases
+        )
+        cursor.execute(
+            """
+            SELECT id::text AS message_id, story_id::text AS story_id,
+                   session_id, turn_index, role, content, status, created_at,
+                   mutation_revision
+            FROM public.v2_chat_messages
+            WHERE story_id = %s AND session_id = %s AND turn_index <= %s
+              AND created_at < %s AND role IN ('user', 'assistant')
+            ORDER BY created_at, id
+            LIMIT %s
+            """,
+            (story_id, session_id, max_cutoff, max_target_time, max_history + 1),
+        )
+        try:
+            superset_rows = _fetchall(cursor, HISTORY_COLUMNS)
+        except HistoryRecoveryError as exc:
+            # A malformed superset cannot be safely partitioned by target.
+            # Isolate the failure to this Session; other Sessions continue.
+            for case in active_cases:
+                holds_by_case[case["case_id"]] = str(exc)
+            continue
+        if len(superset_rows) > max_history:
+            # Safe fallback: original per-case SQL, with no partial superset.
+            continue
+        for case in active_cases:
+            try:
+                target_time = targets_by_case[case["case_id"]]["created_at"]
+                cutoff = case["turn_index"] - 1
+                eligible_rows = [
+                    row for row in superset_rows
+                    if row["turn_index"] <= cutoff
+                    and _before(row["created_at"], target_time)
+                ]
+                segment = {
+                    "session": leaf,
+                    "turn_cutoff": cutoff,
+                    "lineage_depth": 0,
+                }
+                current_history_by_case[case["case_id"]] = _history(
+                    cursor, story_id, segment, target_time, rows=eligible_rows,
+                )
+            except HistoryRecoveryError as exc:
+                holds_by_case[case["case_id"]] = str(exc)
+
+    recovered = []
+    for case in sorted(cases, key=lambda item: item["case_id"]):
+        case_id = case["case_id"]
+        if case_id in holds_by_case:
+            continue
+        key = (case["story_id"], case["session_id"])
+        try:
+            result = recover_case(
+                cursor, case, max_history=max_history,
+                max_lineage_depth=max_lineage_depth,
+                target=targets_by_case[case_id],
+                ledger_events=ledger_by_session[key],
+                ledger_event_index=ledger_index_by_session[key],
+                current_history=current_history_by_case.get(case_id),
+                max_ledger_events=max_ledger_events,
+                session_cache=session_cache,
+                lineage_cache=lineage_cache,
+                story_version_cache=story_version_cache,
+            )
+            recovered.append(result)
+        except HistoryRecoveryError as exc:
+            holds_by_case[case_id] = str(exc)
+
+    holds = [
+        {"case_id": case["case_id"], "reason_code": holds_by_case[case["case_id"]]}
+        for case in cases if case["case_id"] in holds_by_case
+    ]
+    if len(recovered) + len(holds) != len(cases):
+        raise HistoryRecoveryError("RECOVERY_CASE_ACCOUNTING_INVALID")
+    return recovered, holds
+
+
+def prepare_history_suffix_diagnostics(cursor, cases: list[dict], *,
+                                      max_history: int = 20000,
+                                      max_lineage_depth: int = 16,
+                                      max_ledger_events: int = 100000) -> list[dict]:
+    """Fetch a repeatable-read session's required source rows for local evaluation.
+
+    The returned structures contain private message content in memory. Callers
+    must not serialize them or retain them beyond the diagnostic process.
+    """
+    if not cases:
+        raise HistoryRecoveryError("CASE_SET_EMPTY")
+    ids = [row.get("case_id") for row in cases]
+    targets = [row.get("target_sha256") for row in cases]
+    if len(ids) != len(set(ids)) or len(targets) != len(set(targets)):
+        raise HistoryRecoveryError("CASE_SET_DUPLICATE")
+
+    targets_by_case = _targets_for_cases(cursor, cases)
+    by_session = {}
+    for case in cases:
+        story_id = case.get("story_id")
+        session_id = case.get("session_id")
+        turn_index = case.get("turn_index")
+        if (not isinstance(story_id, str) or not story_id
+                or not isinstance(session_id, str) or not session_id
+                or type(turn_index) is not int or turn_index <= 0):
+            raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
+        key = (story_id, session_id)
+        entry = by_session.setdefault(key, {"max_turn": 0, "targets": []})
+        entry["max_turn"] = max(entry["max_turn"], turn_index)
+        entry["targets"].append(targets_by_case[case["case_id"]])
+
+    ledger_by_session = {
+        key: load_session_events(
+            cursor, key[0], key[1], entry["max_turn"],
+            targets=entry["targets"], max_events=max_ledger_events,
+        )
+        for key, entry in sorted(by_session.items())
+    }
+
+    prepared = []
+    for index, case in enumerate(cases):
+        target = targets_by_case[case["case_id"]]
+        key = (case["story_id"], case["session_id"])
+        try:
+            chain = _lineage(
+                cursor, case["story_id"], case["session_id"], max_lineage_depth
+            )
+            leaf = chain[0]["session"]
+            segment = {
+                "session": leaf,
+                "turn_cutoff": case["turn_index"] - 1,
+                "lineage_depth": 0,
+            }
+            current_history = _history(
+                cursor, case["story_id"], segment, target["created_at"]
+            )
+            prepared.append({
+                "safe_index": index,
+                "case": case,
+                "target": target,
+                "current_history": current_history,
+                "events": ledger_by_session[key],
+                "prepare_error": None,
+            })
+        except HistoryRecoveryError as exc:
+            reason = str(exc)
+            if not reason or not reason.replace("_", "").isalnum() or reason.upper() != reason:
+                reason = "RECOVERY_CASE_HOLD"
+            prepared.append({
+                "safe_index": index,
+                "case": case,
+                "target": target,
+                "current_history": None,
+                "events": ledger_by_session[key],
+                "prepare_error": reason,
+            })
+    return prepared
+
+
+def evaluate_history_suffix_diagnostics(
+    prepared: list[dict], *, progress_callback=None,
+) -> list[dict]:
+    """Evaluate prepared history entirely locally, after the DB transaction closes."""
+    if not prepared:
+        raise HistoryRecoveryError("CASE_SET_EMPTY")
+    ledger_index_by_session = {}
+    for item in prepared:
+        case = item["case"]
+        key = (case["story_id"], case["session_id"])
+        if key not in ledger_index_by_session:
+            ledger_index_by_session[key] = LedgerEventIndex(item["events"])
+
+    results = []
+    for item in prepared:
+        index = item["safe_index"]
+        case = item["case"]
+        base = {"safe_index": index}
+        try:
+            if item.get("prepare_error") is not None:
+                results.append({
+                    **base, "result": "HOLD",
+                    "reason_code": item["prepare_error"],
+                })
+                if progress_callback is not None:
+                    progress_callback(
+                        "case_completed", safe_index=index, result="HOLD",
+                        reason_code=item["prepare_error"],
+                    )
+                continue
+
+            target = item["target"]
+            current_history = item["current_history"]
+            history, reconstruction = reconstruct_history(
+                current_history, item["events"], target, case["story_id"],
+                case["session_id"], case["turn_index"] - 1,
+                event_index=ledger_index_by_session[
+                    (case["story_id"], case["session_id"])
+                ],
+            )
+            history.sort(
+                key=lambda row: (_datetime(row["created_at"]), row["message_id"])
+            )
+            current_history.sort(
+                key=lambda row: (_datetime(row["created_at"]), row["message_id"])
+            )
+            current_suffix = current_history[-1] if current_history else None
+            recovered_suffix = history[-1] if history else None
+            event_index = ledger_index_by_session[
+                (case["story_id"], case["session_id"])
+            ]
+            boundary = _key(event_index.target_boundary(target))
+            suffix_operation = None
+            if current_suffix is not None:
+                later_suffix_events = event_index.by_message_id.get(
+                    current_suffix["message_id"], []
+                )
+                suffix_operation = next(
+                    (event["operation"] for event in later_suffix_events
+                     if _key(event) > boundary),
+                    None,
+                )
+
+            events_by_message = event_index.by_message_id
+            first_operation_counts = {}
+            excluded_with_prior_snapshot = 0
+            excluded_without_prior_snapshot = 0
+            excluded_prior_snapshot_same_timestamp = 0
+            for row in current_history:
+                row_events = events_by_message.get(row["message_id"], [])
+                later_events = sorted(
+                    (event for event in row_events if _key(event) > boundary),
+                    key=_key,
+                )
+                if not later_events:
+                    continue
+                operation = later_events[0]["operation"]
+                first_operation_counts[operation] = first_operation_counts.get(operation, 0) + 1
+                if operation in MARKERS:
+                    prior_snapshots = [
+                        event for event in row_events
+                        if event["operation"] in SNAPSHOTS and _key(event) <= boundary
+                    ]
+                    if prior_snapshots:
+                        excluded_with_prior_snapshot += 1
+                        if _key(max(prior_snapshots, key=_key))[0] == boundary[0]:
+                            excluded_prior_snapshot_same_timestamp += 1
+                    else:
+                        excluded_without_prior_snapshot += 1
+
+            suffix_fields = {
+                "current_history_message_count": len(current_history),
+                "current_history_suffix_role": (
+                    current_suffix["role"] if current_suffix else None
+                ),
+                "current_history_suffix_turn": (
+                    current_suffix["turn_index"] if current_suffix else None
+                ),
+                "reconstructed_history_message_count": len(history),
+                "history_suffix_role": (
+                    recovered_suffix["role"] if recovered_suffix else None
+                ),
+                "history_suffix_turn": (
+                    recovered_suffix["turn_index"] if recovered_suffix else None
+                ),
+                "current_suffix_first_post_target_operation": suffix_operation,
+                "ledger_event_count": reconstruction["ledger_event_count"],
+                "history_rows_restored": reconstruction[
+                    "history_rows_restored_from_snapshot"
+                ],
+                "history_rows_excluded": reconstruction[
+                    "history_rows_excluded_by_post_target_marker"
+                ],
+                "current_history_first_post_target_operation_counts": dict(
+                    sorted(first_operation_counts.items())
+                ),
+                "current_marker_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
+                "current_marker_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
+                "current_marker_prior_snapshot_same_timestamp_as_boundary": (
+                    excluded_prior_snapshot_same_timestamp
+                ),
+            }
+            if not history or recovered_suffix["role"] != "user":
+                result = {
+                    **base, "result": "HOLD",
+                    "reason_code": "HISTORY_SUFFIX_NOT_USER",
+                    **suffix_fields,
+                }
+            else:
+                result = {
+                    **base,
+                    "result": "RECOVERED",
+                    "history_message_count": len(history),
+                    "history_suffix_role": history[-1]["role"],
+                    "ledger_event_count": reconstruction["ledger_event_count"],
+                    "history_rows_restored": reconstruction[
+                        "history_rows_restored_from_snapshot"
+                    ],
+                    "history_rows_excluded": reconstruction[
+                        "history_rows_excluded_by_post_target_marker"
+                    ],
+                    "current_history_suffix_role": suffix_fields[
+                        "current_history_suffix_role"
+                    ],
+                    "current_suffix_first_post_target_operation": suffix_operation,
+                    "current_history_first_post_target_operation_counts": (
+                        suffix_fields["current_history_first_post_target_operation_counts"]
+                    ),
+                    "current_marker_rows_with_preboundary_snapshot": excluded_with_prior_snapshot,
+                    "current_marker_rows_without_preboundary_snapshot": excluded_without_prior_snapshot,
+                    "current_marker_prior_snapshot_same_timestamp_as_boundary": (
+                        excluded_prior_snapshot_same_timestamp
+                    ),
+                }
+            results.append(result)
+            if progress_callback is not None:
+                progress_callback(
+                    "case_completed", safe_index=index,
+                    result=result["result"],
+                    reason_code=result.get("reason_code"),
+                )
+        except HistoryRecoveryError as exc:
+            reason = str(exc)
+            if not reason or not reason.replace("_", "").isalnum() or reason.upper() != reason:
+                reason = "RECOVERY_CASE_HOLD"
+            result = {**base, "result": "HOLD", "reason_code": reason}
+            results.append(result)
+            if progress_callback is not None:
+                progress_callback(
+                    "case_completed", safe_index=index, result="HOLD",
+                    reason_code=reason,
+                )
+    return results
+
+
+def diagnose_history_suffixes(cursor, cases: list[dict], *,
+                              max_history: int = 20000,
+                              max_lineage_depth: int = 16,
+                              max_ledger_events: int = 100000,
+                              progress_callback=None) -> list[dict]:
+    """Compatibility wrapper: fetch source rows, then evaluate the suffix locally."""
+    prepared = prepare_history_suffix_diagnostics(
+        cursor, cases, max_history=max_history,
+        max_lineage_depth=max_lineage_depth,
+        max_ledger_events=max_ledger_events,
+    )
+    return evaluate_history_suffix_diagnostics(
+        prepared, progress_callback=progress_callback
+    )
+
+
 def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
                   max_lineage_depth: int = 16,
                   max_ledger_events: int = 100000) -> list[dict]:
@@ -453,7 +978,7 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
     # Resolve targets first, then read one bounded ledger metadata stream per
     # Session. Large before-image JSONB snapshots are fetched by primary key
     # only when they are the first post-target event for a requested case.
-    targets_by_case = {}
+    targets_by_case = _targets_for_cases(cursor, cases)
     by_session = {}
     for case in cases:
         story_id = case.get("story_id")
@@ -463,12 +988,10 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
                 or not isinstance(session_id, str) or not session_id
                 or type(turn_index) is not int or turn_index <= 0):
             raise HistoryRecoveryError("CASE_LOCATOR_INVALID")
-        target = _target(cursor, case)
-        targets_by_case[case["case_id"]] = target
         key = (story_id, session_id)
         entry = by_session.setdefault(key, {"max_turn": 0, "targets": []})
         entry["max_turn"] = max(entry["max_turn"], turn_index)
-        entry["targets"].append(target)
+        entry["targets"].append(targets_by_case[case["case_id"]])
     ledger_by_session = {
         key: load_session_events(
             cursor, key[0], key[1], entry["max_turn"],
@@ -476,13 +999,26 @@ def recover_cases(cursor, cases: list[dict], *, max_history: int = 20000,
         )
         for key, entry in sorted(by_session.items())
     }
+    ledger_index_by_session = {
+        key: LedgerEventIndex(events) for key, events in ledger_by_session.items()
+    }
+    # Share immutable read results across cases in this single DB transaction.
+    # These caches remove repeated session-lineage queries without changing
+    # target boundaries, history selection, or admission decisions.
+    session_cache = {}
+    lineage_cache = {}
+    story_version_cache = {}
     return [
         recover_case(
             cursor, row, max_history=max_history,
             max_lineage_depth=max_lineage_depth,
             target=targets_by_case[row["case_id"]],
             ledger_events=ledger_by_session[(row["story_id"], row["session_id"])],
+            ledger_event_index=ledger_index_by_session[(row["story_id"], row["session_id"])],
             max_ledger_events=max_ledger_events,
+            session_cache=session_cache,
+            lineage_cache=lineage_cache,
+            story_version_cache=story_version_cache,
         )
         for row in sorted(cases, key=lambda item: item["case_id"])
     ]
