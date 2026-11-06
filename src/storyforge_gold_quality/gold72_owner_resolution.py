@@ -281,16 +281,34 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
     owner_sha = _unique(owner_rows, "target_sha256", "OWNER_MAP_TARGET_SHA_DUPLICATE")
     if set(owner_idx) != set(blind_idx) or set(owner_sha) != set(blind_sha):
         raise OwnerResolutionHold("BLIND_OWNER_MAP_SET_MISMATCH")
+    expected_map_fields = {
+        "blind_case_id", "original_case_id", "original_story_uuid", "target_sha256",
+        "reviewer_a_decision", "reviewer_b2_decision", "reviewer_a_evidence_class",
+        "disagreement_type", "prior_b2_blind_case_id",
+    }
+    pair_counts: Counter[str] = Counter()
     for blind_id, row in owner_idx.items():
-        if (row.get("target_sha256") != blind_idx[blind_id].get("target_sha256")
+        a_class = row.get("reviewer_a_evidence_class")
+        a_decision = row.get("reviewer_a_decision")
+        b_decision = row.get("reviewer_b2_decision")
+        expected_a = {
+            "CASE_LEVEL_SCORED_PASS": "PASS",
+            "EXPLICIT_HOLD": "HOLD",
+        }.get(a_class)
+        pair = f"{a_class}__B2_{b_decision}"
+        if (set(row) != expected_map_fields
+                or row.get("target_sha256") != blind_idx[blind_id].get("target_sha256")
                 or not isinstance(row.get("original_case_id"), str) or not row["original_case_id"]
                 or not isinstance(row.get("original_story_uuid"), str) or not row["original_story_uuid"]
-                or row.get("reviewer_a_decision") not in DECISIONS
-                or row.get("reviewer_b2_decision") not in DECISIONS
-                or not isinstance(row.get("reviewer_a_evidence_class"), str)
-                or not isinstance(row.get("disagreement_type"), str)
-                or not isinstance(row.get("prior_b2_blind_case_id"), str)):
+                or a_decision not in DECISIONS or b_decision not in DECISIONS
+                or expected_a != a_decision
+                or row.get("disagreement_type") != pair
+                or not isinstance(row.get("prior_b2_blind_case_id"), str)
+                or not row["prior_b2_blind_case_id"]):
             raise OwnerResolutionHold("OWNER_MAP_CASE_BINDING_INVALID")
+        pair_counts[pair] += 1
+    if dict(sorted(pair_counts.items())) != dict(sorted(EXPECTED_PAIRS.items())):
+        raise OwnerResolutionHold("OWNER_MAP_DISAGREEMENT_DISTRIBUTION_INVALID")
 
     if (result.get("schema") != RESULT_SCHEMA or result.get("reviewer") != "C"
             or result.get("status") != "REVIEW_COMPLETE"):
@@ -362,6 +380,14 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
         raise OwnerResolutionHold("OWNER_RESOLUTION_TEMPLATE_BINDING_INVALID")
     for blind_id, owner_row in owner_idx.items():
         row = template_idx[blind_id]
+        expected_template_fields = set(owner_row) | {
+            "reviewer_c_decision", "reviewer_c_scores_1_to_5",
+            "reviewer_c_severe_flags", "reviewer_c_evidence_summary",
+            "owner_decision", "owner_rationale_cn", "owner_evidence_refs",
+            "owner_decided_at_utc", "owner_signoff",
+        }
+        if set(row) != expected_template_fields:
+            raise OwnerResolutionHold("OWNER_RESOLUTION_TEMPLATE_FIELDS_INVALID")
         for key, value in owner_row.items():
             if row.get(key) != value:
                 raise OwnerResolutionHold("OWNER_RESOLUTION_TEMPLATE_MAP_MISMATCH")
