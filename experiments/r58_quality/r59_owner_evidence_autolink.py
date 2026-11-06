@@ -15,14 +15,7 @@ import re
 import stat
 from pathlib import Path
 
-try:
-    from .r59_gold192_canonical_a import (
-        A_SHA, B_SHA, B_SCHEMA, B_COUNTS, PACKETS_SHA, validate_reviewer_a_v3,
-    )
-except ImportError:
-    from r59_gold192_canonical_a import (
-        A_SHA, B_SHA, B_SCHEMA, B_COUNTS, PACKETS_SHA, validate_reviewer_a_v3,
-    )
+from r59_gold192_supabase_extract import A_SHA, B_SHA, PACKETS_SHA
 
 SCHEMA = "storyforge-r59-owner-evidence-autolink-safe-v1"
 HEX = re.compile(r"^[0-9a-f]{64}$")
@@ -90,13 +83,6 @@ def build(packet_rows, staged_rows, a_doc, b_doc, owner_rows,
           packet_sha, staged_sha, a_sha, b_sha):
     if len(packet_rows) != 13 or a_sha != A_SHA or b_sha != B_SHA or packet_sha != PACKETS_SHA:
         raise AutoLinkHold("FROZEN_SOURCE_PIN_OR_COUNT_MISMATCH")
-    try:
-        canonical_a_index = validate_reviewer_a_v3(a_doc)
-    except ValueError as exc:
-        raise AutoLinkHold(str(exc)) from None
-    if (not isinstance(b_doc, dict) or b_doc.get("schema") != B_SCHEMA
-            or b_doc.get("counts") != B_COUNTS):
-        raise AutoLinkHold("CANONICAL_REVIEWER_B_REQUIRED")
 
     packet_index = {}
     for packet_i, packet in enumerate(packet_rows):
@@ -115,8 +101,6 @@ def build(packet_rows, staged_rows, a_doc, b_doc, owner_rows,
     if not isinstance(a_rows, list) or not isinstance(b_rows, list):
         raise AutoLinkHold("REVIEW_STRUCTURE_INVALID")
     a_index = _index_by_target(a_rows, "REVIEWER_A", require_case_id=True)
-    if set(a_index) != set(canonical_a_index):
-        raise AutoLinkHold("CANONICAL_A_INDEX_MISMATCH")
     b_index = _index_by_target(b_rows, "REVIEWER_B")
     if len(a_index) != 192 or len(b_index) != 192 or set(a_index) != set(b_index):
         raise AutoLinkHold("FROZEN_REVIEW_COVERAGE_INVALID")
@@ -138,7 +122,6 @@ def build(packet_rows, staged_rows, a_doc, b_doc, owner_rows,
         raise AutoLinkHold("OWNER_TEMPLATE_COVERAGE_MISMATCH")
 
     enriched = []
-    a_granularity_counts = {}
     for stage in ready:
         cid, target = stage["case_id"], stage["target_sha256"]
         owner = dict(owner_by_id[cid])
@@ -156,14 +139,8 @@ def build(packet_rows, staged_rows, a_doc, b_doc, owner_rows,
         packet_i, case_i, packet, case = packet_match
         if case.get("target_assistant_text") is None:
             raise AutoLinkHold("PACKET_TARGET_MISSING")
-        granularity = a_match[1]["evidence_granularity"]
-        a_granularity_counts[granularity] = a_granularity_counts.get(granularity, 0) + 1
         owner.update({
             "reviewer_a_evidence_ref": f"sha256:{a_sha}#records[{a_match[0]}]",
-            "reviewer_a_evidence_granularity": granularity,
-            "reviewer_a_case_level_scored_review_present": (
-                a_match[1]["case_level_scored_review_present"]
-            ),
             "reviewer_b_evidence_ref": f"sha256:{b_sha}#cases[{b_match[0]}]",
             "packet_case_evidence_ref": (
                 f"sha256:{packet_sha}#rows[{packet_i}].cases[{case_i}]"
@@ -188,7 +165,6 @@ def build(packet_rows, staged_rows, a_doc, b_doc, owner_rows,
         "staged_candidates": len(ready),
         "packet_exact_matches": len(enriched),
         "reviewer_a_exact_matches": len(enriched),
-        "reviewer_a_evidence_granularity_counts": dict(sorted(a_granularity_counts.items())),
         "reviewer_b_exact_matches": len(enriched),
         "owner_attestations_created": 0,
         "source_version_verified": False,
