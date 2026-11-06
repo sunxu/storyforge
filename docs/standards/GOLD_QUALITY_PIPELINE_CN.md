@@ -99,3 +99,53 @@ Reviewer A 与 B 的 blind ID 属于各自 reviewer 的局部编号，**不得�
 2. `r59.sft-candidates`：只接收 Owner 私有审核过的 `storyforge-quality-v1-private-candidate-v1` JSONL，复用 `quality_v1.py` 的原六维门槛、完整批次重复和世界隔离检查；仅为结构 PASS 的样本编译 last-assistant-only loss，生成私有候选 + SAFE 汇总，永远标记候选非准入。
 
 具体入口、权限、冻结限制和 SAFE 合同见 `docs/R59_GOLD_QUALITY_V1_SFT_CANDIDATE_COMPILE_CN.md`。现阶段不自动导出真正的 TRAIN / VALIDATION 冻结集；Reviewer 独立性、语义世界组件、来源证据和历史消息结构的 Owner 核对未完成时，`quality_v1_admitted=0`。实际 Qwen Tokenizer/Collator 仍只能在 HF CPU 使用共享预检工具；GPU 一律需要独立授权。
+
+
+## Batch-level review reconciliation receipts
+
+The shared core accepts aggregate review-comparison receipts through
+storyforge-gold-quality import-review-reconciliation. The first allowlisted
+adapter is reviewer-a-b2-gold72, which imports the Owner-local output of
+experiments/r58_quality/r60_reviewer_ab2_gold72_crosswalk.py.
+
+~~~bash
+storyforge-gold-quality import-review-reconciliation \
+  --batch gold72 \
+  --kind reviewer-a-b2-gold72 \
+  --input "$CROSSWALK_SAFE" \
+  --manifest "$OWNER_PRIVATE_MANIFEST" \
+  --repo-root "$PWD"
+
+storyforge-gold-quality report-safe --manifest "$OWNER_PRIVATE_MANIFEST"
+~~~
+
+Contract:
+
+- The experiment adapter remains responsible for revalidating frozen Gold72
+  staging, staging SAFE, Owner Evidence, canonical Reviewer A V3, B2 inputs,
+  execution receipt and B2 audit SAFE, including exact target-identity joins.
+- The shared core imports only the resulting aggregate SAFE. It does not
+  duplicate the crosswalk algorithm, read case-level review rows, or generate
+  synthetic case events.
+- The receipt must have the exact allowlisted schema/status, 72-case totals,
+  consistent A evidence-granularity / B2 decision / pair counts, six complete
+  score-comparison dimensions, valid source SHA256 pins, and non-admission flags.
+- The input SAFE must be outside the checkout, a regular non-symlink file with
+  mode 0600, in a private parent directory with mode 0700. The append-only
+  Manifest remains outside the checkout with its existing 0700/0600 contract.
+- Exactly one canonical REVIEW_RECONCILIATION event is accepted for this
+  batch/type. Reimporting the same receipt SHA is idempotent; a different
+  receipt for the already-pinned canonical batch fails closed. Corrections
+  require a separately reviewed migration/versioning decision, not overwrite.
+- The private Manifest stores the receipt SHA and source pins for provenance.
+  report-safe emits only aggregate counts and comparison metrics; it never
+  emits source pins, receipt digests, case IDs, target hashes or review text.
+- A/B2 agreement is evidence comparison only. Reviewer A independent dual
+  review remains false; B2 execution attestation remains self-reported;
+  cryptographic independence and B2 independence verification remain false.
+  quality_v1_admitted=0, training_authorized=false, gpu_started=false,
+  and r50_accessed=false are mandatory.
+
+Synthetic coverage lives in tests/test_gold_quality_review_reconciliation.py.
+The importer does not invoke the Owner-local crosswalk and does not access
+production DB, private story text, HF, GPU or R50.

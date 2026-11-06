@@ -19,6 +19,7 @@ from .manifest import (
     validate_manifest,
 )
 from .reconcile import reconcile_gold192
+from .review_reconciliation import import_review_reconciliation
 
 SOURCE_PINS = {
     "gold87": ("evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
@@ -41,6 +42,7 @@ TOOLS = [
     ("r59.gold-review-bind", "experiments/r58_quality/gold_quality_review_bind.py", "private pinned A/B/exclusions + owner evidence -> Quality-v1 candidate input + SAFE", "experiments/r58_quality/test_gold_quality_review_bind.py"),
     ("r59.evidence-inventory", "experiments/r58_quality/r59_evidence_inventory.py", "private staged/locator/draft/exposure exports -> aggregate SAFE exact-association audit", "experiments/r58_quality/test_r59_evidence_inventory.py"),
     ("r59.sft-candidates", "experiments/r58_quality/quality_v1_sft_candidates.py", "private reviewed rows -> SFT candidates + SAFE; no training admission", "experiments/r58_quality/test_quality_v1_sft_candidates.py"),
+    ("quality.review-reconciliation", "src/storyforge_gold_quality/review_reconciliation.py", "private aggregate crosswalk SAFE -> append-only batch event", "tests/test_gold_quality_review_reconciliation.py"),
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
@@ -76,7 +78,7 @@ def read_jsonl(path):
 def inventory(_args):
     return {"schema": "storyforge_gold_quality_inventory_v1",
             "commands": ["inventory", "verify-source", "import-history", "import-exposure",
-                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "validate", "report-safe"],
+                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "import-review-reconciliation", "validate", "report-safe"],
             "read_only_safe_checks": list(available_checks()),
             "registered_tools": [{"id": x[0], "path": x[1], "io_contract": x[2], "tests": x[3]}
                                  for x in TOOLS],
@@ -432,6 +434,16 @@ def main():
     review_parser = sub.add_parser("reconcile-gold192")
     review_parser.add_argument("--manifest", type=Path, required=True)
     review_parser.set_defaults(func=lambda a: reconcile_gold192(load_events(a.manifest)))
+
+    reconciliation_parser = sub.add_parser("import-review-reconciliation")
+    reconciliation_parser.add_argument("--batch", choices=("gold72",), required=True)
+    reconciliation_parser.add_argument(
+        "--kind", choices=("reviewer-a-b2-gold72",), required=True
+    )
+    reconciliation_parser.add_argument("--input", type=Path, required=True)
+    reconciliation_parser.add_argument("--manifest", type=Path, required=True)
+    reconciliation_parser.add_argument("--repo-root", type=Path, required=True)
+    reconciliation_parser.set_defaults(func=import_review_reconciliation)
 
     validate_parser = sub.add_parser("validate")
     validate_parser.add_argument("--manifest", type=Path, required=True)

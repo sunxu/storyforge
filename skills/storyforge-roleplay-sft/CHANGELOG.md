@@ -1,3 +1,11 @@
+# 0.1.14 — 2026-11-06
+
+- 将 Gold72 Reviewer A V3 / B2 Crosswalk 接入共享 Gold Quality Pipeline，新增通用 batch-level review reconciliation SAFE 导入事件。
+- 私有 Manifest 追加来源 Receipt SHA 与 source pins；report-safe 仅输出聚合一致/分歧和评分比较计数，不暴露来源哈希、case ID 或逐案内容。
+- 同一 Receipt 幂等导入；不同 Receipt 冲突失败关闭。不会把 A/B2 一致性提升为 Reviewer 独立性或 Quality-v1 准入。
+- 增加 synthetic-only 测试，覆盖 72 条计数绑定、六维评分、来源 SHA、隐私、权限、幂等、冲突与非准入门禁。
+- 不重新审核 Gold72、不重建 Gold72、不修改冻结数据、不访问 R50、不启动 GPU/训练、不合并 PR；Quality-v1 admission 仍为 0。
+
 # 0.1.13 — 2026-11-02
 
 - 新增统一 Gold Quality Pipeline：私有 append-only Manifest、CLI、历史 Gold87/Gold108 分层证据导入、R57 Gold195 曝光导入及独立审核事件。
