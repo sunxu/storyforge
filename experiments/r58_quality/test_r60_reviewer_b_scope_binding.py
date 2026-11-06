@@ -8,7 +8,6 @@ from unittest.mock import patch
 
 from experiments.r58_quality import r60_reviewer_b_scope_binding as m
 
-
 SCORES = {
     "chinese_prose": 4,
     "character_consistency": 4,

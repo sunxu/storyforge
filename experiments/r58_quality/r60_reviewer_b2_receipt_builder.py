@@ -13,7 +13,7 @@ import os
 import stat
 import sys
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -184,10 +184,10 @@ def _validate_package(safe_raw: bytes, template_raw: bytes, raw: dict[str, bytes
 
 def _utc(value: str) -> datetime | None:
     try:
-        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        dt = datetime.fromisoformat(value)
         if dt.tzinfo is None or dt.utcoffset() is None:
             return None
-        return dt.astimezone(timezone.utc)
+        return dt.astimezone(UTC)
     except (TypeError, ValueError, OverflowError):
         return None
 

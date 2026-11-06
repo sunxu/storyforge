@@ -14,9 +14,9 @@ import os
 import re
 import secrets
 import stat
-from collections import Counter
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 GOLD192_SOURCE_SHA256 = "ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e"
 GOLD72_STAGE_SHA256 = "edf46b1c637ba66e697968d6bf8dbab8feb3b4ec7bee26ec85b1bfb6edeaa3df"

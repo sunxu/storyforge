@@ -104,7 +104,7 @@ def _aware_timestamp(value: Any) -> bool:
     if not isinstance(value, str) or not value:
         return False
     try:
-        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(value)
     except ValueError:
         return False
     return parsed.tzinfo is not None and parsed.utcoffset() is not None

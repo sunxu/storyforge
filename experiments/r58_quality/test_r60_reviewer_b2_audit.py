@@ -7,7 +7,6 @@ import unittest
 
 from experiments.r58_quality import r60_reviewer_b2_audit as m
 
-
 SCORES = {
     "chinese_prose": 4,
     "character_consistency": 4,

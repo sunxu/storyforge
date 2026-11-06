@@ -159,7 +159,7 @@ def audit(blind_raw: bytes, map_raw: bytes, instructions_raw: bytes,
     blind_idx = _unique(blind_rows, "blind_case_id", "BLIND_ID_MISSING_OR_DUPLICATE")
     blind_sha_idx = _unique(blind_rows, "target_sha256", "BLIND_TARGET_SHA_MISSING_OR_DUPLICATE")
     source_id_idx = _unique(source_rows, "case_id", "SOURCE_CASE_ID_MISSING_OR_DUPLICATE")
-    source_sha_idx = _unique(source_rows, "target_sha256", "SOURCE_TARGET_SHA_MISSING_OR_DUPLICATE")
+    _unique(source_rows, "target_sha256", "SOURCE_TARGET_SHA_MISSING_OR_DUPLICATE")
 
     id_map = _json(map_raw)
     if id_map.get("schema") != ID_MAP_SCHEMA or id_map.get("reviewer") != "B":
