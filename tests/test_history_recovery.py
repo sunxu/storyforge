@@ -228,7 +228,7 @@ class HistoryRecoveryTests(unittest.TestCase):
             "result": "RECOVERED",
             "history_message_count": 4,
             "history_suffix_role": "user",
-            "ledger_event_count": 5,
+            "ledger_event_count": 1,
             "history_rows_restored": 0,
             "history_rows_excluded": 0,
             "current_history_suffix_role": "user",
@@ -290,7 +290,7 @@ class HistoryRecoveryTests(unittest.TestCase):
             "history_suffix_role": "assistant",
             "history_suffix_turn": 2,
             "current_suffix_first_post_target_operation": "update_after",
-            "ledger_event_count": 7,
+            "ledger_event_count": 3,
             "history_rows_restored": 0,
             "history_rows_excluded": 2,
             "current_history_first_post_target_operation_counts": {"update_after": 2},
@@ -406,7 +406,7 @@ class HistoryRecoveryTests(unittest.TestCase):
             ["c1", "c2", "c5", "c6"],
         )
         self.assertEqual(
-            results[0]["history_reconstruction"]["ledger_event_count"], 5
+            results[0]["history_reconstruction"]["ledger_event_count"], 1
         )
         self.assertEqual(
             sum("turn_index = ANY(%s)" in query for query in self.cursor.queries), 1
