@@ -412,6 +412,13 @@ class Gold72OwnerResolutionTests(unittest.TestCase):
         with self.assertRaisesRegex(OwnerResolutionHold, "CANONICAL_A_B2_CROSSWALK_PIN_OR_COHORT_INVALID"):
             prepare_owner_resolution(self.common_args(output=self.private / "never.json"))
 
+    def test_prepare_rejects_unbound_execution_metadata_digest(self):
+        self.results_only_safe["execution_metadata_sha256"] = "a" * 64
+        self.results_only_path.write_text(json.dumps(self.results_only_safe))
+        self.results_only_path.chmod(0o600)
+        with self.assertRaisesRegex(OwnerResolutionHold, "RESULTS_ONLY_SAFE_INVALID"):
+            prepare_owner_resolution(self.common_args(output=self.private / "never.json"))
+
     def test_prepare_rejects_results_only_safe_with_promoted_independence(self):
         self.results_only_safe["reviewer_c_independence_verified"] = True
         self.results_only_path.write_text(json.dumps(self.results_only_safe))
