@@ -9,6 +9,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .adapters import available_checks, run_safe_check
+from .gold72_owner_resolution import (
+    import_owner_resolution,
+    prepare_owner_resolution,
+    validate_owner_resolution,
+)
 from .import_ai_arbitration import import_ai_arbitration
 from .manifest import (
     ManifestError,
@@ -20,7 +25,6 @@ from .manifest import (
 )
 from .reconcile import reconcile_gold192
 from .review_reconciliation import import_review_reconciliation
-from .gold72_owner_resolution import import_owner_resolution, prepare_owner_resolution, validate_owner_resolution
 
 SOURCE_PINS = {
     "gold87": ("evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
@@ -44,6 +48,7 @@ TOOLS = [
     ("r59.evidence-inventory", "experiments/r58_quality/r59_evidence_inventory.py", "private staged/locator/draft/exposure exports -> aggregate SAFE exact-association audit", "experiments/r58_quality/test_r59_evidence_inventory.py"),
     ("r59.sft-candidates", "experiments/r58_quality/quality_v1_sft_candidates.py", "private reviewed rows -> SFT candidates + SAFE; no training admission", "experiments/r58_quality/test_quality_v1_sft_candidates.py"),
     ("quality.review-reconciliation", "src/storyforge_gold_quality/review_reconciliation.py", "private aggregate crosswalk SAFE -> append-only batch event", "tests/test_gold_quality_review_reconciliation.py"),
+    ("r60.gold72-owner-resolution", "src/storyforge_gold_quality/gold72_owner_resolution.py", "private A/B2/C decisions -> Owner resolution + aggregate-only SAFE import", "tests/test_gold72_owner_resolution.py"),
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
