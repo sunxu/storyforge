@@ -27,7 +27,7 @@ def fixture():
     for story_index in range(13):
         cases = []
         start = story_index * 15
-        end = min(192, start + (15 if story_index < 10 else 14))
+        end = min(192, start + 15)
         card = {"cardType": "story", "name": f"Synthetic {story_index}"}
         card_sha = hashlib.sha256(
             json.dumps(card, ensure_ascii=False, sort_keys=True, indent=2).encode()
