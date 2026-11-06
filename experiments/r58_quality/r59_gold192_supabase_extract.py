@@ -16,17 +16,10 @@ import stat
 from collections import Counter, defaultdict
 from pathlib import Path
 
-try:
-    from .r59_gold192_canonical_a import (
-        A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, PACKETS_SHA,
-        validate_reviewer_a_v3,
-    )
-except ImportError:
-    from r59_gold192_canonical_a import (
-        A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, PACKETS_SHA,
-        validate_reviewer_a_v3,
-    )
-
+A_SHA = '641b71e10a14318b57e69cb0239172f7016fe5b9d2149923f876308f5e6fe1e4'
+B_SHA = 'bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8'
+EX_SHA = '9ca99432e08b680cb67b5a1f89d172a337cb91c9bd02af70b68356938c6c04ed'
+PACKETS_SHA = 'ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e'
 HEX = re.compile(r'^[a-f0-9]{64}$')
 
 
@@ -78,56 +71,30 @@ def index_packets(packets: list[dict]) -> dict[str, dict]:
 
 
 def select_candidates(a: dict, b: dict, exclusions: list[dict], packets: dict) -> list[dict]:
-    """Select only explicit case-scored A V3 PASS + B PASS, minus frozen exclusions.
-
-    Aggregate-complement PASS_ONLY rows are intentionally not eligible because
-    they carry no case-level score or strict A/B comparison decision.
-    """
-    a_idx = validate_reviewer_a_v3(a)
-    bb = b.get('cases') if isinstance(b, dict) else None
-    if (b.get('schema') != B_SCHEMA or b.get('counts') != B_COUNTS
-            or not isinstance(bb, list) or len(bb) != 192 or len(exclusions) != 11):
+    aa = a['records']
+    bb = b['cases']
+    if len(aa) != 192 or len(bb) != 192 or len(exclusions) != 11:
         raise ValueError('REVIEW_COUNT_INVALID')
-
-    b_idx = {}
-    for row in bb:
-        target = row.get('target_sha256')
-        if (not isinstance(target, str) or not HEX.fullmatch(target)
-                or target in b_idx or row.get('decision') not in {'PASS', 'HOLD', 'REJECT'}):
-            raise ValueError('REVIEWER_B_IDENTITY_INVALID')
-        b_idx[target] = row
-
+    a_idx = {x['target_sha256']: x for x in aa}
+    b_idx = {x['target_sha256']: x for x in bb}
     target_ids = {x['target_sha256'] for x in packets.values()}
-    if len(target_ids) != 192 or set(a_idx) != target_ids or set(b_idx) != target_ids:
+    excluded = {x['target_sha256'] for x in exclusions}
+    if (len(a_idx) != 192 or len(b_idx) != 192 or len(excluded) != 11
+            or set(a_idx) != target_ids or set(b_idx) != target_ids
+            or not excluded <= target_ids
+            or any(x.get('exclusion_reason') != 'EXCLUDED_FROM_TRAINING_DISAGREEMENT'
+                   for x in exclusions)):
         raise ValueError('REVIEW_IDENTITY_INVALID')
     for case in packets.values():
-        if a_idx[case['target_sha256']].get('case_id') != case['case_id']:
+        a_case = a_idx[case['target_sha256']]
+        if a_case['case_id'] != case['case_id']:
             raise ValueError('REVIEW_CASE_ID_MISMATCH')
-
-    excluded = set()
-    for row in exclusions:
-        target = row.get('target_sha256')
-        if (not isinstance(target, str) or not HEX.fullmatch(target)
-                or target in excluded
-                or row.get('exclusion_reason') != 'EXCLUDED_FROM_TRAINING_DISAGREEMENT'):
-            raise ValueError('EXCLUSION_IDENTITY_INVALID')
-        excluded.add(target)
-    if len(excluded) != 11 or not excluded <= target_ids:
-        raise ValueError('REVIEW_IDENTITY_INVALID')
-
-    selected = []
-    for case in packets.values():
-        target = case['target_sha256']
-        a_row, b_row = a_idx[target], b_idx[target]
-        if (
-            target not in excluded
-            and a_row.get('evidence_granularity') == 'CASE_LEVEL_SCORED_REVIEW'
-            and a_row.get('decision_for_strict_ab_decision_comparison') == 'PASS_ONLY'
-            and b_row.get('decision') == 'PASS'
-        ):
-            selected.append(case)
-    if not selected:
-        raise ValueError('NO_EXPLICIT_CASE_LEVEL_AB_PASS_CANDIDATES')
+    selected = [case for case in packets.values()
+                if (case['target_sha256'] not in excluded
+                    and a_idx[case['target_sha256']]['decision_for_strict_ab_pairing'] == 'PASS_ONLY'
+                    and b_idx[case['target_sha256']]['decision'] == 'PASS')]
+    if len(selected) != 72:
+        raise ValueError('BOTH_PASS_72_NOT_VERIFIED')
     return sorted(selected, key=lambda x: (x['story_id'], x['turn_index'], x['case_id']))
 
 
@@ -260,14 +227,14 @@ def main() -> int:
     p.add_argument('--exclusions', type=Path, required=True)
     p.add_argument('--source-packets', type=Path, required=True)
     p.add_argument('--output-dir', type=Path, required=True)
-    p.add_argument('--pilot', type=int, default=7, help='0 = all explicitly scored A/B PASS candidates')
+    p.add_argument('--pilot', type=int, default=7, help='0 = all 72 priority candidates')
     p.add_argument('--max-history', type=int, default=20000)
     p.add_argument('--dsn-env', default='STORYFORGE_SUPABASE_DSN')
     p.add_argument('--identity-only', action='store_true',
                    help='Validate 192/72/11 without connecting to Supabase')
     args = p.parse_args()
     try:
-        if not (0 <= args.pilot <= 192 and args.max_history >= 12):
+        if not (0 <= args.pilot <= 72 and args.max_history >= 12):
             raise ValueError('PARAMETERS_INVALID')
         packets = read_jsonl(args.source_packets, PACKETS_SHA)
         packet_index = index_packets(packets)
@@ -281,8 +248,6 @@ def main() -> int:
                 'status': 'GOLD192_REVIEW_IDENTITY_PASS__NO_DB_ACCESS',
                 'gold192': len(packet_index),
                 'excluded_disagreements': 11, 'priority_candidates': len(selected),
-                'candidate_policy': 'EXPLICIT_CASE_LEVEL_SCORED_A_V3_PASS_AND_B_PASS_MINUS_11_EXCLUSIONS',
-                'aggregate_complement_passes_eligible': False,
                 'pilot_requested': len(priority), 'quality_v1_admitted': 0,
                 'gpu_started': False, 'private_values_emitted': False,
             }, sort_keys=True))
@@ -316,9 +281,7 @@ def main() -> int:
             'schema': 'r59_gold192_supabase_extract_safe_v1',
             'status': 'SOURCE_EXTRACTED__NOT_QUALITY_ADMITTED',
             'gold192': len(packet_index), 'excluded_disagreements': 11,
-            'reviewer_a_b_explicit_case_level_pass_priority': len(selected),
-            'candidate_policy': 'EXPLICIT_CASE_LEVEL_SCORED_A_V3_PASS_AND_B_PASS_MINUS_11_EXCLUSIONS',
-            'aggregate_complement_passes_eligible': False,
+            'reviewer_a_b_pass_priority': len(selected),
             'context_requested': len(priority), 'context_exported': len(contexts),
             'source_match_counts': dict(sorted(counts.items())),
             'story_count': len(drafts), 'artifacts': written,
