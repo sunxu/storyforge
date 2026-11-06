@@ -80,7 +80,10 @@ test "$(shasum -a 256 "$A_V3" | awk '{print $1}')" = \
 SAFE="$OUT/R60_GOLD72_REVIEWER_A_B2_CROSSWALK_SAFE.json"
 test ! -e "$SAFE" && test ! -L "$SAFE"
 
-python3 "$REPO/experiments/r58_quality/r60_reviewer_ab2_gold72_crosswalk.py" \
+# 必须从仓库根目录以模块方式运行；脚本使用 package-relative imports。
+PYTHON="$HOME/.venvs/storyforge-r60/bin/python"
+cd "$REPO"
+"$PYTHON" -m experiments.r58_quality.r60_reviewer_ab2_gold72_crosswalk \
   --staged-jsonl "$STAGED" \
   --staging-safe "$STAGING_SAFE" \
   --owner-evidence-jsonl "$OWNER_EVIDENCE" \
