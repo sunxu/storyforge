@@ -492,6 +492,27 @@ class MessageLedgerTests(unittest.TestCase):
             [row["id"] for row in rows if row["message_id"] == "snapshot-message"],
             [6],
         )
+        snapshot_event = next(row for row in rows if row["id"] == 6)
+        self.assertEqual(snapshot_event["row_data"]["content"], "old")
+
+        # SQL-reduced rows must preserve the first eligible event for every
+        # message under each target's independent boundary and cutoff.
+        full_index = ledger.LedgerEventIndex(events)
+        reduced_index = ledger.LedgerEventIndex(rows)
+        for target in (self.target, second_target):
+            boundary = ledger._key(full_index.target_boundary(target))
+            for message_id in full_index.by_message_id:
+                expected = full_index.first_post_boundary_event(
+                    message_id, boundary, target["turn_index"] - 1
+                )
+                actual = reduced_index.first_post_boundary_event(
+                    message_id, boundary, target["turn_index"] - 1
+                )
+                self.assertEqual(
+                    actual["id"] if actual else None,
+                    expected["id"] if expected else None,
+                    (target["message_id"], message_id),
+                )
 
     def test_equal_timestamp_boundary_uses_event_id_tiebreaker(self):
         boundary = marker(10, "target", "s", 5, "assistant", "insert", 10)
