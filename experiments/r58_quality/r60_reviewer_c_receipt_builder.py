@@ -38,7 +38,7 @@ LIMITS = {
 }
 ATTESTATION_PROMPTS = {
     "reviewer_a_materials_not_provided": "Reviewer C 未获得 Reviewer A 的任何材料",
-    "reviewer_b2_materials_not_provided": "Reviewer C 未获得 Reviewer B1 的任何材料",
+    "reviewer_b2_materials_not_provided": "Reviewer C 未获得 Reviewer B2 的任何材料",
     "owner_id_map_not_provided": "Reviewer C 未获得 Owner ID Map 或原始案例身份",
     "prior_conversations_or_memory_not_used": "独立执行未使用任何旧会话、记忆或历史上下文",
     "tools_and_connectors_not_used": "独立执行未使用任何工具、连接器、搜索或仓库",
