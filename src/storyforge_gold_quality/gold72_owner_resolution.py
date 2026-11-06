@@ -127,9 +127,8 @@ def _read(path: Path, repo: Path, limit: int, *, private: bool = True) -> bytes:
     try:
         resolved = path.resolve(strict=True)
         info = path.lstat()
-        if resolved == repo or repo in resolved.parents:
-            if private:
-                raise OwnerResolutionHold("PRIVATE_INPUT_INSIDE_REPOSITORY")
+        if (resolved == repo or repo in resolved.parents) and private:
+            raise OwnerResolutionHold("PRIVATE_INPUT_INSIDE_REPOSITORY")
         if not stat.S_ISREG(info.st_mode) or not 0 < info.st_size <= limit:
             raise OwnerResolutionHold("INPUT_NOT_REGULAR_OR_SIZE_INVALID")
         if private:
@@ -585,9 +584,7 @@ def _evidence_ref(value: Any) -> bool:
         return False
     if value.startswith(("/", "~")) or "://" in value or "\\" in value:
         return False
-    if any(part == ".." for part in value.split("/")):
-        return False
-    return True
+    return not any(part == ".." for part in value.split("/"))
 
 
 def validate_owner_resolution(args) -> dict[str, Any]:
