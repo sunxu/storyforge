@@ -1,4 +1,4 @@
-"""R59 bounded Supabase extraction identity and safety tests. No DB/network required."""
+"""R60 Canonical A V3 extraction identity and safety tests. No DB/network required."""
 from __future__ import annotations
 
 import hashlib
@@ -8,8 +8,10 @@ from pathlib import Path
 
 try:
     from . import r60_gold192_supabase_extract_v3 as m
+    from .r60_gold192_canonical_a_v3 import A_SCHEMA, A_STATUS, A_SOURCE_PINS
 except ImportError:
     import r60_gold192_supabase_extract_v3 as m
+    from r60_gold192_canonical_a_v3 import A_SCHEMA, A_STATUS, A_SOURCE_PINS
 
 
 SCORES = {
@@ -110,9 +112,9 @@ class R60Gold192ExtractV3Test(unittest.TestCase):
             })
 
         a = {
-            "schema": m.A_SCHEMA,
-            "status": m.A_STATUS,
-            "source_pins": dict(m.A_SOURCE_PINS),
+            "schema": A_SCHEMA,
+            "status": A_STATUS,
+            "source_pins": dict(A_SOURCE_PINS),
             "records": a_records,
         }
         b = {
