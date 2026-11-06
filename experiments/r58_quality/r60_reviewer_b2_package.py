@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 GOLD192_SOURCE_SHA256 = "ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e"
+GOLD72_STAGE_SHA256 = "edf46b1c637ba66e697968d6bf8dbab8feb3b4ec7bee26ec85b1bfb6edeaa3df"
 SOURCE_PACKET_SCHEMA = "r58_gold192_story_semantic_review_packet_private_v1"
 SOURCE_PACKET_STATUS = "PRIVATE_STORY_REVIEW_PACKET_NOT_REVIEWED"
 STAGE_SCHEMA = "storyforge-quality-v1-source-staging-private-v1"
@@ -69,6 +70,15 @@ def _read_private(path: Path, limit: int = MAX_BYTES) -> bytes:
         raw = stream.read(limit + 1)
     if len(raw) > limit:
         raise PackageHold("INPUT_SIZE_LIMIT")
+    return raw
+
+
+def _read_instructions(path: Path) -> bytes:
+    if path.is_symlink() or not path.is_file():
+        raise PackageHold("B2_INSTRUCTIONS_FILE_INVALID")
+    raw = path.read_bytes()
+    if not 100 <= len(raw) <= 128 * 1024:
+        raise PackageHold("B2_INSTRUCTIONS_FILE_INVALID")
     return raw
 
 
@@ -343,9 +353,11 @@ def run(
     source_raw = _read_private(source_path)
     staged_raw = _read_private(staged_path)
     stage_safe_raw = _read_private(staging_safe_path, 256 * 1024)
-    instructions_raw = _read_private(instructions_path, 128 * 1024)
+    instructions_raw = _read_instructions(instructions_path)
     if _sha(source_raw) != GOLD192_SOURCE_SHA256:
         raise PackageHold("GOLD192_SOURCE_PIN_MISMATCH")
+    if _sha(staged_raw) != GOLD72_STAGE_SHA256:
+        raise PackageHold("GOLD72_STAGE_PIN_MISMATCH")
     stage_safe = _json(stage_safe_raw, "STAGING_SAFE_JSON_INVALID")
     if (
         stage_safe.get("schema") != STAGING_RECEIPT_SCHEMA
