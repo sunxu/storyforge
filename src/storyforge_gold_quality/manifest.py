@@ -12,7 +12,7 @@ SCHEMA = "storyforge_gold_quality_manifest_event_v1"
 EVENT_TYPES = {"SOURCE_FREEZE", "LEGACY_SELECTION_EVIDENCE", "LEGACY_REVIEW",
                "SOURCE_METADATA", "TRAINING_EXPOSURE_AGGREGATE", "TRAINING_EXPOSURE_ROW",
                "WORLD_IDENTITY_REVIEW", "INCREMENTAL_REVIEW", "BLIND_REVIEW",
-               "ADJUDICATION", "AI_ARBITRATION", "HISTORICAL_REJECT_EVIDENCE", "STRUCTURE_VALIDATION", "TOKEN_PREFLIGHT", "FREEZE", "EXCLUSION", "REVIEW_RECONCILIATION"}
+               "ADJUDICATION", "AI_ARBITRATION", "HISTORICAL_REJECT_EVIDENCE", "STRUCTURE_VALIDATION", "TOKEN_PREFLIGHT", "FREEZE", "EXCLUSION", "REVIEW_RECONCILIATION", "GOLD72_OWNER_RESOLUTION"}
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
 
 
@@ -102,6 +102,109 @@ def validate_event(event):
                 or payload.get("gpu_started") is not False
                 or payload.get("r50_accessed") is not False):
             raise ManifestError("REVIEW_RECONCILIATION_EVENT_INVALID")
+    elif event["event_type"] == "GOLD72_OWNER_RESOLUTION":
+        payload = event["payload"]
+        required = {
+            "resolution_type", "source_receipt_sha256", "source_pins", "candidate_count",
+            "a_b2_pair_counts", "reviewer_a_decisions", "reviewer_b2_decisions",
+            "reviewer_c_decisions", "owner_decisions", "resolution_matrix",
+            "owner_evidence_reference_count", "execution_record_available",
+            "execution_metadata_sha256", "execution_attestation_complete",
+            "reviewer_c_independence_verified", "cryptographic_independence_proven",
+            "evidence_tier", "quality_v1_admitted", "training_authorized",
+            "gpu_started", "r50_accessed",
+        }
+        pin_keys = {
+            "package_safe_sha256", "receipt_template_sha256", "blind_input_sha256",
+            "instructions_sha256", "owner_map_sha256", "result_sha256",
+            "results_only_safe_sha256", "resolution_template_sha256",
+            "reviewer_a_v3_sha256", "b2_results_sha256", "crosswalk_safe_sha256",
+            "owner_resolution_sha256",
+        }
+        expected_pairs = {
+            "CASE_LEVEL_SCORED_PASS__B2_HOLD": 5,
+            "CASE_LEVEL_SCORED_PASS__B2_REJECT": 2,
+            "EXPLICIT_HOLD__B2_PASS": 30,
+            "EXPLICIT_HOLD__B2_REJECT": 3,
+        }
+        def valid_decisions(value):
+            return (
+                isinstance(value, dict)
+                and set(value).issubset({"PASS", "HOLD", "REJECT"})
+                and all(type(count) is int and count >= 0 for count in value.values())
+                and sum(value.values()) == 40
+            )
+        matrix = payload.get("resolution_matrix")
+        matrix_pattern = re.compile(
+            r"A_(PASS|HOLD|REJECT)__B2_(PASS|HOLD|REJECT)__C_(PASS|HOLD|REJECT)__OWNER_(PASS|HOLD|REJECT)"
+        )
+        matrix_valid = (
+            isinstance(matrix, dict) and bool(matrix)
+            and all(isinstance(key, str) and matrix_pattern.fullmatch(key)
+                    and type(count) is int and count > 0 for key, count in matrix.items())
+            and sum(matrix.values()) == 40
+        )
+        maps_valid = all(valid_decisions(payload.get(key)) for key in (
+            "reviewer_a_decisions", "reviewer_b2_decisions",
+            "reviewer_c_decisions", "owner_decisions",
+        ))
+        marginals_valid = False
+        if matrix_valid and maps_valid:
+            a_counts, b_counts, c_counts, owner_counts, pair_counts = {}, {}, {}, {}, {}
+            for key, count in matrix.items():
+                match = matrix_pattern.fullmatch(key)
+                a, b, c, owner = match.groups()
+                for target, decision in (
+                    (a_counts, a), (b_counts, b), (c_counts, c), (owner_counts, owner)
+                ):
+                    target[decision] = target.get(decision, 0) + count
+                a_class = {"PASS": "CASE_LEVEL_SCORED_PASS", "HOLD": "EXPLICIT_HOLD"}.get(a)
+                if a_class is not None:
+                    pair = f"{a_class}__B2_{b}"
+                    pair_counts[pair] = pair_counts.get(pair, 0) + count
+            marginals_valid = (
+                all(
+                    {key: value.get(key, 0) for key in ("PASS", "HOLD", "REJECT")}
+                    == {key: payload[target].get(key, 0) for key in ("PASS", "HOLD", "REJECT")}
+                    for value, target in (
+                        (a_counts, "reviewer_a_decisions"),
+                        (b_counts, "reviewer_b2_decisions"),
+                        (c_counts, "reviewer_c_decisions"),
+                        (owner_counts, "owner_decisions"),
+                    )
+                )
+                and pair_counts == expected_pairs
+            )
+        metadata_sha = payload.get("execution_metadata_sha256")
+        if (
+            event["batch_id"] != "gold72"
+            or set(payload) != required
+            or payload.get("resolution_type") != "GOLD72_REVIEWER_C_OWNER_RESOLUTION"
+            or not isinstance(payload.get("source_receipt_sha256"), str)
+            or not HEX64.fullmatch(payload["source_receipt_sha256"])
+            or not isinstance(payload.get("source_pins"), dict)
+            or set(payload["source_pins"]) != pin_keys
+            or any(not isinstance(value, str) or not HEX64.fullmatch(value)
+                   for value in payload["source_pins"].values())
+            or payload.get("candidate_count") != 40
+            or payload.get("a_b2_pair_counts") != expected_pairs
+            or not maps_valid
+            or payload.get("reviewer_c_decisions") != {"PASS": 38, "HOLD": 1, "REJECT": 1}
+            or not matrix_valid or not marginals_valid
+            or type(payload.get("owner_evidence_reference_count")) is not int
+            or payload["owner_evidence_reference_count"] < 40
+            or payload.get("execution_record_available") is not False
+            or metadata_sha is not None
+            or payload.get("execution_attestation_complete") is not False
+            or payload.get("reviewer_c_independence_verified") is not False
+            or payload.get("cryptographic_independence_proven") is not False
+            or payload.get("evidence_tier") != "OWNER_RETURNED_SAFE_AGGREGATE"
+            or payload.get("quality_v1_admitted") is not False
+            or payload.get("training_authorized") is not False
+            or payload.get("gpu_started") is not False
+            or payload.get("r50_accessed") is not False
+        ):
+            raise ManifestError("GOLD72_OWNER_RESOLUTION_EVENT_INVALID")
     return event
 
 
@@ -268,6 +371,32 @@ def safe_report(events):
                 "training_authorized": False,
             }
             for batch, payloads in sorted(reconciliations.items())
+        },
+        "gold72_owner_resolution_summary": {
+            batch: {
+                "receipt_count": len(payloads),
+                "candidate_count": sum(item["candidate_count"] for item in payloads),
+                "reviewer_a_decisions": payloads[-1]["reviewer_a_decisions"],
+                "reviewer_b2_decisions": payloads[-1]["reviewer_b2_decisions"],
+                "reviewer_c_decisions": payloads[-1]["reviewer_c_decisions"],
+                "owner_decisions": payloads[-1]["owner_decisions"],
+                "resolution_matrix": payloads[-1]["resolution_matrix"],
+                "owner_evidence_reference_count": sum(
+                    item["owner_evidence_reference_count"] for item in payloads
+                ),
+                "execution_record_available": False,
+                "reviewer_c_independence_verified": False,
+                "quality_v1_admitted": 0,
+                "training_authorized": False,
+            }
+            for batch, payloads in sorted(
+                {
+                    batch: [event["payload"] for event in events
+                            if event["batch_id"] == batch and event["event_type"] == "GOLD72_OWNER_RESOLUTION"]
+                    for batch in {event["batch_id"] for event in events
+                                  if event["event_type"] == "GOLD72_OWNER_RESOLUTION"}
+                }.items()
+            )
         },
         "quality_v1_admitted": 0,
         "training_authorized": False,

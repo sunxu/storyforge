@@ -9,6 +9,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from .adapters import available_checks, run_safe_check
+from .gold72_owner_resolution import (
+    import_owner_resolution,
+    prepare_owner_resolution,
+    validate_owner_resolution,
+)
 from .import_ai_arbitration import import_ai_arbitration
 from .manifest import (
     ManifestError,
@@ -43,6 +48,7 @@ TOOLS = [
     ("r59.evidence-inventory", "experiments/r58_quality/r59_evidence_inventory.py", "private staged/locator/draft/exposure exports -> aggregate SAFE exact-association audit", "experiments/r58_quality/test_r59_evidence_inventory.py"),
     ("r59.sft-candidates", "experiments/r58_quality/quality_v1_sft_candidates.py", "private reviewed rows -> SFT candidates + SAFE; no training admission", "experiments/r58_quality/test_quality_v1_sft_candidates.py"),
     ("quality.review-reconciliation", "src/storyforge_gold_quality/review_reconciliation.py", "private aggregate crosswalk SAFE -> append-only batch event", "tests/test_gold_quality_review_reconciliation.py"),
+    ("r60.gold72-owner-resolution", "src/storyforge_gold_quality/gold72_owner_resolution.py", "private A/B2/C decisions -> Owner resolution + aggregate-only SAFE import", "tests/test_gold72_owner_resolution.py"),
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
@@ -78,7 +84,7 @@ def read_jsonl(path):
 def inventory(_args):
     return {"schema": "storyforge_gold_quality_inventory_v1",
             "commands": ["inventory", "verify-source", "import-history", "import-exposure",
-                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "import-review-reconciliation", "validate", "report-safe"],
+                         "append-review", "append-exclusion", "import-reviewer-b", "import-ai-arbitration", "run-check", "reconcile-gold192", "import-review-reconciliation", "prepare-gold72-owner-resolution", "validate-gold72-owner-resolution", "import-gold72-owner-resolution", "validate", "report-safe"],
             "read_only_safe_checks": list(available_checks()),
             "registered_tools": [{"id": x[0], "path": x[1], "io_contract": x[2], "tests": x[3]}
                                  for x in TOOLS],
@@ -444,6 +450,35 @@ def main():
     reconciliation_parser.add_argument("--manifest", type=Path, required=True)
     reconciliation_parser.add_argument("--repo-root", type=Path, required=True)
     reconciliation_parser.set_defaults(func=import_review_reconciliation)
+
+    owner_prepare = sub.add_parser("prepare-gold72-owner-resolution")
+    for name in (
+        "package-safe", "receipt-template", "blind-input", "instructions",
+        "owner-map", "result", "results-only-safe", "resolution-template",
+        "reviewer-a-v3", "b2-results", "crosswalk-safe",
+    ):
+        owner_prepare.add_argument("--" + name, type=Path, required=True)
+    owner_prepare.add_argument("--output", type=Path, required=True)
+    owner_prepare.add_argument("--repo-root", type=Path, required=True)
+    owner_prepare.set_defaults(func=prepare_owner_resolution)
+
+    owner_validate = sub.add_parser("validate-gold72-owner-resolution")
+    for name in (
+        "package-safe", "receipt-template", "blind-input", "instructions",
+        "owner-map", "result", "results-only-safe", "resolution-template",
+        "reviewer-a-v3", "b2-results", "crosswalk-safe",
+    ):
+        owner_validate.add_argument("--" + name, type=Path, required=True)
+    owner_validate.add_argument("--owner-resolution", type=Path, required=True)
+    owner_validate.add_argument("--safe-output", type=Path, required=True)
+    owner_validate.add_argument("--repo-root", type=Path, required=True)
+    owner_validate.set_defaults(func=validate_owner_resolution)
+
+    owner_import = sub.add_parser("import-gold72-owner-resolution")
+    owner_import.add_argument("--input", type=Path, required=True)
+    owner_import.add_argument("--manifest", type=Path, required=True)
+    owner_import.add_argument("--repo-root", type=Path, required=True)
+    owner_import.set_defaults(func=import_owner_resolution)
 
     validate_parser = sub.add_parser("validate")
     validate_parser.add_argument("--manifest", type=Path, required=True)
