@@ -17,13 +17,11 @@ from pathlib import Path
 
 try:
     from .r59_gold192_canonical_a import (
-        A_SHA, A_SOURCE_PINS, A_SCHEMA, A_STATUS, B_SHA, B_SCHEMA, B_COUNTS,
-        PACKETS_SHA, validate_reviewer_a_v3,
+        A_SHA, B_SHA, B_SCHEMA, B_COUNTS, PACKETS_SHA, validate_reviewer_a_v3,
     )
 except ImportError:
     from r59_gold192_canonical_a import (
-        A_SHA, A_SOURCE_PINS, A_SCHEMA, A_STATUS, B_SHA, B_SCHEMA, B_COUNTS,
-        PACKETS_SHA, validate_reviewer_a_v3,
+        A_SHA, B_SHA, B_SCHEMA, B_COUNTS, PACKETS_SHA, validate_reviewer_a_v3,
     )
 
 SCHEMA = "storyforge-r59-owner-evidence-autolink-safe-v1"
