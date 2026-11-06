@@ -11,6 +11,7 @@ from experiments.r58_quality.r60_reviewer_c_disagreement_packet import (
     PackageHold,
     _create_package,
     build,
+    validate_crosswalk_safe,
 )
 
 SCORES = {
@@ -165,6 +166,32 @@ class ReviewerCPacketTests(unittest.TestCase):
         self.assertTrue(all("reviewer_a_decision" in row
                             and "reviewer_b2_decision" in row
                             for row in owner_map["mapping"]))
+
+    def test_stale_crosswalk_safe_fails_closed(self):
+        from experiments.r58_quality import r60_reviewer_ab2_gold72_crosswalk as crosswalk
+
+        fresh = {
+            "candidate_count": 72,
+            "staging_sha256": "a" * 64,
+            "source_context_sha256": "b" * 64,
+            "reviewer_a_v3_report_sha256": "c" * 64,
+            "reviewer_b2_blind_input_sha256": "d" * 64,
+            "reviewer_b2_instructions_sha256": "e" * 64,
+            "reviewer_b2_owner_map_sha256": "f" * 64,
+            "reviewer_b2_result_sha256": "1" * 64,
+            "reviewer_b2_execution_record_sha256": "2" * 64,
+            "reviewer_a_evidence_granularity": {"CASE_LEVEL_SCORED_PASS": 28, "EXPLICIT_HOLD": 44},
+            "reviewer_b2_decisions": {"PASS": 51, "HOLD": 16, "REJECT": 5},
+            "a_b2_pair_counts": {},
+            "a_b2_comparable_decision_cases": 72,
+            "a_b2_semantic_decision_disagreements": 40,
+            "a_b2_semantic_decision_agreements": 32,
+        }
+        safe = dict(fresh, schema=crosswalk.SAFE_SCHEMA, status=crosswalk.SAFE_STATUS)
+        validate_crosswalk_safe(safe, fresh)
+        safe["reviewer_b2_result_sha256"] = "9" * 64
+        with self.assertRaisesRegex(PackageHold, "CROSSWALK_SAFE_STALE_OR_MISMATCH"):
+            validate_crosswalk_safe(safe, fresh)
 
     def test_owner_identity_join_mismatch_holds(self):
         staged, a, blind, owner, result = self.sources
