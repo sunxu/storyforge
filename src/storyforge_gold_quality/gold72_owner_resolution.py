@@ -65,6 +65,7 @@ SOURCE_PIN_KEYS = {
     "package_safe_sha256", "receipt_template_sha256", "blind_input_sha256",
     "instructions_sha256", "owner_map_sha256", "result_sha256",
     "results_only_safe_sha256", "resolution_template_sha256",
+    "reviewer_a_v3_sha256", "b2_results_sha256", "crosswalk_safe_sha256",
 }
 SAFE_FIELDS = {
     "schema", "status", "resolution_type", "candidate_count", "source_pins",
@@ -206,6 +207,9 @@ def _load_inputs(args: Any) -> dict[str, Any]:
         "result": 16 * 1024 * 1024,
         "results_only_safe": 256 * 1024,
         "resolution_template": 8 * 1024 * 1024,
+        "reviewer_a_v3": 32 * 1024 * 1024,
+        "b2_results": 16 * 1024 * 1024,
+        "crosswalk_safe": 2 * 1024 * 1024,
     }
     raw = {}
     for key, limit in limits.items():
@@ -215,7 +219,8 @@ def _load_inputs(args: Any) -> dict[str, Any]:
         key: _json(raw[key], key.upper() + "_JSON_INVALID")
         for key in (
             "package_safe", "receipt_template", "owner_map", "result",
-            "results_only_safe", "resolution_template",
+            "results_only_safe", "resolution_template", "reviewer_a_v3",
+            "b2_results", "crosswalk_safe",
         )
     }
     values["blind_packets"] = _jsonl(raw["blind_input"], "BLIND_INPUT_JSONL_INVALID")
@@ -256,6 +261,49 @@ def _validate_sources(values: dict[str, Any]) -> tuple[dict[str, dict], dict[str
             or not isinstance(template.get("owner_verification"), dict)
             or any(value is not False for value in template["owner_verification"].values())):
         raise OwnerResolutionHold("RECEIPT_TEMPLATE_INVALID")
+
+    crosswalk = values["crosswalk_safe"]
+    a_report = values["reviewer_a_v3"]
+    b2_result = values["b2_results"]
+    if (
+        crosswalk.get("schema") != "r60_gold72_reviewer_a_b2_crosswalk_safe_v1"
+        or crosswalk.get("status") != "A_B2_CROSSWALK_COMPLETE__ADMISSION_HOLD"
+        or crosswalk.get("candidate_count") != 72
+        or crosswalk.get("a_b2_comparable_decision_cases") != 72
+        or crosswalk.get("a_b2_semantic_decision_disagreements") != 40
+        or crosswalk.get("a_b2_semantic_decision_agreements") != 32
+        or crosswalk.get("reviewer_a_v3_report_sha256") != _sha(raw["reviewer_a_v3"])
+        or crosswalk.get("reviewer_b2_result_sha256") != _sha(raw["b2_results"])
+        or crosswalk.get("a_b2_pair_counts") != {
+            "CASE_LEVEL_SCORED_PASS__B2_PASS": 21,
+            "CASE_LEVEL_SCORED_PASS__B2_HOLD": 5,
+            "CASE_LEVEL_SCORED_PASS__B2_REJECT": 2,
+            "EXPLICIT_HOLD__B2_PASS": 30,
+            "EXPLICIT_HOLD__B2_HOLD": 11,
+            "EXPLICIT_HOLD__B2_REJECT": 3,
+        }
+    ):
+        raise OwnerResolutionHold("CANONICAL_A_B2_CROSSWALK_PIN_OR_COHORT_INVALID")
+    if (
+        a_report.get("schema") != "r58_gold192_reviewer_a_results_v3_reconciled_private_v1"
+        or a_report.get("status") != "V3_SOURCES_NORMALIZED__192_IDENTITIES_VERIFIED__EVIDENCE_GRANULARITY_EXPLICIT"
+        or not isinstance(a_report.get("records"), list)
+        or len(a_report["records"]) != 192
+    ):
+        raise OwnerResolutionHold("CANONICAL_A_V3_REPORT_INVALID")
+    a_idx = _unique(a_report["records"], "target_sha256", "A_V3_TARGET_SHA_DUPLICATE")
+    if (
+        b2_result.get("schema") != "r60_gold72_reviewer_b2_results_v1"
+        or b2_result.get("reviewer") != "B2"
+        or b2_result.get("status") != "REVIEW_COMPLETE"
+        or not isinstance(b2_result.get("cases"), list)
+        or len(b2_result["cases"]) != 72
+        or b2_result.get("counts") != {"PASS": 51, "HOLD": 16, "REJECT": 5}
+    ):
+        raise OwnerResolutionHold("CANONICAL_B2_RESULTS_INVALID")
+    b2_idx = _unique(b2_result["cases"], "target_sha256", "B2_RESULT_TARGET_SHA_DUPLICATE")
+    if len(b2_idx) != 72:
+        raise OwnerResolutionHold("B2_RESULT_TARGET_COUNT_INVALID")
 
     blind_rows = []
     for packet in values["blind_packets"]:
