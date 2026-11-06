@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.13
+version: 0.1.14
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -44,6 +44,15 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - 精确 target、历史 Train/Validation、story UUID 与语义 world-component 是不同证据层；任何一层不得冒充另一层。
 - Reviewer A、Reviewer B、AI 与 Owner 仲裁分别追加事件。分歧、HOLD、REJECT 和 3 条 unresolved-world exclusions 均保留，不覆盖、不平均、不删除。
 - `report-safe` 仅输出计数，不构成质量准入；Quality-v1 admission 保持 0，GPU 与训练保持未授权。
+
+### Batch-level Review Reconciliation
+
+- Gold72 A/B2 交叉分析继续由 Owner-only adapter 执行：experiments/r58_quality/r60_reviewer_ab2_gold72_crosswalk.py。它必须重新验证冻结 staging、Owner Evidence、canonical Reviewer A V3、B2 Receipt/Audit 与逐案 target identity join。
+- 共享 Pipeline 只导入交叉分析生成的聚合 SAFE：storyforge-gold-quality import-review-reconciliation --batch gold72 --kind reviewer-a-b2-gold72。不得把逐案 crosswalk、case ID、target SHA 或原始结果写入共享 Manifest。
+- 私有 append-only Manifest 记录批次级 reconciliation event 与来源 pin；report-safe 只返回聚合统计，不输出 Receipt SHA 或输入 SHA。
+- 同一 canonical receipt 重复导入必须幂等；同批次出现不同 receipt 时失败关闭，不覆盖旧事件。
+- A/B2 一致率、分歧和评分差异只是证据对照，不自动构成双审独立性或 Quality-v1 准入。A 双审独立性、B2 独立性验证、密码学独立性均保持 false；admission=0。
+- 完整 Schema、失败码、输入权限、幂等规则和合成测试见 docs/standards/GOLD_QUALITY_PIPELINE_CN.md；Skill 不复制实现。
 
 ## 数据与质量主线
 
