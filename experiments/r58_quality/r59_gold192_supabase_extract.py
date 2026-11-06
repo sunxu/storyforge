@@ -26,6 +26,7 @@ except ImportError:
         A_SHA, B_SHA, B_COUNTS, B_SCHEMA, EX_SHA, PACKETS_SHA,
         validate_reviewer_a_v3,
     )
+
 HEX = re.compile(r'^[a-f0-9]{64}$')
 
 
