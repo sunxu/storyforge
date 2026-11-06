@@ -217,6 +217,38 @@ class HistoryRecoveryTests(unittest.TestCase):
             "current_marker_prior_snapshot_same_timestamp_as_boundary": 0,
         }])
 
+    def test_suffix_diagnostic_evaluates_after_database_reads_are_complete(self):
+        prepared = h.prepare_history_suffix_diagnostics(
+            self.cursor, [self.case]
+        )
+        query_count_after_prepare = len(self.cursor.queries)
+        progress = []
+        results = h.evaluate_history_suffix_diagnostics(
+            prepared,
+            progress_callback=lambda event, **fields: progress.append((event, fields)),
+        )
+        self.assertEqual(len(self.cursor.queries), query_count_after_prepare)
+        self.assertEqual(results[0]["result"], "RECOVERED")
+        self.assertEqual(
+            progress,
+            [("case_completed", {
+                "safe_index": 0,
+                "result": "RECOVERED",
+                "reason_code": None,
+            })],
+        )
+
+    def test_suffix_diagnostic_wrapper_preserves_marker_hold_result(self):
+        self.cursor.ledger_events.extend([
+            self.cursor.ledger_marker(6, "c5", 5, "user", 11),
+            self.cursor.ledger_marker(7, "c6", 6, "user", 12),
+        ])
+        self.cursor.ledger_events[-2]["operation"] = "update_after"
+        self.cursor.ledger_events[-1]["operation"] = "update_after"
+        direct = h.diagnose_history_suffixes(self.cursor, [self.case])
+        self.assertEqual(direct[0]["result"], "HOLD")
+        self.assertEqual(direct[0]["reason_code"], "HISTORY_SUFFIX_NOT_USER")
+
     def test_per_case_suffix_diagnostic_identifies_marker_exclusion(self):
         self.cursor.ledger_events.extend([
             self.cursor.ledger_marker(6, "c5", 5, "user", 11),
