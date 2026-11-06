@@ -494,17 +494,29 @@ def _source_pins(values: dict[str, Any]) -> dict[str, str]:
         "result_sha256": _sha(raw["result"]),
         "results_only_safe_sha256": _sha(raw["results_only_safe"]),
         "resolution_template_sha256": _sha(raw["resolution_template"]),
+        "reviewer_a_v3_sha256": _sha(raw["reviewer_a_v3"]),
+        "b2_results_sha256": _sha(raw["b2_results"]),
+        "crosswalk_safe_sha256": _sha(raw["crosswalk_safe"]),
     }
 
 
 def prepare_owner_resolution(args) -> dict[str, Any]:
     values = _load_inputs(args)
-    blind_idx, owner_idx, result_idx, counts = _validate_sources(values)
+    blind_idx, owner_idx, result_idx, a_idx, b2_idx, counts = _validate_sources(values)
     cases = []
     for blind_id, owner_row in sorted(owner_idx.items()):
         result = result_idx[blind_id]
+        digest = owner_row["target_sha256"]
+        a_row = a_idx[digest]
+        b2_row = b2_idx[digest]
         cases.append({
             **owner_row,
+            "reviewer_a_reported_final_decision": a_row["reported_final_decision"],
+            "reviewer_a_evidence_granularity": a_row["evidence_granularity"],
+            "reviewer_a_scores_1_to_5": a_row.get("scores_1_to_5"),
+            "reviewer_b2_scores_1_to_5": b2_row["scores_1_to_5"],
+            "reviewer_b2_severe_flags": b2_row["severe_flags"],
+            "reviewer_b2_evidence_summary": b2_row["evidence_summary"],
             "reviewer_c_decision": result["decision"],
             "reviewer_c_scores_1_to_5": result["scores_1_to_5"],
             "reviewer_c_severe_flags": result["severe_flags"],
@@ -568,7 +580,7 @@ def _evidence_ref(value: Any) -> bool:
 
 def validate_owner_resolution(args) -> dict[str, Any]:
     values = _load_inputs(args)
-    _, owner_idx, result_idx, c_counts = _validate_sources(values)
+    _, owner_idx, result_idx, a_idx, b2_idx, c_counts = _validate_sources(values)
     repo = values["repo"]
     resolution_raw = _read(args.owner_resolution, repo, 16 * 1024 * 1024, private=True)
     resolution = _json(resolution_raw, "OWNER_RESOLUTION_JSON_INVALID")
@@ -605,6 +617,19 @@ def validate_owner_resolution(args) -> dict[str, Any]:
         ):
             if row.get(key) != owner.get(key):
                 raise OwnerResolutionHold("OWNER_RESOLUTION_SOURCE_MAP_CHANGED")
+        digest = owner["target_sha256"]
+        a_row = a_idx[digest]
+        b2_row = b2_idx[digest]
+        for key, expected in (
+            ("reviewer_a_reported_final_decision", a_row["reported_final_decision"]),
+            ("reviewer_a_evidence_granularity", a_row["evidence_granularity"]),
+            ("reviewer_a_scores_1_to_5", a_row.get("scores_1_to_5")),
+            ("reviewer_b2_scores_1_to_5", b2_row["scores_1_to_5"]),
+            ("reviewer_b2_severe_flags", b2_row["severe_flags"]),
+            ("reviewer_b2_evidence_summary", b2_row["evidence_summary"]),
+        ):
+            if row.get(key) != expected:
+                raise OwnerResolutionHold("OWNER_RESOLUTION_A_B2_EVIDENCE_CHANGED")
         for key, value in (
             ("reviewer_c_decision", c_result["decision"]),
             ("reviewer_c_scores_1_to_5", c_result["scores_1_to_5"]),
