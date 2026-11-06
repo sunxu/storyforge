@@ -207,9 +207,9 @@ class ReviewerB2PackageTests(unittest.TestCase):
             with (
                 patch.object(m, "GOLD192_SOURCE_SHA256", hashlib.sha256(paths[0].read_bytes()).hexdigest()),
                 patch.object(m, "GOLD72_STAGE_SHA256", hashlib.sha256(paths[1].read_bytes()).hexdigest()),
+                self.assertRaisesRegex(m.PackageHold, "GOLD72_STAGING_RECEIPT_INVALID"),
             ):
-                with self.assertRaisesRegex(m.PackageHold, "GOLD72_STAGING_RECEIPT_INVALID"):
-                    m.run(*paths[:1], paths[1], paths[2], paths[3], parent / "out", root)
+                m.run(*paths[:1], paths[1], paths[2], paths[3], parent / "out", root)
 
 
 if __name__ == "__main__":
