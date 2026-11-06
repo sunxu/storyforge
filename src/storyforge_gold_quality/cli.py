@@ -455,6 +455,7 @@ def main():
     for name in (
         "package-safe", "receipt-template", "blind-input", "instructions",
         "owner-map", "result", "results-only-safe", "resolution-template",
+        "reviewer-a-v3", "b2-results", "crosswalk-safe",
     ):
         owner_prepare.add_argument("--" + name, type=Path, required=True)
     owner_prepare.add_argument("--output", type=Path, required=True)
@@ -465,6 +466,7 @@ def main():
     for name in (
         "package-safe", "receipt-template", "blind-input", "instructions",
         "owner-map", "result", "results-only-safe", "resolution-template",
+        "reviewer-a-v3", "b2-results", "crosswalk-safe",
     ):
         owner_validate.add_argument("--" + name, type=Path, required=True)
     owner_validate.add_argument("--owner-resolution", type=Path, required=True)
