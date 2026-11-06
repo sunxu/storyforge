@@ -194,8 +194,7 @@ def validate_event(event):
             or type(payload.get("owner_evidence_reference_count")) is not int
             or payload["owner_evidence_reference_count"] < 40
             or payload.get("execution_record_available") is not False
-            or (metadata_sha is not None and
-                (not isinstance(metadata_sha, str) or not HEX64.fullmatch(metadata_sha)))
+            or metadata_sha is not None
             or payload.get("execution_attestation_complete") is not False
             or payload.get("reviewer_c_independence_verified") is not False
             or payload.get("cryptographic_independence_proven") is not False
