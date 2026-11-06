@@ -1,0 +1,102 @@
+{
+  "schema": "storyforge-r60-ledger-performance-closeout-safe-v1",
+  "project": "StoryForge",
+  "phase": "R60",
+  "checked_at_utc": "2026-11-06T03:44:53Z",
+  "scope": "production_index_catalog_and_postbuild_metadata_only",
+  "closeout_status": "PRODUCTION_B2_INDEX_DEPLOYMENT_PASS__RUNTIME_BENEFIT_NOT_MEASURED",
+  "production_index": {
+    "name": "public.idx_v2_chat_message_ledger_r60_b2",
+    "parent_table": "public.v2_chat_message_ledger",
+    "method": "btree",
+    "key_columns": [
+      "session_id",
+      "story_id",
+      "recorded_at",
+      "id"
+    ],
+    "include_columns": [
+      "turn_index",
+      "message_id",
+      "role",
+      "operation"
+    ],
+    "unique": false,
+    "valid": true,
+    "ready": true,
+    "live": true,
+    "bytes": 7520387072,
+    "index_count_on_table": 6,
+    "invalid_or_not_ready_index_count": 0,
+    "in_progress_index_build_count": 0,
+    "originally_existing_indexes_retained": true,
+    "idx_scan_at_check": 0
+  },
+  "database_health_point_in_time": {
+    "db": "postgres",
+    "connector_role": "supabase_read_only_user",
+    "transaction_read_only": true,
+    "row_security_setting_on": true,
+    "connector_role_bypassrls": true,
+    "business_rows_read": false,
+    "connection_count": 32,
+    "active_connections": 1,
+    "idle_in_transaction": 0,
+    "lock_wait_connections": 0,
+    "waiting_locks": 0,
+    "ledger_estimated_live_tuples": 43227728,
+    "ledger_estimated_dead_tuples": 1092270,
+    "ledger_total_bytes": 117834670080,
+    "db_bytes": 213088193683,
+    "wal_stats_reset_utc": "2026-07-27T03:48:32.170482Z",
+    "cumulative_wal_bytes": 1900002745988,
+    "visible_replication_sessions": 0,
+    "visible_replication_slots": 0,
+    "disk_free_capacity_verified": false,
+    "managed_replica_health_verified": false,
+    "note": "All health metrics are single observations and are not service-level performance guarantees. Database size differs from physical disk usage. Zero visible replication sessions/slots does not rule out managed replication."
+  },
+  "plan_tests": {
+    "synthetic_nonexistent_session_first_page": "B2 INDEX_ONLY_SCAN_SELECTED",
+    "synthetic_nonexistent_session_keyset_page": "B2 INDEX_ONLY_SCAN_SELECTED",
+    "real_session_plan_checked": false,
+    "real_session_latency_checked": false,
+    "heap_fetches_measured": false,
+    "prior_cross_session_hypopg_plan": "3_OF_3_SELECTED_B2_INDEX_ONLY_SCAN",
+    "prior_cross_session_hypopg_scope": "HYPOTHETICAL_EXPLAIN_COSTS_NOT_WALL_TIME"
+  },
+  "code_changes": {
+    "current_history_session_reuse_implemented": true,
+    "per_target_time_and_turn_filters_preserved": true,
+    "bounded_superset_limit_with_per_case_fallback": true,
+    "regression_ci": "PASS",
+    "last_verified_code_ci": "CI_2013_724_PASSED_5_SKIPPED_33_SUBTESTS_PASSED",
+    "main_branch_merged": false
+  },
+  "stage_status": {
+    "T0_code_and_handoff": "PASS",
+    "T1_database_catalog_and_security": "PASS_METADATA_ONLY",
+    "T2_hypopg_cross_session": "PASS_HYPOTHETICAL_PLANS",
+    "T3_code_review": "PASS",
+    "T4_synthetic_batch_testing": "PASS_SYNTHETIC_ONLY",
+    "T5_production_b2_index": "PASS_CATALOG",
+    "T6_pilot8_v3_real_workload": "NOT_EXECUTED",
+    "T7_closeout_evidence": "PASS"
+  },
+  "open_followups": [
+    "Post-build Supabase host disk available space and resource telemetry are not available through this connector.",
+    "Actual representative private-session EXPLAIN, wall-time, heap fetches and end-to-end history recovery outputs have not been measured after index creation.",
+    "B2 idx_scan was 0 at the sampled point; monitor workload and statistics before making real-world improvement claims.",
+    "PR #16 and PR #17 stay Draft and unmerged; no approval to merge or promote data/training."
+  ],
+  "safety": {
+    "no_database_modification_by_this_audit": true,
+    "no_data_content_access": true,
+    "private_values_emitted": false,
+    "no_gpu_or_training": true,
+    "no_role_rls_trigger_changes": true,
+    "no_further_index_create_or_drop": true,
+    "quality_v1_admission_unchanged": true,
+    "original_history_suffix_holds_unchanged": true
+  }
+}
