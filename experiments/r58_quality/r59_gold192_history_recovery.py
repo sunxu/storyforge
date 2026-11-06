@@ -740,76 +740,281 @@ def run(*, reviewer_a: Path, reviewer_b: Path, exclusions: Path,
     if diagnose_history_suffix:
         import psycopg
 
+        if output_dir.is_symlink() or not output_dir.is_dir():
+            raise ValueError("OUTPUT_DIRECTORY_INVALID")
+        if stat.S_IMODE(output_dir.stat().st_mode) != 0o700:
+            raise ValueError("OUTPUT_PERMISSIONS_INVALID")
+        progress_writer = (
+            SafeProgressWriter(progress_file, output_dir)
+            if progress_file is not None else None
+        )
+
+        def emit_progress(event, **fields):
+            payload = {
+                "schema": "r59_gold192_history_progress_safe_v1",
+                "event": event,
+                **fields,
+            }
+            if progress_writer is not None:
+                progress_writer.emit(event, **fields)
+            else:
+                print(json.dumps(
+                    payload, ensure_ascii=False, sort_keys=True,
+                    separators=(",", ":")
+                ), file=sys.stderr, flush=True)
+
+        checkpoint_dir = output_dir / "history-suffix-checkpoints"
+        try:
+            checkpoint_dir.mkdir(mode=0o700)
+        except FileExistsError:
+            pass
+        if (checkpoint_dir.is_symlink() or not checkpoint_dir.is_dir()
+                or stat.S_IMODE(checkpoint_dir.stat().st_mode) != 0o700):
+            if progress_writer is not None:
+                progress_writer.close()
+            raise ValueError("SESSION_CHECKPOINT_DIRECTORY_INVALID")
+
+        groups = {}
+        for pilot_index, case in enumerate(priority):
+            locator = locator_index[case["case_id"]]
+            key = (case["story_id"], locator["session_id"])
+            groups.setdefault(key, []).append((pilot_index, case))
+        ordered_groups = sorted(groups.items())
+        input_fingerprint = digest(json.dumps({
+            "input_sha256": {
+                key: digest(value) for key, value in sorted(inputs.items())
+            },
+            "pilot": len(priority),
+            "max_history": max_history,
+            "max_lineage_depth": max_lineage_depth,
+            "max_ledger_events": max_ledger_events,
+            "algorithm_version": "sessionized-v1",
+            "schema": "r59_gold192_history_session_checkpoint_v1",
+        }, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+
+        all_results = []
+        all_metrics = []
+        verified_duplicate_indices = set()
+        session_checkpoints_reused = 0
+        session_checkpoints_created = 0
+        owner_count = None
         stage = "CONNECT"
         tracked_cursor = None
+        session_count = len(ordered_groups)
+        emit_progress(
+            "run_started", pilot_count=len(priority),
+            session_count=session_count, max_ledger_events=max_ledger_events,
+        )
         try:
-            with psycopg.connect(dsn, autocommit=False, connect_timeout=15) as db:
-                stage = "SET_READ_ONLY"
-                db.execute("SET TRANSACTION READ ONLY")
-                stage = "SET_STATEMENT_TIMEOUT"
-                db.execute("SET LOCAL statement_timeout = '90000ms'")
-                stage = "SET_LOCK_TIMEOUT"
-                db.execute("SET LOCAL lock_timeout = '1000ms'")
-                stage = "VERIFY_READ_ONLY_ROLE"
-                with db.cursor() as cursor:
-                    cursor.execute(
-                        """
-                        SELECT current_user, current_setting('transaction_read_only'),
-                               current_setting('row_security'), r.rolsuper, r.rolbypassrls
-                        FROM pg_roles AS r WHERE r.rolname = current_user
-                        """
+            with psycopg.connect(
+                dsn, autocommit=True, connect_timeout=15,
+                application_name="storyforge-r60-history-diagnostic",
+                keepalives=1, keepalives_idle=30,
+                keepalives_interval=10, keepalives_count=3,
+            ) as db:
+                for session_number, (session_key, entries) in enumerate(ordered_groups, 1):
+                    global_indices = [index for index, _case in entries]
+                    expected_indices = sorted(global_indices)
+                    checkpoint_path = checkpoint_dir / (
+                        f"session-{session_number:04d}-{input_fingerprint[:16]}.safe.json"
                     )
-                    role = cursor.fetchone()
-                    if (role is None or role[0] != "r58_export_reader"
-                            or role[1] != "on" or role[2] != "on"
-                            or role[3] is not False or role[4] is not False):
-                        raise ValueError("DATABASE_ROLE_NOT_APPROVED")
-                    tracked_cursor = RecoveryStageCursor(cursor)
-                    owner_count = verify_story_owner_scope(
-                        tracked_cursor,
-                        sorted({case["story_id"] for case in packet_index.values()})
-                    )
-                    verified_duplicate_indices = set()
-                    for pilot_index, case in enumerate(priority):
-                        locator = locator_index[case["case_id"]]
-                        match_count = locator.get("matched_message_count")
-                        if isinstance(match_count, int) and not isinstance(match_count, bool) and match_count == 1:
-                            continue
-                        if not isinstance(match_count, int) or isinstance(match_count, bool) or match_count < 2:
-                            raise ValueError("SOURCE_MATCH_COUNT_INVALID")
-                        proof = diagnose_duplicate_source(
-                            tracked_cursor, case, locator, max_lineage_depth
+                    if checkpoint_path.exists() or checkpoint_path.is_symlink():
+                        checkpoint = _load_session_checkpoint(
+                            checkpoint_path, fingerprint=input_fingerprint,
+                            session_index=session_number,
+                            session_count=session_count,
+                            pilot_indices=expected_indices,
                         )
-                        if proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
-                            raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
-                        verified_duplicate_indices.add(pilot_index)
-                    cases = build_recovery_cases(
-                        priority, locator_index, verified_duplicate_indices
+                        duplicate_indices = checkpoint.get(
+                            "duplicate_source_reverification_pilot_indices"
+                        )
+                        if (not isinstance(duplicate_indices, list)
+                                or any(type(value) is not int
+                                       or value not in expected_indices
+                                       for value in duplicate_indices)
+                                or len(duplicate_indices) != checkpoint[
+                                    "duplicate_source_roots_reverified"
+                                ]):
+                            raise ValueError("SESSION_CHECKPOINT_DUPLICATE_INDICES_INVALID")
+                        all_results.extend(checkpoint["case_results"])
+                        all_metrics.append(checkpoint["performance_metrics"])
+                        verified_duplicate_indices.update(duplicate_indices)
+                        if owner_count is None:
+                            owner_count = checkpoint["distinct_story_owner_count"]
+                        elif owner_count != checkpoint["distinct_story_owner_count"]:
+                            raise ValueError("STORY_OWNER_SCOPE_DRIFT")
+                        session_checkpoints_reused += 1
+                        emit_progress(
+                            "session_checkpoint_reused",
+                            session_index=session_number,
+                            session_count=session_count,
+                            case_count=len(entries),
+                            pilot_indices=expected_indices,
+                        )
+                        continue
+
+                    emit_progress(
+                        "session_started", session_index=session_number,
+                        session_count=session_count, case_count=len(entries),
+                        pilot_indices=expected_indices,
                     )
-                    results = diagnose_history_suffixes(
-                        tracked_cursor, cases, max_history=max_history,
-                        max_lineage_depth=max_lineage_depth,
-                        max_ledger_events=max_ledger_events,
+                    session_started = time.perf_counter()
+                    session_verified_duplicates = set()
+                    session_results = []
+                    session_metrics = {}
+                    session_owner_count = None
+                    stage = "SESSION_TRANSACTION_BEGIN"
+                    try:
+                        with db.transaction():
+                            db.execute(
+                                "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY"
+                            )
+                            db.execute("SET LOCAL statement_timeout = '90000ms'")
+                            db.execute("SET LOCAL lock_timeout = '1000ms'")
+                            with db.cursor() as cursor:
+                                tracked_cursor = RecoveryStageCursor(
+                                    cursor, progress_callback=emit_progress
+                                )
+                                stage = "VERIFY_READ_ONLY_ROLE"
+                                tracked_cursor.execute(
+                                    """
+                                    SELECT current_user, current_setting('transaction_read_only'),
+                                           current_setting('row_security'), r.rolsuper, r.rolbypassrls
+                                    FROM pg_roles AS r WHERE r.rolname = current_user
+                                    """
+                                )
+                                role = tracked_cursor.fetchone()
+                                if (role is None or role[0] != "r58_export_reader"
+                                        or role[1] != "on" or role[2] != "on"
+                                        or role[3] is not False or role[4] is not False):
+                                    raise ValueError("DATABASE_ROLE_NOT_APPROVED")
+
+                                stage = "VERIFY_STORY_OWNER_SCOPE"
+                                session_owner_count = verify_story_owner_scope(
+                                    tracked_cursor,
+                                    sorted({case["story_id"] for case in packet_index.values()}),
+                                )
+                                if owner_count is not None and owner_count != session_owner_count:
+                                    raise ValueError("STORY_OWNER_SCOPE_DRIFT")
+
+                                session_priority = [case for _index, case in entries]
+                                local_verified_indices = set()
+                                for local_index, (global_index, case) in enumerate(entries):
+                                    locator = locator_index[case["case_id"]]
+                                    match_count = locator.get("matched_message_count")
+                                    if (isinstance(match_count, int)
+                                            and not isinstance(match_count, bool)
+                                            and match_count == 1):
+                                        continue
+                                    if (not isinstance(match_count, int)
+                                            or isinstance(match_count, bool)
+                                            or match_count < 2):
+                                        raise ValueError("SOURCE_MATCH_COUNT_INVALID")
+                                    stage = "DUPLICATE_SOURCE_REVERIFICATION"
+                                    proof = diagnose_duplicate_source(
+                                        tracked_cursor, case, locator, max_lineage_depth
+                                    )
+                                    if proof.get("status") != "UNIQUE_ROOT_CANONICAL_MATCH":
+                                        raise ValueError("PILOT_SOURCE_IDENTITY_HOLD")
+                                    local_verified_indices.add(local_index)
+                                    session_verified_duplicates.add(global_index)
+
+                                session_cases = build_recovery_cases(
+                                    session_priority, locator_index,
+                                    verified_duplicate_indices=local_verified_indices,
+                                )
+                                stage = "HISTORY_SUFFIX_DIAGNOSTIC"
+                                session_results = diagnose_history_suffixes(
+                                    tracked_cursor, session_cases,
+                                    max_history=max_history,
+                                    max_lineage_depth=max_lineage_depth,
+                                    max_ledger_events=max_ledger_events,
+                                )
+                                session_metrics = tracked_cursor.safe_metrics()
+                    except psycopg.Error as exc:
+                        sqlstate = getattr(exc, "sqlstate", None)
+                        if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
+                            sqlstate = None
+                        failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
+                        raise DatabaseFailure(
+                            failure_stage, sqlstate, type(exc).__name__
+                        ) from None
+
+                    for row in session_results:
+                        local_index = row.get("safe_index")
+                        if (type(local_index) is not int
+                                or not 0 <= local_index < len(global_indices)):
+                            raise ValueError("SESSION_RESULT_INDEX_INVALID")
+                        row["safe_index"] = global_indices[local_index]
+                    _validate_checkpoint_case_results(session_results, expected_indices)
+                    session_elapsed_ms = round(
+                        (time.perf_counter() - session_started) * 1000, 3
                     )
-                stage = "ROLLBACK"
-                db.rollback()
+                    checkpoint_payload = {
+                        "schema": "r59_gold192_history_session_checkpoint_v1",
+                        "status": "SESSION_DIAGNOSTIC_COMPLETE",
+                        "run_fingerprint": input_fingerprint,
+                        "session_index": session_number,
+                        "session_count": session_count,
+                        "pilot_indices": expected_indices,
+                        "case_results": session_results,
+                        "performance_metrics": session_metrics,
+                        "duplicate_source_roots_reverified": len(session_verified_duplicates),
+                        "duplicate_source_reverification_pilot_indices": sorted(
+                            session_verified_duplicates
+                        ),
+                        "distinct_story_owner_count": session_owner_count,
+                        "session_elapsed_ms": session_elapsed_ms,
+                    }
+                    _write_session_checkpoint(checkpoint_path, checkpoint_payload)
+                    all_results.extend(session_results)
+                    all_metrics.append(session_metrics)
+                    verified_duplicate_indices.update(session_verified_duplicates)
+                    if owner_count is None:
+                        owner_count = session_owner_count
+                    session_checkpoints_created += 1
+                    emit_progress(
+                        "session_completed", session_index=session_number,
+                        session_count=session_count, case_count=len(entries),
+                        pilot_indices=expected_indices,
+                        elapsed_ms=session_elapsed_ms,
+                        recovered_count=sum(row["result"] == "RECOVERED" for row in session_results),
+                        hold_count=sum(row["result"] == "HOLD" for row in session_results),
+                        total_query_count=session_metrics.get("total_query_count", 0),
+                        total_fetch_ms=session_metrics.get("total_fetch_ms", 0.0),
+                    )
         except psycopg.Error as exc:
             sqlstate = getattr(exc, "sqlstate", None)
             if not isinstance(sqlstate, str) or not re.fullmatch(r"[0-9A-Z]{5}", sqlstate):
                 sqlstate = None
             failure_stage = tracked_cursor.stage if tracked_cursor is not None else stage
             raise DatabaseFailure(failure_stage, sqlstate, type(exc).__name__) from None
+        finally:
+            if progress_writer is not None:
+                progress_writer.close()
+
+        all_results.sort(key=lambda row: row["safe_index"])
+        if len(all_results) != len(priority):
+            raise ValueError("SESSION_RESULT_COUNT_INVALID")
         return {
             "schema": "r59_gold192_history_suffix_recovery_diagnostic_safe_v1",
             "status": "HISTORY_SUFFIX_DIAGNOSTIC_COMPLETE",
             "pilot_requested": len(priority),
-            "case_results": results,
+            "case_results": all_results,
+            "session_count": session_count,
+            "session_checkpoints_created": session_checkpoints_created,
+            "session_checkpoints_reused": session_checkpoints_reused,
+            "transaction_scope": "REPEATABLE_READ_READ_ONLY_PER_SESSION",
+            "cross_session_snapshot_consistency_proven": False,
             "database_role_verified": "r58_export_reader",
             "transaction_read_only": True,
             "row_security": True,
             "role_bypassrls": False,
             "database_modified": False,
             "private_values_emitted": False,
+            "performance_metrics": merge_safe_metrics(all_metrics),
+            "duplicate_source_roots_reverified": len(verified_duplicate_indices),
+            "distinct_story_owner_count": owner_count,
             "quality_v1_admitted": 0,
             "training_authorized": False,
             "gpu_started": False,
