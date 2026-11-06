@@ -99,17 +99,14 @@ python3 "$REPO/experiments/r58_quality/r60_reviewer_ab2_gold72_crosswalk.py" \
 
 ### 3.1 导入共享 Quality Pipeline
 
-交叉分析器完成后，再把聚合 SAFE 导入既有私有 append-only Manifest。先从 Owner 私有目录只读定位现有 Manifest；不要为了本次导入擅自新建第二份账本。
+交叉分析器完成后，再把聚合 SAFE 导入既有私有 append-only Manifest。此前已验证的统一账本路径如下；不要新建第二份账本：
 
 ~~~bash
-find "$HOME/.local/share/storyforge" -type f -name 'gold-quality-events.jsonl' -print
-~~~
+MANIFEST="$HOME/.local/share/storyforge/r58/private/gold-quality-events.jsonl"
 
-确认唯一现有 Manifest 后设置其绝对路径：
-
-~~~bash
-: "\${MANIFEST:?请设置已存在的 Owner 私有 Gold Quality Manifest 绝对路径}"
 test -f "$MANIFEST" && test ! -L "$MANIFEST"
+test "$(stat -f '%Lp' "$MANIFEST")" = "600"
+test "$(stat -f '%Lp' "$(dirname "$MANIFEST")")" = "700"
 
 storyforge-gold-quality import-review-reconciliation \
   --batch gold72 \
