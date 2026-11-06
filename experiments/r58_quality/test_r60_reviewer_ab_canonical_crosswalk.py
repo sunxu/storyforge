@@ -130,6 +130,7 @@ class CanonicalCrosswalkTests(unittest.TestCase):
         digest = hashlib.sha256(b_raw).hexdigest()
         pins = dict(m.A_SOURCE_PINS)
         pins["reviewer_b"] = digest
+        a["source_pins"] = dict(pins)
         with (
             patch.object(m, "B_SHA256", digest),
             patch.dict(m.A_SOURCE_PINS, pins, clear=True),
@@ -147,8 +148,16 @@ class CanonicalCrosswalkTests(unittest.TestCase):
 
     def test_superseded_a_artifact_is_rejected(self):
         staged_raw, receipt, owners, a, b, b_raw = fixture()
+        digest = hashlib.sha256(b_raw).hexdigest()
+        pins = dict(m.A_SOURCE_PINS)
+        pins["reviewer_b"] = digest
+        a["source_pins"] = dict(pins)
         a["schema"] = "old-superseded-reviewer-a-schema"
-        with self.assertRaisesRegex(m.AuditHold, "CANONICAL_REVIEWER_A_V3_REQUIRED"):
+        with (
+            patch.object(m, "B_SHA256", digest),
+            patch.dict(m.A_SOURCE_PINS, pins, clear=True),
+            self.assertRaisesRegex(m.AuditHold, "CANONICAL_REVIEWER_A_V3_REQUIRED"),
+        ):
             m.audit(staged_raw, receipt, owners, a, b, b_raw)
 
     def test_owner_identity_or_staging_pin_mismatch_fails_closed(self):
@@ -157,6 +166,7 @@ class CanonicalCrosswalkTests(unittest.TestCase):
         digest = hashlib.sha256(b_raw).hexdigest()
         pins = dict(m.A_SOURCE_PINS)
         pins["reviewer_b"] = digest
+        a["source_pins"] = dict(pins)
         with (
             patch.object(m, "B_SHA256", digest),
             patch.dict(m.A_SOURCE_PINS, pins, clear=True),
