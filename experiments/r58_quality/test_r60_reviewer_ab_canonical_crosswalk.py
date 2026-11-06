@@ -193,7 +193,10 @@ class CanonicalCrosswalkTests(unittest.TestCase):
 
     def test_b_source_pin_mismatch_fails_closed(self):
         staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
-        with self.assertRaisesRegex(m.AuditHold, "REVIEWER_B_SOURCE_PIN_MISMATCH"):
+        with (
+            patch.object(m, "A_REPORT_SHA256", hashlib.sha256(a_raw).hexdigest()),
+            self.assertRaisesRegex(m.AuditHold, "REVIEWER_B_SOURCE_PIN_MISMATCH"),
+        ):
             m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw + b"tampered")
 
 
