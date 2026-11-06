@@ -281,7 +281,8 @@ class MessageLedgerTests(unittest.TestCase):
         )
         by_id = {event["id"]: event for event in rows}
         self.assertEqual(by_id[5]["row_data"]["content"], "old")
-        self.assertIsNone(by_id[7]["row_data"])
+        self.assertNotIn(7, by_id)
+        self.assertEqual([event["id"] for event in rows], [4, 5])
         self.assertNotIn("row_data", cursor.queries[0])
         self.assertNotIn("row_data", cursor.queries[1])
         self.assertIn("WHERE id = ANY(%s)", cursor.queries[2])
@@ -458,7 +459,7 @@ class MessageLedgerTests(unittest.TestCase):
         )
         repeated = [event for event in rows if event["message_id"] == "repeated"]
         self.assertEqual([event["id"] for event in repeated], [5])
-        self.assertIsNone(repeated[0]["row_data"])
+        self.assertEqual(repeated[0]["row_data"], {"_ledger_event": "marker_v1"})
 
     def test_multiple_targets_keep_independent_boundaries_and_cutoffs(self):
         events = [
@@ -479,7 +480,7 @@ class MessageLedgerTests(unittest.TestCase):
         rows = ledger.load_session_events(
             cursor, "story", "s", 7, [self.target, second_target], max_events=20
         )
-        self.assertEqual([row["id"] for row in rows], [2, 3, 4, 5, 6])
+        self.assertEqual([row["id"] for row in rows], [2, 4, 3, 5, 6])
         self.assertEqual(
             cursor.query_params[1],
             ([0, 1], [5, 7], [dt(10), dt(20)], [2, 3], "story", "s"),
@@ -577,7 +578,8 @@ class MessageLedgerTests(unittest.TestCase):
             cursor, "story", "s", 5, [self.target], max_events=700000
         )
         self.assertEqual(len(rows), 1)
-        self.assertEqual(cursor.query_params[1][-1], 10000)
+        self.assertEqual(cursor.query_params[1][-1], "s")
+        self.assertNotIn("LIMIT", cursor.queries[1])
 
     def test_event_limit_remains_hard_bounded_at_one_million(self):
         cursor = FakeCursor(self.events)
