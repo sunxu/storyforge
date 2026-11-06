@@ -16,6 +16,7 @@ on:
       - "tests/test_gold192_arbitration_queue.py"
       - "tests/test_gold192_ai_arbitration_import.py"
       - "tests/test_gold_quality_review_reconciliation.py"
+      - "tests/test_gold72_owner_resolution.py"
       - "experiments/r58_quality/r60_reviewer_c_disagreement_packet.py"
       - "experiments/r58_quality/test_r60_reviewer_c_disagreement_packet.py"
       - "experiments/r58_quality/r60_reviewer_c_audit.py"
@@ -79,7 +80,7 @@ jobs:
           python -m pip install -e .
           python -m pip install pytest ruff
       - name: Lint unified pipeline
-        run: ruff check src/storyforge_gold_quality tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold_quality_review_reconciliation.py experiments/r58_quality/r60_reviewer_c_disagreement_packet.py experiments/r58_quality/test_r60_reviewer_c_disagreement_packet.py experiments/r58_quality/r60_reviewer_c_audit.py experiments/r58_quality/r60_reviewer_c_receipt_builder.py experiments/r58_quality/test_r60_reviewer_c_audit.py experiments/r58_quality/test_r60_reviewer_c_receipt_builder.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py tests/test_gold192_reviewer_a_v3_normalization.py
+        run: ruff check src/storyforge_gold_quality tests/test_gold72_owner_resolution.py tests/test_gold_quality_pipeline.py tests/test_gold_quality_adapters.py tests/test_gold_quality_review_reconciliation.py experiments/r58_quality/r60_reviewer_c_disagreement_packet.py experiments/r58_quality/test_r60_reviewer_c_disagreement_packet.py experiments/r58_quality/r60_reviewer_c_audit.py experiments/r58_quality/r60_reviewer_c_receipt_builder.py experiments/r58_quality/test_r60_reviewer_c_audit.py experiments/r58_quality/test_r60_reviewer_c_receipt_builder.py tests/test_gold192_reconciliation.py tests/test_gold192_reviewer_b_import.py tests/test_gold192_reviewer_a_recovery.py tests/test_gold192_arbitration_queue.py tests/test_gold192_ai_arbitration_import.py tests/test_gold192_reviewer_a_v3_normalization.py
       - name: Verify frozen source blob pins
         run: |
           storyforge-gold-quality verify-source --repo-root "$PWD" > /tmp/gold-quality-source-safe.json
@@ -123,6 +124,8 @@ jobs:
         run: python -m unittest discover -s tests -p 'test_gold192_ai_arbitration_import.py' -v
       - name: Run shared review reconciliation import synthetic tests
         run: python -m unittest discover -s tests -p 'test_gold_quality_review_reconciliation.py' -v
+      - name: Run Gold72 Owner resolution and aggregate importer synthetic tests
+        run: python -m unittest discover -s tests -p 'test_gold72_owner_resolution.py' -v
       - name: Run Gold72 Reviewer C disagreement packet synthetic tests
         run: python -m unittest discover -s experiments/r58_quality -p 'test_r60_reviewer_c_disagreement_packet.py' -v
       - name: Run Gold72 Reviewer C audit synthetic tests
