@@ -67,6 +67,7 @@ def fixture():
     receipt = {
         "schema": m.EXECUTION_SCHEMA,
         "reviewer": "B2",
+        "status": "EXECUTION_COMPLETE",
         "execution_mode": "STATELESS_API",
         "provider": "synthetic-provider",
         "model_id": "synthetic-model",
