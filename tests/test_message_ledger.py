@@ -50,32 +50,40 @@ class FakeCursor:
             ]
             self.rows.sort(key=lambda event: (event["recorded_at"], event["id"]))
             return
-
-        story_id, session_id, max_turn = params[:3]
-        if "(recorded_at, id) >=" in query:
-            first_key = (params[3], params[4])
-            limit = params[5]
-            last_key = None
-        elif "(recorded_at, id) >" in query:
-            last_key = (params[3], params[4])
-            limit = params[5]
-            first_key = None
-        else:
-            raise AssertionError("unexpected ledger query shape")
-        self.rows = []
-        for source in self.events:
-            key = (source["recorded_at"], source["id"])
-            if (source["story_id"] == story_id
-                    and source["session_id"] == session_id
-                    and 1 <= source["turn_index"] <= max_turn
-                    and (first_key is None or key >= first_key)
-                    and (last_key is None or key > last_key)):
-                event = dict(source)
-                if event["operation"] in ledger.SNAPSHOTS:
-                    event["row_data"] = None
-                self.rows.append(event)
-        self.rows.sort(key=lambda event: (event["recorded_at"], event["id"]))
-        self.rows = self.rows[:limit]
+        if "WITH targets AS" in query:
+            ordinals, turns, boundary_times, boundary_ids, story_id, session_id = params
+            selected = {}
+            for ordinal, turn, boundary_time, boundary_id in zip(
+                ordinals, turns, boundary_times, boundary_ids, strict=True
+            ):
+                boundary = (boundary_time, boundary_id)
+                first_by_message = {}
+                for source in self.events:
+                    key = (source["recorded_at"], source["id"])
+                    if (source["story_id"] != story_id
+                            or source["session_id"] != session_id
+                            or not 1 <= source["turn_index"] < turn
+                            or key <= boundary):
+                        continue
+                    previous = first_by_message.get(source["message_id"])
+                    if previous is None or key < (
+                        previous["recorded_at"], previous["id"]
+                    ):
+                        first_by_message[source["message_id"]] = source
+                for event in first_by_message.values():
+                    selected[event["id"]] = {
+                        key: event[key]
+                        for key in (
+                            "id", "message_id", "story_id", "session_id",
+                            "role", "turn_index", "operation", "recorded_at",
+                        )
+                    }
+            self.rows = sorted(
+                selected.values(),
+                key=lambda event: (event["recorded_at"], event["id"]),
+            )
+            return
+        raise AssertionError("unexpected ledger query shape")
 
     def fetchall(self):
         return list(self.rows)
@@ -164,10 +172,13 @@ class MessageLedgerTests(unittest.TestCase):
         rows = ledger.load_session_events(cursor, "story", "s", 5, [self.target], max_events=20)
         self.assertEqual(len(rows), 1)
         self.assertIn("message_id = ANY(%s::uuid[])", cursor.queries[0])
-        self.assertIn("WHERE story_id = %s AND session_id = %s", cursor.queries[1])
-        self.assertIn("(recorded_at, id) >= (%s, %s)", cursor.queries[1])
-        self.assertEqual(cursor.query_params[1], ("story", "s", 5, dt(10), 4, 21))
-        self.assertIn("WHERE id = ANY(%s)", cursor.queries[2])
+        self.assertIn("DISTINCT ON (t.target_ordinal, e.message_id)", cursor.queries[1])
+        self.assertEqual(
+            cursor.query_params[1],
+            ([0], [5], [dt(10)], [4], "story", "s"),
+        )
+        self.assertNotIn("LIMIT", cursor.queries[1])
+        self.assertEqual(len(cursor.queries), 2)
 
     def test_nonpositive_turn_events_are_outside_positive_turn_query(self):
         events = self.events + [
@@ -181,8 +192,8 @@ class MessageLedgerTests(unittest.TestCase):
             cursor, "story", "s", 5, [self.target], max_events=20
         )
         self.assertEqual([row["id"] for row in rows], [4])
-        self.assertIn("turn_index BETWEEN 1 AND %s", cursor.queries[1])
-        self.assertEqual(cursor.query_params[1], ("story", "s", 5, dt(10), 4, 21))
+        self.assertIn("e.turn_index BETWEEN 1 AND (t.turn_index - 1)", cursor.queries[1])
+        self.assertEqual(cursor.query_params[1][1], [5])
 
     def test_nonpositive_locator_direct_validation_still_holds(self):
         for value in (0, -3, -999):
@@ -415,7 +426,7 @@ class MessageLedgerTests(unittest.TestCase):
             report["history_rows_using_unchanged_current_state"], 3
         )
 
-    def test_metadata_reads_use_stable_keyset_pages(self):
+    def test_metadata_first_event_reduction_is_pushed_into_sql(self):
         events = list(self.events) + [
             marker(5 + index, f"bulk-{index}", "s", 1, "user",
                    "update_after", 20 + index)
@@ -427,25 +438,37 @@ class MessageLedgerTests(unittest.TestCase):
         )
         self.assertEqual(len(rows), 10002)
         metadata_queries = [
-            (query, params) for query, params in zip(
-                cursor.queries, cursor.query_params, strict=True
-            ) if "turn_index BETWEEN 1 AND %s" in query
+            query for query in cursor.queries if "WITH targets AS" in query
         ]
-        self.assertEqual(len(metadata_queries), 2)
-        self.assertIn("(recorded_at, id) >= (%s, %s)", metadata_queries[0][0])
-        self.assertIn("(recorded_at, id) > (%s, %s)", metadata_queries[1][0])
-        self.assertEqual(
-            metadata_queries[1][1][4],
-            rows[9999]["id"],
-        )
+        self.assertEqual(len(metadata_queries), 1)
+        self.assertIn("DISTINCT ON (t.target_ordinal, e.message_id)", metadata_queries[0])
+        self.assertIn("ORDER BY t.target_ordinal, e.message_id, e.recorded_at, e.id",
+                      metadata_queries[0])
 
-    def test_ledger_reads_start_at_earliest_target_boundary(self):
+    def test_repeated_events_for_same_message_are_reduced_to_first_event(self):
+        events = list(self.events) + [
+            marker(5, "repeated", "s", 1, "user", "update_after", 11),
+            snapshot(6, "repeated", "s", 1, "user", "update_before", 12,
+                     content="later snapshot"),
+            marker(7, "repeated", "s", 1, "user", "update_after", 13),
+        ]
+        cursor = FakeCursor(events)
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 5, [self.target], max_events=20
+        )
+        repeated = [event for event in rows if event["message_id"] == "repeated"]
+        self.assertEqual([event["id"] for event in repeated], [5])
+        self.assertIsNone(repeated[0]["row_data"])
+
+    def test_multiple_targets_keep_independent_boundaries_and_cutoffs(self):
         events = [
             marker(1, "old", "s", 1, "user", "insert", 1),
             marker(2, "target", "s", 5, "assistant", "insert", 10),
             marker(3, "later-target", "s", 7, "assistant", "insert", 20),
-            marker(4, "changed-after-first-target", "s", 2, "user", "update_after", 30),
-            marker(5, "changed-after-second-target", "s", 2, "user", "update_after", 40),
+            marker(4, "same-message", "s", 2, "user", "update_after", 15),
+            marker(5, "same-message", "s", 6, "user", "update_after", 25),
+            snapshot(6, "snapshot-message", "s", 1, "user", "update_before", 26),
+            marker(7, "snapshot-message", "s", 1, "user", "update_after", 27),
         ]
         second_target = {
             "message_id": "later-target", "story_id": "story",
@@ -456,11 +479,46 @@ class MessageLedgerTests(unittest.TestCase):
         rows = ledger.load_session_events(
             cursor, "story", "s", 7, [self.target, second_target], max_events=20
         )
-        self.assertEqual([row["id"] for row in rows], [2, 3, 4, 5])
+        self.assertEqual([row["id"] for row in rows], [2, 3, 4, 5, 6])
         self.assertEqual(
-            cursor.query_params[1][3:5],
-            (dt(10), 2),
+            cursor.query_params[1],
+            ([0, 1], [5, 7], [dt(10), dt(20)], [2, 3], "story", "s"),
         )
+        self.assertEqual(
+            [row["id"] for row in rows if row["message_id"] == "same-message"],
+            [4, 5],
+        )
+        self.assertEqual(
+            [row["id"] for row in rows if row["message_id"] == "snapshot-message"],
+            [6],
+        )
+
+    def test_equal_timestamp_boundary_uses_event_id_tiebreaker(self):
+        boundary = marker(10, "target", "s", 5, "assistant", "insert", 10)
+        before = marker(9, "before", "s", 1, "user", "update_after", 10)
+        after = marker(11, "after", "s", 1, "user", "update_after", 10)
+        cursor = FakeCursor([before, boundary, after])
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 5, [self.target], max_events=20
+        )
+        self.assertEqual([row["id"] for row in rows], [10, 11])
+
+    def test_missing_target_boundary_isolated_from_valid_target(self):
+        missing_target = {
+            "message_id": "missing", "story_id": "story",
+            "session_id": "s", "turn_index": 7, "role": "assistant",
+            "created_at": dt(20),
+        }
+        cursor = FakeCursor(self.events)
+        rows = ledger.load_session_events(
+            cursor, "story", "s", 7, [self.target, missing_target], max_events=20
+        )
+        index = ledger.LedgerEventIndex(rows)
+        self.assertEqual(index.target_boundary(self.target)["id"], 4)
+        with self.assertRaisesRegex(
+            ledger.LedgerRecoveryError, "TARGET_LEDGER_BOUNDARY_MISSING"
+        ):
+            index.target_boundary(missing_target)
 
     def test_missing_boundary_for_one_target_does_not_hold_other_target(self):
         events = list(self.events)
