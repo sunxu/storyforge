@@ -100,6 +100,8 @@ cd "$REPO"
 **绝不能提供：**
 - `R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json`
 - `R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json`
+- `R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json`
+- `R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json`
 - 任意 Reviewer A/B2 文件、SAFE、分数、决策或分歧类型
 - Gold72 staging、Gold192 原始包、Owner Evidence、case_id、story_uuid
 
@@ -169,7 +171,7 @@ C Audit 检查 40/40 blind-ID / Owner Map / Results 绑定、target SHA、六维
 
 ### 5.4 Owner 决策与 Manifest
 
-Reviewer C Audit 通过后，40 条仍不是最终裁决。下一步还需要 Owner-only 逐案决策账本和 aggregate-only Gold72 resolution importer；在这两项工具完成并通过 synthetic-only CI 之前，不生成最终 Owner 决策，不追加 Manifest 事件，不进行 Quality-v1 准入。
+Reviewer C Audit 通过后，40 条仍不是最终裁决。Owner-only `R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE_TEMPLATE.json` 已随盲审包生成，40 条的 Reviewer C 与 Owner 决策字段均为空。仍需实现并验证逐案决策完整性校验器和 aggregate-only Gold72 resolution importer；在这两项工具完成并通过 synthetic-only CI 之前，不把模板标记为完成，不追加 Manifest 事件，不进行 Quality-v1 准入。
 
 不得把 Reviewer C 结果自动转成最终 Owner 决定。40 条未决期间保持 HOLD。
 
