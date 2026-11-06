@@ -48,7 +48,7 @@ find_by_sha() {
   return 1
 }
 
-SOURCE="$(find_by_sha 'GOLD192_STORY_REVIEW_PACKETS_PRIVATE.jsonl' "$EXPECTED_SOURCE")"
+SOURCE="$(find_by_sha '*.jsonl' "$EXPECTED_SOURCE")"
 STAGED="$(find_by_sha 'GOLD_SOURCE_STAGING_PRIVATE.jsonl' "$EXPECTED_STAGE")"
 STAGING_SAFE="$(dirname "$STAGED")/GOLD_SOURCE_STAGING_SAFE.json"
 INSTRUCTIONS="$REPO/docs/evidence/R60_GOLD72_REVIEWER_B2_INSTRUCTIONS_CN.md"
