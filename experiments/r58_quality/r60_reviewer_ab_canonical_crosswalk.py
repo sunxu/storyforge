@@ -222,8 +222,10 @@ def audit(staged_raw: bytes, receipt: dict[str, Any], owner_rows: list[dict[str,
         raise AuditHold("B_BLIND_CASE_ID_MISSING_OR_DUPLICATE")
 
     owner_attestation = Counter(
-        "TRUE" if row.get("reviewers_blinded_and_independent_attested") is True
-        else "FALSE" if row.get("reviewers_blinded_and_independent_attested") is False
+        "TRUE" if (isinstance(row.get("evidence"), dict)
+                   and row["evidence"].get("reviewers_blinded_and_independent_attested") is True)
+        else "FALSE" if (isinstance(row.get("evidence"), dict)
+                         and row["evidence"].get("reviewers_blinded_and_independent_attested") is False)
         else "MISSING"
         for row in owner_rows
     )
