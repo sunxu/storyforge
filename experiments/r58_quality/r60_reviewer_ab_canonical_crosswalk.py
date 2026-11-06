@@ -15,12 +15,12 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from .r59_gold192_canonical_a import (
+    from .r60_gold192_canonical_a_v3 import (
         A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
         B_SHA as B_SHA256, validate_reviewer_a_v3,
     )
 except ImportError:
-    from r59_gold192_canonical_a import (
+    from r60_gold192_canonical_a_v3 import (
         A_REPORT_SHA256, A_SCHEMA, A_STATUS, A_SOURCE_PINS, B_SCHEMA,
         B_SHA as B_SHA256, validate_reviewer_a_v3,
     )
