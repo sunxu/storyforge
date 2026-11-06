@@ -114,7 +114,7 @@ cp "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json" \
 chmod 600 "$OUT/R60_GOLD72_REVIEWER_B2_EXECUTION_RECEIPT_PRIVATE.json"
 ```
 
-按实际执行情况填写：
+按实际执行情况填写，并将 status 从模板的 `PENDING_INDEPENDENT_REVIEW_EXECUTION` 改为 `EXECUTION_COMPLETE`：
 - `execution_mode`：`STATELESS_API` 或 `CHATGPT_TEMPORARY_CHAT`
 - provider、model_id、session_or_request_id、UTC 开始/完成时间
 - blind input、instructions、result、execution record 的 SHA256
