@@ -169,7 +169,10 @@ class ReviewerB2PackageTests(unittest.TestCase):
             for path in (source_path, stage_path, stage_safe_path, instructions_path):
                 path.chmod(0o600)
             output = private_parent / "b2-package"
-            with (\n                patch.object(m, "GOLD192_SOURCE_SHA256", hashlib.sha256(source_raw).hexdigest()),\n                patch.object(m, "GOLD72_STAGE_SHA256", hashlib.sha256(stage_raw).hexdigest()),\n            ):
+            with (
+                patch.object(m, "GOLD192_SOURCE_SHA256", hashlib.sha256(source_raw).hexdigest()),
+                patch.object(m, "GOLD72_STAGE_SHA256", hashlib.sha256(stage_raw).hexdigest()),
+            ):
                 safe = m.run(
                     source_path, stage_path, stage_safe_path,
                     instructions_path, output, root,
@@ -201,7 +204,10 @@ class ReviewerB2PackageTests(unittest.TestCase):
             paths[3].write_text(instructions)
             for path in paths:
                 path.chmod(0o600)
-            with (\n                patch.object(m, "GOLD192_SOURCE_SHA256", hashlib.sha256(paths[0].read_bytes()).hexdigest()),\n                patch.object(m, "GOLD72_STAGE_SHA256", hashlib.sha256(paths[1].read_bytes()).hexdigest()),\n            ):
+            with (
+                patch.object(m, "GOLD192_SOURCE_SHA256", hashlib.sha256(paths[0].read_bytes()).hexdigest()),
+                patch.object(m, "GOLD72_STAGE_SHA256", hashlib.sha256(paths[1].read_bytes()).hexdigest()),
+            ):
                 with self.assertRaisesRegex(m.PackageHold, "GOLD72_STAGING_RECEIPT_INVALID"):
                     m.run(*paths[:1], paths[1], paths[2], paths[3], parent / "out", root)
 
