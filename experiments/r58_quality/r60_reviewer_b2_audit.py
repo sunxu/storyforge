@@ -204,7 +204,11 @@ def audit(
         raise AuditHold("B2_PASS_GATE_VIOLATION")
 
     receipt = _json(receipt_raw, "B2_EXECUTION_RECEIPT_INVALID")
-    if (receipt.get("schema") != EXECUTION_SCHEMA or receipt.get("reviewer") != "B2"\n            or receipt.get("status") != "EXECUTION_COMPLETE"):
+    if (
+        receipt.get("schema") != EXECUTION_SCHEMA
+        or receipt.get("reviewer") != "B2"
+        or receipt.get("status") != "EXECUTION_COMPLETE"
+    ):
         raise AuditHold("B2_EXECUTION_RECEIPT_SCHEMA_INVALID")
     if (
         receipt.get("blind_input_sha256") != _sha(blind_raw)
@@ -227,6 +231,13 @@ def audit(
         raise AuditHold("B2_EXECUTION_ATTESTATIONS_INVALID")
     if any(attestations.get(key) is not True for key in ATTESTATIONS):
         raise AuditHold("B2_EXECUTION_ATTESTATIONS_INCOMPLETE")
+    owner_verification = receipt.get("owner_verification")
+    if (
+        not isinstance(owner_verification, dict)
+        or set(owner_verification) != OWNER_VERIFICATION
+        or any(owner_verification.get(key) is not True for key in OWNER_VERIFICATION)
+    ):
+        raise AuditHold("B2_OWNER_VERIFICATION_INCOMPLETE")
 
     return {
         "schema": SAFE_SCHEMA,
