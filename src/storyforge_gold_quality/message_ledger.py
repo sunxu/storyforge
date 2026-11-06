@@ -10,7 +10,6 @@ COLUMNS = ("id", "message_id", "story_id", "session_id", "role",
            "turn_index", "operation", "row_data", "recorded_at")
 SNAPSHOTS = {"update_before", "delete"}
 MARKERS = {"insert", "update_after"}
-LEDGER_METADATA_BATCH_SIZE = 10000
 
 
 class LedgerRecoveryError(ValueError):
@@ -77,6 +76,11 @@ def _required_event_ids(events, targets):
 
 def load_session_events(cursor, story_id, session_id, max_turn_index,
                         targets, max_events=100000):
+    """Load target boundaries and each target's first eligible event per message.
+
+    Metadata reduction runs in PostgreSQL before rows cross the client boundary.
+    max_events caps the deduplicated event union, not the source rows examined.
+    """
     if (not isinstance(story_id, str) or not story_id
             or not isinstance(session_id, str) or not session_id
             or type(max_turn_index) is not int or max_turn_index < 1
@@ -89,13 +93,12 @@ def load_session_events(cursor, story_id, session_id, max_turn_index,
            or not target.get("message_id")
            or type(target.get("turn_index")) is not int
            or target["turn_index"] < 1
+           or target["turn_index"] > max_turn_index
            for target in targets):
         raise LedgerRecoveryError("LEDGER_TARGET_SCOPE_INVALID")
 
-    # Only ledger events at/after the earliest target boundary can affect any
-    # target's historical reconstruction. Locate the small set of target
-    # boundary markers first, then keyset-page forward from the earliest one.
-    # This avoids transferring the entire pre-target ledger history.
+    # Resolve exact target boundaries first. The SQL reduction below then
+    # applies each target's own boundary and turn cutoff independently.
     target_message_ids = sorted({target["message_id"] for target in targets})
     target_turn_indices = sorted({target["turn_index"] for target in targets})
     cursor.execute(
