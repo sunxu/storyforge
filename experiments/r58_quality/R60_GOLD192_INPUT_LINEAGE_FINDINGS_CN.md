@@ -185,3 +185,76 @@ Preflight SAFE 不记录实际 staged JSONL SHA、staging receipt SHA、source-c
 - 当前任务的下一步是重新生成严格 Stage，并以新 Stage 的 JSONL + SAFE receipt 运行 Preflight；不是复用 suffix72 的 72 READY，也不是启动训练。
 
 **最终门禁状态：** `HISTORICAL_LINEAGE_UNPROVEN__STRICT_STAGE_REBUILD_REQUIRED`。
+
+
+## 9. 2026-11-07 Strict Stage 与 Owner Template 执行续记
+
+本节根据 Owner Mac 返回的 SAFE 聚合结果和文件元数据追加。没有读取或写入私有案例正文。
+
+### 9.1 Strict Stage 本轮复核
+
+Owner Mac 本地脚本对实际 Source Context、Stage JSONL 和 Stage SAFE 做了字节级核验，返回：
+
+- `STRICT_STAGE_BYTE_AND_COUNT_VERIFIED`
+- source_rows = 72
+- 实际 JSONL READY = 5
+- 实际 JSONL HOLD = 67
+- unique case IDs = 72
+- source pin match = true
+- staged pin match = true
+- Quality-v1 admission = 0
+
+该结果满足 Strict Stage 重建门槛。仍不代表 5 条案例已获得 Owner 审批或 Quality-v1 准入。
+
+### 9.2 Owner Template 产物实际已成功创建
+
+Owner Mac 随后对模板产物进行只读检查：
+
+| 项目 | 结果 |
+|---|---:|
+| Template SAFE status | `OWNER_EVIDENCE_TEMPLATE_CREATED__NOT_EVIDENCE` |
+| staged_candidates | 5 |
+| template_rows | 5 |
+| 实际 JSONL rows | 5 |
+| template 目录 mode | 0700 |
+| 两个模板文件 | regular、非 symlink、mode 0600、nlink 1 |
+| Stage / Source pins | 全部匹配 |
+| READY identity 对应 | 5/5 |
+| 审批 / evidence / attestation 字段 | 全部保持 null |
+| Quality-v1 admission | 0 |
+
+因此，模板创建本身是成功的。模板只是空白 Owner 工作表，不是 Owner Evidence、审批或训练授权。
+
+### 9.3 命令回执 HOLD 的时间线根因
+
+另一个文件 `OWNER_TEMPLATE_COMMAND_OUTPUT_PRIVATE.json` 当前显示：
+
+`OWNER_EVIDENCE_TEMPLATE_HOLD`
+
+该命令输出没有 `reason_code`。原因是 `r59_owner_evidence_template.py` 的 CLI 异常处理会捕获异常并只输出通用 HOLD，不暴露具体异常原因。
+
+Owner Mac 返回的 UTC mtime（由纳秒时间戳换算）：
+
+| 文件 | mtime (UTC) |
+|---|---|
+| Strict Stage JSONL | 2026-11-06 16:52:50.304048 |
+| Strict Stage SAFE | 2026-11-06 16:52:50.347959 |
+| Owner Template JSONL | 2026-11-06 16:53:22.127939 |
+| Owner Template SAFE | 2026-11-06 16:53:22.128388 |
+| Template command output | 2026-11-06 17:05:21.060182 |
+
+command output 比已经成功创建的模板文件晚约 11 分 59 秒。结合执行轨迹在 template 命令处因 `set -e` 停止，以及模板工具的 create-only 语义（输出目录已存在会触发 `OUTPUT_EXISTS`），最符合现有证据的解释是：**第一次模板创建已成功；之后再次运行模板命令，因输出目录已存在而返回通用 HOLD，并通过 shell 重定向覆盖了 command output 文件。**
+
+这是由时间顺序和工具实现共同支持的高置信度解释，但因为 CLI 没有输出 reason code，不能声称捕获到了原始异常文本或确定的错误码。保留 HOLD 回执作为重复执行记录，不删除、不覆盖、不重建已经成功的模板产物。
+
+### 9.4 下一步执行规则
+
+1. 保留现有 Strict Stage 与 Owner Template 目录，不重跑 Stage 或 Template create-only 命令。
+2. 先只读检查 Packet、Reviewer A、Reviewer B 文件是否存在、权限是否为 0600、nlink 是否为 1；并检查 AutoLink 输出目录不存在。
+3. 确认 Owner Template SAFE 为 `OWNER_EVIDENCE_TEMPLATE_CREATED__NOT_EVIDENCE`，5 行身份与 Stage READY 5/5 对应，Stage/Source pins 匹配。
+4. 仅运行一次 `r59_owner_evidence_autolink.py`，输出到全新 create-only 目录。该步骤只建立冻结 Packet / A / B 的精确证据定位符，不创建 Owner attestation。
+5. AutoLink SAFE 必须明确保持 `owner_attestations_created=0`、`reviewer_independence_proven=false`、`world_component_isolation_proven=false`、`protected_set_completeness_proven=false`、`quality_v1_admitted=0`、`training_authorized=false`。
+6. AutoLink 完成后仍不运行 Preflight、Review Bind 或 Quality-v1；先由 Owner 根据真实证据补全来源版本、世界身份、split、严重问题判断、保护集和独立性证据。
+7. 不触碰 R50，不修改生产 B2，不执行 DDL/DML，不启动 GPU，不自动合并 PR。
+
+**当前门禁：** `STRICT_STAGE_VERIFIED__OWNER_TEMPLATE_CREATED__AUTOLINK_PENDING`。
