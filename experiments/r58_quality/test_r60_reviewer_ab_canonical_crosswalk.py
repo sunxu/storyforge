@@ -153,18 +153,21 @@ class CanonicalCrosswalkTests(unittest.TestCase):
         self.assertEqual(result["quality_v1_admitted"], 0)
 
     def test_superseded_a_artifact_is_rejected(self):
-        staged_raw, receipt, owners, a, b, b_raw = fixture()
+        staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
         digest = hashlib.sha256(b_raw).hexdigest()
         pins = dict(m.A_SOURCE_PINS)
         pins["reviewer_b"] = digest
         a["source_pins"] = dict(pins)
         a["schema"] = "old-superseded-reviewer-a-schema"
+        a_raw = json.dumps(a, sort_keys=True).encode()
+        a_digest = hashlib.sha256(a_raw).hexdigest()
         with (
             patch.object(m, "B_SHA256", digest),
+            patch.object(m, "A_REPORT_SHA256", a_digest),
             patch.dict(m.A_SOURCE_PINS, pins, clear=True),
             self.assertRaisesRegex(m.AuditHold, "CANONICAL_REVIEWER_A_V3_REQUIRED"),
         ):
-            m.audit(staged_raw, receipt, owners, a, b, b_raw)
+            m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw)
 
     def test_owner_identity_or_staging_pin_mismatch_fails_closed(self):
         staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
@@ -183,10 +186,15 @@ class CanonicalCrosswalkTests(unittest.TestCase):
         ):
             m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw)
 
-    def test_b_source_pin_mismatch_fails_closed(self):
+    def test_a_report_pin_mismatch_fails_closed(self):
         staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
         with self.assertRaisesRegex(m.AuditHold, "REVIEWER_A_V3_REPORT_PIN_MISMATCH"):
             m.audit(staged_raw, receipt, owners, a, a_raw + b"tampered", b, b_raw)
+
+    def test_b_source_pin_mismatch_fails_closed(self):
+        staged_raw, receipt, owners, a, a_raw, b, b_raw = fixture()
+        with self.assertRaisesRegex(m.AuditHold, "REVIEWER_B_SOURCE_PIN_MISMATCH"):
+            m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw + b"tampered")
 
 
 if __name__ == "__main__":
