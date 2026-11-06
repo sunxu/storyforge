@@ -231,6 +231,14 @@ class ReviewerCPacketTests(unittest.TestCase):
             self.assertEqual(output.stat().st_mode & 0o777, 0o700)
             for path in output.iterdir():
                 self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            safe = json.loads((output / "R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json").read_text())
+            template = json.loads((output / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json").read_text())
+            self.assertEqual(template["reviewer"], "C")
+            self.assertEqual(template["status"], "PENDING_INDEPENDENT_REVIEW_EXECUTION")
+            self.assertEqual(safe["execution_receipt_template_sha256"],
+                             __import__("hashlib").sha256(
+                                 (output / "R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json").read_bytes()
+                             ).hexdigest())
             with self.assertRaisesRegex(PackageHold, "OUTPUT_DIR_INVALID_OR_EXISTS"):
                 _create_package(output, packets, owner_map, safe, instructions)
 
