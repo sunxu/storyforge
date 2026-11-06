@@ -257,6 +257,10 @@ def safe_report(events):
                 "decision_agreements": sum(item["decision_agreements"] for item in payloads),
                 "decision_disagreements": sum(item["decision_disagreements"] for item in payloads),
                 "score_comparable_cases": sum(item["score_comparable_cases"] for item in payloads),
+                "reviewer_a_evidence_granularity": payloads[0]["reviewer_a_evidence_granularity"],
+                "reviewer_b2_decisions": payloads[0]["reviewer_b2_decisions"],
+                "a_b2_pair_counts": payloads[0]["a_b2_pair_counts"],
+                "score_comparison_by_dimension": payloads[0]["score_comparison_by_dimension"],
                 "reviewer_b2_independence_verified": all(
                     item["reviewer_b2_independence_verified"] for item in payloads
                 ),
