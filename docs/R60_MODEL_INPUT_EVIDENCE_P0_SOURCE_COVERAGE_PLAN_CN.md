@@ -72,3 +72,34 @@
 不运行数据库 DML/DDL，不访问 R50，不导出聊天/Prompt 原文至聊天或 GitHub，不读生产 JSONB 全文，不允许绕过 `LEDGER_TEMPORAL_ORDER_AUDIT_REQUIRED`，不生成训练候选，不启动 GPU。
 
 T1 Ledger Writer Path 审计保留为 RolePlay P1 的数据可靠性治理以及必要个案的支持任务，不作为 P0 输入证据调查的统一硬门槛。
+
+
+## 5. S1 已实现：Catalog-only 守卫预检（2026-11-07）
+
+新增 [`r60_model_input_coverage_catalog.py`](../experiments/r58_quality/r60_model_input_coverage_catalog.py) 和 [合成测试](../experiments/r58_quality/test_r60_model_input_coverage_catalog.py)。
+
+**当前仅执行 Catalog，不执行真实表的 COUNT/SELECT 业务数据。** 它通过 psycopg 用 Owner 本地的 `STORYFORGE_SUPABASE_DSN` 发起 `REPEATABLE READ READ ONLY` 事务，首先确认：`current_user=r58_export_reader`、`transaction_read_only=on`、`row_security=on`，15 秒语句超时和 1 秒锁等待；失败则输出聚合 HOLD。它只读取 `pg_catalog` 表名、列名、索引名和 `has_table_privilege` 布尔值，最后显式 rollback；没有读取请求信封、聊天正文、JSONB 或用户行。
+
+RolePlay 当前历史 migration [`20260820213000_v2_durable_reply_jobs.sql`](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20260820213000_v2_durable_reply_jobs.sql) 最初对 `v2_chat_reply_jobs` 只授予 `service_role` 业务表权限，因此 **不能假设** `r58_export_reader` 必然拥有该表的 SELECT。若预检发现权限不足或 RLS 不符合要求，应停在 HOLD，另行制定经批准的最小权限访问方案；严禁切到 `service_role` 或关闭 RLS。
+
+Owner 使用原有私人凭据运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+git fetch origin r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+# 在原 Owner 私有环境中加载 STORYFORGE_SUPABASE_DSN（不要在聊天中提供连接串）
+test -n "${STORYFORGE_SUPABASE_DSN:-}"
+python3 -m unittest experiments.r58_quality.test_r60_model_input_coverage_catalog -v
+python3 experiments/r58_quality/r60_model_input_coverage_catalog.py
+```
+
+回传仅 CLI SAFE JSON；不要打印连接串或业务内容。预检通过仍只能说明结构与表级权限可进一步核查，**不是 Gold192 覆盖率数字，也不表示可直接读取生产行**；继续检查角色可见性和时间窗索引后才能执行有界覆盖计数。
+
+### 最新的停止条件
+
+- `CATALOG_PREFLIGHT_HOLD`：先修复权限、表结构或环境问题（需独立审批），不自动降级为不受控连接。
+- `CATALOG_PREFLIGHT_PASS_NO_BUSINESS_ROWS_READ`：允许准备下一轮限定时间窗的聚合方案，尚未执行它。
+- A/B/C/D 继续未知；`UNKNOWN_NOT_REVIEWED=192`；`quality_v1_admitted=0`，无 GPU。
