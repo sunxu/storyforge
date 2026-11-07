@@ -231,3 +231,46 @@ Owner 的 `r60_model_input_metadata_window_safe_v1` 回执：`METADATA_WINDOW_HO
 4. 不改任何 RLS policy、GRANT、数据库数据、时间窗大小或训练准入门槛。
 
 **下一步：** 更新 PR #25 后运行 S1 + S2 合成测试，再用同一已明确授权的 24 小时日期窗口重新执行 S2。若仍 HOLD，保留 SAFE reason_code，不扩大日期或改用高权限账号。结果仅是两张表的元数据时间窗计数，与 Gold192 逐案输入证明无关。
+
+
+## 10. S2 Owner 首轮零记录与 S3 索引定位 Pilot（2026-11-07）
+
+Owner 的首轮 S2 SAFE 回执状态为 `METADATA_WINDOW_AGGREGATES_ONLY_NOT_CASE_LINKED`。请求时间窗口**仅**为 `2026-08-01T00:00:00+00:00` 到 `2026-08-02T00:00:00+00:00`：
+
+| 来源 | 匹配行数 | request_id 非空 | relay_request_id 非空 |
+|---|---:|---:|---:|
+| `chat_abnormal_snapshot` | 0 | 0 | 0 |
+| `chat_latency_metrics` | 0 | 0 | 0 |
+| `v2_chat_reply_jobs` | 未执行 | unknown | unknown |
+
+该零结果**只适用于以上 24 小时窗口和当时已授权角色的行可见性**，不能推断 Gold192 无请求证据、不能据此填充 A/B/C/D、也不能排除留存清理影响。
+
+### S3：冻结定位的 Reply Job 定向 Pilot
+
+新增 [`r60_reply_job_locator_pilot.py`](../experiments/r58_quality/r60_reply_job_locator_pilot.py) 和 [合成测试](../experiments/r58_quality/test_r60_reply_job_locator_pilot.py)。它验证冻结 R60 Source Locator 的 192 条数量和 SAFE 内文件 SHA256，以 `case_id` 排序，**最多选取 8 条**具有 `session_id` 与 `turn_index` 的目标。只使用现有索引 `uq_v2_reply_job_assistant_turn` 的键 `(session_id, assistant_turn)` 做只读定位计数和 `attempt_count` 汇总。
+
+此工具不读取 `request_envelope`、不查询任何未许可正文，不打印 session / story / user / request / message ID，不生成训练集，也不做 Gold192 A/B/C/D 分类。成功表示 Reply Jobs 元数据关联候选数，不表示输入或回复链已认证。
+
+Owner 需在已有 `r58_export_reader` 私有凭据环境中运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+python3 -m unittest \
+  experiments.r58_quality.test_r60_reply_job_locator_pilot \
+  experiments.r58_quality.test_r60_model_input_coverage_catalog -v
+
+# SOURCE 必须替换为前次 192 条 locator 与其配套 SAFE 的实际同次目录。
+SOURCE="$HOME/.local/share/storyforge/r59/private/r60-source-v3-pilot7-verified-20261107"
+
+python3 experiments/r58_quality/r60_reply_job_locator_pilot.py \
+  --source-locators "$SOURCE/R60_SOURCE_LOCATORS_192.jsonl" \
+  --source-safe "$SOURCE/R60_SOURCE_SAFE.json" \
+  --pilot-count 8
+```
+
+该脚本要求源文件为私有的 0600、父目录 0700，连接保持只读事务、RLS、`r58_export_reader` 且每条查询 3 秒超时。返回仅聚合 SAFE；若来源路径/权限/定位签名不符，保留 HOLD。不要把私有 locator JSONL 发送到 GitHub 或聊天。
+
+注意，本次选择按 `case_id` 排序的前 8 条是**技术可执行性 Pilot**，不是质量最优 8 条，不保证在旧 Reply Job 上有覆盖。若 8/8 无匹配，仍然不代表全量 192 条无证据，应进一步按**目标真实生成时间、部署版本**与持久化链路判断是否存在记录。
