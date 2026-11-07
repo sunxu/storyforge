@@ -80,7 +80,7 @@ def seed(locator_raw: bytes, source_safe_raw: bytes) -> tuple[bytes, dict]:
         "schema": SAFE_SCHEMA,
         "status": "EVIDENCE_SLOTS_SEEDED_NOT_REVIEWED",
         "gold192_total": EXPECTED_TOTAL,
-        "input_evidence_class_counts": {"A": 0, "B": 0, "C": 0, "D": 0,
+        "input_evidence_class_counts": {"A": None, "B": None, "C": None, "D": None,
                                         "UNKNOWN_NOT_REVIEWED": EXPECTED_TOTAL},
         "source_status_counts": dict(sorted(source_counts.items())),
         "source_locator_sha256": _sha(locator_raw),
