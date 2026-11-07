@@ -69,3 +69,9 @@ python3 experiments/r58_quality/r60_dual_track_coverage.py \
 6. **所有 Gate**：E0–E3 实证、E4 独立 Train/Validation 冻结、E5 真实 CPU Collator、E6 明确 GPU 和预算授权；此次不执行训练。
 
 若现有受限账号不具备经审核的 Owner 限域 SELECT，则本阶段应输出 `OWNER_SCOPED_COVERAGE_HOLD`，由 Owner 审核增补只读接口，禁止改用当前绕过 RLS 的 Supabase Connector。
+
+## 执行环境区分（Owner 确认）
+
+- ChatGPT 直接调用 Supabase 连接器：`supabase_read_only_user`，只读、但拥有 BYPASSRLS，仅按已授权范围执行限定的聚合和诊断查询。
+- Owner Mac 使用 `STORYFORGE_SUPABASE_DSN` 的本地 Python 脚本：`r58_export_reader`。`r60_dual_track_coverage.py` 和 `r60_scoped_target_pairs.py` 都要求此角色且不得 BYPASSRLS。
+- 切勿把连接器的实际角色套用到本地执行说明；本机遇到 `DATABASE_GUARD_HOLD` 或表 SELECT/RLS 权限不足时，应核证原权限与来源，不应切换到旁路账号。
