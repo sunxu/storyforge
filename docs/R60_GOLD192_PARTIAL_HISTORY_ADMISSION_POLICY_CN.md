@@ -77,3 +77,9 @@ SAFE 与审核记录必须分别表达以下状态：
 - 不因本策略变更生成派生训练候选。
 
 后续每次执行只依据 SAFE 输出更新样本级状态；私人正文、Case ID、消息 ID、故事名及自由文本审核备注不得输出到聊天或公开 CI 日志。
+
+## 2026-11-07 训练输入证据目标纠偏
+
+本文件讨论的 Ledger 历史恢复只是一种**数据库历史恢复路径**，不能证明模型请求真正收到的输入。StoryForge 已将实际模型输入留证及 Gold192 A/B/C/D 证据分类作为独立 P0 工作流；详见 [R60_MODEL_INPUT_EVIDENCE_PIVOT_CN.md](R60_MODEL_INPUT_EVIDENCE_PIVOT_CN.md)。
+
+**本文件的历史恢复门槛仅对该 Ledger 恢复路径生效**，不应被解释成所有 Gold192 证据审查或未来 RolePlay 实际请求留证的全局前置。Ledger Full Recovery 仍保持 fail-closed，不得绕过代码限制；新的输入证据审查不得使用未经认证的数据库恢复正文作为已发往模型的输入。审核、Owner 审批及训练授权继续独立。
