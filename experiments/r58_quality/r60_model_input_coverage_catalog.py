@@ -15,9 +15,9 @@ SCHEMA = "r60_input_evidence_catalog_preflight_safe_v1"
 COLUMNS = {
     "v2_chat_reply_jobs": ("id", "session_id", "assistant_turn", "request_envelope",
                            "attempt_count", "model_id", "created_at"),
-    "chat_abnormal_snapshot": ("request_id", "relay_request_id", "conversation_context",
+    "chat_abnormal_snapshot": ("created_at", "request_id", "relay_request_id", "conversation_context",
                                "history_preview", "expires_at"),
-    "chat_latency_metrics": ("request_id", "relay_request_id", "attempt_trace"),
+    "chat_latency_metrics": ("created_at", "request_id", "relay_request_id", "attempt_trace"),
 }
 
 
@@ -26,8 +26,8 @@ COLUMNS = {
 METADATA_SELECT_COLUMNS = {
     "v2_chat_reply_jobs": ("id", "session_id", "assistant_turn",
                            "attempt_count", "model_id", "created_at"),
-    "chat_abnormal_snapshot": ("request_id", "relay_request_id", "expires_at"),
-    "chat_latency_metrics": ("request_id", "relay_request_id"),
+    "chat_abnormal_snapshot": ("created_at", "request_id", "relay_request_id", "expires_at"),
+    "chat_latency_metrics": ("created_at", "request_id", "relay_request_id"),
 }
 
 
