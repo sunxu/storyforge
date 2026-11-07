@@ -22,7 +22,7 @@ COLUMNS = {
 
 
 def classify(rows: list[tuple]) -> dict:
-    """Classify catalog tuples only: (table, column, type, rls, select, index_columns)."""
+    """Catalog tuples: (table, column, type, rls, select, index_name, policy_count)."""
     result = {}
     for table in TABLES:
         selected = [x for x in rows if x[0] == table]
@@ -31,6 +31,7 @@ def classify(rows: list[tuple]) -> dict:
         access = bool(selected) and all(x[4] is True for x in selected)
         rls = bool(selected) and all(x[3] is True for x in selected)
         indices = sorted({x[5] for x in selected if x[5]})
+        policy_count = max((x[6] for x in selected), default=0)
         missing = sorted(required - columns)
         result[table] = {
             "present": bool(selected),
@@ -38,10 +39,14 @@ def classify(rows: list[tuple]) -> dict:
             "missing_expected_columns": missing,
             "select_privilege": access,
             "rls_enabled": rls,
+            "select_policy_count": policy_count,
             "index_names": indices,
-            "status": ("CATALOG_ABSENT" if not selected else
-                       "SCHEMA_OR_PERMISSION_HOLD" if missing or not access or not rls else
-                       "CATALOG_READY_COUNTS_NOT_RUN"),
+            "status": (
+                "CATALOG_ABSENT" if not selected else
+                "SCHEMA_OR_PERMISSION_HOLD" if missing or not access or not rls else
+                "RLS_POLICY_ABSENT_HOLD" if policy_count == 0 else
+                "RLS_POLICY_REVIEW_REQUIRED"
+            ),
         }
     return result
 
@@ -49,7 +54,9 @@ def classify(rows: list[tuple]) -> dict:
 SQL = """
 SELECT c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
        c.relrowsecurity, has_table_privilege(current_user, c.oid, 'SELECT'),
-       ix.indexrelid::regclass::text
+       ix.indexrelid::regclass::text,
+       (SELECT COUNT(*) FROM pg_catalog.pg_policy pol
+        WHERE pol.polrelid = c.oid AND pol.polcmd IN ('r', '*'))
 FROM pg_catalog.pg_class AS c
 JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
 LEFT JOIN pg_catalog.pg_attribute AS a
@@ -90,10 +97,7 @@ def run(dsn: str) -> dict:
     tables = classify(rows)
     return {
         "schema": SCHEMA,
-        "status": ("CATALOG_PREFLIGHT_PASS_NO_BUSINESS_ROWS_READ"
-                   if all(t["status"] == "CATALOG_READY_COUNTS_NOT_RUN"
-                          for t in tables.values())
-                   else "CATALOG_PREFLIGHT_HOLD"),
+        "status": "CATALOG_PREFLIGHT_HOLD",
         "database_role_verified": REQUIRED_ROLE,
         "transaction_read_only": True,
         "row_security": True,
@@ -126,7 +130,7 @@ def main() -> int:
                           "private_values_emitted": False}))
         return 2
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 0 if result["status"] == "CATALOG_PREFLIGHT_PASS_NO_BUSINESS_ROWS_READ" else 2
+    return 2  # Catalog policies require independent authorization review.
 
 
 if __name__ == "__main__":
