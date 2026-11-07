@@ -10,6 +10,14 @@ from r60_experimental_shape_adapter import GATES, NOT_ACTUAL_SENT
 from r60_p3_stage_pair_probe import Hold
 
 
+SYSTEM = (
+    "你是互动叙事模型。仅根据本次给出的可见历史对话与当前玩家输入继续故事。\
+"
+    "保持已经在对话中出现的人物事实和关系、时间空间连续性、角色口吻与玩家自主权；不编造已确定的旧事，不提前使用未来剧情。\
+"
+    "不替玩家作出未表达的选择，不越过内容安全边界。若必要信息不足，在故事内自然保留未确定部分，不将假设写成既定事实。"
+)
+
 def raw(rows):
     return b"".join(json.dumps(x, ensure_ascii=False).encode() + b"\n" for x in rows)
 
@@ -41,13 +49,25 @@ def fixtures(monkeypatch):
             "context_provenance": NOT_ACTUAL_SENT,
             "gates": {g: "HOLD_UNREVIEWED" for g in GATES},
         })
+        input_messages = [
+            {"role": "system", "content": SYSTEM},
+            {"role": "assistant", "content": f"prior-{i}"},
+            {"role": "user", "content": user},
+        ]
+        input_hash = hashlib.sha256(json.dumps(
+            input_messages, ensure_ascii=False, sort_keys=True,
+            separators=(",", ":"),
+        ).encode()).hexdigest()
         previews.append({
             "messages": [
-                {"role": "system", "content": "synthetic"},
-                {"role": "user", "content": user},
-                {"role": "assistant", "content": target},
+                *[dict(m, loss=False) for m in input_messages],
+                {"role": "assistant", "content": target, "loss": True},
             ],
-            "metadata": {"source_target_sha256": digest},
+            "metadata": {
+                "status": "ENGINEERING_PREVIEW_NOT_ADMITTED",
+                "source_target_sha256": digest,
+                "input_messages_sha256": input_hash,
+            },
         })
     p_raw, s_raw = raw(packets), raw(stage)
     monkeypatch.setattr(e03, "PACKETS_SHA", hashlib.sha256(p_raw).hexdigest())
