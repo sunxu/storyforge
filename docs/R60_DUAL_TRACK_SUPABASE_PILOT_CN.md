@@ -6,7 +6,7 @@
 
 - `STRICT_GOLD_QUALITY_V1`：已有 Gold192 冻结来源及原 28 条显式 A/B 候选保持不变。输入 A/B 取证、Reviewer/Owner、世界/Protected Set/曝光必须独立通过；本轮不会将新数据库候选混入 Gold192 的冻结清单。
 - `RECONSTRUCTED_CONTEXT_SFT_EXPERIMENTAL`：以**新的独立候选池**寻找具备来源和监督语义、可追溯世界的最终 Assistant 回复；用 `RECONSTRUCTED_NOT_ACTUAL_SENT` 标记未经证明的输入。需要单独的 dataset ID、split、审核和 manifest。
-- 本轮的 `DB_FINAL_MESSAGE_METADATA_ONLY` 仅代表“具有可定位的完成消息”，不能证明是单次 Provider Completion，不证明世界独立、使用权或可训练资格。
+- 本轮的 `DB_FINAL_MESSAGE_METADATA_ONLY` 仅代表“具有可定位的已完成 Assistant 消息”，不能证明是单次 Provider Completion，不证明世界独立、使用权或可训练资格。
 
 ## Supabase 实际连接发现
 
@@ -23,7 +23,7 @@
 
 1. 只读取 Owner 本地 0600/0700 私有作品 ID 白名单。它是**本次预筛的明确范围**，不是作品权益与独立世界已经核证的声明。
 2. 限制最多 16 个 Story；按 `story_id` 既有索引逐个查询，每条 SQL 3 秒 statement timeout、1 秒锁超时；每 Story 最多取 20 条最终 `assistant/completed` 消息候选。
-3. 仅查询 `id/session_id/turn_index/created_at/char_length(content)/status`；没有 SELECT 正文或 JSONB。ID 仅写 Owner 私有 0600 文件；SAFE 只报聚合。
+3. 仅查询 `id/session_id/turn_index/created_at/status`；没有 SELECT 正文或 JSONB。ID 仅写 Owner 私有 0600 文件；SAFE 只报聚合。
 4. `current_user` 必须 `r58_export_reader`、`rolbypassrls=false`、`rolsuper=false`、只读事务、`row_security=on`，并在业务查询前验证目标表 RLS 启用、`story_id` 列可读且索引存在。
 5. 不创建任何 A/B 证据、Quality-v1 PASS、Owner 签核或训练数据。即使查到数百条也只算未经审核的 DB 元数据候选。
 6. R50 禁止访问；不得使用 R50 Story/Session 作白名单或从 R50 资料中寻找范围。
