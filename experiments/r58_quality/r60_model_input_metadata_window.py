@@ -11,13 +11,14 @@ import json
 import os
 import sys
 
-from experiments.r58_quality.r60_model_input_coverage_catalog import (
-    METADATA_SELECT_COLUMNS,
-    REQUIRED_ROLE,
-    SQL,
-    TABLES,
-    classify,
-)
+try:
+    from .r60_model_input_coverage_catalog import (
+        METADATA_SELECT_COLUMNS, REQUIRED_ROLE, SQL, TABLES, classify,
+    )
+except ImportError:
+    from r60_model_input_coverage_catalog import (
+        METADATA_SELECT_COLUMNS, REQUIRED_ROLE, SQL, TABLES, classify,
+    )
 
 SCHEMA = "r60_model_input_metadata_window_safe_v1"
 MAX_WINDOW = dt.timedelta(days=1)
