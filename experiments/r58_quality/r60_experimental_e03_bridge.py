@@ -16,6 +16,8 @@ from pathlib import Path
 
 from r59_gold192_supabase_extract import PACKETS_SHA
 from r59_packet_evidence_inventory import build_inventory
+from r59_sft_collator_cpu import validate_preview_row
+from r59_staging_receipt import valid_staging_receipt
 from r60_experimental_shape_adapter import GATES, NOT_ACTUAL_SENT
 from r60_p3_stage_pair_probe import (
     ALLOWED_BASE,
@@ -56,6 +58,7 @@ def bridge(packet_raw: bytes, stage_raw: bytes, preview: list[dict],
         assoc = indexed.get(cid)
         if not assoc or assoc["target_sha256"] != target:
             raise Hold("PACKET_EXACT_ASSOCIATION_MISSING")
+        validate_preview_row(row)  # Reuse existing R59 schema/loss/hash checks.
         messages = row.get("messages")
         metadata = row.get("metadata")
         if (not isinstance(messages, list) or not messages
@@ -134,7 +137,19 @@ def main() -> int:
             raise Hold("STAGE_PAIRS_INVALID")
         pair = pairs[0]
         stage_path = Path(pair["stage_private_path"])
+        receipt_path = Path(pair["receipt_private_path"])
+        allowed_roots = tuple(ALLOWED_BASE / x for x in (
+            "r58/private/quality-v1", "r59/private/quality-v1",
+        ))
+        if any(not any(p.is_relative_to(root) for root in allowed_roots)
+               for p in (stage_path, receipt_path)):
+            raise Hold("STAGE_PAIR_SCOPE_INVALID")
         stage_raw = private_bytes(stage_path, 160_000_000)
+        receipt_raw = private_bytes(receipt_path, 2_000_000)
+        if (hashlib.sha256(receipt_raw).hexdigest() != pair["receipt_sha256"]
+                or not valid_staging_receipt(
+                    json.loads(receipt_raw), pair["stage_sha256"])):
+            raise Hold("STAGE_RECEIPT_INVALID")
         preview = parse_lines(private_bytes(args.experimental_preview, 10_000_000), 3)
         tasks = parse_lines(private_bytes(args.experimental_tasks, 2_000_000), 3)
         out = args.output_dir
