@@ -1,0 +1,169 @@
+"""R60 P0: read-only production catalog preflight for model-input evidence sources.
+
+No business rows are accessed. Never switches roles or disables RLS.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+
+TABLES = ("v2_chat_reply_jobs", "chat_abnormal_snapshot", "chat_latency_metrics")
+REQUIRED_ROLE = "r58_export_reader"
+SCHEMA = "r60_input_evidence_catalog_preflight_safe_v1"
+COLUMNS = {
+    "v2_chat_reply_jobs": ("id", "session_id", "assistant_turn", "request_envelope",
+                           "attempt_count", "model_id", "created_at"),
+    "chat_abnormal_snapshot": ("created_at", "request_id", "relay_request_id", "conversation_context",
+                               "history_preview", "expires_at"),
+    "chat_latency_metrics": ("created_at", "request_id", "relay_request_id", "attempt_trace"),
+}
+
+
+# For phase S1, confirm these metadata columns are readable; sensitive JSONB
+# fields must exist but are NOT required to be SELECT-able.
+METADATA_SELECT_COLUMNS = {
+    "v2_chat_reply_jobs": ("id", "session_id", "assistant_turn",
+                           "attempt_count", "model_id", "created_at"),
+    "chat_abnormal_snapshot": ("created_at", "request_id", "relay_request_id", "expires_at"),
+    "chat_latency_metrics": ("created_at", "request_id", "relay_request_id"),
+}
+
+
+def classify(rows: list[tuple]) -> dict:
+    """Catalog tuples: (table, column, type, rls, column_select, index, policies, table_select, scoped_policies)."""
+    result = {}
+    for table in TABLES:
+        selected = [x for x in rows if x[0] == table]
+        columns = {x[1] for x in selected if x[1] is not None}
+        required = set(COLUMNS[table])
+        selected_by_column = {x[1]: x[4] for x in selected if x[1] is not None}
+        access = bool(selected) and all(
+            selected_by_column.get(col) is True for col in METADATA_SELECT_COLUMNS[table]
+        )
+        rls = bool(selected) and all(x[3] is True for x in selected)
+        indices = sorted({x[5] for x in selected if x[5]})
+        policy_count = max((x[6] for x in selected), default=0)
+        table_wide_select = any(x[7] is True for x in selected)
+        matching_policy_count = max((x[8] for x in selected), default=0)
+        missing = sorted(required - columns)
+        result[table] = {
+            "present": bool(selected),
+            "columns_present": sorted(required & columns),
+            "missing_expected_columns": missing,
+            "metadata_columns_select_privilege": access,
+            "table_wide_select_privilege": table_wide_select,
+            "rls_enabled": rls,
+            "select_policy_count": policy_count,
+            "matching_scoped_policy_count": matching_policy_count,
+            "index_names": indices,
+            "status": (
+                "CATALOG_ABSENT" if not selected else
+                "SCHEMA_OR_PERMISSION_HOLD" if missing or not access or not rls or table_wide_select else
+                "RLS_POLICY_ABSENT_HOLD" if policy_count == 0 else
+                "RLS_POLICY_MISMATCH_HOLD" if policy_count != 1 or matching_policy_count != 1 else
+                "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
+            ),
+        }
+    return result
+
+
+SQL = """
+SELECT c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
+       c.relrowsecurity, CASE WHEN a.attname IS NOT NULL THEN
+         has_column_privilege(current_user, c.oid, a.attname, 'SELECT')
+       ELSE false END,
+       ix.indexrelid::regclass::text,
+       (SELECT COUNT(*) FROM pg_catalog.pg_policy pol
+        WHERE pol.polrelid = c.oid AND pol.polcmd IN ('r', '*')),
+       has_table_privilege(current_user, c.oid, 'SELECT'),
+       (SELECT COUNT(*) FROM pg_catalog.pg_policy pol
+        WHERE pol.polrelid=c.oid
+          AND pol.polname='r60_gold192_evidence_metadata_select'
+          AND pol.polcmd='r' AND pol.polpermissive
+          AND pol.polroles=ARRAY[(SELECT oid FROM pg_catalog.pg_roles
+                                  WHERE rolname='r58_export_reader')]::oid[]
+          AND pg_catalog.pg_get_expr(pol.polqual,pol.polrelid)='true'
+          AND pol.polwithcheck IS NULL)
+FROM pg_catalog.pg_class AS c
+JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
+LEFT JOIN pg_catalog.pg_attribute AS a
+  ON a.attrelid = c.oid AND a.attnum > 0 AND NOT a.attisdropped
+LEFT JOIN pg_catalog.pg_index AS ix
+  ON ix.indrelid = c.oid AND ix.indisvalid AND ix.indisready
+WHERE n.nspname = 'public' AND c.relname = ANY(%s)
+  AND c.relkind IN ('r', 'p')
+ORDER BY c.relname, a.attnum, ix.indexrelid
+"""
+
+
+def run(dsn: str) -> dict:
+    import psycopg
+
+    # Per-session guard precedes catalog read, and the transaction is read-only.
+    with (
+        psycopg.connect(dsn, autocommit=True, connect_timeout=10) as conn,
+        conn.cursor() as cur,
+    ):
+            cur.execute("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            cur.execute("SET LOCAL statement_timeout = '15000ms'")
+            cur.execute("SET LOCAL lock_timeout = '1000ms'")
+            cur.execute("SET LOCAL row_security = on")
+            cur.execute(
+                "SELECT current_user, current_setting('transaction_read_only'), "
+                "current_setting('row_security'), "
+                "current_setting('statement_timeout'), current_setting('lock_timeout')"
+            )
+            role, read_only, rls, statement_timeout, lock_timeout = cur.fetchone()
+            if (role != REQUIRED_ROLE or read_only != "on" or rls != "on"
+                    or statement_timeout not in ("15s", "15000ms")
+                    or lock_timeout not in ("1s", "1000ms")):
+                raise ValueError("DATABASE_GUARD_FAILED")
+            cur.execute(SQL, (list(TABLES),))
+            rows = cur.fetchall()
+            conn.rollback()
+    tables = classify(rows)
+    return {
+        "schema": SCHEMA,
+        "status": ("CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
+                   if all(t["status"] == "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
+                          for t in tables.values())
+                   else "CATALOG_PREFLIGHT_HOLD"),
+        "database_role_verified": REQUIRED_ROLE,
+        "transaction_read_only": True,
+        "row_security": True,
+        "business_rows_read": 0,
+        "aggregate_counts_executed": False,
+        "tables": tables,
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+        "gpu_started": False,
+        "database_modified": False,
+        "r50_accessed": False,
+        "private_values_emitted": False,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args()
+    dsn = os.environ.get("STORYFORGE_SUPABASE_DSN")
+    if not dsn:
+        print(json.dumps({"status": "HOLD", "reason": "DSN_UNAVAILABLE"}))
+        return 2
+    try:
+        result = run(dsn)
+    except Exception as exc:  # noqa: BLE001 - never disclose DB/DSN exception text
+        # Intentionally never print exception text (may include DSN or SQL values).
+        print(json.dumps({"status": "CATALOG_PREFLIGHT_HOLD",
+                          "reason_code": type(exc).__name__,
+                          "database_modified": False,
+                          "private_values_emitted": False}))
+        return 2
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    return 0 if result["status"] == "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN" else 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())
