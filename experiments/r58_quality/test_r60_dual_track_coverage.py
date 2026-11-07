@@ -1,14 +1,11 @@
 """Synthetic guardrail tests for owner-scoped R60 metadata pilot."""
 from __future__ import annotations
 
-import json
-import os
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
 
-from r60_dual_track_coverage import Hold, read_scope, screen
+from r60_dual_track_coverage import Hold, screen
 
 
 def test_metadata_rows_not_promoted():
