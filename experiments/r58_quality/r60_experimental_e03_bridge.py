@@ -18,7 +18,10 @@ from r59_gold192_supabase_extract import PACKETS_SHA
 from r59_packet_evidence_inventory import build_inventory
 from r60_experimental_shape_adapter import GATES, NOT_ACTUAL_SENT
 from r60_p3_stage_pair_probe import (
-    ALLOWED_BASE, Hold, parse_lines, private_bytes,
+    ALLOWED_BASE,
+    Hold,
+    parse_lines,
+    private_bytes,
 )
 
 SCHEMA = "storyforge_r60_experimental_e03_bridge_safe_v1"
