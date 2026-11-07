@@ -2,6 +2,11 @@
 import datetime as dt
 import unittest
 
+from experiments.r58_quality.r60_model_input_coverage_catalog import (
+    COLUMNS,
+    TABLES,
+    classify,
+)
 from experiments.r58_quality.r60_model_input_metadata_window import (
     check_catalog,
     validate_window,
@@ -24,6 +29,33 @@ class R60MetadataWindowTests(unittest.TestCase):
         for start, end in pairs:
             with self.subTest(start=start, end=end), self.assertRaises(ValueError):
                 validate_window(start, end)
+
+    def test_valid_catalog_with_created_at_passes(self):
+        rows = [
+            (table, column, "text", True, True, "synthetic_idx", 1, False, 1)
+            for table in TABLES
+            for column in COLUMNS[table]
+        ]
+        rows.extend([
+            (table, "created_at", "timestamptz", True, True,
+             f"idx_{table}_created", 1, False, 1)
+            for table in ("chat_abnormal_snapshot", "chat_latency_metrics")
+        ])
+        catalog = classify(rows)
+        check_catalog(catalog)
+
+    def test_missing_created_at_holds(self):
+        rows = [
+            (table, column, "text", True, True, "synthetic_idx", 1, False, 1)
+            for table in TABLES
+            for column in COLUMNS[table]
+            if not (table == "chat_abnormal_snapshot" and column == "created_at")
+        ]
+        catalog = classify(rows)
+        self.assertEqual(catalog["chat_abnormal_snapshot"]["status"],
+                         "SCHEMA_OR_PERMISSION_HOLD")
+        with self.assertRaisesRegex(ValueError, "CATALOG_POLICY_HOLD"):
+            check_catalog(catalog)
 
     def test_catalog_holds_without_date_index(self):
         catalog = {
