@@ -201,3 +201,37 @@ Owner 报告的 SHA256：`d657f54601ebf7e63a2be5665c14e3856f6a470bf810c7f725091a
 5. 新增 W17 Checkpoint Rewind 的 `_v2` RPC 定义来源优先核实；不可自动归并到旧函数。
 6. 形成最终 T1 覆盖矩阵，才进入 T2；仍不得把 Ledger commit-order/trigger-continuity 标记为 true。
 
+
+## I. Owner T1 聚合结果与重点复核（2026-11-07）
+
+Owner 基于同一份本地 SAFE JSON 提供的聚合输出：SQL_MESSAGE_WRITE 291 次、65 个文件；SUPABASE_MESSAGE_TABLE 106 次、49 个文件；DYNAMIC_SQL_REVIEW_REQUIRED 89 次、89 个文件；SQL_FUNCTION_DEFINITION 按名称去重为 199 个函数名，其中 77 个函数名在不同文件重复定义。
+
+**解释边界**：上述只是静态匹配计数。65 个 SQL 文件中包括大量 supabase/tests、scripts/check-* 和早期 migration；106 次表引用既包括 SELECT，也包括 INSERT/UPDATE/DELETE；89 个动态 SQL 待核仅表示扫描启发式命中，不等于 89 处真实动态写入。77 个重定义函数名未按参数类型区分 overload，也不代表全部为生产有效函数。
+
+### I.1 需要优先追踪最终定义的函数
+
+| 函数 | 涉及文件数 | 审计重点 |
+|---|---:|---|
+| mutate_v2_session_messages_atomic | 9 | 删除/压缩、Session 锁、最新签名及迁移覆写 |
+| claim_v2_session_turn | 5 | 轮次分配与并发 |
+| capture_v2_chat_message_ledger | 4 | OLD 快照、marker、trigger 实际定义 |
+| execute_v2_chat_fork | 3 | 来源/目标 Session 的历史边界 |
+| execute_v2_checkpoint_rewind_v2 | 2 | 先前待查的 _v2 RPC 确实有重定义候选，仍需核对具体文件和签名 |
+| accept_v2_chat_reply_job | 2 | 接收、重试及最新写入事务 |
+| import_v2_session_messages_atomic | 2 | 历史批量导入 |
+| commit_v2_event_turn_claim | 2 | 元数据写入 |
+| cleanup_v2_chat_message_ledger | 3 | 账本清理/保留 |
+
+### I.2 直接核实的非 Web 写入路径
+
+1. [execute-v2-session-watermark-recovery.mjs](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/scripts/execute-v2-session-watermark-recovery.mjs#L193-L230)：显式执行模式下分批直接 INSERT 消息，再调用 publish_history_recovery_save；需要核对跨 PostgREST 事务的恢复边界，不能因为它不是在线 API 就忽略。
+2. [cleanup-deleted-history-recovery-20260825.mjs](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/scripts/cleanup-deleted-history-recovery-20260825.mjs#L95-L116)：显式执行模式下逐条直接 DELETE 消息；必须确认 Ledger 删除前快照及脚本实际运行情况。
+3. [repair-turncap-damaged-sessions-0714.mjs](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/scripts/repair-turncap-damaged-sessions-0714.mjs#L35-L88)：消息表为 SELECT；带 --apply 时修改 story_v2_sessions.total_turns，而不是直接修改消息表。应登记为 SESSION_BOUNDARY_WRITER，避免误计入消息写入。
+4. [v2-message-service.ts](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/src/lib/db/v2-message-service.ts#L1471-L1545)：finalizeStreamingAssistant 有 status='streaming' CAS、零行处理和相同正文重试幂等判断；不能误称完全没有并发保护，仍需审计 Session 级事务顺序。
+5. [v2-message-service.ts](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/src/lib/db/v2-message-service.ts#L361-L390)：saveMessage 直接 INSERT；需继续追踪 claim RPC 与 INSERT 是否跨事务及有无统一排序依据。
+
+**这些脚本含有写入语句，并不证明它们已经在生产执行。** 所有结论须区分 CODE_DEFINED、CALLABLE、PRODUCTION_ENABLED、EXECUTED。
+
+### I.3 下一步
+
+将所有命中以代码文件、行号、操作、函数签名去重；把 TEST_FIXTURE、HISTORICAL_MIGRATION、LIVE_API_WRITE、WORKER_CRON_WRITE、MANUAL_SCRIPT_WRITE、READ_ONLY 分类。对 9/4/2 个重点重定义组核实最终签名，并与实际数据库 catalog 只读对照。T1 仍未达到完整认证，T2 的 Session 锁审计仅能针对已验证路径先行。
