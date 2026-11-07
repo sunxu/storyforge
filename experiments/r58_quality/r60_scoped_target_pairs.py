@@ -123,6 +123,11 @@ ORDER BY turn_index DESC LIMIT %s
 """
 
 
+def assert_owner_db_guard(row: tuple) -> None:
+    if row != (OWNER_DB_ROLE, "on", "on", False, False):
+        raise Hold("DATABASE_GUARD_HOLD")
+
+
 def fetch_scoped(dsn: str, sessions: list[dict]) -> tuple[list[dict], int]:
     import psycopg
 
@@ -140,8 +145,7 @@ def fetch_scoped(dsn: str, sessions: list[dict]) -> tuple[list[dict], int]:
                            current_setting('row_security'), r.rolbypassrls, r.rolsuper
                     FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
                 """)
-                if cur.fetchone() != (OWNER_DB_ROLE, "on", "on", False, False):
-                    raise Hold("DATABASE_GUARD_HOLD")
+                assert_owner_db_guard(cur.fetchone())
                 for record in sessions:
                     cur.execute(SQL, (record["session_id"], record["story_id"], MAX_MESSAGES))
                     rows = cur.fetchall()
