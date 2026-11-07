@@ -160,3 +160,44 @@ shasum -a 256 "$OUT"
 
 完成真正的 T1 需要：全仓零未解释的 skip、动态 SQL/间接调用的人工覆盖、最新 RPC 函数版本核对、所有写路径 reachability 分类，并进行生产目录只读交叉比对。随后才能进入 T2 的 lock-order 审计。
 
+
+## H. Owner 本地 RolePlay 全仓静态扫描 SAFE 回执（2026-11-07）
+
+Owner 已在本机执行 `r60_roleplay_writer_inventory.py`，并提供终端 SAFE 摘要：
+
+| 字段 | 数值 |
+|---|---:|
+| `status` | `STATIC_SCAN_COMPLETE_NOT_CERTIFIED` |
+| `head_sha` | `ccdf2e8dc2723f481cd0392883bc359e9e341c66` |
+| `tracked_source_files_scanned` | 3466 |
+| `skipped_count` | 0 |
+| `SQL_MESSAGE_WRITE` | 291 |
+| `SUPABASE_MESSAGE_TABLE` | 106 |
+| `RPC_CALL_CANDIDATE` | 98 |
+| `SQL_FUNCTION_DEFINITION` | 339 |
+| `TRIGGER_DEFINITION_CANDIDATE` | 26 |
+| `DYNAMIC_SQL_REVIEW_REQUIRED` | 89 |
+
+Owner 报告的 SHA256：`d657f54601ebf7e63a2be5665c14e3856f6a470bf810c7f725091a18f919a3e1`。
+
+**证据边界：**本报告只是复录 Owner 提供的 SAFE 输出；GitHub 审计端未读取或独立验算本地完整 JSON 文件字节，因此不能声称二次复核了 SHA256。也不能据此确认 `RolePlay` Worktree 干净、扫描结果完整覆盖动态构造/被忽略的目录、以及所有发现均为生产可达写入。扫描器的 `STATIC_SCAN_COMPLETE_NOT_CERTIFIED` 仅意味着所选择的已跟踪源码无 skipped/dirty，并不是代码正确性或生产数据库认证。
+
+**数值不可直接当作独立写路径数：**
+- 291 为 SQL 写入语法的正则命中，包含历史覆写、可能废弃的函数或重复定义；
+- 106 为 TS/JS 对表的引用匹配，其中可能有 READ；
+- 98 是相关 RPC 调用候选，不都写入消息表；
+- 339 是按名称过滤的 SQL 函数定义，不都直接/间接写入消息表；
+- 26 为 Trigger 定义候选，非现行启用 Trigger 的数量；
+- 89 是“文件内同时发现 `EXECUTE` 和表名”的保守待核标签，不证明全部为动态 SQL 消息写入。
+
+**与此前源码版本的差异：**首次人工审计用 `e9fe29c42434caeb0bac5acc91845ab4741ecb2b`，本次 Owner 扫描使用 `ccdf2e8dc2723f481cd0392883bc359e9e341c66`。需按扫描 HEAD 重新确认历史函数覆写和应用调用者，不直接将两个版本认作完全一致。
+
+### 下一步：先做去重与分类，后做人工代码审查
+
+1. 从 Owner 本地完整 SAFE JSON 按 **`path`、`line`、`kind`、`function`** 聚合；优先列出 `SQL_MESSAGE_WRITE` 与 `SUPABASE_MESSAGE_TABLE` 的真实路径，并分类写、读、误报。
+2. 按函数名与 migration 日期查找同名 `CREATE OR REPLACE FUNCTION` 的覆写链，找到扫描 HEAD 的最后定义；再与生产 catalog（仅只读）比对。
+3. 对 89 个动态 SQL 标签进行逐文件复核，标记真动态写入、只读或误报。
+4. 将每条 **独立、已确证** Writer Path 连接至上游 Route/Worker/cron/RPC 和实际 Trigger；分离“代码定义、调用可达、生产启用”三层状态。
+5. 新增 W17 Checkpoint Rewind 的 `_v2` RPC 定义来源优先核实；不可自动归并到旧函数。
+6. 形成最终 T1 覆盖矩阵，才进入 T2；仍不得把 Ledger commit-order/trigger-continuity 标记为 true。
+
