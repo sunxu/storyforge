@@ -200,3 +200,9 @@ SAFE stdout 可以回传聊天。不要回传任何私有 JSONL 或数据库日�
 - `historical_system_prompt_verified=false`
 
 历史恢复 PASS 仅表示机械历史证据通过，不代表 Reviewer 决定、Owner 审批、Quality-v1 准入或训练授权。R50 不访问。
+
+## 2026-11-07 训练输入证据目标纠偏
+
+本文件讨论的 Ledger 历史恢复只是一种**数据库历史恢复路径**，不能证明模型请求真正收到的输入。StoryForge 已将实际模型输入留证及 Gold192 A/B/C/D 证据分类作为独立 P0 工作流；详见 [R60_MODEL_INPUT_EVIDENCE_PIVOT_CN.md](R60_MODEL_INPUT_EVIDENCE_PIVOT_CN.md)。
+
+**本文件的历史恢复门槛仅对该 Ledger 恢复路径生效**，不应被解释成所有 Gold192 证据审查或未来 RolePlay 实际请求留证的全局前置。Ledger Full Recovery 仍保持 fail-closed，不得绕过代码限制；新的输入证据审查不得使用未经认证的数据库恢复正文作为已发往模型的输入。审核、Owner 审批及训练授权继续独立。
