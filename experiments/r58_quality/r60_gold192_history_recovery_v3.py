@@ -11,6 +11,7 @@ import json
 import os
 import re
 import stat
+import sys
 from collections import Counter
 from pathlib import Path
 
@@ -22,6 +23,12 @@ except ImportError:
     import r59_gold192_history_recovery as recovery
 
 from storyforge_gold_quality.history_recovery import recover_cases_independently
+
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
 
 SCHEMA = "r60_gold192_history_recovery_v3_safe_v1"
 MAX_LEDGER_EVENTS_HARD = 1_000_000
@@ -292,10 +299,7 @@ def _write_outputs(output_dir: Path, recovered: list[dict], holds: list[dict],
         else "GOLD192_HISTORICAL_CONTEXT_HOLD"
     )
     payload = (json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode()
-    safe["artifacts"]["R60_HISTORY_SAFE.json"] = {
-        "records": 1,
-        "sha256": recovery.create_only(output_dir / "R60_HISTORY_SAFE.json", payload),
-    }
+    recovery.create_only(output_dir / "R60_HISTORY_SAFE.json", payload)
 
 
 def run(args) -> dict:
@@ -303,6 +307,8 @@ def run(args) -> dict:
         raise ValueError("PILOT_PARAMETER_INVALID")
     if args.max_ledger_events < 1 or args.max_ledger_events > MAX_LEDGER_EVENTS_HARD:
         raise ValueError("LEDGER_EVENT_LIMIT_INVALID")
+    if not args.diagnose_source_only and not args.diagnose_ledger_event_counts and args.output_dir is None:
+        raise ValueError("OUTPUT_DIRECTORY_REQUIRED")
     raw, source_safe, packet_index, selected, priority, locator_index = _load_inputs(args)
 
     if args.diagnose_source_only:
