@@ -14,11 +14,11 @@ from collections import Counter
 from pathlib import Path
 
 try:
-    from .r60_model_input_evidence_seed import _read_private
     from .r60_model_input_coverage_catalog import REQUIRED_ROLE, SQL, TABLES, classify
+    from .r60_model_input_evidence_seed import _read_private
 except ImportError:
-    from r60_model_input_evidence_seed import _read_private
     from r60_model_input_coverage_catalog import REQUIRED_ROLE, SQL, TABLES, classify
+    from r60_model_input_evidence_seed import _read_private
 
 SCHEMA = "r60_reply_job_locator_pilot_safe_v1"
 SOURCE_SCHEMA = "r60_gold192_supabase_extract_v3_safe_v1"
