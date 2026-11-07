@@ -309,7 +309,7 @@ def run(args) -> dict:
         raise ValueError("LEDGER_EVENT_LIMIT_INVALID")
     if not args.diagnose_source_only and not args.diagnose_ledger_event_counts and args.output_dir is None:
         raise ValueError("OUTPUT_DIRECTORY_REQUIRED")
-    raw, source_safe, packet_index, selected, priority, locator_index = _load_inputs(args)
+    _raw, _source_safe, packet_index, selected, priority, locator_index = _load_inputs(args)
 
     if args.diagnose_source_only:
         counts = Counter(locator_index[case["case_id"]]["source_status"] for case in priority)
