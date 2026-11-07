@@ -18,6 +18,27 @@ import gold_quality_review_bind as binder
 from gold_source_context_stage import stage_source
 from quality_v1 import EVIDENCE, FLOORS, SCORES, SEVERE, canonical, sha
 
+try:
+    from .r60_gold192_canonical_a_v3 import (
+        A_SCHEMA,
+        A_SHA,
+        A_SOURCE_PINS,
+        A_STATUS,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+    )
+except ImportError:
+    from r60_gold192_canonical_a_v3 import (
+        A_SCHEMA,
+        A_SHA,
+        A_SOURCE_PINS,
+        A_STATUS,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+    )
+
 
 def fixture():
     target = "她把信递给玩家，等待回应。"
@@ -33,18 +54,56 @@ def fixture():
     staged, _ = stage_source([source], "通用系统提示")
     digest = source["target_sha256"]
     a_scores = {k: max(4, FLOORS[k]) for k in SCORES}
-    a = {"records": [{
-        "case_id": source["case_id"], "target_sha256": digest,
-        "decision_for_strict_ab_pairing": "PASS_ONLY",
-        "case_level_scored_review_present": True,
-        "evidence_granularity": "CASE_LEVEL_SCORED_REVIEW",
-        "scores_1_to_5": a_scores,
-    }]}
-    b = {"cases": [{
-        "target_sha256": digest, "decision": "PASS",
-        "scores_1_to_5": a_scores, "severe_flags": [],
-        "blind_case_id": "blind-001",
-    }]}
+    a_records = []
+    for i in range(192):
+        if i < 31:
+            granularity = "CASE_LEVEL_SCORED_REVIEW"
+            decision, strict, scored, aggregate, scores = (
+                "PASS_ONLY", "PASS_ONLY", True, False, dict(a_scores)
+            )
+        elif i < 82:
+            granularity = "CASE_ID_IN_EXPLICIT_HOLD_GROUP"
+            decision, strict, scored, aggregate, scores = (
+                "HOLD", "HOLD", False, False, None
+            )
+        elif i == 82:
+            granularity = "CASE_ID_IN_EXPLICIT_REJECT_GROUP"
+            decision, strict, scored, aggregate, scores = (
+                "REJECT", "REJECT", False, False, None
+            )
+        else:
+            granularity = "AGGREGATE_COMPLEMENT_ONLY"
+            decision, strict, scored, aggregate, scores = (
+                "PASS_ONLY", None, False, True, None
+            )
+        a_records.append({
+            "case_id": source["case_id"] if i == 0 else f"synthetic-{i}",
+            "target_sha256": digest if i == 0 else f"{i:064x}",
+            "reported_final_decision": decision,
+            "decision_for_strict_ab_decision_comparison": strict,
+            "evidence_granularity": granularity,
+            "case_level_scored_review_present": scored,
+            "aggregate_complement_only": aggregate,
+            "scores_1_to_5": scores,
+        })
+    a = {
+        "schema": A_SCHEMA,
+        "status": A_STATUS,
+        "source_pins": dict(A_SOURCE_PINS),
+        "records": a_records,
+    }
+    b_cases = []
+    for i in range(192):
+        target_hash = digest if i == 0 else f"{i:064x}"
+        decision = "PASS" if i < 178 else "HOLD" if i < 190 else "REJECT"
+        b_cases.append({
+            "target_sha256": target_hash,
+            "decision": decision,
+            "scores_1_to_5": a_scores,
+            "severe_flags": [],
+            "blind_case_id": f"blind-{i:03d}",
+        })
+    b = {"schema": B_SCHEMA, "counts": dict(B_COUNTS), "cases": b_cases}
     evidence = {k: True for k in EVIDENCE}
     evidence.update({
         "known_protected_overlap": False,
@@ -62,16 +121,9 @@ def fixture():
         "split": "train", "evidence": evidence,
         "owner_supplemental_severe_flags": {k: False for k in SEVERE},
         "owner_supplemental_severe_evidence_ref": "owner-private-review",
-        "reviewer_a_evidence_ref": "private-a-case",
-        "reviewer_b_evidence_ref": "private-b-case",
+        "reviewer_a_evidence_ref": f"sha256:{A_SHA}#records[0]",
+        "reviewer_b_evidence_ref": f"sha256:{B_SHA}#cases[0]",
     }]
-    # The strict 192/11 contract is exercised with real synthetic identities.
-    aa = a["records"][0]
-    bb = b["cases"][0]
-    for i in range(1, 192):
-        fake_hash = f"{i:064x}"
-        a["records"].append({**aa, "case_id": f"synthetic-{i}", "target_sha256": fake_hash})
-        b["cases"].append({**bb, "target_sha256": fake_hash})
     exclusions = [
         {"target_sha256": f"{i:064x}",
          "exclusion_reason": "EXCLUDED_FROM_TRAINING_DISAGREEMENT"}
@@ -132,13 +184,36 @@ class BindTests(unittest.TestCase):
             "OWNER_SUPPLEMENTAL_SEVERE_FLAG_PRESENT": 1
         })
 
-    def test_aggregate_a_pass_without_case_scores_holds(self):
+    def test_aggregate_a_pass_without_case_scores_holds_even_with_legacy_alias(self):
         args = fixture()
-        args[1]["records"][0]["scores_1_to_5"] = None
-        args[1]["records"][0]["case_level_scored_review_present"] = False
+        first = args[1]["records"][0]
+        replacement_scored = args[1]["records"][83]
+        first.update({
+            "reported_final_decision": "PASS_ONLY",
+            "decision_for_strict_ab_decision_comparison": None,
+            "decision_for_strict_ab_pairing": "PASS_ONLY",
+            "evidence_granularity": "AGGREGATE_COMPLEMENT_ONLY",
+            "case_level_scored_review_present": False,
+            "aggregate_complement_only": True,
+            "scores_1_to_5": None,
+        })
+        replacement_scored.update({
+            "reported_final_decision": "PASS_ONLY",
+            "decision_for_strict_ab_decision_comparison": "PASS_ONLY",
+            "evidence_granularity": "CASE_LEVEL_SCORED_REVIEW",
+            "case_level_scored_review_present": True,
+            "aggregate_complement_only": False,
+            "scores_1_to_5": dict(args[1]["records"][1]["scores_1_to_5"]),
+        })
         result, safe = bind(*args)
         self.assertFalse(result)
         self.assertEqual(safe["hold_reasons"], {"CASE_LEVEL_SCORES_MISSING": 1})
+
+    def test_superseded_a_report_schema_is_rejected(self):
+        args = fixture()
+        args[1]["schema"] = "superseded-r59-a-schema"
+        with self.assertRaisesRegex(binder.BindHold, "CANONICAL_A_V3_REQUIRED"):
+            bind(*args)
 
     def test_excluded_target_is_never_bound(self):
         args = fixture()
@@ -162,6 +237,16 @@ class BindTests(unittest.TestCase):
         self.assertFalse(result)
         self.assertEqual(safe["hold_reasons"], {"OWNER_SOURCE_CONTEXT_PINS_MISMATCH": 1})
 
+    def test_superseded_or_wrong_reviewer_a_locator_holds(self):
+        args = fixture()
+        args[4][0]["reviewer_a_evidence_ref"] = (
+            "sha256:641b71e10a14318b57e69cb0239172f7016fe5b9d2149923f876308f5e6fe1e4"
+            "#records[0]"
+        )
+        result, safe = bind(*args)
+        self.assertFalse(result)
+        self.assertEqual(safe["hold_reasons"], {"REVIEWER_EVIDENCE_REF_MISMATCH": 1})
+
     def test_world_overlap_in_candidate_set_holds(self):
         staged, a, b, exclusion, owners = fixture()
         two = copy.deepcopy(staged[0])
@@ -179,6 +264,8 @@ class BindTests(unittest.TestCase):
         owner2["case_id"] = "case-two"
         owner2["target_sha256"] = two["target_sha256"]
         owner2["split"] = "validation"
+        owner2["reviewer_a_evidence_ref"] = f"sha256:{A_SHA}#records[12]"
+        owner2["reviewer_b_evidence_ref"] = f"sha256:{B_SHA}#cases[12]"
         owners.append(owner2)
         with self.assertRaisesRegex(binder.BindHold, "WORLD_OR_DUPLICATE_CANDIDATE_COLLISION"):
             bind(staged, a, b, exclusion, owners)
@@ -258,6 +345,10 @@ class BindTests(unittest.TestCase):
                 "ex.json": canonical(exclusions),
                 "owner.jsonl": b"".join(canonical(x) + b"\n" for x in owner),
             }
+            a_pin = sha(inputs["a.json"])
+            b_pin = sha(inputs["b.json"])
+            owner[0]["reviewer_a_evidence_ref"] = f"sha256:{a_pin}#records[0]"
+            owner[0]["reviewer_b_evidence_ref"] = f"sha256:{b_pin}#cases[0]"
             source_pin = "d" * 64
             stage_pin = sha(inputs["stage.jsonl"])
             owner[0]["staged_file_sha256"] = stage_pin
@@ -286,8 +377,8 @@ class BindTests(unittest.TestCase):
                 paths[name] = p
             # Patch canonical pins for synthetic-only IO test.
             from unittest.mock import patch
-            with (patch.object(binder, "A_SHA", sha(inputs["a.json"])),
-                  patch.object(binder, "B_SHA", sha(inputs["b.json"])),
+            with (patch.object(binder, "A_SHA", a_pin),
+                  patch.object(binder, "B_SHA", b_pin),
                   patch.object(binder, "EX_SHA", sha(inputs["ex.json"]))):
                 out = private / "out"
                 safe = binder.run(

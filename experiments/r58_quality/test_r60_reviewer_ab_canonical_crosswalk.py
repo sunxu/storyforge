@@ -171,7 +171,7 @@ class CanonicalCrosswalkTests(unittest.TestCase):
             patch.object(m, "B_SHA256", digest),
             patch.object(m, "A_REPORT_SHA256", a_digest),
             patch.dict(m.A_SOURCE_PINS, pins, clear=True),
-            self.assertRaisesRegex(m.AuditHold, "CANONICAL_REVIEWER_A_V3_REQUIRED"),
+            self.assertRaisesRegex(m.AuditHold, "CANONICAL_A_V3_REQUIRED"),
         ):
             m.audit(staged_raw, receipt, owners, a, a_raw, b, b_raw)
 

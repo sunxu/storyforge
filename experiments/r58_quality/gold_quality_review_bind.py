@@ -15,7 +15,26 @@ from pathlib import Path
 
 from gold_source_context_stage import StageHold, _create_only, _private_file, _read_rows
 from quality_v1 import EVIDENCE, SCHEMA, SEVERE, canonical, decide, sha, summarize
-from r59_gold192_supabase_extract import A_SHA, B_SHA, EX_SHA
+
+try:
+    from .r60_gold192_canonical_a_v3 import (
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        EX_SHA,
+        validate_reviewer_a_v3,
+    )
+except ImportError:
+    from r60_gold192_canonical_a_v3 import (
+        A_SHA,
+        B_COUNTS,
+        B_SCHEMA,
+        B_SHA,
+        EX_SHA,
+        validate_reviewer_a_v3,
+    )
+
 from r59_staging_receipt import valid_staging_receipt
 
 SAFE_SCHEMA = "storyforge-gold192-review-bind-safe-v1"
@@ -27,9 +46,9 @@ class BindHold(ValueError):
     pass
 
 
-def _index(rows, label, *, case_key=None):
+def _index(rows, label, *, case_key=None, include_position=False):
     result = {}
-    for row in rows:
+    for position, row in enumerate(rows):
         if not isinstance(row, dict):
             raise BindHold("SOURCE_ROW_INVALID")
         digest = row.get("target_sha256")
@@ -38,7 +57,7 @@ def _index(rows, label, *, case_key=None):
         if case_key is not None and (not isinstance(row.get(case_key), str)
                                      or not row[case_key]):
             raise BindHold("SOURCE_CASE_ID_INVALID")
-        result[digest] = row
+        result[digest] = (position, row) if include_position else row
     return result
 
 
@@ -94,23 +113,27 @@ def _owner_index(rows):
 
 
 def _a_scores(row):
-    # Frozen A v3 has both scored and aggregate-complement PASS_ONLY entries.
+    """Return scores only for an explicitly case-scored Canonical A V3 PASS."""
+    if (
+        row.get("evidence_granularity") != "CASE_LEVEL_SCORED_REVIEW"
+        or row.get("reported_final_decision") != "PASS_ONLY"
+        or row.get("decision_for_strict_ab_decision_comparison") != "PASS_ONLY"
+        or row.get("case_level_scored_review_present") is not True
+        or row.get("aggregate_complement_only") is not False
+    ):
+        return None
     scores = row.get("scores_1_to_5")
-    if scores is None:
-        scores = row.get("reviewer_a_scores_1_to_5")
-    if row.get("aggregate_complement_only") is True:
+    if not isinstance(scores, dict) or set(scores) != {
+        "chinese_prose", "character_consistency", "npc_initiative",
+        "player_agency", "narrative_continuity", "rule_fidelity",
+    }:
         return None
-    if row.get("evidence_granularity") not in (None, "CASE_LEVEL_SCORED_REVIEW"):
+    if any(type(value) is not int or not 1 <= value <= 5 for value in scores.values()):
         return None
-    if row.get("case_level_scored_review_present") is False:
-        return None
-    if row.get("decision_for_strict_ab_pairing",
-               row.get("reported_final_decision")) != "PASS_ONLY":
-        return None
-    return scores if isinstance(scores, dict) else None
+    return scores
 
 
-def _bind_one(stage, owner, a, b, excluded, pins):
+def _bind_one(stage, owner, a, b, excluded, pins, a_position, b_position):
     cid = stage["case_id"]
     target_hash = stage["target_sha256"]
     if (not isinstance(owner, dict) or owner.get("case_id") != cid
@@ -167,11 +190,15 @@ def _bind_one(stage, owner, a, b, excluded, pins):
     if (owner.get("staged_file_sha256") != pins["staged_file_sha256"]
             or owner.get("source_context_file_sha256") != pins["source_context_file_sha256"]):
         return None, "OWNER_SOURCE_CONTEXT_PINS_MISMATCH"
-    if (not isinstance(owner.get("reviewer_a_evidence_ref"), str)
-            or not owner["reviewer_a_evidence_ref"]
-            or not isinstance(owner.get("reviewer_b_evidence_ref"), str)
-            or not owner["reviewer_b_evidence_ref"]):
-        return None, "REVIEWER_EVIDENCE_REF_MISSING"
+    expected_a_ref = (
+        f"sha256:{pins['reviewer_a_sha256']}#records[{a_position}]"
+    )
+    expected_b_ref = (
+        f"sha256:{pins['reviewer_b_sha256']}#cases[{b_position}]"
+    )
+    if (owner.get("reviewer_a_evidence_ref") != expected_a_ref
+            or owner.get("reviewer_b_evidence_ref") != expected_b_ref):
+        return None, "REVIEWER_EVIDENCE_REF_MISMATCH"
     if not isinstance(stage.get("messages"), list):
         return None, "SOURCE_MESSAGES_UNAVAILABLE"
     row = {
@@ -226,12 +253,25 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
             or not isinstance(a_doc, dict) or not isinstance(b_doc, dict)
             or not isinstance(exclusions, list) or len(exclusions) != 11):
         raise BindHold("SOURCE_COUNTS_INVALID")
+    try:
+        canonical_a_index = validate_reviewer_a_v3(a_doc)
+    except ValueError as exc:
+        raise BindHold(str(exc)) from None
+    if (not isinstance(b_doc, dict) or b_doc.get("schema") != B_SCHEMA
+            or b_doc.get("counts") != B_COUNTS):
+        raise BindHold("CANONICAL_REVIEWER_B_REQUIRED")
     aa, bb = a_doc.get("records"), b_doc.get("cases")
     if not isinstance(aa, list) or not isinstance(bb, list):
         raise BindHold("REVIEW_STRUCTURE_INVALID")
-    a, b, ex = _index(aa, "A", case_key="case_id"), _index(bb, "B"), _index(exclusions, "EX")
+    if (any(not isinstance(row, dict) for row in bb)
+            or dict(Counter(row.get("decision") for row in bb)) != B_COUNTS):
+        raise BindHold("CANONICAL_REVIEWER_B_COUNTS_INVALID")
+    a = _index(aa, "A", case_key="case_id", include_position=True)
+    b = _index(bb, "B", include_position=True)
+    ex = _index(exclusions, "EX")
     if (len(a) != 192 or len(b) != 192 or len(ex) != 11
-            or set(a) != set(b) or not set(ex) <= set(a)
+            or set(a) != set(b) or set(a) != set(canonical_a_index)
+            or not set(ex) <= set(a)
             or any(x.get("exclusion_reason") != "EXCLUDED_FROM_TRAINING_DISAGREEMENT"
                    for x in exclusions)):
         raise BindHold("FROZEN_REVIEW_COVERAGE_INVALID")
@@ -256,10 +296,18 @@ def bind(staged, a_doc, b_doc, exclusions, owner_rows, staged_sha,
             source_stage_reasons[row.get("private_reason_code", "SOURCE_STAGE_NOT_READY")] += 1
             continue
         stage_ready += 1
-        item, reason = _bind_one(row, owner.get(cid), a[digest], b[digest], ex, {
-            "staged_file_sha256": staged_sha,
-            "source_context_file_sha256": source_context_sha,
-        })
+        a_position, a_row = a[digest]
+        b_position, b_row = b[digest]
+        item, reason = _bind_one(
+            row, owner.get(cid), a_row, b_row, ex,
+            {
+                "staged_file_sha256": staged_sha,
+                "source_context_file_sha256": source_context_sha,
+                "reviewer_a_sha256": A_SHA,
+                "reviewer_b_sha256": B_SHA,
+            },
+            a_position, b_position,
+        )
         if item is None:
             reasons[reason] += 1
         else:
