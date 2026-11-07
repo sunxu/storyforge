@@ -13,7 +13,6 @@ import sys
 
 try:
     from .r60_model_input_coverage_catalog import (
-        METADATA_SELECT_COLUMNS,
         REQUIRED_ROLE,
         SQL,
         TABLES,
@@ -75,7 +74,7 @@ def check_catalog(tables: dict) -> None:
         if name in QUERIES and EXPECTED_DATE_INDEXES[name] not in values["index_names"]:
             raise ValueError("DATE_INDEX_MISSING")
         if name in QUERIES and not REQUIRED_COUNT_COLUMNS.issubset(
-            set(METADATA_SELECT_COLUMNS[name]) | set(values["columns_present"])
+            set(values["columns_present"])
         ):
             raise ValueError("COUNT_COLUMNS_MISSING")
 
