@@ -17,7 +17,7 @@ RolePlay 源码显示 `v2_chat_messages.metadata` 并未在上述样本中保留
 
 输入为**Owner Mac 已有的私有审核材料中确认可用于候选调查**的 1–12 个 Story/Session 精确对，每个最多读取该 Session 按轮次倒序最近 80 条消息的**身份、轮次、角色、状态、创建时间**，绝不读取正文或 JSONB。只挑有前一轮 `user/completed` 的 `assistant/completed`，输出 Owner 私有 Candidate Locator JSONL + SAFE 汇总；没有任何训练准入字段被置为 true。
 
-连接角色必须是用户明确指定的 `supabase_read_only_user`，执行 `REPEATABLE READ READ ONLY` 和 5 秒查询超时。此角色具有 BYPASSRLS，因此 **Story/Session scope 必须由 Owner 从已有已授权私有来源明确指定**，不得从全站任意候选生成 scope。此工具不以 `owner_scope_confirmed=true` 或 `r50_protected_scope_excluded=true` 自行证明权益/隔离；它们是范围选择人的声明，需后续独立核实。
+Owner Mac 本地脚本连接角色必须是 `r58_export_reader`（还要求 `rolbypassrls=false`、`rolsuper=false`），执行 `REPEATABLE READ READ ONLY` 和 5 秒查询超时。ChatGPT 连接器的 `supabase_read_only_user` 才具有 BYPASSRLS，不能混同本机角色。因此 **Story/Session scope 必须由 Owner 从已有已授权私有来源明确指定**，不得从全站任意候选生成 scope。此工具不以 `owner_scope_confirmed=true` 或 `r50_protected_scope_excluded=true` 自行证明权益/隔离；它们是范围选择人的声明，需后续独立核实。
 
 ## 本机运行（只对真实 Owner 批准的范围）
 
