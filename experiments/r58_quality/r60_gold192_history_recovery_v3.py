@@ -36,7 +36,25 @@ MAX_INPUT_BYTES = 160 * 1024 * 1024
 
 
 def _read_private(path: Path, label: str) -> bytes:
-    return recovery.private_bytes(path, label)
+    if not path.is_absolute() or path.is_symlink() or not path.is_file():
+        raise ValueError(f"{label}_PATH_INVALID")
+    if any(parent.is_symlink() for parent in path.parents if parent.exists()):
+        raise ValueError(f"{label}_PARENT_SYMLINK")
+    info = path.stat()
+    if (
+        not stat.S_ISREG(info.st_mode)
+        or stat.S_IMODE(info.st_mode) != 0o600
+        or info.st_nlink != 1
+        or info.st_size <= 0
+        or info.st_size > MAX_INPUT_BYTES
+    ):
+        raise ValueError(f"{label}_PERMISSIONS_LINK_OR_SIZE_INVALID")
+    if stat.S_IMODE(path.parent.stat().st_mode) != 0o700:
+        raise ValueError(f"{label}_PARENT_PERMISSIONS_INVALID")
+    raw = path.read_bytes()
+    if len(raw) != info.st_size:
+        raise ValueError(f"{label}_CHANGED_DURING_READ")
+    return raw
 
 
 def _parse_json(raw: bytes, label: str) -> dict:
