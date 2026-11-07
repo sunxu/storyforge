@@ -32,7 +32,7 @@ METADATA_SELECT_COLUMNS = {
 
 
 def classify(rows: list[tuple]) -> dict:
-    """Catalog tuples: (table, column, type, rls, column_select, index, policies)."""
+    """Catalog tuples: (table, column, type, rls, column_select, index, policies, table_select)."""
     result = {}
     for table in TABLES:
         selected = [x for x in rows if x[0] == table]
@@ -45,18 +45,20 @@ def classify(rows: list[tuple]) -> dict:
         rls = bool(selected) and all(x[3] is True for x in selected)
         indices = sorted({x[5] for x in selected if x[5]})
         policy_count = max((x[6] for x in selected), default=0)
+        table_wide_select = any(x[7] is True for x in selected)
         missing = sorted(required - columns)
         result[table] = {
             "present": bool(selected),
             "columns_present": sorted(required & columns),
             "missing_expected_columns": missing,
             "metadata_columns_select_privilege": access,
+            "table_wide_select_privilege": table_wide_select,
             "rls_enabled": rls,
             "select_policy_count": policy_count,
             "index_names": indices,
             "status": (
                 "CATALOG_ABSENT" if not selected else
-                "SCHEMA_OR_PERMISSION_HOLD" if missing or not access or not rls else
+                "SCHEMA_OR_PERMISSION_HOLD" if missing or not access or not rls or table_wide_select else
                 "RLS_POLICY_ABSENT_HOLD" if policy_count == 0 else
                 "RLS_POLICY_REVIEW_REQUIRED"
             ),
@@ -71,7 +73,8 @@ SELECT c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
        ELSE false END,
        ix.indexrelid::regclass::text,
        (SELECT COUNT(*) FROM pg_catalog.pg_policy pol
-        WHERE pol.polrelid = c.oid AND pol.polcmd IN ('r', '*'))
+        WHERE pol.polrelid = c.oid AND pol.polcmd IN ('r', '*')),
+       has_table_privilege(current_user, c.oid, 'SELECT')
 FROM pg_catalog.pg_class AS c
 JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
 LEFT JOIN pg_catalog.pg_attribute AS a
