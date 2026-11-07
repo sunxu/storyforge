@@ -235,3 +235,44 @@ Owner 基于同一份本地 SAFE JSON 提供的聚合输出：SQL_MESSAGE_WRITE 
 ### I.3 下一步
 
 将所有命中以代码文件、行号、操作、函数签名去重；把 TEST_FIXTURE、HISTORICAL_MIGRATION、LIVE_API_WRITE、WORKER_CRON_WRITE、MANUAL_SCRIPT_WRITE、READ_ONLY 分类。对 9/4/2 个重点重定义组核实最终签名，并与实际数据库 catalog 只读对照。T1 仍未达到完整认证，T2 的 Session 锁审计仅能针对已验证路径先行。
+
+## J. T1 三组关键函数的源码覆写与调用链复核（2026-11-07）
+
+本节锁定 RolePlay 源码 Commit `ccdf2e8dc2723f481cd0392883bc359e9e341c66`，检查最新检出的 SQL 定义；属于代码静态证据，**尚非生产 pg_proc / pg_trigger 实际定义证明**。各函数按函数名和明确的参数类型定位；所有同名不同签名 overload 仍须 catalog 复核。
+
+### J.1 mutate_v2_session_messages_atomic：重点是 10 月 7 日版本
+
+- Owner 聚合清单：同名函数出现在 9 个 SQL 文件中。
+- [2026-10-06 migration](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20261006120000_v2_legacy_orphan_delete_guard.sql#L5) 有该函数定义，但并非最后已核实的代码版本。
+- [2026-10-07 migration](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20261007100000_v2_memory_summary_continuity.sql#L144-L205) 再次 `CREATE OR REPLACE FUNCTION public.mutate_v2_session_messages_atomic(p_session_id text, p_user_id uuid, p_mode text, p_turn_indices integer[], p_role text, p_truncate_from integer)`；它在 L188–195 明确先锁 `story_v2_sessions FOR UPDATE`。
+- 同一 10 月 7 日函数还有多个针对 `v2_chat_messages` 的 DELETE（约 L372/400/467）及 UPDATE（约 L498/506），与 Session 首锁位于一个 PostgreSQL RPC 调用事务；需要进一步比较被调用的所有 helper 和触发器。
+- **T1 判定：**上游消息删除/压缩调用链找到较新函数实现，标记 `SOURCE_DEFINITION_FOUND_PROD_UNVERIFIED`；不再用 10 月 6 日定义代表最终代码。
+
+### J.2 capture_v2_chat_message_ledger：稀疏快照实现明确，生产状态未认证
+
+- Owner 聚合清单：同名函数在 4 个文件中出现。
+- [2026-07-27 初版](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20260727d_v2_chat_message_ledger.sql#L30-L77) 建立 Ledger Trigger，记录 `recorded_at DEFAULT now()`，对 `v2_chat_messages` `AFTER INSERT OR UPDATE OR DELETE`；该初版授予 `service_role` 直接 INSERT Ledger 的权限（需要检查后续 revoke 和生产实际 ACL）。
+- [2026-08-12 业务语义版本](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20260812160000_v2_chat_ledger_semantic_versions.sql#L12-L85) 重新定义业务版本记录规则。
+- [2026-09-08 稀疏标记版本](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20260908132000_v2_chat_ledger_sparse_markers.sql#L6-L105) 重定义：业务 INSERT 与 UPDATE_AFTER 写 marker，业务 UPDATE_BEFORE / DELETE 写 OLD 完整快照；**status-only、partial_content-only 更新不会写业务 Ledger**。
+- 这意味着 Ledger 对可恢复正文的记录规则可描述，但不保证所有运行状态转换或目标时点消息有效性已记录。第四处函数定义尚未由本轮人工源码定位和复核，不能宣布全部覆写链已核清。
+- **T1 判定：**已发现主 Trigger 和关键版本行为，标记 `SOURCE_TRIGGER_BEHAVIOR_PARTIAL_PROD_UNVERIFIED`，保留目标历史时间语义 HOLD。
+
+### J.3 execute_v2_checkpoint_rewind_v2：之前的版本缺失疑问已消除
+
+- [应用调用](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/src/lib/story-v2/rewind-service.ts#L50-L72) 确认 `rewindFork` → `execute_v2_checkpoint_rewind_v2`。
+- [2026-08-26 的 v2 定义](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20260826220000_checkpoint_full_state_snapshot.sql#L343-L385) 以及 [2026-10-07 再定义](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20261007100000_v2_memory_summary_continuity.sql#L859-L900) 均明确存在；两者同名、形参为 `(UUID, UUID, TEXT, TEXT)`。
+- v2 包装函数调用 [基础 `execute_v2_checkpoint_rewind`](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/supabase/migrations/20260826210000_atomic_checkpoint_rewind_rpc.sql#L33-L95)（此函数执行跨表复制，包含约 L248 的消息 INSERT），然后读取 rewind job / checkpoint、恢复目标 Session 的其他状态。
+- 基础函数对源 checkpoint / session 使用 `FOR SHARE`，并非简单的 Session `FOR UPDATE` 独占锁；在 T2 需判断与源 Session 并发写入的关系，以及快照读取时点。包装函数整体处于单个 RPC 事务的初步代码结构，仍需确认异常分支、隔离级别及生产定义。
+- **T1 判定：**原先 `RPC_VERSION_MISMATCH_UNVERIFIED` 应细化为 `SOURCE_WRAPPER_CHAIN_RESOLVED_PROD_UNVERIFIED`。`_v2` 并非找不到定义，真正待核是当前生产所部署的确切 SQL 及全链事务语义。
+
+### J.4 下游 T2 与生产只读核验
+
+| 优先级 | 审计项 | 只读证据要求 |
+|---|---|---|
+| P0 | `mutate_v2_session_messages_atomic` | 生产 `pg_get_functiondef` 的同签名函数、Session/消息锁顺序、所有 Helper |
+| P0 | `capture_v2_chat_message_ledger` | 生产 `pg_trigger.tgenabled`、`pg_get_triggerdef`、最终 `pg_get_functiondef`、Ledger ACL |
+| P0 | `execute_v2_checkpoint_rewind_v2` 与基础函数 | 两个函数定义、调用是否同事务、源/目标锁与版本边界 |
+| P0 | 直接 INSERT/Finalize/脚本写入 | 单次 HTTP/RPC 的事务范围、CAS、Session 锁、是否纳入 Trigger |
+| P1 | runtime status-only 操作 | 是否影响训练目标的可见性或有效状态；不能默认 Ledger 有记录 |
+
+**安全结论：** 本轮没有生产数据库连接或验证；未进行 DML/DDL，未运行训练或历史恢复。`ledger_commit_order_verified=false`、`ledger_trigger_continuity_verified=false`、`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
