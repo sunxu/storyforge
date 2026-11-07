@@ -95,13 +95,12 @@ def screen(fetch, story_ids):
         if not isinstance(rows, list) or len(rows) > MAX_PER_STORY:
             raise Hold("CANDIDATE_LIMIT_EXCEEDED")
         for row in rows:
-            if not isinstance(row, (tuple, list)) or len(row) != 6:
+            if not isinstance(row, (tuple, list)) or len(row) != 5:
                 raise Hold("CANDIDATE_ROW_INVALID")
-            message_id, session, turn, created, length, status = row
+            message_id, session, turn, created, status = row
             if (not isinstance(message_id, str) or not message_id
                     or not isinstance(session, str) or not session
                     or not isinstance(turn, int) or turn < 1
-                    or not isinstance(length, int) or length < 100 or length > 6000
                     or status != "completed"):
                 raise Hold("CANDIDATE_METADATA_INVALID")
             out.append({
@@ -110,7 +109,6 @@ def screen(fetch, story_ids):
                 "session_id": session,
                 "turn_index": turn,
                 "created_at": str(created),
-                "content_length": length,
                 "source_category": "DB_FINAL_MESSAGE_METADATA_ONLY",
                 "actual_sent_payload_verified": False,
                 "single_completion_verified": False,
@@ -128,12 +126,10 @@ def screen(fetch, story_ids):
 
 
 QUERY = """
-    SELECT id::text, session_id, turn_index, created_at,
-           char_length(content)::integer, status
+    SELECT id::text, session_id, turn_index, created_at, status
     FROM public.v2_chat_messages
     WHERE story_id=%s AND role='assistant' AND status='completed'
-      AND content IS NOT NULL AND char_length(content) BETWEEN 100 AND 6000
-      AND turn_index >= 1
+      AND turn_index >= 3
     ORDER BY turn_index DESC, id DESC
     LIMIT %s
 """
