@@ -15,18 +15,18 @@ SCAN_DIRS = ("src/", "apps/", "packages/", "scripts/", "supabase/", "workers/")
 MAX_BYTES = 4 * 1024 * 1024
 DIRECT_SQL = re.compile(
     r"\b(INSERT\s+INTO|UPDATE|DELETE\s+FROM|MERGE\s+INTO|TRUNCATE(?:\s+TABLE)?)\s+"
-    r'(?:"?public"?\s*\.\s*)?"?v2_chat_messages"?\b', re.I,
+    r'(?:"?public"?\s*\.\s*)?"?v2_chat_messages"?\b', re.IGNORECASE,
 )
-TABLE_REF = re.compile(r"\.from\s*\(\s*['\"]v2_chat_messages['\"]\s*\)", re.I)
-METHOD = re.compile(r"\.\s*(insert|update|delete|upsert)\s*\(", re.I)
-RPC_CALL = re.compile(r"\.rpc\s*\(\s*['\"]([a-z][a-z0-9_]+)['\"]", re.I)
+TABLE_REF = re.compile(r"\.from\s*\(\s*['\"]v2_chat_messages['\"]\s*\)", re.IGNORECASE)
+METHOD = re.compile(r"\.\s*(insert|update|delete|upsert)\s*\(", re.IGNORECASE)
+RPC_CALL = re.compile(r"\.rpc\s*\(\s*['\"]([a-z][a-z0-9_]+)['\"]", re.IGNORECASE)
 FUNCTION = re.compile(
     r"\bCREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+"
-    r'(?:(?:"?public"?)\s*\.\s*)?"?([a-z_][a-z0-9_]*)"?\s*\(', re.I,
+    r'(?:(?:"?public"?)\s*\.\s*)?"?([a-z_][a-z0-9_]*)"?\s*\(', re.IGNORECASE,
 )
-TRIGGER = re.compile(r"\bCREATE\s+(?:CONSTRAINT\s+)?TRIGGER\s+([a-z_][a-z0-9_]*)", re.I)
+TRIGGER = re.compile(r"\bCREATE\s+(?:CONSTRAINT\s+)?TRIGGER\s+([a-z_][a-z0-9_]*)", re.IGNORECASE)
 RPC_RELEVANT = re.compile(
-    r"(?:v2|chat|message|reply|stream|turn|session|fork|rewind|retry|import|claim)", re.I,
+    r"(?:v2|chat|message|reply|stream|turn|session|fork|rewind|retry|import|claim)", re.IGNORECASE,
 )
 
 
@@ -63,7 +63,7 @@ def capture(path: str, source: str) -> list[dict]:
             if RPC_RELEVANT.search(m.group(1)):
                 results.append({"path": path, "line": lines_at(source, m.start()),
                                 "kind": "SQL_FUNCTION_DEFINITION", "function": m.group(1)})
-        if re.search(r"\bEXECUTE\b", source, re.I) and "v2_chat_messages" in source:
+        if re.search(r"\bEXECUTE\b", source, re.IGNORECASE) and "v2_chat_messages" in source:
             results.append({"path": path, "line": 0, "kind": "DYNAMIC_SQL_REVIEW_REQUIRED"})
         for m in TRIGGER.finditer(source):
             if "v2_chat_messages" in source[max(0, m.start() - 100):m.start() + 800]:
