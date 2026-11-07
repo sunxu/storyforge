@@ -160,9 +160,13 @@ def choose_pilot(selected: list[dict], n: int) -> list[dict]:
     for x in selected:
         by_story[x['story_id']].append(x)
     groups = [sorted(v, key=lambda x: x['turn_index']) for _, v in sorted(by_story.items())]
-    candidates = []
-    for group in groups:
-        candidates.extend((group[0], group[-1]))
+    # Round-robin first case per story before taking second cases. This avoids
+    # letting lexicographically early stories consume a small pilot.
+    candidates = [group[0] for group in groups]
+    candidates.extend(group[-1] for group in groups if len(group) > 1)
+    candidates.extend(
+        case for group in groups for case in group[1:-1]
+    )
     seen = set()
     unique = []
     for x in candidates + selected:
@@ -172,10 +176,25 @@ def choose_pilot(selected: list[dict], n: int) -> list[dict]:
     return unique[:n]
 
 
+def status_category(value) -> str:
+    if value == 'completed':
+        return 'completed'
+    if value is None:
+        return 'null_or_missing'
+    if isinstance(value, str):
+        return 'other_string'
+    return 'other_type'
+
+
 def decide_matches(case: dict, matches: list[dict]) -> tuple[str, dict | None]:
     exact = [x for x in matches if sha_text(x['content']) == case['target_sha256']]
     if not exact:
         return ('SOURCE_FOUND_BUT_CONTENT_CHANGED' if matches else 'SOURCE_NOT_FOUND'), None
+    # Exact text is not sufficient: a target row must also be completed.
+    # If duplicate exact rows disagree on status, fail closed rather than
+    # choosing one based on session lineage alone.
+    if any(x.get('status') != 'completed' for x in exact):
+        return 'TARGET_STATUS_NOT_COMPLETED', None
     if len(exact) == 1:
         return 'EXACT_MATCH', exact[0]
     roots = [x for x in exact if x['parent_session_id'] is None]
@@ -236,13 +255,21 @@ def execute(db, selected: list[dict], packet_index: dict, max_history: int):
             stories[story_id] = row
         locators, contexts = [], []
         selected_ids = {x['case_id'] for x in selected}
+        exact_target_status_counts = Counter()
         for case in sorted(packet_index.values(), key=lambda x: x['case_id']):
             variants = found[(case['story_id'], case['turn_index'])]
+            exact_variants = [
+                x for x in variants
+                if sha_text(x['content']) == case['target_sha256']
+            ]
+            for variant in exact_variants:
+                exact_target_status_counts[status_category(variant.get('status'))] += 1
             status, canonical = decide_matches(case, variants)
             locators.append({**case, 'source_status': status,
-                             'matched_message_count': sum(
-                                 sha_text(x['content']) == case['target_sha256']
-                                 for x in variants),
+                             'matched_message_count': len(exact_variants),
+                             'exact_target_status_categories': sorted({
+                                 status_category(x.get('status')) for x in exact_variants
+                             }),
                              'message_id': canonical['message_id'] if canonical else None,
                              'session_id': canonical['session_id'] if canonical else None})
             if case['case_id'] not in selected_ids or canonical is None:
@@ -348,6 +375,9 @@ def main() -> int:
             'aggregate_complement_passes_eligible': False,
             'context_requested': len(priority), 'context_exported': len(contexts),
             'source_match_counts': dict(sorted(counts.items())),
+            'exact_target_message_status_category_counts': dict(
+                sorted(exact_target_status_counts.items())
+            ),
             'story_count': len(drafts), 'artifacts': written,
             'system_prompt_reconstructed': False,
             'current_story_snapshot_is_historical': False,
