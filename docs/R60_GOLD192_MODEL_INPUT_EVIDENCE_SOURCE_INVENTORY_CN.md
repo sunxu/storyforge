@@ -50,3 +50,22 @@ StoryForge 来源：`r60/gold192-history-v3-adapter`
 - 不再把全量 Ledger T1–T7 作为全部输入证据审查的前置；对使用 Ledger 逆向恢复数据的旧适配器，继续保持 fail-closed。
 - Source identity Pilot7、Gold192 质量冻结、11 exclusion、R50 隔离、Owner 审批、world isolation、历史训练曝光等门槛不变。
 - `quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`、`database_modified=false`。
+
+## 六、Supabase 实际数据库 Catalog 只读核验（2026-11-07）
+
+通过已连接的 Supabase **只读 Catalog 查询**验证了公共 schema 的表名/字段，未读取任何业务表数据行、请求正文、用户标识、故事 ID、JSONB 内容或消息正文。
+
+- 当前 Connector 角色为 `supabase_read_only_user`，**不是** Gold192 历史恢复适配器要求的 `r58_export_reader`。此次仅查询 `pg_catalog.pg_class/pg_attribute/pg_namespace` 元数据；不能据此替代 R60 受限角色/隔离级别验收，不能使用此连接进行 Gold192 私有行级取证。
+- 数据库中实际表名是 **`public.chat_abnormal_snapshot`**（单数），而不是初步猜测的 `chat_abnormal_snapshots`；字段含 `request_id`、`relay_request_id`、`conversation_context`、`history_preview`、`memory_injection`、`assistant_output`、`continuation_attempts`、`expires_at` 等。结构存在不等于旧记录当前还留存或未截断。
+- `public.v2_chat_reply_jobs` 存在，包含 `request_envelope jsonb`、`model_id`、`attempt_count`、`client_msg_id`、`session_id`、`assistant_turn` 等；字段结构存在**不意味着**保存了 Provider 已出站完整 Payload 或当前还能读取 Gold192 的旧 Job。
+- `public.chat_latency_metrics` 存在，包含 `request_id`、`relay_request_id`、`relay_trace_id`、`attempt_trace jsonb` 和模型/Token/状态等字段；未发现名为 `request_payload` 或 `prompt_hash` 的对应专用字段。不要从 `attempt_trace` 的存在推断包含请求正文。
+- `public.v2_chat_messages` 与 `public.v2_chat_message_ledger` 均存在，但属于数据库历史层而不是实际 Provider 输入证明。
+- 在本次限定检索范围（公有 schema 关系名含 abnormal/archive/attempt/prompt/reply_job）内未发现专用完整 Provider 请求归档表。这只是**目录范围内未发现**，不能排除其他表、外部对象存储、Relay 或服务器文件系统中存在证据。
+
+### 后续取证必须遵守的门槛
+
+1. 先确认授权的 `r58_export_reader` 路径、实际生产来源与 RolePlay 当前运行版本；本轮 Catalog 结果只能说明连接目标数据库的结构。
+2. 用受控权限做**记录数量、保留区间、字段非空率**的聚合验证，再考虑是否和冻结 Gold192 locator 做私有 Join；在权限不匹配时不得继续行级查询。
+3. 旧异常快照可能受 `expires_at` 清理；不得假定当前表有覆盖历史日期的数据，也不得因零记录直接把任何 Case 判为 D。
+4. 完整对话/请求正文只允许 Owner 私有处理，不进入 SAFE、GitHub、聊天或 CI 日志。
+5. 所有分类仍为 `UNKNOWN_NOT_REVIEWED`；本次为 source inventory + catalog metadata 层，不属于 A/B/C/D 个案判定。
