@@ -120,7 +120,7 @@ def investigate(inventory: dict, p2_rows: list[dict], loader) -> tuple[list[dict
                 "structural_strict_ready_proven": False,
             })
             private.append((len(ready), len(ready & ids)))
-    counts = sorted(set((a, b) for a, b in private))
+    counts = sorted(set(private))
     safe = {
         "schema": SCHEMA,
         "status": "P3_STAGE_PAIRS_CHECKED_NOT_STRICT_READY",
