@@ -116,22 +116,40 @@ python3 experiments/r58_quality/r60_gold192_history_recovery_v3.py \
   --pilot 7 \
   --diagnose-ledger-event-counts
 
-# 3. 仅当上一步所有 Session 均在 100000 默认上限内，执行完整历史恢复。
-#    如超限，先按 SAFE 中实际计数设置有限的 --max-ledger-events；
-#    上限不得超过 1000000，不得截断 Ledger 事件。
-test ! -e "$HISTORY"
-python3 experiments/r58_quality/r60_gold192_history_recovery_v3.py \
-  --reviewer-a "$A" \
-  --reviewer-b "$B" \
-  --exclusions "$EX" \
-  --source-packets "$PACKETS" \
-  --source-locators "$LOCATORS" \
-  --source-safe "$SOURCE_SAFE" \
-  --output-dir "$HISTORY" \
-  --pilot 7 \
-  --max-ledger-events 100000
+# 3. STOP：当前禁止执行 FULL History Recovery。
+#    事件计数 PASS 只证明读取规模未超过上限，不证明事件提交顺序或 Trigger 连续性。
+#    V3 适配器对此设置 fail-closed gate，若未完成时间顺序审计会返回：
+#    LEDGER_TEMPORAL_ORDER_AUDIT_REQUIRED。
+#    不要添加绕过参数，不要生成历史上下文文件。
 ```
 
+## 6. 时间顺序与 Trigger 连续性是独立硬门槛
+
+2026-11-05 的 Pilot8 Ledger 时间顺序审计已经确认：
+
+- `recorded_at` 默认值为 PostgreSQL `now()`，表示事务开始时间，不是提交时间。
+- Ledger `id` 是 sequence 分配值，不代表跨事务提交顺序。
+- 数据库 `track_commit_timestamp=off`。
+- 部分 Writer Path 已发现 Session 行锁，但所有可能修改消息版本/状态的写入路径及其 helper 尚未全部审计。
+- 当前 trigger 对业务 UPDATE 写入 `update_before` 快照和 `update_after` 标记；status-only 生命周期变更与业务内容变更必须分开审计。
+- 因此 `ledger_commit_order_verified=false`、`ledger_trigger_continuity_verified=false`。
+
+这两个 false 不是普通 SAFE 注释，而是历史恢复的阻断条件。即使机械重建代码能按 `(recorded_at,id)` 产生一份结果，也不能把它称为 `FULL_HISTORY_RECOVERED`，更不能进入 Quality-v1。
+
+### 后续审计任务（只读）
+
+1. 完整枚举所有对 `v2_chat_messages` 产生 INSERT / UPDATE / DELETE 的应用写入函数、RPC、后台任务和直接写入路径。
+2. 逐条跟踪调用的 helper，证明同一 Story/Session 的所有可能影响历史版本的写入是否在触发器执行前持有相同 Session 行锁，并持有至事务提交。
+3. 单独审计 status-only 更新、stream cancel、stale-stream reconciliation、legacy retry、import/replay 等路径；确认触发器是否覆盖所有会改变“目标时点消息是否有效”或消息正文/角色/turn/metadata 的变更。
+4. 证明触发器对每类相关变更的快照完整性、触发时机、事务原子性、无禁用/绕过路径；检查 trigger enable 状态与函数定义。
+5. 对于无法证明提交顺序的事件（尤其相同 `recorded_at` 的跨事务事件），必须保持逐案 HOLD；不得把 sequence ID 当作提交顺序证明。
+6. 只有在审计产出经复核的 SAFE 证据、并明确覆盖本次 Pilot 7 的相关 Writer Path 后，才可设计下一版 adapter 输入契约。不能仅把两个 SAFE 布尔值手工改成 true。
+
+在以上工作完成前，本工具只允许：
+- `--diagnose-source-only`：本地来源身份预检查；
+- `--diagnose-ledger-event-counts`：Supabase 只读事件数量检查。
+
+正常历史恢复路径 fail-closed。禁止运行 FULL Recovery，禁止输出训练上下文，禁止 Quality-v1 admission。
 ### 数据库连接要求
 
 从本机私有凭据管理器设置 `STORYFORGE_SUPABASE_DSN`。只允许 `r58_export_reader`。脚本会验证：
