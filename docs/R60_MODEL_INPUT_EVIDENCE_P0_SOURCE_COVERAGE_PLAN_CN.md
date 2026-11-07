@@ -162,3 +162,56 @@ Owner 表示可以扩大数据库读取权限。为了让 R60 在 RolePlay 暂�
 - 回滚模板仅撤销 R60 专用列授权与政策；之前的整表 SELECT 是否需要恢复，必须根据 BEFORE 快照人工确认，不得盲目重授。
 - 既有 Gold192 192 个槽位保持 UNKNOWN_NOT_REVIEWED，A/B/C/D 未知；Quality-v1 admission=0，无 GPU。
 
+
+
+## 8. Owner 生产授权回执与数据库实际 Policy 复核（2026-11-07）
+
+Owner 第二次 S1 SAFE 回执确认三张表的关键元数据列均可 SELECT，整表 SELECT 均为 false，RLS 启用且 SELECT policy 计数均为 1。状态继续 `CATALOG_PREFLIGHT_HOLD`，每表状态 `RLS_POLICY_REVIEW_REQUIRED`，这是之前的**人为安全审核门槛**而不是表授权失败。
+
+通过受限连接的独立 `pg_catalog` 元数据只读检查，实际部署 Policy 三表均符合下列精确条件：
+
+- policy 名称 `r60_gold192_evidence_metadata_select`；
+- `FOR SELECT TO r58_export_reader`，`PERMISSIVE`；
+- `USING (true)`，无 `WITH CHECK`；
+- 表 `relrowsecurity=true`、`relforcerowsecurity=false`，`has_table_privilege('r58_export_reader', 'SELECT')=false`；
+- 之前 Owner 工具已证实所需**列级** SELECT 为 true。
+
+此事实意味着 **该 Reader 对这三表的已授权列可跨所有者读元数据行**，不能视作 Gold192 专属行级授权。允许用于本项目审核过的限制时间窗汇总，严禁把原始用户/请求/Session 标识返回至 SAFE。
+
+修改 [S1 精确 Policy 预检工具](../experiments/r58_quality/r60_model_input_coverage_catalog.py)，只有上述 Policy 签名、列级授权、无整表授权、RLS 都符合时返回 `CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN`。这**仍不意味着业务表已被查询**。
+
+### 8.1 S2 首个有界元数据统计器
+
+新增 [`r60_model_input_metadata_window.py`](../experiments/r58_quality/r60_model_input_metadata_window.py) 与对应合成测试。其行为：
+
+- 只允许带时区的 ISO 8601 UTC/offset 时间窗口，`0 < duration <= 24h`；
+- 在 Owner `r58_export_reader` 连接上使用 `REPEATABLE READ READ ONLY`、`row_security=on`、8s `statement_timeout`、1s `lock_timeout`；
+- 先重跑精确 Catalog 预检，要求两张统计表存在索引 `idx_chat_abnormal_snapshot_created`、`idx_chat_latency_metrics_created`；
+- 只在两张表的 `created_at >= start AND created_at < end` 条件下计算 `COUNT(*)`、`COUNT(request_id)`、`COUNT(relay_request_id)`；
+- **不读取**任何 JSONB、Prompt、聊天正文、用户 ID、Session ID、故事 ID；只向客户端返回 6 个整数（两张表各 3 个）；
+- `v2_chat_reply_jobs` 暂为 `HOLD_NO_VERIFIED_CREATED_AT_LEADING_INDEX`，避免未验证访问路径的时间范围全表扫描；后续应优先使用已存在的 `(session_id, assistant_turn)` 唯一索引对冻结 Gold192 做经授权的私有 target lookup，或先只读 EXPLAIN；
+- 该统计是**表级时间窗元数据覆盖**，不是 Gold192 Case 的请求关联率，更不是实际模型输入认证。
+
+示例仅对 2026-08-01 一天做核查（时间窗是示例，并非声称 Gold192 的确切生成时间）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+git pull --ff-only origin r60/gold192-history-v3-adapter
+test -n "${STORYFORGE_SUPABASE_DSN:-}"
+
+python3 -m unittest \
+  experiments.r58_quality.test_r60_model_input_coverage_catalog \
+  experiments.r58_quality.test_r60_model_input_metadata_window -v
+
+python3 experiments/r58_quality/r60_model_input_coverage_catalog.py
+python3 experiments/r58_quality/r60_model_input_metadata_window.py \
+  --start 2026-08-01T00:00:00Z \
+  --end 2026-08-02T00:00:00Z
+```
+
+先根据 Owner 私有 frozen locator 的真实日期范围选择窗口，不应照抄示例日期。若生产表较大、索引/执行计划不符合预期或查询达到超时，则 HOLD，不要直接扩大时间窗口。
+
+### 8.2 未改变的限制
+
+不执行 SQL DDL/DML、不修改 RolePlay 生产表、不读取 R50、不导出任何用户/请求 ID、A/B/C/D 全部 UNKNOWN、Quality-v1 admitted=0、training_authorized=false、GPU=false。S2 结果不能自动放行任何训练样本。
