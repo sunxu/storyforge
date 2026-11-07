@@ -10,9 +10,9 @@ from experiments.r58_quality.r60_model_input_coverage_catalog import (
 
 class TestModelInputCoverageCatalog(unittest.TestCase):
     @staticmethod
-    def fixtures(privileged=True, rls=True, policy_count=1, table_wide=False):
+    def fixtures(privileged=True, rls=True, policy_count=1, table_wide=False, matched=1):
         return [
-            (table, col, "text", rls, privileged, "synthetic_idx", policy_count, table_wide)
+            (table, col, "text", rls, privileged, "synthetic_idx", policy_count, table_wide, matched)
             for table in TABLES
             for col in COLUMNS[table]
         ]
@@ -21,7 +21,7 @@ class TestModelInputCoverageCatalog(unittest.TestCase):
         result = classify(self.fixtures())
         self.assertEqual(set(result), set(TABLES))
         self.assertTrue(all(
-            item["status"] == "RLS_POLICY_REVIEW_REQUIRED"
+            item["status"] == "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
             for item in result.values()
         ))
         self.assertTrue(all("synthetic_idx" in item["index_names"]
@@ -50,6 +50,13 @@ class TestModelInputCoverageCatalog(unittest.TestCase):
         result = classify(self.fixtures(policy_count=0))
         self.assertTrue(all(
             row["status"] == "RLS_POLICY_ABSENT_HOLD"
+            for row in result.values()
+        ))
+
+    def test_wrong_policy_holds(self):
+        result = classify(self.fixtures(matched=0))
+        self.assertTrue(all(
+            row["status"] == "RLS_POLICY_MISMATCH_HOLD"
             for row in result.values()
         ))
 
