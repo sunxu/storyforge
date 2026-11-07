@@ -10,9 +10,9 @@ from experiments.r58_quality.r60_model_input_coverage_catalog import (
 
 class TestModelInputCoverageCatalog(unittest.TestCase):
     @staticmethod
-    def fixtures(privileged=True, rls=True):
+    def fixtures(privileged=True, rls=True, policy_count=1):
         return [
-            (table, col, "text", rls, privileged, "synthetic_idx")
+            (table, col, "text", rls, privileged, "synthetic_idx", policy_count)
             for table in TABLES
             for col in COLUMNS[table]
         ]
@@ -21,7 +21,7 @@ class TestModelInputCoverageCatalog(unittest.TestCase):
         result = classify(self.fixtures())
         self.assertEqual(set(result), set(TABLES))
         self.assertTrue(all(
-            item["status"] == "CATALOG_READY_COUNTS_NOT_RUN"
+            item["status"] == "RLS_POLICY_REVIEW_REQUIRED"
             for item in result.values()
         ))
         self.assertTrue(all("synthetic_idx" in item["index_names"]
@@ -45,6 +45,13 @@ class TestModelInputCoverageCatalog(unittest.TestCase):
                 x["status"] == "SCHEMA_OR_PERMISSION_HOLD"
                 for x in out.values()
             ))
+
+    def test_policy_absent_holds_even_with_select(self):
+        result = classify(self.fixtures(policy_count=0))
+        self.assertTrue(all(
+            row["status"] == "RLS_POLICY_ABSENT_HOLD"
+            for row in result.values()
+        ))
 
     def test_absent_relation_holds(self):
         rows = [x for x in self.fixtures() if x[0] != "chat_latency_metrics"]
