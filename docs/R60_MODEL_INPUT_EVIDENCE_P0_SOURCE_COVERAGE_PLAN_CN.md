@@ -130,3 +130,35 @@ Owner 返回 `r60_input_evidence_catalog_preflight_safe_v1`：`CATALOG_PREFLIGHT
 5. 如产出是全站统计，需考虑跨租户泄露及小样本重识别，必要时仅返回粗粒度桶与最小样本阈值。
 
 **当前判定：** S1 `CATALOG_PREFLIGHT_HOLD`；不能读取业务记录，也不能推断 Gold192 历史数据缺失。192 个槽位仍为 `UNKNOWN_NOT_REVIEWED`，A/B/C/D 全部未知，`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
+
+
+## 7. Owner 允许扩大只读数据库权限：StoryForge 自主元数据取证方案（2026-11-07）
+
+Owner 表示可以扩大数据库读取权限。为了让 R60 在 RolePlay 暂时无法交付新接口的条件下继续运行，本轮已提供 **review-only 管理员 SQL 模板**，但**尚未在生产执行**：
+
+- [授权模板](../experiments/r58_quality/sql/r60_model_input_evidence_metadata_access_REVIEW_ONLY.sql)
+- [回滚模板](../experiments/r58_quality/sql/r60_model_input_evidence_metadata_access_ROLLBACK_REVIEW_ONLY.sql)
+
+### 本轮明确的授权边界
+
+- 允许 `r58_export_reader` 在三张证据表读取必要的 **元数据列**：时间、Session/Story/Request 标识、模型、状态、尝试数和关联信息；R60 本地程序只输出聚合 SAFE，不输出标识或敏感值。
+- **暂不授权** `v2_chat_reply_jobs.request_envelope`，`chat_abnormal_snapshot.conversation_context`、`history_preview`、`user_input`、`assistant_output`、`memory_injection`、`continuation_attempts`，`chat_latency_metrics.attempt_trace` 等敏感正文/JSONB 字段。
+- RLS 使用 `TO r58_export_reader` 的专用 SELECT policy。当前 SQL 模板 `USING (true)` 意味着该角色可见**全站所有所有者**的已授权元数据行，不是租户级隔离；因此管理员必须明确批准该范围，且在单独管理的私有数据库执行。
+- 首轮预检中 `chat_latency_metrics` 已有整表 SELECT 有效授权。为了避免加上 RLS policy 后意外暴露全部字段，授权模板显式 `REVOKE SELECT ON chat_latency_metrics FROM r58_export_reader`，再授予列级 SELECT。**这可能影响其它使用该角色的功能，必须先保存 `pg_class.relacl`、`pg_attribute.attacl` 和角色继承关系的 BEFORE 快照并确认依赖。** 若整表权限来自继承，简单 REVOKE 不会移除它，StoryForge 预检会继续阻断，不能强行继续。
+- 不授予 DML、DDL、RLS bypass、service_role、超级用户或数据库所有者权限；不改变应用角色权限。
+
+### 执行顺序
+
+1. 由授权的数据库管理员核对授权模板、现有 ACL（包括 role membership 和 `has_table_privilege` 的来源），并保存可回滚的 BEFORE ACL/RLS 快照。
+2. 先在隔离环境检验 Policy 与列级 SELECT 的有效授权，再于经批准的生产维护窗口执行模板。
+3. 用 Owner Mac 现有 `STORYFORGE_SUPABASE_DSN` 重跑 `r60_model_input_coverage_catalog.py`；新程序分别检查关键列的 `has_column_privilege`、整表 `has_table_privilege` 以及 SELECT/ALL Policy 存在性。
+4. 预检中 **整表 SELECT = true**、未授予所需列、缺 RLS policy、角色错误等任何情况继续 HOLD；若 policy 存在，状态仍是 `RLS_POLICY_REVIEW_REQUIRED`，待管理员独立确认 SQL 条件和授权范围才执行业务表聚合。
+5. 授权通过后才实现/运行 **仅元数据、按日期窗口有界** 的覆盖率查询。初始只验证记录覆盖率、请求关联字段非空率和时间窗口，不触及请求正文或 Gold192 分级。
+6. 要证明真正发送的 Provider 请求，后续另设**必要、定向、Owner 私有**的正文证据审查，单独审批其访问字段；不能将此元数据 GRANT 视为真实模型输入已被证明。
+
+### 避免误用
+
+- SQL 文件是 **审查模板**，不属于生产 migrations，不能自动部署。当前 GitHub 工作仅修改 StoryForge 代码和文档，未修改 RolePlay Repo 或数据库。
+- 回滚模板仅撤销 R60 专用列授权与政策；之前的整表 SELECT 是否需要恢复，必须根据 BEFORE 快照人工确认，不得盲目重授。
+- 既有 Gold192 192 个槽位保持 UNKNOWN_NOT_REVIEWED，A/B/C/D 未知；Quality-v1 admission=0，无 GPU。
+
