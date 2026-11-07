@@ -52,9 +52,8 @@ const bind = await supabaseAdmin.rpc('bind_v2_legacy_retry_source', {});
             with patch.object(inventory, "git", side_effect=[
                 (str(path) + "\n").encode(),
                 b"origin https://github.com/example/not-our-project.git (fetch)\n",
-            ]):
-                with self.assertRaisesRegex(ValueError, "ROLEPLAY_REMOTE_NOT_VERIFIED"):
-                    inventory.run(path)
+            ]), self.assertRaisesRegex(ValueError, "ROLEPLAY_REMOTE_NOT_VERIFIED"):
+                inventory.run(path)
 
 
 if __name__ == "__main__":
