@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """R60 P1 frozen Gold192 identity triage; Owner-local, no network/DB/GPU/R50.
 
 Only ranks *review candidates*. No evidence-class promotion, Owner attestation,
@@ -158,8 +157,8 @@ def main() -> int:
         parser.add_argument("--" + name, required=True, type=Path)
     args = parser.parse_args()
     try:
-        from experiments.r58_quality import r60_gold192_supabase_extract_v3 as source
         from experiments.r58_quality import r60_gold192_canonical_a_v3 as canon
+        from experiments.r58_quality import r60_gold192_supabase_extract_v3 as source
 
         inputs = ("reviewer_a", "reviewer_b", "exclusions", "source_packets",
                   "source_locators", "source_safe", "evidence_slots")
@@ -176,7 +175,7 @@ def main() -> int:
         save_new(output / "R60_P1_SAFE.json", safe)
         print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
         return 0
-    except Exception as exc:
+    except (Hold, ValueError, TypeError, KeyError, OSError, ImportError) as exc:
         code = str(exc) if isinstance(exc, Hold) and re.fullmatch(r"[A-Z0-9_]{1,80}", str(exc)) else "P1_VALIDATION_FAILED"
         print(json.dumps({
             "status": "P1_HOLD", "reason_code": code,
