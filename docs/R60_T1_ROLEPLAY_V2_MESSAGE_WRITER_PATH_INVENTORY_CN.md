@@ -85,3 +85,30 @@ Durable worker/job RPCs → accept_v2_chat_reply_job / cancel_v2_chat_reply_job 
 - 对每条 Writer Path 核验 `session-row lock first`、锁顺序、是否在同一 SQL 事务中提交及其是否存在跨事务请求链。
 - 特别优先核对：W01 直接 INSERT、W04 Finalize、W05/W15/W16 status-only、W09 Delete-all、W11 Legacy retry、W14 Durable RPC、W10 Fork。
 - **禁止**根据这份静态清单把 `ledger_commit_order_verified` 或 `ledger_trigger_continuity_verified` 提升为 true。
+
+## F. T1 第二轮增量审计：Checkpoint Rewind 与 RPC 版本覆写（2026-11-07）
+
+本轮补查了消息/Session 相关路由、rewind service，以及多份 SQL migration。新增两个必须独立跟踪的路径：
+
+| 编号 | 静态调用链/代码定义 | 变更 | 状态与后续检查 |
+|---|---|---|---|
+| W17 | [rewind route](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/src/app/api/chat/v2/checkpoints/%5BckptId%5D/rewind/route.ts) → [rewindFork](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/src/lib/story-v2/rewind-service.ts#L50-L76) → `execute_v2_checkpoint_rewind_v2` | 目标 Session 的消息复制 INSERT | 当前 app 调用 **`..._v2`**；已检查的 [SQL](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/supabase/migrations/20260826210000_atomic_checkpoint_rewind_rpc.sql#L33-L60) 定义 **`execute_v2_checkpoint_rewind`**（没有 `_v2`），且其中确实包含 INSERT（约 L248）。两者不能等同；需确认最新同签名定义、部署状态、权限和调用可达性；本项暂标记 `RPC_VERSION_MISMATCH_UNVERIFIED`。 |
+| W18 | [reply-job accept migration](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/supabase/migrations/20260913120000_v2_reply_job_accept_conflict_predicate.sql) 再次定义 `accept_v2_chat_reply_job` | User/Assistant INSERT；失败回复 UPDATE | W14 原先引用的 20260820 函数不是最新发现的定义。新迁移仍有约 L50/L77 INSERT 和 L127 UPDATE；必须按 **最新函数定义**审计锁，而不是根据旧迁移给出生产结论。 |
+
+同时核对：
+
+- [`src/app/api/chat/v2/messages/compact/route.ts`](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/src/app/api/chat/v2/messages/compact/route.ts)：经 `V2MessageService.compactTurnIndices` 路由进入 W07，不是新的直接 SQL 入口，但应登记为 W07 的另一上游调用者。
+- [`src/lib/story-v2/events/chat.ts`](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/src/lib/story-v2/events/chat.ts)：存在 `v2_chat_messages` 表引用，当前查到的为 SELECT；对消息修改的间接 helper 仍需逐层跟踪。
+- [`src/app/api/chat/v2/sessions/[sessionId]/fork/route.ts`](https://github.com/sunxu/RolePlay/blob/e9fe29c42434caeb0bac5acc91845ab4741ecb2b/src/app/api/chat/v2/sessions/%5BsessionId%5D/fork/route.ts) → `forkFromTurn` → `execute_v2_chat_fork`：补强 W10 的应用调用链。
+- SQL migration `20260826210000_atomic_checkpoint_rewind_rpc.sql` 使用源 Session 的 `FOR SHARE`（而非强制 `FOR UPDATE`）；若生产仍运行类似逻辑，必须在 T2 解释其与并发源消息变更的可见性和拷贝一致性关系。
+- `20261008150000_v2_checked_message_mutation.sql` 中的 `bind_v2_legacy_retry_source` 调用了 `validate_v2_message_action_sources`，而该 helper 在已核代码中执行 Session `FOR UPDATE NOWAIT`。所以原先“函数体没有显式 Session 锁”只能标为 **间接锁待确认**，不能认定完全无锁。
+
+### T1 进度口径与发现的重要问题
+
+- 已登记 **18 类 Writer Path / 候选 Writer Path**（W01–W18）；其中 W18 是 W14 的新版本定义核查，**不是新的独立业务写入类型**。
+- 不把这 18 类称为“全仓所有入口”，也不把旧 migration 函数作为现行生产定义。
+- GitHub 代码搜索对该私有仓库没有返回可用匹配，完整扫描需要逐文件源码核对；目前仅覆盖选定的高相关 TS/SQL 文件。
+- 从整个 Git tree 确认：RolePlay main 中至少有 **632 个 migration SQL**、**1,515 个 `src/` TS/TSX**、**305 个 `apps/` TS/TSX**、**43 个 `packages/` TS/TSX** 和 **457 个 `scripts/` TS/TSX/SQL/Python**。仅目录和扩展名计数，不表示都引用消息表；T1 要证明完整性，必须进行自动化扫描并记录跳过/失败文件。
+- 下一步先做全仓静态扫描，重点 `execute_v2_checkpoint_rewind_v2` 的定义来源、所有 `CREATE OR REPLACE FUNCTION` 覆写链、动态 SQL、直接写入、触发器写入和定时任务引用；之后做生产 catalog **只读**核验。
+- **当前仍然不证明**任意 Session 的最终提交顺序/Trigger 连续性；StoryForge V3 Full Recovery 保持 fail-closed。
+
