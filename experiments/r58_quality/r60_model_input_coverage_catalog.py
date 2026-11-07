@@ -21,6 +21,16 @@ COLUMNS = {
 }
 
 
+# For phase S1, confirm these metadata columns are readable; sensitive JSONB
+# fields must exist but are NOT required to be SELECT-able.
+METADATA_SELECT_COLUMNS = {
+    "v2_chat_reply_jobs": ("id", "session_id", "assistant_turn",
+                           "attempt_count", "model_id", "created_at"),
+    "chat_abnormal_snapshot": ("request_id", "relay_request_id", "expires_at"),
+    "chat_latency_metrics": ("request_id", "relay_request_id"),
+}
+
+
 def classify(rows: list[tuple]) -> dict:
     """Catalog tuples: (table, column, type, rls, column_select, index, policies)."""
     result = {}
@@ -29,7 +39,9 @@ def classify(rows: list[tuple]) -> dict:
         columns = {x[1] for x in selected if x[1] is not None}
         required = set(COLUMNS[table])
         selected_by_column = {x[1]: x[4] for x in selected if x[1] is not None}
-        access = bool(selected) and all(selected_by_column.get(col) is True for col in required)
+        access = bool(selected) and all(
+            selected_by_column.get(col) is True for col in METADATA_SELECT_COLUMNS[table]
+        )
         rls = bool(selected) and all(x[3] is True for x in selected)
         indices = sorted({x[5] for x in selected if x[5]})
         policy_count = max((x[6] for x in selected), default=0)
@@ -38,7 +50,7 @@ def classify(rows: list[tuple]) -> dict:
             "present": bool(selected),
             "columns_present": sorted(required & columns),
             "missing_expected_columns": missing,
-            "required_columns_select_privilege": access,
+            "metadata_columns_select_privilege": access,
             "rls_enabled": rls,
             "select_policy_count": policy_count,
             "index_names": indices,
