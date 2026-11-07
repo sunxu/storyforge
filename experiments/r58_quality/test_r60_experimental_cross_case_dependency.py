@@ -65,7 +65,7 @@ def test_independent_rows_remain_three_components():
     assert safe["world_component_independently_verified"] is False
 
 
-def test_non_assistant_history_does_not_make_edge():
+def test_user_quoted_prior_target_also_links_cases():
     preview, reviews = fixture(links=())
     preview[1]["messages"][-2]["content"] = "原创目标0"
     original = [{"role": m["role"], "content": m["content"]}
@@ -74,7 +74,8 @@ def test_non_assistant_history_does_not_make_edge():
     preview[1]["metadata"]["input_messages_sha256"] = new_sha
     reviews[1]["input_messages_sha256"] = new_sha
     _, safe = analyze(preview, reviews)
-    assert safe["literal_dependency_edges"] == 0
+    assert safe["literal_dependency_edges"] == 1
+    assert safe["user_history_edges"] == 1
 
 
 def test_unapproved_review_rejected():
