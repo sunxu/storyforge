@@ -5,6 +5,7 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 try:
     from . import r60_gold192_history_recovery_v3 as adapter
@@ -106,6 +107,19 @@ class V3HistoryAdapterTests(unittest.TestCase):
         finally:
             adapter.source.sha_text = original
         self.assertEqual(reason, "DUPLICATE_SOURCE_MATCH_COUNT_DRIFT")
+
+    def test_full_recovery_is_blocked_without_temporal_order_audit(self):
+        args = SimpleNamespace(
+            pilot=7,
+            max_ledger_events=100000,
+            diagnose_source_only=False,
+            diagnose_ledger_event_counts=False,
+            output_dir=Path("/private/not-created"),
+        )
+        with self.assertRaisesRegex(
+            ValueError, "LEDGER_TEMPORAL_ORDER_AUDIT_REQUIRED"
+        ):
+            adapter.run(args)
 
     def test_private_input_rejects_hard_links(self):
         with tempfile.TemporaryDirectory() as temporary:
