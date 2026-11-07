@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from r60_scoped_target_pairs import Hold, parse_scope, select_targets
+from r60_scoped_target_pairs import Hold, assert_owner_db_guard, parse_scope, select_targets
 
 
 def test_pairs_strictly_adjacent_and_unadmitted():
@@ -65,3 +65,15 @@ def test_scope_accepts_owner_defined_approved_session():
         }],
     }).encode()
     assert len(parse_scope(raw)) == 1
+
+
+def test_owner_mac_reader_guard_accepts_r58_only():
+    assert_owner_db_guard(("r58_export_reader", "on", "on", False, False))
+    for bad in (
+        ("supabase_read_only_user", "on", "on", True, False),
+        ("r58_export_reader", "on", "on", True, False),
+        ("r58_export_reader", "on", "on", False, True),
+        ("r58_export_reader", "off", "on", False, False),
+    ):
+        with pytest.raises(Hold, match="DATABASE_GUARD_HOLD"):
+            assert_owner_db_guard(bad)
