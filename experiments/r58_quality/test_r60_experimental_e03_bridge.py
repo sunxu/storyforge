@@ -9,7 +9,6 @@ import r60_experimental_e03_bridge as e03
 from r60_experimental_shape_adapter import GATES, NOT_ACTUAL_SENT
 from r60_p3_stage_pair_probe import Hold
 
-
 SYSTEM = (
     "你是互动叙事模型。仅根据本次给出的可见历史对话与当前玩家输入继续故事。\n"
     "保持已经在对话中出现的人物事实和关系、时间空间连续性、角色口吻与玩家自主权；不编造已确定的旧事，不提前使用未来剧情。\n"
