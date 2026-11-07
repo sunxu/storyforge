@@ -215,3 +215,19 @@ python3 experiments/r58_quality/r60_model_input_metadata_window.py \
 ### 8.2 未改变的限制
 
 不执行 SQL DDL/DML、不修改 RolePlay 生产表、不读取 R50、不导出任何用户/请求 ID、A/B/C/D 全部 UNKNOWN、Quality-v1 admitted=0、training_authorized=false、GPU=false。S2 结果不能自动放行任何训练样本。
+
+
+## 9. S2 首次运行遇到 COUNT_COLUMNS_MISSING：程序误判已修复（2026-11-07）
+
+Owner 的 `r60_model_input_metadata_window_safe_v1` 回执：`METADATA_WINDOW_HOLD`、`reason_code=COUNT_COLUMNS_MISSING`，`database_modified=false`、`private_values_emitted=false`。**该回执没有声称查询了任何数据或产生覆盖率。**
+
+根因是 S1 `classify()` 输出的 `columns_present` 只包含其 `COLUMNS` 白名单，而该白名单在 `chat_abnormal_snapshot` 与 `chat_latency_metrics` 中漏掉了 S2 必须使用的 `created_at`。S2 `check_catalog()` 随后检查 `created_at`，因内部目录描述缺失而触发误 HOLD。先前数据库 Catalog 已独立确认两张表实际存在 `created_at` 字段，并有日期索引。
+
+修正包括：
+
+1. 在 S1 两张表的 `COLUMNS` 和 `METADATA_SELECT_COLUMNS` 中均明确加入 `created_at`，校验实际字段存在与可 SELECT；
+2. S2 不再用“配置中声称需要的字段”和 Catalog 字段并集来假装列存在，只根据 S1 实际验证的 `columns_present` 判断；
+3. 补充 `created_at` 完整 Catalog 正向回归及缺失字段 HOLD 反向合成测试；
+4. 不改任何 RLS policy、GRANT、数据库数据、时间窗大小或训练准入门槛。
+
+**下一步：** 更新 PR #25 后运行 S1 + S2 合成测试，再用同一已明确授权的 24 小时日期窗口重新执行 S2。若仍 HOLD，保留 SAFE reason_code，不扩大日期或改用高权限账号。结果仅是两张表的元数据时间窗计数，与 Gold192 逐案输入证明无关。
