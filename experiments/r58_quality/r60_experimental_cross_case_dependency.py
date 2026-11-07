@@ -86,7 +86,7 @@ def analyze(previews: list[dict], reviews: list[dict]):
             for k, msg in enumerate(dst["history"]):
                 content = msg["content"]
                 target = src["target"]
-                if msg["role"] != "assistant" or target not in content:
+                if target not in content:
                     continue
                 kind = "EXACT_MESSAGE" if target == content else "CONTAINED_SUBSTRING"
                 edges.append({
@@ -94,6 +94,7 @@ def analyze(previews: list[dict], reviews: list[dict]):
                     "to_case_id": dst["case_id"],
                     "history_index": k,
                     "match_kind": kind,
+                    "history_role": msg["role"],
                     "split_across_this_edge_forbidden": True,
                 })
                 join(i, j)
@@ -102,6 +103,7 @@ def analyze(previews: list[dict], reviews: list[dict]):
         components.setdefault(find(i), []).append(node["case_id"])
     groups = sorted((sorted(ids) for ids in components.values()), key=lambda x: x[0])
     counts = Counter(e["match_kind"] for e in edges)
+    roles = Counter(e["history_role"] for e in edges)
     private = {
         "schema": "storyforge_r60_experimental_dependency_private_v1",
         "status": "EXACT_TEXT_DEPENDENCY_ONLY_NOT_WORLD_GRAPH",
@@ -122,8 +124,10 @@ def analyze(previews: list[dict], reviews: list[dict]):
         "cases_checked": 3,
         "semantic_reviews_matched": 3,
         "literal_dependency_edges": len(edges),
-        "exact_assistant_message_edges": counts["EXACT_MESSAGE"],
-        "contained_assistant_message_edges": counts["CONTAINED_SUBSTRING"],
+        "exact_message_edges": counts["EXACT_MESSAGE"],
+        "contained_message_edges": counts["CONTAINED_SUBSTRING"],
+        "assistant_history_edges": roles["assistant"],
+        "user_history_edges": roles["user"],
         "literal_connected_components": len(groups),
         "largest_literal_component": max(map(len, groups)),
         "all_three_connected_by_literal_edges": len(groups) == 1,
