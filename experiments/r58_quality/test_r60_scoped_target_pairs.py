@@ -77,3 +77,53 @@ def test_owner_mac_reader_guard_accepts_r58_only():
     ):
         with pytest.raises(Hold, match="DATABASE_GUARD_HOLD"):
             assert_owner_db_guard(bad)
+
+def test_limited_owner_g0_g1_allows_unknown_r50():
+    raw = json.dumps({
+        "schema": "storyforge_r60_single_pair_g0_g1_scope_v1",
+        "approved_purpose": "G0_DISCOVERY_G1_LIMITED_PRIVATE_REVIEW",
+        "owner_authorization_ref": "OWNER_CHAT_2026-11-07_G0_G1_SINGLE_PAIR",
+        "scope_pair_provenance": "R60_OWNER_LOCATOR_THREE_CASES_ONE_PAIR",
+        "r50_scope_verification": "UNKNOWN_HOLD",
+        "training_rights_verification": "UNVERIFIED_HOLD",
+        "source_version_sha256": None,
+        "sessions": [{
+            "story_id": "story",
+            "session_id": "session",
+            "g0_g1_scope_authorized": True,
+            "r50_protected_scope_excluded": None,
+            "training_rights_verified": None,
+        }],
+    }).encode()
+    assert len(parse_scope(raw)) == 1
+
+
+def test_limited_owner_scope_must_not_fake_r50_exclusion():
+    base = {
+        "schema": "storyforge_r60_single_pair_g0_g1_scope_v1",
+        "approved_purpose": "G0_DISCOVERY_G1_LIMITED_PRIVATE_REVIEW",
+        "owner_authorization_ref": "OWNER_CHAT_2026-11-07_G0_G1_SINGLE_PAIR",
+        "scope_pair_provenance": "R60_OWNER_LOCATOR_THREE_CASES_ONE_PAIR",
+        "r50_scope_verification": "UNKNOWN_HOLD",
+        "training_rights_verification": "UNVERIFIED_HOLD",
+        "source_version_sha256": None,
+        "sessions": [{
+            "story_id": "story",
+            "session_id": "session",
+            "g0_g1_scope_authorized": True,
+            "r50_protected_scope_excluded": None,
+            "training_rights_verified": None,
+        }],
+    }
+    for patch in (
+        {"r50_scope_verification": "PASS"},
+        {"source_version_sha256": "fabricated"},
+        {"owner_authorization_ref": "UNVERIFIED"},
+        {"sessions": [base["sessions"][0], base["sessions"][0]]},
+    ):
+        with pytest.raises(Hold):
+            parse_scope(json.dumps({**base, **patch}).encode())
+    modified = json.loads(json.dumps(base))
+    modified["sessions"][0]["r50_protected_scope_excluded"] = True
+    with pytest.raises(Hold, match="LIMITED_SCOPE_UNVERIFIED_FLAGS_HOLD"):
+        parse_scope(json.dumps(modified).encode())
