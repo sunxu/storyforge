@@ -374,7 +374,7 @@ def run(args) -> dict:
     if args.max_ledger_events < 1 or args.max_ledger_events > MAX_LEDGER_EVENTS_HARD:
         raise ValueError("LEDGER_EVENT_LIMIT_INVALID")
     if not args.diagnose_source_only and not args.diagnose_ledger_event_counts:
-        _validate_output_target(args.output_dir)
+        raise ValueError("LEDGER_TEMPORAL_ORDER_AUDIT_REQUIRED")
     _raw, _source_safe, packet_index, selected, priority, locator_index = _load_inputs(args)
 
     if args.diagnose_source_only:
