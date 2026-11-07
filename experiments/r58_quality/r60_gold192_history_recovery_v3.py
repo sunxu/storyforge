@@ -22,11 +22,11 @@ if str(ROOT / "src") not in sys.path:
     sys.path.insert(0, str(ROOT / "src"))
 
 try:
-    from . import r60_gold192_supabase_extract_v3 as source
     from . import r59_gold192_history_recovery as recovery
+    from . import r60_gold192_supabase_extract_v3 as source
 except ImportError:
-    import r60_gold192_supabase_extract_v3 as source
     import r59_gold192_history_recovery as recovery
+    import r60_gold192_supabase_extract_v3 as source
 
 from storyforge_gold_quality.history_recovery import recover_cases_independently
 
