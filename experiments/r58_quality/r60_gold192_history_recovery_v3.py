@@ -15,6 +15,12 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[2]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+if str(ROOT / "src") not in sys.path:
+    sys.path.insert(0, str(ROOT / "src"))
+
 try:
     from . import r60_gold192_supabase_extract_v3 as source
     from . import r59_gold192_history_recovery as recovery
@@ -23,12 +29,6 @@ except ImportError:
     import r59_gold192_history_recovery as recovery
 
 from storyforge_gold_quality.history_recovery import recover_cases_independently
-
-ROOT = Path(__file__).resolve().parents[2]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
-if str(ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(ROOT / "src"))
 
 SCHEMA = "r60_gold192_history_recovery_v3_safe_v1"
 MAX_LEDGER_EVENTS_HARD = 1_000_000
