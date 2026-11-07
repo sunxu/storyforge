@@ -4,7 +4,6 @@ from __future__ import annotations
 from unittest.mock import Mock
 
 import pytest
-
 from r60_dual_track_coverage import Hold, screen
 
 
