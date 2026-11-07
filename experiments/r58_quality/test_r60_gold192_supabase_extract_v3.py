@@ -35,16 +35,38 @@ class R60Gold192ExtractV3Test(unittest.TestCase):
         self.assertEqual(len({c["case_id"] for c in selected}), 5)
         self.assertEqual(len({c["story_id"] for c in selected}), 3)
 
+    def test_pilot_round_robins_across_many_stories(self):
+        cases = [
+            {"case_id": f"s{i:02d}-t{n:05d}", "story_id": f"s{i:02d}", "turn_index": n}
+            for i in range(13) for n in (1, 900)
+        ]
+        selected = m.choose_pilot(cases, 7)
+        self.assertEqual(len(selected), 7)
+        self.assertEqual(len({c["story_id"] for c in selected}), 7)
+
     def test_exact_and_root_resolution(self):
         case = {"target_sha256": m.sha_text("目标")}
         self.assertEqual(m.decide_matches(case, [])[0], "SOURCE_NOT_FOUND")
         self.assertEqual(m.decide_matches(case, [{"content": "改变"}])[0],
                          "SOURCE_FOUND_BUT_CONTENT_CHANGED")
-        exact = {"content": "目标", "parent_session_id": None, "session_id": "root"}
-        fork = {"content": "目标", "parent_session_id": "root", "session_id": "fork"}
+        exact = {
+            "content": "目标", "status": "completed",
+            "parent_session_id": None, "session_id": "root",
+        }
+        fork = {
+            "content": "目标", "status": "completed",
+            "parent_session_id": "root", "session_id": "fork",
+        }
         self.assertEqual(m.decide_matches(case, [exact, fork]), ("EXACT_MATCH", exact))
         self.assertEqual(m.decide_matches(case, [fork, fork])[0], "IDENTITY_AMBIGUOUS")
         self.assertEqual(m.decide_matches(case, [exact, exact])[0], "IDENTITY_AMBIGUOUS")
+        pending = {**exact, "status": "pending"}
+        self.assertEqual(
+            m.decide_matches(case, [pending])[0], "TARGET_STATUS_NOT_COMPLETED"
+        )
+        self.assertEqual(
+            m.decide_matches(case, [exact, pending])[0], "TARGET_STATUS_NOT_COMPLETED"
+        )
 
     def test_exclusive_private_file_write(self):
         with tempfile.TemporaryDirectory() as temp:
