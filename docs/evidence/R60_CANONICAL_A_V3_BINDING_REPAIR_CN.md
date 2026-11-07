@@ -123,13 +123,22 @@ R60 Pilot 必须在独立的新目录执行；此前未校验目标消息 status
 不得作为新版本验收证据。新版 Pilot SAFE 必须同时满足：
 
 - source_match_counts 中 192 条均为 EXACT_MATCH；
-- exact_target_message_status_category_counts 中 completed 为 192，且不得出现
-  null_or_missing、other_string 或 other_type；
+- exact_target_message_status_category_counts 中 completed 必须等于
+  exact_target_message_matches_total，且不得出现 null_or_missing、other_string 或 other_type；
 - context_requested 与 context_exported 均为 7；
 - 随后对 R60_SOURCE_CONTEXT_PRIVATE.jsonl 运行只读历史结构诊断，必须确认
   7 条均无角色重复、空内容、非 completed 状态及末条非 user 等结构违规。
 
 Pilot 选择现已改为按 story round-robin，优先覆盖不同故事。旧 Pilot 的文件不得覆盖或删除。
+
+新版 Pilot 完成后，必须运行：
+
+    "$PYTHON" experiments/r58_quality/r59_history_structure_diagnostic.py \
+      --source-context-jsonl "$PILOT/R60_SOURCE_CONTEXT_PRIVATE.jsonl"
+
+结构诊断必须满足 cases_with_violations=0、cases_without_violations=7，
+且 case_violation_counts 为空。该诊断只验证角色、内容、状态和末条 user 结构，
+不单独证明数据库历史没有缺页、截断或跨会话遗漏；这些仍需后续 Ledger/历史连续性审计。
 
 检查 R60_SOURCE_SAFE.json 的聚合统计和源匹配分类。只有 Owner 审查新版 Pilot SAFE
 及历史结构诊断 SAFE 后，才可在另一个全新目录运行全部明确逐案候选：
