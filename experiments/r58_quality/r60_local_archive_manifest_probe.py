@@ -6,10 +6,10 @@ only totals by archive category and broad date buckets. Not an input proof.
 from __future__ import annotations
 
 import argparse
+import datetime as dt
 import json
 import os
 import re
-import stat
 import sys
 from collections import Counter
 from pathlib import Path
@@ -50,7 +50,6 @@ def inspect(root: Path) -> dict:
                 if matches > MAX_FILES:
                     raise ValueError("FILE_LIMIT_EXCEEDED")
                 try:
-                    import datetime as dt
                     dt.date(int(m[1]), int(m[2]), int(m[3]))
                 except ValueError:
                     raise ValueError("INVALID_DATE_IN_FILENAME") from None
