@@ -27,6 +27,34 @@ Reviewer A/B、exclusions、packets 继续使用 V3 源码中冻结的 SHA256。
 
 所有私有输入必须为普通文件、0600、单硬链接，直接父目录为 0700。输出目录必须不存在，且父目录为 0700。不得把私有 JSONL、故事正文、消息正文、ID 或 DSN 发到聊天或 GitHub。
 
+## 2.1 固定 Worktree 与分支切换
+
+Owner 已有的 R60 工作目录是：
+
+`$HOME/workspace/storyforge-r60-ledger-diagnostics`
+
+不要改用 `$HOME/workspace/storyforge`，也不要重新克隆仓库。先在原工作目录检查工作区干净，然后 fetch 并验证 PR 分支确实是原始 R60 基线的后代：
+
+```bash
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+test -z "$(git status --porcelain)"
+git fetch origin r60/gold192-history-v3-adapter
+git merge-base --is-ancestor \
+  c071784b135c934bfe29537761300c14aa2cd818 \
+  origin/r60/gold192-history-v3-adapter
+```
+
+确认上述命令成功后，在同一目录切换到 PR 分支：
+
+```bash
+git switch --track -c r60/gold192-history-v3-adapter \
+  origin/r60/gold192-history-v3-adapter
+git status --short --branch
+git rev-parse HEAD
+```
+
+如果本地分支已经存在，不要重复创建；先检查其 upstream 和工作区状态，再使用 `git switch` 与 `git pull --ff-only`。不得强制重置或覆盖未提交工作。
+
 ## 3. CPU-only 检查
 
 在仓库根目录执行：
@@ -51,7 +79,7 @@ pytest -q \
 ```bash
 set -euo pipefail
 umask 077
-cd "$HOME/workspace/storyforge"
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
 
 PRIVATE="$HOME/.local/share/storyforge/r58/private"
 R59_PRIVATE="$HOME/.local/share/storyforge/r59/private"
