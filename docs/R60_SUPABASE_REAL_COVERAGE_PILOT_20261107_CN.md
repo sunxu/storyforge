@@ -49,3 +49,7 @@
 状态：`AGGREGATE_COVERAGE_PASS__CANDIDATE_ADMISSION_HOLD`。本轮 `strict_gold_admitted=0`、`experimental_admitted=0`、`training_authorized=false`、`gpu_started=false`、`database_modified=false`、`r50_accessed=false`。
 
 注意：Owner 在后续轮次明确授权 `supabase_read_only_user` 执行不涉及修改、权限变更或关闭 RLS 的查询；此前本机工具对 `r58_export_reader` 的强制角色限制属于较早设计，当前连接不可据此直接运行那个工具。对跨所有者业务行数据，仍必须用明确合法的作品范围，而不能依赖 BYPASSRLS 带来的全表访问。
+
+## 执行环境角色澄清（Owner 2026-11-07）
+
+本报告中的生产聚合 SQL 由 **ChatGPT Supabase 连接器** 的 `supabase_read_only_user` 执行（只读但 BYPASSRLS）。**Owner Mac 上执行本地脚本使用 `r58_export_reader`**，两种身份不得混淆。后续本机 E0–E3 私有取证必须遵守受限角色及权限预检；连接器查询并不证明本机 Reader 拥有消息表 SELECT 权限。
