@@ -119,8 +119,20 @@ Identity-only 不连接数据库、不写输出目录、不恢复历史、不启
       --source-packets "$PACKETS" \
       --output-dir "$R59_PRIVATE/r60-source-v3-pilot7" --pilot 7
 
-检查 R60_SOURCE_SAFE.json 的聚合统计和源匹配分类。只有 Owner 审查 Pilot SAFE
-后，才可在另一个全新目录运行全部明确逐案候选：
+R60 Pilot 必须在独立的新目录执行；此前未校验目标消息 status 的 Pilot 产物只能作为旧版提取记录，
+不得作为新版本验收证据。新版 Pilot SAFE 必须同时满足：
+
+- source_match_counts 中 192 条均为 EXACT_MATCH；
+- exact_target_message_status_category_counts 中 completed 为 192，且不得出现
+  null_or_missing、other_string 或 other_type；
+- context_requested 与 context_exported 均为 7；
+- 随后对 R60_SOURCE_CONTEXT_PRIVATE.jsonl 运行只读历史结构诊断，必须确认
+  7 条均无角色重复、空内容、非 completed 状态及末条非 user 等结构违规。
+
+Pilot 选择现已改为按 story round-robin，优先覆盖不同故事。旧 Pilot 的文件不得覆盖或删除。
+
+检查 R60_SOURCE_SAFE.json 的聚合统计和源匹配分类。只有 Owner 审查新版 Pilot SAFE
+及历史结构诊断 SAFE 后，才可在另一个全新目录运行全部明确逐案候选：
 
     "$PYTHON" experiments/r58_quality/r60_gold192_supabase_extract_v3.py \
       --reviewer-a "$A_V3" --reviewer-b "$B" --exclusions "$EX" \
