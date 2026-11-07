@@ -5,7 +5,6 @@ import hashlib
 import json
 
 import pytest
-
 import r60_experimental_e03_bridge as e03
 from r60_experimental_shape_adapter import GATES, NOT_ACTUAL_SENT
 from r60_p3_stage_pair_probe import Hold
