@@ -13,11 +13,19 @@ import sys
 
 try:
     from .r60_model_input_coverage_catalog import (
-        METADATA_SELECT_COLUMNS, REQUIRED_ROLE, SQL, TABLES, classify,
+        METADATA_SELECT_COLUMNS,
+        REQUIRED_ROLE,
+        SQL,
+        TABLES,
+        classify,
     )
 except ImportError:
     from r60_model_input_coverage_catalog import (
-        METADATA_SELECT_COLUMNS, REQUIRED_ROLE, SQL, TABLES, classify,
+        METADATA_SELECT_COLUMNS,
+        REQUIRED_ROLE,
+        SQL,
+        TABLES,
+        classify,
     )
 
 SCHEMA = "r60_model_input_metadata_window_safe_v1"
@@ -47,15 +55,15 @@ REQUIRED_COUNT_COLUMNS = {"created_at", "request_id", "relay_request_id"}
 
 def validate_window(start: str, end: str) -> tuple[dt.datetime, dt.datetime]:
     try:
-        a = dt.datetime.fromisoformat(start.replace("Z", "+00:00"))
-        b = dt.datetime.fromisoformat(end.replace("Z", "+00:00"))
+        a = dt.datetime.fromisoformat(start)
+        b = dt.datetime.fromisoformat(end)
     except ValueError as exc:
         raise ValueError("WINDOW_PARSE_INVALID") from exc
     if a.tzinfo is None or b.tzinfo is None:
         raise ValueError("WINDOW_TZ_REQUIRED")
     if not dt.timedelta(0) < b - a <= MAX_WINDOW:
         raise ValueError("WINDOW_NOT_BOUNDED")
-    return a.astimezone(dt.timezone.utc), b.astimezone(dt.timezone.utc)
+    return a.astimezone(dt.UTC), b.astimezone(dt.UTC)
 
 
 def check_catalog(tables: dict) -> None:
