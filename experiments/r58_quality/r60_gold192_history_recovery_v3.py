@@ -124,6 +124,39 @@ def _precheck_candidate(case: dict, locator: dict) -> str | None:
     return None
 
 
+def _duplicate_target_statuses_valid(rows, expected_count: int, target_sha256: str) -> str | None:
+    exact = [
+        row for row in rows
+        if isinstance(row, (tuple, list)) and len(row) == 3
+        and isinstance(row[1], str)
+        and source.sha_text(row[1]) == target_sha256
+    ]
+    if len(exact) != expected_count:
+        return "DUPLICATE_SOURCE_MATCH_COUNT_DRIFT"
+    if any(row[2] != "completed" for row in exact):
+        return "DUPLICATE_TARGET_STATUS_DRIFT"
+    return None
+
+
+def _reverify_duplicate_source(cursor, case: dict, locator: dict) -> dict:
+    cursor.execute(
+        """
+        SELECT id::text AS message_id, content, status
+        FROM public.v2_chat_messages
+        WHERE story_id = %s AND turn_index = %s AND role = 'assistant'
+        """,
+        (case["story_id"], case["turn_index"]),
+    )
+    reason = _duplicate_target_statuses_valid(
+        cursor.fetchall(), locator["matched_message_count"], case["target_sha256"]
+    )
+    if reason:
+        return {"status": "HOLD", "reason": reason}
+    return recovery.diagnose_duplicate_source(
+        cursor, case, locator, max_lineage_depth=16
+    )
+
+
 def _verify_and_build_cases(cursor, priority: list[dict], locator_index: dict):
     eligible = []
     duplicate_indices = set()
@@ -138,9 +171,7 @@ def _verify_and_build_cases(cursor, priority: list[dict], locator_index: dict):
         match_count = locator["matched_message_count"]
         if match_count > 1:
             try:
-                proof = recovery.diagnose_duplicate_source(
-                    cursor, case, locator, max_lineage_depth=16
-                )
+                proof = _reverify_duplicate_source(cursor, case, locator)
             except ValueError:
                 holds.append({
                     "case_id": case["case_id"],
@@ -246,6 +277,23 @@ def _safe_base(priority, selected, owner_count, duplicate_verified, cases, ident
     }
 
 
+def _validate_output_target(output_dir: Path | None) -> None:
+    if output_dir is None:
+        raise ValueError("OUTPUT_DIRECTORY_REQUIRED")
+    if output_dir.exists() or output_dir.is_symlink():
+        raise ValueError("OUTPUT_ALREADY_EXISTS")
+    parent = output_dir.parent
+    if (
+        not parent.is_dir() or parent.is_symlink()
+        or stat.S_IMODE(parent.stat().st_mode) != 0o700
+    ):
+        raise ValueError("OUTPUT_PARENT_PERMISSIONS_INVALID")
+    root_repo = Path(__file__).resolve().parents[2]
+    resolved_parent = parent.resolve(strict=True)
+    if resolved_parent == root_repo or root_repo in resolved_parent.parents:
+        raise ValueError("OUTPUT_MUST_REMAIN_PRIVATE")
+
+
 def _write_outputs(output_dir: Path, recovered: list[dict], holds: list[dict],
                    packet_index: dict, safe: dict) -> None:
     if output_dir.exists() or output_dir.is_symlink():
@@ -307,8 +355,8 @@ def run(args) -> dict:
         raise ValueError("PILOT_PARAMETER_INVALID")
     if args.max_ledger_events < 1 or args.max_ledger_events > MAX_LEDGER_EVENTS_HARD:
         raise ValueError("LEDGER_EVENT_LIMIT_INVALID")
-    if not args.diagnose_source_only and not args.diagnose_ledger_event_counts and args.output_dir is None:
-        raise ValueError("OUTPUT_DIRECTORY_REQUIRED")
+    if not args.diagnose_source_only and not args.diagnose_ledger_event_counts:
+        _validate_output_target(args.output_dir)
     _raw, _source_safe, packet_index, selected, priority, locator_index = _load_inputs(args)
 
     if args.diagnose_source_only:
