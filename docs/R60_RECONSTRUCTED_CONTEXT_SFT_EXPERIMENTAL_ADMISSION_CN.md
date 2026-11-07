@@ -37,3 +37,18 @@
 - 若无提示，记录 `EXISTING_OWNER_METADATA_NO_REQUEST_HINTS`，不扩大扫描、不复跑旧失败的 Reply Job / Diagnostic Archive 调查。
 - 实验线 E0–E5 可在 Mac CPU-only 和独立 Owner 审核下推进；E6 不获明确授权则停止在 `EXPERIMENTAL_GPU_NOT_AUTHORIZED`。
 - 发布 SAFE 只包含聚合数量、状态和工具版本；禁止输出私有 ID、路径、故事正文、系统提示词、请求内容与任何 R50 内容。
+
+## R60 实验适配器：本机 Python 路径要求
+
+当前 `r60_experimental_shape_adapter.py` 通过文件路径运行，复用同目录下的 R59 模块，而 R60 P3 依赖 `experiments.r58_quality` 绝对导入。必须在仓库根目录设置 `PYTHONPATH`，否则会出现 `ModuleNotFoundError: No module named 'experiments'`；这不是 Stage/数据校验失败。
+
+```bash
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+PYTHONPATH="$PWD${PYTHONPATH:+:$PYTHONPATH}" python3 \
+  experiments/r58_quality/r60_experimental_shape_adapter.py \
+  --stage-pairs "$STAGE_PAIRS" \
+  --p2-queue "$P2_QUEUE" \
+  --output-dir "$PRIVATE_OUTPUT_NEW_DIR"
+```
+
+上述三个参数只允许指向 Owner 私有、已冻结的输入文件及尚不存在的新输出目录；不允许把私有文件放进 GitHub。保留原有代码的 `R59` shape packer、CPU schema validator、Stage receipt verifier，不新增第二份实现。该执行只会产生非准入预览，E0–E6 仍为 HOLD。
