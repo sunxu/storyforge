@@ -10,9 +10,9 @@ from experiments.r58_quality.r60_model_input_coverage_catalog import (
 
 class TestModelInputCoverageCatalog(unittest.TestCase):
     @staticmethod
-    def fixtures(privileged=True, rls=True, policy_count=1):
+    def fixtures(privileged=True, rls=True, policy_count=1, table_wide=False):
         return [
-            (table, col, "text", rls, privileged, "synthetic_idx", policy_count)
+            (table, col, "text", rls, privileged, "synthetic_idx", policy_count, table_wide)
             for table in TABLES
             for col in COLUMNS[table]
         ]
@@ -50,6 +50,13 @@ class TestModelInputCoverageCatalog(unittest.TestCase):
         result = classify(self.fixtures(policy_count=0))
         self.assertTrue(all(
             row["status"] == "RLS_POLICY_ABSENT_HOLD"
+            for row in result.values()
+        ))
+
+    def test_whole_table_select_is_rejected(self):
+        result = classify(self.fixtures(table_wide=True))
+        self.assertTrue(all(
+            row["status"] == "SCHEMA_OR_PERMISSION_HOLD"
             for row in result.values()
         ))
 
