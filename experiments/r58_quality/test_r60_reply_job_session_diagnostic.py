@@ -53,9 +53,11 @@ class ReplyJobSessionDiagnosticTests(unittest.TestCase):
         raw, receipt, digest = synthetic_inputs()
         with self.assertRaisesRegex(ValueError, "SOURCE_PIN_INVALID"):
             diagnostic.select_diverse(raw, receipt)
-        with patch.object(diagnostic, "EXPECTED_SOURCE_SHA", digest):
-            with self.assertRaisesRegex(ValueError, "SOURCE_PIN_INVALID"):
-                diagnostic.select_diverse(raw + b" ", receipt)
+        with (
+            patch.object(diagnostic, "EXPECTED_SOURCE_SHA", digest),
+            self.assertRaisesRegex(ValueError, "SOURCE_PIN_INVALID"),
+        ):
+            diagnostic.select_diverse(raw + b" ", receipt)
 
     def test_distinguish_absent_session_and_missing_turn(self):
         results = [(False, 0, 0), (True, 0, 0), (True, 1, 2)] + [(False, 0, 0)] * 5
