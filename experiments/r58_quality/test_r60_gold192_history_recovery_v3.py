@@ -1,7 +1,10 @@
 """CPU-only tests for the R60 Canonical A V3 history adapter."""
 from __future__ import annotations
 
+import os
+import tempfile
 import unittest
+from pathlib import Path
 
 try:
     from . import r60_gold192_history_recovery_v3 as adapter
@@ -103,6 +106,18 @@ class V3HistoryAdapterTests(unittest.TestCase):
         finally:
             adapter.source.sha_text = original
         self.assertEqual(reason, "DUPLICATE_SOURCE_MATCH_COUNT_DRIFT")
+
+    def test_private_input_rejects_hard_links(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            root.chmod(0o700)
+            original = root / "source.json"
+            original.write_bytes(b'{"safe":true}')
+            original.chmod(0o600)
+            linked = root / "linked.json"
+            os.link(original, linked)
+            with self.assertRaisesRegex(ValueError, "PERMISSIONS_LINK_OR_SIZE"):
+                adapter._read_private(linked, "TEST_INPUT")
 
     def test_source_receipt_requires_v3_schema_and_locator_pin(self):
         locator_bytes = b'{"case_id":"private"}\\n'
