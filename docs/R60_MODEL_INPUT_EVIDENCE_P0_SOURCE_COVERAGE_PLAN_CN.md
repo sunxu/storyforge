@@ -316,3 +316,42 @@ python3 experiments/r58_quality/r60_reply_job_session_diagnostic.py \
 ```
 
 需要使用上次验证过的真实 SOURCE 目录，只有 JSON SAFE 回执允许贴回聊天。所有个人数据保持在 Owner 私有目录内，R50 隔离、数据库不修改、质量准入 0、训练授权 false、GPU false。
+
+
+## 12. S3B Owner 回执与 S3C 证据源转向（2026-11-07）
+
+Owner 提交的 `r60_reply_job_session_diagnostic_safe_v1` 显示：Gold192 涉及 13 个不同故事；跨故事抽查 8 个目标，`session_not_found=8`、`session_found_exact_turn_missing=0`、`exact_turn_found=0`、`matched_job_attempt_count_sum=0`。源身份仍 192，未获取出站模型输入，数据库未修改。**该回执证明这 8 个 Session 在当前授权行集中的 Reply Job 表没有可见记录，不证明全量 Gold192 没有历史模型输入。**
+
+RolePlay 代码基线 `ccdf2e8dc2723f481cd0392883bc359e9e341c66` 提供有价值的来源解释：
+
+- [Durable Reply 设计](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/.claude/plans/2026-08-20-v2-durable-reply-jobs.md) 规定运行开关 `V2_DURABLE_REPLY_MODE=off|shadow|on`；`off` 模式仍走直接生成。数据库表存在、迁移完成，并不能证明某个历史生成请求走了 Durable Job 路径。
+- [Chat Archive](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/src/lib/archive/chat-archive.ts) 的 `CHAT_ARCHIVE_ENABLED` 默认关闭。启用时按用户/Session 写 append-only 消息操作文件；不保证保留最终发送态完整 Prompt。
+- [Diagnostic Archive](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/src/lib/archive/chat-diagnostic-archive.ts) 通过 `CHAT_DIAGNOSTIC_ARCHIVE_ENABLED` 单独控制（未设置时回退至 Chat Archive 开关），默认根目录为 `/var/www/isekai-chat-diagnostic-archive`，两个类别目录名分别为 `abnormal-snapshots`、`latency-metrics`，按 UTC 日期及进程 shard 写 JSONL。
+- 诊断归档代码标记异常快照 30 天、指标 90 天的保留期，但异常快照的旧版清理另有 `CHAT_DIAGNOSTIC_SNAPSHOT_LEGACY_PRUNE_ENABLED` 控制。**这只是代码中的保留逻辑，不证明当前生产归档已经删除或存在**；异地备份也可能保留历史文件。
+- [Archive V2 备份同步脚本](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/ops/backup/chat-archive-v2-sync.sh) 支持加密 S3 备份同步；[Direct Sync](https://github.com/sunxu/RolePlay/blob/ccdf2e8dc2723f481cd0392883bc359e9e341c66/ops/backup/chat-archive-v2-direct-sync.sh) 支持同步批次，故文件取证应先检查 **Owner 已持有的归档 manifest / 本地备份**，不需要 RolePlay 新开发。
+
+### S3C：本地归档文件名存在性清点
+
+新增 [`r60_local_archive_manifest_probe.py`](../experiments/r58_quality/r60_local_archive_manifest_probe.py) 和 [合成测试](../experiments/r58_quality/test_r60_local_archive_manifest_probe.py)。此工具只扫描 Owner 已授权、本机可见的 Diagnostic Archive 目录下 **文件名**，不会打开任何 JSONL、读取正文或修改文件。仅返回两个归档类型的匹配文件数与**年份级**分桶，不输出文件名/具体日期/路径。它不是输入证据分级工具。
+
+Owner 若已将 Diagnostic Archive 安全地同步到本机，可以运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+git pull --ff-only origin r60/gold192-history-v3-adapter
+python3 -m unittest experiments.r58_quality.test_r60_local_archive_manifest_probe -v
+
+# 必须替换为已存在且授权访问的本地归档根目录；
+# 不能直接把下方服务器默认路径当成本机路径。
+ARCHIVE_ROOT="$HOME/.local/share/storyforge/r59/private/roleplay-diagnostic-archive"
+test -d "$ARCHIVE_ROOT"
+python3 experiments/r58_quality/r60_local_archive_manifest_probe.py \
+  --archive-root "$ARCHIVE_ROOT"
+```
+
+若本机没有归档根目录，**不必创建空目录伪装已有记录**。应先确认现存服务器归档和备份清单的位置与可访问性；不能推断归档不存在。不要复制用户对话或请求正文至 GitHub/聊天。
+
+### 后续门槛
+
+先确认 Gold192 的实际来源生成时段、当时 Durable Reply 配置和本地/备份归档的真实时间覆盖。若能找到匹配源，再进行私有逐案绑定；若不能，仅记录来源覆盖范围未证实。**A/B/C/D 均不改变；192 条 UNKNOWN_NOT_REVIEWED，quality_v1_admitted=0、training_authorized=false、gpu_started=false。**
