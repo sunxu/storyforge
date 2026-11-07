@@ -17,6 +17,8 @@ from pathlib import Path
 SCHEMA = "storyforge_r60_scoped_target_evidence_safe_v1"
 OWNER_DB_ROLE = "r58_export_reader"
 SCOPE_SCHEMA = "storyforge_r60_private_session_scope_v1"
+LIMITED_SCOPE_SCHEMA = "storyforge_r60_single_pair_g0_g1_scope_v1"
+LIMITED_AUTH_REF = "OWNER_CHAT_2026-11-07_G0_G1_SINGLE_PAIR"
 BASE = Path.home() / ".local/share/storyforge/r59/private"
 MAX_SESSIONS = 12
 MAX_MESSAGES = 80
@@ -45,11 +47,24 @@ def parse_scope(raw: bytes) -> list[dict]:
         data = json.loads(raw)
     except (ValueError, UnicodeError) as exc:
         raise Hold("PRIVATE_SCOPE_FORMAT_HOLD") from exc
-    sessions = data.get("sessions") if isinstance(data, dict) else None
-    if (data.get("schema") != SCOPE_SCHEMA
-            or data.get("approved_purpose") != "PRIVATE_TRAINING_CANDIDATE_REVIEW_ONLY"
-            or not isinstance(sessions, list)
-            or not 1 <= len(sessions) <= MAX_SESSIONS):
+    if not isinstance(data, dict):
+        raise Hold("PRIVATE_SCOPE_FORMAT_HOLD")
+    sessions = data.get("sessions")
+    if not isinstance(sessions, list):
+        raise Hold("PRIVATE_SCOPE_SCHEMA_HOLD")
+    limited = data.get("schema") == LIMITED_SCOPE_SCHEMA
+    if limited:
+        if (data.get("approved_purpose") != "G0_DISCOVERY_G1_LIMITED_PRIVATE_REVIEW"
+                or data.get("owner_authorization_ref") != LIMITED_AUTH_REF
+                or len(sessions) != 1
+                or data.get("r50_scope_verification") != "UNKNOWN_HOLD"
+                or data.get("training_rights_verification") != "UNVERIFIED_HOLD"
+                or data.get("source_version_sha256") is not None
+                or data.get("scope_pair_provenance") != "R60_OWNER_LOCATOR_THREE_CASES_ONE_PAIR"):
+            raise Hold("LIMITED_SCOPE_AUTHORIZATION_HOLD")
+    elif (data.get("schema") != SCOPE_SCHEMA
+          or data.get("approved_purpose") != "PRIVATE_TRAINING_CANDIDATE_REVIEW_ONLY"
+          or not 1 <= len(sessions) <= MAX_SESSIONS):
         raise Hold("PRIVATE_SCOPE_SCHEMA_HOLD")
     keys = set()
     for row in sessions:
@@ -57,11 +72,18 @@ def parse_scope(raw: bytes) -> list[dict]:
             raise Hold("PRIVATE_SCOPE_SESSION_HOLD")
         story, session = row.get("story_id"), row.get("session_id")
         if (not isinstance(story, str) or not 1 <= len(story) <= 128
-                or not isinstance(session, str) or not 1 <= len(session) <= 128
-                or row.get("owner_scope_confirmed") is not True
-                or row.get("r50_protected_scope_excluded") is not True):
+                or not isinstance(session, str) or not 1 <= len(session) <= 128):
             raise Hold("PRIVATE_SCOPE_SESSION_HOLD")
-        # Assertions delimit intended query scope; no independent rights proof.
+        if limited:
+            if (row.get("g0_g1_scope_authorized") is not True
+                    or row.get("r50_protected_scope_excluded") is not None
+                    or row.get("training_rights_verified") is not None):
+                raise Hold("LIMITED_SCOPE_UNVERIFIED_FLAGS_HOLD")
+        elif (row.get("owner_scope_confirmed") is not True
+              or row.get("r50_protected_scope_excluded") is not True):
+            raise Hold("PRIVATE_SCOPE_SESSION_HOLD")
+        # User authorization applies to the one existing Owner Locator pair only.
+        # The Mac agent must match that pair against the frozen local evidence.
         if (story, session) in keys:
             raise Hold("PRIVATE_SCOPE_DUPLICATE_HOLD")
         keys.add((story, session))
@@ -200,6 +222,9 @@ def main() -> int:
             "schema": SCHEMA,
             "status": "SCOPED_TARGET_PAIR_LOCATORS_EXTRACTED_NOT_ADMITTED",
             "session_scope_count": len(sessions),
+            "g0_g1_limited_authorization": json.loads(raw).get("schema") == LIMITED_SCOPE_SCHEMA,
+            "r50_exclusion_verified_count": 0,
+            "source_version_sha256_verified_count": 0,
             "messages_scanned": scanned,
             "adjacent_completed_pairs": len(rows),
             "scope_sha256": hashlib.sha256(raw).hexdigest(),
