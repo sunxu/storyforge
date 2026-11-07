@@ -69,3 +69,32 @@ StoryForge 来源：`r60/gold192-history-v3-adapter`
 3. 旧异常快照可能受 `expires_at` 清理；不得假定当前表有覆盖历史日期的数据，也不得因零记录直接把任何 Case 判为 D。
 4. 完整对话/请求正文只允许 Owner 私有处理，不进入 SAFE、GitHub、聊天或 CI 日志。
 5. 所有分类仍为 `UNKNOWN_NOT_REVIEWED`；本次为 source inventory + catalog metadata 层，不属于 A/B/C/D 个案判定。
+
+## 七、已实现独立 P0 私有证据槽位初始化（不读取生产正文）
+
+新增 [r60_model_input_evidence_seed.py](../experiments/r58_quality/r60_model_input_evidence_seed.py) 和 [合成测试](../experiments/r58_quality/test_r60_model_input_evidence_seed.py)。它读取与 R60 Source Extract 同一目录的冻结 192 条 locator 和 SAFE 记录，校验条数与来源哈希后，在 Owner 私有目录创建 192 条待审核槽位，**全部为 UNKNOWN_NOT_REVIEWED**；不会读数据库、模型请求、故事正文或输出候选训练 JSONL。
+
+注意：`A/B/C/D` 的已证实数量仍然是 `null`（未盘点），不是 0；只确认 192 条待调查，并不宣称已经逐案取证。程序不赋予 Quality-v1 admission。
+
+Owner 在已有的 StoryForge R60 Worktree 执行：
+
+```bash
+set -euo pipefail
+umask 077
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+test -z "$(git status --porcelain)"
+git fetch origin r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+BASE="$HOME/.local/share/storyforge/r59/private"
+SOURCE="$BASE/r60-source-v3-pilot7-verified-20261107"
+OUT="$BASE/r60-model-input-evidence-seed-$(date -u +%Y%m%dT%H%M%SZ)"
+python3 experiments/r58_quality/r60_model_input_evidence_seed.py \
+  --source-locators "$SOURCE/R60_SOURCE_LOCATORS_192.jsonl" \
+  --source-safe "$SOURCE/R60_SOURCE_SAFE.json" \
+  --output-dir "$OUT"
+```
+
+CLI 仅打印 SAFE 聚合，无私有 Case ID。新增目录为 0700，两个输出文件为 0600。命令需使用 R60 V3 Source Extract 的真实有效同次运行目录；若用户本地命名不同，只替换 SOURCE 行。若遇到来源哈希不一致或输入权限不符则 fail closed，不改动已有文件。**不要上传私有槽位文件到 GitHub/聊天。**
+
+本阶段只建立统一的逐案证据问题清单，下一阶段需利用授权数据源逐案审阅才能出现 A/B/C/D 的真正统计；不能自行填写推测等级。
