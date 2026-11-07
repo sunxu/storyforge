@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import stat
+from pathlib import Path
 
 import pytest
 
@@ -16,7 +17,7 @@ def test_digest_is_deterministic():
 
 def test_private_read_rejects_relative_path(tmp_path):
     with pytest.raises(triage.Hold, match="PRIVATE_INPUT_PATH_INVALID"):
-        triage.read_private(tmp_path.name)
+        triage.read_private(Path(tmp_path.name))
 
 
 def test_private_read_rejects_relaxed_mode(tmp_path):
