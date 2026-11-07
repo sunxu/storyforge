@@ -24,6 +24,7 @@ FLOORS = {"chinese_prose": 4, "character_consistency": 4,
 
 
 def validated_stage(stage_raw: bytes, safe_raw: bytes) -> set[str]:
+    """Validate staged-status receipt only; NOT historical Strict structural READY."""
     # Stage is optional, but if supplied its receipt must be verified.
     from experiments.r58_quality.r59_staging_receipt import valid_staging_receipt
 
@@ -81,13 +82,13 @@ def build(raw: dict[str, bytes], stage: set[str] | None = None,
         if not floor_pass:
             gaps.insert(0, "REVIEWER_A_QUALITY_BELOW_FLOOR")
         if stage is None:
-            gaps.append("OLD_STRICT_STAGE_NOT_CROSSCHECKED")
+            gaps.append("LEGACY_STAGE_STATUS_NOT_CROSSCHECKED")
         elif not stage_ready:
-            gaps.append("OLD_STRICT_STAGE_NOT_READY")
+            gaps.append("LEGACY_STAGE_STATUS_NOT_PRESENT")
         queue.append({
             "case_id": case_id,
             "target_sha256": row["target_sha256"],
-            "old_strict_stage_ready": stage_ready,
+            "legacy_stage_status_present_not_strict_ready": stage_ready,
             "reviewer_a_scores_frozen": scores,
             "reviewer_a_floor_pass": floor_pass,
             "priority_source_rank": row["priority_rank"],
@@ -98,7 +99,7 @@ def build(raw: dict[str, bytes], stage: set[str] | None = None,
             "quality_v1_admitted": False,
         })
     queue.sort(key=lambda r: (
-        0 if r["old_strict_stage_ready"] is True else 1,
+        0 if r["legacy_stage_status_present_not_strict_ready"] is True else 1,
         0 if r["reviewer_a_floor_pass"] else 1,
         -sum(r["reviewer_a_scores_frozen"].values()),
         r["priority_source_rank"],
@@ -112,9 +113,10 @@ def build(raw: dict[str, bytes], stage: set[str] | None = None,
         "gold192_total": 192, "explicit_ab_candidates": len(queue),
         "queue_first_pass_count": min(limit, len(queue)),
         "candidate_a_scores_meet_v1_floors": sum(r["reviewer_a_floor_pass"] for r in queue),
-        "old_strict_ready_crosscheck": "VERIFIED_STAGING_RECEIPT" if stage is not None else "NOT_CHECKED",
-        "old_strict_ready_total": len(stage) if stage is not None else None,
-        "old_strict_ready_intersection_ab": sum(r["old_strict_stage_ready"] is True for r in queue) if stage is not None else None,
+        "legacy_stage_status_crosscheck": "RECEIPT_VERIFIED_NOT_STRICT_READY" if stage is not None else "NOT_CHECKED",
+        "old_strict_structural_ready_crosscheck": "NOT_CHECKED",
+        "legacy_staged_status_total": len(stage) if stage is not None else None,
+        "legacy_staged_status_intersection_ab": sum(r["legacy_stage_status_present_not_strict_ready"] is True for r in queue) if stage is not None else None,
         "first_pass_missing_evidence_counts": dict(sorted(counts.items())),
         "input_evidence_class_counts": p1_safe["input_evidence_class_counts"],
         "request_attempt_linkage_verified_count": 0,
