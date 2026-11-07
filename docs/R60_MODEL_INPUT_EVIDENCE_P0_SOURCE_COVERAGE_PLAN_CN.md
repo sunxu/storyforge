@@ -103,3 +103,30 @@ python3 experiments/r58_quality/r60_model_input_coverage_catalog.py
 - `CATALOG_PREFLIGHT_HOLD`：先修复权限、表结构或环境问题（需独立审批），不自动降级为不受控连接。
 - `CATALOG_PREFLIGHT_PASS_NO_BUSINESS_ROWS_READ`：允许准备下一轮限定时间窗的聚合方案，尚未执行它。
 - A/B/C/D 继续未知；`UNKNOWN_NOT_REVIEWED=192`；`quality_v1_admitted=0`，无 GPU。
+
+
+## 6. S1 Owner 预检回执与 SELECT/RLS 进一步核证（2026-11-07）
+
+Owner 返回 `r60_input_evidence_catalog_preflight_safe_v1`：`CATALOG_PREFLIGHT_HOLD`；使用 `r58_export_reader`、只读事务、`row_security=on`。三个目标表的必需列与索引均存在，`business_rows_read=0`、`aggregate_counts_executed=false`，且无数据库修改、R50 访问、GPU、训练准入。
+
+| 表 | SELECT 授权 | RLS | 已发现 SELECT/ALL Policy 数 | 结论 |
+|---|---|---|---:|---|
+| `v2_chat_reply_jobs` | false | true | 0 | 表授权与行策略均阻断 |
+| `chat_abnormal_snapshot` | false | true | 0 | 表授权与行策略均阻断 |
+| `chat_latency_metrics` | true | true | 0 | **原程序的 CATALOG_READY_COUNTS_NOT_RUN 不能代表可见有效数据**；没有适用的 SELECT RLS 策略 |
+
+以上政策数量来自独立 `pg_catalog.pg_class` / `pg_policies` 元数据只读查询，连接为 `supabase_read_only_user`，不是 Owner 的 `r58_export_reader`；查询没有读取业务表数据。三个目标表 `relforcerowsecurity=false`；此事实不允许推断在服务方或表所有者身份下的数据可见性。
+
+**修订后的预检规则**：在已有 `r58_export_reader` 和只读事务检查之外，新增 `pg_policy` 计数。即便具备 SELECT 授权，SELECT/ALL RLS policy 为 0 也必须 `RLS_POLICY_ABSENT_HOLD`；即便存在策略，若尚未审查适用角色、表达式、业务数据授权范围，也只能 `RLS_POLICY_REVIEW_REQUIRED`，不能自动准许覆盖率聚合。实现及合成测试见 `r60_model_input_coverage_catalog.py`。
+
+### 推荐授权路径（未执行、待批准）
+
+**优先**由 RolePlay 管理者设计专用且经安全审核的聚合统计 RPC（或等价受控只读导出服务），返回仅限已批准时间窗口的计数、完整性标记与关联率；不直接公开 `request_envelope`、`conversation_context`、原始 request IDs。此方案必须明确：
+
+1. 明确函数执行身份、调用角色、授权业务范围、租户/用户数据访问规则，禁止宽泛 `SECURITY DEFINER` 自动绕过 RLS；如必须使用 definer，须通过固定 `search_path`、固定 SQL、严格输入验证、授权白名单、资源限额、审计日志和安全评审。
+2. 只对必要函数授予 `EXECUTE`，不要直接给 `r58_export_reader` 两张敏感表的全文 SELECT 或使用 `service_role`；继续以唯一已批准受限角色调用。
+3. 必须保留 `READ ONLY`、RLS/等价明确授权行过滤和最小必要的结果字段；无合适索引、范围不可控、权限异常时 fail closed。
+4. 生产 DDL（包括创建函数、GRANT、RLS policy）必须由 Owner **另行明确授权**并通过 RolePlay 仓库迁移与审查流程，当前 StoryForge 工作不能代行。
+5. 如产出是全站统计，需考虑跨租户泄露及小样本重识别，必要时仅返回粗粒度桶与最小样本阈值。
+
+**当前判定：** S1 `CATALOG_PREFLIGHT_HOLD`；不能读取业务记录，也不能推断 Gold192 历史数据缺失。192 个槽位仍为 `UNKNOWN_NOT_REVIEWED`，A/B/C/D 全部未知，`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
