@@ -20,7 +20,6 @@ try:
     )
 except ImportError:
     from r60_model_input_coverage_catalog import (
-        METADATA_SELECT_COLUMNS,
         REQUIRED_ROLE,
         SQL,
         TABLES,
