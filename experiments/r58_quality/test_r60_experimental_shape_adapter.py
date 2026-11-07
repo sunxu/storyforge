@@ -5,7 +5,6 @@ import hashlib
 import json
 
 import pytest
-
 from r59_sft_shape_preview import R27_SYSTEM_SHA256
 from r60_experimental_shape_adapter import NOT_ACTUAL_SENT, make_preview
 from r60_p3_stage_pair_probe import Hold
