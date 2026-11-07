@@ -267,9 +267,9 @@ def execute(db, selected: list[dict], packet_index: dict, max_history: int):
             status, canonical = decide_matches(case, variants)
             locators.append({**case, 'source_status': status,
                              'matched_message_count': len(exact_variants),
-                             'exact_target_status_categories': sorted({
+                             'exact_target_status_categories': sorted(
                                  status_category(x.get('status')) for x in exact_variants
-                             }),
+                             ),
                              'message_id': canonical['message_id'] if canonical else None,
                              'session_id': canonical['session_id'] if canonical else None})
             if case['case_id'] not in selected_ids or canonical is None:
@@ -366,6 +366,11 @@ def main() -> int:
                 'sha256': atomic_private_write(root / name, jsonl_bytes(rows)),
             }
         counts = Counter(x['source_status'] for x in locators)
+        exact_target_status_counts = Counter(
+            category
+            for locator in locators
+            for category in locator['exact_target_status_categories']
+        )
         safe = {
             'schema': 'r60_gold192_supabase_extract_v3_safe_v1',
             'status': 'SOURCE_EXTRACTED__NOT_QUALITY_ADMITTED',
