@@ -51,3 +51,19 @@
 4. 数据集与 GPU 都不启动；本轮 `strict_gold_admitted=0`、`experimental_admitted=0`、`training_authorized=false`、`gpu_started=false`、`database_modified=false`、`r50_accessed=false`。
 
 本报告仅记录聚合与来源代码线索，既不冻结训练集，也不构成授权状态或训练准入决定。
+
+## C. 同日 V2 Chat 活跃 Session 的高优先级元数据候选
+
+后续采用 **仅 `scene='v2-chat'`** 的 12 个最活跃 Session，区别于上一份覆盖率报告中的**全场景** 12 Session。两组抽样标准不同，前者同日完成消息为 **152**，后者为 **153**；不得将两个 cohort 的计数合并或把 1 条差异视为数据丢失。
+
+在 `scene='v2-chat'` 12 Session 各最近 30 条完成 Assistant 中，仅统计当天创建的消息：
+
+- 2026-11-06 UTC 创建并完成的 Assistant：**152**。
+- 不带 `editedAt` / `originalContent` 顶层编辑标记：**148**。
+- 不带 `parseWarnings` 顶层键：**85**。
+- 同时无上述编辑标记、无 `parseWarnings` 键、具有常见正常结束 `finishReason`：**81**。
+- 81 条属于 **7 个不同 Story ID**，不是 7 个独立 world component；目前没有任何一条通过来源权益 / 世界隔离审核。
+
+**代码级发现：** RolePlay `src/app/api/chat/v2/route.ts` 的成功流式生成路径先 `moderateOutput`，在阻断时可能把 `outputContent` 改为 fallback，然后经 `persistTurnMessages` 保存目标，才调用 `ChatLatencyMetricsService.record` 写 `requestId: logger.ctx.requestId` 与 `attemptTrace`（约第 5030–5200 行）。因此请求日志的完成状态仅说明应用成功流的后置指标，不证明其文本和原始 Provider Completion 完全一致。消息 metadata 抽样没有直观 requestId 顶层键；不得依靠 Session + 近邻时间做唯一匹配。
+
+**下一次优先行动**：在 Owner 已认证使用权的作品中识别同等筛选条件下的少量候选，寻找真实可信的 target–attempt 关联和处理链，并区分原生单次响应与 moderation/重试/拼接/编辑。不要把这 81 条写入训练集，不准按结果推断可用率。
