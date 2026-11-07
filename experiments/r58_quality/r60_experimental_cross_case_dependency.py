@@ -27,7 +27,16 @@ def analyze(previews: list[dict], reviews: list[dict]):
     if len(previews) != 3 or len(reviews) != 3:
         raise Hold("THREE_CASES_REQUIRED")
     nodes, seen, targets = [], set(), set()
-    for row, review in zip(previews, reviews, strict=True):
+    by_digest = {}
+    for review in reviews:
+        if not isinstance(review, dict):
+            raise Hold("REVIEW_SCHEMA_INVALID")
+        digest = review.get("source_target_sha256")
+        if not isinstance(digest, str) or digest in by_digest:
+            raise Hold("REVIEW_DUPLICATE_TARGET")
+        by_digest[digest] = review
+    for row in previews:
+        review = by_digest.get(row["metadata"]["source_target_sha256"])
         validate_preview_row(row)
         if not isinstance(review, dict) or review.get("schema") != REVIEW_SCHEMA:
             raise Hold("REVIEW_SCHEMA_INVALID")
