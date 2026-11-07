@@ -12,7 +12,6 @@ import os
 import re
 import stat
 import sys
-from collections import Counter
 from pathlib import Path
 
 SCHEMA = "storyforge_r60_dual_track_coverage_safe_v1"
@@ -171,11 +170,11 @@ def write_private(output: Path, rows, safe):
     output.mkdir(mode=0o700)
     for name, payload in (
         ("R60_DUAL_TRACK_CANDIDATES_PRIVATE.jsonl", b"".join(
-            (json.dumps(row, ensure_ascii=False, sort_keys=True)+"\\n").encode()
+            (json.dumps(row, ensure_ascii=False, sort_keys=True)+"\n").encode()
             for row in rows
         )),
         ("R60_DUAL_TRACK_COVERAGE_SAFE.json", (
-            json.dumps(safe, ensure_ascii=False, sort_keys=True)+"\\n").encode()),
+            json.dumps(safe, ensure_ascii=False, sort_keys=True)+"\n").encode()),
     ):
         fd = os.open(output/name, os.O_WRONLY|os.O_CREAT|os.O_EXCL
                      |getattr(os,"O_NOFOLLOW",0), 0o600)
