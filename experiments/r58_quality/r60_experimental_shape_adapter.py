@@ -16,6 +16,7 @@ from pathlib import Path
 
 from r59_sft_collator_cpu import validate_preview_row
 from r59_sft_shape_preview import build_preview
+from r59_staging_receipt import valid_staging_receipt
 from r60_p3_stage_pair_probe import (
     ALLOWED_BASE,
     STAGE_SCHEMA,
@@ -25,7 +26,6 @@ from r60_p3_stage_pair_probe import (
     parse_lines,
     private_bytes,
 )
-from r59_staging_receipt import valid_staging_receipt
 
 SCHEMA = "storyforge_r60_experimental_shape_adapter_safe_v1"
 NOT_ACTUAL_SENT = "RECONSTRUCTED_NOT_ACTUAL_SENT"
