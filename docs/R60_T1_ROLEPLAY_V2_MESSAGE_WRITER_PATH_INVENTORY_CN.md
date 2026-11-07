@@ -112,3 +112,51 @@ Durable worker/job RPCs → accept_v2_chat_reply_job / cancel_v2_chat_reply_job 
 - 下一步先做全仓静态扫描，重点 `execute_v2_checkpoint_rewind_v2` 的定义来源、所有 `CREATE OR REPLACE FUNCTION` 覆写链、动态 SQL、直接写入、触发器写入和定时任务引用；之后做生产 catalog **只读**核验。
 - **当前仍然不证明**任意 Session 的最终提交顺序/Trigger 连续性；StoryForge V3 Full Recovery 保持 fail-closed。
 
+
+## G. 可复现的只读全仓扫描器（代码已提交，待 Owner 本地运行）
+
+新增：
+
+- [`experiments/r58_quality/r60_roleplay_writer_inventory.py`](https://github.com/sunxu/storyforge/blob/r60/gold192-history-v3-adapter/experiments/r58_quality/r60_roleplay_writer_inventory.py)
+- [合成测试](https://github.com/sunxu/storyforge/blob/r60/gold192-history-v3-adapter/experiments/r58_quality/test_r60_roleplay_writer_inventory.py)
+
+扫描器使用 `git ls-files` 读取本地 RolePlay Worktree 中的 `src/`、`apps/`、`packages/`、`scripts/`、`supabase/`、`workers/` 下已跟踪的 TS/JS/Python/SQL，输出：
+
+1. 直接 SQL `INSERT/UPDATE/DELETE/MERGE/TRUNCATE v2_chat_messages` 位置；
+2. Supabase `.from('v2_chat_messages')` 和相邻写入方法候选；
+3. 相关 `.rpc('...')` 调用；
+4. 相关 SQL 函数定义及潜在覆写链；
+5. 相关 Trigger 定义候选与动态 SQL 待核项；
+6. 每个发现的相对路径、行号、分类，以及 skipped 文件记录、仓库 HEAD SHA。
+
+不输出文件正文、消息文本、用户 ID、数据库连接串或 token；不访问网络或数据库，不执行被扫描项目的代码。现阶段是正则扫描工具，**存在误报和漏报可能**（比如动态生成函数名、多行拼接、间接数据库写入、第三方运行时代码），必须人工/AST 复核，不能仅凭 `STATIC_SCAN_COMPLETE_NOT_CERTIFIED` 宣告 T1 完成。
+
+在 Owner 原 StoryForge Worktree 运行（RolePlay 目录必须由 Owner 指向实际已有的本地 clone，不假设 `~/workspace/RolePlay` 存在）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+# 按实际情况设置；目录必须是 sunxu/RolePlay 的本地 git 仓库根目录
+: "${ROLEPLAY_REPO:?请先设置本机 RolePlay 仓库绝对路径}"
+ROLEPLAY_REPO="$(cd "$ROLEPLAY_REPO" && pwd -P)"
+git -C "$ROLEPLAY_REPO" remote -v
+git -C "$ROLEPLAY_REPO" rev-parse HEAD
+
+# 保存到 Owner 私有目录；不要将完整 scan report 自动提交 GitHub
+umask 077
+OUT="$HOME/.local/share/storyforge/r59/private/R60_T1_ROLEPLAY_WRITER_SCAN_SAFE_$(date -u +%Y%m%dT%H%M%SZ).json"
+test ! -e "$OUT"
+python3 experiments/r58_quality/r60_roleplay_writer_inventory.py \
+  --roleplay-repo "$ROLEPLAY_REPO" \
+  --output "$OUT"
+shasum -a 256 "$OUT"
+```
+
+输出的 CLI SAFE 摘要可用于回传；完整 JSON 包含可公开的代码路径/函数名，但仍建议先留 Owner 本机，复核后只提交适当聚合统计。当前还没有执行实际 Owner RolePlay clone 的全仓扫描。
+
+### T1 剩余判定
+
+完成真正的 T1 需要：全仓零未解释的 skip、动态 SQL/间接调用的人工覆盖、最新 RPC 函数版本核对、所有写路径 reachability 分类，并进行生产目录只读交叉比对。随后才能进入 T2 的 lock-order 审计。
+
