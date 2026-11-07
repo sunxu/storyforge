@@ -380,6 +380,9 @@ def main() -> int:
             'aggregate_complement_passes_eligible': False,
             'context_requested': len(priority), 'context_exported': len(contexts),
             'source_match_counts': dict(sorted(counts.items())),
+            'exact_target_message_matches_total': sum(
+                row['matched_message_count'] for row in locators
+            ),
             'exact_target_message_status_category_counts': dict(
                 sorted(exact_target_status_counts.items())
             ),
