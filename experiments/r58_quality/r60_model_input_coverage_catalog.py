@@ -66,7 +66,7 @@ def run(dsn: str) -> dict:
     import psycopg
 
     # Per-session guard precedes catalog read, and the transaction is read-only.
-    with psycopg.connect(dsn, autocommit=False, connect_timeout=10) as conn:
+    with psycopg.connect(dsn, autocommit=True, connect_timeout=10) as conn:
         with conn.cursor() as cur:
             cur.execute("BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
             cur.execute("SET LOCAL statement_timeout = '15000ms'")
@@ -116,7 +116,7 @@ def main() -> int:
         return 2
     try:
         result = run(dsn)
-    except (Exception,) as exc:
+    except Exception as exc:
         # Intentionally never print exception text (may include DSN or SQL values).
         print(json.dumps({"status": "CATALOG_PREFLIGHT_HOLD",
                           "reason_code": type(exc).__name__,
