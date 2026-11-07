@@ -70,6 +70,36 @@ class V3HistoryAdapterTests(unittest.TestCase):
         )
         self.assertEqual(reason, "SOURCE_MATCH_COUNT_INVALID")
 
+    def test_duplicate_status_reverification_rejects_status_drift(self):
+        rows = [
+            ("message-1", "exact target", "completed"),
+            ("message-2", "exact target", "pending"),
+        ]
+        # Replace the hash function only for this synthetic status-gate test.
+        original = adapter.source.sha_text
+        try:
+            adapter.source.sha_text = lambda value: (
+                "a" * 64 if value == "exact target" else "b" * 64
+            )
+            reason = adapter._duplicate_target_statuses_valid(
+                rows, 2, "a" * 64
+            )
+        finally:
+            adapter.source.sha_text = original
+        self.assertEqual(reason, "DUPLICATE_TARGET_STATUS_DRIFT")
+
+    def test_duplicate_status_reverification_rejects_match_count_drift(self):
+        rows = [("message-1", "exact target", "completed")]
+        original = adapter.source.sha_text
+        try:
+            adapter.source.sha_text = lambda value: "a" * 64
+            reason = adapter._duplicate_target_statuses_valid(
+                rows, 2, "a" * 64
+            )
+        finally:
+            adapter.source.sha_text = original
+        self.assertEqual(reason, "DUPLICATE_SOURCE_MATCH_COUNT_DRIFT")
+
     def test_source_receipt_requires_v3_schema_and_locator_pin(self):
         locator_bytes = b'{"case_id":"private"}\\n'
         safe = {
