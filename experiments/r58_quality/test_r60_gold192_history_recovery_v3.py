@@ -78,9 +78,10 @@ class V3HistoryAdapterTests(unittest.TestCase):
         # Replace the hash function only for this synthetic status-gate test.
         original = adapter.source.sha_text
         try:
-            adapter.source.sha_text = lambda value: (
-                "a" * 64 if value == "exact target" else "b" * 64
-            )
+            def fake_hash(value):
+                return "a" * 64 if value == "exact target" else "b" * 64
+
+            adapter.source.sha_text = fake_hash
             reason = adapter._duplicate_target_statuses_valid(
                 rows, 2, "a" * 64
             )
@@ -92,7 +93,10 @@ class V3HistoryAdapterTests(unittest.TestCase):
         rows = [("message-1", "exact target", "completed")]
         original = adapter.source.sha_text
         try:
-            adapter.source.sha_text = lambda value: "a" * 64
+            def fake_hash(value):
+                return "a" * 64
+
+            adapter.source.sha_text = fake_hash
             reason = adapter._duplicate_target_statuses_valid(
                 rows, 2, "a" * 64
             )
