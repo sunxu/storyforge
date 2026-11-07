@@ -21,7 +21,7 @@ decision_for_strict_ab_pairing 的依赖。新版只接受冻结的 Canonical Re
 | Canonical A V3 status | V3_SOURCES_NORMALIZED__192_IDENTITIES_VERIFIED__EVIDENCE_GRANULARITY_EXPLICIT |
 | Canonical A V3 report SHA256 | b0356782963dd3c4f85c210bf0f1c69dc01211d818011c16754ea95e9a4fbdb8 |
 | Reviewer B SHA256 | bdd1980eacf9e21c08fb3e5ada482ea476f35c2018c6120e0f708718eda666e8 |
-| 11 exclusions SHA256 | 9ca99432e08b680cb67b1f89d172a337cb91c9bd02af70b68356938c6c04ed |
+| 11 exclusions SHA256 | 9ca99432e08b680cb67b5a1f89d172a337cb91c9bd02af70b68356938c6c04ed |
 | Gold192 packets SHA256 | ae26a288382939aa79923d4a4c0602b0d575baa63f81c622ab362fbb70d56a5e |
 
 A V3 的固定证据粒度：
