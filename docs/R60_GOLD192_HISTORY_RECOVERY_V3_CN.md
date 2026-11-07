@@ -123,6 +123,21 @@ python3 experiments/r58_quality/r60_gold192_history_recovery_v3.py \
 #    不要添加绕过参数，不要生成历史上下文文件。
 ```
 
+## 5.1 2026-11-07 Pilot7 Ledger 事件计数 SAFE
+
+Owner 在原 R60 Ledger Diagnostics Worktree 使用本适配器执行只读计数，SAFE 结果：
+
+- `status=LEDGER_EVENT_COUNTS_WITHIN_LIMIT`
+- `pilot_requested=7`，`source_identity_eligible=7`，`source_identity_held=0`
+- Pilot 7 中 `multiple_match_cases=0`；这不代表 Gold192 全体 192 条的 12 个多重匹配 Case 已解决。
+- 数据库角色 `r58_export_reader`；`transaction_read_only=true`；RLS 开启；`rolsuper/rolbypassrls=false`。
+- 两个 Session 的正 turn 范围 Ledger 元数据计数分别为 13,657 和 86,583，均低于每 Session 100,000 默认上限。
+- 合计 100,240 是两个 Session 的计数之和，不是实际载入的去重事件数，也不是已恢复的历史消息数。
+- `duplicate_source_roots_reverified=0`，因为本次 Pilot 7 locator 全部是单一匹配；这不是重复根复核通过的数量。
+- `database_modified=false`、`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`、`r50_accessed=false`。
+
+该结果只证明本次 Pilot 的来源身份及 Ledger 读取规模预检查通过。它**不证明** Ledger 事件提交顺序、Trigger 连续性、目标时点历史版本或 System Prompt。不能据此启动历史正文恢复。
+
 ## 6. 时间顺序与 Trigger 连续性是独立硬门槛
 
 2026-11-05 的 Pilot8 Ledger 时间顺序审计已经确认：
