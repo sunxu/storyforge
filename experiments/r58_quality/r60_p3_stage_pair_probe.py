@@ -101,13 +101,13 @@ def investigate(inventory: dict, p2_rows: list[dict], loader) -> tuple[list[dict
             seen = set()
             ready = set()
             for row in rows:
-                if row.get("schema") != STAGE_SCHEMA:
-                    raise Hold("MATCHED_STAGE_SCHEMA_INVALID")
                 cid = row.get("case_id")
                 if not isinstance(cid, str) or not cid or cid in seen:
                     raise Hold("MATCHED_STAGE_IDENTITY_INVALID")
                 seen.add(cid)
                 if row.get("status") == STAGE_STATUS:
+                    if row.get("schema") != STAGE_SCHEMA:
+                        raise Hold("MATCHED_READY_STAGE_SCHEMA_INVALID")
                     ready.add(cid)
             pairs.append({
                 "stage_sha256": stage_hash,
