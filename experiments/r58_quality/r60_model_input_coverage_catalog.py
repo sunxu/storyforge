@@ -32,7 +32,7 @@ METADATA_SELECT_COLUMNS = {
 
 
 def classify(rows: list[tuple]) -> dict:
-    """Catalog tuples: (table, column, type, rls, column_select, index, policies, table_select)."""
+    """Catalog tuples: (table, column, type, rls, column_select, index, policies, table_select, scoped_policies)."""
     result = {}
     for table in TABLES:
         selected = [x for x in rows if x[0] == table]
@@ -46,6 +46,7 @@ def classify(rows: list[tuple]) -> dict:
         indices = sorted({x[5] for x in selected if x[5]})
         policy_count = max((x[6] for x in selected), default=0)
         table_wide_select = any(x[7] is True for x in selected)
+        matching_policy_count = max((x[8] for x in selected), default=0)
         missing = sorted(required - columns)
         result[table] = {
             "present": bool(selected),
@@ -55,12 +56,14 @@ def classify(rows: list[tuple]) -> dict:
             "table_wide_select_privilege": table_wide_select,
             "rls_enabled": rls,
             "select_policy_count": policy_count,
+            "matching_scoped_policy_count": matching_policy_count,
             "index_names": indices,
             "status": (
                 "CATALOG_ABSENT" if not selected else
                 "SCHEMA_OR_PERMISSION_HOLD" if missing or not access or not rls or table_wide_select else
                 "RLS_POLICY_ABSENT_HOLD" if policy_count == 0 else
-                "RLS_POLICY_REVIEW_REQUIRED"
+                "RLS_POLICY_MISMATCH_HOLD" if policy_count != 1 or matching_policy_count != 1 else
+                "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
             ),
         }
     return result
@@ -74,7 +77,15 @@ SELECT c.relname, a.attname, format_type(a.atttypid, a.atttypmod),
        ix.indexrelid::regclass::text,
        (SELECT COUNT(*) FROM pg_catalog.pg_policy pol
         WHERE pol.polrelid = c.oid AND pol.polcmd IN ('r', '*')),
-       has_table_privilege(current_user, c.oid, 'SELECT')
+       has_table_privilege(current_user, c.oid, 'SELECT'),
+       (SELECT COUNT(*) FROM pg_catalog.pg_policy pol
+        WHERE pol.polrelid=c.oid
+          AND pol.polname='r60_gold192_evidence_metadata_select'
+          AND pol.polcmd='r' AND pol.polpermissive
+          AND pol.polroles=ARRAY[(SELECT oid FROM pg_catalog.pg_roles
+                                  WHERE rolname='r58_export_reader')]::oid[]
+          AND pg_catalog.pg_get_expr(pol.polqual,pol.polrelid)='true'
+          AND pol.polwithcheck IS NULL)
 FROM pg_catalog.pg_class AS c
 JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace
 LEFT JOIN pg_catalog.pg_attribute AS a
@@ -115,7 +126,10 @@ def run(dsn: str) -> dict:
     tables = classify(rows)
     return {
         "schema": SCHEMA,
-        "status": "CATALOG_PREFLIGHT_HOLD",
+        "status": ("CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
+                   if all(t["status"] == "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN"
+                          for t in tables.values())
+                   else "CATALOG_PREFLIGHT_HOLD"),
         "database_role_verified": REQUIRED_ROLE,
         "transaction_read_only": True,
         "row_security": True,
@@ -148,7 +162,7 @@ def main() -> int:
                           "private_values_emitted": False}))
         return 2
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 2  # Catalog policies require independent authorization review.
+    return 0 if result["status"] == "CATALOG_POLICY_MATCHED_COUNTS_NOT_RUN" else 2
 
 
 if __name__ == "__main__":
