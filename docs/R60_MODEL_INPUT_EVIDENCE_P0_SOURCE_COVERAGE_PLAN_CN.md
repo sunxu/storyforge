@@ -274,3 +274,45 @@ python3 experiments/r58_quality/r60_reply_job_locator_pilot.py \
 该脚本要求源文件为私有的 0600、父目录 0700，连接保持只读事务、RLS、`r58_export_reader` 且每条查询 3 秒超时。返回仅聚合 SAFE；若来源路径/权限/定位签名不符，保留 HOLD。不要把私有 locator JSONL 发送到 GitHub 或聊天。
 
 注意，本次选择按 `case_id` 排序的前 8 条是**技术可执行性 Pilot**，不是质量最优 8 条，不保证在旧 Reply Job 上有覆盖。若 8/8 无匹配，仍然不代表全量 192 条无证据，应进一步按**目标真实生成时间、部署版本**与持久化链路判断是否存在记录。
+
+
+## 11. Owner S3 首轮 8/8 不匹配：改用 Session/Turn 双层诊断
+
+Owner 回执 `r60_reply_job_locator_pilot_safe_v1`：`REPLY_JOB_LOCATOR_PILOT_METADATA_ONLY_NOT_INPUT_VERIFIED`，`pilot_targets_checked=8`、`reply_job_exact_locator_matches=0`、`reply_job_not_found=8`、`matched_job_attempt_count_sum=0`。这不是数据库执行失败，而是 8 条精确 `(session_id, assistant_turn)` 查询未匹配。没有任何生成请求正文获得验证。
+
+重要解释：
+
+- 首轮 8 条是**按 case_id 排序**的 8 条，不代表不同故事、不同生成日期或不同 RolePlay 部署时期；
+- R60 Source Extract 的 `session_id` 来自**当前持久化消息**，可能经过 fork/rewind/import/migration，不能凭它断言生成时的 Reply Job Session 唯一标识相同；
+- RolePlay 的 `v2_chat_reply_jobs` 建表迁移时间是 2026-08-20；旧请求可能没有该表对应记录。创建文件时间不是生产部署时间，不能直接用迁移名判断样本来源时点；
+- 存在 RLS 限制、记录生命周期、功能模式或不同生成路径等其他解释。**不能把 8/8 零匹配外推到 Gold192 192 条，不应据此划 D。**
+
+### 11.1 S3B 双层定位（仅元数据、最多 8 条）
+
+新增 [`r60_reply_job_session_diagnostic.py`](../experiments/r58_quality/r60_reply_job_session_diagnostic.py)，仅从已经冻结且 SHA256 为 `eb2b186b03ffc31585c224ac75cbfd7dd20c8d762887a6463c85bc5090ae9739` 的 192 条 Source Locator 中读取私有定位字段，按**不同 story 先各选一个**的规则抽取 8 条，不要求与前一轮 8 条不同。
+
+在 Owner 的 `r58_export_reader`、`READ ONLY`、`row_security=on` 事务中，只用已存在的 `session_id` 前导唯一索引（`uq_v2_reply_job_client_msg`）和 `(session_id, assistant_turn)` 唯一索引，每条查询设置 3 秒超时。分别检查：
+
+1. `EXISTS (SELECT 1 ... WHERE session_id=... LIMIT 1)`：是否能看到该 Session 任一 Reply Job；
+2. `COUNT(*) WHERE session_id=... AND assistant_turn=...`：是否有目标轮次的准确任务；
+3. 只返回聚合三类数：`session_not_found` / `session_found_exact_turn_missing` / `exact_turn_found` 和已匹配任务的 attempt_count 总和。
+
+不读取 Reply Job `request_envelope`、聊天正文、用户 ID 或任何原始标识；**不会写入 Gold192 证据槽位，更不会升级 A/B/C/D**。如 8 个 Session 均不存在，下一步优先排查样本时间与 Job 功能的覆盖期，而不是先做 192 条无区别的重复查询。如出现 Session 存在但 Turn 不匹配，优先核对轮次映射/迁移；如有 exact match，再对命中的 Owner 私有个案做请求证据来源的进一步资格审核。
+
+Owner 执行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-ledger-diagnostics"
+git pull --ff-only origin r60/gold192-history-v3-adapter
+python3 -m unittest \
+  experiments.r58_quality.test_r60_reply_job_locator_pilot \
+  experiments.r58_quality.test_r60_reply_job_session_diagnostic -v
+
+SOURCE="$HOME/.local/share/storyforge/r59/private/r60-source-v3-pilot7-verified-20261107"
+python3 experiments/r58_quality/r60_reply_job_session_diagnostic.py \
+  --source-locators "$SOURCE/R60_SOURCE_LOCATORS_192.jsonl" \
+  --source-safe "$SOURCE/R60_SOURCE_SAFE.json"
+```
+
+需要使用上次验证过的真实 SOURCE 目录，只有 JSON SAFE 回执允许贴回聊天。所有个人数据保持在 Owner 私有目录内，R50 隔离、数据库不修改、质量准入 0、训练授权 false、GPU false。
