@@ -13,7 +13,7 @@ class R60MetadataWindowTests(unittest.TestCase):
         a, b = validate_window("2026-08-01T00:00:00+08:00",
                                "2026-08-02T00:00:00+08:00")
         self.assertEqual(b - a, dt.timedelta(days=1))
-        self.assertEqual(a.tzinfo, dt.timezone.utc)
+        self.assertEqual(a.tzinfo, dt.UTC)
 
     def test_unbounded_or_naive_window_holds(self):
         pairs = [
