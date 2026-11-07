@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 SCHEMA = "storyforge_r60_scoped_target_evidence_safe_v1"
+OWNER_DB_ROLE = "r58_export_reader"
 SCOPE_SCHEMA = "storyforge_r60_private_session_scope_v1"
 BASE = Path.home() / ".local/share/storyforge/r59/private"
 MAX_SESSIONS = 12
@@ -136,9 +137,10 @@ def fetch_scoped(dsn: str, sessions: list[dict]) -> tuple[list[dict], int]:
                 cur.execute("SET LOCAL row_security=on")
                 cur.execute("""
                     SELECT current_user, current_setting('transaction_read_only'),
-                           current_setting('row_security')
+                           current_setting('row_security'), r.rolbypassrls, r.rolsuper
+                    FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
                 """)
-                if cur.fetchone() != ("supabase_read_only_user", "on", "on"):
+                if cur.fetchone() != (OWNER_DB_ROLE, "on", "on", False, False):
                     raise Hold("DATABASE_GUARD_HOLD")
                 for record in sessions:
                     cur.execute(SQL, (record["session_id"], record["story_id"], MAX_MESSAGES))
