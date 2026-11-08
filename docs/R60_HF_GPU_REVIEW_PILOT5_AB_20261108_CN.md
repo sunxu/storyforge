@@ -1,5 +1,17 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08：B v3 H200 完成 5/5，双模型技术 Pilot 结束，质量语义校准仍 HOLD（最新状态）
+
+已只读核验 [真实 B v3 HF Job `6af060700e0338d1bb84b025`](https://huggingface.co/jobs/adradar/6af060700e0338d1bb84b025)：`r60-quality-gpu-pilot5-B-v3-01`，`adradar/h200`，固定不可变 vLLM digest，固定 GLM 模型 revision `077b5c2f5c43bd3239fd605a0600229e8facbd4a`。HF `2026-11-08T11:43:44.359Z` 创建、`11:49:03.773Z` 完成，**COMPLETED**，实际模型权重 14/14 shards 加载。SAFE 结果 `status=HF_REVIEW_PARTIAL__NO_ADMISSION`、`cases_total=1000`、`cases_completed=5`、`quality_decisions={PASS:0,HOLD:0,REJECT:5}`、`quote_repair_attempts=1`、`quote_repair_successes=1`、`quality_v1_admitted=0`、`training_authorized=false`。此次 v3 引用纠错在实际 H200 上**确实成功 1/1**；修复候选仅索引选择，模型原始评分及严重标记未在修复阶段改动。5 个私有 `review_0001..0005.private.json` 均已产生，且全部 `storyforge_hf_literary_checkpoint_private_v3`。原 B v2 失败任务、旧输出和 A v2 输出均保持不动。
+
+独立仅在私有 HF 文件内核验 B 前 5 条真实冻结输入与 5 个 Checkpoint：模型 revision、六维评分、blind_id 均 **5/5 匹配**；每条 `specific_source_quotes` 与该条可见历史某单条消息，`specific_target_quotes` 与该条目标正文的严格子串匹配 **5/5 通过**。所有字段存在 receipt/input SHA256，但**没有独立重算所有规范化摘要**；精确引用存在并不意味着其在语义上证明所标记的严重违规。公开仅 [B v3 SAFE 汇总](evidence/R60_GPU_B_V3_PILOT5_COMPLETED_SAFE_20261108.json)，不公开故事正文、模型解释或盲审 ID。
+
+A v2 之前同样已完成 5 条，模型 `REJECT=5`、`serious_player_agency=true` 5/5；B v3 也 `REJECT=5`、`serious_player_agency=true` 5/5，B 的 `hard_fact_or_ban=true` 2/5、`safety_exclusion=true` 2/5。**这是两个槽各自 5 条的汇总统计，不可因数量相同而视作逐案例 A/B 一致**；冻结 A/B 使用独立 `blind_id`，必须通过 Owner 私有 crosswalk 绑定同一条来源再对比。两个模型共享同一六维 Prompt，其严重标记都可能偏激进。当前推荐先对这 5+5 的匹配关系和严重“玩家自主权”语义做人工或独立 AI 裁定，用真实证据区分 NPC 主动推进情节与擅自替玩家决定；无法证实 HOLD，不能未经校准就淘汰 10 条或按 1000 条放大 REJECT 率。
+
+**实际下一步**：停止额外 H200 与重复 CPU 预检；Owner 在私有范围内获取双槽原 Checkpoint 与冻结源映射，执行 `A/B source crosswalk → 双模型私有 pairwise 对比 → 严重标记证据语义校准 → Quality-v1 准入策略审批`。保留 B 修复标记及 v3 schema，不覆盖或迁移 v2 为 v3，不泄露私人源。只有证实判别能力可靠并得到扩量批准后才进入分批 1000 条；Quality-v1 admitted 仍 0、SFT training 仍未授权。本次没有创建新的 GPU 作业。
+
+---
+
 ## 2026-11-08 19:39 +08:00：B v3 已上传、快速核验 PASS，直接推进 GPU（最新）
 
 Owner 表示 `reviewer-runner-v3/runner.py` 已上传并要求缩短验证流程。经 HF Bucket `cat` 与 GitHub 当前分支直接全文比较，**两端 31,473 字符完全相同**，且固定 Checkpoint v3 和单次 Batch Quote Repair 存在；GitHub blob SHA `178c8f44e4ec5e6e1cbc3a7c074a816895dc09a6`。四项 CI SUCCESS；冻结 B 输入存在；`gpu-review-output-B-pilot5-v3-01` 不存在；组织 Job 列表无同名任务。
