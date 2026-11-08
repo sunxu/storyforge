@@ -1,5 +1,17 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08 B Reviewer v2 在目标 vLLM 镜像下 CPU1000/1000 PASS（最新权威状态）
+
+实际 [HF Job `6af059c4e6320c66fad74722`](https://huggingface.co/jobs/adradar/6af059c4e6320c66fad74722)，`name=r60-gpuimage-cpu-token-B-reviewer-v2-01`，`adradar/cpu-basic`，固定 `vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9`，创建 `2026-11-08T11:15:16.113Z`、完成 `11:15:36.016Z`，**COMPLETED**。
+
+真实日志表明原始资源项仅 `nvidia_visibility=FAIL`；无实际 NVIDIA 设备节点、其他所有子资源项 PASS。CPU-only 的 `NVIDIA_VISIBLE_DEVICES=void` 后完整 ResourceGuard `PASS`，且 `HF_REVIEWER_V2_CONTRACT_PASS`（Checkpoint v2、严重 REJECT 证据要求）、`HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`，真实 B/GLM `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`，`cases_checked=1000`、`over_budget_count=0`、max_model_len=32768、reserved_output_tokens=2400、prompt min/median/p95/max=`729/1155/2362/3606`、max_total_tokens=`6006`、`gpu_started=false`。SAFE 证据见 [`docs/evidence/R60_GPUIMAGE_B_REVIEWER_V2_CPU1000_PASS_SAFE_20261108.json`](evidence/R60_GPUIMAGE_B_REVIEWER_V2_CPU1000_PASS_SAFE_20261108.json)。
+
+**A/B Reviewer v2 同镜像 CPU 双槽前置条件已完整达成**。A H200 v2 前五条已产生五条私有 v2 Checkpoint 并最终 COMPLETED；A 模型五条全部 REJECT 且五条 `serious_player_agency=true`，需独立 B 判断，不应直接据此判定 5 条真实历史样本全部不合格。查询 HF 组织 Job 列表暂无 B 新 GPU Pilot `r60-quality-gpu-pilot5-B-v2-01`，其新的独立输出 `gpu-review-output-B-pilot5-v2-01` 不存在。已存在原冻结 B 私有输入及 v2 Runner，**无需重复 staging 或重复 Tokenizer**。
+
+**下一操作仅 B 5 条**：Owner Mac 用已核验 HF CLI 2.4.0，先原生 `hf jobs run --dry-run`，然后只提交一次 H200 `r60-quality-gpu-pilot5-B-v2-01`，固定 GLM 不可变 revision `077b5c2f5c43bd3239fd605a0600229e8facbd4a`，RO `input_B:/input` + RO `reviewer-runner-v2:/scripts`，唯一新的 RW `gpu-review-output-B-pilot5-v2-01:/output`，`--start 1 --limit 5 --confirm-paid-gpu`，35m / one attempt、进程 timeout 2050s。**GPU 可能产生费用**，预计单卡 H200 按历史 $5/h、35m 硬上限约 $2.92（不承诺实时价格）；无任何 SFT 训练。审核完先只读核查 B 私有 Checkpoint 结构、源/目标严格子串；A/B 两边的 `blind_id` 独立，**必须在 Owner 私有 crosswalk 下配对，不能假定 A 第 i 条就是 B 第 i 条**。任何结果 HOLD 不自动重试，全部 `REJECT` 不自动入淘汰集合；质量准入继续 0。
+
+---
+
 ## 2026-11-08：A v2 H200 真正五条 Pilot 终态 COMPLETED；质量判定须校准（最新权威状态）
 
 实际 HF [Job `6af056bb0e0338d1bb84ac8a`](https://huggingface.co/jobs/adradar/6af056bb0e0338d1bb84ac8a)（`r60-quality-gpu-pilot5-A-v2-01`，H200、固定 vLLM digest、`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`），创建 `2026-11-08T11:02:19.731Z`，完成 `11:07:22.223Z`，最终 **COMPLETED**。真实模型权重 `17/17` shard 全部加载，GPU 推理及私有 Checkpoint 持久化完成。`/gpu-review-output-A-pilot5-v2-01` 新独立目录实际生成 `review_0001.private.json` 至 `review_0005.private.json` 五个 Checkpoint，全部为 v2 契约。
