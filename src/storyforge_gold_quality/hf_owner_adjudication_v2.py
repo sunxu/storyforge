@@ -277,7 +277,10 @@ Schema：{severity.SCHEMA}
 6. 不要为了让 20 条都得到确定标签而降低证据标准。
 
 ## 输出
-生成 20 行 JSONL，文件名建议 `OWNER_ADJUDICATION_RESULTS_PRIVATE.jsonl`。每行必须符合 `{severity.SCHEMA}`，case_ref 使用 packet 的 calibration_id，rubric_version 固定为 `{severity.RUBRIC_VERSION}`。只输出结果，不要复制源正文到 SAFE 或 GitHub。
+1. 生成 20 行 `OWNER_ADJUDICATION_RESULTS_PRIVATE.jsonl`。每行符合 `{severity.SCHEMA}`，case_ref 使用 packet 的 calibration_id，rubric_version 固定为 `{severity.RUBRIC_VERSION}`。
+2. 完成 verdict/evidence 后，再单独进行 semantic entailment 复核，生成 60 行 `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl`（每个 case × 三维一行）。每行外层包含 calibration_id、dimension、reviewed_at_utc 和 check；check 必须符合 `{severity.SEMANTIC_CHECK_SCHEMA}`。结论使用 SUPPORTS_VERDICT / DOES_NOT_SUPPORT_VERDICT / INSUFFICIENT_CONTEXT。INSUFFICIENT_CONTEXT 且无引用时 reviewed_evidence_indexes 可以为空数组。
+3. 不得把引用存在性当成语义蕴含；DOES_NOT_SUPPORT_VERDICT 或未解决的上下文不足均保留 HOLD，不得为凑数改判。
+4. 两个文件均留在 Owner 私有目录；不要复制源正文、结果或映射到 SAFE/GitHub。
 
 本次只完成 Owner 独立裁决，不执行模型推理，不运行 HF Job/GPU，不处理 Locked Regression 20、R60 Severe10、1000 条候选或 SFT。
 """
