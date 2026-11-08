@@ -169,3 +169,11 @@ def test_template_does_not_fabricate_review(tmp_path, monkeypatch):
     held = batch.review(directory, path)
     assert held["review_decisions"]["HOLD"] == 1
     assert held["train_admitted"] == 0
+
+def test_live_capture_query_excludes_session_forks():
+    sql = batch.SQL.lower()
+    assert "parent_session_id is null" in sql
+    assert "forked_from_turn is null" in sql
+    assert "order by md5(story_id) limit 16" in sql
+    assert "order by turn_index desc limit 20" in sql
+    assert "limit 6" in sql
