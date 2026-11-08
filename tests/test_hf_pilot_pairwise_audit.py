@@ -41,7 +41,20 @@ def fake_response(row: dict) -> dict:
 
 
 @pytest.fixture
-def staged(tmp_path: Path) -> tuple[Path, Path, Path]:
+def staged(tmp_path: Path, monkeypatch) -> tuple[Path, Path, Path]:
+    # Deterministic disjoint first-five inputs; avoid a ~2.5% overlap flake
+    # from the real cryptographic shuffling in synthetic fixtures only.
+    class TestShuffle:
+        calls = 0
+
+        def shuffle(self, values):
+            TestShuffle.calls += 1
+            if TestShuffle.calls == 2:
+                values[:] = values[5:] + values[:5]
+            elif TestShuffle.calls == 3:
+                values[:] = values[3:] + values[:3]
+
+    monkeypatch.setattr(stage.secrets, "SystemRandom", TestShuffle)
     source = [fake_case(i) for i in range(1000)]
     root = tmp_path / "private" / "stage"
     root.parent.mkdir(mode=0o700)
