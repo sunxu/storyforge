@@ -292,7 +292,8 @@ def token_preflight(rows: list[dict], model: str, revision: str,
             from token_core import describe_token_lengths, encode_chat
         except ModuleNotFoundError:
             from storyforge_dataset.token_preflight import (
-                describe_token_lengths, encode_chat,
+                describe_token_lengths,
+                encode_chat,
             )
     else:
         try:
