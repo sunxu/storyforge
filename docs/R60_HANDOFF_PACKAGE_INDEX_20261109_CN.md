@@ -141,3 +141,12 @@ Owner Pairwise SAFE 已验证 A/B 两槽各 1000/1000 来源映射、输入 SHA 
 - [正式执行命令与安全边界](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#86-owner-mac-一键-p0-freeze-runner代码已提交尚未在-owner-mac-执行)
 
 代码提交已通过 GitHub CI / Ruff / Tests。它尚未在 Owner Mac 运行，因此本地私有 manifest、cross-set dedup receipt 和 Inventory SAFE 仍未生成；P0 不得标为 PASS。Runner 不会重跑 R60 1000-row crosswalk 或旧 A/B checkpoints，也不会调用模型/GPU/数据库。
+
+
+## 9. P0 正式冻结完成（2026-11-09）
+
+Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`，`manifest_files_written=4`。Gold72 40 条、20/20 分层，R60 Severe10 10 条，跨集合三类精确指纹交集均为 0，唯一来源数 50。Gold72/R60 C 独立性限制、Quality-v1 admitted=0、training_authorized=false 均保留。
+
+详细聚合计数及状态边界见 [P0 正式冻结执行记录](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#812-owner-mac-正式冻结完成p0-pass--quality-hold-2026-11-09)。
+
+四份私有产物仅保留在 Owner 私有目录，不得上传 GitHub/HF。P1 尚未开始；P0 授权不构成后续阶段或 GPU/SFT 授权。
