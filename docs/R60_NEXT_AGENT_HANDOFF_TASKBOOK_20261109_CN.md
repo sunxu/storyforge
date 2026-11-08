@@ -769,3 +769,28 @@ PYTHONPATH=src:. .venv/bin/python scripts/r60_owner_adjudication_v2.py \
 如返回 HOLD，不要改权限或猜测替代源文件；先根据 reason_code 核查 P0 manifest、Reviewer-C packet 的精确路径、文件 0600 和各自父目录 0700。只有 dry-run PASS 后，才对同一命令显式追加 `--write`。输出目录必须此前不存在；若已存在，不删除、不覆盖，换一个新的唯一输出目录并重新 dry-run。
 
 当前工具只提供 GitHub / HF / VPS 等远端能力，没有 Owner Mac 本机 shell 通道；因此 dry-run 和 `--write` 必须在 Owner Mac 本机执行，不能谎报为已运行。
+
+
+### 8.19 Owner dry-run 自身的输出路径门禁补强（2026-11-09）
+
+代码审查发现一个 dry-run 语义缺口：原实现先返回 dry-run PASS，再检查输出目录权限/是否已存在。这会让 dry-run 对实际 `--write` 路径的可写性和 create-only 条件给出过早 PASS。
+
+已修复：
+- dry-run 与正式写入共用同一输出路径预检。
+- 输出目录必须是绝对路径、尚不存在、没有 symlink 父级。
+- 父目录必须已存在且权限为 0700。
+- 输出位置不得落入 Git worktree。
+- dry-run 仍不创建目录、不写文件，SAFE 返回 `files_written=0`。
+- 新增合成测试：已有输出目录、父目录权限错误时，dry-run 必须 HOLD。
+
+最新代码提交：`bf1181eefc43832e89cb82b76cea45d46e954301`。
+
+最终 Actions 全部 PASS：
+- pytest 871 passed / 5 skipped / 42 subtests passed。
+- Ruff / CI PASS。
+- Gold Quality Pipeline PASS。
+- R60 HF Runtime CI PASS。
+- R60 HF CPU dependency profiles PASS（两组 hash lock、安装、CPU-only boundary、Chat Template）。
+- R58 scoped synthetic PASS。
+
+**当前可进入 Owner Mac dry-run。** 仍未运行本机 dry-run、未写入 P2 私有包、未开始 Owner verdict/semantic review；P2 真实审核尚未完成。
