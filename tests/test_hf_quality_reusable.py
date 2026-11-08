@@ -287,3 +287,65 @@ def test_tampered_shared_core_fails_closed(tmp_path):
     path.write_bytes(path.read_bytes() + b"\n# altered\n")
     with pytest.raises(stage.StageError, match="STAGE_BYTES_CHANGED_HOLD"):
         stage.audit(root, "c" * 64, cases)
+
+
+def test_hf_pipeline_export_reuses_existing_append_review_manifest(tmp_path):
+    from argparse import Namespace
+
+    from storyforge_gold_quality.cli import append_review
+    from storyforge_gold_quality.manifest import load_events
+
+    root, cases, _ = setup(tmp_path)
+    for side, model, revision in (("A", MODEL_A, SHA_A), ("B", MODEL_B, SHA_B)):
+        for position, row in enumerate(
+                review.read_input(root / f"input_{side}" / "source.private.jsonl"), 1):
+            review.write_checkpoint(
+                root / f"output_{side}" / review.checkpoint_name(position),
+                review.checkpoint_record(
+                    position, row, answer(row), model, revision))
+    receipt = stage.export_pipeline_reviews(root, "c" * 64, cases)
+    assert receipt["status"] == "HF_QUALITY_PIPELINE_PRIVATE_IMPORT_READY__NOT_IMPORTED"
+    assert receipt["manifest_modified"] is False
+    assert receipt["reviewer_a_rows"] == receipt["reviewer_b_rows"] == 3
+    repo = tmp_path / "checkout"
+    repo.mkdir()
+    private_manifest = root.parent / "manifest.jsonl"
+    for side in ("A", "B"):
+        file = root / "owner" / f"reviewer_{side}_pipeline.private.jsonl"
+        assert file.stat().st_mode & 0o777 == 0o600
+        data = [json.loads(x) for x in file.read_text().splitlines()]
+        assert len(data) == 3
+        assert "PRIVATE_STORY" not in json.dumps(data)
+        result = append_review(Namespace(
+            batch="r60-real", event_type="BLIND_REVIEW",
+            input=file, manifest=private_manifest, repo_root=repo))
+        assert result["events_appended"] == 3
+    events = load_events(private_manifest)
+    assert len(events) == 6
+    assert {e["payload"]["reviewer_role"] for e in events} == {
+        "REVIEWER_A", "REVIEWER_B"}
+    assert all(e["event_type"] == "BLIND_REVIEW" for e in events)
+    with pytest.raises(stage.StageError, match="HF_PIPELINE_IMPORT_ALREADY_EXISTS"):
+        stage.export_pipeline_reviews(root, "c" * 64, cases)
+
+
+def test_hf_pipeline_export_incomplete_pair_is_hold(tmp_path):
+    root, cases, _ = setup(tmp_path)
+    with pytest.raises(stage.StageError, match="HF_DUAL_REVIEW_INCOMPLETE_HOLD"):
+        stage.export_pipeline_reviews(root, "c" * 64, cases)
+    assert not (root / "owner" / "reviewer_A_pipeline.private.jsonl").exists()
+
+
+def test_quality_pipeline_inspect_command_uses_shared_reviewer(tmp_path):
+    from argparse import Namespace
+
+    from storyforge_gold_quality.cli import inspect_hf_review
+
+    root, _, _ = setup(tmp_path)
+    infile = root / "input_A" / "source.private.jsonl"
+    out = root / "output_A"
+    result = inspect_hf_review(Namespace(
+        input=infile, output_dir=out, model=MODEL_A, revision=SHA_A))
+    assert result["cases_total"] == 3
+    assert result["status"] == "HF_REVIEW_PARTIAL__NO_ADMISSION"
+    assert result["quality_v1_admitted"] == 0
