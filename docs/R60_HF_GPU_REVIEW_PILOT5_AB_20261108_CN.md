@@ -1,5 +1,15 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08 19:39 +08:00：B v3 已上传、快速核验 PASS，直接推进 GPU（最新）
+
+Owner 表示 `reviewer-runner-v3/runner.py` 已上传并要求缩短验证流程。经 HF Bucket `cat` 与 GitHub 当前分支直接全文比较，**两端 31,473 字符完全相同**，且固定 Checkpoint v3 和单次 Batch Quote Repair 存在；GitHub blob SHA `178c8f44e4ec5e6e1cbc3a7c074a816895dc09a6`。四项 CI SUCCESS；冻结 B 输入存在；`gpu-review-output-B-pilot5-v3-01` 不存在；组织 Job 列表无同名任务。
+
+v3 变更仅为引用纠错候选及 checkpoint 契约，初始评审 Prompt、模型、token 预算保持与已完成的 B v2 固定 vLLM 镜像 CPU Tokenizer 预检一致（1000/1000 PASS、over-budget=0），因此依 Owner 要求**跳过冗余的单独 B v3 CPU Job**，直接运行 v3 的 H200 5 条小批次。但一次纠错的追加 prompt 由 Runner 在 GPU 上单独验证 token 预算，任何溢出 fail-closed HOLD；这不等于已证明纠错会成功。
+
+ChatGPT 已尝试通过 HF 连接器提交 `adradar/r60-quality-gpu-pilot5-B-v3-01`，服务端仍返回 **403 Forbidden**，没有 Job ID，未确证提交。故直接在 Owner Mac 用已验证 `hf jobs run` 单次提交（禁止重复），镜像 `vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9`，H200，timeout35m，attempt=1，`input_B` 与 `reviewer-runner-v3` 只读，新 `gpu-review-output-B-pilot5-v3-01` 独立读写，模型 `zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`，`--start 1 --limit 5 --confirm-paid-gpu`。GPU 产生费用；不自动重试、扩样或启动 SFT。B 结果出来后只核验私有 checkpoint 的安全信息，不能按 A/B 序号直接配对，必须用 Owner 私有 crosswalk；A 的 5/5 severe REJECT 仍属语义校准 HOLD。
+
+---
+
 ## 2026-11-08：B 首轮 H200 v2 引用失败 → v3 受控单次批量索引纠错实现（最新）
 
 实际 HF [B GPU Job `6af05bbf0e0338d1bb84ad9f`](https://huggingface.co/jobs/adradar/6af05bbf0e0338d1bb84ad9f)（`r60-quality-gpu-pilot5-B-v2-01`；`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`，H200 固定镜像 digest）创建 `11:23:43.285Z`、完成 `11:25:58.312Z`，**ERROR / exit42**。GLM 权重 `14/14` 分片实际加载成功，进入推理，首次模型输出未通过严格引用验证，SAFE `HF_REVIEW_HOLD` / `MODEL_NONEXACT_QUOTE_HOLD`；目标输出 `gpu-review-output-B-pilot5-v2-01` 无私有 checkpoint，因此 **B 的有效文学判断数为零**。不能因为异常就推断 GLM 作出了 REJECT/PASS，也不能把 A 的 5/5 severe REJECT 自动入淘汰。公开证据 [B v2 SAFE](evidence/R60_GPU_B_V2_PILOT5_NONEXACT_QUOTE_HOLD_SAFE_20261108.json)。
