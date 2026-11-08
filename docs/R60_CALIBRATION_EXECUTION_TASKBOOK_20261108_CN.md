@@ -27,6 +27,17 @@
 
 不得合并两个集合的历史标签、评分、Owner 裁决或报告。不得覆盖任何原始文件。
 
+
+### P0.0 已收到证据状态（交接准备阶段记录，不能代替 P0 验收）
+
+截至 2026-11-08，Owner 已提供 R60 Pilot10 Owner Pairwise SAFE，并提供 1000 条 Owner crosswalk 的本地位置及脱敏结构摘要。
+
+- Pilot10 SAFE 摘要：A=5、B=5；两槽各 5/5 REJECT；matched_cases=0、unique_source_cases=10；10/10 Checkpoint receipt/input SHA 绑定验证通过；Owner manifest receipt 通过。此项是已收到的历史审计证据，不需要重跑旧 A/B 或旧 Reviewer C。
+- 1000 crosswalk 摘要：schema=`storyforge_hf_quality_dual_stage_private_v1`；root=dict；bindings=dict（2 个键）；count=int；pool_sha256=str。摘要未显示 count 数值，也未验证 bindings 对应的实际条数、A/B 输入池 SHA 和逐项 source binding；当前状态为 `STRUCTURE_SEEN_BINDING_UNVERIFIED`。
+- Gold72 40 条：尚未收到可供本任务书冻结的完整私有证据摘要；需盘点原始 manifest/历史 C 与 Owner SAFE/receipt，不得只依赖历史聊天计数。
+
+**P0 不因以上部分证据而自动 PASS。** 新 Agent 应先核对已有 SAFE 和本地 crosswalk，再只做缺口检查；不重复已完成的 Pilot 推理，也不重新生成旧 Checkpoint。
+
 ### P0.1 分支与 CI 基线核验
 
 Owner Mac / 新 Agent 在仓库根目录运行：
