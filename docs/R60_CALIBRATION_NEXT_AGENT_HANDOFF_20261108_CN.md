@@ -4,6 +4,7 @@
 适用分支：r60/gold192-history-v3-adapter  
 关联 PR：[ #25 ](https://github.com/sunxu/storyforge/pull/25)  
 主线 Issue：[ #26 ](https://github.com/sunxu/storyforge/issues/26)  
+专项跟踪 Issue：[ #28 ](https://github.com/sunxu/storyforge/issues/28)  
 执行任务：[R60 校准执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)  
 上位计划：[R60 下一阶段校准与三模型配对评估计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)
 
