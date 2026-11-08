@@ -69,3 +69,11 @@ Owner 在本轮新增授权：现有 ChatGPT Supabase 只读连接器可对所�
 执行回执：[`docs/R60_GLOBAL_SUPABASE_METADATA_DISCOVERY_20261108_CN.md`](R60_GLOBAL_SUPABASE_METADATA_DISCOVERY_20261108_CN.md)；复现 SQL：`experiments/r58_quality/sql/r60_global_real_history_aggregate_READ_ONLY.sql`。四类别各 16 Story 的有界聚合样本，64 Story / 1,280 completed Assistant，523 达技术优先条件。技术优先不是质量或准入；公开原创也不等于微调授权。
 
 **P0 实际推进**：全范围 G0 元数据统计已取得；下一关键环节是先确定各作品与聊天参与者的**内容审核及微调授权依据**，然后针对具备权限的候选进行定点正文审核/上下文构建。没有这个边界，不得使用 BYPASSRLS 账号批量读取所有私有用户原文。现有 `r58_export_reader` 本机方案和 ChatGPT connector 角色不得混同。严格 Gold192 和 R50 未改变，正式准入仍 0。
+
+## 2026-11-08 新 Agent 交接与最新权益调查入口
+
+- [主线新 Agent 总交接](R60_NEW_AGENT_MASTER_HANDOFF_20261108_CN.md)：最新状态、两个 GitHub 仓库、工具角色、复现 SQL、冻结边界、最短实施路径。
+- [新 Agent P0 执行任务书](R60_REAL_HISTORY_NEXT_AGENT_P0_TASKBOOK_CN.md)：具体执行顺序、权利与正文审核边界、六维评分、独立世界/R50 和产物验收。
+- [历史权益/参与者来源目录审计](R60_REAL_HISTORY_RIGHTS_PROVENANCE_AUDIT_20261108_CN.md)：`voice_consents` 不可代替文字授权；original/private/author==player 30+ 轮 1,039 Session/814 Story、16 Story 新 Pilot 77 技术优先。
+- P0 核心阻断 Issue [#27](https://github.com/sunxu/storyforge/issues/27)，跟踪历史版本条款/作品与参与者权利来源及合法 G1 小批范围。
+- 最新的跨全库 G0 只是元数据授权；任何未获得独立许可的完整正文均未导出，不能宣称已 Quality PASS。正式训练准入 0/0，GPU 未启动。
