@@ -17,7 +17,7 @@
 
 早先的 `r60_real_ai_dual_review.py` / `r60_real_quality_batch.py` 保留历史本地审查兼容，不再作为 HF 主线推理实现。旧 R58 13 案冻结脚本仍不修改。新的公共合同采用既有六维最低分：中文表达4、人物一致4、NPC主动3、玩家自主4、规则忠实4、叙事连贯4；严重标志有一项 true 必须 REJECT，PASS 需要历史与目标的可验证连续子串。不能从三消息可见历史推断完整世界卡或者历史实际 System。
 
-**唯一 Tokenizer Core**：`src/storyforge_dataset/token_preflight.py`，HF Worker 调用已有 `encode_chat` / `describe_token_lengths`，Owner stage 将其精确字节复制为 `token_core.py` 并绑定 SHA，不在 Mac 本地运行 Tokenizer。HF 工程与操作规范见 `docs/standards/HF_JOBS_ENGINEERING.md`、`skills/storyforge-hf-jobs/SKILL.md`、`docs/HF_JOBS.md`。
+**唯一 Tokenizer Core**：`src/storyforge_dataset/token_preflight.py`，HF Worker 调用已有 `encode_chat` / `describe_token_lengths`，Owner stage 将其精确字节复制为 `token_core.py` 并绑定 SHA；同时从 `src/storyforge_dataset/hf_runtime/` 以原字节复制 `inputs.py` 和 `resources.py` 到双 Slot，Reviewer 只调用已有 `InputManager` 与 `ResourceGuard`，不重复实现读取/CPU 安全算法。Mac 本地不运行 Tokenizer。HF 工程与操作规范见 `docs/standards/HF_JOBS_ENGINEERING.md`、`skills/storyforge-hf-jobs/SKILL.md`、`docs/HF_JOBS.md`。
 
 ## 2. Owner Mac：先在本地准备，**不上传、不启动 HF Job**
 
@@ -70,11 +70,15 @@ r60-hf-quality-first-1000/        0700
     source.private.jsonl
     runner.py
     token_core.py
+    runtime_inputs.py               # HF Runtime InputManager 原件
+    runtime_resources.py            # HF Runtime ResourceGuard 原件
   output_A/                     HF 独立 :rw
   input_B/                      独立盲审 B，HF :ro
     source.private.jsonl
     runner.py
     token_core.py
+    runtime_inputs.py
+    runtime_resources.py
   output_B/                     HF 独立 :rw
 ~~~
 
