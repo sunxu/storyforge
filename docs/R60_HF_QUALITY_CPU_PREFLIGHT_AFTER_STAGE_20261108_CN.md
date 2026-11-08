@@ -102,6 +102,7 @@ hf buckets sync "$STAGE/input_B" "$INROOT/input_B"
 按照仓库标准，所有 CPU Job 由已有 `scripts/hf_job_guard.py` 提交。这个 Guard 默认只检查参数，**不提交 Job**，而且要求同时指定私有 RO input 和独立 RW output。下列循环仅输出 `PREFLIGHT_PASS_NOT_SUBMITTED` 或 SAFE HOLD：
 
 ~~~bash
+LOCK_SHA="$(shasum -a 256 requirements/hf-quality-reviewer.lock | awk '{print $1}')"
 for SLOT in A B; do
   case "$SLOT" in
     A) MODEL="Qwen/Qwen3-32B"
