@@ -1,5 +1,9 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **2026-11-08 二次决策：候选池目标从 600 上调到 1000。** Owner Mac 实际完成 **600 条（原 Seed 6 + 新增 594）/ 12 页 / 已扫描 240 Story**，SAFE `EXPANSION_TARGET_REACHED__NOT_ADMITTED`。此状态仅证明技术候选采集，不代表 Quality PASS（当前 0）或训练准入（当前 0）。
+> 用户已明确批准继续扩样至 **1000 条真实历史技术候选**；通过 [600→1000 原位续跑说明](R60_REAL_HISTORY_EXPANSION_1000_CONTINUATION_20261108_CN.md) 和 `r60_real_expand_private.py extend --target-total 1000` 追加私有扩容回执，**不覆盖先前 12 页、600 条和源配置**，随后原目录 `advance`、`inspect`。此前 600 目标已完成，但本次对 Owner Mac 的新续跑**尚未实际执行**，不可把 1000 写成已采集完成。
+> 达成 1000 后优先真实双模型质量筛查及严重问题排除，再进行 R50 完整元数据/世界组件隔离、CPU Tokenizer/Collator，最后另行申请 GPU 训练。RolePlay、Gold192 不修改。
+
 状态：`REAL_HISTORY_MAINLINE_ACTIVE__TRAINING_ADMISSION_HOLD`  
 执行：StoryForge / Owner Mac（本机数据库连接角色 `r58_export_reader`）；ChatGPT 只读连接器 `supabase_read_only_user`，不得混用。  
 **RolePlay 不修改；不启动新的 GPU 技术可行性实验；本轮不授权 GPU 训练。**
