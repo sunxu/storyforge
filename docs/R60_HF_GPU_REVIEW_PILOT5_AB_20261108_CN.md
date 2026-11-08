@@ -1,5 +1,13 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08 B 同镜像 CPU 1000/1000 PASS：A/B 双槽技术闸门达成（最新）
+
+Hugging Face [B Job `6af04fda0e0338d1bb84aa61`](https://huggingface.co/jobs/adradar/6af04fda0e0338d1bb84aa61) 经实际 inspect 和 SAFE logs 验证终态 **COMPLETED**（`2026-11-08T10:32:58.362Z` 创建，`10:33:29.455Z` 完成）。与 A 修复任务同一个固定 vLLM digest、`cpu-basic`、`NVIDIA_VISIBLE_DEVICES=void` 仅在无真实 GPU 设备节点时设置，完整原样 ResourceGuard 检查全部 PASS。B 1000/1000 Tokenizer `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`，超预算 0；prompt Token min/median/p95/max=`673/1099/2306/3550`，输出预留 2400，最大总 token 5950，`max_model_len=32768`，`gpu_started=false`、`training_authorized=false`。见 [B SAFE](evidence/R60_GPUIMAGE_B_CPU1000_ENVFIX_PASS_SAFE_20261108.json)。A 同镜像 [Job `6af04eb10e0338d1bb84a9e1`](https://huggingface.co/jobs/adradar/6af04eb10e0338d1bb84a9e1) 亦已 1000/1000 PASS。
+
+**状态已升级**：A/B 两槽已经在目标 GPU 镜像环境做过真实 CPU Tokenizer 核验，故不再重复 CPU Job；下一个执行步骤是分别对原冻结 A/B 的前 5 条使用 H200 跑真实模型推理，独立输出目录、单槽单次提交、35min 硬超时、Checkpoint 私有保存与逐字引用严格验证。原先本文的“先运行 A/B 同镜像 CPU 检查”是历史操作，**不得再重复提交**。CPU PASS 不能证明 GPU runtime 的模型加载、显存、评审格式必定 PASS，故应先 A 的小批次，真实完成并审计后再 B，任何 HOLD 不得自动重试。SFT 与完整 1000 条没有批准。
+
+---
+
 ## 2026-11-08 A 同镜像 CPU ResourceGuard 修复完成（最新权威状态）
 
 实际 HF [Job `6af04eb10e0338d1bb84a9e1`](https://huggingface.co/jobs/adradar/6af04eb10e0338d1bb84a9e1)，`name=r60-gpuimage-cpu-token-A-envfix-02`，`adradar`、`cpu-basic`、相同固定 vLLM digest，创建 `10:28:01.186Z`，结束 `10:28:30.021Z`，**COMPLETED**。
