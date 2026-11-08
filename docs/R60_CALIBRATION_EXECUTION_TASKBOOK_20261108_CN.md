@@ -1,12 +1,14 @@
 # R60 下一阶段执行任务书：校准集冻结 → 三态证据审核 → 三模型配对 → 1000 条批量审核
 
-版本：v1.0 / 2026-11-08  
+版本：v1.1 / 2026-11-09（交接准备定稿）  
 分支：r60/gold192-history-v3-adapter  
 关联：PR #25、主线 Issue #26、专项执行 Issue #28  
 主交接：[R60 Calibration Next-Agent Handoff](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md)  
 总计划：[R60 Next Phase Calibration & Model Selection](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)
 
 ## 任务书使用规则
+
+**本文件是交给下一位 Agent 的执行说明，不是当前交接准备阶段的执行授权。当前交接工作只负责核对、记录和封装材料；P0–P6 的实际操作由接手 Agent 在交接完成后执行。**
 
 - 严格按 P0→P6 顺序执行。未通过前置验收，不得跳到下一阶段。
 - 每个阶段都要输出：实际执行命令、输入 manifest SHA、输出文件/SAFE schema、计数、PASS/HOLD 原因、Git commit/PR/Issue 更新。
