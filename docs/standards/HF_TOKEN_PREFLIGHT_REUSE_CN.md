@@ -124,6 +124,26 @@ R58 Qwen Chat Template 运行环境还必须安装 Jinja2。Transformers 4.57.1 
 
 共享核心只输出固定错误码，不暴露异常消息。预检适配器仅传播白名单中的安全子码；未知异常仍使用通用 `TOKENIZER_OR_PRIVATE_INPUT_ERROR`。这些码只用于定位阶段，不会使 HOLD 自动转为 PASS。诊断后应修复已识别原因，保留输入与预算不变，再运行同一共享预检核心。
 
+### R60 重复故障复盘与永久防复发规则（2026-11-08）
+
+**不是新问题，而是已经解决的问题回归。** 本文在 2026-11-01 已确认 R58 Qwen/GLM Chat Template 的真实缺包症状、正确安装组合和成功 A/B HF CPU Tokenizer 回执（见本节及下方第六节）：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。R60 1000 条新流水线却仅安装 Transformers + huggingface_hub，未继承 Jinja2 与 sentencepiece 依赖基线，导致同样的缺包反复出现。
+
+证据链：`A v1: 6af033d10e0338d1bb84941e` 远端退出码 42，但被旧 CLI 的“提交失败”掩盖；`A v2: 6af039530e0338d1bb849aa7` 通过 1000 条输入结构检验，随后 `HF_CPU_CHAT_TEMPLATE_HOLD`；`A v3: 6af042680e0338d1bb84a276` 输出 `HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_CLASS_IMPORTERROR`。精确 Transformers 4.57.1 实现中，缺失/过旧 Jinja2 会在 `apply_chat_template` 抛出 `ImportError`；但 v3 未公开原始异常或依赖清单，Jinja2 缺失仍是“**高可信尚待新容器验证**”，不能凭推断宣布已修复。
+
+**今后所有以 Qwen/GLM + Transformers 4.57.1 进行的真实 HF CPU Tokenizer 和 GPU reviewer 任务必须先执行：**
+
+1. **回顾已有案例**：在开始新 HF Job 前先检查本节 R58 已验证的软件组合、模型 revision 与 SAFE 回执；不要为重复故障先添加第三版诊断 Worker 或另行付费试错。
+2. **统一固定依赖**：Job 安装命令中显式包含 `transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`，另固定所需 huggingface_hub 兼容范围。不能将 Jinja2 作为 Transformers 自动安装的默认依赖。
+3. **容器启动即做依赖自检**：`python3 -m pip check`，`python3 -c 'import jinja2,sentencepiece; print("HF_TOKEN_DEPS_PASS")'`。只输出 SAFE 标识与公开版本号，绝不打印私有输入、Prompt、Token IDs、异常原文。
+4. **本地 CLI 兼容性属于另一个闸门**：不要把 `PREFLIGHT_PASS_NOT_SUBMITTED` 误认为 HF 运行时检查已通过。调用 Guard `--check-hf-cli`、HF 原生 `--dry-run` 并验证其解析结果；`huggingface_hub 0.36.2` 的 CLI 不支持 `--name/--attempts/-v`，需要已验证兼容版本（本轮 Owner 升级至 `hf 2.4.0`）。
+5. **证据链分层**：Local Guard PASS ≠ HF Job 已创建；Job ID/状态 ≠ Tokenizer PASS；`HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE` 只证明输入结构，而不是已编码 1000 条；只有实际 `cases_checked=1000` 且 `over_budget_count=0` 和 HF CPU SAFE PASS 才完成 Tokenizer 预检，更不代表文学评分/训练准入。
+6. **不重复消费失败前缀**：保留冻结输入和旧失败 Job；修复仅调整必要的运行时依赖，创建新的作业名/输出路径；先执行 dry-run，确认组织无同名已运行 Job，再单次提交 CPU；不自动重试、不切 GPU。
+7. **故障知识必须回写公共基线**：新流水线复用本规范与 `requirements/hf-cpu-tokenizer.in` 作为依赖检查清单；后续若改变包版本，先添加基于合成 prompt 的 Chat Template smoke test 再发真实 HF Job。
+
+R60 专用保守修复命令与证据见 `docs/R60_HF_CPU_JOB_A_FAILURE_DIAGNOSTIC_20261108_CN.md`；此处为各代流水线共用的防回归要求，不另起一套 Tokenizer 核心。
+
+
+
 ## 五、下次使用前的最小决策
 
 先问：已有有效 SAFE 回执吗？对比原始输入、真实 prompt、模型 revision、Tokenizer/运行时版本、thinking、预算和核心代码。如果全一致，无须支付另一笔 HF CPU Job；若任何关键事实改变，先复算必要范围，不能仅因为脚本换了名字或换了机器就重跑。
