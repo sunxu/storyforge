@@ -362,17 +362,23 @@ def validate_response(result: object, row: dict) -> str:
     if any(flags.values()) and not result["specific_target_quotes"]:
         raise ReviewError("MODEL_SEVERE_EVIDENCE_HOLD")
     histories = [x["content"] for x in row["visible_history"]]
-    for field, candidates in (
+    invalid: dict[str, list[int]] = {}
+    for field, bodies in (
         ("specific_source_quotes", histories),
         ("specific_target_quotes", [row["target_text"]]),
     ):
         quotes = result[field]
-        if (not isinstance(quotes, list) or len(quotes) > 12
-                or (decision == "PASS" and not quotes)
-                or any(not isinstance(q, str) or not q.strip() or len(q) > 300
-                       or not any(q in candidate for candidate in candidates)
-                       for q in quotes)):
+        if not isinstance(quotes, list) or len(quotes) > 12:
             raise ReviewError("MODEL_NONEXACT_QUOTE_HOLD")
+        if decision == "PASS" and not quotes:
+            invalid[field] = [0]
+        for idx, quote in enumerate(quotes):
+            if (not isinstance(quote, str) or not quote.strip()
+                    or len(quote) > 300
+                    or not any(quote in body for body in bodies)):
+                invalid.setdefault(field, []).append(idx)
+    if invalid:
+        raise QuoteValidationError(invalid)
     if decision == "PASS" and any(scores[k] < v for k, v in FLOORS.items()):
         raise ReviewError("MODEL_BELOW_QUALITY_FLOOR_HOLD")
     return decision
