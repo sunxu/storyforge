@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Owner-Mac P0 freeze runner for Gold72 20/20 and R60 Severe10.
 
 This command is local-only and fail-closed. It reads existing Owner-private
@@ -19,7 +18,6 @@ import stat
 import sys
 import tempfile
 from collections import Counter
-from datetime import UTC, datetime
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -890,7 +888,11 @@ def main() -> int:
             return 0 if safe["status"] == "CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_FILES_WRITTEN" else 42
 
         repo_root = args.repo_root.resolve(strict=True)
+        owner_root = args.owner_data_root.expanduser().resolve(strict=True)
         output_dir = args.output_dir.expanduser()
+        output_resolved = output_dir.resolve(strict=False)
+        if output_resolved == owner_root or owner_root not in output_resolved.parents:
+            raise FreezeHold("PRIVATE_OUTPUT_OUTSIDE_OWNER_DATA_ROOT")
         _output_directory(output_dir, repo_root)
         outputs = [
             ("GOLD72_CALIBRATION_MANIFEST_PRIVATE.json", gold),
