@@ -127,3 +127,16 @@ def test_inventory_safe_is_aggregate_only_and_preserves_story_overlap():
     assert safe["private_values_emitted"] is False
     assert not any("sha256" in key.lower() or "blind_id" in key.lower()
                    for key in safe)
+
+
+def test_failure_diagnostics_expose_location_without_exception_payload():
+    from scripts.r60_calibration_p0_freeze import _safe_diagnostic
+
+    try:
+        raise KeyError("private owner evidence value")
+    except KeyError as exc:
+        diagnostic = _safe_diagnostic(exc)
+
+    assert diagnostic["exception_type"] == "KeyError"
+    assert isinstance(diagnostic["source_line"], int)
+    assert "private owner evidence value" not in str(diagnostic)
