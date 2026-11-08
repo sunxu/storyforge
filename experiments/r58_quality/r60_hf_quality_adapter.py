@@ -6,19 +6,17 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
-import r60_real_quality_batch as local_batch
 import r60_real_private_batch as g1
+import r60_real_quality_batch as local_batch
 
 try:
-    from storyforge_gold_quality import hf_blind_stage
-    from storyforge_gold_quality import hf_literary_review
+    from storyforge_gold_quality import hf_blind_stage, hf_literary_review
 except ModuleNotFoundError:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
-    from storyforge_gold_quality import hf_blind_stage
-    from storyforge_gold_quality import hf_literary_review
+    from storyforge_gold_quality import hf_blind_stage, hf_literary_review
 
 SAFE_SCHEMA = "storyforge_r60_hf_quality_adapter_safe_v1"
 
