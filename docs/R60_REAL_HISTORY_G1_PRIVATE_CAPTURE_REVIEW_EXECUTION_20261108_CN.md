@@ -8,7 +8,7 @@
 
 代码：
 - \`experiments/r58_quality/r60_real_private_batch.py\`：\`capture\` / \`template\` / \`review\`
-- \`experiments/r58_quality/test_r60_real_private_batch.py\`：14 个无生产数据的合成测试
+- \`experiments/r58_quality/test_r60_real_private_batch.py\`：15 个无生产数据的合成测试
 - 旧 Gold195/R58 \`quality_v1.py\` **未修改**，新实验线使用独立 Schema
 
 ## Owner Mac：可直接执行的最小命令
@@ -99,7 +99,7 @@ python3 experiments/r58_quality/r60_real_private_batch.py \
 
 - R50 **正文绝对不读取**。本轮仅检索过可见的 GitHub 代码检索入口，未找到能独立证明完整范围、版本和世界连接关系的 R50 保护全集元数据。不能由此推断它不存在；当前 \`R50_COMPLETE_EXCLUSION_UNKNOWN_HOLD\`。
 - Story ID 不足以等价代表独立世界；跨作品别名/角色/共享资产等完整关系未知，世界连通组件与 Split **HOLD**。
-- 实际生产提取 0（Owner Mac 尚未执行）→ 未形成冻结的私有真实训练集。本轮本地 Python CPU **14 项纯合成单元测试通过**；这**不是**真实候选的 Qwen Tokenizer、ms-swift Collator 或 HF CPU Job PASS，均保持待执行。
+- 实际生产提取 0（Owner Mac 尚未执行）→ 未形成冻结的私有真实训练集。本轮本地 Python CPU **15 项纯合成单元测试通过**；这**不是**真实候选的 Qwen Tokenizer、ms-swift Collator 或 HF CPU Job PASS，均保持待执行。
 - 新实验线使用 \`DB_FINAL_PERSISTED_ASSISTANT\` 目标，只代表数据库最终持久化 completed 文本；历史 System 缺失不得用当前 Story Draft 回填，只可经过额外审阅的 \`RECONSTRUCTED_NOT_ACTUAL_SENT\` 规范化输入。
 
 ## 与 GitHub 受控协作库交换
@@ -107,3 +107,8 @@ python3 experiments/r58_quality/r60_real_private_batch.py \
 \`sunxu/storyforge\` 当前 API 为 **Public**，只能提交代码、合成测试、脱敏统计。Owner \`sunxu/storyforge-owner-evidence\` 虽为 Private，当前 SAFE Schema 原为旧单对 40 pair 合同，**不得为了容纳新跨 Story 批次擅改 authorized_pairs=1 或直接上传私有 JSONL**。如需交换新六案例 SAFE，先为此独立批次设计并核验只含计数/原因码的版本化投影；不要传递私有 case_key、ID、哈希或正文。
 
 **状态结论：\`G1_CAPTURE_PIPELINE_CODE_TESTED__OWNER_PRIVATE_CAPTURE_NOT_EXECUTED\`。两轨 train_admitted=0 / 0、生产 DB 未修改、RolePlay 未修改、R50 正文未读、GPU/HF Job 未运行。**
+
+
+## 本轮 G0 分支谱系实际检查补充
+
+生产列目录实际发现 \`story_v2_sessions.parent_session_id\` 和 \`forked_from_turn\`。按六案例同口径候选的**只读聚合**复核：6/6 对这两个字段均为空，计数 6 个 \`root_like\`。因此首批私有采集 SQL 已增加 \`parent_session_id IS NULL AND forked_from_turn IS NULL\` 约束，并新增测试；避免从明显的 forked Session 直接取局部历史就宣称已经重建完整目标前上下文。根会话标志不等于跨 Story 世界连通组件已经完整隔离。
