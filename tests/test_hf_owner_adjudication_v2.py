@@ -357,3 +357,35 @@ def test_verify_owner_results_requires_single_owner_identity_reference():
             b"".join(p2.canonical(row) + b"\n" for row in results),
             b"".join(p2.canonical(row) + b"\n" for row in checks),
         )
+
+
+def test_prepare_dry_run_validates_output_directory_without_writing(tmp_path):
+    manifest, source_raw = fixture_data()
+    owner_root = tmp_path / "owner"
+    owner_root.mkdir(mode=0o700)
+    p0_dir = owner_root / "p0"
+    p0_dir.mkdir(mode=0o700)
+    source_dir = owner_root / "c-source"
+    source_dir.mkdir(mode=0o700)
+    output_parent = owner_root / "p2"
+    output_parent.mkdir(mode=0o700)
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    p0_path = p0_dir / "manifest.json"
+    p0_path.write_bytes(p2.canonical(manifest))
+    p0_path.chmod(0o600)
+    source_path = source_dir / "packets.jsonl"
+    source_path.write_bytes(source_raw)
+    source_path.chmod(0o600)
+
+    existing_output = output_parent / "already-exists"
+    existing_output.mkdir(mode=0o700)
+    with pytest.raises(p2.AdjudicationHold, match="PRIVATE_OUTPUT_DIRECTORY_HOLD"):
+        p2.prepare(p0_path, source_path, existing_output, repo_root, dry_run=True)
+
+    bad_parent = owner_root / "p2-bad"
+    bad_parent.mkdir(mode=0o755)
+    with pytest.raises(p2.AdjudicationHold, match="PRIVATE_OUTPUT_DIRECTORY_HOLD"):
+        p2.prepare(
+            p0_path, source_path, bad_parent / "new-output", repo_root, dry_run=True
+        )
