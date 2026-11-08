@@ -473,3 +473,27 @@ Owner Mac 第二次 dry-run 已把失败精确定位为：
 该提交的 CI、Gold Quality Pipeline、R60 HF Runtime CI、R58 scoped synthetic、R60 HF CPU dependency profiles 全部通过。以上是代码/合成测试通过，不代表 Owner Mac P0 dry-run 或正式冻结通过。
 
 **下一步：Owner Mac 拉取最新分支后，只重跑原 dry-run 命令。** 若 dry-run PASS，先回传 SAFE；在确认结果前仍不得执行正式冻结。
+
+
+### 8.9 Gold72 split aggregate handoff KeyError 修复（2026-11-09）
+
+Owner Mac 第三次 dry-run 返回：
+
+- phase：`crossset_exact_dedup`
+- exception：`KeyError`
+- source：`r60_calibration_p0_freeze.py`，SAFE builder 附近
+- GPU / model / R50：未启动/未访问。
+
+根因已从代码定位：`_load_gold()` 成功计算并在 Gold72 manifest 的 `split_summary` 中保存了 `development_story_count`、`locked_regression_story_count`、`shared_story_count`，但其返回给 `_run()` 的聚合 summary 字典遗漏了这三个字段。随后 `build_inventory_safe()` 读取这些字段时抛出 KeyError。该错误发生在两组输入校验和 `compare_crosssets()` 调用之后的 SAFE 构造阶段，不是来源数据或去重算法报告失败；本次 SAFE 未输出，所以不能报告具体交集计数或 P0 PASS。
+
+修复：
+- 新增 `_gold_story_summary()`，验证并提取三个整数聚合计数。
+- 将这些计数加入 `_load_gold()` 返回的聚合 summary，供 SAFE builder 使用。
+- 增加回归测试，验证 20/20 分层的 Story 聚合数可以进入 SAFE，同时 `story_disjoint=false`。
+- 不输出 Story ID，不改动任何 Owner 私有输入或历史证据。
+
+修复提交：`055497c8fdce2b4b6a47cc778d4de27259c9ec7b`；测试补充提交：`31bd90df4a980494966ff66c2d822f176464da67`、`37e7f7484f0f440f6c6a4f61ada532c0d33e00bb`。
+
+CI、R58 scoped synthetic、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles 以最终测试提交 `37e7f7484f0f440f6c6a4f61ada532c0d33e00bb` 的实际 Actions 结果为准。
+
+**下一步仍只允许 Owner Mac 重跑 dry-run。** 必须取得完整 SAFE JSON 并检查 P0 状态、Gold72 Story 聚合数、Pilot10 计数、三类跨集合交集和唯一来源数量；若 dry-run PASS，再单独确认后执行正式 create-only 冻结。不得直接复用本次未输出的内存 dedup 结果。
