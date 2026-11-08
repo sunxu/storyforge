@@ -618,3 +618,26 @@ v2 规则与校验覆盖：
 **当前阶段状态：P1 IN PROGRESS / NOT PASS。** 初轮 Actions 暴露了 Ruff lint 问题，已根据实际日志修复；以最新测试提交 `1b9ab4bd932e07e958000987023ea9d275753f47` 的最终 Actions 为准。若测试失败，必须先修复再宣称 P1 PASS。
 
 P1 未完成前不进入 P2 Owner 盲裁决。当前没有运行任何模型、HF Job、GPU、1000 条审核或 SFT；Quality-v1 admitted 仍为 0，training_authorized=false。
+
+
+### 8.14 P1 v2 标准与合成回归通过（2026-11-09）
+
+最新实现提交：`c80d6bbc2c7f1cd7a6d5184be808e6a788d0e2b7`。
+
+P1 验收：
+- v2 Schema/Rubric 版本固定：PASS。
+- 三维三态 contract 与 fail-closed 聚合：PASS。
+- exact quote check（字符 offsets、消息/组件定位、连续原文）：PASS。
+- hard_rule 规则依据与真实 System/User/verified-world-component locator 绑定：PASS。
+- NPC 主动性/玩家自主权、安全误报边界、上下文不足：合成回归 PASS。
+- semantic entailment 独立复核接口：PASS；无独立复核记录时 HOLD；引用存在不等于语义支持。
+- 旧 Literary Reviewer v3 checkpoint/schema 与 Reviewer-C v1 结果兼容：PASS。
+- 全仓 pytest：859 passed、5 skipped、42 subtests passed。
+- Ruff changed Python files：PASS。
+- 五组 Actions：CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic 全部 PASS。
+
+Rubric 文档：`docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_20261109_CN.md`。
+
+**P1 = PASS。** 这只表示标准、Schema、合成回归和旧版本兼容通过；不表示 Owner ground truth 已建立、不表示真实案例的 semantic entailment 已审、不表示模型选型或 Quality-v1 admission 通过。
+
+下一阶段按 P2 进行：仅 Gold72 Development 20 条进入 Owner 独立盲裁决；Gold72 Locked Regression 20 与 R60 Severe10 继续锁定。新 packets 必须隐藏旧 A/B/C 判断、分数、flags、Owner resolution、槽位及旧 blind IDs；旧证据只作后续对照。P2 仍不得启动模型/GPU。当前 Quality-v1 admitted=0，training_authorized=false。
