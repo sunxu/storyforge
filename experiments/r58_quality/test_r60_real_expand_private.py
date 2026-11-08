@@ -215,3 +215,14 @@ def test_call_bounds_and_no_private_identifiers_in_safe(tmp_path, monkeypatch):
         assert marker not in json.dumps(safe)
     assert safe["gpu_started"] is False
     assert safe["r50_complete_exclusion_verified"] is False
+
+def test_immutable_shard_writer_supports_real_batch_over_200kb(tmp_path):
+    folder = tmp_path / "private"
+    folder.mkdir(mode=0o700)
+    content = {"schema": exp.PAGE_SCHEMA, "synthetic_payload": "x" * 240_000}
+    exp.immutable_page(folder, 1, content)
+    path = folder / exp.page_name(1)
+    assert len(path.read_bytes()) > g1.MAX_CAPTURE_BYTES
+    assert path.stat().st_mode & 0o777 == 0o600
+    with pytest.raises(exp.Hold, match="PAGE_ALREADY_EXISTS"):
+        exp.immutable_page(folder, 1, content)
