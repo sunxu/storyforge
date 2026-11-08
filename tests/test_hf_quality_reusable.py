@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import json
-import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -259,7 +259,7 @@ def test_verifier_never_submits_or_initializes_model(tmp_path, monkeypatch, caps
     input_dir.mkdir()
     file = input_dir / "source.private.jsonl"
     file.write_bytes(stage.safe_bytes(blind()))
-    monkeypatch.setattr(review.sys, "argv", [
+    monkeypatch.setattr(sys, "argv", [
         "runner.py", "--verify-only", "--input", str(file),
         "--output-dir", str(input_dir), "--model", MODEL_A,
         "--revision", SHA_A])
