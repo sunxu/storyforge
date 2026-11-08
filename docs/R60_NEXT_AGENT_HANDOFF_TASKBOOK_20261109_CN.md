@@ -355,3 +355,62 @@ Gold 40 条的 target_assistant_text SHA256 与 Gold C Owner map 的 target_sha2
 - **P0 总状态：HOLD，不能进入 P1。**
 
 继续执行时只需在 Owner Mac 完成上述四个 create-only 产物及其本地 SHA/权限复核；不得重跑旧模型，不得重做已通过的旧 Checkpoint 审计。Quality-v1 admitted=0、training_authorized=false、GPU 未启动、R50 未访问、1000 条批量审核未启动。
+
+
+### 8.6 Owner Mac 一键 P0 Freeze Runner（代码已提交，尚未在 Owner Mac 执行）
+
+新增可复用工具：
+
+- `scripts/r60_calibration_p0_freeze.py`
+- `tests/test_r60_calibration_p0_freeze.py`
+
+Runner 的职责：
+
+1. 从 Owner 私有目录只读读取 Gold72 / Pilot10 证据。
+2. 重新执行 Gold72 专用 A V3/B2 72-case crosswalk validator，并与历史 SAFE 精确比较。
+3. 重新执行 Gold72 Owner-resolution validator 到临时私有目录，并与历史 Owner SAFE 精确比较。
+4. 读取 Gold72 40 条 C packet、Owner map 和 Owner resolution，按已确认分层规则确定性构建 20/20。
+5. 对 R60 Pilot10 只核对既有 Pairwise SAFE、Stage manifest、Owner crosswalk 的 10 个来源位置、10 份既有 A/B checkpoint 文件；**不重跑 R60 1000-row crosswalk 或 A/B checkpoint audit**。
+6. 复核 Pilot10 C packet/map/result 和十组本地 Codex per-case receipt；复用现有 `verify_local_execution_receipt`，不调用模型。
+7. 计算 Gold72↔Pilot10 的精确历史、目标正文、完整历史+目标三类指纹交集。
+8. create-only 生成三份 Owner 私有 manifest/receipt 和一份聚合 SAFE；所有私有输出 0600、目录 0700。
+
+执行环境必须是 Owner Mac。默认输入根目录为 `~/.local/share/storyforge`；所有私有输入文件须为普通文件、权限 0600、直接父目录权限 0700，且不得位于 StoryForge Git 仓库内。权限不合格时 Runner 只返回固定 reason code，不自动 chmod、不修复、不覆盖输入。
+
+先执行 dry-run：
+
+~~~bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge"
+git fetch origin
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+PYTHONPATH=src:. python3 scripts/r60_calibration_p0_freeze.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
+  --dry-run
+~~~
+
+只有输出 `CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_FILES_WRITTEN` 才执行正式冻结（去掉 `--dry-run`）：
+
+~~~bash
+PYTHONPATH=src:. python3 scripts/r60_calibration_p0_freeze.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109"
+~~~
+
+正式冻结预期 create-only 输出：
+
+- `GOLD72_CALIBRATION_MANIFEST_PRIVATE.json`
+- `R60_SEVERE10_CALIBRATION_MANIFEST_PRIVATE.json`
+- `CALIBRATION_CROSSSET_DEDUP_PRIVATE.json`
+- `CALIBRATION_INVENTORY_SAFE.json`
+
+Runner 输出的 SAFE 仅含聚合数量、状态和准入边界，不含 case/story/blind ID、原文、crosswalk 或来源 SHA。三个 manifest 和 dedup receipt 都是 Owner 私有材料，禁止上传 GitHub、粘贴到聊天或挂载给模型。
+
+Runner 只进行本地只读核验和本地 create-only 文件写入，不调用网络、Supabase、HF、模型或 GPU。Gold72 C execution record unavailable、Gold72 C independence false、Pilot10 C model identity independently verified false 等历史限制必须保留。即使 SAFE 显示 P0 PASS，也只代表校准集库存冻结完成；Quality-v1 admission 仍为 0，不能据此启动 P1 以外的 GPU、1000 条推理或 SFT。
+
+**当前状态：Runner 代码已提交且 CI 合成测试通过；尚未在 Owner Mac 实际运行。P0 仍为 HOLD，直到 Owner Mac 的正式 SAFE 实际生成并核验。**
