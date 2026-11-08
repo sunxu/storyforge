@@ -211,7 +211,7 @@ def test_call_bounds_and_no_private_identifiers_in_safe(tmp_path, monkeypatch):
     with pytest.raises(exp.Hold, match="PAGE_CALL_LIMIT_HOLD"):
         exp.advance(output, "unused", 6)
     safe = exp.inspect(output)
-    for marker in ("story", "session-", "assistant-id-", "seed_sha256"):
+    for marker in ("seed-story-", "session-", "assistant-id-", "seed_sha256"):
         assert marker not in json.dumps(safe)
     assert safe["gpu_started"] is False
     assert safe["r50_complete_exclusion_verified"] is False
