@@ -1,5 +1,8 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **2026-11-08 Owner Mac 实测 Stage 通过**：实际 `prepare` = `HF_QUALITY_BLIND_STAGE_READY__NOT_SUBMITTED`（1000 候选、2 Slot、Owner crosswalk 未上传）；实际 `audit` = `HF_QUALITY_DUAL_PARTIAL__NO_ADMISSION`（A=0、B=0、complete_pairs=0、1000 HOLD，Quality PASS=0、训练准入=0），两 Reviewer 固定 A Qwen3-32B @ `9216db5781bf21249d130ec9da846c4624c16137`、B GLM-4-32B-0414 @ `077b5c2f5c43bd3239fd605a0600229e8facbd4a`。
+> **最新 P0 下一步是 HF CPU 模型 Tokenizer/Chat Template 真正预检**，依照 [受控执行书](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 只上传两个私有 A/B 输入到 `hf://buckets/adradar/storyforge-training` 下独立 RO 前缀，借由已有 `scripts/hf_job_guard.py` 做 CPU Job 规格检验和必要的受控 CPU 提交；绝不可上传 Owner crosswalk 或整个 Stage。直接 `-v 本地目录` 隐式同步到 `jobs-artifacts` 的过时示例不再作为执行标准。未实际上传 HF 私有正文，CPU/GPU 尚未提交。GPU 推理/训练另行授权。
+
 > **2026-11-08 HF/Quality Pipeline 复用决策（覆盖此前 Owner Mac Ollama 双审步骤）**：真实 1000 候选已采集，质量 0、入训 0。审核工具盘点表明 R58 已有 HF GPU 语义/六维双审、引文校验、A/B 隔离与检查点机制；为避免继续维护 R60 本地第三套审稿器，新增公共 `storyforge_gold_quality.hf_literary_review`、`hf_blind_stage` 和唯一 R60 薄适配 `r60_hf_quality_adapter.py`。先 Owner Mac `prepare` 做严格冻结 SHA + A/B 盲审分发；再经过 HF CPU Tokenizer 预检（共享 core）；模型/镜像实际兼容性和明确 GPU 费用批准后才运行 HF 双模型小批 Pilot。回收 SAFE 后由 `audit` 验收、`export` 生成为原 `storyforge-gold-quality append-review` 可导入的两个私人 Reviewer 文件。**未提交付费 HF Job、未上传私有候选、未执行真实 AI 审核。** 新操作书：[HF × Gold Quality Pipeline 1000 条复用路线](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md)。此前 `R60_REAL_HISTORY_1000_QUALITY_BATCH_EXECUTION_20261108_CN.md` 的 Ollama 方案仅保留为历史备选，不再作为主线。
 
 
