@@ -1,5 +1,42 @@
 # R60-REAL P0：真实历史 SFT 扩样 6 → 600 执行书（2026-11-08）
 
+## 故障修复（2026-11-08：FileNotFoundError / Hold）
+
+Owner 在原命令中使用了未替换的 `g1-pilot-实际时间戳` 示例路径，导致 `init` 输出 `FileNotFoundError`；`advance` 随后因为尚无合法扩样目录而输出笼统 `Hold`。这**不是**原 6 条捕获丢失，更不是数据库数据不足。
+
+已修复：
+- `init` 默认 `--seed-capture auto`，自动在 Owner 私有根目录的**直属 Pilot 子目录**中寻找唯一一份通过「6 条、哈希一致、0600 文件、0700 父目录」的真实 Capture。若 0 份 → `SEED_CAPTURE_NOT_FOUND`，多份 → `MULTIPLE_VALID_SEEDS_SPECIFY_PATH`，**绝不猜时间戳**。原有 `--seed-capture "$PILOT/..."` 显式路径也继续支持。
+- `advance` 若 `init` 未创建扩样目录，明确返回 `EXPANSION_NOT_INITIALIZED`；找不到私有配置返回 `EXPANSION_CONFIG_NOT_FOUND`。不将底层 `g1.Hold` 降为模糊字符串。
+- 仅修复错误信息和 Seed 定位，不访问数据库、不触碰现有 Pilot 文件、不放宽审查/训练门槛。
+
+**推荐修复命令（在 Owner Mac 的 StoryForge 最新 R60 分支运行）**：
+
+```bash
+set -euo pipefail
+umask 077
+BASE="$HOME/.local/share/storyforge/r60/private"
+EXPAND="$BASE/r60-expand-first-600"
+test -d "$BASE"
+test ! -e "$EXPAND"
+
+python3 experiments/r58_quality/r60_real_expand_private.py init \
+  --output-dir "$EXPAND" --seed-capture auto \
+  --page-size 20 --target-total 600
+```
+
+注意：**只有 init 返回 `EXPANSION_INITIALIZED` 之后**，才在相同或重新加载 `STORYFORGE_SUPABASE_DSN` 的 Shell 中运行：
+
+```bash
+test -n "${STORYFORGE_SUPABASE_DSN:-}"
+python3 experiments/r58_quality/r60_real_expand_private.py advance \
+  --output-dir "$EXPAND" --max-pages 5
+python3 experiments/r58_quality/r60_real_expand_private.py inspect \
+  --output-dir "$EXPAND"
+```
+
+若 `MULTIPLE_VALID_SEEDS_SPECIFY_PATH`，先在本地查找实际的文件位置，选择正确的原六案捕获目录后显式传入 `--seed-capture`。命令不得向 ChatGPT 打印原始正文或凭据。
+
+
 状态：**扩样代码、合成测试与生产 SQL 计划校验已完成；Owner Mac 尚未运行真实扩样。GPU 不启动。**
 
 ## 1. 已有生产事实与优先级
