@@ -117,9 +117,12 @@ def read_secure(path: Path, limit: int) -> bytes:
 def check_seed(path: Path) -> tuple[list[dict], str]:
     # Must be the existing, Owner-only R60 single-batch capture, not a new
     # Supabase query, and not a path outside the private tree.
+    if not path.is_file():
+        raise Hold("SEED_CAPTURE_NOT_FOUND")
     if (path.name != "R60_REAL_G1_CAPTURE_PRIVATE.jsonl"
-            or path.parent.parent != BASE or path.parent.is_symlink()
-            or stat.S_IMODE(path.parent.stat().st_mode) != 0o700):
+            or path.is_symlink() or path.parent.parent != BASE
+            or path.parent.is_symlink() or
+            stat.S_IMODE(path.parent.stat().st_mode) != 0o700):
         raise Hold("SEED_PRIVATE_PATH_HOLD")
     raw = read_secure(path, g1.MAX_CAPTURE_BYTES)
     try:
@@ -134,6 +137,25 @@ def check_seed(path: Path) -> tuple[list[dict], str]:
     return cases, sha_bytes(raw)
 
 
+def discover_seed() -> Path:
+    """Resolve only a unique, valid existing G1 capture; never guess a timestamp."""
+    if (not BASE.is_dir() or BASE.is_symlink()
+            or stat.S_IMODE(BASE.stat().st_mode) != 0o700):
+        raise Hold("PRIVATE_BASE_DIR_HOLD")
+    matches = []
+    for seed in BASE.glob("*/R60_REAL_G1_CAPTURE_PRIVATE.jsonl"):
+        try:
+            check_seed(seed)
+        except (Hold, g1.Hold, OSError, ValueError, TypeError):
+            continue
+        matches.append(seed)
+    if not matches:
+        raise Hold("SEED_CAPTURE_NOT_FOUND")
+    if len(matches) != 1:
+        raise Hold("MULTIPLE_VALID_SEEDS_SPECIFY_PATH")
+    return matches[0]
+
+
 def page_name(index: int) -> str:
     return f"{PAGE_PREFIX}{index:04d}{PAGE_SUFFIX}"
 
@@ -142,6 +164,8 @@ def create_config(folder: Path, seed: Path, page_size: int,
                   target_total: int) -> dict:
     if not 1 <= page_size <= MAX_PAGE_SIZE or not 20 <= target_total <= MAX_TOTAL:
         raise Hold("CONFIG_BOUNDS_HOLD")
+    if seed == Path("auto"):
+        seed = discover_seed()
     seeds, checksum = check_seed(seed)
     g1.private_dir(folder, create=True)
     config = {
@@ -167,7 +191,11 @@ def create_config(folder: Path, seed: Path, page_size: int,
 
 
 def validate_config(folder: Path) -> tuple[dict, list[dict]]:
+    if not folder.is_dir():
+        raise Hold("EXPANSION_NOT_INITIALIZED")
     g1.private_dir(folder, create=False)
+    if not (folder / CONFIG_NAME).is_file():
+        raise Hold("EXPANSION_CONFIG_NOT_FOUND")
     try:
         config = json.loads(read_secure(folder / CONFIG_NAME, MAX_CONFIG_BYTES))
     except (ValueError, TypeError, UnicodeError) as exc:
@@ -430,6 +458,8 @@ def safe_summary(config: dict, progress: dict) -> dict:
 def advance(folder: Path, dsn: str, max_pages: int) -> dict:
     if not 1 <= max_pages <= MAX_PAGES_PER_CALL:
         raise Hold("PAGE_CALL_LIMIT_HOLD")
+    if not folder.is_dir():
+        raise Hold("EXPANSION_NOT_INITIALIZED")
     g1.private_dir(folder, create=False)
     with locked(folder):
         config, seeds = validate_config(folder)
@@ -463,7 +493,7 @@ def main() -> int:
     sub = parser.add_subparsers(dest="action", required=True)
     ini = sub.add_parser("init")
     ini.add_argument("--output-dir", type=Path, required=True)
-    ini.add_argument("--seed-capture", type=Path, required=True)
+    ini.add_argument("--seed-capture", type=Path, default=Path("auto"))
     ini.add_argument("--page-size", type=int, default=20)
     ini.add_argument("--target-total", type=int, default=600)
     adv = sub.add_parser("advance")
@@ -488,7 +518,10 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001 - never leak private values
         print(json.dumps({
             "schema": SAFE_SCHEMA, "status": "EXPANSION_HOLD",
-            "reason_code": str(exc) if isinstance(exc, Hold) else type(exc).__name__,
+            "reason_code": (str(exc) if isinstance(exc, (Hold, g1.Hold))
+                            else "PRIVATE_FILE_NOT_FOUND" if isinstance(
+                                exc, FileNotFoundError)
+                            else type(exc).__name__),
             "train_admitted": 0, "database_modified": False,
             "gpu_started": False, "private_values_emitted": False,
         }, sort_keys=True), file=sys.stderr)
