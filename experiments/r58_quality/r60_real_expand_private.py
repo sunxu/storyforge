@@ -146,7 +146,7 @@ def discover_seed() -> Path:
     for seed in BASE.glob("*/R60_REAL_G1_CAPTURE_PRIVATE.jsonl"):
         try:
             check_seed(seed)
-        except (Hold, g1.Hold, OSError, ValueError, TypeError):
+        except (ValueError, OSError, TypeError, KeyError):
             continue
         matches.append(seed)
     if not matches:
