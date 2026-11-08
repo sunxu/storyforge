@@ -355,10 +355,6 @@ def prepare(
     packet_raw, private_map, manifest_out, safe, instructions = build_package(
         manifest, source_raw, p0_manifest_sha256=sha(p0_raw)
     )
-    if dry_run:
-        safe["status"] = "P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN"
-        safe["files_written"] = 0
-        return safe
     output_dir = output_dir.expanduser()
     if (not output_dir.is_absolute() or output_dir.exists() or output_dir.is_symlink()
             or any(parent.is_symlink() for parent in output_dir.parents)
@@ -367,6 +363,10 @@ def prepare(
             or output_dir.resolve(strict=False) == repo_root
             or repo_root in output_dir.resolve(strict=False).parents):
         raise AdjudicationHold("PRIVATE_OUTPUT_DIRECTORY_HOLD")
+    if dry_run:
+        safe["status"] = "P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN"
+        safe["files_written"] = 0
+        return safe
     output_dir.mkdir(mode=0o700)
     output_dir.chmod(0o700)
     safe["files_written"] = 6
