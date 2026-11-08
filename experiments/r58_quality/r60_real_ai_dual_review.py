@@ -160,11 +160,20 @@ def evaluate(cases: list[dict], configs: list[tuple[str, str, str]],
             or configs[0][1].casefold() == configs[1][1].casefold()):
         raise Hold("DISTINCT_MODELS_REQUIRED")
     receipts = []
+    model_attempt_holds = {}
+    fully_responded = 0
     for case in cases:
         reviews = []
         prompt = prompt_for_case(case)
         for n, (endpoint, model, key) in enumerate(configs):
-            answer = model_request(endpoint, model, key, prompt, timeout, json_mode)
+            try:
+                answer = model_request(endpoint, model, key, prompt, timeout, json_mode)
+            except Hold as exc:
+                # Never create fictional scores or false severe flags. A missing
+                # model review remains incomplete and is automatically HOLD.
+                code = str(exc)
+                model_attempt_holds[code] = model_attempt_holds.get(code, 0) + 1
+                continue
             reviews.append({
                 "reviewer_key": "ai-model-a" if n == 0 else "ai-model-b",
                 "decision": answer["decision"],
@@ -176,6 +185,8 @@ def evaluate(cases: list[dict], configs: list[tuple[str, str, str]],
                 "model_id": model,
                 "method": "ISOLATED_STATELESS_MODEL_REQUEST",
             })
+        if len(reviews) == 2:
+            fully_responded += 1
         receipts.append({
             "schema": batch.REVIEW_SCHEMA,
             "case_key": case["case_key"],
@@ -186,9 +197,13 @@ def evaluate(cases: list[dict], configs: list[tuple[str, str, str]],
             "reviews": reviews,
         })
     safe = batch.review_receipt(cases, receipts)
-    safe["status"] = "TWO_MODEL_AI_REVIEWED__TRAIN_ADMISSION_HOLD"
+    safe["status"] = ("TWO_MODEL_AI_REVIEWED__TRAIN_ADMISSION_HOLD"
+                      if fully_responded == len(cases)
+                      else "TWO_MODEL_AI_REVIEW_PARTIAL_HOLD")
     safe["ai_review_models_distinct"] = True
     safe["owner_attested_independence"] = attest_independent
+    safe["complete_two_model_responses"] = fully_responded
+    safe["model_attempt_hold_counts"] = dict(sorted(model_attempt_holds.items()))
     return receipts, safe
 
 
