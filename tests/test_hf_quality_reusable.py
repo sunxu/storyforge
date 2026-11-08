@@ -115,6 +115,47 @@ def test_rejects_severe_without_reject_and_low_pass_floor():
     assert review.validate_response(rejected, row) == "REJECT"
 
 
+def test_severe_reject_without_target_quote_is_evidence_hold():
+    row = blind(1)
+    rejected = answer(row, "REJECT")
+    rejected["severe_flags"]["safety_exclusion"] = True
+    rejected["specific_target_quotes"] = []
+    with pytest.raises(review.ReviewError, match="MODEL_SEVERE_EVIDENCE_HOLD"):
+        review.validate_response(rejected, row)
+    # Do not silently fabricate a quote; a verbatim existing one is valid.
+    rejected["specific_target_quotes"] = [row["target_text"][0:12]]
+    assert review.validate_response(rejected, row) == "REJECT"
+
+
+def test_reason_field_safe_subcodes_are_distinct():
+    row = blind()
+    for field, value, reason in (
+        ("literary_quality_notes", "", "MODEL_NOTES_TOO_SHORT_HOLD"),
+        ("literary_quality_notes", "很短", "MODEL_NOTES_TOO_SHORT_HOLD"),
+        ("literary_quality_notes", None, "MODEL_NOTES_TYPE_HOLD"),
+        ("uncertainty", None, "MODEL_UNCERTAINTY_TYPE_HOLD"),
+    ):
+        invalid = answer(row)
+        invalid[field] = value
+        with pytest.raises(review.ReviewError, match=reason):
+            review.validate_response(invalid, row)
+    assert len(answer(row)["literary_quality_notes"].strip()) >= 8
+    assert review.validate_response(answer(row), row) == "PASS"
+
+
+def test_legacy_v1_checkpoint_not_implicitly_trusted_under_v2(tmp_path):
+    row = blind()
+    record = review.checkpoint_record(1, row, answer(row), MODEL_A, SHA_A)
+    record["schema"] = "storyforge_hf_literary_checkpoint_private_v1"
+    record["receipt_sha256"] = review.digest({
+        k: value for k, value in record.items() if k != "receipt_sha256"
+    })
+    path = tmp_path / review.checkpoint_name(1)
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(review.ReviewError, match="CHECKPOINT_SOURCE_OR_MODEL_HOLD"):
+        review.read_checkpoint(path, 1, row, MODEL_A, SHA_A)
+
+
 def test_hold_requires_uncertainty_not_guessing():
     row = blind()
     valid = answer(row, "HOLD")
