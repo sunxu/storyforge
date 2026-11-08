@@ -29,7 +29,8 @@ export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
 export PYTHONPATH=/input
 python3 -m pip install --quiet --no-cache-dir   'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6'
-python3 -c 'import jinja2; print("HF_CPU_JINJA2_PRESENT", jinja2.__version__)'
+echo HF_CPU_JINJA2_PRESENT
+python3 -c 'import jinja2; print(jinja2.__version__)'
 python3 /scripts/runner.py   --input /input/source.private.jsonl --output-dir /output   --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137 --verify-only
 python3 /scripts/runner.py   --input /input/source.private.jsonl --output-dir /output   --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137   --token-preflight-only --max-model-len 32768 --max-output-tokens 2400"
 
