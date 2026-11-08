@@ -5,13 +5,13 @@ rows and a frozen pool SHA. This module never reads a source DB or submits a Job
 """
 from __future__ import annotations
 
-from collections import Counter
 import hashlib
 import json
 import os
-from pathlib import Path
 import secrets
 import stat
+from collections import Counter
+from pathlib import Path
 
 from . import hf_literary_review as reviewer
 
@@ -228,7 +228,6 @@ def verified_stage(root: Path, pool_hash: str, cases: list[dict]) -> tuple[dict,
 
 def audit(root: Path, pool_hash: str, cases: list[dict]) -> dict:
     manifest, crosswalk = verified_stage(root, pool_hash, cases)
-    results = {}
     by_slot = {}
     for slot in ("A", "B"):
         model, revision = manifest["model_pins"][slot]
