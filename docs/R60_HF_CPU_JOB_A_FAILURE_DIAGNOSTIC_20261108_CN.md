@@ -1,0 +1,91 @@
+# R60 HF CPU A Job 已提交但远程失败：安全诊断与继续执行（2026-11-08）
+
+## 真实故障结论：不是提交被拒绝
+
+Owner Mac 的旧 `hf_job_guard.py` 输出 `SUBMISSION_REJECTED / HF_JOB_SUBMISSION_FAILED`。只读查询组织 `adradar` 真实 HF Job 后确认：
+
+- **真实 Job 已创建**：`6af033d10e0338d1bb84941e`，组织 `adradar`，创建者 `greenkeedle`
+- Name `r60-quality-cpu-A-20261108-082545`，镜像 `python:3.11`，Flavor `cpu-basic`；开始 2026-11-08T08:33:21Z，结束 08:33:55Z，约 34 秒
+- Job 状态 `ERROR`，远程进程退出码 `42`。日志中已出现 pip 依赖安装完成、Transformers 对缺少 PyTorch 的非致命提示，然后只有安全回执：`HF_REVIEW_HOLD / HF_REVIEW_RUNTIME_ERROR`。
+- **这不是 HF API 提交失败**。原 Guard 默认使 `hf jobs run` 跟随远程日志，将远程程序退出码 42 当作 CLI 提交失败。此问题已通过 `hf_job_guard.py` 新增 `--detach` 修复。
+- **当前具体根因还不明**，因为旧 Worker 将各阶段未知异常全部归为 `HF_REVIEW_RUNTIME_ERROR`；不能断言是 Qwen Tokenizer、网络、CPU 资源、挂载或数据结构问题。
+- 暂未观测到本批次对应的 Reviewer B CPU Job。**禁止重复提交原 A Job，禁止直接把失败解释为质量不通过或升级 GPU。**
+
+这次故障未执行任何 AI 文学评分，Quality PASS/训练准入仍然为 0，R50 未访问。
+
+## 已落实的工具修复
+
+1. `scripts/hf_job_guard.py`：只有 `hf jobs run --detach` 返回 0 才报告 `JOB_SUBMITTED`，不会再把远程进程失败归类为提交错误；非零且缺失 Job ID 视为 `SUBMISSION_UNCONFIRMED_CHECK_ORG_JOBS`，人工核对组织列表，禁止自动重试。
+2. `src/storyforge_gold_quality/hf_literary_review.py`：新增安全失败阶段码 `HF_REVIEW_INPUT_RUNTIME_HOLD`、`HF_CPU_TOKENIZER_IMPORT_HOLD`、`HF_CPU_TOKENIZER_LOAD_HOLD`、`HF_CPU_CHAT_TEMPLATE_HOLD`、`HF_CPU_TOKEN_SUMMARY_HOLD`、`HF_CPU_PREFLIGHT_RUNTIME_HOLD`。绝不打印私有正文、模型异常消息、路径、token IDs 或回溯。
+3. 合成回归覆盖远程日志码误判的防护、Tokenizer/load/template 故障原因分级、未知输入阶段错误的安全回执。
+4. **冻结旧 A/B 私有 Stage 与 Bucket 输入不变**。旧 `input_A/runner.py` 也不覆盖或重写；新代码单独存放在新增的 diagnostics-only RO 脚本前缀，避免打破 Owner Stage SHA 和原始证据。
+
+## Owner Mac 无付费步骤：检查并上传**只有代码**的新脚本
+
+以下使用用户已上传的固定前缀和原 Revision；工作目录必须是同步后的 StoryForge R60 源码根目录：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+
+git fetch origin r60/gold192-history-v3-adapter
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+INROOT="hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z"
+BASE="$HOME/.local/share/storyforge/r60/private"
+DIAG="$BASE/r60-hf-cpu-diagnostic-runner-v2"
+
+# 原输入不能覆盖；仅创建一个与既有 Stage 分离的新 0700 代码目录
+test ! -e "$DIAG"
+install -d -m 700 "$DIAG"
+install -m 600 src/storyforge_gold_quality/hf_literary_review.py "$DIAG/runner.py"
+
+# 此命令只上传一份无私有正文的 Python Reviewer 源代码；
+# 不上传本地 owner 映射、tokenizer 输入或原 1000 条源文件
+hf buckets sync "$DIAG" "$INROOT/diagnostic-runner-v2"
+~~~
+
+## 诊断 Job A：先 dry-run，不自动重试
+
+原 `input_A` 继续挂载在 `/input:ro`；新增无私有正文的代码挂载在 `/scripts:ro`。`PYTHONPATH=/input` 使诊断 Runner 仍使用已冻结的 `token_core.py`、`runtime_inputs.py`、`runtime_resources.py`，保持共享 Tokenizer/Runtime 核心的来源一致。使用一个新的、与失败 Job 区分的输出路径。**这里只做 HF CPU**。
+
+~~~bash
+INROOT="hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z"
+
+CMD="set -eu
+export CUDA_VISIBLE_DEVICES=''
+export TOKENIZERS_PARALLELISM=false
+export PYTHONPATH=/input
+python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3'
+test -f /input/source.private.jsonl
+test -f /scripts/runner.py
+python3 /scripts/runner.py --input /input/source.private.jsonl \
+  --output-dir /output --model 'Qwen/Qwen3-32B' \
+  --revision '9216db5781bf21249d130ec9da846c4624c16137' --verify-only
+python3 /scripts/runner.py --input /input/source.private.jsonl \
+  --output-dir /output --model 'Qwen/Qwen3-32B' \
+  --revision '9216db5781bf21249d130ec9da846c4624c16137' \
+  --token-preflight-only --max-model-len 32768 --max-output-tokens 2400"
+
+python3 scripts/hf_job_guard.py \
+  --namespace adradar \
+  --name r60-quality-cpu-A-diagnostic-v2 \
+  --flavor cpu-basic --timeout-minutes 45 \
+  --input-volume "$INROOT/input_A:/input:ro" \
+  --input-volume "$INROOT/diagnostic-runner-v2:/scripts:ro" \
+  --output-volume "$INROOT/cpu-output-A-diagnostic-v2:/output:rw" \
+  --image python:3.11 \
+  -- /bin/sh -lc "$CMD"
+~~~
+
+上述应仅返回 `PREFLIGHT_PASS_NOT_SUBMITTED`，`input_mounts=2`、`gpu_allowed=false`、输入全 RO、输出独立 RW。**先检查，不要自动执行付费 Job。**
+
+在确认首次 Job 已结束、代码脚本挂载存在、同意另开一次 CPU 诊断 Job 后，对同一命令添加 `--submit` 才实际执行。新版 Guard 将通过 `--detach` 及时返回提交回执和 Job ID；用 `hf jobs logs adradar/JOB_ID` 检查结果，`HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE` 应先出现，然后是 `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU` 或明确的安全分阶段 HOLD。不得在未知故障下自动重跑。
+
+**B 的 CPU 任务保持 HOLD**，直到 A 给出可解释的模型 Tokenizer SAFE 或确定修复方向。
+
+## 额外边界
+
+从云端日志看 `None of PyTorch...` 是 Transformers 的环境信息，**尚不能确定它就是根因**。本 CPU 预检只需要 Tokenizer、不加载 32B 模型权重，不应通过自动加 GPU、私有日志打印或禁用安全校验解决。HF Bucket 原 A/B 1000 个真实用户正文已上传，继续留在既有组织私有前缀；本轮不增加正文副本。
