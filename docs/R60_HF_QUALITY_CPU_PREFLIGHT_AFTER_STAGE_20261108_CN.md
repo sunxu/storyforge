@@ -78,7 +78,7 @@ for SLOT in A B; do
   CMD="set -eu
 export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
-python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3'
+python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6'
 test -f /input/source.private.jsonl
 python3 /input/runner.py --input /input/source.private.jsonl \
   --output-dir /output --model '$MODEL' --revision '$REV' \
