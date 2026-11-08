@@ -5,13 +5,15 @@ on:
     branches: [r60/hf-jobs-runtime]
     paths:
       - 'requirements/hf-cpu-tokenizer.in'
-      - 'requirements/hf-cpu-tokenizer.lock'\n      - 'requirements/hf-quality-reviewer.in'\n      - 'requirements/hf-quality-reviewer.in'
+      - 'requirements/hf-cpu-tokenizer.lock'
+      - 'requirements/hf-quality-reviewer.in'
       - 'requirements/README.md'
       - '.github/workflows/r60-hf-cpu-lock-resolve.yml'
   pull_request:
     paths:
       - 'requirements/hf-cpu-tokenizer.in'
       - 'requirements/hf-cpu-tokenizer.lock'
+      - 'requirements/hf-quality-reviewer.in'
       - 'requirements/README.md'
       - '.github/workflows/r60-hf-cpu-lock-resolve.yml'
   workflow_dispatch:
