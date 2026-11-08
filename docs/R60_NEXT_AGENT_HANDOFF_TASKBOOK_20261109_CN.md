@@ -450,3 +450,26 @@ PYTHONPATH=src:. python3 scripts/r60_calibration_p0_freeze.py \
 诊断补丁提交：`375a68da88b20779a9856a47f6587b66b903795a`。GitHub CI、R60 HF Runtime CI、Gold Quality Pipeline、R58 synthetic regression 已通过；R60 HF CPU dependency profile 正在完成。此提交的 CI 通过不代表 Owner Mac P0 已通过。
 
 **P0 仍为 HOLD；不得去掉 `--dry-run`，直到诊断后的 dry-run 明确返回 `CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_FILES_WRITTEN`。**
+
+
+### 8.8 macOS 临时目录符号链接兼容修复（2026-11-09）
+
+Owner Mac 第二次 dry-run 已把失败精确定位为：
+
+- phase：`gold72_replay_owner_resolution`
+- validator：`gold72_owner_resolution.py`
+- reason：`OUTPUT_PATH_SYMLINK`
+- failure site：Owner Resolution Validator 的 create-only SAFE 输出路径祖先检查。
+
+原因是 Runner 用 `tempfile.mkdtemp()` 创建临时目录后，将 macOS 的临时目录别名路径直接传入 Validator。macOS 的系统临时目录路径可能包含 `/var -> /private/var` 这样的系统符号链接祖先。Validator 对输出路径的全祖先进行符号链接拒绝，因此把合法 OS 路径误判为不安全路径。
+
+修复：
+- Runner 新增 `_private_temp_directory()`：确认新建目录本身不是 symlink，解析为 canonical absolute path，确认目录有效并设置/复核 0700。
+- 只把 canonical path 传给既有 Validator；不放宽 Validator 的符号链接安全检查，不改变私有输入读取、create-only 写入或 0600 文件权限。
+- 新增合成回归测试：模拟 macOS 风格的 symlinked ancestor，验证返回 canonical path 且目录权限为 0700。
+
+修复提交：`d9e951f68f4e0aa9c526ecef43fd588a6c2dcc9a`（测试补充提交：`33bfca8ef6b1531b2b146253ad2f22d9e4d3a5ca`）。
+
+该提交的 CI、Gold Quality Pipeline、R60 HF Runtime CI、R58 scoped synthetic、R60 HF CPU dependency profiles 全部通过。以上是代码/合成测试通过，不代表 Owner Mac P0 dry-run 或正式冻结通过。
+
+**下一步：Owner Mac 拉取最新分支后，只重跑原 dry-run 命令。** 若 dry-run PASS，先回传 SAFE；在确认结果前仍不得执行正式冻结。
