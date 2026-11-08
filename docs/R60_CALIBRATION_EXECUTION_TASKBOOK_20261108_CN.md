@@ -30,13 +30,13 @@
 
 ### P0.0 已收到证据状态（交接准备阶段记录，不能代替 P0 验收）
 
-截至 2026-11-08，Owner 已提供 R60 Pilot10 Owner Pairwise SAFE，并提供 1000 条 Owner crosswalk 的本地位置及脱敏结构摘要。
+截至 2026-11-08，Owner 已提供 R60 Pilot10 Owner Pairwise SAFE；该 SAFE 不只是 crosswalk 结构摘要，而是已完成真实来源映射、跨槽绑定和 10 个 Pilot Checkpoint 的只读核验。
 
-- Pilot10 SAFE 摘要：A=5、B=5；两槽各 5/5 REJECT；matched_cases=0、unique_source_cases=10；10/10 Checkpoint receipt/input SHA 绑定验证通过；Owner manifest receipt 通过。此项是已收到的历史审计证据，不需要重跑旧 A/B 或旧 Reviewer C。
-- 1000 crosswalk：已有 Owner Pairwise SAFE 验证 A/B 两槽各 1000/1000 source binding、输入 SHA 与跨槽同源绑定通过；该子项已 PASS，不重跑旧审计。
-- Gold72 40 条：尚未收到可供本任务书冻结的完整私有证据摘要；需盘点原始 manifest/历史 C 与 Owner SAFE/receipt，不得只依赖历史聊天计数。
+- **R60 1000 crosswalk：PASS。** Owner Pairwise SAFE 的 `owner_manifest_receipt_verified=true`、`input_hash_and_cross_slot_binding_verified=true`；审计代码对 A/B 各 1000 条输入和 bindings、source_index 全覆盖、blind_id 唯一性、case_key/target/history SHA 跨槽一致性作硬校验。实际 SAFE 已报告 A/B 两槽各 1000/1000 source binding 通过。不得重复运行旧 crosswalk 审计。
+- **R60 Pilot10 Checkpoint：PASS（技术来源/回执层）。** A v2 五份、B v3 五份共 10/10 的 `receipt_sha256/input_sha256` 完整重算通过；A/B 两槽均 5/5 REJECT，但 `matched_cases=0`、`unique_source_cases=10`，所以不能声称双模型对同一案例达成一致。严重度语义裁决仍未完成。
+- **Gold72 40 条：部分证据已存在，冻结仍未完成。** 已知存在 Reviewer C 40-case blind packets、Owner ID map、C results-only SAFE、Owner resolution worksheet 和 Owner aggregate SAFE；历史聚合为 A V3/B2 disagreement 40/72、C=38/1/1、Owner=30/4/6。但 C execution record unavailable，独立 40-case source manifest/A-B crosswalk 尚未证明；需从原始来源和 Owner map 重建、核验并冻结。不得把 72-row source 或 suffix72 的 72 READY Stage 当成 40-case Gold72 集合。
 
-**P0 整体仍 OPEN，但不是 R60 crosswalk 阻塞。** R60 来源映射与 10 个 Checkpoint 已由现有 SAFE 验证；剩余工作集中于 Gold72 40 条私有材料盘点/冻结和 Gold72↔R60 跨集去重。
+**P0 整体仍 OPEN，但 R60 1000 crosswalk 与 Pilot10 回执核验子项已 PASS。** 当前实际阻塞是 Gold72 40 条独立来源集合重建/冻结，以及 Gold72↔R60 跨集去重；不得重跑已通过的 R60 crosswalk 审计。
 
 ### P0.1 分支与 CI 基线核验
 
