@@ -11,8 +11,9 @@ import json
 import os
 import secrets
 import stat
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from . import hf_severity_evidence_v2 as severity
 
