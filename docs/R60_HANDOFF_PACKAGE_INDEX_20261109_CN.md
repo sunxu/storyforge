@@ -190,3 +190,6 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 - 依赖锁漂移已通过显式固定 `regex==2026.11.7` 修复；未放宽 hash lock。
 - **尚未执行 Owner Mac dry-run；尚未生成真实私有 P2 packets；Owner 审核未开始。**
 - 下一步按任务书 8.15 dry-run → 显式 --write → Owner 盲审 → 20 verdict + 60 semantic checks → 8.16 私有回执验证。当前 Quality-v1 admission=0、training_authorized=false。
+
+
+Owner Mac 的精确 P0 manifest 路径、Reviewer-C blind source 路径、项目工作目录和 dry-run 命令已补充至 [任务书 8.18](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#818-owner-mac-dry-run-精确路径与命令)。
