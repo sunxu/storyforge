@@ -7,12 +7,12 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import json
 import os
-from pathlib import Path
 import sys
 import uuid
+from collections import Counter
+from pathlib import Path
 
 from r60_scoped_target_pairs import (
     BASE,
