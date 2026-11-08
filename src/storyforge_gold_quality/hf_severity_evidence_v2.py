@@ -347,8 +347,13 @@ def _validate_evidence(packet: dict[str, Any], evidence: object) -> list[dict]:
             raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
         if item["role"] == "risk_indicator" and item["source"] != "target":
             raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
-        if item["role"] in ("explicit_refusal", "player_boundary") and item["source"] != "history":
-            raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
+        if item["role"] in ("explicit_refusal", "player_boundary"):
+            if (item["source"] != "history"
+                    or packet["visible_history"][item["message_index"]]["role"] != "user"):
+                raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
+        if item["role"] == "applicable_rule" and item["source"] == "history":
+            if packet["visible_history"][item["message_index"]]["role"] not in ("system", "user"):
+                raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
         if item["role"] == "npc_autonomy" and item["source"] != "target":
             raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
         locator = (
@@ -450,9 +455,29 @@ def _dimension_rules(
                    and item["source"] in ("history", "verified_world_component")
                    for item in evidence):
             raise EvidenceHold("SEVERITY_HARD_RULE_QUOTE_HOLD")
-        allowed_basis = {"history_system", "history_user", "verified_world_component"}
-        if not any(item["source"] in allowed_basis for item in basis):
-            raise EvidenceHold("SEVERITY_HARD_RULE_BASIS_HOLD")
+        linked_basis = False
+        for rule in basis:
+            if rule["source"] == "history_system":
+                linked_basis = linked_basis or any(
+                    item["source"] == "history" and item["role"] == "applicable_rule"
+                    and packet["visible_history"][item["message_index"]]["role"] == "system"
+                    for item in evidence
+                )
+            elif rule["source"] == "history_user":
+                linked_basis = linked_basis or any(
+                    item["source"] == "history" and item["role"] == "applicable_rule"
+                    and packet["visible_history"][item["message_index"]]["role"] == "user"
+                    for item in evidence
+                )
+            elif rule["source"] == "verified_world_component":
+                linked_basis = linked_basis or any(
+                    item["source"] == "verified_world_component"
+                    and item["role"] == "applicable_rule"
+                    and item["component_ref"] == rule["rule_id"]
+                    for item in evidence
+                )
+        if not linked_basis:
+            raise EvidenceHold("SEVERITY_HARD_RULE_BASIS_EVIDENCE_LINK_HOLD")
     else:
         if "risk_indicator" not in target_roles:
             raise EvidenceHold("SEVERITY_SAFETY_TARGET_EVIDENCE_HOLD")
