@@ -79,10 +79,9 @@ Gold72:
 - 私有固定分组：20 条 rubric development、20 条 locked regression。随机种子和分组指纹写入私有 manifest。
 
 R60:
-- 必须恰好 10 个唯一来源案例；
-- 必须验证 A/B 两个原始槽的 10 个 Checkpoint receipt、input SHA、source crosswalk；
-- 记录 A/B 的共同案例为 0；不得伪造逐案双模型一致；
-- C 10/10 的执行和 reconcile 收据完整；独立模型身份未验证这一限制写入 manifest；
+- **已有 Owner Pairwise SAFE 完成来源审计**：A/B 两槽各 1000/1000 source binding、input SHA、跨槽同源绑定通过；10/10 Checkpoint receipt/input SHA 验证通过；无需重跑。
+- Pilot10 的 `matched_cases=0`、`unique_source_cases=10` 必须原样保留；不得伪造逐案双模型一致。
+- C 10/10 的执行和 reconcile 收据完整；独立模型身份未验证这一限制写入 manifest；不得把 C 结果自动当作真值。
 - 保留三维 C 结果原样。
 
 两集合的跨集合重复检查：
