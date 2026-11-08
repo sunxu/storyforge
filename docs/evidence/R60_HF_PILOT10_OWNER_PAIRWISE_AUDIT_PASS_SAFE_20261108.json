@@ -1,0 +1,51 @@
+{
+  "schema": "storyforge_r60_hf_pilot10_owner_pairwise_safe_v1",
+  "status": "OWNER_PAIRWISE_AUDIT_COMPLETE__SEMANTIC_HOLD",
+  "cases_reviewed_by_slot": {
+    "A": 5,
+    "B": 5
+  },
+  "checkpoint_receipt_and_input_sha256_verified": {
+    "A": 5,
+    "B": 5
+  },
+  "checkpoint_validation_complete": true,
+  "input_hash_and_cross_slot_binding_verified": true,
+  "matched_cases": 0,
+  "matched_decision_agreement": 0,
+  "matched_severe_flag_agreement": 0,
+  "owner_manifest_receipt_verified": true,
+  "per_slot_decisions": {
+    "A": {
+      "REJECT": 5
+    },
+    "B": {
+      "REJECT": 5
+    }
+  },
+  "per_slot_severe_counts": {
+    "A": {
+      "hard_fact_or_ban": 2,
+      "safety_exclusion": 2,
+      "serious_player_agency": 5
+    },
+    "B": {
+      "hard_fact_or_ban": 2,
+      "safety_exclusion": 2,
+      "serious_player_agency": 5
+    }
+  },
+  "private_values_emitted": false,
+  "quality_v1_admitted": 0,
+  "semantic_severity_adjudication_complete": false,
+  "severe_agency_with_score_ge4": {
+    "A": 1,
+    "B": 2
+  },
+  "stage_case_count": 1000,
+  "training_authorized": false,
+  "true_dual_model_agreement_evaluable": false,
+  "unique_source_cases_in_pilot": 10,
+  "unmatched_A": 5,
+  "unmatched_B": 5
+}
