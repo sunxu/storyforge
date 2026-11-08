@@ -26,3 +26,6 @@
 
 
 **2026-11-08 R60 双槽案例**：固定 vLLM GPU digest 的 `cpu-basic` 兼容性预检 A/B 两 Job（`6af04c570e0338d1bb84a91e` / `6af04c58e6320c66fad7416c`）均在 `HF_GPUIMAGE_DEPS_PRESENT` 后输出 `HF_CPU_RESOURCE_GUARD_HOLD`，未进入 Tokenizer。历史 CPU 标准镜像 A/B 各 1000/1000 Tokenizer PASS 不受影响。不要把失败误认为数据或模型评审问题。下一次仅 A 用独立输出前缀，在不修改公共 ResourceGuard 的条件下读取 SAFE `checks`；若实际 GPU 设备节点、非 CPU ACCELERATOR 或 CUDA 模块出现，立即 HOLD。仅当是容器默认的 NVIDIA 可见性变量且**无 GPU 设备**时，可在 CPU Job 的 shell 中明确 `NVIDIA_VISIBLE_DEVICES=void`，然后重新运行完整 ResourceGuard，再运行 Tokenizer（仍是 CPU flavor）。先 A 后 B，不要同时盲重试两槽。
+
+
+**2026-11-08 R60 A 精确证实**：GPU vLLM 固定 digest 运行于真正 `cpu-basic` 时，原始 `ResourceGuard` SAFE 子项均 PASS，唯 `nvidia_visibility=FAIL`；当且仅当另外四项 PASS（包含实际无 NVIDIA 设备节点），在 shell `export NVIDIA_VISIBLE_DEVICES=void` 后完整资源检查五项全部 PASS，随即同镜像 A 真正 1000/1000 CPU Tokenizer PASS（over_budget=0）。HF Job `6af04eb10e0338d1bb84a9e1` 终态 COMPLETED，证据 `docs/evidence/R60_GPUIMAGE_A_CPU1000_ENVFIX_PASS_SAFE_20261108.json`。**不允许从此推断 GPU 节点上的检查可忽略，更不允许更改 ResourceGuard 以放松安全标准**。后续 B 参照 A 已验证的步骤单槽进行，新的独立输出，禁止重复提交 A。
