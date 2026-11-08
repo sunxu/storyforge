@@ -11,7 +11,7 @@ Owner Mac 于 2026-11-08 返回：
 
 代码位于：
 - `experiments/r58_quality/r60_real_ai_dual_review.py`（本轮新增）
-- `experiments/r58_quality/test_r60_real_ai_dual_review.py`（12 项合成测试）
+- `experiments/r58_quality/test_r60_real_ai_dual_review.py`（13 项合成测试）
 - 原有 `experiments/r58_quality/r60_real_private_batch.py review`（审核聚合、质量 PASS 但不入训）
 
 ## AI 双评审要求
@@ -55,7 +55,7 @@ python3 experiments/r58_quality/r60_real_ai_dual_review.py \
   --owner-attest-independent-ai
 ```
 
-若本地 OpenAI-compatible 端点需要 JSON mode，可增加 `--json-mode`。上述模型名称仅为示例，必须以本机**实际可用**的两种模型为准。相同模型通过两个不同 endpoint 运行会被拒绝；响应格式不合规则整批 HOLD，不产生半成品。若未验证模型隔离，请先省略 `--owner-attest-independent-ai`，SAFE 会显示全部质量为 HOLD。
+若本地 OpenAI-compatible 端点需要 JSON mode，可增加 `--json-mode`。若某个案例出现模型拒绝、网络错误、回复非 JSON 等问题，该案例保留已有独立审阅意见，另一侧评审缺失，按 `TWO_MODEL_AI_REVIEW_PARTIAL_HOLD` / 固定 `model_attempt_hold_counts` 聚合，**绝不填充虚构评分或安全标记**。成功案例可继续进行质量判定；不将部分失败提升为 PASS。上述模型名称仅为示例，必须以本机**实际可用**的两种模型为准。相同模型通过两个不同 endpoint 运行会被拒绝；响应格式不合规则整批 HOLD，不产生半成品。若未验证模型隔离，请先省略 `--owner-attest-independent-ai`，SAFE 会显示全部质量为 HOLD。
 
 远程 API 可选：使用两个独立模型的 HTTPS endpoint，命令上明确添加 `--allow-remote-review`；API 密钥只能经环境变量 `R60_REVIEW_A_KEY`、`R60_REVIEW_B_KEY` 提供，不写进命令、仓库或 Issue。**任何 API provider 不能因为接受本请求而自动获得训练准入权**；正式训练仍受另行控制。
 
