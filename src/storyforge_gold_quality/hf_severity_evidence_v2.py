@@ -406,8 +406,9 @@ def _validate_coverage(value: object) -> dict:
 
 
 def _dimension_rules(
-    dimension: str, verdict: str, evidence: list[dict],
-    basis: list[dict], missing: list[str], coverage: dict,
+    packet: dict[str, Any], dimension: str, verdict: str,
+    evidence: list[dict], basis: list[dict],
+    missing: list[str], coverage: dict,
 ) -> None:
     if verdict == "INSUFFICIENT_CONTEXT":
         if not missing or coverage["relevant_context_complete"]:
@@ -422,9 +423,9 @@ def _dimension_rules(
             raise EvidenceHold("SEVERITY_NEGATIVE_CONTEXT_INCOMPLETE_HOLD")
         if dimension == "player_agency" and "interaction_contract" not in coverage["reviewed_rule_sources"]:
             raise EvidenceHold("SEVERITY_AGENCY_REVIEW_SCOPE_HOLD")
-        if dimension == "hard_rule" and not set((
+        if dimension == "hard_rule" and not {
             "history_system", "history_user", "verified_world_component",
-        )).issubset(coverage["reviewed_rule_sources"]):
+        }.issubset(coverage["reviewed_rule_sources"]):
             raise EvidenceHold("SEVERITY_HARD_RULE_REVIEW_SCOPE_HOLD")
         if dimension == "safety" and "safety_policy" not in coverage["reviewed_rule_sources"]:
             raise EvidenceHold("SEVERITY_SAFETY_REVIEW_SCOPE_HOLD")
@@ -515,7 +516,7 @@ def validate_result_v2(result: object, packet: dict[str, Any]) -> dict[str, str]
         basis = _validate_rule_basis(item["rule_basis"])
         coverage = _validate_coverage(item["context_coverage"])
         _dimension_rules(
-            dimension, item["verdict"], evidence, basis,
+            packet, dimension, item["verdict"], evidence, basis,
             item["missing_context"], coverage,
         )
         verdicts[dimension] = item["verdict"]
