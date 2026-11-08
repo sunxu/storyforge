@@ -1,0 +1,59 @@
+{
+  "schema": "storyforge_r60_gpuimage_a_cpu_token_preflight_safe_v1",
+  "date": "2026-11-08",
+  "job_id": "6af04eb10e0338d1bb84a9e1",
+  "job_url": "https://huggingface.co/jobs/adradar/6af04eb10e0338d1bb84a9e1",
+  "job_name": "r60-gpuimage-cpu-token-A-envfix-02",
+  "namespace": "adradar",
+  "hardware": "cpu-basic",
+  "stage": "COMPLETED",
+  "created_at_utc": "2026-11-08T10:28:01.186Z",
+  "finished_at_utc": "2026-11-08T10:28:30.021Z",
+  "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+  "model": "Qwen/Qwen3-32B",
+  "model_revision": "9216db5781bf21249d130ec9da846c4624c16137",
+  "resource_before": {
+    "status": "FAIL",
+    "error_code": "CPU_PROFILE_GPU_VISIBLE",
+    "checks": {
+      "accelerator_profile": "PASS",
+      "cuda_visibility": "PASS",
+      "nvidia_device_nodes": "PASS",
+      "nvidia_visibility": "FAIL",
+      "runtime_no_cuda_import": "PASS"
+    }
+  },
+  "environment_adjustment": "NVIDIA_VISIBLE_DEVICES=void in cpu-basic job after confirming no device nodes or other failed resource checks; ResourceGuard left unchanged",
+  "resource_after": {
+    "status": "PASS",
+    "error_code": null,
+    "checks": {
+      "accelerator_profile": "PASS",
+      "cuda_visibility": "PASS",
+      "nvidia_device_nodes": "PASS",
+      "nvidia_visibility": "PASS",
+      "runtime_no_cuda_import": "PASS"
+    }
+  },
+  "safe_markers": [
+    "HF_CPU_RESOURCE_GUARD_PASS",
+    "HF_GPUIMAGE_DEPS_PRESENT"
+  ],
+  "status": "HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU",
+  "cases_checked": 1000,
+  "pilot_cases_checked": 5,
+  "remaining_cases_checked": 995,
+  "prompt_tokens_min": 712,
+  "prompt_tokens_median": 1148,
+  "prompt_tokens_p95": 2284,
+  "prompt_tokens_max": 3124,
+  "reserved_output_tokens": 2400,
+  "max_total_tokens": 5524,
+  "max_model_len": 32768,
+  "over_budget_count": 0,
+  "model_revision_pinned": true,
+  "gpu_started": false,
+  "training_authorized": false,
+  "private_values_emitted": false,
+  "limitations": "A-only CPU tokenization in pinned vLLM image; no GPU inference, review scores, checkpoint or training admission. Resource probe passes only after disabling NVIDIA_VISIBLE_DEVICES on cpu-basic and verifying no GPU device nodes."
+}
