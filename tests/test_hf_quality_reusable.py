@@ -156,6 +156,112 @@ def test_legacy_v1_checkpoint_not_implicitly_trusted_under_v2(tmp_path):
         review.read_checkpoint(path, 1, row, MODEL_A, SHA_A)
 
 
+def test_r60_v3_one_batch_repairs_multiple_exact_quote_fields():
+    row = blind(1)
+    raw = answer(row)
+    raw["specific_source_quotes"] = ["虚构历史原文甲", "虚构历史原文乙"]
+    raw["specific_target_quotes"] = ["虚构目标原文"]
+    with pytest.raises(review.QuoteValidationError) as exc:
+        review.validate_response(raw, row)
+    indices = exc.value.invalid_indices
+    assert indices == {
+        "specific_source_quotes": [0, 1],
+        "specific_target_quotes": [0],
+    }
+    choices = {field: review.quote_candidates(row, field) for field in indices}
+    schema = review.repair_schema(indices, choices)
+    assert schema["properties"]["repairs"]["minItems"] == 3
+    corrected = review.apply_repairs(raw, row, indices, choices, {
+        "repairs": [
+            {"field": "specific_source_quotes", "quote_index": 0, "candidate_index": 0},
+            {"field": "specific_source_quotes", "quote_index": 1, "candidate_index": 1},
+            {"field": "specific_target_quotes", "quote_index": 0, "candidate_index": 0},
+        ],
+    })
+    assert review.validate_response(corrected, row) == "PASS"
+    for field in ("decision", "scores", "severe_flags",
+                  "literary_quality_notes", "uncertainty"):
+        assert corrected[field] == raw[field]
+    assert raw["specific_source_quotes"] == ["虚构历史原文甲", "虚构历史原文乙"]
+
+
+def test_r60_v3_repair_rejects_duplicate_omission_and_out_of_range():
+    row = blind(1)
+    raw = answer(row)
+    raw["specific_target_quotes"] = ["虚构目标甲", "虚构目标乙"]
+    with pytest.raises(review.QuoteValidationError) as exc:
+        review.validate_response(raw, row)
+    idx = exc.value.invalid_indices
+    candidates = {field: review.quote_candidates(row, field) for field in idx}
+    items = [
+        {"field": "specific_target_quotes", "quote_index": i, "candidate_index": 0}
+        for i in (0, 1)
+    ]
+    for invalid in (
+        [items[0]],
+        [items[0], items[0]],
+        [items[0], dict(items[1], candidate_index=999)],
+        [items[0], dict(items[1], candidate_index=True)],
+    ):
+        with pytest.raises(review.ReviewError, match="QUOTE_REPAIR_SELECTION_HOLD"):
+            review.apply_repairs(raw, row, idx, candidates, {"repairs": invalid})
+
+
+def test_r60_v3_single_constrained_repair_generation_and_budget_guard():
+    from types import SimpleNamespace
+
+    row = blind(1)
+    raw = answer(row)
+    raw["specific_target_quotes"] = ["不存在的假引文"]
+    with pytest.raises(review.QuoteValidationError) as exc:
+        review.validate_response(raw, row)
+
+    class FakeEngine:
+        calls = 0
+
+        def generate(self, prompts, params, use_tqdm=False):
+            self.calls += 1
+            assert len(prompts) == 1
+            assert params["max_tokens"] == 256
+            assert params["temperature"] == 0
+            return [SimpleNamespace(outputs=[SimpleNamespace(
+                finish_reason="stop",
+                text=json.dumps({"repairs": [
+                    {"field": "specific_target_quotes",
+                     "quote_index": 0, "candidate_index": 0}
+                ]}),
+            )])]
+
+    engine = FakeEngine()
+    repair_args = (
+        row, raw, json.dumps(raw, ensure_ascii=False), exc.value,
+        object(), engine,
+        lambda tokenizer, messages: [1] * 30,
+        lambda **kw: kw, lambda **kw: kw, lambda **kw: kw,
+    )
+    repaired = review.repair_generated_quotes(*repair_args, max_model_len=32768)
+    assert engine.calls == 1
+    assert repaired["scores"] == raw["scores"]
+    assert repaired["severe_flags"] == raw["severe_flags"]
+    assert review.validate_response(repaired, row) == "PASS"
+    with pytest.raises(review.ReviewError, match="QUOTE_REPAIR_TOKEN_BUDGET_HOLD"):
+        review.repair_generated_quotes(*repair_args, max_model_len=250)
+    assert engine.calls == 1
+
+
+def test_r60_v3_does_not_reuse_old_v2_checkpoint(tmp_path):
+    row = blind(1)
+    record = review.checkpoint_record(1, row, answer(row), MODEL_A, SHA_A)
+    record["schema"] = "storyforge_hf_literary_checkpoint_private_v2"
+    record["receipt_sha256"] = review.digest({
+        k: value for k, value in record.items() if k != "receipt_sha256"
+    })
+    path = tmp_path / review.checkpoint_name(1)
+    path.write_text(json.dumps(record), encoding="utf-8")
+    with pytest.raises(review.ReviewError, match="CHECKPOINT_SOURCE_OR_MODEL_HOLD"):
+        review.read_checkpoint(path, 1, row, MODEL_A, SHA_A)
+
+
 def test_hold_requires_uncertainty_not_guessing():
     row = blind()
     valid = answer(row, "HOLD")
