@@ -112,7 +112,7 @@ P0 PASS 条件：
 
 ---
 
-## P0.5 已知依赖故障回看：R58 Jinja2 问题在 R60 重复发生（必做）
+## P0.5 已知依赖故障回看：R58 Jinja2 问题在 R60 重复发生（工程门禁已实现）
 
 这是已知故障的复发，不是首次发现。R58 于 2026-11-01 已实测：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`；缺少 Jinja2 会导致 Transformers Chat Template `ImportError`；安装 Jinja2 后，A/B 两组真实 HF CPU Tokenizer 预检均通过。
 
@@ -122,7 +122,7 @@ R60 再次发生同类故障。必须把经验固化为依赖和门禁，而不�
 3. 增加 CI 回归，确保 Chat Template 依赖不会从依赖清单/Runner 安装步骤中消失。
 4. preflight 任一失败立即停止，不提交 Job、不换 flavor/namespace、不自动重试。
 5. 复用 [R60 HF CPU 预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 的已知故障记录；不得再次花费付费 Job 诊断已知的缺包原因。
-6. R60 Reviewer 已新增独立依赖输入 `requirements/hf-quality-reviewer.in`，避免误用 R59 Qwen3.8 的 Transformers 5.16.1 profile；GitHub Actions 将在 Transformers 4.57.1 环境执行合成 `apply_chat_template` 冒烟。Reviewer hash-pinned lock `requirements/hf-quality-reviewer.lock` 已生成；Owner Mac 上传输入前必须将它只读复制到 A/B 输入目录，远端先校验 SHA256，再使用 `pip install --require-hashes`。
+6. R60 Reviewer 已新增独立依赖输入 `requirements/hf-quality-reviewer.in` 与 hash-pinned lock `requirements/hf-quality-reviewer.lock`，避免误用 R59 Qwen3.8 的 Transformers 5.16.1 profile。GitHub Actions Run `42495819470`（commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5`）已验证 lock 重解析一致、hash-verified install、`pip check`、CPU-only boundary 与合成 `apply_chat_template` smoke 全部 PASS。Owner Mac 上传输入前必须将 lock 只读复制到 A/B 输入目录，远端先校验 SHA256，再使用 `pip install --require-hashes`；**该 Owner Mac staging/远端目标 Tokenizer 检查尚未执行，不代表新 HF Job 已通过。**
 
 ## P1 — 三项严重问题的证据标准 v2
 
