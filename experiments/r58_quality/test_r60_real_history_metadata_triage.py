@@ -6,7 +6,6 @@ import os
 import uuid
 
 import pytest
-
 import r60_real_history_metadata_triage as triage
 import r60_scoped_target_pairs as scoped
 
