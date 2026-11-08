@@ -1,5 +1,7 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **2026-11-08 CPU 故障修正（最高优先级）**：Owner 运行 A 的 CPU Guard 后获得 `SUBMISSION_REJECTED/HF_JOB_SUBMISSION_FAILED`，但组织 HF Job 列表证实 Job `6af033d10e0338d1bb84941e` 已于 08:33:21Z 成功创建，08:33:55Z 以远程退出码 42 失败；日志含 `HF_REVIEW_HOLD / HF_REVIEW_RUNTIME_ERROR`，故是远程 Worker 运行失败，**不是提交失败、不是质量审核 REJECT**。原 `hf jobs run` 因默认跟随日志而误归类，现 Guard 改用 `--detach`，Worker 提供安全失败阶段码。**暂停 B 与原 A 自动重试**；按 [A CPU 故障诊断说明](R60_HF_CPU_JOB_A_FAILURE_DIAGNOSTIC_20261108_CN.md) 使用隔离的新 Runner 代码目录，保持原冻结 A/B Stage 和 Bucket 输入原样，先 dry-run 验证再单次 CPU 诊断（需 Owner 确认）。截至此回执未执行任何真实文学评分，Quality/Train PASS=0，GPU 未启动。
+
 > **2026-11-08 Owner Mac 实测 Stage 通过**：实际 `prepare` = `HF_QUALITY_BLIND_STAGE_READY__NOT_SUBMITTED`（1000 候选、2 Slot、Owner crosswalk 未上传）；实际 `audit` = `HF_QUALITY_DUAL_PARTIAL__NO_ADMISSION`（A=0、B=0、complete_pairs=0、1000 HOLD，Quality PASS=0、训练准入=0），两 Reviewer 固定 A Qwen3-32B @ `9216db5781bf21249d130ec9da846c4624c16137`、B GLM-4-32B-0414 @ `077b5c2f5c43bd3239fd605a0600229e8facbd4a`。
 > **最新 P0 下一步是 HF CPU 模型 Tokenizer/Chat Template 真正预检**，依照 [受控执行书](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 只上传两个私有 A/B 输入到 `hf://buckets/adradar/storyforge-training` 下独立 RO 前缀，借由已有 `scripts/hf_job_guard.py` 做 CPU Job 规格检验和必要的受控 CPU 提交；绝不可上传 Owner crosswalk 或整个 Stage。直接 `-v 本地目录` 隐式同步到 `jobs-artifacts` 的过时示例不再作为执行标准。未实际上传 HF 私有正文，CPU/GPU 尚未提交。GPU 推理/训练另行授权。
 
