@@ -567,6 +567,11 @@ def _load_gold(
         "owner_decisions": stored_owner_safe["owner_decisions"],
         "reviewer_c_decisions": stored_owner_safe["reviewer_c_decisions"],
         "source_file_count": len(files),
+        # Carry the deterministic 20/20 split's aggregate story counts into
+        # SAFE construction; do not expose story identifiers.
+        "development_story_count": split_summary["development_story_count"],
+        "locked_regression_story_count": split_summary["locked_regression_story_count"],
+        "shared_story_count": split_summary["shared_story_count"],
     }
 
 
