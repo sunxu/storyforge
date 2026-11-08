@@ -295,3 +295,145 @@ def test_init_cli_missing_seed_does_not_expose_private_path(
     assert "bogus" not in error
     assert "train_admitted" in result
     assert not (root / "new-expansion").exists()
+
+
+def frozen_600_run(tmp_path, monkeypatch):
+    """Build 12 immutable synthetic pages matching the user's 6+594 snapshot."""
+    root, seed = make_private_home(tmp_path, monkeypatch)
+    folder = root / "r60-expand-first-600"
+    exp.create_config(folder, seed, 20, 600)
+    all_stories = [f"expand-world-{i:04d}" for i in range(800)]
+    all_stories.sort(key=lambda s: (hashlib.md5(s.encode()).hexdigest(), s))
+    before = ["", ""]
+    for page_index in range(1, 13):
+        part = all_stories[(page_index - 1) * 20:page_index * 20]
+        current_stories = []
+        cases = []
+        for index, story in enumerate(part):
+            sort_key = hashlib.md5(story.encode()).hexdigest()
+            current_stories.append({
+                "story_id": story, "session_id": f"session-{story}",
+                "sort_key": sort_key,
+            })
+            n = 3 if index < (10 if page_index <= 6 else 9) else 2
+            for turn in range(n):
+                row = (
+                    story, f"session-{story}", f"msg-{story}-{turn}",
+                    f"u-{story}-{turn}", f"pa-{story}-{turn}",
+                    f"pu-{story}-{turn}", 20 + 4 * turn,
+                    "先前玩家", "前序 NPC 文字", "当前玩家", "中文互动小说故事" * 65,
+                )
+                cases.append(g1.parse_rows([row])[0])
+        after = [current_stories[-1]["sort_key"], part[-1]]
+        page = {
+            "schema": exp.PAGE_SCHEMA,
+            "page_index": page_index,
+            "cursor_before": before,
+            "cursor_after": after,
+            "stories": current_stories,
+            "cases": cases,
+        }
+        page["page_sha256"] = g1.digest(page)
+        exp.immutable_page(folder, page_index, page)
+        before = after
+    return folder, all_stories
+
+
+def test_600_snapshot_is_exact_before_extend(tmp_path, monkeypatch):
+    folder, _all_stories = frozen_600_run(tmp_path, monkeypatch)
+    safe = exp.inspect(folder)
+    assert safe["total_candidates"] == 600
+    assert safe["new_cases"] == 594
+    assert safe["private_pages"] == 12
+    assert safe["stories_scanned"] == 240
+    assert safe["target_total"] == 600
+    assert safe["status"] == "EXPANSION_TARGET_REACHED__NOT_ADMITTED"
+
+
+def test_extend_600_to_1000_keeps_original_files_immutable(tmp_path, monkeypatch):
+    folder, _all_stories = frozen_600_run(tmp_path, monkeypatch)
+    original_config = (folder / exp.CONFIG_NAME).read_bytes()
+    original_last_page = (folder / exp.page_name(12)).read_bytes()
+    safe = exp.extend_target(folder, 1000)
+    assert safe["status"] == "EXPANSION_TARGET_EXTENDED__NOT_ADMITTED"
+    assert safe["target_total"] == 1000
+    assert safe["original_target"] == 600
+    assert safe["total_candidates"] == 600
+    assert safe["train_admitted"] == 0
+    assert (folder / exp.EXTENSION_NAME).stat().st_mode & 0o777 == 0o600
+    assert (folder / exp.CONFIG_NAME).read_bytes() == original_config
+    assert (folder / exp.page_name(12)).read_bytes() == original_last_page
+    view = exp.inspect(folder)
+    assert view["status"] == "EXPANSION_IN_PROGRESS__NOT_ADMITTED"
+    assert view["target_total"] == 1000
+    assert view["total_candidates"] == 600
+    assert "expand-world-" not in json.dumps(view)
+
+
+def test_extend_idempotent_cannot_overwrite_existing_receipt(tmp_path, monkeypatch):
+    folder, _all_stories = frozen_600_run(tmp_path, monkeypatch)
+    exp.extend_target(folder, 1000)
+    receipt = (folder / exp.EXTENSION_NAME).read_bytes()
+    safe = exp.extend_target(folder, 1000)
+    assert safe["target_total"] == 1000
+    assert (folder / exp.EXTENSION_NAME).read_bytes() == receipt
+
+
+def test_after_extend_advance_resumes_from_page_13(tmp_path, monkeypatch):
+    folder, all_stories = frozen_600_run(tmp_path, monkeypatch)
+    exp.extend_target(folder, 1000)
+    calls = []
+    next_stories = all_stories[240:260]
+    mock_rows = [db_row(story, 0) for story in next_stories]
+
+    def fake_fetch(dsn, cursor, config):
+        calls.append((cursor, config["target_total"]))
+        return mock_rows
+
+    monkeypatch.setattr(exp, "fetch_page", fake_fetch)
+    safe = exp.advance(folder, "fake-dsn-not-used", 1)
+    assert safe["private_pages"] == 13
+    assert safe["stories_scanned"] == 260
+    assert safe["total_candidates"] == 620
+    assert safe["target_total"] == 1000
+    assert safe["train_admitted"] == 0
+    assert calls[0][1] == 1000
+    assert calls[0][0] == json.loads(
+        (folder / exp.page_name(12)).read_bytes())["cursor_after"]
+    assert exp.inspect(folder)["total_candidates"] == 620
+
+
+def test_extend_denies_early_or_wrong_target(tmp_path, monkeypatch):
+    root, seed = make_private_home(tmp_path, monkeypatch)
+    folder = root / "expanded"
+    exp.create_config(folder, seed, 20, 600)
+    with pytest.raises(exp.Hold, match="BASELINE_600_NOT_REACHED_HOLD"):
+        exp.extend_target(folder, 1000)
+    with pytest.raises(exp.Hold, match="TARGET_EXTENSION_BOUNDS_HOLD"):
+        exp.extend_target(folder, 1100)
+    assert not (folder / exp.EXTENSION_NAME).exists()
+
+
+def test_extension_tamper_rejected(tmp_path, monkeypatch):
+    folder, _ = frozen_600_run(tmp_path, monkeypatch)
+    exp.extend_target(folder, 1000)
+    f = folder / exp.EXTENSION_NAME
+    record = json.loads(f.read_bytes())
+    record["checkpoint_total"] = 599
+    f.write_bytes(exp.private_bytes(record))
+    with pytest.raises(exp.Hold, match="TARGET_EXTENSION_INTEGRITY_HOLD"):
+        exp.inspect(folder)
+
+
+def test_extension_old_page_checksum_change_rejected(tmp_path, monkeypatch):
+    folder, _ = frozen_600_run(tmp_path, monkeypatch)
+    exp.extend_target(folder, 1000)
+    page_path = folder / exp.page_name(12)
+    page = json.loads(page_path.read_bytes())
+    page["cases"][0]["target_text"] = "修改私有内容"
+    page["cases"][0]["assistant_target_sha256"] = g1.digest("修改私有内容")
+    raw = {k: v for k, v in page.items() if k != "page_sha256"}
+    page["page_sha256"] = g1.digest(raw)
+    page_path.write_bytes(exp.private_bytes(page))
+    with pytest.raises(exp.Hold, match="TARGET_EXTENSION_CHECKPOINT_HOLD"):
+        exp.inspect(folder)
