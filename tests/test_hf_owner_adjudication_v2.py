@@ -301,3 +301,54 @@ def test_verify_owner_results_rejects_duplicate_case_dimension_check():
             b"".join(p2.canonical(row) + b"\n" for row in result_rows),
             b"".join(p2.canonical(row) + b"\n" for row in check_rows),
         )
+
+
+def test_verify_owner_results_requires_single_owner_identity_reference():
+    manifest, source_raw = fixture_data()
+    packet_raw, _, _, _, _ = p2.build_package(
+        manifest, source_raw,
+        token_factory=lambda: "d" * 32,
+        shuffle=lambda values: None,
+    )
+    packets = [json.loads(line) for line in packet_raw.splitlines()]
+    results = []
+    checks = []
+    for packet in packets:
+        result = {
+            "schema": "storyforge_severity_evidence_review_v2",
+            "rubric_version": "r60_severity_rubric_v2",
+            "case_ref": packet["calibration_id"], "assessments": {},
+        }
+        for dimension in ("player_agency", "hard_rule", "safety"):
+            result["assessments"][dimension] = {
+                "verdict": "INSUFFICIENT_CONTEXT", "evidence": [], "rule_basis": [],
+                "reasoning_summary": "合成案例上下文不足以作出可靠判断。",
+                "missing_context": ["合成案例缺少必要适用上下文。"],
+                "context_coverage": {
+                    "history_complete": False, "target_complete": True,
+                    "relevant_context_complete": False, "reviewed_rule_sources": [],
+                    "summary": "合成案例按维度完成范围核查。",
+                },
+                "confidence": 0.99,
+            }
+            checks.append({
+                "calibration_id": packet["calibration_id"], "dimension": dimension,
+                "reviewed_at_utc": "2026-11-09T00:00:00Z",
+                "check": {
+                    "schema": "storyforge_severity_semantic_entailment_check_v2",
+                    "rubric_version": "r60_severity_rubric_v2",
+                    "reviewer_role": "OWNER_INDEPENDENT",
+                    "reviewer_ref": "owner-reviewer-reference",
+                    "conclusion": "INSUFFICIENT_CONTEXT",
+                    "reviewed_evidence_indexes": [],
+                    "reasoning_summary": "合成案例上下文不足，维持信息不足判断。",
+                },
+            })
+        results.append(result)
+    checks[-1]["check"]["reviewer_ref"] = "different-owner-reviewer"
+    with pytest.raises(p2.AdjudicationHold, match="OWNER_SEMANTIC_REVIEWER_IDENTITY_MISMATCH"):
+        p2.verify_owner_results(
+            packet_raw,
+            b"".join(p2.canonical(row) + b"\n" for row in results),
+            b"".join(p2.canonical(row) + b"\n" for row in checks),
+        )
