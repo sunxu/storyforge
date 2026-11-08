@@ -193,3 +193,11 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 
 
 Owner Mac 的精确 P0 manifest 路径、Reviewer-C blind source 路径、项目工作目录和 dry-run 命令已补充至 [任务书 8.18](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#818-owner-mac-dry-run-精确路径与命令)。
+
+
+### Owner dry-run 输出路径门禁与最新回归
+
+- dry-run 现在也检查正式写入输出路径的绝对路径、父目录 0700、create-only 和仓库外约束；dry-run 本身不写文件。
+- 最新代码提交：`bf1181eefc43832e89cb82b76cea45d46e954301`。
+- 最终 Actions：871 passed / 5 skipped / 42 subtests；Ruff、CI、Gold Quality Pipeline、R60 Runtime、CPU dependency profiles、R58 scoped synthetic 全部 PASS。
+- Owner Mac dry-run 尚未运行。精确路径和命令见 [任务书 8.18](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#818-owner-mac-dry-run-精确路径与命令)。
