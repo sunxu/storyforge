@@ -92,6 +92,19 @@ def stage(root: Path, cases: list[dict], pool_hash: str, runner: Path,
     token_code = shared_core.read_bytes()
     if not token_code or len(token_code) > 100_000:
         raise StageError("SHARED_TOKEN_CORE_SIZE_HOLD")
+    runtime_src = shared_core.parent / "hf_runtime"
+    runtime_files = {
+        "runtime_inputs.py": runtime_src / "inputs.py",
+        "runtime_resources.py": runtime_src / "resources.py",
+    }
+    runtime_code = {}
+    for name, path in runtime_files.items():
+        if not path.is_file() or path.is_symlink():
+            raise StageError("HF_RUNTIME_SOURCE_NOT_FOUND")
+        content = path.read_bytes()
+        if not content or len(content) > 100_000:
+            raise StageError("HF_RUNTIME_SOURCE_SIZE_HOLD")
+        runtime_code[name] = content
     # Stable per-case input row, no Source Story/Session/Message/Owner IDs.
     ids = [item.get("case_key") for item in cases]
     if (len(set(ids)) != len(ids)
@@ -143,6 +156,8 @@ def stage(root: Path, cases: list[dict], pool_hash: str, runner: Path,
         write_once(inp / "source.private.jsonl", payload)
         write_once(inp / "runner.py", code)
         write_once(inp / "token_core.py", token_code)
+        for name, content in runtime_code.items():
+            write_once(inp / name, content)
     owner = root / "owner"
     owner.mkdir(mode=0o700)
     write_once(owner / MAP_NAME, safe_bytes({
@@ -154,6 +169,9 @@ def stage(root: Path, cases: list[dict], pool_hash: str, runner: Path,
         "count": len(cases), "model_pins": model_pins,
         "runner_sha256": sha_bytes(code),
         "shared_token_core_sha256": sha_bytes(token_code),
+        "runtime_code_sha256": {
+            name: sha_bytes(content) for name, content in runtime_code.items()
+        },
         "source_sha256": {
             slot: sha_bytes((root / f"input_{slot}" /
                             "source.private.jsonl").read_bytes())
@@ -185,7 +203,8 @@ def verified_stage(root: Path, pool_hash: str, cases: list[dict]) -> tuple[dict,
     signed = {k: v for k, v in manifest.items() if k != "receipt_sha256"}
     if (set(manifest) != {
             "schema", "pool_sha256", "count", "model_pins", "runner_sha256",
-            "shared_token_core_sha256", "source_sha256", "receipt_sha256",
+            "shared_token_core_sha256", "runtime_code_sha256",
+            "source_sha256", "receipt_sha256",
         } or manifest["receipt_sha256"] != reviewer.digest(signed)
             or manifest["schema"] != SCHEMA or crosswalk.get("schema") != SCHEMA
             or manifest["pool_sha256"] != pool_hash
@@ -205,9 +224,18 @@ def verified_stage(root: Path, pool_hash: str, cases: list[dict]) -> tuple[dict,
         src = private_read(inp / "source.private.jsonl", MAX_STAGE_BYTES)
         code = private_read(inp / "runner.py", 100_000)
         token_code = private_read(inp / "token_core.py", 100_000)
+        runtime_hashes = manifest.get("runtime_code_sha256")
+        if (not isinstance(runtime_hashes, dict) or set(runtime_hashes) != {
+                "runtime_inputs.py", "runtime_resources.py"}):
+            raise StageError("STAGE_RUNTIME_MANIFEST_HOLD")
+        actual_runtime = {
+            name: sha_bytes(private_read(inp / name, 100_000))
+            for name in runtime_hashes
+        }
         if (sha_bytes(src) != manifest["source_sha256"][slot]
                 or sha_bytes(code) != manifest["runner_sha256"]
-                or sha_bytes(token_code) != manifest["shared_token_core_sha256"]):
+                or sha_bytes(token_code) != manifest["shared_token_core_sha256"]
+                or actual_runtime != runtime_hashes):
             raise StageError("STAGE_BYTES_CHANGED_HOLD")
         try:
             rows = reviewer.read_input(inp / "source.private.jsonl")
