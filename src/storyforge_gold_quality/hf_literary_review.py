@@ -282,13 +282,17 @@ def inference(rows: list[dict], output: Path, model: str, revision: str,
     from vllm import LLM, SamplingParams, TokensPrompt
     from vllm.sampling_params import StructuredOutputsParams
 
+    # The existing StoryForge tokenizer core is the only chat-template implementation.
+    try:
+        from token_core import encode_chat
+    except ModuleNotFoundError:
+        from storyforge_dataset.token_preflight import encode_chat
+
     tokenizer = AutoTokenizer.from_pretrained(
         model, revision=revision, trust_remote_code=False)
     tokens = {}
     for pos in needed:
-        ids = tokenizer.apply_chat_template(
-            prompt_messages(rows[pos - 1]), tokenize=True,
-            add_generation_prompt=True)
+        ids = encode_chat(tokenizer, prompt_messages(rows[pos - 1]))
         if len(ids) + max_output_tokens > max_model_len:
             raise ReviewError("REVIEW_PROMPT_TOKEN_BUDGET_HOLD")
         tokens[pos] = ids
