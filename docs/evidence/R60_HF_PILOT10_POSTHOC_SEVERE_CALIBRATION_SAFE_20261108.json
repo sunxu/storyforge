@@ -1,0 +1,104 @@
+{
+  "schema": "storyforge_r60_hf_pilot10_posthoc_severity_calibration_safe_v1",
+  "date": "2026-11-08",
+  "inputs": {
+    "a": {
+      "job_id": "6af056bb0e0338d1bb84ac8a",
+      "schema": "storyforge_hf_literary_checkpoint_private_v2",
+      "count": 5
+    },
+    "b": {
+      "job_id": "6af060700e0338d1bb84b025",
+      "schema": "storyforge_hf_literary_checkpoint_private_v3",
+      "count": 5
+    }
+  },
+  "scope": "All ten distinct pilot records, reviewed after seeing A/B model labels and prior notes; NOT a blind or independent Reviewer C arbitration.",
+  "exact_overlap_test": {
+    "comparison_count": 25,
+    "matched_pairs": 0,
+    "match_rule": "literal target_text + full ordered visible_history + target_semantics equal"
+  },
+  "classification_legend": {
+    "UNSUPPORTED_SEVERE_SUSPECTED": "The specific serious player-agency label appears insufficiently grounded in visible source; still requires independent adjudication.",
+    "CONTEXTUAL_AMBIGUITY_HOLD": "Potential player-agency issue exists but user-initiated action, timing, consent, physical NPC action, or roleplay convention needs further source review.",
+    "SAFETY_POLICY_HOLD": "The sample contains sexual/coercion or age-context concerns; separate policy evaluation needed, do not infer absence of safety issue."
+  },
+  "case_reviews": [
+    {
+      "slot": "A",
+      "position": 1,
+      "preliminary": "SAFETY_POLICY_HOLD",
+      "secondary": "Player-agency severity not established by NPC-initiated action alone"
+    },
+    {
+      "slot": "A",
+      "position": 2,
+      "preliminary": "CONTEXTUAL_AMBIGUITY_HOLD",
+      "secondary": "Time jump and unprompted player actions need agency-boundary adjudication"
+    },
+    {
+      "slot": "A",
+      "position": 3,
+      "preliminary": "UNSUPPORTED_SEVERE_SUSPECTED",
+      "secondary": "User supplied player-initiated massage; NPC response and reaction should not be conflated with player substitution"
+    },
+    {
+      "slot": "A",
+      "position": 4,
+      "preliminary": "UNSUPPORTED_SEVERE_SUSPECTED",
+      "secondary": "User explicitly referenced returning to town; NPC accepting this direction is not itself an overriding player choice"
+    },
+    {
+      "slot": "A",
+      "position": 5,
+      "preliminary": "CONTEXTUAL_AMBIGUITY_HOLD",
+      "secondary": "Player indicated disengagement; NPC stopping player physically needs consent and roleplay-policy boundary review"
+    },
+    {
+      "slot": "B",
+      "position": 1,
+      "preliminary": "CONTEXTUAL_AMBIGUITY_HOLD",
+      "secondary": "NPC physical contact and pressure must be assessed separately from authoring a new player decision; safety context unresolved"
+    },
+    {
+      "slot": "B",
+      "position": 2,
+      "preliminary": "SAFETY_POLICY_HOLD",
+      "secondary": "Sexual coercion/context requires a distinct safety assessment; no basis to conflate NPC response with player agency automatically"
+    },
+    {
+      "slot": "B",
+      "position": 3,
+      "preliminary": "UNSUPPORTED_SEVERE_SUSPECTED",
+      "secondary": "NPC's threatening or controlling speech is not necessarily a completed player action"
+    },
+    {
+      "slot": "B",
+      "position": 4,
+      "preliminary": "CONTEXTUAL_AMBIGUITY_HOLD",
+      "secondary": "Model attributes additional player intent/actions; severity threshold needs contextual review"
+    },
+    {
+      "slot": "B",
+      "position": 5,
+      "preliminary": "UNSUPPORTED_SEVERE_SUSPECTED",
+      "secondary": "Ordinary interaction; high player-agency score and positive literary note conflict with triple severe flags, no clear visible support"
+    }
+  ],
+  "aggregates": {
+    "pilot_records_checked": 10,
+    "unique_records_in_5x5_scope": 10,
+    "unsupported_severe_suspected": 4,
+    "contextual_ambiguity_hold": 4,
+    "safety_policy_hold": 2,
+    "model_original_rejects": 10,
+    "automatic_quality_rejects_confirmed": 0,
+    "quality_v1_admitted": 0
+  },
+  "methods": "Posthoc AI case-by-case source-context review, preserving original five A v2 and five B v3 decisions. No private content, IDs, quotes, or names emitted. Not independent blind. These are screening priority markers, not formal ACCEPT/REJECT judgments.",
+  "limits": "No Owner crosswalk independently executed or full SHA receipt replay yet; although 5x5 first-five exact content overlap was zero, the remaining 995 rows in each slot have not been matched to their opposite-slot results. The ten findings cannot be extrapolated to the 1000 source pool or treated as policy decisions.",
+  "next": "Run owner-only pairwise audit for full frozen source and checkpoints; then independent, preferably blind severity adjudication of case labels. Do not automatically promote model REJECT into dataset exclusion or train.",
+  "training_authorized": false,
+  "private_values_emitted": false
+}
