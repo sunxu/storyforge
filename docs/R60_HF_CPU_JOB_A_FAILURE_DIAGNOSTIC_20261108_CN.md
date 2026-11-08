@@ -1,5 +1,19 @@
 # R60 HF CPU A Job 已提交但远程失败：安全诊断与继续执行（2026-11-08）
 
+## 2026-11-08 A 修复 Job 最终完成（优先于下面诊断计划）
+
+已只读核验真实 HF [Job `6af045fb0e0338d1bb84a4ce`](https://huggingface.co/jobs/adradar/6af045fb0e0338d1bb84a4ce)，`adradar`、`cpu-basic`、`python:3.11`，创建 `2026-11-08T09:50:51.347Z`，结束 `09:51:29.624Z`，**终态 `COMPLETED`**。工作负载安装 `transformers==4.57.1`、`huggingface_hub>=0.35,<3`、`jinja2==3.1.6`、`sentencepiece==0.2.1`，`pip check` PASS，`HF_TOKEN_DEPS_PASS`，合成公开文本的 `HF_CPU_TEMPLATE_SMOKE_PASS`。实际真实输入合同 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`，实际 A 1000 条返回 `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`：
+
+~~~json
+{"cases_checked":1000,"gpu_started":false,"max_model_len":32768,"max_total_tokens":5524,"model_revision_pinned":true,"over_budget_count":0,"pilot_cases_checked":5,"pilot_prompt_tokens_max":1824,"private_values_emitted":false,"prompt_tokens_max":3124,"prompt_tokens_median":1148,"prompt_tokens_min":712,"prompt_tokens_p95":2284,"remaining_cases_checked":995,"remaining_prompt_tokens_max":3124,"reserved_output_tokens":2400,"schema":"storyforge_hf_literary_safe_v1","status":"HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU","training_authorized":false}
+~~~
+
+独立公开 SAFE 证据：[`docs/evidence/R60_HF_A_CPU1000_JINJA_FIX_PASS_SAFE_20261108.json`](evidence/R60_HF_A_CPU1000_JINJA_FIX_PASS_SAFE_20261108.json)。
+
+**故障闭环：** R58 已在 2026-11-01 明确验证缺 Jinja2 导致 Chat Template ImportError；R60 早期容器遗漏它，A v3 同样出现 `HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_CLASS_IMPORTERROR`；恢复已验证依赖后真实 1000 条全部通过。因最初异常消息被安全隐藏，严格说是“高度一致的修复前后证据”，不把缺 Jinja2 的特定异常文本描述成已经直接采集。原 v1/v2/v3 的 ERROR 与原因码均保留。下一阶段是 B 冻结输入 CPU Tokenizer 验证（仍未运行），然后才是模型文学审核；**训练准入、Quality-v1 合格案例、GPU 推理仍未发生**。本页下面的“下一次提交 A Jinja 修复 Job”是已完成历史操作，不得再次提交，也不得覆盖对应前缀。
+
+---
+
 ## 2026-11-08 A diagnostic-v3 终态：Chat Template ImportError，缺少 Jinja2 为高可信根因
 
 Owner 提交的 [HF CPU Job `6af042680e0338d1bb84a276`](https://huggingface.co/jobs/adradar/6af042680e0338d1bb84a276) 现已在 HF 连接器只读检查中确认为终态 `ERROR`、exit 42，创建于 `2026-11-08T09:35:36.259Z`，结束于 `09:36:02.559Z`。SAFE 日志顺序：
