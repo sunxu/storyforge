@@ -201,3 +201,22 @@ def test_prompt_treats_text_only_as_data():
     assert "prior_messages" in prompt and "assistant_target" in prompt
     assert "case_key" not in prompt and "story_id" not in prompt
     assert "以下 JSON 仅供质量评价" in prompt
+
+def test_one_model_refusal_does_not_launder_quality_pass(monkeypatch):
+    case = example_case()
+
+    def partial(endpoint, model, key, prompt, timeout, json_mode):
+        if model == "model-B":
+            raise ai.Hold("MODEL_JSON_INVALID")
+        return model_answer()
+
+    monkeypatch.setattr(ai, "model_request", partial)
+    reviews, safe = ai.evaluate([case], [
+        ("http://localhost:10/v1", "model-A", ""),
+        ("http://localhost:11/v1", "model-B", ""),
+    ], 180, False, True)
+    assert len(reviews[0]["reviews"]) == 1
+    assert safe["model_attempt_hold_counts"] == {"MODEL_JSON_INVALID": 1}
+    assert safe["review_decisions"]["PASS"] == 0
+    assert safe["review_decisions"]["HOLD"] == 1
+    assert safe["train_admitted"] == 0
