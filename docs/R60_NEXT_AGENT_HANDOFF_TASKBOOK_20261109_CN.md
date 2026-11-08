@@ -572,3 +572,49 @@ Owner 回传正式执行 SAFE：
 Runner 在返回上述正式 PASS SAFE 前已完成四个 create-only 文件写入，并对输出目录/父目录权限 0700、四个文件权限 0600 执行了代码内检查。SAFE 不暴露私人值。Owner 尚未单独回传 SHA-256 元数据摘要；如需外部审计留档，可在 Owner Mac 本地对四个文件计算并私下保存 SHA-256，不要将私有文件或哈希粘贴到公共 GitHub。
 
 **P0 正式冻结已完成。** 四份文件仅存在于 Owner 私有目录；不得上传 GitHub/HF。Quality-v1 admission 仍为 0；P0 PASS 不代表 Quality PASS、模型选择完成或训练授权。P1 尚未开始；本次 P0 授权不自动扩展为 P1/GPU/1000 条批量审核/SFT 授权。
+
+
+### 8.13 P1 v2 三维严重证据标准实现进展（2026-11-09）
+
+Owner 对“继续”确认后，开始 P1 的代码/标准/合成测试工作。当前只在公共仓库提交通用代码、Rubric 和合成测试；没有读取 Gold72/R60 私有正文，没有运行模型或 HF Job，没有启动 GPU。
+
+新增：
+- `src/storyforge_gold_quality/hf_severity_evidence_v2.py`
+- `tests/test_hf_severity_evidence_v2.py`
+- `docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_20261109_CN.md`
+
+版本：
+- Schema：`storyforge_severity_evidence_review_v2`
+- Rubric：`r60_severity_rubric_v2`
+- 独立语义复核记录：`storyforge_severity_semantic_entailment_check_v2`
+
+复用入口：
+- `hf_literary_review.severity_evidence_response_schema_v2()`
+- `hf_literary_review.severity_evidence_prompt_messages_v2()`
+- `hf_literary_review.validate_severity_evidence_v2()`
+- `hf_pilot_semantic_c.validate_c_result_v2()`
+- `hf_pilot_semantic_c.verify_c_semantic_entailment_v2()`
+
+v2 规则与校验覆盖：
+- 三维各自输出 SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_CONTEXT。
+- 每条引用有 source、消息/组件位置、0-based 字符 offsets 和连续原文；程序校验 `text[start_char:end_char] == quote`。
+- hard_rule 的规则来源必须绑定到真实可见 System/User 消息或 verified world component，目标冲突也必须有独立目标引用。
+- player_agency 的目标行为和玩家边界分开取证；NPC 主动性不能自动成为玩家代理。
+- safety 需要目标风险证据和明确政策依据；普通亲密/冲突/威胁内容不自动触发排除。
+- NOT_SUPPORTED 要求相关上下文覆盖完整；INSUFFICIENT_CONTEXT 必须列明缺失信息；confidence 不改变 verdict。
+- 聚合规则：任一 SUPPORTED → REJECT_OWNER_REVIEW_REQUIRED；否则任一 INSUFFICIENT_CONTEXT → HOLD；全 NOT_SUPPORTED → NO_SEVERE_FLAGS__QUALITY_NOT_PASSED（不是 Quality PASS）。
+- Exact quote 自动检查与 semantic entailment 独立检查分开。没有独立语义复核记录，不能把 exact quote PASS 解释成语义 PASS；helper 也明确不声称 reviewer 身份/独立性已获密码学证明。
+
+兼容性：
+- 旧 `storyforge_hf_literary_checkpoint_private_v3`、旧文学 response schema、旧 Reviewer-C `storyforge_r60_pilot10_c_review_private_v1` 不改写。
+- v2 是单独版本入口；不自动迁移、接受或覆盖旧 checkpoint。
+- P1 合成测试覆盖引用位置/跨消息拼接、NPC 主动性、玩家拒绝、硬规则 System/世界组件来源、安全证据、上下文不足、confidence、聚合优先级、语义蕴含独立复核和旧 v3/v1 兼容。
+
+本轮代码提交链：
+- `cdc2066b87ef7c184cce22309ad20b9c96147aa4`：新增 v2 rubric/schema/validator。
+- `5007166d49f3f49b59ef34f8bd8dac2a2be9a21b`、`53eea491a80549269e913fe8d54d50bb832be681`：接入既有 reviewer / Reviewer-C 入口。
+- `4acf4f0d5bea1e4d09fa48f756c67330f58e6d61`、`96288fe82b2a52754cff9ef7bf8272d4ac3b7a20`、`e9bca64ea1d998160e399bf550886ecc0bee1a09`、`2ac7a3373e980dd61d335d06f3fcf70b796c2093`、`93715815a3dfbcf29f4abf5dfd8213af7ddd5ebc`、`1b9ab4bd932e07e958000987023ea9d275753f47`：合成测试、来源绑定强化和 lint 修复。
+
+**当前阶段状态：P1 IN PROGRESS / NOT PASS。** 初轮 Actions 暴露了 Ruff lint 问题，已根据实际日志修复；以最新测试提交 `1b9ab4bd932e07e958000987023ea9d275753f47` 的最终 Actions 为准。若测试失败，必须先修复再宣称 P1 PASS。
+
+P1 未完成前不进入 P2 Owner 盲裁决。当前没有运行任何模型、HF Job、GPU、1000 条审核或 SFT；Quality-v1 admitted 仍为 0，training_authorized=false。
