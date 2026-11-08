@@ -271,6 +271,41 @@ def run(c_dir: Path, *, executable: str = "codex",
     }
 
 
+
+def verify_local_execution_receipt(
+        c_dir: Path, packets: list[dict], results: list[dict]) -> bool:
+    """Verify locally produced CLI receipts; not remote model attestation."""
+    path = c_dir / RUN_RECEIPT_FILE
+    if not path.exists() and not path.is_symlink():
+        return False
+    final = c.private_json(path)
+    if (final.get("schema") != RECEIPT_SCHEMA
+            or final.get("status") != "C_CODEX_10_FRESH_EXEC_RETURNED__OWNER_REVIEW_PENDING"
+            or final.get("case_count") != 10
+            or not isinstance(final.get("cli_version"), str)
+            or final.get("blinded_input_only") is not True
+            or final.get("no_A_B_judgments_in_model_prompt") is not True
+            or final.get("cloud_model_sent_private_blind_text") is not True
+            or final.get("receipt_sha256") != reviewer.digest({
+                k: v for k, v in final.items() if k != "receipt_sha256"
+            })
+            or final.get("result_jsonl_sha256") != hashlib.sha256(
+                c.jsonl_bytes(results)).hexdigest()
+            or not isinstance(final.get("case_receipt_sha256"), list)
+            or len(final["case_receipt_sha256"]) != 10):
+        raise c.CalibrationHold("C_CODEX_FINAL_RECEIPT_HOLD")
+    for i, (packet, result) in enumerate(zip(packets, results, strict=True), 1):
+        previous, receipt = _valid_previous(
+            packet,
+            c_dir / f"C_CASE_{i:02d}_RESULT_PRIVATE.json",
+            c_dir / f"C_CASE_{i:02d}_EXEC_PRIVATE.json",
+            final["cli_version"], final.get("model_requested"))
+        if (previous != result
+                or receipt["receipt_sha256"] != final["case_receipt_sha256"][i-1]):
+            raise c.CalibrationHold("C_CODEX_CASE_RECEIPT_HOLD")
+    return True
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--c-dir", type=Path, required=True)
