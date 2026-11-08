@@ -1,4 +1,4 @@
-"""Run 14 synthetic-only R60 real-history quality batch checks in default CI."""
+"""Run 15 synthetic-only R60 real-history quality batch checks in default CI."""
 import subprocess
 import sys
 from pathlib import Path
@@ -12,4 +12,4 @@ def test_r60_real_quality_batch_synthetic_suite():
         capture_output=True, text=True, timeout=100, check=False,
     )
     assert result.returncode == 0, result.stdout[-6000:] + result.stderr[-3000:]
-    assert "14 passed" in result.stdout
+    assert "15 passed" in result.stdout
