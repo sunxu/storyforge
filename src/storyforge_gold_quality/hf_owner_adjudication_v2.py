@@ -148,7 +148,9 @@ def _source_cases(source_packets: list[dict]) -> list[dict]:
 
 
 def build_package(
-    manifest: dict, source_packet_raw: bytes, *, token_factory: Callable[[], str] | None = None,
+    manifest: dict, source_packet_raw: bytes, *,
+    p0_manifest_sha256: str | None = None,
+    token_factory: Callable[[], str] | None = None,
     shuffle: Callable[[list[Any]], None] | None = None,
 ) -> tuple[bytes, dict, dict, dict, bytes]:
     development = _validate_manifest(manifest, source_packet_raw)
@@ -202,6 +204,7 @@ def build_package(
             "visible_history": visible_history,
             "target_text": target_text,
             # P0 source packet has no verified component snapshot. Do not infer one.
+            "target_semantics": "DB_FINAL_PERSISTED_ASSISTANT",
             "verified_world_components": [],
         }
         if FORBIDDEN_PACKET_KEYS & set(_walk_keys(packet)):
@@ -231,7 +234,7 @@ def build_package(
         "schema": MANIFEST_SCHEMA,
         "status": "OWNER_ADJUDICATION_PACKET_SET_FROZEN__REVIEW_NOT_STARTED",
         "rubric_version": severity.RUBRIC_VERSION,
-        "source_p0_manifest_sha256": sha(canonical(manifest)),
+        "source_p0_manifest_sha256": p0_manifest_sha256 or sha(canonical(manifest)),
         "source_c_blind_packets_sha256": sha(source_packet_raw),
         "rubric_sha256": sha(rubric_raw),
         "packet_sha256": sha(packet_raw),
@@ -337,15 +340,19 @@ def _write_once(path: Path, raw: bytes) -> None:
 
 def prepare(
     p0_manifest_path: Path, source_packet_path: Path,
-    output_dir: Path, repo_root: Path,
+    output_dir: Path, repo_root: Path, *, dry_run: bool = True,
 ) -> dict:
     repo_root = repo_root.resolve(strict=True)
     p0_raw = _read_private(p0_manifest_path, repo_root, 8 * 1024 * 1024)
     source_raw = _read_private(source_packet_path, repo_root, 32 * 1024 * 1024)
     manifest = _json(p0_raw, "P0_GOLD_MANIFEST_JSON_INVALID")
     packet_raw, private_map, manifest_out, safe, instructions = build_package(
-        manifest, source_raw
+        manifest, source_raw, p0_manifest_sha256=sha(p0_raw)
     )
+    if dry_run:
+        safe["status"] = "P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN"
+        safe["files_written"] = 0
+        return safe
     output_dir = output_dir.expanduser()
     if (not output_dir.is_absolute() or output_dir.exists() or output_dir.is_symlink()
             or any(parent.is_symlink() for parent in output_dir.parents)
