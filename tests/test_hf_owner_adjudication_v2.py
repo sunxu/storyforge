@@ -31,7 +31,10 @@ def fixture_data():
             "history_starts_with_assistant": False,
             "review_focus": ["synthetic-only"],
             "history": [
-                {"role": "user", "content": f"玩家历史问题第{index:02d}条。"},
+                {
+                    "role": "user", "content": f"玩家历史问题第{index:02d}条。",
+                    "source_turn": index + 1,
+                },
                 {"role": "assistant", "content": f"NPC 历史回应第{index:02d}条。"},
             ],
             "current_user_text": f"玩家当前输入第{index:02d}条。",
@@ -91,6 +94,7 @@ def test_build_package_exposes_only_fresh_development20_packets():
     assert not old_ids.intersection({item["calibration_id"] for item in packets})
     assert all(item["schema"] == p2.PACKET_SCHEMA for item in packets)
     assert all(len(item["visible_history"]) == 3 for item in packets)
+    assert all(item["visible_history"][0]["source_turn"] > 0 for item in packets)
     assert all(item["verified_world_components"] == [] for item in packets)
     assert not (p2.FORBIDDEN_PACKET_KEYS & set(p2._walk_keys(packets)))
     assert len(owner_map["mapping"]) == 20
