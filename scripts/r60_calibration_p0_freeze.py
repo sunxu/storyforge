@@ -696,7 +696,17 @@ def _validate_pilot10(
             raise FreezeHold("PILOT10_C_OWNER_BINDING_INVALID")
         source_key = (slot, source_index)
         source = bindings_by_slot_source.get(source_key)
-        if source is None or source_key in source_keys:
+        ordered_source = cross["bindings"][slot][position - 1]
+        if (
+            source is None
+            or source_key in source_keys
+            or ordered_source.get("source_index") != source_index
+            or ordered_source.get("blind_id") != binding.get("blind_id")
+            or not isinstance(source.get("case_key"), str)
+            or not _is_sha(source.get("history_sha256"))
+            or not _is_sha(source.get("target_sha256"))
+            or not _is_sha(binding.get("input_sha256"))
+        ):
             raise FreezeHold("PILOT10_C_OWNER_SOURCE_CROSSWALK_MISMATCH")
         source_keys.add(source_key)
         slot_counts[slot] += 1
