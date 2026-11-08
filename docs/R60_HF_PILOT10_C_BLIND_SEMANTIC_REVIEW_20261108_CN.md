@@ -32,6 +32,34 @@ bash scripts/r60_hf_pilot10_semantic_c_prepare.sh
 
 **只将 `C_BLIND_PACKETS_PRIVATE.jsonl` 和 `C_REVIEW_INSTRUCTIONS_PRIVATE.md` 交给未见过 A/B 结论的独立 Reviewer C。绝不能交给 C 的文件**：`C_OWNER_MAP_PRIVATE.json`、A/B Checkpoint、A/B SAFE REJECT 汇总、任何后验 AI 分类结果。全部原文保留在 Owner 私有工作区，不上传 GitHub、不公开于聊天。
 
+## Owner Mac Reviewer C 实际执行（推荐）
+
+已经实现 `src/storyforge_gold_quality/hf_pilot_semantic_c_codex.py` 与一键脚本 `scripts/r60_hf_pilot10_semantic_c_run_codex.sh`：
+
+- 每条私有 C 盲包用一条**全新** Codex CLI 会话，要求 `--ephemeral`、`--ignore-user-config`、`--ignore-rules`、`--sandbox read-only` 与临时空目录；不用旧会话，不读取 A/B 的 REJECT、评分、flag 或 Owner 映射，不重复审核已经成功保存了回执的条目。
+- 模型按严格 JSON Schema 回复三个严重维度的 `SUPPORTED/NOT_SUPPORTED/INSUFFICIENT_CONTEXT`；本机进一步逐字核验原文引文与校准 ID。所有逐案结果与 CLI 执行回执私有 0600 写入，不向终端打印故事正文。任何失败 HOLD，禁止自动重新提交同一已完成任务。
+- 10 条全部审核完毕时才写入 `C_RESULTS_PRIVATE.jsonl` 和 `C_CODEX_EXECUTION_RECEIPT_PRIVATE.json`；现有 `reconcile` 将核验每例执行 SHA、盲包/Owner 来源 SHA、C 引文和 C 结果，仅显示聚合 SAFE。
+- 存在经过完整核验的本机 Codex 回执时报告 `reviewer_c_execution_verified=true` 和 `reviewer_c_input_blinding_verified=true`，但**不把本机回执冒充模型服务端身份公证**：`reviewer_c_independence_verified=false`、`quality_v1_admitted=0`。
+
+**隐私及额度提醒**：运行默认 Codex 云端配置会把这些 10 条私人历史及目标回复发送给 Codex 模型服务，可能消耗 Codex 配额。不会自动提交 HF GPU 或上传 GitHub；C Agent 运行在只读沙箱与独立工作目录，但不能声称达到 OS 级绝对读取隔离。未授权云端传输时不要执行。使用本机 Ollama/其他完全离线模型需另外适配。
+
+Owner Mac 在已登录 Codex CLI、盲包已准备的情况下：
+
+~~~bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge"
+git fetch origin r60/gold192-history-v3-adapter
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+# 明确授权仅十条 C 盲包发送给已登录的 Codex 云端模型
+R60_C_ALLOW_CODEX_CLOUD=YES bash scripts/r60_hf_pilot10_semantic_c_run_codex.sh
+~~~
+
+可选 `R60_C_CODEX_MODEL=<可用模型名>` 显式选择模型；默认使用用户 CLI 配置，回执不会猜测其真实模型身份。必须能够识别全部 CLI 隔离选项，否则在发出任何原文之前安全 HOLD。若成功，第二段 SAFE 为 `C_BLIND_SEMANTIC_RECONCILED__QUALITY_HOLD`；**仅复制这段聚合 SAFE JSON 回聊天**，不要上传逐案结果和私人 C 映射。
+
+---
+
 ## C 完成后：只读验证结果
 
 独立 Reviewer C 必须按 Instructions 的 JSONL schema 提交 `C_RESULTS_PRIVATE.jsonl`（仅存私有工作区）。Owner 在原 Stage 和 A/B 本地 Checkpoint 均仍存在时执行：
