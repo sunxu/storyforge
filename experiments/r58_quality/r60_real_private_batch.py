@@ -330,6 +330,34 @@ def review_receipt(cases: list[dict], reviews: list[dict]) -> dict:
     }
 
 
+def create_review_template(directory: Path) -> dict:
+    """Create unfilled private review envelopes; never invent scores or approval."""
+    private_dir(directory, create=False)
+    raw = read_private(directory / "R60_REAL_G1_CAPTURE_PRIVATE.jsonl",
+                       MAX_CAPTURE_BYTES)
+    try:
+        cases = [json.loads(x) for x in raw.splitlines() if x.strip()]
+    except (ValueError, TypeError, UnicodeError) as exc:
+        raise Hold("PRIVATE_JSONL_FORMAT_HOLD") from exc
+    # Reuse source-hash and count checks before producing review forms.
+    review_receipt(cases, [])
+    entries = [{
+        "schema": REVIEW_SCHEMA,
+        "case_key": case["case_key"],
+        "assistant_target_sha256": case["assistant_target_sha256"],
+        "history_messages_sha256": case["history_messages_sha256"],
+        "reviewers_independent_owner_attested": False,
+        "reviews": [],
+    } for case in cases]
+    write_new(directory / "R60_REAL_G1_REVIEWS_PRIVATE.jsonl",
+              encode_lines(entries))
+    return {"schema": SAFE_SCHEMA,
+            "status": "PRIVATE_REVIEW_TEMPLATE_CREATED__REVIEWS_UNFILLED",
+            "review_templates": len(entries), "train_admitted": 0,
+            "private_values_emitted": False,
+            "database_modified": False, "gpu_started": False}
+
+
 def review(directory: Path, review_file: Path) -> dict:
     private_dir(directory, create=False)
     if review_file.parent != directory:
@@ -353,6 +381,8 @@ def main() -> int:
     modes = parser.add_subparsers(dest="mode", required=True)
     cap = modes.add_parser("capture")
     cap.add_argument("--output-dir", type=Path, required=True)
+    temp = modes.add_parser("template")
+    temp.add_argument("--capture-dir", type=Path, required=True)
     rev = modes.add_parser("review")
     rev.add_argument("--capture-dir", type=Path, required=True)
     rev.add_argument("--reviews", type=Path, required=True)
@@ -363,6 +393,8 @@ def main() -> int:
             if not dsn:
                 raise Hold("DSN_UNAVAILABLE")
             safe = capture(args.output_dir, dsn)
+        elif args.mode == "template":
+            safe = create_review_template(args.capture_dir)
         else:
             safe = review(args.capture_dir, args.reviews)
         print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
