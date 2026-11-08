@@ -276,6 +276,7 @@ def response_schema_v2() -> dict:
 def prompt_messages_v2(packet: dict[str, Any]) -> list[dict[str, str]]:
     packet = _validate_packet(packet)
     material = {
+        "case_ref": _packet_ref(packet),
         "visible_history": packet["visible_history"],
         "target_text": packet["target_text"],
         "verified_world_components": packet.get("verified_world_components", []),
@@ -436,19 +437,36 @@ def _dimension_rules(
         raise EvidenceHold("SEVERITY_SUPPORTED_WITHOUT_BASIS_HOLD")
     if not coverage["history_complete"] or not coverage["target_complete"]:
         raise EvidenceHold("SEVERITY_SUPPORTED_CONTEXT_INCOMPLETE_HOLD")
-    if not any(item["applicability"] == "APPLIES" for item in basis):
+    expected_basis_type = {
+        "player_agency": "player_agency_boundary",
+        "hard_rule": "explicit_hard_rule",
+        "safety": "safety_exclusion_rule",
+    }[dimension]
+    if any(item["basis_type"] != expected_basis_type for item in basis):
+        raise EvidenceHold("SEVERITY_RULE_BASIS_TYPE_HOLD")
+    if not any(item["applicability"] == "APPLIES" and item["coverage_complete"]
+               for item in basis):
         raise EvidenceHold("SEVERITY_SUPPORTED_RULE_NOT_APPLICABLE_HOLD")
     target_roles = {item["role"] for item in evidence if item["source"] == "target"}
     if dimension == "player_agency":
         if "target_behavior" not in target_roles:
             raise EvidenceHold("SEVERITY_AGENCY_TARGET_EVIDENCE_HOLD")
         allowed_basis = {"interaction_contract", "history_user"}
-        if not any(item["source"] in allowed_basis for item in basis):
+        if not any(item["source"] in allowed_basis
+                   and item["applicability"] == "APPLIES"
+                   and item["coverage_complete"] for item in basis):
             raise EvidenceHold("SEVERITY_AGENCY_RULE_BASIS_HOLD")
-        if not any(item["role"] in ("explicit_refusal", "player_boundary")
-                   for item in evidence) and not any(
-                       item["source"] == "interaction_contract" for item in basis
-                   ):
+        user_boundary_evidence = any(
+            item["source"] == "history" and item["role"] in (
+                "explicit_refusal", "player_boundary"
+            ) and packet["visible_history"][item["message_index"]]["role"] == "user"
+            for item in evidence
+        )
+        if not user_boundary_evidence and not any(
+            item["source"] == "interaction_contract"
+            and item["applicability"] == "APPLIES"
+            and item["coverage_complete"] for item in basis
+        ):
             raise EvidenceHold("SEVERITY_AGENCY_BOUNDARY_EVIDENCE_HOLD")
     elif dimension == "hard_rule":
         if "target_behavior" not in target_roles:
@@ -459,19 +477,25 @@ def _dimension_rules(
             raise EvidenceHold("SEVERITY_HARD_RULE_QUOTE_HOLD")
         linked_basis = False
         for rule in basis:
-            if rule["source"] == "history_system":
+            if (rule["source"] == "history_system"
+                    and rule["applicability"] == "APPLIES"
+                    and rule["coverage_complete"]):
                 linked_basis = linked_basis or any(
                     item["source"] == "history" and item["role"] == "applicable_rule"
                     and packet["visible_history"][item["message_index"]]["role"] == "system"
                     for item in evidence
                 )
-            elif rule["source"] == "history_user":
+            elif (rule["source"] == "history_user"
+                    and rule["applicability"] == "APPLIES"
+                    and rule["coverage_complete"]):
                 linked_basis = linked_basis or any(
                     item["source"] == "history" and item["role"] == "applicable_rule"
                     and packet["visible_history"][item["message_index"]]["role"] == "user"
                     for item in evidence
                 )
-            elif rule["source"] == "verified_world_component":
+            elif (rule["source"] == "verified_world_component"
+                    and rule["applicability"] == "APPLIES"
+                    and rule["coverage_complete"]):
                 linked_basis = linked_basis or any(
                     item["source"] == "verified_world_component"
                     and item["role"] == "applicable_rule"
@@ -483,7 +507,9 @@ def _dimension_rules(
     else:
         if "risk_indicator" not in target_roles:
             raise EvidenceHold("SEVERITY_SAFETY_TARGET_EVIDENCE_HOLD")
-        if not any(item["source"] == "safety_policy" for item in basis):
+        if not any(item["source"] == "safety_policy"
+                   and item["applicability"] == "APPLIES"
+                   and item["coverage_complete"] for item in basis):
             raise EvidenceHold("SEVERITY_SAFETY_POLICY_BASIS_HOLD")
 
 
