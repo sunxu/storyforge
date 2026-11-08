@@ -25,7 +25,7 @@
 
 R58 于 2026-11-01 已验证 `transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`；当时缺少 Jinja2 会触发 Transformers Chat Template `ImportError`，安装后 A/B 两组真实 HF CPU Tokenizer 预检通过。R60 发生同类故障属于重复发生，后续修复必须沉淀为共享依赖基线与提交前门禁。
 
-强制要求：
+强制要求：\n- R60 literary reviewer 使用独立依赖输入 `requirements/hf-quality-reviewer.in`（Transformers 4.57.1、SentencePiece 0.2.1、Jinja2 3.1.6）；不得误用 R59 Qwen3.8 的 `hf-cpu-tokenizer` profile（Transformers 5.16.1）。当前 reviewer `.in` 是直接依赖定义；付费 HF Job 前必须完成 hash-pinned lock 生成与验证。
 - Jinja2 显式依赖 `jinja2==3.1.6`，不得依赖镜像预装；当前已验证的 Transformers/SentencePiece 组合为 `transformers==4.57.1`、`sentencepiece==0.2.1`。
 - 每个 HF Runner/Job 的依赖定义必须可复用、可审查；禁止只在单次命令临时补装。
 - Job 提交前，在相同镜像/依赖安装步骤执行 `pip check`、版本/import probe，并调用目标 Tokenizer `apply_chat_template`。失败即 fail closed。
