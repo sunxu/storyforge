@@ -18,14 +18,15 @@
 
 ## 1. 接手必读顺序
 
-1. 本文：当前状态、历史事实、边界和接手原则。
-2. [执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：按 P0→P6 顺序执行，含命令、产物和验收。
-3. [统一计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)：阶段定义和模型评估设计。
-4. [R60 主线状态](R60_REAL_HISTORY_SFT_MAINLINE_CN.md)：仅用于理解历史技术背景、原始主线边界和已完成事实；其中旧权益/协议调查段落属于历史记录，本次不重新启动该调查，以本交接文件和任务书中的用户最新要求为准。
-5. [Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md)：10 条严重问题三态结果。
-6. [Owner Pairwise 报告](R60_HF_PILOT10_OWNER_PAIRWISE_AND_CALIBRATION_20261108_CN.md)：A/B 5+5 不相交、摘要核验和私有审计器。
-7. [HF Quality Pipeline 说明](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md)：现有可复用实现与 1000 候选 Stage。
-8. [HF Job 工程规范](standards/HF_JOBS_ENGINEERING.md) 和 [HF CPU Stage 后预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md)。
+1. [新 Agent 交接任务书](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)：下一 Agent 的正式工作指令，按 P0→P6 执行。
+2. 本文：当前状态、历史事实、边界和接手原则。
+3. [执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：按 P0→P6 顺序执行，含命令、产物和验收。
+4. [统一计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)：阶段定义和模型评估设计。
+5. [R60 主线状态](R60_REAL_HISTORY_SFT_MAINLINE_CN.md)：仅用于理解历史技术背景、原始主线边界和已完成事实；其中旧权益/协议调查段落属于历史记录，本次不重新启动该调查，以本交接文件和任务书中的用户最新要求为准。
+6. [Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md)：10 条严重问题三态结果。
+7. [Owner Pairwise 报告](R60_HF_PILOT10_OWNER_PAIRWISE_AND_CALIBRATION_20261108_CN.md)：A/B 5+5 不相交、摘要核验和私有审计器。
+8. [HF Quality Pipeline 说明](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md)：现有可复用实现与 1000 候选 Stage。
+9. [HF Job 工程规范](standards/HF_JOBS_ENGINEERING.md) 和 [HF CPU Stage 后预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md)。
 
 ## 2. 仓库、分支、PR、Issue 的已核实状态
 
