@@ -53,6 +53,16 @@ def audit(expand_dir: Path, stage_dir: Path) -> dict:
                                       if k != "schema"}}
 
 
+def export(expand_dir: Path, stage_dir: Path) -> dict:
+    cases, pool_sha = frozen_source(expand_dir)
+    if (not stage_dir.is_absolute() or stage_dir.parent != g1.BASE
+            or not stage_dir.name.startswith("r60-hf-quality-")):
+        raise hf_blind_stage.StageError("R60_STAGE_PRIVATE_PATH_HOLD")
+    result = hf_blind_stage.export_pipeline_reviews(stage_dir, pool_sha, cases)
+    return {"schema": SAFE_SCHEMA, **{k: v for k, v in result.items()
+                                      if k != "schema"}}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="mode", required=True)
@@ -66,14 +76,19 @@ def main() -> int:
     view = sub.add_parser("audit")
     view.add_argument("--expand-dir", type=Path, required=True)
     view.add_argument("--stage-dir", type=Path, required=True)
+    exported = sub.add_parser("export")
+    exported.add_argument("--expand-dir", type=Path, required=True)
+    exported.add_argument("--stage-dir", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.mode == "prepare":
             receipt = prepare(
                 args.expand_dir, args.stage_dir, args.model_a,
                 args.revision_a, args.model_b, args.revision_b)
-        else:
+        elif args.mode == "audit":
             receipt = audit(args.expand_dir, args.stage_dir)
+        else:
+            receipt = export(args.expand_dir, args.stage_dir)
         print(json.dumps(receipt, ensure_ascii=False, sort_keys=True))
         return 0
     except Exception as exc:  # noqa: BLE001 - safe-only on private data errors
