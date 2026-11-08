@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 import os
+import secrets
 import sys
 from collections import Counter
 from pathlib import Path
@@ -198,6 +199,7 @@ def case_receipt(case: dict, index: int, pool_hash: str,
         {**record, "schema": g1.REVIEW_SCHEMA}, case)
     record["quality_decision"] = decision
     record["quality_reason_code"] = reason
+    record["receipt_sha256"] = g1.digest(record)
     return record
 
 
@@ -213,7 +215,11 @@ def inspected_records(folder: Path, config: dict, cases: list[dict],
         except (ValueError, TypeError, UnicodeError) as exc:
             raise Hold("QUALITY_CASE_FILE_FORMAT_HOLD") from exc
         case = cases[n - 1]
-        if (record.get("schema") != CASE_SCHEMA
+        if not isinstance(record, dict):
+            raise Hold("QUALITY_CASE_FILE_FORMAT_HOLD")
+        signed = {k: v for k, v in record.items() if k != "receipt_sha256"}
+        if (record.get("receipt_sha256") != g1.digest(signed)
+                or record.get("schema") != CASE_SCHEMA
                 or record.get("position") != n
                 or record.get("pool_sha256") != pool_hash
                 or record.get("case_key") != case["case_key"]
@@ -278,7 +284,37 @@ def inspected_records(folder: Path, config: dict, cases: list[dict],
     }
 
 
+def atomic_case_file(folder: Path, index: int, record: dict) -> None:
+    """fsync a new receipt and link it without overwriting an existing one."""
+    data = expand.private_bytes(record)
+    if len(data) > MAX_CASE_BYTES:
+        raise Hold("QUALITY_RECEIPT_TOO_LARGE_HOLD")
+    target = folder / receipt_name(index)
+    temp = folder / (".r60-review-" + secrets.token_hex(12) + ".tmp")
+    fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                 getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        with os.fdopen(fd, "wb") as out:
+            out.write(data)
+            out.flush()
+            os.fsync(out.fileno())
+        try:
+            os.link(temp, target, follow_symlinks=False)
+        except FileExistsError as exc:
+            raise Hold("QUALITY_RECEIPT_ALREADY_EXISTS") from exc
+        dir_fd = os.open(folder, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    finally:
+        if temp.exists():
+            temp.unlink()
+
+
 def inspect(folder: Path) -> dict:
+    if not folder.is_dir():
+        raise Hold("QUALITY_BATCH_NOT_INITIALIZED")
     with expand.locked(folder):
         config = validate_config(folder)
         cases, pool_hash = frozen_pool(Path(config["source"]))
@@ -290,6 +326,8 @@ def inspect(folder: Path) -> dict:
 def advance(folder: Path, max_cases: int) -> dict:
     if type(max_cases) is not int or not 1 <= max_cases <= MAX_CASES_PER_CALL:
         raise Hold("MAX_CASES_PER_CALL_HOLD")
+    if not folder.is_dir():
+        raise Hold("QUALITY_BATCH_NOT_INITIALIZED")
     with expand.locked(folder):
         config = validate_config(folder)
         cases, pool_hash = frozen_pool(Path(config["source"]))
@@ -299,8 +337,7 @@ def advance(folder: Path, max_cases: int) -> dict:
         start = progress["cases_reviewed"]
         for index in range(start, min(start + max_cases, len(cases))):
             record = case_receipt(cases[index], index + 1, pool_hash, config)
-            g1.write_new(folder / receipt_name(index + 1),
-                         expand.private_bytes(record))
+            atomic_case_file(folder, index + 1, record)
         return inspected_records(folder, config, cases, pool_hash)
 
 
