@@ -739,3 +739,33 @@ python scripts/r60_owner_adjudication_verify_v2.py \
 - R58 scoped synthetic (no training)：PASS。
 
 **P2 工程准备 = PASS（仅生成器/回执验证器与合成回归）。P2 Owner Mac dry-run 仍未执行，真实 Owner 审核仍未开始。** 当前 PR #25 仍为 Open / Draft；不合并、不启动模型/HF Job/GPU/SFT。
+
+
+### 8.18 Owner Mac dry-run 精确路径与命令
+
+P0 freeze manifest 目录已知为：
+`$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109`
+
+Gold72 Reviewer-C blind packet 源目录由当前 `scripts/r60_calibration_p0_freeze.py` 的 `GOLD["c_dir"]` 固定为：
+`$HOME/.local/share/storyforge/r59/private/reviewer-c-runs/gold72-c-20261106-v1/R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`
+
+Owner Mac 项目工作目录：`/Users/keedle/workspace/storyforge-gold-quality`。
+
+先确认当前 worktree 无未提交修改，并更新到本分支最新版本；不要覆盖 Owner Mac 的未提交工作。然后在 Owner Mac 执行默认 dry-run（不加 `--write`）：
+
+```bash
+cd /Users/keedle/workspace/storyforge-gold-quality
+
+PYTHONPATH=src:. .venv/bin/python scripts/r60_owner_adjudication_v2.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --p0-freeze-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-20261109"
+```
+
+成功唯一状态：
+`P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`，并且 `files_written=0`。
+
+如返回 HOLD，不要改权限或猜测替代源文件；先根据 reason_code 核查 P0 manifest、Reviewer-C packet 的精确路径、文件 0600 和各自父目录 0700。只有 dry-run PASS 后，才对同一命令显式追加 `--write`。输出目录必须此前不存在；若已存在，不删除、不覆盖，换一个新的唯一输出目录并重新 dry-run。
+
+当前工具只提供 GitHub / HF / VPS 等远端能力，没有 Owner Mac 本机 shell 通道；因此 dry-run 和 `--write` 必须在 Owner Mac 本机执行，不能谎报为已运行。
