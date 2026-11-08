@@ -285,7 +285,10 @@ def token_preflight(rows: list[dict], model: str, revision: str,
         raise ReviewError("HF_CPU_RESOURCE_GUARD_HOLD")
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     if tokenizer_factory is None:
-        from transformers import AutoTokenizer
+        try:
+            from transformers import AutoTokenizer
+        except Exception as exc:  # noqa: BLE001 - do not reveal package paths
+            raise ReviewError("HF_CPU_TOKENIZER_IMPORT_HOLD") from exc
         tokenizer_factory = AutoTokenizer.from_pretrained
     if encode_fn is None:
         try:
@@ -301,13 +304,23 @@ def token_preflight(rows: list[dict], model: str, revision: str,
         except ModuleNotFoundError:
             from storyforge_dataset.token_preflight import describe_token_lengths
         encode_chat = encode_fn
-    tokenizer = tokenizer_factory(
-        model, revision=revision, trust_remote_code=False)
-    lengths = [len(encode_chat(tokenizer, prompt_messages(row))) for row in rows]
-    summary = describe_token_lengths(
-        lengths, max_model_len=max_model_len,
-        reserved_output_tokens=max_output_tokens,
-        pilot_count=min(5, len(rows)))
+    try:
+        tokenizer = tokenizer_factory(
+            model, revision=revision, trust_remote_code=False)
+    except Exception as exc:  # noqa: BLE001 - no raw HF errors in Job logs
+        raise ReviewError("HF_CPU_TOKENIZER_LOAD_HOLD") from exc
+    try:
+        lengths = [len(encode_chat(tokenizer, prompt_messages(row)))
+                   for row in rows]
+    except Exception as exc:  # noqa: BLE001 - token IDs/private text never logged
+        raise ReviewError("HF_CPU_CHAT_TEMPLATE_HOLD") from exc
+    try:
+        summary = describe_token_lengths(
+            lengths, max_model_len=max_model_len,
+            reserved_output_tokens=max_output_tokens,
+            pilot_count=min(5, len(rows)))
+    except Exception as exc:  # noqa: BLE001 - only bounded stage codes
+        raise ReviewError("HF_CPU_TOKEN_SUMMARY_HOLD") from exc
     return {
         "schema": "storyforge_hf_literary_safe_v1",
         "status": ("HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU"
@@ -392,6 +405,7 @@ def main() -> int:
     p.add_argument("--token-preflight-only", action="store_true")
     p.add_argument("--confirm-paid-gpu", action="store_true")
     a = p.parse_args()
+    phase = "ARGUMENTS"
     try:
         if (not a.model.strip() or HEX40.fullmatch(a.revision) is None
                 or not 1 <= a.start <= MAX_RECORDS
@@ -407,7 +421,9 @@ def main() -> int:
         os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         os.environ["VLLM_LOGGING_LEVEL"] = "WARNING"
+        phase = "READ_INPUT"
         rows = read_input(a.input)
+        phase = "DISPATCH"
         if a.verify_only:
             result = {
                 "schema": "storyforge_hf_literary_safe_v1",
@@ -416,10 +432,12 @@ def main() -> int:
                 "training_authorized": False, "private_values_emitted": False,
             }
         elif a.token_preflight_only:
+            phase = "CPU_TOKEN_PREFLIGHT"
             result = token_preflight(
                 rows, a.model, a.revision, a.max_model_len,
                 a.max_output_tokens)
         else:
+            phase = "GPU_INFERENCE"
             result = inference(rows, a.output_dir, a.model, a.revision,
                                a.start, a.limit, a.max_model_len,
                                a.max_output_tokens, a.max_wall_seconds)
@@ -444,8 +462,19 @@ def main() -> int:
             "OUTPUT_DIR_INVALID", "REVIEW_PARAMETERS_HOLD",
             "PAID_GPU_NOT_AUTHORIZED", "CHECKPOINT_OUTPUT_SIZE_HOLD",
         )}
-        code = str(exc) if isinstance(exc, ReviewError) and str(exc) in allowed else (
-            "HF_REVIEW_RUNTIME_ERROR")
+        allowed.update({
+            "HF_CPU_TOKENIZER_IMPORT_HOLD",
+            "HF_CPU_TOKENIZER_LOAD_HOLD",
+            "HF_CPU_CHAT_TEMPLATE_HOLD",
+            "HF_CPU_TOKEN_SUMMARY_HOLD",
+        })
+        fallback = {
+            "READ_INPUT": "HF_REVIEW_INPUT_RUNTIME_HOLD",
+            "CPU_TOKEN_PREFLIGHT": "HF_CPU_PREFLIGHT_RUNTIME_HOLD",
+            "GPU_INFERENCE": "HF_GPU_REVIEW_RUNTIME_HOLD",
+        }
+        code = (str(exc) if isinstance(exc, ReviewError) and str(exc) in allowed
+                else fallback.get(phase, "HF_REVIEW_RUNTIME_ERROR"))
         print(json.dumps({
             "schema": "storyforge_hf_literary_safe_v1", "status": "HF_REVIEW_HOLD",
             "reason_code": code, "training_authorized": False,
