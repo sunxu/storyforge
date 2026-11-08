@@ -19,17 +19,18 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（Open / Draft）
 
 | 顺序 | 文件 | 用途 | 交接状态 |
 |---|---|---|---|
-| 1 | [新 Agent 交接总览](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md) | 项目状态、证据事实、边界、代码资产、模型缺口、接手入口 | 已完成 |
-| 2 | [可执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md) | P0–P6 的执行顺序、命令、输入、产物和验收标准 | 已完成 |
-| 3 | [三模型校准计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md) | Gold72/R60 校准集、三模型配对设计和选型目标 | 已存在，作为上位计划 |
-| 4 | [R60 真实历史 SFT 主线](R60_REAL_HISTORY_SFT_MAINLINE_CN.md) | 真实历史主线沿革和准入状态；仅按交接总览说明读取历史段落 | 已存在，历史主线文档 |
-| 5 | [Pilot10 Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md) | C 的三态结果、绑定和独立性限制 | 已存在 |
-| 6 | [Pilot10 Owner Pairwise 报告](R60_HF_PILOT10_OWNER_PAIRWISE_AND_CALIBRATION_20261108_CN.md) | A/B 5+5、无交集、Checkpoint 与 crosswalk 核验 | 已存在 |
-| 7 | [1000 条 HF Quality Pipeline 说明](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md) | 现有可复用审核 Stage、Runner 和限制 | 已存在 |
-| 8 | [HF CPU Stage 后预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) | Jinja2/Chat Template 故障复盘和可复用预检命令 | 已存在 |
-| 9 | [HF Jobs 工程规范](standards/HF_JOBS_ENGINEERING.md) | 共享 Runtime、依赖、隐私、Job 与验收约束 | 已更新 |
-| 10 | [HF Runtime 架构](standards/R60_HF_JOBS_RUNTIME_ARCHITECTURE_V1_CN.md) | 共享 Runtime 七模块职责 | 已存在 |
-| 11 | [HF Jobs Skill](../skills/storyforge-hf-jobs/SKILL.md) | Owner/Agent 实际操作入口 | 已存在 |
+| 1 | [新 Agent 交接任务书](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md) | 下一 Agent 的正式工作指令：目标、当前事实、P0–P6、授权门槛、完成定义 | 已完成 |
+| 2 | [新 Agent 交接总览](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md) | 项目状态、证据事实、边界、代码资产、模型缺口、接手入口 | 已完成 |
+| 3 | [详细执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md) | P0–P6 的执行顺序、命令、输入、产物和验收标准 | 已完成 |
+| 4 | [三模型校准计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md) | Gold72/R60 校准集、三模型配对设计和选型目标 | 已存在，作为上位计划 |
+| 5 | [R60 真实历史 SFT 主线](R60_REAL_HISTORY_SFT_MAINLINE_CN.md) | 真实历史主线沿革和准入状态；仅按交接总览说明读取历史段落 | 已存在，历史主线文档 |
+| 6 | [Pilot10 Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md) | C 的三态结果、绑定和独立性限制 | 已存在 |
+| 7 | [Pilot10 Owner Pairwise 报告](R60_HF_PILOT10_OWNER_PAIRWISE_AND_CALIBRATION_20261108_CN.md) | A/B 5+5、无交集、Checkpoint 与 crosswalk 核验 | 已存在 |
+| 8 | [1000 条 HF Quality Pipeline 说明](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md) | 现有可复用审核 Stage、Runner 和限制 | 已存在 |
+| 9 | [HF CPU Stage 后预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) | Jinja2/Chat Template 故障复盘和可复用预检命令 | 已存在 |
+| 10 | [HF Jobs 工程规范](standards/HF_JOBS_ENGINEERING.md) | 共享 Runtime、依赖、隐私、Job 与验收约束 | 已更新 |
+| 11 | [HF Runtime 架构](standards/R60_HF_JOBS_RUNTIME_ARCHITECTURE_V1_CN.md) | 共享 Runtime 七模块职责 | 已存在 |
+| 12 | [HF Jobs Skill](../skills/storyforge-hf-jobs/SKILL.md) | Owner/Agent 实际操作入口 | 已存在 |
 
 ## 3. 交接证据状态矩阵
 
