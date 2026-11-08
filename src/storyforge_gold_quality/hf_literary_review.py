@@ -335,7 +335,7 @@ def token_preflight(rows: list[dict], model: str, revision: str,
             lengths.append(len(encode_chat(tokenizer, prompt_messages(row))))
         except ValueError as exc:
             raise ReviewError(cpu_token_error_code(exc)) from None
-        except Exception:
+        except Exception:  # noqa: BLE001 - suppress private tokenizer exceptions
             raise ReviewError("HF_CPU_CHAT_TEMPLATE_HOLD") from None
     try:
         summary = describe_token_lengths(
