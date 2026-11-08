@@ -107,6 +107,14 @@ Owner 回传的 SAFE 显示：
 
 Owner 私有文件仅保留在本机受控私有目录。GitHub 不存放其正文、crosswalk 内容、blind IDs、source locators 或逐案 Checkpoint。
 
+**Gold72 40-case inventory（Owner Mac only）**：
+- 已知 C packet directory：`reviewer-c-runs/gold72-c-20261106-v1/`，包含 `R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`、`R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_ONLY_AUDIT_SAFE.json`。
+- 已知 Owner artifacts：`R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json`、`R60_GOLD72_OWNER_RESOLUTION_SAFE.json`。历史聚合为 40 条 Owner PASS/HOLD/REJECT=30/4/6；Owner Resolution 与 Reconciliation 各 1 个事件、Manifest 288 个事件、重复导入追加 0。只读核验，不重复导入。
+- 历史 C aggregate=38/1/1，但 C execution record unavailable；results-only SAFE 不能证明独立执行。
+- 72-row source `r59-source-priority72-20261103/R59_SOURCE_CONTEXT_PRIVATE.jsonl` 不是 40-case subset；strict stage 为 5 READY/67 HOLD。suffix72 72 READY stage 是非 Quality-admitted 替代路径，禁止当作 Gold72 40。
+- **缺口**：尚未证明准确的 A/B disagreement 40-case source crosswalk/manifest 已独立冻结。需要用 Owner ID map 与 A/B 历史来源重新核验 40 个唯一来源，再分成 20 development / 20 locked regression。
+
+
 **Gold72 40-case 证据边界（不要与 72-row source stage 混淆）**：
 - Owner Mac 私有目录 `reviewer-c-runs/gold72-c-20261106-v1` 已知文件：`R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`、`R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md`、`R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_ONLY_AUDIT_SAFE.json`、`R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json`、`R60_GOLD72_OWNER_RESOLUTION_SAFE.json`。C execution record unavailable。
 - Owner aggregate: 40 cases, PASS/HOLD/REJECT = 30/4/6；历史 C aggregate = 38/1/1；A/B disagreement = 40 of 72。Owner Resolution 与 Reconciliation 各 1 个事件，Manifest 共 288 个事件；duplicate re-import appended 0。不得重复导入或覆盖。
