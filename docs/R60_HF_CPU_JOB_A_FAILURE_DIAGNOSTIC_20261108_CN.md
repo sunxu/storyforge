@@ -33,7 +33,8 @@ export PYTHONPATH=/input
 python3 -m pip install --quiet --no-cache-dir   'transformers==4.57.1' 'huggingface_hub>=0.35,<3' \
   'jinja2==3.1.6' 'sentencepiece==0.2.1'
 python3 -m pip check
-python3 -c 'import jinja2, sentencepiece; print("HF_TOKEN_DEPS_PASS")'
+python3 -c 'import jinja2, sentencepiece; print(jinja2.__version__)'
+echo HF_TOKEN_DEPS_PASS
 python3 /scripts/runner.py   --input /input/source.private.jsonl --output-dir /output   --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137 --verify-only
 python3 /scripts/runner.py   --input /input/source.private.jsonl --output-dir /output   --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137   --token-preflight-only --max-model-len 32768 --max-output-tokens 2400"
 
