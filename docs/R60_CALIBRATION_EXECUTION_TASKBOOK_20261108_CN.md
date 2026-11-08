@@ -101,6 +101,17 @@ P0 PASS 条件：
 
 ---
 
+## P0.5 已知依赖故障回看：R58 Jinja2 问题在 R60 重复发生（必做）
+
+这是已知故障的复发，不是首次发现。R58 于 2026-11-01 已实测：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`；缺少 Jinja2 会导致 Transformers Chat Template `ImportError`；安装 Jinja2 后，A/B 两组真实 HF CPU Tokenizer 预检均通过。
+
+R60 再次发生同类故障。必须把经验固化为依赖和门禁，而不是只修某个 Job：
+1. 在共享 HF Runtime/Reviewer Runner 的可复用依赖声明中显式 pin `jinja2==3.1.6`，并保留已验证的 `transformers==4.57.1`、`sentencepiece==0.2.1` 组合；变更版本必须有独立验证。
+2. 每次提交 HF Job 前，在目标镜像和依赖安装环境运行 `pip check`、三项 import/version probe，以及目标 Tokenizer 的 `apply_chat_template` 冒烟测试。
+3. 增加 CI 回归，确保 Chat Template 依赖不会从依赖清单/Runner 安装步骤中消失。
+4. preflight 任一失败立即停止，不提交 Job、不换 flavor/namespace、不自动重试。
+5. 复用 [R60 HF CPU 预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 的已知故障记录；不得再次花费付费 Job 诊断已知的缺包原因。
+
 ## P1 — 三项严重问题的证据标准 v2
 
 ### 目标
