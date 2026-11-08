@@ -290,8 +290,8 @@ def prompt_messages_v2(packet: dict[str, Any]) -> list[dict[str, str]]:
     user = (
         "依据给定 JSON 输出严格符合 schema 的对象。引用必须提供准确 source、"
         "message_index/component_ref、start_char/end_char 与连续原文 quote；"
-        "位置从 0 开始，end 不包含。不要把引用存在误当成语义支持。"
-        "若关键上下文不足，必须 INSUFFICIENT_CONTEXT 并列出 missing_context。"
+        "位置从 0 开始，end 不包含。精确引用核验与语义蕴含核验必须分开执行；"
+        "不要把引用存在误当成语义支持。若关键上下文不足，必须 INSUFFICIENT_CONTEXT 并列出 missing_context。"
         "confidence 不能覆盖证据。只输出 JSON。\n"
         + canonical(material).decode("utf-8")
     )
