@@ -76,20 +76,21 @@ done | sort -u
 如果 Gold72 文件不在 R60 private 根目录，允许只在用户已知的 StoryForge 私有归档根目录查找。不得遍历、打印或上传小说正文。发现多个相似版本时不得猜最新；按 manifest、SHA、时间和原始 Owner 收据确定唯一版本，否则 HOLD。
 
 已知 Gold72 相关候选文件（均为 Owner Mac 私有文件，只在本地核验，不上传 GitHub）：
-- C 包目录：`reviewer-c-runs/gold72-c-20261106-v1/`，包括 `R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`、`R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_ONLY_AUDIT_SAFE.json`。
-- Owner 裁决：`R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json`、`R60_GOLD72_OWNER_RESOLUTION_SAFE.json`；历史摘要为 40 条、Owner PASS/HOLD/REJECT=30/4/6，Owner Resolution/Reconciliation 各 1 个事件，Manifest 共 288 个事件，重复导入追加 0。**不得再次导入或覆盖。**
+- A V3/B2 crosswalk SAFE 的历史目标位置：`reviewer-b2-runs/gold72-b2-20261106-v1/R60_GOLD72_REVIEWER_A_B2_CROSSWALK_SAFE.json`；Owner Mac 必须确认文件实际存在并重新核验 SHA/status，不能只依赖历史聊天中的 intended path。
+- C 包目录：`reviewer-c-runs/gold72-c-20261106-v1/`，包括 `R60_GOLD72_REVIEWER_C_PACKAGE_SAFE.json`、`R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`、`R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json`、C results 文件（历史命名有 `R60_GOLD72_REVIEWER_C_RESULTS.json` / `R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json`，本地需确认唯一实际文件）、`R60_GOLD72_REVIEWER_C_RESULTS_ONLY_AUDIT_SAFE.json`、`R60_GOLD72_REVIEWER_C_EXECUTION_RECEIPT_PRIVATE_TEMPLATE.json`。
+- Owner 裁决：`R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json`、`R60_GOLD72_OWNER_RESOLUTION_SAFE.json`；历史 A V3/B2 disagreement=40/72、Owner PASS/HOLD/REJECT=30/4/6，Owner Resolution/Reconciliation 各 1 个事件，Manifest 共 288 个事件，重复导入追加 0。**不得再次导入或覆盖。**
 - 72-row 来源：`r59-source-priority72-20261103/R59_SOURCE_CONTEXT_PRIVATE.jsonl`；严格 Stage `source-staging-priority72-20261103/GOLD_SOURCE_STAGING_PRIVATE.jsonl` + `GOLD_SOURCE_STAGING_SAFE.json` 为 5 READY/67 HOLD。它们不是 40-case 冻结清单。
 - `source-staging-suffix72-20261104-v1` 的 72 READY 属于另一条非 Quality-admitted 路径，禁止拿来替代 Gold72 40。
-- 历史 C aggregate 38/1/1，但 C execution record unavailable；results-only SAFE 不等于独立执行证明。历史 A/B 192 条结果文件也不能单凭文件存在就证明 40-case source crosswalk 已冻结。
+- 历史 Reviewer C aggregate=38/1/1，但 C execution record unavailable；`r60_reviewer_c_audit.py` 需要 execution receipt 与完整 execution record，results-only SAFE 不等于独立执行证明。历史 A/B 192 条结果文件也不能单凭文件存在就证明 40-case source crosswalk 已冻结。
 
 
 ### P0.3 校验并冻结两个独立集合
 
 Gold72:
-- 必须恰好 40 个唯一案例，且必须从 A/B disagreement 40/72 的真实来源映射中重建；C blind packets 有 40 条不自动证明 A/B 40-case crosswalk 已冻结。
+- 必须恰好 40 个唯一案例，且必须从 Reviewer A V3/B2 disagreement 40/72 的真实来源映射中重建；C blind packets 有 40 条不自动证明 A/B 40-case crosswalk 已冻结。
 - 已存在 Owner worksheet/aggregate SAFE：历史 Owner PASS/HOLD/REJECT=30/4/6；Owner Resolution/Reconciliation 各 1 个事件，Manifest 288 个事件，重复导入追加 0。只读核验原 SAFE 与事件，不重跑导入。
-- 已存在 C results 与 results-only SAFE：历史 C aggregate=38/1/1；但 C execution record unavailable，模型身份/独立性不能声称已证明，不能将 C aggregate 自动当作独立真值。
-- 必须定位 40 条准确 A/B source binding、核验 Owner ID map、重算唯一来源数并创建独立 source manifest；完整 72-row source 与 suffix72 72 READY Stage 都不得替代 40 条集合。
+- 已存在 C results 与 results-only SAFE：历史 Reviewer C aggregate=38/1/1；但 C execution record unavailable，模型身份/独立性不能声称已证明，不能将 C aggregate 自动当作独立真值。
+- 必须定位并验证 A V3/B2 crosswalk SAFE（由 `r60_reviewer_ab2_gold72_crosswalk.py` 重算）、40 条准确 source binding、核验 Owner ID map、重算唯一来源数并创建独立 source manifest；完整 72-row source 与 suffix72 72 READY Stage 都不得替代 40 条集合。
 - 私有固定分组：20 条 rubric development、20 条 locked regression。随机种子和分组指纹写入私有 manifest。
 
 R60:
