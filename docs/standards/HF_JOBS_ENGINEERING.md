@@ -21,6 +21,16 @@
 - 下载 SAFE 文件，严格验证 Schema/状态/大小/SHA256；将结果与 Job ID、Commit、依赖和镜像版本一起记录。
 - 所有 GPU 推理和训练另行审批。
 
+## Chat Template 依赖基线：Jinja2 故障不得复发
+
+R58 于 2026-11-01 已验证 `transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`；当时缺少 Jinja2 会触发 Transformers Chat Template `ImportError`，安装后 A/B 两组真实 HF CPU Tokenizer 预检通过。R60 发生同类故障属于重复发生，后续修复必须沉淀为共享依赖基线与提交前门禁。
+
+强制要求：
+- Jinja2 显式依赖 `jinja2==3.1.6`，不得依赖镜像预装；当前已验证的 Transformers/SentencePiece 组合为 `transformers==4.57.1`、`sentencepiece==0.2.1`。
+- 每个 HF Runner/Job 的依赖定义必须可复用、可审查；禁止只在单次命令临时补装。
+- Job 提交前，在相同镜像/依赖安装步骤执行 `pip check`、版本/import probe，并调用目标 Tokenizer `apply_chat_template`。失败即 fail closed。
+- CI 覆盖依赖 pin 和 Chat Template 冒烟测试；不得为已知缺包问题重复提交付费 Job、换 flavor 或 namespace。
+- 具体 R60 故障记录与命令见 `docs/R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md`。
 ## Runtime 模块
 
 `context.py`、`paths.py`、`inputs.py`、`outputs.py`、`diagnostics.py`、`resources.py`、`receipts.py` 七模块职责和 API 见 `docs/standards/R60_HF_JOBS_RUNTIME_ARCHITECTURE_V1_CN.md`。Runtime 只依赖 Python 标准库。
