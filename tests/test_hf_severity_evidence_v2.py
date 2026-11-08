@@ -137,7 +137,7 @@ def test_v2_schema_and_prompt_are_versioned_and_private_context_only():
     messages = legacy_review.severity_evidence_prompt_messages_v2(row)
     assert "NPC 主动行动不自动等于玩家代理" in messages[0]["content"]
     assert "普通亲密、冲突、威胁台词不自动等于安全排除" in messages[0]["content"]
-    assert "semantic" in messages[1]["content"]
+    assert "语义蕴含" in messages[1]["content"]
     assert "synthetic-world-rule-01" in messages[1]["content"]
     assert "synthetic-calibration-0001" in messages[1]["content"]
     assert legacy_review.severity_evidence_response_schema_v2() == schema
@@ -313,7 +313,11 @@ def test_legacy_v3_review_and_reviewer_c_contracts_remain_unchanged():
     row = {
         "schema": legacy_review.SCHEMA,
         "blind_id": "c" * 32,
-        "visible_history": [{"role": "user", "content": "请打开地图。"}],
+        "visible_history": [
+            {"role": "user", "content": "请打开地图。"},
+            {"role": "assistant", "content": "NPC正在寻找地图。"},
+            {"role": "user", "content": "请先展开地图。"},
+        ],
         "target_text": "NPC打开地图。",
         "target_semantics": "DB_FINAL_PERSISTED_ASSISTANT",
         "policy": legacy_review.POLICY,
