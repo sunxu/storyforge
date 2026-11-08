@@ -174,7 +174,7 @@ def test_a_b_blind_staging_no_crosswalk_or_private_ids_in_job(tmp_path):
         assert "owner_crosswalk" not in payload
         assert (input_folder / "runner.py").stat().st_mode & 0o777 == 0o600
         assert len(review.read_input(input_folder / "source.private.jsonl")) == len(cases)
-    assert not (root / "input_A" / "source.private.jsonl").read_bytes() == (
+    assert (root / "input_A" / "source.private.jsonl").read_bytes() != (
         root / "input_B" / "source.private.jsonl").read_bytes()
     assert (root / "owner" / stage.MAP_NAME).is_file()
     assert not (root / "input_A" / stage.MAP_NAME).exists()
