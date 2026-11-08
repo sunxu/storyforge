@@ -21,7 +21,7 @@
 1. 本文：当前状态、历史事实、边界和接手原则。
 2. [执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：按 P0→P6 顺序执行，含命令、产物和验收。
 3. [统一计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)：阶段定义和模型评估设计。
-4. [R60 主线状态](R60_REAL_HISTORY_SFT_MAINLINE_CN.md)：历史执行记录与当前准入状态。
+4. [R60 主线状态](R60_REAL_HISTORY_SFT_MAINLINE_CN.md)：仅用于理解历史技术背景、原始主线边界和已完成事实；其中旧权益/协议调查段落属于历史记录，本次不重新启动该调查，以本交接文件和任务书中的用户最新要求为准。
 5. [Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md)：10 条严重问题三态结果。
 6. [Owner Pairwise 报告](R60_HF_PILOT10_OWNER_PAIRWISE_AND_CALIBRATION_20261108_CN.md)：A/B 5+5 不相交、摘要核验和私有审计器。
 7. [HF Quality Pipeline 说明](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md)：现有可复用实现与 1000 候选 Stage。
@@ -29,24 +29,27 @@
 
 ## 2. 仓库、分支、PR、Issue 的已核实状态
 
-| 项目 | 当前核实值 |
+| 项目 | 本次交接核验快照（2026-11-09） |
 |---|---|
 | 仓库 | sunxu/storyforge（Private） |
 | 工作分支 | r60/gold192-history-v3-adapter |
-| PR | #25，Open |
+| PR | #25，Open / Draft |
 | PR 标题 | R60 V3 Gold192 Ledger history recovery adapter |
-| 本次交接前 HEAD | 945ab236e36e2451d6e059e4e4c404ba41fbb1e9 |
+| 核验时 PR HEAD | `4746a23b552cfea6bcffd9c8ff3045ecb7e4f510` |
+| PR base | `r60/canonical-a-v3-binding` |
 | 主线 Issue | #26，Open |
-| 旧 Issue #27 | 已关闭（not_planned）；本阶段不重开、不重复做权益/协议调查 |
-| 最近 CI | 在 945ab2... 上四项 workflow 已全部 SUCCESS |
+| 专项交接/执行 Issue | #28，Open |
+| 旧 Issue #27 | Closed / not_planned；按用户当前要求，不在本次交接中重新开展权利/协议调查 |
+| 核验时 CI | 5 项 workflow 正在运行，尚无最终结论 |
 
-最近 CI 核验：
-- R60 HF Runtime CI：SUCCESS
-- Gold Quality Pipeline (synthetic + R57 regression)：SUCCESS
-- R58 scoped synthetic (no training)：SUCCESS
-- CI：SUCCESS
+核验时运行中的 workflow：
+- Gold Quality Pipeline (synthetic + R57 regression)
+- R58 scoped synthetic (no training)
+- R60 HF Runtime CI
+- R60 HF CPU dependency profiles
+- CI
 
-新 Agent 必须重新 fetch 并核对最新 HEAD 和 CI；上表是本次交接编写时的基线，不保证接手时分支未变化。不要 reset、force-push、merge 或关闭 PR。
+**快照说明**：上述 HEAD/CI 是本次最终交接审查时实际读取的 GitHub 状态。交接文档后续提交会使 PR HEAD 变化，接手 Agent 应在开始工作时只读刷新 HEAD/CI；不得把旧 SHA 的 CI 结果挪用为新 HEAD 的 PASS。不要 reset、force-push、merge 或关闭 PR。PR #25 仍为 Draft，不要把文档交接完成误认为该 PR 已满足合并条件。
 
 ## 3. 已完成且不能重复的工作
 
@@ -204,7 +207,18 @@ GLM-Z1 是 GLM-4 同家族推理增强 Challenger，不是第三个完全独立�
 11. 不使用合成数据替代真实主线。合成数据只可用于 CI 的工具单元测试。
 12. 不以增加候选数量为目标；当前重点是质量标准与模型选型。
 
-## 9. 交接完成定义
+## 10. 本次交接材料的完成边界（2026-11-09）
+
+本次 ChatGPT 工作的交付范围是**完成交接材料，不执行下一阶段 P0–P6**。因此：
+- 已完成：交接总览、P0–P6 执行任务书、三模型校准计划、HF Job/Jinja2 永久经验、Pilot10 SAFE 事实、R60 1000 crosswalk 已通过的证据状态、Gold72 尚缺证据的明确边界、Issue #28 任务入口。
+- 未执行且交由新 Agent：Owner Mac 上 Gold72 私有文件最终存在性/SHA/receipt 核验、40 条来源重建、Gold72↔R60 私有指纹去重及两个冻结 manifest。
+- 本次没有执行 Gold72 重建、没有生成私有 manifest、没有修改审核 Prompt、没有运行新模型、没有提交 HF Job/GPU、没有批量审核 1000 条、没有修改 RolePlay 或数据库。
+- 新 Agent 接手第一步是只读刷新 GitHub HEAD/CI，并按任务书 P0 对 Gold72 证据缺口执行；**不得重复已通过的 R60 1000 crosswalk 与 Pilot10 Checkpoint 审计**。
+- 本次交接包的完成不等于 P0 PASS、Quality-v1 admission 或 GPU/SFT 授权。
+
+交接文件索引与逐项验收见 [交接包索引与完成清单](R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md)。
+
+## 9. 新 Agent 下一阶段完成定义
 
 新 Agent 不应把“读完文档”当作完成。按任务书逐项交付：
 - P0：两个校准集的 Owner 私有冻结 manifest 和无敏感 SAFE；
