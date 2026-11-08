@@ -12,4 +12,4 @@ def test_r60_expansion_synthetic_suite():
         capture_output=True, text=True, timeout=90, check=False,
     )
     assert result.returncode == 0, result.stdout[-5000:] + result.stderr[-2500:]
-    assert "14 passed" in result.stdout
+    assert "19 passed" in result.stdout
