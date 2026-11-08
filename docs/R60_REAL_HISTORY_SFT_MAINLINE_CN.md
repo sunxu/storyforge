@@ -1,0 +1,63 @@
+# R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
+
+状态：`REAL_HISTORY_MAINLINE_ACTIVE__TRAINING_ADMISSION_HOLD`  
+执行：StoryForge / Owner Mac（本机数据库连接角色 `r58_export_reader`）；ChatGPT 只读连接器 `supabase_read_only_user`，不得混用。  
+**RolePlay 不修改；不启动新的 GPU 技术可行性实验；本轮不授权 GPU 训练。**
+
+## 一、目标和已证事实
+
+目标是以**真实、优质的历史 User–Assistant 数据**训练中文互动小说模型，不以合成数据替代主线。R46 等已有训练已验证 Runtime/Adapter 技术可行性，不重复做 GPU smoke test。
+
+两轨独立：
+
+- `STRICT_GOLD_QUALITY_V1`：Gold192 原冻结、A/B 输入/单次原始 Provider 证据和既有 Quality-v1 标准不改变，当前准入 0。
+- `REAL_HISTORY_FINAL_RESPONSE_SFT_EXPERIMENTAL`：候选来自经授权的真实历史消息，监督标签**定义为数据库已完成的、最终交付的 Assistant 文本**（不是声称原始 Provider 单次 completion）；训练上下文采用可核对的真实历史消息与明确标记的规范化/重建系统约束，标注 `RECONSTRUCTED_NOT_ACTUAL_SENT`，不得假称它是历史实际发送 Prompt。最终必须通过权益、隐私、上下文一致性、质量、世界组件与完整保护集隔离及独立审核后才准入。两轨不得共用数据集 ID、split、冻结列表。
+
+本次 Supabase 只读调查的**非随机活跃 Session 抽样**显示，最近一批样本中 117 条同日 completed Assistant，117 有紧邻 completed User，49 满足长度 >=300、正常 finish、无可见编辑键及无 parseWarnings 键，覆盖 6 个 Story ID。**49 是技术优先候选，不代表训练合法或高质量，不能外推比例**。不同轮次活动 Session 排序或筛选窗口导致 117/152 等抽样差异，不应混算。
+
+Owner Mac 在**唯一明确批准的 Story/Session 对**上已经获取 80 条消息元数据、40 对相邻完成 User–Assistant；原 3 案目标 SHA/身份 PASS，但历史 System/Memory、单次 Provider 证据仍 HOLD。该对的 G0/G1 授权**不自动扩展到其他 Session、其他用户或全站；也不代表 G2 训练授权**。
+
+## 二、正式调整的任务优先级
+
+| 编号 | 优先级 | 任务 | 可交付物 / 完成门槛 | 当前 |
+|---|---|---|---|---|
+| R60-REAL-01 | P0 | 经授权历史数据的元数据预筛（先用已授权单对 40 pairs） | 每条仅以 DB 精确 ID 与相邻 User 验证，统计字数、正常 finish、编辑/解析迹象；私有 shortlist + SAFE；不得输出正文 | **进行中** |
+| R60-REAL-02 | P0 | 真实文本质量审核（文学、角色、NPC、玩家自主权、规则、连贯性） | 私有逐案两名独立审核者/证据引用、严重问题拒绝；不以字数替代质量 | 待 REAL-01 |
+| R60-REAL-03 | P0 | 构建准确标记的真实历史训练上下文 | 真正的历史 user/assistant 交替、目标前时间边界、无未来泄漏；规范化重建说明及校验；不得用当前故事卡伪装历史快照 | 与 REAL-02 并行 |
+| R60-REAL-04 | P0 | 来源权益、隐私、R50 完整元数据排除、世界及历史曝光 | 每条证据、Owner 审批、授权用途、世界组件及完整保护范围核验；未核实即 HOLD | 并行、阻断准入 |
+| R60-REAL-05 | P1 | 独立 Train/Validation 冻结与 CPU Tokenizer/Collator | 同一依赖世界同一 split；独立数据清单 SHA；CPU collator 通过；绝不混入 R50 | 等 P0 |
+| R60-REAL-06 | P1 | 训练预算、正式 GPU SFT 审批及模型验证设计 | 经批准的数据集 + 可重放 HF Job 配置 + 用户单独 GPU 授权；**当前不执行** | HOLD |
+| R60-REAL-07 | P3 | 原 3 案缺失 Provider/时钟/历史快照追溯 | 只有新独立证据出现才恢复；既有 HOLD 不阻塞实验线初筛 | 暂停 |
+| R60-REAL-08 | 暂停 | RolePlay 真实生成证据 Shadow 开发 | 本主线不修改 RolePlay，不以新上报机制作为历史数据前置条件 | 暂停 |
+| R60-REAL-09 | 取消 | 重复 GPU 可行性实验/新合成训练集替代主线 | 既有训练链路已验证，避免偏离真实历史数据目标 | 取消 |
+
+## 三、真实历史训练标签的精确定义
+
+`target_semantics=DB_FINAL_DELIVERED_ASSISTANT` 表示最终持久化 completed Assistant，不保证与 Provider 原始字节相同。凡有明确的编辑、fallback、重复、续写、解析异常、UI 与持久化冲突等迹象，先 `MANUAL_REVIEW_HOLD`；没有迹象也只能标为 `TECHNICAL_PRIORITY`，不能认定单次或未变换。
+
+多轮输入必须可检验目标前上下文，并与训练时提供的规范化 System/世界信息一致。对来源版本不明的故事卡，不能默认它是历史时点内容；要么以**独立、原创、静态且显式标注的训练约束**代替并执行语义一致性审核，要么 HOLD。不可把目标未来信息注入输入，不能用 Target 生成 Prompt。
+
+质量审核利用 `quality_v1.py` 中六维评分语义和严重问题，但该工具的原 `gold195/r58_round1` 来源封闭枚举与原 Gold 来源条件不得被偷偷放宽；新实验线建立独立 Schema、Reviewer 记录及入选审查器。既有 Strict Gold 文件不改。
+
+## 四、阶段状态与准入断言
+
+`DISCOVERED` → `METADATA_TRIAGED` → `QUALITY_REVIEWED` → `CONTEXT_VALIDATED` → `ADMISSION_PENDING` → `TRAIN_ADMITTED`。
+
+- G0/G1 只读候选发现与有限私有审核，可以在 R50 状态 `UNKNOWN_HOLD` 时进行**已明确授权的那一个对**。
+- `TRAIN_ADMITTED` 须对 E0/E1/E2/E3 权益/隐私、监督目标语义、语境一致、世界与 R50 完整保护集审查全部有独立依据，E4/E5 冻结和 CPU 预检通过，并经 Owner 逐批签核。
+- 未通过来源权益/隐私、完整 Test 保护集排除的样本**不得**进入训练，即便质量极高。
+- 原 Gold192、R50 内容、旧三案审核结果只可只读引用；不得自动将 40/49 条转为准入，不能把世界 Story ID 当作独立 Validation world。
+
+## 五、立刻执行的第一个 Pilot（R60-REAL-01）
+
+基于现有单对私有 `R60_G0_G1_SINGLE_PAIR_SCOPE_PRIVATE.json`、`R60_TARGET_PAIR_LOCATORS_PRIVATE.jsonl`、`R60_TARGET_PAIR_SAFE.json`（Owner Mac）。本机新工具仅用 `r58_export_reader` **精确查回**这 40 个 `session_id/turn_index/id` 组合的结构字段、字数、`finishReason` 与编辑/解析元数据布尔值；不读取正文或完整 metadata JSONB，查询只读、有界、索引命中。严格校验原始 Scope SHA、pair 数和身份一致性，结果只在 Owner Mac 0700/0600 私有目录。
+
+短名单等级：`TECHNICAL_PRIORITY`（满足约束，**尚未经质量审查**）、`MANUAL_REVIEW_HOLD`（可疑或待审），而不是 `PASS/ADMITTED`。SAFE 仅输出计数和原因码，私有 locator 不上传 GitHub。
+
+第一批目标是形成实际的 **40 → 技术优先名单 → 小批质量审核（先少量）** 的可审计转换，不求扩大未经授权的全站采样。后续才在获得明确授权的更多 Story/Session 上扩展。
+
+## 六、非目标与审批边界
+
+不改 RolePlay、不进行合成数据 SFT、不启动 GPU、不修改生产 Supabase 数据或权限、不关闭 RLS、不读取 R50 正文、不将任何真实用户内容提交 GitHub。程序和合成测试可提交 GitHub。所有模型训练或付费任务单独申请授权。
+
+完成 REAL-01 后，优先推进 REAL-02/03，独立并行解决 REAL-04；不再以缺少旧 Provider raw log 为由停止真实最终回复 SFT 实验线筛选，但也不降低严格 Gold 的 A/B 门槛。
