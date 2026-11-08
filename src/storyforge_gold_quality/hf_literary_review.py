@@ -334,6 +334,27 @@ def prompt_messages(row: dict) -> list[dict]:
     ]
 
 
+def severity_evidence_response_schema_v2() -> dict:
+    """Return the separate v2 three-state evidence schema; legacy v3 is unchanged."""
+    from . import hf_severity_evidence_v2 as severity_v2
+
+    return severity_v2.response_schema_v2()
+
+
+def severity_evidence_prompt_messages_v2(row: dict) -> list[dict]:
+    """Build a versioned severe-evidence prompt without changing the v3 prompt."""
+    from . import hf_severity_evidence_v2 as severity_v2
+
+    return severity_v2.prompt_messages_v2(row)
+
+
+def validate_severity_evidence_v2(result: object, row: dict) -> dict[str, str]:
+    """Validate v2 severe evidence while preserving the legacy v3 validator."""
+    from . import hf_severity_evidence_v2 as severity_v2
+
+    return severity_v2.validate_result_v2(result, row)
+
+
 def validate_response(result: object, row: dict) -> str:
     validate_input(row)
     if not isinstance(result, dict) or set(result) != set(response_schema()["properties"]):
