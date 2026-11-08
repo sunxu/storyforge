@@ -1,5 +1,17 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08 A 同镜像 CPU ResourceGuard 修复完成（最新权威状态）
+
+实际 HF [Job `6af04eb10e0338d1bb84a9e1`](https://huggingface.co/jobs/adradar/6af04eb10e0338d1bb84a9e1)，`name=r60-gpuimage-cpu-token-A-envfix-02`，`adradar`、`cpu-basic`、相同固定 vLLM digest，创建 `10:28:01.186Z`，结束 `10:28:30.021Z`，**COMPLETED**。
+
+原始检查：`accelerator_profile=PASS`、`cuda_visibility=PASS`、`nvidia_device_nodes=PASS`、`runtime_no_cuda_import=PASS`，**仅 `nvidia_visibility=FAIL`**。因此此前 A/B 的 CPU ResourceGuard HOLD 可以归因于这个 vLLM 镜像的 NVIDIA 可见性默认环境，而**不是实际 GPU 设备节点暴露**。shell 只在 `cpu-basic`、确认其余所有检查通过后设置 `NVIDIA_VISIBLE_DEVICES=void`，不修改任何公共资源守卫逻辑；完整 ResourceGuard 再检查每个子项全部 PASS，日志 `HF_CPU_RESOURCE_GUARD_PASS`。依赖导入 `HF_GPUIMAGE_DEPS_PRESENT` 亦 PASS。
+
+随后在真实冻结 A 1000 条上返回 `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`：`cases_checked=1000`（5 pilot + 995 remaining）、`over_budget_count=0`、`max_model_len=32768`、`reserved_output_tokens=2400`、`max_total_tokens=5524`、prompt min/median/p95/max=`712/1148/2284/3124`，`gpu_started=false`。独立公开 [SAFE evidence](evidence/R60_GPUIMAGE_A_CPU1000_ENVFIX_PASS_SAFE_20261108.json) 已记录。原先 A/B 的 `HF_CPU_RESOURCE_GUARD_HOLD` 和失败 Job 保留为历史故障，不再重试 A。
+
+**下一步 B（尚未完成同镜像修复检查）**：按与 A 完全一致的双重 ResourceGuard、`NVIDIA_VISIBLE_DEVICES=void`、固定 B 模型 `zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a` 在新独立输出 `cpu-output-gpuimage-token-B-02` 进行 CPU-only Tokenizer 检查。Job 名 `r60-gpuimage-cpu-token-B-envfix-02`；先 dry-run、避免同名重复提交、一次尝试，等待 B 真实 COMPLETED。两槽同镜像都 PASS 后才具备**考虑** A/B 前 5 条真正 H200 Reviewer Pilot 的技术条件；GPU 推理仍未运行，SFT 训练仍不授权。
+
+---
+
 ## 2026-11-08：A/B 同镜像 CPU 预检触发资源闸门（最新进度，覆盖下面旧待提交段落）
 
 已只读 inspect/logs 确认先前通过 Owner Mac 提交的两个 **CPU-basic** Job 都已完成为 **ERROR / exit 42**：A `6af04c570e0338d1bb84a91e`（10:17:59–10:18:08 UTC）、B `6af04c58e6320c66fad7416c`（10:18:00–10:18:10 UTC）。均先输出 `HF_GPUIMAGE_DEPS_PRESENT`，随后仅输出 `HF_REVIEW_HOLD / HF_CPU_RESOURCE_GUARD_HOLD`；还未运行真实 Tokenizer。**因此前文“GPU 镜像 CPU 已通过才可 GPU”硬门槛尚未完成，GPU Job=0，模型评审=0；旧标准 CPU 镜像 A/B 1000/1000 PASS 保持有效**。
