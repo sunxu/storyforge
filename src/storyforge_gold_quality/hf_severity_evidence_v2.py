@@ -590,15 +590,16 @@ def verify_semantic_entailment_v2(
     assessment = result["assessments"][dimension]
     evidence = assessment["evidence"]
     indexes = check["reviewed_evidence_indexes"]
-    if any(i < 0 or i >= len(evidence) for i in indexes):
+    if (any(i < 0 or i >= len(evidence) for i in indexes)
+            or set(indexes) != set(range(len(evidence)))):
         raise SemanticEntailmentHold("SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD")
     if check["conclusion"] == "INSUFFICIENT_CONTEXT":
-        if assessment["verdict"] != "INSUFFICIENT_CONTEXT" or indexes:
+        if assessment["verdict"] != "INSUFFICIENT_CONTEXT":
             raise SemanticEntailmentHold("SEMANTIC_ENTAILMENT_NOT_ESTABLISHED")
         return {
             "status": "SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD",
             "dimension": dimension,
-            "reviewed_evidence_count": 0,
+            "reviewed_evidence_count": len(indexes),
             "reviewer_independence_cryptographically_verified": False,
         }
     if not indexes or check["conclusion"] != "SUPPORTS_VERDICT":
