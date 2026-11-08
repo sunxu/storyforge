@@ -265,6 +265,46 @@ def safe_summary(rows: list[dict], output: Path,
     }
 
 
+def token_preflight(rows: list[dict], model: str, revision: str,
+                    max_model_len: int, max_output_tokens: int,
+                    tokenizer_factory=None, encode_fn=None) -> dict:
+    """HF CPU only: real tokenizer with StoryForge's shared chat-template core."""
+    os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    if tokenizer_factory is None:
+        from transformers import AutoTokenizer
+        tokenizer_factory = AutoTokenizer.from_pretrained
+    if encode_fn is None:
+        try:
+            from token_core import describe_token_lengths, encode_chat
+        except ModuleNotFoundError:
+            from storyforge_dataset.token_preflight import (
+                describe_token_lengths, encode_chat,
+            )
+    else:
+        try:
+            from token_core import describe_token_lengths
+        except ModuleNotFoundError:
+            from storyforge_dataset.token_preflight import describe_token_lengths
+        encode_chat = encode_fn
+    tokenizer = tokenizer_factory(
+        model, revision=revision, trust_remote_code=False)
+    lengths = [len(encode_chat(tokenizer, prompt_messages(row))) for row in rows]
+    summary = describe_token_lengths(
+        lengths, max_model_len=max_model_len,
+        reserved_output_tokens=max_output_tokens,
+        pilot_count=min(5, len(rows)))
+    return {
+        "schema": "storyforge_hf_literary_safe_v1",
+        "status": ("HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU"
+                   if summary["over_budget_count"] == 0 else
+                   "HF_REVIEW_CPU_TOKEN_BUDGET_HOLD__NO_GPU"),
+        **summary,
+        "model_revision_pinned": True,
+        "gpu_started": False, "training_authorized": False,
+        "private_values_emitted": False,
+    }
+
+
 def inference(rows: list[dict], output: Path, model: str, revision: str,
               start: int, limit: int, max_model_len: int,
               max_output_tokens: int, max_wall_seconds: int) -> dict:
@@ -334,6 +374,7 @@ def main() -> int:
     p.add_argument("--max-output-tokens", type=int, default=2400)
     p.add_argument("--max-wall-seconds", type=int, default=1200)
     p.add_argument("--verify-only", action="store_true")
+    p.add_argument("--token-preflight-only", action="store_true")
     p.add_argument("--confirm-paid-gpu", action="store_true")
     a = p.parse_args()
     try:
@@ -344,7 +385,9 @@ def main() -> int:
                 or not 512 <= a.max_output_tokens <= 4096
                 or not 60 <= a.max_wall_seconds <= 5400):
             raise ReviewError("REVIEW_PARAMETERS_HOLD")
-        if not a.verify_only and not a.confirm_paid_gpu:
+        if sum((a.verify_only, a.token_preflight_only)) > 1:
+            raise ReviewError("REVIEW_PARAMETERS_HOLD")
+        if not (a.verify_only or a.token_preflight_only or a.confirm_paid_gpu):
             raise ReviewError("PAID_GPU_NOT_AUTHORIZED")
         os.environ["HF_HUB_DISABLE_PROGRESS_BARS"] = "1"
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -357,12 +400,17 @@ def main() -> int:
                 "cases_total": len(rows), "cases_completed": 0,
                 "training_authorized": False, "private_values_emitted": False,
             }
+        elif a.token_preflight_only:
+            result = token_preflight(
+                rows, a.model, a.revision, a.max_model_len,
+                a.max_output_tokens)
         else:
             result = inference(rows, a.output_dir, a.model, a.revision,
                                a.start, a.limit, a.max_model_len,
                                a.max_output_tokens, a.max_wall_seconds)
         print(json.dumps(result, sort_keys=True))
-        return 0
+        return 42 if result["status"] == (
+            "HF_REVIEW_CPU_TOKEN_BUDGET_HOLD__NO_GPU") else 0
     except Exception as exc:  # noqa: BLE001 - no private paths/values in stdout
         allowed = {x for x in (
             "BLIND_INPUT_NOT_REGULAR", "BLIND_INPUT_SIZE_HOLD",
