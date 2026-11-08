@@ -13,6 +13,8 @@ import stat
 from collections import Counter
 from pathlib import Path
 
+from storyforge_dataset.hf_runtime.inputs import InputManager
+
 from . import hf_literary_review as reviewer
 
 SCHEMA = "storyforge_hf_quality_dual_stage_private_v1"
@@ -48,9 +50,10 @@ def private_read(path: Path, limit: int) -> bytes:
     if (not stat.S_ISREG(st.st_mode) or stat.S_IMODE(st.st_mode) != 0o600
             or st.st_nlink != 1 or not 0 < st.st_size <= limit):
         raise StageError("PRIVATE_STAGE_INPUT_HOLD")
-    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
-    with os.fdopen(fd, "rb") as src:
-        return src.read(limit + 1)
+    try:
+        return InputManager.open_verified(path, max_bytes=limit).read_bytes()
+    except ValueError as exc:
+        raise StageError("PRIVATE_STAGE_INPUT_HOLD") from exc
 
 
 def write_once(path: Path, payload: bytes) -> None:
