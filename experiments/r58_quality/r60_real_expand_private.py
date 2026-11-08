@@ -23,6 +23,8 @@ SCHEMA = "storyforge_r60_real_expand_private_v1"
 PAGE_SCHEMA = "storyforge_r60_real_expand_page_private_v1"
 SAFE_SCHEMA = "storyforge_r60_real_expand_safe_v1"
 CONFIG_NAME = "R60_EXPAND_CONFIG_PRIVATE.json"
+EXTENSION_NAME = "R60_EXPAND_TARGET_EXTENSION_PRIVATE.json"
+EXTENSION_SCHEMA = "storyforge_r60_real_target_extension_private_v1"
 LOCK_NAME = "R60_EXPAND_LOCK_PRIVATE"
 MAX_BATCH_BYTES = 5_000_000
 MAX_CONFIG_BYTES = 16_000
@@ -246,6 +248,7 @@ def reconstruct(folder: Path, config: dict, seeds: list[dict]) -> dict:
     cursor = ["", ""]
     exhausted = False
     index = 0
+    checkpoints = {}
     seen_stories = set()
     candidates = sorted(folder.glob(f"{PAGE_PREFIX}*{PAGE_SUFFIX}"))
     for file in candidates:
@@ -253,7 +256,8 @@ def reconstruct(folder: Path, config: dict, seeds: list[dict]) -> dict:
         if index > 100 or file.name != page_name(index) or exhausted:
             raise Hold("PAGE_SEQUENCE_HOLD")
         try:
-            page = json.loads(read_secure(file, MAX_BATCH_BYTES))
+            page_data = read_secure(file, MAX_BATCH_BYTES)
+            page = json.loads(page_data)
         except (ValueError, TypeError, UnicodeError) as exc:
             raise Hold("PAGE_FORMAT_HOLD") from exc
         checksum = page.get("page_sha256")
@@ -302,13 +306,17 @@ def reconstruct(folder: Path, config: dict, seeds: list[dict]) -> dict:
         cursor = expected_cursor
         story_count += len(stories)
         count += len(page["cases"])
+        checkpoints[index] = {
+            "total": count, "cursor": list(cursor),
+            "page_sha256": sha_bytes(page_data),
+        }
         if count > MAX_TOTAL:
             raise Hold("TOTAL_LIMIT_HOLD")
     return {"next_index": index + 1, "cursor": cursor,
             "exhausted": exhausted, "pages": index,
             "stories_scanned": story_count,
             "new_cases": count - len(seeds), "total": count,
-            "known_ids": known}
+            "known_ids": known, "checkpoints": checkpoints}
 
 
 def parse_page_rows(rows: list[tuple], before: list[str], config: dict,
@@ -434,6 +442,82 @@ def immutable_page(folder: Path, index: int, content: dict) -> None:
             temp.unlink()
 
 
+def extension_target(folder: Path, config: dict, progress: dict) -> int:
+    """Validate immutable 600→1000 authorization against the frozen prefix."""
+    path = folder / EXTENSION_NAME
+    if not path.exists() and not path.is_symlink():
+        return config["target_total"]
+    try:
+        record = json.loads(read_secure(path, MAX_CONFIG_BYTES))
+    except (ValueError, TypeError, UnicodeError) as exc:
+        raise Hold("TARGET_EXTENSION_FORMAT_HOLD") from exc
+    if not isinstance(record, dict):
+        raise Hold("TARGET_EXTENSION_FORMAT_HOLD")
+    checksum = record.get("receipt_sha256")
+    content = {k: v for k, v in record.items() if k != "receipt_sha256"}
+    if (set(record) != {
+                "schema", "from_target", "to_target", "base_config_sha256",
+                "checkpoint_pages", "checkpoint_total", "checkpoint_cursor",
+                "checkpoint_page_sha256", "receipt_sha256",
+            }
+            or record.get("schema") != EXTENSION_SCHEMA
+            or record.get("from_target") != 600
+            or record.get("to_target") != 1000
+            or config["target_total"] != 600
+            or checksum != g1.digest(content)
+            or record.get("base_config_sha256") != sha_bytes(
+                read_secure(folder / CONFIG_NAME, MAX_CONFIG_BYTES))):
+        raise Hold("TARGET_EXTENSION_INTEGRITY_HOLD")
+    pages = record.get("checkpoint_pages")
+    if type(pages) is not int or pages < 1:
+        raise Hold("TARGET_EXTENSION_CHECKPOINT_HOLD")
+    checkpoint = progress["checkpoints"].get(pages)
+    if (checkpoint is None or record.get("checkpoint_total") != 600
+            or checkpoint["total"] != 600
+            or checkpoint["cursor"] != record.get("checkpoint_cursor")
+            or checkpoint["page_sha256"] != record.get("checkpoint_page_sha256")):
+        raise Hold("TARGET_EXTENSION_CHECKPOINT_HOLD")
+    return 1000
+
+
+def extend_target(folder: Path, target_total: int) -> dict:
+    """Only extend an exact, verified 600-case snapshot; never edit old files."""
+    if not folder.is_dir():
+        raise Hold("EXPANSION_NOT_INITIALIZED")
+    g1.private_dir(folder, create=False)
+    with locked(folder):
+        config, seeds = validate_config(folder)
+        progress = reconstruct(folder, config, seeds)
+        if target_total != 1000 or config["target_total"] != 600:
+            raise Hold("TARGET_EXTENSION_BOUNDS_HOLD")
+        if (folder / EXTENSION_NAME).exists():
+            actual = extension_target(folder, config, progress)
+            if actual != target_total:
+                raise Hold("TARGET_EXTENSION_CONFLICT_HOLD")
+        else:
+            if (progress["exhausted"] or progress["total"] != 600
+                    or progress["pages"] < 1):
+                raise Hold("BASELINE_600_NOT_REACHED_HOLD")
+            checkpoint = progress["checkpoints"][progress["pages"]]
+            record = {
+                "schema": EXTENSION_SCHEMA,
+                "from_target": 600, "to_target": target_total,
+                "base_config_sha256": sha_bytes(
+                    read_secure(folder / CONFIG_NAME, MAX_CONFIG_BYTES)),
+                "checkpoint_pages": progress["pages"],
+                "checkpoint_total": progress["total"],
+                "checkpoint_cursor": checkpoint["cursor"],
+                "checkpoint_page_sha256": checkpoint["page_sha256"],
+            }
+            record["receipt_sha256"] = g1.digest(record)
+            g1.write_new(folder / EXTENSION_NAME, private_bytes(record))
+        effective = dict(config, target_total=target_total)
+        safe = safe_summary(effective, progress)
+        safe["status"] = "EXPANSION_TARGET_EXTENDED__NOT_ADMITTED"
+        safe["original_target"] = 600
+        return safe
+
+
 def safe_summary(config: dict, progress: dict) -> dict:
     status = ("EXPANSION_EXHAUSTED__NOT_ADMITTED" if progress["exhausted"]
               else "EXPANSION_TARGET_REACHED__NOT_ADMITTED"
@@ -464,6 +548,7 @@ def advance(folder: Path, dsn: str, max_pages: int) -> dict:
     with locked(folder):
         config, seeds = validate_config(folder)
         progress = reconstruct(folder, config, seeds)
+        config = dict(config, target_total=extension_target(folder, config, progress))
         for _ in range(max_pages):
             if progress["exhausted"] or progress["total"] >= config["target_total"]:
                 break
@@ -485,7 +570,9 @@ def advance(folder: Path, dsn: str, max_pages: int) -> dict:
 def inspect(folder: Path) -> dict:
     config, seeds = validate_config(folder)
     with locked(folder):
-        return safe_summary(config, reconstruct(folder, config, seeds))
+        progress = reconstruct(folder, config, seeds)
+        config = dict(config, target_total=extension_target(folder, config, progress))
+        return safe_summary(config, progress)
 
 
 def main() -> int:
@@ -501,6 +588,9 @@ def main() -> int:
     adv.add_argument("--max-pages", type=int, default=1)
     view = sub.add_parser("inspect")
     view.add_argument("--output-dir", type=Path, required=True)
+    ext = sub.add_parser("extend")
+    ext.add_argument("--output-dir", type=Path, required=True)
+    ext.add_argument("--target-total", type=int, required=True)
     args = parser.parse_args()
     try:
         if args.action == "init":
@@ -508,6 +598,8 @@ def main() -> int:
                                  args.page_size, args.target_total)
         elif args.action == "inspect":
             safe = inspect(args.output_dir)
+        elif args.action == "extend":
+            safe = extend_target(args.output_dir, args.target_total)
         else:
             dsn = os.getenv("STORYFORGE_SUPABASE_DSN")
             if not dsn:
