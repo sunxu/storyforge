@@ -547,3 +547,28 @@ PYTHONPATH=src:. python3 scripts/r60_calibration_p0_freeze.py \
 执行后只回传聚合 SAFE JSON 和不含私有路径/值的文件元数据核验结果；不得上传或粘贴三个 private manifest/dedup receipt。必须确认四文件均新建成功、SHA-256 已在 Owner 本地计算并记录、private files mode 0600、目录 mode 0700、历史输入 SHA 前后不变、`private_values_emitted=false`。如目标文件已存在，Runner 应 fail closed，不得覆盖；先停下报告，不得删除或改名绕过 create-only。
 
 只有正式 SAFE 真实返回且四文件元数据核验通过，才能将 P0 标为正式冻结 PASS。随后仍需单独按任务书申请进入 P1；本授权不自动授权任何后续阶段。
+
+
+### 8.12 Owner Mac 正式冻结完成：P0 PASS / Quality HOLD（2026-11-09）
+
+Owner 回传正式执行 SAFE：
+
+`status=CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`
+`manifest_files_written=4`
+`private_values_emitted=false`
+`quality_v1_admitted=0`
+`training_authorized=false`
+`gpu_started=false`
+`r50_accessed=false`
+
+正式聚合结果：
+- Gold72 来源 40/40；A/B 可比较 72，分歧 40、一致 32。
+- Gold72 Development 20 / Locked Regression 20；Story 数 5 / 6，共享 Story 数 5，`story_disjoint=false`。
+- Gold72 Owner 历史决策 PASS 30 / HOLD 4 / REJECT 6；Reviewer C 历史决策 PASS 38 / HOLD 1 / REJECT 1。Gold72 C execution record 和 independence 均未证明。
+- R60 Severe10 来源 10/10；既有 A/B checkpoint receipt A=5、B=5；A/B matched cases=0；C execution verified=true，independence verified=false。
+- Gold72↔R60 exact history / target / full-history-target overlap 均为 0；跨集合唯一来源数 50。
+- semantic near-duplicate detection=false；不得将精确去重结果解释成语义近重复排除。
+
+Runner 在返回上述正式 PASS SAFE 前已完成四个 create-only 文件写入，并对输出目录/父目录权限 0700、四个文件权限 0600 执行了代码内检查。SAFE 不暴露私人值。Owner 尚未单独回传 SHA-256 元数据摘要；如需外部审计留档，可在 Owner Mac 本地对四个文件计算并私下保存 SHA-256，不要将私有文件或哈希粘贴到公共 GitHub。
+
+**P0 正式冻结已完成。** 四份文件仅存在于 Owner 私有目录；不得上传 GitHub/HF。Quality-v1 admission 仍为 0；P0 PASS 不代表 Quality PASS、模型选择完成或训练授权。P1 尚未开始；本次 P0 授权不自动扩展为 P1/GPU/1000 条批量审核/SFT 授权。
