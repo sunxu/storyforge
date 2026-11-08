@@ -1,6 +1,8 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
-> **交接证据状态补充（2026-11-08）**：Pilot10 Owner Pairwise SAFE 已收到（A/B 各 5 条、matched=0、unique=10、Checkpoint receipt/input SHA 10/10 验证通过）；1000 条 Owner crosswalk 仅收到结构摘要（schema `storyforge_hf_quality_dual_stage_private_v1`、bindings 2 项、count 字段和 pool SHA 字段存在），实际映射条数及绑定尚未核验；Gold72 40 条冻结尚待私有证据盘点。故 P0 整体仍未完成。R58→R60 Jinja2/Chat Template 故障复发经验已写入交接总览、P0.5 任务和 HF 工程规范。PR #25 当前 head `b1f47db213afb367f2ca289035782c996c107aa5` 的四项 CI 均 SUCCESS。
+> **交接证据状态补充（2026-11-08）**：Pilot10 Owner Pairwise SAFE 已收到（A/B 各 5 条、matched=0、unique=10、Checkpoint receipt/input SHA 10/10 验证通过）；1000 条 Owner crosswalk 仅收到结构摘要（schema `storyforge_hf_quality_dual_stage_private_v1`、bindings 2 项、count 字段和 pool SHA 字段存在），实际映射条数及绑定尚未核验；Gold72 40 条冻结尚待私有证据盘点。故 P0 整体仍未完成。R58→R60 Jinja2/Chat Template 故障复发经验已写入交接总览、P0.5 任务和 HF 工程规范。PR #25 当前 head `32c4965d18ef98cacc25f14de86b8ce824fb0bb5` 的五项 GitHub Actions 均 SUCCESS（CI、Gold Quality Pipeline、R58 scoped synthetic、R60 HF Runtime CI、R60 HF CPU dependency profiles）。
+
+> **2026-11-08 P0.5 工程门禁落实（不代表 HF Job 已执行）**：R60 Reviewer 独立依赖 profile `requirements/hf-quality-reviewer.in` + `requirements/hf-quality-reviewer.lock` 已提交，锁定 Transformers 4.57.1、SentencePiece 0.2.1、Jinja2 3.1.6，含 729 个 SHA256 包哈希；与 R59 Qwen3.8 的 Transformers 5.16.1 profile 分开。GitHub Actions Run `42495819470` 在 commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5` 验证 lock 重解析、hash 安装、`pip check`、合成 `apply_chat_template` 全部 PASS。R60 CPU Runbook 已改为将 lock 只读加入 A/B 输入、远端校验 lock SHA 后安装。**尚未在 Owner Mac 执行新的 lock staging/上传，也未提交新的 HF Job；不能将 CI smoke 描述为真实模型 Tokenizer PASS。** R59 原 profile 未降级。
 
 > **新 Agent 交接与执行任务书（2026-11-08）**：下一阶段由 [交接总览](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md) 和 [可执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md) 作为接手入口，按 P0 校准集只读库存/分轨/去重/冻结 → P1 三态严重证据规则 → P2 Owner 盲裁决 → P3 三模型配置 → P4 30 条严格配对 → P5 回归验收 → P6 1000 条批量审核执行。按用户明确指示，本阶段不重新探讨权利/协议问题；不改 RolePlay、不读取 R50 正文、不覆盖旧 A/B/C、不访问全库正文。当前无 GPU 授权。
 
