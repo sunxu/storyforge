@@ -198,7 +198,7 @@ def verified_stage(root: Path, pool_hash: str, cases: list[dict]) -> tuple[dict,
     private_folder(owner)
     try:
         manifest = json.loads(private_read(owner / MANIFEST_NAME, 20_000))
-        crosswalk = json.loads(private_read(owner / MAP_NAME, 512_000))
+        crosswalk = json.loads(private_read(owner / MAP_NAME, 2_000_000))
     except (ValueError, TypeError) as exc:
         raise StageError("STAGE_OWNER_JSON_HOLD") from exc
     if not isinstance(manifest, dict) or not isinstance(crosswalk, dict):
