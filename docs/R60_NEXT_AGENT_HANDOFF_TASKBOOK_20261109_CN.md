@@ -641,3 +641,42 @@ Rubric 文档：`docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_20261109_CN.md`。
 **P1 = PASS。** 这只表示标准、Schema、合成回归和旧版本兼容通过；不表示 Owner ground truth 已建立、不表示真实案例的 semantic entailment 已审、不表示模型选型或 Quality-v1 admission 通过。
 
 下一阶段按 P2 进行：仅 Gold72 Development 20 条进入 Owner 独立盲裁决；Gold72 Locked Regression 20 与 R60 Severe10 继续锁定。新 packets 必须隐藏旧 A/B/C 判断、分数、flags、Owner resolution、槽位及旧 blind IDs；旧证据只作后续对照。P2 仍不得启动模型/GPU。当前 Quality-v1 admitted=0，training_authorized=false。
+
+
+### 8.15 P2 Gold72 Development-20 Owner 盲裁决包生成器已实现（2026-11-09）
+
+P1 已 PASS 后，继续准备 P2 Owner 独立盲裁决。当前只完成通用代码与合成验证；**Owner Mac 私有数据 dry-run 尚未执行，真实 Owner 裁决尚未开始。**
+
+新增：
+- `src/storyforge_gold_quality/hf_owner_adjudication_v2.py`
+- `scripts/r60_owner_adjudication_v2.py`
+- `tests/test_hf_owner_adjudication_v2.py`
+
+生成器边界：
+- 只读取 P0 冻结 Gold72 manifest 和其已验证 SHA pin 的 Gold72 C blind source packet。
+- 不读取 A V3/B2 结果文件、Reviewer C 结果、Owner resolution 或 R60 Severe10 私有数据。
+- 使用 manifest 的 Development 20 列表与 target SHA 绑定来源；仅把 Development 20 的历史和目标正文写入新盲包。
+- 生成全新 32 位 calibration_id；旧 blind_case_id、A/B/C 标签、分数、flags、Owner resolution、Story ID、分歧分层不进入 reviewer packet。
+- Owner-only ID map 单独保存；reviewer 只接触 blind packet 与说明，不接触 map、P0 manifest 或旧结果。
+- Locked Regression 20 不写入输出；R60 Severe10 不读取。
+- 新 packet 使用 v2 schema/rubric；世界组件快照未包含在原 C packet 时保持空数组，不臆造。
+- 默认 dry-run；只有显式 `--write` 才 create-only 写入六份私有文件。输出目录 0700、文件 0600；已有目录拒绝覆盖。
+- 不调用模型、不提交 HF Job、不启动 GPU。
+
+六个私有输出：
+- `OWNER_ADJUDICATION_BLIND_PACKETS_PRIVATE.jsonl`
+- `OWNER_ADJUDICATION_ID_MAP_PRIVATE.json`
+- `OWNER_ADJUDICATION_MANIFEST_PRIVATE.json`
+- `OWNER_ADJUDICATION_PREPARE_SAFE.json`
+- `OWNER_ADJUDICATION_INSTRUCTIONS_CN.md`
+- `OWNER_ADJUDICATION_SCHEMA_V2.json`
+
+合成回归覆盖 20/20 Development 选择、旧 ID 隔离、Locked20 不泄露、source pin mismatch、target binding mismatch、私有文件权限、dry-run no-write、create-only 不覆盖。
+
+最新 P2 代码提交：`d36bdc51043f1a1abcdf6c758e188db475f7a40d`、`8612e97a9d2aca92fe26d24770bbfa037afe1008`、`515e0c3e390bec86ebceadde04154fad98b069c4`、`ca781f1853fbdd9af7a24b7639a57d787c7d29a7`、`b257eb159939cd20a459e98ce10fd369e77a950c`、`58b5884819c8e5684eeddab9e075286682111858`、`bee13ec7f65658338340a6a3c217db6c84ebf098`、`dcff01b7f3d5ffe05906be97a2f7b80fc4f8c630`、`a50a49a10b3ad03a29887d5b4ee89662a06918d5`、`e096c87732476b1f68b8acd4191fd8b86d9bf44b`、`e77e4eb339928574e0c677ef6a619519cf507c2c`。
+
+最终测试提交 `e096c87732476b1f68b8acd4191fd8b86d9bf44b`：全仓 pytest 865 passed、5 skipped、42 subtests passed；Ruff、CI、Gold Quality Pipeline、R60 HF Runtime CI、R58 scoped synthetic PASS。当前 PR head 的 CPU dependency profile 仍以最终 Actions 回执为准。
+
+**P2 当前状态：PACKET BUILDER READY / OWNER MAC DRY-RUN PENDING / OWNER REVIEW NOT STARTED。** 下一步先在 Owner Mac 执行默认 dry-run；只有返回 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN` 后，才执行带 `--write` 的私有包生成。生成后仅把 packets + instructions 提供给 Owner 盲审，ID map 不得给 reviewer。Owner 结果与独立 semantic checks 需另行校验并生成逐案 timestamp/receipt；在此之前不宣称 P2 PASS。
+
+Quality-v1 admitted=0；training_authorized=false；无模型、GPU、1000 条审核或 SFT。
