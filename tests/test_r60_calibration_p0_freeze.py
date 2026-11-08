@@ -140,3 +140,24 @@ def test_failure_diagnostics_expose_location_without_exception_payload():
     assert diagnostic["exception_type"] == "KeyError"
     assert isinstance(diagnostic["source_line"], int)
     assert "private owner evidence value" not in str(diagnostic)
+
+
+def test_private_temp_directory_resolves_macos_style_symlinked_ancestor(monkeypatch, tmp_path):
+    from pathlib import Path
+
+    from scripts import r60_calibration_p0_freeze as freeze
+
+    real_parent = tmp_path / "private" / "var" / "folders"
+    real_parent.mkdir(parents=True)
+    symlink_parent = tmp_path / "var"
+    symlink_parent.symlink_to(tmp_path / "private" / "var", target_is_directory=True)
+    created = real_parent / "scratch"
+    created.mkdir()
+
+    monkeypatch.setattr(freeze.tempfile, "mkdtemp", lambda prefix: str(symlink_parent / "folders" / "scratch"))
+
+    resolved = freeze._private_temp_directory("test-")
+
+    assert resolved == Path(created).resolve()
+    assert not any(parent.is_symlink() for parent in (resolved, *resolved.parents))
+    assert resolved.stat().st_mode & 0o777 == 0o700
