@@ -514,3 +514,36 @@ Owner Mac 最新 dry-run SAFE 返回 `CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_F
 最新分支提交 `15ab890506ba11411f6e81c1c5f35e03fd55f497` 的 CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic 均已通过。PR #25 仍 Open / Draft，head 与该提交一致。
 
 **状态边界：P0 只读预检 PASS，不等于正式冻结完成。** 尚未生成四个 create-only 文件，尚未验证文件存在性、SHA、0600/0700 权限及历史文件不变性。正式冻结需要 Owner 明确确认后，再在 Owner Mac 使用同一命令去掉 `--dry-run` 执行；之后必须重新核验四份产物和最终 SAFE。未经确认不得写入。
+
+
+### 8.11 Owner 已授权 P0 正式冻结（2026-11-09）
+
+Owner 在 ChatGPT 对话中明确确认授权：仅在 Owner Mac 本地执行 P0 正式冻结，create-only 生成以下四份文件：
+
+- `GOLD72_CALIBRATION_MANIFEST_PRIVATE.json`
+- `R60_SEVERE10_CALIBRATION_MANIFEST_PRIVATE.json`
+- `CALIBRATION_CROSSSET_DEDUP_PRIVATE.json`
+- `CALIBRATION_INVENTORY_SAFE.json`
+
+授权范围不包含模型推理、HF Job、GPU、P1、1000 条批量审核、SFT、数据库/权限变更、上传私有文件或修改历史证据。
+
+执行环境限制：本 ChatGPT 会话没有 Owner Mac 本机 shell/文件系统执行通道，不能代替 Owner 在本地运行该命令，也不能将私有输入复制到 GitHub Actions/HF 作为替代。因此授权已记录，但**本地正式冻结尚未执行**。不得声称四个文件已生成。
+
+Owner Mac 拉取本任务书最新提交后，在仓库执行以下正式命令（与已通过 dry-run 相同，唯一变化是移除 `--dry-run`）：
+
+~~~bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge"
+git fetch origin
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+PYTHONPATH=src:. python3 scripts/r60_calibration_p0_freeze.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109"
+~~~
+
+执行后只回传聚合 SAFE JSON 和不含私有路径/值的文件元数据核验结果；不得上传或粘贴三个 private manifest/dedup receipt。必须确认四文件均新建成功、SHA-256 已在 Owner 本地计算并记录、private files mode 0600、目录 mode 0700、历史输入 SHA 前后不变、`private_values_emitted=false`。如目标文件已存在，Runner 应 fail closed，不得覆盖；先停下报告，不得删除或改名绕过 create-only。
+
+只有正式 SAFE 真实返回且四文件元数据核验通过，才能将 P0 标为正式冻结 PASS。随后仍需单独按任务书申请进入 P1；本授权不自动授权任何后续阶段。
