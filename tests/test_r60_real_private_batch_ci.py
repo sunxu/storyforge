@@ -12,4 +12,4 @@ def test_r60_real_private_batch_synthetic_suite():
         capture_output=True, text=True, timeout=60, check=False,
     )
     assert result.returncode == 0, result.stdout[-4000:] + result.stderr[-2000:]
-    assert "14 passed" in result.stdout
+    assert "15 passed" in result.stdout
