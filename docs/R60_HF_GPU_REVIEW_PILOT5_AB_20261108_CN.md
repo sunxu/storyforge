@@ -1,5 +1,17 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08：A v2 H200 真正五条 Pilot 终态 COMPLETED；质量判定须校准（最新权威状态）
+
+实际 HF [Job `6af056bb0e0338d1bb84ac8a`](https://huggingface.co/jobs/adradar/6af056bb0e0338d1bb84ac8a)（`r60-quality-gpu-pilot5-A-v2-01`，H200、固定 vLLM digest、`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`），创建 `2026-11-08T11:02:19.731Z`，完成 `11:07:22.223Z`，最终 **COMPLETED**。真实模型权重 `17/17` shard 全部加载，GPU 推理及私有 Checkpoint 持久化完成。`/gpu-review-output-A-pilot5-v2-01` 新独立目录实际生成 `review_0001.private.json` 至 `review_0005.private.json` 五个 Checkpoint，全部为 v2 契约。
+
+Job 最终 SAFE 是 `HF_REVIEW_PARTIAL__NO_ADMISSION`、`cases_total=1000`、`cases_completed=5`、`quality_decisions={PASS:0,HOLD:0,REJECT:5}`、`quality_v1_admitted=0`、`training_authorized=false`。这里的 `PARTIAL` **仅代表按计划审核前 5/1000，不代表运行失败**。独立只读查阅 5 个 checkpoint 的结构化字段，并对照冻结 A 输入前 5 条逐条比较 `blind_id` 及所有 `specific_source_quotes` / `specific_target_quotes`，身份及来源/目标严格连续子串检查 **5/5 通过**；未输出任何私有正文/引用/案例 ID。Checkpoint 包含 receipt/input SHA256 字段，但**尚未独立复算这两个 hash**，不可谎称已完成完整字节身份校验。
+
+**质量校准重要异常：** A 模型 5/5 `REJECT`，所有 5 个 `serious_player_agency=true`；`hard_fact_or_ban=true` 为 2/5，`safety_exclusion=true` 为 2/5，六维评分完整。虽有严格真实引用，这仍只证明文本引用真实，不保证引用语义确实能够支持“严重侵犯玩家自主权”等判断。在没有独立 Reviewer B 结果与语义冲突仲裁之前，**绝对不能将这 5 个结果升级成已证实的真实训练数据 REJECT**；Quality-v1 准入仍 0。不能因为模型全判 REJECT 就放宽严重标记校验，也不能把原作者回复直接视为不合格。
+
+**下一步主线优先级：** 使用同一个已上传公开 v2 Runner，先对原冻结 `input_B` 在固定目标 vLLM GPU 镜像执行一次严格 CPU-only B v2 Prompt Tokenizer 预检（独立输出、不覆盖历史 B CPU1 / GPU A）；成功后，再按 A 同样固定条件运行 Reviewer B 的前 5 条（H200 费用独立控制，禁止自动启动），保留 B 原始盲审独立性。只有拿到两侧结果才进行 Owner 私有 crosswalk 配对、模型间歧义 HOLD/校准、必要的审阅者进一步判定；正式 SFT 训练未授权。详见本次 [SAFE 汇总](evidence/R60_GPU_A_V2_PILOT5_COMPLETED_SAFE_20261108.json)。**不再重跑 A 这五条。**
+
+---
+
 ## 2026-11-08：A Reviewer v2 固定 GPU 镜像 CPU 预检真实 PASS（最新阶段）
 
 HF [Job `6af055ace6320c66fad7456d`](https://huggingface.co/jobs/adradar/6af055ace6320c66fad7456d)，`name=r60-gpuimage-cpu-token-A-reviewer-v2-01`，`adradar/cpu-basic`，创建 `10:57:48.396Z`、完成 `10:58:06.841Z`，实际状态 **COMPLETED**。与未来 H200 使用同一固定 vLLM image digest。先对 CPU ResourceGuard 原始环境检测，只有 `nvidia_visibility=FAIL`，`accelerator_profile/cuda_visibility/nvidia_device_nodes/runtime_no_cuda_import` 均 PASS；随后在无实际 GPU 设备的 CPU 容器中设 `NVIDIA_VISIBLE_DEVICES=void`，原样 ResourceGuard 所有检查 PASS，日志 `HF_CPU_RESOURCE_GUARD_PASS`。新版 Runner `reviewer-runner-v2/runner.py` 通过 `HF_REVIEWER_V2_CONTRACT_PASS`（包含 Checkpoint v2、`MODEL_SEVERE_EVIDENCE_HOLD` 和 `MODEL_NOTES_TOO_SHORT_HOLD`），冻结输入结构 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`。
