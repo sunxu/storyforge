@@ -113,6 +113,9 @@ def build_hf_argv(
         "--flavor", flavor,
         "--timeout", f"{timeout_minutes}m",
         "--attempts", "1",
+        # Do not stream Job logs: a nonzero exit from the remote workload must
+        # not be mistaken for an HTTP/API submission failure.
+        "--detach",
     ]
     for volume in input_volumes:
         argv.extend(["-v", volume])
@@ -195,7 +198,11 @@ def main() -> int:
                 reason = "ORGANIZATION_PERMISSION_OR_MOUNT_POLICY"
             else:
                 reason = "HF_JOB_SUBMISSION_FAILED"
-            report.update(status="SUBMISSION_REJECTED", reason_code=reason)
+            report.update(
+                status="SUBMISSION_UNCONFIRMED_CHECK_ORG_JOBS",
+                reason_code=reason,
+                note="Check the organization's job list before any new submission",
+            )
             print(json.dumps(report, sort_keys=True))
             return result.returncode or 42
 
