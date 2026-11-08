@@ -161,3 +161,20 @@ def test_private_temp_directory_resolves_macos_style_symlinked_ancestor(monkeypa
     assert resolved == Path(created).resolve()
     assert not any(parent.is_symlink() for parent in (resolved, *resolved.parents))
     assert resolved.stat().st_mode & 0o777 == 0o700
+
+
+def test_gold72_story_split_summary_contract_feeds_inventory_safe():
+    from scripts.r60_calibration_p0_freeze import _gold_story_summary
+
+    summary = _gold_story_summary({
+        "development_story_count": 5,
+        "locked_regression_story_count": 6,
+        "shared_story_count": 5,
+        "story_disjoint": False,
+    })
+
+    assert summary == {
+        "development_story_count": 5,
+        "locked_regression_story_count": 6,
+        "shared_story_count": 5,
+    }
