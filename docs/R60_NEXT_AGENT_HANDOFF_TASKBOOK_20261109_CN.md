@@ -717,3 +717,25 @@ python scripts/r60_owner_adjudication_verify_v2.py \
 验证失败输出稳定 reason code，不输出私有正文。验证器不会覆盖已有回执。
 
 **P2 当前仍未开始真实 Owner 审核。** 先完成 Owner Mac 的默认 dry-run，再显式 `--write` 生成盲包；完成 Owner verdict 与 60 项语义复核后，运行上述 verifier。只有结果与独立语义证据均满足要求，才能推进后续校准；任何 semantic HOLD 均需保留，不得通过改写结果来追求全绿。
+
+
+### 8.17 P2 生成器与回执验证器最终 CI 回归（2026-11-09）
+
+最新代码提交：`e7917030e76e7ccb96562dec47ce4e879b9306b9`。
+
+本轮新增 20-case / 60-check Owner 回执验证后，CI 首次发现 4 个合成测试 fixture 重复使用同一个 calibration_id；已修正为每例独立 32 位 ID。Ruff 同时发现 datetime import order / UTC 解析 lint，已修复。
+
+另外，R60 CPU dependency profile 首次发现 PyPI 的 transitive `regex` 版本从 lock 中的 2026.11.7 漂移到 2026.11.8，导致 lock reproducibility 检查失败。已在：
+- `requirements/hf-cpu-tokenizer.in`
+- `requirements/hf-quality-reviewer.in`
+
+显式固定 `regex==2026.11.7`。现有 hash lock 与该版本匹配，不放宽 lock 检查。
+
+最终 GitHub Actions：
+- CI：PASS，pytest 870 passed / 5 skipped / 42 subtests passed，Ruff PASS。
+- Gold Quality Pipeline (synthetic + R57 regression)：PASS。
+- R60 HF Runtime CI：PASS。
+- R60 HF CPU dependency profiles：PASS（tokenizer lock、reviewer lock、locked installation、CPU-only dependency boundary、Chat Template）。
+- R58 scoped synthetic (no training)：PASS。
+
+**P2 工程准备 = PASS（仅生成器/回执验证器与合成回归）。P2 Owner Mac dry-run 仍未执行，真实 Owner 审核仍未开始。** 当前 PR #25 仍为 Open / Draft；不合并、不启动模型/HF Job/GPU/SFT。
