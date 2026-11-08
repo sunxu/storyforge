@@ -4,7 +4,8 @@
 分支：r60/gold192-history-v3-adapter  
 关联：PR #25、主线 Issue #26、专项执行 Issue #28  
 主交接：[R60 Calibration Next-Agent Handoff](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md)  
-总计划：[R60 Next Phase Calibration & Model Selection](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)
+总计划：[R60 Next Phase Calibration & Model Selection](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)  
+交接索引：[R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md](R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md)
 
 ## 任务书使用规则
 
