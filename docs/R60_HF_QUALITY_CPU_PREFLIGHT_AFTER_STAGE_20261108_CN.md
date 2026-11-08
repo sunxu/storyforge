@@ -113,7 +113,7 @@ for SLOT in A B; do
   CMD="set -eu
 export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
-test "$(sha256sum /input/hf-quality-reviewer.lock | awk '{print $1}')" = '$LOCK_SHA'
+test \"\$(sha256sum /input/hf-quality-reviewer.lock | awk '{print \$1}')\" = '$LOCK_SHA'
 python3 -m pip install --quiet --no-cache-dir --require-hashes -r /input/hf-quality-reviewer.lock
 python3 -m pip check
 python3 -c 'import transformers, jinja2, sentencepiece; assert transformers.__version__ == "4.57.1"; assert jinja2.__version__ == "3.1.6"; assert sentencepiece.__version__ == "0.2.1"; print("R60 reviewer dependency baseline: PASS")'
