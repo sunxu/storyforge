@@ -683,6 +683,9 @@ def _validate_pilot10(
 
     manifest_rows = []
     source_keys = set()
+    source_indices = set()
+    slot_positions = {"A": set(), "B": set()}
+    blind_ids = set()
     slot_counts = Counter()
     for calibration_id, binding in map_idx.items():
         slot = binding.get("slot")
@@ -700,6 +703,9 @@ def _validate_pilot10(
         if (
             source is None
             or source_key in source_keys
+            or source_index in source_indices
+            or position in slot_positions[slot]
+            or binding.get("blind_id") in blind_ids
             or ordered_source.get("source_index") != source_index
             or ordered_source.get("blind_id") != binding.get("blind_id")
             or not isinstance(source.get("case_key"), str)
@@ -709,6 +715,9 @@ def _validate_pilot10(
         ):
             raise FreezeHold("PILOT10_C_OWNER_SOURCE_CROSSWALK_MISMATCH")
         source_keys.add(source_key)
+        source_indices.add(source_index)
+        slot_positions[slot].add(position)
+        blind_ids.add(binding["blind_id"])
         slot_counts[slot] += 1
         checkpoint = checkpoint_by_slot_position[(slot, position)]
         if (
@@ -743,7 +752,13 @@ def _validate_pilot10(
                 for key in ("player_agency", "hard_rule", "safety")
             },
         })
-    if slot_counts != {"A": 5, "B": 5} or len(source_keys) != 10:
+    if (
+        slot_counts != {"A": 5, "B": 5}
+        or slot_positions != {"A": {1, 2, 3, 4, 5}, "B": {1, 2, 3, 4, 5}}
+        or len(source_keys) != 10
+        or len(source_indices) != 10
+        or len(blind_ids) != 10
+    ):
         raise FreezeHold("PILOT10_C_SLOT_OR_SOURCE_COUNTS_INVALID")
 
     # Reuse the existing local Codex receipt validator. It checks all ten
