@@ -150,3 +150,15 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 详细聚合计数及状态边界见 [P0 正式冻结执行记录](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#812-owner-mac-正式冻结完成p0-pass--quality-hold-2026-11-09)。
 
 四份私有产物仅保留在 Owner 私有目录，不得上传 GitHub/HF。P1 尚未开始；P0 授权不构成后续阶段或 GPU/SFT 授权。
+
+
+## 10. P1 三维严重证据标准 v2 已通过（2026-11-09）
+
+- [三维严重问题证据标准 v2](R60_SEVERITY_EVIDENCE_RUBRIC_V2_20261109_CN.md)
+- 实现：`src/storyforge_gold_quality/hf_severity_evidence_v2.py`
+- 合成回归：`tests/test_hf_severity_evidence_v2.py`
+- 旧 v3 Literary Reviewer 与 Reviewer-C v1 兼容路径保持不变。
+- 最新实现提交：`c80d6bbc2c7f1cd7a6d5184be808e6a788d0e2b7`；全仓 pytest 859 passed / 5 skipped / 42 subtests；五组 Actions 全部通过。
+- 详细验收与边界见 [P1 执行任务书 8.14](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#814-p1-v2-标准与合成回归通过-2026-11-09)。
+
+**当前：P0 PASS、P1 PASS；P2 Owner 独立盲裁决未开始。** Quality-v1 admitted=0；没有模型/HF/GPU/1000 条审核/SFT。
