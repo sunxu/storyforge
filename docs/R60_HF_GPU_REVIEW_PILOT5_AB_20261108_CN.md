@@ -1,5 +1,15 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08：A Reviewer v2 固定 GPU 镜像 CPU 预检真实 PASS（最新阶段）
+
+HF [Job `6af055ace6320c66fad7456d`](https://huggingface.co/jobs/adradar/6af055ace6320c66fad7456d)，`name=r60-gpuimage-cpu-token-A-reviewer-v2-01`，`adradar/cpu-basic`，创建 `10:57:48.396Z`、完成 `10:58:06.841Z`，实际状态 **COMPLETED**。与未来 H200 使用同一固定 vLLM image digest。先对 CPU ResourceGuard 原始环境检测，只有 `nvidia_visibility=FAIL`，`accelerator_profile/cuda_visibility/nvidia_device_nodes/runtime_no_cuda_import` 均 PASS；随后在无实际 GPU 设备的 CPU 容器中设 `NVIDIA_VISIBLE_DEVICES=void`，原样 ResourceGuard 所有检查 PASS，日志 `HF_CPU_RESOURCE_GUARD_PASS`。新版 Runner `reviewer-runner-v2/runner.py` 通过 `HF_REVIEWER_V2_CONTRACT_PASS`（包含 Checkpoint v2、`MODEL_SEVERE_EVIDENCE_HOLD` 和 `MODEL_NOTES_TOO_SHORT_HOLD`），冻结输入结构 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`。
+
+实际 Prompt `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137` 的 1000/1000 CPU Tokenizer `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`，`over_budget_count=0`、`max_model_len=32768`、`reserved_output_tokens=2400`、max-total=5581，prompt min/median/p95/max=`769/1205/2341/3181`。详见 [SAFE evidence](evidence/R60_GPUIMAGE_A_REVIEWER_V2_CPU1000_PASS_SAFE_20261108.json)。
+
+A 的新版公开 Runner 与 GitHub 逐字一致；旧 H200 Pilot 输出目录 `gpu-review-output-A-pilot5-01` 中 `review_0001.private.json` 使用 v1 仅作历史保存。**不能复制该 v1 checkpoint 到新的 v2 私有输出**。新 A Pilot 只能选独立目录 `gpu-review-output-A-pilot5-v2-01`，原始冻结 A input 和新版 runner 均 RO 挂载。此 CPU PASS 不证明模型会按照新契约成功给出文学分数；付费 GPU 回归须明确独立提交、固定参数、最多 A 前 5 条，失败不自动重试，先有结果再决定是否启动 B。Quality-v1 admission=0，SFT 未授权。
+
+---
+
 ## 2026-11-08 A Reviewer v2 远端代码核验（当前最新阶段）
 
 Owner Mac 已用 `hf buckets cp` 将新 Runner 上传到 `hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z/reviewer-runner-v2/runner.py`。ChatGPT 已通过 HF Bucket 的**真实 cat** 读取文件，与 GitHub 当前分支 `src/storyforge_gold_quality/hf_literary_review.py` 比较，**内容逐字一致（22,547 字符）**，包含 `storyforge_hf_literary_checkpoint_private_v2`，GitHub 文件 blob SHA `c183d8377878ca317db04a74c0fec546dfc78888`。A 的冻结 `input_A/source.private.jsonl`、`runtime_inputs.py`、`runtime_resources.py`、`token_core.py` 在 HF 均存在；新 A CPU 输出 `cpu-output-gpuimage-A-v2-01` 与新 GPU 输出 `gpu-review-output-A-pilot5-v2-01` 均尚不存在。HF 组织 Jobs 列表未见同名 v2 Job。
