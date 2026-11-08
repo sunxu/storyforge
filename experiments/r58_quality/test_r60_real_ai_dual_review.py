@@ -169,7 +169,7 @@ def test_private_review_output_and_nonreplay(tmp_path, monkeypatch):
         ], ["A", "B"], ["TEST_UNUSED_A", "TEST_UNUSED_B"], 120, False, False, False)
 
 
-def test_no_partial_private_review_output_on_api_failure(tmp_path, monkeypatch):
+def test_partial_model_failure_keeps_other_review_as_hold(tmp_path, monkeypatch):
     parent = tmp_path / "private"
     parent.mkdir(mode=0o700)
     monkeypatch.setattr(batch, "BASE", parent)
@@ -183,11 +183,16 @@ def test_no_partial_private_review_output_on_api_failure(tmp_path, monkeypatch):
         raise ai.Hold("MODEL_TRANSPORT_HOLD")
 
     monkeypatch.setattr(ai, "model_request", network_fail)
-    with pytest.raises(ai.Hold, match="MODEL_TRANSPORT_HOLD"):
-        ai.run(directory, [
-            "http://localhost:10/v1", "http://localhost:11/v1",
-        ], ["A", "B"], ["TEST_UNUSED_A", "TEST_UNUSED_B"], 120, False, False, False)
-    assert not (directory / ai.OUT_FILE).exists()
+    safe = ai.run(directory, [
+        "http://localhost:10/v1", "http://localhost:11/v1",
+    ], ["A", "B"], ["TEST_UNUSED_A", "TEST_UNUSED_B"], 120, False, False, False)
+    assert safe["status"] == "TWO_MODEL_AI_REVIEW_PARTIAL_HOLD"
+    assert safe["complete_two_model_responses"] == 0
+    assert safe["model_attempt_hold_counts"] == {"MODEL_TRANSPORT_HOLD": 2}
+    assert safe["review_decisions"] == {"PASS": 0, "HOLD": 1, "REJECT": 0}
+    assert safe["train_admitted"] == 0
+    data = json.loads((directory / ai.OUT_FILE).read_text().strip())
+    assert data["reviews"] == []
 
 
 def test_prompt_treats_text_only_as_data():
