@@ -11,6 +11,7 @@ import json
 import os
 import secrets
 import stat
+from datetime import datetime, timezone
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -391,3 +392,114 @@ def prepare(
             path.unlink(missing_ok=True)
         raise
     return safe
+
+
+def verify_owner_results(
+    packet_raw: bytes, result_raw: bytes, semantic_check_raw: bytes,
+) -> tuple[dict, dict]:
+    """Verify the complete 20-result / 60-check Owner package without admitting data."""
+    packets = _jsonl(packet_raw, "OWNER_PACKET_JSONL_INVALID")
+    results = _jsonl(result_raw, "OWNER_RESULT_JSONL_INVALID")
+    checks = _jsonl(semantic_check_raw, "OWNER_SEMANTIC_CHECK_JSONL_INVALID")
+    if len(packets) != 20 or len(results) != 20 or len(checks) != 60:
+        raise AdjudicationHold("OWNER_RESULT_SET_CARDINALITY_HOLD")
+    packet_by_id = _unique(packets, "calibration_id", "OWNER_PACKET_ID_DUPLICATE")
+    result_by_id = _unique(results, "case_ref", "OWNER_RESULT_CASE_REF_DUPLICATE")
+    if set(packet_by_id) != set(result_by_id):
+        raise AdjudicationHold("OWNER_RESULT_PACKET_SET_MISMATCH")
+
+    verdict_counts = {dimension: {} for dimension in severity.DIMENSIONS}
+    aggregate_counts: dict[str, int] = {}
+    for case_ref, packet in packet_by_id.items():
+        if packet.get("schema") != PACKET_SCHEMA:
+            raise AdjudicationHold("OWNER_PACKET_SCHEMA_HOLD")
+        result = result_by_id[case_ref]
+        verdicts = severity.validate_result_v2(result, packet)
+        for dimension, verdict in verdicts.items():
+            verdict_counts[dimension][verdict] = (
+                verdict_counts[dimension].get(verdict, 0) + 1
+            )
+        aggregate = severity.aggregate_severity_outcome_v2(verdicts)
+        aggregate_counts[aggregate] = aggregate_counts.get(aggregate, 0) + 1
+
+    expected_pairs = {
+        (case_ref, dimension)
+        for case_ref in packet_by_id for dimension in severity.DIMENSIONS
+    }
+    seen_pairs: set[tuple[str, str]] = set()
+    semantic_status_counts: dict[str, int] = {}
+    for row in checks:
+        if (set(row) != {"calibration_id", "dimension", "reviewed_at_utc", "check"}
+                or not isinstance(row["calibration_id"], str)
+                or row["calibration_id"] not in packet_by_id
+                or row["dimension"] not in severity.DIMENSIONS
+                or not isinstance(row["reviewed_at_utc"], str)):
+            raise AdjudicationHold("OWNER_SEMANTIC_CHECK_ROW_SHAPE_HOLD")
+        try:
+            reviewed_at = datetime.fromisoformat(
+                row["reviewed_at_utc"].replace("Z", "+00:00")
+            )
+        except ValueError:
+            raise AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD") from None
+        if reviewed_at.tzinfo is None or reviewed_at.utcoffset() != timezone.utc.utcoffset(reviewed_at):
+            raise AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD")
+        pair = (row["calibration_id"], row["dimension"])
+        if pair in seen_pairs:
+            raise AdjudicationHold("OWNER_SEMANTIC_CHECK_DUPLICATE")
+        seen_pairs.add(pair)
+        result = result_by_id[row["calibration_id"]]
+        try:
+            outcome = severity.verify_semantic_entailment_v2(
+                result, packet_by_id[row["calibration_id"]],
+                row["dimension"], row["check"],
+            )
+            status = outcome["status"]
+        except severity.SemanticEntailmentHold as exc:
+            if str(exc) != "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED":
+                raise AdjudicationHold("OWNER_SEMANTIC_CHECK_INVALID") from None
+            status = "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD"
+        semantic_status_counts[status] = semantic_status_counts.get(status, 0) + 1
+    if seen_pairs != expected_pairs:
+        raise AdjudicationHold("OWNER_SEMANTIC_CHECK_COVERAGE_HOLD")
+
+    manifest = {
+        "schema": "storyforge_r60_owner_adjudication_results_manifest_private_v2",
+        "status": "OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED",
+        "rubric_version": severity.RUBRIC_VERSION,
+        "packet_sha256": sha(packet_raw),
+        "result_sha256": sha(result_raw),
+        "semantic_check_sha256": sha(semantic_check_raw),
+        "rubric_sha256": sha(severity.RUBRIC_TEXT.encode("utf-8")),
+        "case_count": len(packet_by_id),
+        "semantic_check_count": len(seen_pairs),
+        "verdict_counts": verdict_counts,
+        "aggregate_outcome_counts": aggregate_counts,
+        "semantic_status_counts": semantic_status_counts,
+        "owner_identity_cryptographically_attested": False,
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+        "gpu_started": False,
+        "private_values_emitted": False,
+    }
+    manifest["receipt_sha256"] = sha(canonical(manifest))
+    safe = {
+        "schema": "storyforge_r60_owner_adjudication_results_safe_v2",
+        "status": "OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED",
+        "cases_verified": len(packet_by_id),
+        "semantic_checks_verified": len(seen_pairs),
+        "semantic_supported_count": semantic_status_counts.get(
+            "SEMANTIC_ENTAILMENT_SUPPORTED__REVIEWER_IDENTITY_NOT_ATTESTED", 0
+        ),
+        "semantic_insufficient_context_count": semantic_status_counts.get(
+            "SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD", 0
+        ),
+        "semantic_not_established_count": semantic_status_counts.get(
+            "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD", 0
+        ),
+        "owner_identity_cryptographically_attested": False,
+        "quality_v1_admitted": 0,
+        "training_authorized": False,
+        "gpu_started": False,
+        "private_values_emitted": False,
+    }
+    return manifest, safe
