@@ -9,6 +9,11 @@ import pytest
 from storyforge_gold_quality import hf_owner_adjudication_v2 as p2
 
 
+def fresh_token_factory():
+    values = iter(range(1, 21))
+    return lambda: f"{next(values):032x}"
+
+
 def fixture_data():
     development = []
     locked = []
@@ -182,7 +187,7 @@ def test_verify_owner_results_requires_exact_20_cases_and_60_semantic_checks():
     manifest, source_raw = fixture_data()
     packet_raw, _, _, _, _ = p2.build_package(
         manifest, source_raw,
-        token_factory=lambda: "a" * 32,
+        token_factory=fresh_token_factory(),
         shuffle=lambda values: None,
     )
     packets = [json.loads(line) for line in packet_raw.splitlines()]
@@ -244,7 +249,7 @@ def test_verify_owner_results_rejects_missing_semantic_check():
     manifest, source_raw = fixture_data()
     packet_raw, _, _, _, _ = p2.build_package(
         manifest, source_raw,
-        token_factory=lambda: "b" * 32,
+        token_factory=fresh_token_factory(),
         shuffle=lambda values: None,
     )
     with pytest.raises(p2.AdjudicationHold, match="OWNER_RESULT_SET_CARDINALITY_HOLD"):
@@ -255,7 +260,7 @@ def test_verify_owner_results_rejects_duplicate_case_dimension_check():
     manifest, source_raw = fixture_data()
     packet_raw, _, _, _, _ = p2.build_package(
         manifest, source_raw,
-        token_factory=lambda: "c" * 32,
+        token_factory=fresh_token_factory(),
         shuffle=lambda values: None,
     )
     packets = [json.loads(line) for line in packet_raw.splitlines()]
@@ -307,7 +312,7 @@ def test_verify_owner_results_requires_single_owner_identity_reference():
     manifest, source_raw = fixture_data()
     packet_raw, _, _, _, _ = p2.build_package(
         manifest, source_raw,
-        token_factory=lambda: "d" * 32,
+        token_factory=fresh_token_factory(),
         shuffle=lambda values: None,
     )
     packets = [json.loads(line) for line in packet_raw.splitlines()]
