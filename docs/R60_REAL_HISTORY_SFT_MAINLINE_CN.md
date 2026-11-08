@@ -1,5 +1,9 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **2026-11-08 完成里程碑：真实候选池 1,000/1,000 已采集，进入 Quality-v1。** Owner Mac 实际 SAFE `EXPANSION_TARGET_REACHED__NOT_ADMITTED`，原始 G1 Seed 6 + 新增 994、20 个私有页、扫描 400 Story；Quality PASS=0、入训=0，R50/world 仍 HOLD，GPU/DB 修改=0。扩样阶段关闭，不再修改原批次、配置或目标数量。
+> 已开发 [1,000 条私有批量双模型 AI 质量审阅](R60_REAL_HISTORY_1000_QUALITY_BATCH_EXECUTION_20261108_CN.md)（`experiments/r58_quality/r60_real_quality_batch.py`）：只读验真冻结源、两模型独立评分、每案例私有不可覆盖审阅回执，`init/advance/inspect` 和断点续跑，默认每次最多 5 条、硬上限 25 条；先做 5 条校准，再分段批量执行。Quality PASS 仍只是质量维度，不等于训练准入，历史世界/System、R50 完整排除、CPU 均须独立验收。
+> **真实批量 AI 审核尚未在 Owner Mac 运行**。切勿把合成测试通过写为真人历史质量 PASS、训练数据冻结或 GPU 训练已启动。
+
 > **2026-11-08 二次决策：候选池目标从 600 上调到 1000。** Owner Mac 实际完成 **600 条（原 Seed 6 + 新增 594）/ 12 页 / 已扫描 240 Story**，SAFE `EXPANSION_TARGET_REACHED__NOT_ADMITTED`。此状态仅证明技术候选采集，不代表 Quality PASS（当前 0）或训练准入（当前 0）。
 > 用户已明确批准继续扩样至 **1000 条真实历史技术候选**；通过 [600→1000 原位续跑说明](R60_REAL_HISTORY_EXPANSION_1000_CONTINUATION_20261108_CN.md) 和 `r60_real_expand_private.py extend --target-total 1000` 追加私有扩容回执，**不覆盖先前 12 页、600 条和源配置**，随后原目录 `advance`、`inspect`。此前 600 目标已完成，但本次对 Owner Mac 的新续跑**尚未实际执行**，不可把 1000 写成已采集完成。
 > 达成 1000 后优先真实双模型质量筛查及严重问题排除，再进行 R50 完整元数据/世界组件隔离、CPU Tokenizer/Collator，最后另行申请 GPU 训练。RolePlay、Gold192 不修改。
