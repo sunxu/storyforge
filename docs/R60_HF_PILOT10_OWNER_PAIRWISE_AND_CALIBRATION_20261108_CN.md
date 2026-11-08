@@ -73,6 +73,22 @@ PYTHONPATH=src python3 -m storyforge_gold_quality.hf_pilot_pairwise_audit \
 
 上面的 `STAGE` 是刻意显式确认的唯一输入，不应根据陌生目录名猜测。在目前 ChatGPT 的 HF 读取权限范围内，没有 Owner Mac 文件系统访问权，所以**尚不能声称 Owner Stage 的 1,000 条映射已经由上述脚本实际验收**；当前仅能证明本次 5×5 文本完全无重叠。此脚本输出交回 ChatGPT 的 SAFE JSON，即可直接评估是否有真正可配对案例。不要上传 `owner_crosswalk.private.json`、`source.private.jsonl` 或私有 Checkpoint 到 GitHub。
 
+## 更简便的单命令执行方式（推荐）
+
+已提供 `scripts/r60_hf_pilot10_owner_audit.sh`，无需手工输入 10 条路径或在终端逐条复制文件。它在 `~/.local/share/storyforge` **只读扫描**既有且模型 pin 精确匹配的 1000-case Owner Stage；只有匹配**恰好一个**时自动选用，0 个或多个都 fail-closed 并提示显式指定 `R60_HF_OWNER_STAGE_ROOT`；自动从原 HF 私有 Bucket 只下载 10 个 Checkpoint 到新的本地 0700 目录，然后调用审计器并生成唯一 0600 SAFE JSON。若发现目标输出目录已存在，则**不覆盖、不重复下载或改写结果**。
+
+~~~bash
+cd "$HOME/workspace/storyforge"
+git fetch origin r60/gold192-history-v3-adapter
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+bash scripts/r60_hf_pilot10_owner_audit.sh
+~~~
+
+不要上传自动生成的私有目录。终端仅输出聚合 SAFE JSON；这份 SAFE 可复制回聊天继续推进。如果 `OWNER_STAGE_DISCOVERY_HOLD`，必须检查原来实际冻结的 Owner Stage，不得自动创建替代目录或重新洗牌。只有在找到真实存在的唯一 Stage 后才设置 `R60_HF_OWNER_STAGE_ROOT` 并重新执行（若脚本未进入下载阶段，原输出目录不存在）。
+
+---
+
 ## 训练主线下一决策
 
 通过 Owner 身份和摘要检查后，**暂不扩大双 Reviewer 1000 案 GPU**，先对严重标记歧义提出独立 AI 语义评审协议：给第三方审阅者仅看用户最后一句、少量有界历史和目标；不提前提供 A/B 的 `decision`、severity flags 或分数；逐条指出具体的玩家新增动作/选择、可见硬规则引用或安全政策条款，并给证据足不足三态（SUPPORTED / UNSUPPORTED / INSUFFICIENT）。对安全/年龄语境不清的实例 HOLD。首次验证样本采用 A 5 + B 5 的 10 个**互不重叠**案例；在误报门槛得到证实后，才考虑有成本上限的分批评审和早期 Quality-v1 候选准备。正式训练仍须单独授权。
