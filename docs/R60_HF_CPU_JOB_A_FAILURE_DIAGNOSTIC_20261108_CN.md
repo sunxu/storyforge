@@ -1,5 +1,61 @@
 # R60 HF CPU A Job 已提交但远程失败：安全诊断与继续执行（2026-11-08）
 
+## 2026-11-08 实际 diagnostic-v2 结果与 v3 定向修复（覆盖前述 v2 待运行描述）
+
+已由 Owner 提交 Job [`6af039530e0338d1bb849aa7`](https://huggingface.co/jobs/adradar/6af039530e0338d1bb849aa7)，组织 `adradar`，`cpu-basic`，运行 2026-11-08T08:56:51Z–08:59:05Z，终态 `ERROR`，退出 42。实际 HF SAFE 日志：
+
+~~~json
+{"schema":"storyforge_hf_literary_safe_v1","status":"HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE","cases_total":1000,"cases_completed":0,"private_values_emitted":false,"training_authorized":false}
+{"schema":"storyforge_hf_literary_safe_v1","status":"HF_REVIEW_HOLD","reason_code":"HF_CPU_CHAT_TEMPLATE_HOLD","private_values_emitted":false,"training_authorized":false}
+~~~
+
+**确认 1000 条盲输入全部通过格式合同验证；实际 Qwen Tokenizer 加载过程没有触发 `HF_CPU_TOKENIZER_LOAD_HOLD`，错误位于共享 Chat Template/Token ID 编码步骤，不是文学质量 REJECT，具体子原因仍 UNKNOWN。** 缺少 PyTorch 的普通日志不能确定原因。暂停 B，不对原失败 Job 重试。
+
+新的公共 Reviewer 不实现第二套 Tokenizer 算法，直接复用 `src/storyforge_dataset/token_preflight.py`。v3 在 `cpu_token_error_code` 里只保留其 allowlist 成员，例如 `HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR`、`HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR`、`HF_CPU_TOKEN_IDS_INVALID`，拒绝泄露来源异常、原文、Token IDs 或任意长错误消息。所有其他异常仍统一 `HF_CPU_CHAT_TEMPLATE_HOLD`；只增强安全原因码，不更改数据、不降低拒绝门槛。
+
+### Owner Mac v3：仅制作/同步新的无私有正文 Python 代码
+
+原冻结 `input_A` / `input_B`、旧 `diagnostic-runner-v2`、全部正式 HF/Owner 映射不变。不要把 v3 覆盖 v2，也不要重新上传真实正文。
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+
+git fetch origin r60/gold192-history-v3-adapter
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+BASE="$HOME/.local/share/storyforge/r60/private"
+INROOT="hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z"
+V3="$BASE/r60-hf-cpu-diagnostic-runner-v3"
+
+test ! -e "$V3"
+install -d -m 700 "$V3"
+install -m 600 src/storyforge_gold_quality/hf_literary_review.py "$V3/runner.py"
+hf buckets sync "$V3" "$INROOT/diagnostic-runner-v3"
+~~~
+
+### A v3 CPU 诊断：先 Dry-run
+
+与 v2 保持一致，**只替换脚本目录与输出前缀**，不重新上传任何 1000 条输入；两个输入各 RO（原 A 来源挂 `/input`，新代码挂 `/scripts`），独立 RW 新输出：
+
+~~~bash
+CMD="set -eu
+export CUDA_VISIBLE_DEVICES=''
+export TOKENIZERS_PARALLELISM=false
+export PYTHONPATH=/input
+python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3'
+python3 /scripts/runner.py --input /input/source.private.jsonl   --output-dir /output --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137   --verify-only
+python3 /scripts/runner.py --input /input/source.private.jsonl   --output-dir /output --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137   --token-preflight-only --max-model-len 32768 --max-output-tokens 2400"
+
+python3 scripts/hf_job_guard.py   --namespace adradar --name r60-quality-cpu-A-diagnostic-v3   --flavor cpu-basic --timeout-minutes 45   --input-volume "$INROOT/input_A:/input:ro"   --input-volume "$INROOT/diagnostic-runner-v3:/scripts:ro"   --output-volume "$INROOT/cpu-output-A-diagnostic-v3:/output:rw"   --image python:3.11   -- /bin/sh -lc "$CMD"
+~~~
+
+此命令默认只返回 `PREFLIGHT_PASS_NOT_SUBMITTED`，**不提交新付费 CPU Job**。只有确认 Job v2 已结束、运行配置合理且 Owner 决定再执行一次 CPU 诊断，才给 Guard 补 `--submit`；版本已强制 `--detach`，返回 Job ID。失败原样保留，不能自动重试或切 GPU。真实 Tokenizer 总量 PASS 之前不得提交 B/GPU。
+
+---
+
 ## 真实故障结论：不是提交被拒绝
 
 Owner Mac 的旧 `hf_job_guard.py` 输出 `SUBMISSION_REJECTED / HF_JOB_SUBMISSION_FAILED`。只读查询组织 `adradar` 真实 HF Job 后确认：
