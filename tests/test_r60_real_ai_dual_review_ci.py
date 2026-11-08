@@ -12,4 +12,4 @@ def test_r60_real_ai_review_synthetic_suite():
         capture_output=True, text=True, timeout=70, check=False,
     )
     assert result.returncode == 0, result.stdout[-4000:] + result.stderr[-2500:]
-    assert "12 passed" in result.stdout
+    assert "13 passed" in result.stdout
