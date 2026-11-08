@@ -58,23 +58,31 @@ def read_input(path: Path) -> list[dict]:
         raise ReviewError("BLIND_INPUT_NOT_REGULAR")
     if not 0 < path.stat().st_size <= MAX_BYTES:
         raise ReviewError("BLIND_INPUT_SIZE_HOLD")
+    # Exact-byte staged HF Runtime InputManager, not a second open/read algorithm.
+    try:
+        from runtime_inputs import InputManager
+    except ModuleNotFoundError:
+        from storyforge_dataset.hf_runtime.inputs import InputManager
+    try:
+        data = InputManager.open_verified(path, max_bytes=MAX_BYTES).read_bytes()
+    except ValueError as exc:
+        raise ReviewError("BLIND_INPUT_RUNTIME_GUARD_HOLD") from exc
     rows = []
     seen = set()
-    with path.open("rb") as fp:
-        for line in fp:
-            if not line.strip():
-                continue
-            try:
-                row = json.loads(line)
-            except ValueError as exc:
-                raise ReviewError("BLIND_INPUT_JSON_HOLD") from exc
-            validate_input(row)
-            if row["blind_id"] in seen:
-                raise ReviewError("BLIND_INPUT_DUPLICATE_HOLD")
-            seen.add(row["blind_id"])
-            rows.append(row)
-            if len(rows) > MAX_RECORDS:
-                raise ReviewError("BLIND_INPUT_COUNT_HOLD")
+    for line in data.splitlines():
+        if not line.strip():
+            continue
+        try:
+            row = json.loads(line)
+        except ValueError as exc:
+            raise ReviewError("BLIND_INPUT_JSON_HOLD") from exc
+        validate_input(row)
+        if row["blind_id"] in seen:
+            raise ReviewError("BLIND_INPUT_DUPLICATE_HOLD")
+        seen.add(row["blind_id"])
+        rows.append(row)
+        if len(rows) > MAX_RECORDS:
+            raise ReviewError("BLIND_INPUT_COUNT_HOLD")
     if not rows:
         raise ReviewError("BLIND_INPUT_EMPTY_HOLD")
     return rows
@@ -269,6 +277,12 @@ def token_preflight(rows: list[dict], model: str, revision: str,
                     max_model_len: int, max_output_tokens: int,
                     tokenizer_factory=None, encode_fn=None) -> dict:
     """HF CPU only: real tokenizer with StoryForge's shared chat-template core."""
+    try:
+        from runtime_resources import ResourceGuard
+    except ModuleNotFoundError:
+        from storyforge_dataset.hf_runtime.resources import ResourceGuard
+    if ResourceGuard.check_cpu_only().status != "PASS":
+        raise ReviewError("HF_CPU_RESOURCE_GUARD_HOLD")
     os.environ["CUDA_VISIBLE_DEVICES"] = ""
     if tokenizer_factory is None:
         from transformers import AutoTokenizer
@@ -417,7 +431,8 @@ def main() -> int:
             "BLIND_INPUT_JSON_HOLD", "BLIND_INPUT_SCHEMA_HOLD",
             "BLIND_INPUT_CONTENT_HOLD", "BLIND_HISTORY_BOUNDARY_HOLD",
             "BLIND_INPUT_DUPLICATE_HOLD", "BLIND_INPUT_COUNT_HOLD",
-            "BLIND_INPUT_EMPTY_HOLD", "REVIEW_PROMPT_TOKEN_BUDGET_HOLD",
+            "BLIND_INPUT_EMPTY_HOLD", "BLIND_INPUT_RUNTIME_GUARD_HOLD",
+            "HF_CPU_RESOURCE_GUARD_HOLD", "REVIEW_PROMPT_TOKEN_BUDGET_HOLD",
             "CHECKPOINT_FILE_HOLD", "CHECKPOINT_JSON_HOLD",
             "CHECKPOINT_SCHEMA_HOLD", "CHECKPOINT_SOURCE_OR_MODEL_HOLD",
             "MODEL_RESPONSE_SCHEMA_HOLD", "MODEL_SCORE_OR_SEVERE_HOLD",
