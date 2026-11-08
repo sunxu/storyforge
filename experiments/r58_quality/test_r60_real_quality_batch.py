@@ -241,3 +241,36 @@ def test_model_id_tampering_with_recomputed_digest_rejected(tmp_path, monkeypatc
     path.write_bytes(exp.private_bytes(value))
     with pytest.raises(q.Hold, match="QUALITY_REVIEW_MODEL_MISMATCH_HOLD"):
         q.inspect(folder)
+
+
+def test_full_1000_case_expansion_source_loaded_without_network(tmp_path, monkeypatch):
+    """Verify the actual source reader against 20 complete synthetic pages."""
+    from test_r60_real_expand_private import db_row, frozen_600_run
+
+    folder, ordered = frozen_600_run(tmp_path, monkeypatch)
+    exp.extend_target(folder, 1000)
+    before = json.loads((folder / exp.page_name(12)).read_bytes())["cursor_after"]
+    for page_index in range(13, 21):
+        selected = ordered[(page_index - 1) * 20:page_index * 20]
+        rows = []
+        for j, story in enumerate(selected):
+            num = 3 if j < 10 else 2
+            rows.extend(db_row(story, turn) for turn in reversed(range(num)))
+        stories, cases, after = exp.parse_page_rows(
+            rows, before, {"page_size": 20}, set(), 1000)
+        entry = {
+            "schema": exp.PAGE_SCHEMA, "page_index": page_index,
+            "cursor_before": before, "cursor_after": after,
+            "stories": stories, "cases": cases,
+        }
+        entry["page_sha256"] = g1.digest(entry)
+        exp.immutable_page(folder, page_index, entry)
+        before = after
+    # Reset to the real production contract, never accidentally use 3-case mock.
+    monkeypatch.setattr(q, "EXPECTED_CASES", 1000)
+    cases, pool_sha = q.frozen_pool(folder)
+    assert len(cases) == 1000
+    assert len(pool_sha) == 64
+    assert cases[0]["schema"] == g1.CAPTURE_SCHEMA
+    assert q.frozen_pool(folder)[1] == pool_sha
+    # No production connectivity or model inference is used.
