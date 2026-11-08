@@ -150,3 +150,22 @@ def test_review_receipt_offline_private_files(tmp_path, monkeypatch):
     assert (directory / "R60_REAL_G1_REVIEW_SAFE.json").stat().st_mode & 0o777 == 0o600
     with pytest.raises(FileExistsError):
         batch.review(directory, f)
+
+def test_template_does_not_fabricate_review(tmp_path, monkeypatch):
+    home = tmp_path / "private"
+    home.mkdir(mode=0o700)
+    monkeypatch.setattr(batch, "BASE", home)
+    monkeypatch.setattr(batch, "fetch", lambda dsn: batch.parse_rows([synthetic_row()]))
+    directory = home / "run-template"
+    batch.capture(directory, "not-used")
+    result = batch.create_review_template(directory)
+    assert result["review_templates"] == 1
+    path = directory / "R60_REAL_G1_REVIEWS_PRIVATE.jsonl"
+    assert path.stat().st_mode & 0o777 == 0o600
+    raw = path.read_text()
+    assert "中文故事正文" not in raw
+    assert "story-a" not in raw
+    assert json.loads(raw)["reviews"] == []
+    held = batch.review(directory, path)
+    assert held["review_decisions"]["HOLD"] == 1
+    assert held["train_admitted"] == 0
