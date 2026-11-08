@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -349,3 +350,30 @@ def test_quality_pipeline_inspect_command_uses_shared_reviewer(tmp_path):
     assert result["cases_total"] == 3
     assert result["status"] == "HF_REVIEW_PARTIAL__NO_ADMISSION"
     assert result["quality_v1_admitted"] == 0
+
+
+def test_cpu_tokenizer_preflight_reuses_shared_core_without_gpu(tmp_path, monkeypatch):
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    answer_safe = review.token_preflight(
+        [blind(1), blind(2)], MODEL_A, SHA_A, 4096, 2400,
+        tokenizer_factory=lambda *args, **kwargs: object(),
+        encode_fn=lambda tokenizer, prompt: list(range(100)),
+    )
+    assert answer_safe["status"] == "HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU"
+    assert answer_safe["cases_checked"] == 2
+    assert answer_safe["model_revision_pinned"] is True
+    assert answer_safe["gpu_started"] is False
+    assert answer_safe["over_budget_count"] == 0
+    assert "PRIVATE_STORY" not in json.dumps(answer_safe)
+    assert os.environ["CUDA_VISIBLE_DEVICES"] == ""
+
+
+def test_cpu_tokenizer_budget_hold_is_not_review_pass():
+    hold = review.token_preflight(
+        [blind()], MODEL_A, SHA_A, 4096, 2400,
+        tokenizer_factory=lambda *args, **kwargs: object(),
+        encode_fn=lambda tokenizer, prompt: list(range(2000)),
+    )
+    assert hold["status"] == "HF_REVIEW_CPU_TOKEN_BUDGET_HOLD__NO_GPU"
+    assert hold["over_budget_count"] == 1
+    assert hold["training_authorized"] is False
