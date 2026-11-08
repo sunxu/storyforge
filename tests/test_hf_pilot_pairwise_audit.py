@@ -10,6 +10,7 @@ from storyforge_gold_quality import hf_blind_stage as stage
 from storyforge_gold_quality import hf_literary_review as review
 from storyforge_gold_quality import hf_pilot_pairwise_audit as audit
 from storyforge_gold_quality import hf_pilot_semantic_c as calibration
+from storyforge_gold_quality import hf_pilot_semantic_c_codex as codex_c
 
 
 def fake_case(i: int) -> dict:
@@ -224,3 +225,116 @@ def test_c_preparation_never_overwrites_existing_output(staged, tmp_path):
     with pytest.raises(calibration.CalibrationHold,
                        match="PRIVATE_OUTPUT_DIRECTORY_HOLD"):
         calibration.prepare(root, a_dir, b_dir, out)
+
+
+def test_c_codex_ten_fresh_private_sessions_prove_local_execution_receipts(
+        staged, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    root, a_dir, b_dir = staged
+    out = tmp_path / "blinded-c"
+    calibration.prepare(root, a_dir, b_dir, out)
+    monkeypatch.setattr(codex_c.shutil, "which", lambda exe: "/usr/bin/codex")
+    monkeypatch.setattr(codex_c, "_cli_capabilities",
+                        lambda exe: "codex-cli 0.153.4")
+    seen_ids = []
+
+    def fake_run(command, **kwargs):
+        prompt = kwargs["input"].decode("utf-8")
+        # The only private data passed to the model is the single C packet.
+        packet = json.loads(prompt.splitlines()[-1])
+        assert set(packet) == {
+            "schema", "calibration_id", "visible_history",
+            "target_text", "target_semantics",
+        }
+        assert "--ephemeral" in command
+        assert "--ignore-user-config" in command
+        assert "--ignore-rules" in command
+        assert command[command.index("--sandbox")+1] == "read-only"
+        assert kwargs["stdout"] == codex_c.subprocess.DEVNULL
+        assert kwargs["stderr"] == codex_c.subprocess.DEVNULL
+        output_schema = json.loads(
+            Path(command[command.index("--output-schema")+1]).read_text())
+        assert output_schema["properties"]["calibration_id"]["enum"] == [
+            packet["calibration_id"]
+        ]
+        seen_ids.append(packet["calibration_id"])
+        assert len(seen_ids) == len(set(seen_ids))
+        answer = {
+            "schema": calibration.RESULT_SCHEMA,
+            "calibration_id": packet["calibration_id"],
+            "assessments": {
+                key: {
+                    "verdict": "NOT_SUPPORTED",
+                    "target_quotes": [], "history_quotes": [],
+                    "rationale": "独立审查中没有足够证据来支持该项严重违规。",
+                }
+                for key in calibration.CATEGORIES
+            },
+        }
+        Path(command[command.index("--output-last-message")+1]).write_text(
+            json.dumps(answer, ensure_ascii=False), encoding="utf-8")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(codex_c.subprocess, "run", fake_run)
+    status = codex_c.run(out)
+    assert status["status"] == "C_CODEX_RESULTS_READY__RECONCILIATION_PENDING"
+    assert len(seen_ids) == 10
+    assert len(calibration.private_jsonl(
+        out / "C_RESULTS_PRIVATE.jsonl")) == 10
+    for i in range(1, 11):
+        assert (out / f"C_CASE_{i:02d}_EXEC_PRIVATE.json").exists()
+    report = calibration.reconcile(
+        root, a_dir, b_dir, out,
+        out / "C_RESULTS_PRIVATE.jsonl",
+        out / "C_CALIBRATION_SAFE.json")
+    assert report["reviewer_c_execution_verified"] is True
+    assert report["reviewer_c_input_blinding_verified"] is True
+    assert report["reviewer_c_independence_verified"] is False
+    assert report["quality_v1_admitted"] == 0
+    with pytest.raises(calibration.CalibrationHold,
+                       match="C_CODEX_OUTPUT_EXISTS_OR_DIR_HOLD"):
+        codex_c.run(out)
+
+
+def test_c_codex_execution_receipt_tampering_fails_closed(
+        staged, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    root, a_dir, b_dir = staged
+    out = tmp_path / "blind"
+    calibration.prepare(root, a_dir, b_dir, out)
+    monkeypatch.setattr(codex_c.shutil, "which", lambda exe: "/usr/bin/codex")
+    monkeypatch.setattr(codex_c, "_cli_capabilities",
+                        lambda exe: "codex-cli 0.153.4")
+
+    def fake_run(command, **kwargs):
+        packet = json.loads(kwargs["input"].decode().splitlines()[-1])
+        payload = {
+            "schema": calibration.RESULT_SCHEMA,
+            "calibration_id": packet["calibration_id"],
+            "assessments": {
+                k: {
+                    "verdict": "INSUFFICIENT_CONTEXT",
+                    "target_quotes": [], "history_quotes": [],
+                    "rationale": "没有足够上下文，不能确认原始材料的严重缺陷。",
+                }
+                for k in calibration.CATEGORIES
+            },
+        }
+        Path(command[command.index("--output-last-message")+1]).write_text(
+            json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(codex_c.subprocess, "run", fake_run)
+    codex_c.run(out)
+    case = out / "C_CASE_01_EXEC_PRIVATE.json"
+    tampered = json.loads(case.read_text(encoding="utf-8"))
+    tampered["model_requested"] = "unauthorized-changing-model"
+    case.write_text(json.dumps(tampered), encoding="utf-8")
+    with pytest.raises(calibration.CalibrationHold,
+                       match="C_CODEX_RECEIPT_DRIFT_HOLD"):
+        calibration.reconcile(
+            root, a_dir, b_dir, out,
+            out / "C_RESULTS_PRIVATE.jsonl",
+            out / "C_CALIBRATION_SAFE.json")
