@@ -1,5 +1,15 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08 A Reviewer v2 远端代码核验（当前最新阶段）
+
+Owner Mac 已用 `hf buckets cp` 将新 Runner 上传到 `hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z/reviewer-runner-v2/runner.py`。ChatGPT 已通过 HF Bucket 的**真实 cat** 读取文件，与 GitHub 当前分支 `src/storyforge_gold_quality/hf_literary_review.py` 比较，**内容逐字一致（22,547 字符）**，包含 `storyforge_hf_literary_checkpoint_private_v2`，GitHub 文件 blob SHA `c183d8377878ca317db04a74c0fec546dfc78888`。A 的冻结 `input_A/source.private.jsonl`、`runtime_inputs.py`、`runtime_resources.py`、`token_core.py` 在 HF 均存在；新 A CPU 输出 `cpu-output-gpuimage-A-v2-01` 与新 GPU 输出 `gpu-review-output-A-pilot5-v2-01` 均尚不存在。HF 组织 Jobs 列表未见同名 v2 Job。
+
+**下一闸门只允许 CPU**：A 使用固定 vLLM digest（与前一 A 同镜像成功 Job 一致），`cpu-basic`、12 分钟、一个新独立 RW 输出、原始输入与新版 Runner 只读，设置 `PYTHONPATH=/input`；第一时间检查 CPU ResourceGuard 原始 SAFE 字段，若除 `nvidia_visibility` 外有 FAIL 立即退出；仅在其它项都 PASS 时设置 `NVIDIA_VISIBLE_DEVICES=void`，再要求完整资源检查 PASS。执行公开依赖导入、Runner v2 静态契约自检、`--verify-only` 与 `--token-preflight-only` 1000 条，标准 `32768` 上下文 / `2400` 输出预算。须真实 HF Job 最终 COMPLETED + `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU` + over-budget=0，不能用单纯 upload/本地测试证明通过。
+
+**后续限制**：新版 GPU A 5 条还未提交；如果 A v2 CPU 预检 PASS，再单独审核追加付费 H200 最小重评；旧 v1 Checkpoint 只存于旧输出，绝不挂载复用。B H200 仍不自动执行；Quality-v1=0、SFT training 未授权。
+
+---
+
 ## 2026-11-08 A H200 首次真实文学审核结果：1 个旧契约 Checkpoint + 后续 MODEL_REASON_HOLD（最新）
 
 真实 [HF Job `6af051150e0338d1bb84aad1`](https://huggingface.co/jobs/adradar/6af051150e0338d1bb84aad1) 使用单卡 H200、固定 vLLM SHA 和 `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`，请求 `--start 1 --limit 5`，创建 `2026-11-08T10:38:13.808Z`、结束 `10:40:51.984Z`，**ERROR / exit 42**。实际模型权重 `17/17` 分片加载完成；推理已经执行，但 SAFE 为 `HF_REVIEW_HOLD`、`reason_code=MODEL_REASON_HOLD`。该码由旧验证器同时涵盖 `literary_quality_notes` 类型/长度与 `uncertainty` 类型不正确，**无法从旧日志进一步区分具体字段**，不得编造原模型输出。
