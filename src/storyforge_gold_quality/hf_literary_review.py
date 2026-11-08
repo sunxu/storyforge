@@ -194,7 +194,7 @@ def repair_generated_quotes(row: dict, original: dict, original_text: str,
     messages = repair_messages(row, original_text, indices, candidates)
     try:
         ids = encode_fn(tokenizer, messages)
-    except Exception:
+    except Exception:  # noqa: BLE001 - suppress private tokenizer exception
         raise ReviewError("QUOTE_REPAIR_TOKEN_ENCODING_HOLD") from None
     if len(ids) + REPAIR_OUTPUT_TOKENS > max_model_len:
         raise ReviewError("QUOTE_REPAIR_TOKEN_BUDGET_HOLD")
@@ -205,7 +205,7 @@ def repair_generated_quotes(row: dict, original: dict, original_text: str,
         generated = engine.generate(
             [tokens_prompt_factory(prompt_token_ids=ids)],
             params, use_tqdm=False)[0].outputs[0]
-    except Exception:
+    except Exception:  # noqa: BLE001 - no model output or private stack trace
         raise ReviewError("QUOTE_REPAIR_GENERATION_HOLD") from None
     if generated.finish_reason != "stop":
         raise ReviewError("QUOTE_REPAIR_INCOMPLETE_HOLD")
