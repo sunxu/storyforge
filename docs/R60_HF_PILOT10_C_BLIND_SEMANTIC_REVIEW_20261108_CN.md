@@ -1,6 +1,19 @@
 # R60：10 条历史回复的 Reviewer C 独立盲语义复核（无新增 GPU）
 
-日期：2026-11-08。状态：**代码与合成测试 PASS；Owner 私有盲包尚未实际创建，Reviewer C 尚未执行，训练不授权。**
+日期：2026-11-08。状态：**Reviewer C 10/10 已执行、Owner 本地回执和来源/结果绑定校验通过；语义严重度仲裁仍 HOLD；训练不授权。**
+
+## 最新 Owner 实际 SAFE 结果（2026-11-08）
+
+Owner 回传的两个 SAFE 聚合结果表明：
+- C 执行：`c_results_completed=10`、`fresh_sessions=10`、`blinded_inputs_only=true`、`private_values_emitted=false`。执行回执为 `OWNER_LOCAL_CODEX_RECEIPTS_NOT_REMOTE_ATTESTATION`；因此本地 CLI 执行和输入盲化可验证，但 `model_identity_independently_verified=false`、`reviewer_c_independence_verified=false`，不能声称远端模型身份已获独立证明。
+- Owner 对账：`cases_reviewed=10`、`original_case_source_integrity_verified=true`、`c_packet_and_result_binding_verified=true`。C 结果和原始 A/B Checkpoint 已逐案映射核对，未暴露私人原文。
+- **硬规则**：C 对 10/10 均为 `NOT_SUPPORTED`；原始严重标记 4/10 为 true、6/10 为 false。因此原模型硬规则严重标记的 4 条均与 C 不一致。
+- **玩家自主权**：原始严重标记 10/10 为 true；C 为 `SUPPORTED=3`、`NOT_SUPPORTED=7`。即 7 条未获 C 支持，3 条获支持但仍需核验具体语义证据。
+- **安全**：C 为 `SUPPORTED=5`、`NOT_SUPPORTED=1`、`INSUFFICIENT_CONTEXT=4`。原始标记为 false 的 6 条中，C 有 3 条 `SUPPORTED`、3 条 `INSUFFICIENT_CONTEXT`；原始标记为 true 的 4 条中，C 有 2 条 `SUPPORTED`、1 条 `NOT_SUPPORTED`、1 条 `INSUFFICIENT_CONTEXT`。安全维度不可据此自动放行或淘汰。
+
+**结论：这 10 条校准样本已经足以证明“原模型严重标记不可直接作为训练淘汰依据”，但不足以证明 C 的判断全都正确。** 目前只有单一原始审核槽（A 或 B）与 C 的逐案对照，不是同一案例上的 A/B 双模型共识。下一阶段应针对这 10 条做证据级语义仲裁，重点覆盖硬规则 4 个冲突、玩家自主权 7 个冲突，以及安全 4 个上下文不足/其余不一致项。所有争议继续 HOLD，不得把 `NOT_SUPPORTED` 等同于文学质量 PASS。
+
+`quality_v1_admitted=0`、`training_authorized=false`、`semantic_severity_adjudication_complete=false` 保持不变。不得启动全量 1000 条 SFT、不得追加 GPU Pilot，也不得修改原始 A/B/C 私有 Checkpoint。
 
 ## 前置证据及为何必须校准
 
