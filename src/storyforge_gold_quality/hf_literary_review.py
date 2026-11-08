@@ -585,6 +585,8 @@ def inference(rows: list[dict], output: Path, model: str, revision: str,
         temperature=0, max_tokens=max_output_tokens,
         structured_outputs=StructuredOutputsParams(json=response_schema()))
     started = time.monotonic()
+    quote_repair_attempts = 0
+    quote_repair_successes = 0
     for pos in needed:
         if time.monotonic() - started > max_wall_seconds:
             break
@@ -597,9 +599,21 @@ def inference(rows: list[dict], output: Path, model: str, revision: str,
             response = json.loads(result.text)
         except (ValueError, TypeError) as exc:
             raise ReviewError("MODEL_JSON_HOLD") from exc
-        record = checkpoint_record(pos, rows[pos - 1], response, model, revision)
+        try:
+            record = checkpoint_record(pos, rows[pos - 1], response, model, revision)
+        except QuoteValidationError as mismatch:
+            quote_repair_attempts += 1
+            response = repair_generated_quotes(
+                rows[pos - 1], response, result.text, mismatch,
+                tokenizer, engine, encode_chat, SamplingParams,
+                StructuredOutputsParams, TokensPrompt, max_model_len)
+            record = checkpoint_record(pos, rows[pos - 1], response, model, revision)
+            quote_repair_successes += 1
         write_checkpoint(output / checkpoint_name(pos), record)
-    return safe_summary(rows, output, model, revision)
+    summary = safe_summary(rows, output, model, revision)
+    summary["quote_repair_attempts"] = quote_repair_attempts
+    summary["quote_repair_successes"] = quote_repair_successes
+    return summary
 
 
 def main() -> int:
@@ -671,6 +685,13 @@ def main() -> int:
             "MODEL_NOTES_TOO_SHORT_HOLD", "MODEL_UNCERTAINTY_TYPE_HOLD",
             "MODEL_SEVERE_EVIDENCE_HOLD", "MODEL_UNCERTAINTY_HOLD",
             "MODEL_SEVERE_MUST_REJECT", "MODEL_NONEXACT_QUOTE_HOLD",
+            "QUOTE_REPAIR_FIELD_HOLD", "QUOTE_REPAIR_CANDIDATES_HOLD",
+            "QUOTE_REPAIR_ITEMS_HOLD", "QUOTE_REPAIR_SELECTION_HOLD",
+            "QUOTE_REPAIR_NONQUOTE_CHANGED_HOLD",
+            "QUOTE_REPAIR_VALIDATION_HOLD",
+            "QUOTE_REPAIR_TOKEN_ENCODING_HOLD", "QUOTE_REPAIR_TOKEN_BUDGET_HOLD",
+            "QUOTE_REPAIR_GENERATION_HOLD", "QUOTE_REPAIR_INCOMPLETE_HOLD",
+            "QUOTE_REPAIR_JSON_HOLD",
             "MODEL_BELOW_QUALITY_FLOOR_HOLD",
             "MODEL_GENERATION_INCOMPLETE_HOLD", "MODEL_JSON_HOLD",
             "OUTPUT_DIR_INVALID", "REVIEW_PARAMETERS_HOLD",
