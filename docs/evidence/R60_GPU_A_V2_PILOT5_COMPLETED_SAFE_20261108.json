@@ -1,0 +1,83 @@
+{
+  "schema": "storyforge_r60_gpu_a_v2_pilot5_completed_safe_v1",
+  "date": "2026-11-08",
+  "job_id": "6af056bb0e0338d1bb84ac8a",
+  "job_url": "https://huggingface.co/jobs/adradar/6af056bb0e0338d1bb84ac8a",
+  "job_name": "r60-quality-gpu-pilot5-A-v2-01",
+  "namespace": "adradar",
+  "flavor": "h200",
+  "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+  "model": "Qwen/Qwen3-32B",
+  "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+  "output_dir_prefix": "gpu-review-output-A-pilot5-v2-01",
+  "job_stage": "COMPLETED",
+  "created_at_utc": "2026-11-08T11:02:19.731Z",
+  "finished_at_utc": "2026-11-08T11:07:22.223Z",
+  "runner_checkpoint_schema": "storyforge_hf_literary_checkpoint_private_v2",
+  "final_safe_status": "HF_REVIEW_PARTIAL__NO_ADMISSION",
+  "cases_total": 1000,
+  "cases_completed": 5,
+  "checkpoint_count": 5,
+  "quality_decisions": {
+    "PASS": 0,
+    "HOLD": 0,
+    "REJECT": 5
+  },
+  "severe_flag_true_counts": {
+    "hard_fact_or_ban": 2,
+    "safety_exclusion": 2,
+    "serious_player_agency": 5
+  },
+  "score_range_by_dimension": {
+    "character_consistency": [
+      4,
+      4
+    ],
+    "chinese_prose": [
+      4,
+      4
+    ],
+    "narrative_continuity": [
+      4,
+      4
+    ],
+    "npc_initiative": [
+      3,
+      3
+    ],
+    "player_agency": [
+      1,
+      4
+    ],
+    "rule_fidelity": [
+      1,
+      4
+    ]
+  },
+  "checkpoint_names_public": [
+    "review_0001.private.json",
+    "review_0002.private.json",
+    "review_0003.private.json",
+    "review_0004.private.json",
+    "review_0005.private.json"
+  ],
+  "checkpoint_metadata_checks": {
+    "expected_schema_count": 5,
+    "model_revision_match_count": 5,
+    "identity_match_to_first5_frozen_input_count": 5,
+    "exact_source_quotes_count_valid_checkpoints": 5,
+    "exact_target_quotes_count_valid_checkpoints": 5,
+    "all_six_scores_present_count": 5,
+    "sha256_fields_present_count": 5,
+    "receipt_sha256_independently_recomputed": false,
+    "input_sha256_independently_recomputed": false,
+    "notes_min_length_pass_count": 5
+  },
+  "raw_private_content_emitted": false,
+  "status": "TECHNICAL_GPU_PILOT_COMPLETED__QUALITY_CALIBRATION_HOLD",
+  "interpretation": "All five checkpoints passed v2 machine structural validation and visible quote substring checks, but 5/5 severe player-agency REJECT may reflect evaluator over-rejection. Exact quotes alone cannot substantiate semantic severity. No independent B evaluation, owner semantic adjudication or train admission performed.",
+  "next": "Before treating any as rejected training candidates, perform blind independent B reviewer quality check with v2 prompt after same-image B CPU token preflight; compare pairwise judgments privately, preserve any disagreement as HOLD. No automatic GPU or SFT.",
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "model_training_started": false
+}
