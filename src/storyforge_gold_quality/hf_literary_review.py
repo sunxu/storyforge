@@ -56,7 +56,7 @@ REPAIR_OUTPUT_TOKENS = 256
 
 
 def quote_segments(value: str) -> list[str]:
-    parts = re.split(r"(?<=[。！？!?；;])|[\\r\\n]+", value)
+    parts = re.split(r"(?<=[。！？!?；;])|[\r\n]+", value)
     candidates: list[str] = []
     for part in parts:
         part = part.strip()
