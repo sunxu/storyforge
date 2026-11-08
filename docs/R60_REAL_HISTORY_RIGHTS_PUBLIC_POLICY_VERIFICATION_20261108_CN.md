@@ -49,3 +49,7 @@
 `global_g0_metadata_authorized=true`；`new_g1_scopes_verified=0`；`training_rights_cases_verified=0`；`quality_reviewed_new_cases=0`；`strict_gold_train_admitted=0`；`experimental_train_admitted=0`；`production_db_modified=false`；`roleplay_modified=false`；`r50_body_accessed=false`；`gpu_started=false`；`owner_private_packet_received=false`（`packets/safe/r60-real-01.json` **未收到**）。
 
 来源：`https://yime.ai/en/privacy`；`https://yime.ai/en/terms`；`https://isekai.zone/`；GitHub Issue #27。以上为聚合 SAFE 审计记录，不包含客户/作者/故事/会话/消息定位符或内容。
+
+## GitHub 仓库公开性独立复核（安全修正）
+
+GitHub API 在 2026-11-08 查询显示：`sunxu/storyforge` 的 `visibility=public`，`sunxu/storyforge-owner-evidence` 的 `visibility=private`。旧交接文件将主仓库也写为 Private，与当前 API 事实不一致。**本报告所在的主仓库应按公开仓库对待**，禁止存放任何真实身份/正文/ID/DSN/原始私有证据。受控仓库虽然为 Private，仍只能接收符合 SAFE 合同的不可逆聚合投影；精确目标 `packets/safe/r60-real-01.json` 仍**未收到**。
