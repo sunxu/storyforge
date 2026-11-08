@@ -4,6 +4,21 @@
 
 `storyforge_dataset.hf_runtime` uses Python 3.11 standard library only. Do not install Transformers, PyTorch, ms-swift or HF Hub for Runtime-only checks.
 
+## R60 literary reviewer compatibility profile
+
+- Input: `hf-quality-reviewer.in`
+- Direct pins: Transformers 4.57.1, SentencePiece 0.2.1, Jinja2 3.1.6; Hugging Face Hub remains `>=0.35,<3`.
+- This profile is intentionally separate from the R59 Qwen3.8 tokenizer profile below, which pins Transformers 5.16.1. Do not downgrade or merge those profiles.
+- GitHub Actions installs this profile in an isolated Python 3.11 environment, runs `pip check`, verifies versions/imports, and executes a synthetic `apply_chat_template` smoke test.
+- **Before using this profile for a paid HF Job**, resolve and commit a hash-pinned lock file with pip-tools; the current `.in` file is the reusable direct-dependency source, not a hash lock.
+
+Install for local compatibility checks:
+
+```bash
+python -m pip install --no-cache-dir -r requirements/hf-quality-reviewer.in
+python -m pip check
+```
+
 ## Tokenizer-only CPU profile
 
 - Input: `hf-cpu-tokenizer.in`
