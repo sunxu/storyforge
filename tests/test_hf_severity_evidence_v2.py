@@ -436,3 +436,20 @@ def test_independent_semantic_review_can_confirm_insufficient_context_without_qu
         result, row, "safety", check
     )
     assert outcome["status"] == "SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD"
+
+
+def test_semantic_entailment_must_review_every_cited_evidence_item():
+    row = packet()
+    result = valid_result(row)
+    check = {
+        "schema": v2.SEMANTIC_CHECK_SCHEMA,
+        "rubric_version": v2.RUBRIC_VERSION,
+        "reviewer_role": "OWNER_INDEPENDENT",
+        "reviewer_ref": "synthetic-reviewer-03",
+        "conclusion": "SUPPORTS_VERDICT",
+        "reviewed_evidence_indexes": [0],
+        "reasoning_summary": "仅核对部分引用不足以确认该维度的全部证据蕴含关系。",
+    }
+    with pytest.raises(v2.SemanticEntailmentHold,
+                       match="SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD"):
+        v2.verify_semantic_entailment_v2(result, row, "hard_rule", check)
