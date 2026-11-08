@@ -267,3 +267,23 @@ def test_verifier_never_submits_or_initializes_model(tmp_path, monkeypatch, caps
     result = json.loads(capsys.readouterr().out)
     assert result["status"] == "HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE"
     assert result["training_authorized"] is False
+
+
+def test_exact_shared_tokenizer_core_is_staged_and_pinned(tmp_path):
+    from storyforge_dataset import token_preflight
+
+    root, cases, _ = setup(tmp_path)
+    expected = Path(token_preflight.__file__).read_bytes()
+    for side in ("A", "B"):
+        staged = root / f"input_{side}" / "token_core.py"
+        assert staged.read_bytes() == expected
+        assert staged.stat().st_mode & 0o777 == 0o600
+    stage.verified_stage(root, "c" * 64, cases)
+
+
+def test_tampered_shared_core_fails_closed(tmp_path):
+    root, cases, _ = setup(tmp_path)
+    path = root / "input_A" / "token_core.py"
+    path.write_bytes(path.read_bytes() + b"\n# altered\n")
+    with pytest.raises(stage.StageError, match="STAGE_BYTES_CHANGED_HOLD"):
+        stage.audit(root, "c" * 64, cases)
