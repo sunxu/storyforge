@@ -176,3 +176,128 @@ def test_prepare_rejects_private_input_with_unsafe_mode(tmp_path):
     (owner_root / "out-parent").mkdir(mode=0o700)
     with pytest.raises(p2.AdjudicationHold, match="PRIVATE_INPUT_PERMISSION_OR_SIZE_HOLD"):
         p2.prepare(p0_path, source_path, output, repo_root, dry_run=True)
+
+
+def test_verify_owner_results_requires_exact_20_cases_and_60_semantic_checks():
+    manifest, source_raw = fixture_data()
+    packet_raw, _, _, _, _ = p2.build_package(
+        manifest, source_raw,
+        token_factory=lambda: "a" * 32,
+        shuffle=lambda values: None,
+    )
+    packets = [json.loads(line) for line in packet_raw.splitlines()]
+    results = []
+    checks = []
+    for packet in packets:
+        result = {
+            "schema": "storyforge_severity_evidence_review_v2",
+            "rubric_version": "r60_severity_rubric_v2",
+            "case_ref": packet["calibration_id"],
+            "assessments": {},
+        }
+        for dimension in ("player_agency", "hard_rule", "safety"):
+            result["assessments"][dimension] = {
+                "verdict": "INSUFFICIENT_CONTEXT",
+                "evidence": [],
+                "rule_basis": [],
+                "reasoning_summary": "合成案例上下文不足以作出可靠判断。",
+                "missing_context": ["合成案例缺少必要适用上下文。"],
+                "context_coverage": {
+                    "history_complete": False,
+                    "target_complete": True,
+                    "relevant_context_complete": False,
+                    "reviewed_rule_sources": [],
+                    "summary": "合成案例按维度完成范围核查。",
+                },
+                "confidence": 1.0,
+            }
+            checks.append({
+                "calibration_id": packet["calibration_id"],
+                "dimension": dimension,
+                "reviewed_at_utc": "2026-11-09T00:00:00Z",
+                "check": {
+                    "schema": "storyforge_severity_semantic_entailment_check_v2",
+                    "rubric_version": "r60_severity_rubric_v2",
+                    "reviewer_role": "OWNER_INDEPENDENT",
+                    "reviewer_ref": "synthetic-owner-reviewer",
+                    "conclusion": "INSUFFICIENT_CONTEXT",
+                    "reviewed_evidence_indexes": [],
+                    "reasoning_summary": "合成案例上下文不足，维持信息不足判断。",
+                },
+            })
+        results.append(result)
+    packet_bytes = packet_raw
+    result_bytes = b"".join(p2.canonical(row) + b"\n" for row in results)
+    checks_bytes = b"".join(p2.canonical(row) + b"\n" for row in checks)
+    receipt, safe = p2.verify_owner_results(packet_bytes, result_bytes, checks_bytes)
+    assert receipt["case_count"] == 20
+    assert receipt["semantic_check_count"] == 60
+    assert receipt["semantic_status_counts"] == {
+        "SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD": 60
+    }
+    assert safe["semantic_insufficient_context_count"] == 60
+    assert safe["quality_v1_admitted"] == 0
+    assert safe["training_authorized"] is False
+
+
+def test_verify_owner_results_rejects_missing_semantic_check():
+    manifest, source_raw = fixture_data()
+    packet_raw, _, _, _, _ = p2.build_package(
+        manifest, source_raw,
+        token_factory=lambda: "b" * 32,
+        shuffle=lambda values: None,
+    )
+    with pytest.raises(p2.AdjudicationHold, match="OWNER_RESULT_SET_CARDINALITY_HOLD"):
+        p2.verify_owner_results(packet_raw, b"{}\n", b"{}\n")
+
+
+def test_verify_owner_results_rejects_duplicate_case_dimension_check():
+    manifest, source_raw = fixture_data()
+    packet_raw, _, _, _, _ = p2.build_package(
+        manifest, source_raw,
+        token_factory=lambda: "c" * 32,
+        shuffle=lambda values: None,
+    )
+    packets = [json.loads(line) for line in packet_raw.splitlines()]
+    result_rows = []
+    check_rows = []
+    for packet in packets:
+        result = {
+            "schema": "storyforge_severity_evidence_review_v2",
+            "rubric_version": "r60_severity_rubric_v2",
+            "case_ref": packet["calibration_id"],
+            "assessments": {},
+        }
+        for dimension in ("player_agency", "hard_rule", "safety"):
+            result["assessments"][dimension] = {
+                "verdict": "INSUFFICIENT_CONTEXT", "evidence": [], "rule_basis": [],
+                "reasoning_summary": "合成案例上下文不足以作出可靠判断。",
+                "missing_context": ["合成案例缺少必要适用上下文。"],
+                "context_coverage": {
+                    "history_complete": False, "target_complete": True,
+                    "relevant_context_complete": False, "reviewed_rule_sources": [],
+                    "summary": "合成案例按维度完成范围核查。",
+                },
+                "confidence": 0.99,
+            }
+            check_rows.append({
+                "calibration_id": packet["calibration_id"], "dimension": dimension,
+                "reviewed_at_utc": "2026-11-09T00:00:00Z",
+                "check": {
+                    "schema": "storyforge_severity_semantic_entailment_check_v2",
+                    "rubric_version": "r60_severity_rubric_v2",
+                    "reviewer_role": "OWNER_INDEPENDENT",
+                    "reviewer_ref": "synthetic-owner-reviewer",
+                    "conclusion": "INSUFFICIENT_CONTEXT",
+                    "reviewed_evidence_indexes": [],
+                    "reasoning_summary": "合成案例上下文不足，维持信息不足判断。",
+                },
+            })
+        result_rows.append(result)
+    check_rows[-1] = dict(check_rows[0])
+    with pytest.raises(p2.AdjudicationHold, match="OWNER_SEMANTIC_CHECK_DUPLICATE"):
+        p2.verify_owner_results(
+            packet_raw,
+            b"".join(p2.canonical(row) + b"\n" for row in result_rows),
+            b"".join(p2.canonical(row) + b"\n" for row in check_rows),
+        )
