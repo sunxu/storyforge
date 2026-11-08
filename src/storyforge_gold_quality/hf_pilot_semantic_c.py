@@ -292,6 +292,12 @@ def reconcile(stage_root: Path, a_dir: Path, b_dir: Path,
             conflicts[category][f"original_{int(original_flag)}__c_{verdict}"] += 1
     if seen != set(by_owner):
         raise CalibrationHold("C_RESULT_COVERAGE_HOLD")
+    # If a local per-case CLI execution receipt exists, verify it in full.
+    # This is a local runner receipt, never cryptographic remote-model proof.
+    from . import hf_pilot_semantic_c_codex as codex  # noqa: PLC0415
+
+    cli_execution_verified = codex.verify_local_execution_receipt(
+        c_dir, packets, results)
     safe = {
         "schema": SAFE_SCHEMA,
         "status": "C_BLIND_SEMANTIC_RECONCILED__QUALITY_HOLD",
@@ -299,7 +305,12 @@ def reconcile(stage_root: Path, a_dir: Path, b_dir: Path,
         "c_packet_and_result_binding_verified": True,
         "c_verdict_counts": {k: dict(v) for k, v in verdict_counts.items()},
         "original_flag_vs_c_verdict": {k: dict(v) for k, v in conflicts.items()},
-        "reviewer_c_execution_verified": False,
+        "reviewer_c_execution_verified": cli_execution_verified,
+        "reviewer_c_input_blinding_verified": True,
+        "reviewer_c_execution_evidence": (
+            "OWNER_LOCAL_CODEX_RECEIPTS_NOT_REMOTE_ATTESTATION"
+            if cli_execution_verified else "NONE"
+        ),
         "reviewer_c_independence_verified": False,
         "semantic_severity_adjudication_complete": False,
         "quality_v1_admitted": 0, "training_authorized": False,
