@@ -43,8 +43,9 @@ To regenerate the lock, use the dedicated `.github/workflows/r60-hf-cpu-lock-res
 
 当前 lock SHA256：
 
-```text
-a48957b2337d703f4629206663e74d9986482c6905e63013a46dc8662204cfba
-```
+| Lock | SHA256 |
+|---|---|
+| `hf-cpu-tokenizer.lock`（R59 / Transformers 5.16.1） | `2ed75a4057c01a3f6310aa790157b721d0bc640cfc27cd3a94d5e1718681da75` |
+| `hf-quality-reviewer.lock`（R60 / Transformers 4.57.1） | `4a909bf5029245ead71ce28512e6f0f718f1097544a238e5c55db15736a3148f` |
 
-GitHub Actions lock resolution Run `41807222164`：提交锁与新解析结果一致，clean hash-verified install、`pip check` 通过，且 `torch` 不存在。
+GitHub Actions Run `42495819470`（commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5`）：两份 lock 均重新解析并与提交内容一致；hash-verified install、`pip check`、CPU-only boundary 与 R60 合成 `apply_chat_template` smoke 全部 PASS。
