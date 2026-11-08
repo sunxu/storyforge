@@ -5,8 +5,8 @@ import argparse
 import json
 from pathlib import Path
 
-from storyforge_gold_quality import hf_owner_adjudication_v2 as adjudication
 from scripts import r60_calibration_p0_freeze as p0
+from storyforge_gold_quality import hf_owner_adjudication_v2 as adjudication
 
 
 def main() -> int:
@@ -50,11 +50,15 @@ def main() -> int:
             else "P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN"
         )
         return 0 if result.get("status") == expected else 42
-    except (adjudication.AdjudicationHold, OSError, ValueError, TypeError, KeyError):
+    except (adjudication.AdjudicationHold, OSError, ValueError, TypeError, KeyError) as exc:
+        reason = (
+            str(exc) if isinstance(exc, adjudication.AdjudicationHold)
+            else "INPUT_OR_IO_ERROR"
+        )
         print(json.dumps({
             "schema": adjudication.SAFE_SCHEMA,
             "status": "P2_OWNER_ADJUDICATION_PREPARE_HOLD",
-            "reason_code": "INPUT_OR_IO_ERROR",
+            "reason_code": reason,
             "private_values_emitted": False,
             "owner_review_started": False,
             "model_calls": 0,
