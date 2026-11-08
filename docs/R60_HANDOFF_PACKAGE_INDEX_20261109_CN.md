@@ -130,3 +130,14 @@ Owner Pairwise SAFE 已验证 A/B 两槽各 1000/1000 来源映射、输入 SHA 
 | Quality-v1 admission / GPU / SFT | NOT DONE / NOT AUTHORIZED |
 
 **交接准备结论：文档与任务书已形成可执行交接包；私有 Gold72 P0 尚未执行，明确交由新 Agent。不得将交接准备完成宣称为训练准入完成。**
+
+
+## 8. P0 Freeze Runner 更新（2026-11-09）
+
+已新增 Owner Mac 本地执行工具与合成测试：
+
+- [P0 Freeze Runner](../scripts/r60_calibration_p0_freeze.py)
+- [Runner 合成测试](../tests/test_r60_calibration_p0_freeze.py)
+- [正式执行命令与安全边界](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#86-owner-mac-一键-p0-freeze-runner代码已提交尚未在-owner-mac-执行)
+
+代码提交已通过 GitHub CI / Ruff / Tests。它尚未在 Owner Mac 运行，因此本地私有 manifest、cross-set dedup receipt 和 Inventory SAFE 仍未生成；P0 不得标为 PASS。Runner 不会重跑 R60 1000-row crosswalk 或旧 A/B checkpoints，也不会调用模型/GPU/数据库。
