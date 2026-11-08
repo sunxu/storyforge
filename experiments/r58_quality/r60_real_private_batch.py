@@ -33,7 +33,8 @@ MAX_REVIEW_BYTES = 80_000
 # Note: no current story cards are selected, and no future turn is included.
 SQL = """
 WITH eligible AS MATERIALIZED (
-  SELECT DISTINCT ON (s.story_id) s.story_id, s.session_id, s.total_turns
+  SELECT DISTINCT ON (s.story_id) s.story_id, s.session_id, s.total_turns,
+         s.parent_session_id, s.forked_from_turn
   FROM public.story_v2_sessions s
   JOIN public.user_stories st ON st.id=s.story_id
   WHERE st.status='published' AND st.deleted_at IS NULL
@@ -42,7 +43,8 @@ WITH eligible AS MATERIALIZED (
     AND s.user_id=st.author_id AND s.total_turns>=30
   ORDER BY s.story_id, s.total_turns DESC, s.session_id
 ), sampled AS MATERIALIZED (
-  SELECT story_id,session_id FROM eligible ORDER BY md5(story_id) LIMIT 16
+  SELECT story_id,session_id,parent_session_id,forked_from_turn
+  FROM eligible ORDER BY md5(story_id) LIMIT 16
 ), replies AS MATERIALIZED (
   SELECT c.story_id,c.session_id,m.id AS aid,m.turn_index,
          m.content AS assistant_text,m.metadata,
@@ -54,6 +56,7 @@ WITH eligible AS MATERIALIZED (
       AND role='assistant' AND status='completed'
     ORDER BY turn_index DESC LIMIT 20
   ) m
+  WHERE c.parent_session_id IS NULL AND c.forked_from_turn IS NULL
 ), qualified AS (
   SELECT r.*,u.id AS uid,u.content AS user_text,
          p.id AS pid,p.content AS previous_assistant_text,
