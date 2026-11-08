@@ -144,7 +144,7 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
         envelope = json.loads(data)
         content = envelope["choices"][0]["message"]["content"]
         if not isinstance(content, str):
-            raise ValueError("not a textual response")
+            raise TypeError("not a textual response")
         model_output = json.loads(content)
     except (ValueError, KeyError, TypeError, IndexError) as exc:
         raise Hold("MODEL_JSON_INVALID") from exc
