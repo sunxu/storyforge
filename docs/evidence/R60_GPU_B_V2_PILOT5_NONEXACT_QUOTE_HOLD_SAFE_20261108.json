@@ -1,0 +1,44 @@
+{
+  "schema": "storyforge_r60_gpu_b_v2_pilot5_nonexact_quote_hold_safe_v1",
+  "date": "2026-11-08",
+  "job_id": "6af05bbf0e0338d1bb84ad9f",
+  "job_url": "https://huggingface.co/jobs/adradar/6af05bbf0e0338d1bb84ad9f",
+  "name": "r60-quality-gpu-pilot5-B-v2-01",
+  "namespace": "adradar",
+  "flavor": "h200",
+  "stage": "ERROR",
+  "exit_code": 42,
+  "created_at_utc": "2026-11-08T11:23:43.285Z",
+  "finished_at_utc": "2026-11-08T11:25:58.312Z",
+  "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+  "model": "zai-org/GLM-4-32B-0414",
+  "revision": "077b5c2f5c43bd3239fd605a0600229e8facbd4a",
+  "model_shards_loaded": "14/14",
+  "pilot_scope": {
+    "start": 1,
+    "limit": 5
+  },
+  "runner_schema": "storyforge_hf_literary_checkpoint_private_v2",
+  "safe_status": "HF_REVIEW_HOLD",
+  "safe_reason_code": "MODEL_NONEXACT_QUOTE_HOLD",
+  "output_dir": "gpu-review-output-B-pilot5-v2-01",
+  "checkpoint_count": 0,
+  "scope_of_failure": "First attempted output failed strict quote substring check before first checkpoint; exact invalid field/index unknown in v2 SAFE; no valid B decisions yet.",
+  "private_values_emitted": false,
+  "gpu_inference_performed": true,
+  "training_authorized": false,
+  "quality_v1_admitted": 0,
+  "a_context": {
+    "job_id": "6af056bb0e0338d1bb84ac8a",
+    "stage": "COMPLETED",
+    "checkpoints": 5,
+    "model_decisions": {
+      "PASS": 0,
+      "HOLD": 0,
+      "REJECT": 5
+    },
+    "semantics": "UNCALIBRATED"
+  },
+  "repair_plan": "Reuse vetted R58 one-shot bounded batch quote candidate-index repair. No generated text passed to GitHub or stdout; all non-quote judgment fields unchanged, full exact quote validation after repair, no fabricated quote or admission, no retry without explicit paid GPU approval.",
+  "current_status": "GPU_B_V2_QUOTE_CONTRACT_HOLD_NO_VALID_CHECKPOINTS"
+}
