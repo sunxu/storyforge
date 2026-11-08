@@ -287,7 +287,7 @@ def token_preflight(rows: list[dict], model: str, revision: str,
     if tokenizer_factory is None:
         try:
             from transformers import AutoTokenizer
-        except Exception as exc:  # noqa: BLE001 - do not reveal package paths
+        except Exception as exc:
             raise ReviewError("HF_CPU_TOKENIZER_IMPORT_HOLD") from exc
         tokenizer_factory = AutoTokenizer.from_pretrained
     if encode_fn is None:
@@ -307,19 +307,19 @@ def token_preflight(rows: list[dict], model: str, revision: str,
     try:
         tokenizer = tokenizer_factory(
             model, revision=revision, trust_remote_code=False)
-    except Exception as exc:  # noqa: BLE001 - no raw HF errors in Job logs
+    except Exception as exc:
         raise ReviewError("HF_CPU_TOKENIZER_LOAD_HOLD") from exc
     try:
         lengths = [len(encode_chat(tokenizer, prompt_messages(row)))
                    for row in rows]
-    except Exception as exc:  # noqa: BLE001 - token IDs/private text never logged
+    except Exception as exc:
         raise ReviewError("HF_CPU_CHAT_TEMPLATE_HOLD") from exc
     try:
         summary = describe_token_lengths(
             lengths, max_model_len=max_model_len,
             reserved_output_tokens=max_output_tokens,
             pilot_count=min(5, len(rows)))
-    except Exception as exc:  # noqa: BLE001 - only bounded stage codes
+    except Exception as exc:
         raise ReviewError("HF_CPU_TOKEN_SUMMARY_HOLD") from exc
     return {
         "schema": "storyforge_hf_literary_safe_v1",
