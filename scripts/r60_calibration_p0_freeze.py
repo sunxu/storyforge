@@ -60,14 +60,12 @@ def _set_phase(value: str) -> None:
 
 def _safe_diagnostic(exc: BaseException) -> dict[str, Any]:
     frames = traceback.extract_tb(exc.__traceback__)
-    local_frames = [
-        frame for frame in frames
-        if Path(frame.filename).name == "r60_calibration_p0_freeze.py"
-    ]
+    last_frame = frames[-1] if frames else None
     diagnostic: dict[str, Any] = {
         "phase": CURRENT_PHASE,
         "exception_type": type(exc).__name__,
-        "source_line": local_frames[-1].lineno if local_frames else None,
+        "source_file": Path(last_frame.filename).name if last_frame else None,
+        "source_line": last_frame.lineno if last_frame else None,
     }
     if isinstance(exc, OSError):
         diagnostic["errno"] = exc.errno
