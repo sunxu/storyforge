@@ -58,6 +58,26 @@ def _set_phase(value: str) -> None:
     CURRENT_PHASE = value
 
 
+def _private_temp_directory(prefix: str) -> Path:
+    """Create a private scratch directory and return its canonical path.
+
+    macOS may expose the system temporary directory through symlinked
+    ancestors (for example /var -> /private/var). Resolve those trusted OS
+    aliases before passing the path to validators that reject symlink paths.
+    The newly-created directory itself must not be a symlink.
+    """
+    created = Path(tempfile.mkdtemp(prefix=prefix))
+    if created.is_symlink():
+        raise FreezeHold("TEMP_DIRECTORY_IS_SYMLINK")
+    resolved = created.resolve(strict=True)
+    if not resolved.is_dir() or resolved.is_symlink():
+        raise FreezeHold("TEMP_DIRECTORY_INVALID")
+    os.chmod(resolved, 0o700)
+    if stat.S_IMODE(resolved.stat().st_mode) != 0o700:
+        raise FreezeHold("TEMP_DIRECTORY_PERMISSION_POSTCHECK_FAILED")
+    return resolved
+
+
 def _safe_diagnostic(exc: BaseException) -> dict[str, Any]:
     frames = traceback.extract_tb(exc.__traceback__)
     last_frame = frames[-1] if frames else None
@@ -394,8 +414,7 @@ def _load_gold(
     _set_phase("gold72_replay_owner_resolution")
     # Re-run the existing Gold72 Owner-resolution validator into an ephemeral
     # private temp directory, then compare its aggregate SAFE byte-for-value.
-    temp_dir = Path(tempfile.mkdtemp(prefix="r60-gold72-safe-check-"))
-    os.chmod(temp_dir, 0o700)
+    temp_dir = _private_temp_directory("r60-gold72-safe-check-")
     try:
         args = SimpleNamespace(
             repo_root=repo_root,
