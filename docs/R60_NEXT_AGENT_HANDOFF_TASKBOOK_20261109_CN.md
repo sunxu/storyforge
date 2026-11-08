@@ -271,3 +271,87 @@ python3 -m compileall -q src/storyforge_gold_quality src/storyforge_dataset
 统一原则：`Job COMPLETED ≠ PASS`；`Tokenizer PASS ≠ 语义 PASS`；`三维 NOT_SUPPORTED ≠ Quality PASS`；`Quality-v1 admission ≠ GPU/SFT 授权`。
 
 **新 Agent 的第一项工作只允许是 P0 的只读库存、来源和回执核验。P0 未通过前，不得修改审核 Prompt、运行模型或提交 HF Job。**
+
+
+---
+
+## 8. 2026-11-09 P0 执行补充：Gold72 20/20 划分决议与只读证据重建
+
+本节记录 Owner 在 2026-11-09 明确确认的 P0 划分原则，以及后续只读核验结果。它是执行补充，不替代 Owner 私有 manifest 和最终 SAFE。
+
+### 8.1 Owner 已确认的划分原则
+
+Gold72 40 条采用案例级分层，固定为：
+
+- Development：20 条。
+- Locked Regression：20 条。
+- 允许 Story 跨集合；story_disjoint=false 必须明确写入私有 manifest 和 SAFE。
+- 不重新抽样，不替换案例，不修改 A V3、B2、C 或历史 Owner 裁决。
+- 不得把 Locked Regression 描述为跨 Story 独立测试集。
+
+分层按 disagreement_type，组内按 target_sha256 字典序升序，确定性分配：
+
+| 分歧类型 | Development | Locked Regression |
+|---|---:|---:|
+| EXPLICIT_HOLD__B2_PASS | 15 | 15 |
+| EXPLICIT_HOLD__B2_REJECT | 2 | 1 |
+| CASE_LEVEL_SCORED_PASS__B2_REJECT | 1 | 1 |
+| CASE_LEVEL_SCORED_PASS__B2_HOLD | 2 | 3 |
+| **合计** | **20** | **20** |
+
+本次按上述规则只读计算：Development 涉及 5 个 Story，Locked Regression 涉及 6 个 Story，跨集合共享 5 个 Story。不得把这项结果解释成 Story 隔离。
+
+### 8.2 Gold72 来源重建结果
+
+本轮重新读取 Owner Evidence 中的 A V3、B2、C 和 Owner 历史材料：
+
+- A V3：192 条记录；完整文件 SHA256 与 A/B2 crosswalk SAFE pin 一致。
+- B2：blind input、instructions、Owner map、results、execution record 五项原始字节 SHA256 均与 B2 SAFE / completed receipt 对应 pin 一致。
+- B2：72/72 blind ↔ Owner map ↔ results 绑定；A/B2 可比较决策 72 条，一致 32 条、分歧 40 条。
+- C：40 条 blind packet、40 条 ID Map、40 条结果；C map 与重建的 A/B2 disagreement 集合逐条匹配 40/40。
+- C results-only SAFE：C_RESULTS_BINDING_VALID__EXECUTION_RECORD_UNAVAILABLE；执行记录缺失，独立性未证明。
+- Owner resolution：40 条逐案可关联；历史聚合裁决 PASS=30、HOLD=4、REJECT=6。Owner SAFE 为 GOLD72_OWNER_RESOLUTION_VALID__AGGREGATE_IMPORT_READY。
+
+B2 的执行回执 SHA 绑定通过，不代表密码学独立性已证明；C 的结果绑定通过，也不代表 C execution record 已存在。上述历史结果只作为来源和校准参考，不是 Quality-v1 admission。
+
+### 8.3 R60 Severe10 既有证据引用
+
+本轮不重新执行 1000 条 Owner crosswalk 或旧 A/B Checkpoint 审计，仅核对既有 SAFE 和 C 结果：
+
+- Owner Pairwise SAFE：OWNER_PAIRWISE_AUDIT_COMPLETE__SEMANTIC_HOLD；A/B 各 5 条，Checkpoint 回执 5/5 + 5/5，来源总数 10，matched_cases=0。
+- Reviewer C SAFE：C_BLIND_SEMANTIC_RECONCILED__QUALITY_HOLD；10/10 来源完整性和 C packet/result 绑定通过，本地 Codex 执行回执验证通过；模型身份独立验证和 Reviewer C 独立性仍为 false。
+- C 的历史三维判断仍只是校准参考，不是 Owner ground truth。
+
+### 8.4 跨集合只读指纹核验
+
+使用 Gold C packet 中的完整 history + current_user_text + target_assistant_text，与 R60 C packet 中的 visible_history + target_text，构造规范化来源指纹：
+
+- 完整历史 + 目标指纹交集：0。
+- 历史上下文指纹交集：0。
+- 目标正文精确 SHA256 交集：0。
+
+Gold 40 条的 target_assistant_text SHA256 与 Gold C Owner map 的 target_sha256 逐条匹配 40/40。R60 C Owner map 的 packet file SHA、map receipt SHA 和逐包 packet SHA 均可复核。
+
+本次比较是精确重复检查，不声称能够发现语义近似、改写或同一剧情的不同续写。
+
+### 8.5 当前 P0 状态：尚未最终 PASS
+
+本轮已完成只读来源重建、历史 SAFE/receipt 核对、20/20 确定性分层计算和跨集合精确指纹去重；但以下 Owner 私有产物尚未创建：
+
+- GOLD72_CALIBRATION_MANIFEST_PRIVATE.json
+- R60_SEVERE10_CALIBRATION_MANIFEST_PRIVATE.json
+- CALIBRATION_CROSSSET_DEDUP_PRIVATE.json
+- CALIBRATION_INVENTORY_SAFE.json
+
+这些文件必须由 Owner Mac 在 ~/.local/share/storyforge/r60/private/ 下以 create-only 方式生成，私有 manifest 文件权限 0600、父目录权限 0700。ChatGPT 当前 GitHub 连接只能读取 Owner Evidence 仓库，不能写入 Owner Mac 私有目录；不得把包含 case/story/blind ID 或来源指纹的 manifest 上传 GitHub 代替本地冻结。
+
+因此当前状态必须记为：
+
+- 来源重建：PASS（只读重建层）。
+- Gold72 40/40 A/B2/C membership：PASS（只读重建层）。
+- 20/20 case-level stratification：规则已确认，分配已计算。
+- Gold72 ↔ R60 精确去重：PASS（只读核验层）。
+- Owner 私有 manifest / dedup receipt / aggregate SAFE：PENDING。
+- **P0 总状态：HOLD，不能进入 P1。**
+
+继续执行时只需在 Owner Mac 完成上述四个 create-only 产物及其本地 SHA/权限复核；不得重跑旧模型，不得重做已通过的旧 Checkpoint 审计。Quality-v1 admitted=0、training_authorized=false、GPU 未启动、R50 未访问、1000 条批量审核未启动。
