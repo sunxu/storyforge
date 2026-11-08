@@ -107,6 +107,15 @@ Owner 回传的 SAFE 显示：
 
 Owner 私有文件仅保留在本机受控私有目录。GitHub 不存放其正文、crosswalk 内容、blind IDs、source locators 或逐案 Checkpoint。
 
+## 3.6 R58 Jinja2 故障复发：工程门禁已落实（2026-11-08）
+
+- 独立 Reviewer profile：`requirements/hf-quality-reviewer.in` + `requirements/hf-quality-reviewer.lock`。
+- 锁定 Transformers 4.57.1、SentencePiece 0.2.1、Jinja2 3.1.6；Hub 解析为 0.36.2；lock 含 729 个 SHA256 包哈希。
+- R59 Qwen3.8 的 `hf-cpu-tokenizer.lock`（Transformers 5.16.1）保持独立，未降级或合并。
+- GitHub Actions Run `42495819470`（commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5`）通过：两份 lock 可重解析、hash-verified install、`pip check`、CPU-only boundary、合成 `apply_chat_template`。
+- R60 CPU Runbook 已改为将 Reviewer lock 只读复制到 A/B 输入，远端先校验 SHA256，再执行 `pip install --require-hashes`。
+- **边界**：以上是 GitHub CI 与文档/脚本准备完成；Owner Mac 尚未执行新的 lock staging/上传，未提交新的 HF Job，未验证本次目标模型 Tokenizer，也没有 GPU/推理/训练动作。
+
 ## 4. 当前代码资产：复用，不要重造
 
 | 文件 | 已有责任 | 新阶段需要做什么 |
