@@ -14,7 +14,7 @@ import time
 from pathlib import Path
 
 SCHEMA = "storyforge_hf_literary_blind_input_v1"
-CHECKPOINT_SCHEMA = "storyforge_hf_literary_checkpoint_private_v2"
+CHECKPOINT_SCHEMA = "storyforge_hf_literary_checkpoint_private_v3"
 POLICY = "storyforge_hf_literary_visible_history_v1"
 FLOORS = {
     "chinese_prose": 4, "character_consistency": 4, "npc_initiative": 3,
@@ -40,6 +40,76 @@ SYSTEM = (
 
 class ReviewError(ValueError):
     pass
+
+
+class QuoteValidationError(ReviewError):
+    """Safe invalid quote indices only, never the quotation text."""
+
+    def __init__(self, invalid_indices: dict[str, list[int]]) -> None:
+        super().__init__("MODEL_NONEXACT_QUOTE_HOLD")
+        self.invalid_indices = invalid_indices
+
+
+MAX_REPAIR_CANDIDATES = 128
+MAX_REPAIR_ITEMS = 24
+REPAIR_OUTPUT_TOKENS = 256
+
+
+def quote_segments(value: str) -> list[str]:
+    parts = re.split(r"(?<=[。！？!?；;])|[\\r\\n]+", value)
+    candidates: list[str] = []
+    for part in parts:
+        part = part.strip()
+        if len(part) > 300:
+            candidates.extend(x.strip() for x in re.split(r"(?<=[，,])", part))
+        else:
+            candidates.append(part)
+    return [x for x in candidates if 8 <= len(x) <= 300]
+
+
+def quote_candidates(row: dict, field: str) -> list[str]:
+    if field == "specific_source_quotes":
+        bodies = [x["content"] for x in row["visible_history"]]
+    elif field == "specific_target_quotes":
+        bodies = [row["target_text"]]
+    else:
+        raise ReviewError("QUOTE_REPAIR_FIELD_HOLD")
+    found: list[str] = []
+    seen: set[str] = set()
+    for body in bodies:
+        for candidate in quote_segments(body):
+            if candidate not in seen:
+                seen.add(candidate)
+                found.append(candidate)
+                if len(found) > MAX_REPAIR_CANDIDATES:
+                    raise ReviewError("QUOTE_REPAIR_CANDIDATES_HOLD")
+    if not found:
+        raise ReviewError("QUOTE_REPAIR_CANDIDATES_HOLD")
+    return found
+
+
+def repair_schema(indices: dict[str, list[int]], candidates: dict[str, list[str]]) -> dict:
+    count = sum(len(v) for v in indices.values())
+    if not 1 <= count <= MAX_REPAIR_ITEMS:
+        raise ReviewError("QUOTE_REPAIR_ITEMS_HOLD")
+    max_candidates = max(len(v) for v in candidates.values())
+    return {
+        "type": "object", "additionalProperties": False,
+        "properties": {"repairs": {
+            "type": "array", "minItems": count, "maxItems": count,
+            "items": {
+                "type": "object", "additionalProperties": False,
+                "properties": {
+                    "field": {"type": "string", "enum": list(indices)},
+                    "quote_index": {"type": "integer", "minimum": 0, "maximum": 11},
+                    "candidate_index": {"type": "integer", "minimum": 0,
+                                        "maximum": max_candidates - 1},
+                },
+                "required": ["field", "quote_index", "candidate_index"],
+            }
+        }},
+        "required": ["repairs"],
+    }
 
 
 def canonical(value: object) -> bytes:
