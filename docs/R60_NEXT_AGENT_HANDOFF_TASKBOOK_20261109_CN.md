@@ -680,3 +680,40 @@ P1 已 PASS 后，继续准备 P2 Owner 独立盲裁决。当前只完成通用�
 **P2 当前状态：PACKET BUILDER READY / OWNER MAC DRY-RUN PENDING / OWNER REVIEW NOT STARTED。** 下一步先在 Owner Mac 执行默认 dry-run；只有返回 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN` 后，才执行带 `--write` 的私有包生成。生成后仅把 packets + instructions 提供给 Owner 盲审，ID map 不得给 reviewer。Owner 结果与独立 semantic checks 需另行校验并生成逐案 timestamp/receipt；在此之前不宣称 P2 PASS。
 
 Quality-v1 admitted=0；training_authorized=false；无模型、GPU、1000 条审核或 SFT。
+
+
+### 8.16 P2 Owner 结果与 60 项语义复核的私有回执验证器（2026-11-09）
+
+在 P2 包生成器基础上，增加 Owner 结果回执验证，避免只生成 20 条 verdict 而漏掉独立语义复核，或出现重复/缺失维度。
+
+新增：
+- `scripts/r60_owner_adjudication_verify_v2.py`
+- `hf_owner_adjudication_v2.verify_owner_results()`
+- 合成测试扩展到 20 条结果 + 60 项语义检查。
+
+验证器要求：
+1. packet/result/semantic-check 分别严格为 20/20/60 行。
+2. 20 个 case_ref 与 20 个新 calibration_id 一一对应，不能混入旧 ID。
+3. 每条结果完整通过 v2 Schema、exact quote 和维度规则验证。
+4. 60 项覆盖 20 case × 3 dimensions；不允许重复或缺失。
+5. 每项语义复核必须标记 `OWNER_INDEPENDENT`，且 reviewer_ref 在本批次保持一致。该字符串一致性不是身份认证；SAFE 明确 `owner_identity_cryptographically_attested=false`。
+6. 每个 timestamp 必须带 UTC 时区。
+7. 每项 semantic check 必须检查该维度全部已引用 evidence indexes，不能只挑选部分引用。
+8. `DOES_NOT_SUPPORT_VERDICT` 不会被自动接受为通过；产生 HOLD 计数。独立确认 `INSUFFICIENT_CONTEXT` 同样保留 HOLD，不伪装成语义 PASS。
+9. 私有 manifest 绑定 packet、结果、语义复核和 rubric 的 SHA-256；SAFE 不输出 case IDs、正文、判定细节。
+10. 不进行 Quality-v1 admission，不授权 GPU/SFT。
+
+Owner 完成两份私有 JSONL 后，在仓库根目录运行：
+
+```bash
+python scripts/r60_owner_adjudication_verify_v2.py \
+  --package-dir "/Users/keedle/.local/share/storyforge/r60/private/owner-adjudication-dev20"
+```
+
+要求该目录是 0700，输入文件均为 0600；验证成功后只会 create-only 写入：
+- `OWNER_ADJUDICATION_RESULTS_MANIFEST_PRIVATE.json`
+- `OWNER_ADJUDICATION_RESULTS_SAFE.json`
+
+验证失败输出稳定 reason code，不输出私有正文。验证器不会覆盖已有回执。
+
+**P2 当前仍未开始真实 Owner 审核。** 先完成 Owner Mac 的默认 dry-run，再显式 `--write` 生成盲包；完成 Owner verdict 与 60 项语义复核后，运行上述 verifier。只有结果与独立语义证据均满足要求，才能推进后续校准；任何 semantic HOLD 均需保留，不得通过改写结果来追求全绿。
