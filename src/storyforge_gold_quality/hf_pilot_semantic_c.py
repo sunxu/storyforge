@@ -294,7 +294,7 @@ def reconcile(stage_root: Path, a_dir: Path, b_dir: Path,
         raise CalibrationHold("C_RESULT_COVERAGE_HOLD")
     # If a local per-case CLI execution receipt exists, verify it in full.
     # This is a local runner receipt, never cryptographic remote-model proof.
-    from . import hf_pilot_semantic_c_codex as codex  # noqa: PLC0415
+    from . import hf_pilot_semantic_c_codex as codex
 
     cli_execution_verified = codex.verify_local_execution_receipt(
         c_dir, packets, results)
