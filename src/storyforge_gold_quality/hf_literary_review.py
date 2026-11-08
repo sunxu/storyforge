@@ -9,10 +9,9 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
-import sys
 import time
+from pathlib import Path
 
 SCHEMA = "storyforge_hf_literary_blind_input_v1"
 CHECKPOINT_SCHEMA = "storyforge_hf_literary_checkpoint_private_v1"
