@@ -109,6 +109,24 @@ Owner 回传的 SAFE 显示：
 - GLM-4 与 GLM-Z1 必须读取各自模型 Revision 的官方 Chat Template / generation_config；不要把 Qwen 参数机械套给 GLM。
 - 当前三态 C 结构存在于 hf_pilot_semantic_c.py，但通用文学 Reviewer 的输出仍是布尔 flags。新版本必须将三态证据作为独立字段，不能将 C 结果硬塞成旧布尔字段。
 
+## 4A. 已知重复故障：Jinja2 / Chat Template（必须先读）
+
+**R60 的 Jinja2 故障是 R58 已解决问题的重复发生，不应作为未知依赖问题重新排查。**
+
+Owner 提供的既有实测记录：
+- 2026-11-01，R58 已验证 `transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。
+- 当时缺少 Jinja2 会使 Transformers Chat Template 抛出 `ImportError`；补齐后，A/B 两组真实 HF CPU Tokenizer 预检均通过。
+- 2026-11-08，R60 CPU 诊断再次遇到 Jinja2 缺失导致的 Chat Template 故障。R60 后续修复不代表可以删除依赖基线或跳过预检。
+
+**永久经验与执行约束**
+1. `jinja2==3.1.6` 必须作为 Transformers Chat Template 运行依赖显式声明，不能依赖环境偶然预装。
+2. 与既有 R58 已验证组合保持一致：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`；若确需变更版本，先做单独兼容性验证并更新 lock/测试。
+3. 每个 HF Runner 的依赖清单/安装命令都必须显式覆盖以上依赖；禁止仅在某一次临时 Job 命令中补装而不沉淀到可复用依赖定义。
+4. 提交任何 HF CPU/GPU Job 前，在与目标 Job 相同的镜像/依赖安装步骤中执行 `pip check`、版本/import probe，并实际调用目标 Tokenizer 的 `apply_chat_template` 冒烟测试。
+5. 依赖探针失败即停止，不提交 Job；不要用重复提交、换 flavor 或换 namespace 规避。
+6. 将“缺 Jinja2 → Chat Template ImportError”加入 Runtime/Tokenizer 合成回归与 Job preflight checklist；CI 应检查依赖 pin 不被意外删除。
+7. 复用既有 R58 证据和 R60 Runbook，不重复付费复现已知故障。R60 既有实测详见 [HF CPU Stage 后预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md)。
+
 ## 5. 新阶段模型组合
 
 | 角色 | 模型 | 处理 |
