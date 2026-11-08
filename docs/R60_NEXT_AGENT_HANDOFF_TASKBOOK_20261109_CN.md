@@ -497,3 +497,20 @@ Owner Mac 第三次 dry-run 返回：
 CI、R58 scoped synthetic、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles 以最终测试提交 `37e7f7484f0f440f6c6a4f61ada532c0d33e00bb` 的实际 Actions 结果为准。
 
 **下一步仍只允许 Owner Mac 重跑 dry-run。** 必须取得完整 SAFE JSON 并检查 P0 状态、Gold72 Story 聚合数、Pilot10 计数、三类跨集合交集和唯一来源数量；若 dry-run PASS，再单独确认后执行正式 create-only 冻结。不得直接复用本次未输出的内存 dedup 结果。
+
+
+### 8.10 P0 只读预检通过，等待正式冻结确认（2026-11-09）
+
+Owner Mac 最新 dry-run SAFE 返回 `CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_FILES_WRITTEN`。
+
+聚合结果：
+- Gold72 来源 40；A/B 可比较 72，其中分歧 40、一致 32。
+- Gold72 development / locked regression = 20 / 20；Story 数分别 5 / 6，共享 Story 数 5；允许 Story 跨集合，`story_disjoint=false`。
+- Gold72 历史 Owner 裁决：PASS 30 / HOLD 4 / REJECT 6；历史 Reviewer C：PASS 38 / HOLD 1 / REJECT 1。C execution record 与 independence 仍未证明。
+- R60 Severe10 来源 10；A/B checkpoint receipt A=5、B=5；A/B matched cases=0；C execution verified=true，C independence verified=false。
+- Gold72↔R60 exact history / target / full-history-target intersections 均为 0；跨集合唯一来源数 50。
+- `manifest_files_written=0`；`private_values_emitted=false`；GPU/R50 未启动/未访问；Quality-v1 admitted=0；training_authorized=false。
+
+最新分支提交 `15ab890506ba11411f6e81c1c5f35e03fd55f497` 的 CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic 均已通过。PR #25 仍 Open / Draft，head 与该提交一致。
+
+**状态边界：P0 只读预检 PASS，不等于正式冻结完成。** 尚未生成四个 create-only 文件，尚未验证文件存在性、SHA、0600/0700 权限及历史文件不变性。正式冻结需要 Owner 明确确认后，再在 Owner Mac 使用同一命令去掉 `--dry-run` 执行；之后必须重新核验四份产物和最终 SAFE。未经确认不得写入。
