@@ -152,6 +152,10 @@ R60 专用保守修复命令与证据见 `docs/R60_HF_CPU_JOB_A_FAILURE_DIAGNOST
 
 ## 六、最新状态与未完成事项
 
+> **2026-11-08 R60 当前证据（优先级高于 R58 历史状态）**：真实 HF CPU Reviewer A [`6af045fb0e0338d1bb84a4ce`](https://huggingface.co/jobs/adradar/6af045fb0e0338d1bb84a4ce) 与 B [`6af047a70e0338d1bb84a5ed`](https://huggingface.co/jobs/adradar/6af047a70e0338d1bb84a5ed) 均已完成各 1000/1000 的 Tokenizer 预检，`over_budget_count=0`，两者公开 SAFE 见 `docs/evidence/R60_HF_A_CPU1000_JINJA_FIX_PASS_SAFE_20261108.json` 和 `docs/evidence/R60_HF_B_CPU1000_TOKEN_PREFLIGHT_PASS_SAFE_20261108.json`。本次明确复用 R58 已验证的 Jinja2/SentencePiece 安装基线。**这不是两模型文学评分、不是完整 GPU 环境等价性证明、不是 1000 条 Quality PASS 或训练授权**；下一个独立闸门是最小 Reviewer 推理 Pilot 和严格私有 checkpoint 验证。
+
+
+
 - **2026-11-01 R58 A/B 13 条真实 HF CPU Token 预检已完成**：A/B 各 13/13 PASS，超出 32,768 上下文预算均为 0；完整汇总见 `docs/evidence/R58_AB_TOKEN_PREFLIGHT_AGGREGATE_SAFE_20261101.json`。PRIVATE 回执及输入指纹不提交 GitHub。
 - A：`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`；Transformers 4.57.1；Tokenizer `Qwen2TokenizerFast`；prompt min/median/p95/max = 5,732 / 11,883 / 27,615 / 27,615；最大总预算 30,015。
 - B：`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`；Transformers 4.57.1；Tokenizer `PreTrainedTokenizerFast`；prompt min/median/p95/max = 5,479 / 11,496 / 26,677 / 26,677；最大总预算 29,077。完整 SHA 从 HF Hub API 获取，与先前记录的 `077b5c2f…cbd4a` 前后缀一致。
