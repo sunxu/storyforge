@@ -428,6 +428,7 @@ def verify_owner_results(
     }
     seen_pairs: set[tuple[str, str]] = set()
     semantic_status_counts: dict[str, int] = {}
+    reviewer_refs: set[str] = set()
     for row in checks:
         if (set(row) != {"calibration_id", "dimension", "reviewed_at_utc", "check"}
                 or not isinstance(row["calibration_id"], str)
@@ -443,6 +444,13 @@ def verify_owner_results(
             raise AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD") from None
         if reviewed_at.tzinfo is None or reviewed_at.utcoffset() != timezone.utc.utcoffset(reviewed_at):
             raise AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD")
+        check = row["check"]
+        if (not isinstance(check, dict)
+                or check.get("reviewer_role") != "OWNER_INDEPENDENT"
+                or not isinstance(check.get("reviewer_ref"), str)
+                or len(check["reviewer_ref"]) < 8):
+            raise AdjudicationHold("OWNER_SEMANTIC_REVIEWER_BINDING_HOLD")
+        reviewer_refs.add(check["reviewer_ref"])
         pair = (row["calibration_id"], row["dimension"])
         if pair in seen_pairs:
             raise AdjudicationHold("OWNER_SEMANTIC_CHECK_DUPLICATE")
@@ -461,6 +469,8 @@ def verify_owner_results(
         semantic_status_counts[status] = semantic_status_counts.get(status, 0) + 1
     if seen_pairs != expected_pairs:
         raise AdjudicationHold("OWNER_SEMANTIC_CHECK_COVERAGE_HOLD")
+    if len(reviewer_refs) != 1:
+        raise AdjudicationHold("OWNER_SEMANTIC_REVIEWER_IDENTITY_MISMATCH")
 
     manifest = {
         "schema": "storyforge_r60_owner_adjudication_results_manifest_private_v2",
