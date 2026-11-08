@@ -80,9 +80,9 @@ for SLOT in A B; do
   CMD="set -eu
 export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
-python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6' 'sentencepiece==0.2.1'
+python3 -m pip install --quiet --no-cache-dir -r requirements/hf-quality-reviewer.in
 python3 -m pip check
-python3 -c 'import jinja2, sentencepiece; print(jinja2.__version__)'
+python3 -c 'import transformers, jinja2, sentencepiece; assert transformers.__version__ == "4.57.1"; assert jinja2.__version__ == "3.1.6"; assert sentencepiece.__version__ == "0.2.1"; print("R60 reviewer dependency baseline: PASS")'
 echo HF_TOKEN_DEPS_PASS
 test -f /input/source.private.jsonl
 python3 /input/runner.py --input /input/source.private.jsonl \
