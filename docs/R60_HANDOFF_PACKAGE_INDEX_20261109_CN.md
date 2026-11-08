@@ -162,3 +162,14 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 - 详细验收与边界见 [P1 执行任务书 8.14](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#814-p1-v2-标准与合成回归通过-2026-11-09)。
 
 **当前：P0 PASS、P1 PASS；P2 Owner 独立盲裁决未开始。** Quality-v1 admitted=0；没有模型/HF/GPU/1000 条审核/SFT。
+
+
+## 11. P2 Owner Development-20 blind packet builder 已准备
+
+- 实现：`src/storyforge_gold_quality/hf_owner_adjudication_v2.py`
+- Owner Mac CLI：`scripts/r60_owner_adjudication_v2.py`
+- 合成测试：`tests/test_hf_owner_adjudication_v2.py`
+- 只准备 Gold72 Development 20；Locked Regression 20 不输出；R60 Severe10 不读取。
+- 默认 dry-run，必须显式 `--write` 才 create-only 生成六份 Owner 私有文件。
+- 真实 Owner 裁决尚未开始，P2 尚未 PASS。
+- 执行命令与限制见 [P2 任务书 8.15](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#815-p2-gold72-development-20-owner-盲裁决包生成器已实现-2026-11-09)。
