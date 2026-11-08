@@ -121,7 +121,7 @@ R60 再次发生同类故障。必须把经验固化为依赖和门禁，而不�
 2. 每次提交 HF Job 前，在目标镜像和依赖安装环境运行 `pip check`、三项 import/version probe，以及目标 Tokenizer 的 `apply_chat_template` 冒烟测试。
 3. 增加 CI 回归，确保 Chat Template 依赖不会从依赖清单/Runner 安装步骤中消失。
 4. preflight 任一失败立即停止，不提交 Job、不换 flavor/namespace、不自动重试。
-5. 复用 [R60 HF CPU 预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 的已知故障记录；不得再次花费付费 Job 诊断已知的缺包原因。
+5. 复用 [R60 HF CPU 预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 的已知故障记录；不得再次花费付费 Job 诊断已知的缺包原因。\n6. R60 Reviewer 已新增独立依赖输入 `requirements/hf-quality-reviewer.in`，避免误用 R59 Qwen3.8 的 Transformers 5.16.1 profile；GitHub Actions 将在 Transformers 4.57.1 环境执行合成 `apply_chat_template` 冒烟。**当前 hash-pinned reviewer lock 尚未生成，生成并验证前不得用该 profile 提交新的付费 HF Job。**
 
 ## P1 — 三项严重问题的证据标准 v2
 
