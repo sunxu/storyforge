@@ -173,3 +173,11 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 - 默认 dry-run，必须显式 `--write` 才 create-only 生成六份 Owner 私有文件。
 - 真实 Owner 裁决尚未开始，P2 尚未 PASS。
 - 执行命令与限制见 [P2 任务书 8.15](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#815-p2-gold72-development-20-owner-盲裁决包生成器已实现-2026-11-09)。
+
+
+### P2 Owner 审核结果回执验证
+
+- 验证器：`scripts/r60_owner_adjudication_verify_v2.py`
+- 核心实现：`hf_owner_adjudication_v2.verify_owner_results()`
+- 固定验收 20 个 verdict + 60 项独立语义复核；按新 calibration_id 绑定；完整检查所有引用索引；输出私有 SHA-256 manifest 和 SAFE。
+- 真实 Owner 审核尚未开始。命令与 HOLD 规则见 [任务书 8.16](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#816-p2-owner-结果与-60-项语义复核的私有回执验证器-2026-11-09)。
