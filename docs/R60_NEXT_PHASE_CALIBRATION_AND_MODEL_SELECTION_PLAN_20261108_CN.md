@@ -3,7 +3,7 @@
 日期：2026-11-08  
 目标分支：`r60/gold192-history-v3-adapter`  
 关联主线：PR #25 / Issue #26  
-当前状态（2026-11-09）：**P0 正式冻结 PASS；P1 三维严重证据标准 v2、Schema、合成回归及旧 v3/v1 兼容测试 PASS；P2 Development-20 Owner 盲裁决包生成器已实现并通过合成测试，Owner Mac dry-run 与真实 Owner 裁决待执行。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
+当前状态（2026-11-09）：**P0 正式冻结 PASS；P1 三维严重证据标准 v2、Schema、合成回归及旧 v3/v1 兼容测试 PASS；P2 Development-20 Owner 盲裁决包生成器、20 verdict + 60 semantic-check 回执验证器已实现并通过合成测试；Owner Mac dry-run 与真实 Owner 裁决待执行。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
 
 ## 0. 执行目标与当前基线
 
