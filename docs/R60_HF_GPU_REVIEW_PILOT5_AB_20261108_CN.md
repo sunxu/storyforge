@@ -1,5 +1,17 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08：A/B 同镜像 CPU 预检触发资源闸门（最新进度，覆盖下面旧待提交段落）
+
+已只读 inspect/logs 确认先前通过 Owner Mac 提交的两个 **CPU-basic** Job 都已完成为 **ERROR / exit 42**：A `6af04c570e0338d1bb84a91e`（10:17:59–10:18:08 UTC）、B `6af04c58e6320c66fad7416c`（10:18:00–10:18:10 UTC）。均先输出 `HF_GPUIMAGE_DEPS_PRESENT`，随后仅输出 `HF_REVIEW_HOLD / HF_CPU_RESOURCE_GUARD_HOLD`；还未运行真实 Tokenizer。**因此前文“GPU 镜像 CPU 已通过才可 GPU”硬门槛尚未完成，GPU Job=0，模型评审=0；旧标准 CPU 镜像 A/B 1000/1000 PASS 保持有效**。
+
+代码/上传镜像资源检查 `ResourceGuard.check_cpu_only()` 检查 `ACCELERATOR`、`CUDA_VISIBLE_DEVICES`、`NVIDIA_VISIBLE_DEVICES`、`/dev/nvidia*` 和 `torch.cuda` 模块是否已导入；上次只设置 `CUDA_VISIBLE_DEVICES=''`。GPU 镜像中继承的 `NVIDIA_VISIBLE_DEVICES` 可能非 CPU 值，但目前只拿到了聚合 HOLD，**尚未证实具体子检查**。不要因为是 CPU-basic 就放宽设备检查；不要取消 Guard；不要重复直接提交相同命令；不要将此描述成 Tokenizer、模型或源数据错误。
+
+**修复策略**：只在单个 A CPU Job 里读出 SAFE 的资源 `checks` 字典；若失败项**除** `nvidia_visibility` 外还存在任何项目，立即退出 `HF_CPU_RESOURCE_UNEXPECTED_HOLD`，不读取私有输入。仅当没有其它失败项时，在 CPU Job shell 显式 `export NVIDIA_VISIBLE_DEVICES=void`，重新运行完整、原样的 ResourceGuard，仍必须全部 PASS；此处理不取消 `/dev/nvidia*` 实际设备检查，也不修改 `ACCELERATOR`。之后在同一固定 vLLM 镜像中才运行真正 A 的 Tokenizer，须取得 HF `COMPLETED`、`cases_checked=1000`、`over_budget_count=0`。**先 A 单槽新输出，完成后才 B；不再 A/B 同时盲重试**。新任务名建议 `r60-gpuimage-cpu-token-A-envfix-02`、新独立输出 `cpu-output-gpuimage-token-A-02`，所有原失败 Job/输出保留。
+
+SAFE 聚合证据保存到 [`docs/evidence/R60_GPUIMAGE_CPU_GUARD_HOLD_SAFE_20261108.json`](evidence/R60_GPUIMAGE_CPU_GUARD_HOLD_SAFE_20261108.json)。该子资源探针仅公开固定字段的 PASS/FAIL、标准错误码，不输出环境变量原始值或用户私人内容。
+
+---
+
 ## 当前事实与范围
 
 - 原冻结 Bucket 根：`hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z`。原 `input_A/source.private.jsonl`、`input_B/source.private.jsonl` 各含 1000 条独立盲审输入，`diagnostic-runner-v3/runner.py` 复用统一 `hf_literary_review.py`；既有文件均只读挂载，绝不上传 Owner crosswalk。
