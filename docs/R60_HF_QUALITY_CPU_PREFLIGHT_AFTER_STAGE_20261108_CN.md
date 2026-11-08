@@ -65,8 +65,15 @@ test -f "$STAGE/owner/owner_crosswalk.private.json"
 test -f requirements/hf-quality-reviewer.lock
 LOCK_SHA="$(shasum -a 256 requirements/hf-quality-reviewer.lock | awk '{print $1}')"
 for SLOT in A B; do
-  install -m 600 requirements/hf-quality-reviewer.lock \
-    "$STAGE/input_$SLOT/hf-quality-reviewer.lock"
+  TARGET="$STAGE/input_$SLOT/hf-quality-reviewer.lock"
+  if [[ -e "$TARGET" || -L "$TARGET" ]]; then
+    cmp -s requirements/hf-quality-reviewer.lock "$TARGET" || {
+      echo "R60_REVIEWER_LOCK_COLLISION_HOLD" >&2
+      exit 42
+    }
+  else
+    install -m 600 requirements/hf-quality-reviewer.lock "$TARGET"
+  fi
 done
 echo "R60_REVIEWER_LOCK_SHA256=$LOCK_SHA"
 ~~~
