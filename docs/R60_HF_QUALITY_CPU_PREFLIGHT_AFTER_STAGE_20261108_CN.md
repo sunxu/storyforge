@@ -31,6 +31,23 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 EXPAND="$BASE/r60-expand-first-600"
 STAGE="$BASE/r60-hf-quality-first-1000"
 
+python3 - <<'PY'
+from pathlib import Path
+pins = {
+    "transformers==4.57.1",
+    "sentencepiece==0.2.1",
+    "jinja2==3.1.6",
+    "huggingface_hub>=0.35,<3",
+}
+declared = {
+    line.strip() for line in Path("requirements/hf-quality-reviewer.in").read_text().splitlines()
+    if line.strip() and not line.lstrip().startswith("#")
+}
+if not pins.issubset(declared):
+    raise SystemExit("R60_REVIEWER_DEPENDENCY_PROFILE_HOLD")
+print("R60 reviewer dependency source profile: PASS")
+PY
+
 hf auth whoami
 python3 -m storyforge_dataset.hf_runtime doctor --profile cpu --json
 python3 experiments/r58_quality/r60_hf_quality_adapter.py audit \
@@ -80,7 +97,7 @@ for SLOT in A B; do
   CMD="set -eu
 export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
-python3 -m pip install --quiet --no-cache-dir -r requirements/hf-quality-reviewer.in
+python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6' 'sentencepiece==0.2.1'
 python3 -m pip check
 python3 -c 'import transformers, jinja2, sentencepiece; assert transformers.__version__ == "4.57.1"; assert jinja2.__version__ == "3.1.6"; assert sentencepiece.__version__ == "0.2.1"; print("R60 reviewer dependency baseline: PASS")'
 echo HF_TOKEN_DEPS_PASS
