@@ -123,7 +123,9 @@ def _validate_manifest(manifest: dict, source_packet_raw: bytes) -> list[dict]:
     development = manifest.get("development_cases")
     locked = manifest.get("locked_regression_cases")
     if (not isinstance(development, list) or len(development) != 20
+            or any(not isinstance(row, dict) for row in development)
             or not isinstance(locked, list) or len(locked) != 20
+            or any(not isinstance(row, dict) for row in locked)
             or any(row.get("split") != "development" for row in development)
             or any(row.get("split") != "locked_regression" for row in locked)):
         raise AdjudicationHold("P0_GOLD_SPLIT_MANIFEST_INVALID")
@@ -363,6 +365,7 @@ def prepare(
         raise AdjudicationHold("PRIVATE_OUTPUT_DIRECTORY_HOLD")
     output_dir.mkdir(mode=0o700)
     output_dir.chmod(0o700)
+    safe["files_written"] = 6
     outputs = [
         (PACKET_NAME, packet_raw),
         (MAP_NAME, canonical(private_map) + b"\n"),
