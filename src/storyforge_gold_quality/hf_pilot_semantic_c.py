@@ -224,6 +224,24 @@ def validate_c_result(result: dict, packet: dict) -> dict[str, str]:
     return verdicts
 
 
+def validate_c_result_v2(result: object, packet: dict) -> dict[str, str]:
+    """Validate a v2 result without changing the historical Reviewer-C v1 path."""
+    from . import hf_severity_evidence_v2 as severity_v2
+
+    return severity_v2.validate_result_v2(result, packet)
+
+
+def verify_c_semantic_entailment_v2(
+    result: dict, packet: dict, dimension: str, independent_check: object
+) -> dict:
+    """Require a separate semantic check; exact quote matching alone is insufficient."""
+    from . import hf_severity_evidence_v2 as severity_v2
+
+    return severity_v2.verify_semantic_entailment_v2(
+        result, packet, dimension, independent_check
+    )
+
+
 def reconcile(stage_root: Path, a_dir: Path, b_dir: Path,
               c_dir: Path, results_path: Path, safe_output: Path) -> dict:
     # Full attestation and SHA replay, do not trust a C packet as an A/B input.
