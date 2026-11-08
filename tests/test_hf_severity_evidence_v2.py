@@ -418,3 +418,21 @@ def test_legacy_reviewer_c_v1_result_contract_still_replays():
         "hard_rule": "NOT_SUPPORTED",
         "safety": "NOT_SUPPORTED",
     }
+
+
+def test_independent_semantic_review_can_confirm_insufficient_context_without_quotes():
+    row = packet()
+    result = valid_result(row)
+    check = {
+        "schema": v2.SEMANTIC_CHECK_SCHEMA,
+        "rubric_version": v2.RUBRIC_VERSION,
+        "reviewer_role": "OWNER_INDEPENDENT",
+        "reviewer_ref": "synthetic-reviewer-02",
+        "conclusion": "INSUFFICIENT_CONTEXT",
+        "reviewed_evidence_indexes": [],
+        "reasoning_summary": "当前材料不足以确认主体年龄与同意情境，维持信息不足。",
+    }
+    outcome = v2.verify_semantic_entailment_v2(
+        result, row, "safety", check
+    )
+    assert outcome["status"] == "SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD"
