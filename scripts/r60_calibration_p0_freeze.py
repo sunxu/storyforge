@@ -587,6 +587,11 @@ def _validate_pilot10(
         stage.get("schema") != "storyforge_hf_quality_dual_stage_private_v1"
         or stage.get("count") != 1000
         or not _is_sha(stage.get("pool_sha256"))
+        or not _is_sha(stage.get("receipt_sha256"))
+        or stage.get("model_pins") != {
+            "A": ["Qwen/Qwen3-32B", "9216db5781bf21249d130ec9da846c4624c16137"],
+            "B": ["zai-org/GLM-4-32B-0414", "077b5c2f5c43bd3239fd605a0600229e8facbd4a"],
+        }
         or cross.get("schema") != "storyforge_hf_quality_dual_stage_private_v1"
         or cross.get("count") != 1000
         or cross.get("pool_sha256") != stage.get("pool_sha256")
@@ -601,6 +606,46 @@ def _validate_pilot10(
     owner_map = _json(raw["c_owner_map"], "PILOT10_C_OWNER_MAP_INVALID")
     results = _jsonl(raw["c_results"], "PILOT10_C_RESULTS_INVALID")
     execution_receipt = _json(raw["c_exec_receipt"], "PILOT10_C_EXECUTION_RECEIPT_INVALID")
+    # Read the ten existing A/B checkpoint records without rerunning their
+    # audit. Bind each C source slot/position to the exact recorded checkpoint.
+    checkpoint_by_slot_position = {}
+    for slot in ("A", "B"):
+        for position in range(1, 6):
+            relative = (
+                f"{PILOT['a_dir'] if slot == 'A' else PILOT['b_dir']}/"
+                f"review_{position:04d}.private.json"
+            )
+            key = f"checkpoint_{slot}_{position:02d}"
+            raw[key] = _input(root, repo_root, key, relative, 2 * 1024 * 1024)
+            checkpoint = _json(raw[key], "PILOT10_CHECKPOINT_INVALID")
+            ordered_source = cross["bindings"][slot][position - 1]
+            if (
+                checkpoint.get("schema") not in {
+                    "storyforge_hf_literary_checkpoint_private_v2",
+                    "storyforge_hf_literary_checkpoint_private_v3",
+                }
+                or checkpoint.get("position") != position
+                or checkpoint.get("blind_id") != ordered_source.get("blind_id")
+                or checkpoint.get("model") != stage["model_pins"][slot][0]
+                or checkpoint.get("revision") != stage["model_pins"][slot][1]
+                or checkpoint.get("policy") != "storyforge_hf_literary_visible_history_v1"
+                or not _is_sha(checkpoint.get("input_sha256"))
+                or not _is_sha(checkpoint.get("receipt_sha256"))
+                or not isinstance(checkpoint.get("response"), dict)
+            ):
+                raise FreezeHold("PILOT10_CHECKPOINT_BINDING_INVALID")
+            checkpoint_by_slot_position[(slot, position)] = checkpoint
+
+    for index in range(1, 11):
+        raw[f"c_case_{index:02d}_exec"] = _input(
+            root, repo_root, f"c_case_{index:02d}_exec",
+            f"{c_dir}/C_CASE_{index:02d}_EXEC_PRIVATE.json", 2 * 1024 * 1024
+        )
+        raw[f"c_case_{index:02d}_result"] = _input(
+            root, repo_root, f"c_case_{index:02d}_result",
+            f"{c_dir}/C_CASE_{index:02d}_RESULT_PRIVATE.json", 2 * 1024 * 1024
+        )
+
     if (
         len(packets) != 10
         or owner_map.get("schema") != "storyforge_r60_pilot10_c_owner_map_private_v1"
@@ -655,6 +700,12 @@ def _validate_pilot10(
             raise FreezeHold("PILOT10_C_OWNER_SOURCE_CROSSWALK_MISMATCH")
         source_keys.add(source_key)
         slot_counts[slot] += 1
+        checkpoint = checkpoint_by_slot_position[(slot, position)]
+        if (
+            checkpoint.get("blind_id") != binding.get("blind_id")
+            or checkpoint.get("input_sha256") != binding.get("input_sha256")
+        ):
+            raise FreezeHold("PILOT10_CHECKPOINT_TO_C_OWNER_MAP_MISMATCH")
         packet = packet_idx[calibration_id]
         result = result_idx[calibration_id]
         if (
