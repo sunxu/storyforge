@@ -1,5 +1,54 @@
 # R60 HF CPU A Job 已提交但远程失败：安全诊断与继续执行（2026-11-08）
 
+## 2026-11-08 v3 提交不确定：本机 Hugging Face CLI 版本不兼容（最新结论）
+
+Owner Mac 的 `r60-quality-cpu-A-diagnostic-v3` Guard 报 `SUBMISSION_UNCONFIRMED_CHECK_ORG_JOBS` / `HF_JOB_SUBMISSION_FAILED`。ChatGPT HF 连接器只读核查 `adradar` Jobs 列表，未见本次 v3 Job。Owner 运行 `hf version` 得到 `huggingface_hub 0.36.2`，`hf jobs run --help` 仅显示 `--detach`（与完整 Guard 需求不匹配）。
+
+已核对 Hugging Face [`v0.36.2` 精确版本 CLI 源码](https://github.com/huggingface/huggingface_hub/blob/v0.36.2/src/huggingface_hub/cli/jobs.py)：`hf jobs run` 缺失 `--name`、`--attempts`、`-v/--volume`，也没有 `--dry-run`。**这足以解释该本地 CLI 不可能成功解析当前 Guard 提交命令，构成高度可信的原因；没有原始 stderr，仍不能证明实际 v3 失败只来自它。** 先前 v2 Job 成功创建，因此要检查当时和现在调用的 `hf` 是否来自不同 PATH / Python 环境。
+
+已修复公共 `scripts/hf_job_guard.py`：
+- 增加 `--check-hf-cli`：仅调用 `hf jobs run --help`，检查全部提交所需 flag 是否存在，不认证、不上传、不执行 Job；
+- 缺失 flag 返回 `PREFLIGHT_HOLD / HF_CLI_UNSUPPORTED_OPTIONS` 并只列出公开 CLI flag 名；帮助获取失败则 `HF_CLI_HELP_UNAVAILABLE`；
+- **`--submit` 前强制执行同样的 CLI flag 检查**，阻止重复将不兼容客户端误报成远端提交问题；
+- 默认仅做参数 Policy 检查时仍为 `PREFLIGHT_PASS_NOT_SUBMITTED`（其意义不包括实际 CLI 兼容性）；只有增加 `--check-hf-cli` 且 `hf_cli_compatible=true` 才同时证实本机 CLI 支持提交参数。
+
+**不建议直接修改 StoryForge 训练 Python 环境**。在 Owner Mac 安装一套单独的 HF CLI 工具环境，用户需决定执行本机包安装（不会创建 HF Job）：
+
+~~~bash
+set -euo pipefail
+set +x
+type -a hf
+hf version
+
+CLI_ROOT="$HOME/.local/share/storyforge/tools/hf-cli"
+python3 -m venv "$CLI_ROOT"
+"$CLI_ROOT/bin/python" -m pip install --upgrade "huggingface_hub>=1,<2"
+
+# 必须检查新 CLI 的真实参数，而不是仅相信版本号
+"$CLI_ROOT/bin/hf" jobs run --help | grep -E -- \
+  '--name|--attempts|--detach|--namespace|--volume|--dry-run'
+~~~
+
+用新 CLI 来复检**原已写好的 v3 参数**，但不提交：
+
+~~~bash
+# 继续使用上一节已经固定的 INROOT 和 CMD 变量，
+# 或重新执行上一节仅定义变量的代码，不执行 HF Job。
+PATH="$CLI_ROOT/bin:$PATH" python3 scripts/hf_job_guard.py \
+  --namespace adradar --name r60-quality-cpu-A-diagnostic-v3 \
+  --flavor cpu-basic --timeout-minutes 45 \
+  --input-volume "$INROOT/input_A:/input:ro" \
+  --input-volume "$INROOT/diagnostic-runner-v3:/scripts:ro" \
+  --output-volume "$INROOT/cpu-output-A-diagnostic-v3:/output:rw" \
+  --image python:3.11 \
+  --check-hf-cli \
+  -- /bin/sh -lc "$CMD"
+~~~
+
+预期 `PREFLIGHT_PASS_NOT_SUBMITTED` 且 `hf_cli_compatible=true`。这个命令不添加 `--submit`，绝对不会创建 HF Job。原 v3 失败回执及远端旧输入均保持不变；未获得明确进一步指令前不提交另一次 CPU 或 GPU、不得重发失败作业。
+
+---
+
 ## 2026-11-08 实际 diagnostic-v2 结果与 v3 定向修复（覆盖前述 v2 待运行描述）
 
 已由 Owner 提交 Job [`6af039530e0338d1bb849aa7`](https://huggingface.co/jobs/adradar/6af039530e0338d1bb849aa7)，组织 `adradar`，`cpu-basic`，运行 2026-11-08T08:56:51Z–08:59:05Z，终态 `ERROR`，退出 42。实际 HF SAFE 日志：
