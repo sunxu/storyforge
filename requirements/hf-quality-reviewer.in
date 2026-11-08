@@ -1,0 +1,6 @@
+# R60 HF literary reviewer CPU preflight dependency inputs.
+# Keep this profile separate from the R59 Qwen3.8 tokenizer profile (Transformers 5.16.1).
+transformers==4.57.1
+sentencepiece==0.2.1
+jinja2==3.1.6
+huggingface_hub>=0.35,<3
