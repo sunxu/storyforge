@@ -4,6 +4,15 @@
 执行：StoryForge / Owner Mac（本机数据库连接角色 `r58_export_reader`）；ChatGPT 只读连接器 `supabase_read_only_user`，不得混用。  
 **RolePlay 不修改；不启动新的 GPU 技术可行性实验；本轮不授权 GPU 训练。**
 
+> **2026-11-08 最新主线调整（覆盖本文此前旧 Pilot 优先级）**：
+> Owner Mac 已成功采集真实 G1 **6 条/6 Story**，完成私有模板，不再重复 G1 捕获。
+> 下一阶段首先扩样真实历史训练候选至 **总量 600 条**（包含原始 6 条，目标区间 500–1000），使用分 Story 游标、分批只读导出、源哈希与跨页去重；不得直接扩大旧六条脚本的上限。
+> 本轮新生产 G0 只读聚合确认：96 Story、1152 最近 completed Assistant、**339 条四消息链技术候选**、67 个 Story；技术候选不是 Quality PASS。
+> 已提交独立扩样程序 `experiments/r58_quality/r60_real_expand_private.py` 和 [Owner Mac 600 条扩样执行书](R60_REAL_HISTORY_EXPANSION_600_EXECUTION_20261108_CN.md)。
+> **任务序列：P0 扩样 → P0 批量六维质量审核 → P0 R50 完整元数据/世界依赖隔离及目标前上下文 → P1 CPU Tokenizer/Collator → Owner 单独批准 GPU。**
+> 本文旧的权益争议调查/单对 G1 阶段说明为历史记录，不再作为当前工作阻断；Owner 已明确授权使用其真实历史数据训练，不再重复讨论该议题。
+> 当前训练准入仍 **0**，无 GPU，RolePlay 与 Gold192 不变。
+
 ## 一、目标和已证事实
 
 目标是以**真实、优质的历史 User–Assistant 数据**训练中文互动小说模型，不以合成数据替代主线。R46 等已有训练已验证 Runtime/Adapter 技术可行性，不重复做 GPU smoke test。
