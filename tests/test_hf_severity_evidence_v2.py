@@ -139,6 +139,7 @@ def test_v2_schema_and_prompt_are_versioned_and_private_context_only():
     assert "普通亲密、冲突、威胁台词不自动等于安全排除" in messages[0]["content"]
     assert "semantic" in messages[1]["content"]
     assert "synthetic-world-rule-01" in messages[1]["content"]
+    assert "synthetic-calibration-0001" in messages[1]["content"]
     assert legacy_review.severity_evidence_response_schema_v2() == schema
 
 
@@ -379,3 +380,37 @@ def test_player_agency_supported_needs_target_behavior_and_boundary():
     ]
     with pytest.raises(v2.EvidenceHold, match="SEVERITY_AGENCY_TARGET_EVIDENCE_HOLD"):
         v2.validate_result_v2(result, row)
+
+
+def test_supported_requires_an_applicable_complete_rule_basis():
+    row = packet()
+    result = valid_result(row)
+    result["assessments"]["hard_rule"]["rule_basis"][0]["coverage_complete"] = False
+    with pytest.raises(v2.EvidenceHold, match="SEVERITY_SUPPORTED_RULE_NOT_APPLICABLE_HOLD"):
+        v2.validate_result_v2(result, row)
+
+
+def test_legacy_reviewer_c_v1_result_contract_still_replays():
+    row = {
+        "calibration_id": "legacy-c-v1-synthetic",
+        "visible_history": [{"role": "user", "content": "请先看地图。"}],
+        "target_text": "NPC展开地图。",
+    }
+    legacy = {
+        "schema": legacy_c.RESULT_SCHEMA,
+        "calibration_id": row["calibration_id"],
+        "assessments": {
+            key: {
+                "verdict": "NOT_SUPPORTED",
+                "target_quotes": [],
+                "history_quotes": [],
+                "rationale": "合成旧版结果用于验证 v1 读取兼容性。",
+            }
+            for key in ("player_agency", "hard_rule", "safety")
+        },
+    }
+    assert legacy_c.validate_c_result(legacy, row) == {
+        "player_agency": "NOT_SUPPORTED",
+        "hard_rule": "NOT_SUPPORTED",
+        "safety": "NOT_SUPPORTED",
+    }
