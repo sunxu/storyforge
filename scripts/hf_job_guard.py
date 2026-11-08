@@ -104,7 +104,7 @@ def missing_hf_cli_options(help_text: str) -> list[str]:
     """Detect unsupported required flags without shelling out or parsing secrets."""
     return [
         option for option in REQUIRED_HF_RUN_FLAGS
-        if re.search(r"(?<![\\w-])" + re.escape(option) + r"(?![\\w-])",
+        if re.search(r"(?<![A-Za-z0-9_-])" + re.escape(option) + r"(?![A-Za-z0-9_-])",
                      help_text) is None
     ]
 
