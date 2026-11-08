@@ -128,6 +128,10 @@ class HuggingFaceJobGuardTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--attempts") + 1], "1")
         self.assertEqual(argv.count("-v"), 3)
         self.assertIn("--", argv)
+        # Hugging Face CLI must report submission without streaming a remote
+        # workload's exit code as though the launch were rejected.
+        self.assertIn("--detach", argv)
+        self.assertLess(argv.index("--detach"), argv.index("python:3.11"))
 
 
 if __name__ == "__main__":
