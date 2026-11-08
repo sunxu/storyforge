@@ -387,9 +387,12 @@ def immutable_page(folder: Path, index: int, content: dict) -> None:
         raise Hold("PAGE_ALREADY_EXISTS")
     temp = folder / (".R60_EXPAND_PAGE_" + secrets.token_hex(12) + ".tmp")
     try:
-        g1.write_new(temp, payload)
-        with temp.open("rb") as src:
-            os.fsync(src.fileno())
+        fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+                     getattr(os, "O_NOFOLLOW", 0), 0o600)
+        with os.fdopen(fd, "wb") as dst:
+            dst.write(payload)
+            dst.flush()
+            os.fsync(dst.fileno())
         if dest.exists() or dest.is_symlink():
             raise Hold("PAGE_ALREADY_EXISTS")
         os.replace(temp, dest)
