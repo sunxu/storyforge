@@ -1,5 +1,7 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **新 Agent 交接与执行任务书（2026-11-08）**：下一阶段由 [交接总览](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md) 和 [可执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md) 作为接手入口，按 P0 校准集只读库存/分轨/去重/冻结 → P1 三态严重证据规则 → P2 Owner 盲裁决 → P3 三模型配置 → P4 30 条严格配对 → P5 回归验收 → P6 1000 条批量审核执行。按用户明确指示，本阶段不重新探讨权利/协议问题；不改 RolePlay、不读取 R50 正文、不覆盖旧 A/B/C、不访问全库正文。当前无 GPU 授权。
+
 > **下一阶段执行基线已整理（2026-11-08）**：统一按 [R60 下一阶段校准与三模型配对评估计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md) 推进。顺序为 Gold72 40 条与 R60 10 条分轨冻结 → 三项严重问题三态证据标准 → Owner 独立参考裁决 → 修复 Qwen3 Thinking/采样配置并保留 GLM-4、评估 GLM-Z1 challenger → 30 条相同案例三模型盲审 → 回归验收 → 1,000 条正式批量审核。当前不启动 GPU；Quality-v1 admitted=0、training_authorized=false。旧 A/B/C Checkpoint 保持不变。
 
 > **2026-11-08 Reviewer C 10/10 已执行、Owner 对账通过；严重度仲裁 HOLD（最新）**：Owner 回传 SAFE `C_CODEX_RESULTS_READY__RECONCILIATION_PENDING` + `C_BLIND_SEMANTIC_RECONCILED__QUALITY_HOLD`。本机 Codex CLI 10 条独立新会话均完成，blind inputs only；本地执行回执、C/原始来源与结果绑定通过。模型身份独立验证仍 false，回执仅为 `OWNER_LOCAL_CODEX_RECEIPTS_NOT_REMOTE_ATTESTATION`。三维对照：`hard_rule` C 10/10 `NOT_SUPPORTED`，原模型 4 条严重标记为 true；`player_agency` 原模型 10/10 true，C `SUPPORTED=3 / NOT_SUPPORTED=7`；`safety` C `SUPPORTED=5 / NOT_SUPPORTED=1 / INSUFFICIENT_CONTEXT=4`。说明原模型严重标记存在显著误报/不确定风险，但 C 结果不是自动真值；接下来仅做这 10 条证据级语义仲裁，不扩样、不跑 GPU。`semantic_severity_adjudication_complete=false`、`quality_v1_admitted=0`、`training_authorized=false` 均保持。执行与 SAFE 见 [Reviewer C 校准报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md)。
