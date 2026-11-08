@@ -234,6 +234,11 @@ def inspected_records(folder: Path, config: dict, cases: list[dict],
                 or len(record["reviews"]) + len(record["attempt_holds"]) != 2
                 or len(record["reviews"]) > 2):
             raise Hold("QUALITY_SOURCE_OR_RECEIPT_TAMPER_HOLD")
+        if any(not isinstance(x, dict) for x in record["reviews"]):
+            raise Hold("QUALITY_REVIEW_FORMAT_HOLD")
+        if len({x.get("reviewer_key") for x in record["reviews"]}) != len(
+                record["reviews"]):
+            raise Hold("QUALITY_DUPLICATE_REVIEWER_HOLD")
         expected_model_sides = ("a", "b")
         for entry in record["reviews"]:
             side = entry.get("reviewer_key", "").removeprefix("ai-model-")
@@ -241,9 +246,6 @@ def inspected_records(folder: Path, config: dict, cases: list[dict],
                     "model_" + side] or entry.get("method") != (
                     "ISOLATED_STATELESS_MODEL_REQUEST"):
                 raise Hold("QUALITY_REVIEW_MODEL_MISMATCH_HOLD")
-        if len(set(x.get("reviewer_key") for x in record["reviews"])) != len(
-                record["reviews"]):
-            raise Hold("QUALITY_DUPLICATE_REVIEWER_HOLD")
         if any(not isinstance(x, str) or x not in (
                 "MODEL_TRANSPORT_HOLD", "MODEL_JSON_INVALID",
                 "MODEL_REPLY_OVERSIZE", "SEVERE_FLAG_DECISION_INCONSISTENT",
