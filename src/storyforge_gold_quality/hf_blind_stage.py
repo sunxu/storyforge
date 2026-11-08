@@ -287,3 +287,65 @@ def audit(root: Path, pool_hash: str, cases: list[dict]) -> dict:
         "r50_body_accessed": False, "paid_gpu_submitted": False,
         "private_values_emitted": False,
     }
+
+
+def export_pipeline_reviews(root: Path, pool_hash: str, cases: list[dict]) -> dict:
+    """Create A/B private import files for existing Gold Quality append-review.
+
+    This does not append to the manifest. A deliberate Owner-side import is a
+    separate action, preserving all existing Gold Quality review evidence.
+    """
+    counts = audit(root, pool_hash, cases)
+    if counts["complete_pairs"] != len(cases):
+        raise StageError("HF_DUAL_REVIEW_INCOMPLETE_HOLD")
+    manifest, crosswalk = verified_stage(root, pool_hash, cases)
+    owner = root / "owner"
+    rows_by_slot = {}
+    for slot in ("A", "B"):
+        model, revision = manifest["model_pins"][slot]
+        rows = reviewer.read_input(root / f"input_{slot}" / "source.private.jsonl")
+        private_rows = []
+        for pos, (row, bind) in enumerate(zip(
+                rows, crosswalk["bindings"][slot], strict=True), 1):
+            record = reviewer.read_checkpoint(
+                root / f"output_{slot}" / reviewer.checkpoint_name(pos),
+                pos, row, model, revision)
+            if record is None:
+                raise StageError("HF_DUAL_REVIEW_INCOMPLETE_HOLD")
+            answer = record["response"]
+            private_rows.append({
+                "case_id": bind["case_key"],
+                "target_sha256": bind["target_sha256"],
+                "reviewer_role": "REVIEWER_" + slot,
+                "decision": answer["decision"],
+                "scores": answer["scores"],
+                "severe_flags": answer["severe_flags"],
+                "specific_source_quotes": answer["specific_source_quotes"],
+                "specific_target_quotes": answer["specific_target_quotes"],
+                "evidence_summary": answer["literary_quality_notes"],
+                "uncertainty": answer["uncertainty"],
+                "model_id": model, "model_revision": revision,
+                "review_policy": reviewer.POLICY,
+                "training_authorized": False, "quality_v1_admitted": False,
+            })
+        rows_by_slot[slot] = private_rows
+    # Explicitly refuse partial re-runs; never overwrite prior private imports.
+    destinations = {
+        slot: owner / f"reviewer_{slot}_pipeline.private.jsonl"
+        for slot in ("A", "B")
+    }
+    if any(path.exists() or path.is_symlink() for path in destinations.values()):
+        raise StageError("HF_PIPELINE_IMPORT_ALREADY_EXISTS")
+    for slot in ("A", "B"):
+        write_once(destinations[slot], b"".join(
+            safe_bytes(row) for row in rows_by_slot[slot]))
+    return {
+        "schema": SAFE_SCHEMA,
+        "status": "HF_QUALITY_PIPELINE_PRIVATE_IMPORT_READY__NOT_IMPORTED",
+        "candidate_total": len(cases),
+        "reviewer_a_rows": len(rows_by_slot["A"]),
+        "reviewer_b_rows": len(rows_by_slot["B"]),
+        "quality_v1_admitted": 0, "training_authorized": False,
+        "manifest_modified": False, "r50_body_accessed": False,
+        "private_values_emitted": False,
+    }
