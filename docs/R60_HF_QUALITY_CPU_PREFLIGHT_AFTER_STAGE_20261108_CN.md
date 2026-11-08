@@ -1,5 +1,7 @@
 # R60 HF Quality：1000 条 A/B Stage 实测 PASS → HF CPU Tokenizer 预检（2026-11-08）
 
+> **防止重复付费排障（2026-11-08）**：R58 于 2026-11-01 已真实验证 `transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。本轮 R60 最初遗漏 Jinja2，导致 A v3 CPU Job `6af042680e0338d1bb84a276` 的 Chat Template `ImportError`。实际根因仍需新容器验证，但以后不能跳过现有 [HF Tokenizer 共享规范](standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md) 的依赖基线。正式 HF Job 提交前先核验本地 CLI `--check-hf-cli`、原生 `--dry-run`；容器内先 `pip check`、再做 Jinja2/sentencepiece import probe，随后才可读取冻结 input 和启动 CPU Tokenizer。原 Jinja2-fix 任务名/输出目录和命令见 [A 故障修复](R60_HF_CPU_JOB_A_FAILURE_DIAGNOSTIC_20261108_CN.md)，不可重用旧失败的输出前缀。
+
 ## 已由 Owner Mac 实际确认
 
 - 原冻结池：1000/1000，原 6 条 Seed + 新增 994，20 私有扩样页，400 Story；未修改原数据
@@ -78,7 +80,9 @@ for SLOT in A B; do
   CMD="set -eu
 export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
-python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6'
+python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6' 'sentencepiece==0.2.1'
+python3 -m pip check
+python3 -c 'import jinja2,sentencepiece; print("HF_TOKEN_DEPS_PASS")'
 test -f /input/source.private.jsonl
 python3 /input/runner.py --input /input/source.private.jsonl \
   --output-dir /output --model '$MODEL' --revision '$REV' \
