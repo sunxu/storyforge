@@ -1,4 +1,4 @@
-name: R60 HF CPU tokenizer dependency lock
+name: R60 HF CPU dependency profiles
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
       - 'requirements/hf-cpu-tokenizer.in'
       - 'requirements/hf-cpu-tokenizer.lock'
       - 'requirements/hf-quality-reviewer.in'
+      - 'requirements/hf-quality-reviewer.lock'
       - 'requirements/README.md'
       - '.github/workflows/r60-hf-cpu-lock-resolve.yml'
   pull_request:
@@ -78,10 +79,40 @@ jobs:
               "torch_installed": False,
           })
           PY
-      - name: Verify R60 reviewer Chat Template dependency baseline
+      - name: Resolve hash-pinned R60 reviewer dependency lock
+        env:
+          PIP_NO_INDEX: "false"
+          PIP_INDEX_URL: "https://pypi.org/simple"
+        run: |
+          pip-compile \
+            --resolver=backtracking \
+            --generate-hashes \
+            --index-url=https://pypi.org/simple \
+            --no-emit-index-url \
+            --output-file=/tmp/hf-quality-reviewer.lock \
+            requirements/hf-quality-reviewer.in
+      - name: Verify committed reviewer lock matches generated resolution
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          lock = Path("requirements/hf-quality-reviewer.lock")
+          generated = Path("/tmp/hf-quality-reviewer.lock")
+          if lock.exists():
+              normalize = lambda path: [
+                  line.rstrip() for line in path.read_text().splitlines()
+                  if line.strip() and not line.lstrip().startswith("#")
+              ]
+              assert normalize(lock) == normalize(generated)
+              print("Committed reviewer lock matches hash-pinned resolution: PASS")
+          else:
+              print("Reviewer lock bootstrap: generated candidate ready; commit before paid HF use.")
+          PY
+      - name: Verify hash-pinned R60 reviewer install and Chat Template
         run: |
           python -m venv /tmp/hf-reviewer-venv
-          /tmp/hf-reviewer-venv/bin/python -m pip install --no-cache-dir -r requirements/hf-quality-reviewer.in
+          LOCK=requirements/hf-quality-reviewer.lock
+          if [ ! -f "$LOCK" ]; then LOCK=/tmp/hf-quality-reviewer.lock; fi
+          /tmp/hf-reviewer-venv/bin/python -m pip install --no-cache-dir --require-hashes -r "$LOCK"
           /tmp/hf-reviewer-venv/bin/python -m pip check
           /tmp/hf-reviewer-venv/bin/python - <<'PY'
           import jinja2
@@ -118,5 +149,5 @@ jobs:
               "chat_template_smoke": "PASS",
           })
           PY
-      - name: Record lock digest
-        run: sha256sum requirements/hf-cpu-tokenizer.lock
+      - name: Record lock digests
+        run: sha256sum requirements/hf-cpu-tokenizer.lock /tmp/hf-quality-reviewer.lock
