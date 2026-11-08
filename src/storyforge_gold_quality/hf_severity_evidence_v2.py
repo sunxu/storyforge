@@ -583,16 +583,25 @@ def verify_semantic_entailment_v2(
                 "SUPPORTS_VERDICT", "DOES_NOT_SUPPORT_VERDICT", "INSUFFICIENT_CONTEXT",
             )
             or not isinstance(check["reviewed_evidence_indexes"], list)
-            or not check["reviewed_evidence_indexes"]
             or any(type(i) is not int for i in check["reviewed_evidence_indexes"])
             or len(set(check["reviewed_evidence_indexes"])) != len(check["reviewed_evidence_indexes"])
             or not _string(check["reasoning_summary"], 12, 1200)):
         raise SemanticEntailmentHold("SEMANTIC_ENTAILMENT_CHECK_HOLD")
-    evidence = result["assessments"][dimension]["evidence"]
+    assessment = result["assessments"][dimension]
+    evidence = assessment["evidence"]
     indexes = check["reviewed_evidence_indexes"]
     if any(i < 0 or i >= len(evidence) for i in indexes):
         raise SemanticEntailmentHold("SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD")
-    if check["conclusion"] != "SUPPORTS_VERDICT":
+    if check["conclusion"] == "INSUFFICIENT_CONTEXT":
+        if assessment["verdict"] != "INSUFFICIENT_CONTEXT" or indexes:
+            raise SemanticEntailmentHold("SEMANTIC_ENTAILMENT_NOT_ESTABLISHED")
+        return {
+            "status": "SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD",
+            "dimension": dimension,
+            "reviewed_evidence_count": 0,
+            "reviewer_independence_cryptographically_verified": False,
+        }
+    if not indexes or check["conclusion"] != "SUPPORTS_VERDICT":
         raise SemanticEntailmentHold("SEMANTIC_ENTAILMENT_NOT_ESTABLISHED")
     return {
         "status": "SEMANTIC_ENTAILMENT_SUPPORTED__REVIEWER_IDENTITY_NOT_ATTESTED",
