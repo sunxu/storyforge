@@ -1,0 +1,86 @@
+{
+  "schema": "storyforge_r60_gpu_b_v3_pilot5_completed_safe_v1",
+  "recorded_date": "2026-11-08",
+  "job_id": "6af060700e0338d1bb84b025",
+  "job_url": "https://huggingface.co/jobs/adradar/6af060700e0338d1bb84b025",
+  "job_name": "r60-quality-gpu-pilot5-B-v3-01",
+  "namespace": "adradar",
+  "flavor": "h200",
+  "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+  "model": "zai-org/GLM-4-32B-0414",
+  "model_revision": "077b5c2f5c43bd3239fd605a0600229e8facbd4a",
+  "runner": "reviewer-runner-v3/runner.py",
+  "checkpoint_schema": "storyforge_hf_literary_checkpoint_private_v3",
+  "job_status": "COMPLETED",
+  "created_at_utc": "2026-11-08T11:43:44.359Z",
+  "finished_at_utc": "2026-11-08T11:49:03.773Z",
+  "model_shards_loaded": "14/14",
+  "safe_status": "HF_REVIEW_PARTIAL__NO_ADMISSION",
+  "cases_total": 1000,
+  "cases_completed": 5,
+  "checkpoint_count": 5,
+  "checkpoint_files": [
+    "review_0001.private.json",
+    "review_0002.private.json",
+    "review_0003.private.json",
+    "review_0004.private.json",
+    "review_0005.private.json"
+  ],
+  "quote_repair_attempts": 1,
+  "quote_repair_successes": 1,
+  "quality_decisions": {
+    "PASS": 0,
+    "HOLD": 0,
+    "REJECT": 5
+  },
+  "severe_true_counts": {
+    "hard_fact_or_ban": 2,
+    "safety_exclusion": 2,
+    "serious_player_agency": 5
+  },
+  "score_ranges": {
+    "character_consistency": [
+      4,
+      4
+    ],
+    "chinese_prose": [
+      4,
+      4
+    ],
+    "narrative_continuity": [
+      4,
+      4
+    ],
+    "npc_initiative": [
+      3,
+      3
+    ],
+    "player_agency": [
+      1,
+      4
+    ],
+    "rule_fidelity": [
+      4,
+      4
+    ]
+  },
+  "checkpoint_validation": {
+    "schema_v3": 5,
+    "model_revision_match": 5,
+    "blind_id_matches_frozen_input_B": 5,
+    "source_quote_substring_matches": 5,
+    "target_quote_substring_matches": 5,
+    "six_score_dimensions_present": 5,
+    "receipt_sha256_field_present": 5,
+    "input_sha256_field_present": 5,
+    "full_digest_recompute_completed": false,
+    "semantic_severity_verification_completed": false,
+    "independent_A_B_source_crosswalk_completed": false
+  },
+  "raw_private_values_emitted": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "semantic_status": "QUALITY_CALIBRATION_HOLD",
+  "notes": "The model marked 5/5 severe player agency and REJECT. A v2's separate first five also gave 5/5 REJECT. These are separate model-slot aggregates, not evidence that corresponding records agree: A/B pairing requires private owner crosswalk. Strict quote substring matches do not establish the semantic claim. No automatic rejection/admission.",
+  "next": "No further GPU job without new authorization. Run private A/B source crosswalk and semantic review calibration of severe flags; preserve disagreement and low-confidence cases as HOLD, then plan bounded staged 1000-case quality screening."
+}
