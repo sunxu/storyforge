@@ -17,8 +17,8 @@ import re
 import shutil
 import stat
 import sys
-import traceback
 import tempfile
+import traceback
 from collections import Counter
 from pathlib import Path
 from types import SimpleNamespace
