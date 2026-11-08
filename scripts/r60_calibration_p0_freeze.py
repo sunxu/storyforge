@@ -13,9 +13,11 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import sys
+import traceback
 import tempfile
 from collections import Counter
 from pathlib import Path
@@ -47,6 +49,39 @@ EXPECTED_PILOT10_C = {
     "safety": {"INSUFFICIENT_CONTEXT": 4, "NOT_SUPPORTED": 1, "SUPPORTED": 5},
 }
 HEX = set("0123456789abcdef")
+
+CURRENT_PHASE = "startup"
+
+
+def _set_phase(value: str) -> None:
+    global CURRENT_PHASE
+    CURRENT_PHASE = value
+
+
+def _safe_diagnostic(exc: BaseException) -> dict[str, Any]:
+    frames = traceback.extract_tb(exc.__traceback__)
+    local_frames = [
+        frame for frame in frames
+        if Path(frame.filename).name == "r60_calibration_p0_freeze.py"
+    ]
+    diagnostic: dict[str, Any] = {
+        "phase": CURRENT_PHASE,
+        "exception_type": type(exc).__name__,
+        "source_line": local_frames[-1].lineno if local_frames else None,
+    }
+    if isinstance(exc, OSError):
+        diagnostic["errno"] = exc.errno
+    message = str(exc)
+    if isinstance(exc, FreezeHold):
+        diagnostic["validator_reason_code"] = message
+    elif (
+        type(exc).__name__ in {"OwnerResolutionHold", "CalibrationHold", "AuditHold"}
+        and re.fullmatch(r"[A-Z][A-Z0-9_]{1,95}", message)
+    ):
+        diagnostic["validator_reason_code"] = (
+            f"{type(exc).__name__}:{message}"
+        )
+    return diagnostic
 
 GOLD = {
     "staged": "r59/private/source-staging-suffix72-20261104-v1/GOLD_SOURCE_STAGING_PRIVATE.jsonl",
@@ -311,6 +346,7 @@ def _source_path(name: str, base: str, filename: str) -> str:
 def _load_gold(
     root: Path, repo_root: Path, raw: dict[str, bytes]
 ) -> tuple[list[dict], dict, dict]:
+    _set_phase("gold72_read_inputs")
     b2 = GOLD["b2_dir"]
     c = GOLD["c_dir"]
     files = {
@@ -340,6 +376,7 @@ def _load_gold(
     for key, (relative, limit) in files.items():
         raw[key] = _input(root, repo_root, key, relative, limit)
 
+    _set_phase("gold72_replay_a_b2_crosswalk")
     # Re-run the existing canonical 72-row A/B2 audit; it is Gold72-specific,
     # not the already-passed R60 1000-row Owner crosswalk.
     sys.path.insert(0, str(repo_root))
@@ -356,6 +393,7 @@ def _load_gold(
     if fresh_crosswalk != stored_crosswalk:
         raise FreezeHold("GOLD_A_B2_CROSSWALK_SAFE_STALE")
 
+    _set_phase("gold72_replay_owner_resolution")
     # Re-run the existing Gold72 Owner-resolution validator into an ephemeral
     # private temp directory, then compare its aggregate SAFE byte-for-value.
     temp_dir = Path(tempfile.mkdtemp(prefix="r60-gold72-safe-check-"))
@@ -399,6 +437,7 @@ def _load_gold(
     ):
         raise FreezeHold("GOLD_C_INDEPENDENCE_STATUS_CHANGED")
 
+    _set_phase("gold72_bind_c_packets_and_owner_map")
     packets = _jsonl(raw["c_blind"], "GOLD_C_BLIND_PACKETS_INVALID")
     cases = []
     for packet in packets:
@@ -517,6 +556,7 @@ def _load_gold(
 def _validate_pilot10(
     root: Path, repo_root: Path, raw: dict[str, bytes]
 ) -> tuple[dict, list[dict], dict]:
+    _set_phase("pilot10_read_inputs")
     c_dir = PILOT["c_dir"]
     owner_dir = PILOT["stage_owner"]
     paths = {
@@ -581,6 +621,7 @@ def _validate_pilot10(
     ):
         raise FreezeHold("PILOT10_C_SAFE_INVALID_OR_STALE")
 
+    _set_phase("pilot10_validate_stage_and_checkpoints")
     stage = _json(raw["stage_manifest"], "PILOT10_STAGE_MANIFEST_INVALID")
     cross = _json(raw["owner_crosswalk"], "PILOT10_OWNER_CROSSWALK_INVALID")
     if (
@@ -602,6 +643,7 @@ def _validate_pilot10(
     ):
         raise FreezeHold("PILOT10_STAGE_SOURCE_MANIFEST_INVALID")
 
+    _set_phase("pilot10_validate_c_packets_and_receipts")
     packets = _jsonl(raw["c_packets"], "PILOT10_C_PACKETS_INVALID")
     owner_map = _json(raw["c_owner_map"], "PILOT10_C_OWNER_MAP_INVALID")
     results = _jsonl(raw["c_results"], "PILOT10_C_RESULTS_INVALID")
@@ -761,6 +803,7 @@ def _validate_pilot10(
     ):
         raise FreezeHold("PILOT10_C_SLOT_OR_SOURCE_COUNTS_INVALID")
 
+    _set_phase("pilot10_verify_local_codex_receipts")
     # Reuse the existing local Codex receipt validator. It checks all ten
     # per-case receipts/results and the aggregate receipt without re-running
     # the old A/B 1000-row crosswalk or any model.
@@ -918,13 +961,17 @@ def build_inventory_safe(
 
 
 def _run(args: argparse.Namespace) -> tuple[dict, dict, dict, dict]:
+    _set_phase("resolve_roots")
     repo_root = args.repo_root.resolve(strict=True)
     root = args.owner_data_root.expanduser().resolve(strict=True)
     if repo_root == root or repo_root in root.parents or root in repo_root.parents:
         raise FreezeHold("REPOSITORY_AND_OWNER_DATA_ROOT_OVERLAP")
     raw: dict[str, bytes] = {}
+    _set_phase("gold72_validation")
     gold_manifest, gold_fp_rows, gold_summary = _load_gold(root, repo_root, raw)
+    _set_phase("pilot10_validation")
     pilot_manifest, pilot_fp_rows, pilot_summary = _validate_pilot10(root, repo_root, raw)
+    _set_phase("crossset_exact_dedup")
     dedup = compare_crosssets(gold_fp_rows, pilot_fp_rows)
     dedup["source_pins_sha256"] = {
         "gold_manifest": _sha(_canonical(gold_manifest)),
@@ -958,11 +1005,13 @@ def main() -> int:
     created: list[Path] = []
     output_dir: Path | None = None
     try:
+        _set_phase("run_preflight")
         gold, pilot, dedup, safe = _run(args)
         if args.dry_run:
             print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
             return 0 if safe["status"] == "CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_FILES_WRITTEN" else 42
 
+        _set_phase("prepare_private_output_directory")
         repo_root = args.repo_root.resolve(strict=True)
         owner_root = args.owner_data_root.expanduser().resolve(strict=True)
         output_dir = args.output_dir.expanduser()
@@ -976,6 +1025,7 @@ def main() -> int:
             ("CALIBRATION_CROSSSET_DEDUP_PRIVATE.json", dedup),
             ("CALIBRATION_INVENTORY_SAFE.json", safe),
         ]
+        _set_phase("write_private_manifests_and_safe")
         for filename, value in outputs:
             target = output_dir / filename
             _write_create_only(target, value)
@@ -992,10 +1042,12 @@ def main() -> int:
             except OSError:
                 pass
         reason = str(exc) if isinstance(exc, FreezeHold) else "INPUT_OR_IO_ERROR"
+        diagnostic = _safe_diagnostic(exc)
         print(json.dumps({
             "schema": SAFE_SCHEMA,
             "status": "CALIBRATION_INVENTORY_HOLD",
             "reason_code": reason,
+            "diagnostic": diagnostic,
             "private_values_emitted": False,
             "quality_v1_admitted": 0,
             "training_authorized": False,
