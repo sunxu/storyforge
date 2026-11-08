@@ -6,16 +6,17 @@
 
 ## R60 literary reviewer compatibility profile
 
-- Input: `hf-quality-reviewer.in`
+- Inputs: `hf-quality-reviewer.in` → hash-pinned `hf-quality-reviewer.lock`
 - Direct pins: Transformers 4.57.1, SentencePiece 0.2.1, Jinja2 3.1.6; Hugging Face Hub remains `>=0.35,<3`.
+- The lock resolves every transitive dependency and records SHA256 hashes; CI regenerates and compares it.
 - This profile is intentionally separate from the R59 Qwen3.8 tokenizer profile below, which pins Transformers 5.16.1. Do not downgrade or merge those profiles.
 - GitHub Actions installs this profile in an isolated Python 3.11 environment, runs `pip check`, verifies versions/imports, and executes a synthetic `apply_chat_template` smoke test.
-- **Before using this profile for a paid HF Job**, resolve and commit a hash-pinned lock file with pip-tools; the current `.in` file is the reusable direct-dependency source, not a hash lock.
+- Use the committed hash lock for every HF Job. The `.in` file is only the direct-dependency source used to regenerate the lock.
 
 Install for local compatibility checks:
 
 ```bash
-python -m pip install --no-cache-dir -r requirements/hf-quality-reviewer.in
+python -m pip install --no-cache-dir --require-hashes -r requirements/hf-quality-reviewer.lock
 python -m pip check
 ```
 
