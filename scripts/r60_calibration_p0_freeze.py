@@ -287,6 +287,17 @@ def stratify_gold72(rows: list[dict[str, Any]]) -> tuple[list[dict], list[dict],
     return development, locked, summary
 
 
+def _gold_story_summary(split_summary: dict[str, Any]) -> dict[str, int]:
+    keys = (
+        "development_story_count",
+        "locked_regression_story_count",
+        "shared_story_count",
+    )
+    if any(type(split_summary.get(key)) is not int or split_summary[key] < 0 for key in keys):
+        raise FreezeHold("GOLD_STORY_SPLIT_SUMMARY_INVALID")
+    return {key: split_summary[key] for key in keys}
+
+
 def case_fingerprints(messages: list[dict], target_text: str) -> dict[str, str]:
     if not isinstance(messages, list) or not messages:
         raise FreezeHold("CASE_HISTORY_INVALID")
@@ -569,9 +580,7 @@ def _load_gold(
         "source_file_count": len(files),
         # Carry the deterministic 20/20 split's aggregate story counts into
         # SAFE construction; do not expose story identifiers.
-        "development_story_count": split_summary["development_story_count"],
-        "locked_regression_story_count": split_summary["locked_regression_story_count"],
-        "shared_story_count": split_summary["shared_story_count"],
+        **_gold_story_summary(split_summary),
     }
 
 
