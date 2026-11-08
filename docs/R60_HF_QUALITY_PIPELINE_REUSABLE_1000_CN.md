@@ -1,5 +1,10 @@
 # R60 真实 1000 候选 × Hugging Face × Gold Quality Pipeline（2026-11-08）
 
+> **2026-11-08 Owner Mac 实测阶段更新（最新）**：`prepare` 已返回 `HF_QUALITY_BLIND_STAGE_READY__NOT_SUBMITTED`、`cases_staged=1000`；`audit` 已返回 `HF_QUALITY_DUAL_PARTIAL__NO_ADMISSION`、A=0、B=0、complete_pairs=0、HOLD=1000、PASS=0、REJECT=0。Owner crosswalk 没有上传到 HF，也没有实际模型推理。
+> 已固定 A=`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`、B=`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`。
+> **本文件第 2 节的 `prepare` 旧命令不需重跑**（重复运行会被拒绝）；第 3 节的直接 `hf jobs run -v 本地目录` 示例**不再使用**，因为 HF CLI 会隐式把私人小说内容上传到 `jobs-artifacts` Bucket，这不符合本仓库明确的组织项目 Bucket/Guard 约束。下一步请以 [已实测 Stage 后的 HF CPU Guard 执行书](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 为唯一指引，先在 Owner 本地 `audit` 再只同步 `input_A`/`input_B` 至 `adradar/storyforge-training` 的新私有前缀，使用 `scripts/hf_job_guard.py` 做 dry-run/CPU-only 提交。不得上传 `owner/`，GPU 仍需单独授权。
+
+
 状态：**公共 HF 审核工具与 R60 适配器已编写；尚未在 Owner Mac 真实 1000 条数据或付费 HF 上运行。** 当前真实冻结候选池 1000/1000，Quality=0、训练准入=0。
 
 ## 1. 复用设计
