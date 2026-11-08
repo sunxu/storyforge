@@ -62,7 +62,16 @@ for SLOT in A B; do
   test -d "$STAGE/output_$SLOT"
 done
 test -f "$STAGE/owner/owner_crosswalk.private.json"
+test -f requirements/hf-quality-reviewer.lock
+LOCK_SHA="$(shasum -a 256 requirements/hf-quality-reviewer.lock | awk '{print $1}')"
+for SLOT in A B; do
+  install -m 600 requirements/hf-quality-reviewer.lock \
+    "$STAGE/input_$SLOT/hf-quality-reviewer.lock"
+done
+echo "R60_REVIEWER_LOCK_SHA256=$LOCK_SHA"
 ~~~
+
+这里仅向 A/B 输入目录增加公开、hash-pinned 的依赖锁文件；不改写 `source.private.jsonl`、Runner、Token Core、Runtime 文件或 Owner crosswalk。后续同步会一并上传该锁文件。
 
 再次确认上述 `audit` 的 `cases_total=1000`、`complete_pairs=0`。测试通过后，根据实际 HF 账号组织权限，为本轮创建**唯一的新远端前缀**；不要复用旧 R59/R58 Jobs 或测试输出。
 
@@ -97,7 +106,8 @@ for SLOT in A B; do
   CMD="set -eu
 export CUDA_VISIBLE_DEVICES=''
 export TOKENIZERS_PARALLELISM=false
-python3 -m pip install --quiet --no-cache-dir 'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6' 'sentencepiece==0.2.1'
+test "$(sha256sum /input/hf-quality-reviewer.lock | awk '{print $1}')" = '$LOCK_SHA'
+python3 -m pip install --quiet --no-cache-dir --require-hashes -r /input/hf-quality-reviewer.lock
 python3 -m pip check
 python3 -c 'import transformers, jinja2, sentencepiece; assert transformers.__version__ == "4.57.1"; assert jinja2.__version__ == "3.1.6"; assert sentencepiece.__version__ == "0.2.1"; print("R60 reviewer dependency baseline: PASS")'
 echo HF_TOKEN_DEPS_PASS
