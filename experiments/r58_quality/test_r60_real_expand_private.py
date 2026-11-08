@@ -226,3 +226,72 @@ def test_immutable_shard_writer_supports_real_batch_over_200kb(tmp_path):
     assert path.stat().st_mode & 0o777 == 0o600
     with pytest.raises(exp.Hold, match="PAGE_ALREADY_EXISTS"):
         exp.immutable_page(folder, 1, content)
+
+
+def test_auto_seed_find_single_valid_capture(tmp_path, monkeypatch):
+    root, seed = make_private_home(tmp_path, monkeypatch)
+    assert exp.discover_seed() == seed
+    safe = exp.create_config(root / "expanded", exp.Path("auto"), 20, 600)
+    assert safe["seed_cases"] == 6
+    assert safe["target_total"] == 600
+    assert safe["total_candidates"] == 6
+
+
+def test_missing_seed_returns_explicit_reason(tmp_path, monkeypatch):
+    root = tmp_path / "private"
+    root.mkdir(mode=0o700)
+    monkeypatch.setattr(g1, "BASE", root)
+    monkeypatch.setattr(exp, "BASE", root)
+    with pytest.raises(exp.Hold, match="SEED_CAPTURE_NOT_FOUND"):
+        exp.discover_seed()
+    with pytest.raises(exp.Hold, match="SEED_CAPTURE_NOT_FOUND"):
+        exp.check_seed(root / "g1-pilot-sample" /
+                       "R60_REAL_G1_CAPTURE_PRIVATE.jsonl")
+
+
+def test_multiple_auto_seed_matches_fail_instead_of_guess(tmp_path, monkeypatch):
+    root, seed = make_private_home(tmp_path, monkeypatch)
+    alternate = root / "g1-pilot-another"
+    alternate.mkdir(mode=0o700)
+    another_seed = alternate / seed.name
+    another_seed.write_bytes(seed.read_bytes())
+    os.chmod(another_seed, 0o600)
+    with pytest.raises(exp.Hold, match="MULTIPLE_VALID_SEEDS_SPECIFY_PATH"):
+        exp.discover_seed()
+
+
+def test_advance_uninitialized_is_actionable_error(tmp_path, monkeypatch, capsys):
+    root, _seed = make_private_home(tmp_path, monkeypatch)
+    folder = root / "not-yet-created"
+    with pytest.raises(exp.Hold, match="EXPANSION_NOT_INITIALIZED"):
+        exp.advance(folder, "fake", 1)
+    monkeypatch.setenv("STORYFORGE_SUPABASE_DSN", "fake")
+    monkeypatch.setattr(exp.sys, "argv", [
+        "r60_real_expand_private.py", "advance",
+        "--output-dir", str(folder), "--max-pages", "5",
+    ])
+    assert exp.main() == 2
+    result = json.loads(capsys.readouterr().err.strip())
+    assert result["reason_code"] == "EXPANSION_NOT_INITIALIZED"
+    assert result["train_admitted"] == 0
+
+
+def test_init_cli_missing_seed_does_not_expose_private_path(
+        tmp_path, monkeypatch, capsys):
+    root = tmp_path / "private"
+    root.mkdir(mode=0o700)
+    monkeypatch.setattr(g1, "BASE", root)
+    monkeypatch.setattr(exp, "BASE", root)
+    monkeypatch.setattr(exp.sys, "argv", [
+        "r60_real_expand_private.py", "init",
+        "--output-dir", str(root / "new-expansion"),
+        "--seed-capture", str(root / "bogus" /
+                               "R60_REAL_G1_CAPTURE_PRIVATE.jsonl"),
+    ])
+    assert exp.main() == 2
+    error = capsys.readouterr().err.strip()
+    result = json.loads(error)
+    assert result["reason_code"] == "SEED_CAPTURE_NOT_FOUND"
+    assert "bogus" not in error
+    assert "train_admitted" in result
+    assert not (root / "new-expansion").exists()
