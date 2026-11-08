@@ -1,5 +1,7 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **交接包最终索引（2026-11-09）**：[R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md](R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md)。当前 ChatGPT 工作范围为交接材料准备；Gold72 私有 P0 重建/冻结交由新 Agent，不在本轮执行。
+
 > **交接证据状态补充（2026-11-08）**：Pilot10 Owner Pairwise SAFE 已收到：A/B 各 5 条、matched=0、unique=10、Checkpoint receipt/input SHA 10/10 验证通过；同一 SAFE 还证明 A/B 两槽各 1000/1000 source crosswalk、输入 SHA 与跨槽来源绑定通过。R60 来源映射子项已 PASS，不应重跑。Gold72 的 C packets/results-only SAFE 与 Owner worksheet/aggregate SAFE 已存在（Owner=30/4/6、历史 C=38/1/1、A/B disagreement=40/72），但 C execution record unavailable，且独立 40-case A/B source manifest/crosswalk 尚未证明；Gold72 40 条冻结及 Gold72↔R60 跨集去重仍待完成，因此 P0 整体 OPEN。R58→R60 Jinja2/Chat Template 故障复发工程门禁已落实。PR #25 在已验证 commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5` 的五项 GitHub Actions 均 SUCCESS。
 
 > **2026-11-08 P0.5 工程门禁落实（不代表 HF Job 已执行）**：R60 Reviewer 独立依赖 profile `requirements/hf-quality-reviewer.in` + `requirements/hf-quality-reviewer.lock` 已提交，锁定 Transformers 4.57.1、SentencePiece 0.2.1、Jinja2 3.1.6，含 729 个 SHA256 包哈希；与 R59 Qwen3.8 的 Transformers 5.16.1 profile 分开。GitHub Actions Run `42495819470` 在 commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5` 验证 lock 重解析、hash 安装、`pip check`、合成 `apply_chat_template` 全部 PASS。R60 CPU Runbook 已改为将 lock 只读加入 A/B 输入、远端校验 lock SHA 后安装。**尚未在 Owner Mac 执行新的 lock staging/上传，也未提交新的 HF Job；不能将 CI smoke 描述为真实模型 Tokenizer PASS。** R59 原 profile 未降级。
