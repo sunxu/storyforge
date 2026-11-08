@@ -9,6 +9,7 @@ import pytest
 from storyforge_gold_quality import hf_blind_stage as stage
 from storyforge_gold_quality import hf_literary_review as review
 from storyforge_gold_quality import hf_pilot_pairwise_audit as audit
+from storyforge_gold_quality import hf_pilot_semantic_c as calibration
 
 
 def fake_case(i: int) -> dict:
@@ -112,3 +113,101 @@ def test_pairwise_audit_rejects_changed_frozen_input(staged):
         dest.write(b" ")
     with pytest.raises(audit.AuditHold, match="BLIND_INPUT_HASH_HOLD"):
         audit.audit(root, a_dir, b_dir)
+
+
+def test_c_prepare_blinds_model_results_and_reconciles_without_admission(staged, tmp_path):
+    root, a_dir, b_dir = staged
+    out = tmp_path / "independent-c"
+    safe = calibration.prepare(root, a_dir, b_dir, out)
+    assert safe["status"] == "C_BLIND_PACKETS_READY__REVIEW_NOT_STARTED"
+    assert safe["model_judgments_exposed_in_blind_packet"] is False
+    packets = calibration.private_jsonl(out / "C_BLIND_PACKETS_PRIVATE.jsonl")
+    assert len(packets) == 10
+    assert len({p["calibration_id"] for p in packets}) == 10
+    for packet in packets:
+        assert set(packet) == {
+            "schema", "calibration_id", "visible_history",
+            "target_text", "target_semantics",
+        }
+        assert "scores" not in json.dumps(packet)
+        assert "severe_flags" not in json.dumps(packet)
+        assert "source_index" not in json.dumps(packet)
+    assert (out / "C_OWNER_MAP_PRIVATE.json").stat().st_mode & 0o777 == 0o600
+    results = []
+    for packet in packets:
+        results.append({
+            "schema": calibration.RESULT_SCHEMA,
+            "calibration_id": packet["calibration_id"],
+            "assessments": {
+                "player_agency": {
+                    "verdict": "NOT_SUPPORTED", "target_quotes": [],
+                    "history_quotes": [],
+                    "rationale": "可见对话中NPC自主回应，缺少严重玩家越权依据。",
+                },
+                "hard_rule": {
+                    "verdict": "INSUFFICIENT_CONTEXT", "target_quotes": [],
+                    "history_quotes": [],
+                    "rationale": "未给世界设定和明确硬禁令，不作猜测。",
+                },
+                "safety": {
+                    "verdict": "NOT_SUPPORTED", "target_quotes": [],
+                    "history_quotes": [],
+                    "rationale": "可见内容没有直接支持安全排除的具体证据。",
+                },
+            },
+        })
+    result_path = tmp_path / "C_RESULTS_PRIVATE.jsonl"
+    result_path.write_bytes(calibration.jsonl_bytes(results))
+    report = calibration.reconcile(
+        root, a_dir, b_dir, out, result_path, out / "C_CALIBRATION_SAFE.json"
+    )
+    assert report["status"] == "C_BLIND_SEMANTIC_RECONCILED__QUALITY_HOLD"
+    assert report["cases_reviewed"] == 10
+    assert report["c_verdict_counts"]["player_agency"] == {"NOT_SUPPORTED": 10}
+    assert report["reviewer_c_execution_verified"] is False
+    assert report["reviewer_c_independence_verified"] is False
+    assert report["quality_v1_admitted"] == 0
+
+
+def test_c_validator_requires_grounded_quotes_and_no_identity_leak():
+    row = {
+        "schema": calibration.PACKET_SCHEMA,
+        "calibration_id": "a" * 32,
+        "visible_history": [
+            {"role": "user", "content": "我打算先去城门观察情况。"},
+        ],
+        "target_text": "NPC回应：城门暂时关闭，请小心巡逻兵。",
+        "target_semantics": "DB_FINAL_PERSISTED_ASSISTANT",
+    }
+    assessments = {
+        field: {
+            "verdict": "NOT_SUPPORTED",
+            "target_quotes": [],
+            "history_quotes": [],
+            "rationale": "没有足够证据支持该类别的严重异常标签。",
+        }
+        for field in calibration.CATEGORIES
+    }
+    result = {
+        "schema": calibration.RESULT_SCHEMA,
+        "calibration_id": row["calibration_id"],
+        "assessments": assessments,
+    }
+    assert len(calibration.validate_c_result(result, row)) == 3
+    result["assessments"]["player_agency"]["verdict"] = "SUPPORTED"
+    with pytest.raises(calibration.CalibrationHold, match="C_RESULT_UNSUPPORTED_EVIDENCE_HOLD"):
+        calibration.validate_c_result(result, row)
+    result["assessments"]["player_agency"]["target_quotes"] = ["捏造引用"]
+    with pytest.raises(calibration.CalibrationHold, match="C_RESULT_NONEXACT_QUOTE_HOLD"):
+        calibration.validate_c_result(result, row)
+    result["assessments"]["player_agency"]["target_quotes"] = ["城门暂时关闭"]
+    assert calibration.validate_c_result(result, row)["player_agency"] == "SUPPORTED"
+
+
+def test_c_preparation_never_overwrites_existing_output(staged, tmp_path):
+    root, a_dir, b_dir = staged
+    out = tmp_path / "independent-c"
+    calibration.prepare(root, a_dir, b_dir, out)
+    with pytest.raises(calibration.CalibrationHold,
+                       match="PRIVATE_OUTPUT_DIRECTORY_HOLD"):
+        calibration.prepare(root, a_dir, b_dir, out)
