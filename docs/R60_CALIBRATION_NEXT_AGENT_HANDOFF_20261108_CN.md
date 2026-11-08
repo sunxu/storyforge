@@ -97,15 +97,22 @@ Owner 回传的 SAFE 显示：
 | R60 Pilot10 Owner Pairwise SAFE | 已收到 Owner 私有审计 SAFE；A=5、B=5；两槽均 5/5 REJECT；matched_cases=0、unique_source_cases=10；10/10 Checkpoint receipt 与 input SHA 绑定验证通过；Owner manifest receipt 通过 | 不能声称 A/B 对相同案例一致；语义严重程度裁决仍未完成；不能转成 Quality PASS |
 | Reviewer C | 已完成 10/10 盲输入和结果绑定；hard_rule 10/10 NOT_SUPPORTED；player_agency=3 SUPPORTED/7 NOT_SUPPORTED；safety=5 SUPPORTED/1 NOT_SUPPORTED/4 INSUFFICIENT_CONTEXT | 模型身份独立验证与 Reviewer C 独立性仍未通过；不是 Owner 最终真值 |
 | 1000 条 Owner crosswalk | 已有 `OWNER_PAIRWISE_AUDIT_COMPLETE__SEMANTIC_HOLD` SAFE；`owner_manifest_receipt_verified=true`、`input_hash_and_cross_slot_binding_verified=true`；A/B 两槽各 1000/1000 来源映射、输入 SHA 与跨槽 source binding 验证通过；10/10 Checkpoint receipt/input SHA 通过 | `matched_cases=0`、`unique_source_cases=10`；只证明 1000 条来源映射及 10 个 Pilot 回执完整，不证明 A/B 在同一案例上达成一致，也不完成严重度语义裁决 |
-| Gold72 40 条 | 已知历史上存在 40 条 A/B 分歧案例，拟作为独立校准集 | 私有原始材料、40 条唯一来源、历史 C/Owner SAFE 分母与数值、文件 SHA、可冻结 manifest 尚待核验 |
+| Gold72 40 条 | 已有 Reviewer C 40-case blind packets、Owner ID map、C results-only SAFE、Owner resolution worksheet 与 Owner aggregate SAFE；历史汇总为 A/B disagreement 40/72、C=38/1/1、Owner=30/4/6 | C execution record unavailable；尚未证明存在独立冻结的 40-case source manifest/A-B crosswalk；需从原始来源与 Owner map 重建并验证，不能把完整 72-row source 或 suffix72 的 72 READY Stage 当成 40-case Gold72 集合 |
 
 **当前交接状态**：
 - Pilot10 SAFE：已收到；摘要层面的来源/Checkpoint 核验结果可引用。
 - 1000 crosswalk：已有 Owner Pairwise SAFE 验证 A/B 两槽 1000/1000 来源映射及跨槽绑定通过；无需重复执行旧审计。
-- Gold72：尚未完成私有材料盘点和 40 条冻结。
+- Gold72：Reviewer C/Owner 相关文件与聚合结果已存在；但独立 40-case source manifest/A-B crosswalk、C execution record 仍未证明，40 条冻结与跨集去重未完成。
 - P0：R60 10 条来源/Checkpoint 审计子项已 PASS；整体仍为 OPEN / NOT COMPLETE，阻塞项是 Gold72 40 条私有材料盘点/冻结及 Gold72↔R60 跨集去重。
 
 Owner 私有文件仅保留在本机受控私有目录。GitHub 不存放其正文、crosswalk 内容、blind IDs、source locators 或逐案 Checkpoint。
+
+**Gold72 40-case 证据边界（不要与 72-row source stage 混淆）**：
+- Owner Mac 私有目录 `reviewer-c-runs/gold72-c-20261106-v1` 已知文件：`R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`、`R60_GOLD72_REVIEWER_C_INSTRUCTIONS_CN.md`、`R60_GOLD72_REVIEWER_C_ID_MAP_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_PRIVATE.json`、`R60_GOLD72_REVIEWER_C_RESULTS_ONLY_AUDIT_SAFE.json`、`R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json`、`R60_GOLD72_OWNER_RESOLUTION_SAFE.json`。C execution record unavailable。
+- Owner aggregate: 40 cases, PASS/HOLD/REJECT = 30/4/6；历史 C aggregate = 38/1/1；A/B disagreement = 40 of 72。Owner Resolution 与 Reconciliation 各 1 个事件，Manifest 共 288 个事件；duplicate re-import appended 0。不得重复导入或覆盖。
+- Full source `r59-source-priority72-20261103/R59_SOURCE_CONTEXT_PRIVATE.jsonl` 是 72 rows，不是已冻结的 40-case subset。严格 Stage `source-staging-priority72-20261103/GOLD_SOURCE_STAGING_PRIVATE.jsonl` / `GOLD_SOURCE_STAGING_SAFE.json` 为 5 READY / 67 HOLD。`source-staging-suffix72-20261104-v1` 的 72 READY 是另一条非 Quality-admitted 路径，禁止拿它替代 Gold72 40。
+- 历史 A/B 文件 `R58_GOLD192_REVIEWER_A_RESULTS_20261102.json` / `R58_GOLD192_REVIEWER_B_RESULTS_20261102.json` 是更大范围的结果；不能仅凭文件存在就认定 40-case crosswalk 已冻结。先定位 40 个 A/B disagreement 的准确映射与源指纹，再冻结。
+
 
 ## 3.6 R58 Jinja2 故障复发：工程门禁已落实（2026-11-08）
 
