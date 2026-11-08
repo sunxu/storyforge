@@ -1,5 +1,8 @@
 # R60 真实优质历史数据 SFT 主线与任务优先级（2026-11-08）
 
+> **2026-11-08 HF/Quality Pipeline 复用决策（覆盖此前 Owner Mac Ollama 双审步骤）**：真实 1000 候选已采集，质量 0、入训 0。审核工具盘点表明 R58 已有 HF GPU 语义/六维双审、引文校验、A/B 隔离与检查点机制；为避免继续维护 R60 本地第三套审稿器，新增公共 `storyforge_gold_quality.hf_literary_review`、`hf_blind_stage` 和唯一 R60 薄适配 `r60_hf_quality_adapter.py`。先 Owner Mac `prepare` 做严格冻结 SHA + A/B 盲审分发；再经过 HF CPU Tokenizer 预检（共享 core）；模型/镜像实际兼容性和明确 GPU 费用批准后才运行 HF 双模型小批 Pilot。回收 SAFE 后由 `audit` 验收、`export` 生成为原 `storyforge-gold-quality append-review` 可导入的两个私人 Reviewer 文件。**未提交付费 HF Job、未上传私有候选、未执行真实 AI 审核。** 新操作书：[HF × Gold Quality Pipeline 1000 条复用路线](R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md)。此前 `R60_REAL_HISTORY_1000_QUALITY_BATCH_EXECUTION_20261108_CN.md` 的 Ollama 方案仅保留为历史备选，不再作为主线。
+
+
 > **2026-11-08 完成里程碑：真实候选池 1,000/1,000 已采集，进入 Quality-v1。** Owner Mac 实际 SAFE `EXPANSION_TARGET_REACHED__NOT_ADMITTED`，原始 G1 Seed 6 + 新增 994、20 个私有页、扫描 400 Story；Quality PASS=0、入训=0，R50/world 仍 HOLD，GPU/DB 修改=0。扩样阶段关闭，不再修改原批次、配置或目标数量。
 > 已开发 [1,000 条私有批量双模型 AI 质量审阅](R60_REAL_HISTORY_1000_QUALITY_BATCH_EXECUTION_20261108_CN.md)（`experiments/r58_quality/r60_real_quality_batch.py`）：只读验真冻结源、两模型独立评分、每案例私有不可覆盖审阅回执，`init/advance/inspect` 和断点续跑，默认每次最多 5 条、硬上限 25 条；先做 5 条校准，再分段批量执行。Quality PASS 仍只是质量维度，不等于训练准入，历史世界/System、R50 完整排除、CPU 均须独立验收。
 > **真实批量 AI 审核尚未在 Owner Mac 运行**。切勿把合成测试通过写为真人历史质量 PASS、训练数据冻结或 GPU 训练已启动。
