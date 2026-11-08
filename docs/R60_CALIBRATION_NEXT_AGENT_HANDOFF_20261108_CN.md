@@ -87,6 +87,26 @@ Owner 回传的 SAFE 显示：
 - 这些历史结果是历史证据，不自动成为新版本规则的独立盲参考标签；新版本 Owner adjudication 必须另存，不能覆盖历史裁决。
 - 建议将 Gold72 40 条划分为 20 条规则开发集和 20 条锁定回归集；私有 crosswalk 固定分组，公开只存聚合数量和哈希。
 
+
+## 3.5 交接准备阶段已收到的私有证据（2026-11-08）
+
+本节只记录交接准备期间 Owner 已提供的脱敏摘要，不代表新 Agent 已完成 P0，也不代表训练准入。
+
+| 证据 | 已确认内容 | 尚未确认 / 不得推断 |
+|---|---|---|
+| R60 Pilot10 Owner Pairwise SAFE | 已收到 Owner 私有审计 SAFE；A=5、B=5；两槽均 5/5 REJECT；matched_cases=0、unique_source_cases=10；10/10 Checkpoint receipt 与 input SHA 绑定验证通过；Owner manifest receipt 通过 | 不能声称 A/B 对相同案例一致；语义严重程度裁决仍未完成；不能转成 Quality PASS |
+| Reviewer C | 已完成 10/10 盲输入和结果绑定；hard_rule 10/10 NOT_SUPPORTED；player_agency=3 SUPPORTED/7 NOT_SUPPORTED；safety=5 SUPPORTED/1 NOT_SUPPORTED/4 INSUFFICIENT_CONTEXT | 模型身份独立验证与 Reviewer C 独立性仍未通过；不是 Owner 最终真值 |
+| 1000 条 Owner crosswalk | Owner 提供了私有文件位置及脱敏结构摘要：root 为 dict；schema 为 `storyforge_hf_quality_dual_stage_private_v1`；存在 `bindings`（dict，2 个键）、`count`（int）、`pool_sha256`（str） | 摘要没有给出 `count` 的数值、两个 binding 的逐项计数、实际 pool SHA 匹配或 source-to-slot 一一映射验证；因此目前只能记为“结构已识别，绑定未核验”，不能称为 1000/1000 crosswalk PASS |
+| Gold72 40 条 | 已知历史上存在 40 条 A/B 分歧案例，拟作为独立校准集 | 私有原始材料、40 条唯一来源、历史 C/Owner SAFE 分母与数值、文件 SHA、可冻结 manifest 尚待核验 |
+
+**当前交接状态**：
+- Pilot10 SAFE：已收到；摘要层面的来源/Checkpoint 核验结果可引用。
+- 1000 crosswalk：已收到结构摘要；实际绑定数量及逐项一致性仍待 Owner 本地只读校验。
+- Gold72：尚未完成私有材料盘点和 40 条冻结。
+- P0：整体仍为 OPEN / NOT COMPLETE；不得因 Pilot10 单项已有证据而标记 P0 PASS。
+
+Owner 私有文件仅保留在本机受控私有目录。GitHub 不存放其正文、crosswalk 内容、blind IDs、source locators 或逐案 Checkpoint。
+
 ## 4. 当前代码资产：复用，不要重造
 
 | 文件 | 已有责任 | 新阶段需要做什么 |
