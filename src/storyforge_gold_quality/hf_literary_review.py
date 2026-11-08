@@ -112,6 +112,110 @@ def repair_schema(indices: dict[str, list[int]], candidates: dict[str, list[str]
     }
 
 
+def repair_messages(row: dict, original_text: str,
+                    indices: dict[str, list[int]],
+                    candidates: dict[str, list[str]]) -> list[dict]:
+    requested = [
+        {"field": field, "quote_index": index}
+        for field, positions in indices.items() for index in positions
+    ]
+    listed = {
+        field: [{"index": i, "text": text} for i, text in enumerate(values)]
+        for field, values in candidates.items()
+    }
+    return prompt_messages(row) + [
+        {"role": "assistant", "content": original_text},
+        {"role": "user", "content": (
+            "仅修复原答复中下列不精确引用；禁止重新评分、修改decision、"
+            "severe_flags、literary_quality_notes或uncertainty。"
+            "只能选择已给出的可见历史或目标原文候选。"
+            "每个指定field/quote_index返回恰好一个candidate_index；"
+            "不得遗漏、重复或额外添加位置。仅输出JSON repairs数组。"
+            "位置：" + canonical(requested).decode("utf-8")
+            + "；候选：" + canonical(listed).decode("utf-8")
+        )},
+    ]
+
+
+def apply_repairs(original: dict, row: dict, indices: dict[str, list[int]],
+                  candidates: dict[str, list[str]], selection: object) -> dict:
+    if (not isinstance(selection, dict) or set(selection) != {"repairs"}
+            or not isinstance(selection["repairs"], list)):
+        raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+    expected = {(field, idx) for field, positions in indices.items()
+                for idx in positions}
+    if len(selection["repairs"]) != len(expected):
+        raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+    repaired = json.loads(canonical(original))
+    seen: set[tuple[str, int]] = set()
+    for item in selection["repairs"]:
+        if (not isinstance(item, dict)
+                or set(item) != {"field", "quote_index", "candidate_index"}
+                or not isinstance(item["field"], str)
+                or type(item["quote_index"]) is not int
+                or type(item["candidate_index"]) is not int):
+            raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+        field, index, chosen = item["field"], item["quote_index"], item["candidate_index"]
+        if ((field, index) not in expected or (field, index) in seen
+                or field not in candidates or not 0 <= chosen < len(candidates[field])):
+            raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+        quotes = repaired[field]
+        if not isinstance(quotes, list) or len(quotes) > 12:
+            raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+        if not quotes and index == 0:
+            quotes.append(candidates[field][chosen])
+        elif 0 <= index < len(quotes):
+            quotes[index] = candidates[field][chosen]
+        else:
+            raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+        seen.add((field, index))
+    if seen != expected:
+        raise ReviewError("QUOTE_REPAIR_SELECTION_HOLD")
+    if any(repaired[k] != original[k] for k in original
+           if k not in ("specific_source_quotes", "specific_target_quotes")):
+        raise ReviewError("QUOTE_REPAIR_NONQUOTE_CHANGED_HOLD")
+    try:
+        validate_response(repaired, row)
+    except ReviewError:
+        raise ReviewError("QUOTE_REPAIR_VALIDATION_HOLD") from None
+    return repaired
+
+
+def repair_generated_quotes(row: dict, original: dict, original_text: str,
+                            error: QuoteValidationError, tokenizer: object,
+                            engine: object, encode_fn: object,
+                            sampling_factory: object, structured_factory: object,
+                            tokens_prompt_factory: object,
+                            max_model_len: int) -> dict:
+    """Single constrained model repair, fail-closed and append-only."""
+    indices = error.invalid_indices
+    candidates = {field: quote_candidates(row, field) for field in indices}
+    schema = repair_schema(indices, candidates)
+    messages = repair_messages(row, original_text, indices, candidates)
+    try:
+        ids = encode_fn(tokenizer, messages)
+    except Exception:
+        raise ReviewError("QUOTE_REPAIR_TOKEN_ENCODING_HOLD") from None
+    if len(ids) + REPAIR_OUTPUT_TOKENS > max_model_len:
+        raise ReviewError("QUOTE_REPAIR_TOKEN_BUDGET_HOLD")
+    try:
+        params = sampling_factory(
+            temperature=0, max_tokens=REPAIR_OUTPUT_TOKENS,
+            structured_outputs=structured_factory(json=schema))
+        generated = engine.generate(
+            [tokens_prompt_factory(prompt_token_ids=ids)],
+            params, use_tqdm=False)[0].outputs[0]
+    except Exception:
+        raise ReviewError("QUOTE_REPAIR_GENERATION_HOLD") from None
+    if generated.finish_reason != "stop":
+        raise ReviewError("QUOTE_REPAIR_INCOMPLETE_HOLD")
+    try:
+        selection = json.loads(generated.text)
+    except (ValueError, TypeError):
+        raise ReviewError("QUOTE_REPAIR_JSON_HOLD") from None
+    return apply_repairs(original, row, indices, candidates, selection)
+
+
 def canonical(value: object) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True,
                       separators=(",", ":"), allow_nan=False).encode("utf-8")
