@@ -399,3 +399,41 @@ def test_staged_hf_runtime_exact_input_and_cpu_resource_modules(tmp_path):
         assert (root / f"input_{side}" / "runtime_resources.py").read_bytes() == (
             Path(resources.__file__).read_bytes())
     stage.verified_stage(root, "c" * 64, cases)
+
+
+def test_tokenizer_load_failure_emits_only_safe_error_code():
+    def fail(*_args, **_kwargs):
+        raise RuntimeError("PRIVATE_INPUT_TEXT_MUST_NOT_APPEAR")
+
+    with pytest.raises(review.ReviewError, match="HF_CPU_TOKENIZER_LOAD_HOLD") as info:
+        review.token_preflight(
+            [blind()], MODEL_A, SHA_A, 4096, 2400,
+            tokenizer_factory=fail, encode_fn=lambda _t, _m: [1] * 100)
+    assert "PRIVATE_INPUT_TEXT" not in str(info.value)
+
+
+def test_tokenizer_chat_template_failure_emits_bounded_error():
+    def fail(_tokenizer, _messages):
+        raise ValueError("private model response: do not reveal")
+
+    with pytest.raises(review.ReviewError, match="HF_CPU_CHAT_TEMPLATE_HOLD") as info:
+        review.token_preflight(
+            [blind()], MODEL_A, SHA_A, 4096, 2400,
+            tokenizer_factory=lambda *_args, **_kwargs: object(),
+            encode_fn=fail)
+    assert "private model response" not in str(info.value)
+
+
+def test_unknown_input_failure_reports_phase_only(tmp_path, monkeypatch, capsys):
+    input_file = tmp_path / "synthetic.jsonl"
+    input_file.write_bytes(stage.safe_bytes(blind()))
+    monkeypatch.setattr(review, "read_input", lambda _: 1 / 0)
+    monkeypatch.setattr(sys, "argv", [
+        "runner.py", "--input", str(input_file),
+        "--output-dir", str(tmp_path), "--model", MODEL_A,
+        "--revision", SHA_A, "--verify-only"])
+    assert review.main() == 42
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "HF_REVIEW_HOLD"
+    assert result["reason_code"] == "HF_REVIEW_INPUT_RUNTIME_HOLD"
+    assert result["private_values_emitted"] is False
