@@ -164,7 +164,9 @@ def test_private_temp_directory_resolves_macos_style_symlinked_ancestor(monkeypa
 
 
 def test_gold72_story_split_summary_contract_feeds_inventory_safe():
-    from scripts.r60_calibration_p0_freeze import _gold_story_summary
+    from scripts import r60_calibration_p0_freeze as freeze
+
+    _gold_story_summary = freeze._gold_story_summary
 
     summary = _gold_story_summary({
         "development_story_count": 5,
@@ -178,3 +180,18 @@ def test_gold72_story_split_summary_contract_feeds_inventory_safe():
         "locked_regression_story_count": 6,
         "shared_story_count": 5,
     }
+
+    safe = freeze.build_inventory_safe(
+        summary,
+        {},
+        {
+            "exact_history_overlap_count": 0,
+            "exact_target_overlap_count": 0,
+            "exact_full_history_target_overlap_count": 0,
+        },
+        written=False,
+    )
+    assert safe["gold72_development_story_count"] == 5
+    assert safe["gold72_locked_regression_story_count"] == 6
+    assert safe["gold72_shared_story_count"] == 5
+    assert safe["gold72_story_disjoint"] is False
