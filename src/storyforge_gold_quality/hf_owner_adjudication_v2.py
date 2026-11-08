@@ -11,8 +11,8 @@ import json
 import os
 import secrets
 import stat
-from datetime import datetime, timezone
 from collections.abc import Callable
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -437,12 +437,10 @@ def verify_owner_results(
                 or not isinstance(row["reviewed_at_utc"], str)):
             raise AdjudicationHold("OWNER_SEMANTIC_CHECK_ROW_SHAPE_HOLD")
         try:
-            reviewed_at = datetime.fromisoformat(
-                row["reviewed_at_utc"].replace("Z", "+00:00")
-            )
+            reviewed_at = datetime.fromisoformat(row["reviewed_at_utc"])
         except ValueError:
             raise AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD") from None
-        if reviewed_at.tzinfo is None or reviewed_at.utcoffset() != timezone.utc.utcoffset(reviewed_at):
+        if reviewed_at.tzinfo is None or reviewed_at.utcoffset() != UTC.utcoffset(reviewed_at):
             raise AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD")
         check = row["check"]
         if (not isinstance(check, dict)
