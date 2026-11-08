@@ -437,3 +437,40 @@ def test_unknown_input_failure_reports_phase_only(tmp_path, monkeypatch, capsys)
     assert result["status"] == "HF_REVIEW_HOLD"
     assert result["reason_code"] == "HF_REVIEW_INPUT_RUNTIME_HOLD"
     assert result["private_values_emitted"] is False
+
+
+@pytest.mark.parametrize(
+    ("core_error", "expected"),
+    [
+        ("TOKEN_IDS_INVALID", "HF_CPU_TOKEN_IDS_INVALID"),
+        ("CHAT_MESSAGES_INVALID", "HF_CPU_CHAT_MESSAGES_INVALID"),
+        ("CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR",
+         "HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR"),
+        ("CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR",
+         "HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR"),
+        ("CHAT_TEMPLATE_RENDER_FAILED_CLASS_CUSTOMTOKENIZERERROR",
+         "HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_CLASS_CUSTOMTOKENIZERERROR"),
+        ("private text: CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR",
+         "HF_CPU_CHAT_TEMPLATE_HOLD"),
+    ],
+)
+def test_cpu_token_preflight_preserves_only_shared_core_safe_code(
+        core_error, expected):
+    def fake_encode(_tokenizer, _messages):
+        raise ValueError(core_error)
+
+    with pytest.raises(review.ReviewError) as info:
+        review.token_preflight(
+            [blind()], MODEL_A, SHA_A, 4096, 2400,
+            tokenizer_factory=lambda *_args, **_kwargs: object(),
+            encode_fn=fake_encode)
+    assert str(info.value) == expected
+
+
+def test_cpu_token_error_code_strict_bounded_allowlist():
+    assert review.cpu_token_error_code(
+        ValueError("CHAT_TEMPLATE_RENDER_FAILED_CLASS_" + "A" * 10000)
+    ) == "HF_CPU_CHAT_TEMPLATE_HOLD"
+    assert review.cpu_token_error_code(
+        ValueError("CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR")
+    ) == "HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR"
