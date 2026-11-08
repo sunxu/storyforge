@@ -189,7 +189,6 @@ def build_package(
         ]
         if any(
             not isinstance(message, dict)
-            or set(message) != {"role", "content"}
             or message.get("role") not in ("system", "user", "assistant")
             or not isinstance(message.get("content"), str)
             for message in visible_history
@@ -207,7 +206,6 @@ def build_package(
             "visible_history": visible_history,
             "target_text": target_text,
             # P0 source packet has no verified component snapshot. Do not infer one.
-            "target_semantics": "DB_FINAL_PERSISTED_ASSISTANT",
             "verified_world_components": [],
         }
         if FORBIDDEN_PACKET_KEYS & set(_walk_keys(packet)):
@@ -264,6 +262,7 @@ Schema：{severity.SCHEMA}
 ## 只允许读取
 - `{PACKET_NAME}`
 - 本说明
+- `{SCHEMA_NAME}`
 - 已冻结的公开 Rubric v2
 
 不要打开 Owner ID Map、P0 Gold manifest、Gold72 C 旧结果、A V3/B2 结果、历史 Owner resolution 或任何旧 checkpoint。不要查看 Locked Regression 20 或 R60 Severe10。
