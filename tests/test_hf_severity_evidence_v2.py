@@ -1,8 +1,6 @@
 """Synthetic regression matrix for R60 three-state severity evidence v2."""
 from __future__ import annotations
 
-import copy
-
 import pytest
 
 from storyforge_gold_quality import hf_literary_review as legacy_review
@@ -334,8 +332,50 @@ def test_legacy_v3_review_and_reviewer_c_contracts_remain_unchanged():
     legacy_checkpoint = legacy_review.checkpoint_record(
         1, row, old_response, "synthetic/model", "a" * 40
     )
-    assert legacy_review.read_checkpoint_from_record if hasattr(
-        legacy_review, "read_checkpoint_from_record"
-    ) else legacy_checkpoint["schema"] == legacy_review.CHECKPOINT_SCHEMA
+    assert legacy_checkpoint["schema"] == legacy_review.CHECKPOINT_SCHEMA
+    assert legacy_checkpoint["receipt_sha256"] == legacy_review.digest({
+        k: value for k, value in legacy_checkpoint.items() if k != "receipt_sha256"
+    })
     assert set(legacy_review.response_schema()["properties"]) == set(old_response)
     assert "assessments" not in legacy_review.response_schema()["properties"]
+
+
+def test_safety_supported_requires_target_indicator_and_policy_basis():
+    row = packet()
+    safety = assessment(
+        "SUPPORTED",
+        evidence=[ev("target", row["target_text"], "角色进入封闭禁区",
+                     "risk_indicator")],
+        rule_basis=[basis("safety_policy", "safety_exclusion_rule",
+                          "SYNTHETIC-SAFETY-01")],
+        context=coverage(reviewed=["safety_policy"]),
+    )
+    result = valid_result(row)
+    result["assessments"]["safety"] = safety
+    assert v2.validate_result_v2(result, row)["safety"] == "SUPPORTED"
+
+
+def test_hard_rule_basis_must_match_the_actual_system_or_user_message_role():
+    row = packet()
+    result = valid_result(row)
+    hard = result["assessments"]["hard_rule"]
+    hard["evidence"][0]["message_index"] = 1
+    body = row["visible_history"][1]["content"]
+    quote = "我明确拒绝进入封闭禁区"
+    start = body.index(quote)
+    hard["evidence"][0].update({
+        "start_char": start, "end_char": start + len(quote),
+        "quote": quote, "role": "applicable_rule",
+    })
+    with pytest.raises(v2.EvidenceHold, match="SEVERITY_HARD_RULE_BASIS_EVIDENCE_LINK_HOLD"):
+        v2.validate_result_v2(result, row)
+
+
+def test_player_agency_supported_needs_target_behavior_and_boundary():
+    row = packet()
+    result = valid_result(row)
+    result["assessments"]["player_agency"]["evidence"] = [
+        ev("target", row["target_text"], "NPC随后停下脚步", "npc_autonomy")
+    ]
+    with pytest.raises(v2.EvidenceHold, match="SEVERITY_AGENCY_TARGET_EVIDENCE_HOLD"):
+        v2.validate_result_v2(result, row)
