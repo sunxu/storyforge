@@ -1,5 +1,47 @@
 # R60 HF CPU A Job 已提交但远程失败：安全诊断与继续执行（2026-11-08）
 
+## 2026-11-08 A diagnostic-v3 终态：Chat Template ImportError，缺少 Jinja2 为高可信根因
+
+Owner 提交的 [HF CPU Job `6af042680e0338d1bb84a276`](https://huggingface.co/jobs/adradar/6af042680e0338d1bb84a276) 现已在 HF 连接器只读检查中确认为终态 `ERROR`、exit 42，创建于 `2026-11-08T09:35:36.259Z`，结束于 `09:36:02.559Z`。SAFE 日志顺序：
+
+~~~json
+{"cases_completed":0,"cases_total":1000,"private_values_emitted":false,"schema":"storyforge_hf_literary_safe_v1","status":"HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE","training_authorized":false}
+{"private_values_emitted":false,"reason_code":"HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_CLASS_IMPORTERROR","schema":"storyforge_hf_literary_safe_v1","status":"HF_REVIEW_HOLD","training_authorized":false}
+~~~
+
+因此：1,000 条结构合同通过；模型 Tokenizer 已加载并进入 `apply_chat_template`；模板渲染出现 Python `ImportError`；正式文学审查与训练准入仍未发生。Job 运行时曾短暂显示 `Retrying job. Failure count: 1`，虽然配置 `attempts=1`，之后已结束为 ERROR；不能仅凭中间状态断言云端额外运行了几次。
+
+**高可信根因**：远端命令只通过 pip 安装 `transformers==4.57.1` 与 `huggingface_hub>=0.35,<3`。精确 Transformers v4.57.1 官方源码显示 [`chat_template_utils.py` 的 `_compile_jinja_template`](https://github.com/huggingface/transformers/blob/v4.57.1/src/transformers/utils/chat_template_utils.py#L393-L443) 在没有 `jinja2` 或 Jinja2 版本低于 3.1.0 时抛出 `ImportError`；[v4.57.1 `setup.py`](https://github.com/huggingface/transformers/blob/v4.57.1/setup.py#L335) 将 Jinja2 定义为 `chat_template` extra，而非默认 `install_requires`。这与 Job 错误码一致，但没有该容器的依赖清单或原始异常，因此仍标为“高可信、尚未现场证实”。
+
+**避免多轮消耗**：优先只改 **Job 安装命令**，增加精确版本 `jinja2==3.1.6`，然后单独核验 `jinja2` 是否可导入。继续复用已冻结 `input_A`（RO）和既有 `diagnostic-runner-v3`（RO），不上传/修改任何私有用户故事正文、Owner crosswalk 或 v3 代码；使用**新的**输出前缀 `cpu-output-A-jinja-fix-01`，**新的**作业名 `r60-quality-cpu-A-jinja-fix-01`，防止覆盖失败证据。
+
+### Owner Mac：实际提交前的零计算费配置检查
+
+此段在 Owner Mac 的 StoryForge 根目录执行，不运行 `--submit`：
+
+~~~bash
+set -euo pipefail
+set +x
+
+INROOT="hf://buckets/adradar/storyforge-training/quality-review/r60/r60-quality-cpu-20261108T082545Z"
+CMD="set -eu
+export CUDA_VISIBLE_DEVICES=''
+export TOKENIZERS_PARALLELISM=false
+export PYTHONPATH=/input
+python3 -m pip install --quiet --no-cache-dir   'transformers==4.57.1' 'huggingface_hub>=0.35,<3' 'jinja2==3.1.6'
+python3 -c 'import jinja2; print("HF_CPU_JINJA2_PRESENT", jinja2.__version__)'
+python3 /scripts/runner.py   --input /input/source.private.jsonl --output-dir /output   --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137 --verify-only
+python3 /scripts/runner.py   --input /input/source.private.jsonl --output-dir /output   --model Qwen/Qwen3-32B   --revision 9216db5781bf21249d130ec9da846c4624c16137   --token-preflight-only --max-model-len 32768 --max-output-tokens 2400"
+
+python3 scripts/hf_job_guard.py   --namespace adradar --name r60-quality-cpu-A-jinja-fix-01   --flavor cpu-basic --timeout-minutes 45   --input-volume "$INROOT/input_A:/input:ro"   --input-volume "$INROOT/diagnostic-runner-v3:/scripts:ro"   --output-volume "$INROOT/cpu-output-A-jinja-fix-01:/output:rw"   --image python:3.11 --check-hf-cli   -- /bin/sh -lc "$CMD"
+
+hf jobs run   --namespace adradar --name r60-quality-cpu-A-jinja-fix-01   --flavor cpu-basic --timeout 45m --attempts 1 --detach --dry-run   -v "$INROOT/input_A:/input:ro"   -v "$INROOT/diagnostic-runner-v3:/scripts:ro"   -v "$INROOT/cpu-output-A-jinja-fix-01:/output:rw"   python:3.11 -- /bin/sh -lc "$CMD"
+~~~
+
+上面两步都 **不会提交 Job**。只在 Owner 确认无同名已存在 Job、看到 `hf_cli_compatible=true` + 完整 `(dry run) Job not submitted`，并同意承担一次 CPU Job 可能产生的费用后，才对**同一 Guard 命令**增加 `--submit`、删除 `--check-hf-cli`。继续单次尝试、无自动重试、不切 GPU。日志判定：`HF_CPU_JINJA2_PRESENT 3.1.6` → `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE` → `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU` 且 `cases_checked=1000`, `over_budget_count=0`。任一步失败继续 HOLD；不得把 1000 结构合格错误认作 Quality-v1 合格。
+
+---
+
 ## 2026-11-08 v3 提交不确定：本机 Hugging Face CLI 版本不兼容（最新结论）
 
 Owner Mac 的 `r60-quality-cpu-A-diagnostic-v3` Guard 报 `SUBMISSION_UNCONFIRMED_CHECK_ORG_JOBS` / `HF_JOB_SUBMISSION_FAILED`。ChatGPT HF 连接器只读核查 `adradar` Jobs 列表，未见本次 v3 Job。Owner 运行 `hf version` 得到 `huggingface_hub 0.36.2`，`hf jobs run --help` 仅显示 `--detach`（与完整 Guard 需求不匹配）。
