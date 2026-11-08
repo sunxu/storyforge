@@ -1,5 +1,21 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08：B 首轮 H200 v2 引用失败 → v3 受控单次批量索引纠错实现（最新）
+
+实际 HF [B GPU Job `6af05bbf0e0338d1bb84ad9f`](https://huggingface.co/jobs/adradar/6af05bbf0e0338d1bb84ad9f)（`r60-quality-gpu-pilot5-B-v2-01`；`zai-org/GLM-4-32B-0414@077b5c2f5c43bd3239fd605a0600229e8facbd4a`，H200 固定镜像 digest）创建 `11:23:43.285Z`、完成 `11:25:58.312Z`，**ERROR / exit42**。GLM 权重 `14/14` 分片实际加载成功，进入推理，首次模型输出未通过严格引用验证，SAFE `HF_REVIEW_HOLD` / `MODEL_NONEXACT_QUOTE_HOLD`；目标输出 `gpu-review-output-B-pilot5-v2-01` 无私有 checkpoint，因此 **B 的有效文学判断数为零**。不能因为异常就推断 GLM 作出了 REJECT/PASS，也不能把 A 的 5/5 severe REJECT 自动入淘汰。公开证据 [B v2 SAFE](evidence/R60_GPU_B_V2_PILOT5_NONEXACT_QUOTE_HOLD_SAFE_20261108.json)。
+
+**针对故障的代码修复（已写 GitHub、合成 CI 全 PASS；尚未部署到 HF）**：
+
+- `src/storyforge_gold_quality/hf_literary_review.py` 将 PRIVATE checkpoint 契约从 **v2 → v3**，原 A v2 5 条、B v2 空目录全部**原样保留**，不能交叉复用。
+- 基于 R58 已通过实际 GPU 校验的 **Batch Quote Repair v2** 思路，只针对 `MODEL_NONEXACT_QUOTE_HOLD` 收集同一响应所有无效 `specific_source_quotes` / `specific_target_quotes` 的位置，严格从该槽可见历史单条消息、目标回复中提取 8–300 字的候选句段，每字段最多 128 条。没有可用候选或候选上限超标必须 HOLD，不截断候选池。
+- **最多一次**受约束模型纠错，输出不是自由生成引用，而是精确 `field/quote_index/candidate_index` 选择；同时最多 24 个待修复位置、输出 256 token、新增 `max_model_len` 预算检查。模型不得重新评分、改变 `decision`、任何 severe flag、文学说明、uncertainty；程序只修改被指定的引用列表，并再次运行完整 `validate_response`，必须严格逐字匹配才能写新 checkpoint。缺少严重 REJECT 证据继续 HOLD；其它格式、严重标记不一致等错误不触发引用修复。
+- SAFE 的成功输出附加 `quote_repair_attempts`、`quote_repair_successes` 两个整数；任何无法修复的字段、越界、重复位置、额外位置、过预算、生成未完成都以固定白名单错误码 HOLD，不把响应正文/引用/候选记录到日志或公开 GitHub。
+- `tests/test_hf_quality_reusable.py` 新增三段引用跨双字段批量修复、重复/遗漏/越界/布尔索引拒绝、FakeEngine 单次生成及 Token 预算拒绝、旧 v2 checkpoint 不复用的合成测试；截至本次提交四项 GitHub CI **SUCCESS**。
+
+**优先级与下一闸门**：不要再运行旧 B GPU Job。Owner Mac 在分支 `r60/gold192-history-v3-adapter` 拉取 GitHub CI 通过的代码，先本地 `PYTHONPATH=src python3 -m pytest tests/test_hf_quality_reusable.py -q`，然后仅上传公开 `src/storyforge_gold_quality/hf_literary_review.py` 到 **新** `reviewer-runner-v3/runner.py`（不要覆盖 `reviewer-runner-v2`）；ChatGPT 用 HF `cat` 与 GitHub 字节对比。之后使用 B 的冻结输入、固定目标 vLLM 镜像运行单槽 `cpu-basic` v3 Tokenizer/资源前置检查，独立新输出。只有全部 PASS 并单独获得额外付费 GPU 预算认可，才考虑 B `--start 1 --limit 5` 一次性 H200 重评，新的 `gpu-review-output-B-pilot5-v3-01`。已有 A 5 条无需重评；后续 Owner 私有 crosswalk 配对，语义校准后才会形成 Quality-v1 结果。**训练仍禁止；全部 1000 条扩样未批准。**
+
+---
+
 ## 2026-11-08 B Reviewer v2 在目标 vLLM 镜像下 CPU1000/1000 PASS（最新权威状态）
 
 实际 [HF Job `6af059c4e6320c66fad74722`](https://huggingface.co/jobs/adradar/6af059c4e6320c66fad74722)，`name=r60-gpuimage-cpu-token-B-reviewer-v2-01`，`adradar/cpu-basic`，固定 `vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9`，创建 `2026-11-08T11:15:16.113Z`、完成 `11:15:36.016Z`，**COMPLETED**。
