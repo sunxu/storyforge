@@ -414,3 +414,39 @@ Runner 输出的 SAFE 仅含聚合数量、状态和准入边界，不含 case/s
 Runner 只进行本地只读核验和本地 create-only 文件写入，不调用网络、Supabase、HF、模型或 GPU。Gold72 C execution record unavailable、Gold72 C independence false、Pilot10 C model identity independently verified false 等历史限制必须保留。即使 SAFE 显示 P0 PASS，也只代表校准集库存冻结完成；Quality-v1 admission 仍为 0，不能据此启动 P1 以外的 GPU、1000 条推理或 SFT。
 
 **当前状态：Runner 代码已提交且 CI 合成测试通过；尚未在 Owner Mac 实际运行。P0 仍为 HOLD，直到 Owner Mac 的正式 SAFE 实际生成并核验。**
+
+
+### 8.7 首次 Owner Mac dry-run HOLD 后的诊断补丁（2026-11-09）
+
+Owner Mac 首次 dry-run 返回 `INPUT_OR_IO_ERROR`。旧版 Runner 兜底捕获了异常类型和执行位置，导致无法判断具体失败阶段；该次未生成 manifest，未启动 GPU/模型，未修改输入证据。
+
+已在 Runner 加入隐私安全诊断字段：
+
+- `diagnostic.phase`：失败阶段（如 Gold72 输入读取、A/B2 replay、Owner resolution replay、Pilot10 checkpoint/C receipt、cross-set dedup、输出准备）。
+- `diagnostic.exception_type`：异常类名。
+- `diagnostic.source_file` / `diagnostic.source_line`：异常栈最内层源文件 basename 与行号。
+- `diagnostic.errno`：仅 OSError 时输出系统错误码。
+- `diagnostic.validator_reason_code`：仅当异常来自内部固定 reason-code 校验器时输出白名单格式错误码。
+
+不输出异常原文、路径、case/story/blind ID、正文、SHA 或 traceback。测试专门确认任意异常文本不会泄露。
+
+**重新执行只允许 dry-run**，拉取最新分支代码后执行：
+
+~~~bash
+cd "$HOME/workspace/storyforge"
+git fetch origin
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+PYTHONPATH=src:. python3 scripts/r60_calibration_p0_freeze.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
+  --dry-run
+~~~
+
+将完整 SAFE JSON 回传。只需 SAFE，不要上传或粘贴私有 manifest / 原始输入 / traceback。若仍 HOLD，依据 `diagnostic.phase`、`exception_type`、`source_file`、`source_line` 和固定 validator reason code 定位修复。
+
+诊断补丁提交：`375a68da88b20779a9856a47f6587b66b903795a`。GitHub CI、R60 HF Runtime CI、Gold Quality Pipeline、R58 synthetic regression 已通过；R60 HF CPU dependency profile 正在完成。此提交的 CI 通过不代表 Owner Mac P0 已通过。
+
+**P0 仍为 HOLD；不得去掉 `--dry-run`，直到诊断后的 dry-run 明确返回 `CALIBRATION_INVENTORY_PREFLIGHT_PASS__NO_FILES_WRITTEN`。**
