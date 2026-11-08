@@ -61,3 +61,11 @@ Owner Mac 在**唯一明确批准的 Story/Session 对**上已经获取 80 条�
 不改 RolePlay、不进行合成数据 SFT、不启动 GPU、不修改生产 Supabase 数据或权限、不关闭 RLS、不读取 R50 正文、不将任何真实用户内容提交 GitHub。程序和合成测试可提交 GitHub。所有模型训练或付费任务单独申请授权。
 
 完成 REAL-01 后，优先推进 REAL-02/03，独立并行解决 REAL-04；不再以缺少旧 Provider raw log 为由停止真实最终回复 SFT 实验线筛选，但也不降低严格 Gold 的 A/B 门槛。
+
+## 2026-11-08 方案 A：G0 全 Story/Session 范围授权与执行进展
+
+Owner 在本轮新增授权：现有 ChatGPT Supabase 只读连接器可对所有 `story_id`/`session_id` 做**聚合式技术元数据发现**。此前仅 1 对 Scope 的限制继续适用于原 Owner Mac `r60_scoped_target_pairs.py`/40 Pair G1 私有审核链，但**不再限制 ChatGPT 的 G0 全范围聚合调查**。这不是全站正文导出/训练许可。
+
+执行回执：[`docs/R60_GLOBAL_SUPABASE_METADATA_DISCOVERY_20261108_CN.md`](R60_GLOBAL_SUPABASE_METADATA_DISCOVERY_20261108_CN.md)；复现 SQL：`experiments/r58_quality/sql/r60_global_real_history_aggregate_READ_ONLY.sql`。四类别各 16 Story 的有界聚合样本，64 Story / 1,280 completed Assistant，523 达技术优先条件。技术优先不是质量或准入；公开原创也不等于微调授权。
+
+**P0 实际推进**：全范围 G0 元数据统计已取得；下一关键环节是先确定各作品与聊天参与者的**内容审核及微调授权依据**，然后针对具备权限的候选进行定点正文审核/上下文构建。没有这个边界，不得使用 BYPASSRLS 账号批量读取所有私有用户原文。现有 `r58_export_reader` 本机方案和 ChatGPT connector 角色不得混同。严格 Gold192 和 R50 未改变，正式准入仍 0。
