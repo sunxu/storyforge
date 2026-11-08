@@ -85,6 +85,13 @@ def stage(root: Path, cases: list[dict], pool_hash: str, runner: Path,
     code = runner.read_bytes()
     if not code or len(code) > 100_000:
         raise StageError("REVIEWER_RUNNER_SIZE_HOLD")
+    shared_core = (Path(__file__).resolve().parents[1] /
+                   "storyforge_dataset" / "token_preflight.py")
+    if not shared_core.is_file() or shared_core.is_symlink():
+        raise StageError("SHARED_TOKEN_CORE_NOT_FOUND")
+    token_code = shared_core.read_bytes()
+    if not token_code or len(token_code) > 100_000:
+        raise StageError("SHARED_TOKEN_CORE_SIZE_HOLD")
     # Stable per-case input row, no Source Story/Session/Message/Owner IDs.
     ids = [item.get("case_key") for item in cases]
     if (len(set(ids)) != len(ids)
@@ -135,6 +142,7 @@ def stage(root: Path, cases: list[dict], pool_hash: str, runner: Path,
         payload = b"".join(safe_bytes(row) for row in rows_by_slot[slot])
         write_once(inp / "source.private.jsonl", payload)
         write_once(inp / "runner.py", code)
+        write_once(inp / "token_core.py", token_code)
     owner = root / "owner"
     owner.mkdir(mode=0o700)
     write_once(owner / MAP_NAME, safe_bytes({
@@ -145,6 +153,7 @@ def stage(root: Path, cases: list[dict], pool_hash: str, runner: Path,
         "schema": SCHEMA, "pool_sha256": pool_hash,
         "count": len(cases), "model_pins": model_pins,
         "runner_sha256": sha_bytes(code),
+        "shared_token_core_sha256": sha_bytes(token_code),
         "source_sha256": {
             slot: sha_bytes((root / f"input_{slot}" /
                             "source.private.jsonl").read_bytes())
@@ -176,7 +185,7 @@ def verified_stage(root: Path, pool_hash: str, cases: list[dict]) -> tuple[dict,
     signed = {k: v for k, v in manifest.items() if k != "receipt_sha256"}
     if (set(manifest) != {
             "schema", "pool_sha256", "count", "model_pins", "runner_sha256",
-            "source_sha256", "receipt_sha256",
+            "shared_token_core_sha256", "source_sha256", "receipt_sha256",
         } or manifest["receipt_sha256"] != reviewer.digest(signed)
             or manifest["schema"] != SCHEMA or crosswalk.get("schema") != SCHEMA
             or manifest["pool_sha256"] != pool_hash
@@ -195,8 +204,10 @@ def verified_stage(root: Path, pool_hash: str, cases: list[dict]) -> tuple[dict,
         private_folder(out)
         src = private_read(inp / "source.private.jsonl", MAX_STAGE_BYTES)
         code = private_read(inp / "runner.py", 100_000)
+        token_code = private_read(inp / "token_core.py", 100_000)
         if (sha_bytes(src) != manifest["source_sha256"][slot]
-                or sha_bytes(code) != manifest["runner_sha256"]):
+                or sha_bytes(code) != manifest["runner_sha256"]
+                or sha_bytes(token_code) != manifest["shared_token_core_sha256"]):
             raise StageError("STAGE_BYTES_CHANGED_HOLD")
         try:
             rows = reviewer.read_input(inp / "source.private.jsonl")
