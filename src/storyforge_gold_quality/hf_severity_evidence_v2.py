@@ -347,13 +347,14 @@ def _validate_evidence(packet: dict[str, Any], evidence: object) -> list[dict]:
             raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
         if item["role"] == "risk_indicator" and item["source"] != "target":
             raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
-        if item["role"] in ("explicit_refusal", "player_boundary"):
-            if (item["source"] != "history"
-                    or packet["visible_history"][item["message_index"]]["role"] != "user"):
-                raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
-        if item["role"] == "applicable_rule" and item["source"] == "history":
-            if packet["visible_history"][item["message_index"]]["role"] not in ("system", "user"):
-                raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
+        if (item["role"] in ("explicit_refusal", "player_boundary")
+                and (item["source"] != "history"
+                     or packet["visible_history"][item["message_index"]]["role"] != "user")):
+            raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
+        if (item["role"] == "applicable_rule" and item["source"] == "history"
+                and packet["visible_history"][item["message_index"]]["role"]
+                not in ("system", "user")):
+            raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
         if item["role"] == "npc_autonomy" and item["source"] != "target":
             raise EvidenceHold("SEVERITY_EVIDENCE_ROLE_HOLD")
         locator = (
