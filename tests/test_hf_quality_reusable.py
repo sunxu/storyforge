@@ -353,7 +353,7 @@ def test_quality_pipeline_inspect_command_uses_shared_reviewer(tmp_path):
 
 
 def test_cpu_tokenizer_preflight_reuses_shared_core_without_gpu(tmp_path, monkeypatch):
-    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "")
     answer_safe = review.token_preflight(
         [blind(1), blind(2)], MODEL_A, SHA_A, 4096, 2400,
         tokenizer_factory=lambda *args, **kwargs: object(),
@@ -377,3 +377,25 @@ def test_cpu_tokenizer_budget_hold_is_not_review_pass():
     assert hold["status"] == "HF_REVIEW_CPU_TOKEN_BUDGET_HOLD__NO_GPU"
     assert hold["over_budget_count"] == 1
     assert hold["training_authorized"] is False
+
+
+def test_cpu_preflight_refuses_visible_gpu(tmp_path, monkeypatch):
+    monkeypatch.setenv("CUDA_VISIBLE_DEVICES", "0")
+    with pytest.raises(review.ReviewError, match="HF_CPU_RESOURCE_GUARD_HOLD"):
+        review.token_preflight(
+            [blind()], MODEL_A, SHA_A, 4096, 2400,
+            tokenizer_factory=lambda *args, **kwargs: pytest.fail("tokenizer"),
+            encode_fn=lambda t, p: pytest.fail("encode"),
+        )
+
+
+def test_staged_hf_runtime_exact_input_and_cpu_resource_modules(tmp_path):
+    from storyforge_dataset.hf_runtime import inputs, resources
+
+    root, cases, _ = setup(tmp_path)
+    for side in ("A", "B"):
+        assert (root / f"input_{side}" / "runtime_inputs.py").read_bytes() == (
+            Path(inputs.__file__).read_bytes())
+        assert (root / f"input_{side}" / "runtime_resources.py").read_bytes() == (
+            Path(resources.__file__).read_bytes())
+    stage.verified_stage(root, "c" * 64, cases)
