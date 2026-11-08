@@ -1,5 +1,17 @@
 # R60 真正文学盲审 A/B 各前五条：最小 GPU Pilot 执行基线（2026-11-08）
 
+## 2026-11-08 A H200 首次真实文学审核结果：1 个旧契约 Checkpoint + 后续 MODEL_REASON_HOLD（最新）
+
+真实 [HF Job `6af051150e0338d1bb84aad1`](https://huggingface.co/jobs/adradar/6af051150e0338d1bb84aad1) 使用单卡 H200、固定 vLLM SHA 和 `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`，请求 `--start 1 --limit 5`，创建 `2026-11-08T10:38:13.808Z`、结束 `10:40:51.984Z`，**ERROR / exit 42**。实际模型权重 `17/17` 分片加载完成；推理已经执行，但 SAFE 为 `HF_REVIEW_HOLD`、`reason_code=MODEL_REASON_HOLD`。该码由旧验证器同时涵盖 `literary_quality_notes` 类型/长度与 `uncertainty` 类型不正确，**无法从旧日志进一步区分具体字段**，不得编造原模型输出。
+
+HF 私有新输出目录只读列出 `review_0001.private.json`（847 字节），无 `review_0002..0005`。第 1 条已先完成旧 v1 校验并成功写入 Checkpoint；安全元数据检查该记录 `position=1`、模型/Revision 一致、六维评分存在、`decision=REJECT`、三个严重标记均真，但 `specific_source_quotes` 和 `specific_target_quotes` 都是空列表（两者数量均为 0）。**现有 v1 验证器只强制 PASS 原文引用、不强制严重 REJECT 引用；故该 REJECT 缺少可靠证据，不应直接计入真实质量淘汰，也不能认为 1/5 Quality PASS。** 当前尚未执行基于原输入的独立 `read_checkpoint` 全量验证；必须保留这条历史 v1 文件、不覆盖，不公开模型原文或私人标识。
+
+**代码修复（GitHub 新版，尚未分发/运行到 HF）：** 在 `src/storyforge_gold_quality/hf_literary_review.py` 将 Checkpoint 契约从 `storyforge_hf_literary_checkpoint_private_v1` 提升到 `v2`，让旧 v1 Checkpoint 不能静默混用；将旧 `MODEL_REASON_HOLD` 拆分为 `MODEL_NOTES_TYPE_HOLD`、`MODEL_NOTES_TOO_SHORT_HOLD`、`MODEL_UNCERTAINTY_TYPE_HOLD`；对严重 REJECT 要求至少一条严格目标正文原文引用，缺失则 `MODEL_SEVERE_EVIDENCE_HOLD`；提示词明确文学说明至少 8 个非空白字符。合成测试新增旧 v1 Checkpoint 拒绝复用、无证据严重 REJECT HOLD 和说明子码分类，禁止自动补造引用/评分、禁止修改旧历史模型判断。
+
+**下一闸门（未执行）**：先完成新版代码 synthetic CI，使用只读冻结 A/B 输入与独立新脚本/输出前缀准备 v2 Pilot，先验证参数与对应 Tokenizer。仅在明确批准追加 H200 GPU 运行费用与确认没有同名 Job 后，才考虑新的 A Pilot 重评；本轮固定的原 5 条旧任务因错误已结束，不能把旧 `review_0001.private.json` 继续当作新版 v2 质量准入，也不应自动启动 B 或完整 1000 条。公开 [本次 SAFE 证据](evidence/R60_GPU_REVIEW_A_PILOT5_FIRST_RUN_SAFE_20261108.json) 已留存。
+
+---
+
 ## 2026-11-08 B 同镜像 CPU 1000/1000 PASS：A/B 双槽技术闸门达成（最新）
 
 Hugging Face [B Job `6af04fda0e0338d1bb84aa61`](https://huggingface.co/jobs/adradar/6af04fda0e0338d1bb84aa61) 经实际 inspect 和 SAFE logs 验证终态 **COMPLETED**（`2026-11-08T10:32:58.362Z` 创建，`10:33:29.455Z` 完成）。与 A 修复任务同一个固定 vLLM digest、`cpu-basic`、`NVIDIA_VISIBLE_DEVICES=void` 仅在无真实 GPU 设备节点时设置，完整原样 ResourceGuard 检查全部 PASS。B 1000/1000 Tokenizer `HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`，超预算 0；prompt Token min/median/p95/max=`673/1099/2306/3550`，输出预留 2400，最大总 token 5950，`max_model_len=32768`，`gpu_started=false`、`training_authorized=false`。见 [B SAFE](evidence/R60_GPUIMAGE_B_CPU1000_ENVFIX_PASS_SAFE_20261108.json)。A 同镜像 [Job `6af04eb10e0338d1bb84a9e1`](https://huggingface.co/jobs/adradar/6af04eb10e0338d1bb84a9e1) 亦已 1000/1000 PASS。
