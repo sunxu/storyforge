@@ -273,6 +273,26 @@ def safe_summary(rows: list[dict], output: Path,
     }
 
 
+TOKEN_CORE_SAFE_ERRORS = frozenset({
+    "CHAT_MESSAGES_INVALID", "TOKEN_IDS_INVALID",
+    "CHAT_TEMPLATE_RENDER_FAILED_TYPE_ERROR",
+    "CHAT_TEMPLATE_RENDER_FAILED_RUNTIME_ERROR",
+    "CHAT_TEMPLATE_RENDER_FAILED_VALUE_ERROR",
+    "CHAT_TEMPLATE_RENDER_FAILED_OTHER",
+})
+TOKEN_CORE_CLASS_ERROR = re.compile(
+    r"^CHAT_TEMPLATE_RENDER_FAILED_CLASS_[A-Z0-9_]{1,70}$"
+)
+
+
+def cpu_token_error_code(exc: ValueError) -> str:
+    """Preserve only bounded codes emitted by the existing token_preflight core."""
+    candidate = str(exc)
+    if candidate in TOKEN_CORE_SAFE_ERRORS or TOKEN_CORE_CLASS_ERROR.fullmatch(candidate):
+        return "HF_CPU_" + candidate
+    return "HF_CPU_CHAT_TEMPLATE_HOLD"
+
+
 def token_preflight(rows: list[dict], model: str, revision: str,
                     max_model_len: int, max_output_tokens: int,
                     tokenizer_factory=None, encode_fn=None) -> dict:
@@ -309,11 +329,14 @@ def token_preflight(rows: list[dict], model: str, revision: str,
             model, revision=revision, trust_remote_code=False)
     except Exception as exc:
         raise ReviewError("HF_CPU_TOKENIZER_LOAD_HOLD") from exc
-    try:
-        lengths = [len(encode_chat(tokenizer, prompt_messages(row)))
-                   for row in rows]
-    except Exception as exc:
-        raise ReviewError("HF_CPU_CHAT_TEMPLATE_HOLD") from exc
+    lengths = []
+    for row in rows:
+        try:
+            lengths.append(len(encode_chat(tokenizer, prompt_messages(row))))
+        except ValueError as exc:
+            raise ReviewError(cpu_token_error_code(exc)) from None
+        except Exception:
+            raise ReviewError("HF_CPU_CHAT_TEMPLATE_HOLD") from None
     try:
         summary = describe_token_lengths(
             lengths, max_model_len=max_model_len,
@@ -473,8 +496,15 @@ def main() -> int:
             "CPU_TOKEN_PREFLIGHT": "HF_CPU_PREFLIGHT_RUNTIME_HOLD",
             "GPU_INFERENCE": "HF_GPU_REVIEW_RUNTIME_HOLD",
         }
-        code = (str(exc) if isinstance(exc, ReviewError) and str(exc) in allowed
-                else fallback.get(phase, "HF_REVIEW_RUNTIME_ERROR"))
+        reason = str(exc) if isinstance(exc, ReviewError) else ""
+        known_reason = (
+            reason in allowed
+            or reason in {"HF_CPU_" + item for item in TOKEN_CORE_SAFE_ERRORS}
+            or bool(re.fullmatch(
+                r"HF_CPU_CHAT_TEMPLATE_RENDER_FAILED_CLASS_[A-Z0-9_]{1,70}",
+                reason))
+        )
+        code = reason if known_reason else fallback.get(phase, "HF_REVIEW_RUNTIME_ERROR")
         print(json.dumps({
             "schema": "storyforge_hf_literary_safe_v1", "status": "HF_REVIEW_HOLD",
             "reason_code": code, "training_authorized": False,
