@@ -86,15 +86,32 @@ def endpoint(base):
     return urllib.parse.urlunsplit((u.scheme,u.netloc,path,"",""))
 def system_message():
     return """You are an independent second-model reviewer for StoryForge R60 P2-A. Review every supplied blind case and all three dimensions independently. Read full visible_history, target_text, verified_world_components, rubric and Owner verdict/evidence/rule_basis/context coverage; do not assume Owner is correct. Check whether all cited evidence supports the verdict. Inspect every evidence item and list every zero-based evidence index in order. Respect player refusal/consent/choice boundaries, established hard rules and safety boundaries. Do not HOLD for missing source, copyright, rights, privacy, authorization or data-isolation material. Use INSUFFICIENT_CONTEXT only when story context genuinely prevents a reliable conclusion; state the missing story context. Do not invent context. Return only JSONL, one object per blind_id x dimension, with exactly: blind_id, dimension, reviewer_type, conclusion, reviewed_evidence_indexes, reasoning_summary, unresolved_context. reviewer_type must be AI_CROSS_REVIEW_ADVISORY_NOT_OWNER. conclusion must be SUPPORTS_VERDICT, DOES_NOT_SUPPORT_VERDICT or INSUFFICIENT_CONTEXT. No prose or markdown. This is AI advisory only, never an Owner decision."""
-def proxy_call(url,key,model,batch,rubric,review_prompt,timeout,max_tokens):
+def proxy_call(url,key,model,batch,rubric,review_prompt,timeout,max_tokens,error_path=None):
     user="RUBRIC V2.1:\n"+rubric+"\n\nBLIND CASES:\n"+"\n".join(json.dumps(x,ensure_ascii=False,sort_keys=True) for x in batch)
     body={"model":model,"messages":[{"role":"system","content":review_prompt + "\\n\\nReturn only the exact JSONL output contract from the prompt. Do not include markdown or prose."},{"role":"user","content":user}],"max_tokens":max_tokens,"stream":False}
     req=urllib.request.Request(url,data=canon(body),method="POST",headers={"Authorization":"Bearer "+key,"Content-Type":"application/json","Accept":"application/json","User-Agent":"storyforge-r60-cross-review/1.0"})
     try:
         with urllib.request.urlopen(req,timeout=timeout) as r: raw=r.read(); status=r.status
     except urllib.error.HTTPError as e:
-        if e.code in {408,409,425,429,500,502,503,504}: raise RuntimeError(f"RETRYABLE_HTTP_{e.code}") from None
-        raise Hold(f"PROXY_HTTP_{e.code}") from None
+        error_body=e.read()
+        if error_path is not None and error_body:
+            try:
+                write_private(error_path,error_body)
+            except FileExistsError:
+                pass
+        error_type="unknown"; error_code="unknown"; error_param="unknown"
+        try:
+            detail=json.loads(error_body)
+            detail=detail.get("error",detail)
+            if isinstance(detail,dict):
+                error_type=str(detail.get("type") or "unknown")[:80]
+                error_code=str(detail.get("code") or "unknown")[:80]
+                error_param=str(detail.get("param") or "unknown")[:80]
+        except (UnicodeDecodeError,json.JSONDecodeError,AttributeError,TypeError):
+            pass
+        safe=f"PROXY_HTTP_{e.code}:type={error_type}:code={error_code}:param={error_param}"
+        if e.code in {408,409,425,429,500,502,503,504}: raise RuntimeError(safe) from None
+        raise Hold(safe) from None
     except (urllib.error.URLError,TimeoutError,OSError): raise RuntimeError("PROXY_TRANSPORT_ERROR") from None
     try:
         data=json.loads(raw); choice=data["choices"][0]; text=choice["message"]["content"]; finish=choice.get("finish_reason"); usage=data.get("usage",{})
@@ -157,7 +174,7 @@ def main():
             last=None
             for attempt in range(1,a.max_attempts+1):
                 try:
-                    response,meta=proxy_call(url,key,a.model,batch,rubric,review_prompt,a.timeout,a.max_tokens)
+                    response,meta=proxy_call(url,key,a.model,batch,rubric,review_prompt,a.timeout,a.max_tokens,a.output_dir/f"BATCH_{bn:02d}_HTTP_ERROR_PRIVATE.json")
                     checked=validate_output(response,exp)
                     write_private(rawp,response.encode())
                     write_private(rp,b"".join(canon(x)+b"\\n" for x in checked))
