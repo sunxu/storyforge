@@ -1,6 +1,6 @@
 # StoryForge R60 下一 Agent 交接任务书
 
-版本：v1.1（P0/P1 状态校正；P2 v2.1 接手版）  
+版本：v1.2（P0/P1 状态校正；P2-A/P2-B 接手版）  
 日期：2026-11-09  
 仓库：`sunxu/storyforge`  
 工作分支：`r60/gold192-history-v3-adapter`  
