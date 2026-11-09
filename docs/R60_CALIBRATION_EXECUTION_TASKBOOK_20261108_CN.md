@@ -559,3 +559,8 @@ Gold72 Development-20 / Locked Regression-20 来自 A V3 / B2 disagreement set�
 新增 Positive Gold 独立计划：`docs/R60_POSITIVE_GOLD_SELECTION_PLAN_CN.md`。候选来源为已冻结的 1,000 条技术候选池；内容筛选复用 Quality-v1 六维门槛（中文表达4、人物一致性4、NPC主动性3、玩家自主权4、规则忠实度4、叙事连贯性4）及三项严重旗标。先经 Owner 确认 Reviewer 和小批范围，再按既有 5/25 受控批次执行；不凑数量，不把 AI-only 建议冒充 Owner Gold，不自动产生训练准入。此计划仅文档化，未启动真实审核。
 
 P2-A 当前 HOLD：原 Owner results 的 4 条 SUPPORTED / Player Agency（result rows 5/6/11/19）均为 `basis_type=player_agency`，而 v2.1 verifier 要求 `player_agency_boundary`。Normalizer v2 已加入 fail-closed guard，不会自动改写原始或派生 rule_basis。需 Owner 明确确认是否允许在独立派生副本中对这 4 个精确 pair 做类型标签规范化；其他字段、verdict、semantic checks 均保持不变。不得创建正式输出目录，直到此问题解决。
+
+
+### 2026-11-09 Owner 批准 basis_type 精确规范化
+
+Owner 已批准仅在派生副本中，将 4 条 SUPPORTED / Player Agency 的 `basis_type` 从 `player_agency` 规范化为 `player_agency_boundary`。实现严格限定 4 个精确 pair；原始 JSONL、verdict、evidence、其他 rule_basis 字段和 60 semantic checks 不变。Normalizer 的私有 approval 记录明确列出映射和不变性断言，SAFE 输出 `basis_type_normalized=4`。真实 Owner Mac 私有包执行及官方 CLI verifier 尚未完成前，P2-A 仍为 HOLD。
