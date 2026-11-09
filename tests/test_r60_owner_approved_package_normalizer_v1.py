@@ -1,14 +1,6 @@
 from __future__ import annotations
 
-import importlib.util
-from pathlib import Path
-
-
-SCRIPT = Path(__file__).resolve().parents[1] / "scripts/r60_owner_approved_package_normalizer_v1.py"
-SPEC = importlib.util.spec_from_file_location("r60_owner_approved_package_normalizer_v1", SCRIPT)
-assert SPEC and SPEC.loader
-MODULE = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MODULE)
+from scripts import r60_owner_approved_package_normalizer_v1 as MODULE
 
 
 def _packet():
