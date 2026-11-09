@@ -237,8 +237,7 @@ GLM-Z1 是 GLM-4 同家族推理增强 Challenger，不是第三个完全独立�
 ## 11. 当前接手状态（2026-11-09；取代本文早期快照）
 
 - PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
-- 当前已核验 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
-- 五组 Actions 全部 completed/success：CI `42555517499`、Gold Quality Pipeline `42555517570`、R60 HF CPU dependency profiles `42555517597`、R58 scoped synthetic `42555517602`、R60 HF Runtime CI `42555517658`。接手时仍须刷新核验。
+- 上一轮核验快照 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`，当时五组 Actions 全部 completed/success（run IDs 见主任务书 8.25）。此后文档校正提交已推进 HEAD；接手时必须实时刷新 PR #25 head/CI。
 - P0 PASS：Gold72 40、R60 Severe10 10；Gold72 案例级 20/20，Story 跨集合允许；Gold72↔R60 精确交集 0，唯一来源 50。
 - P1 PASS：Rubric v2.1、Schema、prompt、合成回归、旧 v3 兼容。
 - P2 v2.0 包 SUPERSEDED；v2.1 新包未生成；Owner review 未开始。
