@@ -86,3 +86,19 @@ Owner 已在 ChatGPT 明确批准：仅在派生副本中，将四条 SUPPORTED 
 - 完成规范化后仍必须通过 Rubric v2.1 官方 verifier；任何不匹配都 HOLD。
 
 这项批准不代表 P2-A 已 PASS。必须在 Owner Mac 私有目录运行 create-only normalizer，检查原始文件 SHA 不变、派生输出只有批准字段变化，再由官方 CLI verifier 验证完整包。不得将私有正文或 Owner-only crosswalk 上传 GitHub。
+
+
+### 真实执行验收补充
+
+在上述成功验收列表中另须满足：
+- `basis_type_normalized=4`
+- 私有 Owner approval 的 `basis_type_normalization.owner_approved=true`
+- `approved_pair_count=4`、`normalized_pair_count=4`
+- `derived_copy_only=true`
+- `original_results_modified=false`
+- `other_rule_basis_fields_modified=false`
+- `verdicts_modified=false`
+- `evidence_modified=false`
+- `semantic_checks_modified=false`
+
+执行后必须对比原始与派生 JSONL：除已批准的 39 条 history_complete 断言、既有 locator 规范化以及四条 SUPPORTED Player Agency 的 `basis_type` 映射外，不允许出现其他字段差异。原始输入文件的 SHA-256 必须与执行前完全一致。
