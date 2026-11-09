@@ -915,3 +915,124 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 **P1 Rubric v2.1 工程实现与 CI = PASS。P2 v2.0 旧包 = SUPERSEDED；P2 v2.1 新包尚未生成；Owner review 尚未开始。**
 
 下一步严格按 8.21，在新目录先 dry-run，再显式 `--write`。不得复用旧 v2.0 六文件包。
+
+
+### 8.23 P2 v2.1 Semantic Entailment JSONL 固定接口合同（2026-11-09）
+
+本节是 P2 v2.1 的强制接口合同。Owner、后续 Agent 和验证器实现均以当前分支以下实际代码为准，不得仅凭口头示例自行增删字段：
+
+- 冻结审核标准：[`docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md`](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)
+- 严重证据与语义复核校验：[`src/storyforge_gold_quality/hf_severity_evidence_v2.py`](../src/storyforge_gold_quality/hf_severity_evidence_v2.py)，重点函数 `verify_semantic_entailment_v2()`
+- 20/60 行 Owner 批次验证：[`src/storyforge_gold_quality/hf_owner_adjudication_v2.py`](../src/storyforge_gold_quality/hf_owner_adjudication_v2.py)，重点为 semantic-check row validation / coverage。
+- 验证入口：`scripts/r60_owner_adjudication_verify_v2.py`
+
+当前接口版本：
+- `schema = storyforge_severity_semantic_entailment_check_v2`
+- `rubric_version = r60_severity_rubric_v2_1`
+- 三个合法维度：`player_agency`、`hard_rule`、`safety`
+- 本节描述的是 60 行语义复核文件，不替代 20 行 `storyforge_severity_evidence_review_v2` 裁决结果文件。
+
+#### 8.23.1 JSONL 外层记录：严格四字段
+
+每行必须是一个 JSON object，且 key 集合必须**恰好**为以下四项，不得缺失或添加字段：
+
+| 字段 | 类型 | 必须满足的约束 |
+|---|---|---|
+| `calibration_id` | string | 必须精确匹配本批次某一条新盲包的 `calibration_id`；不得使用旧 blind ID 或其他批次 ID |
+| `dimension` | string | 只能是 `player_agency`、`hard_rule`、`safety` |
+| `reviewed_at_utc` | string | 必须是可解析 ISO-8601 时间戳，且必须带 UTC 时区、UTC offset 为零；推荐统一写成 `YYYY-MM-DDTHH:MM:SS+00:00` |
+| `check` | object | 必须符合下述七字段语义复核合同 |
+
+外层记录示例（仅展示结构，禁止把示例 ID 当作真实案例 ID）：
+
+```json
+{
+  "calibration_id": "<本批次盲包 calibration_id>",
+  "dimension": "player_agency",
+  "reviewed_at_utc": "2026-11-09T12:00:00+00:00",
+  "check": {
+    "schema": "storyforge_severity_semantic_entailment_check_v2",
+    "rubric_version": "r60_severity_rubric_v2_1",
+    "reviewer_role": "OWNER_INDEPENDENT",
+    "reviewer_ref": "<本批次固定的 reviewer reference>",
+    "conclusion": "SUPPORTS_VERDICT",
+    "reviewed_evidence_indexes": [0, 1],
+    "reasoning_summary": "逐项检查该维度的全部引用，确认每项引用在当前上下文中共同支持所作判断。"
+  }
+}
+```
+
+#### 8.23.2 内层 check：严格七字段
+
+`check` 的 key 集合必须**恰好**为以下七项，不得添加时间戳、case ID、自由扩展字段或其他元数据：
+
+| 字段 | 类型 | 约束 |
+|---|---|---|
+| `schema` | string | 固定 `storyforge_severity_semantic_entailment_check_v2` |
+| `rubric_version` | string | 固定 `r60_severity_rubric_v2_1` |
+| `reviewer_role` | string | Owner 批次验证强制为 `OWNER_INDEPENDENT`；底层通用 helper 另允许 `INDEPENDENT_REVIEWER`，但本次 Owner 包不得使用后者 |
+| `reviewer_ref` | string | 去除首尾空白后长度 8–128 字符；60 条记录必须完全一致。该字段是批次内引用标识，不是密码学身份认证 |
+| `conclusion` | string | 只能是 `SUPPORTS_VERDICT`、`DOES_NOT_SUPPORT_VERDICT`、`INSUFFICIENT_CONTEXT` |
+| `reviewed_evidence_indexes` | integer[] | 必须是整数数组，不允许重复、负数、越界或遗漏；必须恰好覆盖对应案例、对应维度 assessment 的全部 evidence 下标 |
+| `reasoning_summary` | string | 去除首尾空白后长度 12–1200 字符；简述引用与 verdict 的语义关系，不能只写“同意”或“通过” |
+
+注意：Python 校验要求 index 的实际类型为整数；不要使用布尔值代替整数。
+
+#### 8.23.3 三种结论与 HOLD 语义
+
+| conclusion | 使用条件 | 验证结果 |
+|---|---|---|
+| `SUPPORTS_VERDICT` | 已逐条检查该维度全部 evidence，证据在语义上支持 Owner verdict，且至少有一条 evidence | `SEMANTIC_ENTAILMENT_SUPPORTED__REVIEWER_IDENTITY_NOT_ATTESTED`；只表示语义复核记录通过，不证明审核人身份 |
+| `DOES_NOT_SUPPORT_VERDICT` | 引用虽然存在，但语义不能支持对应 verdict，或证据与结论冲突 | `SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD`；必须保留 HOLD |
+| `INSUFFICIENT_CONTEXT` | 语义复核后确认上下文不足 | 仅当该维 Owner verdict 本身也是 `INSUFFICIENT_CONTEXT` 时，得到 `SEMANTIC_ENTAILMENT_INSUFFICIENT_CONTEXT_HOLD`；仍然是 HOLD，不是 PASS |
+
+额外约束：
+1. `INSUFFICIENT_CONTEXT` 且该维 evidence 为空时，`reviewed_evidence_indexes` 必须为空数组 `[]`；若有 evidence，则必须检查全部 evidence indexes。
+2. `SUPPORTS_VERDICT` 不能使用空数组；必须至少检查一条 evidence。
+3. `DOES_NOT_SUPPORT_VERDICT` 不得通过修改结论、删除不利引用或重写 Owner 原始 verdict 来消除 HOLD。
+4. 若语义复核确认引用不足以支持原 verdict，应保留原始记录与 HOLD，交 Owner 按独立裁决流程决定是否另行形成有审计轨迹的修订；不得在语义复核文件中静默改写 verdict。
+5. Exact quote check 只证明原文和位置准确，不证明语义蕴含；两者不可合并。
+
+#### 8.23.4 60 行覆盖与批次绑定
+
+`OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl` 必须满足：
+
+- 总行数严格为 60。
+- 20 个新 `calibration_id` × 3 个维度，每个组合恰好一行。
+- 不允许重复的 `(calibration_id, dimension)`，不允许缺失组合。
+- 每条记录的 `calibration_id` 必须属于本批次 20 条盲包，且能关联到同批次 20 行 Owner result。
+- 60 条记录的 `reviewer_ref` 必须一致；这只验证批次标识一致，不等同于身份或独立性证明。
+- 每条记录的 evidence indexes 必须完整覆盖对应 Owner result 的该维 `assessments[dimension].evidence`。
+- `reviewed_at_utc` 每行独立记录实际复核时间，必须有明确 UTC 时区。
+- 两个私有 JSONL 与盲包必须由私有 manifest 以 SHA-256 绑定；不得将这些内容或 ID 映射写入 GitHub、Issue、PR 或 SAFE。
+
+#### 8.23.5 实际验证行为与完成定义
+
+Owner 在新 v2.1 私有盲包目录内准备好：
+- `OWNER_ADJUDICATION_RESULTS_PRIVATE.jsonl`：20 行；
+- `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl`：60 行。
+
+然后在当前仓库根目录运行：
+
+```bash
+PYTHONPATH=src:. python scripts/r60_owner_adjudication_verify_v2.py \
+  --repo-root "$PWD" \
+  --package-dir "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109"
+```
+
+验证器会核对：
+1. 20/20/60 行数量与案例集合；
+2. Owner result 的 v2 schema、rubric version、精确引用及维度约束；
+3. 外层四字段、内层七字段和每个值的约束；
+4. 60 个案例×维度组合完整、无重复；
+5. UTC 时间戳；
+6. 全部 evidence indexes 覆盖；
+7. `OWNER_INDEPENDENT` 与同批次唯一 `reviewer_ref`；
+8. 语义不支持和上下文不足的 HOLD 计数；
+9. packet、result、semantic-check 和 rubric SHA-256。
+
+成功时 create-only 写入私有 manifest 与 SAFE；验证失败时不得覆盖旧文件或伪造 PASS。即使 60 行结构验证通过，只要存在语义 HOLD，P2 仍须按实际 HOLD 结果报告，不得宣称 60/60 语义通过。
+
+**身份边界：** 当前代码明确输出 `reviewer_independence_cryptographically_verified=false`。`reviewer_role` / `reviewer_ref` 是记录声明和批次一致性字段，不能单独证明实际操作者身份、盲化过程或独立性。P2 汇报必须如实保留此限制。
+
+**范围边界：** Rubric v2.1 已明确排除训练数据来源、权利、隐私、数据使用授权和数据隔离审核；上述事项不得被重新加入 Owner 20 条裁决或 60 条语义复核。故事内部的玩家拒绝/同意边界、可见故事规则和安全规则仍按内容语义标准判断。
