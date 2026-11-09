@@ -87,7 +87,7 @@ Builder 为 20 个案例生成全新 blind IDs 并重新打乱顺序。模型包
 ### 批量执行与验证
 
 - 固定 5 案例/批，共 4 批，每批 15 个维度判断。
-- 每批使用温度 0，默认 max_tokens 12000，timeout 300 秒。
+- 每批使用不发送 temperature 参数（Claude Opus 5.5 已返回 temperature deprecated 错误），默认 max_tokens 12000，timeout 300 秒。
 - 只对网络错误及 HTTP 408/409/425/429/5xx 做有限重试；不对格式错误伪装成功。
 - 已验证批次结果以 0600 私有 JSONL 保存；支持 `--resume`，重启时先验证并复用已完成批次。
 - 必须严格验证 60 个 blind_id × dimension 唯一组合、字段集合、枚举、Reviewer 类型和每项完整 evidence index 覆盖。
