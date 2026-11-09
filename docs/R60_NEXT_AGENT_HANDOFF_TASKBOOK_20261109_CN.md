@@ -19,10 +19,11 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（当前 Open / Draft；
 - P0：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`；Gold72=40、R60 Severe10=10；Gold72 Development/Locked=20/20；Gold72↔R60 exact history/target/full-history-target overlap=0；unique source cases=50。
 - Gold72 分层按案例，不要求 Story 互斥：Development Story=5、Locked Story=6、shared Story=5、`story_disjoint=false`，这是 Owner 已确认的预期结果。
 - P1：Rubric v2.1、Schema、prompt、合成回归及旧 v3 兼容 = PASS。Rubric version 为 `r60_severity_rubric_v2_1`。
-- P2：v2.0 六文件包已 SUPERSEDED；v2.1 新包尚未生成；Owner 20 条裁决与 60 条语义复核未开始。
+- P2-A：v2.0 六文件包已 SUPERSEDED；v2.1 Development-20 新包尚未生成；Owner 20 条裁决与 60 条语义复核未开始。
+- P2-B：Locked20 + Severe10 的 30 条 held-out Owner reference labels / 90 条语义复核尚未准备；这是 P4 前置，必须在 P2-A 与 Rubric/prompt 冻结后单独实现和验收。
 - Quality-v1 admitted=0；training_authorized=false；无 GPU 推理、1000 条批量审核或 SFT 授权。
 
-**当前第一项工作：P2 v2.1 新包 dry-run → 显式 --write。不得从 P0 重新开始。**
+**当前第一项工作：P2-A v2.1 Development-20 新包 dry-run → 显式 --write。P2-B 的 30/90 held-out labels 是后续 P4 前置；不得混包，也不得直接使用当前固定 20/60 的 verifier。不得从 P0 重新开始。**
 
 ## 1. 任务目标
 
@@ -279,6 +280,8 @@ python3 -m compileall -q src/storyforge_gold_quality src/storyforge_dataset
 ## 8. 2026-11-09 P0 执行补充：Gold72 20/20 划分决议与只读证据重建
 
 本节记录 Owner 在 2026-11-09 明确确认的 P0 划分原则，以及后续只读核验结果。它是执行补充，不替代 Owner 私有 manifest 和最终 SAFE。
+
+**历史记录说明：以下 8.1–8.11 是 P0 执行期间的时间线，包含当时的 HOLD、dry-run 和修复状态。它们已被 8.12 的正式 P0 PASS SAFE 取代；其中任何“P0 HOLD / PENDING / 尚未执行”均为历史状态，不是当前待办。不得重跑这些 P0 命令。当前 Gold72 20/20 案例分层与 Story 跨集合规则以 8.12 为准。**
 
 ### 8.1 Owner 已确认的划分原则
 
@@ -868,7 +871,7 @@ Owner 明确要求：**审核标准去掉来源与权利审核，不要求来源
 - v2.1 重新生成到新的、此前不存在的目录：
   `$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109`
 
-PR #25 当前 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 已全部 completed/success。下一 Agent 接手时仍须重新核验当前 HEAD/CI；确认通过后，在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree 执行：
+历史快照 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 当时已全部 completed/success；后续交接文档提交已推进 HEAD。下一 Agent 必须重新核验 PR 当前 HEAD/CI，再在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree 执行：
 
 ```bash
 cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
@@ -1114,14 +1117,15 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 | P1 | PASS | Rubric v2.1 / Schema / Prompt / 合成回归 / 旧 v3 兼容 |
 | P2 packet v2.0 | SUPERSEDED | 已生成旧包不得使用、覆盖或删除 |
 | P2 packet v2.1 | NOT GENERATED | 当前第一项执行任务 |
-| Owner adjudication 20 + semantic checks 60 | NOT STARTED | 新 v2.1 包生成后开展 |
-| P3 | NOT STARTED | 等 P2 验收后做模型固定与 CPU 预检 |
+| P2-A Owner adjudication 20 + semantic checks 60 | NOT STARTED | 新 v2.1 Development-20 包生成后开展 |
+| P2-B Held-out labels 30 + semantic checks 90 | NOT PREPARED | P4 前置；P2-A 完成、Rubric/prompt 冻结后另行实现 |
+| P3 | NOT STARTED | 等 P2-A/P2-B 验收后做模型固定与 CPU 预检 |
 | P4 GPU Pilot | NOT AUTHORIZED | 需单独明确授权 |
 | P6 1000 batch / SFT | NOT AUTHORIZED | 独立门禁，不在本任务授权内 |
 
-**下一 Agent 立即执行：** 在 Owner Mac 的 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree，先检查工作区状态和分支，刷新到当前 PR head；确认 v2.1 新输出目录不存在、父目录权限满足 0700 后，运行 `scripts/r60_owner_adjudication_v2.py` dry-run。只有 SAFE 严格为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`、`cases_prepared=20`、`files_written=0`、Locked20/Severe10 未暴露时，才显式追加 `--write`。命令见 8.21。不要重做 P0/P1，不要运行模型/GPU/HF Job。
+**下一 Agent 立即执行 P2-A：** 在 Owner Mac 的 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree，先检查工作区状态和分支，刷新到当前 PR head；确认 v2.1 新输出目录不存在、父目录权限满足 0700 后，运行 `scripts/r60_owner_adjudication_v2.py` dry-run。只有 SAFE 严格为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`、`cases_prepared=20`、`files_written=0`、Locked20/Severe10 未暴露时，才显式追加 `--write`。命令见 8.21。不要重做 P0/P1，不要运行模型/GPU/HF Job。
 
-本次状态核验仅证明当前 GitHub HEAD 的五组 Actions 通过，不证明 Owner 私有 v2.1 包已生成或 Owner 审核已完成。Quality-v1 admitted=0；training_authorized=false。
+本次历史状态核验仅证明当时 GitHub HEAD 的五组 Actions 通过，不证明 Owner 私有 v2.1 包已生成或 Owner 审核已完成；后续文档提交后的最新 HEAD/CI 必须重新核验。Quality-v1 admitted=0；training_authorized=false。
 
 
 ### 8.26 P2-B Held-out Owner reference labels：P4 前置缺口（2026-11-09）
