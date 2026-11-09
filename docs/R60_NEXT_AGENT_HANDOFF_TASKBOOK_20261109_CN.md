@@ -1283,3 +1283,20 @@ Claude Opus 5.5 首批请求返回 HTTP 400，尚未获得任何有效审核结�
 ## 2026-11-09：4Router Claude system 参数格式修复
 
 已根据 Owner 提供的 400 错误原文，将 CLI Proxy 请求从 `messages[0].role=system` 改为顶层 `system` 字段，messages 只保留 user 消息；不传 temperature，其他请求边界不变。新增合成测试。提交：`c1a3d4f`（客户端）、`807495f`（测试）、`c6a5d5c`（协议）。修复尚待 CI 与真实单批调用验证。使用原输出目录 `--resume`，保留原 HTTP 错误记录；不覆盖已验证成功批次。未启动 GPU/HF Job/SFT。
+
+
+## 2026-11-09：Claude Opus 5.5 第二模型交叉审核调用完成（Advisory only）
+
+Owner 提交的真实 SAFE 回执：
+
+- status：`CROSS_REVIEW_MODEL_CALLS_COMPLETE__ADVISORY_ONLY`
+- model：`claude-opus-5-5`
+- cases：20；dimensions：60；rows_validated：60；batches：4/4
+- reviewer_type：`AI_CROSS_REVIEW_ADVISORY_NOT_OWNER`
+- private_data_egress：true（仅此前明确授权的 Development-20 盲包发往 4Router）
+- owner_review_completed：false
+- gpu_started：false；training_authorized：false；private_values_emitted：false
+
+客户端顶层 `system` 兼容修复对应分支 HEAD `1d337afcea22a52ec0b553b730d3f9b2200fa5c5` 的五项 Actions 均 completed/success：CI、R60 HF Runtime CI、R60 HF CPU dependency profiles、Gold Quality Pipeline、R58 scoped synthetic。该结果验证代码/合成回归，不等于 Owner 内容裁决通过。
+
+**当前唯一下一步：Owner 对 60 项 Claude Advisory 与原始 20 条 Owner results / Rubric v2.1 逐项核对，形成自己的 60 项最终语义判断。** Claude 结论不能自动采纳、不能回填成 Owner semantic checks；逐项保留分歧和真实 HOLD。Owner 最终记录须使用正式七字段合同并由官方 verifier 验证。P2-A 在 Owner 60 项最终复核及官方 verifier PASS 前仍为 HOLD；不启动 P2-B、P3、GPU/HF Job、1000 条审核或 SFT。
