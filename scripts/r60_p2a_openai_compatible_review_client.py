@@ -1,5 +1,6 @@
 """Private resumable OpenAI-compatible R60 cross-review client."""
 from __future__ import annotations
+
 import argparse
 import hashlib
 import json
