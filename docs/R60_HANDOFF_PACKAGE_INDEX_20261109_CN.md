@@ -206,3 +206,12 @@ Owner Mac 的精确 P0 manifest 路径、Reviewer-C blind source 路径、项目
 ### Owner Mac Dry-run 实际回执（2026-11-09）
 
 Owner 已在当前 worktree `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 对应分支执行 P2 dry-run，SAFE 状态为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`，20 cases prepared、0 files written。Owner review 未开始；下一步显式 `--write` 前确认输出目录不存在。任务书 8.18 已更正 worktree 路径，并使用普通 `python` 命令，不再要求绝对 Python/venv 路径。
+
+
+### P2 Development-20 盲审包已生成
+
+- 实际 SAFE：`P2_OWNER_BLIND_PACKETS_READY__OWNER_REVIEW_NOT_STARTED`，20 cases / 6 files。
+- 仅 Gold72 Development-20；未暴露 Locked Regression 20、R60 Severe10、旧 A/B/C、旧 Owner resolution 或旧 blind IDs。
+- Owner review 尚未开始；model_calls=0、HF jobs=0、GPU=false。
+- 下一步为 Owner 独立完成 20 条三维裁决 + 60 项逐维语义蕴含复核，再运行私有回执验证器。
+- 完整步骤、允许读取范围、禁止读取范围、文件名和验证命令见 [任务书 8.20](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#820-p2-development-20-私有盲审包已正式生成-2026-11-09)。
