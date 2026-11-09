@@ -27,9 +27,9 @@ def _fixture():
         (1, "hard_rule"): "INSUFFICIENT_CONTEXT",
         (3, "player_agency"): "NOT_SUPPORTED",
         (3, "safety"): "NOT_SUPPORTED",
-        (5, "safety"): "INSUFFICIENT_CONTEXT",
-        (19, "player_agency"): "SUPPORTED",
-        (20, "player_agency"): "SUPPORTED",
+        (7, "safety"): "INSUFFICIENT_CONTEXT",
+        (9, "player_agency"): "SUPPORTED",
+        (10, "player_agency"): "SUPPORTED",
     }
     for n, case_id in enumerate(ids, 1):
         history = [{"role": "user", "content": f"history-{i}"} for i in range(11)]
@@ -120,7 +120,7 @@ def _fixture():
          "evidence_supplement_candidates": [
              cand("history", 0, "visible_history", "history-0", "player_boundary"),
              cand("target", -1, "target_text", "target", "target_behavior"),
-             cand("target", -1, "target_text", "好了，轮到你了。", "target_behavior", start=25)]},
+             cand("target", -1, "target_text", "好了，轮到你了。", "target_behavior", start=18)]},
     ]
     update = {
         "schema": MODULE.UPDATE_SCHEMA,
