@@ -135,3 +135,12 @@ SAFE 成功状态：`CROSS_REVIEW_MODEL_CALLS_COMPLETE__ADVISORY_ONLY`。若中�
 Owner 提供的 `GET https://4router.net/v1/models` 返回列表中明确包含 `claude-opus-5-5`，且该模型的 `supported_endpoint_types` 包含 `openai`。因此客户端默认 model ID 已从未经目录证实的 `claude-opus-5-5-high` 更正为 `claude-opus-5-5`。
 
 目录未返回独立的 `claude-opus-5-5-high` ID，也未证明 OpenAI-compatible 接口支持名为 `high` 的推理等级参数。当前客户端不擅自发送该参数；先以标准非流式 Chat Completions 做单次最小连通性/模型调用验证，再决定是否存在服务商专属的 High 配置。模型目录出现该 ID 只证明列出可用，不等于真实调用已成功。
+
+
+### 2026-11-09：HTTP 4xx 私有诊断补强
+
+首次 Claude Opus 5.5 批量请求返回 `PROXY_HTTP_400`。此前客户端只保留状态码，未保留服务端错误体，无法区分参数拒绝、上下文限制或代理侧策略拒绝。
+
+现已补强客户端：每次 HTTP 错误响应体写入对应批次的私有文件 `BATCH_NN_ATTEMPT_MM_HTTP_ERROR_PRIVATE.json`（0600、独占创建）；SAFE reason 仅暴露 HTTP 状态、error type/code/param，不暴露服务端 message、请求正文或密钥。每次重试使用独立文件名，保留诊断历史。不得将该私有错误文件原文贴到公开 Issue；如需分享，仅提供安全字段，或经检查后删去任何回显的私有正文。
+
+下一次执行使用同一输出目录和 `--resume`。若再次返回 400，先读取本地错误文件中的 `error.type`、`error.code`、`error.param`，必要时在 Owner Mac 本地检查 message；不要盲目修改请求参数。既有授权仍仅覆盖同一 20 条 Development 盲包发往 4Router。
