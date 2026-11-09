@@ -252,7 +252,7 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 ## 14. 当前有效状态与下一 Agent 唯一接手入口（2026-11-09）
 
 - PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
-- 当前已核验 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`；该 HEAD 的五组 Actions 全部 completed/success，run IDs 见 [主任务书 8.25](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#825-当前接手基线复核-2026-11-09取代-824-的旧-head)。
+- 上一轮核验快照 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`，当时五组 Actions 全部 completed/success；之后交接文档校正提交已推进 HEAD。当前 HEAD/CI 必须在接手时实时刷新，不能沿用 8.25 的旧 SHA。
 - P0 PASS：Gold72 40、R60 Severe10 10；案例级 20/20；Gold72 Story 可跨集合（shared Story=5）；Gold72↔R60 exact overlaps=0；unique source=50。
 - P1 PASS：Rubric v2.1 / Schema / Prompt / synthetic regression / old v3 compatibility。
 - P2 v2.0 package：SUPERSEDED；P2 v2.1 package：NOT GENERATED；Owner review：NOT STARTED。
