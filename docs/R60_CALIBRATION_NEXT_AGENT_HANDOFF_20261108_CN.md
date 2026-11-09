@@ -18,9 +18,9 @@
 
 ## 1. 接手必读顺序
 
-1. [新 Agent 交接任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)：下一 Agent 的正式工作指令，从 P2 v2.1 开始；P0/P1 已 PASS，不得重做。
+1. [新 Agent 交接任务书 v1.2](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)：下一 Agent 的正式工作指令，从 P2 v2.1 开始；P0/P1 已 PASS，不得重做。
 2. 本文：当前状态、历史事实、边界和接手原则。
-3. [执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：P0/P1 已完成；P2/P3 为当前后续阶段。
+3. [执行任务书 v1.3](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：P0/P1 已完成；P2/P3 为当前后续阶段。
 4. [统一计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)：阶段定义和模型评估设计。
 5. [R60 主线状态](R60_REAL_HISTORY_SFT_MAINLINE_CN.md)：仅用于理解历史技术背景、原始主线边界和已完成事实；其中旧权益/协议调查段落属于历史记录，本次不重新启动该调查，以本交接文件和任务书中的用户最新要求为准。
 6. [Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md)：10 条严重问题三态结果。
@@ -244,4 +244,4 @@ GLM-Z1 是 GLM-4 同家族推理增强 Challenger，不是第三个完全独立�
 - 下一步：Owner Mac 在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 执行 v2.1 dry-run，严格 PASS 后显式 `--write`；再完成 20 verdict + 60 semantic checks 和验证器。
 - Quality-v1 admitted=0；training_authorized=false；GPU/1000 条批量审核/SFT 均未授权。
 
-详细可执行命令与验收见 [下一 Agent 任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md) 与 [执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
+详细可执行命令与验收见 [下一 Agent 任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md) 与 [执行任务书 v1.3](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
