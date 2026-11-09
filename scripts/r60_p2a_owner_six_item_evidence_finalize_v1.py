@@ -24,6 +24,8 @@ from storyforge_gold_quality import hf_severity_evidence_v2 as severity
 REVIEWER_REF = "owner-independent-r60-p2a-dev20-20261109"
 UPDATE_SCHEMA = "storyforge_r60_owner_conversation_decision_update_v1"
 UPDATE_STATUS = "OWNER_LATEST_CONVERSATION_DECISIONS_CAPTURED__NOT_FORMAL_RECEIPT"
+EXPECTED_UPDATE_SHA256 = "182659fc4766578a007b693cbace9655fe4880d332b2e5e372a0871564285e39"
+EXPECTED_HANDOFF_SHA256 = "2961b8d1623a96f695ed00dc14cccfa1ed9f6e7d099b9519d38ef616f5305a51"
 EXPECTED_ITEMS = {5, 10, 34, 51, 55, 58}
 ADD_EVIDENCE_COUNTS = {5: 1, 34: 3, 51: 1, 58: 1}
 OFFICIAL_OUTPUTS = {
@@ -74,7 +76,8 @@ def apply_owner_updates(packets: list[dict], results: list[dict],
                         checks: list[dict], update: dict) -> tuple[list, list, dict]:
     """Pure transformation; original inputs remain unchanged."""
     if (update.get("schema") != UPDATE_SCHEMA
-            or update.get("status") != UPDATE_STATUS):
+            or update.get("status") != UPDATE_STATUS
+            or update.get("source_handoff_sha256") != EXPECTED_HANDOFF_SHA256):
         raise adjudication.AdjudicationHold("SIX_ITEM_UPDATE_SCHEMA_HOLD")
     latest = update.get("latest_six_decisions")
     if not isinstance(latest, list) or {x.get("item") for x in latest} != EXPECTED_ITEMS:
@@ -248,6 +251,8 @@ def main() -> int:
         result_raw = _private(source / RESULTS, repo)
         checks_raw = _private(source / CHECKS, repo)
         update_raw = _private(update_path, repo)
+        if sha(update_raw) != EXPECTED_UPDATE_SHA256:
+            raise adjudication.AdjudicationHold("SIX_ITEM_UPDATE_SHA256_HOLD")
         packets = adjudication._jsonl(packet_raw, "PACKET_JSONL_INVALID")
         results = adjudication._jsonl(result_raw, "RESULT_JSONL_INVALID")
         checks = adjudication._jsonl(checks_raw, "SEMANTIC_CHECK_JSONL_INVALID")
