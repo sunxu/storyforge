@@ -138,7 +138,8 @@ def test_supported_basis_type_mismatch_fails_closed_without_rewriting_label():
         {(case_id, "player_agency"): "SUPPORTED"},
         dimensions,
     )
-    assert normalized[0]["assessments"]["player_agency"]["rule_basis"][0]["basis_type"] == "player_agency"
+    actual_type = normalized[0]["assessments"]["player_agency"]["rule_basis"][0]["basis_type"]
+    assert actual_type == "player_agency"
     try:
         MODULE.validate_supported_basis_types(normalized, dimensions)
     except SystemExit:
