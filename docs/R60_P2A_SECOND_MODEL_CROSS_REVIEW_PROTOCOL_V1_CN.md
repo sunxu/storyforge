@@ -144,3 +144,10 @@ Owner 提供的 `GET https://4router.net/v1/models` 返回列表中明确包含 
 现已补强客户端：每次 HTTP 错误响应体写入对应批次的私有文件 `BATCH_NN_ATTEMPT_MM_HTTP_ERROR_PRIVATE.json`（0600、独占创建）；SAFE reason 仅暴露 HTTP 状态、error type/code/param，不暴露服务端 message、请求正文或密钥。每次重试使用独立文件名，保留诊断历史。不得将该私有错误文件原文贴到公开 Issue；如需分享，仅提供安全字段，或经检查后删去任何回显的私有正文。
 
 下一次执行使用同一输出目录和 `--resume`。若再次返回 400，先读取本地错误文件中的 `error.type`、`error.code`、`error.param`，必要时在 Owner Mac 本地检查 message；不要盲目修改请求参数。既有授权仍仅覆盖同一 20 条 Development 盲包发往 4Router。
+
+
+### 2026-11-09：4Router Claude system prompt 格式兼容修复
+
+Owner 的本地 HTTP 400 message 明确指出：`messages.0` 不允许作为初始 system prompt，必须使用顶层 `system` 参数。已修复客户端请求体：审核指令放入顶层 `system`，`messages` 仅包含 user 消息；模型、批次内容、max_tokens、stream=false 和不发送 temperature 的约束保持不变。新增合成测试，断言顶层 system 存在且 messages 不含 system role。
+
+下一步必须先更新 Owner Mac 执行 worktree 至包含该修复的提交，并运行本地测试/只读检查。随后使用原输出目录 `--resume`：失败批次的旧 HTTP error 文件保留，批次 1 会重新请求；任何已完成且验证通过的批次继续复用。当前修复尚未经过 CI，也尚未证明真实请求成功。未经再次检查，不要扩大外发范围。
