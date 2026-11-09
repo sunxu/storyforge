@@ -159,7 +159,7 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 - 最新实现提交：`c80d6bbc2c7f1cd7a6d5184be808e6a788d0e2b7`；全仓 pytest 859 passed / 5 skipped / 42 subtests；五组 Actions 全部通过。
 - 详细验收与边界见 [P1 执行任务书 8.14](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#814-p1-v2-标准与合成回归通过-2026-11-09)。
 
-**当前：P0 PASS、P1 PASS；P2 Owner 独立盲裁决未开始。** Quality-v1 admitted=0；没有模型/HF/GPU/1000 条审核/SFT。
+**当时状态快照：P0 PASS、P1 PASS；P2 Owner 独立盲裁决未开始。** 后续 v2.0 包生成并被 SUPERSEDED；当前 P2-A v2.1 新包未生成，P2-B held-out 30/90 references 未准备。Quality-v1 admitted=0；没有模型/HF/GPU/1000 条审核/SFT。
 
 
 ## 11. P2 Owner Development-20 blind packet builder 已实现；v2.0 包已废弃，v2.1 包待生成
