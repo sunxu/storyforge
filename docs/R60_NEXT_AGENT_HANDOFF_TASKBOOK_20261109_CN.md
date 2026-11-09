@@ -1,6 +1,6 @@
 # StoryForge R60 下一 Agent 交接任务书
 
-版本：v1.0  
+版本：v1.1（P0/P1 状态校正；P2 v2.1 接手版）  
 日期：2026-11-09  
 仓库：`sunxu/storyforge`  
 工作分支：`r60/gold192-history-v3-adapter`  
@@ -8,21 +8,35 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（当前 Open / Draft；
 主线 Issue：[#26](https://github.com/sunxu/storyforge/issues/26)  
 执行跟踪 Issue：[#28](https://github.com/sunxu/storyforge/issues/28)
 
-> **本任务书是交给下一位 Agent 的正式工作指令。** 本轮已完成交接材料准备；下一 Agent 从 P0 接手执行。不要把本任务书当成已经执行或已经通过的验收报告。
+> **本任务书是交给下一位 Agent 的正式工作指令。** P0 校准集冻结与 P1 Rubric v2.1 工程实现均已 PASS；下一 Agent 从 P2 v2.1 Development-20 盲审包生成开始，不得重新执行 P0/P1。本文中的早期 P0/P1 状态段落均为历史记录，当前状态以第 8.25 节及接手时实时 GitHub 核验为准。
+
+
+
+## 0.1 当前接手状态（2026-11-09；接手时必须重新核验）
+
+- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`；HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
+- HEAD `4190c6f` 的五组 Actions 均 completed/success：CI（42555517499）、Gold Quality Pipeline（42555517570）、R60 HF CPU dependency profiles（42555517597）、R58 scoped synthetic（42555517602）、R60 HF Runtime CI（42555517658）。任何新提交均须重新核验自己的 CI。
+- P0：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`；Gold72=40、R60 Severe10=10；Gold72 Development/Locked=20/20；Gold72↔R60 exact history/target/full-history-target overlap=0；unique source cases=50。
+- Gold72 分层按案例，不要求 Story 互斥：Development Story=5、Locked Story=6、shared Story=5、`story_disjoint=false`，这是 Owner 已确认的预期结果。
+- P1：Rubric v2.1、Schema、prompt、合成回归及旧 v3 兼容 = PASS。Rubric version 为 `r60_severity_rubric_v2_1`。
+- P2：v2.0 六文件包已 SUPERSEDED；v2.1 新包尚未生成；Owner 20 条裁决与 60 条语义复核未开始。
+- Quality-v1 admitted=0；training_authorized=false；无 GPU 推理、1000 条批量审核或 SFT 授权。
+
+**当前第一项工作：P2 v2.1 新包 dry-run → 显式 --write。不得从 P0 重新开始。**
 
 ## 1. 任务目标
 
-完成 StoryForge R60 Quality 校准与审核模型选型，形成可复用、可追溯、能识别严重误报/漏报的真实历史数据审核流程，最终为冻结的 1,000 条候选提供可信的双模型批量审核结果。
+继续完成 StoryForge R60 Quality 校准与模型选型：从已完成的 P0/P1 接手，完成 P2 Owner Development-20 盲裁决与 60 条语义复核，随后推进 P3 三模型固定与 CPU 预检；P4/P6 仍须另行授权。最终目标仍是为冻结的 1,000 条候选建立可信的双模型审核结果。
 
-按顺序完成：
+当前执行顺序：
 
-1. 冻结两个独立校准集：Gold72 的 40 条 A/B 分歧案例；R60 Pilot10 的 10 条严重标记案例。
-2. 为玩家自主权、硬规则、安全三个维度建立 `SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_CONTEXT` 三态证据标准。
-3. 保留旧 A/B/C 判断、旧 Owner 裁决和旧 Checkpoint，不覆盖、不回写。
-4. 用 Owner 独立盲裁决建立参考标签。
-5. 对 Qwen3-32B、GLM-4-32B-0414、GLM-Z1-32B-0414 做相同案例、相同上下文、相同标准的严格配对校准。
-6. 用真实案例回归验证审核器，冻结最终双评审组合。
-7. 所有门槛通过且 Owner 明确授权后，才对 1,000 条候选开展正式批量审核。
+1. **P0 已 PASS**：Gold72 40 条与 R60 Severe10 10 条已冻结，20/20 案例分层及跨集精确去重完成；不得重做。
+2. **P1 已 PASS**：当前标准为 `r60_severity_rubric_v2_1`；不得退回旧 v2.0。
+3. **当前 P2**：生成全新的 v2.1 Development-20 盲审包，完成 Owner 20 条三维裁决 + 60 条语义蕴含复核，并运行私有验证器。
+4. **P3**：固定 Qwen3-32B、GLM-4-32B-0414、GLM-Z1-32B-0414 的完整 Revision/profile，完成 CPU/Tokenizer/Chat Template/Schema 预检。
+5. **P4**：30 条严格配对三模型 Pilot，共 90 个独立结果；GPU 必须先获得单独明确授权。
+6. **P5**：真实案例回归、误报/漏报解释、冻结最终双模型。
+7. **P6**：所有门槛通过且 Owner 明确授权后，才对 1,000 条候选开展正式批量审核。
 
 **本任务不包含直接启动 SFT。** Quality-v1 admission、训练数据冻结和 GPU SFT 授权是不同审批事项。
 
@@ -45,16 +59,16 @@ Owner Pairwise SAFE 已验证 A/B 两槽各 1,000/1,000 source binding、输入 
 
 这不代表 1,000 条已完成 A/B 推理：既有批量 Stage audit 曾报告 A=0、B=0、complete_pairs=0、HOLD=1000。不得把来源映射 PASS 写成审核 PASS。
 
-### 2.3 Gold72 40 条
+### 2.3 Gold72 40 条（P0 已正式冻结）
 
-已知 Owner 私有材料包括 Reviewer C blind packets、Owner ID map、C results-only SAFE、Owner resolution worksheet 和 Owner aggregate SAFE。历史汇总曾记载：
-- A V3/B2 disagreement：40/72；
-- Reviewer C：38/1/1；
-- Owner resolution：30/4/6。
+- Gold72 A V3/B2：72 条可比较，40 条分歧、32 条一致；准确的 40 条 disagreement 案例已冻结。
+- Owner 私有 P0 manifest 已将 40 条按案例分为 Development=20、Locked Regression=20。
+- Development 涉及 5 个 Story，Locked 涉及 6 个 Story，共享 Story=5，`story_disjoint=false`。**Owner 明确允许 Story 跨集合；保持案例级 20/20，不得擅自改成 Story 互斥。**
+- Gold72↔R60 exact history / target / full-history-target overlap 均为 0，唯一来源 50。
+- 历史 Reviewer C aggregate=38/1/1、Owner resolution=30/4/6 仍是历史记录；Gold72 C execution record / independence 未证明，不把 C 结果当 Owner ground truth。上述历史限制不阻断已完成的 P0。
+- P0 正式 SAFE：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`；四份私有产物已写入，`manifest_files_written=4`。不得重复执行 P0。
 
-这些历史数字必须回到原始 SAFE/manifest 核对定义、分母、来源和 SHA。C execution record 尚未证明；独立的 A V3/B2 40-case source manifest/crosswalk 尚未证明。C packets 恰好 40 条，不自动证明 A/B 40 条来源集合已冻结。
-
-禁止用完整 72-row source 或 suffix72 的 72 READY Stage 替代 Gold72 40 条校准集。
+完整 72-row source 与 suffix72 72 READY Stage 均不得替代 Gold72 40-case 集合。
 
 ### 2.4 当前准入边界
 
@@ -72,7 +86,7 @@ Owner Pairwise SAFE 已验证 A/B 两槽各 1,000/1,000 source binding、输入 
 
 ~~~bash
 set -euo pipefail
-cd "$HOME/workspace/storyforge"
+cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
 git fetch origin
 git switch r60/gold192-history-v3-adapter
 git pull --ff-only origin r60/gold192-history-v3-adapter
@@ -81,20 +95,22 @@ git status --short --branch
 git log -5 --oneline --decorate
 ~~~
 
-如果本地路径不同，只调整 `cd` 路径。检查 PR #25 head、base、Draft 状态和当前 HEAD 是否一致；重新核验当前 HEAD 的 GitHub Actions。不要 reset、force-push、merge 或关闭 PR。
+该路径是已确认绑定 `r60/gold192-history-v3-adapter` 的 worktree；不要改用 `/Users/keedle/workspace/storyforge`（该目录此前为 detached HEAD）。先检查 `git status`；若有未提交修改，停止并报告，不得覆盖。检查 PR #25 head、base、Draft 状态和当前 HEAD 是否一致；重新核验当前 HEAD 的 GitHub Actions。不要 reset、force-push、merge 或关闭 PR。
 
 ### 3.2 阅读顺序
 
 1. 本任务书。
 2. [交接包索引](R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md)。
 3. [交接总览](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md)。
-4. [详细 P0–P6 执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
+4. [详细 P0–P6 执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：P0/P1 已完成，当前从 P2 v2.1 开始；其中 P0/P1 命令只作历史记录。
 5. [三模型校准计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)。
 6. [HF Job 工程规范](standards/HF_JOBS_ENGINEERING.md) 和 [CPU Stage 预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md)。
 
 ## 4. 阶段任务与验收
 
-### P0 — 两个校准集库存、冻结和跨集去重
+### P0 — PASS（已完成；不再执行）
+
+P0 的实际 SAFE、20/20 案例分层、Story 可跨集合和三类精确去重结果见本任务书 8.12。下列 P0 原始步骤仅供历史追溯，不得重复运行。
 
 **目标**
 - Gold72：准确的 40 条 A V3/B2 disagreement 来源。
@@ -122,7 +138,9 @@ git log -5 --oneline --decorate
 
 任一项不满足，P0=HOLD；不进入 P1，不改 Prompt、不运行模型。
 
-### P1 — 三个严重维度证据标准 v2.1
+### P1 — PASS（Rubric v2.1 已冻结；不再执行旧 v2）
+
+当前唯一有效标准：`r60_severity_rubric_v2_1`，见 `docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md`。本任务书 8.13–8.14 是旧 v2 实施过程的历史记录；v2.1 最终状态与 CI 见 8.21–8.24。.1
 
 实现三态，不再依赖旧布尔 flag：
 
@@ -155,7 +173,7 @@ NPC 主动行动不自动等于玩家代理；普通亲密、冲突、威胁台�
 
 **P2 PASS**：Owner 参考标签独立、盲化、可追溯；锁定标签未泄露给 Prompt/model 开发；未决项保留 HOLD。
 
-### P3 — 三模型固定与 CPU 预检
+### P3 — 下一阶段（P2 验收后进入）：三模型固定与 CPU 预检
 
 模型角色：
 - A：Qwen/Qwen3-32B，保留旧 Revision；新 profile 显式 Thinking=True。
@@ -270,7 +288,7 @@ python3 -m compileall -q src/storyforge_gold_quality src/storyforge_dataset
 
 统一原则：`Job COMPLETED ≠ PASS`；`Tokenizer PASS ≠ 语义 PASS`；`三维 NOT_SUPPORTED ≠ Quality PASS`；`Quality-v1 admission ≠ GPU/SFT 授权`。
 
-**新 Agent 的第一项工作只允许是 P0 的只读库存、来源和回执核验。P0 未通过前，不得修改审核 Prompt、运行模型或提交 HF Job。**
+**新 Agent 的第一项工作是 P2 v2.1 Development-20 盲包生成。P0/P1 已通过，不得重做；P2 Owner 裁决和 60 条语义复核未完成前，不进入 P3 模型推理，不提交 HF Job/GPU。**
 
 
 ---
@@ -334,7 +352,7 @@ Gold 40 条的 target_assistant_text SHA256 与 Gold C Owner map 的 target_sha2
 
 本次比较是精确重复检查，不声称能够发现语义近似、改写或同一剧情的不同续写。
 
-### 8.5 当前 P0 状态：尚未最终 PASS
+### 8.5 历史状态（已被 8.12 最终 SAFE 取代）：P0 尚未最终 PASS
 
 本轮已完成只读来源重建、历史 SAFE/receipt 核对、20/20 确定性分层计算和跨集合精确指纹去重；但以下 Owner 私有产物尚未创建：
 
@@ -352,12 +370,12 @@ Gold 40 条的 target_assistant_text SHA256 与 Gold C Owner map 的 target_sha2
 - 20/20 case-level stratification：规则已确认，分配已计算。
 - Gold72 ↔ R60 精确去重：PASS（只读核验层）。
 - Owner 私有 manifest / dedup receipt / aggregate SAFE：PENDING。
-- **P0 总状态：HOLD，不能进入 P1。**
+- **历史快照状态：P0 HOLD。该状态已被 8.12 的正式 Owner SAFE 覆盖；当前 P0=PASS。**
 
 继续执行时只需在 Owner Mac 完成上述四个 create-only 产物及其本地 SHA/权限复核；不得重跑旧模型，不得重做已通过的旧 Checkpoint 审计。Quality-v1 admitted=0、training_authorized=false、GPU 未启动、R50 未访问、1000 条批量审核未启动。
 
 
-### 8.6 Owner Mac 一键 P0 Freeze Runner（代码已提交，尚未在 Owner Mac 执行）
+### 8.6 历史记录：Owner Mac 一键 P0 Freeze Runner（当时尚未执行，最终执行见 8.12）
 
 新增可复用工具：
 
@@ -571,10 +589,10 @@ Owner 回传正式执行 SAFE：
 
 Runner 在返回上述正式 PASS SAFE 前已完成四个 create-only 文件写入，并对输出目录/父目录权限 0700、四个文件权限 0600 执行了代码内检查。SAFE 不暴露私人值。Owner 尚未单独回传 SHA-256 元数据摘要；如需外部审计留档，可在 Owner Mac 本地对四个文件计算并私下保存 SHA-256，不要将私有文件或哈希粘贴到公共 GitHub。
 
-**P0 正式冻结已完成。** 四份文件仅存在于 Owner 私有目录；不得上传 GitHub/HF。Quality-v1 admission 仍为 0；P0 PASS 不代表 Quality PASS、模型选择完成或训练授权。P1 尚未开始；本次 P0 授权不自动扩展为 P1/GPU/1000 条批量审核/SFT 授权。
+**P0 正式冻结已完成。** 四份文件仅存在于 Owner 私有目录；不得上传 GitHub/HF。Quality-v1 admission 仍为 0；P0 PASS 不代表 Quality PASS、模型选择完成或训练授权。P1(v2.1) 后续已独立完成并 PASS；本次 P0 授权本身不自动扩展为 GPU/1000 条批量审核/SFT 授权。
 
 
-### 8.13 P1 v2 三维严重证据标准实现进展（2026-11-09）
+### 8.13 历史记录：P1 v2 三维严重证据标准实现进展（已被 8.14、8.21–8.22 的 v2.1 结果取代）
 
 Owner 对“继续”确认后，开始 P1 的代码/标准/合成测试工作。当前只在公共仓库提交通用代码、Rubric 和合成测试；没有读取 Gold72/R60 私有正文，没有运行模型或 HF Job，没有启动 GPU。
 
@@ -615,12 +633,10 @@ v2 规则与校验覆盖：
 - `5007166d49f3f49b59ef34f8bd8dac2a2be9a21b`、`53eea491a80549269e913fe8d54d50bb832be681`：接入既有 reviewer / Reviewer-C 入口。
 - `4acf4f0d5bea1e4d09fa48f756c67330f58e6d61`、`96288fe82b2a52754cff9ef7bf8272d4ac3b7a20`、`e9bca64ea1d998160e399bf550886ecc0bee1a09`、`2ac7a3373e980dd61d335d06f3fcf70b796c2093`、`93715815a3dfbcf29f4abf5dfd8213af7ddd5ebc`、`1b9ab4bd932e07e958000987023ea9d275753f47`：合成测试、来源绑定强化和 lint 修复。
 
-**当前阶段状态：P1 IN PROGRESS / NOT PASS。** 初轮 Actions 暴露了 Ruff lint 问题，已根据实际日志修复；以最新测试提交 `1b9ab4bd932e07e958000987023ea9d275753f47` 的最终 Actions 为准。若测试失败，必须先修复再宣称 P1 PASS。
-
-P1 未完成前不进入 P2 Owner 盲裁决。当前没有运行任何模型、HF Job、GPU、1000 条审核或 SFT；Quality-v1 admitted 仍为 0，training_authorized=false。
+**历史状态：P1 当时处于 IN PROGRESS；该状态已被 8.14 的 v2 PASS 和 8.21–8.22 的 v2.1 最终 PASS 取代。当前 P1(v2.1)=PASS，下一阶段为 P2。**
 
 
-### 8.14 P1 v2 标准与合成回归通过（2026-11-09）
+### 8.14 历史记录：P1 v2 标准与合成回归通过（v2.1 已取代该版本）
 
 最新实现提交：`c80d6bbc2c7f1cd7a6d5184be808e6a788d0e2b7`。
 
@@ -643,7 +659,7 @@ Rubric 文档：`docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_20261109_CN.md`。
 下一阶段按 P2 进行：仅 Gold72 Development 20 条进入 Owner 独立盲裁决；Gold72 Locked Regression 20 与 R60 Severe10 继续锁定。新 packets 必须隐藏旧 A/B/C 判断、分数、flags、Owner resolution、槽位及旧 blind IDs；旧证据只作后续对照。P2 仍不得启动模型/GPU。当前 Quality-v1 admitted=0，training_authorized=false。
 
 
-### 8.15 P2 Gold72 Development-20 Owner 盲裁决包生成器已实现（2026-11-09）
+### 8.15 历史工程记录：P2 Development-20 Owner 盲裁决包生成器（当前须按 v2.1 重新生成）
 
 P1 已 PASS 后，继续准备 P2 Owner 独立盲裁决。当前只完成通用代码与合成验证；**Owner Mac 私有数据 dry-run 尚未执行，真实 Owner 裁决尚未开始。**
 
@@ -796,7 +812,7 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 **Owner Mac dry-run 已于 2026-11-09 通过。** SAFE 回执：`P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`，`cases_prepared=20`、`files_written=0`；未暴露 Locked Regression 20 / Severe10 / 旧 A/B/C judgments / Owner Resolution；未启动 Owner review、模型、HF Job 或 GPU。下一步仅在核对 worktree 分支与输出目录仍不存在后，显式 `--write` 生成 Development-20 六份私有盲审文件。Owner verdict / semantic review 尚未开始，P2 真实审核尚未完成。
 
 
-### 8.20 P2 Development-20 私有盲审包已正式生成（2026-11-09）
+### 8.20 历史记录：P2 v2.0 Development-20 私有盲审包已生成（随后被 v2.1 SUPERSEDED）
 
 Owner Mac 已在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 的 `r60/gold192-history-v3-adapter` worktree 执行带 `--write` 的生成命令。实际 SAFE 回执：
 
@@ -810,7 +826,7 @@ Owner Mac 已在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 的
 - `owner_review_started=false`；model_calls=0；hf_jobs_submitted=0；gpu_started=false。
 - Quality-v1 admitted=0；training_authorized=false。
 
-**状态更新：P2 PRIVATE PACKET GENERATION = PASS；P2 OWNER ADJUDICATION = NOT STARTED；P2 总体仍 INCOMPLETE。**
+**历史状态：该六文件包属于 Rubric v2.0，后来已由 Owner 明确标记 `SUPERSEDED`。不得用于裁决、不得覆盖或删除。当前唯一待生成的是 8.21 指定的新 v2.1 包。**
 
 #### 下一步：Owner 独立盲裁决
 
@@ -869,7 +885,7 @@ Owner 明确要求：**审核标准去掉来源与权利审核，不要求来源
 - v2.1 重新生成到新的、此前不存在的目录：
   `$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109`
 
-待本分支最新 CI 全部通过后，在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree 执行：
+PR #25 当前 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 已全部 completed/success。下一 Agent 接手时仍须重新核验当前 HEAD/CI；确认通过后，在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree 执行：
 
 ```bash
 cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
@@ -1038,10 +1054,10 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_verify_v2.py \
 **范围边界：** Rubric v2.1 已明确排除训练数据来源、权利、隐私、数据使用授权和数据隔离审核；上述事项不得被重新加入 Owner 20 条裁决或 60 条语义复核。故事内部的玩家拒绝/同意边界、可见故事规则和安全规则仍按内容语义标准判断。
 
 
-### 8.24 P2 v2.1 接口合同提交后的 CI 全部通过（2026-11-09）
+### 8.24 历史 CI 快照（9b4f235）；当前 HEAD/CI 已更新见 8.25
 
 已重新核验 PR #25 当前 head 与本次接口合同提交一致：
-- PR head：`9b4f235da01a856b3f123f87a2ee1c314c54a3fc`
+- 当时 PR head：`9b4f235da01a856b3f123f87a2ee1c314c54a3fc`（历史快照，不是当前 HEAD）
 - PR 状态：Open / Draft；base：`r60/canonical-a-v3-binding`。
 - 以下五组 GitHub Actions 全部 `completed / success`：
   1. `CI` — run `42554925877`
@@ -1093,3 +1109,33 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 仅当状态严格为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN` 且 `files_written=0` 时，才对同一命令显式追加 `--write`。写入成功状态必须是 `P2_OWNER_BLIND_PACKETS_READY__OWNER_REVIEW_NOT_STARTED` 且 `cases_prepared=20`、`files_written=6`、`private_values_emitted=false`。新 manifest 必须绑定 `r60_severity_rubric_v2_1` 和 Rubric v2.1 SHA。
 
 不得复用/覆盖旧 v2.0 六文件包；不得打开或暴露 ID Map；不得解锁 Locked Regression 20 / R60 Severe10；不运行模型、不提交 HF Job、不启动 GPU/SFT。
+
+
+### 8.25 当前接手基线复核（2026-11-09；取代 8.24 的旧 HEAD）
+
+接手时重新从 GitHub 实时读取 PR #25 与对应 commit workflow runs。本次已核验：
+- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
+- 当前 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
+- 五组 Actions 全部 `completed / success`：
+  - CI：run `42555517499`
+  - Gold Quality Pipeline (synthetic + R57 regression)：run `42555517570`
+  - R60 HF CPU dependency profiles：run `42555517597`
+  - R58 scoped synthetic (no training)：run `42555517602`
+  - R60 HF Runtime CI：run `42555517658`
+
+### 当前唯一有效阶段状态
+
+| 阶段 | 状态 | 说明 |
+|---|---|---|
+| P0 | PASS | Gold72=40、R60 Severe10=10；20/20 案例分层；Gold72 Story 可跨集合；跨集精确交集 0、唯一来源 50 |
+| P1 | PASS | Rubric v2.1 / Schema / Prompt / 合成回归 / 旧 v3 兼容 |
+| P2 packet v2.0 | SUPERSEDED | 已生成旧包不得使用、覆盖或删除 |
+| P2 packet v2.1 | NOT GENERATED | 当前第一项执行任务 |
+| Owner adjudication 20 + semantic checks 60 | NOT STARTED | 新 v2.1 包生成后开展 |
+| P3 | NOT STARTED | 等 P2 验收后做模型固定与 CPU 预检 |
+| P4 GPU Pilot | NOT AUTHORIZED | 需单独明确授权 |
+| P6 1000 batch / SFT | NOT AUTHORIZED | 独立门禁，不在本任务授权内 |
+
+**下一 Agent 立即执行：** 在 Owner Mac 的 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree，先检查工作区状态和分支，刷新到当前 PR head；确认 v2.1 新输出目录不存在、父目录权限满足 0700 后，运行 `scripts/r60_owner_adjudication_v2.py` dry-run。只有 SAFE 严格为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`、`cases_prepared=20`、`files_written=0`、Locked20/Severe10 未暴露时，才显式追加 `--write`。命令见 8.21。不要重做 P0/P1，不要运行模型/GPU/HF Job。
+
+本次状态核验仅证明当前 GitHub HEAD 的五组 Actions 通过，不证明 Owner 私有 v2.1 包已生成或 Owner 审核已完成。Quality-v1 admitted=0；training_authorized=false。
