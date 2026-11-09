@@ -2,7 +2,8 @@
 
 The tool is create-only. It preserves original inputs and semantic checks,
 validates both AI advisory sets (35 NOT_SUPPORTED + 4 SUPPORTED), applies only
-the Owner-approved history_complete assertions, normalizes evidence locators,
+the Owner-approved history_complete assertions and the separately approved
+four-pair derived-copy rule_basis label mapping, normalizes evidence locators,
 then runs the unchanged official v2 verifier. No GPU/HF/SFT/admission.
 """
 from __future__ import annotations
