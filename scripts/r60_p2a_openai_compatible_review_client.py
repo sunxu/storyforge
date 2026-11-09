@@ -1,6 +1,15 @@
 """Private resumable OpenAI-compatible R60 cross-review client."""
 from __future__ import annotations
-import argparse, hashlib, json, os, re, stat, time, urllib.error, urllib.parse, urllib.request
+import argparse
+import hashlib
+import json
+import os
+import re
+import stat
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from pathlib import Path
 
 KEYS={"blind_id","dimension","reviewer_type","conclusion","reviewed_evidence_indexes","reasoning_summary","unresolved_context"}
