@@ -426,12 +426,17 @@ def prepare(
 
 def verify_owner_results(
     packet_raw: bytes, result_raw: bytes, semantic_check_raw: bytes,
+    *, expected_cases: int = 20, packet_schema: str = PACKET_SCHEMA,
 ) -> tuple[dict, dict]:
-    """Verify the complete 20-result / 60-check Owner package without admitting data."""
+    """Verify exact Owner results and semantic checks; default preserves P2-A 20/60."""
     packets = _jsonl(packet_raw, "OWNER_PACKET_JSONL_INVALID")
     results = _jsonl(result_raw, "OWNER_RESULT_JSONL_INVALID")
     checks = _jsonl(semantic_check_raw, "OWNER_SEMANTIC_CHECK_JSONL_INVALID")
-    if len(packets) != 20 or len(results) != 20 or len(checks) != 60:
+    if (type(expected_cases) is not int or expected_cases not in (20, 30)
+            or packet_schema not in (PACKET_SCHEMA, "storyforge_r60_p2b_owner_packet_private_v1")
+            or len(packets) != expected_cases
+            or len(results) != expected_cases
+            or len(checks) != expected_cases * len(severity.DIMENSIONS)):
         raise AdjudicationHold("OWNER_RESULT_SET_CARDINALITY_HOLD")
     packet_by_id = _unique(packets, "calibration_id", "OWNER_PACKET_ID_DUPLICATE")
     result_by_id = _unique(results, "case_ref", "OWNER_RESULT_CASE_REF_DUPLICATE")
@@ -441,7 +446,7 @@ def verify_owner_results(
     verdict_counts = {dimension: {} for dimension in severity.DIMENSIONS}
     aggregate_counts: dict[str, int] = {}
     for case_ref, packet in packet_by_id.items():
-        if packet.get("schema") != PACKET_SCHEMA:
+        if packet.get("schema") != packet_schema:
             raise AdjudicationHold("OWNER_PACKET_SCHEMA_HOLD")
         result = result_by_id[case_ref]
         verdicts = severity.validate_result_v2(result, packet)
