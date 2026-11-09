@@ -39,7 +39,7 @@ def write_once(path: Path, raw: bytes) -> None:
 
 
 def jsonl(rows: list[dict]) -> bytes:
-    return b"".join(adjudication.canonical(row) + b"\\n" for row in rows)
+    return b"".join(adjudication.canonical(row) + b"\n" for row in rows)
 
 
 def main() -> int:
@@ -147,13 +147,13 @@ def main() -> int:
                 "migrated_results_sha256": digest((out / RESULT).read_bytes()),
             }
             write_once(out / "EVIDENCE_LOCATOR_MIGRATION_SAFE.json",
-                       adjudication.canonical(safe) + b"\\n")
+                       adjudication.canonical(safe) + b"\n")
             manifest = {
                 "schema": "storyforge_r60_owner_evidence_locator_migration_manifest_v1",
                 "files": {p.name: {"bytes": p.stat().st_size, "sha256": digest(p.read_bytes())}
                           for p in sorted(out.iterdir()) if p.is_file()}
             }
-            write_once(out / "MANIFEST_PRIVATE.json", adjudication.canonical(manifest) + b"\\n")
+            write_once(out / "MANIFEST_PRIVATE.json", adjudication.canonical(manifest) + b"\n")
         except BaseException:
             for p in out.iterdir():
                 if p.is_file() and not p.is_symlink():
