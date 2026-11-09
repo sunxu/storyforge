@@ -387,7 +387,10 @@ def test_keyset_diagnostic_handles_invalid_json_without_echoing_input():
     raw = b'{"private":"do-not-echo"}\nnot-json\n'
     report = KEYSET_DIAG.diagnose(raw)
     assert report["status"] == "DIAGNOSTIC_INPUT_HOLD"
-    assert report["input_errors"] == [{"line": 2, "reason": "INVALID_JSON"}]
+    assert report["input_errors"] == [
+        {"line": 1, "reason": "CHECK_NOT_OBJECT"},
+        {"line": 2, "reason": "INVALID_JSON"},
+    ]
     assert "do-not-echo" not in json.dumps(report)
 
 
