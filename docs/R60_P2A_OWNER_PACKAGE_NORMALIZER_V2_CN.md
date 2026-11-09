@@ -144,3 +144,10 @@ Normalizer 在内存中补齐 60 行 reviewer binding 后，必须将 `semantic_
 未知异常统一映射为 `OWNER_SEMANTIC_CHECK_INVALID:UNCLASSIFIED`，绝不回显异常文本或私有输入。新增测试覆盖安全 reason、原有 NOT_ESTABLISHED 语义和未知异常不泄露。
 
 请先更新 Owner Mac worktree 到最新分支 HEAD，再对已生成的派生包运行官方 CLI verifier。该诊断步骤只读现有包，不重新生成、不修改包内文件。将返回的 SAFE reason_code 原样反馈；再针对具体原因修复。禁止直接改 60 条 conclusion、reviewed_evidence_indexes 或 reasoning_summary。
+
+
+### 2026-11-09：Normalizer 捕获 AdjudicationHold
+
+真实私有包预验证会由 `verify_owner_results` 抛出 `AdjudicationHold`（而不是 `EvidenceHold`）。Normalizer v2 此前只捕获后者，导致前者直接显示 Python traceback。现已同时捕获两类异常，并通过 allowlist 输出稳定 SAFE reason_code；未知原因统一降级为 `OFFICIAL_VERIFIER_ADJUDICATION_HOLD` / `OFFICIAL_VERIFIER_EVIDENCE_HOLD`，不回显异常文本或私有值。
+
+因此，最新代码更新后应重新运行 normalizer（不是对不存在的 OUT 目录运行 verifier）。如果纯验证通过，将 create-only 写出新派生包并自动运行官方 CLI；如果仍失败，将在创建 OUT 前给出安全 reason_code，原始输入不变。
