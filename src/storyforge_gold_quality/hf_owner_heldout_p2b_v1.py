@@ -198,7 +198,7 @@ def prepare(gold_path: Path, severe_path: Path, dedup_path: Path,
             "结果只存 Owner 私有目录，不向模型或 GitHub 提供。"
             "每条语义复核使用与 P2-A 相同的 4 字段外层和 7 字段 check；"
             "真实不足保留 HOLD。不得启动推理或训练。\n"
-        ).encode("utf-8")),
+        ).encode()),
         ("P2B_OWNER_SCHEMA_V2.json", base.canonical(severity.response_schema_v2()) + b"\n"),
     )
     created = []
