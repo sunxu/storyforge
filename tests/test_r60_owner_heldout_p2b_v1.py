@@ -1,8 +1,10 @@
 """Synthetic P2-B tests; never use Owner private data."""
 import json
+import stat
 
 import pytest
 
+from scripts import r60_owner_heldout_p2b_v1 as cli
 from storyforge_gold_quality import hf_owner_adjudication_v2 as base
 from storyforge_gold_quality import hf_owner_heldout_p2b_v1 as heldout
 
@@ -158,3 +160,59 @@ def test_p2b_manifest_map_binding_fail_closed_before_owner_review():
             raw, result_raw, check_raw,
             base.canonical(manifest), base.canonical(tampered_map)
         )
+
+
+def test_verifier_split_directories_write_only_receipt(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    package = tmp_path / "package"
+    owner = tmp_path / "owner"
+    receipt = tmp_path / "receipt"
+    repo.mkdir()
+    for directory in (package, owner, receipt):
+        directory.mkdir(mode=0o700)
+        directory.chmod(0o700)
+    names = (
+        (package, heldout.PACKET_NAME), (package, heldout.MANIFEST_NAME),
+        (package, heldout.MAP_NAME), (owner, heldout.RESULT_NAME),
+        (owner, heldout.CHECK_NAME),
+    )
+    for directory, name in names:
+        path = directory / name
+        path.write_bytes(b"{}\n")
+        path.chmod(stat.S_IRUSR | stat.S_IWUSR)
+
+    monkeypatch.setattr(cli.base, "_read_private", lambda *args, **kwargs: b"{}\n")
+    monkeypatch.setattr(
+        cli.heldout, "verify_package", lambda *args: ({"manifest": True}, {"safe": True})
+    )
+    monkeypatch.setattr(
+        cli, "_private_dir", lambda path, repo, must_exist: path.expanduser()
+    )
+    monkeypatch.setattr(
+        "sys.argv", [
+            "r60_owner_heldout_p2b_v1.py", "--repo-root", str(repo), "--verify",
+            "--package-dir", str(package), "--owner-results-dir", str(owner),
+            "--receipt-dir", str(receipt),
+        ]
+    )
+    assert cli.main() == 0
+    assert (receipt / "P2B_REVIEW_FINAL_SAFE.json").read_text() == (
+        '{"safe":true}\n'
+    )
+    assert not (receipt / "P2B_OWNER_RESULTS_MANIFEST_PRIVATE.json").exists()
+
+
+def test_verifier_split_directories_must_be_distinct(tmp_path, monkeypatch):
+    repo = tmp_path / "repo"
+    shared = tmp_path / "shared"
+    repo.mkdir()
+    shared.mkdir(mode=0o700)
+    shared.chmod(0o700)
+    monkeypatch.setattr(
+        "sys.argv", [
+            "r60_owner_heldout_p2b_v1.py", "--repo-root", str(repo), "--verify",
+            "--package-dir", str(shared), "--owner-results-dir", str(shared),
+            "--receipt-dir", str(shared),
+        ]
+    )
+    assert cli.main() == 42
