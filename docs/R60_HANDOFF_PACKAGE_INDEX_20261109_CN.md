@@ -256,7 +256,7 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 - P0 PASS：Gold72 40、R60 Severe10 10；案例级 20/20；Gold72 Story 可跨集合（shared Story=5）；Gold72↔R60 exact overlaps=0；unique source=50。
 - P1 PASS：Rubric v2.1 / Schema / Prompt / synthetic regression / old v3 compatibility。
 - P2 v2.0 package：SUPERSEDED；P2 v2.1 package：NOT GENERATED；Owner review：NOT STARTED。
-- 下一步仅做 P2 v2.1 新包 dry-run → 显式 `--write` → Owner 20 verdict + 60 semantic checks → 私有验证器。
+- 下一步先做 P2-A v2.1 新包 dry-run → 显式 `--write` → Owner 20 verdict + 60 semantic checks → 私有验证器；随后 P2-B 需独立准备 Locked20 + Severe10 的 30 Owner results + 90 semantic checks，作为 P4 前置。
 - P3 等 P2 完成后进入；P4 GPU、P6 1000 批量审核、SFT 均未授权。
 - 不重做 P0/P1，不读取 R50 正文，不修改数据库/RolePlay，不上传私有值。
 
