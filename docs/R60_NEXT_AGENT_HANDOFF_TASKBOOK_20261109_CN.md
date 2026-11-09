@@ -863,6 +863,7 @@ Owner 明确要求：**审核标准去掉来源与权利审核，不要求来源
 版本处理：
 - `RUBRIC_VERSION` 从 `r60_severity_rubric_v2` 升为 `r60_severity_rubric_v2_1`；JSON schema shape 保持兼容，rubric version 和 rubric SHA 明确区分。
 - 新 prompt/schema 描述明确排除数据来源、权利、隐私、数据使用授权和隔离证明。
+- 公开冻结文本：[R60 Severity Evidence Rubric v2.1](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)；Owner instructions 明确引用此文件，rubric_sha256 绑定模块中的同一文本。
 - 新盲包生成器只保留 visible_history 的 `role/content`，不向审核员暴露 `source_turn` 等来源元数据。
 - 已生成的 `owner-adjudication-dev20-20261109` 六文件包基于 v2.0，**标记 SUPERSEDED，不得用于裁决，不得覆盖或删除**。Owner 尚未开始 review，因此无需迁移或重写任何裁决。
 - v2.1 重新生成到新的、此前不存在的目录：
