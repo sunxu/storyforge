@@ -151,3 +151,21 @@ Normalizer 在内存中补齐 60 行 reviewer binding 后，必须将 `semantic_
 真实私有包预验证会由 `verify_owner_results` 抛出 `AdjudicationHold`（而不是 `EvidenceHold`）。Normalizer v2 此前只捕获后者，导致前者直接显示 Python traceback。现已同时捕获两类异常，并通过 allowlist 输出稳定 SAFE reason_code；未知原因统一降级为 `OFFICIAL_VERIFIER_ADJUDICATION_HOLD` / `OFFICIAL_VERIFIER_EVIDENCE_HOLD`，不回显异常文本或私有值。
 
 因此，最新代码更新后应重新运行 normalizer（不是对不存在的 OUT 目录运行 verifier）。如果纯验证通过，将 create-only 写出新派生包并自动运行官方 CLI；如果仍失败，将在创建 OUT 前给出安全 reason_code，原始输入不变。
+
+
+### 2026-11-09：语义检查失败细分到具体合同字段
+
+Owner 执行返回 `OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_CHECK_HOLD`。检查官方实现发现：`verify_semantic_entailment_v2` 对 `check` 使用严格 keyset（必须恰好 7 个字段），并逐项验证 schema、rubric_version、reviewer_role/ref、conclusion、reviewed_evidence_indexes（整数且无重复）和 reasoning_summary 长度。旧错误码无法区分是哪项失败。
+
+已在 severity validator 增加纯诊断函数 `semantic_check_contract_reason`，只返回固定安全码，不输出字段值或私有文本；Owner verifier 在原校验失败时调用该函数，SAFE 将进一步报告具体失败原因，例如：
+- `CHECK_KEYSET_MISMATCH`
+- `SCHEMA_MISMATCH`
+- `RUBRIC_VERSION_MISMATCH`
+- `REVIEWER_ROLE_INVALID`
+- `REVIEWER_REF_INVALID`
+- `CONCLUSION_INVALID`
+- `EVIDENCE_INDEX_TYPE_INVALID`
+- `EVIDENCE_INDEX_DUPLICATE`
+- `REASONING_SUMMARY_INVALID`
+
+本次仅增加诊断，不自动修正任何 semantic check 内容，不改变 conclusion、evidence indexes、reasoning_summary 或原始审核记录。请更新 Owner Mac 到最新 HEAD 后，重新运行已批准的 normalizer；失败时应在 OUT 创建前返回细分 SAFE reason_code。按具体原因再决定是否属于可安全规范化的元数据问题；语义内容本身不得自动改写。
