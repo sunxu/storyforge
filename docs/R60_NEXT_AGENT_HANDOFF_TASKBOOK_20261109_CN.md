@@ -1273,3 +1273,8 @@ Owner 已明确确认：原 `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl` 的
 已新增 `scripts/r60_p2a_openai_compatible_review_client.py`，为 R60 P2-A 提供可复用 OpenAI Chat Completions 客户端。默认模型别名为 `claude-opus-5-5-high`，非流式调用（`stream=false`），每批 5 案例，共 4 批。远程 endpoint 强制 HTTPS；base URL、API key、model 均由环境变量提供，密钥不写入参数或输出。默认只做本地 preflight；真实外发必须显式 `--execute --allow-private-data-egress`。输出严格验证 60 个 blind_id × dimension、七字段合同、枚举及完整 evidence index 覆盖。批次结果和原始响应仅写入 0600 私有文件，支持 `--resume`。本工具只产生 AI Advisory，不产生 Owner 最终裁决。具体环境变量和命令见 `docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`。
 
 当前仍缺 Owner Mac 的实际 CLI Proxy Base URL 与本机环境变量配置；未发出任何 API 请求。CI 需验证新客户端及测试后才能视为代码验收。即使 60 行 AI Advisory 生成成功，P2-A 仍须 Owner 最终复核；不启动 GPU/HF Job/SFT。
+
+
+## 2026-11-09：4Router HTTP 400 诊断
+
+Claude Opus 5.5 首批请求返回 HTTP 400，尚未获得任何有效审核结果。客户端已更新为将每次 HTTP 错误体保存至本地 0600 私有诊断文件，并只在 SAFE 中输出 HTTP 状态及 error type/code/param；不输出服务端 message、请求正文或密钥。继续使用原输出目录加 `--resume`，先读取安全诊断字段，确认拒绝原因后再修复；不得删除/覆盖批次文件或盲目改变请求参数。Owner 已授权的外发范围仍仅限本批 20 条 Development 盲包至 4Router。GPU/HF Job/SFT 未启动。
