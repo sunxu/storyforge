@@ -296,3 +296,39 @@ def test_official_verifier_reason_does_not_echo_evidence_exception():
     assert MODULE.official_verifier_reason(
         exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
     ) == "OFFICIAL_VERIFIER_EVIDENCE_HOLD"
+
+
+def _valid_semantic_check():
+    return {
+        "schema": SEVERITY.SEMANTIC_CHECK_SCHEMA,
+        "rubric_version": SEVERITY.RUBRIC_VERSION,
+        "reviewer_role": "OWNER_INDEPENDENT",
+        "reviewer_ref": "owner-independent-r60-p2a-dev20-20261109",
+        "conclusion": "SUPPORTS_VERDICT",
+        "reviewed_evidence_indexes": [0],
+        "reasoning_summary": "Reviewed the complete cited evidence against the recorded verdict.",
+    }
+
+
+def test_semantic_check_contract_diagnostic_accepts_valid_contract():
+    assert SEVERITY.semantic_check_contract_reason(_valid_semantic_check()) is None
+
+
+def test_semantic_check_contract_diagnostic_identifies_keyset_mismatch():
+    check = _valid_semantic_check()
+    check["unexpected"] = "not emitted"
+    assert SEVERITY.semantic_check_contract_reason(check) == "CHECK_KEYSET_MISMATCH"
+
+
+def test_semantic_check_contract_diagnostic_identifies_rubric_mismatch():
+    check = _valid_semantic_check()
+    check["rubric_version"] = "wrong"
+    assert SEVERITY.semantic_check_contract_reason(check) == "RUBRIC_VERSION_MISMATCH"
+
+
+def test_semantic_check_contract_diagnostic_identifies_index_shape_and_duplicates():
+    check = _valid_semantic_check()
+    check["reviewed_evidence_indexes"] = ["0"]
+    assert SEVERITY.semantic_check_contract_reason(check) == "EVIDENCE_INDEX_TYPE_INVALID"
+    check["reviewed_evidence_indexes"] = [0, 0]
+    assert SEVERITY.semantic_check_contract_reason(check) == "EVIDENCE_INDEX_DUPLICATE"
