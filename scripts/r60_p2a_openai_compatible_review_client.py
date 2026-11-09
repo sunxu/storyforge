@@ -86,9 +86,18 @@ def endpoint(base):
     return urllib.parse.urlunsplit((u.scheme,u.netloc,path,"",""))
 def system_message():
     return """You are an independent second-model reviewer for StoryForge R60 P2-A. Review every supplied blind case and all three dimensions independently. Read full visible_history, target_text, verified_world_components, rubric and Owner verdict/evidence/rule_basis/context coverage; do not assume Owner is correct. Check whether all cited evidence supports the verdict. Inspect every evidence item and list every zero-based evidence index in order. Respect player refusal/consent/choice boundaries, established hard rules and safety boundaries. Do not HOLD for missing source, copyright, rights, privacy, authorization or data-isolation material. Use INSUFFICIENT_CONTEXT only when story context genuinely prevents a reliable conclusion; state the missing story context. Do not invent context. Return only JSONL, one object per blind_id x dimension, with exactly: blind_id, dimension, reviewer_type, conclusion, reviewed_evidence_indexes, reasoning_summary, unresolved_context. reviewer_type must be AI_CROSS_REVIEW_ADVISORY_NOT_OWNER. conclusion must be SUPPORTS_VERDICT, DOES_NOT_SUPPORT_VERDICT or INSUFFICIENT_CONTEXT. No prose or markdown. This is AI advisory only, never an Owner decision."""
+def build_request_payload(model,user,review_prompt,max_tokens):
+    return {
+        "model": model,
+        "system": review_prompt + "\n\nReturn only the exact JSONL output contract from the prompt. Do not include markdown or prose.",
+        "messages": [{"role": "user", "content": user}],
+        "max_tokens": max_tokens,
+        "stream": False,
+    }
+
 def proxy_call(url,key,model,batch,rubric,review_prompt,timeout,max_tokens,error_path=None):
-    user="RUBRIC V2.1:\n"+rubric+"\n\nBLIND CASES:\n"+"\n".join(json.dumps(x,ensure_ascii=False,sort_keys=True) for x in batch)
-    body={"model":model,"messages":[{"role":"system","content":review_prompt + "\\n\\nReturn only the exact JSONL output contract from the prompt. Do not include markdown or prose."},{"role":"user","content":user}],"max_tokens":max_tokens,"stream":False}
+    user="RUBRIC V2.1:\\n"+rubric+"\\n\\nBLIND CASES:\\n"+"\\n".join(json.dumps(x,ensure_ascii=False,sort_keys=True) for x in batch)
+    body=build_request_payload(model,user,review_prompt,max_tokens)
     req=urllib.request.Request(url,data=canon(body),method="POST",headers={"Authorization":"Bearer "+key,"Content-Type":"application/json","Accept":"application/json","User-Agent":"storyforge-r60-cross-review/1.0"})
     try:
         with urllib.request.urlopen(req,timeout=timeout) as r: raw=r.read(); status=r.status
