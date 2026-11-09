@@ -207,6 +207,13 @@ def test_owner_semantic_reviewer_binding_is_retrospective_and_derived_only():
         and row["check"]["reviewer_ref"] == MODULE.OWNER_SEMANTIC_REVIEWER_REF
         for row in derived
     )
+    for before, after in zip(original, derived, strict=True):
+        before_check = before["check"]
+        after_check = after["check"]
+        assert {
+            key: value for key, value in after_check.items()
+            if key not in ("reviewer_role", "reviewer_ref")
+        } == before_check
     assert all(
         "reviewer_role" not in row["check"] and "reviewer_ref" not in row["check"]
         for row in checks
