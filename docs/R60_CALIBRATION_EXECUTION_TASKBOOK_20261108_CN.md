@@ -582,3 +582,8 @@ Owner 已明确确认：原 60 条 semantic checks 由 Owner AI 生成，未经 
 ## 2026-11-09：CLI Proxy 外部模型调用客户端
 
 新增 `scripts/r60_p2a_openai_compatible_review_client.py`，支持远程 HTTPS OpenAI-compatible Chat Completions、非流式调用、默认 Claude Opus 5.5 High 模型别名、每批 5 案例/4 批、有限网络重试、严格 60 行输出校验和私有断点续跑。API Key 仅从环境变量读取；预检不调用外部服务，实际调用必须显式 `--execute --allow-private-data-egress`。工具不会读取 Owner ID Map、旧 AI semantic checks 或旧 AI advisory。当前未调用模型，待 Owner Mac 配置准确 CLI Proxy endpoint 和环境变量，并通过本地 preflight 后执行。模型输出仍只是 AI Advisory，不解锁 P2-A/P2-B/P3/GPU/SFT。
+
+
+## 2026-11-09：4Router HTTP 400 诊断
+
+Claude Opus 5.5 首批请求返回 HTTP 400，尚未获得任何有效审核结果。客户端已更新为将每次 HTTP 错误体保存至本地 0600 私有诊断文件，并只在 SAFE 中输出 HTTP 状态及 error type/code/param；不输出服务端 message、请求正文或密钥。继续使用原输出目录加 `--resume`，先读取安全诊断字段，确认拒绝原因后再修复；不得删除/覆盖批次文件或盲目改变请求参数。Owner 已授权的外发范围仍仅限本批 20 条 Development 盲包至 4Router。GPU/HF Job/SFT 未启动。
