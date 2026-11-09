@@ -294,15 +294,15 @@ P2-B 验收：30/30 结果、90/90 semantic checks 完整绑定；无重复/缺�
 
 ### P3.1 模型固定
 
-- Qwen3-32B：旧 Revision 保留；新版本显式 Thinking=True。官方 Thinking 参数 temperature=0.6、top_p=0.95、top_k=20、min_p=0；不使用 temperature=0 greedy。
+- Qwen3-32B：旧 Revision 保留；新版本显式 Thinking=True。官方 Thinking 参数 不传 temperature.6、top_p=0.95、top_k=20、min_p=0；不使用 不传 temperature greedy。
 - GLM-4-32B-0414：保留旧 Revision，读取其模型卡、tokenizer/chat template 和 generation_config。
 - GLM-Z1-32B-0414：查询并固定完整 40 位 Revision；检查 vLLM、Tokenizer、Chat Template 兼容性。
 - 任何模型的 Revision、template、runtime、generation config 不可用或漂移：HOLD，不自动换 pin。
 
 ### P3.2 代码要求
 
-- 将 SamplingParams 从全局固定 temperature=0 改成模型 profile 驱动。
-- Qwen profile 显式：enable_thinking=true, temperature=0.6, top_p=0.95, top_k=20, min_p=0。
+- 将 SamplingParams 从全局固定 不传 temperature 改成模型 profile 驱动。
+- Qwen profile 显式：enable_thinking=true, 不传 temperature.6, top_p=0.95, top_k=20, min_p=0。
 - token_preflight.encode_chat 增加向后兼容的显式 thinking 参数；旧调用语义不变，新 Qwen 调用显式设置 True。
 - GLM profiles 从对应固定 Revision 的官方 generation config 确定，不复制 Qwen 参数。
 - Checkpoint 保存 model profile、generation config SHA、rubric SHA、prompt SHA、model/tokenizer revision、runtime digest。
