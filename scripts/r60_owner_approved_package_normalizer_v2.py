@@ -79,6 +79,27 @@ def stop(reason: str) -> None:
     raise SystemExit(2)
 
 
+def official_verifier_reason(exc, adjudication_hold_type, evidence_hold_type) -> str:
+    """Return a safe stable reason for official-verifier failures."""
+    if isinstance(exc, adjudication_hold_type):
+        reason = str(exc)
+        allowed = {
+            "OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_CHECK_HOLD",
+            "OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD",
+            "OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_DIMENSION_HOLD",
+            "OWNER_SEMANTIC_CHECK_INVALID:UNCLASSIFIED",
+            "OWNER_SEMANTIC_REVIEWER_BINDING_HOLD",
+            "OWNER_SEMANTIC_REVIEWER_IDENTITY_MISMATCH",
+            "OWNER_SEMANTIC_CHECK_COVERAGE_HOLD",
+        }
+        return f"OFFICIAL_VERIFIER_{reason}" if reason in allowed else (
+            "OFFICIAL_VERIFIER_ADJUDICATION_HOLD"
+        )
+    if isinstance(exc, evidence_hold_type):
+        return "OFFICIAL_VERIFIER_EVIDENCE_HOLD"
+    return "OFFICIAL_VERIFIER_UNCLASSIFIED"
+
+
 def read_jsonl(raw: bytes, module, reason: str):
     return module._jsonl(raw, reason)
 
@@ -404,8 +425,10 @@ def main() -> int:
         manifest, pure_safe = adjudication.verify_owner_results(
             raw[PACKET], normalized_raw, semantic_checks_derived_raw
         )
-    except severity.EvidenceHold as exc:
-        stop(f"OFFICIAL_VERIFIER_{exc}")
+    except (adjudication.AdjudicationHold, severity.EvidenceHold) as exc:
+        stop(official_verifier_reason(
+            exc, adjudication.AdjudicationHold, severity.EvidenceHold
+        ))
     if (manifest.get("case_count") != 20 or manifest.get("semantic_check_count") != 60
             or pure_safe.get("status") != "OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED"):
         stop("PURE_VERIFIER_POSTCONDITION_HOLD")
