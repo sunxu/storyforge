@@ -1,5 +1,4 @@
 """Synthetic P2-B tests; never use Owner private data."""
-import copy
 import json
 
 import pytest
