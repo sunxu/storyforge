@@ -3,7 +3,7 @@
 日期：2026-11-08  
 目标分支：`r60/gold192-history-v3-adapter`  
 关联主线：PR #25 / Issue #26  
-当前状态（2026-11-09）：**P0 正式冻结 PASS；原 Rubric v2.0 的 P1 / P2 工程准备已完成，但 Owner 尚未开始裁决。Owner 随后要求从内容审核中排除数据来源/权利/隐私/数据使用授权/数据隔离证明，故现有 v2.0 盲审包已标记 SUPERSEDED，不得使用；v2.1 rubric、schema 描述、prompt 和新盲包回归正在更新。新 v2.1 包重新生成前，不开始 Owner 裁决。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
+当前状态（2026-11-09）：**P0 正式冻结 PASS；原 Rubric v2.0 的 P1 / P2 工程准备已完成，但 Owner 尚未开始裁决。Owner 随后要求从内容审核中排除数据来源/权利/隐私/数据使用授权/数据隔离证明，故现有 v2.0 盲审包已标记 SUPERSEDED，不得使用；v2.1 rubric、schema 描述、prompt、盲包来源元数据剥离和合成回归已完成；最新 GitHub Actions 全部 PASS（pytest 875 passed / 5 skipped / 42 subtests，Ruff、Gold Quality Pipeline、R60 Runtime、CPU dependency profiles、R58 scoped synthetic 均 PASS）。v2.0 包仍 SUPERSEDED；新 v2.1 包重新生成前，不开始 Owner 裁决。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
 
 ## 0. 执行目标与当前基线
 
