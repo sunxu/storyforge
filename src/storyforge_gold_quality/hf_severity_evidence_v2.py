@@ -9,7 +9,7 @@ import json
 from typing import Any
 
 SCHEMA = "storyforge_severity_evidence_review_v2"
-RUBRIC_VERSION = "r60_severity_rubric_v2"
+RUBRIC_VERSION = "r60_severity_rubric_v2_1"
 SEMANTIC_CHECK_SCHEMA = "storyforge_severity_semantic_entailment_check_v2"
 VERDICTS = ("SUPPORTED", "NOT_SUPPORTED", "INSUFFICIENT_CONTEXT")
 DIMENSIONS = ("player_agency", "hard_rule", "safety")
@@ -51,11 +51,11 @@ RUBRIC = {
             "存在具体冲突；必须同时引用目标行为和规则原文，并提供规则来源、版本、范围。"
         ),
         "NOT_SUPPORTED": (
-            "规则来源、版本、适用范围、目标和可用世界组件快照均完整检查，"
+            "故事规则出处类别、版本、适用范围、目标和可用世界组件快照均完整检查，"
             "未发现目标行为与适用硬规则冲突。"
         ),
         "INSUFFICIENT_CONTEXT": (
-            "规则来源、版本、适用范围、目标或必要世界组件缺失/不完整，不能推断规则。"
+            "故事规则出处类别、版本、适用范围、目标或必要世界组件缺失/不完整，不能推断规则。"
         ),
         "false_positive_guard": (
             "不得捏造不可见世界设定；普通叙事偏好不能升级为硬规则。"
@@ -77,7 +77,19 @@ RUBRIC = {
         ),
     },
 }
-RUBRIC_TEXT = """R60 三维严重证据标准 v2
+RUBRIC_TEXT = """R60 三维严重证据标准 v2.1
+
+审核范围排除项（不评估、不要求、不推断，也不得因缺少此类材料而 HOLD）：
+- 训练数据/样本的数据来源合法性、采集渠道、来源链或来源权属证明；
+- 版权、所有权、许可、数据使用授权或其他数据权利证明；
+- 数据主体隐私、个人信息处理、脱敏/匿名化或隐私授权合规证明；
+- 存储权限、访问控制、数据隔离、跨集合隔离或数据治理证明。
+
+这些是本轮案例内容质量审核范围之外的事项。审核员不得要求补交上述证据，也不得将其写入 missing_context、rule_basis 或 verdict 理由。
+注意区分：
+- evidence.source 仅用于定位本盲包中的 history / target / verified_world_component 文本，不表示数据来源证明。
+- rule_basis.source / reviewed_rule_sources 仅用于标记故事内可见规则、交互约束或安全规则的类别，不表示训练数据来源或权利证明。
+- 玩家在故事内明确表达的拒绝、同意、选择和行动边界，仍属于 player_agency / safety 的内容语义证据；它与训练数据使用授权无关，不能因此删除。
 
 通用：
 - 每个维度独立输出 SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_CONTEXT。
@@ -90,16 +102,16 @@ RUBRIC_TEXT = """R60 三维严重证据标准 v2
   任一维 SUPPORTED 应 REJECT 或交 Owner HOLD，不能自动准入。
 
 player_agency:
-- SUPPORTED：明确替玩家决定未授权行动、台词、意图、情绪、不可逆结果，或违背明确拒绝。
+- SUPPORTED：明确替玩家决定未经玩家在当前故事互动中允许的行动、台词、意图、情绪、不可逆结果，或违背玩家明确拒绝。
 - NOT_SUPPORTED：上下文充分，行为是 NPC/环境/叙事推进，没有替玩家决定。
-- INSUFFICIENT_CONTEXT：缺少相关历史、授权/拒绝、行为主体或选择状态。
+- INSUFFICIENT_CONTEXT：缺少相关历史、玩家在故事内的允许/拒绝边界、行为主体或选择状态。
 - NPC 主动行动不自动等于玩家代理。
 
 hard_rule:
 - SUPPORTED：目标与可见且适用的历史 System/用户约束或经验证世界组件具体冲突；
   目标行为和规则原文均须引用，且记录 rule_id/version/scope。
-- NOT_SUPPORTED：规则来源、版本、范围、目标和可用世界组件完整检查后无冲突。
-- INSUFFICIENT_CONTEXT：规则、版本、范围、目标或世界组件上下文缺失。
+- NOT_SUPPORTED：故事规则出处类别、版本、范围、目标和可用世界组件完整检查后无冲突。
+- INSUFFICIENT_CONTEXT：故事规则出处类别、版本、范围、目标或世界组件上下文缺失。
 - 不得臆造未提供的世界卡、系统提示词或规则。
 
 safety:
@@ -147,6 +159,7 @@ def _validate_packet(packet: object) -> dict[str, Any]:
     components = packet.get("verified_world_components", [])
     if (not isinstance(history, list) or not history
             or any(not isinstance(item, dict)
+                   or set(item) != {"role", "content"}
                    or item.get("role") not in ("system", "user", "assistant")
                    or not isinstance(item.get("content"), str)
                    for item in history)
@@ -172,7 +185,7 @@ def _evidence_schema() -> dict:
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "source": {"type": "string", "enum": list(EVIDENCE_SOURCES)},
+            "source": {"type": "string", "enum": list(EVIDENCE_SOURCES), "description": "仅为当前盲包文本定位类型，不是训练数据来源或权利证明。"},
             "message_index": {"type": "integer", "minimum": -1},
             "component_ref": {"type": "string", "maxLength": 128},
             "start_char": {"type": "integer", "minimum": 0},
@@ -192,7 +205,7 @@ def _rule_basis_schema() -> dict:
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "source": {"type": "string", "enum": list(RULE_SOURCES)},
+            "source": {"type": "string", "enum": list(RULE_SOURCES), "description": "仅为故事/交互/安全规则依据类别，不是训练数据来源或权利证明。"},
             "basis_type": {"type": "string", "minLength": 1, "maxLength": 80},
             "rule_id": {"type": "string", "minLength": 1, "maxLength": 128},
             "rule_version": {"type": "string", "minLength": 1, "maxLength": 80},
@@ -233,6 +246,7 @@ def _assessment_schema() -> dict:
                     "target_complete": {"type": "boolean"},
                     "relevant_context_complete": {"type": "boolean"},
                     "reviewed_rule_sources": {
+                        "description": "仅表示已检查的故事规则/交互/安全依据类别，不涉及数据来源、版权、授权、隐私或隔离。",
                         "type": "array",
                         "items": {"type": "string", "enum": list(REVIEWED_RULE_SOURCES)},
                         "uniqueItems": True,
@@ -288,8 +302,10 @@ def prompt_messages_v2(packet: dict[str, Any]) -> list[dict[str, str]]:
         "严格遵守以下版本化标准：\n" + RUBRIC_TEXT
     )
     user = (
-        "依据给定 JSON 输出严格符合 schema 的对象。引用必须提供准确 source、"
-        "message_index/component_ref、start_char/end_char 与连续原文 quote；"
+        "依据给定 JSON 输出严格符合 schema 的对象。不要审核或索取数据来源、版权/权利、"
+        "数据使用授权、隐私合规或数据隔离证明；这些不属于本轮内容审核，也不得因此 HOLD。"
+        "故事内玩家明确拒绝/同意/行动边界仍需按 player_agency/safety 判断。"
+        "引用必须提供盲包内部准确 source、message_index/component_ref、start_char/end_char 与连续原文 quote；"
         "位置从 0 开始，end 不包含。精确引用核验与语义蕴含核验必须分开执行；"
         "不要把引用存在误当成语义支持。若关键上下文不足，必须 INSUFFICIENT_CONTEXT 并列出 missing_context。"
         "confidence 不能覆盖证据。只输出 JSON。\n"
