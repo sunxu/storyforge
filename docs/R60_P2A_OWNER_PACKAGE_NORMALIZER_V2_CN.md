@@ -67,3 +67,7 @@ python3 scripts/r60_owner_approved_package_normalizer_v2.py \
 - gpu_started=false
 
 任何输入 SHA、行序、ID、维度、verdict、SAFE 或权限不匹配均停止，不得放宽 Rubric 或覆盖已有文件。
+
+### 新增 HOLD 说明：SUPPORTED rule_basis 类型不匹配
+
+实际诊断发现 4 条 SUPPORTED / Player Agency 的原始 `basis_type=player_agency`，但 Rubric v2.1 要求 `player_agency_boundary`。Normalizer v2 只允许对 Owner 已批准的 history completeness 字段和 locator 做规范化，不得擅自改写 rule_basis。脚本已增加显式 fail-closed guard：`SUPPORTED_RULE_BASIS_TYPE_REQUIRES_OWNER_REVIEW`。需 Owner 明确批准精确 4 条的派生副本类型标签映射后，才可新增版本化规范化步骤；原始文件不变。
