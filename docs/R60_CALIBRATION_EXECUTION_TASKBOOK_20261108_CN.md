@@ -13,8 +13,8 @@
 ## 0.1 当前接手状态快照（2026-11-09；以接手时实时 GitHub 核验为准）
 
 - PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
-- 最近核验 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
-- 该 HEAD 的五组 Actions 全部 completed/success：CI（42555517499）、Gold Quality Pipeline（42555517570）、R60 HF CPU dependency profiles（42555517597）、R58 scoped synthetic（42555517602）、R60 HF Runtime CI（42555517658）。接手时必须重新核验，不得将该结果挪用于新提交。
+- 历史核验快照：HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 当时全部 completed/success（CI 42555517499、Gold Quality Pipeline 42555517570、R60 HF CPU dependency profiles 42555517597、R58 scoped synthetic 42555517602、R60 HF Runtime CI 42555517658）。
+- 该快照之后又有交接文档校正提交，故 4190c6f 不再是当前 HEAD；**不得把此处 SHA/CI 当作当前分支状态**。新 Agent 开始工作时必须实时查询 PR #25 head，并对该精确 SHA 重新核验五组 Actions。
 - P0：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`，40/10 冻结完成，20/20 案例分层，Gold72 Story 可跨集合（共享 Story=5），跨集精确交集 0，唯一来源 50。
 - P1：Rubric v2.1、Schema、合成回归和旧 v3 兼容 = PASS。
 - P2：v2.0 包 SUPERSEDED；v2.1 新包尚未生成；Owner 20 条裁决和 60 条语义复核未开始。
