@@ -168,3 +168,59 @@ Owner 提交的真实 SAFE 回执：
 客户端顶层 `system` 兼容修复对应分支 HEAD `1d337afcea22a52ec0b553b730d3f9b2200fa5c5` 的五项 Actions 均 completed/success：CI、R60 HF Runtime CI、R60 HF CPU dependency profiles、Gold Quality Pipeline、R58 scoped synthetic。该结果验证代码/合成回归，不等于 Owner 内容裁决通过。
 
 **当前唯一下一步：Owner 对 60 项 Claude Advisory 与原始 20 条 Owner results / Rubric v2.1 逐项核对，形成自己的 60 项最终语义判断。** Claude 结论不能自动采纳、不能回填成 Owner semantic checks；逐项保留分歧和真实 HOLD。Owner 最终记录须使用正式七字段合同并由官方 verifier 验证。P2-A 在 Owner 60 项最终复核及官方 verifier PASS 前仍为 HOLD；不启动 P2-B、P3、GPU/HF Job、1000 条审核或 SFT。
+
+
+## Owner 实际复核操作指南（2026-11-09）
+
+### 推荐工作方式：分批逐项确认，不要求 Owner 手工编辑 JSONL
+
+Owner 最终复核必须覆盖 20 案例 × 3 维度 = 60 项。建议分为 12 组，每组 5 项；每项只讨论一个维度，避免将同一案例三个维度混为一个整体结论。
+
+每项复核时，按以下顺序阅读：
+1. 完整 `visible_history`，确认玩家此前的明确选择/拒绝/同意，以及必要故事上下文。
+2. `target_text`，确认本次实际被判断的行为和行为主体。
+3. `verified_world_components`，仅在 Hard Rule 判断中使用实际提供且适用的规则/世界组件；不得补造缺失规则。
+4. Owner 原始 verdict、该维全部 evidence、rule_basis、context_coverage、missing_context。
+5. Claude 第二模型 Advisory 的结论、理由和 unresolved_context。先独立形成自己的判断，再看 Claude 意见；若已看到 Claude 意见，必须特别避免顺从偏差，重新回到原文核对。
+
+### 每一项 Owner 必须回答
+
+- 我是否逐条检查了该维度全部 evidence，而不是只看一条有利引用？
+- 引文是否准确定位到可见历史/目标/已验证世界组件？
+- 引文的实际语义是否足以支持 Owner verdict？
+- 是否存在反向证据、被忽略的玩家边界、适用规则或必要上下文？
+- 我自己的最终语义复核结论是什么？理由是什么？
+
+### 结论选择
+
+| Owner conclusion | 适用情况 | 后续处理 |
+|---|---|---|
+| `SUPPORTS_VERDICT` | 全部 evidence 已检查，且语义上支持该维 Owner verdict | 该项语义复核可通过；不代表案例 Quality PASS |
+| `DOES_NOT_SUPPORT_VERDICT` | 引文存在但不蕴含 verdict，或证据之间冲突 | 保留 HOLD；不得在 semantic check 中静默改写原 verdict |
+| `INSUFFICIENT_CONTEXT` | 缺少判断所必需的历史、玩家边界、适用规则或安全情境 | 保留 HOLD；只有原 Owner verdict 也是 `INSUFFICIENT_CONTEXT` 时，才符合对应验证器分支 |
+
+若 Owner 认为原始 verdict 本身应改变，先停止该项的语义复核并单独记录“建议重新裁决”的原因；不得把改 verdict 与 semantic entailment check 混为一件事，也不得直接修改原始结果文件。由版本化修订流程另行处理。
+
+### 记录规则
+
+- 每个维度一条正式记录；共 60 条。
+- 外层恰好四字段：`calibration_id`、`dimension`、`reviewed_at_utc`、`check`。
+- 内层恰好七字段，严格遵守本任务书 8.23.2。
+- `reviewed_evidence_indexes` 必须完整覆盖该维全部 evidence 索引；不得只记录支持结论的引用。
+- `reasoning_summary` 必须写 Owner 自己的理由（12–1200 字符），不能复制 Claude 文本或只写“同意”。
+- `reviewer_role=OWNER_INDEPENDENT`；60 行使用同一个 8–128 字符 `reviewer_ref`。该字段是记录标识，不是密码学身份认证。
+- 每行 `reviewed_at_utc` 记录真实复核时间，UTC offset 为零。
+- 原始 packets、Owner results、Claude Advisory 均只读；正式 Owner checks 以 create-only 新文件写入，权限 0600，父目录 0700。
+
+### 如何与 ChatGPT 协作（可选）
+
+若 Owner 希望逐批在 ChatGPT 中查看，需由 Owner 主动上传以下三份私有材料：
+- `AI_CROSS_REVIEW_PACKETS_PRIVATE.jsonl`（包含盲化后的完整上下文和待核对 Owner verdict/evidence）；
+- `AI_CROSS_REVIEW_RESULTS_PRIVATE.jsonl`（Claude 60 项 Advisory）；
+- `RUBRIC_V2_1_PRIVATE.md`（本批绑定的 Rubric 副本）。
+
+**不要上传** `AI_CROSS_REVIEW_ID_MAP_PRIVATE.json`、原始 calibration ID 映射、P0 manifest、Locked20/Severe10 或任何第一模型历史 AI checks。上述三份文件足以按第二模型 blind_id 对齐上下文、Owner 依据和 Claude Advisory。若文件内容不完整或字段无法对齐，先 HOLD，不猜测映射。
+
+ChatGPT 可以整理每项证据、解释 Rubric、指出 Claude 与原证据的冲突并提出建议；但 ChatGPT 的建议仍是 AI 辅助。Owner 必须自己选择最终 conclusion，并亲自提供 reasoning。不得将 ChatGPT 输出自动标记为 Owner 复核。
+
+建议按 5 项一组进行交互。每组完成后由 Owner 明确确认 5 项结论及理由，再由本地工具生成对应正式记录；未确认项目保持未完成。完成 60 项后，运行官方 `scripts/r60_owner_adjudication_verify_v2.py`，如实保留所有 semantic HOLD。结构验证通过不等于语义全部通过。
