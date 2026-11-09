@@ -303,3 +303,12 @@ Gold72 40 条先分为 20 条规则开发集和 20 条锁定回归集；R60 10 �
 - GLM-4-32B-0414 官方模型卡：<https://huggingface.co/zai-org/GLM-4-32B-0414>
 - GLM-Z1-32B-0414 官方模型卡：<https://huggingface.co/zai-org/GLM-Z1-32B-0414>
 
+
+
+## 2026-11-09 审核范围修订：Rubric v2.1
+
+公开冻结标准见 [R60 Severity Evidence Rubric v2.1](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)。本轮不审核、不要求、不推断数据来源合法性、版权/权利、数据使用授权、隐私合规或数据隔离证明；缺少这些材料不得成为 missing_context、HOLD 或质量拒绝理由。
+
+盲包 evidence locator 仍用于定位包内原文；rule_basis 仍用于标记故事内可见规则、交互约束和安全规则类别。玩家在故事内的明确拒绝/同意/行动边界继续保留为内容语义证据。P0 hash/source binding、私有存储权限、HF Volume 权限和 Story 级训练 split 作为系统侧工程控制保留，不要求案例审核员提供相关证明。
+
+此前按 v2.0 生成的 Development-20 包已 SUPERSEDED，不得用于裁决。Owner review 尚未开始；需按任务书 8.21 在新目录重新生成 v2.1 包后，才可开始 Owner adjudication。
