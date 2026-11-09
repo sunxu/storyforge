@@ -366,8 +366,6 @@ def test_official_verifier_reason_reports_semantic_duplicate_hold():
 
 
 def test_keyset_diagnostic_reports_only_missing_and_extra_field_names():
-    import json
-
     expected = KEYSET_DIAG.EXPECTED_CHECK_KEYS
     check = {key: "x" for key in expected}
     del check["reviewer_ref"]
