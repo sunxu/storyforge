@@ -114,6 +114,35 @@ def normalize_results(results, packets, approved_pairs, dimensions):
     }
 
 
+def normalize_owner_approved_basis_types(results, approved_pairs) -> int:
+    """Normalize only the four explicitly approved derived-copy basis labels."""
+    expected_pairs = {
+        pair for pair, verdict in approved_pairs.items()
+        if pair[1] == "player_agency" and verdict == "SUPPORTED"
+    }
+    if len(expected_pairs) != 4:
+        stop("BASIS_TYPE_APPROVAL_SCOPE_MISMATCH")
+    normalized_pairs = set()
+    for result in results:
+        pair = (result.get("case_ref"), "player_agency")
+        if pair not in expected_pairs:
+            continue
+        assessment = result.get("assessments", {}).get("player_agency", {})
+        basis = assessment.get("rule_basis")
+        if (assessment.get("verdict") != "SUPPORTED"
+                or not isinstance(basis, list) or not basis):
+            stop("BASIS_TYPE_NORMALIZATION_PRECONDITION_HOLD")
+        if any(not isinstance(item, dict) or item.get("basis_type") != "player_agency"
+               for item in basis):
+            stop("BASIS_TYPE_NORMALIZATION_SOURCE_LABEL_MISMATCH")
+        for item in basis:
+            item["basis_type"] = "player_agency_boundary"
+        normalized_pairs.add(pair)
+    if normalized_pairs != expected_pairs:
+        stop("BASIS_TYPE_NORMALIZATION_PAIR_SET_MISMATCH")
+    return len(normalized_pairs)
+
+
 def validate_supported_basis_types(results, dimensions) -> None:
     """Fail closed when a SUPPORTED rule-basis label does not match Rubric v2.1."""
     expected = {
@@ -324,6 +353,11 @@ def main() -> int:
     }:
         stop("NORMALIZATION_COUNT_HOLD")
 
+    basis_type_normalized_count = normalize_owner_approved_basis_types(
+        normalized, approved_pairs
+    )
+    if basis_type_normalized_count != 4:
+        stop("BASIS_TYPE_NORMALIZATION_COUNT_HOLD")
     validate_supported_basis_types(normalized, severity.DIMENSIONS)
     normalized_raw = b"".join(adjudication.canonical(row) + b"\n" for row in normalized)
     try:
@@ -343,6 +377,20 @@ def main() -> int:
         "approved_recommendation_count": 39,
         "approved_dimensions": {"player_agency": 20, "safety": 19, "hard_rule": 0},
         "approved_original_verdicts": {"NOT_SUPPORTED": 35, "SUPPORTED": 4},
+        "basis_type_normalization": {
+            "owner_approved": True,
+            "approved_pair_count": 4,
+            "normalized_pair_count": basis_type_normalized_count,
+            "dimension": "player_agency",
+            "from": "player_agency",
+            "to": "player_agency_boundary",
+            "derived_copy_only": True,
+            "original_results_modified": False,
+            "other_rule_basis_fields_modified": False,
+            "verdicts_modified": False,
+            "evidence_modified": False,
+            "semantic_checks_modified": False,
+        },
         "decision": {
             "history_complete": True,
             "verdict_changes": 0,
@@ -420,6 +468,7 @@ def main() -> int:
         "status": safe.get("status"),
         "output_dir": str(output),
         **counts,
+        "basis_type_normalized": basis_type_normalized_count,
         "cases_verified": safe.get("cases_verified"),
         "semantic_checks_verified": safe.get("semantic_checks_verified"),
         "semantic_supported_count": safe.get("semantic_supported_count"),
