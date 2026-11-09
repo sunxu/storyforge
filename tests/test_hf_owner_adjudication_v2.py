@@ -99,7 +99,7 @@ def test_build_package_exposes_only_fresh_development20_packets():
     assert not old_ids.intersection({item["calibration_id"] for item in packets})
     assert all(item["schema"] == p2.PACKET_SCHEMA for item in packets)
     assert all(len(item["visible_history"]) == 3 for item in packets)
-    assert all(item["visible_history"][0]["source_turn"] > 0 for item in packets)
+    assert all(set(message) == {"role", "content"} for item in packets for message in item["visible_history"])
     assert all(item["verified_world_components"] == [] for item in packets)
     assert not (p2.FORBIDDEN_PACKET_KEYS & set(p2._walk_keys(packets)))
     assert len(owner_map["mapping"]) == 20
@@ -109,6 +109,8 @@ def test_build_package_exposes_only_fresh_development20_packets():
     assert safe["old_a_b_c_judgments_exposed"] is False
     assert safe["private_values_emitted"] is False
     assert "不要打开 Owner ID Map" in instructions.decode("utf-8")
+    assert "数据使用授权" in instructions.decode("utf-8")
+    assert "玩家明确表达的拒绝、同意和行动边界仍是 Player Agency / Safety 的内容证据" in instructions.decode("utf-8")
 
 
 def test_build_package_rejects_source_packet_pin_mismatch():
@@ -196,7 +198,7 @@ def test_verify_owner_results_requires_exact_20_cases_and_60_semantic_checks():
     for packet in packets:
         result = {
             "schema": "storyforge_severity_evidence_review_v2",
-            "rubric_version": "r60_severity_rubric_v2",
+            "rubric_version": p2.severity.RUBRIC_VERSION,
             "case_ref": packet["calibration_id"],
             "assessments": {},
         }
@@ -389,3 +391,18 @@ def test_prepare_dry_run_validates_output_directory_without_writing(tmp_path):
         p2.prepare(
             p0_path, source_path, bad_parent / "new-output", repo_root, dry_run=True
         )
+
+
+def test_build_package_strips_source_turn_metadata_from_reviewer_packets():
+    manifest, source_raw = fixture_data()
+    packet_raw, _, _, _, _ = p2.build_package(
+        manifest, source_raw,
+        token_factory=fresh_token_factory(),
+        shuffle=lambda values: None,
+    )
+    packets = [json.loads(line) for line in packet_raw.splitlines()]
+    assert all(
+        set(message) == {"role", "content"}
+        and "source_turn" not in message
+        for packet in packets for message in packet["visible_history"]
+    )
