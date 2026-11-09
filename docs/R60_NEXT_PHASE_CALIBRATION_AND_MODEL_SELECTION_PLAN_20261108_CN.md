@@ -3,7 +3,7 @@
 日期：2026-11-08  
 目标分支：`r60/gold192-history-v3-adapter`  
 关联主线：PR #25 / Issue #26  
-当前状态（2026-11-09）：**P0 正式冻结 PASS；P1 三维严重证据标准 v2、Schema、合成回归及旧 v3/v1 兼容测试 PASS；P2 Development-20 Owner 盲裁决包生成器、20 verdict + 60 semantic-check 回执验证器已实现；最终 GitHub Actions 全部 PASS（pytest 870 passed / 5 skipped / 42 subtests，CPU dependency profiles PASS）；Owner Mac dry-run 可执行（输出路径也纳入 dry-run 门禁），但尚未运行；真实 Owner 裁决待执行。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
+当前状态（2026-11-09）：**P0 正式冻结 PASS；原 Rubric v2.0 的 P1 / P2 工程准备已完成，但 Owner 尚未开始裁决。Owner 随后要求从内容审核中排除数据来源/权利/隐私/数据使用授权/数据隔离证明，故现有 v2.0 盲审包已标记 SUPERSEDED，不得使用；v2.1 rubric、schema 描述、prompt 和新盲包回归正在更新。新 v2.1 包重新生成前，不开始 Owner 裁决。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
 
 ## 0. 执行目标与当前基线
 
@@ -119,9 +119,9 @@
 |---|---|
 | 任一维 SUPPORTED | 严重问题成立，REJECT/HOLD 依政策处置，不准入 |
 | 任一维 INSUFFICIENT_CONTEXT | HOLD，不准入 |
-| 三维均 NOT_SUPPORTED | 仅表示这三项严重问题未被证实；仍须通过六维文学质量、来源、隐私、R50 隔离和世界组件证据门槛 |
+| 三维均 NOT_SUPPORTED | 仅表示这三项严重问题未被证实；仍须通过六维文学质量和适用的故事世界组件/历史输入质量门槛。数据来源、版权/权利、数据使用授权、隐私合规和数据隔离证明不属于案例审核证据，不得因此 HOLD |
 
-**NOT_SUPPORTED 绝不等于 Quality PASS。**
+**NOT_SUPPORTED 绝不等于 Quality PASS。** 数据来源/权利/隐私/数据使用授权/隔离证明不属于本轮内容审核证据；P0 manifest/hash、私有目录权限、HF Volume 边界和训练 split 等仍是系统侧工程安全控制，不要求案例审核员收集或判断。
 
 ## 3. 独立 Owner 证据裁决参照（P2）
 
@@ -271,8 +271,8 @@ Gold72 40 条先分为 20 条规则开发集和 20 条锁定回归集；R60 10 �
 3. 先输出完整聚合 SAFE，再由 Owner 在私有环境对分歧、严重问题和 INSUFFICIENT_CONTEXT 做定点复核；
 4. 所有 SUPPORTED 严重问题和未解决的 INSUFFICIENT_CONTEXT 不准入；
 5. NOT_SUPPORTED 只解除对应严重 flag，不自动授予 Quality PASS；
-6. 六维质量、来源完整性、R50 完整排除、隐私边界、世界组件证据分别验收；
-7. 按 Story 维度进行 train/validation/test 隔离，避免同一 Story 跨集合泄漏；
+6. 六维文学质量与故事世界组件/历史输入证据按内容标准验收；不要求审核员提供数据来源合法性、版权/权利、数据使用授权、隐私合规或数据隔离证明，也不得把其缺失写入 missing_context 或作为案例 HOLD 理由；
+7. Story 级 train/validation/test 切分仍作为系统侧训练数据防泄漏控制执行，不属于案例审核员需要提供的内容证据；
 8. 生成可复用的 Quality-v1 admission receipt 和训练清单。
 
 不得为了达到目标数量降低质量门槛；若 1,000 条中只有少量 PASS，按真实结果接受，不合成、不回填、不篡改 Gold192。
