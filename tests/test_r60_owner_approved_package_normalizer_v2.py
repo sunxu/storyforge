@@ -112,40 +112,55 @@ def test_normalize_results_rejects_target_locator_shape_mismatch():
         raise AssertionError("unexpected target locator was accepted")
 
 
-def test_supported_basis_type_mismatch_fails_closed_without_rewriting_label():
+def test_owner_approved_basis_type_normalization_changes_only_four_derived_pairs():
     dimensions = ("player_agency", "hard_rule", "safety")
-    case_id = "a" * 32
-    result = {
-        "case_ref": case_id,
-        "assessments": {
-            "player_agency": _assessment("SUPPORTED"),
-            "hard_rule": _assessment("NOT_SUPPORTED"),
-            "safety": _assessment("NOT_SUPPORTED"),
-        },
-    }
-    result["assessments"]["player_agency"]["rule_basis"] = [{
-        "source": "interaction_contract",
-        "basis_type": "player_agency",
-        "rule_id": "boundary",
-        "rule_version": "v1",
-        "scope": "player boundary",
-        "applicability": "APPLIES",
-        "coverage_complete": True,
-    }]
-    normalized, _ = MODULE.normalize_results(
-        [result],
-        [_packet()],
-        {(case_id, "player_agency"): "SUPPORTED"},
-        dimensions,
-    )
-    actual_type = normalized[0]["assessments"]["player_agency"]["rule_basis"][0]["basis_type"]
-    assert actual_type == "player_agency"
+    case_ids = ["a" * 32, "b" * 32, "c" * 32, "d" * 32]
+    results = []
+    for case_id in case_ids:
+        result = {
+            "case_ref": case_id,
+            "assessments": {
+                "player_agency": _assessment("SUPPORTED"),
+                "hard_rule": _assessment("NOT_SUPPORTED"),
+                "safety": _assessment("NOT_SUPPORTED"),
+            },
+        }
+        result["assessments"]["player_agency"]["rule_basis"] = [{
+            "source": "interaction_contract",
+            "basis_type": "player_agency",
+            "rule_id": "boundary",
+            "rule_version": "v1",
+            "scope": "player boundary",
+            "applicability": "APPLIES",
+            "coverage_complete": True,
+        }]
+        results.append(result)
+
+    original = copy.deepcopy(results)
+    approvals = {(case_id, "player_agency"): "SUPPORTED" for case_id in case_ids}
+    normalized_count = MODULE.normalize_owner_approved_basis_types(results, approvals)
+
+    assert normalized_count == 4
+    assert results == original
+    for result in results:
+        basis = result["assessments"]["player_agency"]["rule_basis"][0]
+        assert basis["basis_type"] == "player_agency_boundary"
+        assert basis["rule_id"] == "boundary"
+        assert basis["rule_version"] == "v1"
+        assert basis["scope"] == "player boundary"
+        assert basis["applicability"] == "APPLIES"
+        assert basis["coverage_complete"] is True
+        assert result["assessments"]["player_agency"]["verdict"] == "SUPPORTED"
+    MODULE.validate_supported_basis_types(results, dimensions)
+
+
+def test_basis_type_normalization_rejects_approval_scope_other_than_four():
     try:
-        MODULE.validate_supported_basis_types(normalized, dimensions)
+        MODULE.normalize_owner_approved_basis_types([], {})
     except SystemExit:
         pass
     else:
-        raise AssertionError("noncanonical supported basis type was silently accepted")
+        raise AssertionError("basis type normalization accepted an unapproved scope")
 
 
 def test_supported_basis_type_accepts_exact_rubric_v21_label():
