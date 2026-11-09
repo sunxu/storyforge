@@ -174,7 +174,7 @@ def main():
             last=None
             for attempt in range(1,a.max_attempts+1):
                 try:
-                    response,meta=proxy_call(url,key,a.model,batch,rubric,review_prompt,a.timeout,a.max_tokens,a.output_dir/f"BATCH_{bn:02d}_HTTP_ERROR_PRIVATE.json")
+                    response,meta=proxy_call(url,key,a.model,batch,rubric,review_prompt,a.timeout,a.max_tokens,a.output_dir/f"BATCH_{bn:02d}_ATTEMPT_{attempt:02d}_HTTP_ERROR_PRIVATE.json")
                     checked=validate_output(response,exp)
                     write_private(rawp,response.encode())
                     write_private(rp,b"".join(canon(x)+b"\\n" for x in checked))
