@@ -151,3 +151,20 @@ Owner 提供的 `GET https://4router.net/v1/models` 返回列表中明确包含 
 Owner 的本地 HTTP 400 message 明确指出：`messages.0` 不允许作为初始 system prompt，必须使用顶层 `system` 参数。已修复客户端请求体：审核指令放入顶层 `system`，`messages` 仅包含 user 消息；模型、批次内容、max_tokens、stream=false 和不发送 temperature 的约束保持不变。新增合成测试，断言顶层 system 存在且 messages 不含 system role。
 
 下一步必须先更新 Owner Mac 执行 worktree 至包含该修复的提交，并运行本地测试/只读检查。随后使用原输出目录 `--resume`：失败批次的旧 HTTP error 文件保留，批次 1 会重新请求；任何已完成且验证通过的批次继续复用。当前修复尚未经过 CI，也尚未证明真实请求成功。未经再次检查，不要扩大外发范围。
+
+
+## 2026-11-09：Claude Opus 5.5 第二模型交叉审核调用完成（Advisory only）
+
+Owner 提交的真实 SAFE 回执：
+
+- status：`CROSS_REVIEW_MODEL_CALLS_COMPLETE__ADVISORY_ONLY`
+- model：`claude-opus-5-5`
+- cases：20；dimensions：60；rows_validated：60；batches：4/4
+- reviewer_type：`AI_CROSS_REVIEW_ADVISORY_NOT_OWNER`
+- private_data_egress：true（仅此前明确授权的 Development-20 盲包发往 4Router）
+- owner_review_completed：false
+- gpu_started：false；training_authorized：false；private_values_emitted：false
+
+客户端顶层 `system` 兼容修复对应分支 HEAD `1d337afcea22a52ec0b553b730d3f9b2200fa5c5` 的五项 Actions 均 completed/success：CI、R60 HF Runtime CI、R60 HF CPU dependency profiles、Gold Quality Pipeline、R58 scoped synthetic。该结果验证代码/合成回归，不等于 Owner 内容裁决通过。
+
+**当前唯一下一步：Owner 对 60 项 Claude Advisory 与原始 20 条 Owner results / Rubric v2.1 逐项核对，形成自己的 60 项最终语义判断。** Claude 结论不能自动采纳、不能回填成 Owner semantic checks；逐项保留分歧和真实 HOLD。Owner 最终记录须使用正式七字段合同并由官方 verifier 验证。P2-A 在 Owner 60 项最终复核及官方 verifier PASS 前仍为 HOLD；不启动 P2-B、P3、GPU/HF Job、1000 条审核或 SFT。
