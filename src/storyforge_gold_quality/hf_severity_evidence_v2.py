@@ -185,7 +185,11 @@ def _evidence_schema() -> dict:
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "source": {"type": "string", "enum": list(EVIDENCE_SOURCES), "description": "仅为当前盲包文本定位类型，不是训练数据来源或权利证明。"},
+            "source": {
+                "type": "string",
+                "enum": list(EVIDENCE_SOURCES),
+                "description": "仅为当前盲包文本定位类型，不是训练数据来源或权利证明。",
+            },
             "message_index": {"type": "integer", "minimum": -1},
             "component_ref": {"type": "string", "maxLength": 128},
             "start_char": {"type": "integer", "minimum": 0},
@@ -205,7 +209,11 @@ def _rule_basis_schema() -> dict:
         "type": "object",
         "additionalProperties": False,
         "properties": {
-            "source": {"type": "string", "enum": list(RULE_SOURCES), "description": "仅为故事/交互/安全规则依据类别，不是训练数据来源或权利证明。"},
+            "source": {
+                "type": "string",
+                "enum": list(RULE_SOURCES),
+                "description": "仅为故事/交互/安全规则依据类别，不是训练数据来源或权利证明。",
+            },
             "basis_type": {"type": "string", "minLength": 1, "maxLength": 80},
             "rule_id": {"type": "string", "minLength": 1, "maxLength": 128},
             "rule_version": {"type": "string", "minLength": 1, "maxLength": 80},
