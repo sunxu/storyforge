@@ -1190,3 +1190,24 @@ test "$(git rev-parse HEAD)" = "24eb9f78de6f6e953d84a150d65f020da6ddb4ef"
 运行命令见 `docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V1_CN.md`。必须显式传入 `--owner-approved`；输出目录必须是此前不存在的新目录。成功验收条件：20 cases、60 semantic checks、35 history assertions、60 target locators、20 history locators；官方 CLI verifier 成功生成 SAFE/Manifest；semantic HOLD 原样保留；原始输入 SHA 不变；`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
 
 **当前实际阻塞仅是这六份 Owner 私有输入尚未由本会话读取/执行。** ChatGPT 已完成 GitHub 代码与 CI 交付；不得伪称本地私有包已规范化或 P2-A 已 PASS。收到真实 SAFE 和 SHA 回执后再更新阶段状态。P2-B、P3、GPU、HF Job、SFT 均不在本次授权范围。
+
+
+---
+
+## 0.3 2026-11-09 Owner 追加采纳 SUPPORTED 4/4；P2-A normalizer v2
+
+Owner 已明确回复“采纳”4 条 SUPPORTED / Player Agency 的 AI Advisory。批准范围现为精确 39 个 case-dimension pair：
+- NOT_SUPPORTED 35 条：Player Agency 16、Safety 19，保持原 verdict。
+- SUPPORTED 4 条：Player Agency 4，保持原 verdict。
+- 39 条仅将 `context_coverage.history_complete` 从 false 改为 true；verdict changes=0，semantic rechecks=0。
+
+新增可复用 v2（不覆盖 v1）：
+- `scripts/r60_owner_approved_package_normalizer_v2.py`
+- `tests/test_r60_owner_approved_package_normalizer_v2.py`
+- `docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V2_CN.md`
+
+v2 同时校验 35-row AI Advisory + SAFE、4-row worksheet + AI Advisory + SAFE，精确绑定 4 条原始结果行 [5, 6, 11, 19]、case ID、assessment 和 semantic check；对 39 个精确 pair 应用 history completeness 确认。原始 60 semantic checks 原样复制，原版 Rubric/Verifier 不修改。输入六份关键 JSONL 的 SHA pin 已在 v2 Runbook 固定。输出使用全新目录 `owner-adjudication-dev20-rubric-v2-1-20261109-owner-approved-v2`。
+
+**v2 代码已推送当前工作分支，等待 GitHub Actions 验证；在 CI PASS 前不得运行真实私有包。** 运行成功门槛仍是 20 results / 60 checks、39 history confirmations、60 target locator、20 history locator；SAFE 必须保留所有原始 semantic HOLD，quality_v1_admitted=0、training_authorized=false、gpu_started=false。
+
+P2-A 尚未 PASS；Owner 的 39 项批准已完成，但正式独立副本及官方 CLI verifier 仍待执行。不得启动 P2-B、P3、GPU/HF Job 或 SFT。
