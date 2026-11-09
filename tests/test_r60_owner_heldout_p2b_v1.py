@@ -1,0 +1,133 @@
+"""Synthetic P2-B tests; never use Owner private data."""
+import copy
+import json
+
+import pytest
+
+from storyforge_gold_quality import hf_owner_adjudication_v2 as base
+from storyforge_gold_quality import hf_owner_heldout_p2b_v1 as heldout
+
+
+def fixture_inputs():
+    gold_sources = []
+    locked = []
+    development = []
+    for i in range(40):
+        old_id = f"gold_{i:02d}"
+        target = f"合成回复{i}"
+        digest = base.sha(target.encode())
+        case = {
+            "blind_case_id": old_id, "target_sha256": digest,
+            "history": [{"role": "system", "content": "合成规则"}],
+            "current_user_text": "下一步？",
+            "target_assistant_text": target,
+        }
+        gold_sources.append(case)
+        entry = {"blind_case_id": old_id, "target_sha256": digest,
+                 "split": "development" if i < 20 else "locked_regression"}
+        (development if i < 20 else locked).append(entry)
+    gold_raw = base.canonical({
+        "schema": base.SOURCE_PACKET_SCHEMA, "reviewer": "C", "cases": gold_sources
+    }) + b"\n"
+    gold = {
+        "schema": base.P0_GOLD_SCHEMA,
+        "status": "GOLD72_CALIBRATION_MANIFEST_FROZEN",
+        "candidate_count": 40, "development_case_count": 20,
+        "locked_regression_case_count": 20, "story_disjoint": False,
+        "source_pins_sha256": {"c_blind": base.sha(gold_raw)},
+        "development_cases": development, "locked_regression_cases": locked,
+        "quality_v1_admitted": 0, "training_authorized": False,
+    }
+    severe_packets = []
+    severe_cases = []
+    for i in range(10):
+        old_id = f"severe_{i:02d}"
+        severe_cases.append({"calibration_id": old_id})
+        severe_packets.append({
+            "schema": "storyforge_r60_pilot10_c_blind_packet_private_v1",
+            "calibration_id": old_id,
+            "visible_history": [{"role": "user", "content": "测试？"}],
+            "target_text": f"合成严重案例{i}",
+            "target_semantics": {"prior_label": "MUST_NOT_LEAK"},
+        })
+    severe_raw = b"".join(base.canonical(x) + b"\n" for x in severe_packets)
+    severe = {
+        "schema": "storyforge_r60_severe10_calibration_manifest_private_v1",
+        "status": "R60_SEVERE10_CALIBRATION_MANIFEST_FROZEN",
+        "candidate_count": 10, "unique_source_cases": 10,
+        "source_pins_sha256": {"c_packets": base.sha(severe_raw)},
+        "cases": severe_cases,
+        "quality_v1_admitted": 0, "training_authorized": False,
+    }
+    dedup = {
+        "schema": "storyforge_r60_calibration_crossset_dedup_private_v1",
+        "status": "CROSSSET_EXACT_DEDUP_PASS", "gold_case_count": 40,
+        "pilot_case_count": 10, "within_gold_unique": 40,
+        "within_pilot_unique": 10, "exact_history_overlap_count": 0,
+        "exact_target_overlap_count": 0,
+        "exact_full_history_target_overlap_count": 0,
+    }
+    return gold, severe, dedup, gold_raw, severe_raw
+
+
+def build(inputs):
+    n = iter(range(30))
+    return heldout.build_package(
+        *inputs, token_factory=lambda: f"{next(n):032x}",
+        shuffle=lambda rows: rows.reverse()
+    )
+
+
+def test_p2b_exact_30_90_contract_and_no_label_leak():
+    raw, mapping, manifest, safe = build(fixture_inputs())
+    packets = [json.loads(line) for line in raw.splitlines()]
+    assert len(packets) == 30
+    assert len({p["calibration_id"] for p in packets}) == 30
+    assert all(set(p) == {"schema", "calibration_id", "visible_history",
+                           "target_text", "verified_world_components"} for p in packets)
+    assert all(p["schema"] == heldout.PACKET_SCHEMA for p in packets)
+    assert b"MUST_NOT_LEAK" not in raw
+    assert b"gold_" not in raw and b"severe_" not in raw
+    assert mapping["case_count"] == manifest["case_count"] == 30
+    assert safe["semantic_checks_expected"] == 90
+    assert safe["owner_review_started"] is False
+    assert safe["training_authorized"] is False
+
+
+@pytest.mark.parametrize("field", ["exact_history_overlap_count",
+                                     "exact_target_overlap_count",
+                                     "exact_full_history_target_overlap_count"])
+def test_p2b_dedup_must_fail_closed(field):
+    inputs = list(fixture_inputs())
+    inputs[2][field] = 1
+    with pytest.raises(base.AdjudicationHold, match="P2B_P0_FREEZE_BINDING_HOLD"):
+        build(inputs)
+
+
+def test_p2b_source_pin_and_split_must_fail_closed():
+    inputs = list(fixture_inputs())
+    inputs[1]["source_pins_sha256"]["c_packets"] = "0" * 64
+    with pytest.raises(base.AdjudicationHold, match="P2B_P0_FREEZE_BINDING_HOLD"):
+        build(inputs)
+    inputs = list(fixture_inputs())
+    inputs[0]["locked_regression_cases"][0]["split"] = "development"
+    with pytest.raises(base.AdjudicationHold, match="P2B_FROZEN_COHORT_COUNT_HOLD"):
+        build(inputs)
+
+
+def test_p2b_rejects_duplicate_blind_ids():
+    inputs = fixture_inputs()
+    with pytest.raises(base.AdjudicationHold, match="P2B_NEW_BLIND_ID_INVALID"):
+        heldout.build_package(*inputs, token_factory=lambda: "0" * 32)
+
+
+def test_p2b_verify_fails_closed_for_missing_owner_results():
+    raw, *_ = build(fixture_inputs())
+    with pytest.raises(base.AdjudicationHold, match="OWNER_RESULT_SET_CARDINALITY_HOLD"):
+        heldout.verify(raw, b'{"empty":true}\n', b'{"empty":true}\n')
+
+
+def test_p2a_default_cardinality_unchanged():
+    with pytest.raises(base.AdjudicationHold, match="OWNER_RESULT_SET_CARDINALITY_HOLD"):
+        base.verify_owner_results(b'{"empty":true}\n', b'{"empty":true}\n',
+                                  b'{"empty":true}\n')
