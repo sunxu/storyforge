@@ -191,3 +191,11 @@ Owner 正式验证返回 `OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_INVALID:CHECK_K
 - 输入解析错误行号。
 
 脚本不修改文件。请先在 Owner Mac 更新同一个 runner worktree 到包含该脚本的最新 HEAD，再对原始 semantic checks 文件运行诊断。依据 SAFE 结果再决定如何在派生副本修复。任何字段变更都必须保留原始文件不变；不能自动删除未知字段，也不能伪造或重写语义结论。
+
+
+
+### 权威更正：AI 生成的 60 条 Semantic checks 不得回溯绑定为 Owner
+
+Owner 已确认原 60 条 semantic checks 是 Owner AI 生成，未经 Owner 逐项最终确认。此前本文件中“Owner 已完成 60 项独立语义复核”以及 normalizer 可回溯添加 `OWNER_INDEPENDENT` / reviewer_ref 的说明作废。Normalizer v2 已改为只接受真实输入中明确存在的 `OWNER_INDEPENDENT` 和一致 reviewer_ref；不再补写身份字段。原 AI 文件保持冻结，不能作为官方 Owner semantic checks。
+
+第二模型交叉审核采用独立盲包工具 `scripts/r60_p2a_second_model_cross_review.py`，详见 `docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`。交叉审核只作 AI Advisory，不能替代 Owner 最终复核。当前 P2-A 仍 HOLD。
