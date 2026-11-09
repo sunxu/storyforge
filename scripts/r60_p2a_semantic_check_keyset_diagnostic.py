@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Safe, read-only keyset diagnostic for private R60 P2-A semantic checks.
 
 Only emits line numbers, field names, counts, and the source file SHA-256.
