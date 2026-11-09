@@ -266,7 +266,7 @@ Schema：{severity.SCHEMA}
 - `{PACKET_NAME}`
 - 本说明
 - `{SCHEMA_NAME}`
-- 已冻结的公开 Rubric v2.1
+- `docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md`（公开 Rubric v2.1）
 
 不要打开 Owner ID Map、P0 Gold manifest、Gold72 C 旧结果、A V3/B2 结果、历史 Owner resolution 或任何旧 checkpoint。不要查看 Locked Regression 20 或 R60 Severe10。
 
