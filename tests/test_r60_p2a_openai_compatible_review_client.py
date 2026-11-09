@@ -78,3 +78,17 @@ def test_remote_endpoint_requires_https_and_normalizes_openai_path():
     assert client.endpoint("https://proxy.example/api/v1/chat/completions") == "https://proxy.example/api/v1/chat/completions"
     with pytest.raises(client.Hold, match="HTTPS_REQUIRED"):
         client.endpoint("http://proxy.example/v1")
+
+
+def test_claude_request_uses_top_level_system_not_system_message():
+    payload = client.build_request_payload(
+        "claude-opus-5-5",
+        "review these cases",
+        "independent reviewer prompt",
+        12000,
+    )
+    assert payload["system"].startswith("independent reviewer prompt")
+    assert payload["messages"] == [{"role": "user", "content": "review these cases"}]
+    assert all(message["role"] != "system" for message in payload["messages"])
+    assert payload["stream"] is False
+    assert "temperature" not in payload
