@@ -137,12 +137,13 @@ def test_owner_approved_basis_type_normalization_changes_only_four_derived_pairs
         results.append(result)
 
     original = copy.deepcopy(results)
+    derived = copy.deepcopy(results)
     approvals = {(case_id, "player_agency"): "SUPPORTED" for case_id in case_ids}
-    normalized_count = MODULE.normalize_owner_approved_basis_types(results, approvals)
+    normalized_count = MODULE.normalize_owner_approved_basis_types(derived, approvals)
 
     assert normalized_count == 4
     assert results == original
-    for result in results:
+    for result in derived:
         basis = result["assessments"]["player_agency"]["rule_basis"][0]
         assert basis["basis_type"] == "player_agency_boundary"
         assert basis["rule_id"] == "boundary"
@@ -151,7 +152,7 @@ def test_owner_approved_basis_type_normalization_changes_only_four_derived_pairs
         assert basis["applicability"] == "APPLIES"
         assert basis["coverage_complete"] is True
         assert result["assessments"]["player_agency"]["verdict"] == "SUPPORTED"
-    MODULE.validate_supported_basis_types(results, dimensions)
+    MODULE.validate_supported_basis_types(derived, dimensions)
 
 
 def test_basis_type_normalization_rejects_approval_scope_other_than_four():
