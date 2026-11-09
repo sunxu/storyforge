@@ -20,6 +20,7 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（当前 Open / Draft；
 - Gold72 分层按案例，不要求 Story 互斥：Development Story=5、Locked Story=6、shared Story=5、`story_disjoint=false`，这是 Owner 已确认的预期结果。
 - P1：Rubric v2.1、Schema、prompt、合成回归及旧 v3 兼容 = PASS。Rubric version 为 `r60_severity_rubric_v2_1`。
 - P2-A：v2.0 六文件包已 SUPERSEDED；v2.1 Development-20 新包尚未生成；Owner 20 条裁决与 60 条语义复核未开始。
+- P2-B：Locked20 + Severe10 的 30 条 held-out Owner results / 90 条 semantic checks 尚未准备。
 - P2-B：Locked20 + Severe10 的 30 条 held-out Owner reference labels / 90 条语义复核尚未准备；这是 P4 前置，必须在 P2-A 与 Rubric/prompt 冻结后单独实现和验收。
 - Quality-v1 admitted=0；training_authorized=false；无 GPU 推理、1000 条批量审核或 SFT 授权。
 
@@ -27,17 +28,18 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（当前 Open / Draft；
 
 ## 1. 任务目标
 
-继续完成 StoryForge R60 Quality 校准与模型选型：从已完成的 P0/P1 接手，完成 P2 Owner Development-20 盲裁决与 60 条语义复核，随后推进 P3 三模型固定与 CPU 预检；P4/P6 仍须另行授权。最终目标仍是为冻结的 1,000 条候选建立可信的双模型审核结果。
+继续完成 StoryForge R60 Quality 校准与模型选型：从已完成的 P0/P1 接手，完成 P2-A Development-20 的 20 条裁决 + 60 条语义复核，并完成 P2-B Locked20 + Severe10 的 30 条 held-out Owner 参考标签 + 90 条语义复核；随后推进 P3 三模型固定与 CPU 预检。P4/P6 仍须另行授权。最终目标仍是为冻结的 1,000 条候选建立可信的双模型审核结果。
 
 当前执行顺序：
 
 1. **P0 已 PASS**：Gold72 40 条与 R60 Severe10 10 条已冻结，20/20 案例分层及跨集精确去重完成；不得重做。
 2. **P1 已 PASS**：当前标准为 `r60_severity_rubric_v2_1`；不得退回旧 v2.0。
-3. **当前 P2**：生成全新的 v2.1 Development-20 盲审包，完成 Owner 20 条三维裁决 + 60 条语义蕴含复核，并运行私有验证器。
-4. **P3**：固定 Qwen3-32B、GLM-4-32B-0414、GLM-Z1-32B-0414 的完整 Revision/profile，完成 CPU/Tokenizer/Chat Template/Schema 预检。
-5. **P4**：30 条严格配对三模型 Pilot，共 90 个独立结果；GPU 必须先获得单独明确授权。
-6. **P5**：真实案例回归、误报/漏报解释、冻结最终双模型。
-7. **P6**：所有门槛通过且 Owner 明确授权后，才对 1,000 条候选开展正式批量审核。
+3. **当前 P2-A**：生成全新的 v2.1 Development-20 盲审包，完成 Owner 20 条三维裁决 + 60 条语义蕴含复核，并运行私有验证器。
+4. **P2-B**：在 P2-A 与 Rubric/prompt 冻结后，独立准备 Locked20 + Severe10 的 30 条 Owner reference labels + 90 条语义复核；先实现专用 builder/verifier。
+5. **P3**：固定 Qwen3-32B、GLM-4-32B-0414、GLM-Z1-32B-0414 的完整 Revision/profile，完成 CPU/Tokenizer/Chat Template/Schema 预检。
+6. **P4**：30 条严格配对三模型 Pilot，共 90 个独立结果；GPU 必须先获得单独明确授权。
+7. **P5**：真实案例回归、误报/漏报解释、冻结最终双模型。
+8. **P6**：所有门槛通过且 Owner 明确授权后，才对 1,000 条候选开展正式批量审核。
 
 **本任务不包含直接启动 SFT。** Quality-v1 admission、训练数据冻结和 GPU SFT 授权是不同审批事项。
 
