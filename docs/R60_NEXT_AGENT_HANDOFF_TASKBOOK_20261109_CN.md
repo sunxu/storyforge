@@ -1245,3 +1245,10 @@ Owner 提供的只读诊断确认原结果第 5、6、11、19 行的 `basis_type
 Owner 明确批准仅在派生副本中，将四条 SUPPORTED / Player Agency 的 `rule_basis[].basis_type` 从 `player_agency` 映射为 `player_agency_boundary`。Normalizer v2 已实现严格四 pair allowlist：恰好 4 个、维度必须为 player_agency、原标签必须完全匹配；不匹配即 HOLD。原始结果文件不修改；verdict、evidence、其他 rule_basis 字段、60 条 semantic checks 均保持不变。私有 approval 记录映射和不变性断言，SAFE 增加 `basis_type_normalized=4`。
 
 下一步：CI 全部通过后，在 Owner Mac 私有目录执行 create-only normalizer；验证原始 SHA 不变、输出字段差异严格符合批准范围，再运行官方 CLI verifier。未经真实私有包验证不得宣称 P2-A PASS。
+
+
+## 2026-11-09 semantic reviewer binding 修复
+
+Owner Mac 诊断确认 60 条 semantic checks 全部缺少 `reviewer_role` / `reviewer_ref`。Owner 先前已明确说明 60 项语义复核由 Owner 独立完成。Normalizer v2 现仅在派生副本回填统一标识：`OWNER_INDEPENDENT` / `owner-independent-r60-p2a-dev20-20261109`。要求恰好 60 行；已有冲突身份信息不得覆盖，直接 HOLD。原始 semantic JSONL 不变。
+
+私有 approval 和 SAFE 将其标记为 `RETROSPECTIVE_DERIVED_COPY_METADATA`，并明确 `cryptographic_identity_attested=false`。这不是密码学身份认证，不伪称独立性已被密码学证明；只是将已完成的 Owner 复核补齐验证器所需的回溯性元数据。官方 verifier 仍须对派生包完整验证。
