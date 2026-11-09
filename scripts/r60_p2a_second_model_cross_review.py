@@ -198,6 +198,11 @@ def main() -> int:
     parser.add_argument("--write", action="store_true")
     args = parser.parse_args()
     try:
+        if args.output_dir.exists() or args.output_dir.is_symlink():
+            raise Hold("OUTPUT_DIRECTORY_ALREADY_EXISTS_HOLD")
+        if (not args.output_dir.parent.is_dir()
+                or stat.S_IMODE(args.output_dir.parent.stat().st_mode) != 0o700):
+            raise Hold("OUTPUT_PARENT_PERMISSION_HOLD")
         packets, packet_raw = _jsonl(args.packets)
         results, result_raw = _jsonl(args.results)
         rubric_raw = args.rubric.read_bytes()
