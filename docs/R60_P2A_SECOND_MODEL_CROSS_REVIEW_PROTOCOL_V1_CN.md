@@ -128,3 +128,10 @@ SAFE 成功状态：`CROSS_REVIEW_MODEL_CALLS_COMPLETE__ADVISORY_ONLY`。若中�
 ### 执行边界
 
 本工具仅进行外部模型内容审核，不运行 GPU、HF Job、SFT，不更改 Owner results、原始 semantic checks、Gold72 分组或 P2-B held-out 数据。即使 60 项全部得到有效 AI 输出，P2-A 仍须由 Owner 独立完成最终语义复核。
+
+
+### 4Router 模型目录核验（2026-11-09）
+
+Owner 提供的 `GET https://4router.net/v1/models` 返回列表中明确包含 `claude-opus-5-5`，且该模型的 `supported_endpoint_types` 包含 `openai`。因此客户端默认 model ID 已从未经目录证实的 `claude-opus-5-5-high` 更正为 `claude-opus-5-5`。
+
+目录未返回独立的 `claude-opus-5-5-high` ID，也未证明 OpenAI-compatible 接口支持名为 `high` 的推理等级参数。当前客户端不擅自发送该参数；先以标准非流式 Chat Completions 做单次最小连通性/模型调用验证，再决定是否存在服务商专属的 High 配置。模型目录出现该 ID 只证明列出可用，不等于真实调用已成功。
