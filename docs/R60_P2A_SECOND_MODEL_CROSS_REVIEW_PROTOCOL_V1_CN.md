@@ -76,7 +76,7 @@ Builder 为 20 个案例生成全新 blind IDs 并重新打乱顺序。模型包
 
 ### 模型与接口配置
 
-- 默认模型别名：`claude-opus-5-5-high`（来自 Owner 提供的 CLI Proxy 可用模型清单；执行时仍须核对代理实际接受的 model ID）。
+- 默认模型别名：`claude-opus-5-5`（来自 Owner 提供的 CLI Proxy 可用模型清单；执行时仍须核对代理实际接受的 model ID）。
 - 协议：OpenAI Chat Completions。
 - 默认非流式：`stream=false`。目前流式能力未知，因此不依赖流式接口。
 - 远程代理必须使用 HTTPS。
@@ -102,7 +102,7 @@ Builder 为 20 个案例生成全新 blind IDs 并重新打乱顺序。模型包
 ```bash
 export CLI_PROXY_BASE_URL='https://你的代理域名/v1'
 export CLI_PROXY_API_KEY='在本机安全注入的密钥'
-export CLI_PROXY_MODEL='claude-opus-5-5-high'
+export CLI_PROXY_MODEL='claude-opus-5-5'
 ```
 
 建议输出目录位于第二模型盲包目录之下，且父目录必须为 0700：
@@ -110,7 +110,7 @@ export CLI_PROXY_MODEL='claude-opus-5-5-high'
 ```bash
 PRIVATE="$HOME/.local/share/storyforge/r60/private"
 IN="$PRIVATE/owner-adjudication-dev20-second-model-cross-review-20261109"
-OUT="$IN/model-run-claude-opus-5-5-high-20261109"
+OUT="$IN/model-run-claude-opus-5-5-20261109"
 RUN="/Users/keedle/workspace/storyforge-r60-p2a-owner-runner"
 
 python3 "$RUN/scripts/r60_p2a_openai_compatible_review_client.py" \
