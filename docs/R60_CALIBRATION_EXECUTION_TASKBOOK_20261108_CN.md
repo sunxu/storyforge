@@ -479,3 +479,47 @@ python3 -m compileall -q src/storyforge_gold_quality src/storyforge_dataset
 - 是否产生 HF Job / GPU 费用:
 - 是否修改数据库/RolePlay/R50:
 - 下一最小可执行动作:
+
+
+---
+
+## 9. 2026-11-09 P2-A Owner approval and execution override (authoritative)
+
+本节优先于前文任何较早的“工作区必须 clean”或“发现未提交修改就停止”要求。
+
+### 已完成的决定与代码交付
+
+- Owner 明确回复“采纳”，正式采纳全部 35 条 AI Advisory：Player Agency 16、Safety 19，保留原 `NOT_SUPPORTED`；verdict changes=0，semantic rechecks=0。
+- AI Advisory 原文件和原始 20 results / 60 semantic checks 均保持冻结。
+- PR #29 已 squash merge，合并提交：`24eb9f78de6f6e953d84a150d65f020da6ddb4ef`。
+- 可复用 normalizer、单元测试和中文 Runbook 已进入当前分支。
+- 合并提交六组 GitHub Actions 全部 completed/success（test、resolve-and-verify、runtime-quality-gates、synthetic-and-r57、r58-source-json-structure、r58-synthetic）。
+
+### 不再要求 Owner Mac clean worktree
+
+Owner 已明确要求：不考虑 Owner Mac 当前工作区存在未提交修改，按合理方式推进。因此：
+- 不要求 clean status；
+- 不执行 reset、clean、stash、checkout 覆盖或其他可能影响既有未提交修改的操作；
+- 推荐新建独立 clone 到新目录，直接检出当前 GitHub 分支和合并提交；原 worktree 完全不动。
+- GitHub 当前分支为代码事实来源；不要依赖旧本地 worktree 中可能尚未同步的代码。
+
+### 当前唯一执行项：使用真实私有包运行 Owner-approved normalizer
+
+工具：`scripts/r60_owner_approved_package_normalizer_v1.py`  
+Runbook：`docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V1_CN.md`
+
+工具必须读取六份私有输入：原始 blind packets、原始 results、原始 semantic checks、schema、35 行 AI Advisory、AI Advisory SAFE。前四项中的 packet/results/semantic/AI Advisory JSONL 必须通过私有 SHA pin 精确校验；所有私有文件 0600、目录 0700。
+
+执行要求：
+1. 原始文件只读，不覆盖、不移动。
+2. 显式 `--owner-approved`，对应 Owner 已明确采纳全部 35 条。
+3. 输出必须是新的、此前不存在的私有目录。
+4. 仅对 35 个已批准 pair 将 `context_coverage.history_complete` 从 false 改为 true；verdict、reasoning、missing_context、evidence quote/offset/role、rule_basis 和其他 coverage 字段不变。
+5. 规范化 60 个 target locator（index -1→0、component_ref 清空）和 20 个 history locator（只清空 component_ref）；其他定位信息不变。
+6. 原始 60 条 semantic checks 原样复制；先在内存运行完整 verifier，之后 create-only 写副本，再运行官方 CLI verifier。
+7. 成功必须返回 20 cases / 60 checks / 35 history confirmations / 60 target locator normalizations / 20 history locator normalizations，并生成正式私有 Manifest + SAFE。所有 semantic HOLD 保留。
+8. SAFE 必须明确 `quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`、`private_values_emitted=false`。
+
+本会话已完成 GitHub 代码与 CI 交付，但尚未取得 Owner Mac 六份真实私有输入，故尚未执行 normalizer；不得将代码合并等同于 P2-A 完成。拿到真实 SAFE/SHA 回执后才可判定 P2-A PASS。
+
+本次不启动 P2-B、P3、HF Job、GPU、1000 条审核或 SFT。
