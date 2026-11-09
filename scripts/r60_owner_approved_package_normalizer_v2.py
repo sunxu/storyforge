@@ -114,6 +114,27 @@ def normalize_results(results, packets, approved_pairs, dimensions):
     }
 
 
+def validate_supported_basis_types(results, dimensions) -> None:
+    """Fail closed when a SUPPORTED rule-basis label does not match Rubric v2.1."""
+    expected = {
+        "player_agency": "player_agency_boundary",
+        "hard_rule": "explicit_hard_rule",
+        "safety": "safety_exclusion_rule",
+    }
+    for result in results:
+        assessments = result.get("assessments", {})
+        for dimension in dimensions:
+            assessment = assessments.get(dimension, {})
+            if assessment.get("verdict") != "SUPPORTED":
+                continue
+            expected_type = expected[dimension]
+            basis = assessment.get("rule_basis", [])
+            if not basis or any(
+                item.get("basis_type") != expected_type for item in basis
+            ):
+                stop("SUPPORTED_RULE_BASIS_TYPE_REQUIRES_OWNER_REVIEW")
+
+
 def canonical_json(value) -> bytes:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
 
@@ -303,8 +324,14 @@ def main() -> int:
     }:
         stop("NORMALIZATION_COUNT_HOLD")
 
+    validate_supported_basis_types(normalized, severity.DIMENSIONS)
     normalized_raw = b"".join(adjudication.canonical(row) + b"\n" for row in normalized)
-    manifest, pure_safe = adjudication.verify_owner_results(raw[PACKET], normalized_raw, raw[SEMANTIC])
+    try:
+        manifest, pure_safe = adjudication.verify_owner_results(
+            raw[PACKET], normalized_raw, raw[SEMANTIC]
+        )
+    except severity.EvidenceHold as exc:
+        stop(f"OFFICIAL_VERIFIER_{exc}")
     if (manifest.get("case_count") != 20 or manifest.get("semantic_check_count") != 60
             or pure_safe.get("status") != "OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED"):
         stop("PURE_VERIFIER_POSTCONDITION_HOLD")
