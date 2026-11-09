@@ -3,7 +3,7 @@
 日期：2026-11-08  
 目标分支：`r60/gold192-history-v3-adapter`  
 关联主线：PR #25 / Issue #26  
-当前状态（2026-11-09）：**P0 正式冻结 PASS；P1 Rubric v2.1 / Schema / Prompt / 合成回归 / 旧 v3 兼容 PASS。P2 v2.0 盲审包已 SUPERSEDED；P2 v2.1 Development-20 新包尚未生成，Owner 20 条裁决与 60 条语义复核尚未开始。PR #25 当前已核验 HEAD 为 `4190c6fe895080d99901cb4c5eb3f221c6948d6d`，五组 Actions 全部 completed/success（run IDs 见交接任务书 8.25）；接手时仍须重新核验。当前下一步为 P2 v2.1 新包 dry-run → 显式 `--write`。没有运行新模型、没有提交 HF GPU Job、没有启动 GPU/SFT；Quality-v1 admitted=0、training_authorized=false。**
+当前状态（2026-11-09）：**P0 正式冻结 PASS；P1 Rubric v2.1 / Schema / Prompt / 合成回归 / 旧 v3 兼容 PASS。P2 v2.0 盲审包已 SUPERSEDED；P2 v2.1 Development-20 新包尚未生成，Owner 20 条裁决与 60 条语义复核尚未开始。上一轮核验快照 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 全部 completed/success；其后交接文档校正提交已推进 HEAD，接手时必须实时核验当前 PR #25 head/CI。当前下一步为 P2 v2.1 新包 dry-run → 显式 `--write`。没有运行新模型、没有提交 HF GPU Job、没有启动 GPU/SFT；Quality-v1 admitted=0、training_authorized=false。**
 
 ## 0. 执行目标与当前基线
 
