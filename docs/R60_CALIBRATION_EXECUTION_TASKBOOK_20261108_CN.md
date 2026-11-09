@@ -1,6 +1,6 @@
 # R60 下一阶段执行任务书：校准集冻结 → 三态证据审核 → 三模型配对 → 1000 条批量审核
 
-版本：v1.1 / 2026-11-09（交接准备定稿）  
+版本：v1.2 / 2026-11-09（P0/P1 状态校正；P2 v2.1 接手执行版）  
 分支：r60/gold192-history-v3-adapter  
 关联：PR #25、主线 Issue #26、专项执行 Issue #28  
 主交接：[R60 Calibration Next-Agent Handoff](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md)  
@@ -9,18 +9,31 @@
 
 ## 任务书使用规则
 
-**本文件是交给下一位 Agent 的执行说明，不是当前交接准备阶段的执行授权。当前交接工作只负责核对、记录和封装材料；P0–P6 的实际操作由接手 Agent 在交接完成后执行。**
 
-- 严格按 P0→P6 顺序执行。未通过前置验收，不得跳到下一阶段。
+## 0.1 当前接手状态快照（2026-11-09；以接手时实时 GitHub 核验为准）
+
+- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
+- 最近核验 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
+- 该 HEAD 的五组 Actions 全部 completed/success：CI（42555517499）、Gold Quality Pipeline（42555517570）、R60 HF CPU dependency profiles（42555517597）、R58 scoped synthetic（42555517602）、R60 HF Runtime CI（42555517658）。接手时必须重新核验，不得将该结果挪用于新提交。
+- P0：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`，40/10 冻结完成，20/20 案例分层，Gold72 Story 可跨集合（共享 Story=5），跨集精确交集 0，唯一来源 50。
+- P1：Rubric v2.1、Schema、合成回归和旧 v3 兼容 = PASS。
+- P2：v2.0 包 SUPERSEDED；v2.1 新包尚未生成；Owner 20 条裁决和 60 条语义复核未开始。
+- Quality-v1 admitted=0；training_authorized=false；无 GPU/HF inference/1000 条批量审核/SFT 授权。
+
+**当前第一项工作是 P2 v2.1 新盲包 dry-run → 显式 --write，不是 P0。**
+
+**本文件是阶段定义与验收标准。当前状态不是从 P0 开始：P0 校准集冻结已正式 PASS，P1 Rubric v2.1 工程实现与 CI 已 PASS。下一 Agent 从 P2 v2.1 Development-20 盲审包生成接手，完成 Owner 裁决与 60 条语义复核后进入 P3。历史 P0/P1 步骤仅供审计追溯，不得重复执行。**
+
+- 严格按阶段门禁执行，但已通过阶段不得重做：P0=PASS、P1(v2.1)=PASS；当前从 P2 v2.1 开始。
 - 每个阶段都要输出：实际执行命令、输入 manifest SHA、输出文件/SAFE schema、计数、PASS/HOLD 原因、Git commit/PR/Issue 更新。
 - Owner 私有正文和映射不进 GitHub；公共仓库只提交代码、合成测试、文档和聚合 SAFE。
 - 需要 Owner 执行时，给一条可复制命令和明确预期 SAFE。
-- 当前没有 GPU 授权。P0-P3 以 Owner 本地只读/CPU 和 GitHub 合成测试为主；P4 GPU 执行必须先另行获得明确授权。
+- 当前没有 GPU 授权。P2 是 Owner 本地盲审与私有回执验证；P3 仅固定 Revision/profile 和 CPU 预检；P4 GPU 推理必须另行获得明确授权。
 - 不重新讨论本阶段的权利/协议问题；按用户已明确的 Owner 授权范围执行。不得因此扩展到全库原文、R50 正文或其他未列入本阶段的资料。
 
 ---
 
-## P0 — 校准集库存、分轨、去重、冻结（最高优先级）
+## P0 — 已完成：校准集库存、分轨、去重、冻结（历史执行记录，不再执行）
 
 ### 目标
 
@@ -31,15 +44,23 @@
 不得合并两个集合的历史标签、评分、Owner 裁决或报告。不得覆盖任何原始文件。
 
 
-### P0.0 已收到证据状态（交接准备阶段记录，不能代替 P0 验收）
+### P0.0 最终冻结事实（Owner Mac SAFE 已验收，2026-11-09）
 
-截至 2026-11-08，Owner 已提供 R60 Pilot10 Owner Pairwise SAFE；该 SAFE 不只是 crosswalk 结构摘要，而是已完成真实来源映射、跨槽绑定和 10 个 Pilot Checkpoint 的只读核验。
+正式 SAFE：`storyforge_r60_calibration_inventory_safe_v1`，状态 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`，`manifest_files_written=4`、`private_values_emitted=false`。
 
-- **R60 1000 crosswalk：PASS。** Owner Pairwise SAFE 的 `owner_manifest_receipt_verified=true`、`input_hash_and_cross_slot_binding_verified=true`；审计代码对 A/B 各 1000 条输入和 bindings、source_index 全覆盖、blind_id 唯一性、case_key/target/history SHA 跨槽一致性作硬校验。实际 SAFE 已报告 A/B 两槽各 1000/1000 source binding 通过。不得重复运行旧 crosswalk 审计。
-- **R60 Pilot10 Checkpoint：PASS（技术来源/回执层）。** A v2 五份、B v3 五份共 10/10 的 `receipt_sha256/input_sha256` 完整重算通过；A/B 两槽均 5/5 REJECT，但 `matched_cases=0`、`unique_source_cases=10`，所以不能声称双模型对同一案例达成一致。严重度语义裁决仍未完成。
-- **Gold72 40 条：部分证据已存在，冻结仍未完成。** 已知存在 Reviewer C 40-case blind packets、Owner ID map、C results-only SAFE、Owner resolution worksheet 和 Owner aggregate SAFE；历史聚合为 A V3/B2 disagreement 40/72、C=38/1/1、Owner=30/4/6。但 C execution record unavailable，独立 40-case source manifest/A-B crosswalk 尚未证明；需从原始来源和 Owner map 重建、核验并冻结。不得把 72-row source 或 suffix72 的 72 READY Stage 当成 40-case Gold72 集合。
+- Gold72 A V3/B2：72 条可比较，40 条分歧、32 条一致；准确 40/40 disagreement 案例已冻结。
+- Gold72 按案例分层：Development=20、Locked Regression=20；Development 涉及 5 个 Story，Locked 涉及 6 个 Story，共享 Story=5，`story_disjoint=false`。**Owner 已明确允许 Story 跨集合；只要求案例级 20/20，不得擅自改成 Story 级互斥或重新分层。**
+- R60 Severe10：10/10 唯一来源案例；既有 A/B Checkpoint receipts A=5、B=5；A/B `matched_cases=0`，不得声称 Pilot10 两模型逐案一致。
+- Gold72↔R60 exact history / target / full-history-target overlap 均为 0；跨集合唯一来源数 50。
+- 语义近重复检测未执行；精确去重不等于语义近重复检测。
+- Gold72 C execution record / independence 未证明；R60 C execution 已验证但 independence 未证明。这些历史限制保留，但不阻断已完成的 P0 冻结。
+- Quality-v1 admitted=0；training_authorized=false；GPU 未启动。
 
-**P0 整体仍 OPEN，但 R60 1000 crosswalk 与 Pilot10 回执核验子项已 PASS。** 当前实际阻塞是 Gold72 40 条独立来源集合重建/冻结，以及 Gold72↔R60 跨集去重；不得重跑已通过的 R60 crosswalk 审计。
+**P0 整体 = PASS。** 四份 Owner 私有 create-only 产物已生成并通过权限检查；不得重复执行 P0、重跑 R60 1000 crosswalk 或 Pilot10 Checkpoint 审计。
+
+### P0.1–P0.4 历史执行步骤（仅供审计追溯；P0 已 PASS，不得重跑）
+
+以下保留原始 P0 核验/冻结命令与验收定义，当前 Agent 不得把它们当作待办；当前 P0 最终事实以本节 P0.0 与主交接任务书 8.12 为准。
 
 ### P0.1 分支与 CI 基线核验
 
@@ -141,11 +162,13 @@ R60 再次发生同类故障。必须把经验固化为依赖和门禁，而不�
 5. 复用 [R60 HF CPU 预检 Runbook](R60_HF_QUALITY_CPU_PREFLIGHT_AFTER_STAGE_20261108_CN.md) 的已知故障记录；不得再次花费付费 Job 诊断已知的缺包原因。
 6. R60 Reviewer 已新增独立依赖输入 `requirements/hf-quality-reviewer.in` 与 hash-pinned lock `requirements/hf-quality-reviewer.lock`，避免误用 R59 Qwen3.8 的 Transformers 5.16.1 profile。GitHub Actions Run `42495819470`（commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5`）已验证 lock 重解析一致、hash-verified install、`pip check`、CPU-only boundary 与合成 `apply_chat_template` smoke 全部 PASS。Owner Mac 上传输入前必须将 lock 只读复制到 A/B 输入目录，远端先校验 SHA256，再使用 `pip install --require-hashes`；**该 Owner Mac staging/远端目标 Tokenizer 检查尚未执行，不代表新 HF Job 已通过。**
 
-## P1 — 三项严重问题的证据标准 v2
+## P1 — 已完成：三项严重问题证据标准 v2.1（以下旧 v2 设计为历史记录）
 
-### 目标
+### 当前有效标准
 
-把当前 Reviewer 的布尔严重 flag 扩展为证据三态。不得覆盖旧 v3 schema。
+当前唯一有效版本为 `r60_severity_rubric_v2_1`，公开文本为 [R60 Severity Evidence Rubric v2.1](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)，实现为 `src/storyforge_gold_quality/hf_severity_evidence_v2.py`。以下 P1.1–P1.5 是较早 v2 设计记录；如与 v2.1 文本、代码或主交接任务书 8.21–8.23 不一致，以 v2.1 为准。
+
+P1(v2.1) 已完成 schema、rubric、prompt、合成回归和旧 v3 兼容测试；当前不再执行 P1 改版。
 
 ### P1.1 固定维度与语义
 
@@ -201,7 +224,7 @@ R60 再次发生同类故障。必须把经验固化为依赖和门禁，而不�
 新增 versioned contract，例如：
 - response schema: storyforge_hf_literary_response_v4
 - checkpoint schema: storyforge_hf_literary_checkpoint_private_v4
-- rubric id: r60_severe_evidence_rubric_v2
+- rubric id: r60_severity_rubric_v2_1（当前有效版本）
 
 旧 v3 的读取和 SAFE 回放必须继续通过。新 schema 必须记录 rubric SHA、prompt SHA、model profile ID、输入 SHA、模型 Revision、Tokenizer SHA、runtime/image digest、generation config、finish reason。
 
@@ -221,34 +244,33 @@ R60 再次发生同类故障。必须把经验固化为依赖和门禁，而不�
 - 安全关键上下文缺失 → INSUFFICIENT_CONTEXT；
 - 引用不存在/跨消息拼接/引用存在但不支持语义 → HOLD。
 
-P1 PASS 条件：三态 schema、rubric version、测试矩阵、旧 v3 兼容回归均通过。
+P1(v2.1) = PASS；验收证据、当前 Rubric SHA 和最新 CI 状态见 [下一 Agent 任务书 8.22–8.24](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)。
 
 ---
 
-## P2 — Owner 独立参考裁决
+## P2 — 当前执行阶段：Rubric v2.1 Owner Development-20 独立裁决
 
-### 目标
+### 当前范围与状态
 
-为模型评估建立独立参照，不把历史模型的多数意见当答案。
+- P0 已 PASS；P1 的 Rubric v2.1 工程实现与 CI 已 PASS。
+- v2.0 Development-20 六文件包已生成但已标记 `SUPERSEDED`，不得用于裁决，不得覆盖或删除。
+- 当前 v2.1 Development-20 新包尚未生成；这是下一 Agent 的第一项执行任务。
+- 当前只允许 Gold72 Development-20 进入 Owner 独立盲裁决；Gold72 Locked Regression-20 与 R60 Severe10 继续锁定。
+- 生成器只读取 P0 Gold72 manifest 和其 SHA pin 的 Gold72 C blind source packet；不得打开旧结果、ID Map 或锁定集合。
 
-执行规则：
-1. Owner 生成新的 blind adjudication packets；隐藏原 A/B/C decision、scores、flags、历史 Owner resolution、文件槽位、原 blind IDs。
-2. 先裁决 Gold72 development 20 条，用于规则调优。
-3. Gold72 locked 20 条和 R60 severe10 作为锁定评估参照：在 rubric v2 冻结前，不把其逐案裁决结果暴露给 Prompt/model developers。
-4. R60 的 C 三态判断可在 Owner 完成盲裁决后用于比较，但不作为 ground truth。
-5. 每维保存 verdict、精确证据、规则依据、缺失上下文、裁决者、rubric version、timestamp、receipt SHA。
-6. 有争议的案例保留 INSUFFICIENT_CONTEXT/HOLD；不能为了样本数强行判定。
-7. 六维文学评分与三维严重证据结论分开裁决、分开报告。
+### 执行与产物
 
-Owner 私有输出建议：
-- GOLD72_DEV_OWNER_ADJUDICATION_PRIVATE.jsonl
-- GOLD72_LOCKED_OWNER_ADJUDICATION_PRIVATE.jsonl
-- R60_SEVERE10_OWNER_ADJUDICATION_PRIVATE.jsonl
-- 每组独立 manifest 和 receipt。
+1. 使用 `scripts/r60_owner_adjudication_v2.py` 默认 dry-run；严格 PASS 后显式 `--write`，create-only 生成六份私有文件。
+2. Owner 只读取新 v2.1 blind packets、instructions、schema 和公开 Rubric v2.1；不查看 ID Map、P0 manifest、旧 A/B/C、旧 Owner resolution、Locked20 或 Severe10。
+3. 生成 20 行 `OWNER_ADJUDICATION_RESULTS_PRIVATE.jsonl`，每个案例包含三个维度的 verdict 和证据。
+4. 另生成 60 行 `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl`，每个案例×维度一行，严格遵守主任务书 8.23 的四字段外层、七字段 check、全部 evidence indexes 和 HOLD 规则。
+5. 运行 `scripts/r60_owner_adjudication_verify_v2.py`；只允许真实结果产生私有 manifest 和 SAFE，不得为了全绿修改原始判断。
 
-公共 SAFE 只包含各组条数、三态计数、引用验证计数、未裁决数和训练准入数。
+### 审核范围
 
-P2 PASS：锁定标签未泄露给模型 Prompt 开发；来源、引用、receipt 全部可验；所有不确定项保留 HOLD。
+只判断 Player Agency、Hard Rule、Safety 内容语义。不得要求或将数据来源、权利、版权、隐私、数据使用授权、数据隔离证据作为 verdict、missing_context 或 HOLD 理由。故事内玩家拒绝/同意边界仍属于内容语义证据。
+
+P2 验收：20/20 Owner 结果和 60/60 语义复核记录结构完整、绑定正确、可追溯；所有 semantic HOLD 原样保留；盲化边界未破坏。结构验证通过不等于 60/60 语义支持，也不自动产生 Quality-v1 admission。
 
 ---
 
