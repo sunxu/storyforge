@@ -65,7 +65,6 @@ def normalize_results(results, packets, approved_pairs, dimensions):
     """Deep-copy results and apply only exact (case, dimension) -> verdict approvals."""
     import copy
 
-    packet_by_id = {row["calibration_id"]: row for row in packets}
     output = copy.deepcopy(results)
     confirmed = target_count = history_count = 0
 
