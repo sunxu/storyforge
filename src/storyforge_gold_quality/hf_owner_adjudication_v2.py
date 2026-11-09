@@ -46,6 +46,24 @@ class AdjudicationHold(ValueError):
     """Stable reason code; never includes private values."""
 
 
+SEMANTIC_ENTAILMENT_HOLD_CODES = frozenset({
+    "SEMANTIC_ENTAILMENT_DIMENSION_HOLD",
+    "SEMANTIC_ENTAILMENT_CHECK_HOLD",
+    "SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD",
+    "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED",
+})
+
+
+def semantic_entailment_hold_reason(exc: severity.SemanticEntailmentHold) -> str:
+    """Expose only an allowlisted validator reason; never echo private input."""
+    reason = str(exc)
+    if reason == "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED":
+        return "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD"
+    if reason in SEMANTIC_ENTAILMENT_HOLD_CODES:
+        return f"OWNER_SEMANTIC_CHECK_INVALID:{reason}"
+    return "OWNER_SEMANTIC_CHECK_INVALID:UNCLASSIFIED"
+
+
 def sha(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
@@ -473,9 +491,10 @@ def verify_owner_results(
             )
             status = outcome["status"]
         except severity.SemanticEntailmentHold as exc:
-            if str(exc) != "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED":
-                raise AdjudicationHold("OWNER_SEMANTIC_CHECK_INVALID") from None
-            status = "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD"
+            reason = semantic_entailment_hold_reason(exc)
+            if reason.startswith("OWNER_SEMANTIC_CHECK_INVALID:"):
+                raise AdjudicationHold(reason) from None
+            status = reason
         semantic_status_counts[status] = semantic_status_counts.get(status, 0) + 1
     if seen_pairs != expected_pairs:
         raise AdjudicationHold("OWNER_SEMANTIC_CHECK_COVERAGE_HOLD")
