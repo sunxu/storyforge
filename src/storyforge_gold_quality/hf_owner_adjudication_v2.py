@@ -491,6 +491,11 @@ def verify_owner_results(
             )
             status = outcome["status"]
         except severity.SemanticEntailmentHold as exc:
+            contract_reason = severity.semantic_check_contract_reason(row["check"])
+            if contract_reason is not None:
+                raise AdjudicationHold(
+                    f"OWNER_SEMANTIC_CHECK_INVALID:{contract_reason}"
+                ) from None
             reason = semantic_entailment_hold_reason(exc)
             if reason.startswith("OWNER_SEMANTIC_CHECK_INVALID:"):
                 raise AdjudicationHold(reason) from None
