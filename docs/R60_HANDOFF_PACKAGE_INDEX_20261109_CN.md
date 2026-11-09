@@ -1,6 +1,6 @@
 # StoryForge R60 交接包索引与完成清单
 
-更新日期：2026-11-09  
+更新日期：2026-11-09（当前状态校正）  
 仓库：`sunxu/storyforge`  
 交接分支：`r60/gold192-history-v3-adapter`  
 PR：[#25](https://github.com/sunxu/storyforge/pull/25)（Open / Draft）  
@@ -11,9 +11,7 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（Open / Draft）
 
 本交接包的目标是让下一位 Agent 无需翻阅数百轮聊天记录，即可准确了解 R60 的历史执行、证据状态、可复用实现、已知故障、未完成事项和下一步执行方法。
 
-**本次完成的是交接材料准备，不是执行下一阶段。** 本次没有执行 Gold72 重建/冻结，没有修改审核 Prompt，没有运行新模型，没有提交 HF Job/GPU，没有开始 1000 条批量审核，没有修改 RolePlay 或数据库。
-
-交接材料完成不代表 P0 PASS、Quality-v1 admission 或训练授权。
+**本索引最初记录的是交接材料准备阶段。此后 Owner Mac 已正式完成 P0 冻结，P1 Rubric v2.1 与工程 CI 也已通过。当前接手状态以本索引末尾“当前有效状态”及主任务书 8.25 为准。** Quality-v1 admission 仍为 0，training_authorized=false。
 
 ## 2. 必读文件顺序
 
@@ -132,7 +130,7 @@ Owner Pairwise SAFE 已验证 A/B 两槽各 1000/1000 来源映射、输入 SHA 
 **交接准备结论：文档与任务书已形成可执行交接包；私有 Gold72 P0 尚未执行，明确交由新 Agent。不得将交接准备完成宣称为训练准入完成。**
 
 
-## 8. P0 Freeze Runner 更新（2026-11-09）
+## 8. P0 Freeze Runner 历史记录（已执行完成，当前 P0=PASS）
 
 已新增 Owner Mac 本地执行工具与合成测试：
 
@@ -140,7 +138,7 @@ Owner Pairwise SAFE 已验证 A/B 两槽各 1000/1000 来源映射、输入 SHA 
 - [Runner 合成测试](../tests/test_r60_calibration_p0_freeze.py)
 - [正式执行命令与安全边界](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#86-owner-mac-一键-p0-freeze-runner代码已提交尚未在-owner-mac-执行)
 
-代码提交已通过 GitHub CI / Ruff / Tests。它尚未在 Owner Mac 运行，因此本地私有 manifest、cross-set dedup receipt 和 Inventory SAFE 仍未生成；P0 不得标为 PASS。Runner 不会重跑 R60 1000-row crosswalk 或旧 A/B checkpoints，也不会调用模型/GPU/数据库。
+历史状态：Runner 代码提交后曾尚未在 Owner Mac 运行；该状态已由第 9 节正式 SAFE 取代。当前 P0 已 PASS，不得重跑 Runner 或旧 R60 1000-row crosswalk / Pilot10 Checkpoint 审计。
 
 
 ## 9. P0 正式冻结完成（2026-11-09）
@@ -149,12 +147,12 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 
 详细聚合计数及状态边界见 [P0 正式冻结执行记录](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#812-owner-mac-正式冻结完成p0-pass--quality-hold-2026-11-09)。
 
-四份私有产物仅保留在 Owner 私有目录，不得上传 GitHub/HF。P1 尚未开始；P0 授权不构成后续阶段或 GPU/SFT 授权。
+四份私有产物仅保留在 Owner 私有目录，不得上传 GitHub/HF。P1(v2.1) 后续已独立 PASS；P0 PASS 不代表 Quality-v1 admission、模型选择或 GPU/SFT 授权。
 
 
-## 10. P1 三维严重证据标准 v2 已通过（2026-11-09）
+## 10. P1 Rubric v2.1 三维严重证据标准已通过（2026-11-09）
 
-- [三维严重问题证据标准 v2](R60_SEVERITY_EVIDENCE_RUBRIC_V2_20261109_CN.md)
+- [当前冻结的三维严重问题证据标准 v2.1](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)
 - 实现：`src/storyforge_gold_quality/hf_severity_evidence_v2.py`
 - 合成回归：`tests/test_hf_severity_evidence_v2.py`
 - 旧 v3 Literary Reviewer 与 Reviewer-C v1 兼容路径保持不变。
@@ -164,15 +162,16 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 **当前：P0 PASS、P1 PASS；P2 Owner 独立盲裁决未开始。** Quality-v1 admitted=0；没有模型/HF/GPU/1000 条审核/SFT。
 
 
-## 11. P2 Owner Development-20 blind packet builder 已准备
+## 11. P2 Owner Development-20 blind packet builder 已实现；v2.0 包已废弃，v2.1 包待生成
 
 - 实现：`src/storyforge_gold_quality/hf_owner_adjudication_v2.py`
 - Owner Mac CLI：`scripts/r60_owner_adjudication_v2.py`
 - 合成测试：`tests/test_hf_owner_adjudication_v2.py`
 - 只准备 Gold72 Development 20；Locked Regression 20 不输出；R60 Severe10 不读取。
 - 默认 dry-run，必须显式 `--write` 才 create-only 生成六份 Owner 私有文件。
-- 真实 Owner 裁决尚未开始，P2 尚未 PASS。
-- 执行命令与限制见 [P2 任务书 8.15](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#815-p2-gold72-development-20-owner-盲裁决包生成器已实现-2026-11-09)。
+- 早期 v2.0 Development-20 包已生成，但随后因审核范围变更标记 `SUPERSEDED`，不得用于裁决。
+- 当前须在新目录生成 Rubric v2.1 包；生成后 Owner review 才能开始。
+- 当前接口与执行命令见 [主任务书 8.21–8.24](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)。
 
 
 ### P2 Owner 审核结果回执验证
@@ -188,8 +187,8 @@ Owner Mac 正式 SAFE 已返回 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_
 - 最新代码提交：`e7917030e76e7ccb96562dec47ce4e879b9306b9`
 - pytest 870 passed / 5 skipped / 42 subtests passed；Ruff、CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic 全部 PASS。
 - 依赖锁漂移已通过显式固定 `regex==2026.11.7` 修复；未放宽 hash lock。
-- **尚未执行 Owner Mac dry-run；尚未生成真实私有 P2 packets；Owner 审核未开始。**
-- 下一步按任务书 8.15 dry-run → 显式 --write → Owner 盲审 → 20 verdict + 60 semantic checks → 8.16 私有回执验证。当前 Quality-v1 admission=0、training_authorized=false。
+- 该段是旧 v2.0 包生成前的历史状态，已由后续 8.20–8.21 更新取代。
+- 当前状态：v2.0 包 SUPERSEDED；v2.1 新包未生成；Owner review 未开始。Quality-v1 admission=0、training_authorized=false。
 
 
 Owner Mac 的精确 P0 manifest 路径、Reviewer-C blind source 路径、项目工作目录和 dry-run 命令已补充至 [任务书 8.18](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#818-owner-mac-dry-run-精确路径与命令)。
@@ -208,13 +207,12 @@ Owner Mac 的精确 P0 manifest 路径、Reviewer-C blind source 路径、项目
 Owner 已在当前 worktree `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 对应分支执行 P2 dry-run，SAFE 状态为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`，20 cases prepared、0 files written。Owner review 未开始；下一步显式 `--write` 前确认输出目录不存在。任务书 8.18 已更正 worktree 路径，并使用普通 `python` 命令，不再要求绝对 Python/venv 路径。
 
 
-### P2 Development-20 盲审包已生成
+### P2 v2.0 Development-20 盲审包已生成（历史包，SUPERSEDED）
 
-- 实际 SAFE：`P2_OWNER_BLIND_PACKETS_READY__OWNER_REVIEW_NOT_STARTED`，20 cases / 6 files。
+- 旧 SAFE：`P2_OWNER_BLIND_PACKETS_READY__OWNER_REVIEW_NOT_STARTED`，20 cases / 6 files。
 - 仅 Gold72 Development-20；未暴露 Locked Regression 20、R60 Severe10、旧 A/B/C、旧 Owner resolution 或旧 blind IDs。
-- Owner review 尚未开始；model_calls=0、HF jobs=0、GPU=false。
-- 下一步为 Owner 独立完成 20 条三维裁决 + 60 项逐维语义蕴含复核，再运行私有回执验证器。
-- 完整步骤、允许读取范围、禁止读取范围、文件名和验证命令见 [任务书 8.20](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#820-p2-development-20-私有盲审包已正式生成-2026-11-09)。
+- 该包基于 Rubric v2.0，已由 Owner 明确标记 `SUPERSEDED`，不得用于裁决、不得覆盖或删除。
+- v2.1 必须在新目录重新 dry-run / `--write` 生成。
 
 
 ### 审核范围变更：Rubric v2.1（2026-11-09）
@@ -223,7 +221,7 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 
 - Rubric version：`r60_severity_rubric_v2_1`
 - v2.0 已生成的 Development-20 六文件包已标记 SUPERSEDED，不得用于裁决、不得覆盖或删除。
-- v2.1 新包须生成到 `owner-adjudication-dev20-rubric-v2-1-20261109` 新目录；等待最新 CI 全部通过后再运行 dry-run / `--write`。
+- v2.1 新包须生成到 `owner-adjudication-dev20-rubric-v2-1-20261109` 新目录；当前 HEAD 的五组 CI 已全部通过，但接手时仍须重新核验。随后执行 dry-run / 显式 `--write`。
 - 完整范围定义、旧包处置和命令见 [任务书 8.21](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#821-owner-要求排除数据来源与权利审核rubric-v21-2026-11-09)。
 
 
@@ -232,7 +230,7 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 
 ### Rubric v2.1 工程回归最终状态
 
-最新代码提交 `f9d23fd11fd5ecdb5e2de41cd203175500bb9004` 的 Actions 全部 PASS：pytest 875 passed / 5 skipped / 42 subtests；Ruff、CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic 全部通过。P1 v2.1 实现通过；v2.0 六文件包已 SUPERSEDED，v2.1 新包尚待 Owner Mac dry-run / `--write` 生成。Owner review 未开始。
+代码实现基线提交 `f9d23fd11fd5ecdb5e2de41cd203175500bb9004` 已通过完整回归。当前 PR HEAD 已推进至 `4190c6fe895080d99901cb4c5eb3f221c6948d6d`，该 HEAD 的五组 Actions 也已全部 completed/success（具体 run IDs 见主任务书 8.25）。P1 v2.1 实现通过；v2.0 六文件包 SUPERSEDED；v2.1 新包尚待 Owner Mac dry-run / `--write`。Owner review 未开始。
 
 
 ### P2 v2.1 语义蕴含复核接口合同已补齐（2026-11-09）
@@ -248,4 +246,18 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 
 ### P2 v2.1 接口合同 CI 全绿（2026-11-09）
 
-PR #25 当前 head `9b4f235da01a856b3f123f87a2ee1c314c54a3fc` 的五组 Actions 全部 completed/success：CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic。P2 v2.1 盲包尚未生成，Owner review 未开始。下一步 Owner Mac 在新目录先 dry-run、再显式 `--write`；详细命令与 SAFE 门槛见 [任务书 8.24](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#824-p2-v21-接口合同提交后的-ci-全部通过-2026-11-09)。
+历史 HEAD `9b4f235` 的 CI 快照已被当前 PR HEAD 取代。当前 HEAD 与五组 Actions 状态以主任务书 8.25 为准；不得将旧 SHA 的 run 当作新 HEAD 的 CI 结果。
+
+
+## 14. 当前有效状态与下一 Agent 唯一接手入口（2026-11-09）
+
+- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
+- 当前已核验 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`；该 HEAD 的五组 Actions 全部 completed/success，run IDs 见 [主任务书 8.25](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#825-当前接手基线复核-2026-11-09取代-824-的旧-head)。
+- P0 PASS：Gold72 40、R60 Severe10 10；案例级 20/20；Gold72 Story 可跨集合（shared Story=5）；Gold72↔R60 exact overlaps=0；unique source=50。
+- P1 PASS：Rubric v2.1 / Schema / Prompt / synthetic regression / old v3 compatibility。
+- P2 v2.0 package：SUPERSEDED；P2 v2.1 package：NOT GENERATED；Owner review：NOT STARTED。
+- 下一步仅做 P2 v2.1 新包 dry-run → 显式 `--write` → Owner 20 verdict + 60 semantic checks → 私有验证器。
+- P3 等 P2 完成后进入；P4 GPU、P6 1000 批量审核、SFT 均未授权。
+- 不重做 P0/P1，不读取 R50 正文，不修改数据库/RolePlay，不上传私有值。
+
+权威接手任务书：[R60 下一 Agent 交接任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)。详细阶段标准：[R60 执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
