@@ -224,7 +224,7 @@ GLM-Z1 是 GLM-4 同家族推理增强 Challenger，不是第三个完全独立�
 新 Agent 不应把“读完文档”当作完成。按任务书逐项交付：
 - P0：已 PASS，两个校准集冻结 manifest 和聚合 SAFE 已在 Owner 私有目录；
 - P1：已 PASS，当前有效标准为 Rubric v2.1 与 Schema；
-- P2：当前进行中，生成 v2.1 Development-20 新盲包并完成 Owner 20 条裁决 + 60 条语义复核；
+- P2-A：当前进行中，生成 v2.1 Development-20 新盲包并完成 Owner 20 条裁决 + 60 条语义复核；P2-B 随后须独立准备 Locked20 + Severe10 的 30 条 Owner results + 90 条 semantic checks，作为 P4 前置；
 - P3：三模型 profile、固定 Revision、Qwen Thinking 参数修正和测试；
 - P4：30 条配对 manifest、90 个结果的 SHA/receipt 验证及 SAFE；
 - P5：Gold72/R60 分轨回归报告；
