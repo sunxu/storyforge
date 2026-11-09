@@ -173,7 +173,7 @@ def test_apply_owner_updates_rejects_unapproved_item_verdict_change():
     update["latest_six_decisions"][0]["owner_latest_conversation_decision"]["verdict"] = "NOT_SUPPORTED"
     try:
         MODULE.apply_owner_updates(packets, results, checks, update)
-    except Exception as exc:
+    except ValueError as exc:
         assert str(exc) == "SIX_ITEM_VERDICT_BINDING_HOLD"
     else:
         raise AssertionError("unexpected verdict change was accepted")
