@@ -102,3 +102,18 @@ Owner 已在 ChatGPT 明确批准：仅在派生副本中，将四条 SUPPORTED 
 - `semantic_checks_modified=false`
 
 执行后必须对比原始与派生 JSONL：除已批准的 39 条 history_complete 断言、既有 locator 规范化以及四条 SUPPORTED Player Agency 的 `basis_type` 映射外，不允许出现其他字段差异。原始输入文件的 SHA-256 必须与执行前完全一致。
+
+
+### 2026-11-09：60 条 semantic check 缺失 reviewer binding 的修复
+
+Owner Mac 只读诊断：60 行全部缺少 `check.reviewer_role` 与 `check.reviewer_ref`（两者均为 null），其余行数为 60；原文件未修改。此前 Owner 已明确陈述这 60 项是在 20 条独立 Owner 裁决之后由 Owner 完成的语义复核。
+
+Normalizer v2 现对派生 semantic-check 副本执行严格回填：
+- `reviewer_role=OWNER_INDEPENDENT`
+- `reviewer_ref=owner-independent-r60-p2a-dev20-20261109`
+- 必须恰好 60 行；
+- 如任何行已有冲突的 role/ref，不覆盖，立即 HOLD；
+- 原始 60 行 JSONL 不修改；
+- approval 私有记录注明 `RETROSPECTIVE_DERIVED_COPY_METADATA`，SAFE 明确 `cryptographic_identity_attested=false`。
+
+此标识是本轮 Owner 复核的项目内稳定引用，不是密码学身份认证，也不证明 reviewer independence 的密码学真实性。该处理只补齐既已完成的 Owner 复核的缺失元数据，不重新执行或改变任何语义判断。必须继续通过官方 v2 verifier。真实私有包执行前，P2-A 仍 HOLD。
