@@ -1145,3 +1145,48 @@ P4 样本是 Gold72 Locked Regression 20 + R60 Severe10 10。它们必须在 P2-
 P2-A 完成后，先设计并合成测试独立版本化的 P2-B 30/90 packet builder / verifier；如拟参数化复用，必须证明旧 20/60 合同和既有 v2 receipts 不受影响。未完成此工具与 Owner reference labels 前，P4 不满足启动条件。不得提前解锁、查看或把 locked labels 暴露给模型/Prompt 开发者。
 
 P2-B 不要求案例审核员提供数据来源、版权/权利、隐私、数据使用授权或数据隔离证据；只按 Rubric v2.1 判断故事内容的三个严重维度。
+
+
+---
+
+## 0.2 2026-11-09 最新执行校正：P2-A Owner 批准已完成，进入私有副本规范化
+
+本节优先于本文早期接手状态与 3.1 工作区检查要求。
+
+- Owner 已明确回复“采纳”，采纳 35/35 AI Advisory：Player Agency 16、Safety 19，全部保留 `NOT_SUPPORTED`；verdict changes=0，semantic rechecks=0。
+- AI Advisory SAFE 已记录：35/35，`owner_final_decision_recorded=false`（生成时的 AI 身份事实）；Owner 的最终批准另由明确回复及新副本内 Owner approval record 表达。
+- 原始 packet/results/semantic/schema/AI Advisory 全部冻结，不能覆盖。
+- PR #29 已合并到本分支，合并提交 `24eb9f78de6f6e953d84a150d65f020da6ddb4ef`。新增：
+  - `scripts/r60_owner_approved_package_normalizer_v1.py`
+  - `tests/test_r60_owner_approved_package_normalizer_v1.py`
+  - `docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V1_CN.md`
+- 合并提交的六组 GitHub Actions 均 completed/success：`test`、`resolve-and-verify`、`runtime-quality-gates`、`synthetic-and-r57`、`r58-source-json-structure`、`r58-synthetic`。
+- PR #25 仍为 Open / Draft；当前分支 HEAD 已更新为上述合并提交。不要因本次工具合并而自动合并或关闭 PR #25。
+
+### Owner Mac 执行方式（不要求清理原 worktree）
+
+此前 3.1 中“发现未提交修改则停止”的要求已被 Owner 明确撤销。不得 reset、clean、stash、覆盖或要求用户先提交 Owner Mac 的其他修改。为避免旧 worktree 代码版本不一致，推荐直接在一个**全新独立目录** clone 当前分支；原 worktree 保持原样：
+
+```bash
+set -euo pipefail
+RUN="$HOME/workspace/storyforge-r60-p2a-owner-runner"
+test ! -e "$RUN"
+git clone --single-branch --branch r60/gold192-history-v3-adapter \
+  https://github.com/sunxu/storyforge.git "$RUN"
+cd "$RUN"
+test "$(git rev-parse HEAD)" = "24eb9f78de6f6e953d84a150d65f020da6ddb4ef"
+```
+
+将以下六份私有输入以原文件名放入一个新建的 0700 私有 staging 目录，文件均为 0600；不移动、不改写原文件：
+- `OWNER_ADJUDICATION_BLIND_PACKETS_PRIVATE.jsonl`
+- `OWNER_ADJUDICATION_RESULTS_PRIVATE.jsonl`
+- `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl`
+- `OWNER_ADJUDICATION_SCHEMA_V2.json`
+- `OWNER_HISTORY_COMPLETENESS_AI_REVIEW_35_PRIVATE.jsonl`
+- `OWNER_HISTORY_COMPLETENESS_AI_REVIEW_35_SAFE.json`
+
+另外创建 0600 的 SHA pin JSON，精确 pin 前四份要求的文件：packet、results、semantic checks、AI Advisory JSONL。SAFE 文件本身会按严格字段核验；其 SHA 不作为第四项以外的额外必需 pin。staging 目录必须 0700，pin 文件保存在 Owner 私有目录，不得进入仓库或 GitHub。
+
+运行命令见 `docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V1_CN.md`。必须显式传入 `--owner-approved`；输出目录必须是此前不存在的新目录。成功验收条件：20 cases、60 semantic checks、35 history assertions、60 target locators、20 history locators；官方 CLI verifier 成功生成 SAFE/Manifest；semantic HOLD 原样保留；原始输入 SHA 不变；`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
+
+**当前实际阻塞仅是这六份 Owner 私有输入尚未由本会话读取/执行。** ChatGPT 已完成 GitHub 代码与 CI 交付；不得伪称本地私有包已规范化或 P2-A 已 PASS。收到真实 SAFE 和 SHA 回执后再更新阶段状态。P2-B、P3、GPU、HF Job、SFT 均不在本次授权范围。
