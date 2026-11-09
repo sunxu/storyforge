@@ -3,8 +3,6 @@ from __future__ import annotations
 import importlib.util
 from pathlib import Path
 
-import pytest
-
 
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/r60_owner_approved_package_normalizer_v1.py"
 SPEC = importlib.util.spec_from_file_location("r60_owner_approved_package_normalizer_v1", SCRIPT)
@@ -82,10 +80,14 @@ def test_normalize_results_rejects_approved_non_negative_verdict():
     }
     result["assessments"]["player_agency"]["verdict"] = "SUPPORTED"
 
-    with pytest.raises(SystemExit):
+    try:
         MODULE.normalize_results(
             [result], [_packet()], {(case_id, "player_agency")}, dimensions
         )
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("unsupported approved verdict was accepted")
 
 
 def test_normalize_results_rejects_unexpected_target_locator():
@@ -97,7 +99,9 @@ def test_normalize_results_rejects_unexpected_target_locator():
     }
     result["assessments"]["safety"]["evidence"][0]["message_index"] = 0
 
-    with pytest.raises(SystemExit):
-        MODULE.normalize_results(
-            [result], [_packet()], set(), dimensions
-        )
+    try:
+        MODULE.normalize_results([result], [_packet()], set(), dimensions)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("unexpected target locator was accepted")
