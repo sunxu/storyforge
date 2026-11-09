@@ -10,10 +10,11 @@ from pathlib import Path
 
 
 def preflight(profiles_path: Path, snapshots_root: Path, *, input_budget: int):
-    from storyforge_gold_quality import hf_severity_evidence_v2 as severity
     import jinja2
     import sentencepiece
     import transformers
+
+    from storyforge_gold_quality import hf_severity_evidence_v2 as severity
 
     del jinja2, sentencepiece
     baseline = {
@@ -88,7 +89,7 @@ def main() -> int:
         safe = preflight(args.profiles, args.snapshots_root, input_budget=args.input_budget)
         print(json.dumps(safe, ensure_ascii=False, sort_keys=True))
         return 0
-    except Exception as exc:
+    except (ValueError, OSError, ImportError, TypeError, KeyError, RuntimeError) as exc:
         # Intentional SAFE error allowlist: no paths, private text or traceback.
         code = str(exc) if isinstance(exc, ValueError) and re.fullmatch(
             r"P3_[A-Z0-9_]+(?:_HOLD)?", str(exc)
