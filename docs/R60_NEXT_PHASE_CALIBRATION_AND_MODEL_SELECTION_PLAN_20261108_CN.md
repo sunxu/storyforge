@@ -332,4 +332,4 @@ Gold72 40 条先分为 20 条规则开发集和 20 条锁定回归集；R60 10 �
 
 ## 11. 当前执行状态校正（2026-11-09）
 
-P0/P1 已完成；当前不是从 P0 开始。当前 PR #25 HEAD 为 `4190c6fe895080d99901cb4c5eb3f221c6948d6d`，五组 Actions 全部通过；接手时仍须实时复核。P2-A Development-20 v2.1 新包未生成，Owner 20 条裁决与 60 条语义复核未开始。P2-B Locked20 + Severe10 的 held-out Owner reference labels 是 P4 前置，须在 P2-A 和 rubric/prompt 冻结后独立准备；不得将 P2-A 20 条当作 30 条 held-out 评估标签。P3 CPU-only 准备不授权 GPU；P4 GPU 需要单独审批。
+P0/P1 已完成；当前不是从 P0 开始。上一轮核验快照 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 全部通过；后续文档提交已推进 HEAD，接手时必须实时复核。P2-A Development-20 v2.1 新包未生成，Owner 20 条裁决与 60 条语义复核未开始。P2-B Locked20 + Severe10 的 held-out Owner reference labels 是 P4 前置，须在 P2-A 和 rubric/prompt 冻结后独立准备；不得将 P2-A 20 条当作 30 条 held-out 评估标签。P3 CPU-only 准备不授权 GPU；P4 GPU 需要单独审批。
