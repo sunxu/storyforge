@@ -59,7 +59,10 @@ def validate_handoff(data: Any) -> list[dict[str, Any]]:
     _require(scope.get("cases") == 20, "CASE_COUNT_MISMATCH")
     _require(scope.get("dimensions_per_case") == 3, "DIMENSION_COUNT_MISMATCH")
     _require(scope.get("total_items") == 60, "ITEM_COUNT_MISMATCH")
-    _require(set(scope.get("dimensions", [])) == DIMENSIONS, "DIMENSION_SET_MISMATCH")
+    dimensions = scope.get("dimensions")
+    _require(isinstance(dimensions, list), "DIMENSION_SET_SHAPE_HOLD")
+    _require(all(isinstance(x, str) for x in dimensions), "DIMENSION_SET_SHAPE_HOLD")
+    _require(set(dimensions) == DIMENSIONS, "DIMENSION_SET_MISMATCH")
 
     owner = data.get("owner_review")
     _require(isinstance(owner, dict), "OWNER_REVIEW_MISSING")
@@ -116,14 +119,16 @@ def validate_handoff(data: Any) -> list[dict[str, Any]]:
         _require(isinstance(blind_id, str) and 8 <= len(blind_id) <= 128,
                  "BLIND_ID_SHAPE_HOLD")
         dimension = row.get("dimension")
-        _require(dimension in DIMENSIONS, "DIMENSION_VALUE_HOLD")
+        _require(isinstance(dimension, str) and dimension in DIMENSIONS,
+                 "DIMENSION_VALUE_HOLD")
         pair = (blind_id, dimension)
         _require(pair not in seen, "DUPLICATE_BLIND_DIMENSION")
         seen.add(pair)
         by_case.setdefault(case_number, set()).add(dimension)
 
         decision = row.get("owner_conversation_decision")
-        _require(decision in DECISIONS, "OWNER_DECISION_VALUE_HOLD")
+        _require(isinstance(decision, str) and decision in DECISIONS,
+                 "OWNER_DECISION_VALUE_HOLD")
         counts[decision] += 1
         _require(isinstance(row.get("original_owner_verdict"), str)
                  and row["original_owner_verdict"], "ORIGINAL_VERDICT_MISSING")
@@ -136,7 +141,7 @@ def validate_handoff(data: Any) -> list[dict[str, Any]]:
 
         claude_conclusion = row.get("claude_conclusion")
         _require(
-            claude_conclusion in (
+            isinstance(claude_conclusion, str) and claude_conclusion in (
                 "SUPPORTS_VERDICT", "DOES_NOT_SUPPORT_VERDICT", "INSUFFICIENT_CONTEXT"
             ),
             "CLAUDE_CONCLUSION_VALUE_HOLD",
@@ -235,7 +240,11 @@ def build_artifacts(data: dict[str, Any], source_sha256: str) -> dict[str, bytes
 
 def _read_private_input(path: Path) -> bytes:
     _require(not path.is_symlink(), "INPUT_SYMLINK_HOLD")
+    _require(all(not parent.is_symlink() for parent in path.parents),
+             "INPUT_PATH_COMPONENT_SYMLINK_HOLD")
     _require(path.is_file(), "INPUT_FILE_MISSING")
+    _require(path.parent.is_dir() and stat.S_IMODE(path.parent.stat().st_mode) == 0o700,
+             "INPUT_PARENT_MODE_MUST_BE_0700")
     info = path.lstat()
     _require(stat.S_IMODE(info.st_mode) == 0o600, "INPUT_MODE_MUST_BE_0600")
     _require(info.st_nlink == 1, "INPUT_HARDLINK_HOLD")
@@ -259,6 +268,8 @@ def import_handoff(input_path: Path, output_dir: Path) -> dict[str, Any]:
              "OUTPUT_MUST_BE_NEW")
     parent = output_dir.parent
     _require(parent.is_dir() and not parent.is_symlink(), "OUTPUT_PARENT_INVALID")
+    _require(all(not ancestor.is_symlink() for ancestor in parent.parents),
+             "OUTPUT_PATH_COMPONENT_SYMLINK_HOLD")
     _require(stat.S_IMODE(parent.stat().st_mode) == 0o700,
              "OUTPUT_PARENT_MODE_MUST_BE_0700")
 
