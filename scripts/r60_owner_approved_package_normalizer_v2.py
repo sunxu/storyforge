@@ -36,31 +36,27 @@ OWNER_SEMANTIC_REVIEWER_REF = "owner-independent-r60-p2a-dev20-20261109"
 
 
 def normalize_owner_semantic_reviewer_binding(checks) -> int:
-    """Bind the already completed Owner review in a derived copy only.
-
-    This is retrospective metadata binding, not cryptographic identity
-    attestation. It is permitted only because the Owner stated that the
-    60 semantic checks were completed as part of the same independent
-    Owner review. Conflicting pre-existing values fail closed.
-    """
+    """Require an actually recorded Owner review; never infer reviewer identity."""
     import copy
 
     output = copy.deepcopy(checks)
     if len(output) != 60:
         stop("SEMANTIC_REVIEWER_BINDING_CARDINALITY_HOLD")
+    refs = set()
     for row in output:
         check = row.get("check") if isinstance(row, dict) else None
         if not isinstance(check, dict):
             stop("SEMANTIC_REVIEWER_BINDING_SHAPE_HOLD")
         role = check.get("reviewer_role")
         ref = check.get("reviewer_ref")
-        if role not in (None, "OWNER_INDEPENDENT"):
-            stop("SEMANTIC_REVIEWER_ROLE_CONFLICT_HOLD")
-        if ref not in (None, OWNER_SEMANTIC_REVIEWER_REF):
-            stop("SEMANTIC_REVIEWER_REF_CONFLICT_HOLD")
-        check["reviewer_role"] = "OWNER_INDEPENDENT"
-        check["reviewer_ref"] = OWNER_SEMANTIC_REVIEWER_REF
-    return output, len(output)
+        if role != "OWNER_INDEPENDENT":
+            stop("SEMANTIC_REVIEW_NOT_OWNER_FINALIZED_HOLD")
+        if not isinstance(ref, str) or not 8 <= len(ref.strip()) <= 128:
+            stop("SEMANTIC_REVIEWER_REF_MISSING_HOLD")
+        refs.add(ref.strip())
+    if len(refs) != 1:
+        stop("SEMANTIC_REVIEWER_REF_CONSISTENCY_HOLD")
+    return output, 0
 
 
 def sha(raw: bytes) -> str:
