@@ -586,6 +586,38 @@ def aggregate_severity_outcome_v2(verdicts: dict[str, str]) -> str:
     return "NO_SEVERE_FLAGS__QUALITY_NOT_PASSED"
 
 
+def semantic_check_contract_reason(check: object) -> str | None:
+    """Classify semantic check contract failures without exposing private values."""
+    expected = {
+        "schema", "rubric_version", "reviewer_role", "reviewer_ref",
+        "conclusion", "reviewed_evidence_indexes", "reasoning_summary",
+    }
+    if not isinstance(check, dict):
+        return "CHECK_NOT_OBJECT"
+    if set(check) != expected:
+        return "CHECK_KEYSET_MISMATCH"
+    if check.get("schema") != SEMANTIC_CHECK_SCHEMA:
+        return "SCHEMA_MISMATCH"
+    if check.get("rubric_version") != RUBRIC_VERSION:
+        return "RUBRIC_VERSION_MISMATCH"
+    if check.get("reviewer_role") not in ("OWNER_INDEPENDENT", "INDEPENDENT_REVIEWER"):
+        return "REVIEWER_ROLE_INVALID"
+    if not _string(check.get("reviewer_ref"), 8, 128):
+        return "REVIEWER_REF_INVALID"
+    if check.get("conclusion") not in (
+        "SUPPORTS_VERDICT", "DOES_NOT_SUPPORT_VERDICT", "INSUFFICIENT_CONTEXT",
+    ):
+        return "CONCLUSION_INVALID"
+    indexes = check.get("reviewed_evidence_indexes")
+    if not isinstance(indexes, list) or any(type(i) is not int for i in indexes):
+        return "EVIDENCE_INDEX_TYPE_INVALID"
+    if len(set(indexes)) != len(indexes):
+        return "EVIDENCE_INDEX_DUPLICATE"
+    if not _string(check.get("reasoning_summary"), 12, 1200):
+        return "REASONING_SUMMARY_INVALID"
+    return None
+
+
 def verify_semantic_entailment_v2(
     result: dict[str, Any], packet: dict[str, Any],
     dimension: str, check: object,
