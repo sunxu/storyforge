@@ -1042,7 +1042,7 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_verify_v2.py \
 **范围边界：** Rubric v2.1 已明确排除训练数据来源、权利、隐私、数据使用授权和数据隔离审核；上述事项不得被重新加入 Owner 20 条裁决或 60 条语义复核。故事内部的玩家拒绝/同意边界、可见故事规则和安全规则仍按内容语义标准判断。
 
 
-### 8.24 历史 CI 快照（9b4f235）；当前 HEAD/CI 已更新见 8.25
+### 8.24 历史 CI 快照（9b4f235；仅供沿革，当前 HEAD/CI 必须实时查询）
 
 已重新核验 PR #25 当前 head 与本次接口合同提交一致：
 - 当时 PR head：`9b4f235da01a856b3f123f87a2ee1c314c54a3fc`（历史快照，不是当前 HEAD）
