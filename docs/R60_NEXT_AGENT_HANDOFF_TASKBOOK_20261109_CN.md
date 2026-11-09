@@ -122,7 +122,7 @@ git log -5 --oneline --decorate
 
 任一项不满足，P0=HOLD；不进入 P1，不改 Prompt、不运行模型。
 
-### P1 — 三个严重维度证据标准 v2
+### P1 — 三个严重维度证据标准 v2.1
 
 实现三态，不再依赖旧布尔 flag：
 
@@ -147,7 +147,7 @@ NPC 主动行动不自动等于玩家代理；普通亲密、冲突、威胁台�
 ### P2 — Owner 独立盲裁决
 
 - 新建 blind adjudication packets，隐藏旧 A/B/C 判断、分数、flags、历史 Owner resolution、槽位和旧 blind IDs。
-- 先裁决 Gold72 development 20 条；locked 20 条和 R60 severe10 保持锁定，直到 rubric v2 冻结。
+- 先裁决 Gold72 development 20 条；locked 20 条和 R60 severe10 保持锁定，直到 rubric v2.1 冻结。
 - C 的历史结果只作比较对象，不作为 ground truth。
 - 逐维保存 verdict、证据引用、规则依据、缺失上下文、rubric 版本、时间戳和 receipt SHA。
 - 不确定案例保留 INSUFFICIENT_CONTEXT/HOLD，不为凑数强行裁决。
@@ -205,7 +205,7 @@ CPU 预检覆盖三个模型的 tokenizer/template、Qwen Thinking prompt、sche
 - Gold72 locked 20 用于锁定回归；
 - R60 severe10 用于专项严重问题回归。
 - 覆盖 NPC 主动性/玩家代理、硬规则证据、安全边界、引用存在但语义不支持、上下文缺失、结构化输出失败、旧 v3/新 v4 checkpoint 防串用。
-- 产出 rubric v2 frozen SHA、模型 profile IDs、回归 SAFE、误报/漏报分类、最终 A/B 选择理由和 Owner approval record。
+- 产出 rubric v2.1 frozen SHA、模型 profile IDs、回归 SAFE、误报/漏报分类、最终 A/B 选择理由和 Owner approval record。
 
 **P5 PASS** 后才可申请 P6。
 
@@ -220,7 +220,7 @@ CPU 预检覆盖三个模型的 tokenizer/template、Qwen Thinking prompt、sche
 - 任一严重维度 SUPPORTED 不准入；任一维 INSUFFICIENT_CONTEXT HOLD；
 - 三维均 NOT_SUPPORTED 仍需通过六维质量及所有其他准入门槛；
 - 保持 Story 级 Train/Validation/Test 隔离；
-- R50 完整元数据排除、世界组件证据、历史输入完整性和 CPU Tokenizer/Collator 仍是准入门槛。
+- 世界组件证据、历史输入完整性和 CPU Tokenizer/Collator 仍是准入门槛。数据来源/权利/隐私/数据使用授权/隔离证明不属于案例审核证据；Story 级数据切分等系统侧防泄漏控制与审核员提供的证据分开管理。
 
 **P6 产物**：批量审核 SAFE、分歧复核记录、Quality-v1 admission SAFE。不得为达到数量目标降低标准。
 
@@ -821,7 +821,7 @@ Owner Mac 已在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 的
 1. `OWNER_ADJUDICATION_BLIND_PACKETS_PRIVATE.jsonl`
 2. `OWNER_ADJUDICATION_INSTRUCTIONS_CN.md`
 3. `OWNER_ADJUDICATION_SCHEMA_V2.json`
-4. 已冻结的公开 Rubric v2。
+4. 已冻结的公开 Rubric v2.1。
 
 严禁打开 `OWNER_ADJUDICATION_ID_MAP_PRIVATE.json`、P0 Gold manifest、Gold72 C 旧结果、A V3/B2 结果、历史 Owner resolution、旧 checkpoint；不得查看 Locked Regression 20 或 R60 Severe10。
 
@@ -846,3 +846,50 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_verify_v2.py \
 任何 semantic check 不支持 verdict、引用不完整、重复/缺失维度或上下文未解决，均保留 HOLD；不得覆盖或重写原始裁决来追求全绿。
 
 在真实 Owner 结果回执验证完成前，不进入 P3 模型推理，不解锁 Locked Regression 20 / Severe10，不提交 GPU/HF Job，不运行 1000 条批量审核或 SFT。
+
+
+### 8.21 Owner 要求排除数据来源与权利审核：Rubric v2.1（2026-11-09）
+
+Owner 明确要求：**审核标准去掉来源与权利审核，不要求来源、隐私、授权和数据隔离相关的证据。**
+
+据此将案例内容审核范围调整为：
+- 不评估、不要求、不推断，也不得因缺少此类材料而 HOLD：训练样本来源合法性/采集渠道/来源权属、版权/所有权/许可、数据使用授权、数据主体隐私/个人信息处理/脱敏或隐私授权合规、存储访问控制/数据隔离/跨集合隔离/数据治理证明。
+- 不得把上述事项写入 `missing_context`、`rule_basis` 或 verdict 理由。
+- `evidence.source` 仍是**当前盲包内部文本定位字段**，用于精确引用核验，不代表数据来源证明。
+- `rule_basis.source` / `reviewed_rule_sources` 仍表示**故事内规则/交互/安全依据类别**，不代表训练数据来源或权利证明。
+- 玩家在故事内明确表达的拒绝、同意、选择和行动边界仍是 Player Agency / Safety 的内容语义证据；它与训练数据使用授权无关，继续按原标准判断。
+- P0 的 manifest/hash/source binding、私有文件权限、HF Volume 边界和训练 split 等属于系统侧完整性/安全控制，不要求案例审核员收集或裁决。此修改不授权删除或绕过这些工程保护。
+
+版本处理：
+- `RUBRIC_VERSION` 从 `r60_severity_rubric_v2` 升为 `r60_severity_rubric_v2_1`；JSON schema shape 保持兼容，rubric version 和 rubric SHA 明确区分。
+- 新 prompt/schema 描述明确排除数据来源、权利、隐私、数据使用授权和隔离证明。
+- 新盲包生成器只保留 visible_history 的 `role/content`，不向审核员暴露 `source_turn` 等来源元数据。
+- 已生成的 `owner-adjudication-dev20-20261109` 六文件包基于 v2.0，**标记 SUPERSEDED，不得用于裁决，不得覆盖或删除**。Owner 尚未开始 review，因此无需迁移或重写任何裁决。
+- v2.1 重新生成到新的、此前不存在的目录：
+  `$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109`
+
+待本分支最新 CI 全部通过后，在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree 执行：
+
+```bash
+cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
+git fetch origin
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+
+PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --p0-freeze-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109"
+
+# 仅当 dry-run 返回 P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN
+# 且 files_written=0，才对同一新输出路径追加 --write。
+PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --p0-freeze-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109" \
+  --write
+```
+
+新包生成后，只能基于 v2.1 盲包开始 Owner 独立裁决。旧 v2.0 包继续封存，不可混用。其余 P2 规则（20 verdict + 60 semantic checks、独立语义复核、HOLD 保留、ID Map 隔离）保持不变。
