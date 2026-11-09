@@ -2,9 +2,10 @@
 
 The tool is create-only. It preserves original inputs and semantic checks,
 validates both AI advisory sets (35 NOT_SUPPORTED + 4 SUPPORTED), applies only
-the Owner-approved history_complete assertions and the separately approved
-four-pair derived-copy rule_basis label mapping, normalizes evidence locators,
-then runs the unchanged official v2 verifier. No GPU/HF/SFT/admission.
+the Owner-approved history_complete assertions, four-pair derived-copy
+rule_basis label mapping, and retrospective Owner reviewer binding on the
+derived semantic-check copy, normalizes evidence locators, then runs the
+unchanged official v2 verifier. No GPU/HF/SFT/admission.
 """
 from __future__ import annotations
 
@@ -31,6 +32,35 @@ APPROVAL = "OWNER_HISTORY_COMPLETENESS_OWNER_APPROVAL_V2_PRIVATE.json"
 PINNED = (PACKET, RESULTS, SEMANTIC, AI35, WORKSHEET4, AI4)
 BASE_RECOMMENDATION = "CONFIRM_HISTORY_COMPLETE_AND_KEEP_NOT_SUPPORTED"
 SUPPORTED_RECOMMENDATION = "CONFIRM_HISTORY_COMPLETE_AND_KEEP_SUPPORTED"
+OWNER_SEMANTIC_REVIEWER_REF = "owner-independent-r60-p2a-dev20-20261109"
+
+
+def normalize_owner_semantic_reviewer_binding(checks) -> int:
+    """Bind the already completed Owner review in a derived copy only.
+
+    This is retrospective metadata binding, not cryptographic identity
+    attestation. It is permitted only because the Owner stated that the
+    60 semantic checks were completed as part of the same independent
+    Owner review. Conflicting pre-existing values fail closed.
+    """
+    import copy
+
+    output = copy.deepcopy(checks)
+    if len(output) != 60:
+        stop("SEMANTIC_REVIEWER_BINDING_CARDINALITY_HOLD")
+    for row in output:
+        check = row.get("check") if isinstance(row, dict) else None
+        if not isinstance(check, dict):
+            stop("SEMANTIC_REVIEWER_BINDING_SHAPE_HOLD")
+        role = check.get("reviewer_role")
+        ref = check.get("reviewer_ref")
+        if role not in (None, "OWNER_INDEPENDENT"):
+            stop("SEMANTIC_REVIEWER_ROLE_CONFLICT_HOLD")
+        if ref not in (None, OWNER_SEMANTIC_REVIEWER_REF):
+            stop("SEMANTIC_REVIEWER_REF_CONFLICT_HOLD")
+        check["reviewer_role"] = "OWNER_INDEPENDENT"
+        check["reviewer_ref"] = OWNER_SEMANTIC_REVIEWER_REF
+    return output, len(output)
 
 
 def sha(raw: bytes) -> str:
@@ -360,10 +390,19 @@ def main() -> int:
     if basis_type_normalized_count != 4:
         stop("BASIS_TYPE_NORMALIZATION_COUNT_HOLD")
     validate_supported_basis_types(normalized, severity.DIMENSIONS)
+
+    semantic_checks_derived, semantic_reviewer_binding_count = (
+        normalize_owner_semantic_reviewer_binding(checks)
+    )
+    if semantic_reviewer_binding_count != 60:
+        stop("SEMANTIC_REVIEWER_BINDING_COUNT_HOLD")
+    semantic_checks_derived_raw = b"".join(
+        adjudication.canonical(row) + b"\n" for row in semantic_checks_derived
+    )
     normalized_raw = b"".join(adjudication.canonical(row) + b"\n" for row in normalized)
     try:
         manifest, pure_safe = adjudication.verify_owner_results(
-            raw[PACKET], normalized_raw, raw[SEMANTIC]
+            raw[PACKET], normalized_raw, semantic_checks_derived_raw
         )
     except severity.EvidenceHold as exc:
         stop(f"OFFICIAL_VERIFIER_{exc}")
@@ -391,6 +430,15 @@ def main() -> int:
             "verdicts_modified": False,
             "evidence_modified": False,
             "semantic_checks_modified": False,
+        },
+        "semantic_reviewer_binding": {
+            "owner_review_already_completed": True,
+            "binding_mode": "RETROSPECTIVE_DERIVED_COPY_METADATA",
+            "reviewer_role": "OWNER_INDEPENDENT",
+            "reviewer_ref": OWNER_SEMANTIC_REVIEWER_REF,
+            "bound_rows": semantic_reviewer_binding_count,
+            "original_semantic_checks_modified": False,
+            "cryptographic_identity_attested": False,
         },
         "decision": {
             "history_complete": True,
@@ -470,6 +518,9 @@ def main() -> int:
         "output_dir": str(output),
         **counts,
         "basis_type_normalized": basis_type_normalized_count,
+        "semantic_reviewer_binding_rows": semantic_reviewer_binding_count,
+        "semantic_reviewer_binding_mode": "RETROSPECTIVE_DERIVED_COPY_METADATA",
+        "semantic_reviewer_identity_cryptographically_attested": False,
         "cases_verified": safe.get("cases_verified"),
         "semantic_checks_verified": safe.get("semantic_checks_verified"),
         "semantic_supported_count": safe.get("semantic_supported_count"),
