@@ -270,7 +270,22 @@ P1(v2.1) = PASS；验收证据、当前 Rubric SHA 和最新 CI 状态见 [下�
 
 只判断 Player Agency、Hard Rule、Safety 内容语义。不得要求或将数据来源、权利、版权、隐私、数据使用授权、数据隔离证据作为 verdict、missing_context 或 HOLD 理由。故事内玩家拒绝/同意边界仍属于内容语义证据。
 
-P2 验收：20/20 Owner 结果和 60/60 语义复核记录结构完整、绑定正确、可追溯；所有 semantic HOLD 原样保留；盲化边界未破坏。结构验证通过不等于 60/60 语义支持，也不自动产生 Quality-v1 admission。
+P2-A 验收：20/20 Owner 结果和 60/60 语义复核记录结构完整、绑定正确、可追溯；所有 semantic HOLD 原样保留；盲化边界未破坏。结构验证通过不等于 60/60 语义支持，也不自动产生 Quality-v1 admission。
+
+### P2-B：Held-out Owner 参考标签（P4 前置；P2-A 完成后再启动）
+
+P4 的 30 条模型对照样本是 Gold72 Locked Regression 20 + R60 Severe10。它们不能只依赖旧 A/B/C 结果，必须有独立 Owner reference labels。该工作不得与 Development-20 混包：
+
+- 只有 P2-A 结果通过验证且 Rubric v2.1 / prompt 已冻结后，才提出 P2-B 执行方案并取得 Owner 明确确认。
+- 分别读取 Gold72 Locked Regression 20 与 R60 Severe10 的已冻结 manifest；不得修改 P0 分组、不得重复计算已通过的 P0 精确去重。
+- 为 30 条生成独立 blind packets、Owner ID map、manifest 和 SAFE；使用新 blind IDs、独立顺序和独立输出目录。模型/Prompt 开发者不得接触 Owner labels 或 ID map，直到 P4 三模型预测及 checkpoint 冻结。
+- 30 条分别进行三个严重维度 Owner 裁决，形成 30 行结果 + 90 行语义蕴含复核（30×3）；六维文学评分如需作为参考，必须另列、另验，不与三维严重判断混合。
+- 当前代码的 verify_owner_results() 固定要求 20 packets / 20 results / 60 checks。不得把 30/30/90 输入现有验证器或放宽 P2-A 的严格合同。P2-B 执行前必须新增独立版本化的 30/90 packet builder 与 verifier（或经测试证明可安全参数化的兼容实现），配套合成测试、rubric SHA/packet/result/check SHA 绑定及 create-only 私有回执。
+- P2-B 的 30 条 Owner reference labels 必须私有封存；P4 模型运行只获得盲输入，不得获得参考标签。
+
+P2-B 验收：30/30 结果、90/90 semantic checks 完整绑定；无重复/缺失；所有引用索引完整覆盖；HOLD 保留；锁定标签未泄露给模型或 Prompt 开发者。
+
+**P2 总体完成门槛**：P2-A 的 Development-20 / 60 checks 与 P2-B 的 held-out 30 / 90 checks 均通过各自验证器。完成 P2 不等于 Quality-v1 admission 或 GPU 授权。
 
 ---
 
