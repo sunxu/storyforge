@@ -587,3 +587,8 @@ Owner 已明确确认：原 60 条 semantic checks 由 Owner AI 生成，未经 
 ## 2026-11-09：4Router HTTP 400 诊断
 
 Claude Opus 5.5 首批请求返回 HTTP 400，尚未获得任何有效审核结果。客户端已更新为将每次 HTTP 错误体保存至本地 0600 私有诊断文件，并只在 SAFE 中输出 HTTP 状态及 error type/code/param；不输出服务端 message、请求正文或密钥。继续使用原输出目录加 `--resume`，先读取安全诊断字段，确认拒绝原因后再修复；不得删除/覆盖批次文件或盲目改变请求参数。Owner 已授权的外发范围仍仅限本批 20 条 Development 盲包至 4Router。GPU/HF Job/SFT 未启动。
+
+
+## 2026-11-09：4Router Claude system 参数格式修复
+
+已根据 Owner 提供的 400 错误原文，将 CLI Proxy 请求从 `messages[0].role=system` 改为顶层 `system` 字段，messages 只保留 user 消息；不传 temperature，其他请求边界不变。新增合成测试。提交：`c1a3d4f`（客户端）、`807495f`（测试）、`c6a5d5c`（协议）。修复尚待 CI 与真实单批调用验证。使用原输出目录 `--resume`，保留原 HTTP 错误记录；不覆盖已验证成功批次。未启动 GPU/HF Job/SFT。
