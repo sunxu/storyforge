@@ -5,6 +5,7 @@ import copy
 
 from scripts import r60_owner_approved_package_normalizer_v2 as MODULE
 from scripts import r60_p2a_semantic_check_keyset_diagnostic as KEYSET_DIAG
+from scripts import r60_p2a_second_model_cross_review as CROSS_REVIEW
 from storyforge_gold_quality import hf_owner_adjudication_v2 as ADJUDICATION
 from storyforge_gold_quality import hf_severity_evidence_v2 as SEVERITY
 
@@ -390,3 +391,64 @@ def test_keyset_diagnostic_handles_invalid_json_without_echoing_input():
     assert report["status"] == "DIAGNOSTIC_INPUT_HOLD"
     assert report["input_errors"] == [{"line": 2, "reason": "INVALID_JSON"}]
     assert "do-not-echo" not in json.dumps(report)
+
+
+def _cross_review_inputs():
+    packets = []
+    results = []
+    for i in range(20):
+        case_id = f"{i:032x}"
+        packets.append({
+            "schema": "storyforge_r60_owner_adjudication_packet_v2",
+            "calibration_id": case_id,
+            "visible_history": [{"role": "user", "content": "A player chooses whether to leave."}],
+            "target_text": "The character responds to the player's choice.",
+            "verified_world_components": [],
+        })
+        results.append({
+            "schema": "storyforge_severity_evidence_review_v2",
+            "rubric_version": "r60_severity_rubric_v2_1",
+            "case_ref": case_id,
+            "assessments": {
+                dimension: {
+                    "verdict": "NOT_SUPPORTED",
+                    "evidence": [{"quote": "The player chooses whether to leave."}],
+                    "rule_basis": [],
+                    "context_coverage": {"history_complete": True},
+                }
+                for dimension in CROSS_REVIEW.DIMENSIONS
+            },
+        })
+    return packets, results
+
+
+def test_second_model_cross_review_builder_creates_fresh_blind_advisory_only_packets():
+    packets, results = _cross_review_inputs()
+    counter = iter(f"{i:032x}" for i in range(100, 120))
+    output, id_map, safe = CROSS_REVIEW.build(
+        packets, results, b"rubric",
+        token_factory=lambda _n: next(counter),
+    )
+    assert len(output) == 20
+    assert len(id_map["mapping"]) == 20
+    assert all(set(row) == {
+        "schema", "blind_id", "visible_history", "target_text",
+        "verified_world_components", "review_targets",
+    } for row in output)
+    assert all(set(row["review_targets"]) == set(CROSS_REVIEW.DIMENSIONS) for row in output)
+    assert all("calibration_id" not in row for row in output)
+    assert safe["prior_ai_semantic_checks_read"] is False
+    assert safe["prior_ai_advisory_files_read"] is False
+    assert safe["reviewer_identity_attested"] is False
+    assert safe["owner_review_completed"] is False
+
+
+def test_second_model_cross_review_builder_rejects_packet_result_mismatch():
+    packets, results = _cross_review_inputs()
+    results.pop()
+    try:
+        CROSS_REVIEW.build(packets, results, b"rubric")
+    except CROSS_REVIEW.Hold as exc:
+        assert str(exc) == "P2A_INPUT_CARDINALITY_HOLD"
+    else:
+        raise AssertionError("mismatched packet/result set was accepted")
