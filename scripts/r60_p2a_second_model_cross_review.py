@@ -21,6 +21,8 @@ PACKET_KEYS = {
     "verified_world_components",
 }
 RESULT_KEYS = {"schema", "rubric_version", "case_ref", "assessments"}
+RESULT_SCHEMA = "storyforge_severity_evidence_review_v2"
+RUBRIC_VERSION = "r60_severity_rubric_v2_1"
 ADVISORY_SCHEMA = "storyforge_r60_p2a_second_model_cross_review_v1"
 EXPECTED_VERDICTS = {"SUPPORTED", "NOT_SUPPORTED", "INSUFFICIENT_CONTEXT"}
 
@@ -97,7 +99,10 @@ def build(packets: list[dict], results: list[dict], rubric_raw: bytes,
 
     result_by_id = {}
     for result in results:
-        if set(result) != RESULT_KEYS or not isinstance(result.get("assessments"), dict):
+        if (set(result) != RESULT_KEYS
+                or result.get("schema") != RESULT_SCHEMA
+                or result.get("rubric_version") != RUBRIC_VERSION
+                or not isinstance(result.get("assessments"), dict)):
             raise Hold("RESULT_SCHEMA_HOLD")
         ref = result.get("case_ref")
         if not isinstance(ref, str) or ref in result_by_id:
@@ -133,6 +138,7 @@ def build(packets: list[dict], results: list[dict], rubric_raw: bytes,
                 "owner_evidence_to_assess": evidence,
                 "owner_rule_basis_to_assess": assessment.get("rule_basis", []),
                 "owner_context_coverage_to_assess": assessment.get("context_coverage", {}),
+                "owner_missing_context_to_assess": assessment.get("missing_context", []),
             }
         output.append({
             "schema": ADVISORY_SCHEMA,
