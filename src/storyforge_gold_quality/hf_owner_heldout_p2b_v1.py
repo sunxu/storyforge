@@ -227,3 +227,61 @@ def verify(packet_raw: bytes, result_raw: bytes, check_raw: bytes):
     safe["schema"] = "storyforge_r60_p2b_owner_results_safe_v1"
     safe["status"] = "P2B_OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED"
     return manifest, safe
+
+
+def verify_package(packet_raw: bytes, result_raw: bytes, check_raw: bytes,
+                   manifest_raw: bytes, map_raw: bytes):
+    """Bind 30/90 Owner receipts to the exact frozen private P2-B packet set."""
+    manifest = base._json(manifest_raw, "P2B_MANIFEST_JSON_HOLD")
+    mapping = base._json(map_raw, "P2B_MAP_JSON_HOLD")
+    packets = base._jsonl(packet_raw, "P2B_PACKET_JSONL_HOLD")
+    expected_cohorts = {"locked_regression": 20, "severe10": 10}
+    if (manifest.get("schema") != MANIFEST_SCHEMA
+            or manifest.get("status") != "P2B_HELDOUT_PACKETS_FROZEN__OWNER_REVIEW_NOT_STARTED"
+            or manifest.get("rubric_version") != severity.RUBRIC_VERSION
+            or manifest.get("case_count") != 30
+            or manifest.get("cohort_counts") != expected_cohorts
+            or manifest.get("packet_sha256") != base.sha(packet_raw)
+            or manifest.get("rubric_sha256") != base.sha(severity.RUBRIC_TEXT.encode())
+            or manifest.get("owner_map_sha256") != base.sha(base.canonical(mapping))
+            or manifest.get("receipt_sha256") != base.sha(base.canonical({
+                k: v for k, v in manifest.items() if k != "receipt_sha256"
+            }))
+            or manifest.get("development_cases_exposed") is not False
+            or manifest.get("old_owner_labels_exposed") is not False
+            or mapping.get("schema") != MAP_SCHEMA
+            or mapping.get("case_count") != 30
+            or mapping.get("receipt_sha256") != base.sha(base.canonical({
+                k: v for k, v in mapping.items() if k != "receipt_sha256"
+            }))):
+        raise base.AdjudicationHold("P2B_MANIFEST_OR_MAP_BINDING_HOLD")
+    bindings = mapping.get("mapping")
+    if not isinstance(bindings, list) or len(bindings) != 30:
+        raise base.AdjudicationHold("P2B_MAP_CARDINALITY_HOLD")
+    by_id = base._unique(packets, "calibration_id", "P2B_PACKET_ID_DUPLICATE")
+    refs = set()
+    cohorts = {"locked_regression": 0, "severe10": 0}
+    seen = set()
+    for row in bindings:
+        if not isinstance(row, dict) or set(row) != {
+            "calibration_id", "cohort", "private_case_ref",
+            "target_sha256", "packet_sha256"
+        }:
+            raise base.AdjudicationHold("P2B_MAP_ROW_HOLD")
+        cid = row["calibration_id"]
+        packet = by_id.get(cid)
+        if (cid in seen or packet is None
+                or row["cohort"] not in cohorts
+                or not isinstance(row["private_case_ref"], str)
+                or not row["private_case_ref"]
+                or row["private_case_ref"] in refs
+                or packet.get("schema") != PACKET_SCHEMA
+                or row["target_sha256"] != base.sha(packet["target_text"].encode())
+                or row["packet_sha256"] != base.sha(base.canonical(packet))):
+            raise base.AdjudicationHold("P2B_PACKET_TO_MAP_BINDING_HOLD")
+        seen.add(cid)
+        refs.add(row["private_case_ref"])
+        cohorts[row["cohort"]] += 1
+    if len(seen) != 30 or cohorts != expected_cohorts:
+        raise base.AdjudicationHold("P2B_COHORT_COVERAGE_HOLD")
+    return verify(packet_raw, result_raw, check_raw)
