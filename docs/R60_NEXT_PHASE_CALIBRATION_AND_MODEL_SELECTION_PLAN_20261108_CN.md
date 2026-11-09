@@ -3,7 +3,7 @@
 日期：2026-11-08  
 目标分支：`r60/gold192-history-v3-adapter`  
 关联主线：PR #25 / Issue #26  
-当前状态（2026-11-09）：**P0 正式冻结 PASS；原 Rubric v2.0 的 P1 / P2 工程准备已完成，但 Owner 尚未开始裁决。Owner 随后要求从内容审核中排除数据来源/权利/隐私/数据使用授权/数据隔离证明，故现有 v2.0 盲审包已标记 SUPERSEDED，不得使用；v2.1 rubric、schema 描述、prompt、盲包来源元数据剥离和合成回归已完成；最新 GitHub Actions 全部 PASS（pytest 875 passed / 5 skipped / 42 subtests，Ruff、Gold Quality Pipeline、R60 Runtime、CPU dependency profiles、R58 scoped synthetic 均 PASS）。v2.0 包仍 SUPERSEDED；新 v2.1 包重新生成前，不开始 Owner 裁决。未运行模型、未提交 HF Job、未启动 GPU/SFT。**
+当前状态（2026-11-09）：**P0 正式冻结 PASS；P1 Rubric v2.1 / Schema / Prompt / 合成回归 / 旧 v3 兼容 PASS。P2 v2.0 盲审包已 SUPERSEDED；P2 v2.1 Development-20 新包尚未生成，Owner 20 条裁决与 60 条语义复核尚未开始。PR #25 当前已核验 HEAD 为 `4190c6fe895080d99901cb4c5eb3f221c6948d6d`，五组 Actions 全部 completed/success（run IDs 见交接任务书 8.25）；接手时仍须重新核验。当前下一步为 P2 v2.1 新包 dry-run → 显式 `--write`。没有运行新模型、没有提交 HF GPU Job、没有启动 GPU/SFT；Quality-v1 admitted=0、training_authorized=false。**
 
 ## 0. 执行目标与当前基线
 
@@ -18,7 +18,7 @@
 
 当前已知基线：
 
-- Gold72：保留 40 条 A/B 分歧案例，作为独立校准集。
+- Gold72：40 条 A/B 分歧案例已冻结；按案例分为 Development=20 / Locked Regression=20。Development 涉及 5 个 Story、Locked 涉及 6 个 Story、共享 Story=5；Owner 允许 Story 跨集合，不得改为 Story 互斥。
 - R60 Pilot10：10 条唯一来源案例；A、B 各自抽取的 5 条没有交集，不能声称 A/B 逐案一致。
 - R60 Reviewer C：10/10 已执行并完成来源/结果绑定核验；本地 Codex 回执不是远端模型身份公证。
 - R60 C 三维聚合：hard_rule 为 10/10 NOT_SUPPORTED；player_agency 为 SUPPORTED=3、NOT_SUPPORTED=7；safety 为 SUPPORTED=5、NOT_SUPPORTED=1、INSUFFICIENT_CONTEXT=4。
@@ -54,7 +54,7 @@
 - GitHub 只提交代码、规则、测试、聚合 SAFE 和不含私人正文的哈希/计数。
 - 新结果使用新 schema/version 和新目录；禁止覆盖原始结果。
 
-**P0 完成门槛**：Gold72=40、R60=10 来源完整；两集合分轨；去重结果已知；历史文件 SHA 与 Checkpoint 只读校验通过；原始数据没有被改写。
+**P0 已正式 PASS**：Owner SAFE 为 `CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`；Gold72=40、R60=10；20/20 案例分层；Gold72↔R60 exact history/target/full-history-target overlap=0；unique source=50。语义近重复检测未执行。P0 已完成，不得重复执行。
 
 ## 2. 三项严重问题证据标准（P1）
 
@@ -125,18 +125,32 @@
 
 ## 3. 独立 Owner 证据裁决参照（P2）
 
-模型比较之前，先建立与模型输出隔离的参考标签。
+P2 分为开发校准和锁定评估参考两段，不能把 Development 标签与 Locked/Severe held-out 标签混用。
 
-1. 对 Gold72 开发集和 R60 Pilot10 进行证据级复核。
-2. 复核者只看盲包提供的故事历史上下文和目标，不看数据来源/权利资料、A/B/C 旧评分、严重 flags 和后验风险分层。
-3. 按上述三态定义分别裁决三个严重维度，并对六维文学质量另行评分。
-4. 每条参考标签必须附证据引用、适用规则、缺失上下文和裁决版本。
-5. 原始 A/B/C 判断保留为历史预测，不参与参考标签生成；参考标签冻结后再做对照。
-6. 对无法独立裁决的案例保留 INSUFFICIENT_CONTEXT/HOLD，不得为了提高可用样本数强行标注。
+### P2-A：Gold72 Development-20（当前首先执行）
 
-参考标签是本项目的 Owner evidence adjudication reference，不应宣传为普适真值或外部认证金标准。
+1. 使用当前 P0 manifest 与 Gold72 C blind source packet，按 Rubric v2.1 生成全新的 Development-20 blind packet；旧 v2.0 包 SUPERSEDED，不得使用。
+2. Owner 仅查看新 blind packet、instructions、schema 和公开 Rubric v2.1；不查看 ID Map、P0 manifest、旧 A/B/C 结果、旧 Owner resolution、Locked20 或 Severe10。
+3. 对 20 个案例分别裁决 player_agency / hard_rule / safety，生成 20 行 Owner result 和 60 行逐维 semantic entailment checks。
+4. 使用 storyforge_severity_semantic_entailment_check_v2 固定接口和私有验证器；具体字段、索引覆盖、UTC、HOLD 规则见主交接任务书 8.23。
+5. 这 20 条用于开发/校准，不作为 held-out 模型准确率评估集。
 
-**P2 完成门槛**：30 条模型对照案例均有独立参考标签或明确 HOLD；复核者未接触旧模型判断；引用可验证；标签和规则版本冻结。
+### P2-B：锁定评估参考标签（P4 前置，当前不解锁）
+
+在 P2-A 完成且 Rubric v2.1 / prompt 规则冻结后，另行准备并经 Owner 确认：Gold72 Locked Regression 20、R60 Severe10 10。为这 30 条建立独立 blind packets、Owner 参考标签及逐维语义复核。不得复用 Development-20 的 ID、顺序、输出或映射；模型/Prompt 开发者不得接触这 30 条参考标签，直到三模型预测与 checkpoint 冻结。若当前代码没有对应的安全生成器，先实现并合成测试独立 create-only builder；不得手工复制/解锁私有 manifest 来绕过工具门禁。
+
+### 通用裁决要求
+
+- 复核者只看盲包提供的故事历史上下文和目标，不看旧 A/B/C 判断、严重 flags、旧 Owner resolution 或后验分层。
+- 只审核 Player Agency、Hard Rule、Safety 内容语义；不得要求数据来源、版权/权利、隐私、数据使用授权或数据隔离证明，也不得因缺少这些材料而 HOLD。
+- 按三态定义分别裁决；六维文学质量另行评分，不与三维严重证据混合。
+- 每条参考标签必须附精确引用、适用故事规则、缺失上下文、rubric version、timestamp 和 receipt。
+- 对无法独立裁决的案例保留 INSUFFICIENT_CONTEXT/HOLD，不得为了提高可用样本数强行标注。
+- 原始 A/B/C 判断保留为历史预测，不参与参考标签生成。
+
+参考标签是项目内 Owner evidence adjudication reference，不是普适真值或外部认证金标准。
+
+**P2 完成门槛**：Development-20 的 20+60 回执验证通过；Held-out Locked20 + Severe10 的 30 条参考标签与逐维语义复核已独立冻结；两组盲化隔离有效；所有不确定项保留 HOLD。P2 完成不等于 Quality-v1 admission。
 
 ## 4. 三模型选型与推理配置（P3）
 
@@ -290,10 +304,12 @@ Gold72 40 条先分为 20 条规则开发集和 20 条锁定回归集；R60 10 �
 
 按下列顺序执行，不并行启动多个未验收阶段：
 
-1. **先完成 P0**：Owner 私有校准集清点、Gold72/R60 分轨、去重、哈希冻结。
-2. **再完成 P1-P2**：把三态证据定义写入公共规则文档和测试；Owner 私有裁决真实案例。
-3. **再完成 P3**：修复模型专属配置和 Checkpoint schema；保留旧结果。
-4. **最后准备 P4**：冻结 30 条配对清单和参考标签，CPU 预检通过后再申请 GPU 授权。
+1. **P0 已 PASS，不重做。**
+2. **P1 v2.1 已 PASS，不回退旧 v2.0。**
+3. **当前执行 P2-A**：生成 v2.1 Development-20 新包，完成 20 条 Owner 裁决 + 60 条语义复核与私有验证。
+4. **随后完成 P2-B**：在 Rubric/prompt 冻结后，为 Locked20 + Severe10 建立独立 held-out Owner 参考标签；不得提前向模型/Prompt 开发者泄露。
+5. **再进入 P3**：固定三模型 Revision/profile，完成 CPU Tokenizer/Template/Schema 预检。
+6. **最后准备 P4**：冻结 30 条 held-out 配对清单和参考标签；完成预算申请并取得 Owner 明确授权后，才提交 GPU Job。
 
 当前没有授权启动新 GPU Job；本计划本身不修改数据库、不访问 R50 正文、不读取全库正文、不改 RolePlay、不改写旧 A/B/C 结果。
 
@@ -312,3 +328,8 @@ Gold72 40 条先分为 20 条规则开发集和 20 条锁定回归集；R60 10 �
 盲包 evidence locator 仍用于定位包内原文；rule_basis 仍用于标记故事内可见规则、交互约束和安全规则类别。玩家在故事内的明确拒绝/同意/行动边界继续保留为内容语义证据。P0 hash/source binding、私有存储权限、HF Volume 权限和 Story 级训练 split 作为系统侧工程控制保留，不要求案例审核员提供相关证明。
 
 此前按 v2.0 生成的 Development-20 包已 SUPERSEDED，不得用于裁决。Owner review 尚未开始；需按任务书 8.21 在新目录重新生成 v2.1 包后，才可开始 Owner adjudication。
+
+
+## 11. 当前执行状态校正（2026-11-09）
+
+P0/P1 已完成；当前不是从 P0 开始。当前 PR #25 HEAD 为 `4190c6fe895080d99901cb4c5eb3f221c6948d6d`，五组 Actions 全部通过；接手时仍须实时复核。P2-A Development-20 v2.1 新包未生成，Owner 20 条裁决与 60 条语义复核未开始。P2-B Locked20 + Severe10 的 held-out Owner reference labels 是 P4 前置，须在 P2-A 和 rubric/prompt 冻结后独立准备；不得将 P2-A 20 条当作 30 条 held-out 评估标签。P3 CPU-only 准备不授权 GPU；P4 GPU 需要单独审批。
