@@ -221,7 +221,7 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 
 - Rubric version：`r60_severity_rubric_v2_1`
 - v2.0 已生成的 Development-20 六文件包已标记 SUPERSEDED，不得用于裁决、不得覆盖或删除。
-- v2.1 新包须生成到 `owner-adjudication-dev20-rubric-v2-1-20261109` 新目录；当前 HEAD 的五组 CI 已全部通过，但接手时仍须重新核验。随后执行 dry-run / 显式 `--write`。
+- v2.1 新包须生成到 `owner-adjudication-dev20-rubric-v2-1-20261109` 新目录；上一轮核验快照 4190c6f 的五组 CI 全部通过，但其后文档提交已推进 HEAD，接手时须重新核验当前 head。随后执行 dry-run / 显式 `--write`。
 - 完整范围定义、旧包处置和命令见 [任务书 8.21](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#821-owner-要求排除数据来源与权利审核rubric-v21-2026-11-09)。
 
 
@@ -230,7 +230,7 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 
 ### Rubric v2.1 工程回归最终状态
 
-代码实现基线提交 `f9d23fd11fd5ecdb5e2de41cd203175500bb9004` 已通过完整回归。当前 PR HEAD 已推进至 `4190c6fe895080d99901cb4c5eb3f221c6948d6d`，该 HEAD 的五组 Actions 也已全部 completed/success（具体 run IDs 见主任务书 8.25）。P1 v2.1 实现通过；v2.0 六文件包 SUPERSEDED；v2.1 新包尚待 Owner Mac dry-run / `--write`。Owner review 未开始。
+代码实现基线提交 `f9d23fd11fd5ecdb5e2de41cd203175500bb9004` 已通过完整回归。上一轮 PR HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 全部通过；其后文档校正提交已推进 HEAD，当前 head/CI 需重新读取。P1 v2.1 实现通过；v2.0 六文件包 SUPERSEDED；v2.1 新包尚待 Owner Mac dry-run / `--write`。Owner review 未开始。
 
 
 ### P2 v2.1 语义蕴含复核接口合同已补齐（2026-11-09）
