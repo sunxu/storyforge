@@ -794,3 +794,55 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 - R58 scoped synthetic PASS。
 
 **Owner Mac dry-run 已于 2026-11-09 通过。** SAFE 回执：`P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`，`cases_prepared=20`、`files_written=0`；未暴露 Locked Regression 20 / Severe10 / 旧 A/B/C judgments / Owner Resolution；未启动 Owner review、模型、HF Job 或 GPU。下一步仅在核对 worktree 分支与输出目录仍不存在后，显式 `--write` 生成 Development-20 六份私有盲审文件。Owner verdict / semantic review 尚未开始，P2 真实审核尚未完成。
+
+
+### 8.20 P2 Development-20 私有盲审包已正式生成（2026-11-09）
+
+Owner Mac 已在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 的 `r60/gold192-history-v3-adapter` worktree 执行带 `--write` 的生成命令。实际 SAFE 回执：
+
+- schema：`storyforge_r60_owner_adjudication_prepare_safe_v2`
+- status：`P2_OWNER_BLIND_PACKETS_READY__OWNER_REVIEW_NOT_STARTED`
+- `cases_prepared=20`
+- `files_written=6`
+- 仅 Gold72 Development-20；Locked Regression 20 / R60 Severe10 均未暴露。
+- 旧 A/B/C judgments、旧 blind IDs、旧 Owner resolution 均未暴露。
+- `private_values_emitted=false`。
+- `owner_review_started=false`；model_calls=0；hf_jobs_submitted=0；gpu_started=false。
+- Quality-v1 admitted=0；training_authorized=false。
+
+**状态更新：P2 PRIVATE PACKET GENERATION = PASS；P2 OWNER ADJUDICATION = NOT STARTED；P2 总体仍 INCOMPLETE。**
+
+#### 下一步：Owner 独立盲裁决
+
+输出目录固定为：
+`$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-20261109`
+
+只允许打开：
+1. `OWNER_ADJUDICATION_BLIND_PACKETS_PRIVATE.jsonl`
+2. `OWNER_ADJUDICATION_INSTRUCTIONS_CN.md`
+3. `OWNER_ADJUDICATION_SCHEMA_V2.json`
+4. 已冻结的公开 Rubric v2。
+
+严禁打开 `OWNER_ADJUDICATION_ID_MAP_PRIVATE.json`、P0 Gold manifest、Gold72 C 旧结果、A V3/B2 结果、历史 Owner resolution、旧 checkpoint；不得查看 Locked Regression 20 或 R60 Severe10。
+
+Owner 逐个案例分别裁决 `player_agency`、`hard_rule`、`safety`，每维只允许 `SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_CONTEXT`。证据必须逐字连续引用并给出 message/component locator、rule_basis、reasoning_summary、missing_context、context_coverage、confidence。引用存在不等于语义蕴含；不确定时保留 `INSUFFICIENT_CONTEXT`，不能猜测或为凑数降级标准。
+
+在私有输出目录中创建：
+- `OWNER_ADJUDICATION_RESULTS_PRIVATE.jsonl`：20 行，每行对应一个新 `calibration_id`，符合 `storyforge_severity_evidence_review_v2`。
+- `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl`：60 行，20 cases × 3 dimensions，每行单独复核该维全部 evidence indexes；结论为 `SUPPORTS_VERDICT / DOES_NOT_SUPPORT_VERDICT / INSUFFICIENT_CONTEXT`，记录带 UTC 时区的 `reviewed_at_utc`。
+
+两个 JSONL 必须留在 Owner 私有目录，权限 0600，目录 0700。不得将正文、case IDs、结果或 ID map 复制到 GitHub/SAFE。完成后运行：
+
+```bash
+PYTHONPATH=src:. python scripts/r60_owner_adjudication_verify_v2.py \
+  --repo-root "$PWD" \
+  --package-dir "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-20261109"
+```
+
+验证器仅 create-only 写入：
+- `OWNER_ADJUDICATION_RESULTS_MANIFEST_PRIVATE.json`
+- `OWNER_ADJUDICATION_RESULTS_SAFE.json`
+
+任何 semantic check 不支持 verdict、引用不完整、重复/缺失维度或上下文未解决，均保留 HOLD；不得覆盖或重写原始裁决来追求全绿。
+
+在真实 Owner 结果回执验证完成前，不进入 P3 模型推理，不解锁 Locked Regression 20 / Severe10，不提交 GPU/HF Job，不运行 1000 条批量审核或 SFT。
