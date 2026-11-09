@@ -749,14 +749,14 @@ P0 freeze manifest 目录已知为：
 Gold72 Reviewer-C blind packet 源目录由当前 `scripts/r60_calibration_p0_freeze.py` 的 `GOLD["c_dir"]` 固定为：
 `$HOME/.local/share/storyforge/r59/private/reviewer-c-runs/gold72-c-20261106-v1/R60_GOLD72_REVIEWER_C_BLIND_PACKETS_PRIVATE.jsonl`
 
-Owner Mac 项目工作目录：`/Users/keedle/workspace/storyforge-gold-quality`。
+Owner Mac 项目 worktree：`/Users/keedle/workspace/storyforge-r60-ledger-diagnostics`，对应分支 `r60/gold192-history-v3-adapter`。以 `git worktree list` 实际输出为准，不使用旧路径 `storyforge-gold-quality`。
 
 先确认当前 worktree 无未提交修改，并更新到本分支最新版本；不要覆盖 Owner Mac 的未提交工作。然后在 Owner Mac 执行默认 dry-run（不加 `--write`）：
 
 ```bash
-cd /Users/keedle/workspace/storyforge-gold-quality
+cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
 
-PYTHONPATH=src:. .venv/bin/python scripts/r60_owner_adjudication_v2.py \
+PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
   --repo-root "$PWD" \
   --owner-data-root "$HOME/.local/share/storyforge" \
   --p0-freeze-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
@@ -793,4 +793,4 @@ PYTHONPATH=src:. .venv/bin/python scripts/r60_owner_adjudication_v2.py \
 - R60 HF CPU dependency profiles PASS（两组 hash lock、安装、CPU-only boundary、Chat Template）。
 - R58 scoped synthetic PASS。
 
-**当前可进入 Owner Mac dry-run。** 仍未运行本机 dry-run、未写入 P2 私有包、未开始 Owner verdict/semantic review；P2 真实审核尚未完成。
+**Owner Mac dry-run 已于 2026-11-09 通过。** SAFE 回执：`P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`，`cases_prepared=20`、`files_written=0`；未暴露 Locked Regression 20 / Severe10 / 旧 A/B/C judgments / Owner Resolution；未启动 Owner review、模型、HF Job 或 GPU。下一步仅在核对 worktree 分支与输出目录仍不存在后，显式 `--write` 生成 Development-20 六份私有盲审文件。Owner verdict / semantic review 尚未开始，P2 真实审核尚未完成。
