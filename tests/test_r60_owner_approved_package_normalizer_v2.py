@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 
 from scripts import r60_owner_approved_package_normalizer_v2 as MODULE
+from scripts import r60_p2a_semantic_check_keyset_diagnostic as KEYSET_DIAG
 from storyforge_gold_quality import hf_owner_adjudication_v2 as ADJUDICATION
 from storyforge_gold_quality import hf_severity_evidence_v2 as SEVERITY
 
@@ -350,3 +351,32 @@ def test_official_verifier_reason_reports_semantic_duplicate_hold():
     assert MODULE.official_verifier_reason(
         exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
     ) == "OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_DUPLICATE"
+
+
+
+def test_keyset_diagnostic_reports_only_missing_and_extra_field_names():
+    import json
+
+    expected = KEYSET_DIAG.EXPECTED_CHECK_KEYS
+    check = {key: "x" for key in expected}
+    del check["reviewer_ref"]
+    check["legacy_reviewer_id"] = "secret-value"
+    raw = (json.dumps({"calibration_id": "PRIVATE-ID", "check": check}) + "\\n").encode()
+    report = KEYSET_DIAG.diagnose(raw)
+    assert report["keyset_mismatch_count"] == 1
+    assert report["row_diagnostics"] == [{
+        "line": 1,
+        "missing_keys": ["reviewer_ref"],
+        "extra_keys": ["legacy_reviewer_id"],
+        "keyset_match": False,
+    }]
+    assert "PRIVATE-ID" not in json.dumps(report)
+    assert "secret-value" not in json.dumps(report)
+
+
+def test_keyset_diagnostic_handles_invalid_json_without_echoing_input():
+    raw = b'{"private":"do-not-echo"}\\nnot-json\\n'
+    report = KEYSET_DIAG.diagnose(raw)
+    assert report["status"] == "DIAGNOSTIC_INPUT_HOLD"
+    assert report["input_errors"] == [{"line": 2, "reason": "INVALID_JSON"}]
+    assert "do-not-echo" not in json.dumps(report)
