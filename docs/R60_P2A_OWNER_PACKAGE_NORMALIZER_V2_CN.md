@@ -169,3 +169,12 @@ Owner 执行返回 `OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTA
 - `REASONING_SUMMARY_INVALID`
 
 本次仅增加诊断，不自动修正任何 semantic check 内容，不改变 conclusion、evidence indexes、reasoning_summary 或原始审核记录。请更新 Owner Mac 到最新 HEAD 后，重新运行已批准的 normalizer；失败时应在 OUT 创建前返回细分 SAFE reason_code。按具体原因再决定是否属于可安全规范化的元数据问题；语义内容本身不得自动改写。
+
+
+### 2026-11-09：补齐 Owner verifier 安全错误码 allowlist
+
+Owner 最新 SAFE 返回 `OFFICIAL_VERIFIER_ADJUDICATION_HOLD`。复核发现 normalizer 的 allowlist 漏掉了官方 `verify_owner_results` 可能抛出的几类静态 AdjudicationHold（semantic row shape、timestamp、duplicate 等），导致真实原因再次被隐藏。
+
+已补齐 P2-A verifier 路径的固定错误码 allowlist，并增加 row-shape、timestamp、duplicate 回归测试。仍只输出代码内固定常量；未知错误继续统一降级，不回显异常文本或私有值。没有更改 Owner 输入、审核结论、语义检查或 evidence indexes。
+
+请等 CI 通过后更新既有 runner worktree 并重新运行 normalizer。若再失败，SAFE 将能区分 semantic row shape、timestamp、duplicate、coverage、reviewer binding 等问题。不得直接改原始语义审核数据。
