@@ -569,3 +569,11 @@ Owner 已批准仅在派生副本中，将 4 条 SUPPORTED / Player Agency 的 `
 ### 2026-11-09 semantic reviewer binding 修复
 
 60 条语义复核诊断结果为 reviewer_role/ref 全部缺失。鉴于 Owner 已确认这些复核均由 Owner 在独立裁决后完成，Normalizer v2 在派生副本中补充统一 role/ref，并记录为回溯性元数据绑定；任何冲突值均 fail-closed。原始 semantic checks 不变。SAFE 明确标注未进行密码学身份认证。P2-A 仍须通过真实私有包和官方 verifier 验收。
+
+
+
+## 2026-11-09 权威状态更正：P2-A 语义复核身份
+
+Owner 已明确确认：原 60 条 semantic checks 由 Owner AI 生成，未经 Owner 逐项最终确认。此前关于 Owner 已完成 60 项独立语义复核、允许在派生副本回溯补写 `OWNER_INDEPENDENT` / reviewer_ref 的描述不再有效。Normalizer v2 已 fail-closed：没有真实 Owner reviewer metadata 的 AI 生成文件不能被提升为官方 Owner semantic checks。
+
+按 `docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`，先由不同模型提供方/模型家族进行盲交叉审核，结果仅为 AI Advisory；随后 Owner 对全部 60 项作最终复核，独立形成正式语义判断。第二模型不得读取第一模型输出；不向第二模型暴露任何旧 AI semantic checks。Owner 必须保留实际 HOLD，不追求全绿。P2-A 官方 20/60 合同不变，P2-B 30/90、P3、GPU/HF Job、SFT 均未获授权。
