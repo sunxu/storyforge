@@ -233,3 +233,14 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 ### Rubric v2.1 工程回归最终状态
 
 最新代码提交 `f9d23fd11fd5ecdb5e2de41cd203175500bb9004` 的 Actions 全部 PASS：pytest 875 passed / 5 skipped / 42 subtests；Ruff、CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic 全部通过。P1 v2.1 实现通过；v2.0 六文件包已 SUPERSEDED，v2.1 新包尚待 Owner Mac dry-run / `--write` 生成。Owner review 未开始。
+
+
+### P2 v2.1 语义蕴含复核接口合同已补齐（2026-11-09）
+
+- 交接任务书新增 **8.23**，正式固定 `storyforge_severity_semantic_entailment_check_v2` 的 JSONL 外层四字段、内层七字段、字段类型/长度/枚举、全部 evidence indexes 覆盖、UTC 时间戳、20×3=60 行去重覆盖、三种 conclusion 的 HOLD 语义及身份认证边界。
+- 当前冻结标准为 [Rubric v2.1](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)，原始 Rubric v2 保留为历史版本。
+- 接口以 `src/storyforge_gold_quality/hf_severity_evidence_v2.py::verify_semantic_entailment_v2` 和 `src/storyforge_gold_quality/hf_owner_adjudication_v2.py` 的实际严格校验为准。
+- v2.1 排除数据来源、权利、隐私、授权和数据隔离审核；不得将其重新加入案例 verdict、missing_context 或 semantic HOLD。
+- 本次只补充公开交接合同，没有读取/修改 Owner 私有盲包、没有开始 Owner review、没有生成 P2 v2.1 包，也没有调用模型/GPU/HF Job。
+
+详见 [R60 执行任务书 8.23](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#823-p2-v21-semantic-entailment-jsonl-固定接口合同-2026-11-09)。
