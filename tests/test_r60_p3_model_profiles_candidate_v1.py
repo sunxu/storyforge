@@ -5,7 +5,6 @@ from pathlib import Path
 
 from storyforge_gold_quality import hf_severity_evidence_v2 as severity
 
-
 PROFILES = Path(__file__).resolve().parents[1] / (
     "experiments/r60_quality/p3_model_profiles_candidate_v1.json"
 )
