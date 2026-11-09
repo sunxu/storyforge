@@ -12,7 +12,6 @@ import argparse
 import copy
 import hashlib
 import json
-import os
 import stat
 import subprocess
 import sys
@@ -95,7 +94,7 @@ def apply_owner_updates(packets: list[dict], results: list[dict],
         raise adjudication.AdjudicationHold("SIX_ITEM_PACKET_RESULT_LINK_HOLD")
 
     # All existing rows must already be true Owner-confirmed checks, not AI advisory rows.
-    for pair, row in check_by_pair.items():
+    for row in check_by_pair.values():
         check = row.get("check", {})
         if (set(row) != {"calibration_id", "dimension", "reviewed_at_utc", "check"}
                 or check.get("reviewer_role") != "OWNER_INDEPENDENT"
@@ -324,9 +323,9 @@ def main() -> int:
                 "status": "SIX_ITEM_EVIDENCE_FINALIZE_AND_OFFICIAL_VERIFIER_PASS",
                 "cases_verified": verifier_safe.get("cases_verified"),
                 "semantic_checks_verified": verifier_safe.get("semantic_checks_verified"),
-                "evidence_added": additions,
-                "target_evidence_added": target_additions,
-                "history_evidence_added": history_additions,
+                "evidence_added": counts["evidence_added"],
+                "target_evidence_added": counts["target_evidence_added"],
+                "history_evidence_added": counts["history_evidence_added"],
                 "semantic_supported_count": verifier_safe.get("semantic_supported_count"),
                 "semantic_insufficient_context_count": verifier_safe.get("semantic_insufficient_context_count"),
                 "semantic_not_established_count": verifier_safe.get("semantic_not_established_count"),
