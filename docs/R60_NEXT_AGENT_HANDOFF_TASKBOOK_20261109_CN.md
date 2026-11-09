@@ -1122,3 +1122,20 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 **下一 Agent 立即执行：** 在 Owner Mac 的 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` worktree，先检查工作区状态和分支，刷新到当前 PR head；确认 v2.1 新输出目录不存在、父目录权限满足 0700 后，运行 `scripts/r60_owner_adjudication_v2.py` dry-run。只有 SAFE 严格为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN`、`cases_prepared=20`、`files_written=0`、Locked20/Severe10 未暴露时，才显式追加 `--write`。命令见 8.21。不要重做 P0/P1，不要运行模型/GPU/HF Job。
 
 本次状态核验仅证明当前 GitHub HEAD 的五组 Actions 通过，不证明 Owner 私有 v2.1 包已生成或 Owner 审核已完成。Quality-v1 admitted=0；training_authorized=false。
+
+
+### 8.26 P2-B Held-out Owner reference labels：P4 前置缺口（2026-11-09）
+
+P2-A Development-20 是当前第一项工作；不得因此误认为 P4 的 30 条 held-out 样本已有 Owner ground truth。
+
+P4 样本是 Gold72 Locked Regression 20 + R60 Severe10 10。它们必须在 P2-A 完成、Rubric v2.1 / prompt 规则冻结后，另行建立 30 条 Owner reference labels：
+- 30 条独立 blind packets / Owner results；
+- 90 条逐维 semantic entailment checks（30 cases × 3 dimensions）；
+- 独立 blind IDs、顺序、私有输出目录、manifest 和 SHA receipt；
+- Owner labels 与 ID Map 保持私有，直到三模型 P4 预测及 checkpoint 冻结。
+
+**已核验的实现缺口：** 当前 `hf_owner_adjudication_v2.verify_owner_results()` 固定要求 20 packets / 20 results / 60 checks；当前 CLI builder 只生成 Gold72 Development-20。不得将 30/30/90 输入现有验证器，也不得为图方便放宽 P2-A 的 20/60 固定合同。
+
+P2-A 完成后，先设计并合成测试独立版本化的 P2-B 30/90 packet builder / verifier；如拟参数化复用，必须证明旧 20/60 合同和既有 v2 receipts 不受影响。未完成此工具与 Owner reference labels 前，P4 不满足启动条件。不得提前解锁、查看或把 locked labels 暴露给模型/Prompt 开发者。
+
+P2-B 不要求案例审核员提供数据来源、版权/权利、隐私、数据使用授权或数据隔离证据；只按 Rubric v2.1 判断故事内容的三个严重维度。
