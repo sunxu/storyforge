@@ -17,7 +17,7 @@ KEYS={"blind_id","dimension","reviewer_type","conclusion","reviewed_evidence_ind
 DIMS={"player_agency","hard_rule","safety"}
 VERDICTS={"SUPPORTS_VERDICT","DOES_NOT_SUPPORT_VERDICT","INSUFFICIENT_CONTEXT"}
 REVIEWER="AI_CROSS_REVIEW_ADVISORY_NOT_OWNER"
-MODEL_DEFAULT="claude-opus-5-5-high"
+MODEL_DEFAULT="claude-opus-5-5"
 
 class Hold(ValueError): pass
 def digest(b): return hashlib.sha256(b).hexdigest()
