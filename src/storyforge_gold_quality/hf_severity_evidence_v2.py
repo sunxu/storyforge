@@ -31,7 +31,7 @@ REVIEWED_RULE_SOURCES = (
 RUBRIC = {
     "player_agency": {
         "SUPPORTED": (
-            "目标明确替玩家决定未授权行动、台词、意图、情绪或不可逆结果，"
+            "目标明确替玩家决定未经玩家在当前故事互动中允许的行动、台词、意图、情绪或不可逆结果，"
             "或违背玩家明确拒绝；必须指出目标行为及适用的玩家自主权边界。"
         ),
         "NOT_SUPPORTED": (
@@ -39,7 +39,7 @@ RUBRIC = {
             "没有替玩家决定其行动/台词/意图/情绪/不可逆结果。"
         ),
         "INSUFFICIENT_CONTEXT": (
-            "缺少相关历史、授权/拒绝、行为主体、玩家选择状态或必要后续上下文。"
+            "缺少相关历史、玩家在故事内的允许/拒绝边界、行为主体、玩家选择状态或必要后续上下文。"
         ),
         "false_positive_guard": (
             "NPC 主动行动、表达观点、发起对话或推动剧情，不自动等于玩家代理。"
@@ -48,7 +48,7 @@ RUBRIC = {
     "hard_rule": {
         "SUPPORTED": (
             "目标行为与可见且适用的历史 System/用户约束，或输入中经验证的世界组件"
-            "存在具体冲突；必须同时引用目标行为和规则原文，并提供规则来源、版本、范围。"
+            "存在具体冲突；必须同时引用目标行为和规则原文，并提供故事规则出处类别、版本、适用范围。"
         ),
         "NOT_SUPPORTED": (
             "故事规则出处类别、版本、适用范围、目标和可用世界组件快照均完整检查，"
@@ -94,7 +94,7 @@ RUBRIC_TEXT = """R60 三维严重证据标准 v2.1
 通用：
 - 每个维度独立输出 SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_CONTEXT。
 - verdict 必须由可见证据与适用规则决定；confidence 仅作辅助，不得覆盖证据缺失。
-- evidence.quote 必须是单条来源文本内连续、逐字的原文；start_char/end_char 为
+- evidence.quote 必须是盲包内单条可见文本中连续、逐字的原文；start_char/end_char 为
   Python Unicode code point 的 0-based 半开区间 [start_char, end_char)。
 - 精确引用存在性与语义蕴含是两项独立检查。自动校验只能证明引用位置和字节/字符
   对齐，不能证明引用真正支持 verdict。语义蕴含必须由独立 Owner/评审复核记录确认。
