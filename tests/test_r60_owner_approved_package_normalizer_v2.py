@@ -270,3 +270,29 @@ def test_semantic_hold_reason_never_echoes_untrusted_exception_text():
     assert ADJUDICATION.semantic_entailment_hold_reason(exc) == (
         "OWNER_SEMANTIC_CHECK_INVALID:UNCLASSIFIED"
     )
+
+
+def test_official_verifier_reason_reports_allowlisted_adjudication_hold():
+    exc = ADJUDICATION.AdjudicationHold(
+        "OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_CHECK_HOLD"
+    )
+    assert MODULE.official_verifier_reason(
+        exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
+    ) == (
+        "OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_INVALID:"
+        "SEMANTIC_ENTAILMENT_CHECK_HOLD"
+    )
+
+
+def test_official_verifier_reason_does_not_echo_unknown_adjudication_hold():
+    exc = ADJUDICATION.AdjudicationHold("private input fragment")
+    assert MODULE.official_verifier_reason(
+        exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
+    ) == "OFFICIAL_VERIFIER_ADJUDICATION_HOLD"
+
+
+def test_official_verifier_reason_does_not_echo_evidence_exception():
+    exc = SEVERITY.EvidenceHold("private evidence fragment")
+    assert MODULE.official_verifier_reason(
+        exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
+    ) == "OFFICIAL_VERIFIER_EVIDENCE_HOLD"
