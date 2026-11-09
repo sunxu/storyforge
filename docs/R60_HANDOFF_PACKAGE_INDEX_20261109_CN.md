@@ -244,3 +244,8 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 - 本次只补充公开交接合同，没有读取/修改 Owner 私有盲包、没有开始 Owner review、没有生成 P2 v2.1 包，也没有调用模型/GPU/HF Job。
 
 详见 [R60 执行任务书 8.23](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#823-p2-v21-semantic-entailment-jsonl-固定接口合同-2026-11-09)。
+
+
+### P2 v2.1 接口合同 CI 全绿（2026-11-09）
+
+PR #25 当前 head `9b4f235da01a856b3f123f87a2ee1c314c54a3fc` 的五组 Actions 全部 completed/success：CI、Gold Quality Pipeline、R60 HF Runtime CI、R60 HF CPU dependency profiles、R58 scoped synthetic。P2 v2.1 盲包尚未生成，Owner review 未开始。下一步 Owner Mac 在新目录先 dry-run、再显式 `--write`；详细命令与 SAFE 门槛见 [任务书 8.24](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#824-p2-v21-接口合同提交后的-ci-全部通过-2026-11-09)。
