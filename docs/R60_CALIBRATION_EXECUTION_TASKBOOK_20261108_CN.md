@@ -1,6 +1,6 @@
 # R60 下一阶段执行任务书：校准集冻结 → 三态证据审核 → 三模型配对 → 1000 条批量审核
 
-版本：v1.2 / 2026-11-09（P0/P1 状态校正；P2 v2.1 接手执行版）  
+版本：v1.3 / 2026-11-09（P0/P1 状态校正；P2-A/P2-B 接手执行版）  
 分支：r60/gold192-history-v3-adapter  
 关联：PR #25、主线 Issue #26、专项执行 Issue #28  
 主交接：[R60 Calibration Next-Agent Handoff](R60_CALIBRATION_NEXT_AGENT_HANDOFF_20261108_CN.md)  
