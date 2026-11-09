@@ -370,7 +370,7 @@ def test_keyset_diagnostic_reports_only_missing_and_extra_field_names():
     check = {key: "x" for key in expected}
     del check["reviewer_ref"]
     check["legacy_reviewer_id"] = "secret-value"
-    raw = (json.dumps({"calibration_id": "PRIVATE-ID", "check": check}) + "\\n").encode()
+    raw = (json.dumps({"calibration_id": "PRIVATE-ID", "check": check}) + "\n").encode()
     report = KEYSET_DIAG.diagnose(raw)
     assert report["keyset_mismatch_count"] == 1
     assert report["row_diagnostics"] == [{
@@ -384,7 +384,7 @@ def test_keyset_diagnostic_reports_only_missing_and_extra_field_names():
 
 
 def test_keyset_diagnostic_handles_invalid_json_without_echoing_input():
-    raw = b'{"private":"do-not-echo"}\\nnot-json\\n'
+    raw = b'{"private":"do-not-echo"}\nnot-json\n'
     report = KEYSET_DIAG.diagnose(raw)
     assert report["status"] == "DIAGNOSTIC_INPUT_HOLD"
     assert report["input_errors"] == [{"line": 2, "reason": "INVALID_JSON"}]
