@@ -60,7 +60,7 @@ python3 scripts/r60_owner_approved_package_normalizer_v2.py \
 - target_locators_normalized=60
 - history_locators_normalized=20
 - verdict changes=0
-- semantic checks 原样保留，所有原 HOLD 保留
+- 原始 semantic checks SHA 不变；派生包只补充 60 行 reviewer_role/ref 元数据，语义结论、证据索引、理由和所有原 HOLD 保持不变
 - 原始 SHA 不变
 - quality_v1_admitted=0
 - training_authorized=false
@@ -99,7 +99,7 @@ Owner 已在 ChatGPT 明确批准：仅在派生副本中，将四条 SUPPORTED 
 - `other_rule_basis_fields_modified=false`
 - `verdicts_modified=false`
 - `evidence_modified=false`
-- `semantic_checks_modified=false`
+- `original_semantic_checks_modified=false`；派生包 `derived_semantic_reviewer_binding_rows=60`；`semantic_conclusions_modified=false`；`semantic_reviewed_evidence_indexes_modified=false`；`semantic_reasoning_modified=false`
 
 执行后必须对比原始与派生 JSONL：除已批准的 39 条 history_complete 断言、既有 locator 规范化以及四条 SUPPORTED Player Agency 的 `basis_type` 映射外，不允许出现其他字段差异。原始输入文件的 SHA-256 必须与执行前完全一致。
 
@@ -117,3 +117,15 @@ Normalizer v2 现对派生 semantic-check 副本执行严格回填：
 - approval 私有记录注明 `RETROSPECTIVE_DERIVED_COPY_METADATA`，SAFE 明确 `cryptographic_identity_attested=false`。
 
 此标识是本轮 Owner 复核的项目内稳定引用，不是密码学身份认证，也不证明 reviewer independence 的密码学真实性。该处理只补齐既已完成的 Owner 复核的缺失元数据，不重新执行或改变任何语义判断。必须继续通过官方 v2 verifier。真实私有包执行前，P2-A 仍 HOLD。
+
+
+### 2026-11-09 执行输出修正：必须写入派生 semantic checks
+
+Normalizer 在内存中补齐 60 行 reviewer binding 后，必须将 `semantic_checks_derived_raw` 写入新输出目录的 `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl`，并由官方 CLI 对该派生文件验收。不得把原始 semantic JSONL 再复制到输出包，否则 manifest 与包内文件不一致，官方 CLI 必然 HOLD。
+
+因此：
+- 原始 semantic 文件保持原字节及 SHA-256；
+- 派生 semantic 文件 SHA 与原始文件不同，唯一允许差异是每行增加 `reviewer_role` 和 `reviewer_ref`；
+- 60 条 `conclusion`、`reviewed_evidence_indexes`、`reasoning_summary` 逐字段不变；
+- SAFE 应分别报告 `original_semantic_checks_modified=false` 与 `derived_semantic_reviewer_binding_rows=60`，不得用含糊的 `semantic_checks_modified=false` 表述派生文件；
+- 输出摘要须提供输入与输出 semantic SHA，便于 Owner 独立比对。
