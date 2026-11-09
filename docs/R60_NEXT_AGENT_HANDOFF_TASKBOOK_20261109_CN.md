@@ -1238,3 +1238,10 @@ v2 最终代码提交 `28d9efa9b186484b61163e150a21316c9cc1f8cb` 的六组 GitHu
 ### P2-A 当前阻塞：SUPPORTED Player Agency 的 rule_basis 类型
 
 Owner 提供的只读诊断确认原结果第 5、6、11、19 行的 `basis_type` 均为 `player_agency`，而 Rubric v2.1 对 SUPPORTED / Player Agency 要求 `player_agency_boundary`。这不是 history_complete 问题。不得自动改写原 Owner results、rule_id、scope 或 basis_type；必须先由 Owner 明确确认是否允许在派生副本中仅将这 4 个精确 pair 的类型标签规范化为 `player_agency_boundary`，且不得改变 verdict / evidence / semantic checks。Normalizer v2 已增加 fail-closed 检查，返回 `SUPPORTED_RULE_BASIS_TYPE_REQUIRES_OWNER_REVIEW`，不会静默转换。P2-A 仍 HOLD，正式输出目录不得创建。
+
+
+## 2026-11-09 Owner 补充批准：四条 basis_type 精确映射
+
+Owner 明确批准仅在派生副本中，将四条 SUPPORTED / Player Agency 的 `rule_basis[].basis_type` 从 `player_agency` 映射为 `player_agency_boundary`。Normalizer v2 已实现严格四 pair allowlist：恰好 4 个、维度必须为 player_agency、原标签必须完全匹配；不匹配即 HOLD。原始结果文件不修改；verdict、evidence、其他 rule_basis 字段、60 条 semantic checks 均保持不变。私有 approval 记录映射和不变性断言，SAFE 增加 `basis_type_normalized=4`。
+
+下一步：CI 全部通过后，在 Owner Mac 私有目录执行 create-only normalizer；验证原始 SHA 不变、输出字段差异严格符合批准范围，再运行官方 CLI verifier。未经真实私有包验证不得宣称 P2-A PASS。
