@@ -894,3 +894,24 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 ```
 
 新包生成后，只能基于 v2.1 盲包开始 Owner 独立裁决。旧 v2.0 包继续封存，不可混用。其余 P2 规则（20 verdict + 60 semantic checks、独立语义复核、HOLD 保留、ID Map 隔离）保持不变。
+
+
+### 8.22 Rubric v2.1 全量 CI 回归通过（2026-11-09）
+
+最终代码提交：`f9d23fd11fd5ecdb5e2de41cd203175500bb9004`。
+
+- pytest：875 passed / 5 skipped / 42 subtests passed。
+- Ruff：PASS。
+- CI：PASS。
+- Gold Quality Pipeline (synthetic + R57 regression)：PASS。
+- R60 HF Runtime CI：PASS。
+- R60 HF CPU dependency profiles：PASS（两个 hash lock、locked install、CPU-only dependency boundary、Chat Template）。
+- R58 scoped synthetic (no training)：PASS。
+- 公开 Rubric 文档与代码内 `RUBRIC_TEXT` 逐字一致（1,571 chars）；manifest 将记录 rubric SHA-256。
+- v2.1 明确不要求数据来源合法性、版权/权利、数据使用授权、隐私合规或数据隔离证明；这些缺失不得导致 HOLD。
+- 盲包 history 已移除 `source_turn` 等来源元数据，只保留 `role/content`；evidence.source 仍仅定位盲包内部文本。
+- 故事内玩家拒绝/同意/行动边界、故事规则依据和安全规则仍是内容语义证据。
+
+**P1 Rubric v2.1 工程实现与 CI = PASS。P2 v2.0 旧包 = SUPERSEDED；P2 v2.1 新包尚未生成；Owner review 尚未开始。**
+
+下一步严格按 8.21，在新目录先 dry-run，再显式 `--write`。不得复用旧 v2.0 六文件包。
