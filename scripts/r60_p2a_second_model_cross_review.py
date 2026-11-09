@@ -53,7 +53,10 @@ def _jsonl(path: Path) -> tuple[list[dict], bytes]:
 
 
 def _secure_directory(path: Path) -> None:
-    path.mkdir(mode=0o700, parents=True, exist_ok=False)
+    parent = path.parent
+    if not parent.is_dir() or stat.S_IMODE(parent.stat().st_mode) != 0o700:
+        raise Hold("OUTPUT_PARENT_PERMISSION_HOLD")
+    path.mkdir(mode=0o700, parents=False, exist_ok=False)
     os.chmod(path, 0o700)
     mode = stat.S_IMODE(path.stat().st_mode)
     if mode != 0o700:
@@ -83,7 +86,7 @@ def build(packets: list[dict], results: list[dict], rubric_raw: bytes,
         raise Hold("P2A_INPUT_CARDINALITY_HOLD")
     packet_by_id = {}
     for packet in packets:
-        if set(packet) != PACKET_KEYS or packet.get("schema") != "storyforge_owner_adjudication_packet_v2":
+        if set(packet) != PACKET_KEYS or packet.get("schema") != "storyforge_r60_owner_adjudication_packet_v2":
             raise Hold("PACKET_SCHEMA_HOLD")
         ref = packet.get("calibration_id")
         if not isinstance(ref, str) or not ref:
@@ -199,11 +202,6 @@ def main() -> int:
         results, result_raw = _jsonl(args.results)
         rubric_raw = args.rubric.read_bytes()
         output, id_map, safe = build(packets, results, rubric_raw)
-        safe.update({
-            "input_packet_sha256": _sha(packet_raw),
-            "input_owner_results_sha256": _sha(result_raw),
-            "output_packet_sha256": _sha(b"".join(_canonical(x) + b"\n" for x in output)),
-        })
         if not args.write:
             safe["status"] = "CROSS_REVIEW_PREFLIGHT_PASS__NO_FILES_WRITTEN"
             safe["files_written"] = 0
@@ -212,15 +210,30 @@ def main() -> int:
         _secure_directory(args.output_dir)
         packet_bytes = b"".join(_canonical(x) + b"\n" for x in output)
         map_bytes = _canonical(id_map) + b"\n"
-        manifest = dict(safe)
-        manifest["status"] = "CROSS_REVIEW_PACKET_READY__ADVISORY_ONLY"
-        manifest["id_map_sha256"] = _sha(map_bytes)
-        manifest["instructions_sha256"] = _sha(prompt_text().encode())
+        prompt_bytes = prompt_text().encode()
+        manifest = {
+            "schema": "storyforge_r60_p2a_second_model_cross_review_manifest_private_v1",
+            "status": "CROSS_REVIEW_PACKET_READY__ADVISORY_ONLY",
+            "input_packet_sha256": _sha(packet_raw),
+            "input_owner_results_sha256": _sha(result_raw),
+            "rubric_sha256": _sha(rubric_raw),
+            "output_packet_sha256": _sha(packet_bytes),
+            "id_map_sha256": _sha(map_bytes),
+            "instructions_sha256": _sha(prompt_bytes),
+            "case_count": 20,
+            "dimension_count": 60,
+            "prior_ai_semantic_checks_read": False,
+            "prior_ai_advisory_files_read": False,
+            "reviewer_identity_attested": False,
+            "owner_review_completed": False,
+        }
+        safe["files_written"] = 6
         files = {
             "AI_CROSS_REVIEW_PACKETS_PRIVATE.jsonl": packet_bytes,
             "AI_CROSS_REVIEW_ID_MAP_PRIVATE.json": map_bytes,
-            "AI_CROSS_REVIEW_PROMPT_PRIVATE.md": prompt_text().encode(),
-            "AI_CROSS_REVIEW_MANIFEST_SAFE.json": _canonical(manifest) + b"\n",
+            "AI_CROSS_REVIEW_PROMPT_PRIVATE.md": prompt_bytes,
+            "AI_CROSS_REVIEW_MANIFEST_PRIVATE.json": _canonical(manifest) + b"\\n",
+            "AI_CROSS_REVIEW_SAFE.json": _canonical(safe) + b"\\n",
             "RUBRIC_V2_1_PRIVATE.md": rubric_raw,
         }
         for name, raw in files.items():
