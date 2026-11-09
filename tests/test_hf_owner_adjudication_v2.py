@@ -224,7 +224,7 @@ def test_verify_owner_results_requires_exact_20_cases_and_60_semantic_checks():
                 "reviewed_at_utc": "2026-11-09T00:00:00Z",
                 "check": {
                     "schema": "storyforge_severity_semantic_entailment_check_v2",
-                    "rubric_version": "r60_severity_rubric_v2",
+                    "rubric_version": p2.severity.RUBRIC_VERSION,
                     "reviewer_role": "OWNER_INDEPENDENT",
                     "reviewer_ref": "synthetic-owner-reviewer",
                     "conclusion": "INSUFFICIENT_CONTEXT",
@@ -271,7 +271,7 @@ def test_verify_owner_results_rejects_duplicate_case_dimension_check():
     for packet in packets:
         result = {
             "schema": "storyforge_severity_evidence_review_v2",
-            "rubric_version": "r60_severity_rubric_v2",
+            "rubric_version": p2.severity.RUBRIC_VERSION,
             "case_ref": packet["calibration_id"],
             "assessments": {},
         }
@@ -292,7 +292,7 @@ def test_verify_owner_results_rejects_duplicate_case_dimension_check():
                 "reviewed_at_utc": "2026-11-09T00:00:00Z",
                 "check": {
                     "schema": "storyforge_severity_semantic_entailment_check_v2",
-                    "rubric_version": "r60_severity_rubric_v2",
+                    "rubric_version": p2.severity.RUBRIC_VERSION,
                     "reviewer_role": "OWNER_INDEPENDENT",
                     "reviewer_ref": "synthetic-owner-reviewer",
                     "conclusion": "INSUFFICIENT_CONTEXT",
@@ -323,7 +323,7 @@ def test_verify_owner_results_requires_single_owner_identity_reference():
     for packet in packets:
         result = {
             "schema": "storyforge_severity_evidence_review_v2",
-            "rubric_version": "r60_severity_rubric_v2",
+            "rubric_version": p2.severity.RUBRIC_VERSION,
             "case_ref": packet["calibration_id"], "assessments": {},
         }
         for dimension in ("player_agency", "hard_rule", "safety"):
@@ -343,7 +343,7 @@ def test_verify_owner_results_requires_single_owner_identity_reference():
                 "reviewed_at_utc": "2026-11-09T00:00:00Z",
                 "check": {
                     "schema": "storyforge_severity_semantic_entailment_check_v2",
-                    "rubric_version": "r60_severity_rubric_v2",
+                    "rubric_version": p2.severity.RUBRIC_VERSION,
                     "reviewer_role": "OWNER_INDEPENDENT",
                     "reviewer_ref": "owner-reviewer-reference",
                     "conclusion": "INSUFFICIENT_CONTEXT",
