@@ -1036,3 +1036,60 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_verify_v2.py \
 **身份边界：** 当前代码明确输出 `reviewer_independence_cryptographically_verified=false`。`reviewer_role` / `reviewer_ref` 是记录声明和批次一致性字段，不能单独证明实际操作者身份、盲化过程或独立性。P2 汇报必须如实保留此限制。
 
 **范围边界：** Rubric v2.1 已明确排除训练数据来源、权利、隐私、数据使用授权和数据隔离审核；上述事项不得被重新加入 Owner 20 条裁决或 60 条语义复核。故事内部的玩家拒绝/同意边界、可见故事规则和安全规则仍按内容语义标准判断。
+
+
+### 8.24 P2 v2.1 接口合同提交后的 CI 全部通过（2026-11-09）
+
+已重新核验 PR #25 当前 head 与本次接口合同提交一致：
+- PR head：`9b4f235da01a856b3f123f87a2ee1c314c54a3fc`
+- PR 状态：Open / Draft；base：`r60/canonical-a-v3-binding`。
+- 以下五组 GitHub Actions 全部 `completed / success`：
+  1. `CI` — run `42554925877`
+  2. `Gold Quality Pipeline (synthetic + R57 regression)` — run `42554925875`
+  3. `R60 HF Runtime CI` — run `42554926008`
+  4. `R60 HF CPU dependency profiles` — run `42554925932`
+  5. `R58 scoped synthetic (no training)` — run `42554925880`
+
+本次验证范围只说明当前代码/文档变更通过 CI，不代表 Owner 私有 P2 包已经生成，也不代表 Owner 裁决完成。
+
+**当前门禁状态：**
+- P0 calibration inventory freeze：PASS。
+- P1 Rubric v2.1 implementation / CI：PASS。
+- P2 v2.1 semantic-check interface contract：已补齐并随上述 CI 通过。
+- P2 v2.1 blind packet：尚未生成。
+- Owner 20-case adjudication / 60 semantic checks：未开始。
+- P3 model inference / HF GPU jobs：未开始、未授权。
+- Quality-v1 admitted=0；training_authorized=false。
+
+#### 下一步：Owner Mac 生成 P2 v2.1 新包
+
+在 Owner 已确认的 worktree `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 执行。先确认 worktree 无未提交修改、当前分支正确，并更新到 PR head：
+
+```bash
+cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
+git status --short --branch
+git fetch origin
+git switch r60/gold192-history-v3-adapter
+git pull --ff-only origin r60/gold192-history-v3-adapter
+git rev-parse HEAD
+```
+
+目标输出目录必须此前不存在，旧 v2.0 目录继续封存：
+
+`$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109`
+
+先确认目录不存在，再执行 dry-run：
+
+```bash
+test ! -e "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109"
+
+PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
+  --repo-root "$PWD" \
+  --owner-data-root "$HOME/.local/share/storyforge" \
+  --p0-freeze-dir "$HOME/.local/share/storyforge/r60/private/calibration-freeze-20261109" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/owner-adjudication-dev20-rubric-v2-1-20261109"
+```
+
+仅当状态严格为 `P2_OWNER_BLIND_PACKET_PREFLIGHT_PASS__NO_FILES_WRITTEN` 且 `files_written=0` 时，才对同一命令显式追加 `--write`。写入成功状态必须是 `P2_OWNER_BLIND_PACKETS_READY__OWNER_REVIEW_NOT_STARTED` 且 `cases_prepared=20`、`files_written=6`、`private_values_emitted=false`。新 manifest 必须绑定 `r60_severity_rubric_v2_1` 和 Rubric v2.1 SHA。
+
+不得复用/覆盖旧 v2.0 六文件包；不得打开或暴露 ID Map；不得解锁 Locked Regression 20 / R60 Severe10；不运行模型、不提交 HF Job、不启动 GPU/SFT。
