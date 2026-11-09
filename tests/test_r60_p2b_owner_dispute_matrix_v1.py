@@ -1,16 +1,7 @@
 """Synthetic checks for private P2-B dispute worksheets (no real stories)."""
-from __future__ import annotations
-
-import importlib.util
-from pathlib import Path
 from unittest import TestCase
 
-
-MODULE = Path(__file__).resolve().parents[1] / "scripts/r60_p2b_owner_dispute_matrix_v1.py"
-SPEC = importlib.util.spec_from_file_location("r60_p2b_owner_dispute_matrix_v1", MODULE)
-assert SPEC is not None and SPEC.loader is not None
-mod = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(mod)
+from scripts import r60_p2b_owner_dispute_matrix_v1 as mod
 
 
 def fixture():
