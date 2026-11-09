@@ -1094,11 +1094,11 @@ PYTHONPATH=src:. python scripts/r60_owner_adjudication_v2.py \
 不得复用/覆盖旧 v2.0 六文件包；不得打开或暴露 ID Map；不得解锁 Locked Regression 20 / R60 Severe10；不运行模型、不提交 HF Job、不启动 GPU/SFT。
 
 
-### 8.25 当前接手基线复核（2026-11-09；取代 8.24 的旧 HEAD）
+### 8.25 历史核验快照（2026-11-09；其后交接文档提交已推进 HEAD）
 
-接手时重新从 GitHub 实时读取 PR #25 与对应 commit workflow runs。本次已核验：
-- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
-- 当前 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
+本节仅记录上一轮核验结果，不能当作接手时的当前状态。新 Agent 必须重新读取 PR #25 与当前 head 对应的 workflow runs。
+- 当时 PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
+- 当时 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
 - 五组 Actions 全部 `completed / success`：
   - CI：run `42555517499`
   - Gold Quality Pipeline (synthetic + R57 regression)：run `42555517570`
