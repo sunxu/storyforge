@@ -38,8 +38,13 @@ def build_package(gold: dict, severe: dict, dedup: dict,
             or severe.get("source_pins_sha256", {}).get("c_packets") != base.sha(severe_raw)
             or dedup.get("schema") != "storyforge_r60_calibration_crossset_dedup_private_v1"
             or dedup.get("status") != "CROSSSET_EXACT_DEDUP_PASS"
-            or any(dedup.get("exact_" + k + "_overlap_count", 0) != 0
-                   for k in ("history", "target", "full"))
+            or dedup.get("gold_case_count") != 40
+            or dedup.get("pilot_case_count") != 10
+            or dedup.get("within_gold_unique") != 40
+            or dedup.get("within_pilot_unique") != 10
+            or any(dedup.get(k) != 0 for k in (
+                "exact_history_overlap_count", "exact_target_overlap_count",
+                "exact_full_history_target_overlap_count"))
             or any(x.get("training_authorized") is not False
                    or x.get("quality_v1_admitted") != 0 for x in (gold, severe))):
         raise base.AdjudicationHold("P2B_P0_FREEZE_BINDING_HOLD")
