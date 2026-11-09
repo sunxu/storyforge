@@ -1,12 +1,11 @@
 from __future__ import annotations
 
+import copy
 import json
 
-import copy
-
 from scripts import r60_owner_approved_package_normalizer_v2 as MODULE
-from scripts import r60_p2a_semantic_check_keyset_diagnostic as KEYSET_DIAG
 from scripts import r60_p2a_second_model_cross_review as CROSS_REVIEW
+from scripts import r60_p2a_semantic_check_keyset_diagnostic as KEYSET_DIAG
 from storyforge_gold_quality import hf_owner_adjudication_v2 as ADJUDICATION
 from storyforge_gold_quality import hf_severity_evidence_v2 as SEVERITY
 
