@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Create an independently verified R60 v2 Owner package after explicit approval.
 
 This is a reusable, create-only utility for the fixed 20-result / 60-semantic-check
@@ -15,7 +14,7 @@ import os
 import stat
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 PACKET = "OWNER_ADJUDICATION_BLIND_PACKETS_PRIVATE.jsonl"
@@ -229,7 +228,7 @@ def main() -> int:
     approval = {
         "schema": "storyforge_r60_owner_history_completeness_owner_approval_v1",
         "status": "OWNER_APPROVED_ALL_AI_RECOMMENDATIONS",
-        "approved_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "approved_at_utc": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "approved_recommendation_count": 35,
         "approved_dimensions": {"player_agency": 16, "safety": 19, "hard_rule": 0},
         "decision": {"history_complete": True, "verdict": "NOT_SUPPORTED",
@@ -277,11 +276,11 @@ def main() -> int:
     proc = subprocess.run(
         [sys.executable, str(repo / "scripts/r60_owner_adjudication_verify_v2.py"),
          "--repo-root", str(repo), "--package-dir", str(output)],
-        cwd=repo, env=env, text=True, capture_output=True,
+        check=False, cwd=repo, env=env, text=True, capture_output=True,
     )
     try:
         safe = json.loads(proc.stdout.strip().splitlines()[-1])
-    except Exception:
+    except (json.JSONDecodeError, IndexError):
         safe = {}
     if proc.returncode != 0:
         print(json.dumps({
