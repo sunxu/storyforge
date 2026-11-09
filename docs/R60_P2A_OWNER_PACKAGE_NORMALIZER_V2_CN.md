@@ -71,3 +71,18 @@ python3 scripts/r60_owner_approved_package_normalizer_v2.py \
 ### 新增 HOLD 说明：SUPPORTED rule_basis 类型不匹配
 
 实际诊断发现 4 条 SUPPORTED / Player Agency 的原始 `basis_type=player_agency`，但 Rubric v2.1 要求 `player_agency_boundary`。Normalizer v2 只允许对 Owner 已批准的 history completeness 字段和 locator 做规范化，不得擅自改写 rule_basis。脚本已增加显式 fail-closed guard：`SUPPORTED_RULE_BASIS_TYPE_REQUIRES_OWNER_REVIEW`。需 Owner 明确批准精确 4 条的派生副本类型标签映射后，才可新增版本化规范化步骤；原始文件不变。
+
+
+## 2026-11-09 Owner 明确批准：四条 SUPPORTED Player Agency basis_type 派生副本规范化
+
+Owner 已在 ChatGPT 明确批准：仅在派生副本中，将四条 SUPPORTED / Player Agency 的 `rule_basis[].basis_type` 从 `player_agency` 改为 `player_agency_boundary`。
+
+实现约束：
+- 只接受 Owner 已批准的 4 个精确 `(case_ref, player_agency)` pair；必须恰好 4 个。
+- 每条原始 basis item 必须仍为 `basis_type=player_agency`，否则 HOLD；不得做宽泛替换。
+- 仅修改派生 `normalized` 对象的 `basis_type` 字段；原始输入 JSONL 不写入、不覆盖。
+- 不修改 `verdict`、`source`、`rule_id`、`rule_version`、`scope`、`applicability`、`coverage_complete`、evidence 或 60 条 semantic checks。
+- 输出 Owner approval 私有记录明确写入映射方向、4 条数量、derived-copy-only 和各项未修改断言；SAFE 另报 `basis_type_normalized=4`。
+- 完成规范化后仍必须通过 Rubric v2.1 官方 verifier；任何不匹配都 HOLD。
+
+这项批准不代表 P2-A 已 PASS。必须在 Owner Mac 私有目录运行 create-only normalizer，检查原始文件 SHA 不变、派生输出只有批准字段变化，再由官方 CLI verifier 验证完整包。不得将私有正文或 Owner-only crosswalk 上传 GitHub。
