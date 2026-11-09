@@ -333,3 +333,11 @@ Gold72 40 条先分为 20 条规则开发集和 20 条锁定回归集；R60 10 �
 ## 11. 当前执行状态校正（2026-11-09）
 
 P0/P1 已完成；当前不是从 P0 开始。上一轮核验快照 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 全部通过；后续文档提交已推进 HEAD，接手时必须实时复核。P2-A Development-20 v2.1 新包未生成，Owner 20 条裁决与 60 条语义复核未开始。P2-B Locked20 + Severe10 的 held-out Owner reference labels 是 P4 前置，须在 P2-A 和 rubric/prompt 冻结后独立准备；不得将 P2-A 20 条当作 30 条 held-out 评估标签。P3 CPU-only 准备不授权 GPU；P4 GPU 需要单独审批。
+
+## 2026-11-09：正向优秀案例与 R60 严重问题校准分轨
+
+Gold72 Development-20 / Locked Regression-20 是从 A V3 / B2 分歧案例冻结的 Rubric 开发/回归集，不是优秀回复集。三维严重问题 verdict 不等于六维文学质量分数，也不等于训练准入。
+
+新增 `docs/R60_POSITIVE_GOLD_SELECTION_PLAN_CN.md`：从冻结 1,000 条技术候选池独立筛选 Positive Gold，复用现有六维分数门槛与三项严重旗标，先小批、Owner 确认、独立冻结；不设置 PASS 配额，不自动授权全量审核或 SFT。Gold87/Gold108 历史材料不得自动转为当前 Positive Gold。当前仅登记计划，没有启动任何真实审核。
+
+P2-A 最新阻塞：4 条 SUPPORTED Player Agency 的 rule_basis 类型实际为 `player_agency`，Rubric v2.1 要求 `player_agency_boundary`。Normalizer v2 增加 fail-closed 检查，不做隐式类型替换。Owner 需先确认是否仅在派生副本中规范化这 4 个精确类型标签；原始 results 与 60 semantic checks 不得修改。
