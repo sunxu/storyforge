@@ -28,10 +28,14 @@ def digest(raw: bytes) -> str:
 
 
 def read_private(path: Path, repo_root: Path):
-    value = adjudication._read_private(path, repo_root)
-    if not isinstance(value, list) or not value or any(not isinstance(x, dict) for x in value):
+    raw = adjudication._read_private(path, repo_root)
+    try:
+        value = [json.loads(line) for line in raw.decode("utf-8").splitlines() if line.strip()]
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        raise adjudication.AdjudicationHold("MIGRATION_JSONL_PARSE_HOLD") from None
+    if not value or any(not isinstance(x, dict) for x in value):
         raise adjudication.AdjudicationHold("MIGRATION_JSONL_SHAPE_HOLD")
-    return value, path.read_bytes()
+    return value, raw
 
 
 def write_once(path: Path, raw: bytes) -> None:
@@ -60,8 +64,9 @@ def main() -> int:
                 raise adjudication.AdjudicationHold(f"MIGRATION_{label}_INSIDE_REPO_HOLD")
         if not src.is_dir() or stat.S_IMODE(src.stat().st_mode) != 0o700:
             raise adjudication.AdjudicationHold("MIGRATION_SOURCE_DIRECTORY_MODE_HOLD")
-        if out.exists() or src.resolve() == out.resolve():
-            raise adjudication.AdjudicationHold("MIGRATION_OUTPUT_EXISTS_OR_COLLISION_HOLD")
+        if (out.exists() or src.resolve() == out.resolve() or not out.parent.is_dir()
+                or stat.S_IMODE(out.parent.stat().st_mode) != 0o700):
+            raise adjudication.AdjudicationHold("MIGRATION_OUTPUT_EXISTS_OR_PARENT_MODE_HOLD")
 
         packets, packet_raw = read_private(src / PACKET, root)
         results, result_raw = read_private(src / RESULT, root)
