@@ -577,3 +577,8 @@ Owner 已批准仅在派生副本中，将 4 条 SUPPORTED / Player Agency 的 `
 Owner 已明确确认：原 60 条 semantic checks 由 Owner AI 生成，未经 Owner 逐项最终确认。此前关于 Owner 已完成 60 项独立语义复核、允许在派生副本回溯补写 `OWNER_INDEPENDENT` / reviewer_ref 的描述不再有效。Normalizer v2 已 fail-closed：没有真实 Owner reviewer metadata 的 AI 生成文件不能被提升为官方 Owner semantic checks。
 
 按 `docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`，先由不同模型提供方/模型家族进行盲交叉审核，结果仅为 AI Advisory；随后 Owner 对全部 60 项作最终复核，独立形成正式语义判断。第二模型不得读取第一模型输出；不向第二模型暴露任何旧 AI semantic checks。Owner 必须保留实际 HOLD，不追求全绿。P2-A 官方 20/60 合同不变，P2-B 30/90、P3、GPU/HF Job、SFT 均未获授权。
+
+
+## 2026-11-09：CLI Proxy 外部模型调用客户端
+
+新增 `scripts/r60_p2a_openai_compatible_review_client.py`，支持远程 HTTPS OpenAI-compatible Chat Completions、非流式调用、默认 Claude Opus 5.5 High 模型别名、每批 5 案例/4 批、有限网络重试、严格 60 行输出校验和私有断点续跑。API Key 仅从环境变量读取；预检不调用外部服务，实际调用必须显式 `--execute --allow-private-data-egress`。工具不会读取 Owner ID Map、旧 AI semantic checks 或旧 AI advisory。当前未调用模型，待 Owner Mac 配置准确 CLI Proxy endpoint 和环境变量，并通过本地 preflight 后执行。模型输出仍只是 AI Advisory，不解锁 P2-A/P2-B/P3/GPU/SFT。
