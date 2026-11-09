@@ -243,8 +243,7 @@ def main() -> int:
         }
         for name, raw in files.items():
             _write_private(args.output_dir / name, raw)
-        manifest["files_written"] = len(files)
-        print(json.dumps(manifest, sort_keys=True))
+        print(json.dumps(safe, sort_keys=True))
         return 0
     except (OSError, Hold, ValueError, TypeError, KeyError) as exc:
         reason = str(exc) if isinstance(exc, Hold) else "INPUT_OR_IO_ERROR"
