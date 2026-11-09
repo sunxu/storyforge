@@ -68,3 +68,63 @@ Builder 为 20 个案例生成全新 blind IDs 并重新打乱顺序。模型包
 - SAFE 只记录聚合计数和边界，不输出正文、case IDs、blind IDs、reviewer refs、私有 SHA。
 - 第二模型结果不得进入模型训练、Prompt 开发或 P2-B held-out labels。
 - 本协议不改变 P2-A 20/60 官方 verifier 合同，也不解锁 Locked20 / Severe10。
+
+
+## OpenAI-compatible CLI Proxy 批量调用实现（2026-11-09）
+
+新增可复用客户端：`scripts/r60_p2a_openai_compatible_review_client.py`。
+
+### 模型与接口配置
+
+- 默认模型别名：`claude-opus-5-5-high`（来自 Owner 提供的 CLI Proxy 可用模型清单；执行时仍须核对代理实际接受的 model ID）。
+- 协议：OpenAI Chat Completions。
+- 默认非流式：`stream=false`。目前流式能力未知，因此不依赖流式接口。
+- 远程代理必须使用 HTTPS。
+- Base URL 通过 `CLI_PROXY_BASE_URL` 提供，支持传入代理根路径、`/v1` 或完整 `/chat/completions` URL。
+- API Key 仅从 `CLI_PROXY_API_KEY` 或 `OPENAI_API_KEY` 环境变量读取；不得写入命令行参数、文件、日志或 Git。
+- 如果代理的实际模型 ID 与 UI 别名不同，设置 `CLI_PROXY_MODEL`。SAFE/manifest 记录实际传入的 model 字段。
+
+### 批量执行与验证
+
+- 固定 5 案例/批，共 4 批，每批 15 个维度判断。
+- 每批使用温度 0，默认 max_tokens 12000，timeout 300 秒。
+- 只对网络错误及 HTTP 408/409/425/429/5xx 做有限重试；不对格式错误伪装成功。
+- 已验证批次结果以 0600 私有 JSONL 保存；支持 `--resume`，重启时先验证并复用已完成批次。
+- 必须严格验证 60 个 blind_id × dimension 唯一组合、字段集合、枚举、Reviewer 类型和每项完整 evidence index 覆盖。
+- 不接受 Owner 身份字段，不会把 AI Advisory 转换为 Owner 结果。
+- 预检默认不发出外部请求；实际外发必须同时显式传入 `--execute --allow-private-data-egress`。
+- 不读取 ID Map，不读取旧 AI semantic checks 或旧 AI Advisory。
+
+### Owner Mac 配置与命令
+
+在 Owner Mac 私有 shell 环境中设置，不要把密钥发到聊天或写入项目：
+
+```bash
+export CLI_PROXY_BASE_URL='https://你的代理域名/v1'
+export CLI_PROXY_API_KEY='在本机安全注入的密钥'
+export CLI_PROXY_MODEL='claude-opus-5-5-high'
+```
+
+建议输出目录位于第二模型盲包目录之下，且父目录必须为 0700：
+
+```bash
+PRIVATE="$HOME/.local/share/storyforge/r60/private"
+IN="$PRIVATE/owner-adjudication-dev20-second-model-cross-review-20261109"
+OUT="$IN/model-run-claude-opus-5-5-high-20261109"
+RUN="/Users/keedle/workspace/storyforge-r60-p2a-owner-runner"
+
+python3 "$RUN/scripts/r60_p2a_openai_compatible_review_client.py" \
+  --input-dir "$IN" --output-dir "$OUT"
+
+# 预检 PASS 后才执行真实外部调用；首次预检已创建目录和私有 manifest，
+# 因此执行时需加 --resume。
+python3 "$RUN/scripts/r60_p2a_openai_compatible_review_client.py" \
+  --input-dir "$IN" --output-dir "$OUT" \
+  --execute --allow-private-data-egress --resume
+```
+
+SAFE 成功状态：`CROSS_REVIEW_MODEL_CALLS_COMPLETE__ADVISORY_ONLY`。若中断，使用相同输入、模型和 endpoint 加 `--resume`。任何输入 SHA、模型或 endpoint origin 不匹配均停止，不覆盖已有私有结果。
+
+### 执行边界
+
+本工具仅进行外部模型内容审核，不运行 GPU、HF Job、SFT，不更改 Owner results、原始 semantic checks、Gold72 分组或 P2-B held-out 数据。即使 60 项全部得到有效 AI 输出，P2-A 仍须由 Owner 独立完成最终语义复核。
