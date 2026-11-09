@@ -232,8 +232,8 @@ def main() -> int:
             "AI_CROSS_REVIEW_PACKETS_PRIVATE.jsonl": packet_bytes,
             "AI_CROSS_REVIEW_ID_MAP_PRIVATE.json": map_bytes,
             "AI_CROSS_REVIEW_PROMPT_PRIVATE.md": prompt_bytes,
-            "AI_CROSS_REVIEW_MANIFEST_PRIVATE.json": _canonical(manifest) + b"\\n",
-            "AI_CROSS_REVIEW_SAFE.json": _canonical(safe) + b"\\n",
+            "AI_CROSS_REVIEW_MANIFEST_PRIVATE.json": _canonical(manifest) + b"\n",
+            "AI_CROSS_REVIEW_SAFE.json": _canonical(safe) + b"\n",
             "RUBRIC_V2_1_PRIVATE.md": rubric_raw,
         }
         for name, raw in files.items():
