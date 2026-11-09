@@ -108,70 +108,53 @@ git log -5 --oneline --decorate
 
 ## 4. 阶段任务与验收
 
-### P0 — PASS（已完成；不再执行）
+### P0 — PASS（已完成；禁止重做）
 
-P0 的实际 SAFE、20/20 案例分层、Story 可跨集合和三类精确去重结果见本任务书 8.12。下列 P0 原始步骤仅供历史追溯，不得重复运行。
+正式 SAFE：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`，`manifest_files_written=4`，`private_values_emitted=false`。
 
-**目标**
-- Gold72：准确的 40 条 A V3/B2 disagreement 来源。
-- R60：既有 10 条 Pilot10 severe 案例。
-- 两组各自独立保存，历史标签不混合。
+- Gold72：A V3/B2 可比较 72 条，分歧 40、一致 32；准确 40/40 已冻结。
+- R60 Severe10：10/10 唯一来源案例；既有 A/B Checkpoint receipts A=5、B=5；Pilot10 A/B matched_cases=0。
+- Gold72 Development/Locked Regression = 20/20，按案例分层；Development Story=5、Locked Story=6、shared Story=5，`story_disjoint=false`。**Owner 明确允许 Story 跨集合，不得改成 Story 互斥。**
+- Gold72↔R60 exact history / target / full-history-target overlap 均为 0；unique source cases=50。
+- semantic near-duplicate detection=false；不声称已完成语义近重复检测。
+- Gold72 C execution/independence 未证明；R60 C execution verified=true、independence verified=false。保留历史限制，但不阻断已完成的 P0。
+- P0 manifest、dedup receipt、aggregate SAFE 均已在 Owner 私有目录 create-only 生成；不得重复运行 P0 Runner 或已通过的旧 1000 crosswalk/Pilot10 Checkpoint audit。
 
-**执行**
-1. 只读盘点 Owner Mac 私有目录中的 Gold72 A/B crosswalk SAFE、C packet、Owner ID map、C results、Owner resolution 和相关 receipt。
-2. 对实际文件重算 SHA、校验 schema/status/计数和 receipt；不能只相信聊天中提到的路径或历史汇总。
-3. 从 A V3/B2 的真实来源映射重建准确 40 个唯一案例；确认不是完整 72-row source，也不是 suffix72 72 READY Stage。
-4. 固定 Gold72 私有 manifest，并分为 20 条 rubric development、20 条 locked regression。
-5. 对 R60 10 条保留既有 source/checkpoint 证据；不得重跑已通过的 R60 1000 crosswalk/Pilot10 Checkpoint 审计。
-6. 用 Owner 私有规范化来源指纹做 Gold72↔R60 去重；只输出交集数量和唯一来源数量。发生重叠时保留两组原始归属，不得静默替换或重复计数。
+Quality-v1 admitted=0；training_authorized=false。P0 PASS 不等于 Quality PASS 或训练授权。
 
-**产物**
-- Owner 私有：`GOLD72_CALIBRATION_MANIFEST_PRIVATE.json`、`R60_SEVERE10_CALIBRATION_MANIFEST_PRIVATE.json`、`CALIBRATION_CROSSSET_DEDUP_PRIVATE.json`。
-- 公共 SAFE：`storyforge_r60_calibration_inventory_safe_v1`；只含聚合数量和状态，`private_values_emitted=false`。
+### P1 — PASS（Rubric v2.1 已冻结；禁止回退旧 v2）
 
-**P0 PASS**
-- Gold72 40/40 来源可追溯；
-- R60 10/10 旧来源/Checkpoint 回执可追溯；
-- 两组独立、跨集去重完成；
-- 历史文件未修改；
-- SAFE 无私人值。
+当前唯一有效标准：`r60_severity_rubric_v2_1`，公开文件 `docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md`。
 
-任一项不满足，P0=HOLD；不进入 P1，不改 Prompt、不运行模型。
+已通过内容：
+- 三维三态 Schema：`storyforge_severity_evidence_review_v2`。
+- Semantic check：`storyforge_severity_semantic_entailment_check_v2`。
+- Rubric v2.1 文本、代码内 RUBRIC_TEXT、Prompt/schema 描述一致。
+- exact quote 与 semantic entailment 分离验证。
+- 来源/权利/版权/隐私/数据使用授权/数据隔离不属于案例内容审核证据；不得因缺少这些材料而 HOLD。
+- 玩家在故事内明确表达的拒绝、同意和行动边界仍是内容语义证据。
+- 合成回归、Ruff、旧 v3 checkpoint / Reviewer-C v1 兼容测试通过。
 
-### P1 — PASS（Rubric v2.1 已冻结；不再执行旧 v2）
+P1 v2.1 的最终 CI 记录见本任务书 8.22–8.25。不得再运行旧 v2 prompt/标准，不得重做 P1。
 
-当前唯一有效标准：`r60_severity_rubric_v2_1`，见 `docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md`。本任务书 8.13–8.14 是旧 v2 实施过程的历史记录；v2.1 最终状态与 CI 见 8.21–8.24。.1
+### P2 — Owner 独立盲裁决（当前从 P2-A 开始）
 
-实现三态，不再依赖旧布尔 flag：
+#### P2-A：Gold72 Development-20（当前执行）
 
-| 维度 | SUPPORTED | NOT_SUPPORTED | INSUFFICIENT_CONTEXT |
-|---|---|---|---|
-| player_agency | Assistant 明确替玩家决定未授权行动/台词/意图/情绪/不可逆结果，或违背明确拒绝 | 上下文充分，行为属于 NPC/环境/叙事推进，未替玩家决定 | 缺少相关历史、授权/拒绝、行为主体或后续选择 |
-| hard_rule | 可见且适用的历史 System/用户约束/经验证世界组件与目标行为具体冲突 | 故事规则出处类别和目标完整可见，核验后不存在冲突 | 故事规则依据、版本、适用范围或目标上下文缺失 |
-| safety | 可见目标内容足以触发适用安全排除规则，明确主体/行为/情境 | 相关上下文充分，问题不成立 | 年龄、同意、关系、行为或必要上下文缺失 |
+- v2.0 六文件包已 SUPERSEDED，不得用于裁决、覆盖或删除。
+- 在新目录生成 Rubric v2.1 Development-20 盲审包；只读取 P0 Gold72 manifest 与 SHA pin 的 Gold72 C blind source packet。
+- Owner 只查看新 blind packets、instructions、schema 和公开 Rubric v2.1；不得打开 ID Map、P0 manifest、旧 A/B/C、旧 Owner resolution、Locked20 或 Severe10。
+- 完成 20 条 Owner 三维裁决 + 60 条逐维语义复核；字段与严格验证见本任务书 8.23。
+- DOES_NOT_SUPPORT_VERDICT 和 INSUFFICIENT_CONTEXT 均按验证器规则保留 HOLD；不能伪装 PASS。
 
-每维输出 verdict、连续原文引用及消息定位、rule basis、reasoning summary、missing context；confidence 只能辅助，不能代替证据。
+#### P2-B：Held-out Owner reference labels（P4 前置；P2-A 完成后另行启动）
 
-必须分别验证：
-- exact quote check：引用确实存在；
-- semantic entailment check：引用真正支持该 verdict。
+- 样本为 Gold72 Locked Regression 20 + R60 Severe10 10，共 30 条。
+- P2-A 通过且 Rubric/prompt 冻结后，另行取得 Owner 确认，使用独立 blind IDs / 顺序 / 输出目录生成 held-out packets。
+- 完成 30 条 Owner 结果 + 90 条语义复核；标签只留 Owner 私有区，直到 P4 三模型预测及 checkpoint 冻结后才允许对照。
+- 当前 verify_owner_results() 固定 20/20/60；不得把 30/30/90 输入现有验证器。P2-B 必须先有独立版本化 builder/verifier 与合成回归，不能放宽 P2-A 合同。
 
-NPC 主动行动不自动等于玩家代理；普通亲密、冲突、威胁台词不自动等于安全排除。任一维 SUPPORTED 按规则 REJECT/Owner HOLD；任一维 INSUFFICIENT_CONTEXT 必须 HOLD；三维均 NOT_SUPPORTED 也不等于 Quality PASS。
-
-优先扩展现有 `hf_literary_review.py`、`hf_blind_stage.py`、`hf_pilot_semantic_c.py`。新建版本化 schema/rubric；旧 v3 读取和回放继续通过。禁止另建一套无关的双审服务。
-
-**P1 PASS**：schema、rubric、合成回归矩阵和旧 v3 兼容测试全部通过。
-
-### P2 — Owner 独立盲裁决
-
-- 新建 blind adjudication packets，隐藏旧 A/B/C 判断、分数、flags、历史 Owner resolution、槽位和旧 blind IDs。
-- 先裁决 Gold72 development 20 条；locked 20 条和 R60 severe10 保持锁定，直到 rubric v2.1 冻结。
-- C 的历史结果只作比较对象，不作为 ground truth。
-- 逐维保存 verdict、证据引用、规则依据、缺失上下文、rubric 版本、时间戳和 receipt SHA。
-- 不确定案例保留 INSUFFICIENT_CONTEXT/HOLD，不为凑数强行裁决。
-- 六维文学评分与三维严重证据分开裁决和报告。
-
-**P2 PASS**：Owner 参考标签独立、盲化、可追溯；锁定标签未泄露给 Prompt/model 开发；未决项保留 HOLD。
+**P2 PASS**：P2-A 20+60 与 P2-B 30+90 均通过各自验证；所有 HOLD 保留；Owner 标签与模型/Prompt 开发隔离；不把结构验证 PASS 等同于 Quality-v1 admission。
 
 ### P3 — 下一阶段（P2 验收后进入）：三模型固定与 CPU 预检
 
