@@ -1224,3 +1224,17 @@ v2 最终代码提交 `28d9efa9b186484b61163e150a21316c9cc1f8cb` 的六组 GitHu
 - `r58-synthetic`：PASS
 
 首次 CI 暴露的 Ruff F841/F821 均已修复，最终提交全套 CI PASS。v2 现在可以用于 Owner Mac 私有包执行；这只表示代码 CI 通过，不代表真实私有包已生成或 P2-A 已 PASS。
+
+
+## 0.4 2026-11-09 方向校正：Development-20 不是优秀训练样本集；Positive Gold 独立建设
+
+已明确区分两种任务：
+- Gold72 Development-20 / Locked Regression-20 是 A V3 / B2 审核分歧样本，用于校准严重问题 Rubric；不是按文学质量筛出的优秀回复。
+- R60 Severe10 是严重问题校准集；也不是正向示范集。
+- 20 条 Owner 裁决的三维分布（Player Agency 4/16/0、Hard Rule 0/0/20、Safety 0/19/1）不能推出 20 条整体质量等级。SUPPORTED/NOT_SUPPORTED 都不是六维文学质量 PASS。
+
+新增独立计划：`docs/R60_POSITIVE_GOLD_SELECTION_PLAN_CN.md`。Positive Gold 以冻结的 1,000 条真实技术候选池为候选来源，复用既有 Quality-v1 六维分数门槛与三项严重旗标；先小批、再 Owner 确认、再独立冻结，不设必须凑足的 PASS 数。Gold87/Gold108 是历史候选，不能自动转换成当前 Positive Gold 或 Quality-v1 准入。该计划未启动真实审核、未启动 1,000 条全量审核、未启动 HF/GPU/SFT。
+
+### P2-A 当前阻塞：SUPPORTED Player Agency 的 rule_basis 类型
+
+Owner 提供的只读诊断确认原结果第 5、6、11、19 行的 `basis_type` 均为 `player_agency`，而 Rubric v2.1 对 SUPPORTED / Player Agency 要求 `player_agency_boundary`。这不是 history_complete 问题。不得自动改写原 Owner results、rule_id、scope 或 basis_type；必须先由 Owner 明确确认是否允许在派生副本中仅将这 4 个精确 pair 的类型标签规范化为 `player_agency_boundary`，且不得改变 verdict / evidence / semantic checks。Normalizer v2 已增加 fail-closed 检查，返回 `SUPPORTED_RULE_BASIS_TYPE_REQUIRES_OWNER_REVIEW`，不会静默转换。P2-A 仍 HOLD，正式输出目录不得创建。
