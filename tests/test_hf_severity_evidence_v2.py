@@ -250,7 +250,7 @@ def test_not_supported_requires_complete_context_and_missing_context_is_hold():
     item["context_coverage"] = coverage(
         complete=False, reviewed=["interaction_contract"]
     )
-    item["missing_context"] = ["缺少前序授权记录。"]
+    item["missing_context"] = ["缺少玩家在当前故事中的允许/拒绝边界。"]
     with pytest.raises(v2.EvidenceHold, match="SEVERITY_CONTEXT_COMPLETENESS_HOLD"):
         v2.validate_result_v2(result, row)
 
@@ -453,3 +453,29 @@ def test_semantic_entailment_must_review_every_cited_evidence_item():
     with pytest.raises(v2.SemanticEntailmentHold,
                        match="SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD"):
         v2.verify_semantic_entailment_v2(result, row, "hard_rule", check)
+
+
+def test_rubric_v21_excludes_data_provenance_rights_privacy_and_isolation_review():
+    assert v2.RUBRIC_VERSION == "r60_severity_rubric_v2_1"
+    for excluded in (
+        "数据来源合法性", "版权", "数据使用授权", "隐私合规", "数据隔离",
+    ):
+        assert excluded in v2.RUBRIC_TEXT
+    assert "不得因缺少此类材料而 HOLD" in v2.RUBRIC_TEXT
+    assert "玩家在故事内明确表达的拒绝、同意、选择和行动边界" in v2.RUBRIC_TEXT
+    assert "它与训练数据使用授权无关" in v2.RUBRIC_TEXT
+
+
+def test_prompt_explicitly_excludes_dataset_rights_evidence_but_keeps_story_boundaries():
+    messages = v2.prompt_messages_v2(packet())
+    prompt = messages[0]["content"] + messages[1]["content"]
+    assert "不要审核或索取数据来源、版权/权利" in prompt
+    assert "隐私合规或数据隔离证明" in prompt
+    assert "故事内玩家明确拒绝/同意/行动边界仍需按 player_agency/safety 判断" in prompt
+
+
+def test_packet_rejects_source_provenance_metadata_in_visible_history():
+    row = packet()
+    row["visible_history"][0]["source_turn"] = 123
+    with pytest.raises(v2.EvidenceHold, match="SEVERITY_PACKET_CONTENT_HOLD"):
+        v2.prompt_messages_v2(row)
