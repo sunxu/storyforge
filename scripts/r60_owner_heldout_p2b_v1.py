@@ -32,8 +32,9 @@ def main() -> int:
                     or repo in out.resolve(strict=True).parents):
                 raise base.AdjudicationHold("P2B_PRIVATE_PACKAGE_DIR_HOLD")
             inputs = [base._read_private(out / filename, repo) for filename in
-                      (heldout.PACKET_NAME, heldout.RESULT_NAME, heldout.CHECK_NAME)]
-            manifest, safe = heldout.verify(*inputs)
+                      (heldout.PACKET_NAME, heldout.RESULT_NAME, heldout.CHECK_NAME,
+                       heldout.MANIFEST_NAME, heldout.MAP_NAME)]
+            manifest, safe = heldout.verify_package(*inputs)
             created = []
             try:
                 for name, obj in (
