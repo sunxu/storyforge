@@ -166,7 +166,7 @@ P1 v2.1 的最终 CI 记录见本任务书 8.22–8.25。不得再运行旧 v2 p
 - B：zai-org/GLM-4-32B-0414，保留旧 Revision。
 - Challenger：zai-org/GLM-Z1-32B-0414，先固定完整 40 位 Revision。
 
-Qwen Thinking=True 使用模型官方建议 profile：temperature=0.6、top_p=0.95、top_k=20、min_p=0；不得沿用统一 temperature=0 greedy。GLM 参数必须按各自固定 Revision 的官方 generation config/template 确定，不能照搬 Qwen 参数。
+Qwen Thinking=True 使用模型官方建议 profile：不传 temperature.6、top_p=0.95、top_k=20、min_p=0；不得沿用统一 不传 temperature greedy。GLM 参数必须按各自固定 Revision 的官方 generation config/template 确定，不能照搬 Qwen 参数。
 
 依赖基线不可丢失：
 - `transformers==4.57.1`
