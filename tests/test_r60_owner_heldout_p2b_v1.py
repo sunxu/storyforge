@@ -130,3 +130,31 @@ def test_p2a_default_cardinality_unchanged():
     with pytest.raises(base.AdjudicationHold, match="OWNER_RESULT_SET_CARDINALITY_HOLD"):
         base.verify_owner_results(b'{"empty":true}\n', b'{"empty":true}\n',
                                   b'{"empty":true}\n')
+
+
+def test_p2b_manifest_map_binding_fail_closed_before_owner_review():
+    raw, mapping, manifest, _ = build(fixture_inputs())
+    result_raw = b'{"not_ready":true}\n'
+    check_raw = b'{"not_ready":true}\n'
+    # A real frozen packet and map pass the binding checks, then the absent
+    # Owner result set is correctly refused by the 30/90 verifier.
+    with pytest.raises(base.AdjudicationHold, match="OWNER_RESULT_SET_CARDINALITY_HOLD"):
+        heldout.verify_package(
+            raw, result_raw, check_raw,
+            base.canonical(manifest), base.canonical(mapping)
+        )
+    tampered_manifest = dict(manifest)
+    tampered_manifest["packet_sha256"] = "0" * 64
+    with pytest.raises(base.AdjudicationHold, match="P2B_MANIFEST_OR_MAP_BINDING_HOLD"):
+        heldout.verify_package(
+            raw, result_raw, check_raw,
+            base.canonical(tampered_manifest), base.canonical(mapping)
+        )
+    tampered_map = dict(mapping)
+    tampered_map["mapping"] = [dict(x) for x in mapping["mapping"]]
+    tampered_map["mapping"][0]["cohort"] = "development"
+    with pytest.raises(base.AdjudicationHold, match="P2B_MANIFEST_OR_MAP_BINDING_HOLD"):
+        heldout.verify_package(
+            raw, result_raw, check_raw,
+            base.canonical(manifest), base.canonical(tampered_map)
+        )
