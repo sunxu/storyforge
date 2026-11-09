@@ -260,4 +260,4 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 - P3 等 P2 完成后进入；P4 GPU、P6 1000 批量审核、SFT 均未授权。
 - 不重做 P0/P1，不读取 R50 正文，不修改数据库/RolePlay，不上传私有值。
 
-权威接手任务书：[R60 下一 Agent 交接任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)。详细阶段标准：[R60 执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
+权威接手任务书：[R60 下一 Agent 交接任务书 v1.2](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)。详细阶段标准：[R60 执行任务书 v1.3](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
