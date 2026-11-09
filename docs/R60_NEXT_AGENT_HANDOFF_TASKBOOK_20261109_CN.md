@@ -1211,3 +1211,16 @@ v2 同时校验 35-row AI Advisory + SAFE、4-row worksheet + AI Advisory + SAFE
 **v2 代码已推送当前工作分支，等待 GitHub Actions 验证；在 CI PASS 前不得运行真实私有包。** 运行成功门槛仍是 20 results / 60 checks、39 history confirmations、60 target locator、20 history locator；SAFE 必须保留所有原始 semantic HOLD，quality_v1_admitted=0、training_authorized=false、gpu_started=false。
 
 P2-A 尚未 PASS；Owner 的 39 项批准已完成，但正式独立副本及官方 CLI verifier 仍待执行。不得启动 P2-B、P3、GPU/HF Job 或 SFT。
+
+
+### v2 CI 验证结果（2026-11-09）
+
+v2 最终代码提交 `28d9efa9b186484b61163e150a21316c9cc1f8cb` 的六组 GitHub Actions 全部 completed/success：
+- `test`（含 changed-file Ruff 与 pytest）：PASS
+- `resolve-and-verify`：PASS
+- `runtime-quality-gates`：PASS
+- `synthetic-and-r57`：PASS
+- `r58-source-json-structure`：PASS
+- `r58-synthetic`：PASS
+
+首次 CI 暴露的 Ruff F841/F821 均已修复，最终提交全套 CI PASS。v2 现在可以用于 Owner Mac 私有包执行；这只表示代码 CI 通过，不代表真实私有包已生成或 P2-A 已 PASS。
