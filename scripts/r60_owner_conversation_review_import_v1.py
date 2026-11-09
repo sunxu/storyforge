@@ -12,7 +12,6 @@ import hashlib
 import json
 import os
 import stat
-import sys
 from pathlib import Path
 from typing import Any
 
