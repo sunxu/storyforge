@@ -1266,3 +1266,10 @@ Owner 已明确确认：原 `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl` 的
 协议：`docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`。第二模型须来自不同模型提供方/模型家族（建议 Claude 或 Gemini 的可用版本），但其结论仍只是 AI Advisory。Owner 最终必须逐项复核 60 项并形成自己的判断、理由和实际时间；AI 一致率不等于 PASS。若外部服务的数据处理条件未获确认，不得上传私有故事正文。
 
 当前状态：P2-A 仍 HOLD；旧 60 条 AI checks 不得作为正式语义复核。下一步先在 Owner Mac 对新 builder 执行 dry-run，确认 20 packets/20 results/60 dimensions、未读取旧 AI 文件、输出目录未创建；再显式 --write 生成本地私有第二模型盲包。第二模型交叉审核和 Owner 最终复核均未完成。不得启动 GPU/HF Job/SFT，不得解锁 Locked20/Severe10，不得进入 P2-B/P3。
+
+
+## 2026-11-09：CLI Proxy 第二模型批量调用客户端
+
+已新增 `scripts/r60_p2a_openai_compatible_review_client.py`，为 R60 P2-A 提供可复用 OpenAI Chat Completions 客户端。默认模型别名为 `claude-opus-5-5-high`，非流式调用（`stream=false`），每批 5 案例，共 4 批。远程 endpoint 强制 HTTPS；base URL、API key、model 均由环境变量提供，密钥不写入参数或输出。默认只做本地 preflight；真实外发必须显式 `--execute --allow-private-data-egress`。输出严格验证 60 个 blind_id × dimension、七字段合同、枚举及完整 evidence index 覆盖。批次结果和原始响应仅写入 0600 私有文件，支持 `--resume`。本工具只产生 AI Advisory，不产生 Owner 最终裁决。具体环境变量和命令见 `docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`。
+
+当前仍缺 Owner Mac 的实际 CLI Proxy Base URL 与本机环境变量配置；未发出任何 API 请求。CI 需验证新客户端及测试后才能视为代码验收。即使 60 行 AI Advisory 生成成功，P2-A 仍须 Owner 最终复核；不启动 GPU/HF Job/SFT。
