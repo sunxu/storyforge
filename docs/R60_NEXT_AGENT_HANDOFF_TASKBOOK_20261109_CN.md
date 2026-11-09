@@ -1252,3 +1252,17 @@ Owner 明确批准仅在派生副本中，将四条 SUPPORTED / Player Agency �
 Owner Mac 诊断确认 60 条 semantic checks 全部缺少 `reviewer_role` / `reviewer_ref`。Owner 先前已明确说明 60 项语义复核由 Owner 独立完成。Normalizer v2 现仅在派生副本回填统一标识：`OWNER_INDEPENDENT` / `owner-independent-r60-p2a-dev20-20261109`。要求恰好 60 行；已有冲突身份信息不得覆盖，直接 HOLD。原始 semantic JSONL 不变。
 
 私有 approval 和 SAFE 将其标记为 `RETROSPECTIVE_DERIVED_COPY_METADATA`，并明确 `cryptographic_identity_attested=false`。这不是密码学身份认证，不伪称独立性已被密码学证明；只是将已完成的 Owner 复核补齐验证器所需的回溯性元数据。官方 verifier 仍须对派生包完整验证。
+
+
+
+## 2026-11-09 权威状态更正：60 条 Semantic checks 实为 Owner AI Advisory
+
+Owner 已明确确认：原 `OWNER_SEMANTIC_ENTAILMENT_CHECKS_PRIVATE.jsonl` 的 60 条语义复核由 Owner AI 生成，未经 Owner 逐项最终确认。此事实覆盖本文 8.23、8.25 及 0.2/0.3 中任何将该 60 条描述为“Owner 独立完成”或允许回溯补写 `OWNER_INDEPENDENT` 的旧记录。旧 AI checks 不得通过 normalizer 补写 reviewer_role/ref/rubric_version 后作为正式 Owner semantic checks；不得将 AI reviewer 冒充 Owner。
+
+已提交代码保护：`scripts/r60_owner_approved_package_normalizer_v2.py` 现在只接受已经明确记录 `reviewer_role=OWNER_INDEPENDENT` 且 60 条 reviewer_ref 一致的真实 Owner 复核输入；缺失时 fail-closed，返回 `SEMANTIC_REVIEW_NOT_OWNER_FINALIZED_HOLD`。原始 AI checks 继续封存为 Advisory。
+
+新增第二模型盲交叉审核工具：`scripts/r60_p2a_second_model_cross_review.py`。它只读取原始 Development-20 blind packets、20 条 Owner results 和 Rubric v2.1；不读取第一模型的 60 条 semantic checks、35 条/4 条 AI Advisory。它生成新的盲 ID、独立随机顺序、Owner-only ID map、第二模型提示词和私有 SHA manifest。第二模型输出只能标记 `AI_CROSS_REVIEW_ADVISORY_NOT_OWNER`，不满足官方 Owner reviewer 合同。
+
+协议：`docs/R60_P2A_SECOND_MODEL_CROSS_REVIEW_PROTOCOL_V1_CN.md`。第二模型须来自不同模型提供方/模型家族（建议 Claude 或 Gemini 的可用版本），但其结论仍只是 AI Advisory。Owner 最终必须逐项复核 60 项并形成自己的判断、理由和实际时间；AI 一致率不等于 PASS。若外部服务的数据处理条件未获确认，不得上传私有故事正文。
+
+当前状态：P2-A 仍 HOLD；旧 60 条 AI checks 不得作为正式语义复核。下一步先在 Owner Mac 对新 builder 执行 dry-run，确认 20 packets/20 results/60 dimensions、未读取旧 AI 文件、输出目录未创建；再显式 --write 生成本地私有第二模型盲包。第二模型交叉审核和 Owner 最终复核均未完成。不得启动 GPU/HF Job/SFT，不得解锁 Locked20/Severe10，不得进入 P2-B/P3。
