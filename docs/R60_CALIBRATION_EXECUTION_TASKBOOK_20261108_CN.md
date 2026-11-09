@@ -546,3 +546,8 @@ v2 verifies both AI Advisory SAFE contracts, 35-row and 4-row JSONL cardinality,
 Do not run v2 against real private data until CI for its commit is PASS. Use a fresh output directory ending `owner-approved-v2`; never reuse the v1 output directory. Expected counts: 20 cases, 60 semantic checks, 39 history completeness confirmations, 60 target locator normalizations, 20 history locator normalizations. Preserve all semantic HOLDs. The output SAFE must keep quality admission 0 and training/GPU false.
 
 Owner approval is complete, but P2-A is not yet PASS until the new v2 package is generated from the actual pinned private inputs and the official verifier passes. No P2-B, P3, GPU/HF Job, bulk review, or SFT authorization is implied.
+
+
+### v2 CI 验证结果（2026-11-09）
+
+最终代码提交 `28d9efa9b186484b61163e150a21316c9cc1f8cb` 六组 Actions 全部 completed/success：test（Ruff + pytest）、resolve-and-verify、runtime-quality-gates、synthetic-and-r57、r58-source-json-structure、r58-synthetic。最初的 Ruff F841/F821 已修复。v2 允许进入真实私有输入执行阶段；CI 通过不等于 P2-A 正式验收通过。
