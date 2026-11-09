@@ -141,17 +141,26 @@ def main():
         for bn in range(1,5):
             batch=packets[(bn-1)*5:bn*5]; exp={x["blind_id"]:x for x in batch}
             rp=a.output_dir/f"BATCH_{bn:02d}_ADVISORY_PRIVATE.jsonl"
+            rawp=a.output_dir/f"BATCH_{bn:02d}_RAW_RESPONSE_PRIVATE.txt"
             if rp.exists():
                 if not a.resume: raise Hold("BATCH_EXISTS_USE_RESUME")
-                old,_=read_jsonl(rp); all_rows.extend(validate_output("\n".join(json.dumps(x) for x in old),exp)); continue
+                old,_=read_jsonl(rp); all_rows.extend(validate_output("\\n".join(json.dumps(x) for x in old),exp)); continue
+            if rawp.exists():
+                if not a.resume: raise Hold("RAW_BATCH_EXISTS_USE_RESUME")
+                response=rawp.read_text("utf-8")
+                checked=validate_output(response,exp)
+                write_private(rp,b"".join(canon(x)+b"\\n" for x in checked))
+                write_private(a.output_dir/f"BATCH_{bn:02d}_META_PRIVATE.json",canon({"batch":bn,"recovered_from_validated_raw_response":True})+b"\\n")
+                all_rows.extend(checked)
+                continue
             last=None
             for attempt in range(1,a.max_attempts+1):
                 try:
                     response,meta=proxy_call(url,key,a.model,batch,rubric,a.timeout,a.max_tokens)
                     checked=validate_output(response,exp)
-                    write_private(a.output_dir/f"BATCH_{bn:02d}_RAW_RESPONSE_PRIVATE.txt",response.encode())
-                    write_private(rp,b"".join(canon(x)+b"\n" for x in checked))
-                    write_private(a.output_dir/f"BATCH_{bn:02d}_META_PRIVATE.json",canon({"batch":bn,"attempt":attempt,**meta})+b"\n")
+                    write_private(rawp,response.encode())
+                    write_private(rp,b"".join(canon(x)+b"\\n" for x in checked))
+                    write_private(a.output_dir/f"BATCH_{bn:02d}_META_PRIVATE.json",canon({"batch":bn,"attempt":attempt,**meta})+b"\\n")
                     all_rows.extend(checked); last=None; break
                 except RuntimeError as e:
                     last=str(e)
