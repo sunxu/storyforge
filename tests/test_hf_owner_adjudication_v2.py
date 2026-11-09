@@ -109,6 +109,7 @@ def test_build_package_exposes_only_fresh_development20_packets():
     assert safe["old_a_b_c_judgments_exposed"] is False
     assert safe["private_values_emitted"] is False
     assert "不要打开 Owner ID Map" in instructions.decode("utf-8")
+    assert "docs/R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md" in instructions.decode("utf-8")
     assert "数据使用授权" in instructions.decode("utf-8")
     assert "玩家明确表达的拒绝、同意和行动边界仍是 Player Agency / Safety 的内容证据" in instructions.decode("utf-8")
 
