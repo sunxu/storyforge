@@ -3,6 +3,8 @@ from __future__ import annotations
 import copy
 
 from scripts import r60_owner_approved_package_normalizer_v2 as MODULE
+from storyforge_gold_quality import hf_owner_adjudication_v2 as ADJUDICATION
+from storyforge_gold_quality import hf_severity_evidence_v2 as SEVERITY
 
 
 def _packet():
@@ -246,3 +248,25 @@ def test_owner_semantic_reviewer_binding_rejects_wrong_cardinality():
         pass
     else:
         raise AssertionError("semantic reviewer binding accepted wrong cardinality")
+
+
+
+def test_semantic_hold_reason_exposes_only_allowlisted_safe_code():
+    exc = SEVERITY.SemanticEntailmentHold("SEMANTIC_ENTAILMENT_CHECK_HOLD")
+    assert ADJUDICATION.semantic_entailment_hold_reason(exc) == (
+        "OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_CHECK_HOLD"
+    )
+
+
+def test_semantic_hold_reason_preserves_non_established_verdict_hold():
+    exc = SEVERITY.SemanticEntailmentHold("SEMANTIC_ENTAILMENT_NOT_ESTABLISHED")
+    assert ADJUDICATION.semantic_entailment_hold_reason(exc) == (
+        "SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD"
+    )
+
+
+def test_semantic_hold_reason_never_echoes_untrusted_exception_text():
+    exc = SEVERITY.SemanticEntailmentHold("private payload must not leak")
+    assert ADJUDICATION.semantic_entailment_hold_reason(exc) == (
+        "OWNER_SEMANTIC_CHECK_INVALID:UNCLASSIFIED"
+    )
