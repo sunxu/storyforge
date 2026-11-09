@@ -184,7 +184,7 @@ def test_supported_basis_type_accepts_exact_rubric_v21_label():
     MODULE.validate_supported_basis_types([result], dimensions)
 
 
-def test_owner_semantic_reviewer_binding_is_retrospective_and_derived_only():
+def test_owner_semantic_reviewer_binding_rejects_ai_generated_checks_without_owner_review():
     checks = [
         {
             "calibration_id": f"{i:032x}",
@@ -195,33 +195,42 @@ def test_owner_semantic_reviewer_binding_is_retrospective_and_derived_only():
                 "rubric_version": "r60_severity_rubric_v2_1",
                 "conclusion": "SUPPORTS_VERDICT",
                 "reviewed_evidence_indexes": [0],
-                "reasoning_summary": "Reviewed the complete cited evidence against the recorded verdict.",
+                "reasoning_summary": "AI advisory reviewed the cited evidence against the recorded verdict.",
             },
         }
         for i in range(60)
     ]
     original = copy.deepcopy(checks)
-
-    derived, count = MODULE.normalize_owner_semantic_reviewer_binding(checks)
-
-    assert count == 60
+    try:
+        MODULE.normalize_owner_semantic_reviewer_binding(checks)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("AI-generated semantic checks were promoted to Owner review")
     assert checks == original
-    assert all(
-        row["check"]["reviewer_role"] == "OWNER_INDEPENDENT"
-        and row["check"]["reviewer_ref"] == MODULE.OWNER_SEMANTIC_REVIEWER_REF
-        for row in derived
-    )
-    for before, after in zip(original, derived, strict=True):
-        before_check = before["check"]
-        after_check = after["check"]
-        assert {
-            key: value for key, value in after_check.items()
-            if key not in ("reviewer_role", "reviewer_ref")
-        } == before_check
-    assert all(
-        "reviewer_role" not in row["check"] and "reviewer_ref" not in row["check"]
-        for row in checks
-    )
+
+
+def test_owner_semantic_reviewer_binding_accepts_only_explicit_owner_metadata():
+    checks = [
+        {
+            "calibration_id": f"{i:032x}",
+            "dimension": ("player_agency", "hard_rule", "safety")[i % 3],
+            "reviewed_at_utc": "2026-11-09T05:00:00Z",
+            "check": {
+                "schema": "storyforge_severity_semantic_entailment_check_v2",
+                "rubric_version": "r60_severity_rubric_v2_1",
+                "reviewer_role": "OWNER_INDEPENDENT",
+                "reviewer_ref": "owner-reviewed-r60-p2a",
+                "conclusion": "SUPPORTS_VERDICT",
+                "reviewed_evidence_indexes": [0],
+                "reasoning_summary": "Owner independently reviewed the complete cited evidence.",
+            },
+        }
+        for i in range(60)
+    ]
+    derived, count = MODULE.normalize_owner_semantic_reviewer_binding(checks)
+    assert count == 0
+    assert derived == checks
 
 
 def test_owner_semantic_reviewer_binding_rejects_conflicting_identity():
