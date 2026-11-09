@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import copy
+
 from scripts import r60_owner_approved_package_normalizer_v2 as MODULE
 
 
@@ -47,7 +49,6 @@ def test_normalize_results_accepts_exact_approved_supported_and_negative_pairs()
             "safety": _assessment("NOT_SUPPORTED"),
         },
     }
-    import copy
     original = copy.deepcopy(result)
 
     normalized, counts = MODULE.normalize_results(
