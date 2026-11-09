@@ -178,3 +178,16 @@ Owner 最新 SAFE 返回 `OFFICIAL_VERIFIER_ADJUDICATION_HOLD`。复核发现 no
 已补齐 P2-A verifier 路径的固定错误码 allowlist，并增加 row-shape、timestamp、duplicate 回归测试。仍只输出代码内固定常量；未知错误继续统一降级，不回显异常文本或私有值。没有更改 Owner 输入、审核结论、语义检查或 evidence indexes。
 
 请等 CI 通过后更新既有 runner worktree 并重新运行 normalizer。若再失败，SAFE 将能区分 semantic row shape、timestamp、duplicate、coverage、reviewer binding 等问题。不得直接改原始语义审核数据。
+
+
+### 2026-11-09：CHECK_KEYSET_MISMATCH 的只读定位
+
+Owner 正式验证返回 `OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_INVALID:CHECK_KEYSET_MISMATCH`。当前官方 check 合同要求 `row["check"]` 恰好包含七个字段：schema、rubric_version、reviewer_role、reviewer_ref、conclusion、reviewed_evidence_indexes、reasoning_summary。
+
+不能猜测是缺字段还是多字段，也不能直接删除字段或重写原始审核记录。新增只读脚本 `scripts/r60_p2a_semantic_check_keyset_diagnostic.py`，仅输出：
+- 输入文件 SHA-256；
+- 每行缺失/多出的字段名（不输出字段值、case ID、reviewer_ref、reasoning）；
+- keyset 分布与计数；
+- 输入解析错误行号。
+
+脚本不修改文件。请先在 Owner Mac 更新同一个 runner worktree 到包含该脚本的最新 HEAD，再对原始 semantic checks 文件运行诊断。依据 SAFE 结果再决定如何在派生副本修复。任何字段变更都必须保留原始文件不变；不能自动删除未知字段，也不能伪造或重写语义结论。
