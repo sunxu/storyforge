@@ -3,8 +3,7 @@ from __future__ import annotations
 
 import importlib.util
 from pathlib import Path
-
-import pytest
+from unittest import TestCase
 
 
 MODULE = Path(__file__).resolve().parents[1] / "scripts/r60_p2b_owner_dispute_matrix_v1.py"
@@ -59,14 +58,14 @@ def test_build_preserves_holds_and_owner_pending():
 
 def test_build_rejects_mismatched_frozen_counts():
     diffs, packets = fixture()
-    with pytest.raises(mod.Hold, match="EXPECTED_CASE_OR_DISAGREEMENT_COUNT_HOLD"):
+    with TestCase().assertRaisesRegex(mod.Hold, "EXPECTED_CASE_OR_DISAGREEMENT_COUNT_HOLD"):
         mod.build(diffs[:-1], packets)
 
 
 def test_build_rejects_duplicate_disagreement():
     diffs, packets = fixture()
     diffs[-1] = diffs[0].copy()
-    with pytest.raises(mod.Hold, match="DISAGREEMENT_BINDING_HOLD"):
+    with TestCase().assertRaisesRegex(mod.Hold, "DISAGREEMENT_BINDING_HOLD"):
         mod.build(diffs, packets)
 
 
@@ -74,12 +73,12 @@ def test_build_rejects_hard_rule_flip():
     diffs, packets = fixture()
     hard = next(x for x in diffs if x["dimension"] == "hard_rule")
     hard["codex_verdict"] = "SUPPORTED"
-    with pytest.raises(mod.Hold, match="DISAGREEMENT_VERDICT_BINDING_HOLD"):
+    with TestCase().assertRaisesRegex(mod.Hold, "DISAGREEMENT_VERDICT_BINDING_HOLD"):
         mod.build(diffs, packets)
 
 
 def test_build_rejects_inconsistent_review_context():
     diffs, packets = fixture()
     packets[0]["dimension_reviews"].pop("safety")
-    with pytest.raises(mod.Hold, match="OWNER_PACKET_DIMENSIONS_HOLD"):
+    with TestCase().assertRaisesRegex(mod.Hold, "OWNER_PACKET_DIMENSIONS_HOLD"):
         mod.build(diffs, packets)
