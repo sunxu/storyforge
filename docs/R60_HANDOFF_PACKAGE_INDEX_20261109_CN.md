@@ -225,3 +225,6 @@ Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私�
 - v2.0 已生成的 Development-20 六文件包已标记 SUPERSEDED，不得用于裁决、不得覆盖或删除。
 - v2.1 新包须生成到 `owner-adjudication-dev20-rubric-v2-1-20261109` 新目录；等待最新 CI 全部通过后再运行 dry-run / `--write`。
 - 完整范围定义、旧包处置和命令见 [任务书 8.21](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#821-owner-要求排除数据来源与权利审核rubric-v21-2026-11-09)。
+
+
+公开冻结的 v2.1 标准：[R60 Severity Evidence Rubric v2.1](R60_SEVERITY_EVIDENCE_RUBRIC_V2_1_CN.md)。Owner instructions 只允许读取新 v2.1 盲包、说明、Schema 和此公开 Rubric；旧 v2.0 包已 SUPERSEDED。
