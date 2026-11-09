@@ -129,3 +129,18 @@ Normalizer 在内存中补齐 60 行 reviewer binding 后，必须将 `semantic_
 - 60 条 `conclusion`、`reviewed_evidence_indexes`、`reasoning_summary` 逐字段不变；
 - SAFE 应分别报告 `original_semantic_checks_modified=false` 与 `derived_semantic_reviewer_binding_rows=60`，不得用含糊的 `semantic_checks_modified=false` 表述派生文件；
 - 输出摘要须提供输入与输出 semantic SHA，便于 Owner 独立比对。
+
+
+### 2026-11-09：OWNER_SEMANTIC_CHECK_INVALID 的安全诊断修复
+
+此前 Owner verifier 将所有非 `SEMANTIC_ENTAILMENT_NOT_ESTABLISHED` 的语义校验错误统一包装为 `OWNER_SEMANTIC_CHECK_INVALID`，导致无法区分 schema、evidence index 等具体失败类型。
+
+现在仅暴露验证器内部固定的 allowlist reason code：
+- `OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_CHECK_HOLD`
+- `OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_EVIDENCE_INDEX_HOLD`
+- `OWNER_SEMANTIC_CHECK_INVALID:SEMANTIC_ENTAILMENT_DIMENSION_HOLD`
+- `SEMANTIC_ENTAILMENT_NOT_ESTABLISHED_HOLD`
+
+未知异常统一映射为 `OWNER_SEMANTIC_CHECK_INVALID:UNCLASSIFIED`，绝不回显异常文本或私有输入。新增测试覆盖安全 reason、原有 NOT_ESTABLISHED 语义和未知异常不泄露。
+
+请先更新 Owner Mac worktree 到最新分支 HEAD，再对已生成的派生包运行官方 CLI verifier。该诊断步骤只读现有包，不重新生成、不修改包内文件。将返回的 SAFE reason_code 原样反馈；再针对具体原因修复。禁止直接改 60 条 conclusion、reviewed_evidence_indexes 或 reasoning_summary。
