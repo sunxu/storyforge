@@ -332,3 +332,21 @@ def test_semantic_check_contract_diagnostic_identifies_index_shape_and_duplicate
     assert SEVERITY.semantic_check_contract_reason(check) == "EVIDENCE_INDEX_TYPE_INVALID"
     check["reviewed_evidence_indexes"] = [0, 0]
     assert SEVERITY.semantic_check_contract_reason(check) == "EVIDENCE_INDEX_DUPLICATE"
+
+
+def test_official_verifier_reason_reports_semantic_row_and_timestamp_holds():
+    row_exc = ADJUDICATION.AdjudicationHold("OWNER_SEMANTIC_CHECK_ROW_SHAPE_HOLD")
+    timestamp_exc = ADJUDICATION.AdjudicationHold("OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD")
+    assert MODULE.official_verifier_reason(
+        row_exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
+    ) == "OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_ROW_SHAPE_HOLD"
+    assert MODULE.official_verifier_reason(
+        timestamp_exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
+    ) == "OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_TIMESTAMP_HOLD"
+
+
+def test_official_verifier_reason_reports_semantic_duplicate_hold():
+    exc = ADJUDICATION.AdjudicationHold("OWNER_SEMANTIC_CHECK_DUPLICATE")
+    assert MODULE.official_verifier_reason(
+        exc, ADJUDICATION.AdjudicationHold, SEVERITY.EvidenceHold
+    ) == "OFFICIAL_VERIFIER_OWNER_SEMANTIC_CHECK_DUPLICATE"
