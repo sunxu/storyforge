@@ -523,3 +523,26 @@ Runbook：`docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V1_CN.md`
 本会话已完成 GitHub 代码与 CI 交付，但尚未取得 Owner Mac 六份真实私有输入，故尚未执行 normalizer；不得将代码合并等同于 P2-A 完成。拿到真实 SAFE/SHA 回执后才可判定 P2-A PASS。
 
 本次不启动 P2-B、P3、HF Job、GPU、1000 条审核或 SFT。
+
+
+---
+
+## 10. 2026-11-09 Owner additional approval: 4 SUPPORTED cases; normalizer v2
+
+Owner has explicitly approved all four AI advisory recommendations for SUPPORTED / player_agency cases (source result rows 5, 6, 11, 19). The complete approved scope is now 39 exact case-dimension pairs:
+
+- 35 NOT_SUPPORTED pairs: Player Agency 16 + Safety 19; retain their original verdicts.
+- 4 SUPPORTED pairs: Player Agency 4; retain their original verdicts.
+- For all 39, set only `context_coverage.history_complete=true` in the isolated derived package.
+- Verdict changes: 0. Semantic rechecks: 0. Do not modify the original 60 semantic checks.
+
+Versioned implementation:
+- `scripts/r60_owner_approved_package_normalizer_v2.py`
+- `tests/test_r60_owner_approved_package_normalizer_v2.py`
+- `docs/R60_P2A_OWNER_PACKAGE_NORMALIZER_V2_CN.md`
+
+v2 verifies both AI Advisory SAFE contracts, 35-row and 4-row JSONL cardinality, the 4-row worksheet exact order and source binding, the unchanged original semantic check for each SUPPORTED case, exact pair sets, six pinned input SHA-256 values, private file permissions, and create-only output. It calls the unchanged pure verifier and unchanged official CLI verifier. v1 remains intact.
+
+Do not run v2 against real private data until CI for its commit is PASS. Use a fresh output directory ending `owner-approved-v2`; never reuse the v1 output directory. Expected counts: 20 cases, 60 semantic checks, 39 history completeness confirmations, 60 target locator normalizations, 20 history locator normalizations. Preserve all semantic HOLDs. The output SAFE must keep quality admission 0 and training/GPU false.
+
+Owner approval is complete, but P2-A is not yet PASS until the new v2 package is generated from the actual pinned private inputs and the official verifier passes. No P2-B, P3, GPU/HF Job, bulk review, or SFT authorization is implied.
