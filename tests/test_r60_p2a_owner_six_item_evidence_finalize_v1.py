@@ -162,7 +162,7 @@ def test_apply_owner_updates_rejects_missing_or_extra_item():
     update["latest_six_decisions"].pop()
     try:
         MODULE.apply_owner_updates(packets, results, checks, update)
-    except Exception as exc:
+    except ValueError as exc:
         assert str(exc) == "SIX_ITEM_UPDATE_COVERAGE_HOLD"
     else:
         raise AssertionError("incomplete six-item update was accepted")
