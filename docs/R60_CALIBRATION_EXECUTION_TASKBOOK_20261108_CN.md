@@ -564,3 +564,8 @@ P2-A 当前 HOLD：原 Owner results 的 4 条 SUPPORTED / Player Agency（resul
 ### 2026-11-09 Owner 批准 basis_type 精确规范化
 
 Owner 已批准仅在派生副本中，将 4 条 SUPPORTED / Player Agency 的 `basis_type` 从 `player_agency` 规范化为 `player_agency_boundary`。实现严格限定 4 个精确 pair；原始 JSONL、verdict、evidence、其他 rule_basis 字段和 60 semantic checks 不变。Normalizer 的私有 approval 记录明确列出映射和不变性断言，SAFE 输出 `basis_type_normalized=4`。真实 Owner Mac 私有包执行及官方 CLI verifier 尚未完成前，P2-A 仍为 HOLD。
+
+
+### 2026-11-09 semantic reviewer binding 修复
+
+60 条语义复核诊断结果为 reviewer_role/ref 全部缺失。鉴于 Owner 已确认这些复核均由 Owner 在独立裁决后完成，Normalizer v2 在派生副本中补充统一 role/ref，并记录为回溯性元数据绑定；任何冲突值均 fail-closed。原始 semantic checks 不变。SAFE 明确标注未进行密码学身份认证。P2-A 仍须通过真实私有包和官方 verifier 验收。
