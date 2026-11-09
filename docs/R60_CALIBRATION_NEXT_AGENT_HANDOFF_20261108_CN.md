@@ -1,6 +1,6 @@
 # StoryForge R60 下一阶段 Agent 交接总览：Quality 校准与模型选型
 
-更新日期：2026-11-08  
+更新日期：2026-11-09（当前执行状态校正）  
 适用分支：r60/gold192-history-v3-adapter  
 关联 PR：[ #25 ](https://github.com/sunxu/storyforge/pull/25)  
 主线 Issue：[ #26 ](https://github.com/sunxu/storyforge/issues/26)  
@@ -10,7 +10,7 @@
 
 ## 0. 新 Agent 接手时的唯一目标
 
-当前工作进入 **审核标准校准 → 模型严格配对评估 → 审核器回归 → 1000 条真实候选批量审核** 阶段。
+当前 P0 校准集冻结与 P1 Rubric v2.1 工程实现均已 PASS。下一 Agent 从 **P2 v2.1 Development-20 Owner 盲审包生成 → 20 条裁决 + 60 条语义复核** 开始；之后进入 P3 三模型固定与 CPU 预检。
 
 最终目标：把 StoryForge 已有的真实历史候选，交给一套经过真实案例校准、保留证据、追溯模型和规则版本、能够量化误报/漏报的可复用 Quality Pipeline，筛出真正可训练样本。
 
@@ -18,9 +18,9 @@
 
 ## 1. 接手必读顺序
 
-1. [新 Agent 交接任务书](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)：下一 Agent 的正式工作指令，按 P0→P6 执行。
+1. [新 Agent 交接任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md)：下一 Agent 的正式工作指令，从 P2 v2.1 开始；P0/P1 已 PASS，不得重做。
 2. 本文：当前状态、历史事实、边界和接手原则。
-3. [执行任务书](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：按 P0→P6 顺序执行，含命令、产物和验收。
+3. [执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)：P0/P1 已完成；P2/P3 为当前后续阶段。
 4. [统一计划](R60_NEXT_PHASE_CALIBRATION_AND_MODEL_SELECTION_PLAN_20261108_CN.md)：阶段定义和模型评估设计。
 5. [R60 主线状态](R60_REAL_HISTORY_SFT_MAINLINE_CN.md)：仅用于理解历史技术背景、原始主线边界和已完成事实；其中旧权益/协议调查段落属于历史记录，本次不重新启动该调查，以本交接文件和任务书中的用户最新要求为准。
 6. [Reviewer C 报告](R60_HF_PILOT10_C_BLIND_SEMANTIC_REVIEW_20261108_CN.md)：10 条严重问题三态结果。
@@ -50,7 +50,7 @@
 - R60 HF CPU dependency profiles
 - CI
 
-**快照说明**：上述 HEAD/CI 是本次最终交接审查时实际读取的 GitHub 状态。交接文档后续提交会使 PR HEAD 变化，接手 Agent 应在开始工作时只读刷新 HEAD/CI；不得把旧 SHA 的 CI 结果挪用为新 HEAD 的 PASS。不要 reset、force-push、merge 或关闭 PR。PR #25 仍为 Draft，不要把文档交接完成误认为该 PR 已满足合并条件。
+**历史快照说明**：以上 SHA/CI 已过期，仅保留沿革。当前 HEAD 与 CI 见本文末尾“当前接手状态”；新 Agent 必须在开始工作时再次只读刷新 PR #25、HEAD/CI。不要 reset、force-push、merge 或关闭 PR。PR #25 仍为 Draft，不要把交接文档完成误认为该 PR 已满足合并条件。
 
 ## 3. 已完成且不能重复的工作
 
@@ -92,9 +92,9 @@ Owner 回传的 SAFE 显示：
 - 建议将 Gold72 40 条划分为 20 条规则开发集和 20 条锁定回归集；私有 crosswalk 固定分组，公开只存聚合数量和哈希。
 
 
-## 3.5 交接准备阶段已收到的私有证据（2026-11-08）
+## 3.5 历史交接准备阶段收到的私有证据（2026-11-08；状态已由 P0 正式冻结记录更新）
 
-本节只记录交接准备期间 Owner 已提供的脱敏摘要，不代表新 Agent 已完成 P0，也不代表训练准入。
+本节仅保留 P0 冻结前的历史证据缺口，不再代表当前状态。P0 正式完成事实见 [P0 执行记录](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#812-owner-mac-正式冻结完成p0-pass--quality-hold-2026-11-09)。
 
 | 证据 | 已确认内容 | 尚未确认 / 不得推断 |
 |---|---|---|
@@ -106,8 +106,8 @@ Owner 回传的 SAFE 显示：
 **当前交接状态**：
 - Pilot10 SAFE：已收到；摘要层面的来源/Checkpoint 核验结果可引用。
 - 1000 crosswalk：已有 Owner Pairwise SAFE 验证 A/B 两槽 1000/1000 来源映射及跨槽绑定通过；无需重复执行旧审计。
-- Gold72：Reviewer C/Owner 相关文件与聚合结果已存在；但独立 40-case source manifest/A-B crosswalk、C execution record 仍未证明，40 条冻结与跨集去重未完成。
-- P0：R60 10 条来源/Checkpoint 审计子项已 PASS；整体仍为 OPEN / NOT COMPLETE，阻塞项是 Gold72 40 条私有材料盘点/冻结及 Gold72↔R60 跨集去重。
+- Gold72：该历史快照时，40-case source manifest/A-B crosswalk 尚未证明；此缺口已由 P0 正式 SAFE 完成冻结（见上文链接）。C execution record / independence 仍未证明，但不阻断 P0。
+- P0：当前已正式 PASS；Gold72=40、R60 Severe10=10，案例级 20/20，Gold72 Story 可跨集合，Gold72↔R60 三类精确交集=0、unique source=50。不得重做 P0。
 
 Owner 私有文件仅保留在本机受控私有目录。GitHub 不存放其正文、crosswalk 内容、blind IDs、source locators 或逐案 Checkpoint。
 
@@ -117,7 +117,7 @@ Owner 私有文件仅保留在本机受控私有目录。GitHub 不存放其正�
 - 已知 Owner artifacts：`R60_GOLD72_OWNER_DISAGREEMENT_RESOLUTION_PRIVATE.json`、`R60_GOLD72_OWNER_RESOLUTION_SAFE.json`。历史聚合为 40 条 Owner PASS/HOLD/REJECT=30/4/6；Owner Resolution 与 Reconciliation 各 1 个事件、Manifest 288 个事件、重复导入追加 0。只读核验，不重复导入。
 - 历史 Reviewer C aggregate=38/1/1，但 C execution record unavailable；`r60_reviewer_c_audit.py` 需要 execution receipt 与完整 execution record，results-only SAFE 不能证明独立执行。
 - 72-row source `r59-source-priority72-20261103/R59_SOURCE_CONTEXT_PRIVATE.jsonl` 不是 40-case subset；strict stage 为 5 READY/67 HOLD。suffix72 72 READY stage 是非 Quality-admitted 替代路径，禁止当作 Gold72 40。
-- **缺口**：尚未证明准确的 Reviewer A V3/B2 disagreement 40-case source crosswalk/manifest 已独立冻结。需要用 Owner ID map 与 A V3/B2 历史来源重新核验 40 个唯一来源，再分成 20 development / 20 locked regression。
+- **历史缺口（已关闭）**：上述 40-case source crosswalk/manifest 已由 P0 冻结 SAFE 验收；20/20 按案例分层完成，Story 跨集合是 Owner 明确允许的结果。不得再按 Story 互斥重分组。
 
 
 ## 4. 当前代码资产：复用，不要重造
@@ -210,25 +210,39 @@ GLM-Z1 是 GLM-4 同家族推理增强 Challenger，不是第三个完全独立�
 
 ## 10. 本次交接材料的完成边界（2026-11-09）
 
-本次 ChatGPT 工作的交付范围是**完成交接材料，不执行下一阶段 P0–P6**。因此：
-- 已完成：交接总览、P0–P6 执行任务书、三模型校准计划、HF Job/Jinja2 永久经验、Pilot10 SAFE 事实、R60 1000 crosswalk 已通过的证据状态、Gold72 尚缺证据的明确边界、Issue #28 任务入口。
-- 未执行且交由新 Agent：Owner Mac 上 Gold72 私有文件最终存在性/SHA/receipt 核验、40 条来源重建、Gold72↔R60 私有指纹去重及两个冻结 manifest。
-- 本次没有执行 Gold72 重建、没有生成私有 manifest、没有修改审核 Prompt、没有运行新模型、没有提交 HF Job/GPU、没有批量审核 1000 条、没有修改 RolePlay 或数据库。
-- 新 Agent 接手第一步是只读刷新 GitHub HEAD/CI，并按任务书 P0 对 Gold72 证据缺口执行；**不得重复已通过的 R60 1000 crosswalk 与 Pilot10 Checkpoint 审计**。
-- 本次交接包的完成不等于 P0 PASS、Quality-v1 admission 或 GPU/SFT 授权。
+本节是 2026-11-09 早期交接材料准备时的历史记录；其后 Owner 已完成 P0 正式冻结、P1 Rubric v2.1 实现与 CI，当前不再适用“P0–P6 均未执行”的旧边界。
+- 当时已完成：交接文档初稿、P0/P1 之前的历史执行说明和工程资产盘点。
+- 当时未执行的 Gold72 私有冻结已在后续由 Owner Mac 完成，正式结果记录于主交接任务书 8.12；P1(v2.1) 后续记录于 8.21–8.22。
+- 当前仍未完成：P2 v2.1 新包生成、Owner 20 条裁决、60 条语义复核；P3 模型固定与 CPU 预检。
+- 当前没有运行新模型、没有提交 HF GPU Job、没有批量审核 1000 条、没有修改 RolePlay 或数据库。
+- 新 Agent 接手第一步是只读刷新 GitHub HEAD/CI，然后执行 P2 v2.1 新包 dry-run → 显式 `--write`；不得重做 P0/P1。
 
 交接文件索引与逐项验收见 [交接包索引与完成清单](R60_HANDOFF_PACKAGE_INDEX_20261109_CN.md)。
 
 ## 9. 新 Agent 下一阶段完成定义
 
 新 Agent 不应把“读完文档”当作完成。按任务书逐项交付：
-- P0：两个校准集的 Owner 私有冻结 manifest 和无敏感 SAFE；
-- P1：三维严重问题证据 rubric v2 与 schema；
-- P2：独立 Owner 参考裁决包和锁定标签；
+- P0：已 PASS，两个校准集冻结 manifest 和聚合 SAFE 已在 Owner 私有目录；
+- P1：已 PASS，当前有效标准为 Rubric v2.1 与 Schema；
+- P2：当前进行中，生成 v2.1 Development-20 新盲包并完成 Owner 20 条裁决 + 60 条语义复核；
 - P3：三模型 profile、固定 Revision、Qwen Thinking 参数修正和测试；
 - P4：30 条配对 manifest、90 个结果的 SHA/receipt 验证及 SAFE；
 - P5：Gold72/R60 分轨回归报告；
 - P6：Owner 批准后才执行 1000 条批量审核；
 - 每个阶段更新 Issue #26、主线文档和私有执行收据，不能只发口头汇报。
 
-**第一步只执行任务书 P0 的只读库存与来源指纹冻结。P0 未通过前，不修改审核 Prompt、不运行模型、不提交 HF Job。**
+**第一步执行 P2 v2.1 Development-20 新盲包 dry-run；P0/P1 已通过，不得重复执行。P2 20+60 验收前，不进入 P3 模型推理，不提交 HF Job/GPU。**
+
+
+## 11. 当前接手状态（2026-11-09；取代本文早期快照）
+
+- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`。
+- 当前已核验 HEAD：`4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
+- 五组 Actions 全部 completed/success：CI `42555517499`、Gold Quality Pipeline `42555517570`、R60 HF CPU dependency profiles `42555517597`、R58 scoped synthetic `42555517602`、R60 HF Runtime CI `42555517658`。接手时仍须刷新核验。
+- P0 PASS：Gold72 40、R60 Severe10 10；Gold72 案例级 20/20，Story 跨集合允许；Gold72↔R60 精确交集 0，唯一来源 50。
+- P1 PASS：Rubric v2.1、Schema、prompt、合成回归、旧 v3 兼容。
+- P2 v2.0 包 SUPERSEDED；v2.1 新包未生成；Owner review 未开始。
+- 下一步：Owner Mac 在 `/Users/keedle/workspace/storyforge-r60-ledger-diagnostics` 执行 v2.1 dry-run，严格 PASS 后显式 `--write`；再完成 20 verdict + 60 semantic checks 和验证器。
+- Quality-v1 admitted=0；training_authorized=false；GPU/1000 条批量审核/SFT 均未授权。
+
+详细可执行命令与验收见 [下一 Agent 任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md) 与 [执行任务书 v1.2](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
