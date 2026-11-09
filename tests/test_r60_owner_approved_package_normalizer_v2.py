@@ -110,3 +110,54 @@ def test_normalize_results_rejects_target_locator_shape_mismatch():
         pass
     else:
         raise AssertionError("unexpected target locator was accepted")
+
+
+def test_supported_basis_type_mismatch_fails_closed_without_rewriting_label():
+    dimensions = ("player_agency", "hard_rule", "safety")
+    case_id = "a" * 32
+    result = {
+        "case_ref": case_id,
+        "assessments": {
+            "player_agency": _assessment("SUPPORTED"),
+            "hard_rule": _assessment("NOT_SUPPORTED"),
+            "safety": _assessment("NOT_SUPPORTED"),
+        },
+    }
+    result["assessments"]["player_agency"]["rule_basis"] = [{
+        "source": "interaction_contract",
+        "basis_type": "player_agency",
+        "rule_id": "boundary",
+        "rule_version": "v1",
+        "scope": "player boundary",
+        "applicability": "APPLIES",
+        "coverage_complete": True,
+    }]
+    normalized, _ = MODULE.normalize_results(
+        [result],
+        [_packet()],
+        {(case_id, "player_agency"): "SUPPORTED"},
+        dimensions,
+    )
+    assert normalized[0]["assessments"]["player_agency"]["rule_basis"][0]["basis_type"] == "player_agency"
+    try:
+        MODULE.validate_supported_basis_types(normalized, dimensions)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("noncanonical supported basis type was silently accepted")
+
+
+def test_supported_basis_type_accepts_exact_rubric_v21_label():
+    dimensions = ("player_agency", "hard_rule", "safety")
+    result = {
+        "case_ref": "a" * 32,
+        "assessments": {
+            "player_agency": _assessment("SUPPORTED"),
+            "hard_rule": _assessment("NOT_SUPPORTED"),
+            "safety": _assessment("NOT_SUPPORTED"),
+        },
+    }
+    result["assessments"]["player_agency"]["rule_basis"] = [{
+        "basis_type": "player_agency_boundary",
+    }]
+    MODULE.validate_supported_basis_types([result], dimensions)
