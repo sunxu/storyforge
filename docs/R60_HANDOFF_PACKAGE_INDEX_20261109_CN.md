@@ -215,3 +215,13 @@ Owner 已在当前 worktree `/Users/keedle/workspace/storyforge-r60-ledger-diagn
 - Owner review 尚未开始；model_calls=0、HF jobs=0、GPU=false。
 - 下一步为 Owner 独立完成 20 条三维裁决 + 60 项逐维语义蕴含复核，再运行私有回执验证器。
 - 完整步骤、允许读取范围、禁止读取范围、文件名和验证命令见 [任务书 8.20](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#820-p2-development-20-私有盲审包已正式生成-2026-11-09)。
+
+
+### 审核范围变更：Rubric v2.1（2026-11-09）
+
+Owner 已明确排除数据来源、版权/权利、数据使用授权、隐私合规和数据隔离证明；审核员不得要求这些证据，也不得因缺失而 HOLD。故事内玩家拒绝/同意/行动边界仍属于 Player Agency / Safety 语义证据；盲包文本 locator 与故事规则依据字段仍保留，但不作为数据来源或权利证明。
+
+- Rubric version：`r60_severity_rubric_v2_1`
+- v2.0 已生成的 Development-20 六文件包已标记 SUPERSEDED，不得用于裁决、不得覆盖或删除。
+- v2.1 新包须生成到 `owner-adjudication-dev20-rubric-v2-1-20261109` 新目录；等待最新 CI 全部通过后再运行 dry-run / `--write`。
+- 完整范围定义、旧包处置和命令见 [任务书 8.21](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md#821-owner-要求排除数据来源与权利审核rubric-v21-2026-11-09)。
