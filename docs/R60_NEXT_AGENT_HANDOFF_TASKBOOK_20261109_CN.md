@@ -14,8 +14,8 @@ PR：[#25](https://github.com/sunxu/storyforge/pull/25)（当前 Open / Draft；
 
 ## 0.1 当前接手状态（2026-11-09；接手时必须重新核验）
 
-- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`；HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d`。
-- HEAD `4190c6f` 的五组 Actions 均 completed/success：CI（42555517499）、Gold Quality Pipeline（42555517570）、R60 HF CPU dependency profiles（42555517597）、R58 scoped synthetic（42555517602）、R60 HF Runtime CI（42555517658）。任何新提交均须重新核验自己的 CI。
+- PR #25：Open / Draft；base `r60/canonical-a-v3-binding`；当前 head 必须在接手时实时读取。
+- 历史核验快照 HEAD `4190c6fe895080d99901cb4c5eb3f221c6948d6d` 的五组 Actions 当时均 completed/success（run IDs 见 8.25）。其后交接文档又有校正提交，故该 SHA 已不是当前 HEAD；不得沿用旧 SHA 的 CI 结论。接手时对 PR 当前精确 head 重新核验五组 Actions。
 - P0：`CALIBRATION_INVENTORY_FROZEN__P0_PASS__QUALITY_HOLD`；Gold72=40、R60 Severe10=10；Gold72 Development/Locked=20/20；Gold72↔R60 exact history/target/full-history-target overlap=0；unique source cases=50。
 - Gold72 分层按案例，不要求 Story 互斥：Development Story=5、Locked Story=6、shared Story=5、`story_disjoint=false`，这是 Owner 已确认的预期结果。
 - P1：Rubric v2.1、Schema、prompt、合成回归及旧 v3 兼容 = PASS。Rubric version 为 `r60_severity_rubric_v2_1`。
