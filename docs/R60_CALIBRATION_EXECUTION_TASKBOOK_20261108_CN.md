@@ -551,3 +551,11 @@ Owner approval is complete, but P2-A is not yet PASS until the new v2 package is
 ### v2 CI 验证结果（2026-11-09）
 
 最终代码提交 `28d9efa9b186484b61163e150a21316c9cc1f8cb` 六组 Actions 全部 completed/success：test（Ruff + pytest）、resolve-and-verify、runtime-quality-gates、synthetic-and-r57、r58-source-json-structure、r58-synthetic。最初的 Ruff F841/F821 已修复。v2 允许进入真实私有输入执行阶段；CI 通过不等于 P2-A 正式验收通过。
+
+## 11. 2026-11-09 方向校正与 P2-A Rule Basis HOLD
+
+Gold72 Development-20 / Locked Regression-20 来自 A V3 / B2 disagreement set，是严重问题审核规则校准样本，不是按文学质量选出的优秀回复。20 条三维裁决不能作为整体文学质量评级；SUPPORTED / NOT_SUPPORTED 不等于六维 Quality PASS。
+
+新增 Positive Gold 独立计划：`docs/R60_POSITIVE_GOLD_SELECTION_PLAN_CN.md`。候选来源为已冻结的 1,000 条技术候选池；内容筛选复用 Quality-v1 六维门槛（中文表达4、人物一致性4、NPC主动性3、玩家自主权4、规则忠实度4、叙事连贯性4）及三项严重旗标。先经 Owner 确认 Reviewer 和小批范围，再按既有 5/25 受控批次执行；不凑数量，不把 AI-only 建议冒充 Owner Gold，不自动产生训练准入。此计划仅文档化，未启动真实审核。
+
+P2-A 当前 HOLD：原 Owner results 的 4 条 SUPPORTED / Player Agency（result rows 5/6/11/19）均为 `basis_type=player_agency`，而 v2.1 verifier 要求 `player_agency_boundary`。Normalizer v2 已加入 fail-closed guard，不会自动改写原始或派生 rule_basis。需 Owner 明确确认是否允许在独立派生副本中对这 4 个精确 pair 做类型标签规范化；其他字段、verdict、semantic checks 均保持不变。不得创建正式输出目录，直到此问题解决。
