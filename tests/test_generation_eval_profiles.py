@@ -51,8 +51,8 @@ def test_all_explicitly_frozen_profiles_can_become_ready():
     profile = candidate_profile()
     profile.update({
         "context_ceiling_tokens": 32768,
-        "input_budget_tokens": 28000,
-        "generation_budget_tokens": 4768,
+        "input_budget_tokens": 28672,
+        "generation_budget_tokens": 4096,
         "seed": 20261110,
         "runtime_digest": "sha256:" + "b" * 64,
         "tokenizer_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
@@ -111,3 +111,15 @@ def test_budget_mismatch_and_greedy_sampling_conflict_are_blockers():
     result = assess_profile(profile)
     assert "CONTEXT_BUDGET_SUM_MISMATCH" in result.blockers
     assert "A_GREEDY_PROFILE_CONFLICT" in result.blockers
+
+
+def test_repository_p3_candidate_remains_held_until_profile_freeze():
+    repo_root = Path(__file__).parents[1]
+    candidate = repo_root / "experiments/r60_quality/p3_model_profiles_candidate_v1.json"
+    result = assess_profile(load_profile(candidate))
+    assert result.ready is False
+    assert "PROFILE_FREEZE_NOT_AUTHORIZED" in result.blockers
+    assert "INFERENCE_NOT_AUTHORIZED" in result.blockers
+    assert "GPU_NOT_AUTHORIZED" in result.blockers
+    assert "B_SAMPLING_UNSET" in result.blockers
+    assert "CHALLENGER_SAMPLING_UNSET" in result.blockers
