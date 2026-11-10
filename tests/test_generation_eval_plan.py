@@ -95,6 +95,8 @@ def test_frozen_profile_builds_deterministic_plan_only():
     assert "git -C /workspace/storyforge fetch --quiet --depth=1 origin " + ("f" * 40) in shell
     assert "--input /input/inputs.jsonl" in shell
     assert "storyforge_dataset.generation_eval.worker_cli" in shell
+    assert "pip install --disable-pip-version-check --require-hashes" in shell
+    assert "hf-generation-eval.lock" in shell
     assert "--repo-root /workspace/storyforge" in shell
     assert "--attempts" in first.argv
     assert first.argv[first.argv.index("--attempts") + 1] == "1"

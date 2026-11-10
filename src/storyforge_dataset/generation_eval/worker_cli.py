@@ -98,6 +98,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         import torch
         import transformers
 
+        if (
+            torch.__version__ != "2.6.0+cu124"
+            or torch.version.cuda != "12.4"
+            or transformers.__version__ != "4.57.1"
+        ):
+            raise WorkerError("PINNED_RUNTIME_DEPENDENCY_MISMATCH")
         if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
             raise WorkerError("CUDA_BF16_RUNTIME_REQUIRED")
 

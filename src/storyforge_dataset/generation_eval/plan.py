@@ -166,6 +166,8 @@ def build_generation_plan(
         "https://github.com/sunxu/storyforge.git /workspace/storyforge; "
         f"git -C /workspace/storyforge fetch --quiet --depth=1 origin {code_revision}; "
         f"git -C /workspace/storyforge checkout --quiet --detach {code_revision}; "
+        "python -m pip install --disable-pip-version-check --require-hashes "
+        "-r /workspace/storyforge/requirements/hf-generation-eval.lock; "
         f"STORYFORGE_RUNTIME_IMAGE_DIGEST={profile['runtime_digest']} "
         "PYTHONPATH=/workspace/storyforge/src "
         "python -m storyforge_dataset.generation_eval.worker_cli "
