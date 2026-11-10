@@ -9,11 +9,28 @@ from dataclasses import dataclass
 from typing import Any
 
 SCHEMA = "storyforge_r60_sampling_decision_candidate_v1"
-ROLES = frozenset({"A", "B", "challenger"})
+EXPECTED_MODELS = {
+    "A": ("Qwen/Qwen3-32B", "9216db5781bf21249d130ec9da846c4624c16137"),
+    "B": ("zai-org/GLM-4-32B-0414", "8dea913c41b543527c2860fb6f3c15c202f24aeb"),
+    "challenger": ("zai-org/GLM-Z1-32B-0414", "8eb2858992c1f749e2a6d4075455decc2484722d"),
+}
 EXPECTED_VARIANTS = {
     "A": {"primary"},
     "B": {"primary", "development_greedy_sensitivity"},
     "challenger": {"primary", "development_sampling_sensitivity"},
+}
+EXPECTED_SAMPLING = {
+    ("A", "primary"): {
+        "do_sample": True, "temperature": 0.6, "top_p": 0.95, "top_k": 20, "min_p": 0,
+    },
+    ("B", "primary"): {
+        "do_sample": True, "temperature": 1.0, "top_p": 1.0, "top_k": 50,
+    },
+    ("B", "development_greedy_sensitivity"): {"do_sample": False},
+    ("challenger", "primary"): {"do_sample": False},
+    ("challenger", "development_sampling_sensitivity"): {
+        "do_sample": True, "temperature": 0.6, "top_p": 0.95, "top_k": 40,
+    },
 }
 
 
@@ -45,14 +62,14 @@ class SamplingAssessment:
 
 
 def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
-    """Validate role coverage, model pins, modes and development-only variants."""
+    """Validate exact model pins, sampling variants and development-only tuning."""
     if not isinstance(document, dict) or document.get("schema") != SCHEMA:
         raise SamplingDecisionError("SAMPLING_DECISION_SCHEMA_INVALID")
     if document.get("status") != "OWNER_ACCEPTED_EXPERIMENT_DESIGN__PROFILE_NOT_FROZEN":
         raise SamplingDecisionError("SAMPLING_DECISION_STATUS_INVALID")
 
     models = document.get("model_profiles")
-    if not isinstance(models, dict) or set(models) != ROLES:
+    if not isinstance(models, dict) or set(models) != set(EXPECTED_MODELS):
         raise SamplingDecisionError("SAMPLING_MODEL_SET_INVALID")
 
     controls = document.get("execution_controls")
@@ -60,12 +77,12 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
         raise SamplingDecisionError("SAMPLING_EXECUTION_CONTROLS_INVALID")
 
     blockers: list[str] = []
-    for role in ("A", "B", "challenger"):
+    for role, expected_pin in EXPECTED_MODELS.items():
         model = models[role]
         if not isinstance(model, dict):
             raise SamplingDecisionError("SAMPLING_MODEL_PROFILE_INVALID")
-        if not isinstance(model.get("model"), str) or not isinstance(model.get("revision"), str):
-            blockers.append(f"{role.upper()}_MODEL_PIN_MISSING")
+        if (model.get("model"), model.get("revision")) != expected_pin:
+            blockers.append(f"{role.upper()}_MODEL_PIN_MISMATCH")
         variants = model.get("variants")
         if not isinstance(variants, dict) or set(variants) != EXPECTED_VARIANTS[role]:
             blockers.append(f"{role.upper()}_VARIANT_SET_INVALID")
@@ -77,34 +94,8 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
             expected_split = "development20" if name != "primary" else "p4_locked30"
             if variant.get("evaluation_split") != expected_split:
                 blockers.append(f"{role.upper()}_VARIANT_SPLIT_INVALID")
-            sampling = variant.get("sampling")
-            if not isinstance(sampling, dict) or not isinstance(sampling.get("do_sample"), bool):
-                blockers.append(f"{role.upper()}_SAMPLING_INVALID")
-                continue
-            do_sample = sampling["do_sample"]
-            if do_sample:
-                for key in ("temperature", "top_p"):
-                    value = sampling.get(key)
-                    if not isinstance(value, (int, float)) or isinstance(value, bool):
-                        blockers.append(f"{role.upper()}_SAMPLING_INVALID")
-                        break
-                else:
-                    if sampling["temperature"] <= 0 or not 0 < sampling["top_p"] <= 1:
-                        blockers.append(f"{role.upper()}_SAMPLING_INVALID")
-                if "top_k" in sampling and (
-                    not isinstance(sampling["top_k"], int)
-                    or isinstance(sampling["top_k"], bool)
-                    or sampling["top_k"] < 1
-                ):
-                    blockers.append(f"{role.upper()}_SAMPLING_INVALID")
-                if "min_p" in sampling and (
-                    not isinstance(sampling["min_p"], (int, float))
-                    or isinstance(sampling["min_p"], bool)
-                    or not 0 <= sampling["min_p"] < 1
-                ):
-                    blockers.append(f"{role.upper()}_SAMPLING_INVALID")
-            elif set(sampling) != {"do_sample"}:
-                blockers.append(f"{role.upper()}_GREEDY_PROFILE_CONFLICT")
+            if variant.get("sampling") != EXPECTED_SAMPLING[(role, name)]:
+                blockers.append(f"{role.upper()}_SAMPLING_POLICY_MISMATCH")
 
     for flag in ("profile_freeze_authorized", "inference_authorized", "gpu_authorized"):
         if document.get(flag) is not False:

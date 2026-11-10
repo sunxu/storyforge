@@ -42,7 +42,23 @@ def test_greedy_variant_cannot_carry_sampling_parameters():
         "sampling"
     ] = {"do_sample": False, "temperature": 0.6}
     result = assess_sampling_decision(candidate)
-    assert "CHALLENGER_GREEDY_PROFILE_CONFLICT" in result.blockers
+    assert "CHALLENGER_SAMPLING_POLICY_MISMATCH" in result.blockers
+
+
+def test_exact_model_revision_is_required():
+    candidate = load_candidate()
+    candidate["model_profiles"]["B"]["revision"] = "main"
+    result = assess_sampling_decision(candidate)
+    assert "B_MODEL_PIN_MISMATCH" in result.blockers
+
+
+def test_sampling_policy_cannot_drift_silently():
+    candidate = load_candidate()
+    candidate["model_profiles"]["A"]["variants"]["primary"]["sampling"][
+        "temperature"
+    ] = 0.8
+    result = assess_sampling_decision(candidate)
+    assert "A_SAMPLING_POLICY_MISMATCH" in result.blockers
 
 
 def test_sampling_decision_requires_exact_roles():
