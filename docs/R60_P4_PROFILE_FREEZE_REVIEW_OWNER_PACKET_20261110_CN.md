@@ -146,11 +146,21 @@ Owner 已批准 Prompt v1 与 Output JSON Schema v1：
 
 Owner 可按 [P4 Owner Mac CLI Runbook](R60_P4_OWNER_MAC_CLI_RUNBOOK_20261110_CN.md) 执行固定镜像的 CPU-only `--help` 与未授权 Profile fail-closed 检查。
 
-此检查只验证入口拒绝路径，不验证真实生成，也不执行 HF Job。Owner Mac 实机回执尚未提供。
+Owner 2026-11-10 已提供实机自检回执：`OWNER_MAC_CPU_FAIL_CLOSED_SELFTEST_PASS`。CLI 参数入口、预期 exit-code=2 / `GENERATION_PROFILE_NOT_AUTHORIZED`、未创建输出目录的 Runbook 断言通过。回执 SAFE 为 `GENERATION_WORKER_HOLD`，其中 `gpu_started=false`、`inference_started=false`、`training_started=false`、`private_values_emitted=false`。这是**正确拒绝未授权配置**，不是授权模型生成成功。Owner 回执没有单独附上 Git SHA / docker inspect，因此这些只能保持未独立核实。本次未执行 HF Job。
+
+## 5.1 Owner Mac 回执的审计边界
+
+- `usage: worker_cli.py ... --model-role {A,B,challenger}`；
+- SAFE schema：`storyforge_r60_generation_worker_receipt_safe_v1`；
+- SAFE status：`GENERATION_WORKER_HOLD`；
+- reason_code：`GENERATION_PROFILE_NOT_AUTHORIZED`（预期 fail-closed）；
+- `OWNER_MAC_CPU_FAIL_CLOSED_SELFTEST_PASS`；
+- Runbook 的逐项脚本断言要求退出码 2 且目标输出目录不存在。
+- 证据来源为 Owner 本次手工回传；没有新增 HF Job、GPU、Inference 或 Training，也没有提供本地 Git SHA、镜像 inspect 原始回执。
 
 ## 6. 未解决 HOLD（必须在批准后仍保留）
 
-1. **Owner Mac CLI 实机 SAFE**：Runbook 已准备，Owner 尚未回传执行结果。
+1. **Owner Mac CLI 实机 SAFE**：Owner 已回传预期 fail-closed PASS；尚缺独立的本地 Git SHA / 镜像 inspect 原始输出。CPU 拒绝路径完成，但不代表 GPU 模型生成。
 2. **P4 私有输出路径**：历史 Owner Mac CLI 对 Bucket RW 曾成功，但本轮未提交 HF Job；本 P4 Job 的输出卷与 SAFE 回收闭环没有新实测。HF 连接器问题继续暂停，不由 ChatGPT 探测。
 3. **32K 真实运行能力**：目前只有短输入 A100 Smoke 与理论 KV cache 估算；没有长上下文 GPU 实测。H200 是候选，不是已验证硬件。
 4. **生成行为边界**：当前 Smoke 不覆盖 28,672/4,096 长上下文，不代表真实评估输出结构、Thinking 长输出和 finish_reason 在完整预算下已验收。
