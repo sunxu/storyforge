@@ -24,6 +24,12 @@ on:
       - 'tests/test_generation_eval_plan.py'
       - 'tests/test_generation_eval_worker.py'
       - 'tests/test_generation_eval_backend.py'
+      - 'tests/test_generation_eval_sampling.py'
+      - 'src/storyforge_dataset/generation_eval/sampling.py'
+      - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - 'experiments/r60_quality/r60_sampling_decision_candidate_v1.json'
+      - 'docs/R60_P4_EVALUATION_PROMPT_CANDIDATE_V1_CN.md'
+      - 'experiments/r60_quality/r60_p4_evaluation_output_schema_candidate_v1.json'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
 
@@ -46,9 +52,9 @@ jobs:
       - name: Lint and compile
         run: |
           ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py tests/test_generation_eval_sampling.py
-          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py
+          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py tests/test_generation_eval_sampling.py
       - name: Synthetic profile, plan, worker and backend tests
-        run: pytest -q tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py
+        run: pytest -q tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py tests/test_generation_eval_sampling.py
       - name: Generate CPU-only P4 freeze-review SAFE
         run: |
           PYTHONPATH=src python -m storyforge_dataset.generation_eval \
