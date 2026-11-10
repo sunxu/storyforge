@@ -138,6 +138,8 @@ def assess_profile(
         ("pad_token_ids", "PAD_TOKEN_IDS_UNSET"),
         ("custom_stop_sequences", "CUSTOM_STOP_SEQUENCES_UNSET"),
         ("p3_download_safe_sha256", "P3_DOWNLOAD_SAFE_HASH_UNSET"),
+        ("evaluation_prompt_sha256", "EVALUATION_PROMPT_HASH_UNSET"),
+        ("output_schema_sha256", "OUTPUT_SCHEMA_HASH_UNSET"),
     ):
         value = profile.get(field)
         if value is None or value == "":
@@ -260,6 +262,11 @@ def assess_profile(
     custom_stop_sequences = profile.get("custom_stop_sequences")
     if custom_stop_sequences is not None and custom_stop_sequences != EXPECTED_CUSTOM_STOP_SEQUENCES:
         blockers.append("CUSTOM_STOP_SEQUENCES_UNSUPPORTED_OR_UNEXPECTED")
+
+    for field, code in (("evaluation_prompt_sha256", "EVALUATION_PROMPT_HASH_INVALID"), ("output_schema_sha256", "OUTPUT_SCHEMA_HASH_INVALID")):
+        value = profile.get(field)
+        if value is not None and (not isinstance(value, str) or not SHA256_RE.fullmatch(value)):
+            blockers.append(code)
 
     p3_safe_hash = profile.get("p3_download_safe_sha256")
     if p3_safe_hash is not None and (
