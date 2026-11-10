@@ -6,12 +6,14 @@ on:
     paths:
       - 'src/storyforge_dataset/generation_eval/**'
       - 'tests/test_generation_eval_profiles.py'
+      - 'tests/test_generation_eval_plan.py'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
   pull_request:
     paths:
       - 'src/storyforge_dataset/generation_eval/**'
       - 'tests/test_generation_eval_profiles.py'
+      - 'tests/test_generation_eval_plan.py'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
 
@@ -33,10 +35,10 @@ jobs:
         run: python -m pip install 'pytest==8.4.2' 'ruff==0.14.3'
       - name: Lint and compile
         run: |
-          ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py
-          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py
-      - name: Synthetic profile tests
-        run: pytest -q tests/test_generation_eval_profiles.py
+          ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py
+          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py
+      - name: Synthetic profile and plan tests
+        run: pytest -q tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py
       - name: Assert CPU-only planning boundary
         run: |
           python - <<'PY'
@@ -50,5 +52,5 @@ jobs:
               for marker in forbidden:
                   if marker in source:
                       raise SystemExit(f'forbidden P4 planning dependency/action: {path.name}')
-          print('P4 CPU-only profile boundary: PASS')
+          print('P4 CPU-only planning boundary: PASS')
           PY
