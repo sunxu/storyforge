@@ -236,10 +236,9 @@ def test_freeze_review_is_independent_of_inference_and_gpu_authorization():
     repo_root = Path(__file__).parents[1]
     profile = load_profile(repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json")
     result = assess_profile(profile, purpose="freeze_review")
-    assert result.ready is False
-    assert "EVALUATION_PROMPT_HASH_UNSET" not in result.blockers
-    assert "OUTPUT_SCHEMA_HASH_UNSET" not in result.blockers
-    assert "EVALUATION_CONTRACT_NOT_OWNER_APPROVED" in result.blockers
+    assert result.ready is True
+    assert result.status == "P4_PROFILE_READY_FOR_FREEZE_REVIEW"
+    assert result.blockers == ()
     assert "INFERENCE_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
     assert "GPU_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
 

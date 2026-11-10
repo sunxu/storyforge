@@ -121,8 +121,24 @@ def assess_profile(
         ):
             if profile.get(flag) is not False:
                 blockers.append(code)
-    if purpose == "freeze_review" and profile.get("evaluation_contract_status") != "OWNER_APPROVED":
-        blockers.append("EVALUATION_CONTRACT_NOT_OWNER_APPROVED")
+    if purpose == "freeze_review":
+        approval = profile.get("evaluation_contract_approval")
+        expected_approval = {
+            "status": "OWNER_APPROVED",
+            "approved_on": "2026-11-10",
+            "scope": ["evaluation_prompt_sha256", "output_schema_sha256"],
+            "prompt_version": "v1",
+            "output_schema_version": "v1",
+            "profile_freeze_authorized": False,
+            "inference_authorized": False,
+            "gpu_authorized": False,
+            "training_authorized": False,
+        }
+        if (
+            profile.get("evaluation_contract_status") != "OWNER_APPROVED"
+            or approval != expected_approval
+        ):
+            blockers.append("EVALUATION_CONTRACT_NOT_OWNER_APPROVED")
     if profile.get("training_authorized") is not False:
         blockers.append("TRAINING_AUTHORIZATION_MUST_REMAIN_DISABLED")
 
