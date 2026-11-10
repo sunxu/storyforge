@@ -1,4 +1,6 @@
 """Synthetic tests for R60 P3 v3 HF tokenizer adapter contracts."""
+import json
+from pathlib import Path
 from scripts import r60_p3_cpu_model_preflight_v3 as p3
 from storyforge_dataset.token_preflight import describe_token_lengths
 
@@ -48,3 +50,33 @@ def test_embedded_template_is_read_from_tokenizer_config_not_loaded_active_templ
         '{"chat_template":"EMBEDDED_TEMPLATE"}', encoding="utf-8"
     )
     assert p3._embedded_template(folder) == "EMBEDDED_TEMPLATE"
+
+
+def test_owner_approved_template_sources_and_hashes_are_pinned():
+    profile_path = (
+        Path(__file__).resolve().parents[1]
+        / "experiments/r60_quality/p3_model_profiles_candidate_v1.json"
+    )
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    models = profile["model_profiles"]
+    assert models["A"]["chat_template_source"] == "embedded_tokenizer_config"
+    assert models["A"]["chat_template_sha256"] == (
+        "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+    )
+    assert models["B"]["chat_template_source"] == "standalone_chat_template.jinja"
+    assert models["B"]["chat_template_sha256"] == (
+        "db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822"
+    )
+    assert models["challenger"]["chat_template_source"] == "standalone_chat_template.jinja"
+    assert models["challenger"]["chat_template_sha256"] == (
+        "adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241"
+    )
+    assert profile["profile_freeze_authorized"] is False
+    assert profile["inference_authorized"] is False
+    assert profile["gpu_authorized"] is False
+    assert profile["training_authorized"] is False
+
+
+def test_glmz1_standalone_generation_prefix_contract():
+    assert p3.MODEL_FILES["challenger"].count("chat_template.jinja") == 1
+    assert p3.MODEL_PINS["challenger"][0] == "zai-org/GLM-Z1-32B-0414"
