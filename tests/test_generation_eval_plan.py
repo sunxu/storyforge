@@ -133,7 +133,6 @@ def test_plan_rejects_mutable_image_and_overlapping_mounts():
 
 
 def _run_bootstrap_with_archive(monkeypatch, tmp_path, archive_bytes):
-    import io
     import pathlib
     import urllib.request
 
