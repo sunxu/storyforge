@@ -1,5 +1,19 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 CPU Job 挂载执行回执（读回待验收）
+
+Owner Mac CLI 已实际提交、执行并完成唯一一次 CPU-only 本地目录挂载探针：
+
+- Job ID：`6af324e99737d9a9e0909d12`；名称：`r60-p4-mount-20261110220617`；链接：https://huggingface.co/jobs/adradar/6af324e99737d9a9e0909d12
+- 结果：`COMPLETED`；stdout SAFE 状态：`CPU_MOUNT_RW_PASS`。
+- 输入 SHA-256：`a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398`（与 A 合成输入一致）。
+- `gpu_started=false`、`inference_started=false`、`training_started=false`。
+- 已证明 Job 内只读输入可用及 RW 输出目录可写；**尚未由 Owner 回传 output bucket sync 到 Mac 后的原始文件与本地 SHA/内容核验**，因此当前总状态为 `CPU_MOUNT_RW_JOB_PASS__READBACK_HOLD`，不能标为完整回收 PASS。
+- 下一步：使用该 Job 最初 CLI 打印的**精确** `hf buckets sync hf://buckets/.../jobs-artifacts/<actual-folder> <local-output-dir>` 命令同步远端输出，禁止猜测 bucket 子目录；读取本地 `mount-safe.json` 验证 schema/status/input_sha 与安全标志。确认后才关闭存储闭环，准备首个 H200 Job。
+
+---
+
+
 > **Owner 已分阶段授权**：首先 32K 合成 GPU 测试；通过验收后再开展正式推理。**本文件不构成已提交 HF Job 的证明。** HF Jobs 仅由 Owner 在 Mac CLI 执行；ChatGPT 不调用 Hugging Face Jobs、不测试 Bucket 或 OAuth，也不擅自合并 PR。
 
 ## 2026-11-10 三模型 CPU 校准最终收口
