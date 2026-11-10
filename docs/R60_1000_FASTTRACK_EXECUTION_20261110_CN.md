@@ -1,5 +1,79 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：A25 Qwen3-32B 单次 H200 本地权重加载与首条强制验收（可执行）
+
+**目标**：接上已通过的真实 Qwen 本地权重 Smoke，保留 A25 固定的真实审核器身份与原始模型 revision；一条 GPU Job 内只初始化 1 次 vLLM，审核第 1 条并由**原审核器完整 `read_checkpoint`** 回读验证后，自动继续剩余 24 条。不会单独跑 1 条 Smoke，不会因为已经完成短生成就伪造 32K 审核通过。
+
+新入口 `experiments/r58_quality/r60_a25_local_first_gate.py`：固定 `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`、冻结 Pilot25 A SHA `492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069`、25 条及 32768/2400 token；输出必须是**存在且为空**的新目录。通过函数包装仅将 `AutoTokenizer.from_pretrained` 与 `vllm.LLM` 的**运行时模型路径**重定向为当前 Job 上游 SHA 校验后的本地目录；审查器传入的原 model/revision 和写出的 Checkpoint identity 全程不修改。严格保持原 JSON Schema、SamplingParams、引文修复、评分政策，首条失败立即 HOLD，不执行下一条；成功完成 25 条才产生 `A25_ALL_VERIFIED`。失败不删除已经写入的 Checkpoint；原始 `input_A` 及 `output_A` 不变。
+
+**警告**：原版 `r60_qwen32b_local_smoke.py` 只能证明短合成生成。此 A25 是真正的结构化审核，首条可能因 JSON Schema、模型回答质量或引文修复 HOLD。不可跳过门禁。若失败，不可在有已写 Checkpoint 的目录直接重新启动，也不得以“0/25”假定没有文件；应先核对已有 Checkpoint，再设计受控恢复流程。
+
+### Owner Mac：CPU-only 准备隔离 A25 runner + 上传工具
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+DEST="$PILOT/input_A_localgate"
+SRC="$PILOT/input_A"
+TOOLS="$BASE/r60-a25-local-review-tools-v1"
+REV="__A25_CODE_PIN__"
+umask 077
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -d "$SRC"
+test ! -e "$DEST" || { echo A25_DEST_EXISTS_HOLD; exit 42; }
+test ! -e "$TOOLS" || { echo A25_TOOLS_EXISTS_HOLD; exit 42; }
+mkdir -m 700 "$DEST" "$TOOLS"
+for f in runner.py source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+  test -f "$SRC/$f"
+  cp "$SRC/$f" "$DEST/$f"
+  chmod 600 "$DEST/$f"
+done
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_a25_local_first_gate.py" > "$DEST/r60_a25_local_first_gate.py"
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_qwen32b_servercopy_localize.py" > "$TOOLS/r60_qwen32b_servercopy_localize.py"
+chmod 600 "$DEST/r60_a25_local_first_gate.py" "$TOOLS/r60_qwen32b_servercopy_localize.py"
+python3 -m py_compile "$DEST"/*.py "$TOOLS"/*.py
+
+EXPECTED=492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069
+ACTUAL="$(shasum -a 256 "$DEST/source.private.jsonl" | awk '{print $1}')"
+test "$ACTUAL" = "$EXPECTED" || { echo A25_SHA_MISMATCH; exit 42; }
+python3 "$DEST/runner.py" \
+  --input "$DEST/source.private.jsonl" \
+  --output-dir "$PILOT/output_A" \
+  --model Qwen/Qwen3-32B \
+  --revision 9216db5781bf21249d130ec9da846c4624c16137 \
+  --verify-only
+```
+
+预期：`HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`、`cases_total=25`；没有新 GPU 费用。复制目标必须为空目录且仅保留当前 Pilot25 必需文件。旧 `input_A` 不修改。
+
+### Owner Mac：单个 H200 Job（含本地复制校验 + A25 1→25 审核）
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+TOOLS="$BASE/r60-a25-local-review-tools-v1"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+
+hf jobs run --namespace adradar --name r60-qwen-a25-local-firstgate \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A_localgate:/input:ro" \
+  -v "$TOOLS:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy:/model-source:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-local-firstgate; if [ -e "$OUT" ]; then echo A25_OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --bucket-dir /model-source --local-dir "$LOCAL"; mkdir -p "$OUT"; export R60_A25_LOCAL_MODEL_DIR="$LOCAL"; exec /usr/bin/python3 -u /input/r60_a25_local_first_gate.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --start 1 --limit 25 --max-model-len 32768 --max-output-tokens 2400 --max-wall-seconds 3000 --confirm-paid-gpu'
+```
+
+预期 SAFE 事件顺序：`LOCAL_DISK_PREFLIGHT` → `LOCAL_WEIGHTS_READY` → `A25_GATE_READY` → `A25_REAL_LOCAL_ENGINE_READY` → `A25_FIRST_GATE_PASS` → `A25_ALL_VERIFIED`（25）及原 runner 的 `HF_REVIEW_COMPLETED__NO_ADMISSION`。其中 `A25_FIRST_GATE_PASS` 仅是第一条技术/语义回执有效，不代表其 `quality_decision=PASS`；最后 `A25_ALL_VERIFIED` 是 25 份正确 Checkpoint，不是 25 份可训练准入。正式 Owner 裁决、与 B25 对齐、训练授权仍独立。
+
+**本轮 ChatGPT 不调用 HF Job**；H200 只有 Owner Mac CLI 可启动。GPU 起动之前须核对相应修订的 CI PASS，以及独立输入校验。已经完成的 Qwen H200 短 Smoke 不会通过此 Job 自动继承临时本地权重，因此单 Job 内再次执行本地 Bucket → disk 顺序复制校验；不能误以为复用上一 Job 的临时盘。
+
+---
+
+
 ## 2026-11-11：Qwen3-32B 本地真实 vLLM Smoke 实测 PASS
 
 Owner Mac 提供 HF Job https://huggingface.co/jobs/adradar/6af366749737d9a9e0914f2a 的真实 SAFE：
