@@ -1,6 +1,6 @@
 """R60 GLM-4 B25: ONE locally loaded vLLM engine for multiple batches.
 
-Use with a frozen *copy* of role-A runner.py and source.private.jsonl.
+Use with a frozen *copy* of role-B runner.py and source.private.jsonl.
 Original reviewer owns prompt, SamplingParams, quote repair, schema validation,
 checkpoint format, model identity and revision. No training or admission.
 Fail closed: mandatory first valid checkpoint; uninterrupted monotonically
