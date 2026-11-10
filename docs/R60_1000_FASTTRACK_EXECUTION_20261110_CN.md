@@ -29,7 +29,7 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 DEST="$PILOT/input_A_continuous"
 CODE="$BASE/r60-qwen-continuous-tools-v1"
-REV="6235ac878eebd1bbe92f6b46766b6fe1e5fb4569"
+REV="0c66c152934af104537209c7b72bb9fda3b38787"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$PILOT/input_A"
 test ! -e "$DEST" || { echo A_CONTINUOUS_ALREADY_EXISTS_HOLD; exit 42; }
@@ -69,7 +69,7 @@ hf jobs run --namespace adradar --name r60-qwen-a25-continuous-v1 \
   sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; if [ -e "$OUT" ]; then echo A25_CONTINUOUS_OUT_EXISTS_HOLD; exit 42; fi; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; mkdir -p "$OUT"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 25 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --confirm-paid-gpu'
 ```
 
-期望 `LOCAL_WEIGHTS_READY full_weight_sha_verified=false` → `CONTINUOUS_REVIEW_READY` → `REAL_ENGINE_INIT_START` → `REAL_ENGINE_READY` → `FIRST_CHECKPOINT_GATE_PASS` → `BATCH_COMPLETE` → `CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1`。若 `REAL_ENGINE_INIT_HOLD`，保留 reason class，**不要再反复提交同参数 GPU**。必须返回真实日志与 Checkpoint 计数，不能当作质量准入。
+期望 `LOCAL_FILE_SIZE_CHECKED`（而不是 `LOCAL_FILE_VERIFIED`）以及 `LOCAL_WEIGHTS_READY full_weight_sha_verified=false` → `CONTINUOUS_REVIEW_READY` → `REAL_ENGINE_INIT_START` → `REAL_ENGINE_READY` → `FIRST_CHECKPOINT_GATE_PASS` → `BATCH_COMPLETE` → `CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1`。若 `REAL_ENGINE_INIT_HOLD`，保留 reason class，**不要再反复提交同参数 GPU**。必须返回真实日志与 Checkpoint 计数，不能当作质量准入。
 
 **使用 full A1000 的下一步**：用已经固定 SHA `687528efe...` 的完整来源创建另一个私有隔离 bundle，绑定独立的输出目录、超时和成本上限。可设置例如 `--case-limit 100 --batch-size 25`，一个 Job 中连续 4 批 25 条且单次 vLLM 初始化；待 A25 首条真实运行证据 PASS 再操作。此处示例仅定义能力，**没有授权直接跑 1000**。HF Jobs 永远由 Owner Mac CLI 提交。
 
