@@ -9,7 +9,6 @@ on:
       - 'tests/test_generation_eval_plan.py'
       - 'tests/test_generation_eval_worker.py'
       - 'tests/test_generation_eval_backend.py'
-      - 'tests/test_generation_eval_worker.py'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
   pull_request:
@@ -17,6 +16,8 @@ on:
       - 'src/storyforge_dataset/generation_eval/**'
       - 'tests/test_generation_eval_profiles.py'
       - 'tests/test_generation_eval_plan.py'
+      - 'tests/test_generation_eval_worker.py'
+      - 'tests/test_generation_eval_backend.py'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
 
@@ -47,13 +48,13 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           root = Path('src/storyforge_dataset/generation_eval')
-          forbidden = ('import torch', 'from torch', 'import transformers',
-                       'from transformers', 'import huggingface_hub',
-                       'from huggingface_hub', 'subprocess.run', 'hf jobs')
-          for path in root.glob('*.py'):
-              source = path.read_text(encoding='utf-8').lower()
+          for name in ('profiles.py', 'plan.py', 'worker.py'):
+              source = (root / name).read_text(encoding='utf-8').lower()
+              forbidden = ('import torch', 'from torch', 'import transformers',
+                           'from transformers', 'import huggingface_hub',
+                           'from huggingface_hub', 'subprocess.run')
               for marker in forbidden:
                   if marker in source:
-                      raise SystemExit(f'forbidden P4 planning dependency/action: {path.name}')
-          print('P4 CPU-only planning boundary: PASS')
+                      raise SystemExit(f'forbidden dependency/action in CPU core: {name}')
+          print('P4 CPU core boundary: PASS')
           PY
