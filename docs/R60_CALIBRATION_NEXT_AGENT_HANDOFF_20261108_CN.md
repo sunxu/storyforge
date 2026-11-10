@@ -1,3 +1,88 @@
+# 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
+
+**本节为当前唯一状态依据。下方较早日期的 P2-B/P3 未开始、Owner review pending、Verifier HOLD 等内容均为历史记录，不得作为当前待办。**
+
+## 阶段状态
+
+| 阶段 | 当前状态 | 说明 |
+|---|---|---|
+| P0 | PASS | Gold72 40 条（Development20 + Locked20）与 R60 Severe10 冻结；不重做 |
+| P1 | PASS | Rubric v2.1 / Schema / Prompt / synthetic regression；不修改、不回退 |
+| P2-A | COMPLETE | Owner 20/20 + 60/60 官方验证；语义 58 支持、1 上下文不足、1 语义未建立；保留 HOLD |
+| P2-B | **OWNER REVIEW + OFFICIAL VERIFIER COMPLETE** | 30/30 cases、90/90 semantic checks，官方 SAFE 状态见下文 |
+| P3 | IN PROGRESS / CPU PREFLIGHT PENDING | 三模型静态 revision/config/template 元数据核查完成；Tokenizer/template 执行、SHA、输入预算与模型 profile 决策未完成 |
+| P4 | NOT AUTHORIZED | 30 条三模型配对推理/GPU 需单独明确授权 |
+| P5 | NOT STARTED | 模型结果回归、误报漏报分析及最终模型选择 |
+| P6 | NOT AUTHORIZED | 1000 条正式批量审核需独立授权 |
+| SFT | NOT AUTHORIZED | 训练授权与 Quality admission 是独立门禁 |
+
+## P2-B 官方 Owner Results Verifier 回执（Owner Mac 提供）
+
+```json
+{
+  "schema": "storyforge_r60_p2b_owner_results_safe_v1",
+  "status": "P2B_OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED",
+  "cases_verified": 30,
+  "semantic_checks_verified": 90,
+  "semantic_supported_count": 57,
+  "semantic_insufficient_context_count": 33,
+  "semantic_not_established_count": 0,
+  "owner_identity_cryptographically_attested": false,
+  "private_values_emitted": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "gpu_started": false
+}
+```
+
+解释：
+- 30/30 Owner Results 与 90/90 Semantic Checks 已被官方 Verifier 接受；P2-B Owner review/技术验收完成，语义 HOLD 保留。
+- 57/33/0 是语义复核结论计数，不是三维 Verdict 计数，不是 Quality-v1 PASS 数，也不等于 30 个案例训练准入。
+- Safety 第21、22条经 Owner 明确二次裁决均为 `INSUFFICIENT_CONTEXT`；原始 `SUPPORTED` 与修订审计记录保留。只修订这两个 Safety 维度，其他 88 个维度项未改；Rubric v2.1 未修改；没有虚构 Rule ID。最终 33 项语义 HOLD 包含这些上下文不足记录。
+- Hard Rule 30 条均为 `INSUFFICIENT_CONTEXT`；Player Agency 3 `SUPPORTED` / 27 `NOT_SUPPORTED`；Safety 修订后为 0 `SUPPORTED` / 27 `NOT_SUPPORTED` / 3 `INSUFFICIENT_CONTEXT`（此三维分布依据已确认 Owner 修订记录；官方 SAFE 本身只报告语义结论计数）。
+- Owner 身份未获密码学认证；不声称 cryptographic attestation。
+- P2-B 的私有正文、blind IDs、ID Map、逐案结果不得上传 GitHub；公开文档只记录 SAFE 聚合值。
+
+## P3 静态模型固定事实
+
+静态核查文档：[R60_P3_MODEL_STATIC_PREFLIGHT_20261110_CN.md](R60_P3_MODEL_STATIC_PREFLIGHT_20261110_CN.md)。
+
+- Qwen/Qwen3-32B revision：`9216db5781bf21249d130ec9da846c4624c16137`
+- zai-org/GLM-4-32B-0414 revision：`8dea913c41b543527c2860fb6f3c15c202f24aeb`
+- zai-org/GLM-Z1-32B-0414 revision：`8eb2858992c1f749e2a6d4075455decc2484722d`
+- 三者保守共同原生上下文上限：32768 tokens。不得将 tokenizer 的 128k/131k model_max_length 当作模型原生上下文证明。
+- Qwen Thinking：需显式 enable_thinking=true；模型卡建议 temperature=0.6/top_p=0.95/top_k=20/min_p=0。
+- GLM-4：generation_config 未固定 sampling 参数；不得照搬 Qwen 参数。
+- GLM-Z1：模型卡 sampling 表与 greedy inference 示例冲突；必须先通过 Owner 决策或证据充分的技术核实解决，不得自行选择。
+- GLM-4 与 GLM-Z1 属同一 GLM4 架构家族，不能当作两个独立家族投票。
+
+## 新 Agent 唯一接手目标：完成 P3 CPU-only 预检
+
+1. 先重新读取本提示词、最新任务书、执行任务书、交接总览、交接索引、P3 静态核查文档及 Rubric v2.1。
+2. 实时查询 PR #25 当前 head/base/draft、分支 HEAD、Issue #26/#28，以及当前精确 HEAD 的五组 Actions。本文中的 HEAD/CI 只作更新前快照，不可沿用。
+3. 检查现有代码、依赖 lock、CI profile 和 HF runtime 工具；复用既有实现，不另建重复 reviewer。
+4. 仅下载三个固定 revision 的 tokenizer/config/template 所需文件，不下载模型权重；记录实际 SHA-256。CPU 本地执行 tokenizer load、chat-template render、generation prompt、中文多轮消息、Thinking 前缀/开关及模板一致性检查。
+5. 对 tokenizer embedded template 与独立 Jinja template 做实际对比；差异必须 HOLD，明确 pin 实际运行时所用模板。
+6. 在 synthetic-only 数据上验证共享 32768 context ceiling、prompt/output budget、截断行为、finish reason/schema 与 90 输入长度预算。不得读取或使用 P2-B held-out 私有文本、Owner labels 或 ID Map。
+7. 固定 GLM-4 sampling profile；GLM-Z1 sampling/greedy 冲突需给 Owner 一份短决策依据，未决前 profile 保持未冻结。所有模型的 prompt、rubric、runtime、tokenizer/template SHA 和参数必须可追溯。
+8. 输出 CPU-only SAFE、报告与可复现命令；更新本任务书、执行任务书、交接总览、索引、P3 静态文档和 Issue #28。
+9. 完成后提出 P4 30 条严格配对三模型实验的方案、资源预算与授权请求，但不得自行提交 HF Job 或启动 GPU。
+
+## 资源与隐私门禁（不可放宽）
+
+- 允许：GitHub 代码/文档/合成测试；已获授权的本地 CPU-only tokenizer/template 预检。
+- 任何可能收费的 CPU 云资源先取得明确授权；默认使用本地 CPU。
+- 禁止：GPU、付费 HF Job、模型 inference、向外部服务发送 P2-B held-out 文本、1000 条批量审核、SFT。
+- `quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`。
+- 不改 P0/P1/P2-A/P2-B 历史裁决，不修改 Rubric v2.1，不重做 Owner review，不触碰生产数据库/RolePlay，不提交私有正文、ID Map、tokens、DSN。
+- PR #25 继续 Draft；Issue #28 继续 OPEN；不自动合并。
+
+## 每次交付要求
+
+报告真实执行命令、输入 revision/hash、输出 SAFE schema/status、测试与 CI 结果、commit SHA、修改文件、资源消耗、未解决 HOLD。未执行步骤不得报告 PASS。
+
+---
+
 # StoryForge R60 下一阶段 Agent 交接总览：Quality 校准与模型选型
 
 > **当前权威状态（2026-11-10；覆盖下方未标明日期的旧 P2-A 待办叙述）**  
