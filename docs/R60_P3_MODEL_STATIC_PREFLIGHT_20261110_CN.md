@@ -256,3 +256,42 @@ Owner 明确回复“按建议进行”，据此记录本次 P3 模板来源裁�
 GLM-Z1 sampling/greedy 冲突、GLM-4 sampling policy、seed、runtime digest、stop/finish_reason、generation budget 等仍属 P4 前的 Generation Profile 待决事项。finish_reason runtime validation 仍延期至 P4；不得为验证它启动 inference。
 
 ---
+
+
+# 2026-11-10 P3 最终实际验收：PASS（本节为权威状态）
+
+Owner Mac 已在模板来源裁决落实后的最新代码上重新执行 `scripts/r60_p3_cpu_model_preflight_v3.py`，提交完整 SAFE 回执。最终状态：
+
+`P3_SYNTHETIC_CPU_PREFLIGHT_PASS__GENERATION_PROFILE_PENDING`
+
+SAFE 关键结果：
+- model_count=3；固定 revision 均匹配。
+- 每模型 90 组 synthetic，合计 270 组；Tokenizer 全部加载并成功编码。
+- 18 个 pinned tokenizer/config/template 文件通过本地 SHA-256 与文件大小校验；download SAFE SHA-256：`52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5`。
+- 模板来源与 Owner 决策、活动模板 SHA 全部一致：A=embedded；B=standalone；challenger=standalone。
+- mismatch 计数：A=0、B=90、challenger=90；B/challenger 差异已由 Owner 明确选择来源并在 SAFE 的 `template_render_mismatch_roles_explained_by_owner_selection` 记录，不再是未决 HOLD。
+- 输入预算 28,672 + 输出预留 4,096 = 32,768；三模型 synthetic token 长度分别为 A 813–816、B 789、challenger 778，均未超预算。
+- Rubric v2.1 与 response schema SHA 已记录。
+- `private_case_tokens_checked=0`、`private_values_emitted=false`、`quality_v1_admitted=0`。
+- `model_weights_loaded=false`、`inference_calls=0`、`hf_jobs_submitted=0`、`gpu_started=false`、`training_authorized=false`、`profile_freeze_authorized=false`。
+
+## GitHub 验收
+
+最终代码 HEAD：`a94268355fc590587f117fec0e5bb3cb8cf6ec45`。
+
+该 HEAD 的五组 GitHub Actions 均 completed/success：
+- CI（含 changed-file Ruff / pytest）
+- R60 HF Runtime CI
+- R60 HF CPU dependency profiles
+- Gold Quality Pipeline（synthetic + R57 regression）
+- R58 scoped synthetic（no training）
+
+P3 的 Tokenizer、Chat Template 来源核对和 synthetic Token Budget 验收完成。早期章节中“P3 未执行”“template source decision required”等文字是当时的历史状态，均由本节最终实际 SAFE 和 CI 结果覆盖；不得再把它们作为当前状态。
+
+## P3 与 P4 边界
+
+P3 PASS 不等于完整 Generation Profile 冻结。以下仍未决定或未实测：GLM-Z1 sampling-vs-greedy 选择、GLM-4 sampling policy、统一 seed、推理 runtime/engine digest、实际 generation budget 执行、stop sequence、finish_reason 行为、运行时显存和吞吐。finish_reason 明确为 `DEFERRED_TO_P4_NO_INFERENCE_IN_P3`。
+
+P4 需单独取得 Owner 授权后才能启动 HF GPU Job 或 inference。不得将本 SAFE 解释为 GPU、模型推理、真实案例评估、1000 条审核或 SFT 授权。
+
+---
