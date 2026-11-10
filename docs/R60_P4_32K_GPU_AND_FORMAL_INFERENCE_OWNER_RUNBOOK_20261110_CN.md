@@ -8,8 +8,8 @@ Owner Mac CLI 已实际提交、执行并完成唯一一次 CPU-only 本地目�
 - 结果：`COMPLETED`；stdout SAFE 状态：`CPU_MOUNT_RW_PASS`。
 - 输入 SHA-256：`a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398`（与 A 合成输入一致）。
 - `gpu_started=false`、`inference_started=false`、`training_started=false`。
-- 已证明 Job 内只读输入可用及 RW 输出目录可写；**尚未由 Owner 回传 output bucket sync 到 Mac 后的原始文件与本地 SHA/内容核验**，因此当前总状态为 `CPU_MOUNT_RW_JOB_PASS__READBACK_HOLD`，不能标为完整回收 PASS。
-- 下一步：使用该 Job 最初 CLI 打印的**精确** `hf buckets sync hf://buckets/.../jobs-artifacts/<actual-folder> <local-output-dir>` 命令同步远端输出，禁止猜测 bucket 子目录；读取本地 `mount-safe.json` 验证 schema/status/input_sha 与安全标志。确认后才关闭存储闭环，准备首个 H200 Job。
+- 已证明 Job 内只读输入可用及 RW 输出目录可写；**Owner 已回传 Mac 本地 output bucket sync 后的实际 `mount-safe.json` 读取和校验 PASS**；总状态更新为 `CPU_MOUNT_RW_READBACK_PASS`。
+- 完成核验：Mac 输出 `CPU_MOUNT_RW_READBACK_PASS`；本地读取的 JSON 为 `{"gpu_started":false,"inference_started":false,"input_sha256":"a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398","status":"CPU_MOUNT_RW_PASS","training_started":false}`。本次读回证明 `jobs-artifacts` 能够完成输出文件回收；不能推论已验证 GPU 工作器或模型权重下载。
 
 ---
 
