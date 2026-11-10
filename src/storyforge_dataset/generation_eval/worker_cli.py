@@ -1,8 +1,23 @@
 """Fail-closed runtime CLI for one authorized P4 model batch."""
 from __future__ import annotations
 
+import argparse
+import hashlib
+import json
+import os
+import re
+import sys
+import tempfile
 from collections.abc import Sequence
 from pathlib import Path
+
+from storyforge_dataset.hf_runtime.inputs import InputManager
+from storyforge_dataset.hf_runtime.outputs import OutputManager
+
+from .backend import TransformersGenerationBackend, download_pinned_tokenizer_snapshot
+from .profiles import assess_profile, load_profile
+from .worker import WorkerError, run_generation_batch
+
 
 def main(argv: Sequence[str] | None = None) -> int:
     """Execute one explicitly authorized, single-model generation batch.
@@ -11,16 +26,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     already carry Owner freeze/inference/GPU authorization. It writes private
     generations only beneath a fresh output directory and prints SAFE metadata.
     """
-    import argparse
-    import hashlib
-    import json
-    import os
-    import sys
-    import tempfile
-
-    from .backend import TransformersGenerationBackend, download_pinned_tokenizer_snapshot
-    from .profiles import assess_profile, load_profile
-
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-role", required=True, choices=("A", "B", "challenger"))
     parser.add_argument("--profile", type=Path, required=True)
