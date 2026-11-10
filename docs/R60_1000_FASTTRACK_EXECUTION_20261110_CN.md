@@ -1,5 +1,18 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：Trace2 CPU 准备 HOLD 根因定位及修复
+
+Owner 实际返回 `R60_TRACE_A25_PREPARE_HOLD` / `INFERENCE_ANCHOR_COUNT_HOLD`，GPU=0、HF Job=0、私有内容未输出。此错误是**诊断准备器的 AST 检测假设不完整**，不是模型加载失败或 A25 训练数据问题。
+
+原 R60 审核器使用 `result = engine.generate(...)[0].outputs[0]`，生成调用在 Python AST 中嵌套于 Subscript/Attribute 节点；早期 Trace2 准备器只处理 `ast.Assign.value` 直接等于 `ast.Call`，因此未识别 GENERATE 锚点。现已修补诊断准备器：有限层数解包 `Subscript` / `Attribute`，只允许直接链上的 `engine.generate`，不会误把 `other_func(engine.generate(...))` 当生成锚点；锚点不匹配时 SAFE `reason_code` 附上 5 个阶段的匹配计数，不打印故事正文。合成测试已覆盖原审核器实际的链式调用。
+
+**修复固定代码**：`cf678c5208a7e46d552241f228d2b079ee4e32b5`；回归测试 `87d40c9b1275b79ee190315a9c2aa155f65a2ff5`。需以最新 GitHub CI 结果为准，尚未收到 Mac 私有 Trace2 准备 PASS 回执。
+
+执行方式与本文件前述 Trace2 步骤相同；仅将前述 `REV` 更新为 `87d40c9b1275b79ee190315a9c2aa155f65a2ff5`。因 create-only 的准备器在所有校验通过后才创建目标目录，之前这次 HOLD 不应创建 `input_A_trace2`；若目录已经存在，保留现场并拒绝覆盖。先准备、verify-only，再提交新的 A25 Job；不能把 CPU 准备 PASS 解释为已完成审核。
+
+---
+
+
 ## 2026-11-11：第二次 A25 因 vLLM 初始化疑似停滞取消；改为精确阶段诊断 v2
 
 Owner 明确已停止 Job `6af34cdb9737d9a9e0910ddb`，其日志在 330.4s 时仍 `ENGINE?` 未区分、`GPU VRAM=63319 MiB`、`GPU util=0%`、`主 Python CPU 秒=22.2`、`checkpoints_written=0`。这组事实**不能**单独证明 GPU 死锁，旧 v1 心跳只统计主 Python 进程，未解析 vLLM 子进程，也没有区分 `AutoTokenizer.from_pretrained`、`LLM(...)` 和 `generate`。停机动作已由 Owner 完成，暂停再次重复相同命令。
