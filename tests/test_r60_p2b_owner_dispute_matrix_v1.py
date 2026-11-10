@@ -73,3 +73,16 @@ def test_build_rejects_inconsistent_review_context():
     packets[0]["dimension_reviews"].pop("safety")
     with TestCase().assertRaisesRegex(mod.Hold, "OWNER_PACKET_DIMENSIONS_HOLD"):
         mod.build(diffs, packets)
+
+
+def test_build_ignores_same_verdict_owner_attention_rows_for_disagreement_count():
+    diffs, packets = fixture()
+    diffs.append({
+        "calibration_id": "synthetic_29",
+        "dimension": "hard_rule",
+        "verdict_agreement": True,
+    })
+    matrix, checks, safe = mod.build(diffs, packets)
+    assert len(matrix) == 29
+    assert len(checks) == 90
+    assert safe["hard_rule_disagreements"] == 20
