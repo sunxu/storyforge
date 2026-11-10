@@ -17,9 +17,25 @@
 - Freeze Review SAFE：`P4_FREEZE_REVIEW_READY_NOT_FROZEN`，`ready=true`、`blockers=[]`、`ready_for_profile_freeze=false`。Artifact ID `13763895951`；ZIP SHA-256 `25b568029272a4e48f4a75c755a98f83a706583f3bf6a61915ebb257065f1d0b`。
 - 本次没有 HF Job、GPU、Inference 或 Training；HF GPU 费用 $0。
 
+### Owner Mac CPU-only CLI 自检回执（2026-11-10）
+
+Owner 已提供 Runbook 自检输出，状态：`OWNER_MAC_CPU_FAIL_CLOSED_SELFTEST_PASS`。
+
+- `worker_cli.py --help` 显示 `--model-role {A,B,challenger}`，说明 CLI 参数入口可调用；
+- CLI SAFE：`storyforge_r60_generation_worker_receipt_safe_v1` / `GENERATION_WORKER_HOLD`；
+- reason_code：`GENERATION_PROFILE_NOT_AUTHORIZED`，这是预期 fail-closed 拒绝，不是本阶段错误；
+- `gpu_started=false`、`inference_started=false`、`training_started=false`、`private_values_emitted=false`；
+- Runbook 末尾断言输出 `OWNER_MAC_CPU_FAIL_CLOSED_SELFTEST_PASS`，对应脚本的 exit-code=2、未创建 `/output/owner-cli-selftest` 等检查。
+- 证据等级：**Owner 提供的命令输出通过检查**。本次回执没有独立提供 `git rev-parse HEAD` 和 `docker image inspect` 输出，因此不能宣称已独立核对 Owner Mac 的实际 Git SHA、镜像平台或 digest；GitHub Actions 的固定镜像 E2E 属另一路独立证据。
+
+**P4-B Owner Mac CPU fail-closed 自检：PASS（Owner 回执）。** 并不证明授权后的推理、模型加载、HF Bucket RW 或 32K 显存。
+当前四项生产授权全部保持 false。本次未由 ChatGPT 提交 HF Job，没有新增 GPU 运行或训练。
+
+当前前一 HEAD `b4156797e18e79e6656207a6d177b1772dc56bd6` 的三组 Actions 已重新确认全部 completed/success：CI `42813326285`，Generation Eval CI `42813326394`，Runtime Image Candidate `42813326259`。后续提交需按新 HEAD 重新检查。
+
 ### 后续仍 HOLD
 
-- Owner Mac CLI Runbook 已准备，但 Owner 尚未在 Mac 执行并回传 SAFE。
+- Owner Mac CPU-only fail-closed Runbook 已由 Owner 执行并返回预期 SAFE；本地 SHA / 镜像 digest 的独立原始输出仍未回传。
 - 32K 资源预算文档已建立，H200 141GB 为首选候选；长上下文显存/时长仍未实测，预算不是 GPU 授权。
 - Profile Freeze 未批准；正式 Inference/GPU/Training 仍 false。
 - PR #30 仍 Open/Draft，Issue #28 仍 OPEN；不得自动合并。
@@ -153,7 +169,7 @@ Owner 已明确决定：暂停 ChatGPT HF 403 / OAuth / Bucket RW 排查，后�
 - [ ] Worker CLI fail-closed 测试覆盖完整。
 - [ ] bootstrap 归档安全测试覆盖完整。
 - [ ] CPU-only 容器入口自检 PASS。
-- [ ] Mac CLI 执行说明可复制、可复现（Runbook 已建立；Owner 实机回执仍 HOLD）。
+- [x] Owner Mac CPU-only fail-closed 自检已收到预期 PASS 回执；镜像平台/digest 与本地 SHA 的独立核验仍待原始输出。
 - [ ] 输出隔离与 SAFE 回收方案明确，并由 Owner Mac 验证或明确 HOLD。
 - [ ] 32K 资源预算与证据等级明确（预算文档已建立；Owner 裁决和长上下文实测仍 HOLD）。
 - [x] 最终 Profile Freeze Review 包完成，未授权状态仍明确；等待 Owner 裁决。
