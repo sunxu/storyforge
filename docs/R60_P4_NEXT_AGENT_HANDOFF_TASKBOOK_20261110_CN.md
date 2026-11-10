@@ -65,6 +65,7 @@ PR：[#30](https://github.com/sunxu/storyforge/pull/30)，Open / Draft
 4. 要求 Owner 回传 SAFE 和必要的脱敏日志；不得要求回传生成正文、token、DSN 或私有案例。
 
 ### P4-C：32K 长上下文资源预算
+资源预算与证据等级见 [P4 32K 长上下文资源预算](R60_P4_32K_RESOURCE_BUDGET_20261110_CN.md)。该文档区分短输入 A100 实测、KV cache 理论值与 32K 未验证估算；首选 H200 141GB，但不构成 GPU 授权。
 1. 分别核算三模型 BF16 权重、KV cache、CUDA context、临时张量和运行时开销；明确 batch size、并发、输入/输出长度和显存余量假设。
 2. 将已完成的短输入 GPU Smoke 与 32K 长上下文能力严格区分。
 3. 预算要列出 GPU flavor、预估时长、单价来源/检索日期、单阶段费用上限、失败停止条件；价格需在执行前重新核验。
@@ -126,7 +127,7 @@ Owner 已明确决定：暂停 ChatGPT HF 403 / OAuth / Bucket RW 排查，后�
 - [ ] CPU-only 容器入口自检 PASS。
 - [ ] Mac CLI 执行说明可复制、可复现。
 - [ ] 输出隔离与 SAFE 回收方案明确，并由 Owner Mac 验证或明确 HOLD。
-- [ ] 32K 资源预算与证据等级明确。
+- [ ] 32K 资源预算与证据等级明确（预算文档已建立；Owner 裁决和长上下文实测仍 HOLD）。
 - [ ] 最终 Profile Freeze Review 包完成，未授权状态仍明确。
 - [ ] 当前 HEAD 的全部 CI 回执核验完成。
 - [ ] Issue #28 更新，PR #30 描述与代码状态一致。
