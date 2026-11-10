@@ -109,9 +109,9 @@ def test_code_patch_api_drift_rejected(tmp_path):
 def test_older_runner_without_quote_repair_can_be_patched(tmp_path):
     source, dest = source_fixture(tmp_path)
     old = (
-        "from vllm.sampling_params import StructuredOutputsParams\\n"
-        "def build(SamplingParams, schema):\\n"
-        "    return SamplingParams(structured_outputs = StructuredOutputsParams(json=schema))\\n"
+        "from vllm.sampling_params import StructuredOutputsParams\n"
+        "def build(SamplingParams, schema):\n"
+        "    return SamplingParams(structured_outputs = StructuredOutputsParams(json=schema))\n"
     )
     for role in ("A", "B"):
         private_file(source / f"input_{role}" / "runner.py", old.encode())
