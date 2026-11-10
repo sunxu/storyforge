@@ -23,7 +23,7 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 DEST="$PILOT/input_A_continuous"
 CODE="$BASE/r60-qwen-continuous-tools-v1"
-REV="__CONTINUOUS_CODE_PIN__"
+REV="a14f1eab47b738f74f1e06a0b030a799dcde93ce"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$PILOT/input_A"
 test ! -e "$DEST" || { echo A_CONTINUOUS_ALREADY_EXISTS_HOLD; exit 42; }
