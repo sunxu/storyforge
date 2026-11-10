@@ -9,9 +9,9 @@ from storyforge_dataset.generation_eval.profiles import EXPECTED_MODELS
 from storyforge_dataset.generation_eval.worker import (
     GenerationResult,
     WorkerError,
-    main as worker_main,
     run_generation_batch,
 )
+from storyforge_dataset.generation_eval.worker_cli import main as worker_main
 
 
 class FakeBackend:
