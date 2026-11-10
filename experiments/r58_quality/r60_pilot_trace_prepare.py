@@ -125,6 +125,24 @@ def instrument(source: str) -> tuple[str, dict]:
     target.body = visit_body(target.body)
     if dict(matches) != EXPECTED:
         raise Hold("INFERENCE_ANCHOR_COUNT_HOLD")
+    # Detailed engine initialization messages, but never per-request metrics
+    # or prompt/answer logs. Only change the copied runner and one known literal.
+    logger_switches = 0
+    for node in ast.walk(tree):
+        if (isinstance(node, ast.Assign) and len(node.targets) == 1
+                and isinstance(node.targets[0], ast.Subscript)
+                and isinstance(node.targets[0].value, ast.Attribute)
+                and isinstance(node.targets[0].value.value, ast.Name)
+                and node.targets[0].value.value.id == "os"
+                and node.targets[0].value.attr == "environ"
+                and isinstance(node.targets[0].slice, ast.Constant)
+                and node.targets[0].slice.value == "VLLM_LOGGING_LEVEL"
+                and isinstance(node.value, ast.Constant)
+                and node.value.value == "WARNING"):
+            node.value = ast.Constant(value="INFO")
+            logger_switches += 1
+    if logger_switches != 1:
+        raise Hold("VLLM_LOG_LEVEL_ANCHOR_HOLD")
     # Allowlisted marker function is supplied only by the external launcher.
     ast.fix_missing_locations(tree)
     patched = ast.unparse(tree) + "\n"
@@ -166,6 +184,7 @@ def prepare(source_dir: Path, destination: Path) -> dict:
         "original_runner_sha256": digest(runner.encode("utf-8")),
         "traced_runner_sha256": digest(raw["runner.py"]),
         "anchors": anchors,
+        "vllm_log_level": "INFO",
         "original_unchanged": True,
         "hf_jobs_submitted": 0,
         "gpu_started": False,
