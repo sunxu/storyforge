@@ -95,7 +95,7 @@ def test_one_local_engine_and_all_25(tmp_path, capsys):
 def test_invalid_first_prevents_second(tmp_path):
     local = tmp_path / "weights"
     local.mkdir()
-    worker, hf, vl, models, tokens = fixture_worker(
+    worker, hf, vl, models, _tokens = fixture_worker(
         tmp_path, invalid_first=True)
     state = gate.install_first_gate(worker, local, hf, vl)
     with pytest.raises(gate.Hold, match="A25_CHECKPOINT_READBACK_HOLD"):
@@ -108,7 +108,7 @@ def test_invalid_first_prevents_second(tmp_path):
 def test_failure_midway_no_completion(tmp_path, capsys):
     local = tmp_path / "weights"
     local.mkdir()
-    worker, hf, vl, models, tokens = fixture_worker(tmp_path, fail_at=7)
+    worker, hf, vl, _models, _tokens = fixture_worker(tmp_path, fail_at=7)
     state = gate.install_first_gate(worker, local, hf, vl)
     with pytest.raises(RuntimeError):
         call(worker, tmp_path)
@@ -119,7 +119,7 @@ def test_failure_midway_no_completion(tmp_path, capsys):
 def test_scope_rejects_before_model_import(tmp_path):
     local = tmp_path / "weights"
     local.mkdir()
-    worker, hf, vl, models, tokens = fixture_worker(tmp_path)
+    worker, hf, vl, models, _tokens = fixture_worker(tmp_path)
     gate.install_first_gate(worker, local, hf, vl)
     with pytest.raises(gate.Hold, match="A25_INFERENCE_CONTRACT_HOLD"):
         worker.inference([{}], tmp_path, gate.MODEL, gate.REV,
