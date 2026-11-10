@@ -1,5 +1,20 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 Challenger H200 合成启动包 Owner SAFE
+
+Owner Mac 已成功生成 challenger 计划，但尚未提交 GPU Job：
+
+- `status=H200_challenger_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED`，`role=challenger`，`flavor=h200`，60m / 1 attempt。
+- 固定 `code_revision=42f86ac228a8dcee5ee495c8b96dcc0cd3efda09`。
+- 校准的 challenger 输入 SHA `2676b44c9e0e6ea1c8ccc1824e246d20c08fd8b7cf789a669e3bd06a1f91c28c`（28,597 tokens）。
+- Owner 本地 `source_archive_sha256=c664a042ef474a0fbb41df9e1e3e6874f6cd566b6894daa2c4d732e4a2d45346`。
+- 脚本 `/Users/keedle/.local/share/storyforge/r60/private/r60-p4-h200-challenger-20261110225429/launch-h200-challenger.sh`；`gpu_started=false`、`inference_started=false`、`hf_job_submitted=false`、`training_started=false`。
+- 绑定该代码 SHA 的 CI `42838690233` PASS、Generation Eval CI `42838690122` PASS；Runtime Image Candidate `42838690088` **仍在运行，未验收**。
+
+在 Owner Mac 核验 tar SHA、CLI 参数及 Runtime Image Candidate 成功之前不得提交收费 H200 Job。若三项 CI PASS，按已有批准的单模型合成 GPU 计划，Owner 可提交 challenger 最后一次单独 H200 Job；禁止自动重试或直接转入正式推理/训练。
+
+---
+
 ## 2026-11-10 模型 B 最终输出回读验收：7 tokens / EOS
 
 Owner Mac 读回 B 的私有输出并执行 SHA、大小、schema、角色、record_count、token 区间与 finish reason 校验，回传不含正文的 SAFE：
