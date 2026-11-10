@@ -11,7 +11,7 @@ def ready_profile():
         models[role] = {
             "model": model,
             "revision": revision,
-            "enable_thinking": role == "A",
+            "enable_thinking": True if role == "A" else None,
             "thinking_mode": "api_flag" if role == "A" else ("template_default" if role == "B" else "explicit_generation_prefix"),
             "generation_prefix": "<think>" if role == "challenger" else None,
             "sampling": {"do_sample": True, "temperature": 0.7, "top_p": 0.9},
