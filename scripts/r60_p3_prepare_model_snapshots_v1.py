@@ -103,6 +103,11 @@ def prepare_snapshots(output_root: Path, downloader=None) -> dict:
     }
 
 
+def serialize_safe(safe: dict) -> str:
+    """Serialize valid JSON with a real trailing newline."""
+    return json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-root", required=True, type=Path)
@@ -110,7 +115,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         safe = prepare_snapshots(args.output_root)
-        encoded = json.dumps(safe, ensure_ascii=False, sort_keys=True, indent=2) + "\\n"
+        encoded = serialize_safe(safe)
         if args.safe_output:
             if not args.safe_output.is_absolute() or args.safe_output.exists():
                 raise ValueError("P3_SAFE_OUTPUT_MUST_BE_ABSENT_ABSOLUTE")
