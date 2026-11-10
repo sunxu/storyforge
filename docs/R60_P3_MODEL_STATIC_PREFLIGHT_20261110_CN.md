@@ -1,3 +1,11 @@
+# 2026-11-10 后续状态补充：P2-B 已完成，P3 CPU 预检为当前主线
+
+P2-B Owner Mac 官方 Verifier 已返回 `P2B_OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED`：30/30 cases、90/90 semantic checks；57 SUPPORTS_VERDICT、33 INSUFFICIENT_CONTEXT、0 DOES_NOT_SUPPORT_VERDICT。Owner identity cryptographic attestation=false；private_values_emitted=false；quality_v1_admitted=0；training_authorized=false；gpu_started=false。
+
+Safety 第21、22条经 Owner 二次裁决均为 INSUFFICIENT_CONTEXT，原始 SUPPORTED 与审计记录保留；其他88项未改，Rubric v2.1 未改。不得重审 P2-B 或向模型输入泄露 held-out 数据。
+
+因此本文件原有静态 revision 事实继续有效；状态仍为 `STATIC_HUB_METADATA_REVIEW_COMPLETE__CPU_PREFLIGHT_PENDING`。CPU tokenizer/template/token-budget 执行尚未完成。本阶段只做本地 CPU、固定 revision 文件下载、hash、模板渲染和 synthetic token budget；不下载权重、不做 inference、不提交 HF Job/GPU。GLM-Z1 sampling 与 greedy 文档冲突必须在 profile 冻结前明确解决。
+
 # R60 P3 三模型静态版本与模板预检（2026-11-10）
 
 > 状态：`STATIC_HUB_METADATA_REVIEW_COMPLETE__CPU_PREFLIGHT_PENDING`。本文件只记录 Hugging Face Hub 公开元数据、模型卡、配置文件与 Chat Template 的只读核查；没有下载模型权重，没有运行 tokenizer，没有执行模型推理，没有提交 HF Job/GPU。
