@@ -14,6 +14,10 @@ from storyforge_dataset.generation_eval.worker import (
 
 
 class FakeBackend:
+    @property
+    def gpu_started(self):
+        return False
+
     def generate(self, **kwargs):
         return GenerationResult(
             text="synthetic response",
