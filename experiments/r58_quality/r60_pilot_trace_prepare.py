@@ -59,6 +59,18 @@ def classify(node: ast.stmt) -> str | None:
     if not isinstance(node, ast.Assign) or len(node.targets) != 1:
         return None
     value = node.value
+    # Original reviewer uses:
+    # result = engine.generate(...)[0].outputs[0]
+    # The assignment value is Subscript(Attribute(Subscript(Call(...)))),
+    # not a direct Call. Unwrap only these indexing/attribute layers.
+    # Do not treat a nested unrelated function call as a phase anchor.
+    for _ in range(6):
+        if isinstance(value, ast.Subscript):
+            value = value.value
+        elif isinstance(value, ast.Attribute):
+            value = value.value
+        else:
+            break
     if not isinstance(value, ast.Call):
         return None
     fn = value.func
@@ -124,7 +136,9 @@ def instrument(source: str) -> tuple[str, dict]:
 
     target.body = visit_body(target.body)
     if dict(matches) != EXPECTED:
-        raise Hold("INFERENCE_ANCHOR_COUNT_HOLD")
+        # Emit only public phase-name counts; never source code or case data.
+        counts = "__".join(f"{k.upper()}_{matches[k]}" for k in EXPECTED)
+        raise Hold(f"INFERENCE_ANCHOR_COUNT_HOLD__{counts}")
     # Detailed engine initialization messages, but never per-request metrics
     # or prompt/answer logs. Only change the copied runner and one known literal.
     logger_switches = 0
