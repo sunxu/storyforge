@@ -15,7 +15,7 @@ set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
 BASE="$HOME/.local/share/storyforge/r60/private"
 BUNDLE="$BASE/r60-qwen32b-servercopy-localize-v2"
-REV="__SERVERCOPY_PIN__"
+REV="b2858aa19b187e721f603ae1891b64bd3f938f24"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test ! -e "$BUNDLE" || { echo ALREADY_EXISTS_HOLD; exit 42; }
 umask 077
