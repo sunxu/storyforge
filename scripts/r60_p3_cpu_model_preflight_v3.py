@@ -173,6 +173,7 @@ def preflight(
 
     results = {}
     template_mismatch_roles = []
+    template_source_decision_required = []
     for role, (expected_model, expected_revision) in MODEL_PINS.items():
         profile = model_profiles[role]
         if (profile.get("model"), profile.get("revision")) != (expected_model, expected_revision):
@@ -201,11 +202,25 @@ def preflight(
         # loaded value rather than assuming which source won.
         if standalone is not None and tokenizer.chat_template != standalone:
             raise ValueError("P3_HF_STANDALONE_TEMPLATE_PRECEDENCE_HOLD")
+        selected_source = profile.get("chat_template_source")
+        selected_sha = profile.get("chat_template_sha256")
+        if selected_source == "embedded_tokenizer_config":
+            selected_template = embedded
+        elif selected_source == "standalone_chat_template.jinja" and standalone is not None:
+            selected_template = standalone
+        else:
+            template_source_decision_required.append(role)
+            raise ValueError("P3_TEMPLATE_SOURCE_DECISION_REQUIRED_HOLD")
+
         active_template = standalone if standalone is not None else embedded
+        if selected_template != active_template:
+            raise ValueError("P3_SELECTED_TEMPLATE_NOT_ACTIVE_HOLD")
 
         active_sha = hashlib.sha256(active_template.encode("utf-8")).hexdigest()
         embedded_sha = hashlib.sha256(embedded.encode("utf-8")).hexdigest()
         standalone_sha = hashlib.sha256(standalone.encode("utf-8")).hexdigest() if standalone else None
+        if selected_sha != active_sha:
+            raise ValueError("P3_SELECTED_TEMPLATE_SHA256_HOLD")
         mismatch_count = 0
         token_lengths = []
         prompt_fingerprints = []
@@ -238,12 +253,16 @@ def preflight(
             raise ValueError("P3_SYNTHETIC_INPUT_BUDGET_HOLD")
         if mismatch_count:
             template_mismatch_roles.append(role)
+        if role == "challenger" and not _render(tokenizer, synthetic_messages(0, severity.RUBRIC_TEXT), role, active_template).endswith("<|assistant|>\\n<think>"):
+            raise ValueError("P3_GLMZ1_THINKING_PREFIX_HOLD")
 
         results[role] = {
             "model": expected_model,
             "revision": expected_revision,
             "tokenizer_class": type(tokenizer).__name__,
             "active_template_source": "standalone_chat_template.jinja" if standalone else "embedded_tokenizer_config",
+            "owner_selected_template_source": selected_source,
+            "owner_selected_template_sha256": selected_sha,
             "active_template_sha256": active_sha,
             "embedded_template_sha256": embedded_sha,
             "standalone_template_sha256": standalone_sha,
@@ -272,12 +291,14 @@ def preflight(
         "schema": "storyforge_r60_p3_cpu_preflight_safe_v3",
         "status": (
             "P3_TEMPLATE_SOURCE_DECISION_REQUIRED_HOLD"
-            if template_mismatch_roles
+            if template_source_decision_required
             else "P3_SYNTHETIC_CPU_PREFLIGHT_PASS__GENERATION_PROFILE_PENDING"
         ),
         "model_count": 3,
         "models": results,
-        "template_source_decision_required": template_mismatch_roles,
+        "template_source_decision_required": template_source_decision_required,
+        "template_render_mismatch_roles_explained_by_owner_selection": template_mismatch_roles,
+        "template_source_decisions_owner_approved": not template_source_decision_required,
         "download_safe_sha256": download_safe_sha,
         "downloaded_file_count": sum(item["file_count"] for item in download_safe["models"].values()),
         "runtime_versions": {
