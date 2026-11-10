@@ -68,7 +68,7 @@ def synthetic(tmp_path, *, first_bad=False, error_at=None):
 
 
 def run(state, *, limit=25, batch_size=5, resume=False):
-    worker, rows, out, local, tok, vl, calls, saved = state
+    worker, rows, out, local, tok, vl, _calls, _saved = state
     return mod.run_batches(worker, rows, out, local, limit=limit,
                            batch_size=batch_size, max_model_len=32768,
                            max_output_tokens=2400, wall_seconds=1200,
@@ -115,7 +115,7 @@ def test_reject_noncontiguous_prefix_and_invalid_resume(tmp_path):
 
 def test_resume_valid_prefix_and_one_engine(tmp_path, capsys):
     state = synthetic(tmp_path)
-    worker, rows, output, local, tokenizer, vllm, calls, saved = state
+    worker, _rows, output, _local, _tokenizer, _vllm, calls, saved = state
     for pos in range(1, 6):
         saved[pos] = {"position": pos}
         (output / worker.checkpoint_name(pos)).write_text("{}")
