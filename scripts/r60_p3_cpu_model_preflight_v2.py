@@ -123,6 +123,7 @@ def preflight(
     import jinja2
     import sentencepiece
     import transformers
+    del jinja2, sentencepiece
     from storyforge_gold_quality import hf_severity_evidence_v2 as severity
 
     baseline = {"transformers": "4.57.1", "sentencepiece": "0.2.1", "jinja2": "3.1.6"}
@@ -242,6 +243,7 @@ def preflight(
         "model_count": 3,
         "models": results,
         "template_source_decision_required": template_mismatch_roles,
+        "downloaded_file_count": sum(item.get("file_count", 0) for item in download_safe["models"].values()),
         "runtime_versions": {
             **installed,
             "tokenizers": version("tokenizers"),
