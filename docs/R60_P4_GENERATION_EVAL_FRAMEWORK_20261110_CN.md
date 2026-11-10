@@ -99,3 +99,37 @@ Job 计划目前引用的 Worker 入口尚未交付，因此即使合成 profile
 2. 将 P3 tokenizer/template 文件 hash、运行镜像 digest、依赖 lock hash 写入独立 P4 Frozen Profile；目前 P3 候选源文件仍保持未冻结状态。
 3. 增加 Worker CLI 和独立 GPU Job submit guard；当前 Job Plan 只用于审查，不得直接执行其 argv。
 4. 在完成 Owner profile freeze 和 GPU 授权后，才进行一个模型、一个样本的 Synthetic GPU Smoke。
+
+
+## P4.3：Pinned Transformers Backend（已实现适配器，未加载权重）
+
+新增 `generation_eval.backend.TransformersGenerationBackend`：
+
+- 使用 `AutoTokenizer` / `AutoModelForCausalLM`，固定 model ID 与 revision；明确 `trust_remote_code=False`。
+- Qwen 从 pinned tokenizer config 读取内嵌 chat template；GLM-4 / GLM-Z1 从独立模板文件加载。两条路径都必须匹配 P3 的 SHA-256。
+- 固定 BF16 与 `device_map="auto"`；拒绝 CPU/disk offload，检查 CUDA 与 BF16 支持。
+- 通过 tokenizer 的 `apply_chat_template` 进行真实 tokenization；按 profile sampling 参数生成，并返回实际 input/output token 数。
+- 模型库仅在显式调用 `from_pretrained` 时延迟导入；profile、plan、CI 和 worker API 的合成测试不会下载模型权重。
+
+### 三个模型的官方仓库配置核对
+
+| 模型 | 架构 | 权重 dtype | 模型配置 context |
+|---|---|---|---:|
+| Qwen3-32B | Qwen3ForCausalLM | BF16 | 40,960 |
+| GLM-4-32B-0414 | Glm4ForCausalLM | BF16 | 32,768 |
+| GLM-Z1-32B-0414 | Glm4ForCausalLM | BF16 | 32,768 |
+
+因此共享 32,768 token ceiling 不超过三个模型中的最小模型 context。
+
+采样证据：
+
+- Qwen3-32B 模型卡对 thinking 模式明确建议 `do_sample=true`、temperature 0.6、top_p 0.95、top_k 20、min_p 0；并明确警告不要使用 greedy decoding。候选 A 的采样设置与该建议一致。
+- GLM-4-32B-0414 的 README 推理示例设置 `do_sample=true`，但模型仓库的 generation_config 没有给出 temperature / top_p / top_k 默认值。不能把 Qwen 参数直接移植给它。
+- GLM-Z1-32B-0414 的 README 参数表建议 temperature 0.6、top_p 0.95、top_k 40；但同一 README 的 generate 示例使用 `do_sample=false`。这是明确的文档内部冲突，不能由代码替 Owner 裁决。
+- GLM-4 与 GLM-Z1 的 generation_config 仅固定 eos_token_id / pad_token_id，没有可据以冻结采样模式的默认参数。
+
+因此 GLM 两个 profile 继续 HOLD。后端已支持两种采样模式，但不会替模型选择模式或参数。
+
+### 尚未验收
+
+本次没有真实导入 Transformers、下载权重、初始化 CUDA 或运行模型。当前后端通过 FakeTorch / FakeTransformers 做接口合成测试；还需在实际 HF GPU 环境验证版本兼容、模型加载、模板 tokenization、显存占用和生成结果。
