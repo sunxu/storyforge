@@ -158,7 +158,7 @@ def build_generation_plan(
     ).hexdigest()
     # Fetch the exact public source archive with Python stdlib; the pinned
     # PyTorch base image does not guarantee that git is installed.
-    archive_script = f\'''import io, shutil, tarfile, urllib.request
+    archive_script = f"""import io, shutil, tarfile, urllib.request
 from pathlib import Path, PurePosixPath
 revision = "{code_revision}"
 url = f"https://codeload.github.com/sunxu/storyforge/tar.gz/{revision}"
@@ -189,10 +189,11 @@ with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as bundle:
             raise SystemExit("SOURCE_ARCHIVE_MEMBER_UNREADABLE")
         with target.open("xb") as output:
             shutil.copyfileobj(source, output)
-\'''
+"""
+    archive_script_b64 = base64.b64encode(archive_script.encode("utf-8")).decode("ascii")
     shell_command = (
         "set -euo pipefail; mkdir -p /workspace; "
-        f"python -c 'exec(\\\"\\\"\\\"{archive_script}\\\"\\\"\\\")'; "
+        f"python -c \"import base64; exec(base64.b64decode('{archive_script_b64}'))\"; "
         "python -m pip install --disable-pip-version-check --require-hashes "
         "-r /workspace/storyforge/requirements/hf-generation-eval.lock; "
         f"STORYFORGE_RUNTIME_IMAGE_DIGEST={profile['runtime_digest']} "
