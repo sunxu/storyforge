@@ -9,6 +9,12 @@ on:
       - 'tests/test_generation_eval_plan.py'
       - 'tests/test_generation_eval_worker.py'
       - 'tests/test_generation_eval_backend.py'
+      - 'tests/test_generation_eval_sampling.py'
+      - 'src/storyforge_dataset/generation_eval/sampling.py'
+      - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - 'experiments/r60_quality/r60_sampling_decision_candidate_v1.json'
+      - 'docs/R60_P4_EVALUATION_PROMPT_CANDIDATE_V1_CN.md'
+      - 'experiments/r60_quality/r60_p4_evaluation_output_schema_candidate_v1.json'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
   pull_request:
@@ -39,10 +45,33 @@ jobs:
         run: python -m pip install 'pytest==8.4.2' 'ruff==0.14.3'
       - name: Lint and compile
         run: |
-          ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py
+          ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py tests/test_generation_eval_sampling.py
           python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py
       - name: Synthetic profile, plan, worker and backend tests
         run: pytest -q tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py tests/test_generation_eval_backend.py
+      - name: Generate CPU-only P4 freeze-review SAFE
+        run: |
+          PYTHONPATH=src python -m storyforge_dataset.generation_eval \
+            experiments/r60_quality/p4_generation_profile_candidate_v1.json \
+            --purpose freeze_review > p4-freeze-review-safe.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path('p4-freeze-review-safe.json').read_text())
+          assert report['status'] == 'P4_FREEZE_REVIEW_READY_NOT_FROZEN', report
+          assert report['ready'] is True, report
+          for key in ('private_values_emitted', 'inference_started', 'gpu_started', 'training_started'):
+              assert report[key] is False, (key, report)
+          assert report['sampling_decision']['blockers'] == [], report
+          print(json.dumps(report, sort_keys=True))
+          PY
+      - name: Upload non-private freeze-review SAFE
+        uses: actions/upload-artifact@v4
+        with:
+          name: r60-p4-freeze-review-safe
+          path: p4-freeze-review-safe.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Assert CPU-only planning boundary
         run: |
           python - <<'PY'
