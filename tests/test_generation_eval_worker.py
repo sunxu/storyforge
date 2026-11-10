@@ -9,8 +9,8 @@ from storyforge_dataset.generation_eval.profiles import EXPECTED_MODELS
 from storyforge_dataset.generation_eval.worker import (
     GenerationResult,
     WorkerError,
-    run_generation_batch,
     main as worker_main,
+    run_generation_batch,
 )
 
 
@@ -241,15 +241,15 @@ def test_worker_holds_on_unrecognized_stop_reason(tmp_path: Path):
 
 def test_worker_cli_holds_before_runtime_when_profile_not_frozen(tmp_path: Path, capsys):
     profile_path = tmp_path / "profile.json"
-    profile_path.write_text(json.dumps({
-        "schema": "storyforge_r60_p3_model_profiles_v1",
+    profile = ready_profile()
+    profile.update({
         "status": "P4_PROFILE_CANDIDATE__NOT_FROZEN",
         "profile_freeze_authorized": False,
         "inference_authorized": False,
         "gpu_authorized": False,
         "training_authorized": False,
-        "model_profiles": {},
-    }))
+    })
+    profile_path.write_text(json.dumps(profile))
     code = worker_main([
         "--model-role", "A",
         "--profile", str(profile_path),
