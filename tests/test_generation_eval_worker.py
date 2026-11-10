@@ -10,6 +10,7 @@ from storyforge_dataset.generation_eval.worker import (
     GenerationResult,
     WorkerError,
     run_generation_batch,
+    main as worker_main,
 )
 
 
@@ -235,3 +236,32 @@ def test_worker_holds_on_unrecognized_stop_reason(tmp_path: Path):
     )
     assert receipt.status == "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP"
     assert receipt.finish_reason_counts["unrecognized_stop"] == 2
+
+
+
+def test_worker_cli_holds_before_runtime_when_profile_not_frozen(tmp_path: Path, capsys):
+    profile_path = tmp_path / "profile.json"
+    profile_path.write_text(json.dumps({
+        "schema": "storyforge_r60_p3_model_profiles_v1",
+        "status": "P4_PROFILE_CANDIDATE__NOT_FROZEN",
+        "profile_freeze_authorized": False,
+        "inference_authorized": False,
+        "gpu_authorized": False,
+        "training_authorized": False,
+        "model_profiles": {},
+    }))
+    code = worker_main([
+        "--model-role", "A",
+        "--profile", str(profile_path),
+        "--manifest", str(tmp_path / "manifest.json"),
+        "--input", str(tmp_path / "inputs.jsonl"),
+        "--output-dir", "/output/test-run",
+        "--repo-root", str(tmp_path),
+    ])
+    report = json.loads(capsys.readouterr().out)
+    assert code == 2
+    assert report["status"] == "GENERATION_WORKER_HOLD"
+    assert report["reason_code"] == "GENERATION_PROFILE_NOT_AUTHORIZED"
+    assert report["inference_started"] is False
+    assert report["gpu_started"] is False
+    assert report["training_started"] is False

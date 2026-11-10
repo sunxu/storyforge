@@ -166,7 +166,7 @@ def run_generation_batch(
             input_path, max_bytes=max_input_file_bytes, expected_sha256=input_sha
         )
         records = InputManager.validate_jsonl(verified.read_bytes(), max_records=expected_count)
-    except (OSError, ValueError) as exc:
+    except (OSError, TypeError, ValueError) as exc:
         raise WorkerError("INPUT_VERIFICATION_FAILED") from exc
     _validate_records(records, expected_count)
 
@@ -279,7 +279,12 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise WorkerError("TRAINING_AUTHORIZATION_MUST_REMAIN_DISABLED")
 
         repo_root = args.repo_root.resolve(strict=True)
-        lock_path = repo_root / profile["dependency_lock_path"]
+        lock_relative = Path(profile["dependency_lock_path"])
+        if lock_relative.is_absolute() or any(part in {"", ".", ".."} for part in lock_relative.parts):
+            raise WorkerError("DEPENDENCY_LOCK_PATH_INVALID")
+        lock_path = (repo_root / lock_relative).resolve(strict=True)
+        if not lock_path.is_relative_to(repo_root):
+            raise WorkerError("DEPENDENCY_LOCK_PATH_INVALID")
         lock_bytes = InputManager.open_verified(
             lock_path, max_bytes=8 * 1024 * 1024
         ).read_bytes()
@@ -306,6 +311,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             raise WorkerError("INPUT_MANIFEST_INVALID")
 
         output_dir = args.output_dir
+        if (
+            output_dir.parent != Path("/output")
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", output_dir.name)
+        ):
+            raise WorkerError("OUTPUT_DIRECTORY_INVALID")
         if output_dir.is_symlink() or output_dir.exists():
             raise WorkerError("OUTPUT_DIRECTORY_MUST_BE_NEW")
         parent = output_dir.parent
@@ -362,7 +372,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             })
             print(json.dumps(safe, sort_keys=True))
             return 0 if receipt.status != "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP" else 3
-    except (OSError, ValueError, KeyError, ImportError) as exc:
+    except (OSError, RuntimeError, TypeError, ValueError, KeyError, ImportError) as exc:
         code = str(exc) if isinstance(exc, WorkerError) else "WORKER_RUNTIME_VALIDATION_FAILED"
         print(json.dumps({
             "schema": "storyforge_r60_generation_worker_receipt_safe_v1",
