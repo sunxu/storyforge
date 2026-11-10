@@ -163,6 +163,7 @@ def run_runtime_smoke(*, profile_path: Path, output_path: Path) -> dict[str, Any
                     messages=SMOKE_MESSAGES,
                     sampling=selected["sampling"],
                     enable_thinking=selected.get("enable_thinking"),
+                    generation_prefix=selected.get("generation_prefix"),
                     seed=SMOKE_SEED,
                     max_input_tokens=SMOKE_MAX_INPUT_TOKENS,
                     max_new_tokens=SMOKE_MAX_NEW_TOKENS,
