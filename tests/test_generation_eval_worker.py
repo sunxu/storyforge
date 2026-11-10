@@ -241,9 +241,11 @@ def test_worker_holds_on_unrecognized_stop_reason(tmp_path: Path):
 
 def test_worker_cli_holds_before_runtime_when_profile_not_frozen(tmp_path: Path, capsys):
     profile_path = tmp_path / "profile.json"
-    profile = ready_profile()
+    repo_root = Path(__file__).resolve().parents[1]
+    profile = json.loads(
+        (repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json").read_text()
+    )
     profile.update({
-        "status": "P4_PROFILE_CANDIDATE__NOT_FROZEN",
         "profile_freeze_authorized": False,
         "inference_authorized": False,
         "gpu_authorized": False,
