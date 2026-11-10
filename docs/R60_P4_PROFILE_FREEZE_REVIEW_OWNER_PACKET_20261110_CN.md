@@ -1,5 +1,24 @@
 # StoryForge R60 P4 Profile Freeze Review — Owner 裁决包（2026-11-10）
 
+## 2026-11-10 Owner 最终裁决：PROFILE FREEZE APPROVED
+
+Owner 在本轮明确回复“批准”，仅对应本包第 7 节 A 项 Profile Freeze，**不包括**第 7 节 B 项的 Inference / GPU / Training。
+
+- 冻结版本（新建、只创建一次）：[`p4_generation_profile_frozen_v1.json`](../experiments/r60_quality/p4_generation_profile_frozen_v1.json)
+- 冻结文件 SHA-256：`a58d02c757767f18deb8a4cb948a56be199c837c045d83648838868961e1037f`。
+- 首次创建提交：`373786548f2f1e37673864b339471a6565e3864f`。
+- 源候选：`p4_generation_profile_candidate_v1.json`，Git blob SHA `22eca083af10f37ebb93b0f4ca3471a4bbe26beb`；保持未修改、原始 `profile_freeze_authorized=false`，用于历史审计。
+- 重新读取 GitHub 后逐字段核对：Frozen 与候选除 `status`、`profile_freeze_authorized`、新增 `profile_freeze_approval` 三项外完全一致；所有模型 Revision、tokenizer/template/config、Sampling、Prompt/Schema、Runtime、Lock、Stop、Budget 未变。
+- Frozen 授权：`profile_freeze_authorized=true`，`inference_authorized=false`，`gpu_authorized=false`，`training_authorized=false`，`runtime_smoke_authorized=false`。
+- 状态：`P4_PROFILE_FROZEN__INFERENCE_GPU_TRAINING_HOLD`。实际 Generation Worker 在另外两项授权缺失时仍 fail-closed。
+- 本次不修改 Worker、训练 Runner 或原 Candidate，不提交 HF Job，不执行 GPU、推理、训练，也不测试 HF Bucket。
+- 后续必须引用这份新 Frozen Profile 的**精确内容 SHA-256**，不得原地改写。参数变化需走新版本、重新裁决。
+
+原本本包中的 `OWNER_REVIEW_READY__PROFILE_NOT_FROZEN`、`profile_freeze_authorized=false` 均是批准前历史快照，现由本节覆盖。原 CPU Freeze Review SAFE 也仅证明批准前候选 readiness，不应被改写为事后 Freeze PASS。
+
+---
+
+
 > **状态：OWNER_REVIEW_READY__PROFILE_NOT_FROZEN**
 >
 > 本包用于 Owner 对不可变 Generation Profile 做最终裁决。它不自动修改 Profile 授权，不启动 Job、GPU、Inference 或 Training。当前四项生产授权仍全部为 false。
