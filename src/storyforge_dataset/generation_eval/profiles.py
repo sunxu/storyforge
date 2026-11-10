@@ -92,6 +92,7 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
         ("generation_budget_tokens", "GENERATION_BUDGET_UNSET"),
         ("seed", "SEED_UNSET"),
         ("runtime_digest", "RUNTIME_DIGEST_UNSET"),
+        ("dependency_lock_sha256", "DEPENDENCY_LOCK_HASH_UNSET"),
         ("tokenizer_hashes", "TOKENIZER_HASHES_UNSET"),
     ):
         value = profile.get(field)
@@ -115,6 +116,10 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
     runtime_digest = profile.get("runtime_digest")
     if runtime_digest is not None and not re.fullmatch(r"sha256:[0-9a-f]{64}", str(runtime_digest)):
         blockers.append("RUNTIME_DIGEST_INVALID")
+
+    lock_hash = profile.get("dependency_lock_sha256")
+    if lock_hash is not None and (not isinstance(lock_hash, str) or not SHA256_RE.fullmatch(lock_hash)):
+        blockers.append("DEPENDENCY_LOCK_HASH_INVALID")
 
     tokenizer_hashes = profile.get("tokenizer_hashes")
     if tokenizer_hashes is not None and (
