@@ -1,5 +1,75 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：A25 引擎初始化 HOLD 后，低开销复制 + 单 H200 连续批次审核（新执行入口）
+
+**最新实测**：Qwen3-32B A25 Job `6af36c549737d9a9e0915d9f` 完成 `LOCAL_WEIGHTS_READY` 后进入 `A25_GATE_READY` → `A25_LOCAL_TOKENIZER_LOAD` → `A25_REAL_LOCAL_ENGINE_START`，vLLM INFO 记录 max_model_len=32768 与 chunked prefill=16384，随后冻结原审查器报 `HF_REVIEW_RUNTIME_ERROR`。**未出现 `A25_REAL_LOCAL_ENGINE_READY`、`A25_FIRST_GATE_PASS`，因此真实审核没有通过，A25=0/25（截至现有回执）**。这只能确定错误发生在模型初始化期间或其紧邻阶段，不能仅凭隐藏的通用错误码判定是显存、vLLM 参数还是模型。原审查器吞异常的原因是其自己的 SAFE redaction；不要假设权重损坏，不要重复同一个旧 Job。
+
+### 已实施改动
+
+1. `experiments/r58_quality/r60_qwen32b_servercopy_localize.py` 新增 `--skip-weight-sha`：在固定 Hub commit 的 24 文件 size/inventory、17 权重分片和 index 路径检查前提下，复制权重不再逐块计算 SHA256。小文本文件仍按实际内容记录 SHA（体积很小）。Manifest 增加 `integrity_mode: size-only-upstream-sha-declared`；`LOCAL_WEIGHTS_READY` 明确 `full_weight_sha_verified=false`。**原版完整 sha 校验模式仍是默认**；只在已经通过一次全 SHA 校验的 servercopy 目录、Owner 明确选择速度优先时开启；此举不能证明新副本与上游 SHA 完全一致。**数据源从未获得绕过固定 revision 的授权。**
+2. `experiments/r58_quality/r60_qwen_continuous_review.py` 新入口：限定 `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137`，仅接受冻结 A25 25 条 SHA `492f24f7...` 或冻结 full A1000 SHA `687528efe...`；保留原 `runner.py` 的 prompt、sampling、JSON schema、引文修复、六维裁决、checkpoint record。将其 `AutoTokenizer.from_pretrained` / `vllm.LLM` 运行时参数改成本地路径并在**同一进程内复用唯一 Engine 实例**，循环 `--batch-size 25` 批次，逐条验证原版 `read_checkpoint`；首条验证失败立即终止，不生成第二条。打印 `BATCH_START`/`BATCH_COMPLETE` 和累计数，预算临界停止并输出 `REVIEW_WALL_BUDGET_HOLD`。
+3. `--resume` 仅当输出目录中全部现有 Checkpoint 是从 0001 起的**连续有效前缀**时启用；原版 `read_checkpoint` 逐个校验 SHA、blind ID、input SHA、model/revision、policy 和响应，任何断档/未知文件/损坏直接 HOLD，不覆盖已写文件。**不同 Job 仍需各自加载一次模型**，同一个 Job 内的多批次不会重载。
+4. 对于上次 `HF_REVIEW_RUNTIME_ERROR` 泛化问题，新入口在 `REAL_ENGINE_INIT_START` 后出现异常时打印脱敏 `REAL_ENGINE_INIT_HOLD` 和异常**类名**，以及 `REVIEW_BATCH_HOLD` 的固定阶段；不得输出异常消息、堆栈、路径或私有文本。还不能保证仅凭异常类名定位根因。
+5. CPU 合成测试覆盖：25 条分五批只初始化 1 次 Engine；首条拒绝不生成第二条；中途异常不虚报完成；非连续 Checkpoint 拒绝恢复；完整前缀验证后继续；另验证 size-only 模式不会假称 SHA 完整性。
+   
+**重要门禁**：依然不能将 `A25` 的 25 条冻结输入和 `A1000` 原始输入混为一谈。先运行 25 条并验证，再用同一软件对 frozen 1000 source 启动更长作业；不能把 `--case-limit 1000` 配上 25 条输入。跨多 Job 恢复时每轮必须有单独的费用、最大时长授权与私有数据源验收。
+
+### Owner Mac：新工具版本隔离安装（CPU-only）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+DEST="$PILOT/input_A_continuous"
+CODE="$BASE/r60-qwen-continuous-tools-v1"
+REV="__CONTINUOUS_CODE_PIN__"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -d "$PILOT/input_A"
+test ! -e "$DEST" || { echo A_CONTINUOUS_ALREADY_EXISTS_HOLD; exit 42; }
+test ! -e "$CODE" || { echo CODE_ALREADY_EXISTS_HOLD; exit 42; }
+umask 077
+mkdir -m 700 "$DEST" "$CODE"
+for name in runner.py source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+  cp "$PILOT/input_A/$name" "$DEST/$name"
+  chmod 600 "$DEST/$name"
+done
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_qwen_continuous_review.py" > "$DEST/r60_qwen_continuous_review.py"
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_qwen32b_servercopy_localize.py" > "$CODE/r60_qwen32b_servercopy_localize.py"
+chmod 600 "$DEST/r60_qwen_continuous_review.py" "$CODE/r60_qwen32b_servercopy_localize.py"
+python3 -m py_compile "$DEST/r60_qwen_continuous_review.py" "$CODE/r60_qwen32b_servercopy_localize.py"
+ACTUAL="$(shasum -a 256 "$DEST/source.private.jsonl" | awk '{print $1}')"
+test "$ACTUAL" = 492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069 || { echo INPUT_SHA_HOLD; exit 42; }
+python3 "$DEST/runner.py" --input "$DEST/source.private.jsonl" \
+  --output-dir "$PILOT/output_A" --model Qwen/Qwen3-32B \
+  --revision 9216db5781bf21249d130ec9da846c4624c16137 --verify-only
+```
+
+### Owner Mac：H200 单 Job，先 25 条正式审核并保留后续批次能力
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+CODE="$BASE/r60-qwen-continuous-tools-v1"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-qwen-a25-continuous-v1 \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A_continuous:/input:ro" \
+  -v "$CODE:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy:/model-source:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; if [ -e "$OUT" ]; then echo A25_CONTINUOUS_OUT_EXISTS_HOLD; exit 42; fi; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; mkdir -p "$OUT"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 25 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --confirm-paid-gpu'
+```
+
+期望 `LOCAL_WEIGHTS_READY full_weight_sha_verified=false` → `CONTINUOUS_REVIEW_READY` → `REAL_ENGINE_INIT_START` → `REAL_ENGINE_READY` → `FIRST_CHECKPOINT_GATE_PASS` → `BATCH_COMPLETE` → `CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1`。若 `REAL_ENGINE_INIT_HOLD`，保留 reason class，**不要再反复提交同参数 GPU**。必须返回真实日志与 Checkpoint 计数，不能当作质量准入。
+
+**使用 full A1000 的下一步**：用已经固定 SHA `687528efe...` 的完整来源创建另一个私有隔离 bundle，绑定独立的输出目录、超时和成本上限。可设置例如 `--case-limit 100 --batch-size 25`，一个 Job 中连续 4 批 25 条且单次 vLLM 初始化；待 A25 首条真实运行证据 PASS 再操作。此处示例仅定义能力，**没有授权直接跑 1000**。HF Jobs 永远由 Owner Mac CLI 提交。
+
+---
+
+
 ## 2026-11-11：A25 Qwen3-32B 单次 H200 本地权重加载与首条强制验收（可执行）
 
 **目标**：接上已通过的真实 Qwen 本地权重 Smoke，保留 A25 固定的真实审核器身份与原始模型 revision；一条 GPU Job 内只初始化 1 次 vLLM，审核第 1 条并由**原审核器完整 `read_checkpoint`** 回读验证后，自动继续剩余 24 条。不会单独跑 1 条 Smoke，不会因为已经完成短生成就伪造 32K 审核通过。
