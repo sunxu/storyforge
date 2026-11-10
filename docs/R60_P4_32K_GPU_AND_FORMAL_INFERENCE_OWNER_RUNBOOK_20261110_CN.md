@@ -1,5 +1,22 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 Owner H200 A 实际提交回执
+
+Owner Mac 已实际执行唯一一次 A H200 合成 GPU Job 提交，并回传 CLI 的 Job ID 和 URL：
+
+- Job ID：`6af32a97ab34849891ac0461`
+- Job name：`r60-p4-h200-a-20261110221534`
+- URL：https://huggingface.co/jobs/adradar/6af32a97ab34849891ac0461
+- 启动脚本：`/Users/keedle/.local/share/storyforge/r60/private/r60-p4-h200-a-20261110221534/launch-h200-A.sh`
+- 源代码提交：`465a041a8cf23dd254099a58c74d37d321db9869`（三项 CI 已通过）
+- 源码归档 SHA：`421fddfa81f072094d2282a5f2a894f8c01445c108bfcfa6037c92a5a8834df8`
+- Input SHA：`a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398`
+- 约束：`h200`、`--timeout 60m`、`--attempts 1`、`--synthetic-authorization`；仅 A 合成负载，无自动重试。
+- **状态：`H200_A_JOB_SUBMITTED__RUNTIME_AND_SAFE_PENDING`。** 目前仅有提交回执；没有 Job 最终状态、GPU 实际启动、模型加载、推理成功、tokens、stop reason、私有输出 SHA 的证据。不得标记 GPU PASS。
+- 下一步：Owner 以 Mac CLI 读取此 Job 状态和 logs，提取 SAFE 结果（不要回传生成正文），结束后按 CLI 实际给出的 sync 命令回收私有输出并核对 SHA。若失败，记录 HOLD、不要重提或启动 B/C。
+
+---
+
 ## 2026-11-10 模型 A H200 输入包 Owner PASS 与专用脚本
 
 Owner Mac 已在新建的本地输入包执行成功：
