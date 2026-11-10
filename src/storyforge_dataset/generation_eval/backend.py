@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 from typing import Any
 
+from storyforge_dataset.hf_runtime.inputs import InputManager
+
 from .worker import GenerationResult, WorkerError
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
@@ -90,10 +92,18 @@ class TransformersGenerationBackend:
                     raise WorkerError("EMBEDDED_CHAT_TEMPLATE_MISSING")
                 actual_hash = hashlib.sha256(template.encode("utf-8")).hexdigest()
             elif template_source == "standalone_chat_template.jinja":
-                if template_path is None or template_path.is_symlink() or not template_path.is_file():
+                if template_path is None:
                     raise WorkerError("STANDALONE_CHAT_TEMPLATE_MISSING")
-                template_bytes = template_path.read_bytes()
-                actual_hash = hashlib.sha256(template_bytes).hexdigest()
+                try:
+                    verified_template = InputManager.open_verified(
+                        template_path,
+                        max_bytes=1024 * 1024,
+                        expected_sha256=expected_template_sha256,
+                    )
+                except (OSError, ValueError) as exc:
+                    raise WorkerError("STANDALONE_CHAT_TEMPLATE_INVALID") from exc
+                template_bytes = verified_template.read_bytes()
+                actual_hash = verified_template.sha256
                 template = template_bytes.decode("utf-8")
                 tokenizer.chat_template = template
             else:
