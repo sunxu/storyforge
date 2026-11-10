@@ -59,6 +59,7 @@ PR：[#30](https://github.com/sunxu/storyforge/pull/30)，Open / Draft
 验收要求：给出真实命令、精确输入/输出、测试计数、容器镜像 digest、SAFE schema/status、无 GPU/无 inference/无训练证明。未覆盖的项目列为 HOLD。
 
 ### P4-B：Owner Mac CLI 执行包（ChatGPT 只准备，不代执行 HF）
+可复制的 Owner CPU-only 镜像/CLI 自检命令见 [Owner Mac CLI Runbook](R60_P4_OWNER_MAC_CLI_RUNBOOK_20261110_CN.md)。该命令只验证未授权 Profile 的 fail-closed，不提交 HF Job、不测试 Bucket。
 1. 生成一组可复制的 Mac CLI 命令：校验分支/commit、镜像与 lock SHA、CPU-only bootstrap/CLI 自检。
 2. 若需提交 HF Job，由 Owner 自行判断并在 Mac CLI 执行；本 Agent 仅提供命令、Job 配置建议、费用上限、SAFE schema 和回执审查。
 3. 输出目录必须与输入目录隔离；私有正文只留在受控私有存储，不写 GitHub、Actions log 或 SAFE。
@@ -125,7 +126,7 @@ Owner 已明确决定：暂停 ChatGPT HF 403 / OAuth / Bucket RW 排查，后�
 - [ ] Worker CLI fail-closed 测试覆盖完整。
 - [ ] bootstrap 归档安全测试覆盖完整。
 - [ ] CPU-only 容器入口自检 PASS。
-- [ ] Mac CLI 执行说明可复制、可复现。
+- [ ] Mac CLI 执行说明可复制、可复现（Runbook 已建立；Owner 实机回执仍 HOLD）。
 - [ ] 输出隔离与 SAFE 回收方案明确，并由 Owner Mac 验证或明确 HOLD。
 - [ ] 32K 资源预算与证据等级明确（预算文档已建立；Owner 裁决和长上下文实测仍 HOLD）。
 - [ ] 最终 Profile Freeze Review 包完成，未授权状态仍明确。
