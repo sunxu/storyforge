@@ -97,23 +97,9 @@ jobs:
           }, sort_keys=True))
           PY
 
-      - name: Execute bootstrap and Worker CLI inside exact digest-pinned container (CPU-only)
+      - name: Prepare CPU-only Worker CLI fail-closed assertion
         run: |
-          docker run --rm --platform linux/amd64 \
-            -v "$RUNNER_TEMP/p4-source-archive-bootstrap.py:/tmp/p4-bootstrap.py:ro" \
-            --entrypoint bash "$IMAGE" -lc '
-              set -euo pipefail
-              python /tmp/p4-bootstrap.py
-              test -f /workspace/storyforge/src/storyforge_dataset/generation_eval/worker_cli.py
-              test -f /workspace/storyforge/requirements/hf-generation-eval.lock
-              python -m pip install --disable-pip-version-check --require-hashes \
-                -r /workspace/storyforge/requirements/hf-generation-eval.lock
-              export STORYFORGE_RUNTIME_IMAGE_DIGEST=sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
-              export PYTHONPATH=/workspace/storyforge/src
-              python -m storyforge_dataset.generation_eval.worker_cli --help >/tmp/worker-cli-help.txt
-              grep -q -- "--model-role" /tmp/worker-cli-help.txt
-              mkdir -p /output
-              python - <<'PY'
+          cat > "$RUNNER_TEMP/p4-cli-smoke.py" <<'PY'
           import builtins
           import contextlib
           import io
@@ -172,7 +158,28 @@ jobs:
               "training_started": False,
           }, sort_keys=True))
           PY
-            '
+          cat > "$RUNNER_TEMP/p4-container-smoke.sh" <<'SH'
+          set -euo pipefail
+          python /tmp/p4-bootstrap.py
+          test -f /workspace/storyforge/src/storyforge_dataset/generation_eval/worker_cli.py
+          test -f /workspace/storyforge/requirements/hf-generation-eval.lock
+          python -m pip install --disable-pip-version-check --require-hashes -r /workspace/storyforge/requirements/hf-generation-eval.lock
+          export STORYFORGE_RUNTIME_IMAGE_DIGEST=sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+          export PYTHONPATH=/workspace/storyforge/src
+          python -m storyforge_dataset.generation_eval.worker_cli --help >/tmp/worker-cli-help.txt
+          grep -q -- "--model-role" /tmp/worker-cli-help.txt
+          mkdir -p /output
+          python /tmp/p4-cli-smoke.py
+          SH
+          chmod 0600 "$RUNNER_TEMP/p4-cli-smoke.py" "$RUNNER_TEMP/p4-container-smoke.sh"
+
+      - name: Execute bootstrap and Worker CLI inside exact digest-pinned container (CPU-only)
+        run: |
+          docker run --rm --platform linux/amd64 \
+            -v "$RUNNER_TEMP/p4-source-archive-bootstrap.py:/tmp/p4-bootstrap.py:ro" \
+            -v "$RUNNER_TEMP/p4-cli-smoke.py:/tmp/p4-cli-smoke.py:ro" \
+            -v "$RUNNER_TEMP/p4-container-smoke.sh:/tmp/p4-container-smoke.sh:ro" \
+            --entrypoint bash "$IMAGE" /tmp/p4-container-smoke.sh
 
       - name: Commit generated lock on branch pushes
         if: github.event_name == 'push'
