@@ -9,12 +9,12 @@ import functools
 import importlib.util
 import json
 import os
-from pathlib import Path
 import resource
 import subprocess
 import sys
 import threading
 import time
+from pathlib import Path
 
 SCHEMA = "storyforge_r60_pilot_runtime_diag_safe_v1"
 START = time.monotonic()
@@ -217,7 +217,7 @@ def main() -> int:
         result = int(worker.main())
         emit("RUNNER_EXIT", exit_code=result, **process_stats())
         return result
-    except Exception:
+    except Exception:  # noqa: BLE001 - intentionally redact private exception details
         emit("LAUNCHER_HOLD", reason_code="RUNTIME_EXCEPTION_REDACTED")
         return 42
     finally:
