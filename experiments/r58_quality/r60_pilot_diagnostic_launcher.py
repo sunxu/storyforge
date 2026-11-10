@@ -74,6 +74,58 @@ def gpu_stats() -> dict:
         return {"gpu_probe": "UNAVAILABLE"}
 
 
+def descendant_stats() -> dict:
+    """Aggregate Linux child processes using /proc numeric fields only.
+
+    Never disclose process arguments, executable paths, environment or names.
+    Include descendants (not the current Python parent process).
+    """
+    try:
+        clock = os.sysconf("SC_CLK_TCK")
+        page = os.sysconf("SC_PAGE_SIZE")
+        nodes = {}
+        for entry in os.scandir("/proc"):
+            if not entry.name.isdecimal():
+                continue
+            try:
+                # /proc/PID/stat has a parenthesized comm which may contain
+                # spaces or right parens. Do not print or retain that text.
+                statline = Path(entry.path, "stat").read_text()
+                fields = statline.rsplit(")", 1)[1].strip().split()
+                if len(fields) < 22:
+                    continue
+                pid = int(entry.name)
+                ppid = int(fields[1])
+                state = fields[0]
+                cpu_ticks = int(fields[11]) + int(fields[12])
+                rss_pages = int(fields[21])
+                nodes[pid] = (ppid, state, cpu_ticks, rss_pages)
+            except (OSError, ValueError, IndexError):
+                continue
+        living = {os.getpid()}
+        descendants = set()
+        for _ in range(8):
+            new = {pid for pid, (ppid, _, _, _) in nodes.items()
+                   if ppid in living and pid not in living}
+            if not new:
+                break
+            living.update(new)
+            descendants.update(new)
+        counts = {}
+        for pid in descendants:
+            state = nodes[pid][1]
+            state = state if state in "RSDTZI" else "OTHER"
+            counts[state] = counts.get(state, 0) + 1
+        return {
+            "descendant_count": len(descendants),
+            "descendant_cpu_sec": round(sum(nodes[p][2] for p in descendants) / clock, 1),
+            "descendant_rss_mib": round(sum(nodes[p][3] for p in descendants) * page / 1048576, 1),
+            "descendant_states": counts,
+        }
+    except (OSError, ValueError):
+        return {"descendant_probe": "UNAVAILABLE"}
+
+
 def safe_stack_phase() -> str:
     # Expose allowlisted function labels only; never paths, line text, locals,
     # private case identifiers, stack traces, URLs or model outputs.
@@ -92,7 +144,7 @@ def heartbeat() -> None:
         with LOCK:
             snapshot = dict(STATE)
         emit("HEARTBEAT", **snapshot, stack_phase=safe_stack_phase(),
-             **process_stats(), **gpu_stats())
+             **process_stats(), **descendant_stats(), **gpu_stats())
 
 
 def attach_hooks(worker: object) -> None:
@@ -133,6 +185,9 @@ def attach_hooks(worker: object) -> None:
         return result
 
     worker.inference = inference
+    # New traced runner copies call only this allowlisted callback. Old
+    # unmodified runners remain supported by the launcher.
+    worker._r60_diag_event = set_stage
 
 
 def main() -> int:
@@ -140,6 +195,7 @@ def main() -> int:
     if source.is_symlink() or not source.is_file():
         emit("BOOT_HOLD", reason_code="RUNNER_NOT_REGULAR")
         return 42
+    os.environ["PYTHONUNBUFFERED"] = "1"
     emit("BOOT", heartbeat_sec=HEARTBEAT_SEC,
          python_version=f"{sys.version_info.major}.{sys.version_info.minor}")
     thread = threading.Thread(target=heartbeat, daemon=True)
