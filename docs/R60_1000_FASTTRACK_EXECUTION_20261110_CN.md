@@ -1,5 +1,16 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-10 Owner Pilot25 Mac CLI / stage 检查 PASS
+
+Owner 已在 Mac 验证已有 A/B stage 文件、非链接输入、输出目录存在，并成功读取 `hf jobs run --help`；`status=R60_1000_PILOT25_LOCAL_INTERFACE_CHECK_PASS`。CLI 确认原生支持 `--dry-run`、`--flavor h200`、`--timeout`、`--attempts 1`、本地私有目录 `-v LOCAL_DIR:/MOUNT_PATH[:ro|:rw]`。**此项仅为静态接口与目录核验，不代表已上传、启动或执行审核。**
+
+下一个 blocker 是 **明确固定旧 vLLM 运行时的具体 image SHA256**，并验证 vLLM 与 `vllm.SamplingParams(structured_outputs=StructuredOutputsParams(...))` 以及 Qwen3/GLM-4-0414 的兼容性；原 H200 32K synthetic 采用 transformers，不能直接重复使用它的镜像来声称 vLLM 完整可执行。vLLM 官方支持 `Glm4ForCausalLM`，但不代表任意旧镜像和依赖版本经过实际运行验收。正式 25 条 pilot 的镜像仍 `UNPINNED`，故目前 `GPU_JOB_NOT_SUBMITTED`。尤其注意：旧 runner 的 `read_input()` 每次会读取完整 1000 条；即使 `--limit 25`，HF 输入仍包含 1000 条，需要 Owner 明确确认范围或创建经过审计、独立哈希的 25-case staging，**禁止**假称只向 HF 提交 25 条。
+
+优先走 **单模型 1-case 运行环境/格式最小探测 → 各模型 25 条 pilot → 30 条 v2.1 校准 → 扩大 1000 审核**，且不把前两批的旧 policy 六维输出当作校准结论。若模型 1-case 探测不能在明确的资源预算内完成则 HOLD，不自动重试。复用现有 `runner.py` / `checkpoint`，不再重复 source audit / verify-only / 1000-token CPU 预检。
+
+---
+
+
 ## 2026-11-10 Owner 1000×2 tokenizer CPU 预检：A/B 均 PASS；进入首批 25 GPU 审核执行准备
 
 Owner Mac 使用现有 `runner.py --token-preflight-only` 对冻结的 A 和 B 两侧各 1000 条完整审核输入执行真实 tokenizer 预检，原始 SAFE 关键数据：
