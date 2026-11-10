@@ -1,3 +1,51 @@
+# 2026-11-10 Owner Mac 文件准备回执与 CPU 预检实现更新
+
+## 固定文件下载阶段：PASS
+
+Owner Mac 已回传 `storyforge_r60_p3_model_files_safe_v1` SAFE，状态 `P3_PINNED_TOKENIZER_FILES_READY__NO_WEIGHTS`。回执核对结果：三模型固定 Revision 均匹配；每模型 6 个 allowlist 文件，共 18 个文件；合计 55,828,852 bytes。回执记录 `model_weights_downloaded=false`、`inference_calls=0`、`hf_jobs_submitted=0`、`gpu_started=false`。该 SAFE 是 Owner 回传的私有执行回执，不将原始 SAFE 文件或本地路径提交仓库。
+
+**该阶段不等于 tokenizer/template CPU 预检通过。** 目前只确认下载器列出的文件与 SHA 记录已产生；本地 Transformers 加载、渲染与 token budget 仍待执行。
+
+## CPU 预检脚本 v1 的范围缺口
+
+复核 `scripts/r60_p3_cpu_model_preflight_v1.py` 后发现它每模型仅渲染一条短 prompt，未读取下载 SAFE 核验本地文件 SHA、未比较 embedded/standalone 模板、未执行 90 组 synthetic 中文多轮输入，也未检查共享上下文预算。因此不得使用该 v1 的 PASS 状态代表完整 P3 验收。
+
+新增 `scripts/r60_p3_cpu_model_preflight_v2.py` 与 `tests/test_r60_p3_cpu_model_preflight_v2.py`。v2 增加：
+- 对照下载 SAFE 逐文件验证本地 SHA-256 和文件大小；检查固定 Revision 与无模型权重。
+- 每模型 90 组中文多轮 synthetic messages；检查 tokenizer token IDs、prompt token 分布和无静默截断预算。
+- 实际比较 embedded 与 standalone Jinja 模板渲染，任何差异均报告 template-source HOLD。
+- Qwen Thinking 显式开启；检查 GLM-Z1 synthetic 历史 think 内容剥离与可见正文保留。
+- 以 32,768 为共同上下文上限，暂定输入 28,672 + 输出预留 4,096 的 CPU 预算边界测试。该分配仅是预检 envelope，不构成 P4 generation profile 或推理授权。
+- 核验 R60 Rubric v2.1 response JSON Schema 的固定字段/三维维度合同。
+
+finish_reason 的真实运行时行为无法在禁止 inference 的 P3 中观察；SAFE 明确标记 `DEFERRED_TO_P4_NO_INFERENCE_IN_P3`，不得伪称已实测。
+
+Owner Mac 在现有下载目录执行（不重新下载）：
+
+```bash
+set -euo pipefail
+cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
+source .venv-r60-p3/bin/activate
+OUT="$HOME/.cache/storyforge/r60-p3-snapshots-20261110"
+set +e
+python scripts/r60_p3_cpu_model_preflight_v2.py \
+  --snapshots-root "$OUT" \
+  --download-safe "$OUT/R60_P3_MODEL_FILES_SAFE.json" \
+  --input-budget 28672 \
+  --output-budget 4096 \
+  --context-ceiling 32768 \
+  > "$OUT/R60_P3_CPU_PREFLIGHT_SAFE.json"
+RC=$?
+set -e
+cat "$OUT/R60_P3_CPU_PREFLIGHT_SAFE.json"
+printf 'P3_PREFLIGHT_EXIT=%s\\n' "$RC"
+```
+
+退出码 42 可能表示模板差异 HOLD 或其他 fail-closed 检查；仍需回传脱敏 SAFE 分析具体 reason。不要把 HOLD 当作脚本崩溃，也不要为追求 PASS 静默替换模板。该命令只加载本地 tokenizer，不加载模型权重、不调用 inference、不启动 GPU/HF Job。
+
+当前阶段：文件准备 PASS；CPU tokenizer/template/token-budget 仍 PENDING；GLM-Z1 模板来源与 decoding 冲突未解决；P4 未授权。
+
+---
 # 2026-11-10 公开模板文件复核补充（优先于下方原静态描述）
 
 ## GLM-Z1 embedded 与 standalone 模板存在明确行为差异
