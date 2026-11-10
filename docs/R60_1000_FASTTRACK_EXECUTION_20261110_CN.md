@@ -1,5 +1,33 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 Owner A25 HF Job dry-run PASS；收费运行前改为可靠 Bucket 根挂载
+
+Owner Mac 返回 HF CLI dry-run 配置，镜像 Digest、A25 本地只读目录、模型固定 revision、H200、90m、单次尝试、`--start 1 --limit 25` 均解析正确，明确 `Job not submitted`。这一结果是**命令解析 PASS**，不是 GPU/可写 Bucket PASS。
+
+HF 官方 [Jobs Configuration](https://huggingface.co/docs/hub/jobs-configuration) 和 [HF URI](https://huggingface.co/docs/huggingface_hub/en/package_reference/hf_uris) 支持 Bucket 根挂载与子目录路径，但 dry-run 不保证子目录已创建或可写。为减少首次真实 Job 因输出目录不存在失败，固定使用已存在 Bucket 根路径 `hf://buckets/adradar/storyforge-training:/bucket:rw`，在容器内创建唯一实验路径 `/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a`，并在启动阶段拒绝已有 `review_*.private.json`，保持 create-only 与断点证据完整。
+
+**建议 Owner Mac 单次批准后执行的 A25 方案**（不是 ChatGPT 自动提交；H200 90m 为硬超时，非已确认报价）：
+
+```bash
+set -euo pipefail
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+IMAGE="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+OUT="/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a"
+hf jobs run --namespace adradar --name r60-quality-a25-pilot \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A:/input:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMAGE" \
+  sh -c 'set -eu; OUT=/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a; if [ -e "$OUT" ]; then echo OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; mkdir -p "$OUT"; exec python /input/runner.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --start 1 --limit 25 --max-model-len 32768 --max-output-tokens 2400 --max-wall-seconds 3000 --confirm-paid-gpu'
+```
+
+**说明**：上方不使用 `--dry-run`，因此会提交收费 Job；只有 Owner 明确批准此固定资源与上限后由 Owner Mac 执行。新输出目录不存在才创建，不覆盖旧结果；Job 异常失败时请先回传 Job ID + SAFE 日志，**不要重提任务/新建另一目录来规避失败**，避免重复收费或丢失阶段证据。此预防方案可能不能处理所有底层目录权限与 Bucket 挂载问题，需以真实运行结果为准。
+
+计算成本：根据 HF H200 当前实际每小时价格 × 最多 1.5 小时估算每 Job 上限，A/B 是独立两次，自动重试=1。用户最终决定是否运行前，应在 Mac 确认价格、可用额度。
+
+---
+
+
 ## 2026-11-11 A Pilot25 输入真实 verify-only PASS；取消单条收费 Smoke
 
 Owner Mac 在独立 Pilot25 A 分片上得到 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`，`cases_total=25`、`cases_completed=0`、`training_authorized=false`、`private_values_emitted=false`。这只验证 A 的 25 个审核输入，B 的独立分片仍需要在 B 第一次执行前 verify-only；不再做重复的 1000 条输入预检。
