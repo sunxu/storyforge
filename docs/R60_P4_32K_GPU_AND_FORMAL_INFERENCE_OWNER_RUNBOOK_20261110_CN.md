@@ -1,5 +1,19 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 模型 B 最终输出回读验收：7 tokens / EOS
+
+Owner Mac 读回 B 的私有输出并执行 SHA、大小、schema、角色、record_count、token 区间与 finish reason 校验，回传不含正文的 SAFE：
+
+```json
+{"finish_reason":"eos","input_tokens":28593,"model_role":"B","output_sha256":"3f8e6da240477e81c1fd20470c315cad5bfc845e0748fac279ea67946215f843","output_tokens":7,"record_count":1,"status":"H200_B_PRIVATE_OUTPUT_READBACK_PASS"}
+```
+
+**裁决：`H200_B_32K_GPU_AND_OUTPUT_READBACK_PASS`。** B 真实处理了 28,593 input tokens、生成 7 output tokens、EOS 正常结束、未截断，输出文件 SHA `3f8e6da240477e81c1fd20470c315cad5bfc845e0748fac279ea67946215f843` 回读一致。相对模型 A 的 28,568 input / 312 output，B 明显短输出；但合成输入请求简短确认且早停是 EOS，**不得直接视为模型运行失败或质量不合格，也不得宣称覆盖 4,096-token 持续生成**。将 B 短输出差异保留为正式推理/质量阶段的分析项，当前不重跑 B。
+
+下一步按已批准的单次、串行 synthetic-only 实验准备 challenger（GLM-Z1-32B-0414）独立输入包：`input_sha256=2676b44c9e0e6ea1c8ccc1824e246d20c08fd8b7cf789a669e3bd06a1f91c28c`；CPU 校准 `input_tokens=28597`。只在 Owner Mac 准备脚本、锁定 Git SHA 和三项 CI，经核对后 Owner 才能单独提交 H200；正式推理及训练均未授权启动。
+
+---
+
 ## 2026-11-10 模型 B 真实 H200 GPU 推理 SAFE（私有输出回收待验收）
 
 Owner 在 Mac 提交 B 的 H200 Job 并回传 Worker SAFE。Job：https://huggingface.co/jobs/adradar/6af32e14ab34849891ac0d16，ID `6af32e14ab34849891ac0d16`。
