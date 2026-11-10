@@ -315,8 +315,8 @@ def main() -> int:
             raise Hold("REVIEW_INPUT_COUNT_HOLD")
         os.environ["HF_HUB_OFFLINE"] = "1"
         os.environ["TRANSFORMERS_OFFLINE"] = "1"
-        from transformers import AutoTokenizer
         import vllm
+        from transformers import AutoTokenizer
 
         emit("CONTINUOUS_REVIEW_READY", input_count=expected_count,
              target=args.case_limit, batch_size=args.batch_size,
