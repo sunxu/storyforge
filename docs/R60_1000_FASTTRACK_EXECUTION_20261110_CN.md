@@ -18,7 +18,7 @@ PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 DEST="$PILOT/input_A_localgate"
 SRC="$PILOT/input_A"
 TOOLS="$BASE/r60-a25-local-review-tools-v1"
-REV="__A25_CODE_PIN__"
+REV="8a10077d91a44961d670b80373176e4e8cbc3fad"
 umask 077
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$SRC"
