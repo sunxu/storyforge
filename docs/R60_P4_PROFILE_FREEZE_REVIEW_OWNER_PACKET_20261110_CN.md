@@ -37,6 +37,8 @@ P4 Runtime Image Candidate 在固定容器内实际完成：
 5. 未授权 Profile 的 CLI fail-closed；
 6. 禁止 torch / transformers / huggingface_hub 导入及 CLI 阶段网络访问。
 
+Bootstrap 负向归档测试覆盖：路径穿越、符号链接、FIFO 特殊文件、成员数量上限、下载字节上限、解压内容上限；均在 55 项 CPU-only 测试中执行。
+
 容器 SAFE：
 - schema：`storyforge_r60_worker_cli_container_smoke_safe_v1`
 - status：`CPU_CONTAINER_ENTRYPOINT_FAIL_CLOSED_PASS`
@@ -65,8 +67,8 @@ P4 Runtime Image Candidate 在固定容器内实际完成：
 - `training_started=false`
 
 Artifact：`r60-p4-freeze-review-safe`  
-Artifact ID：`13761927972`  
-ZIP SHA-256：`fb9399a38d0dc042e94ef85ac98b112f74e30803367fd4ce0758bb631d240114`
+Artifact ID：`13763895951`  
+ZIP SHA-256：`25b568029272a4e48f4a75c755a98f83a706583f3bf6a61915ebb257065f1d0b`
 
 解释：`ready=true` 表示候选配置与评估契约通过 CPU-only Review；`ready_for_profile_freeze=false` 与 `P4_FREEZE_REVIEW_READY_NOT_FROZEN` 表明它没有替 Owner 做出冻结决定。
 
