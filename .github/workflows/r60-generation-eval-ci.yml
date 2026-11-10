@@ -1,0 +1,54 @@
+name: R60 Generation Eval CI
+
+on:
+  push:
+    branches: [r60/p4-generation-eval-framework]
+    paths:
+      - 'src/storyforge_dataset/generation_eval/**'
+      - 'tests/test_generation_eval_profiles.py'
+      - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
+      - '.github/workflows/r60-generation-eval-ci.yml'
+  pull_request:
+    paths:
+      - 'src/storyforge_dataset/generation_eval/**'
+      - 'tests/test_generation_eval_profiles.py'
+      - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
+      - '.github/workflows/r60-generation-eval-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  generation-eval-quality-gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test tools
+        run: python -m pip install 'pytest==8.4.2' 'ruff==0.14.3'
+      - name: Lint and compile
+        run: |
+          ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py
+          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py
+      - name: Synthetic profile tests
+        run: pytest -q tests/test_generation_eval_profiles.py
+      - name: Assert CPU-only planning boundary
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('src/storyforge_dataset/generation_eval')
+          forbidden = ('import torch', 'from torch', 'import transformers',
+                       'from transformers', 'import huggingface_hub',
+                       'from huggingface_hub', 'subprocess.run', 'hf jobs')
+          for path in root.glob('*.py'):
+              source = path.read_text(encoding='utf-8').lower()
+              for marker in forbidden:
+                  if marker in source:
+                      raise SystemExit(f'forbidden P4 planning dependency/action: {path.name}')
+          print('P4 CPU-only profile boundary: PASS')
+          PY
