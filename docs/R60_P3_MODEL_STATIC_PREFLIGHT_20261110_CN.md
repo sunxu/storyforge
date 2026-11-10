@@ -231,3 +231,28 @@ Owner 在同一固定本地快照、Transformers 4.57.1 下，分别将 embedded
 - 不下载权重、不执行 inference、不提交 HF Job、不启动 GPU；不读取任何 P2-B 私有案例或 Owner 裁决。
 
 ---
+
+
+# 2026-11-10 Owner 模板来源裁决与 P3 复验要求
+
+Owner 明确回复“按建议进行”，据此记录本次 P3 模板来源裁决：
+
+| Role | Owner 选定来源 | 固定模板 SHA-256 | 说明 |
+|---|---|---|---|
+| A / Qwen3-32B | `embedded_tokenizer_config` | `a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8` | 无 standalone 文件 |
+| B / GLM-4-32B-0414 | `standalone_chat_template.jinja` | `db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822` | 与 Transformers 4.57.1 本地实际活动模板一致；embedded 仅在 generation suffix 多一个换行符 |
+| challenger / GLM-Z1-32B-0414 | `standalone_chat_template.jinja` | `adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241` | 显式追加 `<think>`，Owner 接受该 Thinking generation prefix |
+
+该裁决仅冻结 P3 Chat Template 来源，不等于冻结完整 Generation Profile。GLM-Z1 的 standalone 模板使 generation prompt 以 `<|assistant|>\n<think>` 结束；这不是 inference 结果，仅是 CPU 模板渲染事实。
+
+代码更新：
+- `experiments/r60_quality/p3_model_profiles_candidate_v1.json` 写入三个模型的 template source 和 SHA，并记录 Owner 决策；`profile_freeze_authorized=false`、`inference_authorized=false`、`gpu_authorized=false`、`training_authorized=false` 保持不变。
+- `scripts/r60_p3_cpu_model_preflight_v3.py` 不再把已由 Owner 明确裁决的 embedded/standalone 差异视为未决 HOLD；改为强制核对 profile 选定来源、活动模板来源与 SHA。GLM-Z1 额外验证 standalone generation prefix 确实以 `<think>` 启动。
+- SAFE 会同时记录模板渲染 mismatch 数量和 Owner 选定来源；mismatch 是保留的差异证据，不再被误当作未决裁决。
+- 新增合成测试锁定三个来源与 SHA，并断言完整 profile / inference / GPU / training 授权仍关闭。
+
+下一步：等待当前提交 CI 全绿后，Owner Mac 同步最新 HEAD，再用原快照重新执行 v3，生成新的 SAFE。预期状态应为 `P3_SYNTHETIC_CPU_PREFLIGHT_PASS__GENERATION_PROFILE_PENDING`；该状态只表示 P3 tokenizer/template/token-budget 预检通过，**不表示 Generation Profile 已冻结或允许 P4 推理**。
+
+GLM-Z1 sampling/greedy 冲突、GLM-4 sampling policy、seed、runtime digest、stop/finish_reason、generation budget 等仍属 P4 前的 Generation Profile 待决事项。finish_reason runtime validation 仍延期至 P4；不得为验证它启动 inference。
+
+---
