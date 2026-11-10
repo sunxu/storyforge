@@ -25,6 +25,22 @@ B 和 challenger 已通过文件 SHA、record_count、budget 校验和固定 Tok
 
 ---
 
+## 2026-11-10 synthetic-only Gate 三模型 Owner 实机回执
+
+Owner 已在 Mac 以固定 Frozen SHA 和校准输入完成 CPU-only Gate，**3/3 PASS**：
+
+| Role | Gate SAFE | 绑定输入 SHA-256 | 校准输入 Tokens |
+|---|---|---|---:|
+| A | `SYNTHETIC_ONLY_GATE_PASS` | `a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398` | 28,568 |
+| B | `SYNTHETIC_ONLY_GATE_PASS` | `8cb8ddf2fc511cf957ed03510853dad94b5169334fde8d6ff153afda6640285e` | 28,593 |
+| challenger | `SYNTHETIC_ONLY_GATE_PASS` | `2676b44c9e0e6ea1c8ccc1824e246d20c08fd8b7cf789a669e3bd06a1f91c28c` | 28,597 |
+
+三个回执均声明 `gpu_started=false`、`inference_started=false`、`training_authorized=false`；检查仅验证合成输入/授权字段，不能视为 GPU 运行。已验收的执行保护代码见 `src/storyforge_dataset/generation_eval/synthetic_gate.py`，Frozen 原始 JSON 不变。
+
+**剩余门槛：** 必须让 HF Job 的 Worker CLI 实际启用 `--synthetic-authorization`，同时对 /input:ro /output:rw 进行 Owner Mac CLI 挂载及回收确认，且单模型执行代码/预算与 Git SHA 一致。现有通用 `plan.py` 生成的普通命令**不包含 synthetic 参数**，不能直接用于本次合成 GPU。
+
+---
+
 ## Owner Mac 实测环境确认（2026-11-10）
 
 Owner 已实际回传以下 CLI 结果：
