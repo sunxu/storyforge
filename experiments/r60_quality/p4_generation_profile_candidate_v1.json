@@ -151,7 +151,7 @@
   "runtime_smoke_authorized": false,
   "p3_download_safe_sha256": "52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5",
   "runtime_smoke_authorization_status": "CONSUMED_2026-11-10",
-  "evaluation_prompt_sha256": "40943938d2b9719567516e8015088cacf32224af7ef80e9a5fe3d1faf195cde6",
-  "output_schema_sha256": "966b51646fcac994abd52d590bd8ce0c85309a8bb7dca7d739d778eeba92888d",
+  "evaluation_prompt_sha256": "51465853db6a2b61a9f87b1e9d5f23f7f02bd2c98b5a0d6a8ab2ec61322346e1",
+  "output_schema_sha256": "e6371bf3319affcae190b6ccb9a1b8ce778bae440a91eefe39a65b2586930d70",
   "evaluation_contract_status": "OWNER_REVIEW_PENDING"
 }
