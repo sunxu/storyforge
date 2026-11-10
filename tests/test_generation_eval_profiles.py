@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -199,8 +200,12 @@ def test_p4_candidate_binds_p3_file_and_stop_token_evidence_but_stays_held():
     result = assess_profile(profile)
     assert result.ready is False
     assert "RUNTIME_DIGEST_UNSET" not in result.blockers
-    assert "DEPENDENCY_LOCK_HASH_UNSET" in result.blockers
+    assert "DEPENDENCY_LOCK_HASH_UNSET" not in result.blockers
+    lock_path = repo_root / profile["dependency_lock_path"]
+    assert hashlib.sha256(lock_path.read_bytes()).hexdigest() == profile["dependency_lock_sha256"]
     assert "PROFILE_FREEZE_NOT_AUTHORIZED" in result.blockers
+    assert "INFERENCE_NOT_AUTHORIZED" in result.blockers
+    assert "GPU_NOT_AUTHORIZED" in result.blockers
     assert "TOKENIZER_FILE_HASHES_INVALID" not in result.blockers
     assert "GENERATION_CONFIG_HASH_MANIFEST_MISMATCH" not in result.blockers
     assert "EOS_TOKEN_IDS_REVISION_MISMATCH" not in result.blockers

@@ -128,7 +128,7 @@
     "platform": "linux/amd64",
     "expected_torch_version": "2.6.0",
     "expected_cuda_runtime": "12.4",
-    "status": "BASE_IMAGE_DIGEST_VALIDATED__DEPENDENCY_LOCK_PENDING",
+    "status": "BASE_IMAGE_AND_DEPENDENCY_LOCK_VALIDATED__HF_GPU_RUNTIME_PENDING",
     "validated_base_runtime": {
       "python": "3.11.11",
       "torch": "2.6.0+cu124",
@@ -139,7 +139,7 @@
   },
   "dependency_lock_path": "requirements/hf-generation-eval.lock",
   "runtime_digest": "sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee",
-  "dependency_lock_sha256": null,
+  "dependency_lock_sha256": "81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c",
   "profile_freeze_authorized": false,
   "inference_authorized": false,
   "gpu_authorized": false,

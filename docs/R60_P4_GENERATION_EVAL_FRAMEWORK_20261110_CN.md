@@ -154,4 +154,4 @@ Worker/Backend 已增加 EOS / length / unrecognized-stop 分类、显式 EOS/PA
 - `.github/workflows/r60-p4-runtime-image-candidate.yml`
 - `docs/R60_P4_RUNTIME_AND_STOP_POLICY_20261110_CN.md`
 
-Base image digest 已通过 GitHub Actions 的 linux/amd64 CPU-only contract，验证值为 Python 3.11.11、PyTorch 2.6.0+cu124、CUDA build 12.4。此结果不代表有 CUDA 设备可用，也不代表 HF GPU runtime 的 BF16 能力已验证。`runtime_digest` 已绑定此 base image digest；GPU generation lock 尚未生成，`dependency_lock_sha256` 仍为 null，所有授权仍关闭。此阶段没有提交 HF Job、下载权重、执行推理或训练。
+Base image digest 已通过 GitHub Actions 的 linux/amd64 CPU-only contract，验证值为 Python 3.11.11、PyTorch 2.6.0+cu124、CUDA build 12.4。此结果不代表有 CUDA 设备可用，也不代表 HF GPU runtime 的 BF16 能力已验证。`runtime_digest` 已绑定此 base image digest；GPU generation dependency lock 已生成并提交，SHA-256 为 `81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`，已写入 profile。锁文件在固定 CUDA base image 中通过 `pip install --dry-run --require-hashes`；PyTorch 仍为 `2.6.0+cu124`。HF GPU runtime 的 BF16 能力尚未验证，所有推理/GPU/训练授权仍关闭。此阶段没有提交 HF Job、下载权重、执行推理或训练。

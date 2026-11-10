@@ -49,12 +49,12 @@ Docker Hub identifies this as a Linux/amd64 image and publishes the manifest dig
 
 P4 requires a GPU-generation dependency lock separate from the P3 CPU reviewer lock. Proposed inputs are in `requirements/hf-generation-eval.in`. PyTorch 2.6.0 is listed as a constraint to match the base image; the lock must be resolved under the same Python version and validated without replacing the image's CUDA-enabled torch build. Do not reuse `requirements/hf-quality-reviewer.lock` as the complete P4 runtime lock: it does not pin Accelerate or the CUDA PyTorch runtime.
 
+The hash-locked dependency file has now been generated and committed at `requirements/hf-generation-eval.lock`. SHA-256: `81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`. It pins `torch==2.6.0` as a compatibility constraint, keeps the base image's installed `2.6.0+cu124` build, and pins NumPy 1.26.4 to avoid unreviewed NumPy 2.x upgrades in this PyTorch 2.6 runtime. The lock passed `pip install --dry-run --require-hashes` inside the digest-pinned image; torch remained `2.6.0+cu124` with CUDA build 12.4. The candidate profile now binds this exact lock SHA.
+
 Still pending:
-- generate and commit `requirements/hf-generation-eval.lock` with hashes;
-- compute its SHA-256 from the committed bytes;
-- validate Transformers, Accelerate, tokenizer and all lock dependencies in the pinned base image without replacing the preinstalled CUDA-enabled torch build;
+- validate actual Transformers/Accelerate imports and tokenizer snapshot load in the selected HF runtime;
 - validate BF16 capability in an authorized HF GPU runtime (not in hosted CI);
-- bind the lock SHA to the candidate profile.
+- decide whether to freeze the generation profile and authorize a synthetic GPU smoke.
 
 The base image digest is now verified by GitHub Actions on linux/amd64. The exact image reports Python 3.11.11, PyTorch 2.6.0+cu124, CUDA build 12.4; the hosted CI runner has no CUDA device, so this is a package/build contract check, not a GPU execution test. The profile now binds `runtime_digest=sha256:77f17f...f563dee`. `dependency_lock_sha256` remains null until the separate hash-locked dependency set is generated and validated. The profile therefore remains `P4_PROFILE_INCOMPLETE_HOLD`.
 
