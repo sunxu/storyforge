@@ -31,6 +31,7 @@ CONTEXT_CEILING = 32768
 DEFAULT_OUTPUT_BUDGET = 4096
 DEFAULT_INPUT_BUDGET = CONTEXT_CEILING - DEFAULT_OUTPUT_BUDGET
 SYNTHETIC_CASES = 90
+CURRENT_PHASE = "DEPENDENCY_IMPORT"
 BASELINE = {"transformers": "4.57.1", "sentencepiece": "0.2.1", "jinja2": "3.1.6"}
 
 
@@ -128,6 +129,8 @@ def preflight(
     output_budget: int = DEFAULT_OUTPUT_BUDGET,
     context_ceiling: int = CONTEXT_CEILING,
 ) -> dict:
+    global CURRENT_PHASE
+    CURRENT_PHASE = "DEPENDENCY_IMPORT"
     import jinja2
     import sentencepiece
     import transformers
@@ -136,6 +139,7 @@ def preflight(
     # Explicit imports are intentional: catch missing optional runtime dependencies
     # before attempting any tokenizer/template operation (R58 Jinja2 regression guard).
     del jinja2, sentencepiece
+    CURRENT_PHASE = "DEPENDENCY_VERSION_CHECK"
     installed = {name: version(name) for name in BASELINE}
     if installed != BASELINE:
         raise ValueError("P3_RUNTIME_DEPENDENCY_PIN_HOLD")
@@ -144,7 +148,9 @@ def preflight(
     if input_budget < 1024 or output_budget < 1:
         raise ValueError("P3_SHARED_CONTEXT_BUDGET_HOLD")
 
+    CURRENT_PHASE = "DOWNLOAD_SAFE_AND_LOCAL_HASH_VERIFY"
     download_safe, download_safe_sha = _verify_download_safe(download_safe_path, snapshots_root)
+    CURRENT_PHASE = "PROFILE_VALIDATE"
     profiles = json.loads(profiles_path.read_text(encoding="utf-8"))
     model_profiles = profiles.get("model_profiles")
     if (profiles.get("schema") != "storyforge_r60_p3_model_profiles_v1"
@@ -168,10 +174,12 @@ def preflight(
         ):
             raise ValueError("P3_QWEN_THINKING_PROFILE_HOLD")
 
+        CURRENT_PHASE = f"TOKENIZER_LOAD_{role}"
         folder = snapshots_root / role / expected_revision
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             str(folder), local_files_only=True, trust_remote_code=False
         )
+        CURRENT_PHASE = f"TEMPLATE_SOURCE_COMPARE_{role}"
         embedded = _embedded_template(folder)
         standalone_path = folder / "chat_template.jinja"
         standalone = standalone_path.read_text(encoding="utf-8") if standalone_path.exists() else None
@@ -189,6 +197,7 @@ def preflight(
         mismatch_count = 0
         token_lengths = []
         prompt_fingerprints = []
+        CURRENT_PHASE = f"SYNTHETIC_TOKENIZATION_{role}"
         for index in range(SYNTHETIC_CASES):
             messages = synthetic_messages(index, severity.RUBRIC_TEXT)
             prompt_fingerprints.append(messages)
@@ -240,6 +249,7 @@ def preflight(
             ).hexdigest(),
         }
 
+    CURRENT_PHASE = "OUTPUT_SCHEMA_VALIDATE"
     schema = severity.response_schema_v2()
     if schema.get("required") != ["schema", "rubric_version", "case_ref", "assessments"]:
         raise ValueError("P3_OUTPUT_SCHEMA_CONTRACT_HOLD")
@@ -297,9 +307,9 @@ def main() -> int:
     parser.add_argument("--output-budget", type=int, default=DEFAULT_OUTPUT_BUDGET)
     parser.add_argument("--context-ceiling", type=int, default=CONTEXT_CEILING)
     args = parser.parse_args()
-    phase = "DEPENDENCY_IMPORT"
+    global CURRENT_PHASE
     try:
-        phase = "DEPENDENCY_IMPORT"
+        CURRENT_PHASE = "PREFLIGHT_START"
         result = preflight(
             args.profiles, args.snapshots_root, args.download_safe,
             input_budget=args.input_budget, output_budget=args.output_budget,
@@ -323,7 +333,7 @@ def main() -> int:
             "schema": "storyforge_r60_p3_cpu_preflight_safe_v3",
             "status": "P3_CPU_PREFLIGHT_HOLD",
             "reason_code": reason,
-            "failure_phase": phase,
+            "failure_phase": CURRENT_PHASE,
             "exception_type": safe_type,
             "inference_calls": 0,
             "model_weights_loaded": False,
