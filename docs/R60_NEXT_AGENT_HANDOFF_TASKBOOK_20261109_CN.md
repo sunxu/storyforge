@@ -1,3 +1,16 @@
+# 2026-11-10 最新执行补充（优先级最高）
+
+**P2-B Owner review 已完成，官方 30/90 验收仍 HOLD；P3 静态模型核查已完成，CPU tokenizer/template 预检待执行。** 本补充覆盖下方所有较早的 P2-B NOT STARTED / P3 NOT STARTED 状态。
+
+- Owner 已确认 30/30 案例三维裁决、90/90 语义复核。Verdict：Hard Rule 30 INSUFFICIENT_CONTEXT；Player Agency 3 SUPPORTED / 27 NOT_SUPPORTED；Safety 2 SUPPORTED / 27 NOT_SUPPORTED / 1 INSUFFICIENT_CONTEXT。Semantic conclusions：59 SUPPORTS_VERDICT、31 INSUFFICIENT_CONTEXT、0 DOES_NOT_SUPPORT_VERDICT。
+- **Safety 第21、22条继续 HOLD 在规则依据层**：Owner 的 SUPPORTED Verdict 与语义结论保留；公开 Rubric v2.1 没有可核验的具体规则 ID / 版本 / scope 注册表。不得臆造 Rule ID 或静默改写 Verdict。
+- ChatGPT 工作副本完成 30 results / 90 checks 合并、target locator 规范化、精确 quote、schema 与 evidence-index 覆盖预检；它不是 Owner Mac 正式私有包，也不是官方 Verifier 回执。官方 30/90 Verifier 与 Final SAFE 尚未运行/生成。
+- P3 已核实并固定 Hub revisions：Qwen3-32B `9216db5781bf21249d130ec9da846c4624c16137`；GLM-4-32B-0414 `8dea913c41b543527c2860fb6f3c15c202f24aeb`；GLM-Z1-32B-0414 `8eb2858992c1f749e2a6d4075455decc2484722d`。静态配置/模板已检查；CPU tokenizer/template/token-budget 未执行。GLM-Z1 官方 sampling 表与 greedy 推理示例冲突，需先明确 profile。
+- 公开 SAFE 进度：[P2-B 30/90 聚合记录](evidence/R60_P2B_OWNER_30_90_PROGRESS_SAFE_20261110.md)；[P3 静态预检记录](R60_P3_MODEL_STATIC_PREFLIGHT_20261110_CN.md)。
+- 当前资源门禁：`quality_v1_admitted=0`、`training_authorized=false`、`gpu_started=false`、`hf_jobs_submitted=0`。不启动 1000 条审核或 SFT。PR #25 保持 Draft，Issue #28 保持 OPEN；实时 HEAD/CI 以 GitHub 为准。
+
+---
+
 # StoryForge R60 下一 Agent 交接任务书
 
 > **当前权威状态（2026-11-10；覆盖下方未标明日期的旧 P2-A 待办叙述）**  
