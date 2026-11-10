@@ -1,3 +1,7 @@
+> **执行入口已迁移（2026-11-10）：** 本文件中的 P3 CPU-only 预检任务已完成，不再是当前待办。请勿按下方历史提示从 P3 重跑。当前唯一有效的接手提示词是 [P4 Worker CLI 工程验收提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)，完整任务书是 [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md)。当前目标为 P4-A Worker CLI/bootstrap CPU-only 端到端验收 → P4-B Owner Mac CLI 执行包 → P4-C 32K 资源预算 → P4-D 最终 Profile Freeze Review。HF 403/OAuth/Bucket 问题按 Owner 要求暂停；ChatGPT 不提交 HF Job、不测试 Bucket、不修改 OAuth，HF 任务由 Owner 在 Mac CLI 执行。下方内容仅保留历史背景，不得作为当前行动指令。
+
+---
+
 # StoryForge R60 下一阶段 Agent 接手提示词（P2-B 已验收，P3 CPU-only）
 
 版本：v2.0；更新：2026-11-10。适用仓库：`sunxu/storyforge`。
