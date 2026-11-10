@@ -90,6 +90,11 @@ def test_frozen_profile_builds_deterministic_plan_only():
     assert first.status == "P4_JOB_PLAN_READY_NOT_SUBMITTED"
     assert first.plan_id == second.plan_id
     assert first.argv[0:3] == ("hf", "jobs", "run")
+    assert first.argv[-3] == "bash"
+    shell = first.argv[first.argv.index("bash") + 2]
+    assert "git fetch --quiet --depth=1 origin " + ("f" * 40) in shell
+    assert "--input /input/inputs.jsonl" in shell
+    assert "--repo-root /workspace/storyforge" in shell
     assert "--attempts" in first.argv
     assert first.argv[first.argv.index("--attempts") + 1] == "1"
     assert first.to_safe_dict()["job_submitted"] is False

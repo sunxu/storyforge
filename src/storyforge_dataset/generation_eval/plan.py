@@ -156,15 +156,27 @@ def build_generation_plan(
     plan_id = hashlib.sha256(
         json.dumps(plan_identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    command: Sequence[str] = (
-        "python", "-m", "storyforge_dataset.generation_eval.worker",
-        "--model-role", model_role,
-        "--profile", "/input/generation-profile.json",
-        "--manifest", "/input/manifest.json",
-        "--input", "/input/inputs.jsonl",
-        "--output-dir", f"/output/{output_subdir}",
-        "--repo-root", "/workspace/storyforge",
+    # The pinned base image does not contain this repository's Python package.
+    # Fetch exactly the planned commit at Job start and expose src/ via PYTHONPATH.
+    shell_command = (
+        "set -euo pipefail; "
+        "command -v git >/dev/null; "
+        "mkdir -p /workspace; "
+        "git clone --quiet --filter=blob:none --no-checkout "
+        "https://github.com/sunxu/storyforge.git /workspace/storyforge; "
+        f"git -C /workspace/storyforge fetch --quiet --depth=1 origin {code_revision}; "
+        f"git -C /workspace/storyforge checkout --quiet --detach {code_revision}; "
+        f"STORYFORGE_RUNTIME_IMAGE_DIGEST={profile['runtime_digest']} "
+        "PYTHONPATH=/workspace/storyforge/src "
+        "python -m storyforge_dataset.generation_eval.worker "
+        f"--model-role {model_role} "
+        "--profile /input/generation-profile.json "
+        "--manifest /input/manifest.json "
+        "--input /input/inputs.jsonl "
+        f"--output-dir /output/{output_subdir} "
+        "--repo-root /workspace/storyforge"
     )
+    command: Sequence[str] = ("bash", "-lc", shell_command)
     argv = (
         "hf", "jobs", "run",
         "--namespace", namespace,
