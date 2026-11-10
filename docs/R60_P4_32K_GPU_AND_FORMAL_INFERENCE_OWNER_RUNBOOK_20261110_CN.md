@@ -2,6 +2,29 @@
 
 > **Owner 已分阶段授权**：首先 32K 合成 GPU 测试；通过验收后再开展正式推理。**本文件不构成已提交 HF Job 的证明。** HF Jobs 仅由 Owner 在 Mac CLI 执行；ChatGPT 不调用 Hugging Face Jobs、不测试 Bucket 或 OAuth，也不擅自合并 PR。
 
+## 2026-11-10 三模型 CPU 校准最终收口
+
+Owner Mac 三组 CPU Tokenizer / Chat Template 校准全部 PASS：
+
+| Role | 实际 input_tokens | SHA-256 | 证据 |
+|---|---:|---|---|
+| A / Qwen3 | 28,568 | `a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398` | 初次 `SYNTHETIC_32K_INPUT_PREPARED__GPU_NOT_STARTED` |
+| B / GLM-4 | 28,593 | `8cb8ddf2fc511cf957ed03510853dad94b5169334fde8d6ff153afda6640285e` | `SYNTHETIC_32K_TOKEN_RECOUNT_PASS` |
+| challenger / GLM-Z1 | 28,597 | `2676b44c9e0e6ea1c8ccc1824e246d20c08fd8b7cf789a669e3bd06a1f91c28c` | `SYNTHETIC_32K_TOKEN_RECOUNT_PASS` |
+
+B 和 challenger 已通过文件 SHA、record_count、budget 校验和固定 Tokenizer 实际重新计数。此前的 `SYNTHETIC_OUTPUT_DIR_MUST_BE_NEW` 是重复执行遇到 create-only 目录保护；实际两个目录 `inputs.jsonl` 和 `manifest.json` 已存在且完整，不是模型/Tokenizer 失败。不再重复生成、不删除已有输出。三角色真实校准前置工作现 CLOSED / PASS；**不等于 GPU 的 32K 推理 PASS**。
+
+## 新增 synthetic-only GPU 防串用保护
+
+- CPU-only `synthetic_gate.authorize_synthetic_profile` 在模型库导入与下载权重前检查 Frozen SHA、授权文件、固定角色、Manifest 预算、记录结构、合成重复文本模式，以及上述**各自精确 input SHA**。非该三条合成输入、角色误用、混入真实私有记录或校验不符，一律 HOLD。
+- `worker_cli --synthetic-authorization <path> --profile <frozen-json>` 使用**只存在内存中的**受限执行配置，Frozen 文件仍维持 Inference/GPU 授权关闭；未提供 `--synthetic-authorization` 的原正式 Worker 行为不变，仍 fail-closed。
+- 测试包含拒绝任意输入、范围负向测试与三份精准记录的正向复现；相关提交 `0e0af924b1d7eab22fcf146fdbb0052831438c8d`、`a8d276e9315cd928b5a24175d301cfe5d6d4ef71`、`4e9a472835480d9f5cebafd9b6a79e863fe1e4bd`。
+- **工程仍未最终 GPU 放行**：待本次变更 CI/容器固定入口成功、Owner Mac CPU-only synthetic gate 正向回执、HF 输入/输出挂载及回收闭环核对、精确可复用 Job 命令完成后，先在 Owner Mac 提交 A 单模型 H200，需独立记录 Job ID/成本/SAFE。
+
+原下文“B 和 challenger 尚未回传”、或重复建议重新执行 B/challenger 的段落均为**历史操作记录**，以本节最终结果为准。
+
+---
+
 ## Owner Mac 实测环境确认（2026-11-10）
 
 Owner 已实际回传以下 CLI 结果：
