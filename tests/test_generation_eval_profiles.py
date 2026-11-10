@@ -198,7 +198,7 @@ def test_p4_candidate_binds_p3_file_and_stop_token_evidence_but_stays_held():
     profile = load_profile(candidate_path)
     result = assess_profile(profile)
     assert result.ready is False
-    assert "RUNTIME_DIGEST_UNSET" in result.blockers
+    assert "RUNTIME_DIGEST_UNSET" not in result.blockers
     assert "DEPENDENCY_LOCK_HASH_UNSET" in result.blockers
     assert "PROFILE_FREEZE_NOT_AUTHORIZED" in result.blockers
     assert "TOKENIZER_FILE_HASHES_INVALID" not in result.blockers

@@ -52,10 +52,11 @@ P4 requires a GPU-generation dependency lock separate from the P3 CPU reviewer l
 Still pending:
 - generate and commit `requirements/hf-generation-eval.lock` with hashes;
 - compute its SHA-256 from the committed bytes;
-- validate Python, torch build, CUDA runtime, Transformers, Accelerate and BF16 capability in the selected HF runtime;
-- bind the resulting final runtime image digest and lock SHA to the candidate profile.
+- validate Transformers, Accelerate, tokenizer and all lock dependencies in the pinned base image without replacing the preinstalled CUDA-enabled torch build;
+- validate BF16 capability in an authorized HF GPU runtime (not in hosted CI);
+- bind the lock SHA to the candidate profile.
 
-The candidate deliberately leaves `runtime_digest=null` and `dependency_lock_sha256=null`. It therefore remains `P4_PROFILE_INCOMPLETE_HOLD`.
+The base image digest is now verified by GitHub Actions on linux/amd64. The exact image reports Python 3.11.11, PyTorch 2.6.0+cu124, CUDA build 12.4; the hosted CI runner has no CUDA device, so this is a package/build contract check, not a GPU execution test. The profile now binds `runtime_digest=sha256:77f17f...f563dee`. `dependency_lock_sha256` remains null until the separate hash-locked dependency set is generated and validated. The profile therefore remains `P4_PROFILE_INCOMPLETE_HOLD`.
 
 ## 5. Authorization
 
