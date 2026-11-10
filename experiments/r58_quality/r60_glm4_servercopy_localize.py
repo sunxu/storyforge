@@ -3,7 +3,7 @@
 Read-only Bucket mount; local-only create. Gets pinned Hub file metadata for
 independent weight LFS digests, then verifies streamed local copy. No GPU
 allocation, model load, review prompts, or private output. This is intended
-to run before r60_qwen32b_local_smoke.py in the SAME H200 Job.
+to run before GLM B25 reviewer in the SAME H200 Job.
 """
 from __future__ import annotations
 
