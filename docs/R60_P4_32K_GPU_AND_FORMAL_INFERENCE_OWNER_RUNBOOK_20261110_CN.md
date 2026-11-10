@@ -1,5 +1,42 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 下一模型 B：Owner Mac 准备指令（不提交 GPU）
+
+模型 A 已经 `H200_A_32K_GPU_AND_OUTPUT_READBACK_PASS`：28,568 input / 312 output / EOS，输出 SHA 复核成功。既定串行顺序下一项是模型 B，不再重复 A。
+
+原 `owner_h200_prepare.py` 现已扩展 `--model-role B` / `--model-role challenger`（保留 A 默认值用于既有调用）；脚本仍然只有在 Owner Mac 才能生成新 `source.tar` 和 `launch-h200-B.sh`，不会提交 HF Job。默认拒绝任何已有输出、已有输入归档、错误模型输入 SHA、跨角色名字和训练授权。
+
+**先验收本次 revision 的三项 CI，尤其 Runtime Image Candidate**。在 Owner Mac 使用以下命令创建 *新的* B staging，并生成计划 SAFE；这一步完全 CPU-only：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BRANCH="r60/p4-generation-eval-framework"
+BASE="$HOME/.local/share/storyforge/r60/private/p4-synthetic-30636aa6187b"
+RUNID="r60-p4-h200-b-$(date +%Y%m%d%H%M%S)"
+STAGING="$HOME/.local/share/storyforge/r60/private/$RUNID"
+
+git -C "$ROOT" fetch origin "$BRANCH"
+REV="$(git -C "$ROOT" rev-parse "origin/$BRANCH")"
+WT="$HOME/workspace/storyforge-p4-h200-plan-${REV:0:12}"
+git -C "$ROOT" worktree add --detach "$WT" "$REV"
+
+mkdir -m 700 "$STAGING" "$STAGING/input" "$STAGING/output"
+cp "$BASE/B/inputs.jsonl" "$BASE/B/manifest.json" "$STAGING/input/"
+cp "$WT/experiments/r60_quality/p4_generation_profile_frozen_v1.json" "$STAGING/input/generation-profile.json"
+cp "$WT/experiments/r60_quality/p4_generation_execution_authorization_20261110.json" "$STAGING/input/synthetic-authorization.json"
+
+PYTHONPATH="$WT/src" python3 -m storyforge_dataset.generation_eval.owner_h200_prepare \
+  --repo "$ROOT" --code-revision "$REV" --staging "$STAGING" --model-role B
+
+echo "STAGING=$STAGING"
+echo "REV=$REV"
+```
+
+预期 SAFE：`H200_B_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED`，输入 SHA 必须为 `8cb8ddf2fc511cf957ed03510853dad94b5169334fde8d6ff153afda6640285e`，模型 B 的 CPU token 校准为 28,593。**Owner 回传 SAFE 后先验收归档 SHA 与可执行脚本、三项 CI；不要在本步骤执行脚本。**
+
+---
+
 ## 2026-11-10 H200 A 私有输出读回与实际 Token 最终验收
 
 Owner Mac 已执行输出文件本地 SHA、大小、schema、模型与 finish reason 验证，回传原始 SAFE：
