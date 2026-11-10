@@ -150,7 +150,7 @@ def instrument(source: str) -> tuple[str, dict]:
     return patched, dict(matches)
 
 
-def prepare(source_dir: Path, destination: Path) -> dict:
+def prepare(source_dir: Path, destination: Path, launcher_file: Path) -> dict:
     check_dir(source_dir)
     check_dir(destination.parent)
     if source_dir == destination or source_dir.is_relative_to(destination) or destination.is_relative_to(source_dir):
@@ -158,6 +158,14 @@ def prepare(source_dir: Path, destination: Path) -> dict:
     if destination.exists() or destination.is_symlink():
         raise Hold("DEST_EXISTS_HOLD")
     raw = {name: read_private(source_dir / name) for name in SLOT_FILES}
+    # Require the new monitored launcher, not the stale file in the first
+    # frozen pilot. Override only the copied slot; source stays untouched.
+    updated_launcher = read_private(launcher_file)
+    if (b"def descendant_stats()" not in updated_launcher
+            or b"worker._r60_diag_event = set_stage" not in updated_launcher
+            or b"def heartbeat()" not in updated_launcher):
+        raise Hold("DIAGNOSTIC_LAUNCHER_VERSION_HOLD")
+    raw["r60_pilot_diagnostic_launcher.py"] = updated_launcher
     if digest(raw["source.private.jsonl"]) != EXPECTED_A_INPUT_SHA256:
         raise Hold("PILOT_A_INPUT_SHA_MISMATCH")
     lines = raw["source.private.jsonl"].splitlines()
@@ -196,9 +204,10 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--source-dir", type=Path, required=True)
     ap.add_argument("--dest-dir", type=Path, required=True)
+    ap.add_argument("--launcher-file", type=Path, required=True)
     args = ap.parse_args()
     try:
-        result = prepare(args.source_dir, args.dest_dir)
+        result = prepare(args.source_dir, args.dest_dir, args.launcher_file)
         rc = 0
     except (Hold, OSError, ValueError) as exc:
         result = {
