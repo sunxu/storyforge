@@ -1,25 +1,37 @@
 {
   "schema": "storyforge_r60_p3_model_profiles_v1",
-  "status": "REVISION_PINS_RECORDED__CPU_PREFLIGHT_PENDING",
+  "status": "TEMPLATE_SOURCE_DECISIONS_OWNER_APPROVED__GENERATION_PROFILE_PENDING",
   "rubric_version": "r60_severity_rubric_v2_1",
   "model_profiles": {
     "A": {
       "model": "Qwen/Qwen3-32B",
       "revision": "9216db5781bf21249d130ec9da846c4624c16137",
       "enable_thinking": true,
-      "sampling": {"do_sample": true, "temperature": 0.6, "top_p": 0.95, "top_k": 20, "min_p": 0}
+      "sampling": {
+        "do_sample": true,
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0
+      },
+      "chat_template_source": "embedded_tokenizer_config",
+      "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
     },
     "B": {
       "model": "zai-org/GLM-4-32B-0414",
       "revision": "8dea913c41b543527c2860fb6f3c15c202f24aeb",
       "enable_thinking": null,
-      "sampling": null
+      "sampling": null,
+      "chat_template_source": "standalone_chat_template.jinja",
+      "chat_template_sha256": "db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822"
     },
     "challenger": {
       "model": "zai-org/GLM-Z1-32B-0414",
       "revision": "8eb2858992c1f749e2a6d4075455decc2484722d",
       "enable_thinking": null,
-      "sampling": null
+      "sampling": null,
+      "chat_template_source": "standalone_chat_template.jinja",
+      "chat_template_sha256": "adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241"
     }
   },
   "input_budget_tokens": null,
@@ -30,5 +42,15 @@
   "profile_freeze_authorized": false,
   "inference_authorized": false,
   "gpu_authorized": false,
-  "training_authorized": false
+  "training_authorized": false,
+  "template_source_owner_decision": {
+    "decision": "APPROVED_AS_RECOMMENDED",
+    "decided_on": "2026-11-10",
+    "models": {
+      "A": "embedded_tokenizer_config",
+      "B": "standalone_chat_template.jinja",
+      "challenger": "standalone_chat_template.jinja"
+    },
+    "note": "GLM-Z1 standalone explicitly starts generation with <think>; this is a template-source decision only and does not resolve sampling-vs-greedy conflict."
+  }
 }
