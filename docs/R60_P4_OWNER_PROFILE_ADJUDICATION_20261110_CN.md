@@ -147,3 +147,13 @@ Owner 已接受本文件中的实验矩阵与 GLM Thinking 建议。已落实到
 - [评估输出 Schema 候选](../experiments/r60_quality/r60_p4_evaluation_output_schema_candidate_v1.json)
 
 **仍未完成 / 未授权：** Prompt 与 Schema 的最终 Owner 审批、真实长上下文硬件选择、私有输出持久化通道验证、正式 Profile 冻结、Development20 inference、Locked30 inference、GPU 与训练。
+
+
+## 2026-11-10 Owner 对评估契约的正式批准
+
+Owner 已明确批准统一评估 Prompt v1 与 Output JSON Schema v1。批准对象由以下 SHA-256 唯一标识：
+
+- Prompt：`51465853db6a2b61a9f87b1e9d5f23f7f02bd2c98b5a0d6a8ab2ec61322346e1`
+- Output Schema：`e6371bf3319affcae190b6ccb9a1b8ce778bae440a91eefe39a65b2586930d70`
+
+该批准仅覆盖评估指令与输出结构，不等于 P4 Generation Profile 冻结，不授权读取真实评估案例、模型推理、GPU Job、Locked30 或训练。机器可读 Profile 将 `evaluation_contract_status` 更新为 `OWNER_APPROVED`，但 `profile_freeze_authorized`、`inference_authorized`、`gpu_authorized`、`training_authorized` 继续保持 false。
