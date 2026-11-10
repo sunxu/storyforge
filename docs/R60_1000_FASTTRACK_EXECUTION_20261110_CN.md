@@ -1,5 +1,69 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：B25 单次加载、首条 Checkpoint 硬门禁（Owner 已授权推进）
+
+**目标**：使用既有冻结的 B25 GLM-4-32B 输入，一次 H200 Job 内运行 1→25 条。第 1 条产出后使用**原审核器** `read_checkpoint` 校验，校验不通过时立即停止、第 2 条不得生成；通过后在**同一 `inference()` 进程、同一个 LLM 实例**继续执行 2–25 条，不额外启动 1 条 Smoke Job，不重复加载模型。每条均进行同样的原版 Checkpoint 回读核验。只要任何条失败，禁止产生 `B25_ALL_VERIFIED`。
+
+### 已实现、测试和边界
+
+- `experiments/r58_quality/r60_b25_single_engine_gate.py`：严格固定角色 B 模型 `zai-org/GLM-4-32B-0414`、完整 revision `8dea913c41b543527c2860fb6f3c15c202f24aeb`、独立冻结 Pilot25 输入 SHA256 `01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9`；`start=1,limit=25,max_model_len=32768,max_output_tokens=2400`，必须明确 `--confirm-paid-gpu`；输出路径必须是既存**空目录**。
+- 通过模块级 wrapper 挂钩 `inference` 和 `write_checkpoint`，调用冻结原版真实 `inference` 一次，且严格要求 Checkpoint 按序 1→25；每个 Checkpoint 写入后立即复用原版 `read_checkpoint(path, pos, row, model, revision)`，执行 SHA、blind ID、输入绑定、revision、response semantic 等校验；`B25_FIRST_GATE_PASS` 只有第 1 条通过才会输出，之后同一函数继续 24 条。全部通过才输出 `B25_ALL_VERIFIED`。
+- `tests/test_r60_b25_single_engine_gate.py` CPU 合成测试：一次 engine 初始化模拟、首条失败立刻停、途中失败不虚报 25、scope mismatch fail-closed。最终 CI 状态必须按最新提交核实。
+- **不修改旧 `input_B` 文件**；此脚本必须放到一个独立 `input_B_gate` 副本中，和 `runner.py`、`source.private.jsonl`、`token_core.py`、`runtime_inputs.py`、`runtime_resources.py` 相邻。不能把原始 A25 已验证输入误用到 B25；两组输入 SHA 不同。
+- P4 三模型旧 Smoke 是 PyTorch/Transformers 的**短合成生成**，并不证明 `GLM-4-32B` 已在当前 vLLM 0.10.0 structured decoding 路径加载成功。若此 Job 卡在模型权重，**不重试同参数；优先采用已完成的持久化下载方案为 GLM-4 建立本地权重再加载**。B25 所有 Checkpoint 只能存于私有 HF Bucket；失败不能越过首条门禁或将 0/25 误报为训练准入。
+
+### Owner Mac：隔离复制冻结 B25 输入 + 安装 gate（CPU-only）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+SRC="$PILOT/input_B"
+DEST="$PILOT/input_B_gate"
+REV="__B25_GATE_REV__"
+umask 077
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -d "$SRC"
+test ! -e "$DEST" || { echo B25_GATE_DEST_EXISTS_HOLD; exit 42; }
+mkdir -m 700 "$DEST"
+for file in runner.py source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+  test -f "$SRC/$file"
+  cp "$SRC/$file" "$DEST/$file"
+  chmod 600 "$DEST/$file"
+done
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_b25_single_engine_gate.py" > "$DEST/r60_b25_single_engine_gate.py"
+chmod 600 "$DEST/r60_b25_single_engine_gate.py"
+python3 -m py_compile "$DEST/r60_b25_single_engine_gate.py"
+shasum -a 256 "$DEST/source.private.jsonl"
+# 必须等于 01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9
+
+python3 "$DEST/runner.py" \
+  --input "$DEST/source.private.jsonl" --output-dir "$PILOT/output_B" \
+  --model zai-org/GLM-4-32B-0414 \
+  --revision 8dea913c41b543527c2860fb6f3c15c202f24aeb \
+  --verify-only
+```
+
+### 单次 B25 GPU Job（不可与 Qwen A25 输出同目录）
+
+```bash
+set -euo pipefail
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-glm4-b25-firstgate \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_B_gate:/input:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; OUT=/bucket/evaluation-runs/r60-1000-pilot25-glm4-b-firstgate; if [ -e "$OUT" ]; then echo B25_OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; mkdir -p "$OUT"; exec /usr/bin/python3 -u /input/r60_b25_single_engine_gate.py --input /input/source.private.jsonl --output-dir "$OUT" --model zai-org/GLM-4-32B-0414 --revision 8dea913c41b543527c2860fb6f3c15c202f24aeb --start 1 --limit 25 --max-model-len 32768 --max-output-tokens 2400 --max-wall-seconds 3000 --confirm-paid-gpu'
+```
+
+**必须同时验收** `B25_GATE_READY`、`B25_FIRST_GATE_PASS`、`B25_ALL_VERIFIED`、原审核器 `HF_REVIEW_COMPLETED__NO_ADMISSION`、`cases_completed=25`。遇到 `B25_GATE_HOLD` 或超过资源预算，要停止并保留输出，不删除已写 Checkpoint、不把重复运行写到原目录。**HF Job 仍由 Owner Mac CLI 提交；本轮 ChatGPT 只写了代码/测试/文档。**
+
+---
+
+
 ## 2026-11-11：固定权重持久化与真实模型本地加载（新增执行路径）
 
 ### 已知证据与目标
