@@ -22,7 +22,8 @@
         "min_p": 0
       },
       "chat_template_source": "embedded_tokenizer_config",
-      "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+      "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8",
+      "thinking_mode": "api_flag"
     },
     "B": {
       "model": "zai-org/GLM-4-32B-0414",
@@ -149,5 +150,7 @@
   "training_authorized": false,
   "runtime_smoke_authorized": false,
   "p3_download_safe_sha256": "52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5",
-  "runtime_smoke_authorization_status": "CONSUMED_2026-11-10"
+  "runtime_smoke_authorization_status": "CONSUMED_2026-11-10",
+  "evaluation_prompt_sha256": null,
+  "output_schema_sha256": null
 }
