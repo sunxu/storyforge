@@ -65,9 +65,7 @@ def classify(node: ast.stmt) -> str | None:
     # not a direct Call. Unwrap only these indexing/attribute layers.
     # Do not treat a nested unrelated function call as a phase anchor.
     for _ in range(6):
-        if isinstance(value, ast.Subscript):
-            value = value.value
-        elif isinstance(value, ast.Attribute):
+        if isinstance(value, (ast.Subscript, ast.Attribute)):
             value = value.value
         else:
             break
