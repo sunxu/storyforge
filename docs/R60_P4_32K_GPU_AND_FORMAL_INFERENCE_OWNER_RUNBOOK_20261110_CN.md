@@ -2,6 +2,22 @@
 
 > **Owner 已分阶段授权**：首先 32K 合成 GPU 测试；通过验收后再开展正式推理。**本文件不构成已提交 HF Job 的证明。** HF Jobs 仅由 Owner 在 Mac CLI 执行；ChatGPT 不调用 Hugging Face Jobs、不测试 Bucket 或 OAuth，也不擅自合并 PR。
 
+## Owner Mac 实测环境确认（2026-11-10）
+
+Owner 已实际回传以下 CLI 结果：
+
+- `/opt/homebrew/bin/hf`，`hf version = 2.4.0`；
+- `hf auth whoami` 登录：`greenkeedle`；组织：`adradar`；
+- `hf jobs hardware` 列出 `h200`：1× NVIDIA H200、141 GB GPU 显存、23 vCPU、256 GB RAM、3000 GB Storage、`$0.0833/min` / `$5.00/hour`；
+- `hf jobs ps --namespace adradar`：`No running jobs`（未包含已结束/失败历史 Job）；
+- Owner 同一轮先前核对：远端分支 `1f98a877039f2a9a52c710f2f396be1bd2c5893f`、Frozen SHA `a58d02c757767f18deb8a4cb948a56be199c837c045d83648838868961e1037f`、`P4_STAGED_AUTHORIZATION_CHECK_PASS`。
+
+**结论**：Mac CLI 与 H200 规格/参考价格已经实际核验，**但 GPU 资源是否能成功分配仍要以真实提交/排队结果为准**。当前没有运行中的 Job，不代表没有历史 Job。下一阻塞点是工程执行包（合成数据及真实 token 校准、synthetic-only 边界、精确可复用提交命令、SAFE 回收），不是 hf CLI 安装或 Profile Freeze。
+
+当前不建议 Owner 手工修改 Frozen 里的授权开关。未完成工程门槛前不提交 32K GPU Job。
+
+---
+
 ## 1. 授权记录与不变量
 
 机器可读授权：`experiments/r60_quality/p4_generation_execution_authorization_20261110.json`。
