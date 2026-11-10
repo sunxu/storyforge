@@ -61,3 +61,36 @@ def test_exception_content_not_leaked(tmp_path):
     assert proc.returncode == 42
     assert "PRIVATE_CONTENT" not in proc.stdout
     assert "RUNTIME_EXCEPTION_REDACTED" in proc.stdout
+
+
+def test_trace_markers_are_allowlisted_and_callback_present(tmp_path):
+    """Synthetic traced runner exposes only stage labels, not private args."""
+    source = tmp_path / "runner.py"
+    source.write_text(
+        "def read_input(path):\n"
+        "    return [1]\n"
+        "def write_checkpoint(path, record):\n"
+        "    return None\n"
+        "def inference(rows):\n"
+        "    _r60_diag_event('TOKENIZER_LOAD_START')\n"
+        "    _r60_diag_event('TOKENIZER_LOADED')\n"
+        "    _r60_diag_event('ENGINE_INIT_START')\n"
+        "    _r60_diag_event('ENGINE_READY')\n"
+        "    _r60_diag_event('GENERATE_START')\n"
+        "    _r60_diag_event('GENERATE_DONE')\n"
+        "    write_checkpoint('private', {'value': 'PRIVATE_SECRET'})\n"
+        "    return {'cases_total':1,'cases_completed':1}\n"
+        "def main():\n"
+        "    inference(read_input('private'))\n"
+        "    return 0\n"
+    )
+    wrapper = tmp_path / LAUNCHER.name
+    wrapper.write_bytes(LAUNCHER.read_bytes())
+    proc = subprocess.run([sys.executable, "-u", str(wrapper)],
+                          capture_output=True, text=True, timeout=15)
+    assert proc.returncode == 0
+    for stage in ("TOKENIZER_LOAD_START", "TOKENIZER_LOADED",
+                  "ENGINE_INIT_START", "ENGINE_READY", "GENERATE_START",
+                  "GENERATE_DONE"):
+        assert f'"stage":"{stage}"' in proc.stdout
+    assert "PRIVATE_SECRET" not in proc.stdout
