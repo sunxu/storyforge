@@ -107,3 +107,24 @@ GPU flavor 限定为 `a100-large`，单 Job、单 attempt、60 分钟硬超时�
 - 因而没有 GPU 初始化、模型权重下载、推理或计费运行。
 
 当前 OAuth 身份有 `jobs` scope，且在 `adradar` 组织具有 write role；但 API 的 403 未区分具体拒绝原因。Hugging Face 官方规则要求 Job 计费 namespace 有正的 compute credit balance；仍需组织管理员确认 `adradar` 的 Jobs compute credit balance / 组织 Jobs 可用状态。不得未经 Owner 另行确认改用个人 namespace 或其他计费主体。解除该账户级阻塞后，重试同一份已固定的 Smoke Job，不更改 GPU flavor、镜像、模型 Revision 或测试范围。
+
+## 10. P4 三模型真实 GPU Runtime Smoke 完成（2026-11-10）
+
+ChatGPT 通过 Hugging Face Jobs 在 adradar namespace 成功创建并完成真实 GPU Job：
+
+- Job: adradar/6af2dbbdab34849891aaef1e
+- URL: https://huggingface.co/jobs/adradar/6af2dbbdab34849891aaef1e
+- 状态：COMPLETED；Flavor：a100-large；GPU：NVIDIA A100-SXM4-80GB
+- 固定镜像：sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+- 代码：8e1e87fd923908f37635b5daac5d2bfe4548563e
+- 依赖锁 SHA256：81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c
+- SAFE：RUNTIME_SMOKE_PASS，3/3；文件 4072 bytes；SHA256 5fbffdcd4058c150c323d57f599a409eb64d5b2b6512b95c4b5d08379b720c25
+- SAFE 从 HF Job logs 回收；生成正文没有写入日志或 SAFE。
+- 三模型均 BF16、CUDA 驻留；结束原因 A=length、B=eos、challenger=length。
+- 未使用训练数据；未启动训练；生产 Profile 未冻结；正式批量推理仍未获授权。
+
+### 对此前 403 诊断的修正
+
+本次在同一个 adradar namespace 下，不挂载 Bucket 的 CPU Job 创建并完成；项目 Bucket RO 挂载并读取成功；Bucket 上传在 /api/buckets/adradar/storyforge-training/xet-write-token 返回 403；不挂载 Bucket 的 a100-large Job 则成功创建、启动并完成真实三模型 Smoke。
+
+因此，组织 Jobs 创建权限和 GPU 计费能力已被真实执行证明可用。此前的 403 不能再归因于组织没有 Compute Credit 或没有 Jobs 权限；当前证据将问题定位到 ChatGPT 调用上下文的 Bucket 写入凭证 / RW 挂载路径。后续 SAFE 通过 Job logs 回收并提交 GitHub；在写入权限单独修复前，不要依赖 RW Bucket mount 或 hf buckets cp。
