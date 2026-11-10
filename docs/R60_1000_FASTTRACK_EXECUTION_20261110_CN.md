@@ -1,5 +1,49 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-10 Owner 已确认 A/B 1000 条审核输入：两侧 verify-only PASS
+
+Owner Mac 已执行现有私有 stage 的 `runner.py --verify-only`：
+
+```json
+{"cases_completed":0,"cases_total":1000,"private_values_emitted":false,"schema":"storyforge_hf_literary_safe_v1","status":"HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE","training_authorized":false}
+```
+
+A/B **各自返回完全相同 SAFE**。**当前裁决 `R60_1000_A_B_REVIEW_INPUT_STRUCTURE_PASS__TOKEN_PREFLIGHT_PENDING`**，尚未调用模型、未审核任何一条。无须再做一次 `--verify-only`。
+
+### 下一步：一次性对全部 1000 条执行各模型真实 tokenizer CPU-only 长度核验
+
+旧审核 runner 有现成的 `--token-preflight-only`，在 Mac 本地读取已冻结的 1000-case 私有输入，只下载/载入固定 revision 的 tokenizer，不加载模型权重、不推理。由于旧 runner 的 `read_input` 始终读取全源，此命令**核验全部 1000 条而不是 25 条**，便于一次性找出超出 32K 预算的比例，不按未经确认的 token 尺寸提交 GPU。该操作可能花费较长 CPU 时间，但不购买 HF 资源。
+
+```bash
+set -euo pipefail
+export CUDA_VISIBLE_DEVICES=""
+export NVIDIA_VISIBLE_DEVICES="none"
+STAGE="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-first-1000"
+
+python "$STAGE/input_A/runner.py" \
+  --input "$STAGE/input_A/source.private.jsonl" \
+  --output-dir "$STAGE/output_A" \
+  --model "Qwen/Qwen3-32B" \
+  --revision "9216db5781bf21249d130ec9da846c4624c16137" \
+  --max-model-len 32768 --max-output-tokens 2400 \
+  --token-preflight-only
+
+python "$STAGE/input_B/runner.py" \
+  --input "$STAGE/input_B/source.private.jsonl" \
+  --output-dir "$STAGE/output_B" \
+  --model "zai-org/GLM-4-32B-0414" \
+  --revision "8dea913c41b543527c2860fb6f3c15c202f24aeb" \
+  --max-model-len 32768 --max-output-tokens 2400 \
+  --token-preflight-only
+```
+
+如出现 `HF_REVIEW_CPU_TOKEN_BUDGET_HOLD__NO_GPU`，必须统计超预算数，不静默截断；如出现 `HF_CPU_TOKENIZER_IMPORT_HOLD` 等依赖错误则 HOLD 并修复本地 Python 环境，而不是改冻结审核输入。只有预检合格后才准备 **25 条 pilot、每角色单模型独立 Job 的成本/时长/Checkpoint/Schema**；旧 vLLM runner 的 GPU 运行环境与已跑通的 PyTorch transformers H200 smoke 不同，需要单独核验镜像/依赖/显存再由 Owner Mac CLI 手动提交。
+
+**重要**：现有旧 A/B 六维审查可复用，但不能以旧审查的结果冒充 Rubric v2.1 的校准分数；新版 30 条三模型严重问题判定仍为正式放大批次的前置 gate。1000 条完成审核之后仍需 Quality-v1 最终准入，不自动训练。
+
+---
+
+
 ## 2026-11-10 Owner 最新只读 audit：1000 冻结源完整，审核 0/1000
 
 Owner Mac 已实际执行旧双审 adapter 的 `audit`，收到 SAFE：
