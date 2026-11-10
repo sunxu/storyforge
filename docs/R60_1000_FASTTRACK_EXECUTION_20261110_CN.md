@@ -1,5 +1,48 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：首个 A25 Job ERROR 127，容器找不到 `python`，无推理
+
+Owner Mac 返回：
+```
+job: https://huggingface.co/jobs/adradar/6af346279737d9a9e090f98b
+sh: 1: exec: python: not found
+stage: ERROR
+exit code: 127
+```
+
+**定案**：旧执行命令在 vLLM Docker 镜像内 `sh -c '... exec python /input/runner.py ...'`，但镜像未提供 `python` 命令。此故障发生在加载模型、运行审核器之前；不能推断 vLLM 模型加载、GPU 占用或 Checkpoint 写入成功。虽然没有发生推理，HF 启动阶段资源可能已计费，不能声称零费用。Hugging Face 官方 [Jobs Docker images](https://huggingface.co/docs/hub/jobs-images) 针对 `vllm/vllm-openai` 使用系统 Python `/usr/bin/python3`；此版本仅根据示例路径提出修复，精确固定 Digest 的解释器路径仍建议在实际镜像中快速检查。
+
+**最小修复**：在已通过的 A25 命令中将 `exec python /input/runner.py` 改为 `exec /usr/bin/python3 /input/runner.py`，保留镜像 SHA、模型 revision、`--limit 25`、`--attempts 1`、`--timeout 90m` 及输出 Bucket 根挂载。**不要重新创建 Pilot25，不要改旧冻结数据，不要修改旧 Job 的输出为成功。**
+
+正式再次提交前，当前已存在上次 Job 尝试创建的 `/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a` 目录；上一次命令 `mkdir -p "$OUT"` 后才执行 Python，所以它很可能已创建、可能为空。**原命令中的 `if [ -e "$OUT" ]; then ... HOLD` 会挡住下一次提交；严禁无检查删除原目录。** 续跑使用新唯一目录 `r60-1000-pilot25-vllm0100-a-retry1`，保留旧目录与原 Job 的诊断证据，仍然拒绝目录覆盖。如果旧 A Job 没有启动推理，不必下载新数据，也不必重做 1000 条 token preflight。
+
+Owner Mac 如需检查 0 GPU 的镜像 Python 路径，可用本机 Docker（会拉取镜像层，可能体积大），或 HF CPU Job，命令示例：
+```bash
+hf jobs run --dry-run --namespace adradar --flavor cpu-basic --timeout 10m --attempts 1 \
+  docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271 \
+  sh -c 'command -v python3; test -x /usr/bin/python3; /usr/bin/python3 --version'
+```
+dry-run 只检查格式，不会证实解释器存在。若本机或 CPU 实测证明解释器存在，则可再付费 A25。模型架构/vLLM 参数的真实兼容性仍未知。
+
+**直接 A25 二次提交建议**（仅 Owner Mac 执行；这是新的收费 Job，必须重新明确成本授权，不应自动提交）：
+
+```bash
+set -euo pipefail
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+IMAGE="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-quality-a25-pilot-retry1 \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A:/input:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMAGE" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || { echo PYTHON3_NOT_FOUND_HOLD; exit 42; }; OUT=/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a-retry1; if [ -e "$OUT" ]; then echo OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; mkdir -p "$OUT"; exec /usr/bin/python3 /input/runner.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --start 1 --limit 25 --max-model-len 32768 --max-output-tokens 2400 --max-wall-seconds 3000 --confirm-paid-gpu'
+```
+
+不得自动启动 B25；待 A25 真实成功后，对 `review_XXXX.private.json` 做私有回收、输入 SHA 和 blind_id 校验，再按 Owner crosswalk 对齐。
+
+---
+
+
 ## 2026-11-11：Owner 已批准并提交 A25 真实 H200 Job（最终状态待回执）
 
 用户明确批准此前约定的 A25 H200、timeout 90m、attempts 1 单次收费任务，并提供已提交 HF Job：
