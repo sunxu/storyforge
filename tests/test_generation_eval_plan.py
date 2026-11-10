@@ -96,7 +96,8 @@ def test_frozen_profile_builds_deterministic_plan_only():
     shell = first.argv[first.argv.index("bash") + 2]
     encoded_script = shell.split("base64.b64decode('", 1)[1].split("')", 1)[0]
     archive_script = base64.b64decode(encoded_script).decode("utf-8")
-    assert "codeload.github.com/sunxu/storyforge/tar.gz/" + ("f" * 40) in archive_script
+    assert 'revision = "' + ("f" * 40) + '"' in archive_script
+    assert 'codeload.github.com/sunxu/storyforge/tar.gz/{revision}' in archive_script
     assert "SOURCE_ARCHIVE_PATH_INVALID" in archive_script
     assert "--input /input/inputs.jsonl" in shell
     assert "storyforge_dataset.generation_eval.worker_cli" in shell
