@@ -59,7 +59,7 @@ def load_profile(path: str | Path) -> dict[str, Any]:
     for role, expected in EXPECTED_MODELS.items():
         item = models[role]
         if not isinstance(item, dict):
-            raise ValueError("P4_MODEL_PROFILE_INVALID")
+            raise TypeError("P4_MODEL_PROFILE_INVALID")
         if (item.get("model"), item.get("revision")) != expected:
             raise ValueError("P4_MODEL_PIN_MISMATCH")
     return value
@@ -117,12 +117,13 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
         blockers.append("RUNTIME_DIGEST_INVALID")
 
     tokenizer_hashes = profile.get("tokenizer_hashes")
-    if tokenizer_hashes is not None:
-        if not isinstance(tokenizer_hashes, dict) or set(tokenizer_hashes) != set(EXPECTED_MODELS):
-            blockers.append("TOKENIZER_HASHES_INVALID")
-        elif any(not isinstance(value, str) or not SHA256_RE.fullmatch(value)
-                 for value in tokenizer_hashes.values()):
-            blockers.append("TOKENIZER_HASHES_INVALID")
+    if tokenizer_hashes is not None and (
+        not isinstance(tokenizer_hashes, dict)
+        or set(tokenizer_hashes) != set(EXPECTED_MODELS)
+        or any(not isinstance(value, str) or not SHA256_RE.fullmatch(value)
+               for value in tokenizer_hashes.values())
+    ):
+        blockers.append("TOKENIZER_HASHES_INVALID")
 
     for role, expected in EXPECTED_MODELS.items():
         item = models[role]
