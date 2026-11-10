@@ -4,12 +4,12 @@ from pathlib import Path
 
 import pytest
 
+from storyforge_dataset.generation_eval.synthetic_32k import SYNTHETIC_SENTENCE
 from storyforge_dataset.generation_eval.synthetic_gate import (
     CALIBRATED_SHA256,
     _is_exact_synthetic_text,
     authorize_synthetic_profile,
 )
-from storyforge_dataset.generation_eval.synthetic_32k import SYNTHETIC_SENTENCE
 from storyforge_dataset.generation_eval.worker import WorkerError
 
 
