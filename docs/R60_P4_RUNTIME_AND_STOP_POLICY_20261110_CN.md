@@ -95,3 +95,15 @@ Smoke 使用独立入口 `storyforge_dataset.generation_eval.runtime_smoke`，�
 GPU flavor 限定为 `a100-large`，单 Job、单 attempt、60 分钟硬超时。只挂载项目 bucket 的独立 Smoke 输出目录为可写卷；不挂载训练集、不读取历史对话、不创建训练器或优化器。运行时镜像和依赖锁仍按 SHA-256 校验。此授权不冻结正式 Generation Profile，不批准 30 条评估集推理、正式批量推理或任何训练。
 
 若任一模型加载、BF16、Tokenizer、模板校验或生成终止行为失败，回执为 HOLD；不自动更换硬件、dtype、模型 revision 或依赖版本。
+
+
+## 9. HF Jobs 首次 GPU 提交阻塞（2026-11-10）
+
+已使用已认证的 Hugging Face OAuth 上下文尝试在 `adradar` namespace 提交唯一一个 `a100-large` Job，固定运行镜像、代码 commit `d434996d1498c5a6472fe23bba33e55b3b2f23e9`、60 分钟 timeout，并只挂载独立 Smoke 输出前缀。Jobs API 返回 `403 Forbidden`，没有返回 Job ID。
+
+提交后只读核对：
+- Hugging Face Jobs 列表：0 个 Job；
+- 预定输出 bucket 前缀：空；
+- 因而没有 GPU 初始化、模型权重下载、推理或计费运行。
+
+当前 OAuth 身份有 `jobs` scope，且在 `adradar` 组织具有 write role；但 API 的 403 未区分具体拒绝原因。Hugging Face 官方规则要求 Job 计费 namespace 有正的 compute credit balance；仍需组织管理员确认 `adradar` 的 Jobs compute credit balance / 组织 Jobs 可用状态。不得未经 Owner 另行确认改用个人 namespace 或其他计费主体。解除该账户级阻塞后，重试同一份已固定的 Smoke Job，不更改 GPU flavor、镜像、模型 Revision 或测试范围。
