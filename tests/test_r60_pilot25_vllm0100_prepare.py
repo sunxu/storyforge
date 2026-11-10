@@ -121,3 +121,19 @@ def test_older_runner_without_quote_repair_can_be_patched(tmp_path):
         patched = (dest / f"input_{role}" / "runner.py").read_text()
         assert "guided_decoding = GuidedDecodingParams(json=schema)" in patched
         assert "structured_outputs" not in patched
+
+
+def test_regex_recognizes_exact_staged_api_keyword(tmp_path):
+    """Regression: old bad regex reported KW_0 even when keyword exists."""
+    source, dest = source_fixture(tmp_path)
+    for role in ("A", "B"):
+        script = source / f"input_{role}" / "runner.py"
+        body = script.read_text()
+        assert "structured_outputs=" in body
+    result = pilot.prepare(source, dest)
+    assert result["cases_per_role"] == 25
+    assert result["hf_jobs_submitted"] == 0
+    for role in ("A", "B"):
+        patched = (dest / f"input_{role}" / "runner.py").read_text()
+        assert "guided_decoding=" in patched
+        assert "structured_outputs=" not in patched
