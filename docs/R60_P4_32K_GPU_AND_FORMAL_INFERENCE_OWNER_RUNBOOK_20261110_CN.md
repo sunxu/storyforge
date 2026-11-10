@@ -1,5 +1,22 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 Challenger 真实 H200 GPU Worker SAFE（最终读回待验收）
+
+Owner Mac 已执行最后一次 challenger（GLM-Z1-32B-0414）H200 合成 Job，链接 https://huggingface.co/jobs/adradar/6af3316f9737d9a9e090c0e4，Job ID `6af3316f9737d9a9e090c0e4`。回传 Worker SAFE：
+
+- `schema=storyforge_r60_generation_worker_receipt_safe_v1`、`status=GENERATION_BATCH_PASS`、`model_role=challenger`、`synthetic_only=true`；
+- `gpu_started=true`、`inference_started=true`、`training_started=false`；
+- `cpu_calibrated_input_tokens=28597`，`input_sha256=2676b44c9e0e6ea1c8ccc1824e246d20c08fd8b7cf789a669e3bd06a1f91c28c`；
+- `model_revision=8eb2858992c1f749e2a6d4075455decc2484722d`；`dependency_lock_sha256=81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`；`runtime_digest=sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`；
+- `record_count=1`、`finish_reason_counts={"eos":1,"length":0,"unrecognized_stop":0}`、`truncated_count=0`；
+- `private_output_path=challenger-outputs.private.json`、`output_sha256=85ca35cfbe582410b9845b841adc7c396d5dab8fe1a068d5eec1e33967ea8f46`、`output_size_bytes=2340`、`output_mode=0600`、`private_values_emitted=false`。
+
+**当前裁决 `H200_CHALLENGER_GPU_GENERATION_PASS__PRIVATE_OUTPUT_READBACK_PENDING`。** 实际输入/输出 token 仅在私有输出 JSON 中，且尚无本地回读 SHA 的单独 Owner SAFE 回执；不能宣布三模型全部闭环完成，更不能进入正式推理或训练。
+
+Owner 在 Mac 以该 Job 实际输出同步位置读回私有 `challenger-outputs.private.json`，必须验证 2340 bytes 和以上 SHA、`model_role=challenger`、`record_count=1`、EOS、token 范围，并只输出非正文 SAFE。完成后汇总 A/B/challenger 合成 GPU 技术验收，提出下一阶段独立审批建议，不自动执行。
+
+---
+
 ## 2026-11-10 Challenger H200 合成启动包 Owner SAFE
 
 Owner Mac 已成功生成 challenger 计划，但尚未提交 GPU Job：
