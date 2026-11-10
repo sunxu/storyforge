@@ -198,3 +198,27 @@ Owner 已批准 Prompt v1 与 Output JSON Schema v1。批准只针对这两份�
 诊断：故障定位到 ChatGPT HF 连接器的 Bucket RW 提交/授权链路；不是 Bucket 普遍不可写，也不是 Jobs 创建权限/余额整体故障。缺少 write-repos 或专用 Bucket scope 只是待核实假设，不能作为已证实根因。需 HF 检查该 OAuth App 的 Bucket RW capability、adradar grant、请求序列化和服务端 403 原因。
 
 状态：ChatGPT RW 持久化 `BLOCKED_403`，P4 私有输出验收 HOLD；Owner Mac CLI RW 已 PASS，只能作为受控临时路径。不得切换个人 namespace、索取长期 PAT、修改 Bucket ACL、配置 Trusted Publishers 或把私有正文写入 GitHub/Actions/SAFE。不要盲目重复提交 RW Job。正式评估推理仍不得启动。
+
+## 2026-11-10 主线续进：Worker CLI / Job bootstrap 工程实现
+
+Owner 已暂停 ChatGPT-HF OAuth / Bucket RW 故障排查，并将自行在 Mac CLI 执行 HF 任务。ChatGPT 不再提交 HF Job、不测试 Bucket、不更改 OAuth；后续只提供可复用代码、命令、SAFE schema 与回执审查。
+
+当前分支 `r60/p4-generation-eval-framework` 正在完成 P4 Worker CLI / Job execution plan 闭环：
+- `worker.py` 保持模型无关的 generation batch engine，不导入 torch / transformers / HF Hub。
+- 新增独立 `worker_cli.py`，作为真正的 `python -m storyforge_dataset.generation_eval.worker_cli` 执行入口；必须先通过 Profile freeze/inference/GPU 授权检查，再校验依赖 lock、runtime、manifest、input SHA、输出目录和私有输出权限；未授权时只输出 SAFE HOLD，不加载模型。
+- Job plan 固定从 GitHub codeload 下载精确 `code_revision` 的仓库归档，限制归档大小/文件数/解压总量并拒绝路径穿越、符号链接和特殊文件；不依赖 PyTorch 基础镜像预装 git。
+- Job 启动后按 `requirements/hf-generation-eval.lock` 使用 `--require-hashes` 安装依赖，再执行独立 Worker CLI；输入挂载路径为 `/input/generation-profile.json`、`/input/manifest.json`、`/input/inputs.jsonl`，输出目录必须为 `/output` 的全新直接子目录。
+- Worker 仅将私有生成正文写入 `/output/<run-id>/<role>-outputs.private.json`，create-only、0600；stdout 只输出 SAFE 元数据，不输出生成正文。
+- 当前提交 `219fd80f35d8b8e3c2da8a1b2d64a8dddeae008c` 的 Repository CI 与 R60 Generation Eval CI 已 PASS；Runtime Image Candidate 正在执行，尚未报告最终结果。
+
+此代码目前仍是执行入口工程候选，不代表正式 Profile 已冻结或获准执行。未完成实际容器启动/归档下载的无 GPU 验证、运行镜像验证、Owner 本地 HF 端到端执行及 32K 资源预算复核前，不提交正式评估 Job。
+
+### 后续主线顺序
+1. 等待当前 HEAD 的 Runtime Image Candidate 真实回执；失败按日志修复，不沿用旧 SHA 的 CI 结果。
+2. 增加 Worker CLI 归档 bootstrap 的语法/边界测试及 CPU-only container entrypoint test；确认镜像不依赖未安装的 git。
+3. 由 Owner 在 Mac CLI 进行无 GPU/无私有数据的执行入口检查；如需 HF Job，由 Owner 决定并执行。ChatGPT 不代为提交。
+4. 复核输出目录契约、SAFE 回收方式和私有正文保管；HF Bucket RW 问题暂时不在 ChatGPT 执行范围内。
+5. 完成 32K 长上下文显存/时间/费用上限证据后，生成最终 Profile Freeze Review 包，等待 Owner 单独批准 Profile Freeze。Freeze 不自动授权正式推理。
+
+### 不变的授权边界
+`profile_freeze_authorized=false`、`inference_authorized=false`、`gpu_authorized=false`、`training_authorized=false`。不启动 Development20 / Locked30 正式推理、1000 条审核或 SFT；不读取 Locked30 私有案例。
