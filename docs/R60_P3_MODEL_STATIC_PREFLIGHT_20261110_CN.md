@@ -1,3 +1,27 @@
+# 2026-11-10 公开模板文件复核补充（优先于下方原静态描述）
+
+## GLM-Z1 embedded 与 standalone 模板存在明确行为差异
+
+已通过 Hugging Face Hub 文件读取，在固定 revision `8eb2858992c1f749e2a6d4075455decc2484722d` 核对：
+
+- `tokenizer_config.json` 内嵌 `chat_template`：对历史消息执行 `content.split('</think>')[-1].strip()`；`add_generation_prompt` 分支只输出 `<|assistant|>`，**不追加 `<think>`**。
+- 独立 `chat_template.jinja`：同样清理历史消息中最后一个 `</think>` 之前的内容；但 generation prompt 输出 `<|assistant|>\n<think>`。
+- 因而两者在生成前缀上不是等价模板。Transformers `AutoTokenizer.from_pretrained` 默认读取 tokenizer 配置中的 embedded template；若运行时不显式覆盖 `tokenizer.chat_template`，不能假设会使用独立 Jinja 文件。
+
+**当前结论：GLM-Z1 template source = HOLD / OWNER DECISION REQUIRED。** 不能把原文中“embedded template 添加 `<think>`”当作事实，也不能静默选择 standalone。P3 CPU 渲染需分别执行两种来源并保存两者 SHA、渲染差异与 generation-prefix 结果；Owner 决定实际运行时来源后，才能固定 template SHA。
+
+GLM-4 固定 revision `8dea913c41b543527c2860fb6f3c15c202f24aeb` 的 embedded 与 standalone 模板原始文本也并非逐字节相同：metadata 分支空白处理不同（embedded 在 `{{ meta }}` 后含额外空格）；必须用真实多轮/metadata synthetic messages 对比渲染，不能只比较文件是否存在。Qwen 当前仓库未列出独立 `chat_template.jinja`，使用 tokenizer embedded template。
+
+本次只是读取公开 Hub 文本；**没有本地下载文件、没有计算本地 SHA-256、没有执行 Transformers/Jinja 渲染**。不得将静态差异诊断冒充 CPU preflight PASS。
+
+## P3 代码与依赖执行基线
+
+- GLM-4 候选 Revision 已在提交 `0f39b685edf82ccc980535d49491d658f7647b81` 修正为 `8dea913c41b543527c2860fb6f3c15c202f24aeb`；此前 profile 文件中的 `077b5c2f...` 是错误旧 pin。
+- R60 P3 运行时使用 `requirements/hf-quality-reviewer.lock`：`transformers==4.57.1`、`sentencepiece==0.2.1`、`jinja2==3.1.6`。不要把 R59 的 `requirements/hf-cpu-tokenizer.lock`（Transformers 5.16.1）混作本轮依赖。
+- 新增 `scripts/r60_p3_prepare_model_snapshots_v1.py`，仅按固定 revision 下载 allowlist 内 tokenizer/config/template 文件，并对文件计算 SHA-256；不允许下载模型权重。对应合成测试为 `tests/test_r60_p3_prepare_model_snapshots_v1.py`。
+- 下载器代码和 revision profile 的 GitHub CI 通过，不代表本地模型 tokenizer/template 已执行。P3 状态仍为 `CPU_PREFLIGHT_PENDING`。
+
+---
 # 2026-11-10 后续状态补充：P2-B 已完成，P3 CPU 预检为当前主线
 
 P2-B Owner Mac 官方 Verifier 已返回 `P2B_OWNER_REVIEW_COMPLETE__SEMANTIC_HOLDS_PRESERVED`：30/30 cases、90/90 semantic checks；57 SUPPORTS_VERDICT、33 INSUFFICIENT_CONTEXT、0 DOES_NOT_SUPPORT_VERDICT。Owner identity cryptographic attestation=false；private_values_emitted=false；quality_v1_admitted=0；training_authorized=false；gpu_started=false。
@@ -43,7 +67,7 @@ The three repositories are public and list Transformers as the supported library
 ### GLM-Z1-32B-0414
 
 - `config.json`: same GLM4 architecture family, `torch_dtype=bfloat16`, `max_position_embeddings=32768`, 61 layers, hidden size 6144.
-- `tokenizer_config.json`: `tokenizer_class=PreTrainedTokenizer`, `model_max_length=128000`; tokenizer embeds a template that strips prior `</think>` content and adds a `<think>` generation prefix.
+- `tokenizer_config.json`: `tokenizer_class=PreTrainedTokenizer`, `model_max_length=128000`; embedded template strips content before the last `</think>` in each message. **It does not append `<think>` in its generation-prompt branch**; the separate `chat_template.jinja` does append `<think>`. See the 2026-11-10 template-source discrepancy below.
 - Repository also contains a separate `chat_template.jinja`; both must be hash-pinned and rendered in CPU tests.
 - `generation_config.json` only supplies EOS IDs, pad ID and Transformers version.
 - Model card's sampling table recommends temperature 0.6 / top_p 0.95 / top_k 40 / max_new_tokens 30000, but its inference example instead sets `do_sample=false` and `max_new_tokens=4096`. This is a real documented configuration conflict; do not silently choose one.
