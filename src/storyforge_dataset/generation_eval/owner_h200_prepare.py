@@ -10,7 +10,6 @@ import argparse
 import base64
 import hashlib
 import json
-import os
 import re
 import shlex
 import subprocess
@@ -161,7 +160,7 @@ def prepare(*, repo: Path, staging: Path, code_revision: str) -> dict[str, Any]:
     input_dir, output_dir = staging / "input", staging / "output"
     if not input_dir.is_dir() or not output_dir.is_dir():
         raise ValueError("STAGING_MOUNT_DIRS_REQUIRED")
-    if set(p.name for p in input_dir.iterdir()) != REQUIRED_INPUTS:
+    if {p.name for p in input_dir.iterdir()} != REQUIRED_INPUTS:
         raise ValueError("STAGING_INPUT_FILE_SET_INVALID")
     if list(output_dir.iterdir()):
         raise ValueError("STAGING_OUTPUT_NOT_EMPTY")
@@ -180,7 +179,7 @@ def prepare(*, repo: Path, staging: Path, code_revision: str) -> dict[str, Any]:
         proc = subprocess.run(
             ["git", "-C", str(repo), "archive", "--format=tar", code_revision,
              *ARCHIVE_MEMBERS],
-            stdout=target, stderr=subprocess.PIPE,
+            check=False, stdout=target, stderr=subprocess.PIPE,
         )
     if proc.returncode:
         (input_dir / "source.tar").unlink(missing_ok=True)
