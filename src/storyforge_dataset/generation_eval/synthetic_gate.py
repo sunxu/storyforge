@@ -10,9 +10,10 @@ from pathlib import Path
 from typing import Any
 
 from storyforge_dataset.hf_runtime.inputs import InputManager
+
 from .profiles import assess_profile, load_profile
-from .worker import WorkerError
 from .synthetic_32k import FROZEN_SHA256, SYNTHETIC_SENTENCE
+from .worker import WorkerError
 
 CALIBRATED_SHA256 = {
     "A": "a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398",
