@@ -1,5 +1,34 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：CPU Weight Stage Job 被驱逐；禁止重试旧下载方案，改 Hub 服务端复制
+
+**真实失败回执**：HF Job `6af35a879737d9a9e0913000`；`SHARD_VERIFIED` 停于 15/24；Pod `ERROR: ephemeral local storage usage exceeds ... 50G`。此前 `STAGE_START` 合计 24 个文件/61.04GiB。**这是确定的容器临时存储超额失败**，不能据此断言权重损坏或 Hub 下载错误。旧 `r60_qwen32b_weight_stage.py --mode stage` 使用可写 Bucket 挂载，虽然每次只有一片的 Python 数据流，挂载层可能保留本地 writeback/cache，积累到 50GB 超额；此前声称该方案不会受到 ephemeral 容量影响属于错误假设。
+
+**禁止事项**：不要原命令重新提交 CPU Job；不要将已经输出 `SHARD_VERIFIED` 的文件视为已经在远端持久化（缺少 `STAGE_COMPLETE` Manifest）；不要覆盖/删除旧 `/model-cache/qwen3-32b-9216db5/` 残留，先保留并后续核验。旧下载流程保留作历史诊断，不再推荐运行。
+
+**改进路径：HF Hub 提供 repo → Bucket 的服务端复制**（https://huggingface.co/docs/hub/storage-buckets#copying-files-between-repos-and-buckets）。对 Xet 托管模型文件，以远端内容哈希复制，不从 Mac/CPU Job 下载整套模型；需源/目标存储区域兼容，非 Xet 小文件可能经客户端复制。修复命令由 Owner Mac CLI 执行，不需新 HF Job：
+
+```bash
+set -euo pipefail
+hf --version
+# 使用已有授权登录状态；不要将 token 打印到日志
+SRC="hf://models/Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137/"
+DST="hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy/"
+# 使用独立新目录，禁止覆盖之前 50GB eviction 的原目录；
+# 仅在确认此目标目录原先不存在后执行：
+hf cp "$SRC" "$DST"
+hf buckets list adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy -R -h
+```
+
+HF URI `@<commit>` 为官方固定 revision 语法：https://huggingface.co/docs/huggingface_hub/en/package_reference/hf_uris；`hf cp` 是 `hf buckets cp` 同义命令。若复制失败提示区域不同或版本不支持，请保留错误、停止；不要自动回退到旧的 50GB CPU 挂载写入方案。目录复制可能包含额外非权重文件，需要下游筛选实际 model config/tokenizer/必要 `*.safetensors` 而非猜测 24 个原文件总集。
+
+**完成标准分层**：`hf cp` 退出码 0 + Bucket 列表只是复制路径初验；后续还需要生成并验证新的 Manifest（文件集合、固定 revision、大小、LFS/Xet 内容关联），不能直接把旧 `r60_weights_verified_manifest.json` 假造或挪用；然后由 H200 确认足够本地容量，进行真实模型加载。若 H200 容器本地磁盘也不足以放 61+GiB 权重，则须先解决 GPU 磁盘容量问题，不能绕过 +20GiB 余量门禁。
+
+**背景**：此前 3/3 PyTorch/Transformers P4 短生成 Smoke 已通过，并不说明新的 vLLM H200 权重链路通过。服务端复制避免重复下载，但不自动解决 vLLM 真实加载。
+
+---
+
+
 ## 2026-11-11：B25 单次加载、首条 Checkpoint 硬门禁（Owner 已授权推进）
 
 **目标**：使用既有冻结的 B25 GLM-4-32B 输入，一次 H200 Job 内运行 1→25 条。第 1 条产出后使用**原审核器** `read_checkpoint` 校验，校验不通过时立即停止、第 2 条不得生成；通过后在**同一 `inference()` 进程、同一个 LLM 实例**继续执行 2–25 条，不额外启动 1 条 Smoke Job，不重复加载模型。每条均进行同样的原版 Checkpoint 回读核验。只要任何条失败，禁止产生 `B25_ALL_VERIFIED`。
