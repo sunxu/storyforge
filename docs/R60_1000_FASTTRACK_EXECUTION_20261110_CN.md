@@ -1,5 +1,70 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：第二次 A25 因 vLLM 初始化疑似停滞取消；改为精确阶段诊断 v2
+
+Owner 明确已停止 Job `6af34cdb9737d9a9e0910ddb`，其日志在 330.4s 时仍 `ENGINE?` 未区分、`GPU VRAM=63319 MiB`、`GPU util=0%`、`主 Python CPU 秒=22.2`、`checkpoints_written=0`。这组事实**不能**单独证明 GPU 死锁，旧 v1 心跳只统计主 Python 进程，未解析 vLLM 子进程，也没有区分 `AutoTokenizer.from_pretrained`、`LLM(...)` 和 `generate`。停机动作已由 Owner 完成，暂停再次重复相同命令。
+
+### v2 诊断变更（仅新副本）
+
+- `experiments/r58_quality/r60_pilot_trace_prepare.py`：要求已固定 A25 输入 SHA256 `492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069`；从原 `input_A` **创建新 `input_A_trace2` 目录**，原始 25 条输入、四个运行模块与审核器代码保持原样；对新副本通过 AST 识别 5 个代码位置（Tokenizer 加载、Prompt Token 编码、`LLM(...)` 引擎构造、SamplingParams、`engine.generate`），各前后插入 `_r60_diag_event` 标记；如果代码结构或源 SHA 不符合预期则 HOLD，避免直接猜测旧源码行号；仅将新副本中的 `VLLM_LOGGING_LEVEL` 从 WARNING 改到 INFO（`disable_log_stats=True` 保留，不输出逐请求正文）；不更改模型 revision、采样参数、审核 rubric 或 Checkpoint 格式。
+- `experiments/r58_quality/r60_pilot_diagnostic_launcher.py`：新增从 `/proc` 汇总**子进程**数量、CPU 总时间、常驻内存、R/S/D/Z 等状态计数，所有字段均为数值/枚举，不打印命令行或环境变量；向新 AST 标记提供 `worker._r60_diag_event=set_stage` 回调。30s 的 HEARTBEAT 与原有 CPU/GPU/NVIDIA SMI 指标保留。vLLM 原生子进程若不属于 main 进程树则可能无法统计，属于诊断盲区。
+- `tests/test_r60_pilot_trace_prepare.py`：合成 CPU-only 校验 SHA、5 个标记位置、私有目录权限、重复目录拒绝、源码漂移失败、原冻结输入和 runner 不变。此前 `tests/test_r60_pilot_diagnostic_launcher.py` 仍覆盖无私有输出、Checkpoint 事件。
+- **当前已提交 GitHub，但未取得 CI PASS/Owner Mac CPU-only prepare PASS。任何失败继续 fail-closed，不应直接重提 GPU。**
+
+### Owner Mac 安装 v2 准备器与最新版 launcher（均为 CPU-only）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+REV="8c6b2317d266b958b87d2fd7ac0e525d718e06ae"
+umask 077
+
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+PREP="$BASE/r60_pilot_trace_prepare.py"
+LAUNCH="$BASE/r60_pilot_diagnostic_launcher_v2.py"
+test ! -e "$PREP" && test ! -e "$LAUNCH" || { echo PRIVATE_DIAG_TOOL_EXISTS_HOLD; exit 42; }
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_pilot_trace_prepare.py" > "$PREP"
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_pilot_diagnostic_launcher.py" > "$LAUNCH"
+chmod 600 "$PREP" "$LAUNCH"
+python3 -m py_compile "$PREP" "$LAUNCH"
+
+python3 "$PREP" \
+  --source-dir "$PILOT/input_A" \
+  --dest-dir "$PILOT/input_A_trace2" \
+  --launcher-file "$LAUNCH"
+
+python3 -u "$PILOT/input_A_trace2/r60_pilot_diagnostic_launcher.py" \
+  --input "$PILOT/input_A_trace2/source.private.jsonl" \
+  --output-dir "$PILOT/output_A" --model Qwen/Qwen3-32B \
+  --revision 9216db5781bf21249d130ec9da846c4624c16137 \
+  --verify-only
+```
+
+准备器期望 `R60_TRACE_A25_PRIVATE_READY__NO_GPU`、`anchors={"tokenizer":1,"encode":1,"engine":1,"params":1,"generate":1}`，无 HF Job/费用；本地 verify-only 应出现 BOOT、INPUT_VERIFIED、RUNNER_EXIT exit_code=0。
+
+### Owner Mac v2 A25 GPU Job（在本地校验 PASS 后）
+
+与旧 Job 相同模型、镜像、H200、超时 90m、attempts 1；**新的唯一 Bucket 输出目录** `r60-1000-pilot25-vllm0100-a-trace2`，绝不删除旧 `a`、`a-diag1`：
+
+```bash
+set -euo pipefail
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-quality-a25-trace2 \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A_trace2:/input:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; echo TRACE2_SHELL_START; test -x /usr/bin/python3 || exit 42; test -f /input/r60_pilot_diagnostic_launcher.py || exit 42; OUT=/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a-trace2; if [ -e "$OUT" ]; then echo OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; mkdir -p "$OUT"; exec /usr/bin/python3 -u /input/r60_pilot_diagnostic_launcher.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --start 1 --limit 25 --max-model-len 32768 --max-output-tokens 2400 --max-wall-seconds 3000 --confirm-paid-gpu'
+```
+
+GPU 日志以 `TOKENIZER_LOAD_START`、`TOKENIZER_LOADED`、`TOKEN_ENCODING_START/DONE`、`ENGINE_INIT_START`、`ENGINE_READY`、`GENERATE_START`、`GENERATE_DONE`、`CHECKPOINT_WRITTEN` 为关键。若一直停留 `ENGINE_INIT_START`，结合子进程 `R/S/D/Z` CPU 时间变化与 vLLM INFO 日志进一步定位。无论是否收费授权，必须先获得新准备器 SAFE PASS；若 v2 运行仍僵住，不再未经原因分析便循环重提同配置。
+
+---
+
+
 ## 2026-11-11：A25 Job 已手动停止；增加详细 SAFE 心跳日志并准备受控重跑
 
 Owner 报告 A25 Job `6af346e9ab34849891ac4e65` 已停止。此前状态 `RUNNING`、`CPU 0%`、`GPU 0%`、`GPU VRAM 64/144 GB`、`hf jobs logs` 空、输出 Bucket 子目录空。**不能凭显存 64GB 断言模型已完成初始化；未验证任何 Checkpoint，正式审核进度仍 0。** 用户已明确授予后续付费调用总体批准，但按此前约定 HF Jobs 仍由 Owner Mac CLI 执行；不经由受限 ChatGPT HF 连接器提交。
