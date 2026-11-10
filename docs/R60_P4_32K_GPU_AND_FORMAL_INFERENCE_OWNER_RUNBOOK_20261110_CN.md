@@ -82,6 +82,51 @@ hf jobs hardware
 
 以上为**只读核对**，不会创建 HF Job、运行 GPU、连接 Bucket 或访问私有案例。
 
+## 3.1 CPU-only 32K 输入 Token 校准（新工具；不提交 HF Job）
+
+工程入口 `python -m storyforge_dataset.generation_eval.synthetic_32k` 已实现，使用冻结 Profile 的三个固定 Revision、tokenizer 文件 SHA 和真实 Chat Template，单模型生成 1 条合成记录，二分校准默认目标 28,600 input tokens（允许误差 96；绝不超过 28,672），保留 4,096 generation 上限。Qwen Thinking flag 与 GLM-Z1 的 generation prefix 一并计数。
+
+工具本身不修改 Frozen、不授予 runtime GPU/inference 开关、不下载模型权重、不发起 HF Job，也不调用 `generate()`。生成文件 `inputs.jsonl` / `manifest.json`，SAFE stdout 不包含文本。仅有 Hugging Face tokenizer/config 公开文件下载，会产生普通网络流量（Mac 本地）。
+
+等本工具的最新 GitHub CI 通过后，在 Mac **只做 A 模型 CPU 校准**。推荐使用既有已验收的 amd64 镜像，通过 Docker/OrbStack 提供与 GPU Worker 相同的版本环境，挂载专门的新输出目录：
+
+```bash
+set -euo pipefail
+ROOT="/Users/keedle/workspace/storyforge"
+BRANCH="r60/p4-generation-eval-framework"
+IMAGE="docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
+
+git -C "$ROOT" fetch origin "$BRANCH"
+REV="$(git -C "$ROOT" rev-parse "origin/$BRANCH")"
+WORKTREE="$HOME/workspace/storyforge-p4-synthetic-${REV:0:12}"
+OUT="$HOME/.local/share/storyforge/r60/private/p4-synthetic-${REV:0:12}"
+mkdir -p "$(dirname "$WORKTREE")" "$(dirname "$OUT")"
+git -C "$ROOT" worktree add --detach "$WORKTREE" "$REV"
+mkdir -m 700 "$OUT"
+
+docker run --rm --platform linux/amd64 \
+  -v "$WORKTREE:/workspace/storyforge:ro" \
+  -v "$OUT:/work" \
+  -e PYTHONPATH=/workspace/storyforge/src \
+  -e HF_HUB_DISABLE_TELEMETRY=1 \
+  --entrypoint bash "$IMAGE" -lc '
+    set -euo pipefail
+    python -m pip install --disable-pip-version-check --require-hashes \
+      -r /workspace/storyforge/requirements/hf-generation-eval.lock
+    python -m storyforge_dataset.generation_eval.synthetic_32k \
+      --frozen /workspace/storyforge/experiments/r60_quality/p4_generation_profile_frozen_v1.json \
+      --authorization /workspace/storyforge/experiments/r60_quality/p4_generation_execution_authorization_20261110.json \
+      --model-role A \
+      --output-dir /work/A
+  '
+```
+
+回传只需终端最后一行 SAFE JSON（应为 `SYNTHETIC_32K_INPUT_PREPARED__GPU_NOT_STARTED`），以及 `REV`。输出 JSONL/Manifest 保存在 Mac 本地 `$OUT/A`；**不要上传合成输入或私有路径到公开日志**。若是 HOLD，保留原报错并停止，不改哈希、模型修订版或预算绕过。若目标目录已存在，该命令为保护数据将停止，不自动覆盖。
+
+**此步骤不是 GPU 任务。** 它只是先取得真实分词长度，并没有完成合成执行器的运行范围隔离和 HF Job 的正式提交前验收。
+
+---
+
 ## 4. 真正提交前的工程门槛（当前 HOLD）
 
 现有通用 `build_generation_plan` 与 `worker_cli` 可以接受三个开关全 true 的任意有效 Profile + Manifest，尚无独立的 `synthetic_only` 身份/记录防串用保护。因此不能只是把 Frozen 中 `gpu_authorized/inference_authorized` 改成 true 后直接投入正式 Job。应先在工程分支实施并通过 CPU-only 测试：
