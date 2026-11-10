@@ -1,5 +1,16 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 最新主线：1000 条候选精筛优先（覆盖下方历史 P4 后续叙述）
+
+Owner 明确指示「按建议推进，尽快进行 1,000 条候选的精筛」。三模型在 R60 的主用途为**审核真实历史回复能否进入 StoryForge 训练集**，不是比较哪个模型写故事最好。后续 P4/P5 的唯一优先实验为 30 条 P2-B 校准（Hard Rule / Player Agency / Safety）→ 校准审核器/分歧策略 → 推进已冻结 1000 条 A/B 六维质量审核与 Quality-v1 最终准入核验；文学故事生成对比 DEFERRED。已有三模型 32K synthetic GPU PASS 无需复测。
+
+可复用而未正式跑完的旧 1000 包：Owner Mac `~/.local/share/storyforge/r60/private/r60-hf-quality-first-1000`，原始扩展包 `r60-expand-first-600`，已有 `r60_hf_quality_adapter.py audit`。2026-11-08 历史回执为 1000 staged、A/B 0 reviewed、1000 HOLD；当前必须先重新只读 audit 并回传 SAFE，不得猜测已审核的数量。旧六维审查 policy 与 Rubric v2.1 不完全相同，不得直接以旧 policy 代替校准。下一阶段指令：[R60_1000_FASTTRACK_EXECUTION_20261110_CN.md](R60_1000_FASTTRACK_EXECUTION_20261110_CN.md)。
+
+**用户已明确推进 1000 精筛的业务目标**，但这并非无上限付费 GPU / 自动重试 / SFT 训练授权。ChatGPT 不能提交 HF Jobs；Owner Mac 才执行实际 GPU。未拿到当前 1000 audit SAFE 之前本阶段保持 `1000_CURRENT_AUDIT_PENDING`，`quality_v1_admitted=0`。
+
+---
+
+
 ## 最终裁决（2026-11-10）：三模型 32K 合成 H200 GPU / 私有输出回读全部 PASS
 
 **最新权威状态：`R60_P4_SYNTHETIC_32K_THREE_MODEL_GPU_AND_READBACK_PASS`。** 下文按时间归档的 `PENDING` / `HOLD` 均为各步**当时状态**，不要误当成当前待办。三模型的真实 H200 Worker SAFE、Owner Mac 私有文件读回 SHA、实际 token 数与正常停止原因已全部闭环。此次只关闭 **P4 三模型合成 GPU 技术验收子阶段**，不等同于关闭整个 P4 正式推理/质量评价阶段。
