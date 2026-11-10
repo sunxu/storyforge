@@ -1,3 +1,57 @@
+# 2026-11-10 P3 CPU 预检 HOLD 诊断与 Hugging Face 行为修正
+
+## 已收到的 Owner SAFE
+
+Owner 回传 `R60_P3_MODEL_FILES_SAFE.json` 已通过文件准备合同复核：schema/status 正确，3 个固定 Revision、每模型 6 个文件，SAFE 中的文件 SHA/bytes 结构与下载器合同一致。该回执没有提供 CPU 预检异常阶段，因此不能从 `P3_CPU_PREFLIGHT_ERROR_HOLD` 推断是依赖、路径或 Tokenizer 故障。
+
+## 先前 v2 的问题
+
+- v2 把所有未识别异常压成 `P3_CPU_PREFLIGHT_ERROR_HOLD`，没有保留阶段和异常类型，导致不可诊断。
+- v2 没有复用仓库唯一的 `src/storyforge_dataset/token_preflight.py`，违反 `docs/standards/HF_JOBS_ENGINEERING.md` 与 `skills/storyforge-hf-jobs/SKILL.md`。
+- v2 从 `tokenizer.chat_template` 读取的并不保证是 embedded template。Transformers 的模板加载有明确优先级：根目录 `chat_template.jinja` 会覆盖 `tokenizer_config.json` 内嵌模板。因此只对 `tokenizer.chat_template` 与 standalone 再比较，可能把同一份 standalone 模板比较两次，漏掉真正差异。
+- GitHub CI 对 v2 的 Ruff 检查发现 4 个 lint errors；不能把该 HEAD 视为 CI PASS。
+
+## Hugging Face 使用规则（本轮适用）
+
+1. 模型文件来自 Hub 的固定 commit Revision；下载只用 `snapshot_download(repo_id, revision=<40位SHA>, local_dir=<独立目录>, allow_patterns=<白名单>, token=False)`。Hub `local_dir` 模式会把仓库文件放在指定目录的相对路径下，并在根目录创建 `.cache/huggingface/` 元数据目录；该缓存目录不是模型文件，不应被误判为额外权重。
+2. Tokenizer 使用 `AutoTokenizer.from_pretrained(local_snapshot, local_files_only=True, trust_remote_code=False)`；本地预检不访问 Hub 网络，不加载 `AutoModel`，不触发模型权重。
+3. `apply_chat_template` 输入只使用标准 `role` / `content` 字段；实际 token ID 长度统一通过 `storyforge_dataset.token_preflight` 的 `encode_chat` / `extract_input_ids` / `describe_token_lengths` 计算，不复制 Token Core 算法。
+4. Transformers 4.57.1 会优先采用根目录 `chat_template.jinja`，而非 tokenizer config 中的旧式 embedded template。脚本必须从 `tokenizer_config.json` 单独读取 embedded 文本，再显式分别渲染 embedded 和 standalone；并核验加载后的活动模板确实对应预期来源。
+5. HF Jobs 是远端托管计算，不等同于 Hugging Face Hub 文件下载。本阶段已明确要求 Owner Mac 本地 CPU；不创建 HF Job，不占用 HF CPU Flavor，不产生 HF Job 费用。只有本地门禁通过且确需验证托管 Volume/容器行为时，才另行申请一次 CPU Job 授权。
+
+## v3 修正
+
+新增 `scripts/r60_p3_cpu_model_preflight_v3.py` 与 `tests/test_r60_p3_cpu_model_preflight_v3.py`：
+- 使用唯一共享 Token Core；90 组 synthetic 中文多轮输入逐模型统计实际 token IDs 和预算。
+- 单独读取 embedded template，显式比较 standalone 与 embedded 渲染，并核验 Transformers 加载优先级。
+- 依赖导入/版本、下载 SAFE 与本地 SHA、逐模型 Tokenizer load、模板渲染、tokenization、schema 检查均保留阶段。
+- SAFE 只输出稳定 reason code、failure_phase、exception_type，不输出异常消息、堆栈、私有路径或文本。
+- 修复 v2 Ruff 未使用导入/变量问题；v2 保留但不再作为验收入口。
+
+Owner Mac 仅在当前 HEAD 的五组 CI 全绿后，使用已存在快照运行 v3（不要重新下载）：
+
+```bash
+set -euo pipefail
+cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
+source .venv-r60-p3/bin/activate
+OUT="$HOME/.cache/storyforge/r60-p3-snapshots-20261110"
+set +e
+python scripts/r60_p3_cpu_model_preflight_v3.py \
+  --snapshots-root "$OUT" \
+  --download-safe "$OUT/R60_P3_MODEL_FILES_SAFE.json" \
+  --input-budget 28672 \
+  --output-budget 4096 \
+  --context-ceiling 32768 \
+  > "$OUT/R60_P3_CPU_PREFLIGHT_SAFE_V3.json"
+RC=$?
+set -e
+cat "$OUT/R60_P3_CPU_PREFLIGHT_SAFE_V3.json"
+printf 'P3_PREFLIGHT_EXIT=%s\\n' "$RC"
+```
+
+v3 仍不下载权重、不调用 inference、不初始化 CUDA、不提交 HF Job。`P3_TEMPLATE_SOURCE_DECISION_REQUIRED_HOLD` 是有效的 Owner 决策 HOLD，不应绕过。
+
+---
 # 2026-11-10 Owner Mac 文件准备回执与 CPU 预检实现更新
 
 ## 固定文件下载阶段：PASS
