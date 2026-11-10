@@ -253,7 +253,7 @@ def preflight(
             raise ValueError("P3_SYNTHETIC_INPUT_BUDGET_HOLD")
         if mismatch_count:
             template_mismatch_roles.append(role)
-        if role == "challenger" and not _render(tokenizer, synthetic_messages(0, severity.RUBRIC_TEXT), role, active_template).endswith("<|assistant|>\\n<think>"):
+        if role == "challenger" and not _render(tokenizer, synthetic_messages(0, severity.RUBRIC_TEXT), role, active_template).endswith("<|assistant|>\n<think>"):
             raise ValueError("P3_GLMZ1_THINKING_PREFIX_HOLD")
 
         results[role] = {
