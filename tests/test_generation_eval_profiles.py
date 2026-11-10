@@ -209,3 +209,36 @@ def test_p4_candidate_binds_p3_file_and_stop_token_evidence_but_stays_held():
     assert "TOKENIZER_FILE_HASHES_INVALID" not in result.blockers
     assert "GENERATION_CONFIG_HASH_MANIFEST_MISMATCH" not in result.blockers
     assert "EOS_TOKEN_IDS_REVISION_MISMATCH" not in result.blockers
+
+
+def test_p4_candidate_has_scoped_runtime_smoke_authorization_only():
+    repo_root = Path(__file__).parents[1]
+    candidate = load_profile(
+        repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json"
+    )
+    result = assess_profile(candidate, purpose="runtime_smoke")
+    assert result.ready is True
+    assert result.status == "P4_PROFILE_READY_FOR_RUNTIME_SMOKE"
+    assert assess_profile(candidate).ready is False
+    assert "PROFILE_FREEZE_NOT_AUTHORIZED" in assess_profile(candidate).blockers
+    assert candidate["profile_freeze_authorized"] is False
+    assert candidate["inference_authorized"] is False
+    assert candidate["gpu_authorized"] is False
+    assert candidate["training_authorized"] is False
+
+
+def test_runtime_smoke_authorization_does_not_allow_training():
+    profile = candidate_profile()
+    profile.update(valid_manifest_fields())
+    profile["runtime_smoke_authorized"] = True
+    profile["training_authorized"] = True
+    result = assess_profile(profile, purpose="runtime_smoke")
+    assert "TRAINING_AUTHORIZATION_MUST_REMAIN_DISABLED" in result.blockers
+
+
+def test_runtime_smoke_requires_its_own_explicit_authorization():
+    profile = candidate_profile()
+    profile.update(valid_manifest_fields())
+    result = assess_profile(profile, purpose="runtime_smoke")
+    assert result.ready is False
+    assert "RUNTIME_SMOKE_NOT_AUTHORIZED" in result.blockers

@@ -155,3 +155,8 @@ Worker/Backend 已增加 EOS / length / unrecognized-stop 分类、显式 EOS/PA
 - `docs/R60_P4_RUNTIME_AND_STOP_POLICY_20261110_CN.md`
 
 Base image digest 已通过 GitHub Actions 的 linux/amd64 CPU-only contract，验证值为 Python 3.11.11、PyTorch 2.6.0+cu124、CUDA build 12.4。此结果不代表有 CUDA 设备可用，也不代表 HF GPU runtime 的 BF16 能力已验证。`runtime_digest` 已绑定此 base image digest；GPU generation dependency lock 已生成并提交，SHA-256 为 `81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`，已写入 profile。锁文件在固定 CUDA base image 中通过 `pip install --dry-run --require-hashes`；PyTorch 仍为 `2.6.0+cu124`。HF GPU runtime 的 BF16 能力尚未验证，所有推理/GPU/训练授权仍关闭。此阶段没有提交 HF Job、下载权重、执行推理或训练。
+
+
+## P4.4：Owner 单独授权的三模型 Runtime Smoke
+
+新增 `generation_eval.runtime_smoke` 独立入口。它只读取 P4 candidate 与 pinned tokenizer manifest，不读取评估数据集；固定一条内置合成提示，每个模型仅生成一次，三模型在单张 GPU 上顺序加载。运行时只保留 SAFE 统计与生成文本 hash，不保存生成文本。该入口要求 `runtime_smoke_authorized=true`，但明确拒绝把生产 profile freeze、批量 inference、GPU generation 或 training 授权标志改为 true。正式 Worker 仍通过默认 `assess_profile(..., purpose="generation")`，因此不能借 Smoke 授权执行正式批量生成。

@@ -79,3 +79,19 @@ The generation model is still loaded only by the explicit `AutoModelForCausalLM.
 ## 7. Single-GPU placement is explicit
 
 The model loader now passes `device_map={"": 0}` rather than `device_map="auto"`. Each generation Job is intended for one allowlisted GPU flavor; model placement is forced onto CUDA device 0. This avoids an automatic CPU/disk offload decision during loading. The post-load device-map check remains as a second fail-closed guard. If the pinned 32B model does not fit the selected GPU in BF16, loading must fail; the runtime must not silently offload layers to CPU or disk.
+
+
+## 8. 独立 Runtime Smoke 授权（2026-11-10）
+
+Owner 已单独授权一次最小真实 GPU Runtime Smoke。机器配置仅新增 `runtime_smoke_authorized=true`；以下生产授权仍保持 false：
+
+- `profile_freeze_authorized=false`
+- `inference_authorized=false`
+- `gpu_authorized=false`
+- `training_authorized=false`
+
+Smoke 使用独立入口 `storyforge_dataset.generation_eval.runtime_smoke`，不调用生产 Generation Worker。它按 A → B → challenger 顺序在同一 GPU 上逐个加载模型，每个模型仅处理同一条内置合成中文提示，`max_input_tokens=256`、`max_new_tokens=32`、seed 42。输出文本不写入日志或 SAFE 回执，只保留文本 SHA-256、token 数、结束原因、耗时、BF16/CUDA 状态和显存峰值。每个模型卸载后清理其本次 Hub cache，再加载下一个模型。
+
+GPU flavor 限定为 `a100-large`，单 Job、单 attempt、60 分钟硬超时。只挂载项目 bucket 的独立 Smoke 输出目录为可写卷；不挂载训练集、不读取历史对话、不创建训练器或优化器。运行时镜像和依赖锁仍按 SHA-256 校验。此授权不冻结正式 Generation Profile，不批准 30 条评估集推理、正式批量推理或任何训练。
+
+若任一模型加载、BF16、Tokenizer、模板校验或生成终止行为失败，回执为 HOLD；不自动更换硬件、dtype、模型 revision 或依赖版本。

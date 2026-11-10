@@ -86,12 +86,16 @@ def load_profile(path: str | Path) -> dict[str, Any]:
     return value
 
 
-def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
-    """Return whether a candidate is fully frozen and explicitly authorized.
+def assess_profile(
+    profile: dict[str, Any], *, purpose: str = "generation"
+) -> ProfileAssessment:
+    """Assess a profile for production generation or a separately scoped smoke.
 
-    Missing model-specific generation settings are blockers, never guessed or
-    inherited from another model. This keeps the profile validator fail-closed.
+    Runtime Smoke authorization does not freeze the production profile and does
+    not authorize the general generation worker or training.
     """
+    if purpose not in {"generation", "runtime_smoke"}:
+        raise ValueError("P4_ASSESSMENT_PURPOSE_INVALID")
     if not isinstance(profile, dict) or profile.get("schema") != PROFILE_SCHEMA:
         raise ValueError("P4_PROFILE_SCHEMA_INVALID")
     models = profile.get("model_profiles")
@@ -99,13 +103,18 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
         raise ValueError("P4_MODEL_SET_INVALID")
 
     blockers: list[str] = []
-    for flag, code in (
-        ("profile_freeze_authorized", "PROFILE_FREEZE_NOT_AUTHORIZED"),
-        ("inference_authorized", "INFERENCE_NOT_AUTHORIZED"),
-        ("gpu_authorized", "GPU_NOT_AUTHORIZED"),
-    ):
-        if profile.get(flag) is not True:
-            blockers.append(code)
+    if purpose == "generation":
+        for flag, code in (
+            ("profile_freeze_authorized", "PROFILE_FREEZE_NOT_AUTHORIZED"),
+            ("inference_authorized", "INFERENCE_NOT_AUTHORIZED"),
+            ("gpu_authorized", "GPU_NOT_AUTHORIZED"),
+        ):
+            if profile.get(flag) is not True:
+                blockers.append(code)
+    elif profile.get("runtime_smoke_authorized") is not True:
+        blockers.append("RUNTIME_SMOKE_NOT_AUTHORIZED")
+    if profile.get("training_authorized") is True:
+        blockers.append("TRAINING_AUTHORIZATION_MUST_REMAIN_DISABLED")
 
     for field, code in (
         ("context_ceiling_tokens", "CONTEXT_CEILING_UNSET"),
@@ -298,8 +307,13 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
 
     blockers = list(dict.fromkeys(blockers))
     ready = not blockers
+    ready_status = (
+        "P4_PROFILE_READY_FOR_RUNTIME_SMOKE"
+        if purpose == "runtime_smoke"
+        else "P4_PROFILE_READY_FOR_OWNER_REVIEW"
+    )
     return ProfileAssessment(
-        status="P4_PROFILE_READY_FOR_OWNER_REVIEW" if ready else "P4_PROFILE_INCOMPLETE_HOLD",
+        status=ready_status if ready else "P4_PROFILE_INCOMPLETE_HOLD",
         ready=ready,
         model_count=len(models),
         roles=tuple(sorted(models)),

@@ -143,5 +143,6 @@
   "profile_freeze_authorized": false,
   "inference_authorized": false,
   "gpu_authorized": false,
-  "training_authorized": false
+  "training_authorized": false,
+  "runtime_smoke_authorized": true
 }
