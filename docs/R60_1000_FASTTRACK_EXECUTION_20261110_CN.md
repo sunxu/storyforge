@@ -1,5 +1,26 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 A Pilot25 输入真实 verify-only PASS；取消单条收费 Smoke
+
+Owner Mac 在独立 Pilot25 A 分片上得到 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`，`cases_total=25`、`cases_completed=0`、`training_authorized=false`、`private_values_emitted=false`。这只验证 A 的 25 个审核输入，B 的独立分片仍需要在 B 第一次执行前 verify-only；不再做重复的 1000 条输入预检。
+
+用户明确表示希望**直接 25 条，跳过独立 1 条真实 GPU Smoke**：32B 模型启动和权重加载属于较大固定成本，使用同一次加载连续审 25 条、并以逐条 checkpoint 记录成功/失败更经济。此更改不等于允许 GPU Job 自动提交或取消成本限制。
+
+已核实 vLLM 0.10.0 的 API 为 `GuidedDecodingParams(json=...)` 和 `SamplingParams(guided_decoding=...)`，准备器修补方向正确（[v0.10.0 官方 API](https://docs.vllm.ai/en/v0.10.0/api/vllm/sampling_params.html)），但模型权重加载/上下文以及可写 bucket 仍须在实机确认。
+
+### A 25 条 Job 参数改动（运行命令需经 Owner dry-run）
+
+- `--start 1 --limit 25 --max-wall-seconds 3000`，不是 limit 1。
+- `hf jobs run --flavor h200 --timeout 90m --attempts 1`（时长为**上限**，不是实际预计成本）。
+- 本地挂载仅 `input_A` 的 25 行独立私有目录；独立 A 输出 HF bucket 路径；输出不能上传/暴露回公开 GitHub。
+- `-v` HF bucket **子目录**挂载语义需先确认；禁止把未经验证的子目录当作一定存在。即使 Job 返回 `HF_REVIEW_COMPLETED__NO_ADMISSION` 也须私有 checkpoint 读回并与原始 source/crosswalk 对齐，才计算 1000 进度。
+- 对 B 的 25 条也需要独立启动和输出。由于原始 A/B 1000 输入独立洗牌，两个前 25 并非严格配对样本，不能按 `complete_pairs=25` 上报。
+
+**范围现状**：A Pilot25 verify-only PASS，A/B 模型实际审核均 0、HF Job 未启动。下一阶段进行明确的 dry-run 与人工成本上限确认，然后由 Owner Mac 手动执行 A25 GPU Job，避免再做 1-case 付费任务。
+
+---
+
+
 ## 2026-11-11 Owner Pilot25 私有分片正式 PASS，下一步只需轻量结构校验与 Job dry-run
 
 Owner Mac 最新实际回执：
