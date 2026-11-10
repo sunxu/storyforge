@@ -85,8 +85,11 @@ class FakeAutoTokenizer:
 
 
 class FakeAutoModel:
+    last_kwargs: ClassVar[dict[str, Any] | None] = None
+
     @staticmethod
     def from_pretrained(*args, **kwargs):
+        FakeAutoModel.last_kwargs = kwargs
         return FakeModel()
 
 
@@ -127,6 +130,7 @@ def test_embedded_template_hash_and_gpu_device_map_are_verified(tmp_path: Path):
         transformers_module=FakeTransformers(),
     )
     assert backend.gpu_started is True
+    assert FakeAutoModel.last_kwargs["device_map"] == {"": 0}
 
 
 def test_standalone_template_hash_is_verified(tmp_path: Path):

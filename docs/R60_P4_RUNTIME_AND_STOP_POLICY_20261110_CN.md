@@ -74,3 +74,8 @@ No HF Job was submitted, no model weights were loaded, and no inference or train
 The backend API now requires an explicit local tokenizer snapshot and its expected per-file SHA-256 map. It verifies all six allowlisted files before calling `AutoTokenizer.from_pretrained(local_files_only=True)`. The standalone GLM template is read from the same verified snapshot. The downloader uses the exact model revision and an `allow_patterns` list derived from the expected file map; it does not request model weights.
 
 The generation model is still loaded only by the explicit `AutoModelForCausalLM.from_pretrained(model_id, revision=...)` call. A manifest mismatch fails before model loading. CI tests use synthetic local files and fake Transformers/Torch objects; they do not download tokenizer files or weights.
+
+
+## 7. Single-GPU placement is explicit
+
+The model loader now passes `device_map={"": 0}` rather than `device_map="auto"`. Each generation Job is intended for one allowlisted GPU flavor; model placement is forced onto CUDA device 0. This avoids an automatic CPU/disk offload decision during loading. The post-load device-map check remains as a second fail-closed guard. If the pinned 32B model does not fit the selected GPU in BF16, loading must fail; the runtime must not silently offload layers to CPU or disk.

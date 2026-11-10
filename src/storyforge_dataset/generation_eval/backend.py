@@ -234,7 +234,7 @@ class TransformersGenerationBackend:
                 model_id,
                 revision=revision,
                 torch_dtype=torch.bfloat16,
-                device_map="auto",
+                device_map={"": 0},
                 trust_remote_code=False,
                 low_cpu_mem_usage=True,
             )
