@@ -98,6 +98,7 @@ PR：[#30](https://github.com/sunxu/storyforge/pull/30)，Open / Draft
 4. 不可仅凭参数量估算声称 32K 一定可运行；没有实测数据时结论应是预算估计或 HOLD。
 
 ### P4-D：最终 Profile Freeze Review 包
+Owner 裁决包已形成：[R60 P4 Profile Freeze Review — Owner 裁决包](R60_P4_PROFILE_FREEZE_REVIEW_OWNER_PACKET_20261110_CN.md)。状态 `OWNER_REVIEW_READY__PROFILE_NOT_FROZEN`；仅请求 Owner 对配置冻结作独立裁决，不请求推理/GPU/训练授权。
 1. 对齐三模型 revision、tokenizer/template/generation config hashes、EOS/PAD、sampling、seed、Prompt v1、Schema v1、runtime digest、lock SHA、context/input/output budget。
 2. 解释所有模型特定采样决策与 finish_reason/stop 规则；不得擅自更改已批准契约。
 3. 汇总 P4-A/B/C 证据，列出全部未解决 HOLD。
@@ -154,7 +155,7 @@ Owner 已明确决定：暂停 ChatGPT HF 403 / OAuth / Bucket RW 排查，后�
 - [ ] Mac CLI 执行说明可复制、可复现（Runbook 已建立；Owner 实机回执仍 HOLD）。
 - [ ] 输出隔离与 SAFE 回收方案明确，并由 Owner Mac 验证或明确 HOLD。
 - [ ] 32K 资源预算与证据等级明确（预算文档已建立；Owner 裁决和长上下文实测仍 HOLD）。
-- [ ] 最终 Profile Freeze Review 包完成，未授权状态仍明确。
+- [x] 最终 Profile Freeze Review 包完成，未授权状态仍明确；等待 Owner 裁决。
 - [ ] 当前 HEAD 的全部 CI 回执核验完成。
 - [ ] Issue #28 更新，PR #30 描述与代码状态一致。
 - [ ] Owner 收到最终裁决包；没有擅自冻结或启动正式评估。
