@@ -92,7 +92,8 @@ def test_frozen_profile_builds_deterministic_plan_only():
     assert first.argv[0:3] == ("hf", "jobs", "run")
     assert first.argv[-3] == "bash"
     shell = first.argv[first.argv.index("bash") + 2]
-    assert "git -C /workspace/storyforge fetch --quiet --depth=1 origin " + ("f" * 40) in shell
+    assert "codeload.github.com/sunxu/storyforge/tar.gz/" + ("f" * 40) in shell
+    assert "SOURCE_ARCHIVE_PATH_INVALID" in shell
     assert "--input /input/inputs.jsonl" in shell
     assert "storyforge_dataset.generation_eval.worker_cli" in shell
     assert "pip install --disable-pip-version-check --require-hashes" in shell

@@ -156,16 +156,43 @@ def build_generation_plan(
     plan_id = hashlib.sha256(
         json.dumps(plan_identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
-    # The pinned base image does not contain this repository's Python package.
-    # Fetch exactly the planned commit at Job start and expose src/ via PYTHONPATH.
+    # Fetch the exact public source archive with Python stdlib; the pinned
+    # PyTorch base image does not guarantee that git is installed.
+    archive_script = f\'''import io, shutil, tarfile, urllib.request
+from pathlib import Path, PurePosixPath
+revision = "{code_revision}"
+url = f"https://codeload.github.com/sunxu/storyforge/tar.gz/{revision}"
+archive = urllib.request.urlopen(url, timeout=90).read()
+destination = Path("/workspace/storyforge")
+destination.mkdir(parents=True, exist_ok=False)
+with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as bundle:
+    members = bundle.getmembers()
+    if not members:
+        raise SystemExit("SOURCE_ARCHIVE_EMPTY")
+    prefix = members[0].name.split("/", 1)[0]
+    for member in members:
+        path = PurePosixPath(member.name)
+        if not path.parts or path.parts[0] != prefix:
+            raise SystemExit("SOURCE_ARCHIVE_PREFIX_INVALID")
+        relative = PurePosixPath(*path.parts[1:])
+        if relative.is_absolute() or ".." in relative.parts:
+            raise SystemExit("SOURCE_ARCHIVE_PATH_INVALID")
+        if member.issym() or member.islnk() or not (member.isdir() or member.isfile()):
+            raise SystemExit("SOURCE_ARCHIVE_MEMBER_INVALID")
+        target = destination.joinpath(*relative.parts)
+        if member.isdir():
+            target.mkdir(parents=True, exist_ok=True)
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        source = bundle.extractfile(member)
+        if source is None:
+            raise SystemExit("SOURCE_ARCHIVE_MEMBER_UNREADABLE")
+        with target.open("xb") as output:
+            shutil.copyfileobj(source, output)
+\'''
     shell_command = (
-        "set -euo pipefail; "
-        "command -v git >/dev/null; "
-        "mkdir -p /workspace; "
-        "git clone --quiet --filter=blob:none --no-checkout "
-        "https://github.com/sunxu/storyforge.git /workspace/storyforge; "
-        f"git -C /workspace/storyforge fetch --quiet --depth=1 origin {code_revision}; "
-        f"git -C /workspace/storyforge checkout --quiet --detach {code_revision}; "
+        "set -euo pipefail; mkdir -p /workspace; "
+        f"python -c 'exec(\\\"\\\"\\\"{archive_script}\\\"\\\"\\\")'; "
         "python -m pip install --disable-pip-version-check --require-hashes "
         "-r /workspace/storyforge/requirements/hf-generation-eval.lock; "
         f"STORYFORGE_RUNTIME_IMAGE_DIGEST={profile['runtime_digest']} "

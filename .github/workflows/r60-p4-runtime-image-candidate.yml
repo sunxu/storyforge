@@ -31,15 +31,15 @@ jobs:
       - name: Verify base Python and CUDA-enabled PyTorch build (no GPU)
         run: |
           docker run --rm --platform linux/amd64 --entrypoint python "$IMAGE" -c '
-          import json, shutil, sys, torch
+          import json, tarfile, urllib.request, sys, torch
           report = {
               "python": sys.version.split()[0],
               "torch": torch.__version__,
               "cuda_build": torch.version.cuda,
               "cuda_available_on_ci_runner": torch.cuda.is_available(),
-              "git_available": shutil.which("git") is not None,
+              "source_archive_stdlib_available": callable(tarfile.open) and callable(urllib.request.urlopen),
           }
-          assert report["git_available"], report
+          assert report["source_archive_stdlib_available"], report
           assert sys.version_info[:2] == (3, 11), report
           assert torch.__version__.startswith("2.6.0"), report
           assert torch.version.cuda is not None and torch.version.cuda.startswith("12.4"), report
