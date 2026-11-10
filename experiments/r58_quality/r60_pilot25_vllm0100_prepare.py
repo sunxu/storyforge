@@ -102,7 +102,6 @@ def prepare(source: Path, dest: Path) -> dict:
         # the verified vLLM API identifiers, not optional control-flow text.
         old_import = "from vllm.sampling_params import StructuredOutputsParams"
         old_type = "StructuredOutputsParams"
-        old_kw = "structured_outputs"
         fingerprint = sha(source_files["runner.py"])
         if runner.count(old_import) != 1:
             raise Hold(f"VLLM0100_IMPORT_HOLD__ROLE_{role}__SHA256_{fingerprint}")
