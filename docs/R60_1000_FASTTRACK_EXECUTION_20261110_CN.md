@@ -34,7 +34,7 @@ PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 SRC="$PILOT/input_B"
 DEST="$PILOT/input_B_continuous_local"
 CODE="$BASE/r60-glm4-b25-local-tools-v1"
-REV="__GLM4_LOCAL_CODE_PIN__"
+REV="205b946ba6bd9cb3c87304150b37e269c1ee80c7"
 umask 077
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$SRC"
