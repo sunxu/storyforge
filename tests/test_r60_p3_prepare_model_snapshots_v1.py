@@ -62,3 +62,13 @@ def test_prepare_requires_create_only_absolute_output(tmp_path):
     existing.mkdir()
     with pytest.raises(ValueError, match="P3_OUTPUT_ROOT_MUST_BE_ABSENT_ABSOLUTE"):
         p3.prepare_snapshots(existing)
+
+
+def test_safe_serializer_emits_valid_json_and_real_newline():
+    import json
+
+    payload = {"schema": "synthetic", "status": "PASS"}
+    encoded = p3.serialize_safe(payload)
+    assert encoded.endswith("\n")
+    assert not encoded.endswith("\\\\n")
+    assert json.loads(encoded) == payload
