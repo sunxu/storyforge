@@ -1,5 +1,20 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 H200 A 真实 GPU 生成 SAFE（输出回收待复核）
+
+Owner Mac 回传 Job `6af32a97ab34849891ac0461` 的 **Worker SAFE**：
+
+- `schema=storyforge_r60_generation_worker_receipt_safe_v1`，`status=GENERATION_BATCH_PASS`，`synthetic_only=true`，`model_role=A`。
+- `gpu_started=true`、`inference_started=true`、`training_started=false`。
+- `cpu_calibrated_input_tokens=28568`；`input_sha256=a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398`。
+- Model revision `9216db5781bf21249d130ec9da846c4624c16137`；lock SHA `81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`；镜像 digest `sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`。
+- `record_count=1`；`finish_reason_counts={"eos":1,"length":0,"unrecognized_stop":0}`；`truncated_count=0`。
+- `private_output_path=a-outputs.private.json`；`output_sha256=0b8b5655bbec5767d72eecbed9dc302a4d4556699b9c90d10b22bfd394b2475b`；`output_size_bytes=1945`；`output_mode=0600`。
+- **已证明真实 H200 加载并执行一次接近 32K 的合成推理**；实际 `output_tokens` 尚未出现在 SAFE，仅在私有输出文件中。模型 EOS 提前停止，不能据此宣称完整生成 4096 tokens。
+- **当前裁决**：`H200_A_GPU_GENERATION_PASS__PRIVATE_OUTPUT_READBACK_PENDING`。下一步 Owner 从 `/output` 的实际 bucket 存储同步回 Mac，验证 SHA-256 与大小，只提取 `outputs[0].input_tokens`、`outputs[0].output_tokens`、`finish_reason` 等元数据；不得回传 `text`，不得随意重启 A 或启动 B/C。
+
+---
+
 ## 2026-11-10 Owner H200 A 实际提交回执
 
 Owner Mac 已实际执行唯一一次 A H200 合成 GPU Job 提交，并回传 CLI 的 Job ID 和 URL：
