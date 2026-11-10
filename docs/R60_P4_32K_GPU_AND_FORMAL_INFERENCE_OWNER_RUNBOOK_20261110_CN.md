@@ -25,6 +25,43 @@ B 和 challenger 已通过文件 SHA、record_count、budget 校验和固定 Tok
 
 ---
 
+## 2026-11-10 最新 Owner Gate 验收（3/3 PASS）
+
+Owner Mac 已对三模型运行 `authorize_synthetic_profile` 的实际 CPU-only Gate。回执均为 `SYNTHETIC_ONLY_GATE_PASS`，无 GPU、推理或训练：
+
+| Model | input SHA-256 | CPU Token 校准 |
+|---|---|---:|
+| A | `a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398` | 28,568 |
+| B | `8cb8ddf2fc511cf957ed03510853dad94b5169334fde8d6ff153afda6640285e` | 28,593 |
+| challenger | `2676b44c9e0e6ea1c8ccc1824e246d20c08fd8b7cf789a669e3bd06a1f91c28c` | 28,597 |
+
+冻结 Profile 未变，合成 Gate 源码提前校验固定哈希、记录格式、授权范围，衍生 Profile 只在内存中启用 GPU/Inference。下一项是 Owner 的 `/input:ro` + `/output:rw` 实际 HF Job 挂载/回收验证；这是与三模型 Gate PASS 不同的验收，不得混用。
+
+### Owner Mac 下一步：CPU-only HF 输入/输出挂载探针
+
+此探针仅提交 `cpu-basic`，使用**本地专用合成数据目录**，无 GPU、无模型权重/推理。HF CLI 会先将本地目录同步到私有 `jobs-artifacts` 存储，再挂载到 Job；输出回收用 CLI 显示的 `hf buckets sync` 命令，不能假定本地目录立刻自动出现输出。该能力参考 [官方 Jobs Configuration](https://huggingface.co/docs/hub/jobs-configuration)。
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private/p4-synthetic-30636aa6187b"
+RUNID="r60-p4-mount-$(date +%Y%m%d%H%M%S)"
+STAGING="$HOME/.local/share/storyforge/r60/private/$RUNID"
+mkdir -m 700 "$STAGING"
+mkdir -m 700 "$STAGING/input" "$STAGING/output"
+cp "$BASE/A/inputs.jsonl" "$BASE/A/manifest.json" "$STAGING/input/"
+shasum -a 256 "$STAGING/input/inputs.jsonl"
+hf jobs run --namespace adradar --name "$RUNID" \
+  --flavor cpu-basic --timeout 5m --attempts 1 \
+  -v "$STAGING/input:/input:ro" \
+  -v "$STAGING/output:/output:rw" \
+  python:3.12 python -c \
+  'import hashlib,json,pathlib; p=pathlib.Path("/input/inputs.jsonl"); m=json.loads(pathlib.Path("/input/manifest.json").read_text()); assert hashlib.sha256(p.read_bytes()).hexdigest()==m["sha256"]; o=pathlib.Path("/output/mount-safe.json"); assert not o.exists(); o.write_text(json.dumps({"schema":"storyforge_r60_p4_mount_probe_safe_v1","status":"CPU_MOUNT_RW_PASS","input_sha256":m["sha256"],"gpu_started":False,"inference_started":False,"training_started":False})); print(o.read_text())'
+```
+
+Owner 执行后提供 Job ID、状态、stdout SAFE，以及 CLI 打印的**输出同步命令**；按该命令将远端结果读回到独立目录，验证 `mount-safe.json` 的内容后再把状态提升为 `CPU_MOUNT_RW_READBACK_PASS`。如果失败或无法回收，停止后续 H200 Job。这个探针有少量 CPU 计费（`cpu-basic` 参考约 $0.01/hour），但不应据此宣称已验证 GPU 的真实挂载或长期模型输出。
+
+---
+
 ## 2026-11-10 synthetic-only Gate 三模型 Owner 实机回执
 
 Owner 已在 Mac 以固定 Frozen SHA 和校准输入完成 CPU-only Gate，**3/3 PASS**：
