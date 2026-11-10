@@ -55,9 +55,10 @@ def source_fixture(tmp_path: Path) -> tuple[Path, Path]:
         private_file(inp / "source.private.jsonl", "".join(lines).encode())
         old_script = (
             "from vllm.sampling_params import StructuredOutputsParams\n"
-            "x=structured_outputs=StructuredOutputsParams(json=response_schema())\n"
-            "y=structured_outputs=structured_factory(json=schema)\n"
-            "z=StructuredOutputsParams, TokensPrompt, max_model_len)\n"
+            "def make_main(SamplingParams, schema):\n"
+            "    return SamplingParams(temperature=0, structured_outputs=StructuredOutputsParams(json=schema))\n"
+            "def make_repair(SamplingParams, structured_factory, schema):\n"
+            "    return SamplingParams(structured_outputs=structured_factory(json=schema))\n"
         )
         private_file(inp / "runner.py", old_script.encode())
         for filename in ("token_core.py", "runtime_inputs.py", "runtime_resources.py"):
@@ -101,5 +102,22 @@ def test_existing_original_checkpoint_is_rejected(tmp_path):
 def test_code_patch_api_drift_rejected(tmp_path):
     source, dest = source_fixture(tmp_path)
     private_file(source / "input_B" / "runner.py", b"unexpected runner version")
-    with pytest.raises(pilot.Hold, match="VLLM0100_PATCH_CONTRACT_CHANGED"):
+    with pytest.raises(pilot.Hold, match="VLLM0100_IMPORT_HOLD"):
         pilot.prepare(source, dest)
+
+
+def test_older_runner_without_quote_repair_can_be_patched(tmp_path):
+    source, dest = source_fixture(tmp_path)
+    old = (
+        "from vllm.sampling_params import StructuredOutputsParams\\n"
+        "def build(SamplingParams, schema):\\n"
+        "    return SamplingParams(structured_outputs = StructuredOutputsParams(json=schema))\\n"
+    )
+    for role in ("A", "B"):
+        private_file(source / f"input_{role}" / "runner.py", old.encode())
+    receipt = pilot.prepare(source, dest)
+    assert receipt["status"] == "R60_PILOT25_PRIVATE_STAGED__GPU_NOT_AUTHORIZED"
+    for role in ("A", "B"):
+        patched = (dest / f"input_{role}" / "runner.py").read_text()
+        assert "guided_decoding = GuidedDecodingParams(json=schema)" in patched
+        assert "structured_outputs" not in patched
