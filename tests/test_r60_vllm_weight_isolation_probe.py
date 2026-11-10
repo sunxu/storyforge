@@ -14,7 +14,7 @@ spec.loader.exec_module(probe)
 
 
 def test_absent_pin_is_not_treated_as_ready(tmp_path):
-    assert probe.cache_probe(tmp_path)["status"] == "PINNED_SNAPSHOT_NOT_LOCAL"
+    assert probe.cache_probe(tmp_path / "absent")["status"] == "PINNED_SNAPSHOT_NOT_LOCAL"
 
 
 def test_complete_synthetic_shards_are_readable(tmp_path):
