@@ -1,5 +1,18 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：同一 Dummy Job 默认缓存未命中（仅限定目录）
+
+Owner 追加真实 SAFE 日志：
+```json
+{"event":"CACHE_PROBE","private_values_emitted":false,"schema":"storyforge_r60_weight_isolation_safe_v1","shards_expected":null,"shards_present":0,"status":"PINNED_SNAPSHOT_NOT_LOCAL"}
+```
+紧接着 `CACHE_NOT_VERIFIED`、`DUMMY_ENGINE_START`，该 Job 的后续日志已单独证实 `DUMMY_ENGINE_READY`（elapsed 28.5s）。探针检查的是**本次 H200 容器默认 HF 缓存中、固定 revision 的 snapshot**，它不验证 `HF_HUB_CACHE` 以外目录、以前 Job 的临时缓存、Hub 网络连接和模型文件是否损坏。因此只能说默认缓存缺失，不能断言权重从未下载，或将其直接判为全部故障根因。
+
+**执行策略更新**：不再尝试同配置直接重跑 A25；先设计持久权重准备并检查磁盘容量、精确 revision、safetensors shard/index 数量及完整性，区分下载、远程文件 I/O 与真实 CUDA loader 阶段；H200 仅在权重准备与本地磁盘空间预检通过后，从**本地**快照加载、确认 `ENGINE_READY` 和首个真实 checkpoint。注意每个 H200 Job 的临时文件系统并不保证共享，持久 HF Bucket 应作为复制来源而不是未经测量直接 mmap safetensors 的路径。保持 A/B 盲审核及冻结源不变。
+
+---
+
+
 ## 2026-11-11：H200 Dummy 引擎完成，转入真实权重路径排障
 
 Owner 提供最新真实实验回执：
