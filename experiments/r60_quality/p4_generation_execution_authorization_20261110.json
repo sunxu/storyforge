@@ -1,0 +1,71 @@
+{
+  "schema": "storyforge_r60_p4_staged_execution_authorization_v1",
+  "status": "OWNER_APPROVED_STAGED__NOT_SUBMITTED",
+  "owner_approved_on": "2026-11-10",
+  "owner_instruction": "授权32K 合成 GPU 测试及后续正式推理",
+  "frozen_profile_path": "experiments/r60_quality/p4_generation_profile_frozen_v1.json",
+  "frozen_profile_sha256": "a58d02c757767f18deb8a4cb948a56be199c837c045d83648838868961e1037f",
+  "stages": {
+    "synthetic_32k": {
+      "owner_authorized": true,
+      "execution_activated": false,
+      "status": "AUTHORIZED__EXECUTION_PACKET_PENDING",
+      "input_type": "synthetic_only",
+      "roles": [
+        "A",
+        "B",
+        "challenger"
+      ],
+      "sequence": "serial_one_model_one_job",
+      "flavor": "h200",
+      "platform": "linux/amd64",
+      "batch_size": 1,
+      "input_budget_tokens": 28672,
+      "output_budget_tokens": 4096,
+      "context_ceiling_tokens": 32768,
+      "max_attempts_per_job": 1,
+      "max_job_minutes": 60,
+      "max_stage_gpu_hours": 3,
+      "reference_h200_usd_per_hour": 5,
+      "max_stage_estimated_gpu_usd": 15,
+      "require_owner_mac_cli": true,
+      "halt_on": [
+        "OOM",
+        "bad_stop",
+        "fingerprint_mismatch",
+        "missing_safe_receipt",
+        "unexpected_cost",
+        "private_input"
+      ]
+    },
+    "formal_inference": {
+      "owner_authorized": true,
+      "execution_activated": false,
+      "status": "AUTHORIZED_IN_PRINCIPLE__GATED_BY_SYNTHETIC_PASS",
+      "activation_requirements": [
+        "all_three_32k_synthetic_pass_or_explicit_owner_exception",
+        "case_scope_manifest_hash_and_count_fixed",
+        "private_input_output_mounts_verified",
+        "formal_gpu_budget_and_timeout_recorded",
+        "blind_review_and_output_schema_controls_pass"
+      ],
+      "no_automatic_submission": true
+    }
+  },
+  "denied": {
+    "training_authorized": false,
+    "sft_authorized": false,
+    "thousand_case_bulk_review_authorized": false,
+    "chatgpt_hf_job_submission_authorized": false,
+    "chatgpt_bucket_debug_authorized": false,
+    "auto_retry_authorized": false,
+    "auto_pr_merge_authorized": false
+  },
+  "production_profile_flags_until_gate": {
+    "profile_freeze_authorized": true,
+    "inference_authorized": false,
+    "gpu_authorized": false,
+    "training_authorized": false
+  },
+  "prior_smoke_authorization_consumed": true
+}
