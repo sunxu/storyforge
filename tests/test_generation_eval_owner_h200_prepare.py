@@ -51,3 +51,26 @@ def test_bootstrap_enforces_digest_and_path():
     assert "SOURCE_ARCHIVE_PATH_INVALID" in source
     assert "SOURCE_ARCHIVE_TYPE_INVALID" in source
     assert "src/storyforge_dataset" in source
+
+
+@pytest.mark.parametrize(("role", "slug"), [("B", "b"), ("challenger", "challenger")])
+def test_owner_h200_non_a_roles_are_separate_and_scoped(tmp_path, role, slug):
+    run_id = f"r60-p4-h200-{slug}-20261110232000"
+    stage = tmp_path / run_id
+    args = build_h200_argv(staging=stage, run_id=run_id,
+                           archive_sha="e" * 64, model_role=role)
+    joined = " ".join(args)
+    assert f"--model-role {role}" in joined
+    assert "--synthetic-authorization /input/synthetic-authorization.json" in joined
+    assert f"--output-dir /output/{run_id}" in joined
+    assert args[args.index("--attempts") + 1] == "1"
+    assert args[args.index("--timeout") + 1] == "60m"
+    assert args[args.index("--flavor") + 1] == "h200"
+
+
+def test_role_and_run_slug_mismatch_rejected(tmp_path):
+    with pytest.raises(ValueError, match="H200_RUN_ID_INVALID"):
+        build_h200_argv(
+            staging=tmp_path, run_id="r60-p4-h200-b-20261110232000",
+            archive_sha="e" * 64, model_role="challenger"
+        )
