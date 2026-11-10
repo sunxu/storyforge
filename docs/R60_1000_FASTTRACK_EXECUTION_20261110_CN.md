@@ -2,6 +2,8 @@
 
 ## 2026-11-11：A25 Trace2 权重加载卡点：v3 隔离诊断与根因分流
 
+> 验证更新（2026-11-11）：权重隔离探针与安全 `/proc` 心跳代码已经提交；当前验证提交 `504e7796664f87b652e4a7bddc06822b04fddf9d`，`CI=PASS`、`R58 scoped synthetic=PASS`、`R60 Generation Eval CI=PASS`，P4 Runtime Image Candidate 查询时仍 in_progress。修复过一处 CPU 合成测试夹具错误（原测试把已存在的临时目录误认为不存在），不是生产探针故障。尚无任何 dummy H200 实测回执，不能声称根因已解决。\n\n
+
 ### 与前面三次运行的实质区别
 
 第一次 A25 在 shell `exec python` 因 `python: not found` 失败，审核代码从未启动；第二次 `/usr/bin/python3` 可启动，但仅靠 GPU VRAM≈64GiB 与 0 日志不能判明卡点；第三次 Trace2 的 25 条私有输入、Tokenizer 与 25 条 Prompt 编码均已通过，`ENGINE_INIT_START` 已出现，vLLM INFO 记录了 `Loading model from scratch` 和 `Using model weights format ['*.safetensors']`，直到 210 秒没有 `ENGINE_READY`，子进程一直 S 睡眠、累计 CPU 秒几乎不变、GPU 利用率 0%，Checkpoint 仍 0。**这只能说明最后可见日志停在加载权重附近，不等于确定权重文件本身坏了**；下一步需区分网络/磁盘、同步等待、CUDA/运行时兼容性。
