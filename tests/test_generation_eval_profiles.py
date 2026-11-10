@@ -268,3 +268,28 @@ def test_runtime_smoke_requires_its_own_explicit_authorization():
     result = assess_profile(profile, purpose="runtime_smoke")
     assert result.ready is False
     assert "RUNTIME_SMOKE_NOT_AUTHORIZED" in result.blockers
+
+
+def test_freeze_review_cli_is_cpu_only_and_reports_candidate_readiness(capsys):
+    from storyforge_dataset.generation_eval.__main__ import main
+
+    repo_root = Path(__file__).parents[1]
+    profile_path = repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json"
+    with pytest.raises(SystemExit) as exc:
+        # main() normally reads argv; patching is isolated to this CPU-only test.
+        import sys
+        old = sys.argv
+        try:
+            sys.argv = ["generation_eval", str(profile_path), "--purpose", "freeze_review"]
+            code = main()
+        finally:
+            sys.argv = old
+        raise SystemExit(code)
+    assert exc.value.code == 0
+    safe = json.loads(capsys.readouterr().out)
+    assert safe["status"] == "P4_PROFILE_READY_FOR_FREEZE_REVIEW"
+    assert safe["ready"] is True
+    assert safe["private_values_emitted"] is False
+    assert safe["inference_started"] is False
+    assert safe["gpu_started"] is False
+    assert safe["training_started"] is False
