@@ -6,14 +6,15 @@
 
 ### P4-A CPU-only Worker CLI / Bootstrap E2E：PASS
 
-代码提交 `7e9fdf9b47aee8da02ceeee1babc7a67d2ee6be9` 对应：
-- Repository CI：Run `42810266068`，completed/success。
-- R60 Generation Eval CI：Run `42810265927`，completed/success；Generation Eval 合成测试 **49 passed**。
-- P4 Runtime Image Candidate：Run `42810265919`，completed/success。
+代码与测试提交 `7506615bf1f72e2fb28ea8ca653e7cb0510c79e8` 对应：
+- Repository CI：Run `42812774192`，completed/success。
+- R60 Generation Eval CI：Run `42812773901`，completed/success；Generation Eval 合成测试 **55 passed**。
+- P4 Runtime Image Candidate：Run `42812773925`，completed/success；Bootstrap 实际下载并解压精确代码 revision `7506615bf1f72e2fb28ea8ca653e7cb0510c79e8`，固定镜像内完成 hash-locked 依赖安装及 Worker CLI fail-closed。
 - 固定镜像：`docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，`linux/amd64`。
 - 实际容器内执行固定 Commit codeload source archive bootstrap、安全解压、真实 `pip install --require-hashes`、CLI `--help` 和未授权 Profile fail-closed。
 - 容器 SAFE：`CPU_CONTAINER_ENTRYPOINT_FAIL_CLOSED_PASS`；archive bootstrap、hash-locked dependency install、CLI 参数解析、未授权拒绝均 PASS；runtime imports/network 均未尝试；输出目录未创建；private_values/inference/GPU/training 均 false。
-- Freeze Review SAFE：`P4_FREEZE_REVIEW_READY_NOT_FROZEN`，`ready=true`、`blockers=[]`、`ready_for_profile_freeze=false`。Artifact ID `13761927972`；ZIP SHA-256 `fb9399a38d0dc042e94ef85ac98b112f74e30803367fd4ce0758bb631d240114`。
+- Bootstrap 负向归档测试：路径穿越、符号链接、FIFO 特殊文件、成员数量上限、下载字节上限、解压内容上限均已覆盖；55 项 CPU-only 测试全 PASS。
+- Freeze Review SAFE：`P4_FREEZE_REVIEW_READY_NOT_FROZEN`，`ready=true`、`blockers=[]`、`ready_for_profile_freeze=false`。Artifact ID `13763895951`；ZIP SHA-256 `25b568029272a4e48f4a75c755a98f83a706583f3bf6a61915ebb257065f1d0b`。
 - 本次没有 HF Job、GPU、Inference 或 Training；HF GPU 费用 $0。
 
 ### 后续仍 HOLD
