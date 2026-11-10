@@ -201,3 +201,33 @@ Sources: Hugging Face model cards and repository files at the exact revisions li
 - Qwen: `README.md`, `config.json`, `generation_config.json`, `tokenizer_config.json`.
 - GLM-4: `README.md`, `config.json`, `generation_config.json`, `tokenizer_config.json`, `chat_template.jinja`.
 - GLM-Z1: `README.md`, `config.json`, `generation_config.json`, `tokenizer_config.json`, `chat_template.jinja`.
+
+
+# 2026-11-10 Owner Mac 实际渲染差异诊断（优先于早期静态推测）
+
+Owner 在同一固定本地快照、Transformers 4.57.1 下，分别将 embedded 与 standalone 模板显式赋给 tokenizer，使用 case 0 synthetic messages 和增加 `meta=analysis` 的 synthetic variant 渲染。结果如下：
+
+| Role | Case | Embedded chars/tokens | Standalone chars/tokens | 首个差异 |
+|---|---|---:|---:|---|
+| GLM-4 | 原始 synthetic | 1776 / 790 | 1775 / 789 | 仅最后一个字符：embedded generation prompt 在 `<|assistant|>` 后多一个换行符 |
+| GLM-4 | 增加 meta=analysis | 1776 / 790 | 1775 / 789 | 同样仅尾部换行符 |
+| GLM-Z1 | 原始 synthetic | 1731 / 774 | 1739 / 778 | generation prompt：embedded 为 `<|assistant|>`；standalone 为 `<|assistant|>\n<think>` |
+| GLM-Z1 | 增加 meta=analysis | 1731 / 774 | 1739 / 778 | 同样是 Thinking generation prefix 差异 |
+
+这组实测**取代**早期“GLM-4 差异可能来自 metadata 空白处理”的推测：本次 case 0 与 meta=analysis 两种 synthetic 输入均显示差异只在最终 generation suffix，metadata 不改变差异。GLM-4 是一个尾部换行符差异（1 token）；GLM-Z1 是是否显式开启 `<think>` generation prefix 的协议差异（4 tokens），不是格式空白差异。
+
+## 当前运行时事实与建议裁决（尚未授权冻结）
+
+- 本地 `AutoTokenizer.from_pretrained(..., local_files_only=True, trust_remote_code=False)` 实际加载的活动来源为：Qwen embedded、GLM-4 standalone、GLM-Z1 standalone。CPU SAFE 中活动模板 SHA 分别已记录。
+- **GLM-4 建议**：选择 standalone，保持与当前 Transformers 默认实际加载行为一致；同时将 standalone SHA 固定到 profile。Embedded 与 standalone 的 1-token 尾部差异保留为已知差异，不做模板“修补”。
+- **GLM-Z1 建议**：选择 standalone 作为候选运行时模板，因为它是当前实际加载模板且显式加入 `<think>`；但这会决定模型从 Thinking 区域开始生成。Owner 必须明确确认该行为符合本次评估目标后，才能将 template source/SHA 固定。
+- GLM-Z1 的 template source 决策与 sampling/greedy 冲突是两个独立问题。选择 standalone 不等于解决模型卡的 sampling 表与 greedy 示例冲突；sampling policy 仍须单独 Owner 决策。
+- 以上只是 synthetic CPU render，不代表 inference 行为已实测。finish_reason 仍为 `DEFERRED_TO_P4_NO_INFERENCE_IN_P3`。
+
+本轮 P3 SAFE 结论：
+- Tokenizer：3/3 PASS；synthetic：90/model、270 total；token budget：PASS。
+- Template source comparison：Qwen 0 mismatch；GLM-4 90/90 mismatch（尾部 1 newline）；GLM-Z1 90/90 mismatch（Thinking prefix）。
+- 总状态仍为 `P3_TEMPLATE_SOURCE_DECISION_REQUIRED_HOLD`。不得把局部 tokenizer/budget PASS 写成完整 P3 PASS。
+- 不下载权重、不执行 inference、不提交 HF Job、不启动 GPU；不读取任何 P2-B 私有案例或 Owner 裁决。
+
+---
