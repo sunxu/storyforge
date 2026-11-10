@@ -20,12 +20,17 @@ class FakeTensor:
         return self
 
 
+class FakeBatchEncoding(dict):
+    def to(self, device):
+        return self
+
+
 class FakeTokenizer:
     chat_template = "embedded template"
     pad_token_id = 0
 
     def apply_chat_template(self, messages, **kwargs):
-        return {"input_ids": FakeTensor([1, 2, 3])}
+        return FakeBatchEncoding({"input_ids": FakeTensor([1, 2, 3])})
 
     def decode(self, tokens, skip_special_tokens=True):
         return "fake output"
