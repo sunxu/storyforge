@@ -1,5 +1,20 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 模型 B 启动包 Owner SAFE / CI 最终核对
+
+Owner Mac 已生成 B 的启动包（没有 GPU Job 提交），SAFE 状态 `H200_B_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED`：
+
+- `code_revision=489a171ac79b052d5f44de1859c842500cf11fec`
+- `input_sha256=8cb8ddf2fc511cf957ed03510853dad94b5169334fde8d6ff153afda6640285e`
+- `source_archive_sha256=5b8dacad3db6e00671fdc11274d8459a836ac325b390341acaaaf38f66aaff5e`
+- `launch_script=/Users/keedle/.local/share/storyforge/r60/private/r60-p4-h200-b-20261110224219/launch-h200-B.sh`
+- `role=B`、`flavor=h200`、`timeout_minutes=60`、`attempts=1`、GPU/inference/job submission/training 均为 false。
+- 对 **完全相同代码提交 SHA** 的三项 Actions：CI `42836291539` 成功，Generation Eval CI `42836291676` 成功，Runtime Image Candidate `42836291543` 成功；`3/3 PASS`。
+
+**剩余 Owner 最终执行前静态检查**：以本地磁盘验证 `input/source.tar` SHA 正好匹配 `5b8dacad...`；检查 `launch-h200-B.sh` 固定 `--model-role B`、`--synthetic-authorization`、`--flavor h200`、`--timeout 60m`、`--attempts 1`，`/input:ro` 和 `/output:rw`。所有检查通过后，Owner 可按既有分阶段授权仅提交一次 B GPU Job（参考 H200 费用不超过 $5、超时 60 分钟）；不得重复提交或提前启动 challenger。提交后先回传 Job ID/status，再验收 SAFE 与私有输出读回。
+
+---
+
 ## 2026-11-10 下一模型 B：Owner Mac 准备指令（不提交 GPU）
 
 模型 A 已经 `H200_A_32K_GPU_AND_OUTPUT_READBACK_PASS`：28,568 input / 312 output / EOS，输出 SHA 复核成功。既定串行顺序下一项是模型 B，不再重复 A。
