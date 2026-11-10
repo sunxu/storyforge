@@ -82,3 +82,20 @@ def test_wrong_revision_or_missing_shard_fails(tmp_path):
     info.siblings.pop()
     with pytest.raises(mod.Hold, match="UPSTREAM_INVENTORY_MISMATCH"):
         mod.inventory(info)
+
+
+
+def test_size_only_skip_weight_sha_is_explicit(tmp_path, monkeypatch, capsys):
+    bucket, info = setup_snapshot(tmp_path)
+    # Same byte length, wrong content. Size-only mode intentionally does NOT
+    # hash/verify shards, and must not claim full content validation.
+    shard = bucket / "model-00002-of-00017.safetensors"
+    shard.write_bytes(b"zz")
+    monkeypatch.setattr(mod, "OVERHEAD", 0)
+    monkeypatch.setattr(mod.shutil, "disk_usage",
+                        lambda _: SimpleNamespace(free=10**9))
+    manifest = mod.run(bucket, tmp_path / "local", info,
+                       verify_weight_sha=False)
+    assert manifest["integrity_mode"] == "size-only-upstream-sha-declared"
+    assert manifest["files"]
+    assert '"full_weight_sha_verified":false' in capsys.readouterr().out
