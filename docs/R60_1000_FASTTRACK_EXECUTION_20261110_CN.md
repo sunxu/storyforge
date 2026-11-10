@@ -1,5 +1,88 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM-4 B25 由 Hub 直载改为服务器端复制 + H200 本地加载 + 单引擎连续批次
+
+**触发证据**：B25 Owner Job https://huggingface.co/jobs/adradar/6af36821ab34849891aca183 仅有 \`B25_GATE_READY\`，无权重、Tokenizer、真实引擎就绪/首条校验事件；不能判定具体卡点。旧 B25 直接从 \`zai-org/GLM-4-32B-0414\` 在线加载，存在与 Qwen 早期 Hub 直载相似的风险。项目已将修复实现提交，但**未运行 HF Job / 未取得 GLM B25 成功回执**。
+
+**独立核对 GLM 固定源**：\`zai-org/GLM-4-32B-0414@8dea913c41b543527c2860fb6f3c15c202f24aeb\`，14 个 \`model-00001-of-00014.safetensors\` ～ \`model-00014-of-00014.safetensors\`，\`model.safetensors.index.json\`、\`chat_template.jinja\`、\`tokenizer.json\` 等。与 Qwen 的 17 分片不同，禁止复用 Qwen 文件清单/模型路径。
+
+**新增源代码**：
+- \`experiments/r58_quality/r60_glm4_servercopy_localize.py\`：固定 GLM commit 获取上游文件清单、14 分片及 index，Bucket 只读挂载复制到 H200 本地；默认完整 SHA 验证，Owner 此次授权用 \`--skip-weight-sha\`，只做文件大小、索引和固定上游元数据校验，标注 \`size-only-upstream-sha-declared\` 和 \`LOCAL_FILE_SIZE_CHECKED\`，不把仅大小校验说成 SHA 验证。每次 H200 Job 的临时磁盘不可复用。
+- \`experiments/r58_quality/r60_glm4_b25_continuous_review.py\`：保留 **B25 冻结输入 SHA** \`01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9\` 和原 reviewer 模型身份/revision/schema/sampling/引文修复/回执；仅运行时 Tokenizer/Engine 重定向已校验本地模型目录，兼容 vLLM 初始化内部本地 Tokenizer 加载。单 H200 Engine 处理连续批次，首条原版 \`read_checkpoint\` 失败即停，每条输出 checkpoint 强制回读；\`--resume\` 只接受从第 1 条连续、无杂项、均验证有效的历史 checkpoint。初始化失败日志 \`REAL_ENGINE_INIT_HOLD exception_class\`，不得泄漏异常文本/私人内容。
+- 本版本**只开放 B25 的 25 条**，不得假装已接受未知 SHA 的 B1000；要处理 B1000，必须在 Owner Mac 验证和冻结 B1000 输入 hash 后更新源代码及 CPU tests。
+
+### 第一步：Owner Mac CLI 服务器端复制（无需 CPU/GPU Job）
+
+\`\`\`bash
+set -euo pipefail
+SRC="hf://models/zai-org/GLM-4-32B-0414@8dea913c41b543527c2860fb6f3c15c202f24aeb/"
+DST="hf://buckets/adradar/storyforge-training/model-cache/glm4-32b-8dea913-servercopy/"
+# 目标必须是新的空目录，不要覆盖之前任何缓存
+hf cp "$SRC" "$DST"
+hf buckets list adradar/storyforge-training/model-cache/glm4-32b-8dea913-servercopy -R -h
+\`\`\`
+
+**Owner 验收**：\`✓ Copied\`、14/14 safetensors 文件、index、tokenizer、chat template 都在目标 Bucket。若报区域/权限/缺失分片，停止；不要回退 Hub 直载的 B25 Job，也不要启动旧 CPU Basic 50GB 临时盘的 stage 脚本。
+
+### 第二步：Owner Mac CLI 新建独立 B25 执行 bundle（CPU-only）
+
+\`\`\`bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+SRC="$PILOT/input_B"
+DEST="$PILOT/input_B_continuous_local"
+CODE="$BASE/r60-glm4-b25-local-tools-v1"
+REV="__GLM4_LOCAL_CODE_PIN__"
+umask 077
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -d "$SRC"
+test ! -e "$DEST" || { echo B25_LOCAL_BUNDLE_EXISTS_HOLD; exit 42; }
+test ! -e "$CODE" || { echo GLM4_LOCAL_TOOLS_EXISTS_HOLD; exit 42; }
+mkdir -m 700 "$DEST" "$CODE"
+for file in runner.py source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+  test -f "$SRC/$file"
+  cp "$SRC/$file" "$DEST/$file"
+  chmod 600 "$DEST/$file"
+done
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_glm4_b25_continuous_review.py" > "$DEST/r60_glm4_b25_continuous_review.py"
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_glm4_servercopy_localize.py" > "$CODE/r60_glm4_servercopy_localize.py"
+chmod 600 "$DEST/r60_glm4_b25_continuous_review.py" "$CODE/r60_glm4_servercopy_localize.py"
+python3 -m py_compile "$DEST/r60_glm4_b25_continuous_review.py" "$CODE/r60_glm4_servercopy_localize.py"
+EXPECTED=01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9
+ACTUAL="$(shasum -a 256 "$DEST/source.private.jsonl" | awk '{print $1}')"
+test "$EXPECTED" = "$ACTUAL" || { echo B25_SHA_MISMATCH; exit 42; }
+python3 "$DEST/runner.py" \
+  --input "$DEST/source.private.jsonl" --output-dir "$PILOT/output_B" \
+  --model zai-org/GLM-4-32B-0414 \
+  --revision 8dea913c41b543527c2860fb6f3c15c202f24aeb \
+  --verify-only
+\`\`\`
+
+### 第三步：Owner Mac CLI H200 单 Job，本地复制 + 5×5 条连续审核
+
+\`\`\`bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+CODE="$BASE/r60-glm4-b25-local-tools-v1"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-glm4-b25-local-continuous \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_B_continuous_local:/input:ro" \
+  -v "$CODE:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training/model-cache/glm4-32b-8dea913-servercopy:/model-source:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/glm4-32b-8dea913; OUT=/bucket/evaluation-runs/r60-1000-pilot25-glm4-b-local-continuous-v1; if [ -e "$OUT" ]; then echo B25_LOCAL_OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; /usr/bin/python3 -u /code/r60_glm4_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; mkdir -p "$OUT"; exec /usr/bin/python3 -u /input/r60_glm4_b25_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model zai-org/GLM-4-32B-0414 --revision 8dea913c41b543527c2860fb6f3c15c202f24aeb --local-dir "$LOCAL" --case-limit 25 --batch-size 5 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --confirm-paid-gpu'
+\`\`\`
+
+**验收事件** \`LOCAL_FILE_SIZE_CHECKED\` → \`LOCAL_WEIGHTS_READY full_weight_sha_verified=false\` → \`CONTINUOUS_REVIEW_READY\` → \`REAL_ENGINE_INIT_START\` → \`REAL_ENGINE_READY\` → \`FIRST_CHECKPOINT_GATE_PASS\` → \`BATCH_COMPLETE\`（5 批）→ \`CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1\`。若仅 \`REAL_ENGINE_INIT_START\` 之后卡住，不要推测已生成；及时读取 Job INFO/ERROR 与脱敏 class，避免重复费用。B25 Checkpoint 合法不等于质量全部通过，更不等于训练准入。**ChatGPT 不提交 HF Job；由 Owner Mac CLI 执行。**
+
+---
+
+
 ## 2026-11-11：A25 引擎初始化 HOLD 后，低开销复制 + 单 H200 连续批次审核（新执行入口）
 
 **最新实测**：Qwen3-32B A25 Job `6af36c549737d9a9e0915d9f` 完成 `LOCAL_WEIGHTS_READY` 后进入 `A25_GATE_READY` → `A25_LOCAL_TOKENIZER_LOAD` → `A25_REAL_LOCAL_ENGINE_START`，vLLM INFO 记录 max_model_len=32768 与 chunked prefill=16384，随后冻结原审查器报 `HF_REVIEW_RUNTIME_ERROR`。**未出现 `A25_REAL_LOCAL_ENGINE_READY`、`A25_FIRST_GATE_PASS`，因此真实审核没有通过，A25=0/25（截至现有回执）**。这只能确定错误发生在模型初始化期间或其紧邻阶段，不能仅凭隐藏的通用错误码判定是显存、vLLM 参数还是模型。原审查器吞异常的原因是其自己的 SAFE redaction；不要假设权重损坏，不要重复同一个旧 Job。
