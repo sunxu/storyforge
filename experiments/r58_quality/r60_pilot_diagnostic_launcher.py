@@ -74,6 +74,35 @@ def gpu_stats() -> dict:
         return {"gpu_probe": "UNAVAILABLE"}
 
 
+def classify_wait_channel(value: str) -> str:
+    """Report bounded categories, never arbitrary kernel symbols."""
+    value = value.strip().lower()
+    if not value or value in ("0", "-"):
+        return "UNKNOWN"
+    if "futex" in value or "wait_for_completion" in value:
+        return "SYNC_WAIT"
+    if any(part in value for part in ("io_schedule", "wait_on_page", "filemap", "folio_wait", "balance_dirty")):
+        return "FILE_IO_WAIT"
+    if any(part in value for part in ("poll", "ep_poll", "select", "sock", "tcp_", "inet_")):
+        return "NETWORK_OR_POLL_WAIT"
+    if any(part in value for part in ("sleep", "hrtimer", "schedule_timeout")):
+        return "TIMER_WAIT"
+    return "OTHER_WAIT"
+
+
+def read_proc_io(pid: int) -> tuple[int, int]:
+    """Kernel disk read/write bytes, omitting all file identities."""
+    try:
+        metrics = {}
+        for line in Path("/proc", str(pid), "io").read_text().splitlines():
+            key, _, value = line.partition(":")
+            if key in ("read_bytes", "write_bytes"):
+                metrics[key] = int(value.strip())
+        return metrics.get("read_bytes", 0), metrics.get("write_bytes", 0)
+    except (OSError, ValueError):
+        return 0, 0
+
+
 def descendant_stats() -> dict:
     """Aggregate Linux child processes using /proc numeric fields only.
 
@@ -112,15 +141,30 @@ def descendant_stats() -> dict:
             living.update(new)
             descendants.update(new)
         counts = {}
+        waits = {}
+        total_read = 0
+        total_write = 0
         for pid in descendants:
             state = nodes[pid][1]
             state = state if state in "RSDTZI" else "OTHER"
             counts[state] = counts.get(state, 0) + 1
+            try:
+                category = classify_wait_channel(
+                    Path("/proc", str(pid), "wchan").read_text())
+            except OSError:
+                category = "UNAVAILABLE"
+            waits[category] = waits.get(category, 0) + 1
+            read_bytes, write_bytes = read_proc_io(pid)
+            total_read += read_bytes
+            total_write += write_bytes
         return {
             "descendant_count": len(descendants),
             "descendant_cpu_sec": round(sum(nodes[p][2] for p in descendants) / clock, 1),
             "descendant_rss_mib": round(sum(nodes[p][3] for p in descendants) * page / 1048576, 1),
             "descendant_states": counts,
+            "descendant_wait_categories": waits,
+            "descendant_disk_read_mib": round(total_read / 1048576, 1),
+            "descendant_disk_write_mib": round(total_write / 1048576, 1),
         }
     except (OSError, ValueError):
         return {"descendant_probe": "UNAVAILABLE"}
