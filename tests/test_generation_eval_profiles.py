@@ -18,6 +18,8 @@ def candidate_profile():
             "model": model,
             "revision": revision,
             "enable_thinking": True if role == "A" else None,
+            "thinking_mode": "api_flag" if role == "A" else ("template_default" if role == "B" else "explicit_generation_prefix"),
+            "generation_prefix": "<think>" if role == "challenger" else None,
             "sampling": None,
             "chat_template_sha256": "a" * 64,
         }
@@ -89,6 +91,8 @@ def test_all_explicitly_frozen_profiles_can_become_ready():
         "seed": 20261110,
         "runtime_digest": "sha256:" + "b" * 64,
         "dependency_lock_sha256": "d" * 64,
+        "evaluation_prompt_sha256": "e" * 64,
+        "output_schema_sha256": "f" * 64,
         **valid_manifest_fields(),
         "profile_freeze_authorized": True,
         "inference_authorized": True,
@@ -217,14 +221,26 @@ def test_p4_candidate_has_scoped_runtime_smoke_authorization_only():
         repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json"
     )
     result = assess_profile(candidate, purpose="runtime_smoke")
-    assert result.ready is True
-    assert result.status == "P4_PROFILE_READY_FOR_RUNTIME_SMOKE"
+    assert result.ready is False
+    assert "RUNTIME_SMOKE_NOT_AUTHORIZED" in result.blockers
     assert assess_profile(candidate).ready is False
     assert "PROFILE_FREEZE_NOT_AUTHORIZED" in assess_profile(candidate).blockers
     assert candidate["profile_freeze_authorized"] is False
     assert candidate["inference_authorized"] is False
     assert candidate["gpu_authorized"] is False
     assert candidate["training_authorized"] is False
+    assert candidate["runtime_smoke_authorization_status"] == "CONSUMED_2026-11-10"
+
+
+def test_freeze_review_is_independent_of_inference_and_gpu_authorization():
+    repo_root = Path(__file__).parents[1]
+    profile = load_profile(repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json")
+    result = assess_profile(profile, purpose="freeze_review")
+    assert result.ready is False
+    assert "EVALUATION_PROMPT_HASH_UNSET" in result.blockers
+    assert "OUTPUT_SCHEMA_HASH_UNSET" in result.blockers
+    assert "INFERENCE_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
+    assert "GPU_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
 
 
 def test_runtime_smoke_authorization_does_not_allow_training():
