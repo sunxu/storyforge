@@ -1,5 +1,19 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：Qwen3-32B 本地真实 vLLM Smoke 实测 PASS
+
+Owner Mac 提供 HF Job https://huggingface.co/jobs/adradar/6af366749737d9a9e0914f2a 的真实 SAFE：
+```json
+{"elapsed_sec":35.2,"event":"REAL_ENGINE_READY","private_values_emitted":false,"schema":"storyforge_r60_qwen32b_local_smoke_safe_v1"}
+{"elapsed_sec":35.9,"event":"REAL_GENERATE_DONE","generated_tokens":32,"private_values_emitted":false,"schema":"storyforge_r60_qwen32b_local_smoke_safe_v1"}
+```
+**结论**：已成功跨过先前真实权重加载卡住的阶段，当前 H200/vLLM 镜像从已经本地化的固定 Qwen3-32B 权重加载成功，并完成非私有 32-token 合成生成。这两项耗时基于该 smoke 内部开始计时，**不含 Bucket 到本地复制和校验时间**。该结果也不代表 32K 满长度推理压力测试、Rubric JSON structured output、A25 真实审核或质量准入已经通过。A25 = 0/25（截至这份回执），Qwen CPU 原先 50GB eviction 及其替代路径历史证据保留。
+
+**下一执行入口**：不要再重复 Dummy、CPU 大权重上传或单独短生成 Smoke。必须基于现有已验证的 `r60_qwen32b_servercopy_localize.py` 实现**同一 H200 Job 内本地化一次、初始化审核器 vLLM 一次、先第 1 条通过原审核器 Checkpoint 校验后继续 2–25 条**。审核器仍以冻结 `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137` 身份写入回执，而本地加载路径指向校验完成的本地目录；切勿将 `model=` 路径直接改成模型 ID 导致 checkpoint/revision 契约破坏。第一条真实 JSON/schema 与 policy 校验失败必须停止，不能继续 24 条。独立的新 Runner 副本及 CPU 合成测试验收完成前不要提交 A25 H200。
+
+---
+
+
 ## 2026-11-11：Qwen3-32B 固定 revision 服务器端复制 PASS，H200 校验加载入口 v2
 
 **Owner Mac 已实际执行成功** `hf cp`：`hf://models/Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137/` → `hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy/`，并列出 17 个 `model-xxxxx-of-00017.safetensors`、`model.safetensors.index.json`、`config.json`、`tokenizer.json`、`tokenizer_config.json`、`vocab.json`、`merges.txt` 等 24 个源文件。HF 服务端复制避免了 CPU Basic 挂载写入缓存累积触发 50GB Pod 驱逐的问题。**列表不能代替内容 SHA 和真实加载**。
