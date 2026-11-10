@@ -1,3 +1,7 @@
+> **当前交接入口（2026-11-10，覆盖下方旧阶段索引）：** P0/P1/P2-A/P2-B/P3 已完成；当前主线是 P4 Worker CLI 工程验收。请使用 [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md) 和 [P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)。已核验基线 HEAD `a1db1ac70fd3777d78460eee58e7d2b891867c40` 的 Repository CI、Generation Eval CI、Runtime Image Candidate 均 PASS。当前仍未完成 CPU-only CLI/bootstrap 端到端验收、Owner Mac CLI 执行验证、32K 资源预算及最终 Profile Freeze 裁决。HF 403/OAuth/Bucket 排查暂停；HF 任务由 Owner 在 Mac CLI 执行。
+
+---
+
 # 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
 
 **本节为当前唯一状态依据。下方较早日期的 P2-B/P3 未开始、Owner review pending、Verifier HOLD 等内容均为历史记录，不得作为当前待办。**
