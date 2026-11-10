@@ -1,11 +1,9 @@
 """CPU-only tests for HF pilot diagnostic launcher (never import vLLM)."""
 from __future__ import annotations
 
-import importlib.util
-import os
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = ROOT / "experiments/r58_quality/r60_pilot_diagnostic_launcher.py"
@@ -30,7 +28,7 @@ def test_diagnostics_keep_original_runner_and_emit_safe_checkpoints(tmp_path):
     wrapper.write_bytes(LAUNCHER.read_bytes())
     baseline = source.read_bytes()
     proc = subprocess.run([sys.executable, "-u", str(wrapper)],
-                          capture_output=True, text=True, timeout=15)
+                          check=False, capture_output=True, text=True, timeout=15)
     assert proc.returncode == 0
     assert '"event":"BOOT"' in proc.stdout
     assert '"event":"INPUT_VERIFIED"' in proc.stdout
@@ -47,7 +45,7 @@ def test_missing_runner_returns_safe_hold(tmp_path):
     wrapper = tmp_path / LAUNCHER.name
     wrapper.write_bytes(LAUNCHER.read_bytes())
     proc = subprocess.run([sys.executable, str(wrapper)],
-                          capture_output=True, text=True, timeout=15)
+                          check=False, capture_output=True, text=True, timeout=15)
     assert proc.returncode == 42
     assert "RUNNER_NOT_REGULAR" in proc.stdout
 
@@ -57,7 +55,7 @@ def test_exception_content_not_leaked(tmp_path):
     wrapper.write_bytes(LAUNCHER.read_bytes())
     (tmp_path / "runner.py").write_text("raise RuntimeError('PRIVATE_CONTENT')\n")
     proc = subprocess.run([sys.executable, str(wrapper)],
-                          capture_output=True, text=True, timeout=15)
+                          check=False, capture_output=True, text=True, timeout=15)
     assert proc.returncode == 42
     assert "PRIVATE_CONTENT" not in proc.stdout
     assert "RUNTIME_EXCEPTION_REDACTED" in proc.stdout
@@ -87,7 +85,7 @@ def test_trace_markers_are_allowlisted_and_callback_present(tmp_path):
     wrapper = tmp_path / LAUNCHER.name
     wrapper.write_bytes(LAUNCHER.read_bytes())
     proc = subprocess.run([sys.executable, "-u", str(wrapper)],
-                          capture_output=True, text=True, timeout=15)
+                          check=False, capture_output=True, text=True, timeout=15)
     assert proc.returncode == 0
     for stage in ("TOKENIZER_LOAD_START", "TOKENIZER_LOADED",
                   "ENGINE_INIT_START", "ENGINE_READY", "GENERATE_START",
