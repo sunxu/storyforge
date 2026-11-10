@@ -175,6 +175,16 @@ def run_batches(worker: object, rows: list[dict], output: Path,
     }
 
     def tokenizer_load(model, *args, **kwargs):
+        # The frozen reviewer loads by Hub ID+revision. The vLLM engine can
+        # separately ask Transformers for the already verified local folder.
+        # Reject any other path/repo to preserve offline fail-closed behavior.
+        if model == str(local):
+            if kwargs.get("revision") not in (None, REV):
+                raise Hold("LOCAL_TOKENIZER_REVISION_HOLD")
+            kwargs = dict(kwargs)
+            kwargs.pop("revision", None)
+            emit("VLLM_INTERNAL_LOCAL_TOKENIZER")
+            return original_tokenizer(str(local), *args, **kwargs)
         if model != MODEL or kwargs.get("revision") != REV:
             raise Hold("TOKENIZER_IDENTITY_HOLD")
         if state["tokenizer"] is None:
