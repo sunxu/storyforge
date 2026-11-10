@@ -9,7 +9,8 @@ import hashlib
 import json
 import re
 from dataclasses import dataclass
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from .profiles import ProfileAssessment, assess_profile
 
