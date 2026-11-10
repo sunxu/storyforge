@@ -29,6 +29,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model-role", required=True, choices=("A", "B", "challenger"))
     parser.add_argument("--profile", type=Path, required=True)
+    parser.add_argument("--synthetic-authorization", type=Path,
+                        help="Enable exact-hash Owner-approved synthetic-only run; --profile must be Frozen")
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
@@ -36,7 +38,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     try:
-        profile = load_profile(args.profile)
+        if args.synthetic_authorization is not None:
+            from .synthetic_gate import authorize_synthetic_profile
+            profile = authorize_synthetic_profile(
+                frozen_path=args.profile,
+                authorization_path=args.synthetic_authorization,
+                manifest_path=args.manifest,
+                input_path=args.input,
+                model_role=args.model_role,
+            )
+        else:
+            profile = load_profile(args.profile)
         assessment = assess_profile(profile)
         if not assessment.ready:
             raise WorkerError("GENERATION_PROFILE_NOT_AUTHORIZED")
@@ -140,6 +152,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "runtime_digest": runtime_digest,
                 "model_revision": revision,
                 "private_output_path": output_path.name,
+                "synthetic_only": args.synthetic_authorization is not None,
+                "input_sha256": manifest["sha256"],
+                "cpu_calibrated_input_tokens": (
+                    profile.get("synthetic_only_runtime_scope", {}).get("input_tokens_cpu_calibrated")
+                    if args.synthetic_authorization is not None else None
+                ),
             })
             print(json.dumps(safe, sort_keys=True))
             return 0 if receipt.status != "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP" else 3
