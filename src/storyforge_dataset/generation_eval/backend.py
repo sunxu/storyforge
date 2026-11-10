@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import hashlib
 import importlib
-import math
 import re
 from pathlib import Path
 from typing import Any
@@ -21,10 +20,15 @@ SAMPLING_KEYS = frozenset({"do_sample", "temperature", "top_p", "top_k", "min_p"
 class TransformersGenerationBackend:
     """One-model, one-device-map backend using pinned Hub revisions."""
 
-    def __init__(self, *, tokenizer: Any, model: Any, torch_module: Any) -> None:
+    def __init__(
+        self, *, tokenizer: Any, model: Any, torch_module: Any,
+        model_id: str | None = None, revision: str | None = None,
+    ) -> None:
         self.tokenizer = tokenizer
         self.model = model
         self.torch = torch_module
+        self.model_id = model_id
+        self.revision = revision
         self._generation_index = 0
         self._gpu_started = self._verify_cuda_device_map(model)
 
@@ -106,7 +110,10 @@ class TransformersGenerationBackend:
                 low_cpu_mem_usage=True,
             )
             model.eval()
-            return cls(tokenizer=tokenizer, model=model, torch_module=torch)
+            return cls(
+                tokenizer=tokenizer, model=model, torch_module=torch,
+                model_id=model_id, revision=revision,
+            )
         except WorkerError:
             raise
         except Exception as exc:  # backend exceptions are converted to fixed codes
@@ -128,9 +135,10 @@ class TransformersGenerationBackend:
             raise WorkerError("SAMPLING_PROFILE_UNSUPPORTED")
         if not isinstance(sampling.get("do_sample"), bool):
             raise WorkerError("SAMPLING_PROFILE_INVALID")
-        if model != getattr(self.model.config, "_name_or_path", model):
-            # The immutable model revision is also checked by the caller's profile.
-            pass
+        if self.model_id is not None and model != self.model_id:
+            raise WorkerError("MODEL_ID_MISMATCH")
+        if self.revision is not None and revision != self.revision:
+            raise WorkerError("MODEL_REVISION_MISMATCH")
         kwargs: dict[str, Any] = {
             "tokenize": True,
             "add_generation_prompt": True,
