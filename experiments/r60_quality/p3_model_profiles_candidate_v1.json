@@ -11,7 +11,7 @@
     },
     "B": {
       "model": "zai-org/GLM-4-32B-0414",
-      "revision": "077b5c2f5c43bd3239fd605a0600229e8facbd4a",
+      "revision": "8dea913c41b543527c2860fb6f3c15c202f24aeb",
       "enable_thinking": null,
       "sampling": null
     },
