@@ -1,5 +1,31 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 Pilot25 prepare HOLD：staged runner 与预期 API 源码可能不同（fail-closed）
+
+Owner Mac 在新建 Pilot25 的 CPU-only 准备器上得到 `R60_PILOT25_PREPARE_HOLD`、`reason_code=VLLM0100_PATCH_CONTRACT_CHANGED`、`hf_jobs_submitted=0`、`gpu_started=false`。此回执没有产生任何收费任务。准备器原先要求旧 `runner.py` 的 4 处 vLLM API 精确匹配，每处恰好出现 1 次。
+
+已核对 GitHub `r60/gold192-history-v3-adapter` 当前 `src/storyforge_gold_quality/hf_literary_review.py` 四处目标文本都恰好 1 次。因此更可能是旧 1000 staging 内打包的 runner 和 GitHub 当前源码不一致；尚不能确定具体偏差，**不得直接强制替换或跳过校验**。
+
+已提交准备器诊断改动 `0bd8f742a8f88af5037bfe521f7713f5a998d165`：下一次失败 SAFE 的 `reason_code` 将包含 `ROLE_A/B`、`PATCH_1..4`、`COUNT_0/2..` 以及原 runner SHA256，不打印源码/故事正文。Owner 在 Mac 重新取得该提交的脚本后，再运行原 prepare 命令：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+REV="0bd8f742a8f88af5037bfe521f7713f5a998d165"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_pilot25_vllm0100_prepare.py" > "$BASE/r60_pilot25_vllm0100_prepare.py"
+chmod 600 "$BASE/r60_pilot25_vllm0100_prepare.py"
+python3 "$BASE/r60_pilot25_vllm0100_prepare.py" \
+  --source-stage "$BASE/r60-hf-quality-first-1000" \
+  --pilot-stage "$BASE/r60-hf-quality-pilot25-vllm0100"
+```
+
+这仍是 CPU-only、create-only 和 fail-closed；若旧目标目录已经存在，会报告 `DEST_ALREADY_EXISTS`，不得覆盖。根据返回的 ROLE/PATCH/COUNT 和 runner SHA，再制定只修改新副本且保存旧证据的兼容方案。**在修复及独立 CI 通过前不生成收费 HF Job。**
+
+---
+
+
 ## 2026-11-10 首批 25 条私有分片：vLLM 0.10.0 API 修复与可复用代码已落库
 
 Owner Mac 确认镜像 `docker.io/vllm/vllm-openai:v0.10.0` 的 manifest Digest 为 `sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271`。这只是**镜像内容 SHA pin**，尚未证明实际 CUDA/vLLM GPU 环境能正确加载三模型，也没有支付 HF GPU。
