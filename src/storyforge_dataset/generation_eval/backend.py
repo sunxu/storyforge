@@ -100,7 +100,14 @@ class TransformersGenerationBackend:
                         max_bytes=1024 * 1024,
                         expected_sha256=expected_template_sha256,
                     )
-                except (OSError, ValueError) as exc:
+                except ValueError as exc:
+                    code = (
+                        "CHAT_TEMPLATE_SHA256_MISMATCH"
+                        if str(exc) == "INPUT_SHA256_MISMATCH"
+                        else "STANDALONE_CHAT_TEMPLATE_INVALID"
+                    )
+                    raise WorkerError(code) from exc
+                except OSError as exc:
                     raise WorkerError("STANDALONE_CHAT_TEMPLATE_INVALID") from exc
                 template_bytes = verified_template.read_bytes()
                 actual_hash = verified_template.sha256
