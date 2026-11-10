@@ -1,0 +1,107 @@
+{
+  "schema": "storyforge_r60_sampling_decision_candidate_v1",
+  "status": "OWNER_ACCEPTED_EXPERIMENT_DESIGN__PROFILE_NOT_FROZEN",
+  "purpose": "Compare model-specific decoding policies for evidence-grounded R60 quality review; do not optimize for creative-writing quality.",
+  "rubric_version": "r60_severity_rubric_v2_1",
+  "model_profiles": {
+    "A": {
+      "model": "Qwen/Qwen3-32B",
+      "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+      "role": "primary_independent_reviewer",
+      "thinking": true,
+      "variants": {
+        "primary": {
+          "evaluation_split": "p4_locked30",
+          "sampling": {
+            "do_sample": true,
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0
+          },
+          "basis": "Qwen3 official thinking-mode recommendation"
+        }
+      }
+    },
+    "B": {
+      "model": "zai-org/GLM-4-32B-0414",
+      "revision": "8dea913c41b543527c2860fb6f3c15c202f24aeb",
+      "role": "second_independent_reviewer",
+      "thinking": null,
+      "variants": {
+        "primary": {
+          "evaluation_split": "p4_locked30",
+          "sampling": {
+            "do_sample": true,
+            "temperature": 1.0,
+            "top_p": 1.0,
+            "top_k": 50
+          },
+          "basis": "Model-card inference example uses do_sample=true but supplies no sampling values; explicit neutral Transformers 4.57.1 generation defaults are recorded to avoid hidden defaults. These are an experimental baseline, not model-author recommended hyperparameters."
+        },
+        "development_greedy_sensitivity": {
+          "evaluation_split": "development20",
+          "sampling": {
+            "do_sample": false
+          },
+          "basis": "Development-only sensitivity comparison against the primary sampling-mode baseline."
+        }
+      }
+    },
+    "challenger": {
+      "model": "zai-org/GLM-Z1-32B-0414",
+      "revision": "8eb2858992c1f749e2a6d4075455decc2484722d",
+      "role": "reasoning_challenger",
+      "thinking": true,
+      "chat_template_generation_prefix": "<think>",
+      "variants": {
+        "primary": {
+          "evaluation_split": "p4_locked30",
+          "sampling": {
+            "do_sample": false
+          },
+          "basis": "Greedy generation example in the pinned model-card documentation; selected as a stable baseline, not asserted as the only recommended decoding mode."
+        },
+        "development_sampling_sensitivity": {
+          "evaluation_split": "development20",
+          "sampling": {
+            "do_sample": true,
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "top_k": 40
+          },
+          "basis": "Sampling table in the pinned model-card documentation; compared against the greedy baseline on Development20 only."
+        }
+      }
+    }
+  },
+  "execution_controls": {
+    "seed": 42,
+    "seed_policy": "same base seed and stable sample ordering within each variant; record effective per-sample seed",
+    "development_only_tuning": true,
+    "locked_reference_accessed": false,
+    "same_prompt_rubric_schema_and_token_budgets": true,
+    "p4_locked_sample_count": 30,
+    "development_sample_count": 20,
+    "input_budget_tokens": 28672,
+    "generation_budget_tokens": 4096,
+    "context_ceiling_tokens": 32768,
+    "max_generation_tokens_includes_reasoning": true
+  },
+  "selection_metrics": [
+    "hard_rule_supported_precision_recall_f1",
+    "player_agency_supported_precision_recall_f1",
+    "safety_supported_precision_recall_f1",
+    "insufficient_context_detection",
+    "false_positive_and_false_negative_case_analysis",
+    "exact_quote_validity",
+    "semantic_evidence_support_rate",
+    "json_schema_completion_rate",
+    "finish_reason_and_truncation_rate",
+    "latency_and_gpu_cost"
+  ],
+  "profile_freeze_authorized": false,
+  "inference_authorized": false,
+  "gpu_authorized": false,
+  "training_authorized": false
+}

@@ -133,3 +133,8 @@ Job 计划目前引用的 Worker 入口尚未交付，因此即使合成 profile
 ### 尚未验收
 
 本次没有真实导入 Transformers、下载权重、初始化 CUDA 或运行模型。当前后端通过 FakeTorch / FakeTransformers 做接口合成测试；还需在实际 HF GPU 环境验证版本兼容、模型加载、模板 tokenization、显存占用和生成结果。
+
+
+## 2026-11-10 采样策略决策补充
+
+Owner 已确认按建议推进采样方案。逐模型主实验配置、GLM-4/GLM-Z1 Development20 敏感性对照及约束见 [R60 P4 Sampling Policy Decision](R60_P4_SAMPLING_POLICY_DECISION_20261110_CN.md) 与机器可读候选 `experiments/r60_quality/r60_sampling_decision_candidate_v1.json`。该决定只批准实验设计，不冻结 Generation Profile；所有 inference/GPU/training 授权仍为 false。GLM-4 主配置已校正为 `do_sample=true`，与其模型卡示例一致；GLM-Z1 greedy 与官方 sampling 表分别作为主基线和 Development20 对照。
