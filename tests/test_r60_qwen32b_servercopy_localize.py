@@ -98,4 +98,7 @@ def test_size_only_skip_weight_sha_is_explicit(tmp_path, monkeypatch, capsys):
                        verify_weight_sha=False)
     assert manifest["integrity_mode"] == "size-only-upstream-sha-declared"
     assert manifest["files"]
-    assert '"full_weight_sha_verified":false' in capsys.readouterr().out
+    logs = capsys.readouterr().out
+    assert '"full_weight_sha_verified":false' in logs
+    assert "LOCAL_FILE_SIZE_CHECKED" in logs
+    assert "LOCAL_FILE_VERIFIED" not in logs
