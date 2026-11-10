@@ -67,9 +67,11 @@ def fixture_worker(tmp_path, *, invalid_first=False, fail_at=None):
 
 
 def call(worker, tmp_path):
+    output = tmp_path / "out"
+    output.mkdir(exist_ok=True)
     return worker.inference(
         rows=[{"position": i} for i in range(1, 26)],
-        output=tmp_path, model=gate.MODEL, revision=gate.REV,
+        output=output, model=gate.MODEL, revision=gate.REV,
         start=1, limit=25, max_model_len=32768,
         max_output_tokens=2400, max_wall_seconds=3000)
 
@@ -102,7 +104,7 @@ def test_invalid_first_prevents_second(tmp_path):
         call(worker, tmp_path)
     assert state["validated"] == 0
     assert len(models) == 1
-    assert not (tmp_path / "review_0002.private.json").exists()
+    assert not (tmp_path / "out" / "review_0002.private.json").exists()
 
 
 def test_failure_midway_no_completion(tmp_path, capsys):
