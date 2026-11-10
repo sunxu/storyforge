@@ -1,5 +1,20 @@
 # StoryForge R60 P4 下一阶段接手任务书（2026-11-10）
 
+## 2026-11-10 最新分阶段授权：32K 合成 GPU + 后续正式推理
+
+Owner 已明确授权**先做 32K 合成 GPU 测试，其后开展正式推理**。但 Owner 早先已要求由本人在 Mac CLI 独立执行任何 HF Job；ChatGPT 不代交任务，不排查 HF 403 / Bucket / OAuth。
+
+- 机器授权记录：`experiments/r60_quality/p4_generation_execution_authorization_20261110.json`，提交 `84a10a8ff0790fa17b620411bb8b31e8a0bc4b24`。
+- 执行任务书：[32K GPU 与正式推理 Owner Runbook](R60_P4_32K_GPU_AND_FORMAL_INFERENCE_OWNER_RUNBOOK_20261110_CN.md)，创建提交 `8cf5f8216f31e8f09bf3f81e3aacbfe5a4f9b5d6`。
+- 先执行 32K 合成、单 H200、BF16、batch=1、单模型串行、单 Job ≤60min、三模型阶段预算最多 3 GPU-hours / 约 $15（以实时 HF 定价为准）。正式推理获原则授权，但只有合成 3/3 PASS、正式输入范围与 SAFE 输出回收确认、独立计费预算确定后才能激活。
+- **冻结 Profile 不变**：`a58d02c757767f18deb8a4cb948a56be199c837c045d83648838868961e1037f`。Frozen 原文件依旧 `profile_freeze_authorized=true`，另三项 `inference_authorized/gpu_authorized/training_authorized=false`；授权意图记录与运行 Profile 激活是两个不同步骤。
+- 下一工程工作：建立绑定 Frozen 哈希、授权范围、合成 manifest 的独立执行副本与 synthetic-only fail-closed；建立可复现合成输入和 CPU-only 预检；Owner 再在 Mac CLI 实际提交 Job。禁止简单修改 Frozen 的 inference/GPU 为 true 来绕过合成验收。
+- Training / SFT / 1000 条批量审核仍未授权。不能说 HF GPU 已运行、32K 已 PASS 或正式推理已执行。
+- 下方其他状态如“GPU/Inference 未授权”仅是**历史快照**，现应区分“Owner 阶段授权已给出”和“执行入口尚未激活、HF Job 尚未提交”。
+
+---
+
+
 ## 2026-11-10 Owner 已批准 Profile Freeze（覆盖下方历史 HOLD）
 
 - 仅授权 Profile Freeze；不授权推理、GPU、训练、Development20/Locked30、HF Job 或 Bucket 探针。
