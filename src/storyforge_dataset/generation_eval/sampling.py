@@ -55,6 +55,10 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
     if not isinstance(models, dict) or set(models) != ROLES:
         raise SamplingDecisionError("SAMPLING_MODEL_SET_INVALID")
 
+    controls = document.get("execution_controls")
+    if not isinstance(controls, dict):
+        raise SamplingDecisionError("SAMPLING_EXECUTION_CONTROLS_INVALID")
+
     blockers: list[str] = []
     for role in ("A", "B", "challenger"):
         model = models[role]
@@ -70,9 +74,8 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
             if not isinstance(variant, dict):
                 blockers.append(f"{role.upper()}_VARIANT_INVALID")
                 continue
-            if variant.get("evaluation_split") != (
-                "development20" if name != "primary" else "p4_locked30"
-            ):
+            expected_split = "development20" if name != "primary" else "p4_locked30"
+            if variant.get("evaluation_split") != expected_split:
                 blockers.append(f"{role.upper()}_VARIANT_SPLIT_INVALID")
             sampling = variant.get("sampling")
             if not isinstance(sampling, dict) or not isinstance(sampling.get("do_sample"), bool):
@@ -108,10 +111,18 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
             blockers.append(f"{flag.upper()}_MUST_REMAIN_FALSE")
     if document.get("training_authorized") is not False:
         blockers.append("TRAINING_AUTHORIZATION_MUST_REMAIN_FALSE")
-    if document.get("development_only_tuning") is not True:
+    if controls.get("development_only_tuning") is not True:
         blockers.append("DEVELOPMENT_ONLY_TUNING_REQUIRED")
-    if document.get("locked_reference_accessed") is not False:
+    if controls.get("locked_reference_accessed") is not False:
         blockers.append("LOCKED_REFERENCE_ACCESS_FORBIDDEN")
+    if controls.get("seed") != 42:
+        blockers.append("BASE_SEED_MISMATCH")
+    if (
+        controls.get("context_ceiling_tokens") != 32768
+        or controls.get("input_budget_tokens") != 28672
+        or controls.get("generation_budget_tokens") != 4096
+    ):
+        blockers.append("TOKEN_BUDGET_CONTRACT_MISMATCH")
 
     blockers = list(dict.fromkeys(blockers))
     return SamplingAssessment(
