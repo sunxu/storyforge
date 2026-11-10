@@ -107,7 +107,7 @@ def prepare(source: Path, dest: Path) -> dict:
         if runner.count(old_import) != 1:
             raise Hold(f"VLLM0100_IMPORT_HOLD__ROLE_{role}__SHA256_{fingerprint}")
         old_type_count = runner.count(old_type)
-        old_kw_count = len(re.findall(r"\\bstructured_outputs\\s*=", runner))
+        old_kw_count = len(re.findall(r"\bstructured_outputs\s*=", runner))
         if old_type_count < 2 or old_kw_count < 1:
             raise Hold(
                 f"VLLM0100_API_SHAPE_HOLD__ROLE_{role}"
@@ -116,10 +116,10 @@ def prepare(source: Path, dest: Path) -> dict:
             )
         runner = runner.replace(old_type, "GuidedDecodingParams")
         runner, changed_kw = re.subn(
-            r"\\bstructured_outputs(?=\\s*=)", "guided_decoding", runner
+            r"\bstructured_outputs(?=\s*=)", "guided_decoding", runner
         )
         if changed_kw != old_kw_count or old_type in runner or re.search(
-            r"\\bstructured_outputs\\s*=", runner
+            r"\bstructured_outputs\s*=", runner
         ):
             raise Hold(f"VLLM0100_RESIDUAL_OLD_API_HOLD__ROLE_{role}")
         try:
