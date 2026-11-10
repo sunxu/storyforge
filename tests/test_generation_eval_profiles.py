@@ -55,6 +55,7 @@ def test_all_explicitly_frozen_profiles_can_become_ready():
         "generation_budget_tokens": 4096,
         "seed": 20261110,
         "runtime_digest": "sha256:" + "b" * 64,
+        "dependency_lock_sha256": "d" * 64,
         "tokenizer_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
         "profile_freeze_authorized": True,
         "inference_authorized": True,
