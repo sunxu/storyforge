@@ -29,7 +29,8 @@ ARCHIVE_MEMBERS = (
     "requirements/hf-generation-eval.lock",
 )
 SHA40 = re.compile(r"^[0-9a-f]{40}$")
-RUN_ID = re.compile(r"^r60-p4-h200-a-[0-9]{14}$")
+RUN_ID = re.compile(r"^r60-p4-h200-(a|b|challenger)-[0-9]{14}$")
+ROLE_SLUG = {"A": "a", "B": "b", "challenger": "challenger"}
 CODE_ROOT = "/workspace/storyforge"
 REQUIRED_INPUTS = {
     "inputs.jsonl", "manifest.json", "generation-profile.json",
@@ -102,9 +103,12 @@ with tarfile.open(archive,mode='r:') as tf:
 """
 
 
-def build_h200_argv(*, staging: Path, run_id: str, archive_sha: str) -> list[str]:
+def build_h200_argv(*, staging: Path, run_id: str, archive_sha: str,
+                    model_role: str = "A") -> list[str]:
     """Generate explicit shell argv; no subprocess or HF client is invoked."""
-    if not RUN_ID.fullmatch(run_id):
+    if model_role not in ROLE_SLUG or not RUN_ID.fullmatch(run_id) or not run_id.startswith(
+        f"r60-p4-h200-{ROLE_SLUG[model_role]}-"
+    ):
         raise ValueError("H200_RUN_ID_INVALID")
     if not re.fullmatch(r"[0-9a-f]{64}", archive_sha):
         raise ValueError("SOURCE_ARCHIVE_SHA_INVALID")
@@ -120,7 +124,7 @@ def build_h200_argv(*, staging: Path, run_id: str, archive_sha: str) -> list[str
           "sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee "
           "PYTHONPATH=/workspace/storyforge/src "
           "python -m storyforge_dataset.generation_eval.worker_cli "
-          "--model-role A "
+          f"--model-role {model_role} "
           "--profile /input/generation-profile.json "
           "--synthetic-authorization /input/synthetic-authorization.json "
           "--manifest /input/manifest.json "
@@ -142,14 +146,17 @@ def build_h200_argv(*, staging: Path, run_id: str, archive_sha: str) -> list[str
     ]
 
 
-def prepare(*, repo: Path, staging: Path, code_revision: str) -> dict[str, Any]:
+def prepare(*, repo: Path, staging: Path, code_revision: str,
+            model_role: str = "A") -> dict[str, Any]:
     """Perform CPU-only validations and write one human-executed launch script."""
     if not SHA40.fullmatch(code_revision):
         raise ValueError("CODE_REVISION_INVALID")
     repo = repo.resolve(strict=True)
     staging = staging.resolve(strict=True)
     run_id = staging.name
-    if not RUN_ID.fullmatch(run_id):
+    if model_role not in ROLE_SLUG or not RUN_ID.fullmatch(run_id) or not run_id.startswith(
+        f"r60-p4-h200-{ROLE_SLUG[model_role]}-"
+    ):
         raise ValueError("H200_RUN_ID_INVALID")
     if _git_output(repo, "rev-parse", code_revision) != code_revision:
         raise ValueError("CODE_REVISION_UNRESOLVED")
@@ -164,16 +171,16 @@ def prepare(*, repo: Path, staging: Path, code_revision: str) -> dict[str, Any]:
         raise ValueError("STAGING_INPUT_FILE_SET_INVALID")
     if list(output_dir.iterdir()):
         raise ValueError("STAGING_OUTPUT_NOT_EMPTY")
-    if (staging / "launch-h200-A.sh").exists():
+    if (staging / f"launch-h200-{model_role}.sh").exists():
         raise ValueError("LAUNCH_SCRIPT_ALREADY_EXISTS")
     auth_profile = authorize_synthetic_profile(
         frozen_path=input_dir / "generation-profile.json",
         authorization_path=input_dir / "synthetic-authorization.json",
         manifest_path=input_dir / "manifest.json",
         input_path=input_dir / "inputs.jsonl",
-        model_role="A",
+        model_role=model_role,
     )
-    if auth_profile["synthetic_only_runtime_scope"]["sha256"] != CALIBRATED_SHA256["A"]:
+    if auth_profile["synthetic_only_runtime_scope"]["sha256"] != CALIBRATED_SHA256[model_role]:
         raise WorkerError("SYNTHETIC_SHA_NOT_CALIBRATED")
     with (input_dir / "source.tar").open("xb") as target:
         proc = subprocess.run(
@@ -187,15 +194,16 @@ def prepare(*, repo: Path, staging: Path, code_revision: str) -> dict[str, Any]:
     source = input_dir / "source.tar"
     _validate_source_members(source)
     sha = hashlib.sha256(source.read_bytes()).hexdigest()
-    argv = build_h200_argv(staging=staging, run_id=run_id, archive_sha=sha)
-    launch = staging / "launch-h200-A.sh"
+    argv = build_h200_argv(staging=staging, run_id=run_id, archive_sha=sha,
+                           model_role=model_role)
+    launch = staging / f"launch-h200-{model_role}.sh"
     launch.write_text("#!/bin/bash\nset -euo pipefail\n" + shlex.join(argv) + "\n")
     launch.chmod(0o700)
     return {
         "schema": "storyforge_r60_p4_synthetic_h200_owner_plan_safe_v1",
-        "status": "H200_A_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED",
-        "role": "A", "code_revision": code_revision,
-        "input_sha256": CALIBRATED_SHA256["A"],
+        "status": f"H200_{model_role}_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED",
+        "role": model_role, "code_revision": code_revision,
+        "input_sha256": CALIBRATED_SHA256[model_role],
         "source_archive_sha256": sha,
         "flavor": "h200", "timeout_minutes": 60, "attempts": 1,
         "launch_script": str(launch),
@@ -210,14 +218,15 @@ def main() -> int:
     parser.add_argument("--repo", type=Path, required=True)
     parser.add_argument("--staging", type=Path, required=True)
     parser.add_argument("--code-revision", required=True)
+    parser.add_argument("--model-role", choices=("A", "B", "challenger"), default="A")
     args = parser.parse_args()
     try:
         receipt = prepare(repo=args.repo, staging=args.staging,
-                          code_revision=args.code_revision)
+                          code_revision=args.code_revision, model_role=args.model_role)
     except (OSError, ValueError, TypeError, subprocess.SubprocessError) as exc:
         receipt = {
             "schema": "storyforge_r60_p4_synthetic_h200_owner_plan_safe_v1",
-            "status": "H200_A_OWNER_PLAN_HOLD",
+            "status": f"H200_{args.model_role}_OWNER_PLAN_HOLD",
             "reason_code": str(exc) if isinstance(exc, ValueError) else "PREPARATION_FAILED",
             "gpu_started": False, "inference_started": False,
             "hf_job_submitted": False, "training_started": False,
