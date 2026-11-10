@@ -134,6 +134,7 @@ def preflight(
     import jinja2
     import sentencepiece
     import transformers
+
     from storyforge_gold_quality import hf_severity_evidence_v2 as severity
 
     # Explicit imports are intentional: catch missing optional runtime dependencies
@@ -317,7 +318,7 @@ def main() -> int:
         )
         print(json.dumps(result, ensure_ascii=False, sort_keys=True))
         return 42 if result["status"].endswith("_HOLD") else 0
-    except Exception as exc:  # SAFE output must never expose messages, paths, or traceback.
+    except Exception as exc:  # noqa: BLE001 - SAFE output must never expose messages, paths, or traceback.
         name = type(exc).__name__
         safe_type = name.upper() if re.fullmatch(r"[A-Za-z][A-Za-z0-9_]{0,63}", name) else "OTHER"
         reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch(
