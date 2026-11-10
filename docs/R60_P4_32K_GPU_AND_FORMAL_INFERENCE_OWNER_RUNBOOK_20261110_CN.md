@@ -82,6 +82,53 @@ hf jobs hardware
 
 以上为**只读核对**，不会创建 HF Job、运行 GPU、连接 Bucket 或访问私有案例。
 
+## 2026-11-10 Owner Qwen A 校准回执（新增）
+
+Owner 实际在 Mac Docker/OrbStack 回传以下 SAFE（未提交 HF Job）：
+
+- schema：`storyforge_r60_synthetic_32k_input_safe_v1`
+- status：`SYNTHETIC_32K_INPUT_PREPARED__GPU_NOT_STARTED`
+- Role A：**28,568 input tokens**，目标 28,600（差 32），上限 28,672；预留 4,096 output tokens；单条合成输入
+- `input_sha256=a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398`
+- `frozen_profile_sha256=a58d02c757767f18deb8a4cb948a56be199c837c045d83648838868961e1037f`
+- `tokenizer_only=true`，`hf_job_submitted=false`、`gpu_started=false`、`inference_started=false`、`training_started=false`、`private_values_emitted=false`
+
+**裁决：模型 A CPU-only 32K 合成输入准备 PASS**。并非 32K GPU / decode / 4,096 token 实测，模型 B 与 challenger 尚未回传校准结果。本次仅证明输入构建及分词长度；正式 synthetic-only GPU 执行隔离尚 HOLD。
+
+后续 Owner 可在原先的**同一个** `WORKTREE` / `OUT` 中执行 B、challenger 输入校准；不得重复 `git worktree add` 或 `mkdir -m 700 "$OUT"`，以免目录已存在报错。
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+REV="30636aa6187b36809c7ae7a9a72f7a0d95572e01"
+WORKTREE="$HOME/workspace/storyforge-p4-synthetic-${REV:0:12}"
+OUT="$HOME/.local/share/storyforge/r60/private/p4-synthetic-${REV:0:12}"
+IMAGE="docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
+
+test "$(git -C "$WORKTREE" rev-parse HEAD)" = "$REV"
+test -f "$OUT/A/manifest.json"
+for ROLE in B challenger; do
+  docker run --rm --platform linux/amd64 \
+    -v "$WORKTREE:/workspace/storyforge:ro" \
+    -v "$OUT:/work" \
+    -e PYTHONPATH=/workspace/storyforge/src \
+    --entrypoint bash "$IMAGE" -lc "
+      set -euo pipefail
+      python -m pip install --disable-pip-version-check --require-hashes \
+        -r /workspace/storyforge/requirements/hf-generation-eval.lock
+      python -m storyforge_dataset.generation_eval.synthetic_32k \
+        --frozen /workspace/storyforge/experiments/r60_quality/p4_generation_profile_frozen_v1.json \
+        --authorization /workspace/storyforge/experiments/r60_quality/p4_generation_execution_authorization_20261110.json \
+        --model-role $ROLE \
+        --output-dir /work/$ROLE
+    "
+done
+```
+
+若当前 Mac 的 Worktree/OUT 实际命名与示例不同，以本地已生成 A 的真实目录为准。只回传 B 与 challenger 两份 SAFE，不要上传任何正文。它们只下载 tokenizer/config，无 GPU、无 HF Job。
+
+---
+
 ## 3.1 CPU-only 32K 输入 Token 校准（新工具；不提交 HF Job）
 
 工程入口 `python -m storyforge_dataset.generation_eval.synthetic_32k` 已实现，使用冻结 Profile 的三个固定 Revision、tokenizer 文件 SHA 和真实 Chat Template，单模型生成 1 条合成记录，二分校准默认目标 28,600 input tokens（允许误差 96；绝不超过 28,672），保留 4,096 generation 上限。Qwen Thinking flag 与 GLM-Z1 的 generation prefix 一并计数。
