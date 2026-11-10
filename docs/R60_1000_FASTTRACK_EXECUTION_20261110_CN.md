@@ -1,5 +1,42 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-10 首批 25 条私有分片：vLLM 0.10.0 API 修复与可复用代码已落库
+
+Owner Mac 确认镜像 `docker.io/vllm/vllm-openai:v0.10.0` 的 manifest Digest 为 `sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271`。这只是**镜像内容 SHA pin**，尚未证明实际 CUDA/vLLM GPU 环境能正确加载三模型，也没有支付 HF GPU。
+
+**已核对的确定性 API 不匹配**：vLLM v0.10.0 离线 JSON schema 生成接口为 `GuidedDecodingParams` + `SamplingParams(guided_decoding=...)`；旧 R60 1000 质量审核器使用 `StructuredOutputsParams` + `structured_outputs=`（包括引文纠错分支）。不能直接用旧审核器启动该容器，否则面临导入或参数错误。官方 0.10.0 文档：https://docs.vllm.ai/en/v0.10.0/features/structured_outputs.html
+
+新增可复用的纯 Python 标准库准备器：
+
+- `experiments/r58_quality/r60_pilot25_vllm0100_prepare.py`：从现有完整 1000 条 A/B stage 各复制首 25 条，原序号和 blind ID 保持不变；对 **复制出来的** `runner.py` 做 4 个 exact-match API 变换，包含原始结构化输出和引文纠错路径；private 输入/代码仍 0600、新目录 0700；重复使用同一输出目录拒绝；发现原始已写 checkpoint 则拒绝；不会改旧 stage 或模型输出、不会 HF 提交。
+- `tests/test_r60_pilot25_vllm0100_prepare.py`：用合成 1000 条测试 25 分片、原始文件不变、断点重复拒绝与 API 漂移 fail-closed。
+- **这些属于刚提交的代码，CI PASS 与 Owner Mac 私有准备回执目前尚未获取；不能声称实际 Pilot25 包已准备好。**
+
+Owner Mac 获取当前分支新增准备器并执行（**不下载模型，不提交 Job，不收费**）：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+BRANCH="r60/p4-generation-eval-framework"
+STAGING="$BASE/r60-hf-quality-pilot25-vllm0100"
+SCRIPT="$BASE/r60_pilot25_vllm0100_prepare.py"
+
+git -C "$ROOT" fetch origin "$BRANCH"
+git -C "$ROOT" show "origin/$BRANCH:experiments/r58_quality/r60_pilot25_vllm0100_prepare.py" > "$SCRIPT"
+chmod 600 "$SCRIPT"
+python3 "$SCRIPT" \
+  --source-stage "$BASE/r60-hf-quality-first-1000" \
+  --pilot-stage "$STAGING"
+```
+
+只有在 `R60_PILOT25_PRIVATE_STAGED__GPU_NOT_AUTHORIZED` 且 `cases_per_role=25`、原始 `1000`、输入 SHA 与 code-patch fingerprint 保持可验证后，才可以提议 **一次单角色 1-case GPU/JSON smoke**，随后首批 25 A/B；Job 仍需固定 H200/时间/预算、镜像运行时检查和 Owner 单次授权。输出必须先独立回收和 `read_checkpoint` 核验，才可安全导入原始 1000 的前 25 个序号；不把 Pilot25 staging 的 `quality_pass` 直接写成 1000 的完成计数。**严禁**直接覆盖旧 source 或 `output_A/B`。
+
+> 注意：旧审核器即使 `--limit 25` 也完整读取其输入 JSONL，因此独立 25 行 staging 是真实避免上传全 1000 的必要步骤，不只是减少推理条数。旧双审六维 `storyforge_hf_literary_visible_history_v1` 不能替代 Rubric v2.1 的严重校准，30×3 校准仍是放大与质量准入的必要门槛。
+
+---
+
+
 ## 2026-11-10 Owner Pilot25 Mac CLI / stage 检查 PASS
 
 Owner 已在 Mac 验证已有 A/B stage 文件、非链接输入、输出目录存在，并成功读取 `hf jobs run --help`；`status=R60_1000_PILOT25_LOCAL_INTERFACE_CHECK_PASS`。CLI 确认原生支持 `--dry-run`、`--flavor h200`、`--timeout`、`--attempts 1`、本地私有目录 `-v LOCAL_DIR:/MOUNT_PATH[:ro|:rw]`。**此项仅为静态接口与目录核验，不代表已上传、启动或执行审核。**
