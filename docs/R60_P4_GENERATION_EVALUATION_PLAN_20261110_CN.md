@@ -1,3 +1,15 @@
+## 2026-11-10 最新执行状态
+
+当前执行任务书与 Agent 入口：
+- [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md)
+- [P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)
+
+Worker CLI 已实现，运行镜像和依赖锁已在 digest-pinned linux/amd64 容器中通过 CI 合同验证。当前 HEAD `a1db1ac70fd3777d78460eee58e7d2b891867c40` 三项 CI 全部 PASS。接下来不重复已通过的 P3 或短输入 GPU Smoke，而是完成 Worker CLI/bootstrap CPU-only 端到端验收、Owner Mac CLI 执行包、32K 资源预算和最终 Profile Freeze Review。
+
+HF 连接器 403/OAuth/Bucket 排查按 Owner 决定暂停；HF 任务由 Owner 在 Mac CLI 执行。当前正式 Profile Freeze、正式推理、GPU 和训练授权仍为 false。
+
+---
+
 # StoryForge R60 P4 Generation Runtime & Evaluation Plan（2026-11-10）
 
 > 状态：**PROPOSAL_ONLY__OWNER_AUTHORIZATION_REQUIRED**
