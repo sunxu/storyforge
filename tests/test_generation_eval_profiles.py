@@ -244,6 +244,15 @@ def test_freeze_review_is_independent_of_inference_and_gpu_authorization():
     assert "GPU_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
 
 
+def test_candidate_prompt_and_schema_hashes_match_exact_files():
+    repo_root = Path(__file__).parents[1]
+    profile = load_profile(repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json")
+    prompt_path = repo_root / "docs/R60_P4_EVALUATION_PROMPT_CANDIDATE_V1_CN.md"
+    schema_path = repo_root / "experiments/r60_quality/r60_p4_evaluation_output_schema_candidate_v1.json"
+    assert hashlib.sha256(prompt_path.read_bytes()).hexdigest() == profile["evaluation_prompt_sha256"]
+    assert hashlib.sha256(schema_path.read_bytes()).hexdigest() == profile["output_schema_sha256"]
+
+
 def test_runtime_smoke_authorization_does_not_allow_training():
     profile = candidate_profile()
     profile.update(valid_manifest_fields())

@@ -127,3 +127,23 @@ Profile freeze 不自动授权：
 - `reports/r60/p4/R60_P4_RUNTIME_SMOKE_SAFE_20261110.json`
 
 本文件状态必须保持 `OWNER_ADJUDICATION_PACKET_READY__PROFILE_NOT_FROZEN`，直到 Owner 决策和后续 CPU-only 复核全部完成。
+
+## 2026-11-10 Owner 接受建议后的实施记录
+
+Owner 已接受本文件中的实验矩阵与 GLM Thinking 建议。已落实到分支候选配置和 CPU-only 合约：
+
+- 三个模型均增加 `development_primary`，与各自 Locked30 primary 使用相同采样策略、但只在 Development20 运行。
+- GLM-4 greedy sensitivity 与其 Development20 primary 配对；GLM-Z1 sampling sensitivity 与其 Development20 greedy primary 配对。
+- Locked30 明确 `primary_only`，禁止用于采样调优。
+- GLM-Z1 Profile 明确 `thinking_mode=explicit_generation_prefix`、`generation_prefix=<think>`；Backend 在 chat template 之后确保该 prefix 只出现一次，并计入 input token budget。
+- GLM-4 明确 `thinking_mode=template_default`，不额外注入 prefix。
+- Qwen 明确 `thinking_mode=api_flag`，沿用 `enable_thinking=true`。
+- 已新增统一 Prompt 候选及输出 JSON Schema 候选，并把其 SHA-256 绑定进 P4 candidate；二者状态仍为 `OWNER_REVIEW_PENDING`，因此 freeze_review 仍 HOLD。
+- 已将一次性 Runtime Smoke 授权标记为 `CONSUMED_2026-11-10`，并关闭 `runtime_smoke_authorized`。
+- 新增 `freeze_review` CPU-only assessment purpose；它独立于 inference/GPU 授权，但要求 Prompt/Schema 完整且 Owner contract approval 明确。
+
+新增文件：
+- [统一评估 Prompt 候选](R60_P4_EVALUATION_PROMPT_CANDIDATE_V1_CN.md)
+- [评估输出 Schema 候选](../experiments/r60_quality/r60_p4_evaluation_output_schema_candidate_v1.json)
+
+**仍未完成 / 未授权：** Prompt 与 Schema 的最终 Owner 审批、真实长上下文硬件选择、私有输出持久化通道验证、正式 Profile 冻结、Development20 inference、Locked30 inference、GPU 与训练。
