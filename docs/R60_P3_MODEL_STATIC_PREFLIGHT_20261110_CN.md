@@ -64,7 +64,7 @@ Owner Mac 已回传 `storyforge_r60_p3_model_files_safe_v1` SAFE，状态 `P3_PI
 
 复核 `scripts/r60_p3_cpu_model_preflight_v1.py` 后发现它每模型仅渲染一条短 prompt，未读取下载 SAFE 核验本地文件 SHA、未比较 embedded/standalone 模板、未执行 90 组 synthetic 中文多轮输入，也未检查共享上下文预算。因此不得使用该 v1 的 PASS 状态代表完整 P3 验收。
 
-新增 `scripts/r60_p3_cpu_model_preflight_v2.py` 与 `tests/test_r60_p3_cpu_model_preflight_v2.py`。v2 增加：
+新增 `scripts/r60_p3_cpu_model_preflight_v3.py` 与 `tests/test_r60_p3_cpu_model_preflight_v3.py`。v2 增加：
 - 对照下载 SAFE 逐文件验证本地 SHA-256 和文件大小；检查固定 Revision 与无模型权重。
 - 每模型 90 组中文多轮 synthetic messages；检查 tokenizer token IDs、prompt token 分布和无静默截断预算。
 - 实际比较 embedded 与 standalone Jinja 模板渲染，任何差异均报告 template-source HOLD。
@@ -82,16 +82,16 @@ cd /Users/keedle/workspace/storyforge-r60-ledger-diagnostics
 source .venv-r60-p3/bin/activate
 OUT="$HOME/.cache/storyforge/r60-p3-snapshots-20261110"
 set +e
-python scripts/r60_p3_cpu_model_preflight_v2.py \
+python scripts/r60_p3_cpu_model_preflight_v3.py \
   --snapshots-root "$OUT" \
   --download-safe "$OUT/R60_P3_MODEL_FILES_SAFE.json" \
   --input-budget 28672 \
   --output-budget 4096 \
   --context-ceiling 32768 \
-  > "$OUT/R60_P3_CPU_PREFLIGHT_SAFE.json"
+  > "$OUT/R60_P3_CPU_PREFLIGHT_SAFE_V3.json"
 RC=$?
 set -e
-cat "$OUT/R60_P3_CPU_PREFLIGHT_SAFE.json"
+cat "$OUT/R60_P3_CPU_PREFLIGHT_SAFE_V3.json"
 printf 'P3_PREFLIGHT_EXIT=%s\\n' "$RC"
 ```
 
