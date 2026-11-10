@@ -1,5 +1,60 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-10 Owner 1000×2 tokenizer CPU 预检：A/B 均 PASS；进入首批 25 GPU 审核执行准备
+
+Owner Mac 使用现有 `runner.py --token-preflight-only` 对冻结的 A 和 B 两侧各 1000 条完整审核输入执行真实 tokenizer 预检，原始 SAFE 关键数据：
+
+| 参数 | A Qwen3-32B | B GLM-4-32B |
+| --- | ---: | ---: |
+| `cases_checked` | 1000 | 1000 |
+| `prompt_tokens_min` | 712 | 673 |
+| `prompt_tokens_median` | 1148 | 1099 |
+| `prompt_tokens_p95` | 2284 | 2306 |
+| `prompt_tokens_max` | 3124 | 3550 |
+| `reserved_output_tokens` | 2400 | 2400 |
+| `max_total_tokens` | 5524 | 5950 |
+| `max_model_len` | 32768 | 32768 |
+| `over_budget_count` | 0 | 0 |
+
+两者 `status=HF_REVIEW_CPU_TOKEN_PREFLIGHT_PASS__NO_GPU`、`gpu_started=false`、`training_authorized=false`、`private_values_emitted=false`。
+
+**裁决：`R60_FROZEN_1000_A_B_INPUT_AND_TOKEN_PREFLIGHT_PASS__REVIEW_NOT_STARTED`。** 输入结构和 token 预算已齐，不再重复；模型审核仍 0/1000，1000 HOLD 均为未审核。
+
+### 现在真正的阻塞项（工程）
+
+已核对旧审核器 `src/storyforge_gold_quality/hf_literary_review.py`：
+
+- `--start 1 --limit 25` 能只为前 25 个序号产生审核；`read_input()` 仍校验完整 1000 条、不会将全 1000 条自动提交到模型推理；
+- `inference()` 对每条使用固定 pinned model revision + `vllm.LLM` / `SamplingParams(temperature=0,max_tokens=2400,structured_outputs=JSON schema)`，单条 checkpoint 为 create-only，重跑前先复核已完成 checkpoint；
+- 必须传 `--confirm-paid-gpu` 才进入 GPU 代码路径。这个参数**不是** Owner 对任意 GPU 批次的预算批准，本阶段还需独立固定 Job 输入、输出位置、镜像 digest、依赖、时长、预算、回执与不重复运行控制；
+- 已完成的 PyTorch/transformers H200 32K synthetic smoke **不能证明 vLLM 和 `StructuredOutputsParams` 在该镜像中可用**；先检查旧运行时与依赖，不以 synthetic PASS 直接提交 25 条付费任务；
+- 旧审核 policy 为 `storyforge_hf_literary_visible_history_v1`，正式 30-case `r60_severity_rubric_v2_1` 仍须独立校准误判/漏判。旧六维质量审核只是可训练候选判断的一个关卡，不等于训练准入；
+- 加速顺序：固定 25-case A/B pilot 单次 Job 计划 → Owner Mac 手动提交 → checkpoint/结构化 JSON/异常 EOS 统计 → 通过后批次 100/500/1000；未拿到校准结果，不扩大或直接训练。Challenger 优先复核分歧，而非直接给 1000 条全量三审。
+
+### Owner Mac 下一次无成本运行时核查
+
+```bash
+set -euo pipefail
+STAGE="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-first-1000"
+
+# 只读核验旧 stage 的 runner / token source 和输出目录。
+for ROLE in A B; do
+  test -s "$STAGE/input_$ROLE/runner.py"
+  test -s "$STAGE/input_$ROLE/token_core.py"
+  test -s "$STAGE/input_$ROLE/source.private.jsonl"
+  test -d "$STAGE/output_$ROLE"
+  test ! -L "$STAGE/input_$ROLE/source.private.jsonl"
+done
+# 显示本地 HF CLI 及运行参数接口；不创建 Job。
+hf jobs run --help | head -80
+echo "R60_1000_PILOT25_LOCAL_INTERFACE_CHECK_PASS"
+```
+
+只读输入核验成功并不代表 vLLM 环境已可执行：必须在独立 Job 计划中 pin vLLM 兼容镜像/依赖、回收路径与费用后再正式付费。
+
+---
+
+
 ## 2026-11-10 Owner 已确认 A/B 1000 条审核输入：两侧 verify-only PASS
 
 Owner Mac 已执行现有私有 stage 的 `runner.py --verify-only`：
