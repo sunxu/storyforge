@@ -1,3 +1,15 @@
+# 2026-11-10 执行状态更新（优先于下方原始启动快照）
+
+**接手时不要再做 P2-B Owner 逐案审核；Owner 已确认 30/30 裁决与 90/90 语义复核。** 当前任务是补齐正式回执并解决真实 HOLD：
+
+1. P2-B 30/90 候选已在工作副本合并并通过 locator/quote/schema/evidence-index 结构预检；这不是 Owner Mac 正式私有包，也不是官方 Verifier PASS。
+2. Safety 第21、22条保留 Owner `SUPPORTED`；具体适用安全规则 ID、版本、scope 仍需从获准正式政策来源核实。不得臆造 Rule ID，不得改写 Owner Verdict。核实后运行独立 30/90 官方 Verifier，生成真实 Final SAFE。
+3. P3 已完成三个模型的静态 revision/config/template 元数据核查。CPU tokenizer/template/token-budget 仍待执行；GLM-Z1 的 sampling 与 greedy 官方指引存在冲突，先解决 profile。
+4. P2-B 聚合状态见 [SAFE 进度记录](evidence/R60_P2B_OWNER_30_90_PROGRESS_SAFE_20261110.md)；P3 模型 pins 见 [静态预检](R60_P3_MODEL_STATIC_PREFLIGHT_20261110_CN.md)。
+5. 仍禁止 GPU、付费 HF Job、1000 条批量审核和 SFT；Quality-v1 admitted=0。实时核对 PR #25 当前 HEAD 与五组 CI，PR 保持 Draft。
+
+---
+
 # StoryForge R60 后续 Agent 接手提示词（P2-A 完成后）
 
 版本：v1.0，2026-11-10。此文件是可直接复制到新 Agent 的**正式执行指令**，不包含私有故事正文。
