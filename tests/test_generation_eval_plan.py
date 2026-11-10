@@ -149,7 +149,7 @@ def _run_bootstrap_with_archive(monkeypatch, tmp_path, archive_bytes):
             return False
 
         def read(self, limit):
-            return archive_bytes[:limit]
+            return archive_bytes
 
     monkeypatch.setattr(
         urllib.request, "urlopen", lambda *args, **kwargs: Response()
