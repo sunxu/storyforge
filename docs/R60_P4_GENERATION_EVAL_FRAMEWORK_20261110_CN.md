@@ -77,3 +77,25 @@ inference_authorized=false、gpu_authorized=false、training_authorized=false。
 
 Job 计划目前引用的 Worker 入口尚未交付，因此即使合成 profile 能通过，也不构成可提交的运行包。下一步需实现并测试通用 Worker、模型后端适配、输出隔离与 SAFE 运行回执；随后再增加单独的 GPU 提交守卫。不得直接使用计划中的 argv 绕过该守卫。
 
+
+
+## P4.2：通用 Generation Worker API（已实现，合成后端验证）
+
+新增 `generation_eval.worker.run_generation_batch`。Worker 与模型加载框架解耦，通过 `GenerationBackend` Protocol 接收后端实例：
+
+- 严格校验 profile 已冻结且 inference/GPU 授权均显式为 true。
+- 输入文件通过现有 HF Runtime 的 no-follow、文件类型、大小、SHA-256 校验。
+- 输入 JSONL 严格限定为 `sample_id + messages`，校验角色、末尾 user 消息、ID 唯一性和消息数量。
+- 逐条调用后端，并校验实际输入 token 数、生成 token 数不超过 manifest/profile 预算。
+- 生成结果只写入独立私有文件，create-only、0600 权限；拒绝覆盖已有文件。
+- SAFE 回执只返回模型角色、数量、字节数、SHA-256、权限和执行标志，不包含 prompt 或生成文本。
+- Worker 不导入 Transformers/PyTorch，不负责模型下载或 Job 提交；模型后端必须实现 GPU 状态报告，真实 GPU adapter 尚未接入。
+
+当前 Worker 仅使用 FakeBackend 完成合成测试。不能把 FakeBackend 测试解释为真实模型推理或 GPU 验收。
+
+### P4.3 后续阻塞
+
+1. 编写并冻结 Qwen / GLM 各自的 backend adapter，明确模型类、dtype、chat template 加载方式、设备映射与停止条件。
+2. 将 P3 tokenizer/template 文件 hash、运行镜像 digest、依赖 lock hash 写入独立 P4 Frozen Profile；目前 P3 候选源文件仍保持未冻结状态。
+3. 增加 Worker CLI 和独立 GPU Job submit guard；当前 Job Plan 只用于审查，不得直接执行其 argv。
+4. 在完成 Owner profile freeze 和 GPU 授权后，才进行一个模型、一个样本的 Synthetic GPU Smoke。
