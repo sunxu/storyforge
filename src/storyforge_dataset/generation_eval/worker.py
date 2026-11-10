@@ -37,6 +37,9 @@ class GenerationResult:
 class GenerationBackend(Protocol):
     """Backend contract implemented by a separately pinned model adapter."""
 
+    @property
+    def gpu_started(self) -> bool: ...
+
     def generate(
         self,
         *,
@@ -99,7 +102,7 @@ def _validate_records(records: list[dict[str, object]], expected_count: int) -> 
         for message in messages:
             if not isinstance(message, dict) or set(message) != {"role", "content"}:
                 raise WorkerError("INPUT_MESSAGE_SCHEMA_INVALID")
-            if message["role"] not in MESSAGE_ROLES:
+            if not isinstance(message["role"], str) or message["role"] not in MESSAGE_ROLES:
                 raise WorkerError("INPUT_MESSAGE_ROLE_INVALID")
             if not isinstance(message["content"], str) or not message["content"].strip():
                 raise WorkerError("INPUT_MESSAGE_CONTENT_INVALID")
@@ -215,5 +218,5 @@ def run_generation_batch(
         output_size_bytes=write_receipt.size_bytes,
         output_sha256=write_receipt.sha256,
         output_mode=write_receipt.mode,
-        gpu_started=getattr(backend, "gpu_started", False) is True,
+        gpu_started=backend.gpu_started is True,
     )
