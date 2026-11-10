@@ -5,15 +5,14 @@ It only accepts exact, pinned synthetic input bytes and an unchanged Frozen Prof
 """
 from __future__ import annotations
 
-import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
 from storyforge_dataset.hf_runtime.inputs import InputManager
 from .profiles import assess_profile, load_profile
-from .synthetic_32k import FROZEN_SHA256, SYNTHETIC_SENTENCE
 from .worker import WorkerError
+from .synthetic_32k import FROZEN_SHA256, SYNTHETIC_SENTENCE
 
 CALIBRATED_SHA256 = {
     "A": "a64ef7434c7f8c62720997b2d2d7d7cfe04545217fee66fc9300978cc42e7398",
@@ -48,7 +47,7 @@ def authorize_synthetic_profile(
     if model_role not in CALIBRATED_SHA256:
         raise WorkerError("SYNTHETIC_MODEL_ROLE_NOT_ALLOWED")
     try:
-        frozen_data = InputManager.open_verified(
+        InputManager.open_verified(
             frozen_path, max_bytes=2 * 1024 * 1024, expected_sha256=FROZEN_SHA256
         ).read_bytes()
         frozen = load_profile(frozen_path)
