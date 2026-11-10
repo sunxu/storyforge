@@ -177,7 +177,7 @@ def run_generation_batch(
                 max_input_tokens=max_input_tokens,
                 max_new_tokens=max_new_tokens,
             )
-        except Exception as exc:  # noqa: BLE001 - do not leak backend errors or prompts
+        except Exception as exc:
             raise WorkerError("GENERATION_BACKEND_FAILED") from exc
         if not isinstance(result, GenerationResult):
             raise WorkerError("GENERATION_RESULT_INVALID")
