@@ -17,7 +17,7 @@ P4 配置候选、采样实验设计、Prompt/Schema、运行镜像和依赖锁�
 | 仓库 / 分支 | `sunxu/storyforge` / `r60/p4-generation-eval-framework` |
 | PR | [#30](https://github.com/sunxu/storyforge/pull/30)，Open / Draft |
 | Issue | [#28](https://github.com/sunxu/storyforge/issues/28)，OPEN |
-| 当前文档 HEAD | `cb65fa3a1f9fbd7b761ea44f2490a32004711938` |
+| 本包首次生成提交 | `59b753f82f77067e6ff8cac6cb0cf135a6f9e276`（后续文档提交会推进 HEAD；Owner 裁决时须实时读取 PR #30 head SHA） |
 | 最近工程代码 HEAD | `7e9fdf9b47aee8da02ceeee1babc7a67d2ee6be9` |
 | 代码 HEAD 后续差异 | 仅文档更新；无源码、测试或 Workflow 变化 |
 
