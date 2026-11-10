@@ -130,3 +130,108 @@ def test_plan_rejects_mutable_image_and_overlapping_mounts():
         assert str(exc) == "IMAGE_MUST_BE_PINNED_BY_SHA256"
     else:
         raise AssertionError("mutable image must be rejected")
+
+
+def _run_bootstrap_with_archive(monkeypatch, tmp_path, archive_bytes):
+    import io
+    import pathlib
+    import urllib.request
+
+    plan = build_generation_plan(**plan_args(ready_profile()))
+    shell = plan.argv[plan.argv.index("bash") + 2]
+    encoded = shell.split("base64.b64decode('", 1)[1].split("')", 1)[0]
+    script = base64.b64decode(encoded).decode("utf-8")
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, limit):
+            return archive_bytes[:limit]
+
+    monkeypatch.setattr(
+        urllib.request, "urlopen", lambda *args, **kwargs: Response()
+    )
+    real_path = pathlib.Path
+    destination = tmp_path / "extracted"
+    monkeypatch.setattr(
+        pathlib,
+        "Path",
+        lambda value: destination if value == "/workspace/storyforge" else real_path(value),
+    )
+    exec(compile(script, "<p4-source-archive-bootstrap>", "exec"), {})
+    return destination
+
+
+def _make_tar_archive(entries):
+    import io
+    import tarfile
+
+    buffer = io.BytesIO()
+    with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+        for info, payload in entries:
+            archive.addfile(info, io.BytesIO(payload) if payload is not None else None)
+    return buffer.getvalue()
+
+
+def test_bootstrap_rejects_archive_path_traversal(monkeypatch, tmp_path):
+    import tarfile
+
+    info = tarfile.TarInfo("repo-root/../escape.txt")
+    info.size = 1
+    archive = _make_tar_archive([(info, b"x")])
+    try:
+        _run_bootstrap_with_archive(monkeypatch, tmp_path, archive)
+    except SystemExit as exc:
+        assert str(exc) == "SOURCE_ARCHIVE_PATH_INVALID"
+    else:
+        raise AssertionError("path traversal archive member must be rejected")
+
+
+def test_bootstrap_rejects_symbolic_links(monkeypatch, tmp_path):
+    import tarfile
+
+    info = tarfile.TarInfo("repo-root/link")
+    info.type = tarfile.SYMTYPE
+    info.linkname = "../../escape"
+    archive = _make_tar_archive([(info, None)])
+    try:
+        _run_bootstrap_with_archive(monkeypatch, tmp_path, archive)
+    except SystemExit as exc:
+        assert str(exc) == "SOURCE_ARCHIVE_MEMBER_INVALID"
+    else:
+        raise AssertionError("symbolic link archive member must be rejected")
+
+
+def test_bootstrap_rejects_special_files(monkeypatch, tmp_path):
+    import tarfile
+
+    info = tarfile.TarInfo("repo-root/fifo")
+    info.type = tarfile.FIFOTYPE
+    archive = _make_tar_archive([(info, None)])
+    try:
+        _run_bootstrap_with_archive(monkeypatch, tmp_path, archive)
+    except SystemExit as exc:
+        assert str(exc) == "SOURCE_ARCHIVE_MEMBER_INVALID"
+    else:
+        raise AssertionError("special archive member must be rejected")
+
+
+def test_bootstrap_rejects_archive_member_count_over_limit(monkeypatch, tmp_path):
+    import tarfile
+
+    entries = []
+    for index in range(10001):
+        info = tarfile.TarInfo(f"repo-root/file-{index}.txt")
+        info.size = 0
+        entries.append((info, b""))
+    archive = _make_tar_archive(entries)
+    try:
+        _run_bootstrap_with_archive(monkeypatch, tmp_path, archive)
+    except SystemExit as exc:
+        assert str(exc) == "SOURCE_ARCHIVE_CONTENT_LIMIT_EXCEEDED"
+    else:
+        raise AssertionError("oversized archive member count must be rejected")
