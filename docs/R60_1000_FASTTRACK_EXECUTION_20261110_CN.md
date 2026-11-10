@@ -1,5 +1,61 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：A25 Job 已手动停止；增加详细 SAFE 心跳日志并准备受控重跑
+
+Owner 报告 A25 Job `6af346e9ab34849891ac4e65` 已停止。此前状态 `RUNNING`、`CPU 0%`、`GPU 0%`、`GPU VRAM 64/144 GB`、`hf jobs logs` 空、输出 Bucket 子目录空。**不能凭显存 64GB 断言模型已完成初始化；未验证任何 Checkpoint，正式审核进度仍 0。** 用户已明确授予后续付费调用总体批准，但按此前约定 HF Jobs 仍由 Owner Mac CLI 执行；不经由受限 ChatGPT HF 连接器提交。
+
+### 新增可复用诊断器与单测
+
+- `experiments/r58_quality/r60_pilot_diagnostic_launcher.py`：纯 Python 标准库，作为 *原审核器的外部入口*；它动态导入同目录 **不变的** `runner.py`，仅包装 `read_input`、`inference`、`write_checkpoint` 发出安全事件，不读取正文日志或修改模型生成参数。
+- 启动立即发 `BOOT`，之后每 30s `HEARTBEAT`（允许列表化 stack phase、进程 CPU 秒与峰值 RSS、`nvidia-smi` 可用时 GPU 利用率和显存）。若调用在原生 C/CUDA 中，则 stack phase 只到 `OTHER_OR_NATIVE_WAIT` / `INFERENCE_FUNCTION`，**并不能识别所有内部 CUDA 阶段**。
+- 出现事件：`READ_INPUT`/`INPUT_VERIFIED`、`INFERENCE_ENTER`、`CHECKPOINT_WRITTEN`、`INFERENCE_SUMMARY`、`RUNNER_EXIT`。异常仅输出允许的状态码；不记录私有历史、blind_id、target、引用、模型生成文本、路径或异常信息。
+- `tests/test_r60_pilot_diagnostic_launcher.py`：合成 runner 的分阶段事件、Checkpoint、保留原文件和私有内容脱敏测试。通过本地合成运行路径验证逻辑；仓库 CI 结果仍待核对。
+- **仍然需要使用 `/usr/bin/python3 -u`**：旧 `python` 不存在；`-u` 使 Python 不缓冲输出。shell 首条 `echo` 用于区分入口解释器错误。
+
+### Owner Mac 安装独立诊断器到现有 A25 私有 stage
+
+**只复制新增入口，不运行任何 GPU，也不修改旧 runner 或冻结 25 行输入。**
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+REV="1c22148380c7525abc5e47ba7e7b76b4ba62866c"
+TARGET="$PILOT/input_A/r60_pilot_diagnostic_launcher.py"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test ! -e "$TARGET" || { echo DIAGNOSTIC_LAUNCHER_ALREADY_EXISTS_HOLD; exit 42; }
+umask 077
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_pilot_diagnostic_launcher.py" > "$TARGET"
+chmod 600 "$TARGET"
+python3 -m py_compile "$TARGET"
+python3 "$TARGET" --input "$PILOT/input_A/source.private.jsonl" \
+  --output-dir "$PILOT/output_A" --model Qwen/Qwen3-32B \
+  --revision 9216db5781bf21249d130ec9da846c4624c16137 --verify-only
+```
+
+上面在 Mac CPU-only 模式测试入口，期望 `BOOT`、`INPUT_VERIFIED`、`RUNNER_EXIT exit_code=0` 与原 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`。**旧 `--verify-only` 不导入 vLLM、不启动 GPU**。
+
+### A25 新的真实 GPU Job 启动命令（Owner Mac 执行，已得到总体付费授权）
+
+使用一个新的唯一目录 `a-diag1`，保留 `a` / `a-retry1` 历史目录（不删除、也不从旧目录误计 checkpoint）：
+
+```bash
+set -euo pipefail
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-quality-a25-diag1 \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A:/input:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; echo DIAG_SHELL_START; test -f /input/r60_pilot_diagnostic_launcher.py || { echo LAUNCHER_NOT_FOUND_HOLD; exit 42; }; OUT=/bucket/evaluation-runs/r60-1000-pilot25-vllm0100-a-diag1; if [ -e "$OUT" ]; then echo OUTPUT_ALREADY_EXISTS_HOLD; exit 42; fi; mkdir -p "$OUT"; exec /usr/bin/python3 -u /input/r60_pilot_diagnostic_launcher.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --start 1 --limit 25 --max-model-len 32768 --max-output-tokens 2400 --max-wall-seconds 3000 --confirm-paid-gpu'
+```
+
+新 Job 每 30 秒应看到至少一个 `HEARTBEAT`，典型输出只含 `event`、`elapsed_sec`、`stage`、`stack_phase`、CPU/RAM/GPU 数值。**如果 `BOOT` 后无心跳，优先诊断容器/进程被外部终止，而不是按正常模型加载处理。** 任何私有回执和 checkpoint 仍留在 HF Bucket。任务成功前不提交 B25。
+
+---
+
+
 ## 2026-11-11：首个 A25 Job ERROR 127，容器找不到 `python`，无推理
 
 Owner Mac 返回：
