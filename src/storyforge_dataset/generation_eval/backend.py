@@ -68,7 +68,19 @@ def download_pinned_tokenizer_snapshot(
         raise WorkerError("MODEL_REVISION_INVALID")
     if destination.exists() or destination.is_symlink():
         raise WorkerError("TOKENIZER_SNAPSHOT_DESTINATION_EXISTS")
-    if not isinstance(expected_file_hashes, Mapping) or not expected_file_hashes:
+    if (
+        not isinstance(expected_file_hashes, Mapping)
+        or frozenset(expected_file_hashes) not in {
+            frozenset({
+                "config.json", "generation_config.json", "merges.txt", "tokenizer.json",
+                "tokenizer_config.json", "vocab.json",
+            }),
+            frozenset({
+                "chat_template.jinja", "config.json", "generation_config.json",
+                "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json",
+            }),
+        }
+    ):
         raise WorkerError("TOKENIZER_FILE_MANIFEST_INVALID")
     for name, digest in expected_file_hashes.items():
         if (

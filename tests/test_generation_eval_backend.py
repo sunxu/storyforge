@@ -242,3 +242,17 @@ def test_tokenizer_snapshot_hash_mismatch_fails_before_model_loading(tmp_path: P
     (snapshot / "tokenizer.json").write_text("tampered", encoding="utf-8")
     with pytest.raises(WorkerError, match="TOKENIZER_FILE_HASH_MISMATCH"):
         verify_tokenizer_snapshot(snapshot, file_hashes)
+
+
+def test_tokenizer_downloader_rejects_model_weight_patterns_before_network(tmp_path: Path):
+    from storyforge_dataset.generation_eval.backend import download_pinned_tokenizer_snapshot
+
+    destination = tmp_path / "download"
+    with pytest.raises(WorkerError, match="TOKENIZER_FILE_MANIFEST_INVALID"):
+        download_pinned_tokenizer_snapshot(
+            model_id="fake-model",
+            revision="a" * 40,
+            destination=destination,
+            expected_file_hashes={"pytorch_model.bin": "a" * 64},
+        )
+    assert not destination.exists()
