@@ -5,8 +5,19 @@ import argparse
 import hashlib
 import json
 import re
+import sys
 from importlib.metadata import version
 from pathlib import Path
+
+# Support direct execution from a source-layout checkout without requiring an editable install.
+_REPO_SRC = next(
+    (parent / "src" for parent in Path(__file__).resolve().parents
+     if (parent / "src" / "storyforge_dataset" / "token_preflight.py").is_file()),
+    None,
+)
+if _REPO_SRC is None:
+    raise RuntimeError("P3_STORYFORGE_SOURCE_TREE_NOT_FOUND")
+sys.path.insert(0, str(_REPO_SRC))
 
 from storyforge_dataset.token_preflight import (
     describe_token_lengths,
