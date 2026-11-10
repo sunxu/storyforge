@@ -74,7 +74,7 @@ def test_capacity_gate_no_copy(tmp_path, monkeypatch):
 
 
 def test_wrong_revision_or_missing_shard_fails(tmp_path):
-    bucket, info = setup_snapshot(tmp_path)
+    _bucket, info = setup_snapshot(tmp_path)
     info.sha = "0" * 40
     with pytest.raises(mod.Hold, match="UPSTREAM_REVISION_MISMATCH"):
         mod.inventory(info)
