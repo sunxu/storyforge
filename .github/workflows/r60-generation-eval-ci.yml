@@ -8,6 +8,7 @@ on:
       - 'tests/test_generation_eval_profiles.py'
       - 'tests/test_generation_eval_plan.py'
       - 'tests/test_generation_eval_worker.py'
+      - 'tests/test_generation_eval_worker.py'
       - 'docs/R60_P4_GENERATION_EVAL_FRAMEWORK_20261110_CN.md'
       - '.github/workflows/r60-generation-eval-ci.yml'
   pull_request:
@@ -37,7 +38,7 @@ jobs:
       - name: Lint and compile
         run: |
           ruff check src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py
-          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py
+          python -m compileall -q src/storyforge_dataset/generation_eval tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py
       - name: Synthetic profile, plan and worker tests
         run: pytest -q tests/test_generation_eval_profiles.py tests/test_generation_eval_plan.py tests/test_generation_eval_worker.py
       - name: Assert CPU-only planning boundary
