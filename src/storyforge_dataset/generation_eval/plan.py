@@ -5,6 +5,7 @@ The returned argv is an internal plan; SAFE serialization excludes mount paths.
 """
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import re
@@ -161,14 +162,19 @@ def build_generation_plan(
     archive_script = f"""import io, shutil, tarfile, urllib.request
 from pathlib import Path, PurePosixPath
 revision = "{code_revision}"
-url = f"https://codeload.github.com/sunxu/storyforge/tar.gz/{revision}"
-archive = urllib.request.urlopen(url, timeout=90).read()
+url = f"https://codeload.github.com/sunxu/storyforge/tar.gz/{{revision}}"
+with urllib.request.urlopen(url, timeout=90) as response:
+    archive = response.read(64 * 1024 * 1024 + 1)
+if len(archive) > 64 * 1024 * 1024:
+    raise SystemExit("SOURCE_ARCHIVE_SIZE_LIMIT_EXCEEDED")
 destination = Path("/workspace/storyforge")
 destination.mkdir(parents=True, exist_ok=False)
 with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as bundle:
     members = bundle.getmembers()
     if not members:
         raise SystemExit("SOURCE_ARCHIVE_EMPTY")
+    if len(members) > 10000 or sum(member.size for member in members) > 256 * 1024 * 1024:
+        raise SystemExit("SOURCE_ARCHIVE_CONTENT_LIMIT_EXCEEDED")
     prefix = members[0].name.split("/", 1)[0]
     for member in members:
         path = PurePosixPath(member.name)
