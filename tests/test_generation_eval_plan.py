@@ -161,7 +161,7 @@ def _run_bootstrap_with_archive(monkeypatch, tmp_path, archive_bytes):
         "Path",
         lambda value: destination if value == "/workspace/storyforge" else real_path(value),
     )
-    exec(compile(script, "<p4-source-archive-bootstrap>", "exec"), {})
+    exec(compile(script, "<p4-source-archive-bootstrap>", "exec"), {})  # noqa: S102
     return destination
 
 
