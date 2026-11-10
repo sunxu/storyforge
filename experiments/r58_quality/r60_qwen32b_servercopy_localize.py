@@ -68,7 +68,8 @@ def inventory(model_info: object) -> list[dict]:
 
 
 def copy_checked(source: Path, dest: Path, size: int,
-                 upstream_sha: str | None) -> str:
+                 upstream_sha: str | None,
+                 *, verify_weight_sha: bool = True) -> str:
     if source.is_symlink() or not source.is_file():
         raise Hold("SOURCE_NOT_REGULAR")
     if source.stat().st_size != size:
@@ -86,12 +87,15 @@ def copy_checked(source: Path, dest: Path, size: int,
                 count += len(piece)
                 if count > size:
                     raise Hold("BUCKET_STREAM_TOO_LARGE")
-                h.update(piece)
+                if verify_weight_sha or upstream_sha is None:
+                    h.update(piece)
                 output.write(piece)
             output.flush()
             os.fsync(output.fileno())
-        digest = h.hexdigest()
-        if count != size or (upstream_sha is not None and digest != upstream_sha):
+        digest = (h.hexdigest() if verify_weight_sha or upstream_sha is None
+                  else upstream_sha)
+        if count != size or (verify_weight_sha and upstream_sha is not None
+                             and digest != upstream_sha):
             raise Hold("BUCKET_WEIGHT_INTEGRITY_HOLD")
         os.rename(part, dest)
         return digest
@@ -100,7 +104,8 @@ def copy_checked(source: Path, dest: Path, size: int,
             part.unlink()
 
 
-def run(bucket: Path, local: Path, model_info: object) -> dict:
+def run(bucket: Path, local: Path, model_info: object,
+        *, verify_weight_sha: bool = True) -> dict:
     if (not bucket.is_absolute() or bucket.is_symlink()
             or not bucket.is_dir()):
         raise Hold("BUCKET_DIR_HOLD")
@@ -119,7 +124,8 @@ def run(bucket: Path, local: Path, model_info: object) -> dict:
     verified = []
     for index, item in enumerate(manifest_items, 1):
         actual = copy_checked(bucket / item["name"], local / item["name"],
-                              item["size"], item["upstream_sha"])
+                              item["size"], item["upstream_sha"],
+                              verify_weight_sha=verify_weight_sha)
         verified.append({"name": item["name"], "size": item["size"],
                          "sha256": actual})
         emit("LOCAL_FILE_VERIFIED", file_number=index,
@@ -129,6 +135,8 @@ def run(bucket: Path, local: Path, model_info: object) -> dict:
     if refs != {item["name"] for item in verified if SHARD.fullmatch(item["name"])}:
         raise Hold("WEIGHT_INDEX_MISMATCH")
     manifest = {"schema": SCHEMA, "model": MODEL, "revision": REV,
+                "integrity_mode": ("sha256-verified" if verify_weight_sha
+                                   else "size-only-upstream-sha-declared"),
                 "files": verified}
     target = local / MANIFEST
     with target.open("x") as fp:
@@ -136,6 +144,8 @@ def run(bucket: Path, local: Path, model_info: object) -> dict:
         fp.flush()
         os.fsync(fp.fileno())
     emit("LOCAL_WEIGHTS_READY", files=len(verified),
+         full_weight_sha_verified=verify_weight_sha,
+         integrity_mode=manifest["integrity_mode"],
          total_gib=round(required / 1024**3, 2))
     return manifest
 
@@ -144,12 +154,16 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--bucket-dir", type=Path, required=True)
     parser.add_argument("--local-dir", type=Path, required=True)
+    parser.add_argument("--skip-weight-sha", action="store_true",
+                        help="Check weight size and pinned upstream metadata only; "
+                             "do not hash large copied shards")
     args = parser.parse_args()
     try:
         from huggingface_hub import HfApi
 
         info = HfApi().model_info(MODEL, revision=REV, files_metadata=True)
-        run(args.bucket_dir, args.local_dir, info)
+        run(args.bucket_dir, args.local_dir, info,
+            verify_weight_sha=not args.skip_weight_sha)
         return 0
     except Exception as exc:  # noqa: BLE001 - redact bucket paths and tokens
         emit("LOCALIZE_HOLD", reason_code=(
