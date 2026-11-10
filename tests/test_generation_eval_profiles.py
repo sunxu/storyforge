@@ -286,8 +286,10 @@ def test_freeze_review_cli_is_cpu_only_and_reports_candidate_readiness(capsys):
         raise SystemExit(code)
     assert exc.value.code == 0
     safe = json.loads(capsys.readouterr().out)
-    assert safe["status"] == "P4_PROFILE_READY_FOR_FREEZE_REVIEW"
+    assert safe["status"] == "P4_FREEZE_REVIEW_READY_NOT_FROZEN"
     assert safe["ready"] is True
+    assert safe["sampling_decision"]["status"] == "SAMPLING_DECISION_VALID__PROFILE_FREEZE_PENDING"
+    assert safe["sampling_decision"]["blockers"] == []
     assert safe["private_values_emitted"] is False
     assert safe["inference_started"] is False
     assert safe["gpu_started"] is False
