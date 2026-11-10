@@ -1,13 +1,14 @@
 """Prepare a create-only, Owner-private 25-row A/B HF review pilot; no HF calls.
 
 Read verified 1000-row original HF stage. Copy only 25 blind cases into each
-pilot slot. Apply the two exact vLLM v0.10.0 guided-decoding API substitutions
+pilot slot. Adapt the pinned vLLM v0.10.0 guided-decoding API names
 to a copied reviewer script; do not change frozen source or old stage files.
 This does NOT establish GPU image/model compatibility or permit paid Jobs.
 """
 from __future__ import annotations
 
 import argparse
+import ast
 import hashlib
 import json
 import os
@@ -21,16 +22,6 @@ ORIG_COUNT = 1000
 PILOT_COUNT = 25
 SOURCE_SIZE_MAX = 64 * 1024 * 1024
 IMAGE = "docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
-PATCHES = (
-    ("from vllm.sampling_params import StructuredOutputsParams",
-     "from vllm.sampling_params import GuidedDecodingParams"),
-    ("structured_outputs=StructuredOutputsParams(json=response_schema())",
-     "guided_decoding=GuidedDecodingParams(json=response_schema())"),
-    ("structured_outputs=structured_factory(json=schema)",
-     "guided_decoding=structured_factory(json=schema)"),
-    ("StructuredOutputsParams, TokensPrompt, max_model_len)",
-     "GuidedDecodingParams, TokensPrompt, max_model_len)"),
-)
 ALLOWED_BUNDLE = ("runner.py", "token_core.py", "runtime_inputs.py", "runtime_resources.py")
 
 
@@ -106,17 +97,35 @@ def prepare(source: Path, dest: Path) -> dict:
         source_files = {name: checked_file(inp / name, 100_000)
                         for name in ALLOWED_BUNDLE}
         runner = source_files["runner.py"].decode("utf-8")
-        for index, (before, after) in enumerate(PATCHES, 1):
-            # Return only the failing slot, patch ordinal, count and runner
-            # fingerprint. Never dump private source, case IDs, or prompts.
-            observed = runner.count(before)
-            if observed != 1:
-                raise Hold(
-                    "VLLM0100_PATCH_CONTRACT_CHANGED"
-                    f"__ROLE_{role}__PATCH_{index}__COUNT_{observed}"
-                    f"__RUNNER_SHA256_{sha(source_files['runner.py'])}"
-                )
-            runner = runner.replace(before, after, 1)
+        # The sealed runner can predate the current repository implementation:
+        # quote repair might be implemented differently or absent. Change only
+        # the verified vLLM API identifiers, not optional control-flow text.
+        old_import = "from vllm.sampling_params import StructuredOutputsParams"
+        old_type = "StructuredOutputsParams"
+        old_kw = "structured_outputs"
+        fingerprint = sha(source_files["runner.py"])
+        if runner.count(old_import) != 1:
+            raise Hold(f"VLLM0100_IMPORT_HOLD__ROLE_{role}__SHA256_{fingerprint}")
+        old_type_count = runner.count(old_type)
+        old_kw_count = len(re.findall(r"\\bstructured_outputs\\s*=", runner))
+        if old_type_count < 2 or old_kw_count < 1:
+            raise Hold(
+                f"VLLM0100_API_SHAPE_HOLD__ROLE_{role}"
+                f"__TYPE_{old_type_count}__KW_{old_kw_count}"
+                f"__SHA256_{fingerprint}"
+            )
+        runner = runner.replace(old_type, "GuidedDecodingParams")
+        runner, changed_kw = re.subn(
+            r"\\bstructured_outputs(?=\\s*=)", "guided_decoding", runner
+        )
+        if changed_kw != old_kw_count or old_type in runner or re.search(
+            r"\\bstructured_outputs\\s*=", runner
+        ):
+            raise Hold(f"VLLM0100_RESIDUAL_OLD_API_HOLD__ROLE_{role}")
+        try:
+            ast.parse(runner)
+        except SyntaxError as exc:
+            raise Hold(f"VLLM0100_PATCH_SYNTAX_HOLD__ROLE_{role}") from exc
         source_files["runner.py"] = runner.encode("utf-8")
         bundles[role] = source_files
         inputs[role] = b"".join(first)
