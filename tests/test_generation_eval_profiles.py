@@ -238,7 +238,8 @@ def test_freeze_review_is_independent_of_inference_and_gpu_authorization():
     result = assess_profile(profile, purpose="freeze_review")
     assert result.ready is False
     assert "EVALUATION_PROMPT_HASH_UNSET" in result.blockers
-    assert "OUTPUT_SCHEMA_HASH_UNSET" in result.blockers
+    assert "OUTPUT_SCHEMA_HASH_UNSET" not in result.blockers
+    assert "EVALUATION_CONTRACT_NOT_OWNER_APPROVED" in result.blockers
     assert "INFERENCE_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
     assert "GPU_AUTHORIZATION_MUST_REMAIN_FALSE" not in result.blockers
 

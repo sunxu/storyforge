@@ -121,6 +121,8 @@ def assess_profile(
         ):
             if profile.get(flag) is not False:
                 blockers.append(code)
+    if purpose == "freeze_review" and profile.get("evaluation_contract_status") != "OWNER_APPROVED":
+        blockers.append("EVALUATION_CONTRACT_NOT_OWNER_APPROVED")
     if profile.get("training_authorized") is not False:
         blockers.append("TRAINING_AUTHORIZATION_MUST_REMAIN_DISABLED")
 
