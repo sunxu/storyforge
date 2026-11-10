@@ -157,3 +157,27 @@ Owner 已明确批准统一评估 Prompt v1 与 Output JSON Schema v1。批准�
 - Output Schema：`e6371bf3319affcae190b6ccb9a1b8ce778bae440a91eefe39a65b2586930d70`
 
 该批准仅覆盖评估指令与输出结构，不等于 P4 Generation Profile 冻结，不授权读取真实评估案例、模型推理、GPU Job、Locked30 或训练。机器可读 Profile 将 `evaluation_contract_status` 更新为 `OWNER_APPROVED`，但 `profile_freeze_authorized`、`inference_authorized`、`gpu_authorized`、`training_authorized` 继续保持 false。
+
+## 2026-11-10：Owner 批准评估契约与联合 Freeze Review
+
+Owner 已批准 Prompt v1 与 Output JSON Schema v1。批准只针对这两份内容，分别以 Profile 中记录的 SHA-256 为准；未授权 Profile freeze、真实数据访问、推理、GPU Job、Locked30 或训练。
+
+新增/完善的 CPU-only Freeze Review 入口：
+
+    PYTHONPATH=src python -m storyforge_dataset.generation_eval \
+      experiments/r60_quality/p4_generation_profile_candidate_v1.json \
+      --purpose freeze_review
+
+该入口同时校验：
+- P4 Profile 的三模型 Revision、Tokenizer/Template/Generation Config fingerprints、EOS/PAD、sampling 与 token budget；
+- Owner-approved Prompt/Schema receipt 与两份文件的 SHA-256；
+- Development20 primary/sensitivity arm matrix 与 Locked30 primary-only 禁调参约束；
+- Profile freeze、inference、GPU、training 授权继续关闭。
+
+通过时输出 P4_FREEZE_REVIEW_READY_NOT_FROZEN，只代表 CPU 配置检查通过，不会冻结 Profile，不会创建 HF Job，也不会加载权重或启动推理。CI 将保存不含私有案例或生成正文的 SAFE artifact：r60-p4-freeze-review-safe。
+
+仍待解决：
+1. 正式长上下文硬件 / 单模型运行预算的 Owner 确认。H200 是当前候选，不是已授权资源。
+2. HF Bucket /output:rw 对本 P4 Job 的真实可写性与回收路径验证。历史 Bucket 中存在旧评估产物，证明该 Bucket 曾被写入，但不等于本次运行身份和挂载已验证。此前 ChatGPT 直连 Xet 写入曾返回 403；不得把该路径标为当前已验收。
+3. 当前 Job plan 引用的 python -m storyforge_dataset.generation_eval.worker CLI 交付及端到端本地/合成验收。
+4. 以上完成后再由 Owner 单独决定是否冻结 Profile；Freeze 不自动授权推理或 GPU。
