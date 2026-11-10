@@ -139,10 +139,11 @@ def run_generation_batch(
         (expected_count, "INPUT_RECORD_COUNT_INVALID"),
         (max_input_tokens, "MAX_INPUT_TOKENS_INVALID"),
         (max_new_tokens, "MAX_NEW_TOKENS_INVALID"),
-        (seed, "SEED_INVALID"),
     ):
         if not isinstance(value, int) or isinstance(value, bool) or value < 1:
             raise WorkerError(code)
+    if not isinstance(seed, int) or isinstance(seed, bool) or seed < 0:
+        raise WorkerError("SEED_INVALID")
     if not isinstance(input_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", input_sha):
         raise WorkerError("INPUT_SHA256_INVALID")
     if max_input_tokens > profile["input_budget_tokens"]:
@@ -179,7 +180,7 @@ def run_generation_batch(
             raise WorkerError("GENERATION_BACKEND_FAILED") from exc
         if not isinstance(result, GenerationResult):
             raise WorkerError("GENERATION_RESULT_INVALID")
-        if not isinstance(result.text, str):
+        if not isinstance(result.text, str) or len(result.text) > max_new_tokens * 64:
             raise WorkerError("GENERATION_RESULT_INVALID")
         if (not isinstance(result.input_tokens, int) or isinstance(result.input_tokens, bool)
                 or not 1 <= result.input_tokens <= max_input_tokens):
@@ -214,4 +215,5 @@ def run_generation_batch(
         output_size_bytes=write_receipt.size_bytes,
         output_sha256=write_receipt.sha256,
         output_mode=write_receipt.mode,
+        gpu_started=getattr(backend, "gpu_started", False) is True,
     )
