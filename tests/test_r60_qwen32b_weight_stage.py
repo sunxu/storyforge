@@ -86,3 +86,62 @@ def test_stream_size_and_sha_enforced(tmp_path):
     with pytest.raises(stage.Hold, match="STREAM_SIZE_OR_SHA_MISMATCH"):
         stage.atomic_stream_copy([good], tmp_path / "bad", len(good), "0" * 64)
     assert not (tmp_path / "bad").exists()
+
+
+def test_mock_hub_stage_then_idempotent_resume(tmp_path, monkeypatch, capsys):
+    import hashlib
+    import sys
+    import types
+
+    payloads = {
+        "config.json": b'{"model_type":"qwen3"}',
+        "model.safetensors.index.json":
+            b'{"weight_map":{"x":"model-00001-of-00001.safetensors"}}',
+        "model-00001-of-00001.safetensors": b"synthetic-weights",
+    }
+    siblings = [
+        types.SimpleNamespace(
+            rfilename=name, size=len(blob),
+            lfs=({"sha256": hashlib.sha256(blob).hexdigest()}
+                 if name.endswith(".safetensors") else None),
+        )
+        for name, blob in payloads.items()
+    ]
+    mock_hub = types.SimpleNamespace(
+        HfApi=lambda: types.SimpleNamespace(
+            model_info=lambda *args, **kwargs: types.SimpleNamespace(
+                sha=stage.REV, siblings=siblings)),
+        hf_hub_url=lambda repo, filename, revision: filename,
+    )
+    class Response:
+        def __init__(self, content):
+            self.content = content
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return None
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, chunk_size):
+            yield self.content
+
+    counters = {"get": 0}
+
+    def get(url, **kwargs):
+        counters["get"] += 1
+        return Response(payloads[url])
+
+    monkeypatch.setitem(sys.modules, "huggingface_hub", mock_hub)
+    monkeypatch.setitem(sys.modules, "requests", types.SimpleNamespace(get=get))
+    target = tmp_path / "bucket"
+    target.mkdir()
+    assert stage.stage(target) == 0
+    assert counters["get"] == len(payloads)
+    assert stage.frozen_manifest(target)["revision"] == stage.REV
+    assert stage.stage(target) == 0
+    assert counters["get"] == len(payloads)
+    assert "STAGE_ALREADY_VERIFIED" in capsys.readouterr().out
