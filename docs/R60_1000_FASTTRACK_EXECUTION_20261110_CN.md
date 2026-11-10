@@ -21,7 +21,7 @@
 ```bash
 set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
-REV="__PINNED_REV__"
+REV="89f5acec76d1735006a360cec671b2b55f595932"
 BUNDLE="$HOME/.local/share/storyforge/r60/private/r60-weight-stage-tools"
 umask 077
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
