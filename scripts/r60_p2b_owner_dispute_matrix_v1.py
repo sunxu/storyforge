@@ -64,7 +64,7 @@ def _write_once(path: Path, raw: bytes) -> None:
 
 
 def build(disagreements: list[dict], owner_packets: list[dict]) -> tuple[list[dict], list[dict], dict]:
-    if len(owner_packets) != 30 or len(disagreements) != 29:
+    if len(owner_packets) != 30 or len(disagreements) < 29:
         raise Hold("EXPECTED_CASE_OR_DISAGREEMENT_COUNT_HOLD")
     by_id: dict[str, dict] = {}
     for packet in owner_packets:
@@ -77,12 +77,14 @@ def build(disagreements: list[dict], owner_packets: list[dict]) -> tuple[list[di
 
     diffs: dict[tuple[str, str], dict] = {}
     counts: Counter[str] = Counter()
+    seen_attention: set[tuple[str, str]] = set()
     for row in disagreements:
         cid, dim = row.get("calibration_id"), row.get("dimension")
-        if cid not in by_id or dim not in DIMS or (cid, dim) in diffs:
+        if cid not in by_id or dim not in DIMS or (cid, dim) in seen_attention:
             raise Hold("DISAGREEMENT_BINDING_HOLD")
+        seen_attention.add((cid, dim))
         if row.get("verdict_agreement") is not False:
-            raise Hold("NOT_A_VERDICT_DISAGREEMENT_HOLD")
+            continue
         reviews = by_id[cid]["dimension_reviews"][dim]
         cv = reviews["codex"]["verdict"]
         lv = reviews["claude"]["verdict"]
