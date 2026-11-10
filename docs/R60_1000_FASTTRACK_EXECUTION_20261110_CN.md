@@ -1,5 +1,37 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 Pilot25 `KW_0` 根因已确认：准备器正则转义错误
+
+Owner 用只读 grep 证实 staged `input_A/runner.py`：
+- 第 338 行：`from vllm.sampling_params import StructuredOutputsParams`；
+- 第 361 行：`structured_outputs=StructuredOutputsParams(json=response_schema())`。
+
+`TYPE_2__KW_0` 并非源文件缺少关键词，而是此前准备器写错了 Python 正则：`r"\\\\bstructured_outputs\\\\s*="` 在源码中对 `\\b` / `\\s` 双重转义，匹配的是字面反斜线，不是 word boundary / whitespace。**这属于准备器实现缺陷，不能把错误归因于冻结的源 runner。** 已修正三处相同模式（识别、替换、残留检验）为 `r"\\bstructured_outputs\\s*="` / `r"\\bstructured_outputs(?=\\s*=)"`，保留只改新副本与所有 fail-closed 检查；新增直接回归 `KW_0` 测试。
+
+- 实际修复代码：`ce81cb784c7141d457f094e17a8717ebd09ea7d7`；
+- 测试提交：`66c55385936defd2be091b6b7609f3fc0fd1ca8e`；
+- `CI` 尚未确认 PASS，真实 private staging 尚未重新生成。此前 HOLD 不涉及任何 GPU Job。
+
+Owner Mac 执行最新固定提交的纯 CPU 准备器：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+REV="66c55385936defd2be091b6b7609f3fc0fd1ca8e"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_pilot25_vllm0100_prepare.py" > "$BASE/r60_pilot25_vllm0100_prepare.py"
+chmod 600 "$BASE/r60_pilot25_vllm0100_prepare.py"
+python3 "$BASE/r60_pilot25_vllm0100_prepare.py" \
+  --source-stage "$BASE/r60-hf-quality-first-1000" \
+  --pilot-stage "$BASE/r60-hf-quality-pilot25-vllm0100"
+```
+
+如返回 `R60_PILOT25_PRIVATE_STAGED__GPU_NOT_AUTHORIZED`，再核对新 `input_A/B/runner.py --verify-only` 各为 25/25；**不得对完整 1000-stage 重做 CPU token 预检，也不得把这些技术 PASS 当作审核质量 PASS。**
+
+---
+
+
 ## 2026-11-11 Pilot25 PATCH_3 HOLD 定位并修复旧代码布局假设
 
 Owner 新诊断 `R60_PILOT25_PREPARE_HOLD`：`VLLM0100_PATCH_CONTRACT_CHANGED__ROLE_A__PATCH_3__COUNT_0__RUNNER_SHA256_d06adef6c28826d505d8dfe9e6920e840ecb18fe3d23256dd3b2d559956cd7d0`。证明旧 stage 内 A 审核器找不到期待的 **引文修复路径精确字面串**；并不说明整个引文修复功能不存在或数据库数据错误。未生成 Pilot25 staging，GPU/Job 均为 0。
