@@ -1,0 +1,75 @@
+# R60 P4 Runtime Fingerprints, Stop Tokens and Finish Reasons（2026-11-10）
+
+## 1. P3 pinned file evidence is now bound into a P4 candidate
+
+Machine-readable candidate:
+`experiments/r60_quality/p4_generation_profile_candidate_v1.json`
+
+The candidate binds all 18 files from `R60_P3_MODEL_FILES_SAFE.json` by model role, filename, SHA-256, and exact P3 model revision. It also binds the P3 download SAFE digest:
+
+`52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5`
+
+The top-level `tokenizer_hashes` values are the exact `tokenizer.json` hashes; `tokenizer_file_hashes` retains the complete six-file-per-model manifest. The validator rejects role/file-set drift, malformed hashes, mismatch between the top-level tokenizer hash and manifest, or mismatch between generation-config hash and the manifest.
+
+## 2. Pinned stop-token configuration
+
+The exact pinned `generation_config.json` files declare:
+
+| Role | EOS token IDs | PAD token ID |
+|---|---|---:|
+| A / Qwen3-32B | 151645, 151643 | 151643 |
+| B / GLM-4-32B-0414 | 151329, 151336, 151338 | 151329 |
+| Challenger / GLM-Z1-32B-0414 | 151329, 151336, 151338 | 151329 |
+
+The P4 backend now passes these IDs explicitly to `model.generate`; it does not rely on a runtime default GenerationConfig. The profile validator checks them against the pinned model/revision contract.
+
+No extra string stop sequences are currently configured. This is a static configuration decision based on the pinned generation-config EOS IDs; it is not proof of observed runtime termination behavior.
+
+## 3. Finish reason and truncation semantics
+
+Transformers `generate()` does not provide a universal per-sequence `finish_reason` field in the tensor-only output used by the previous adapter. The adapter now returns structured sequences and classifies actual generated token IDs:
+
+- `eos`: final generated token is one of the pinned EOS IDs.
+- `length`: no EOS at the end and generated token count reaches `max_new_tokens`.
+- `unrecognized_stop`: neither condition holds; the batch receipt becomes HOLD.
+
+Length stops are preserved in the private output and counted in the SAFE receipt; they are not silently labelled as EOS. The private output records the effective per-sample seed (`base_seed + stable_input_index`) and finish reason. SAFE output contains counts only, never generated text.
+
+Prompt tokenization retains the P3 policy: reject over-budget input; never silently truncate. The 4,096 generation budget includes reasoning tokens. A `length` finish reason is a generation-budget stop, not prompt truncation.
+
+Actual EOS/length behavior of each model remains deferred until a separately authorized synthetic GPU smoke. No inference was used to establish runtime observations in this commit.
+
+## 4. Runtime image and dependency lock
+
+Candidate base image:
+
+`docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`
+
+Docker Hub identifies this as a Linux/amd64 image and publishes the manifest digest. It is recorded as a candidate only; the actual HF Jobs runtime has not been launched or validated against it. Source: https://hub.docker.com/layers/pytorch/pytorch/2.6.0-cuda12.4-cudnn9-runtime/images/sha256-77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+
+P4 requires a GPU-generation dependency lock separate from the P3 CPU reviewer lock. Proposed inputs are in `requirements/hf-generation-eval.in`. PyTorch 2.6.0 is listed as a constraint to match the base image; the lock must be resolved under the same Python version and validated without replacing the image's CUDA-enabled torch build. Do not reuse `requirements/hf-quality-reviewer.lock` as the complete P4 runtime lock: it does not pin Accelerate or the CUDA PyTorch runtime.
+
+Still pending:
+- generate and commit `requirements/hf-generation-eval.lock` with hashes;
+- compute its SHA-256 from the committed bytes;
+- validate Python, torch build, CUDA runtime, Transformers, Accelerate and BF16 capability in the selected HF runtime;
+- bind the resulting final runtime image digest and lock SHA to the candidate profile.
+
+The candidate deliberately leaves `runtime_digest=null` and `dependency_lock_sha256=null`. It therefore remains `P4_PROFILE_INCOMPLETE_HOLD`.
+
+## 5. Authorization
+
+All remain false:
+- `profile_freeze_authorized`
+- `inference_authorized`
+- `gpu_authorized`
+- `training_authorized`
+
+No HF Job was submitted, no model weights were loaded, and no inference or training was run. The code changes are CPU/CI synthetic tests only.
+
+
+## 6. Runtime-side file verification
+
+The backend API now requires an explicit local tokenizer snapshot and its expected per-file SHA-256 map. It verifies all six allowlisted files before calling `AutoTokenizer.from_pretrained(local_files_only=True)`. The standalone GLM template is read from the same verified snapshot. The downloader uses the exact model revision and an `allow_patterns` list derived from the expected file map; it does not request model weights.
+
+The generation model is still loaded only by the explicit `AutoModelForCausalLM.from_pretrained(model_id, revision=...)` call. A manifest mismatch fails before model loading. CI tests use synthetic local files and fake Transformers/Torch objects; they do not download tokenizer files or weights.

@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import importlib
 import re
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any
 
@@ -16,7 +17,99 @@ from storyforge_dataset.hf_runtime.inputs import InputManager
 from .worker import GenerationResult, WorkerError
 
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
+HEX40 = re.compile(r"^[0-9a-f]{40}$")
 SAMPLING_KEYS = frozenset({"do_sample", "temperature", "top_p", "top_k", "min_p"})
+
+
+def verify_tokenizer_snapshot(
+    snapshot_path: Path,
+    expected_file_hashes: Mapping[str, str],
+) -> None:
+    """Verify every manifest-pinned tokenizer/config file before local-only loading."""
+    if snapshot_path.is_symlink() or not snapshot_path.is_dir():
+        raise WorkerError("TOKENIZER_SNAPSHOT_INVALID")
+    if (
+        not isinstance(expected_file_hashes, Mapping)
+        or frozenset(expected_file_hashes) not in {frozenset(x) for x in (
+            {"config.json", "generation_config.json", "merges.txt", "tokenizer.json",
+             "tokenizer_config.json", "vocab.json"},
+            {"chat_template.jinja", "config.json", "generation_config.json",
+             "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json"},
+        )}
+    ):
+        raise WorkerError("TOKENIZER_FILE_MANIFEST_INVALID")
+    for name, digest in expected_file_hashes.items():
+        if (
+            not isinstance(name, str) or Path(name).name != name
+            or name in {".", ".."} or not isinstance(digest, str)
+            or not SHA256.fullmatch(digest)
+        ):
+            raise WorkerError("TOKENIZER_FILE_MANIFEST_INVALID")
+        try:
+            verified = InputManager.open_verified(
+                snapshot_path / name,
+                max_bytes=64 * 1024 * 1024,
+                expected_sha256=digest,
+            )
+            verified.read_bytes()
+        except (OSError, ValueError) as exc:
+            raise WorkerError("TOKENIZER_FILE_HASH_MISMATCH") from exc
+
+
+def download_pinned_tokenizer_snapshot(
+    *,
+    model_id: str,
+    revision: str,
+    destination: Path,
+    expected_file_hashes: Mapping[str, str],
+) -> Path:
+    """Download only the exact tokenizer/config file allowlist at one commit."""
+    if not isinstance(revision, str) or not HEX40.fullmatch(revision):
+        raise WorkerError("MODEL_REVISION_INVALID")
+    if destination.exists() or destination.is_symlink():
+        raise WorkerError("TOKENIZER_SNAPSHOT_DESTINATION_EXISTS")
+    if not isinstance(expected_file_hashes, Mapping) or not expected_file_hashes:
+        raise WorkerError("TOKENIZER_FILE_MANIFEST_INVALID")
+    for name, digest in expected_file_hashes.items():
+        if (
+            not isinstance(name, str) or Path(name).name != name
+            or name in {".", ".."} or not isinstance(digest, str)
+            or not SHA256.fullmatch(digest)
+        ):
+            raise WorkerError("TOKENIZER_FILE_MANIFEST_INVALID")
+    try:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        hub = importlib.import_module("huggingface_hub")
+        downloaded = hub.snapshot_download(
+            repo_id=model_id,
+            revision=revision,
+            local_dir=str(destination),
+            allow_patterns=sorted(expected_file_hashes),
+            token=False,
+        )
+        snapshot = Path(downloaded)
+        verify_tokenizer_snapshot(snapshot, expected_file_hashes)
+        return snapshot
+    except WorkerError:
+        raise
+    except Exception as exc:
+        raise WorkerError("TOKENIZER_SNAPSHOT_DOWNLOAD_FAILED") from exc
+
+
+def classify_finish_reason(
+    generated_token_ids: Sequence[int],
+    *,
+    eos_token_ids: Sequence[int],
+    max_new_tokens: int,
+) -> str:
+    """Classify a single sequence from its actual generated token IDs."""
+    if not generated_token_ids:
+        return "unrecognized_stop"
+    if generated_token_ids[-1] in eos_token_ids:
+        return "eos"
+    if len(generated_token_ids) >= max_new_tokens:
+        return "length"
+    return "unrecognized_stop"
 
 
 class TransformersGenerationBackend:
@@ -31,7 +124,6 @@ class TransformersGenerationBackend:
         self.torch = torch_module
         self.model_id = model_id
         self.revision = revision
-        self._generation_index = 0
         self._gpu_started = self._verify_cuda_device_map(model)
 
     @staticmethod
@@ -67,12 +159,33 @@ class TransformersGenerationBackend:
         revision: str,
         template_source: str,
         expected_template_sha256: str,
-        template_path: Path | None = None,
+        tokenizer_snapshot: Path,
+        expected_tokenizer_file_hashes: Mapping[str, str],
         torch_module: Any | None = None,
         transformers_module: Any | None = None,
     ) -> TransformersGenerationBackend:
+        if not HEX40.fullmatch(revision):
+            raise WorkerError("MODEL_REVISION_INVALID")
+        if not isinstance(expected_tokenizer_file_hashes, Mapping):
+            raise WorkerError("TOKENIZER_FILE_MANIFEST_INVALID")
         if not SHA256.fullmatch(expected_template_sha256):
             raise WorkerError("CHAT_TEMPLATE_HASH_INVALID")
+        file_set = frozenset(expected_tokenizer_file_hashes)
+        if (
+            template_source == "embedded_tokenizer_config"
+            and file_set != frozenset({
+                "config.json", "generation_config.json", "merges.txt", "tokenizer.json",
+                "tokenizer_config.json", "vocab.json",
+            })
+        ) or (
+            template_source == "standalone_chat_template.jinja"
+            and file_set != frozenset({
+                "chat_template.jinja", "config.json", "generation_config.json",
+                "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json",
+            })
+        ):
+            raise WorkerError("TOKENIZER_TEMPLATE_SOURCE_MANIFEST_MISMATCH")
+        verify_tokenizer_snapshot(tokenizer_snapshot, expected_tokenizer_file_hashes)
         torch = torch_module or importlib.import_module("torch")
         transformers = transformers_module or importlib.import_module("transformers")
         if not torch.cuda.is_available():
@@ -82,8 +195,8 @@ class TransformersGenerationBackend:
 
         try:
             tokenizer = transformers.AutoTokenizer.from_pretrained(
-                model_id,
-                revision=revision,
+                str(tokenizer_snapshot),
+                local_files_only=True,
                 trust_remote_code=False,
             )
             if template_source == "embedded_tokenizer_config":
@@ -92,8 +205,7 @@ class TransformersGenerationBackend:
                     raise WorkerError("EMBEDDED_CHAT_TEMPLATE_MISSING")
                 actual_hash = hashlib.sha256(template.encode("utf-8")).hexdigest()
             elif template_source == "standalone_chat_template.jinja":
-                if template_path is None:
-                    raise WorkerError("STANDALONE_CHAT_TEMPLATE_MISSING")
+                template_path = tokenizer_snapshot / "chat_template.jinja"
                 try:
                     verified_template = InputManager.open_verified(
                         template_path,
@@ -147,7 +259,15 @@ class TransformersGenerationBackend:
         seed: int,
         max_input_tokens: int,
         max_new_tokens: int,
+        eos_token_ids: Sequence[int],
+        pad_token_id: int,
     ) -> GenerationResult:
+        if (not isinstance(eos_token_ids, (list, tuple)) or not eos_token_ids
+                or any(not isinstance(value, int) or isinstance(value, bool) or value < 0
+                       for value in eos_token_ids)
+                or not isinstance(pad_token_id, int) or isinstance(pad_token_id, bool)
+                or pad_token_id < 0):
+            raise WorkerError("STOP_TOKEN_PROFILE_INVALID")
         if not isinstance(sampling, dict) or set(sampling) - SAMPLING_KEYS:
             raise WorkerError("SAMPLING_PROFILE_UNSUPPORTED")
         if not isinstance(sampling.get("do_sample"), bool):
@@ -170,15 +290,15 @@ class TransformersGenerationBackend:
             if not 1 <= input_tokens <= max_input_tokens:
                 raise WorkerError("INPUT_TOKEN_BUDGET_EXCEEDED")
             inputs = inputs.to(self.model.device)
-            effective_seed = seed + self._generation_index
-            self._generation_index += 1
-            self.torch.manual_seed(effective_seed)
-            self.torch.cuda.manual_seed_all(effective_seed)
+            self.torch.manual_seed(seed)
+            self.torch.cuda.manual_seed_all(seed)
             generation_kwargs: dict[str, Any] = {
                 "max_new_tokens": max_new_tokens,
                 "do_sample": sampling["do_sample"],
                 "use_cache": True,
-                "pad_token_id": self.tokenizer.pad_token_id,
+                "eos_token_id": list(eos_token_ids),
+                "pad_token_id": pad_token_id,
+                "return_dict_in_generate": True,
             }
             if sampling["do_sample"]:
                 for key in ("temperature", "top_p", "top_k", "min_p"):
@@ -186,13 +306,25 @@ class TransformersGenerationBackend:
                         generation_kwargs[key] = sampling[key]
             with self.torch.inference_mode():
                 generated = self.model.generate(**inputs, **generation_kwargs)
-            new_tokens = generated[0][input_tokens:]
+            sequences = getattr(generated, "sequences", None)
+            if sequences is None:
+                raise WorkerError("GENERATION_OUTPUT_INVALID")
+            new_tokens = sequences[0][input_tokens:]
             output_tokens = int(new_tokens.shape[-1])
+            token_ids = new_tokens.tolist() if hasattr(new_tokens, "tolist") else None
+            if not isinstance(token_ids, list) or any(
+                not isinstance(value, int) or isinstance(value, bool) for value in token_ids
+            ):
+                raise WorkerError("GENERATION_OUTPUT_INVALID")
+            finish_reason = classify_finish_reason(
+                token_ids, eos_token_ids=eos_token_ids, max_new_tokens=max_new_tokens
+            )
             text = self.tokenizer.decode(new_tokens, skip_special_tokens=True)
             return GenerationResult(
                 text=text,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
+                finish_reason=finish_reason,
             )
         except WorkerError:
             raise

@@ -19,6 +19,27 @@ EXPECTED_MODELS = {
     "challenger": ("zai-org/GLM-Z1-32B-0414", "8eb2858992c1f749e2a6d4075455decc2484722d"),
 }
 SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
+EXPECTED_TOKENIZER_FILES = {
+    "A": {"config.json", "generation_config.json", "merges.txt", "tokenizer.json",
+          "tokenizer_config.json", "vocab.json"},
+    "B": {"chat_template.jinja", "config.json", "generation_config.json",
+          "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json"},
+    "challenger": {"chat_template.jinja", "config.json", "generation_config.json",
+                   "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json"},
+}
+EXPECTED_FINISH_REASON_POLICY = {
+    "eos_source": "pinned_generation_config_eos_token_id",
+    "length_definition": "max_new_tokens_exhausted_without_eos",
+    "unexpected_stop_action": "hold",
+}
+EXPECTED_EOS_TOKEN_IDS = {
+    "A": [151645, 151643],
+    "B": [151329, 151336, 151338],
+    "challenger": [151329, 151336, 151338],
+}
+EXPECTED_PAD_TOKEN_IDS = {"A": 151643, "B": 151329, "challenger": 151329}
+EXPECTED_CUSTOM_STOP_SEQUENCES = {"A": [], "B": [], "challenger": []}
+EXPECTED_TRUNCATION_POLICY = "reject_over_budget_no_silent_prompt_truncation"
 
 
 @dataclass(frozen=True)
@@ -94,6 +115,12 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
         ("runtime_digest", "RUNTIME_DIGEST_UNSET"),
         ("dependency_lock_sha256", "DEPENDENCY_LOCK_HASH_UNSET"),
         ("tokenizer_hashes", "TOKENIZER_HASHES_UNSET"),
+        ("tokenizer_file_hashes", "TOKENIZER_FILE_HASHES_UNSET"),
+        ("generation_config_hashes", "GENERATION_CONFIG_HASHES_UNSET"),
+        ("eos_token_ids", "EOS_TOKEN_IDS_UNSET"),
+        ("pad_token_ids", "PAD_TOKEN_IDS_UNSET"),
+        ("custom_stop_sequences", "CUSTOM_STOP_SEQUENCES_UNSET"),
+        ("p3_download_safe_sha256", "P3_DOWNLOAD_SAFE_HASH_UNSET"),
     ):
         value = profile.get(field)
         if value is None or value == "":
@@ -129,6 +156,100 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
                for value in tokenizer_hashes.values())
     ):
         blockers.append("TOKENIZER_HASHES_INVALID")
+
+    tokenizer_file_hashes = profile.get("tokenizer_file_hashes")
+    if tokenizer_file_hashes is not None:
+        if (
+            not isinstance(tokenizer_file_hashes, dict)
+            or set(tokenizer_file_hashes) != set(EXPECTED_MODELS)
+            or any(
+                not isinstance(tokenizer_file_hashes[role], dict)
+                or set(tokenizer_file_hashes[role]) != EXPECTED_TOKENIZER_FILES[role]
+                or any(
+                    not isinstance(digest, str) or not SHA256_RE.fullmatch(digest)
+                    for digest in tokenizer_file_hashes[role].values()
+                )
+                for role in EXPECTED_MODELS
+            )
+        ):
+            blockers.append("TOKENIZER_FILE_HASHES_INVALID")
+        elif isinstance(tokenizer_hashes, dict) and set(tokenizer_hashes) == set(EXPECTED_MODELS):
+            if any(
+                tokenizer_hashes[role] != tokenizer_file_hashes[role]["tokenizer.json"]
+                for role in EXPECTED_MODELS
+            ):
+                blockers.append("TOKENIZER_HASH_MANIFEST_MISMATCH")
+
+    generation_config_hashes = profile.get("generation_config_hashes")
+    if generation_config_hashes is not None and (
+        not isinstance(generation_config_hashes, dict)
+        or set(generation_config_hashes) != set(EXPECTED_MODELS)
+        or any(not isinstance(value, str) or not SHA256_RE.fullmatch(value)
+               for value in generation_config_hashes.values())
+    ):
+        blockers.append("GENERATION_CONFIG_HASHES_INVALID")
+    elif isinstance(tokenizer_file_hashes, dict) and isinstance(generation_config_hashes, dict):
+        if (
+            set(tokenizer_file_hashes) == set(EXPECTED_MODELS)
+            and set(generation_config_hashes) == set(EXPECTED_MODELS)
+            and all(
+                isinstance(tokenizer_file_hashes[role], dict)
+                and set(tokenizer_file_hashes[role]) == EXPECTED_TOKENIZER_FILES[role]
+                for role in EXPECTED_MODELS
+            )
+            and any(
+                generation_config_hashes[role]
+                != tokenizer_file_hashes[role]["generation_config.json"]
+                for role in EXPECTED_MODELS
+            )
+        ):
+            blockers.append("GENERATION_CONFIG_HASH_MANIFEST_MISMATCH")
+
+    eos_token_ids = profile.get("eos_token_ids")
+    if eos_token_ids is not None and (
+        not isinstance(eos_token_ids, dict)
+        or set(eos_token_ids) != set(EXPECTED_MODELS)
+        or any(
+            not isinstance(values, list) or not values
+            or any(
+                not isinstance(value, int) or isinstance(value, bool) or value < 0
+                for value in values
+            )
+            or len(set(values)) != len(values)
+            for values in eos_token_ids.values()
+        )
+    ):
+        blockers.append("EOS_TOKEN_IDS_INVALID")
+    elif isinstance(eos_token_ids, dict) and eos_token_ids != EXPECTED_EOS_TOKEN_IDS:
+        blockers.append("EOS_TOKEN_IDS_REVISION_MISMATCH")
+
+    pad_token_ids = profile.get("pad_token_ids")
+    if pad_token_ids is not None and (
+        not isinstance(pad_token_ids, dict)
+        or set(pad_token_ids) != set(EXPECTED_MODELS)
+        or any(
+            not isinstance(value, int) or isinstance(value, bool) or value < 0
+            for value in pad_token_ids.values()
+        )
+    ):
+        blockers.append("PAD_TOKEN_IDS_INVALID")
+    elif isinstance(pad_token_ids, dict) and pad_token_ids != EXPECTED_PAD_TOKEN_IDS:
+        blockers.append("PAD_TOKEN_IDS_REVISION_MISMATCH")
+
+    custom_stop_sequences = profile.get("custom_stop_sequences")
+    if custom_stop_sequences is not None and custom_stop_sequences != EXPECTED_CUSTOM_STOP_SEQUENCES:
+        blockers.append("CUSTOM_STOP_SEQUENCES_UNSUPPORTED_OR_UNEXPECTED")
+
+    p3_safe_hash = profile.get("p3_download_safe_sha256")
+    if p3_safe_hash is not None and (
+        not isinstance(p3_safe_hash, str) or not SHA256_RE.fullmatch(p3_safe_hash)
+    ):
+        blockers.append("P3_DOWNLOAD_SAFE_HASH_INVALID")
+
+    if profile.get("finish_reason_policy") != EXPECTED_FINISH_REASON_POLICY:
+        blockers.append("FINISH_REASON_POLICY_INVALID")
+    if profile.get("truncation_policy") != EXPECTED_TRUNCATION_POLICY:
+        blockers.append("TRUNCATION_POLICY_INVALID")
 
     for role, expected in EXPECTED_MODELS.items():
         item = models[role]

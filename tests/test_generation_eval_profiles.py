@@ -37,6 +37,38 @@ def candidate_profile():
     }
 
 
+
+def valid_manifest_fields():
+    files = {
+        "A": ["config.json", "generation_config.json", "merges.txt", "tokenizer.json",
+              "tokenizer_config.json", "vocab.json"],
+        "B": ["chat_template.jinja", "config.json", "generation_config.json",
+              "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json"],
+        "challenger": ["chat_template.jinja", "config.json", "generation_config.json",
+                       "special_tokens_map.json", "tokenizer.json", "tokenizer_config.json"],
+    }
+    return {
+        "p3_download_safe_sha256": "a" * 64,
+        "tokenizer_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
+        "tokenizer_file_hashes": {
+            role: {name: "c" * 64 for name in names} for role, names in files.items()
+        },
+        "generation_config_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
+        "eos_token_ids": {
+            "A": [151645, 151643],
+            "B": [151329, 151336, 151338],
+            "challenger": [151329, 151336, 151338],
+        },
+        "pad_token_ids": {"A": 151643, "B": 151329, "challenger": 151329},
+        "custom_stop_sequences": {"A": [], "B": [], "challenger": []},
+        "finish_reason_policy": {
+            "eos_source": "pinned_generation_config_eos_token_id",
+            "length_definition": "max_new_tokens_exhausted_without_eos",
+            "unexpected_stop_action": "hold",
+        },
+        "truncation_policy": "reject_over_budget_no_silent_prompt_truncation",
+    }
+
 def test_candidate_profile_is_held_not_guessed():
     result = assess_profile(candidate_profile())
     assert result.ready is False
@@ -56,7 +88,7 @@ def test_all_explicitly_frozen_profiles_can_become_ready():
         "seed": 20261110,
         "runtime_digest": "sha256:" + "b" * 64,
         "dependency_lock_sha256": "d" * 64,
-        "tokenizer_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
+        **valid_manifest_fields(),
         "profile_freeze_authorized": True,
         "inference_authorized": True,
         "gpu_authorized": True,
@@ -124,3 +156,51 @@ def test_repository_p3_candidate_remains_held_until_profile_freeze():
     assert "GPU_NOT_AUTHORIZED" in result.blockers
     assert "B_SAMPLING_UNSET" in result.blockers
     assert "CHALLENGER_SAMPLING_UNSET" in result.blockers
+
+
+def test_tokenizer_file_manifest_mismatch_is_a_blocker():
+    profile = candidate_profile()
+    profile.update(valid_manifest_fields())
+    profile["tokenizer_file_hashes"]["A"]["tokenizer.json"] = "d" * 64
+    result = assess_profile(profile)
+    assert "TOKENIZER_HASH_MANIFEST_MISMATCH" in result.blockers
+
+
+def test_generation_config_hash_must_match_file_manifest():
+    profile = candidate_profile()
+    profile.update(valid_manifest_fields())
+    profile["generation_config_hashes"]["A"] = "d" * 64
+    result = assess_profile(profile)
+    assert "GENERATION_CONFIG_HASH_MANIFEST_MISMATCH" in result.blockers
+
+
+def test_eos_token_ids_must_match_pinned_generation_config():
+    profile = candidate_profile()
+    profile.update(valid_manifest_fields())
+    profile["eos_token_ids"]["challenger"] = [151329]
+    result = assess_profile(profile)
+    assert "EOS_TOKEN_IDS_REVISION_MISMATCH" in result.blockers
+
+
+def test_custom_stop_sequences_are_not_silently_ignored():
+    profile = candidate_profile()
+    profile.update(valid_manifest_fields())
+    profile["custom_stop_sequences"]["A"] = ["</custom>"]
+    result = assess_profile(profile)
+    assert "CUSTOM_STOP_SEQUENCES_UNSUPPORTED_OR_UNEXPECTED" in result.blockers
+
+
+def test_p4_candidate_binds_p3_file_and_stop_token_evidence_but_stays_held():
+    repo_root = Path(__file__).parents[1]
+    candidate_path = (
+        repo_root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json"
+    )
+    profile = load_profile(candidate_path)
+    result = assess_profile(profile)
+    assert result.ready is False
+    assert "RUNTIME_DIGEST_UNSET" in result.blockers
+    assert "DEPENDENCY_LOCK_HASH_UNSET" in result.blockers
+    assert "PROFILE_FREEZE_NOT_AUTHORIZED" in result.blockers
+    assert "TOKENIZER_FILE_HASHES_INVALID" not in result.blockers
+    assert "GENERATION_CONFIG_HASH_MANIFEST_MISMATCH" not in result.blockers
+    assert "EOS_TOKEN_IDS_REVISION_MISMATCH" not in result.blockers

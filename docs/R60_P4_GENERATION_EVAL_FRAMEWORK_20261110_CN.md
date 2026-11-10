@@ -138,3 +138,20 @@ Job 计划目前引用的 Worker 入口尚未交付，因此即使合成 profile
 ## 2026-11-10 采样策略决策补充
 
 Owner 已确认按建议推进采样方案。逐模型主实验配置、GLM-4/GLM-Z1 Development20 敏感性对照及约束见 [R60 P4 Sampling Policy Decision](R60_P4_SAMPLING_POLICY_DECISION_20261110_CN.md) 与机器可读候选 `experiments/r60_quality/r60_sampling_decision_candidate_v1.json`。该决定只批准实验设计，不冻结 Generation Profile；所有 inference/GPU/training 授权仍为 false。GLM-4 主配置已校正为 `do_sample=true`，与其模型卡示例一致；GLM-Z1 greedy 与官方 sampling 表分别作为主基线和 Development20 对照。
+
+
+## 2026-11-10：P4 Profile Evidence Binding 与 Stop Policy
+
+新增 `experiments/r60_quality/p4_generation_profile_candidate_v1.json`，将 P3 SAFE 中三个模型的 18 个文件 SHA-256、generation_config SHA、EOS/PAD token IDs、模板来源与采样参数绑定到 P4 候选配置。P4 validator 会校验文件集合、哈希交叉一致性、revision 对应的 EOS/PAD IDs，以及不支持的自定义 stop sequence。
+
+Generation Backend 现在只从已验证的本地 tokenizer snapshot 加载 tokenizer：下载器只允许请求 manifest 中的六个文件，固定 revision；snapshot 的每个文件在 AutoTokenizer local-only 加载前重新校验 SHA-256。模型权重仍只会在显式调用 pinned `AutoModelForCausalLM.from_pretrained` 时加载。
+
+Worker/Backend 已增加 EOS / length / unrecognized-stop 分类、显式 EOS/PAD token 传递、per-sample effective seed 和 SAFE finish-reason 计数。未识别停止原因会使批次 HOLD；达到 `max_new_tokens` 会单独统计，不会伪装为 EOS。
+
+运行镜像候选及 CPU-only Docker contract workflow 见：
+- `experiments/r60_quality/p4_generation_profile_candidate_v1.json`
+- `requirements/hf-generation-eval.in`
+- `.github/workflows/r60-p4-runtime-image-candidate.yml`
+- `docs/R60_P4_RUNTIME_AND_STOP_POLICY_20261110_CN.md`
+
+候选 runtime digest 尚未被 HF Jobs 验证，GPU generation lock 尚未生成；profile 的 `runtime_digest` 和 `dependency_lock_sha256` 保持 null，所有授权仍关闭。此阶段没有提交 HF Job、下载权重、执行推理或训练。

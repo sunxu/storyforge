@@ -30,6 +30,7 @@ class GenerationResult:
     text: str
     input_tokens: int
     output_tokens: int
+    finish_reason: str = "unrecognized_stop"
 
 
 class GenerationBackend(Protocol):
@@ -49,6 +50,8 @@ class GenerationBackend(Protocol):
         seed: int,
         max_input_tokens: int,
         max_new_tokens: int,
+        eos_token_ids: Sequence[int],
+        pad_token_id: int,
     ) -> GenerationResult: ...
 
 
@@ -60,6 +63,7 @@ class WorkerReceipt:
     output_size_bytes: int
     output_sha256: str
     output_mode: int
+    finish_reason_counts: dict[str, int]
     private_values_emitted: bool = False
     inference_started: bool = True
     gpu_started: bool = False
@@ -74,6 +78,8 @@ class WorkerReceipt:
             "output_size_bytes": self.output_size_bytes,
             "output_sha256": self.output_sha256,
             "output_mode": f"{self.output_mode:04o}",
+            "finish_reason_counts": dict(self.finish_reason_counts),
+            "truncated_count": self.finish_reason_counts.get("length", 0),
             "private_values_emitted": False,
             "inference_started": self.inference_started,
             "gpu_started": self.gpu_started,
@@ -165,7 +171,9 @@ def run_generation_batch(
 
     selected = profile["model_profiles"][model_role]
     private_outputs: list[dict[str, object]] = []
-    for record in records:
+    finish_reason_counts = {"eos": 0, "length": 0, "unrecognized_stop": 0}
+    for index, record in enumerate(records):
+        effective_seed = seed + index
         try:
             result = backend.generate(
                 model=selected["model"],
@@ -173,9 +181,11 @@ def run_generation_batch(
                 messages=record["messages"],
                 sampling=selected["sampling"],
                 enable_thinking=selected.get("enable_thinking"),
-                seed=seed,
+                seed=effective_seed,
                 max_input_tokens=max_input_tokens,
                 max_new_tokens=max_new_tokens,
+                eos_token_ids=profile["eos_token_ids"][model_role],
+                pad_token_id=profile["pad_token_ids"][model_role],
             )
         except Exception as exc:
             raise WorkerError("GENERATION_BACKEND_FAILED") from exc
@@ -183,6 +193,9 @@ def run_generation_batch(
             raise WorkerError("GENERATION_RESULT_INVALID")
         if not isinstance(result.text, str) or len(result.text) > max_new_tokens * 64:
             raise WorkerError("GENERATION_RESULT_INVALID")
+        if result.finish_reason not in finish_reason_counts:
+            raise WorkerError("GENERATION_FINISH_REASON_INVALID")
+        finish_reason_counts[result.finish_reason] += 1
         if (not isinstance(result.input_tokens, int) or isinstance(result.input_tokens, bool)
                 or not 1 <= result.input_tokens <= max_input_tokens):
             raise WorkerError("INPUT_TOKEN_BUDGET_EXCEEDED")
@@ -191,9 +204,11 @@ def run_generation_batch(
             raise WorkerError("OUTPUT_TOKEN_BUDGET_EXCEEDED")
         private_outputs.append({
             "sample_id": record["sample_id"],
+            "effective_seed": effective_seed,
             "text": result.text,
             "input_tokens": result.input_tokens,
             "output_tokens": result.output_tokens,
+            "finish_reason": result.finish_reason,
         })
 
     payload = {
@@ -209,12 +224,19 @@ def run_generation_batch(
         write_receipt: WriteReceipt = OutputManager.write_safe(output_path, payload, mode=0o600)
     except (OSError, ValueError) as exc:
         raise WorkerError("OUTPUT_PUBLICATION_FAILED") from exc
+    if finish_reason_counts["unrecognized_stop"]:
+        status = "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP"
+    elif finish_reason_counts["length"]:
+        status = "GENERATION_BATCH_PASS_WITH_LENGTH_STOPS"
+    else:
+        status = "GENERATION_BATCH_PASS"
     return WorkerReceipt(
-        status="GENERATION_BATCH_PASS",
+        status=status,
         model_role=model_role,
         record_count=len(private_outputs),
         output_size_bytes=write_receipt.size_bytes,
         output_sha256=write_receipt.sha256,
         output_mode=write_receipt.mode,
+        finish_reason_counts=finish_reason_counts,
         gpu_started=backend.gpu_started is True,
     )

@@ -1,0 +1,140 @@
+{
+  "schema": "storyforge_r60_p3_model_profiles_v1",
+  "status": "P4_PROFILE_CANDIDATE__NOT_FROZEN",
+  "rubric_version": "r60_severity_rubric_v2_1",
+  "source_evidence": {
+    "p3_download_safe_sha256": "52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5",
+    "p3_download_safe_schema": "storyforge_r60_p3_model_files_safe_v1",
+    "pinned_file_count": 18,
+    "model_weights_downloaded": false,
+    "p3_cpu_status": "P3_SYNTHETIC_CPU_PREFLIGHT_PASS__GENERATION_PROFILE_PENDING"
+  },
+  "model_profiles": {
+    "A": {
+      "model": "Qwen/Qwen3-32B",
+      "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+      "enable_thinking": true,
+      "sampling": {
+        "do_sample": true,
+        "temperature": 0.6,
+        "top_p": 0.95,
+        "top_k": 20,
+        "min_p": 0
+      },
+      "chat_template_source": "embedded_tokenizer_config",
+      "chat_template_sha256": "a55ee1b1660128b7098723e0abcd92caa0788061051c62d51cbe87d9cf1974d8"
+    },
+    "B": {
+      "model": "zai-org/GLM-4-32B-0414",
+      "revision": "8dea913c41b543527c2860fb6f3c15c202f24aeb",
+      "enable_thinking": null,
+      "sampling": {
+        "do_sample": true,
+        "temperature": 1,
+        "top_p": 1,
+        "top_k": 50
+      },
+      "chat_template_source": "standalone_chat_template.jinja",
+      "chat_template_sha256": "db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822"
+    },
+    "challenger": {
+      "model": "zai-org/GLM-Z1-32B-0414",
+      "revision": "8eb2858992c1f749e2a6d4075455decc2484722d",
+      "enable_thinking": null,
+      "sampling": {
+        "do_sample": false
+      },
+      "chat_template_source": "standalone_chat_template.jinja",
+      "chat_template_sha256": "adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241"
+    }
+  },
+  "context_ceiling_tokens": 32768,
+  "input_budget_tokens": 28672,
+  "generation_budget_tokens": 4096,
+  "max_new_tokens_includes_reasoning": true,
+  "seed": 42,
+  "tokenizer_hashes": {
+    "A": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+    "B": "76ebeac0d8bd7879ead7b43c16b44981f277e47225de2bd7de9ae1a6cc664a8c",
+    "challenger": "76ebeac0d8bd7879ead7b43c16b44981f277e47225de2bd7de9ae1a6cc664a8c"
+  },
+  "tokenizer_file_hashes": {
+    "A": {
+      "config.json": "97e295b63283935788fac5e4f8860862a56d4089538cafc93f0431f2ebe483bb",
+      "generation_config.json": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+      "merges.txt": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5",
+      "tokenizer.json": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4",
+      "tokenizer_config.json": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101",
+      "vocab.json": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+    },
+    "B": {
+      "chat_template.jinja": "db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822",
+      "config.json": "d39fa377eb7e712d0ba5934d54a30dc6ab7c25b44a515d4a435f3956dcad07e2",
+      "generation_config.json": "56ee0be8c595f22a6a80a822096533e10455fcd1e859e0fc36a6e760088147fa",
+      "special_tokens_map.json": "35a6dd9ff6e2474ba72b180db853851d2a84fce3d12095089285f447c7474541",
+      "tokenizer.json": "76ebeac0d8bd7879ead7b43c16b44981f277e47225de2bd7de9ae1a6cc664a8c",
+      "tokenizer_config.json": "323edeae6aa07273bd282e676275078f5ca0d0243bfccf4fa088b7d7209252e6"
+    },
+    "challenger": {
+      "chat_template.jinja": "adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241",
+      "config.json": "d39fa377eb7e712d0ba5934d54a30dc6ab7c25b44a515d4a435f3956dcad07e2",
+      "generation_config.json": "56ee0be8c595f22a6a80a822096533e10455fcd1e859e0fc36a6e760088147fa",
+      "special_tokens_map.json": "35a6dd9ff6e2474ba72b180db853851d2a84fce3d12095089285f447c7474541",
+      "tokenizer.json": "76ebeac0d8bd7879ead7b43c16b44981f277e47225de2bd7de9ae1a6cc664a8c",
+      "tokenizer_config.json": "3bbc20fb2c38bbdf31bbadf9f73114449e3ecdaa6514e415266d6dc8facfdb64"
+    }
+  },
+  "generation_config_hashes": {
+    "A": "2325da0f15bb848e018c5ae071b7943332e9f871d6b60e2ed22ca97d4cb993d2",
+    "B": "56ee0be8c595f22a6a80a822096533e10455fcd1e859e0fc36a6e760088147fa",
+    "challenger": "56ee0be8c595f22a6a80a822096533e10455fcd1e859e0fc36a6e760088147fa"
+  },
+  "eos_token_ids": {
+    "A": [
+      151645,
+      151643
+    ],
+    "B": [
+      151329,
+      151336,
+      151338
+    ],
+    "challenger": [
+      151329,
+      151336,
+      151338
+    ]
+  },
+  "pad_token_ids": {
+    "A": 151643,
+    "B": 151329,
+    "challenger": 151329
+  },
+  "custom_stop_sequences": {
+    "A": [],
+    "B": [],
+    "challenger": []
+  },
+  "finish_reason_policy": {
+    "eos_source": "pinned_generation_config_eos_token_id",
+    "length_definition": "max_new_tokens_exhausted_without_eos",
+    "unexpected_stop_action": "hold"
+  },
+  "finish_reason_runtime_validation": "DEFERRED_UNTIL_AUTHORIZED_SYNTHETIC_GPU_SMOKE",
+  "truncation_policy": "reject_over_budget_no_silent_prompt_truncation",
+  "runtime_image_candidate": {
+    "image": "docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee",
+    "source": "https://hub.docker.com/layers/pytorch/pytorch/2.6.0-cuda12.4-cudnn9-runtime/images/sha256-77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee",
+    "platform": "linux/amd64",
+    "expected_torch_version": "2.6.0",
+    "expected_cuda_runtime": "12.4",
+    "status": "CANDIDATE_ONLY__NOT_VALIDATED"
+  },
+  "dependency_lock_path": "requirements/hf-generation-eval.lock",
+  "runtime_digest": null,
+  "dependency_lock_sha256": null,
+  "profile_freeze_authorized": false,
+  "inference_authorized": false,
+  "gpu_authorized": false,
+  "training_authorized": false
+}

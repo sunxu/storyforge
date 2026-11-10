@@ -23,6 +23,7 @@ class FakeBackend:
             text="synthetic response",
             input_tokens=12,
             output_tokens=4,
+            finish_reason="eos",
         )
 
 
@@ -45,7 +46,23 @@ def ready_profile():
         "seed": 42,
         "runtime_digest": "sha256:" + "e" * 64,
         "dependency_lock_sha256": "d" * 64,
+        "p3_download_safe_sha256": "a" * 64,
         "tokenizer_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
+        "tokenizer_file_hashes": {"A":{"config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","generation_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","merges.txt":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","vocab.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},"B":{"chat_template.jinja":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","generation_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","special_tokens_map.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},"challenger":{"chat_template.jinja":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","generation_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","special_tokens_map.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}},
+        "generation_config_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
+        "eos_token_ids": {
+            "A": [151645, 151643],
+            "B": [151329, 151336, 151338],
+            "challenger": [151329, 151336, 151338],
+        },
+        "pad_token_ids": {"A": 151643, "B": 151329, "challenger": 151329},
+        "custom_stop_sequences": {"A": [], "B": [], "challenger": []},
+        "finish_reason_policy": {
+            "eos_source": "pinned_generation_config_eos_token_id",
+            "length_definition": "max_new_tokens_exhausted_without_eos",
+            "unexpected_stop_action": "hold",
+        },
+        "truncation_policy": "reject_over_budget_no_silent_prompt_truncation",
         "profile_freeze_authorized": True,
         "inference_authorized": True,
         "gpu_authorized": True,
@@ -94,6 +111,7 @@ def test_worker_writes_private_output_and_safe_receipt(tmp_path: Path):
     safe = receipt.to_safe_dict()
     assert receipt.status == "GENERATION_BATCH_PASS"
     assert receipt.record_count == 2
+    assert receipt.finish_reason_counts == {"eos": 2, "length": 0, "unrecognized_stop": 0}
     assert stat.S_IMODE(output_path.stat().st_mode) == 0o600
     assert safe["private_values_emitted"] is False
     assert "synthetic response" not in json.dumps(safe)
@@ -175,3 +193,41 @@ def test_worker_never_overwrites_existing_output(tmp_path: Path):
             backend=FakeBackend(),
         )
     assert output_path.read_text() == "existing"
+
+
+def test_worker_records_length_stops_and_effective_per_sample_seeds(tmp_path: Path):
+    class LengthBackend(FakeBackend):
+        def generate(self, **kwargs):
+            return GenerationResult(
+                text="partial", input_tokens=12, output_tokens=128, finish_reason="length"
+            )
+
+    input_path, manifest = write_input(tmp_path, sample_records())
+    output_path = tmp_path / "private-output.json"
+    receipt = run_generation_batch(
+        profile=ready_profile(), model_role="A", manifest=manifest,
+        input_path=input_path, output_path=output_path, backend=LengthBackend(),
+    )
+    saved = json.loads(output_path.read_text())
+    assert receipt.status == "GENERATION_BATCH_PASS_WITH_LENGTH_STOPS"
+    assert receipt.finish_reason_counts["length"] == 2
+    assert [row["effective_seed"] for row in saved["outputs"]] == [42, 43]
+    assert all(row["finish_reason"] == "length" for row in saved["outputs"])
+
+
+def test_worker_holds_on_unrecognized_stop_reason(tmp_path: Path):
+    class UnknownBackend(FakeBackend):
+        def generate(self, **kwargs):
+            return GenerationResult(
+                text="partial", input_tokens=12, output_tokens=4,
+                finish_reason="unrecognized_stop",
+            )
+
+    input_path, manifest = write_input(tmp_path, sample_records())
+    receipt = run_generation_batch(
+        profile=ready_profile(), model_role="A", manifest=manifest,
+        input_path=input_path, output_path=tmp_path / "private-output.json",
+        backend=UnknownBackend(),
+    )
+    assert receipt.status == "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP"
+    assert receipt.finish_reason_counts["unrecognized_stop"] == 2

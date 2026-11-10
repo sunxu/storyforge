@@ -1,0 +1,40 @@
+name: R60 P4 Runtime Image Candidate
+
+on:
+  push:
+    branches: [r60/p4-generation-eval-framework]
+    paths:
+      - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - '.github/workflows/r60-p4-runtime-image-candidate.yml'
+  pull_request:
+    paths:
+      - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - '.github/workflows/r60-p4-runtime-image-candidate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  base-image-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE: docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+    steps:
+      - name: Pull exact amd64 image digest
+        run: docker pull --platform linux/amd64 "$IMAGE"
+      - name: Verify base Python and CUDA-enabled PyTorch build (no GPU)
+        run: |
+          docker run --rm --platform linux/amd64 --entrypoint python "$IMAGE" -c '
+          import json, sys, torch
+          report = {
+              "python": sys.version.split()[0],
+              "torch": torch.__version__,
+              "cuda_build": torch.version.cuda,
+              "cuda_available_on_ci_runner": torch.cuda.is_available(),
+          }
+          assert sys.version_info[:2] == (3, 11), report
+          assert torch.__version__.startswith("2.6.0"), report
+          assert torch.version.cuda is not None and torch.version.cuda.startswith("12.4"), report
+          print(json.dumps(report, sort_keys=True))
+          '
