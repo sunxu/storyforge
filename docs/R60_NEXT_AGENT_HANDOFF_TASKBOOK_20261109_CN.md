@@ -1447,3 +1447,24 @@ Owner 提交的真实 SAFE 回执：
 客户端顶层 `system` 兼容修复对应分支 HEAD `1d337afcea22a52ec0b553b730d3f9b2200fa5c5` 的五项 Actions 均 completed/success：CI、R60 HF Runtime CI、R60 HF CPU dependency profiles、Gold Quality Pipeline、R58 scoped synthetic。该结果验证代码/合成回归，不等于 Owner 内容裁决通过。
 
 **当前唯一下一步：Owner 对 60 项 Claude Advisory 与原始 20 条 Owner results / Rubric v2.1 逐项核对，形成自己的 60 项最终语义判断。** Claude 结论不能自动采纳、不能回填成 Owner semantic checks；逐项保留分歧和真实 HOLD。Owner 最终记录须使用正式七字段合同并由官方 verifier 验证。P2-A 在 Owner 60 项最终复核及官方 verifier PASS 前仍为 HOLD；不启动 P2-B、P3、GPU/HF Job、1000 条审核或 SFT。
+
+
+## 2026-11-10 权威更新：ChatGPT Hugging Face OAuth / Bucket RW 故障
+
+- 插件：Hugging Face Plugin v0.1.4，关联日期 2026-11-04，Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`，OAuth Application ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`，状态 RELEASED。
+- ChatGPT `hf_whoami`：账号 `greenkeedle`，`adradar` 组织角色 `write`；OAuth scopes 为 `openid profile read-mcp read-repos jobs contribute-repos inference-api`。
+- ChatGPT 连接器可创建并执行无 Volume CPU Job；提交 `hf://buckets/adradar/storyforge-training:/output` RW Job 返回 HTTP 403。
+- Owner Mac CLI 使用同一 `adradar` namespace、`python:3.12`、`cpu-basic` 和相同默认 RW volume 成功完成 Job `6af2ee90ab34849891ab2f6e`：写入 `/output/.p4-rw-probe`、读回 `PASS`、删除文件。
+- ChatGPT 无 Volume CPU Job `6af2ec43ab34849891ab279c` 成功。RO Job `6af2ec64ab34849891ab27f8` 仅有提交接受记录，没有可用执行/读回证据，不得写成 RO 端到端 PASS。
+- Owner 提供的 Bucket Settings 页面显示 `adradar/storyforge-training` 为组织 Private Bucket，组织成员可查看和上传；未修改 ACL、可见性或 Trusted Publishers。
+
+### 诊断边界
+证据将故障收敛到 ChatGPT HF 连接器的 Bucket RW 提交/授权链路，而非 Bucket 普遍不可写、组织余额不足或 Jobs 创建权限整体失效。当前 OAuth scope 缺少 `write-repos` / 专用 Bucket write scope 是待验证假设，不是已证实根因；公开文档没有明确证明其必然导致 Jobs Bucket RW 403。仍需 HF 检查该 OAuth App 的 capability、组织 grant、请求序列化及 403 服务端拒绝原因。
+
+### 后续执行规则
+- ChatGPT 直连 Bucket RW：`BLOCKED_403`；P4 私有输出持久化保持 HOLD。Mac CLI 同 Bucket RW：PASS，只是 Owner 受控临时路径，不代表 ChatGPT 链路通过。
+- 要求 Hugging Face 检查 OAuth App `asdk_app_6ac752d4c640819191c206f9cb0dafad`（Plugin v0.1.4）是否允许挂载既有组织私有 Bucket RW、`adradar` grant 是否完整，并解释 403。
+- 不切个人 namespace，不索取长期 PAT，不修改 Bucket ACL，不配置 Trusted Publishers，不将私有生成正文写入 GitHub / Actions logs / SAFE。
+- 不盲目重复提交 RW Job；等待 HF 答复或连接器修复。该问题不影响 CPU Freeze Review SAFE，但阻止正式评估私有输出通道验收。
+- 后续 Agent 必须先检查 PR #30 最新评论及本节，避免重复早期“组织余额/Jobs 权限不足”诊断。
+- CLI 成功 Job：`https://huggingface.co/jobs/adradar/6af2ee90ab34849891ab2f6e`；ChatGPT 无 Volume Job：`https://huggingface.co/jobs/adradar/6af2ec43ab34849891ab279c`。
