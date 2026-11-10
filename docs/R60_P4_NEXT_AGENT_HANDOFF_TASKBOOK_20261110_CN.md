@@ -1,5 +1,30 @@
 # StoryForge R60 P4 下一阶段接手任务书（2026-11-10）
 
+## 2026-11-10 最新执行回执（覆盖下方历史基线）
+
+当前 PR #30 分支 HEAD：`9f321579e4bb1d1d5a7d50d18a4c03af973d41cb`。该 HEAD 相对已通过工程测试的代码提交 `7e9fdf9b47aee8da02ceeee1babc7a67d2ee6be9` 仅增加/更新 3 份文档（32K 资源预算、Owner Mac CLI Runbook、本任务书），没有改动源码、测试或 Workflow。文档提交未命中三个 Workflow 的路径触发条件；不得把代码提交的 Actions 描述为文档 HEAD 新触发的 Actions。
+
+### P4-A CPU-only Worker CLI / Bootstrap E2E：PASS
+
+代码提交 `7e9fdf9b47aee8da02ceeee1babc7a67d2ee6be9` 对应：
+- Repository CI：Run `42810266068`，completed/success。
+- R60 Generation Eval CI：Run `42810265927`，completed/success；Generation Eval 合成测试 **49 passed**。
+- P4 Runtime Image Candidate：Run `42810265919`，completed/success。
+- 固定镜像：`docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，`linux/amd64`。
+- 实际容器内执行固定 Commit codeload source archive bootstrap、安全解压、真实 `pip install --require-hashes`、CLI `--help` 和未授权 Profile fail-closed。
+- 容器 SAFE：`CPU_CONTAINER_ENTRYPOINT_FAIL_CLOSED_PASS`；archive bootstrap、hash-locked dependency install、CLI 参数解析、未授权拒绝均 PASS；runtime imports/network 均未尝试；输出目录未创建；private_values/inference/GPU/training 均 false。
+- Freeze Review SAFE：`P4_FREEZE_REVIEW_READY_NOT_FROZEN`，`ready=true`、`blockers=[]`、`ready_for_profile_freeze=false`。Artifact ID `13761927972`；ZIP SHA-256 `fb9399a38d0dc042e94ef85ac98b112f74e30803367fd4ce0758bb631d240114`。
+- 本次没有 HF Job、GPU、Inference 或 Training；HF GPU 费用 $0。
+
+### 后续仍 HOLD
+
+- Owner Mac CLI Runbook 已准备，但 Owner 尚未在 Mac 执行并回传 SAFE。
+- 32K 资源预算文档已建立，H200 141GB 为首选候选；长上下文显存/时长仍未实测，预算不是 GPU 授权。
+- Profile Freeze 未批准；正式 Inference/GPU/Training 仍 false。
+- PR #30 仍 Open/Draft，Issue #28 仍 OPEN；不得自动合并。
+
+---
+
 > **本文件是当前唯一有效的下一阶段执行任务书。** 它取代旧版交接材料中“继续 P3 CPU 预检”“Worker CLI 尚不存在”“Runtime Image Candidate 运行中”等过期指令。旧文档保留审计历史，不作为执行入口。
 
 ## 1. 项目目标与当前阶段
