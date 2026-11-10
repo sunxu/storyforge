@@ -8,8 +8,8 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from dataclasses import dataclass
 from collections.abc import Sequence
+from dataclasses import dataclass
 from typing import Any
 
 from .profiles import ProfileAssessment, assess_profile
@@ -18,6 +18,7 @@ BUCKET_PREFIX = "hf://buckets/adradar/storyforge-training/"
 GPU_FLAVORS = frozenset({"a100-large", "h200", "rtx-pro-6000"})
 IMAGE_DIGEST = re.compile(r"^.+@sha256:[0-9a-f]{64}$")
 SHA256 = re.compile(r"^[0-9a-f]{64}$")
+GIT_COMMIT = re.compile(r"^[0-9a-f]{40}$")
 ROLES = frozenset({"A", "B", "challenger"})
 
 
@@ -103,7 +104,7 @@ def build_generation_plan(
         raise PlanError("GPU_TIMEOUT_OUT_OF_RANGE")
     if not isinstance(image, str) or not IMAGE_DIGEST.fullmatch(image):
         raise PlanError("IMAGE_MUST_BE_PINNED_BY_SHA256")
-    if not isinstance(code_revision, str) or not SHA256.fullmatch(code_revision):
+    if not isinstance(code_revision, str) or not GIT_COMMIT.fullmatch(code_revision):
         raise PlanError("CODE_REVISION_MUST_BE_COMMIT_SHA")
     if not isinstance(output_subdir, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", output_subdir):
         raise PlanError("OUTPUT_SUBDIR_INVALID")
