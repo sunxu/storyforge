@@ -1,6 +1,7 @@
 """Synthetic tests for R60 P3 v3 HF tokenizer adapter contracts."""
 import json
 from pathlib import Path
+
 from scripts import r60_p3_cpu_model_preflight_v3 as p3
 from storyforge_dataset.token_preflight import describe_token_lengths
 
