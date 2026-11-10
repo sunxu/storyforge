@@ -36,7 +36,7 @@ def fixture(tmp_path):
         "        ids = encode_chat(tokenizer, row)\n"
         "    engine = LLM(model='synthetic')\n"
         "    params = SamplingParams(temperature=0)\n"
-        "    result = engine.generate([], params)\n"
+        "    result = engine.generate([], params)[0].outputs[0]\n"
         "    return result\n"
         "def main():\n"
         "    os.environ['VLLM_LOGGING_LEVEL'] = 'WARNING'\n"
@@ -92,3 +92,30 @@ def test_source_sha_mismatch_rejected(tmp_path):
     trace.EXPECTED_A_INPUT_SHA256 = "0" * 64
     with pytest.raises(trace.Hold, match="PILOT_A_INPUT_SHA_MISMATCH"):
         trace.prepare(source, target, launcher)
+
+
+def test_actual_reviewer_nested_generate_is_detected():
+    """The production reviewer indexes and extracts engine.generate output."""
+    source = (
+        "import os\n"
+        "def inference():\n"
+        "    tokenizer = AutoTokenizer.from_pretrained('synthetic')\n"
+        "    for pos in [1]:\n"
+        "        ids = encode_chat(tokenizer, pos)\n"
+        "    engine = LLM(model='synthetic')\n"
+        "    params = SamplingParams(temperature=0)\n"
+        "    result = engine.generate([], params, use_tqdm=False)[0].outputs[0]\n"
+        "    return result\n"
+        "def main():\n"
+        "    os.environ['VLLM_LOGGING_LEVEL'] = 'WARNING'\n"
+    )
+    rewritten, anchors = trace.instrument(source)
+    assert anchors == trace.EXPECTED
+    assert rewritten.count("GENERATE_START") == 1
+    assert rewritten.count("GENERATE_DONE") == 1
+
+
+def test_unrelated_nested_generate_not_misclassified():
+    assert trace.classify(__import__("ast").parse(
+        "result = other_func(engine.generate([]))"
+    ).body[0]) is None
