@@ -1,0 +1,36 @@
+{
+  "schema": "storyforge_r60_gpu_b_v3_semantic_flag_spotcheck_safe_v1",
+  "date": "2026-11-08",
+  "source_job_id": "6af060700e0338d1bb84b025",
+  "source_checkpoint": "gpu-review-output-B-pilot5-v3-01/review_0005.private.json",
+  "audit_scope": "Single targeted blind B slot spot-check, not independent blind arbitration and not A/B crosswalk matching",
+  "private_content_emitted": false,
+  "textual_source_quote_emitted": false,
+  "case_position": 5,
+  "input_visible_history_message_count": 3,
+  "checkpoint_v3_model_decision": "REJECT",
+  "model_severe_flags": {
+    "hard_fact_or_ban": true,
+    "safety_exclusion": true,
+    "serious_player_agency": true
+  },
+  "model_scores": {
+    "chinese_prose": 4,
+    "character_consistency": 4,
+    "npc_initiative": 3,
+    "player_agency": 4,
+    "rule_fidelity": 4,
+    "narrative_continuity": 4
+  },
+  "safe_review": {
+    "visible_hard_rule_detected": false,
+    "clear_serious_player_action_override_detected": false,
+    "clear_safety_exclusion_basis_detected": false,
+    "positive_literary_quality_notes_despite_severe_flags": true,
+    "result": "SERIOUS_FLAG_FALSE_POSITIVE_SUSPECTED__OWNER_SEMANTIC_ADJUDICATION_REQUIRED"
+  },
+  "limitations": "This assistant targeted check viewed B position 5's private visible history and target after seeing model decision; it is not blind or a formal human/independent C reviewer outcome. It cannot establish overall false-positive rate or decide other 4 B cases. Full checkpoint canonical receipt SHA256 and A/B crosswalk not independently recalculated.",
+  "training_authorized": false,
+  "quality_v1_admitted": 0,
+  "next": "Fail-closed: retain all model original results as uncalibrated; add independent blind severity classification with clear distinction NPC autonomy versus player agency, adjudicate B position 5 and matched A/B cases privately; do not extrapolate REJECT=10 to the 1000 candidates."
+}

@@ -52,6 +52,11 @@ TOOLS = [
     ("r58.scope", "experiments/r58_quality/gold192_scope_exclusion.py", "private tasks/queue -> SAFE", "experiments/r58_quality/test_gold192_scope_exclusion.py"),
     ("r58.packets", "experiments/r58_quality/gold192_story_review_packets.py", "private tasks -> private packets", "experiments/r58_quality/test_gold192_story_review_packets.py"),
     ("tokenizer.shared", "src/storyforge_dataset/token_preflight.py", "HF CPU token preflight primitives", "tests/test_token_preflight_core.py"),
+    ("quality.hf-literary", "src/storyforge_gold_quality/hf_literary_review.py",
+     "HF blind literary model inference + exact-quote evidence (no admission)",
+     "tests/test_hf_quality_reusable.py"),
+    ("quality.hf-blind-stage", "src/storyforge_gold_quality/hf_blind_stage.py",
+     "private A/B staging + Owner-only reconciliation", "tests/test_hf_quality_reusable.py"),
 ]
 SCORES = {"chinese_prose", "character_consistency", "npc_initiative",
           "player_agency", "narrative_continuity", "rule_fidelity"}
@@ -390,6 +395,18 @@ def append_exclusion(args):
             "quality_v1_admitted": 0, "training_authorized": False}
 
 
+def inspect_hf_review(args):
+    """Read-only generic HF reviewer receipt inspection; no model inference."""
+    from .hf_literary_review import HEX40, read_input, safe_summary
+
+    if HEX40.fullmatch(args.revision) is None or not args.model.strip():
+        raise ManifestError("HF_MODEL_PIN_INVALID")
+    if (args.output_dir.is_symlink() or not args.output_dir.is_dir()):
+        raise ManifestError("HF_REVIEW_OUTPUT_INVALID")
+    rows = read_input(args.input)
+    return safe_summary(rows, args.output_dir, args.model, args.revision)
+
+
 def main():
     parser = argparse.ArgumentParser(prog="storyforge-gold-quality")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -479,6 +496,13 @@ def main():
     owner_import.add_argument("--manifest", type=Path, required=True)
     owner_import.add_argument("--repo-root", type=Path, required=True)
     owner_import.set_defaults(func=import_owner_resolution)
+
+    hf_parser = sub.add_parser("hf-review-inspect")
+    hf_parser.add_argument("--input", type=Path, required=True)
+    hf_parser.add_argument("--output-dir", type=Path, required=True)
+    hf_parser.add_argument("--model", required=True)
+    hf_parser.add_argument("--revision", required=True)
+    hf_parser.set_defaults(func=inspect_hf_review)
 
     validate_parser = sub.add_parser("validate")
     validate_parser.add_argument("--manifest", type=Path, required=True)

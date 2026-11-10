@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -16,6 +17,10 @@ from dataclasses import dataclass
 BUCKET_PREFIX = "hf://buckets/adradar/storyforge-training/"
 NAMESPACE = "adradar"
 CPU_FLAVORS = frozenset({"cpu-basic", "cpu-upgrade"})
+REQUIRED_HF_RUN_FLAGS = (
+    "--namespace", "--name", "--flavor", "--timeout",
+    "--attempts", "--detach", "--volume",
+)
 
 
 class PolicyError(ValueError):
@@ -95,6 +100,29 @@ def validate_spec(
     return inputs, output
 
 
+def missing_hf_cli_options(help_text: str) -> list[str]:
+    """Detect unsupported required flags without shelling out or parsing secrets."""
+    return [
+        option for option in REQUIRED_HF_RUN_FLAGS
+        if re.search(r"(?<![A-Za-z0-9_-])" + re.escape(option) + r"(?![A-Za-z0-9_-])",
+                     help_text) is None
+    ]
+
+
+def check_hf_cli_compatibility() -> list[str] | None:
+    """Return missing options; None means the local CLI could not be inspected."""
+    try:
+        result = subprocess.run(
+            ["hf", "jobs", "run", "--help"],
+            capture_output=True, text=True, check=False, timeout=20,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    return missing_hf_cli_options(result.stdout)
+
+
 def build_hf_argv(
     *,
     namespace: str,
@@ -113,6 +141,9 @@ def build_hf_argv(
         "--flavor", flavor,
         "--timeout", f"{timeout_minutes}m",
         "--attempts", "1",
+        # Do not stream Job logs: a nonzero exit from the remote workload must
+        # not be mistaken for an HTTP/API submission failure.
+        "--detach",
     ]
     for volume in input_volumes:
         argv.extend(["-v", volume])
@@ -131,6 +162,8 @@ def main() -> int:
     parser.add_argument("--image", required=True)
     parser.add_argument("--submit", action="store_true",
                         help="Actually submit. Without this flag, only validate.")
+    parser.add_argument("--check-hf-cli", action="store_true",
+                        help="Validate local hf jobs run flags without submitting.")
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     command = list(args.command)
@@ -161,6 +194,20 @@ def main() -> int:
             "automatic_retry": False,
             "private_values_emitted": False,
         }
+        if args.check_hf_cli or args.submit:
+            missing_options = check_hf_cli_compatibility()
+            if missing_options is None or missing_options:
+                report.update(
+                    status="PREFLIGHT_HOLD",
+                    reason_code=("HF_CLI_HELP_UNAVAILABLE" if missing_options is None
+                                 else "HF_CLI_UNSUPPORTED_OPTIONS"),
+                    job_submitted=False,
+                )
+                if missing_options:
+                    report["missing_cli_options"] = missing_options
+                print(json.dumps(report, sort_keys=True))
+                return 40
+            report["hf_cli_compatible"] = True
         if not args.submit:
             print(json.dumps(report, sort_keys=True))
             return 0
@@ -195,7 +242,11 @@ def main() -> int:
                 reason = "ORGANIZATION_PERMISSION_OR_MOUNT_POLICY"
             else:
                 reason = "HF_JOB_SUBMISSION_FAILED"
-            report.update(status="SUBMISSION_REJECTED", reason_code=reason)
+            report.update(
+                status="SUBMISSION_UNCONFIRMED_CHECK_ORG_JOBS",
+                reason_code=reason,
+                note="Check the organization's job list before any new submission",
+            )
             print(json.dumps(report, sort_keys=True))
             return result.returncode or 42
 

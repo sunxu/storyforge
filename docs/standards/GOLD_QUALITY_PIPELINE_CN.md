@@ -149,3 +149,22 @@ Contract:
 Synthetic coverage lives in tests/test_gold_quality_review_reconciliation.py.
 The importer does not invoke the Owner-local crosswalk and does not access
 production DB, private story text, HF, GPU or R50.
+
+## R60 HF 文学双审可复用公共工具（2026-11-08）
+
+统一 Quality Pipeline 已登记 `quality.hf-literary`、`quality.hf-blind-stage`，并新增只读子命令：
+
+~~~bash
+storyforge-gold-quality hf-review-inspect \
+  --input /OWNER_PRIVATE/input_A/source.private.jsonl \
+  --output-dir /OWNER_PRIVATE/output_A \
+  --model Qwen/Qwen3-32B --revision <EXACT_40_HEX_COMMIT>
+~~~
+
+公共源代码在 `src/storyforge_gold_quality/hf_literary_review.py`、`hf_blind_stage.py`。两者共享已存在的六维门槛和三项严重标记语义、严格连续引用、私有分发、模型 revision 绑定和逐案不可覆盖 HF checkpoint；HF CPU Tokenizer 始终调用唯一核心 `src/storyforge_dataset/token_preflight.py`，仅在 HF CPU 执行模型特定 Tokenizer/Chat Template 预检。新 R60 适配器为 `experiments/r58_quality/r60_hf_quality_adapter.py`，只处理已经冻结的 1000 条来源验真及 `prepare/audit/export`；**不在 R60 自己开发新的模型推理或 Quality Manifest**。
+
+HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；模型推理和数据上传必须另行批准，绝不可因工具可用而自动启动。`audit` 必须先核实两个 Reviewer 的 checkpoint SHA、模型、精确原文引用与来源匹配；`export` 仅在 1000×2 条审核完整后生成 A/B 私有 `append-review` 合同文件。随后以原有 `storyforge-gold-quality append-review --event-type BLIND_REVIEW` 分别导入现存唯一正式的私有 Manifest，保留 A/B 各自完整事件，不合并成单个无来源判决。`report-safe` 仅聚合，不公开个案。
+
+这是**新批次公共 Card-independent 路线**；Gold195 R58 冻结旧 Reviewer 仍用于审查其历史旧批次，不能为 R60 虚构 `card_snapshot_suitable_for_offline_training=true`。PASS 仍只证明局部可见历史质量判断，R50/world/历史 System/CPU Collator/GPU 训练独立门槛不被改变。
+
+完整命令、Hugging Face namespace `adradar`、独立 RO/RW volume、模型 pin、CPU/GPU 授权及 SAFE 验收见 `docs/R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md`。

@@ -5,6 +5,7 @@ import unittest
 from scripts.hf_job_guard import (
     PolicyError,
     build_hf_argv,
+    missing_hf_cli_options,
     parse_volume,
     validate_spec,
 )
@@ -112,6 +113,33 @@ class HuggingFaceJobGuardTests(unittest.TestCase):
         with self.assertRaisesRegex(PolicyError, "DUPLICATE_INPUT_DESTINATION"):
             self.valid(input_volumes=[INPUT, INPUT])
 
+    def test_old_cli_rejected_before_submission(self):
+        legacy_help = (
+            "usage: hf jobs run [--namespace] [--flavor] [--timeout] "
+            "[-d, --detach] image command"
+        )
+        self.assertEqual(
+            missing_hf_cli_options(legacy_help),
+            ["--name", "--attempts", "--volume"],
+        )
+
+    def test_modern_cli_help_accepts_exact_required_options(self):
+        modern_help = (
+            "--namespace --name --flavor --timeout "
+            "--attempts --detach -v, --volume"
+        )
+        self.assertEqual(missing_hf_cli_options(modern_help), [])
+
+    def test_cli_flag_prefix_does_not_bypass_check(self):
+        help_with_fake_flag = (
+            "--namespace --name-extra --flavor --timeout "
+            "--attempts-more --detach --volume-upload"
+        )
+        self.assertEqual(
+            missing_hf_cli_options(help_with_fake_flag),
+            ["--name", "--attempts", "--volume"],
+        )
+
     def test_submit_argv_pins_namespace_and_no_retry(self):
         argv = build_hf_argv(
             namespace="adradar",
@@ -128,6 +156,10 @@ class HuggingFaceJobGuardTests(unittest.TestCase):
         self.assertEqual(argv[argv.index("--attempts") + 1], "1")
         self.assertEqual(argv.count("-v"), 3)
         self.assertIn("--", argv)
+        # Hugging Face CLI must report submission without streaming a remote
+        # workload's exit code as though the launch were rejected.
+        self.assertIn("--detach", argv)
+        self.assertLess(argv.index("--detach"), argv.index("python:3.11"))
 
 
 if __name__ == "__main__":

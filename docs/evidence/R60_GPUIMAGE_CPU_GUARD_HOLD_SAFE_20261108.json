@@ -1,0 +1,53 @@
+{
+  "schema": "storyforge_r60_gpuimage_cpu_guard_hold_safe_v1",
+  "status": "GPUIMAGE_CPU_RESOURCE_GUARD_HOLD_NO_TOKENIZER",
+  "date": "2026-11-08",
+  "namespace": "adradar",
+  "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+  "flavor": "cpu-basic",
+  "jobs": [
+    {
+      "slot": "A",
+      "id": "6af04c570e0338d1bb84a91e",
+      "name": "r60-gpuimage-cpu-token-A-20261108",
+      "status": "ERROR",
+      "exit_code": 42,
+      "started_at_utc": "2026-11-08T10:17:59.639Z",
+      "finished_at_utc": "2026-11-08T10:18:08.652Z",
+      "dependencies_check": "HF_GPUIMAGE_DEPS_PRESENT",
+      "safe_reason_code": "HF_CPU_RESOURCE_GUARD_HOLD"
+    },
+    {
+      "slot": "B",
+      "id": "6af04c58e6320c66fad7416c",
+      "name": "r60-gpuimage-cpu-token-B-20261108",
+      "status": "ERROR",
+      "exit_code": 42,
+      "started_at_utc": "2026-11-08T10:18:00.922Z",
+      "finished_at_utc": "2026-11-08T10:18:10.259Z",
+      "dependencies_check": "HF_GPUIMAGE_DEPS_PRESENT",
+      "safe_reason_code": "HF_CPU_RESOURCE_GUARD_HOLD"
+    }
+  ],
+  "root_cause_status": "UNCONFIRMED",
+  "candidate_causes": [
+    "ACCELERATOR_NON_CPU",
+    "NVIDIA_VISIBLE_DEVICES_NON_CPU",
+    "CUDA_VISIBLE_DEVICES_NON_CPU",
+    "NVIDIA_DEVICE_NODES",
+    "TORCH_CUDA_IMPORTED"
+  ],
+  "observed": "Previous shell explicitly set CUDA_VISIBLE_DEVICES empty; Jinja2 and sentencepiece imports succeeded. No token encoding was reached; the GPU image could contain inherited NVIDIA_VISIBLE_DEVICES metadata. Current SAFE logs do not identify which resource check failed.",
+  "safeguards": {
+    "gpu_started": false,
+    "inference_performed": false,
+    "training_authorized": false,
+    "private_values_emitted": false
+  },
+  "previous_cpu_preflight": {
+    "A": "6af045fb0e0338d1bb84a4ce",
+    "B": "6af047a70e0338d1bb84a5ed",
+    "both": "COMPLETED_1000_OF_1000_OVER_BUDGET_ZERO"
+  },
+  "next": "Single A cpu-basic Job with non-private ResourceGuard checks before and after explicitly disabling NVIDIA_VISIBLE_DEVICES; fail-closed on GPU device nodes, non-CPU accelerator, or CUDA imported. Only on CPU guard PASS execute the same pinned-image tokenizer preflight. Do not submit B until A completes and passes."
+}

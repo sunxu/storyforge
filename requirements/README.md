@@ -4,6 +4,22 @@
 
 `storyforge_dataset.hf_runtime` uses Python 3.11 standard library only. Do not install Transformers, PyTorch, ms-swift or HF Hub for Runtime-only checks.
 
+## R60 literary reviewer compatibility profile
+
+- Inputs: `hf-quality-reviewer.in` → hash-pinned `hf-quality-reviewer.lock`
+- Direct pins: Transformers 4.57.1, SentencePiece 0.2.1, Jinja2 3.1.6; Hugging Face Hub remains `>=0.35,<3`.
+- The lock resolves every transitive dependency and records SHA256 hashes; CI regenerates and compares it.
+- This profile is intentionally separate from the R59 Qwen3.8 tokenizer profile below, which pins Transformers 5.16.1. Do not downgrade or merge those profiles.
+- GitHub Actions installs this profile in an isolated Python 3.11 environment, runs `pip check`, verifies versions/imports, and executes a synthetic `apply_chat_template` smoke test.
+- Use the committed hash lock for every HF Job. The `.in` file is only the direct-dependency source used to regenerate the lock.
+
+Install for local compatibility checks:
+
+```bash
+python -m pip install --no-cache-dir --require-hashes -r requirements/hf-quality-reviewer.lock
+python -m pip check
+```
+
 ## Tokenizer-only CPU profile
 
 - Input: `hf-cpu-tokenizer.in`
@@ -27,8 +43,9 @@ To regenerate the lock, use the dedicated `.github/workflows/r60-hf-cpu-lock-res
 
 当前 lock SHA256：
 
-```text
-a48957b2337d703f4629206663e74d9986482c6905e63013a46dc8662204cfba
-```
+| Lock | SHA256 |
+|---|---|
+| `hf-cpu-tokenizer.lock`（R59 / Transformers 5.16.1） | `2ed75a4057c01a3f6310aa790157b721d0bc640cfc27cd3a94d5e1718681da75` |
+| `hf-quality-reviewer.lock`（R60 / Transformers 4.57.1） | `4a909bf5029245ead71ce28512e6f0f718f1097544a238e5c55db15736a3148f` |
 
-GitHub Actions lock resolution Run `41807222164`：提交锁与新解析结果一致，clean hash-verified install、`pip check` 通过，且 `torch` 不存在。
+GitHub Actions Run `42495819470`（commit `32c4965d18ef98cacc25f14de86b8ce824fb0bb5`）：两份 lock 均重新解析并与提交内容一致；hash-verified install、`pip check`、CPU-only boundary 与 R60 合成 `apply_chat_template` smoke 全部 PASS。

@@ -1,0 +1,99 @@
+from __future__ import annotations
+
+from scripts import r60_owner_approved_package_normalizer_v1 as MODULE
+
+
+def _packet():
+    return {
+        "calibration_id": "a" * 32,
+        "visible_history": [{"role": "user", "content": "I refuse."}],
+    }
+
+
+def _assessment(verdict="NOT_SUPPORTED", history_complete=False):
+    return {
+        "verdict": verdict,
+        "context_coverage": {
+            "history_complete": history_complete,
+            "target_complete": True,
+            "relevant_context_complete": True,
+        },
+        "missing_context": [],
+        "evidence": [
+            {
+                "source": "target",
+                "message_index": -1,
+                "component_ref": "legacy-target",
+                "quote": "target quote",
+            },
+            {
+                "source": "history",
+                "message_index": 0,
+                "component_ref": "legacy-history",
+                "quote": "history quote",
+            },
+        ],
+    }
+
+
+def test_normalize_results_changes_only_approved_coverage_and_locator_fields():
+    dimensions = ("player_agency", "hard_rule", "safety")
+    case_id = "a" * 32
+    result = {
+        "case_ref": case_id,
+        "assessments": {dimension: _assessment() for dimension in dimensions},
+    }
+    original = __import__("copy").deepcopy(result)
+
+    normalized, counts = MODULE.normalize_results(
+        [result], [_packet()], {(case_id, "player_agency")}, dimensions
+    )
+
+    assert counts == {
+        "history_completeness_confirmed": 1,
+        "target_locators_normalized": 3,
+        "history_locators_normalized": 3,
+    }
+    assert result == original  # source object is not mutated
+    assert normalized[0]["assessments"]["player_agency"]["context_coverage"]["history_complete"] is True
+    assert normalized[0]["assessments"]["hard_rule"]["context_coverage"]["history_complete"] is False
+    for assessment in normalized[0]["assessments"].values():
+        target, history = assessment["evidence"]
+        assert (target["message_index"], target["component_ref"]) == (0, "")
+        assert (history["message_index"], history["component_ref"]) == (0, "")
+
+
+def test_normalize_results_rejects_approved_non_negative_verdict():
+    dimensions = ("player_agency", "hard_rule", "safety")
+    case_id = "a" * 32
+    result = {
+        "case_ref": case_id,
+        "assessments": {dimension: _assessment() for dimension in dimensions},
+    }
+    result["assessments"]["player_agency"]["verdict"] = "SUPPORTED"
+
+    try:
+        MODULE.normalize_results(
+            [result], [_packet()], {(case_id, "player_agency")}, dimensions
+        )
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("unsupported approved verdict was accepted")
+
+
+def test_normalize_results_rejects_unexpected_target_locator():
+    dimensions = ("player_agency", "hard_rule", "safety")
+    case_id = "a" * 32
+    result = {
+        "case_ref": case_id,
+        "assessments": {dimension: _assessment() for dimension in dimensions},
+    }
+    result["assessments"]["safety"]["evidence"][0]["message_index"] = 0
+
+    try:
+        MODULE.normalize_results([result], [_packet()], set(), dimensions)
+    except SystemExit:
+        pass
+    else:
+        raise AssertionError("unexpected target locator was accepted")
