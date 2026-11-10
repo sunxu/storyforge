@@ -4,12 +4,20 @@ from storyforge_dataset.generation_eval.plan import (
 )
 from storyforge_dataset.generation_eval.profiles import EXPECTED_MODELS
 
-from test_generation_eval_profiles import candidate_profile
-
 
 def ready_profile():
-    profile = candidate_profile()
-    profile.update({
+    models = {}
+    for role, (model, revision) in EXPECTED_MODELS.items():
+        models[role] = {
+            "model": model,
+            "revision": revision,
+            "enable_thinking": role == "A",
+            "sampling": {"do_sample": True, "temperature": 0.7, "top_p": 0.9},
+            "chat_template_sha256": "a" * 64,
+        }
+    return {
+        "schema": "storyforge_r60_p3_model_profiles_v1",
+        "model_profiles": models,
         "context_ceiling_tokens": 32768,
         "input_budget_tokens": 28672,
         "generation_budget_tokens": 4096,
@@ -19,10 +27,8 @@ def ready_profile():
         "profile_freeze_authorized": True,
         "inference_authorized": True,
         "gpu_authorized": True,
-    })
-    for item in profile["model_profiles"].values():
-        item["sampling"] = {"do_sample": True, "temperature": 0.7, "top_p": 0.9}
-    return profile
+        "training_authorized": False,
+    }
 
 
 def plan_args(profile):
@@ -46,14 +52,15 @@ def plan_args(profile):
 
 
 def test_incomplete_p3_profile_holds_plan_and_never_submits():
-    profile = candidate_profile()
+    profile = ready_profile()
+    profile["profile_freeze_authorized"] = False
     plan = build_generation_plan(**plan_args(profile))
     safe = plan.to_safe_dict()
     assert plan.status == "P4_JOB_PLAN_HOLD"
     assert plan.argv == ()
     assert safe["job_submitted"] is False
     assert safe["gpu_started"] is False
-    assert "GPU_NOT_AUTHORIZED" in safe["blockers"]
+    assert "PROFILE_FREEZE_NOT_AUTHORIZED" in safe["blockers"]
 
 
 def test_frozen_profile_builds_deterministic_plan_only():
