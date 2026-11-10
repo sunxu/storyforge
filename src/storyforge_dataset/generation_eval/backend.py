@@ -308,16 +308,25 @@ class TransformersGenerationBackend:
                     for value in prefix_ids
                 ):
                     raise WorkerError("GENERATION_PREFIX_TOKENIZATION_FAILED")
-                prefix_tensor = self.torch.tensor(
-                    [prefix_ids], dtype=inputs["input_ids"].dtype, device=inputs["input_ids"].device
-                )
-                inputs["input_ids"] = self.torch.cat((inputs["input_ids"], prefix_tensor), dim=-1)
-                if "attention_mask" in inputs:
-                    mask = self.torch.ones(
-                        (1, len(prefix_ids)), dtype=inputs["attention_mask"].dtype,
-                        device=inputs["attention_mask"].device,
+                existing_ids = inputs["input_ids"][0][-len(prefix_ids):].tolist()
+                if existing_ids != prefix_ids:
+                    prefix_tensor = self.torch.tensor(
+                        [prefix_ids],
+                        dtype=inputs["input_ids"].dtype,
+                        device=inputs["input_ids"].device,
                     )
-                    inputs["attention_mask"] = self.torch.cat((inputs["attention_mask"], mask), dim=-1)
+                    inputs["input_ids"] = self.torch.cat(
+                        (inputs["input_ids"], prefix_tensor), dim=-1
+                    )
+                    if "attention_mask" in inputs:
+                        mask = self.torch.ones(
+                            (1, len(prefix_ids)),
+                            dtype=inputs["attention_mask"].dtype,
+                            device=inputs["attention_mask"].device,
+                        )
+                        inputs["attention_mask"] = self.torch.cat(
+                            (inputs["attention_mask"], mask), dim=-1
+                        )
             input_tokens = int(inputs["input_ids"].shape[-1])
             if not 1 <= input_tokens <= max_input_tokens:
                 raise WorkerError("INPUT_TOKEN_BUDGET_EXCEEDED")
