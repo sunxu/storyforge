@@ -14,6 +14,12 @@
    
 **重要门禁**：依然不能将 `A25` 的 25 条冻结输入和 `A1000` 原始输入混为一谈。先运行 25 条并验证，再用同一软件对 frozen 1000 source 启动更长作业；不能把 `--case-limit 1000` 配上 25 条输入。跨多 Job 恢复时每轮必须有单独的费用、最大时长授权与私有数据源验收。
 
+### 2026-11-11 补充诊断：旧门禁可能误拒绝 vLLM 内部的本地 Tokenizer 调用
+
+在冻结 A25 门禁实现复核中发现：旧 `AutoTokenizer.from_pretrained` 拦截器只允许 `model=Qwen/Qwen3-32B,revision=固定SHA`，但 vLLM 初始化真实本地权重时，**可能也使用 Transformers 请求本地 tokenizer 路径**。旧逻辑会抛出拦截器 Hold，再由冻结 reviewer 统一压成 `HF_REVIEW_RUNTIME_ERROR`。这是**高优先级、尚未以 H200 实测确认的可能原因**，不是已确定根因。
+
+已修复新的连续审核入口以及历史 A25 门禁：允许且仅允许已验证的 `local_dir` 内部 tokenizer 调用，禁止加载任何意外模型或其他路径；CPU 合成测试已模拟引擎构造期间再次加载本地 tokenizer。新的日志会输出 `VLLM_INTERNAL_LOCAL_TOKENIZER`（不含路径）或 `REAL_ENGINE_INIT_HOLD exception_class=...`。本段覆盖本执行书内此前旧版 A25 命令；**新 Job 一律采用最新固定脚本，禁止再使用旧 A25 gate 版本重新支付 GPU 费用**。
+
 ### Owner Mac：新工具版本隔离安装（CPU-only）
 
 ```bash
@@ -23,7 +29,7 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 DEST="$PILOT/input_A_continuous"
 CODE="$BASE/r60-qwen-continuous-tools-v1"
-REV="a14f1eab47b738f74f1e06a0b030a799dcde93ce"
+REV="6235ac878eebd1bbe92f6b46766b6fe1e5fb4569"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$PILOT/input_A"
 test ! -e "$DEST" || { echo A_CONTINUOUS_ALREADY_EXISTS_HOLD; exit 42; }
