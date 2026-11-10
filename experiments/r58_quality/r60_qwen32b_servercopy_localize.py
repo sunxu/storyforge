@@ -128,7 +128,8 @@ def run(bucket: Path, local: Path, model_info: object,
                               verify_weight_sha=verify_weight_sha)
         verified.append({"name": item["name"], "size": item["size"],
                          "sha256": actual})
-        emit("LOCAL_FILE_VERIFIED", file_number=index,
+        emit(("LOCAL_FILE_VERIFIED" if verify_weight_sha
+              else "LOCAL_FILE_SIZE_CHECKED"), file_number=index,
              file_count=len(manifest_items))
     index_data = json.loads((local / "model.safetensors.index.json").read_text())
     refs = set(index_data["weight_map"].values())
