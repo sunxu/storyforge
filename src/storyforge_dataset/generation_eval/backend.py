@@ -268,6 +268,7 @@ class TransformersGenerationBackend:
         messages: list[dict[str, str]],
         sampling: dict[str, Any],
         enable_thinking: bool | None,
+        generation_prefix: str | None = None,
         seed: int,
         max_input_tokens: int,
         max_new_tokens: int,
@@ -298,6 +299,25 @@ class TransformersGenerationBackend:
             kwargs["enable_thinking"] = enable_thinking
         try:
             inputs = self.tokenizer.apply_chat_template(messages, **kwargs)
+            if generation_prefix is not None:
+                if not isinstance(generation_prefix, str) or not generation_prefix or len(generation_prefix) > 64:
+                    raise WorkerError("GENERATION_PREFIX_INVALID")
+                prefix_ids = self.tokenizer.encode(generation_prefix, add_special_tokens=False)
+                if not isinstance(prefix_ids, list) or not prefix_ids or any(
+                    not isinstance(value, int) or isinstance(value, bool) or value < 0
+                    for value in prefix_ids
+                ):
+                    raise WorkerError("GENERATION_PREFIX_TOKENIZATION_FAILED")
+                prefix_tensor = self.torch.tensor(
+                    [prefix_ids], dtype=inputs["input_ids"].dtype, device=inputs["input_ids"].device
+                )
+                inputs["input_ids"] = self.torch.cat((inputs["input_ids"], prefix_tensor), dim=-1)
+                if "attention_mask" in inputs:
+                    mask = self.torch.ones(
+                        (1, len(prefix_ids)), dtype=inputs["attention_mask"].dtype,
+                        device=inputs["attention_mask"].device,
+                    )
+                    inputs["attention_mask"] = self.torch.cat((inputs["attention_mask"], mask), dim=-1)
             input_tokens = int(inputs["input_ids"].shape[-1])
             if not 1 <= input_tokens <= max_input_tokens:
                 raise WorkerError("INPUT_TOKEN_BUDGET_EXCEEDED")

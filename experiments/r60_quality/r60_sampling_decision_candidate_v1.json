@@ -20,6 +20,17 @@
             "min_p": 0
           },
           "basis": "Qwen3 official thinking-mode recommendation"
+        },
+        "development_primary": {
+          "evaluation_split": "development20",
+          "sampling": {
+            "do_sample": true,
+            "temperature": 0.6,
+            "top_p": 0.95,
+            "top_k": 20,
+            "min_p": 0
+          },
+          "basis": "Same-model primary decoding baseline on Development20; paired with sensitivity variants and isolated from Locked30."
         }
       }
     },
@@ -33,8 +44,8 @@
           "evaluation_split": "p4_locked30",
           "sampling": {
             "do_sample": true,
-            "temperature": 1.0,
-            "top_p": 1.0,
+            "temperature": 1,
+            "top_p": 1,
             "top_k": 50
           },
           "basis": "Model-card inference example uses do_sample=true but supplies no sampling values; explicit neutral Transformers 4.57.1 generation defaults are recorded to avoid hidden defaults. These are an experimental baseline, not model-author recommended hyperparameters."
@@ -45,6 +56,16 @@
             "do_sample": false
           },
           "basis": "Development-only sensitivity comparison against the primary sampling-mode baseline."
+        },
+        "development_primary": {
+          "evaluation_split": "development20",
+          "sampling": {
+            "do_sample": true,
+            "temperature": 1,
+            "top_p": 1,
+            "top_k": 50
+          },
+          "basis": "Same-model primary decoding baseline on Development20; paired with sensitivity variants and isolated from Locked30."
         }
       }
     },
@@ -71,6 +92,13 @@
             "top_k": 40
           },
           "basis": "Sampling table in the pinned model-card documentation; compared against the greedy baseline on Development20 only."
+        },
+        "development_primary": {
+          "evaluation_split": "development20",
+          "sampling": {
+            "do_sample": false
+          },
+          "basis": "Same-model primary decoding baseline on Development20; paired with sensitivity variants and isolated from Locked30."
         }
       }
     }
@@ -86,7 +114,25 @@
     "input_budget_tokens": 28672,
     "generation_budget_tokens": 4096,
     "context_ceiling_tokens": 32768,
-    "max_generation_tokens_includes_reasoning": true
+    "max_generation_tokens_includes_reasoning": true,
+    "development20_arm_matrix": {
+      "A": [
+        "development_primary"
+      ],
+      "B": [
+        "development_primary",
+        "development_greedy_sensitivity"
+      ],
+      "challenger": [
+        "development_primary",
+        "development_sampling_sensitivity"
+      ],
+      "locked30": [
+        "primary_only"
+      ]
+    },
+    "locked30_primary_only": true,
+    "locked30_tuning_forbidden": true
   },
   "selection_metrics": [
     "hard_rule_supported_precision_recall_f1",

@@ -36,6 +36,9 @@ class FakeTokenizer:
     def apply_chat_template(self, messages, **kwargs):
         return FakeBatchEncoding({"input_ids": FakeTensor([1, 2, 3])})
 
+    def encode(self, text, add_special_tokens=False):
+        return [99] if text == "<think>" else [98]
+
     def decode(self, tokens, skip_special_tokens=True):
         return "fake output"
 
@@ -70,6 +73,15 @@ class FakeTorch:
     def manual_seed(self, seed):
         self.seed = seed
 
+    @staticmethod
+    def tensor(values, dtype=None, device=None):
+        return FakeTensor(values[0])
+    @staticmethod
+    def cat(tensors, dim=-1):
+        return FakeTensor(tensors[0].values + tensors[1].values)
+    @staticmethod
+    def ones(shape, dtype=None, device=None):
+        return FakeTensor([1] * shape[-1])
     class inference_mode:
         def __enter__(self):
             return self
@@ -195,6 +207,23 @@ def test_generation_uses_explicit_sampling_and_reports_token_counts():
     assert result.input_tokens == 3
     assert result.output_tokens == 2
     assert result.finish_reason == "eos"
+
+
+def test_explicit_generation_prefix_is_appended_before_generation():
+    class InspectModel(FakeModel):
+        def generate(self, **kwargs):
+            self.input_ids = kwargs["input_ids"]
+            return SimpleNamespace(sequences=[FakeTensor([1, 2, 3, 99, 4])])
+    model = InspectModel()
+    backend = TransformersGenerationBackend(tokenizer=FakeTokenizer(), model=model, torch_module=FakeTorch())
+    result = backend.generate(
+        model="fake-model", revision="a" * 40,
+        messages=[{"role": "user", "content": "hello"}],
+        sampling={"do_sample": False}, enable_thinking=None, generation_prefix="<think>",
+        seed=1, max_input_tokens=100, max_new_tokens=10, eos_token_ids=[4], pad_token_id=0,
+    )
+    assert model.input_ids.values == [1, 2, 3, 99]
+    assert result.input_tokens == 4
 
 
 def test_greedy_mode_does_not_forward_sampling_knobs():

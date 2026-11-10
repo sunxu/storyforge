@@ -35,7 +35,8 @@
         "top_k": 50
       },
       "chat_template_source": "standalone_chat_template.jinja",
-      "chat_template_sha256": "db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822"
+      "chat_template_sha256": "db700f25fa300e53634c6fc78dee86b7fbd6d27e624edb855b18a4078c83a822",
+      "thinking_mode": "template_default"
     },
     "challenger": {
       "model": "zai-org/GLM-Z1-32B-0414",
@@ -45,7 +46,9 @@
         "do_sample": false
       },
       "chat_template_source": "standalone_chat_template.jinja",
-      "chat_template_sha256": "adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241"
+      "chat_template_sha256": "adee3accece2e4a347280cb16580b3575d6164f2a0f4ac58a1a8392a346eb241",
+      "thinking_mode": "explicit_generation_prefix",
+      "generation_prefix": "<think>"
     }
   },
   "context_ceiling_tokens": 32768,
@@ -144,6 +147,7 @@
   "inference_authorized": false,
   "gpu_authorized": false,
   "training_authorized": false,
-  "runtime_smoke_authorized": true,
-  "p3_download_safe_sha256": "52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5"
+  "runtime_smoke_authorized": false,
+  "p3_download_safe_sha256": "52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5",
+  "runtime_smoke_authorization_status": "CONSUMED_2026-11-10"
 }

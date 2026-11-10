@@ -27,6 +27,15 @@ def test_sampling_design_is_valid_but_never_freezes_or_authorizes():
     assert safe["training_started"] is False
 
 
+def test_development20_has_paired_primary_and_sensitivity_arms():
+    candidate = load_candidate()
+    result = assess_sampling_decision(candidate)
+    assert result.blockers == ()
+    for role in ("A", "B", "challenger"):
+        assert candidate["model_profiles"][role]["variants"]["development_primary"]["evaluation_split"] == "development20"
+    assert candidate["execution_controls"]["development20_arm_matrix"]["locked30"] == ["primary_only"]
+
+
 def test_locked_set_cannot_be_used_for_sampling_tuning():
     candidate = load_candidate()
     candidate["model_profiles"]["challenger"]["variants"][

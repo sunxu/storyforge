@@ -15,18 +15,21 @@ EXPECTED_MODELS = {
     "challenger": ("zai-org/GLM-Z1-32B-0414", "8eb2858992c1f749e2a6d4075455decc2484722d"),
 }
 EXPECTED_VARIANTS = {
-    "A": {"primary"},
-    "B": {"primary", "development_greedy_sensitivity"},
-    "challenger": {"primary", "development_sampling_sensitivity"},
+    "A": {"primary", "development_primary"},
+    "B": {"primary", "development_primary", "development_greedy_sensitivity"},
+    "challenger": {"primary", "development_primary", "development_sampling_sensitivity"},
 }
 EXPECTED_SAMPLING = {
+    ("A", "development_primary"): {"do_sample": True, "temperature": 0.6, "top_p": 0.95, "top_k": 20, "min_p": 0},
     ("A", "primary"): {
         "do_sample": True, "temperature": 0.6, "top_p": 0.95, "top_k": 20, "min_p": 0,
     },
+    ("B", "development_primary"): {"do_sample": True, "temperature": 1.0, "top_p": 1.0, "top_k": 50},
     ("B", "primary"): {
         "do_sample": True, "temperature": 1.0, "top_p": 1.0, "top_k": 50,
     },
     ("B", "development_greedy_sensitivity"): {"do_sample": False},
+    ("challenger", "development_primary"): {"do_sample": False},
     ("challenger", "primary"): {"do_sample": False},
     ("challenger", "development_sampling_sensitivity"): {
         "do_sample": True, "temperature": 0.6, "top_p": 0.95, "top_k": 40,
@@ -91,7 +94,7 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
             if not isinstance(variant, dict):
                 blockers.append(f"{role.upper()}_VARIANT_INVALID")
                 continue
-            expected_split = "development20" if name != "primary" else "p4_locked30"
+            expected_split = "p4_locked30" if name == "primary" else "development20"
             if variant.get("evaluation_split") != expected_split:
                 blockers.append(f"{role.upper()}_VARIANT_SPLIT_INVALID")
             if variant.get("sampling") != EXPECTED_SAMPLING[(role, name)]:
@@ -106,6 +109,16 @@ def assess_sampling_decision(document: dict[str, Any]) -> SamplingAssessment:
         blockers.append("DEVELOPMENT_ONLY_TUNING_REQUIRED")
     if controls.get("locked_reference_accessed") is not False:
         blockers.append("LOCKED_REFERENCE_ACCESS_FORBIDDEN")
+    expected_matrix = {
+        "A": ["development_primary"],
+        "B": ["development_primary", "development_greedy_sensitivity"],
+        "challenger": ["development_primary", "development_sampling_sensitivity"],
+        "locked30": ["primary_only"],
+    }
+    if controls.get("development20_arm_matrix") != expected_matrix:
+        blockers.append("DEVELOPMENT20_ARM_MATRIX_INVALID")
+    if controls.get("locked30_primary_only") is not True or controls.get("locked30_tuning_forbidden") is not True:
+        blockers.append("LOCKED30_PRIMARY_ONLY_REQUIRED")
     if controls.get("seed") != 42:
         blockers.append("BASE_SEED_MISMATCH")
     if (

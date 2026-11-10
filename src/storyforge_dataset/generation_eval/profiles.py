@@ -94,7 +94,7 @@ def assess_profile(
     Runtime Smoke authorization does not freeze the production profile and does
     not authorize the general generation worker or training.
     """
-    if purpose not in {"generation", "runtime_smoke"}:
+    if purpose not in {"generation", "runtime_smoke", "freeze_review"}:
         raise ValueError("P4_ASSESSMENT_PURPOSE_INVALID")
     if not isinstance(profile, dict) or profile.get("schema") != PROFILE_SCHEMA:
         raise ValueError("P4_PROFILE_SCHEMA_INVALID")
@@ -111,9 +111,17 @@ def assess_profile(
         ):
             if profile.get(flag) is not True:
                 blockers.append(code)
-    elif profile.get("runtime_smoke_authorized") is not True:
+    elif purpose == "runtime_smoke" and profile.get("runtime_smoke_authorized") is not True:
         blockers.append("RUNTIME_SMOKE_NOT_AUTHORIZED")
-    if profile.get("training_authorized") is True:
+    if purpose == "freeze_review":
+        for flag, code in (
+            ("profile_freeze_authorized", "PROFILE_FREEZE_ALREADY_SET_IN_REVIEW"),
+            ("inference_authorized", "INFERENCE_AUTHORIZATION_MUST_REMAIN_FALSE"),
+            ("gpu_authorized", "GPU_AUTHORIZATION_MUST_REMAIN_FALSE"),
+        ):
+            if profile.get(flag) is not False:
+                blockers.append(code)
+    if profile.get("training_authorized") is not False:
         blockers.append("TRAINING_AUTHORIZATION_MUST_REMAIN_DISABLED")
 
     for field, code in (
@@ -297,8 +305,16 @@ def assess_profile(
                 or not math.isfinite(float(sampling["min_p"])) or not 0 <= sampling["min_p"] < 1
             ):
                 blockers.append(f"{role.upper()}_SAMPLING_INVALID")
-        if role == "A" and item.get("enable_thinking") is not True:
+        if role == "A" and (item.get("enable_thinking") is not True or item.get("thinking_mode") != "api_flag"):
             blockers.append("A_THINKING_MODE_UNSET")
+        if role == "B" and (item.get("thinking_mode") != "template_default" or item.get("generation_prefix") is not None):
+            blockers.append("B_THINKING_MODE_INVALID")
+        if role == "challenger" and (
+            item.get("thinking_mode") != "explicit_generation_prefix"
+            or item.get("generation_prefix") != "<think>"
+            or item.get("enable_thinking") is not None
+        ):
+            blockers.append("CHALLENGER_THINKING_PREFIX_INVALID")
         if role != "A" and item.get("enable_thinking") not in (True, False, None):
             raise ValueError("P4_THINKING_MODE_INVALID")
         template_sha = item.get("chat_template_sha256")
@@ -310,6 +326,7 @@ def assess_profile(
     ready_status = (
         "P4_PROFILE_READY_FOR_RUNTIME_SMOKE"
         if purpose == "runtime_smoke"
+        else "P4_PROFILE_READY_FOR_FREEZE_REVIEW" if purpose == "freeze_review"
         else "P4_PROFILE_READY_FOR_OWNER_REVIEW"
     )
     return ProfileAssessment(
