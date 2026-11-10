@@ -1,5 +1,28 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：Owner 已批准并提交 A25 真实 H200 Job（最终状态待回执）
+
+用户明确批准此前约定的 A25 H200、timeout 90m、attempts 1 单次收费任务，并提供已提交 HF Job：
+- Job ID：`6af346279737d9a9e090f98b`
+- URL：https://huggingface.co/jobs/adradar/6af346279737d9a9e090f98b
+- 角色：A / `Qwen/Qwen3-32B`
+- 范围：独立 Pilot25 25 条（据前一份 dry-run/已批准配置；**任务实际启动配置尚未由 HF 回执再次核验**）
+- 已知 Pilot25 源 SHA：`492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069`；Model revision：`9216db5781bf21249d130ec9da846c4624c16137`
+- 当前状态：`JOB_SUBMITTED__RESULT_PENDING`。不能因 URL 存在就宣称推理成功、Checkpoint 已保存或已有 PASS/REJECT。
+- **禁止**重提 A25 或自动提交 B25；先验 Job 状态、SAFE 日志、`review_XXXX.private.json` 存储与 SHA/来源校验。若失败，有结果时分析失败路径/已落盘 checkpoint 后再决定续跑。
+
+Owner Mac 只读查看状态和日志（按本机 HF CLI 支持的子命令）：
+
+```bash
+hf jobs inspect 6af346279737d9a9e090f98b
+hf jobs logs 6af346279737d9a9e090f98b
+```
+
+若 `inspect` 子命令不可用，先 `hf jobs --help` 确认当前 CLI 对应命令；不要将私有模型回复正文或 Token 粘贴到公共 issue。仅汇报 Job state、exit status、SAFE JSON、output checkpoint 计数。现有 1000 正式质量审核统计仍 `0/1000`，除非新 GPU checkpoint 校验并与 Owner crosswalk 对齐，才更新进度。
+
+---
+
+
 ## 2026-11-11 Owner A25 HF Job dry-run PASS；收费运行前改为可靠 Bucket 根挂载
 
 Owner Mac 返回 HF CLI dry-run 配置，镜像 Digest、A25 本地只读目录、模型固定 revision、H200、90m、单次尝试、`--start 1 --limit 25` 均解析正确，明确 `Job not submitted`。这一结果是**命令解析 PASS**，不是 GPU/可写 Bucket PASS。
