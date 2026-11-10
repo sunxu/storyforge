@@ -30,6 +30,9 @@ def synthetic(tmp_path, *, first_bad=False, error_at=None):
 
     def llm_fn(**kwargs):
         calls["model"].append(kwargs)
+        # vLLM can internally request the verified local tokenizer while
+        # its constructor is running; the interceptor must allow this.
+        tokenizer.from_pretrained(kwargs["tokenizer"], revision=None)
         return object()
 
     tokenizer = type("Tokenizer", (), {
@@ -80,7 +83,8 @@ def test_five_batches_one_engine_and_first_gate(tmp_path, capsys):
     result = run(state)
     assert result == {"completed": 25, "complete": True}
     assert len(state[6]["model"]) == 1
-    assert len(state[6]["tokenizer"]) == 1
+    assert len(state[6]["tokenizer"]) == 2
+    assert state[6]["tokenizer"][1] == str(state[3])
     assert state[6]["batch"] == [(1, 5), (6, 5), (11, 5), (16, 5), (21, 5)]
     log = capsys.readouterr().out
     assert "FIRST_CHECKPOINT_GATE_PASS" in log
