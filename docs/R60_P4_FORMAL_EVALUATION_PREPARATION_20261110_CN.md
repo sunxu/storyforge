@@ -1,5 +1,18 @@
 # StoryForge R60 P4：正式三模型配对评测准备任务书 v1（CPU-only）
 
+## 2026-11-10 主线纠偏（优先于下文全部规划）
+
+**唯一当前业务目标：用已冻结的 Rubric v2.1 和 Gold/Owner 裁决校准 A（Qwen3-32B）、B（GLM-4-32B-0414）、challenger（GLM-Z1-32B-0414）作为历史训练数据质量审核模型/审核组合，进而精筛 Supabase 粗筛的约 1000 条候选，形成符合 Quality-v1 的可训练数据，随后另行授权 StoryForge SFT。**
+
+**优先级 P0 = 下文「评测线 S」的 30 条严格配对三模型盲审和 P5 审核准确性分析。** 三维 Hard Rule、Player Agency、Safety 是 R60 严重问题校准主轴；模型输出须符合冻结的裁决 schema，而不是故事续写。先精确验证 Owner reference 与三模型新预测的隔离，再冻结预测、按维度计算漏判/误判/弃判、分析分歧。不可凭任何一个模型输出长度决定模型审核能力或把三模型“写故事能力”作为本阶段选型依据。
+
+**下文「评测线 W」仅作为未来可选的故事生成研究草案，目前 DEFERRED，不在本轮 P4/P5 的执行范围，不做 W-pilot、W-12 样本准备、GPU 推理、文学盲评或训练模型排名。** 原先叙述“两条评测线同时准备”属于偏离 R60 主线，不得据此安排执行。前期新建的 `formal_pairing_gate.py` 是 CPU-only 的 JSONL 严格配对结构校验助手，**不是** Rubric 三维预测 Verifier，也不代表 P4 30 条评测授权或正式数据检查 PASS。
+
+**当前下一步**：核对 P2-B 已冻结的 30 个 blind case 及 private reference 隔离可达性、固定 exact 30×3 预测输入和 SHA、补齐结构化三维裁决模型输出及 verifier、CPU-only 生成不提交的三模型推理计划和资源预算；三模型合成 GPU 子阶段已 PASS，无需重跑。formal inference 仅原则授权，`execution_activated=false`，Owner Mac CLI 执行之前仍需独立执行门槛。1000 条批量审核与 SFT 均未授权。
+
+---
+
+
 > 2026-11-10。**当前状态：FORMAL_EVAL_PREPARATION_IN_PROGRESS__NO_GPU_JOB**。本文件只确定下一阶段架构、输入门槛与验收标准；未对真实私有样本执行抽取、Token 预检或任何推理。所有历史已冻结裁决原样保留。
 
 ## 一、已完成的工程依据
