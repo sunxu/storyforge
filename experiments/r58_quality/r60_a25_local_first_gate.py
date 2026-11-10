@@ -97,6 +97,12 @@ def install_first_gate(worker: object, local: Path,
              "first_pass": False}
 
     def local_tokenizer(model: str, *args, **kwargs):
+        if model == str(local):
+            if kwargs.get("revision") not in (None, REV):
+                raise Hold("A25_LOCAL_TOKENIZER_REVISION_HOLD")
+            kwargs.pop("revision", None)
+            emit("A25_VLLM_INTERNAL_LOCAL_TOKENIZER")
+            return original_tokenizer(str(local), *args, **kwargs)
         if model != MODEL or kwargs.get("revision") != REV:
             raise Hold("A25_TOKENIZER_CONTRACT_HOLD")
         kwargs.pop("revision")
