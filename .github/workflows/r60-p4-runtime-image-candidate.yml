@@ -63,10 +63,16 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- requirements/hf-generation-eval.lock; then
+          if [[ -f requirements/hf-generation-eval.lock ]] && \
+             git ls-files --error-unmatch requirements/hf-generation-eval.lock >/dev/null 2>&1 && \
+             git diff --quiet -- requirements/hf-generation-eval.lock; then
             echo "Dependency lock is unchanged."
           else
             git add requirements/hf-generation-eval.lock
-            git commit -m "R60 P4: add hash-locked generation runtime dependencies"
-            git push origin "HEAD:$GITHUB_REF_NAME"
+            if git diff --cached --quiet; then
+              echo "No dependency lock changes to commit."
+            else
+              git commit -m "R60 P4: add hash-locked generation runtime dependencies"
+              git push origin "HEAD:$GITHUB_REF_NAME"
+            fi
           fi
