@@ -2,7 +2,9 @@
 
 ## 2026-11-11：A25 Trace2 权重加载卡点：v3 隔离诊断与根因分流
 
-> 验证更新（2026-11-11）：权重隔离探针与安全 `/proc` 心跳代码已经提交；当前验证提交 `504e7796664f87b652e4a7bddc06822b04fddf9d`，`CI=PASS`、`R58 scoped synthetic=PASS`、`R60 Generation Eval CI=PASS`，P4 Runtime Image Candidate 查询时仍 in_progress。修复过一处 CPU 合成测试夹具错误（原测试把已存在的临时目录误认为不存在），不是生产探针故障。尚无任何 dummy H200 实测回执，不能声称根因已解决。\n\n
+> 验证更新（2026-11-11）：权重隔离探针与安全 `/proc` 心跳代码已经提交；当前验证提交 `504e7796664f87b652e4a7bddc06822b04fddf9d`，`CI=PASS`、`R58 scoped synthetic=PASS`、`R60 Generation Eval CI=PASS`，P4 Runtime Image Candidate 查询时仍 in_progress。修复过一处 CPU 合成测试夹具错误（原测试把已存在的临时目录误认为不存在），不是生产探针故障。尚无任何 dummy H200 实测回执，不能声称根因已解决。
+
+
 
 ### 与前面三次运行的实质区别
 
