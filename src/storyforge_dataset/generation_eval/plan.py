@@ -161,7 +161,9 @@ def build_generation_plan(
         "--model-role", model_role,
         "--profile", "/input/generation-profile.json",
         "--manifest", "/input/manifest.json",
+        "--input", "/input/inputs.jsonl",
         "--output-dir", f"/output/{output_subdir}",
+        "--repo-root", "/workspace/storyforge",
     )
     argv = (
         "hf", "jobs", "run",
