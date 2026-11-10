@@ -1,5 +1,26 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：H200 Dummy 引擎完成，转入真实权重路径排障
+
+Owner 提供最新真实实验回执：
+```json
+{"elapsed_sec":28.5,"event":"DUMMY_ENGINE_READY","private_values_emitted":false,"schema":"storyforge_r60_weight_isolation_safe_v1"}
+```
+
+**结论与边界**：固定 Qwen3-32B revision 的 vLLM `load_format="dummy"` 已在 H200 完成引擎构造，说明基础 vLLM 引擎启动、模型配置以及部分 CUDA 初始化路径工作正常；**未读取真实权重，也未执行实际模型生成、Checkpoint 或质量审核**。不能因此证明真实权重损坏、网络/文件系统问题已被定位，也不能完全排除真实权重路径中的 CUDA/显存问题。
+
+**下一步优先级**：
+
+1. 获取该 Dummy Job 同一次执行中的 `CACHE_PROBE` 结果（若存在）。即使报告 `PINNED_SNAPSHOT_NOT_LOCAL`，只能证明那个容器的缓存未命中；不同 HF Jobs 之间缓存不能假定共享。
+2. 不重新提交原 A25。先构造可以复用的**真实权重准备/缓存检查**流程，固定 Qwen3-32B model revision，检查索引、分片大小和完整性；评估工作目录磁盘空间，避免直接从可能的远程 FUSE 目录 mmap 读取 60+GiB safetensors。优先使用经验证的本地磁盘快照进行 vLLM 加载，避免每次初始化重新下载。
+3. 真正验证路径：固定同样镜像、模型 revision 与推理设置，先完成 `ENGINE_READY`，再完成 `GENERATE_DONE`，最后通过 `review_0001.private.json` 的完整性校验。若仅 Dummy PASS 而真实本地权重仍阻塞，再追查 loader / mmap / CUDA 和 `/proc` 诊断数据。
+4. A25/ B25 都只能按其各自冻结的输入 stage 进行，不可将 A 的前 25 条直接视为与 B 前 25 条已对齐；正式全量 1,000 审核仍需 Rubric v2.1 校准与质量准入验证。
+
+**状态**：Dummy H200 **PASS**；真实 A25 完成 `0/25`，1000 候选质量准入仍为 0；不宣称根因修复，不重复付费执行相同失败命令。用户已批准后续收费，具体 HF Job 仍由 Owner Mac CLI 提交。
+
+---
+
+
 ## 2026-11-11：A25 Trace2 权重加载卡点：v3 隔离诊断与根因分流
 
 > 验证更新（2026-11-11）：权重隔离探针与安全 `/proc` 心跳代码已经提交；当前验证提交 `504e7796664f87b652e4a7bddc06822b04fddf9d`，`CI=PASS`、`R58 scoped synthetic=PASS`、`R60 Generation Eval CI=PASS`，P4 Runtime Image Candidate 查询时仍 in_progress。修复过一处 CPU 合成测试夹具错误（原测试把已存在的临时目录误认为不存在），不是生产探针故障。尚无任何 dummy H200 实测回执，不能声称根因已解决。
