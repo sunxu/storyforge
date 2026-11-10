@@ -112,3 +112,21 @@
 - 不盲目重复提交 RW Job；等待 HF 答复或连接器修复。该问题不影响 CPU Freeze Review SAFE，但阻止正式评估私有输出通道验收。
 - 后续 Agent 必须先检查 PR #30 最新评论及本节，避免重复早期“组织余额/Jobs 权限不足”诊断。
 - CLI 成功 Job：`https://huggingface.co/jobs/adradar/6af2ee90ab34849891ab2f6e`；ChatGPT 无 Volume Job：`https://huggingface.co/jobs/adradar/6af2ec43ab34849891ab279c`。
+
+## 2026-11-10 补充证据：OAuth 授权确认页面截图（Owner 提供）
+
+Owner 提供的 Hugging Face OAuth 授权页面截图显示：
+- Repositories / Read repositories：读取用户可访问的私有及 gated repos。
+- Repositories / Contribute to repositories：创建 repos 并管理由该 app 创建的 repos；页面明确注明 `Cannot access other repos`。
+- Compute / Jobs：`Start Jobs on your behalf and read their status, logs and outputs`。
+- Compute / Inference Providers：代表用户调用 Inference Providers。
+- Account / MCP tools：读取 MCP tools。
+- Organization grant 选择 `Grant ChatGPT the same access to selected organizations`，且 `Hong Kong Adradar Technology Limited` 已勾选（同时页面显示 Select all organizations 已勾选）。
+
+### 对诊断的影响
+该截图确认授权界面确实授予 Jobs 和指定组织访问，但没有单独列出 Bucket / Storage write permission。`Contribute to repositories` 的界面描述明确限定为 app-created repositories，不能据此推导它允许写入既有 `adradar/storyforge-training` Bucket。结合 ChatGPT RW Job 403 与 Mac CLI 同 Bucket RW 成功，最值得 HF 核查的是：Jobs OAuth 授权是否包含对既有组织 Bucket 的 RW mount / Xet write-token 签发能力，或该能力是否需要 OAuth App 额外 capability / grant。
+
+此截图仍不能单独证明根因：页面未展示底层 OAuth scopes、Bucket-specific permission model 或 403 服务端拒绝码。不得把“缺少 Bucket write scope”写成已确认事实。应向 Hugging Face 提供 OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`、Plugin v0.1.4、此授权页面截图、Mac CLI Job `6af2ee90ab34849891ab2f6e` 和 ChatGPT RW 403 对照，请其确认 Jobs token 是否能签发既有 Bucket 的 Xet write token。
+
+### Owner 授权范围说明
+截图中组织授权范围为选定组织（当前截图同时勾选 Select all organizations 与 Hong Kong Adradar Technology Limited）。后续若重新授权，应只选择完成 StoryForge 工作所需的 `Hong Kong Adradar Technology Limited`，除非 Owner 明确希望授权其他组织；本截图不构成要求扩大组织授权范围的理由。
