@@ -11,7 +11,7 @@ from storyforge_dataset.generation_eval.worker import WorkerError
 class FakeTensor:
     def __init__(self, values):
         self.values = values
-        self.shape = SimpleNamespace(__getitem__=lambda self, index: (len(self.values),))
+        self.shape = (1, len(values))
 
     def __getitem__(self, index):
         return FakeTensor(self.values[index]) if isinstance(index, slice) else self.values[index]
