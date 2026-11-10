@@ -80,7 +80,7 @@ def test_first_checkpoint_bad_stops_before_second(tmp_path):
 
 
 def test_midrun_failure_does_not_claim_25(tmp_path, capsys):
-    worker, loads = build_worker(tmp_path, fail_at=7)
+    worker, _loads = build_worker(tmp_path, fail_at=7)
     state = gate.install_gate(worker)
     with pytest.raises(ValueError, match="PRIVATE_GENERATION_FAILED"):
         call(worker, tmp_path)
