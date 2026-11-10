@@ -168,7 +168,7 @@ def build_generation_plan(
         f"git -C /workspace/storyforge checkout --quiet --detach {code_revision}; "
         f"STORYFORGE_RUNTIME_IMAGE_DIGEST={profile['runtime_digest']} "
         "PYTHONPATH=/workspace/storyforge/src "
-        "python -m storyforge_dataset.generation_eval.worker "
+        "python -m storyforge_dataset.generation_eval.worker_cli "
         f"--model-role {model_role} "
         "--profile /input/generation-profile.json "
         "--manifest /input/manifest.json "
