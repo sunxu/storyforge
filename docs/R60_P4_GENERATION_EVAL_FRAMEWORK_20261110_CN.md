@@ -54,3 +54,26 @@ PYTHONPATH=src python -m storyforge_dataset.generation_eval \
 ## 当前授权状态
 
 inference_authorized=false、gpu_authorized=false、training_authorized=false。当前提交不创建或运行任何 Hugging Face Job。
+
+
+## P4.1：单模型 Job 计划生成器（已实现，未提交）
+
+新增 `generation_eval.plan`，只生成确定性的单模型 HF Job 计划，不调用网络、不执行 subprocess、不提交 Job。
+
+安全约束：
+
+- namespace 固定为组织 `adradar`，拒绝个人 namespace fallback。
+- 仅允许明确列出的 GPU flavor（A100 Large / H200 / RTX PRO 6000）；不自动选择或升级硬件。
+- 镜像必须使用 SHA-256 digest，代码必须固定到 40 位 commit SHA。
+- 输入仅允许项目 bucket 的 `/input:ro` 挂载；输出必须是独立 `/output:rw` 挂载。
+- 输入/输出 bucket 路径不得相同或互相包含。
+- 每个计划仅一个 attempt、detach、超时上限 60 分钟。
+- 计划 SAFE 回执不输出 bucket 路径、镜像地址或命令行，不代表 Job 已提交。
+- 现有 P3 候选仍未完成 profile freeze，实际调用计划生成器时应得到 HOLD；合成测试只验证完整假配置可以生成确定性计划。
+
+命令行参数中的 image digest、flavor、timeout、bucket subpath、dataset manifest 和 code revision 都必须由后续经批准的执行配置显式提供，本阶段没有替用户选定这些运行参数。
+
+### 尚未进入真实执行
+
+Job 计划目前引用的 Worker 入口尚未交付，因此即使合成 profile 能通过，也不构成可提交的运行包。下一步需实现并测试通用 Worker、模型后端适配、输出隔离与 SAFE 运行回执；随后再增加单独的 GPU 提交守卫。不得直接使用计划中的 argv 绕过该守卫。
+
