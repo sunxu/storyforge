@@ -1,3 +1,7 @@
+> **当前执行入口（2026-11-10，优先级最高）：** 本任务书后续大量章节属于 P0–P3 历史记录，不能据此启动旧任务。当前阶段是 P4 Worker CLI 工程验收。请先阅读 [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md) 与 [P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)。最新已核验基线 HEAD 为 `a1db1ac70fd3777d78460eee58e7d2b891867c40`，三项 CI 全部 PASS；后续 HEAD 的 CI 必须重新核验。HF 403/OAuth/Bucket 排查已按 Owner 要求暂停，HF 任务由 Owner 在 Mac CLI 执行；ChatGPT 不提交 Job、不测试 Bucket、不修改 OAuth。不得启动正式推理、GPU、1000 条审核或 SFT。
+
+---
+
 # 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
 
 **本节为当前唯一状态依据。下方较早日期的 P2-B/P3 未开始、Owner review pending、Verifier HOLD 等内容均为历史记录，不得作为当前待办。**
