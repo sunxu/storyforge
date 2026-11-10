@@ -1,3 +1,15 @@
+## 2026-11-10 最新状态覆盖
+
+当前接手任务书：[P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md)。
+
+镜像候选现已由 GitHub Actions 实际拉取并验证（Linux/amd64）：Python 3.11.11、PyTorch 2.6.0+cu124、CUDA build 12.4；依赖锁在该镜像内以 `--require-hashes` 执行 dry-run 安装通过。镜像 digest 与 lock SHA 绑定在 P4 candidate。该 CI runner 无 GPU，故不是 GPU runtime 或长上下文验收。
+
+Worker CLI 已实现；剩余工作是 CLI/bootstrap CPU-only 端到端容器入口自检、Owner Mac CLI 输出路径/SAFE 回收验证，以及 28,672 input + 4,096 generation 的显存、耗时和费用证据。短输入三模型 GPU Smoke 3/3 PASS 不代表 32K 长上下文能力。
+
+HF 403/OAuth/Bucket 排查暂停，由 Owner 在 Mac CLI 执行 HF 任务。当前 Profile Freeze / inference / GPU / training 授权均 false。
+
+---
+
 # R60 P4 Runtime Fingerprints, Stop Tokens and Finish Reasons（2026-11-10）
 
 ## 1. P3 pinned file evidence is now bound into a P4 candidate
