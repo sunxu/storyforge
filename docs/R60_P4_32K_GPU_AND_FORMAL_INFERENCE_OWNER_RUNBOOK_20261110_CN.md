@@ -1,5 +1,21 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 模型 B 真实 H200 GPU 推理 SAFE（私有输出回收待验收）
+
+Owner 在 Mac 提交 B 的 H200 Job 并回传 Worker SAFE。Job：https://huggingface.co/jobs/adradar/6af32e14ab34849891ac0d16，ID `6af32e14ab34849891ac0d16`。
+
+- `schema=storyforge_r60_generation_worker_receipt_safe_v1`；`status=GENERATION_BATCH_PASS`，`synthetic_only=true`，`model_role=B`；`record_count=1`。
+- `gpu_started=true`、`inference_started=true`、`training_started=false`。
+- `cpu_calibrated_input_tokens=28593`；`input_sha256=8cb8ddf2fc511cf957ed03510853dad94b5169334fde8d6ff153afda6640285e`。
+- Model revision `8dea913c41b543527c2860fb6f3c15c202f24aeb`，dependency lock SHA `81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`，runtime digest `sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`。
+- `finish_reason_counts={"eos":1,"length":0,"unrecognized_stop":0}`、`truncated_count=0`。
+- `private_output_path=b-outputs.private.json`；`output_sha256=3f8e6da240477e81c1fd20470c315cad5bfc845e0748fac279ea67946215f843`；`output_size_bytes=354`、`output_mode=0600`；`private_values_emitted=false`。
+- **当前裁决：`H200_B_GPU_GENERATION_PASS__PRIVATE_OUTPUT_READBACK_PENDING`。** 真正的 `input_tokens` 和 `output_tokens` 尚未由 Mac 从私有结果读取。354 bytes 不足以判断模型质量或者是否早停；需读取 token 数与 `finish_reason`。单次 EOS 不代表跑满 4096 output tokens。
+
+下一步仅使用 Owner CLI 返回的远端输出同步路径将 Job 输出回收到 Mac，再按实际 SHA/大小查验私有 `b-outputs.private.json`，向任务书反馈不含生成正文的 SAFE 元数据。**B 不重试，challenger 和正式推理尚不启动**。
+
+---
+
 ## 2026-11-10 模型 B 启动包 Owner SAFE / CI 最终核对
 
 Owner Mac 已生成 B 的启动包（没有 GPU Job 提交），SAFE 状态 `H200_B_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED`：
