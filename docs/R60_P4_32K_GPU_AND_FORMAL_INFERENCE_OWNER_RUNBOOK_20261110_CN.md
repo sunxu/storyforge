@@ -1,5 +1,29 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 最终裁决（2026-11-10）：三模型 32K 合成 H200 GPU / 私有输出回读全部 PASS
+
+**最新权威状态：`R60_P4_SYNTHETIC_32K_THREE_MODEL_GPU_AND_READBACK_PASS`。** 下文按时间归档的 `PENDING` / `HOLD` 均为各步**当时状态**，不要误当成当前待办。三模型的真实 H200 Worker SAFE、Owner Mac 私有文件读回 SHA、实际 token 数与正常停止原因已全部闭环。此次只关闭 **P4 三模型合成 GPU 技术验收子阶段**，不等同于关闭整个 P4 正式推理/质量评价阶段。
+
+| 模型 | H200 Job ID | 实际输入 tokens | 实际输出 tokens | 停止原因 | 私有文件读回 SHA / 状态 |
+| --- | --- | ---: | ---: | --- | --- |
+| A / Qwen3-32B | `6af32a97ab34849891ac0461` | 28568 | 312 | EOS | `0b8b5655bbec5767d72eecbed9dc302a4d4556699b9c90d10b22bfd394b2475b` / PASS |
+| B / GLM-4-32B-0414 | `6af32e14ab34849891ac0d16` | 28593 | 7 | EOS | `3f8e6da240477e81c1fd20470c315cad5bfc845e0748fac279ea67946215f843` / PASS |
+| challenger / GLM-Z1-32B-0414 | `6af3316f9737d9a9e090c0e4` | 28597 | 378 | EOS | `85ca35cfbe582410b9845b841adc7c396d5dab8fe1a068d5eec1e33967ea8f46` / PASS |
+
+三个 Job 均为已冻结的 `synthetic_only=true` 合成输入，各 1 条，真实 `gpu_started=true` 和 `inference_started=true`，`training_started=false`，`truncated_count=0`，`output_mode=0600`，`private_values_emitted=false`。共同 runtime digest：`sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`；共同 dependency lock SHA：`81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`。
+
+Challenger **最后一份 Owner Mac 原始回执**：
+```json
+{"finish_reason":"eos","input_tokens":28597,"model_role":"challenger","output_sha256":"85ca35cfbe582410b9845b841adc7c396d5dab8fe1a068d5eec1e33967ea8f46","output_tokens":378,"record_count":1,"status":"H200_CHALLENGER_PRIVATE_OUTPUT_READBACK_PASS"}
+```
+
+**解释边界**：三次真实近 32K *输入* 的生成和私有回收链路通过，不代表实际生成过 4096-token 输出；三模型输出分别为 312、7、378 tokens，B 的 7 tokens 是短输出观察项，不能仅由此判定模型质量、对话模板或文学表现有问题。不能将这三次合成 smoke 解释为正式盲评或训练成功。
+
+**下一阶段：正式推理门槛仍 OPEN，未提交新 Job。** `p4_generation_execution_authorization_20261110.json` 中 `formal_inference.owner_authorized=true` 仅为原则授权，`execution_activated=false`，`no_automatic_submission=true`。下一步先独立落实并验收 `case_scope_manifest_hash_and_count_fixed`、`private_input_output_mounts_verified`、`formal_gpu_budget_and_timeout_recorded`、`blind_review_and_output_schema_controls_pass`，确定 A/B/challenger 的正式样本公平性与 B 短输出诊断方案，再由 Owner Mac CLI 根据新计划逐次提交；不得仅因 synthetic PASS 自动运行正式数据。训练/SFT、1000 条批量审核、HF 连接器提交、自动重试和 PR 自动合并仍均禁止。
+
+---
+
+
 ## 2026-11-10 Challenger 真实 H200 GPU Worker SAFE（最终读回待验收）
 
 Owner Mac 已执行最后一次 challenger（GLM-Z1-32B-0414）H200 合成 Job，链接 https://huggingface.co/jobs/adradar/6af3316f9737d9a9e090c0e4，Job ID `6af3316f9737d9a9e090c0e4`。回传 Worker SAFE：
