@@ -1,5 +1,33 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 Pilot25 PATCH_3 HOLD 定位并修复旧代码布局假设
+
+Owner 新诊断 `R60_PILOT25_PREPARE_HOLD`：`VLLM0100_PATCH_CONTRACT_CHANGED__ROLE_A__PATCH_3__COUNT_0__RUNNER_SHA256_d06adef6c28826d505d8dfe9e6920e840ecb18fe3d23256dd3b2d559956cd7d0`。证明旧 stage 内 A 审核器找不到期待的 **引文修复路径精确字面串**；并不说明整个引文修复功能不存在或数据库数据错误。未生成 Pilot25 staging，GPU/Job 均为 0。
+
+**修复策略**：废除对引文修复函数完整字面布局的强制匹配，改为对旧 vLLM API 的 `StructuredOutputsParams` 类名、`structured_outputs=` 参数名进行受约束批量替换；验证唯一旧 import、至少一次 JSON sampling 参数、替换总数和无旧 API 残留，并用 `ast.parse` 做 Python 语法检查；修改对象**只限新 Pilot25 runner 副本**，原始 1000 stage 不动。加入含/不含旧引文修复分支的合成测试以及异常导入拒绝测试。参照 vLLM v0.10.0 官方 API：https://docs.vllm.ai/en/v0.10.0/features/structured_outputs.html
+
+GitHub 当前准备器及测试修订 HEAD：`35ebb082e4ea5fcab4a6de2756494d2670d04f6e`。**CI 尚无已确认 PASS 回执；真实私有 stage 重新准备也尚未完成。**
+
+Owner Mac 重新取指定提交并运行 create-only 纯 CPU 准备：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+REV="35ebb082e4ea5fcab4a6de2756494d2670d04f6e"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_pilot25_vllm0100_prepare.py" > "$BASE/r60_pilot25_vllm0100_prepare.py"
+chmod 600 "$BASE/r60_pilot25_vllm0100_prepare.py"
+python3 "$BASE/r60_pilot25_vllm0100_prepare.py" \
+  --source-stage "$BASE/r60-hf-quality-first-1000" \
+  --pilot-stage "$BASE/r60-hf-quality-pilot25-vllm0100"
+```
+
+成功标准 `R60_PILOT25_PRIVATE_STAGED__GPU_NOT_AUTHORIZED`，A/B 各 25 行，原始源 1000 行无变化，`hf_jobs_submitted=0`；若仍 HOLD，输出原因码即可，不读私有正文或覆盖原数据。在 GPU 花钱之前仍要对副本 `--verify-only`，使用 pinned 镜像做专门 runtime 兼容检查；不得直接进行全量 1000 审核。
+
+---
+
+
 ## 2026-11-11 Pilot25 prepare HOLD：staged runner 与预期 API 源码可能不同（fail-closed）
 
 Owner Mac 在新建 Pilot25 的 CPU-only 准备器上得到 `R60_PILOT25_PREPARE_HOLD`、`reason_code=VLLM0100_PATCH_CONTRACT_CHANGED`、`hf_jobs_submitted=0`、`gpu_started=false`。此回执没有产生任何收费任务。准备器原先要求旧 `runner.py` 的 4 处 vLLM API 精确匹配，每处恰好出现 1 次。
