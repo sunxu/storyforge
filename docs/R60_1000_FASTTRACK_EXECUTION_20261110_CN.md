@@ -1,5 +1,84 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：固定权重持久化与真实模型本地加载（新增执行路径）
+
+### 已知证据与目标
+
+此前 H200 Dummy `DUMMY_ENGINE_READY` 耗时 28.5s；该次 CPU `CACHE_PROBE` 返回 `PINNED_SNAPSHOT_NOT_LOCAL`，只代表该 Job 的默认 HF Cache 未命中；前面真实 Trace2 卡在 safetensors 权重加载附近。Hugging Face Hub 上固定的 `Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137` 约 65.5 GB、17 个 safetensors shard。目标是 **先把官方固定 revision 的权重可靠存入持久 Bucket，再复制到 H200 本地磁盘，经逐文件 SHA256 核验后加载真实模型**，杜绝 CPU Job 和 GPU Job 之间误以为共享临时 Cache 的问题。
+
+### 实现内容
+
+- `experiments/r58_quality/r60_qwen32b_weight_stage.py`：两种模式：
+  - `stage`：CPU Job；先通过 Hub model_info 固定 commit sha、枚举权重/必要 tokenizer/config 文件，并取得 shard 的官方 LFS SHA256 和 size，逐个 HTTP stream 到 HF Bucket，8 MiB 分块做 SHA256 与大小核对；每个完整 shard 通过 `.r60-partial` 原子改名；写入 `r60_weights_verified_manifest.json` 作为最终完成标记。已通过完整文件的 SHA 可在下一轮 CPU Job 复用；若发现完整文件大小或哈希不匹配，fail-closed，不自动覆盖。普通小文件如上游未提供 LFS SHA，则记录流式下载得到的 SHA；这不是来自上游的独立 SHA 认证。
+  - `localize`：GPU Job 的 CPU 阶段；读取 Bucket Manifest 与 safetensors index，预检本地磁盘剩余空间必须高于文件总大小 + 20GiB，逐文件流式复制到本地路径并按 Manifest SHA256 校验，全部完成后才打印 `LOCAL_WEIGHTS_READY`。Bucket 挂载只作为顺序读取来源，**vLLM 不直接从 Bucket mount 执行随机读取**。
+- `experiments/r58_quality/r60_qwen32b_local_smoke.py`：独立本地权重真实加载 + 1 条**非私有合成 Prompt** 推理测试；加载时关闭 Hub/Transformers 在线访问，模型路径、tokenizer 路径指向本地目录；要求先有 `LOCAL_WEIGHTS_READY` 与 Manifest，期望 `REAL_ENGINE_READY`、`REAL_GENERATE_DONE`，不生成质量审核决策、无 Checkpoint、也不输出模型回答。此测试不是 A25 的真实案例审核验证。
+- `tests/test_r60_qwen32b_weight_stage.py`：CPU 合成完整性、原子分片复制、缺片/坏 SHA、目录越界与非覆盖测试。
+- **注意**：只提交了代码、测试及可复用操作步骤；**从未在本轮由 ChatGPT 提交任何新的 CPU 或 GPU Job**。没有真实 Hub 65GB 下载证据；R60 品质审核状态保持 0/25。用户已总批准相关费用，但 Owner 仍通过 Mac CLI 提交 HF Jobs。
+- 官方依据：`https://huggingface.co/docs/hub/jobs-configuration`（HF Jobs mount 默认惰性下载）、`https://huggingface.co/docs/huggingface_hub/package_reference/file_download`（固定 commit 与本地下载）、`https://huggingface.co/docs/hub/storage-buckets-access`（HF Bucket）。
+  
+### 一、Mac 准备脚本目录（不修改 Owner 私有审查数据）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+REV="__PINNED_REV__"
+BUNDLE="$HOME/.local/share/storyforge/r60/private/r60-weight-stage-tools"
+umask 077
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test ! -e "$BUNDLE" || { echo BUNDLE_ALREADY_EXISTS_HOLD; exit 42; }
+mkdir -m 700 "$BUNDLE"
+for name in r60_qwen32b_weight_stage.py r60_qwen32b_local_smoke.py; do
+  git -C "$ROOT" show "$REV:experiments/r58_quality/$name" > "$BUNDLE/$name"
+  chmod 600 "$BUNDLE/$name"
+done
+python3 -m py_compile "$BUNDLE"/*.py
+```
+
+### 二、CPU Job 下载并校验固定权重到持久 Bucket（首次执行，可能产生约 65.5GB 下载与存储）
+
+```bash
+set -euo pipefail
+BUNDLE="$HOME/.local/share/storyforge/r60/private/r60-weight-stage-tools"
+hf jobs run --namespace adradar --name r60-qwen32b-weight-stage \
+  --flavor cpu-basic --timeout 8h --attempts 1 \
+  -v "$BUNDLE:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  python:3.12 \
+  sh -c 'set -eu; python -m pip install -q "huggingface_hub>=0.35,<2" "requests>=2.32,<3"; mkdir -p /bucket/model-cache/qwen3-32b-9216db5; exec python -u /code/r60_qwen32b_weight_stage.py --mode stage --bucket-dir /bucket/model-cache/qwen3-32b-9216db5'
+```
+
+验收：日志最后必须有 `STAGE_COMPLETE`（或者后续同一目录的 `STAGE_ALREADY_VERIFIED`）；Bucket 出现固定目录下 `r60_weights_verified_manifest.json` 与所有预期 shards。单条 `SHARD_VERIFIED` 不能视为全部完成。若首次失败，允许在同一目录重新提交 CPU Job 继续，已通过 SHA 核验的完整 shard 不重下；暂不启动 GPU。
+
+### 三、H200 从持久 Bucket 复制到本地磁盘并执行真正模型加载 Smoke（不读取 A25 私有输入）
+
+```bash
+set -euo pipefail
+BUNDLE="$HOME/.local/share/storyforge/r60/private/r60-weight-stage-tools"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-qwen32b-local-weight-smoke \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$BUNDLE:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:ro" \
+  "$IMG" \
+  sh -c 'set -eu; echo LOCAL_LOAD_START; mkdir -p /tmp/r60-local; /usr/bin/python3 -u /code/r60_qwen32b_weight_stage.py --mode localize --bucket-dir /bucket/model-cache/qwen3-32b-9216db5 --local-dir /tmp/r60-local/qwen3-32b-9216db5; exec /usr/bin/python3 -u /code/r60_qwen32b_local_smoke.py --local-dir /tmp/r60-local/qwen3-32b-9216db5 --confirm-paid-gpu'
+```
+
+本命令有 fail-closed 磁盘预检；如果 H200 的 `/tmp` 容量不够，请不要更改或降低 +20GiB 余量要求来强行运行；换到经容量证据确认的本地盘后再重试。期望 `DISK_PREFLIGHT`、`LOCAL_WEIGHTS_READY`、`REAL_ENGINE_READY`、`REAL_GENERATE_DONE`；其中任何一个失败都不能宣布解决。
+
+### 四、后续：A25 正式审核
+
+**仅当上述真实本地模型 Smoke PASS** 才回到 A25 正式任务。必须再准备隔离的 runner 副本，使其在 `AutoTokenizer.from_pretrained`、`LLM(model=...)` 处都使用同一已经本地化并校验的目录，同时保持原始 `model/revision` 用于 checkpoint 来源校验；新 runner 的 AST patch 必须配合合成测试，不能把加载路径改动误写成模型 revision 变动。后续的 A25 第 1 条真实审核及 Checkpoint 写入必须在同一次 H200 加载后验证，避免再次重复 65GB 模型加载。
+
+### 不可声称的事项
+
+- HF Bucket 里的文件可读，不等于本地 SSD 全部页读取成功；
+- `LOCAL_WEIGHTS_READY` 不等于模型推理成功；
+- 合成 `REAL_GENERATE_DONE` 不等于 A25 审核已完成；
+- `STAGE_COMPLETE` 也不能视作 SHA256 全仓库（包含未知非权重文件）的证明；仅覆盖选择的配置、Tokenizer 与 Safetensors 文件集合。
+
+---
+
+
 ## 2026-11-11：同一 Dummy Job 默认缓存未命中（仅限定目录）
 
 Owner 追加真实 SAFE 日志：
