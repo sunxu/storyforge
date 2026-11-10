@@ -22,7 +22,7 @@
 set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
 PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
-REV="__LATEST_REV__"
+REV="289e1d21649b522c21dcfd7aa82b0de204d90a08"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 umask 077
 PROBE="$PILOT/input_A_trace2/r60_vllm_weight_isolation_probe.py"
