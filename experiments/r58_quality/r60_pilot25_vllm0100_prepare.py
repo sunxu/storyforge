@@ -106,9 +106,16 @@ def prepare(source: Path, dest: Path) -> dict:
         source_files = {name: checked_file(inp / name, 100_000)
                         for name in ALLOWED_BUNDLE}
         runner = source_files["runner.py"].decode("utf-8")
-        for before, after in PATCHES:
-            if runner.count(before) != 1:
-                raise Hold("VLLM0100_PATCH_CONTRACT_CHANGED")
+        for index, (before, after) in enumerate(PATCHES, 1):
+            # Return only the failing slot, patch ordinal, count and runner
+            # fingerprint. Never dump private source, case IDs, or prompts.
+            observed = runner.count(before)
+            if observed != 1:
+                raise Hold(
+                    "VLLM0100_PATCH_CONTRACT_CHANGED"
+                    f"__ROLE_{role}__PATCH_{index}__COUNT_{observed}"
+                    f"__RUNNER_SHA256_{sha(source_files['runner.py'])}"
+                )
             runner = runner.replace(before, after, 1)
         source_files["runner.py"] = runner.encode("utf-8")
         bundles[role] = source_files
