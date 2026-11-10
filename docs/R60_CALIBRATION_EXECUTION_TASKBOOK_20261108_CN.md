@@ -1,3 +1,14 @@
+# 2026-11-10 最新执行状态补充（优先于本文件旧状态）
+
+- **P2-B Owner 30/30 裁决 + 90/90 语义复核已确认**；Hard Rule 30 INSUFFICIENT_CONTEXT；Player Agency 3 SUPPORTED / 27 NOT_SUPPORTED；Safety 2 SUPPORTED / 27 NOT_SUPPORTED / 1 INSUFFICIENT_CONTEXT。语义结论 59 SUPPORTS_VERDICT + 31 INSUFFICIENT_CONTEXT。
+- Safety 第21、22条的 Owner SUPPORTED 与语义结论不改写，但具体规则 ID / 版本 / scope 未从正式来源核实，保持 fail-closed HOLD。不得虚构 ID。
+- ChatGPT 工作副本的 30/90 合并候选已完成 locator、quote、schema、evidence-index 覆盖预检；**官方 P2-B Verifier 未运行，Final SAFE 未生成**。不可将工作副本预检称为正式验收。
+- P3 静态 Hub revision 核查已完成：Qwen3-32B `9216db5781bf21249d130ec9da846c4624c16137`；GLM-4-32B-0414 `8dea913c41b543527c2860fb6f3c15c202f24aeb`；GLM-Z1-32B-0414 `8eb2858992c1f749e2a6d4075455decc2484722d`。CPU tokenizer/template/token-budget 尚未执行；GLM-Z1 generation 建议冲突待决。
+- 参考：[P2-B SAFE 聚合记录](evidence/R60_P2B_OWNER_30_90_PROGRESS_SAFE_20261110.md)、[P3 静态预检](R60_P3_MODEL_STATIC_PREFLIGHT_20261110_CN.md)。
+- GPU、付费 HF Job、1000 条批量审核、SFT 均未授权；Quality-v1 admission=0。
+
+---
+
 # R60 下一阶段执行任务书：校准集冻结 → 三态证据审核 → 三模型配对 → 1000 条批量审核
 
 > **当前权威状态（2026-11-10；覆盖下方未标明日期的旧 P2-A 待办叙述）**  
