@@ -1,6 +1,7 @@
 import hashlib
 from pathlib import Path
 from types import SimpleNamespace
+from typing import ClassVar
 
 import pytest
 
@@ -37,7 +38,7 @@ class FakeTokenizer:
 
 
 class FakeModel:
-    hf_device_map = {"model": 0}
+    hf_device_map: ClassVar[dict[str, int]] = {"model": 0}
     device = SimpleNamespace(type="cuda")
     config = SimpleNamespace(_name_or_path="fake-model")
 
