@@ -1,5 +1,19 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 H200 A 私有输出读回与实际 Token 最终验收
+
+Owner Mac 已执行输出文件本地 SHA、大小、schema、模型与 finish reason 验证，回传原始 SAFE：
+
+```json
+{"finish_reason":"eos","input_tokens":28568,"model_role":"A","output_sha256":"0b8b5655bbec5767d72eecbed9dc302a4d4556699b9c90d10b22bfd394b2475b","output_tokens":312,"record_count":1,"status":"H200_A_PRIVATE_OUTPUT_READBACK_PASS"}
+```
+
+**裁决：`H200_A_32K_GPU_AND_OUTPUT_READBACK_PASS`。** H200 模型 A 输入 28,568 tokens，实际解码 312 tokens，总计 28,880 tokens；一次 EOS 正常停止，没有截断，私有输出读回及 SHA 验证通过。请勿将配置的 `max_new_tokens=4096` 误写为实际生成 4096 tokens。本次仅证明近 32K 输入的真实 GPU 推理，不证明满 4096 输出，也不是文学质量盲评。
+
+按 Owner 已批准的三模型合成阶段逐一串行推进：下一模型 B（GLM-4-32B-0414）需新输入包与绑定其独立 SHA 的提交脚本，A 不能重试；B 的 SAFE 完整核验后才考虑 challenger。正式推理须待三模型合成全部验收通过，且独立通过正式阶段数据范围、预算、盲评等门槛。
+
+---
+
 ## 2026-11-10 H200 A 真实 GPU 生成 SAFE（输出回收待复核）
 
 Owner Mac 回传 Job `6af32a97ab34849891ac0461` 的 **Worker SAFE**：
