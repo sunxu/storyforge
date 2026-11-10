@@ -1,5 +1,59 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：A25 Trace2 权重加载卡点：v3 隔离诊断与根因分流
+
+### 与前面三次运行的实质区别
+
+第一次 A25 在 shell `exec python` 因 `python: not found` 失败，审核代码从未启动；第二次 `/usr/bin/python3` 可启动，但仅靠 GPU VRAM≈64GiB 与 0 日志不能判明卡点；第三次 Trace2 的 25 条私有输入、Tokenizer 与 25 条 Prompt 编码均已通过，`ENGINE_INIT_START` 已出现，vLLM INFO 记录了 `Loading model from scratch` 和 `Using model weights format ['*.safetensors']`，直到 210 秒没有 `ENGINE_READY`，子进程一直 S 睡眠、累计 CPU 秒几乎不变、GPU 利用率 0%，Checkpoint 仍 0。**这只能说明最后可见日志停在加载权重附近，不等于确定权重文件本身坏了**；下一步需区分网络/磁盘、同步等待、CUDA/运行时兼容性。
+
+### 当前新增代码和判定能力（不改变审核 Rubric、数据、模型）
+
+- `experiments/r58_quality/r60_pilot_diagnostic_launcher.py`：保留原 30s 心跳与 5 个 AST 阶段标记，增加 Linux `/proc/<pid>/wchan` 内核等待状态的允许类别（`FILE_IO_WAIT / SYNC_WAIT / NETWORK_OR_POLL_WAIT / TIMER_WAIT / OTHER_WAIT / UNKNOWN`）以及所有 vLLM 子进程累计磁盘 `read_bytes/write_bytes` MiB。**仅类别和数值，禁止打印原始 wchan、进程环境、私有路径/正文**。计数在容器权限限制下可能不可用；`S` 状态本身并不代表死锁。
+- `experiments/r58_quality/r60_vllm_weight_isolation_probe.py`：独立探针，两个显式模式：
+  1. `--mode cache`：不启动 GPU、不下载模型，只检查**当前执行环境**下固定 Qwen3-32B revision 的 Hugging Face cache 是否存在 `model.safetensors.index.json`，索引中的分片是否齐全、每个能否读取头尾各 4KiB，输出分片数量、总权重 GiB 与样本读取时间，不输出权重路径。**这不是完整 SHA256 完整性证明，也不能预测所有页读取是否正常**。
+  2. `--mode dummy --confirm-paid-gpu`：在固定 H200/vLLM 镜像上以相同模型 revision、max_model_len 32768、dtype BF16、enforce_eager 等参数构造 LLM，但使用 `load_format="dummy"`，不读真实权重、不审核数据、不生成 Checkpoint。返回 `DUMMY_ENGINE_READY` 仅证明**跳过权重情况下引擎初始化可完成**，不等于真实推理 PASS。若 dummy 也卡住，优先排查 CUDA、vLLM 子进程/驱动；若 dummy PASS 而真实权重仍卡，优先排查权重路径、文件系统及模型 loader。
+- `tests/test_r60_vllm_weight_isolation_probe.py`：纯 CPU 合成索引的完整、缺片、路径越界/无效索引拒绝测试；未启动收费 GPU。
+- 参考 vLLM 0.10.0 官方 Troubleshooting：模型下载挂起与磁盘文件读取挂起需分别定位；推荐先在本地磁盘完整下载，并可用 `load_format=dummy` 跳过权重分离问题。参考：https://docs.vllm.ai/en/v0.10.0/usage/troubleshooting.html
+- **可靠性原则**：不能声称问题已经彻底解决；仅在真实权重 `ENGINE_READY` + 至少一个真实 `GENERATE_DONE` + Checkpoint 校验后，才视为故障解除。用户已总体授权收费，但仍由 Owner 在 Mac CLI 发 HF Jobs，不通过 ChatGPT HF 连接器提交。
+
+### Owner Mac CPU-only 准备（不会修改已冻结输入；只在诊断副本增加新探针）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+REV="__LATEST_REV__"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+umask 077
+PROBE="$PILOT/input_A_trace2/r60_vllm_weight_isolation_probe.py"
+test ! -e "$PROBE" || { echo WEIGHT_PROBE_ALREADY_EXISTS_HOLD; exit 42; }
+git -C "$ROOT" show "$REV:experiments/r58_quality/r60_vllm_weight_isolation_probe.py" > "$PROBE"
+chmod 600 "$PROBE"
+python3 -m py_compile "$PROBE"
+```
+
+**注意：在 Mac 上执行 `--mode cache` 只检查 Mac 的本地缓存，不能证明 HF H200 容器里的缓存存在。即使 CPU 和 H200 Job 用相同镜像，如果没有挂载相同的持久化缓存，也不能假设它们共享模型文件。**
+
+### 建议的下一次隔离验证（不要立刻重新执行 A25 正式审核）
+
+先在 **15 分钟封顶、单次尝试** 的 H200 Job 里执行 `cache` 快速检查（允许返回 42），然后执行 `dummy` 跳过权重探针。这个操作会产生 GPU 费用，但不下载整套模型权重用于正式审核、不产生任何审核样本结果：
+
+```bash
+set -euo pipefail
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-a25-dummy-weight-isolation \
+  --flavor h200 --timeout 15m --attempts 1 \
+  -v "$PILOT/input_A_trace2:/input:ro" \
+  "$IMG" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; echo WEIGHT_ISOLATION_START; /usr/bin/python3 -u /input/r60_vllm_weight_isolation_probe.py --mode cache || echo CACHE_NOT_VERIFIED; exec /usr/bin/python3 -u /input/r60_vllm_weight_isolation_probe.py --mode dummy --confirm-paid-gpu'
+```
+
+若 `DUMMY_ENGINE_READY`，后续应先通过 **可持久化的 HF Bucket/CPU Job 下载权重和 SHA/大小校验**，再在 H200 上将权重完整复制到**本机容器真实本地磁盘**并从本地路径加载；不应直接在 Bucket FUSE 上做 mmap 随机读取。要先验证 H200 本地磁盘剩余空间，再设计下载/复制作业与原 revision 的离线校验。若 dummy 失败，则不下载 65GiB 权重，优先排查镜像/驱动/多进程配置。**不要把 dummy 结果当作实际审核器或模型可用性的结论**。
+
+---
+
+
 ## 2026-11-11：Trace2 CPU 准备 HOLD 根因定位及修复
 
 Owner 实际返回 `R60_TRACE_A25_PREPARE_HOLD` / `INFERENCE_ANCHOR_COUNT_HOLD`，GPU=0、HF Job=0、私有内容未输出。此错误是**诊断准备器的 AST 检测假设不完整**，不是模型加载失败或 A25 训练数据问题。
