@@ -13,8 +13,12 @@ class FakeTensor:
     def __init__(self, values):
         self.values = values
         self.shape = (1, len(values))
+        self.dtype = "int64"
+        self.device = "cuda"
 
     def __getitem__(self, index):
+        if index == 0:
+            return self
         return FakeTensor(self.values[index]) if isinstance(index, slice) else self.values[index]
 
     def tolist(self):

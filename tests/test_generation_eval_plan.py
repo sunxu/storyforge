@@ -12,6 +12,8 @@ def ready_profile():
             "model": model,
             "revision": revision,
             "enable_thinking": role == "A",
+            "thinking_mode": "api_flag" if role == "A" else ("template_default" if role == "B" else "explicit_generation_prefix"),
+            "generation_prefix": "<think>" if role == "challenger" else None,
             "sampling": {"do_sample": True, "temperature": 0.7, "top_p": 0.9},
             "chat_template_sha256": "a" * 64,
         }
@@ -24,6 +26,8 @@ def ready_profile():
         "seed": 20261110,
         "runtime_digest": "sha256:" + "e" * 64,
         "dependency_lock_sha256": "d" * 64,
+        "evaluation_prompt_sha256": "e" * 64,
+        "output_schema_sha256": "f" * 64,
         "p3_download_safe_sha256": "a" * 64,
         "tokenizer_hashes": {role: "c" * 64 for role in EXPECTED_MODELS},
         "tokenizer_file_hashes": {"A":{"config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","generation_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","merges.txt":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","vocab.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},"B":{"chat_template.jinja":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","generation_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","special_tokens_map.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"},"challenger":{"chat_template.jinja":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","generation_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","special_tokens_map.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","tokenizer_config.json":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"}},
