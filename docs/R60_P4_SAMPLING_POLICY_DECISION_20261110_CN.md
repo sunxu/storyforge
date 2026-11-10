@@ -56,3 +56,12 @@ PYTHONPATH=src python -m pytest -q tests/test_generation_eval_sampling.py
 ```
 
 通过只表示采样实验设计契约有效，不代表模型推理或参数效果已验证。
+
+
+## 2026-11-10：P4 HF 输出 Bucket RW 的连接器阻塞
+
+ChatGPT Hugging Face Plugin v0.1.4（OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`，Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`）的连接器能创建无 Volume CPU Job，但对组织 Bucket `hf://buckets/adradar/storyforge-training:/output` 的 RW Job 提交返回 403。连接器身份 scopes 为 `openid profile read-mcp read-repos jobs contribute-repos inference-api`，`adradar` role=write。
+
+Owner Mac CLI 使用同一 namespace / image / cpu-basic / volume URI 成功完成 Job `6af2ee90ab34849891ab2f6e`，文件写入、读回和删除均 PASS。ChatGPT 无 Volume Job `6af2ec43ab34849891ab279c` 成功；RO Job `6af2ec64ab34849891ab27f8` 只有提交接受记录，没有端到端读回证明。
+
+结论：正式 P4 私有结果持久化通道的 ChatGPT 直连路径仍 HOLD。问题集中在连接器的 Bucket RW 提交/授权链路；OAuth scope 缺失是待验证假设而非根因定论。不得将私有生成正文放入 GitHub、Actions logs 或 SAFE；不得切换个人 namespace、索取长期 PAT、修改 Bucket ACL 或配置 Trusted Publishers。正式推理不得启动。
