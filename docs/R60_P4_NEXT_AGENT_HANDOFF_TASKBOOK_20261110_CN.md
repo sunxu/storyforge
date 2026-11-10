@@ -1,5 +1,18 @@
 # StoryForge R60 P4 下一阶段接手任务书（2026-11-10）
 
+## 2026-11-10 Owner 已批准 Profile Freeze（覆盖下方历史 HOLD）
+
+- 仅授权 Profile Freeze；不授权推理、GPU、训练、Development20/Locked30、HF Job 或 Bucket 探针。
+- 新建不可变文件：`experiments/r60_quality/p4_generation_profile_frozen_v1.json`，内容 SHA-256 `a58d02c757767f18deb8a4cb948a56be199c837c045d83648838868961e1037f`；提交 `373786548f2f1e37673864b339471a6565e3864f`。
+- 新 Frozen 文件 `profile_freeze_authorized=true`，`inference_authorized=false`、`gpu_authorized=false`、`training_authorized=false`；原 `p4_generation_profile_candidate_v1.json` 完全不变。冻结配置与候选的其余业务字段逐项一致。
+- Frozen 状态：`P4_PROFILE_FROZEN__INFERENCE_GPU_TRAINING_HOLD`；Worker 不具备 Generation Ready 所需的推理/GPU 独立授权。
+- Owner Mac 自检已有 `OWNER_MAC_CPU_FAIL_CLOSED_SELFTEST_PASS`，无需重做此检查；32K GPU 实测与 P4 HF 输出路径仍 HOLD。
+- 下方“Profile Freeze 未获批准 / 四项授权全部 false”的历史陈述仅适用于批准前；**现仅冻结授权为 true，另三项仍 false**。
+- Owner 裁决和 SHA 的唯一完整记录参见 [Profile Freeze Owner 包](R60_P4_PROFILE_FREEZE_REVIEW_OWNER_PACKET_20261110_CN.md)。
+
+---
+
+
 ## 2026-11-10 最新执行回执（覆盖下方历史基线）
 
 当前 PR #30 分支 HEAD：`9f321579e4bb1d1d5a7d50d18a4c03af973d41cb`。该 HEAD 相对已通过工程测试的代码提交 `7e9fdf9b47aee8da02ceeee1babc7a67d2ee6be9` 仅增加/更新 3 份文档（32K 资源预算、Owner Mac CLI Runbook、本任务书），没有改动源码、测试或 Workflow。文档提交未命中三个 Workflow 的路径触发条件；不得把代码提交的 Actions 描述为文档 HEAD 新触发的 Actions。
@@ -172,7 +185,7 @@ Owner 已明确决定：暂停 ChatGPT HF 403 / OAuth / Bucket RW 排查，后�
 - [x] Owner Mac CPU-only fail-closed 自检已收到预期 PASS 回执；镜像平台/digest 与本地 SHA 的独立核验仍待原始输出。
 - [ ] 输出隔离与 SAFE 回收方案明确，并由 Owner Mac 验证或明确 HOLD。
 - [ ] 32K 资源预算与证据等级明确（预算文档已建立；Owner 裁决和长上下文实测仍 HOLD）。
-- [x] 最终 Profile Freeze Review 包完成，未授权状态仍明确；等待 Owner 裁决。
+- [x] 最终 Profile Freeze Review 包完成；Owner 已批准 **仅 Profile Freeze**，新建独立 Frozen JSON 与 SHA-256；GPU/Inference/Training 仍 HOLD。
 - [ ] 当前 HEAD 的全部 CI 回执核验完成。
 - [ ] Issue #28 更新，PR #30 描述与代码状态一致。
 - [ ] Owner 收到最终裁决包；没有擅自冻结或启动正式评估。
