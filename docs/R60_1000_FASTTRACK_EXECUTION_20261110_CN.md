@@ -1,5 +1,70 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 Owner Pilot25 私有分片正式 PASS，下一步只需轻量结构校验与 Job dry-run
+
+Owner Mac 最新实际回执：
+```json
+{"schema":"storyforge_r60_pilot25_vllm0100_prepare_safe_v1","status":"R60_PILOT25_PRIVATE_STAGED__GPU_NOT_AUTHORIZED","cases_per_role":25,"source_cases_per_role":1000,"model_roles":["A","B"],"image":"docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271","runner_api":"vllm0100_GuidedDecodingParams_PATCHED_COPY","original_input_sha256":{"A":"687528efe5081ac8ce32dcb88f575b3e59d9e7536baf6bd5ec1563283e455320","B":"2898dc355c8348140192dc018d9632b1877d216763d077a83f9530845b954139"},"pilot_input_sha256":{"A":"492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069","B":"01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9"},"original_inputs_unchanged":true,"hf_jobs_submitted":0,"gpu_started":false,"inference_started":false,"training_started":false,"private_values_emitted":false}
+```
+
+**状态**：两侧各 25 个独立盲审输入已安全准备；原 1000 完全不变，未产生推理或费用。不能把该状态解释为审核了 25 条。
+
+### Owner Mac 一次性本地校验（无需再次 1000 token preflight）
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+for ROLE in A B; do
+  case "$ROLE" in
+    A) MODEL=Qwen/Qwen3-32B; REV=9216db5781bf21249d130ec9da846c4624c16137 ;;
+    B) MODEL=zai-org/GLM-4-32B-0414; REV=8dea913c41b543527c2860fb6f3c15c202f24aeb ;;
+  esac
+  python "$PILOT/input_$ROLE/runner.py" \
+    --input "$PILOT/input_$ROLE/source.private.jsonl" \
+    --output-dir "$PILOT/output_$ROLE" \
+    --model "$MODEL" --revision "$REV" --verify-only
+done
+```
+
+期望各返回 `HF_REVIEW_INPUT_VERIFIED__NO_INFERENCE`、`cases_total=25`。
+
+### HF Jobs 无费用配置演练（先 A 1-case）
+
+正式收费前先验证 dry-run 在当前 Mac CLI 能解析容器命令、只含 A 的 25 条输入与单独的 HF bucket 输出卷；**dry-run 不代表 GPU runtime 通过，也不得作为付费提交凭证**。
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+OUT="hf://buckets/adradar/storyforge-training/evaluation-runs/r60-1000-pilot25-vllm0100-a:/output:rw"
+
+hf jobs run --dry-run --namespace adradar \
+  --name r60-pilot25-a-smoke1 \
+  --flavor h200 --timeout 60m --attempts 1 \
+  -v "$PILOT/input_A:/input:ro" -v "$OUT" \
+  -e HF_HUB_DISABLE_PROGRESS_BARS=1 \
+  "$IMG" -- \
+  python /input/runner.py \
+    --input /input/source.private.jsonl \
+    --output-dir /output --model Qwen/Qwen3-32B \
+    --revision 9216db5781bf21249d130ec9da846c4624c16137 \
+    --start 1 --limit 1 --max-model-len 32768 \
+    --max-output-tokens 2400 --max-wall-seconds 1800 \
+    --confirm-paid-gpu
+```
+
+**不要**仅去掉 `--dry-run` 立即运行：先检查独立远端输出目录是否已存在/为空、是否与别的任务冲突、H200 成本预算、vLLM 运行时和 Qwen3/B 模型架构支持，再由 Owner Mac 自行决定/明确激活一次性 GPU。这里的 `--confirm-paid-gpu` 只是旧 runner 的命令行门禁，不是项目授权。
+
+- 文档和启动演练只使用 Owner 已提供的模型 revision、镜像 SHA、固定 stage 路径。仓库从未收到数据正文、blind IDs、输出或 HF Token。
+- 因旧 stage 的 A/B `blind_id` 按模型独立随机分配，两个 25-case pilot 通过 `case_count=25` 并不能自动证明两侧前 25 是相同源 case；需根据 Owner 本地 `owner_crosswalk.private.json` 做对应源索引的纯本地集合核对，不能把双模型同时审前 25 当作严格同案配对证据。
+- 输出 Checkpoint 写入新 HF bucket 私有路径，**不会自动**写回原始 Mac staging；必须 Owner 下载、SHA/来源复核后以保留原序号与 blind ID 的 create-only 方式对齐到原始 1000 账本，不能仅凭 Job 日志累计 `model_a_reviewed`。
+- 1000 精筛仍需要 Rubric v2.1 的 30-case 三模型校准决定正式准入策略；pilot 是审核稳定性/耗时/成本证据，不是人工校准集。
+
+---
+
+
 ## 2026-11-11 Pilot25 `KW_0` 根因已确认：准备器正则转义错误
 
 Owner 用只读 grep 证实 staged `input_A/runner.py`：
