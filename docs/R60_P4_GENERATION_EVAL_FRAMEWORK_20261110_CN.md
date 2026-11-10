@@ -1,3 +1,20 @@
+## 2026-11-10 最新状态覆盖说明（Worker CLI / Runtime Image）
+
+当前权威后续任务书：[P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md)；启动提示词：[P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)。
+
+此前本文中“Worker CLI 未交付”“Runtime Image Candidate 未验证”等章节属于实现过程记录，现已由最新回执取代：
+- `worker_cli.py` 已实现独立 fail-closed CLI。
+- bootstrap 已实现固定 Commit 源码归档下载、安全解压和 hash-locked dependency install。
+- HEAD `a1db1ac70fd3777d78460eee58e7d2b891867c40` 的 Repository CI、Generation Eval CI、Runtime Image Candidate 均 PASS。
+- Runtime Image 已在 linux/amd64 容器中验证：Python 3.11.11、torch 2.6.0+cu124、CUDA build 12.4；`pip install --dry-run --require-hashes` PASS。Hosted runner 无 GPU。
+- Freeze Review SAFE 为 `P4_FREEZE_REVIEW_READY_NOT_FROZEN`，ready=true、blockers=[]；仍未冻结。
+- 仍待：Worker CLI/bootstrap CPU-only 端到端容器自检、Owner Mac CLI 执行包及输出回收验证、32K 长上下文显存/耗时/费用证据。
+- HF 403/OAuth/Bucket 排查暂停，HF Job 由 Owner 在 Mac CLI 执行；ChatGPT 不提交 Job、不测试 Bucket、不改 OAuth。
+
+不得把上述 CI/镜像契约 PASS 解释为实际 HF Job、GPU 长上下文或正式推理已验收。
+
+---
+
 # R60 P4 Generation Eval Framework（2026-11-10）
 
 ## 决策
