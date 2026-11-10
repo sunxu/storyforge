@@ -5,14 +5,16 @@ on:
     branches: [r60/p4-generation-eval-framework]
     paths:
       - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - 'requirements/hf-generation-eval.in'
       - '.github/workflows/r60-p4-runtime-image-candidate.yml'
   pull_request:
     paths:
       - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - 'requirements/hf-generation-eval.in'
       - '.github/workflows/r60-p4-runtime-image-candidate.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   base-image-contract:
@@ -21,6 +23,9 @@ jobs:
     env:
       IMAGE: docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
       - name: Pull exact amd64 image digest
         run: docker pull --platform linux/amd64 "$IMAGE"
       - name: Verify base Python and CUDA-enabled PyTorch build (no GPU)
@@ -38,3 +43,31 @@ jobs:
           assert torch.version.cuda is not None and torch.version.cuda.startswith("12.4"), report
           print(json.dumps(report, sort_keys=True))
           '
+
+      - name: Generate hash-locked dependencies and validate in the pinned base image
+        run: |
+          docker run --rm --platform linux/amd64 \
+            -v "$GITHUB_WORKSPACE:/workspace" -w /workspace \
+            --entrypoint bash "$IMAGE" -lc '
+              set -euo pipefail
+              python -m pip install --disable-pip-version-check "pip-tools==7.5.1"
+              pip-compile --generate-hashes --resolver=backtracking \
+                --python-version 3.11 \
+                --output-file requirements/hf-generation-eval.lock \
+                requirements/hf-generation-eval.in
+              python -m pip install --dry-run --require-hashes \
+                -r requirements/hf-generation-eval.lock
+              python -c "import torch; assert torch.__version__ == \"2.6.0+cu124\"; assert torch.version.cuda == \"12.4\"; print(torch.__version__, torch.version.cuda)"
+            '
+      - name: Commit generated lock on branch pushes
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- requirements/hf-generation-eval.lock; then
+            echo "Dependency lock is unchanged."
+          else
+            git add requirements/hf-generation-eval.lock
+            git commit -m "R60 P4: add hash-locked generation runtime dependencies"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
