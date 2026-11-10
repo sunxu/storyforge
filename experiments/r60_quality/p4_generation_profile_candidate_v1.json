@@ -144,5 +144,6 @@
   "inference_authorized": false,
   "gpu_authorized": false,
   "training_authorized": false,
-  "runtime_smoke_authorized": true
+  "runtime_smoke_authorized": true,
+  "p3_download_safe_sha256": "52c3dcae10a0d715d72296ac078d0dfda523e902bb31bbdb2df5776f310581c5"
 }

@@ -128,6 +128,8 @@ def run_runtime_smoke(*, profile_path: Path, output_path: Path) -> dict[str, Any
         record: dict[str, Any] = {
             "model_role": role,
             "model_revision": revision,
+            "chat_template_sha256": selected["chat_template_sha256"],
+            "tokenizer_file_hashes": dict(profile["tokenizer_file_hashes"][role]),
             "status": "RUNNING",
         }
         started = time.monotonic()
@@ -189,7 +191,7 @@ def run_runtime_smoke(*, profile_path: Path, output_path: Path) -> dict[str, Any
                 record["status"] = "PASS"
         except WorkerError as exc:
             record.update({"status": "HOLD", "error_code": str(exc)})
-        except Exception:
+        except (OSError, RuntimeError, ValueError, ImportError):
             record.update({
                 "status": "HOLD",
                 "error_code": "RUNTIME_SMOKE_UNEXPECTED_FAILURE",
