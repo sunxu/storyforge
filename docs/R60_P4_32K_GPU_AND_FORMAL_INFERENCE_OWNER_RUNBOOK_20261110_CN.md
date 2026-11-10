@@ -1,5 +1,40 @@
 # StoryForge R60 P4：32K 合成 GPU 与后续正式推理 — Owner Mac 执行任务书（2026-11-10）
 
+## 2026-11-10 模型 A H200 输入包 Owner PASS 与专用脚本
+
+Owner Mac 已在新建的本地输入包执行成功：
+
+- `H200_A_INPUT_PACKAGE_PASS`
+- `STAGING=/Users/keedle/.local/share/storyforge/r60/private/r60-p4-h200-a-20261110221534`
+- `RUNID=r60-p4-h200-a-20261110221534`
+
+注意这只是本地输入包检查，没有 GPU/推理。**不要把本地 STAGING 目录或私有正文提交到 GitHub**。
+
+本轮新增 `src/storyforge_dataset/generation_eval/owner_h200_prepare.py`：使用 Owner Mac 的本地 `git archive` 从已审核的确切 Git SHA 提取 `src/storyforge_dataset` 和哈希锁定依赖 `requirements/hf-generation-eval.lock`，封装 `input/source.tar`，在远端执行前按 SHA 检查归档、路径及大小。脚本先验证 Owner 当时的输入包（包括旧 Frozen SHA、B/C 无关、合成仅 A）、输出目录为空、源 HEAD 精确匹配 `origin/r60/p4-generation-eval-framework`，然后**仅写出** `STAGING/launch-h200-A.sh`；不提交 HF Job。
+
+已通过最新三个 Actions 后，在 Owner Mac 执行：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BRANCH="r60/p4-generation-eval-framework"
+STAGING="$HOME/.local/share/storyforge/r60/private/r60-p4-h200-a-20261110221534"
+git -C "$ROOT" fetch origin "$BRANCH"
+REV="$(git -C "$ROOT" rev-parse "origin/$BRANCH")"
+WT="$HOME/workspace/storyforge-p4-h200-plan-${REV:0:12}"
+git -C "$ROOT" worktree add --detach "$WT" "$REV"
+PYTHONPATH="$WT/src" python3 -m storyforge_dataset.generation_eval.owner_h200_prepare \
+  --repo "$ROOT" --code-revision "$REV" --staging "$STAGING"
+```
+
+应输出 `H200_A_OWNER_LAUNCH_SCRIPT_PREPARED_NOT_SUBMITTED`，确认 `source_archive_sha256` 和 `code_revision`。**不要重新运行此生成器覆盖目录**：它强制 create-only、拒绝已有 launch script，避免隐式替换已准备的源码或输入。
+
+Owner 再检查 `cat "$STAGING/launch-h200-A.sh"`：限定 `--flavor h200`、`--timeout 60m`、`--attempts 1`、`--model-role A`、`--synthetic-authorization /input/synthetic-authorization.json`、容器固定 digest、`/input:ro`、`/output:rw`。若与预期一致，**由 Owner 自己**执行 `bash "$STAGING/launch-h200-A.sh"`。这一步会提交真实收费 GPU Job，至多 60 分钟/$5 H200 参考价（但模型下载时间也计入计费时长），只跑一次，不自动重试。立即保存 Job ID 与 CLI 输出。不能先开始 B/C，更不能开始正式推理。
+
+GPU 实测后用 `hf jobs logs <job_id> --namespace adradar` 查看最新 SAFE（CLI 参数以 Owner `hf jobs logs --help` 为准）；按 HF CLI 实际打印的输出 bucket sync 命令回收至 Mac，验证私人完整输出的 SHA 与 SAFE。`input_tokens` 和 `output_tokens` 是验收字段；如仅达到 28,568 输入、但生成 EOS 较短，需报告实际 decode，不得写成输出 4,096 tokens 已跑满。
+
+---
+
 ## 2026-11-10 CPU Job 挂载执行回执（读回待验收）
 
 Owner Mac CLI 已实际提交、执行并完成唯一一次 CPU-only 本地目录挂载探针：
