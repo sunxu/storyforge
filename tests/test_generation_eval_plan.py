@@ -234,3 +234,43 @@ def test_bootstrap_rejects_archive_member_count_over_limit(monkeypatch, tmp_path
         assert str(exc) == "SOURCE_ARCHIVE_CONTENT_LIMIT_EXCEEDED"
     else:
         raise AssertionError("oversized archive member count must be rejected")
+
+
+def test_bootstrap_rejects_archive_download_size_over_limit(monkeypatch, tmp_path):
+    class OversizedBytes(bytes):
+        def __len__(self):
+            return 64 * 1024 * 1024 + 1
+
+    archive = OversizedBytes(b"x")
+    try:
+        _run_bootstrap_with_archive(monkeypatch, tmp_path, archive)
+    except SystemExit as exc:
+        assert str(exc) == "SOURCE_ARCHIVE_SIZE_LIMIT_EXCEEDED"
+    else:
+        raise AssertionError("oversized source archive must be rejected")
+
+
+def test_bootstrap_rejects_expanded_archive_size_over_limit(monkeypatch, tmp_path):
+    import tarfile
+
+    class Member:
+        name = "repo-root/large.bin"
+        size = 256 * 1024 * 1024 + 1
+
+    class Bundle:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def getmembers(self):
+            return [Member()]
+
+    monkeypatch.setattr(tarfile, "open", lambda **kwargs: Bundle())
+    try:
+        _run_bootstrap_with_archive(monkeypatch, tmp_path, b"synthetic")
+    except SystemExit as exc:
+        assert str(exc) == "SOURCE_ARCHIVE_CONTENT_LIMIT_EXCEEDED"
+    else:
+        raise AssertionError("oversized expanded source archive must be rejected")
