@@ -47,8 +47,6 @@ def fixture_worker(tmp_path, *, invalid_first=False, fail_at=None):
 
     def review(rows, output, model, revision, start, limit,
                max_model_len, max_output_tokens, max_wall_seconds):
-        from vllm import LLM  # replaced in this synthetic via closure below
-        del LLM
         hf.AutoTokenizer.from_pretrained(model, revision=revision,
                                          trust_remote_code=False)
         vllm.LLM(model=model, revision=revision,
