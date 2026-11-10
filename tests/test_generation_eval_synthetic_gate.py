@@ -93,12 +93,12 @@ def test_exact_owner_calibrated_input_allows_scoped_profile_only(tmp_path, role,
     frozen = root / "experiments/r60_quality/p4_generation_profile_frozen_v1.json"
     auth = root / "experiments/r60_quality/p4_generation_execution_authorization_20261110.json"
     prefix = ("请确认你正在处理一次人工生成的长上下文运行时测试，"
-              "请简洁概括下文重复结构，不要猜测真实人物或故事。\\n")
-    suffix = "\\n结束。请输出一句简短中文确认。"
+              "请简洁概括下文重复结构，不要猜测真实人物或故事。\n")
+    suffix = "\n结束。请输出一句简短中文确认。"
     record = {"sample_id": f"r60-synthetic-32k-{role.lower()}",
               "messages": [{"role": "user",
                             "content": prefix + SYNTHETIC_SENTENCE * repetitions + suffix}]}
-    payload = (json.dumps(record, ensure_ascii=False, sort_keys=True) + "\\n").encode("utf-8")
+    payload = (json.dumps(record, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
     import hashlib
 
     assert hashlib.sha256(payload).hexdigest() == CALIBRATED_SHA256[role]
