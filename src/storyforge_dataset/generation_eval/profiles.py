@@ -173,12 +173,15 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
             )
         ):
             blockers.append("TOKENIZER_FILE_HASHES_INVALID")
-        elif isinstance(tokenizer_hashes, dict) and set(tokenizer_hashes) == set(EXPECTED_MODELS):
-            if any(
+        elif (
+            isinstance(tokenizer_hashes, dict)
+            and set(tokenizer_hashes) == set(EXPECTED_MODELS)
+            and any(
                 tokenizer_hashes[role] != tokenizer_file_hashes[role]["tokenizer.json"]
                 for role in EXPECTED_MODELS
-            ):
-                blockers.append("TOKENIZER_HASH_MANIFEST_MISMATCH")
+            )
+        ):
+            blockers.append("TOKENIZER_HASH_MANIFEST_MISMATCH")
 
     generation_config_hashes = profile.get("generation_config_hashes")
     if generation_config_hashes is not None and (
@@ -188,22 +191,23 @@ def assess_profile(profile: dict[str, Any]) -> ProfileAssessment:
                for value in generation_config_hashes.values())
     ):
         blockers.append("GENERATION_CONFIG_HASHES_INVALID")
-    elif isinstance(tokenizer_file_hashes, dict) and isinstance(generation_config_hashes, dict):
-        if (
-            set(tokenizer_file_hashes) == set(EXPECTED_MODELS)
-            and set(generation_config_hashes) == set(EXPECTED_MODELS)
-            and all(
-                isinstance(tokenizer_file_hashes[role], dict)
-                and set(tokenizer_file_hashes[role]) == EXPECTED_TOKENIZER_FILES[role]
-                for role in EXPECTED_MODELS
-            )
-            and any(
-                generation_config_hashes[role]
-                != tokenizer_file_hashes[role]["generation_config.json"]
-                for role in EXPECTED_MODELS
-            )
-        ):
-            blockers.append("GENERATION_CONFIG_HASH_MANIFEST_MISMATCH")
+    elif (
+        isinstance(tokenizer_file_hashes, dict)
+        and isinstance(generation_config_hashes, dict)
+        and set(tokenizer_file_hashes) == set(EXPECTED_MODELS)
+        and set(generation_config_hashes) == set(EXPECTED_MODELS)
+        and all(
+            isinstance(tokenizer_file_hashes[role], dict)
+            and set(tokenizer_file_hashes[role]) == EXPECTED_TOKENIZER_FILES[role]
+            for role in EXPECTED_MODELS
+        )
+        and any(
+            generation_config_hashes[role]
+            != tokenizer_file_hashes[role]["generation_config.json"]
+            for role in EXPECTED_MODELS
+        )
+    ):
+        blockers.append("GENERATION_CONFIG_HASH_MANIFEST_MISMATCH")
 
     eos_token_ids = profile.get("eos_token_ids")
     if eos_token_ids is not None and (
