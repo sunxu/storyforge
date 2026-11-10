@@ -48,13 +48,15 @@ def fixture(tmp_path):
                  "runtime_resources.py", "r60_pilot_diagnostic_launcher.py"):
         private_file(source / name, b"# synthetic\n")
     trace.EXPECTED_A_INPUT_SHA256 = trace.digest(b"".join(lines))
-    return source, root / "input_A_trace2"
+    launcher = root / "launcher.py"
+    private_file(launcher, b"def descendant_stats(): pass\ndef heartbeat(): pass\nworker._r60_diag_event = set_stage\n")
+    return source, root / "input_A_trace2", launcher
 
 
 def test_trace_prepare_copy_and_markers(tmp_path):
-    source, target = fixture(tmp_path)
+    source, target, launcher = fixture(tmp_path)
     baseline = {p.name: p.read_bytes() for p in source.iterdir()}
-    result = trace.prepare(source, target)
+    result = trace.prepare(source, target, launcher)
     assert result["status"] == "R60_TRACE_A25_PRIVATE_READY__NO_GPU"
     assert result["anchors"] == trace.EXPECTED
     assert result["hf_jobs_submitted"] == 0
@@ -71,22 +73,22 @@ def test_trace_prepare_copy_and_markers(tmp_path):
 
 
 def test_repeated_output_rejected(tmp_path):
-    source, target = fixture(tmp_path)
-    trace.prepare(source, target)
+    source, target, launcher = fixture(tmp_path)
+    trace.prepare(source, target, launcher)
     with pytest.raises(trace.Hold, match="DEST_EXISTS_HOLD"):
-        trace.prepare(source, target)
+        trace.prepare(source, target, launcher)
 
 
 def test_inference_drift_rejected(tmp_path):
-    source, target = fixture(tmp_path)
+    source, target, launcher = fixture(tmp_path)
     script = source / "runner.py"
     private_file(script, script.read_bytes().replace(b"engine = LLM", b"engine = Other"))
     with pytest.raises(trace.Hold, match="INFERENCE_ANCHOR_COUNT_HOLD"):
-        trace.prepare(source, target)
+        trace.prepare(source, target, launcher)
 
 
 def test_source_sha_mismatch_rejected(tmp_path):
-    source, target = fixture(tmp_path)
+    source, target, launcher = fixture(tmp_path)
     trace.EXPECTED_A_INPUT_SHA256 = "0" * 64
     with pytest.raises(trace.Hold, match="PILOT_A_INPUT_SHA_MISMATCH"):
-        trace.prepare(source, target)
+        trace.prepare(source, target, launcher)
