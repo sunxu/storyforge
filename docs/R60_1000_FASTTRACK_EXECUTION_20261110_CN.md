@@ -1,5 +1,51 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：Qwen3-32B 固定 revision 服务器端复制 PASS，H200 校验加载入口 v2
+
+**Owner Mac 已实际执行成功** `hf cp`：`hf://models/Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137/` → `hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy/`，并列出 17 个 `model-xxxxx-of-00017.safetensors`、`model.safetensors.index.json`、`config.json`、`tokenizer.json`、`tokenizer_config.json`、`vocab.json`、`merges.txt` 等 24 个源文件。HF 服务端复制避免了 CPU Basic 挂载写入缓存累积触发 50GB Pod 驱逐的问题。**列表不能代替内容 SHA 和真实加载**。
+
+**修复上版执行书的衔接错误**：原 `r60_qwen32b_weight_stage.py --mode localize` 要求源 Bucket 内有 `r60_weights_verified_manifest.json`，服务器端复制并不会自动生成该 Manifest。故上版 H200 localize 命令不可直接使用。新增 `experiments/r58_quality/r60_qwen32b_servercopy_localize.py`：在 H200 Job 通过 `HfApi.model_info(..., revision=固定 SHA, files_metadata=True)` 获取上游文件尺寸、17 个权重分片的 LFS SHA256；从只读 Bucket mount 逐个顺序读取并流式写到 H200 本地目录，检查总容量 +20GiB 空余、每个大小与上游权重 SHA，最后检查 index 覆盖关系，在**本地**生成旧 smoke 可兼容的 `r60_weights_verified_manifest.json`，输出 `LOCAL_WEIGHTS_READY`。仅用上游可查询 SHA 验证权重；tokenizer/config 无 LFS 哈希时记录实际本地流 SHA，不能宣称其上游来源已独立校验。
+
+HF 官方当前 H200 Flavor 标称约 3TB ephemeral disk（https://huggingface.co/docs/huggingface_hub/main/en/guides/jobs），与 CPU Basic 的 50GB 不同，但仍需以 Job 中实际 `shutil.disk_usage` 门禁为准。**这次不允许将权重复制到 CPU Basic 本地磁盘**。
+
+### Owner Mac 准备 v2 两脚本（CPU-only）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+BUNDLE="$BASE/r60-qwen32b-servercopy-localize-v2"
+REV="__SERVERCOPY_PIN__"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test ! -e "$BUNDLE" || { echo ALREADY_EXISTS_HOLD; exit 42; }
+umask 077
+mkdir -m 700 "$BUNDLE"
+for file in r60_qwen32b_servercopy_localize.py r60_qwen32b_local_smoke.py r60_qwen32b_weight_stage.py; do
+  git -C "$ROOT" show "$REV:experiments/r58_quality/$file" > "$BUNDLE/$file"
+  chmod 600 "$BUNDLE/$file"
+done
+python3 -m py_compile "$BUNDLE"/*.py
+```
+
+### H200 单 Job：localize 校验后直接真实模型合成生成（不访问 A25 私有输入）
+
+```bash
+set -euo pipefail
+BUNDLE="$HOME/.local/share/storyforge/r60/private/r60-qwen32b-servercopy-localize-v2"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-qwen32b-servercopy-real-smoke \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$BUNDLE:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy:/model-source:ro" \
+  "$IMG" \
+  sh -c 'set -eu; test -x /usr/bin/python3 || exit 42; mkdir -p /tmp/r60-model-local; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --bucket-dir /model-source --local-dir /tmp/r60-model-local/qwen3-32b-9216db5; exec /usr/bin/python3 -u /code/r60_qwen32b_local_smoke.py --local-dir /tmp/r60-model-local/qwen3-32b-9216db5 --confirm-paid-gpu'
+```
+
+**验收** `LOCAL_DISK_PREFLIGHT`（必要磁盘容量 +20GiB）→ 每文件 `LOCAL_FILE_VERIFIED` → `LOCAL_WEIGHTS_READY` → `REAL_ENGINE_READY` → `REAL_GENERATE_DONE`。没有以上两条真实模型事件不得称 Qwen 模型问题解决。不能因为 Dummy PASS 或 server-side copy PASS 就提前恢复 A25。当前仍未由 ChatGPT 提交 HF Jobs，Owner Mac CLI 执行边界保持不变。失败必须留存 SAFE 原因码，禁止对相同条件重复提交 GPU。
+
+---
+
+
 ## 2026-11-11：CPU Weight Stage Job 被驱逐；禁止重试旧下载方案，改 Hub 服务端复制
 
 **真实失败回执**：HF Job `6af35a879737d9a9e0913000`；`SHARD_VERIFIED` 停于 15/24；Pod `ERROR: ephemeral local storage usage exceeds ... 50G`。此前 `STAGE_START` 合计 24 个文件/61.04GiB。**这是确定的容器临时存储超额失败**，不能据此断言权重损坏或 Hub 下载错误。旧 `r60_qwen32b_weight_stage.py --mode stage` 使用可写 Bucket 挂载，虽然每次只有一片的 Python 数据流，挂载层可能保留本地 writeback/cache，积累到 50GB 超额；此前声称该方案不会受到 ephemeral 容量影响属于错误假设。
