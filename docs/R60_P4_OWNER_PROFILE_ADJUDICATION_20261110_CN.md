@@ -181,3 +181,13 @@ Owner 已批准 Prompt v1 与 Output JSON Schema v1。批准只针对这两份�
 2. HF Bucket /output:rw 对本 P4 Job 的真实可写性与回收路径验证。历史 Bucket 中存在旧评估产物，证明该 Bucket 曾被写入，但不等于本次运行身份和挂载已验证。此前 ChatGPT 直连 Xet 写入曾返回 403；不得把该路径标为当前已验收。
 3. 当前 Job plan 引用的 python -m storyforge_dataset.generation_eval.worker CLI 交付及端到端本地/合成验收。
 4. 以上完成后再由 Owner 单独决定是否冻结 Profile；Freeze 不自动授权推理或 GPU。
+
+## 2026-11-10：HF OAuth App / Bucket RW 故障更新
+
+ChatGPT Hugging Face Plugin v0.1.4，OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`，Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`，RELEASED。连接器 `hf_whoami` scopes：`openid profile read-mcp read-repos jobs contribute-repos inference-api`；账号 `greenkeedle`，组织 `adradar` role=write。
+
+Mac CLI 对同一组织 Bucket 的默认 RW mount `hf://buckets/adradar/storyforge-training:/output` 已真实验收：Job `6af2ee90ab34849891ab2f6e` 写入、读回 `PASS`、删除成功。ChatGPT 连接器无 Volume CPU Job `6af2ec43ab34849891ab279c` 成功，但带 RW Volume 提交返回 403。RO Job `6af2ec64ab34849891ab27f8` 仅提交被接受，未取得执行与读回证据。
+
+因此，Bucket 普遍不可写、组织 Jobs 余额/创建权限整体故障已被对照实验排除。根因仍未确认：可能涉及 OAuth App capability / org grant / connector volume 参数序列化 / HF 服务端策略。缺少 `write-repos` 不得直接等同于 Bucket RW 权限缺失。
+
+行动：要求 HF 检查上述 OAuth App 是否允许 Jobs 挂载既有私有组织 Bucket RW，核对 `adradar` grant，并解释对应 403。ChatGPT RW persistence 保持 HOLD；Mac CLI RW 仅是 Owner 受控临时路径。不得更换个人 namespace、索取长期 PAT、修改 ACL、配置 Trusted Publishers 或启动正式评估推理。

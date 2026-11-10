@@ -128,3 +128,13 @@ ChatGPT 通过 Hugging Face Jobs 在 adradar namespace 成功创建并完成真�
 本次在同一个 adradar namespace 下，不挂载 Bucket 的 CPU Job 创建并完成；项目 Bucket RO 挂载并读取成功；Bucket 上传在 /api/buckets/adradar/storyforge-training/xet-write-token 返回 403；不挂载 Bucket 的 a100-large Job 则成功创建、启动并完成真实三模型 Smoke。
 
 因此，组织 Jobs 创建权限和 GPU 计费能力已被真实执行证明可用。此前的 403 不能再归因于组织没有 Compute Credit 或没有 Jobs 权限；当前证据将问题定位到 ChatGPT 调用上下文的 Bucket 写入凭证 / RW 挂载路径。后续 SAFE 通过 Job logs 回收并提交 GitHub；在写入权限单独修复前，不要依赖 RW Bucket mount 或 hf buckets cp。
+
+## 2026-11-10：HF OAuth App / Bucket RW 故障更新
+
+ChatGPT Hugging Face Plugin v0.1.4，OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`，Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`，RELEASED。连接器 `hf_whoami` scopes：`openid profile read-mcp read-repos jobs contribute-repos inference-api`；账号 `greenkeedle`，组织 `adradar` role=write。
+
+Mac CLI 对同一组织 Bucket 的默认 RW mount `hf://buckets/adradar/storyforge-training:/output` 已真实验收：Job `6af2ee90ab34849891ab2f6e` 写入、读回 `PASS`、删除成功。ChatGPT 连接器无 Volume CPU Job `6af2ec43ab34849891ab279c` 成功，但带 RW Volume 提交返回 403。RO Job `6af2ec64ab34849891ab27f8` 仅提交被接受，未取得执行与读回证据。
+
+因此，Bucket 普遍不可写、组织 Jobs 余额/创建权限整体故障已被对照实验排除。根因仍未确认：可能涉及 OAuth App capability / org grant / connector volume 参数序列化 / HF 服务端策略。缺少 `write-repos` 不得直接等同于 Bucket RW 权限缺失。
+
+行动：要求 HF 检查上述 OAuth App 是否允许 Jobs 挂载既有私有组织 Bucket RW，核对 `adradar` grant，并解释对应 403。ChatGPT RW persistence 保持 HOLD；Mac CLI RW 仅是 Owner 受控临时路径。不得更换个人 namespace、索取长期 PAT、修改 ACL、配置 Trusted Publishers 或启动正式评估推理。
