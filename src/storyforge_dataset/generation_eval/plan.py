@@ -104,6 +104,8 @@ def build_generation_plan(
         raise PlanError("GPU_TIMEOUT_OUT_OF_RANGE")
     if not isinstance(image, str) or not IMAGE_DIGEST.fullmatch(image):
         raise PlanError("IMAGE_MUST_BE_PINNED_BY_SHA256")
+    if profile.get("runtime_digest") != image.rsplit("@", 1)[-1]:
+        raise PlanError("IMAGE_RUNTIME_DIGEST_MISMATCH")
     if not isinstance(code_revision, str) or not GIT_COMMIT.fullmatch(code_revision):
         raise PlanError("CODE_REVISION_MUST_BE_COMMIT_SHA")
     if not isinstance(output_subdir, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,63}", output_subdir):
