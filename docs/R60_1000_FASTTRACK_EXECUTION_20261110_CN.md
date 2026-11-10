@@ -21,7 +21,7 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 SRC="$PILOT/input_B"
 DEST="$PILOT/input_B_gate"
-REV="ef3f0a54eab4c65207af018677717128beeac90f"
+REV="2453e1c562724f87d4fb1f049eb7e8cb098ab799"
 umask 077
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$SRC"
