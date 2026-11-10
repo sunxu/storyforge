@@ -1,5 +1,6 @@
 """Reusable, fail-closed StoryForge generation evaluation primitives."""
 
+from .backend import TransformersGenerationBackend
 from .plan import GenerationJobPlan, PlanError, build_generation_plan
 from .profiles import ProfileAssessment, assess_profile, load_profile
 from .worker import (
@@ -16,6 +17,7 @@ __all__ = [
     "GenerationResult",
     "PlanError",
     "ProfileAssessment",
+    "TransformersGenerationBackend",
     "WorkerError",
     "WorkerReceipt",
     "assess_profile",
