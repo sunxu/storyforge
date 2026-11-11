@@ -10,7 +10,10 @@ import re
 from pathlib import Path
 
 from r60_review_isolation_core import (
-    IsolationHold, failure_name, validate_failure, emit,
+    IsolationHold,
+    emit,
+    failure_name,
+    validate_failure,
 )
 
 MODEL = "zai-org/GLM-4-32B-0414"
