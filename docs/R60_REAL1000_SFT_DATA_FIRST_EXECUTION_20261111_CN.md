@@ -1,5 +1,28 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 4Router 首条真实审核返回 length — 输出预算修复（最新）
+
+Owner 已将现有审核配置改为实测可用 `https://4router.ai/v1/chat/completions`，经 `inspect` 验证原私有20条审阅包配置可读；真实 `advance --max-cases 1` 返回 `PROXY_TRUNCATED_HOLD`，`model_reviewed=0`、`quality_v1_admitted=0`，原因是模型回复 `finish_reason=length`。这证明请求至少已获模型响应，不是初始HTTP断连；**可能已经发生私有数据外发及API计费**，不能按 `model_reviewed=0` 推断无费用或无外发。
+
+已只修改 `r60_real1000_pilot20_local_review.py` 的 `REVIEW_MAX_TOKENS` 常量，从1600提升至8192；顶层 `system`、用户消息、评分Rubric、严格JSON输出验证、私有回执路径与签名、冻结样本均不改变。保留 `PROXY_TRUNCATED_HOLD` 为技术失败，绝不等同文学质量 `REJECT`。补充合成测试检查8192预算和截断安全处置；代码提交后先在**现有唯一固定worktree**原地同步并运行CPU测试。无需新建worktree、无需重建/覆盖配置或审阅包、无需清理任何回执。
+
+```bash
+set -euo pipefail
+WORK="$HOME/workspace/storyforge-r60-4router-review"
+ROOT="$HOME/workspace/storyforge"
+git -C "$WORK" status --short
+test -z "$(git -C "$WORK" status --porcelain)" || { echo "DIRTY_WORKTREE_HOLD"; exit 42; }
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$WORK" switch --detach origin/r60/p4-generation-eval-framework
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"
+```
+
+如再审核真实第1条，必须由Owner明确批准本次再次外发及费用后执行 `advance --max-cases 1 --execute --allow-private-data-egress`；若仍length则暂停并研究思考预算/响应格式，不要无上限增加费用。模型生成未完成不写评分回执，阶段准入仍0。
+
+
 ## 2026-11-11 4Router 细分错误码 + 固定工作树（最新执行规则）
 
 用户确认此次问题**与代理无关**，禁止因推测代理而继续改变联网行为。最新审核器只修改诊断：保留原显式无代理的联网设置，针对 HTTP 数字状态（400/401/403/404/429/5xx）、已知4Router/Claude错误`type/code`（严格有限白名单映射）、DNS、TLS证书校验、TLS握手、超时、拒绝连接、重置连接、无路由等输出细分的 `reason_code`。绝不输出原始HTTP错误正文、异常字符串、Key、URL或私有案例。合成回归覆盖类别；**原20条审阅包、旧配置和0份成功回执不覆盖、不重建**。
