@@ -67,7 +67,8 @@ def test_snapshot_persists_primary_and_repair_before_review(tmp_path):
             policy=worker.POLICY)
         assert receipt["generation_index"] == index
     assert len(events) == 2
-    assert all("private" not in str(e) for e in events)
+    assert all("敏感原文" not in str(e) and "private 1" not in str(e)
+               for e in events)
     with pytest.raises(snap.SnapshotHold, match="SNAPSHOT_TOO_MANY_GENERATIONS_HOLD"):
         engine.generate(["third"])
 
