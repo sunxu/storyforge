@@ -529,3 +529,45 @@ def test_batch_stops_on_technical_hold_and_preserves_prior(monkeypatch, tmp_path
     assert mod.get_state(output)[2]["processed"] == 1
     assert (output / mod.receipt_name(1)).exists()
     assert not (output / mod.receipt_name(2)).exists()
+
+
+def test_proxy_live_path_creates_recoverable_conflict_and_snapshot(
+        monkeypatch, tmp_path):
+    setup_private(monkeypatch, tmp_path)
+    output = tmp_path / "out"
+    output.mkdir()
+    answer = model_answer()
+    answer["decision"] = "PASS"
+    answer["severe_flags"]["serious_player_agency"] = False
+    answer["scores"]["chinese_prose"] = 3
+    payload = json.dumps({"id": "synthetic", "model": "claude-opus-5-5",
+        "choices": [{"finish_reason": "stop",
+                     "message": {"content": "```json\n" +
+                                 json.dumps(answer) + "\n```"}}]}).encode()
+    class MockResponse:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return None
+        def read(self, count):
+            assert count > len(payload)
+            return payload
+    class MockOpener:
+        def open(self, request, timeout):
+            return MockResponse()
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic-key")
+    monkeypatch.setattr(mod.urllib.request, "build_opener",
+                        lambda *args: MockOpener())
+    try:
+        mod.proxy_request(
+            "https://4router.ai/v1/chat/completions",
+            "claude-opus-5-5", "synthetic prompt", 20,
+            output, 1,
+        )
+    except mod.QualityConflict as exc:
+        assert exc.answer == answer
+    else:
+        raise AssertionError("expected recoverable model quality conflict")
+    snapshot = tmp_path / "out-response-diagnostics-v1" / (
+        "R60_PILOT20_FAILED_0001_PRIVATE.json")
+    assert snapshot.read_bytes() == payload
