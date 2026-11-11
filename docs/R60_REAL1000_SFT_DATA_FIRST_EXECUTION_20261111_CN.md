@@ -1,5 +1,24 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 4Router 技术 HOLD 定位修复（最新）
+
+Owner 的 `PILOT20_LOCAL_REVIEW_HOLD` 回执没有包含子原因，**不能解释成模型 REJECT 或样本不合格**。经代码审查发现 `advance` 曾接受 `OPENAI_API_KEY` 作为存在性检查，但真正的HTTP请求只读取 `CLI_PROXY_API_KEY`；并且所有错误均折叠成无原因 HOLD。现已统一要求 `CLI_PROXY_API_KEY`，并增加严格白名单 `stage` / `reason_code`，绝不回显私有报错字符串、URL、Key、文本或返回正文。
+
+最短无费用诊断：先用**新固定代码 PIN**运行合成测试；若此前 `init` 已创建目录，不再重复 `init`；直接运行 `inspect`（不调用API），即可区分配置/私有文件问题与后续 API 问题。若 `inspect` PASS，检查专用 Key 是否存在（仅打印yes/no，不回显Key）；如 `advance` 真实请求曾失败，新的SAFE会显示如 `PROXY_API_KEY_REQUIRED`、`PROXY_TRANSPORT_OR_HTTP_HOLD`、`PROXY_RESPONSE_SCHEMA_HOLD` 等。失败不自动重试已持久化位置，未经 Owner 明确确认不继续真实付费外发。
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+REVIEW="experiments/r58_quality/r60_real1000_pilot20_local_review.py"
+OUT="$BASE/r60-real1000-pilot20-4router-v1"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+python3 "$REVIEW" inspect --output-dir "$OUT"
+if [ -n "${CLI_PROXY_API_KEY:-}" ]; then echo "CLI_PROXY_API_KEY_PRESENT=yes"; else echo "CLI_PROXY_API_KEY_PRESENT=no"; fi
+```
+
+只有在 `inspect` 报 `PRIVATE_FILE_MISSING_HOLD`，并确认确实从未初始化时，才考虑原 `init`，不要因无原因HOLD就删除目录。原始20条审阅包和已有评分回执保持不变。
+
+
 
 ## 2026-11-11 P1 Pilot20 审核协议切换至 4Router Claude（最新）
 
