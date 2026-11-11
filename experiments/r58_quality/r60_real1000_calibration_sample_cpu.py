@@ -12,9 +12,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import r60_real1000_technical_profile_cpu as technical
 import r60_real_private_batch as private
 import r60_real_quality_batch as quality
-import r60_real1000_technical_profile_cpu as technical
 
 SCHEMA = "storyforge_r60_real1000_calibration_sample_private_v1"
 SAFE_SCHEMA = "storyforge_r60_real1000_calibration_sample_safe_v1"
