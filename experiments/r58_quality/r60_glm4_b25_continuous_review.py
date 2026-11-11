@@ -391,6 +391,14 @@ def main() -> int:
             or args.resume or not args.quote_match_observer
         ):
             raise Hold("SNAPSHOT_ARGS_HOLD")
+        if args.generation_snapshot_dir is not None:
+            # Snapshots are private raw model text, never written to the SAFE
+            # checkpoint directory or original source/baseline directories.
+            if (args.generation_snapshot_dir.resolve()
+                    in (args.output_dir.resolve(),
+                        args.retry_baseline_dir.resolve(),
+                        runner.parent.resolve())):
+                raise Hold("SNAPSHOT_DESTINATION_SCOPE_HOLD")
         if args.case_limit > expected_count:
             raise Hold("REVIEW_SCOPE_INVALID")
         spec = importlib.util.spec_from_file_location("r60_frozen_reviewer", runner)
