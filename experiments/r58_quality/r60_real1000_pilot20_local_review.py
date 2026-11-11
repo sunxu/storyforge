@@ -299,7 +299,7 @@ def advance(output_dir: Path, max_cases: int, *,
         raise Hold("MAX_CASES_HOLD")
     if not execute or not allow_private_data_egress:
         raise Hold("EXPLICIT_EGRESS_APPROVAL_REQUIRED")
-    if not (os.environ.get(API_KEY_ENV) or os.environ.get("OPENAI_API_KEY")):
+    if not os.environ.get(API_KEY_ENV):
         raise Hold("PROXY_API_KEY_REQUIRED")
     config, packets, current = get_state(output_dir)
     start = current["model_reviewed"]
@@ -322,6 +322,40 @@ def advance(output_dir: Path, max_cases: int, *,
         receipt["receipt_sha256"] = sha(canonical(receipt))
         private.write_new(output_dir / receipt_name(i + 1), canonical(receipt))
     return get_state(output_dir)[2]
+
+
+# Exact allowlist: never echo arbitrary exception strings from private I/O or APIs.
+SAFE_REASON_CODES = frozenset({
+    "PACKETS_SCHEMA_HOLD", "PACKET_ENTRY_HOLD", "PACKETS_QUOTA_HOLD",
+    "PACKET_POSITION_DUPLICATE_HOLD", "PROXY_ENDPOINT_HOLD",
+    "PROXY_API_KEY_REQUIRED", "PROXY_TRANSPORT_OR_HTTP_HOLD",
+    "PROXY_RESPONSE_OVERSIZE_HOLD", "PROXY_TRUNCATED_HOLD",
+    "PROXY_EMPTY_HOLD", "PROXY_RESPONSE_SCHEMA_HOLD",
+    "CONFIG_HOLD", "FOREIGN_FILE_HOLD", "NONCONTIGUOUS_HOLD",
+    "RECEIPT_SCHEMA_HOLD", "RECEIPT_BINDING_HOLD", "PACKETS_MODIFIED_HOLD",
+    "OUTPUT_EXISTS_HOLD", "CONFIG_ARGS_HOLD", "MAX_CASES_HOLD",
+    "EXPLICIT_EGRESS_APPROVAL_REQUIRED", "POSITION_HOLD",
+    "HISTORY_BOUNDARY_HOLD", "PROMPT_TOO_LARGE_HOLD",
+    "MODEL_JSON_INVALID", "SEVERE_FLAG_DECISION_INCONSISTENT",
+    "QUALITY_FLOOR_DECISION_INCONSISTENT",
+})
+
+
+def safe_reason_code(exc: Exception) -> str:
+    if isinstance(exc, (Hold, reviewer.Hold)):
+        code = str(exc)
+        return code if code in SAFE_REASON_CODES else "REVIEW_CONTRACT_HOLD"
+    if isinstance(exc, FileNotFoundError):
+        return "PRIVATE_FILE_MISSING_HOLD"
+    if isinstance(exc, PermissionError):
+        return "PRIVATE_FILE_PERMISSION_HOLD"
+    if isinstance(exc, FileExistsError):
+        return "PRIVATE_OUTPUT_EXISTS_HOLD"
+    if isinstance(exc, (json.JSONDecodeError, UnicodeError)):
+        return "PRIVATE_JSON_INVALID_HOLD"
+    if isinstance(exc, (OSError, ValueError, TypeError, KeyError)):
+        return "PRIVATE_INPUT_OR_IO_HOLD"
+    return "UNEXPECTED_TECHNICAL_HOLD"
 
 
 def main() -> int:
@@ -354,10 +388,12 @@ def main() -> int:
             result = get_state(args.output_dir)[2]
         print(json.dumps(result, sort_keys=True))
         return 0
-    except Exception:  # noqa: BLE001 - redact all local texts and API errors
+    except Exception as exc:  # noqa: BLE001 - never expose private error text
         print(json.dumps({
             "schema": SAFE_SCHEMA,
             "status": "PILOT20_LOCAL_REVIEW_HOLD",
+            "reason_code": safe_reason_code(exc),
+            "stage": args.mode.upper(),
             "database_accessed": False, "gpu_job_started": False,
             "private_values_emitted": False, "quality_v1_admitted": 0,
             "train_admitted": 0,
