@@ -339,6 +339,7 @@ def main() -> int:
     parser.add_argument("--quote-match-observer", action="store_true")
     parser.add_argument("--quote-literal-repair", action="store_true")
     parser.add_argument("--literal-probe-cases", type=int, default=0)
+    parser.add_argument("--generation-snapshot-dir", type=Path)
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -385,6 +386,11 @@ def main() -> int:
             raise Hold("LITERAL_PROBE_SCOPE_HOLD")
         if args.literal_probe_cases < 0:
             raise Hold("LITERAL_PROBE_SCOPE_HOLD")
+        if args.generation_snapshot_dir is not None and (
+            not args.isolate_technical_failures or args.retry_baseline_dir is None
+            or args.resume or not args.quote_match_observer
+        ):
+            raise Hold("SNAPSHOT_ARGS_HOLD")
         if args.case_limit > expected_count:
             raise Hold("REVIEW_SCOPE_INVALID")
         spec = importlib.util.spec_from_file_location("r60_frozen_reviewer", runner)
@@ -419,6 +425,16 @@ def main() -> int:
                     worker, rows, args.retry_baseline_dir, args.output_dir)
                 emit("RETRY_SUBSET_READY", retry_count=len(retry_rows),
                      selected_from_original_25=True)
+            snapshot_store = None
+            if args.generation_snapshot_dir is not None:
+                from r60_generation_snapshot import GenerationSnapshotStore
+
+                snapshot_store = GenerationSnapshotStore(
+                    args.generation_snapshot_dir, worker=worker,
+                    model=MODEL, revision=REV,
+                    runner_sha256=sha256_file(runner), emit=emit)
+                emit("GENERATION_SNAPSHOT_ENABLED",
+                     private_output_only=True, write_once=True)
             original_checkpoint_record = worker.checkpoint_record
             original_validate_response = worker.validate_response
             observed_counts = {}
@@ -462,7 +478,8 @@ def main() -> int:
                     wall_seconds=args.wall_seconds, resume=args.resume,
                     hf_tokenizer=AutoTokenizer, vllm=vllm,
                     attempt_diagnostic_guard=attempt_guard,
-                    stop_after_attempts=args.literal_probe_cases or None)
+                    stop_after_attempts=args.literal_probe_cases or None,
+                    generation_snapshot_store=snapshot_store)
             finally:
                 worker.checkpoint_record = original_checkpoint_record
                 worker.validate_response = original_validate_response
