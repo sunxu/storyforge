@@ -1,5 +1,30 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 双PASS 3条Owner真实CPU生成PASS，训练上下文检查开始
+
+Owner 回执：`DOUBLE_PASS_CANDIDATES_READY__TRAIN_ADMISSION_HOLD`，`cases_checked=20`、`double_pass_candidates=3`、`not_double_pass=17`，推理0、数据库0、GPU0、Quality-v1及训练准入0。3条严格Claude∩Codex有效PASS的位置级Owner私有候选清单已生成，不得重跑覆盖或误报为正式入训。
+
+新增 `experiments/r58_quality/r60_real1000_double_pass_context_cpu.py` 和 `tests/test_r60_real1000_double_pass_context_cpu.py`：本地只读重新验证冻结1000个来源页和现有Sample100哈希/选样，核对3条候选对应Pilot20原位置与同一源样本三条历史消息+目标原文，检查跨世界/目标唯一性及历史System、世界组件、R50排除缺失的状态。输出只有聚合SAFE、不可打印来源文本/标识。历史真实System和世界组件若仍为UNKNOWN，报告`UNVERIFIED`而不制造修复或批准训练。后续世界隔离、训练Prompt真实重建、Tokenizer/Collator和R50排除需另行工程核验。
+
+Owner Mac在已存在固定worktree同步CI通过的新PIN后运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_double_pass_context_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_double_pass_context_cpu.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --candidate-file "$BASE/r60-real1000-double-pass-candidates-v1/R60_DOUBLE_PASS_TRAIN_CANDIDATES_PRIVATE.json"
+```
+
+预期 `DOUBLE_PASS_CONTEXT_PREFLIGHT_PASS__TRAIN_ADMISSION_HOLD`、`candidate_count=3`、`train_admitted=0`。此检查只验证本轮已有的真实源数据边界，未证明Gold/R50全部泄漏隔离，不启动Tokenize或模型调用。
+
+低成本双模型方案仍限**预算和协议评估**：先确定官方Qwen/DeepSeek版本、API形态、参数、单例token消耗和容错规则；未经Owner独立批准，不提交外部付费20/80/980真实审核调用。旧4Router Claude结果无需重发。
+
+
 ## 2026-11-11 用户决策：只采双模型PASS；低成本官方API替代4Router
 
 **质量候选策略现已切换。** 用户接受仅当Claude和Codex针对同一冻结样本均给出格式有效的PASS、六维全部达标、严重flag全false时才进入 `TRAIN_CANDIDATES_PRIVATE`；原Claude 2条“PASS低于冻结分数线”的冲突必须排除，不参与双PASS。已知Pilot20有3条有效双PASS。11条争议证据裁决从批量筛选前置闸门移除，保留原始意见和私有记录，必要时抽查双PASS的一致性误放；对其余样本不自动更改原有结论。**双PASS仅为训练候选，不是Quality-v1正式准入或训练授权**，仍需检查历史System、世界组件、R50评测隔离、训练/验证/测试世界切分、Tokenizer/Collator，未核验维持HOLD。
