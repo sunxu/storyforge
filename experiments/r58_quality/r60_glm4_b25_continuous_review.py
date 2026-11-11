@@ -409,6 +409,7 @@ def main() -> int:
         if args.snapshot_probe_cases < 0 or (
             args.generation_snapshot_dir is not None
             and args.snapshot_probe_cases == 0
+            and not args.snapshot_full25
         ):
             raise Hold("SNAPSHOT_PROBE_SCOPE_HOLD")
         if args.snapshot_primary_only and (
