@@ -44,3 +44,11 @@ python3 -m unittest discover -s tests -p 'test_r60_qwen_snapshot_cpu_replay.py' 
 - 单次有界付费运行命令经 Owner 明确批准；
 - 真实第7条签名 Snapshot 与阶段事件回传；
 - 原封不动进行 CPU Replay，禁止训练准入自动升级。
+
+## 2026-11-11 补充：真实 Owner CPU 单测通过与恢复前缀止损保护
+
+Owner Mac 对 `40dbc2d7574b34d18e26bc46cca511dff0ef57a8` 回传：阶段追踪 3/3、Snapshot Replay 5/5、`py_compile` 全 PASS。该提交的四组 CI 后续也已核实全部 SUCCESS。
+
+审查时发现：此前新 Snapshot 运行路径虽要求 `--resume --case-limit 7 --batch-size 1`，但缺少“已验证的前缀必须**恰好6份**”运行时保护。修复后 `run_batches` 在接触 tokenizer/LLM 前验证前6份原版 Checkpoint，任何0–5份或7份以上场景均 `QWEN_SNAPSHOT_RESUME_PREFIX6_HOLD`，不许从位置1重复付费生成。新增纯 CPU 负面测试（0份、5份）验证 GPU 初始化/推理调用次数为0。
+
+该新增保护提交为 `84e7a2bfc078a9dffcf7aebb1b01cf396da7677d`，测试提交为 `a459e812839f3e744d139c35f97e110bea19a9a3`。**必须核对包含这两项的最终文档 HEAD 四组 CI 全 PASS，才能作为新付费代码 PIN；原 `40dbc2d` 不包含恢复前缀运行时保护，不再推荐作 GPU PIN。** Owner 本地合成测试结果来自旧 PIN，新增负面测试仍需 Owner 单独验收。
