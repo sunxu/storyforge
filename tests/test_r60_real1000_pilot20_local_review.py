@@ -577,6 +577,7 @@ def test_exact_single_extra_closing_brace_repaired_with_original_rubric():
     answer = model_answer()
     answer["decision"] = "HOLD"
     answer["scores"]["chinese_prose"] = 3
+    answer["severe_flags"]["serious_player_agency"] = False
     text = json.dumps(answer, ensure_ascii=False)
     raw = json.dumps({"choices": [{"finish_reason": "stop", "message": {
         "content": "```json\n" + text + "}\n```"
