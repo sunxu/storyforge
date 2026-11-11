@@ -16,7 +16,7 @@ mod = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(mod)
 
 
-def synthetic(tmp_path, *, first_bad=False, error_at=None):
+def synthetic(tmp_path, *, first_bad=False, error_at=None, review_error=None):
     output = tmp_path / "output"
     output.mkdir()
     local = tmp_path / "local"
@@ -56,6 +56,8 @@ def synthetic(tmp_path, *, first_bad=False, error_at=None):
         vllm.LLM(model=model, revision=revision, tokenizer_revision=revision)
         for pos in range(start, start + limit):
             if pos == error_at:
+                if review_error is not None:
+                    raise type("ReviewError", (ValueError,), {})(review_error)
                 raise RuntimeError("private-detail")
             worker.write_checkpoint(
                 out / worker.checkpoint_name(pos), {"position": pos})
@@ -140,3 +142,25 @@ def test_reject_manifest_tamper(tmp_path):
     }))
     with pytest.raises(mod.Hold, match="LOCAL_MANIFEST_INVALID"):
         mod.verify_local_manifest(local)
+
+
+
+def test_glm_first_review_safe_error_reason(tmp_path, capsys):
+    state = synthetic(
+        tmp_path, error_at=1, review_error="MODEL_GENERATION_INCOMPLETE_HOLD")
+    with pytest.raises(ValueError, match="MODEL_GENERATION_INCOMPLETE_HOLD"):
+        run(state)
+    log = capsys.readouterr().out
+    assert '"safe_reason_code":"MODEL_GENERATION_INCOMPLETE_HOLD"' in log
+    assert '"completed":0' in log
+    assert "CONTINUOUS_REVIEW_COMPLETE" not in log
+
+
+def test_glm_unknown_review_error_redacted(tmp_path, capsys):
+    state = synthetic(
+        tmp_path, error_at=1, review_error="private-case-data-must-not-log")
+    with pytest.raises(ValueError):
+        run(state)
+    log = capsys.readouterr().out
+    assert '"safe_reason_code":"UNKNOWN_REVIEW_FAILURE"' in log
+    assert "private-case-data-must-not-log" not in log
