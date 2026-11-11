@@ -1,5 +1,38 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 首批20条审阅包 Owner 验收 PASS，开始单模型试点
+
+Owner Mac 对 `b6b25fb8c7a8a7db62db24375f323d23c63edabe` 报告：`4 passed in 0.06s`、`PILOT20_REVIEW_PACKETS_READY__NO_REVIEWS`、`cases_prepared=20`、`sample100_verified=true`、长度配额11/8/1；原始私有审阅包 `r60-real1000-pilot20-packets-v1` 已创建，尚无质量评分。
+
+**下一步不再建新的冻结池或抽样包**。新增唯一薄适配 `r60_real1000_pilot20_local_review.py`，复用既有 `r60_real_ai_dual_review` 六维 Rubric/JSON 验证/OpenAI-compatible API；只允许 Owner Mac 的 localhost 服务，以最多5条/调用逐条审核，并在独立私有目录生成 create-only 的评分/理由回执。原始模型的 `PASS/HOLD/REJECT` 明确作为 *advisory*，不自动成为真实质量 PASS 或训练准入；需要独立参考对严重标记及争议做实质语义复核。失败中断后从已持久化的连续编号继续，不会重复已成功的请求。
+
+Owner 确认自己本机已安装/运行可用 OpenAI-compatible 审核模型后运行如下命令（替换实际 `MODEL`，并根据实际本地服务填写 `ENDPOINT`）。这些命令会对真实私有20条逐条发起**本机模型推理**，可能占用 Mac CPU/GPU，但不提交远端 HF GPU Job：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PIN="$(git -C "$ROOT" rev-parse origin/r60/p4-generation-eval-framework)"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/r60-review20-XXXXXX")"
+git -C "$ROOT" worktree add --detach "$WORK" "$PIN"
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+MODEL="替换为本机实际可用模型名称"
+ENDPOINT="http://127.0.0.1:11434/v1"
+OUT="$BASE/r60-real1000-pilot20-local-review-v1"
+test ! -e "$OUT"
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py init \
+  --packets-dir "$BASE/r60-real1000-pilot20-packets-v1" \
+  --output-dir "$OUT" --endpoint "$ENDPOINT" --model "$MODEL" --json-mode
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py advance \
+  --output-dir "$OUT" --max-cases 5
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect \
+  --output-dir "$OUT"
+```
+
+首轮五条审核后检查 `model_reviewed=5`、`model_decisions_advisory`、`model_severe_flag_counts_advisory`；若全REJECT并伴严重标记，立即对少数样本做独立复核，**不要直接继续15条**。若质量输出可靠，再执行三次 `advance --max-cases 5`。新脚本仅接受本地 `127.0.0.1/localhost/::1` 接口；不自动上传小说内容到第三方远程 API。训练准入保持0。
+
+
 ## 2026-11-11 P1 真实100条抽样 PASS → 20条小批质量审核包
 
 Owner CPU `4 passed in 0.05s`，`CALIBRATION_SAMPLE100_READY__NO_REVIEWS`，抽样100/100个不同故事，目标字数层55/38/7，私有目录 `$HOME/.local/share/storyforge/r60/private/r60-real1000-calibration100-v1` 已创建。**P1 抽样 PASS，不代表任何质量审查完成**。
