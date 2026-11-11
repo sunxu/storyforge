@@ -1,5 +1,20 @@
 # R60 GLM 优先 + Qwen 并行故障修复任务书（2026-11-11）
 
+## 2026-11-11 GLM 小样本实证门槛：最多 2 条 + SAFE 修复统计（CPU 测试先行）
+
+根据 Owner `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，新增版本化的下一步实验入口：
+- `r60_glm4_b25_continuous_review.py --quote-match-observer --quote-literal-repair --literal-probe-cases 2`。必须与原25条冻结签名基线、`--retry-baseline-dir`、`--isolate-technical-failures`、`--case-limit 12` 同时使用。**实际仅尝试重试子集的前2条**（其原始位置是1、5），结果写入**新的空目录**，不继续尝试第3至第12条。不得使用 `--resume`。若只需要验证首条，改为 `--literal-probe-cases 1`。
+- `r60_review_isolation_core.run_isolated()` 新增仅显式调用才生效的 `stop_after_attempts`；达到上限发出 `ISOLATION_PROBE_STOP`，`all_attempted=false`，程序返回 exit42 是有意的未完成状态而非 GPU 硬故障。未提供此参数的原 Qwen/GLM 路径不改变。
+- `r60_glm4_repair_telemetry.py` 汇总 `QUOTE_REPAIR_PILOT_SAFE_SUMMARY`：`attempted`、`verified`、`technical_failures`、`repair_candidate_cases`、`unresolved_quote_cases`、`candidate_quotes`、`candidate_source_quotes`、`candidate_target_quotes`、`unresolved_quotes`；只输出数字，绝不写原始引用或私有模型响应。
+- **注意**：`repair_candidate_cases` 是「找到了字面修复候选」的样本数，并不等于质量 PASS 或有效 Checkpoint。唯一可代表完整技术审核有效的指标是经过冻结 Runner 签名重验的 `verified`。即使出现新有效 Checkpoint，也必须另行统计其 `response.decision`，并通过原始位置映射后合并，而不能直接覆盖先前的技术失败。
+- 观察器继续强制每条须产生 `VALIDATOR_ENTRY`，否则 fail closed，避免没有证据的 H200 重复付费。既有原13个有效回执和12个技术失败回执完全保留。
+- 本次只实现**代码、CPU 合成测试与报告结构**，未发起 HF Job。用户未单独授权付费运行，不能据此认定真实两条效果已验证或 12 条已修复。
+
+后续 Owner 确认要付费时，必须先用 GitHub 已固定 HEAD 重新准备 **同一个版本的全部脚本**（`r60_glm4_b25_continuous_review.py`、`r60_review_isolation_core.py`、`r60_glm4_b25_retry_contract.py`、`r60_glm4_validation_observer.py`、`r60_glm4_exact_quote_repair.py`、`r60_glm4_repair_telemetry.py`），再使用之前固定的权重缓存、镜像、私有原始输入和单独新 Bucket 输出目录；不得混用旧 v1/v2 bundle。如果 2 条没有 SAFE 修复候选且 0 条 verified，应停止进一步 H200 重试，转为设计受约束的原文证据重审方案。
+
+---
+
+
 ## 2026-11-11 Owner Mac GLM v2 真实冻结 Runner CPU 回执：PASS
 
 Owner 在固定版 CPU 集成测试中返回：
