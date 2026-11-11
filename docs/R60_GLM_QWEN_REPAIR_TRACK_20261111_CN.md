@@ -1,5 +1,20 @@
 # R60 GLM 优先 + Qwen 并行故障修复任务书（2026-11-11）
 
+## 2026-11-11 Owner Mac GLM v2 真实冻结 Runner CPU 回执：PASS
+
+Owner 在固定版 CPU 集成测试中返回：
+
+```json
+{"frozen_runner_used":true,"gpu_started":false,"original_rejected_inexact":true,"original_response_modified":false,"private_values_emitted":false,"punctuation_repair_revalidated":true,"quality_decision_changed":false,"schema":"storyforge_r60_glm4_literal_repair_cpu_probe_safe_v1","status":"GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS"}
+```
+
+**已证实**：冻结 Runner 能拒绝合成的不精确引用，标点级引用修复候选通过冻结校验，审核质量判定及原始响应不变。没有模型推理、没有使用历史12条失败的实际模型输出验证修复率，不能据此报告新有效 Checkpoint。原 GLM 仍 **13/25 VERIFIED、12/25 TECHNICAL_FAILURE**；本次仅标记 CPU 集成门槛 PASS。
+
+**下一优先级**：修复脚本加入安全的实际运行时覆盖率和独立保存原始模型生成诊断的机制（不输出正文），再由 Owner 决定是否进行**有预算、有限样本、独立输出**的 H200 新实验；避免一次性原样重试12条。现有 `--quote-literal-repair` 是可选功能，不代表批准付费 GPU，不代表已获得新的质量 PASS。Qwen 继续准备前6条 Checkpoint 的 CPU 身份核验及第7条 SAFE 分阶段故障定位。
+
+---
+
+
 ## 2026-11-11 GLM CPU 集成预检 HOLD：安全定位 v2
 
 Owner 实测初版 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_HOLD`，初版没有 reason_code，不能判断是模型引用修复失败还是测试夹具制造了无法修复的引用。初版合成方式 `target_text[:24] + 任意标点` 不保证候选在原文中唯一、不能作为修复通过的充分前提。
