@@ -1,5 +1,14 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Owner R50已知5故事零重叠PASS；结合历史R50账本澄清边界
+
+Owner最新真实SAFE：`R50_KNOWN5_PARTIAL_CHECK_PASS__FULL_EXCLUSION_HOLD`：冻结池1000、双PASS候选3、R50已知来源故事5、`known5_story_overlap_count=0`、`r50_complete_exclusion_verified=false`、训练准入0；无DB/模型/GPU操作。
+
+进一步核实GitHub历史权威记录：`docs/r56/R56_R50_46_PROTECTED_GATE_NEXT_STEPS_20261022.md`、`docs/evidence/V03_R50_46_PRESEAL_GATE_DELTA_COUNT_ONLY_20261022.json`。2026-10-16 R50原50候选按Owner排除4条形成46条**PRESEAL**，这46条来自原5个候选世界（9/10/9/8/10）；此前50/50来源回放与392/392冻结历史引用核验PASS。但报告明确`final_seal=NOT_PERFORMED`、`official_heldout_test_admitted=0`、跨世界别名与语义隔离HOLD。故本轮5故事零重叠**能支持对这46个PRESEAL样本来源世界的直接story UUID碰撞排除**，不能扩大成“完整评测隔离”或“没有R50和早期开发测试语义泄漏”。历史50条仍有4条原候选排除，但也来自这五世界；仍需考虑先前R47/R48等已见测试、别名/复述/同事件等语义暴露，和Gold/R45 Train/Val拆分。
+
+**后续不应重复运行已PASS的5故事比对，也不应无依据声称R50正式Held-out已封存。** 下一高价值工作是对3条候选复用已经存在的源世界、角色别名、历史System及世界组件检查逻辑；找不到的史料标`UNKNOWN`，可将统一训练System作为显式新建的训练构造而非真实历史上下文。新双模型API试点仍待费用、外发和具体模型授权。训练准入持续0。
+
+
 ## 2026-11-11 R50排除证据核验：先做已知五个来源世界的安全部分检查
 
 已确认仓库 `docs/evidence/V03_R49_R50_16_20_SOURCE_INTAKE_20261015.md` 记录 R49/R50历史测试素材16–20的五个不同story_id，**但该文件明确标注2026-10-15时`FRESH_TEST_NOT_SEALED`，不是完整封存的Held-out排除清单**。不能把“五个已知世界无交集”当作完整R50排除通过。
