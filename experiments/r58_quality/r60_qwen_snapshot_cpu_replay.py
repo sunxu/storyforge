@@ -102,7 +102,7 @@ def inspect(runner: Path, source: Path, snapshots: Path, *, position: int = 7) -
         decision = checkpoint["response"]["decision"]
         if decision not in ("PASS", "HOLD", "REJECT"):
             raise ReplayHold("QUALITY_DECISION_HOLD")
-    except Exception:
+    except Exception:  # noqa: BLE001 - redact frozen reviewer errors
         # Never leak original reviewer errors or private text to stdout/report.
         return result
     result["technical_status"] = "REPLAY_VALIDATED"
@@ -132,7 +132,7 @@ def main() -> int:
             os.fsync(f.fileno())
         print(json.dumps(report, sort_keys=True))
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - redact private source errors
         print(json.dumps({"schema": SCHEMA, "status": "QWEN_SNAPSHOT_CPU_REPLAY_HOLD",
                           "gpu_started": False, "private_values_emitted": False},
                          sort_keys=True))
