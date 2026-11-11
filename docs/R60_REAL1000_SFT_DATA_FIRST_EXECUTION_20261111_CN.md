@@ -1,5 +1,33 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 用户决策：只采双模型PASS；低成本官方API替代4Router
+
+**质量候选策略现已切换。** 用户接受仅当Claude和Codex针对同一冻结样本均给出格式有效的PASS、六维全部达标、严重flag全false时才进入 `TRAIN_CANDIDATES_PRIVATE`；原Claude 2条“PASS低于冻结分数线”的冲突必须排除，不参与双PASS。已知Pilot20有3条有效双PASS。11条争议证据裁决从批量筛选前置闸门移除，保留原始意见和私有记录，必要时抽查双PASS的一致性误放；对其余样本不自动更改原有结论。**双PASS仅为训练候选，不是Quality-v1正式准入或训练授权**，仍需检查历史System、世界组件、R50评测隔离、训练/验证/测试世界切分、Tokenizer/Collator，未核验维持HOLD。
+
+新增 `experiments/r58_quality/r60_real1000_double_pass_candidates_cpu.py` 和合成测试 `tests/test_r60_real1000_double_pass_candidates_cpu.py`。CPU-only重验S0/S1冻结盲包与Owner映射、Codex原审结果、逐位置Claude对账报告一致性，仅生成create-only的3条双PASS位置级私有候选清单，**不导出真实小说内容，不修改任何现有回执，不推理/不入训**。Owner Mac在现有专用worktree同步最新CI通过的固定PIN后执行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_double_pass_candidates_cpu.py tests/test_r60_real1000_s1_compare_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_double_pass_candidates_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --comparison-file "$BASE/r60-real1000-s1-codex-claude-compare-v1/R60_S1_CODEX_CLAUDE_COMPARE_PRIVATE.json" \
+  --private-report-dir "$BASE/r60-real1000-double-pass-candidates-v1"
+```
+
+预期`DOUBLE_PASS_CANDIDATES_READY__TRAIN_ADMISSION_HOLD`、`cases_checked=20`、`double_pass_candidates=3`、`train_admitted=0`。输出为不可覆盖的Owner私有位置清单；第二次运行前先检查目录，不可覆盖。
+
+**低成本模型路线：** 后续试验不默认使用4Router Claude Opus全量复核。先从已冻结Sample100剩余80条中准备有界低成本模型对照Pilot；候选两厂商：阿里云百炼 `qwen3.7-flash`（官方北京价格输入¥0.2/百万tokens、输出¥0.8/百万tokens，<=32K输入）与DeepSeek官方 `deepseek-flash`（DeepSeek V4.1 Flash，非高峰输入$0.15/百万tokens、输出$0.60/百万tokens，峰值可能双倍）。可备选Gemini `gemini-2.5-flash-lite`（官方$0.10/$0.40每百万输入/输出tokens），但需兼顾中文文学判断能力和跨厂商相关性。**上述是公开标价，不是本批真实费用估算**；必须先本地离线计算每条prompt/output预算和硬上限，校准JSON/严重标志及真实用量，并取得Owner独立API Key/私有外发/费用授权，才可触发真实请求。
+
+**质量验收门槛：** 先在已有20条中对有历史Claude+Codex结论的数据，对候选低成本模型做受控小规模对照，测双PASS精确度与假阳性风险、HOLD和模型严重flag一致性，以及JSON失败率、token成本；真实结果与既有20条保持同案例逐位置绑定，避免在尚无参考真值时声称“审核准确率”。评估通过后才考虑扩到其余80条/980条。不能把不同模型组合的双PASS率混成同一统计，更不能将旧Claude+Codex结论直接外推到Qwen+DeepSeek审核质量。
+
+
 ## 2026-11-11 S1争议去重真实SAFE：优先11条证据复核
 
 Owner Mac 返回 `S1_DISPUTE_TRIAGE_CPU_PASS`：原始Pilot20共20条；`decision_disagreements_including_conflicts=10`（包含Claude低分PASS冲突2）、`severe_flag_disagreements=4`、`claude_quality_conflicts=2`，并集 `unique_priority_cases=11`，其余 `remaining_cases_for_control_review=9`。因此10条判定争议和4条严重flag差异重叠3条（剩余1条仅严重标志分歧），不可简单相加。Owner最终裁决0、训练准入0。只以SAFE归档，私有位置不写入GitHub。
