@@ -262,10 +262,30 @@ def run_batches(worker: object, rows: list[dict], output: Path,
                     max_model_len, max_output_tokens,
                     max(min_remaining_seconds, int(remaining)))
             except Exception as exc:
+                # Only immutable, reviewed errors from the frozen verifier;
+                # never expose arbitrary exception string or private payload.
+                safe_reasons = {
+                    "MODEL_GENERATION_INCOMPLETE_HOLD",
+                    "MODEL_JSON_HOLD", "MODEL_RESPONSE_SCHEMA_HOLD",
+                    "MODEL_NONEXACT_QUOTE_HOLD",
+                    "QUOTE_REPAIR_VALIDATION_HOLD",
+                    "QUOTE_REPAIR_GENERATION_HOLD",
+                    "QUOTE_REPAIR_INCOMPLETE_HOLD",
+                    "QUOTE_REPAIR_JSON_HOLD",
+                    "MODEL_BELOW_QUALITY_FLOOR_HOLD",
+                    "MODEL_SEVERE_MUST_REJECT",
+                    "CHECKPOINT_OUTPUT_SIZE_HOLD",
+                    "CHECKPOINT_FILE_HOLD",
+                    "CHECKPOINT_SCHEMA_HOLD",
+                    "CHECKPOINT_SOURCE_OR_MODEL_HOLD",
+                }
+                code = (str(exc) if type(exc).__name__ == "ReviewError"
+                        and str(exc) in safe_reasons else "UNKNOWN_REVIEW_FAILURE")
                 emit("REVIEW_BATCH_HOLD", completed=state["completed"],
                      stage=("MODEL_INITIALIZATION" if state["engine_calls"] == 0
                             else "REVIEW_OR_CHECKPOINT"),
-                     exception_class=type(exc).__name__)
+                     exception_class=type(exc).__name__,
+                     safe_reason_code=code)
                 raise
             if state["completed"] == before:
                 raise Hold("REVIEW_BATCH_NO_PROGRESS_HOLD")
