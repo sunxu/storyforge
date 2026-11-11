@@ -131,3 +131,29 @@ def emit_safe(event: str, **fields: object) -> None:
                       "event": event, "private_values_emitted": False,
                       **fields}, sort_keys=True, separators=(",", ":")),
           flush=True)
+
+def main() -> int:
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--runner", type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        import vllm
+        import vllm.sampling_params as sampling_module
+        probe_runner_from_local_file(
+            args.runner, vllm=vllm, sampling_module=sampling_module,
+            emit=emit_safe)
+        emit_safe("GUIDANCE_CPU_PREFLIGHT_PASS")
+        return 0
+    except DiagnosticHold as exc:
+        emit_safe("GUIDANCE_CPU_PREFLIGHT_HOLD", reason_code=str(exc))
+        return 42
+    except Exception as exc:
+        emit_safe("GUIDANCE_CPU_PREFLIGHT_HOLD",
+                  reason_code="GUIDANCE_CPU_UNEXPECTED_HOLD",
+                  exception_class=safe_exception_stage(exc))
+        return 42
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
