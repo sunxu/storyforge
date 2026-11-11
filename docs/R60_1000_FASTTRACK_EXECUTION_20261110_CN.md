@@ -15,7 +15,7 @@
 set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
 PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
-PIN="e062cb9a5a3ede9f1254739edd443b62e352b822"
+PIN="a8673296691cb7bd90d8ab48787a21be3505dbb2"
 DIR="$HOME/.local/share/storyforge/r60/private/qwen-guidance-diagnostics-v1"
 IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
