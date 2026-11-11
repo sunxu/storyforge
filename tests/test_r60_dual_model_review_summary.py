@@ -16,7 +16,7 @@ spec = importlib.util.spec_from_file_location(
 assert spec and spec.loader
 p1 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(p1)
-from r60_review_isolation_core import create_failure, sha
+from r60_review_isolation_core import IsolationHold, create_failure, sha
 
 
 def _fixture(tmp_path):
@@ -100,7 +100,7 @@ def test_corrupt_or_tampered_failure_holds(tmp_path):
     record = json.loads(f.read_text())
     record["technical_reason_code"] = "MODEL_JSON_HOLD"
     f.write_text(json.dumps(record))
-    with pytest.raises(Exception):
+    with pytest.raises(IsolationHold, match="TECHNICAL_RECEIPT_IDENTITY_HOLD"):
         _summarize(rows, a, b, a_dir, b_dir)
 
 
