@@ -342,6 +342,7 @@ def main() -> int:
     parser.add_argument("--generation-snapshot-dir", type=Path)
     parser.add_argument("--snapshot-probe-cases", type=int, default=0)
     parser.add_argument("--snapshot-primary-only", action="store_true")
+    parser.add_argument("--snapshot-full25", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -365,7 +366,7 @@ def main() -> int:
         if args.quote_shape_diagnostic and not args.isolate_technical_failures:
             raise Hold("SHAPE_DIAGNOSTIC_REQUIRES_ISOLATION_HOLD")
         if args.quote_match_observer and (
-            args.retry_baseline_dir is None
+            (args.retry_baseline_dir is None and not args.snapshot_full25)
             or not args.isolate_technical_failures
             or args.quote_shape_diagnostic
             or args.repair_quote_shape
@@ -388,6 +389,16 @@ def main() -> int:
             raise Hold("LITERAL_PROBE_SCOPE_HOLD")
         if args.literal_probe_cases < 0:
             raise Hold("LITERAL_PROBE_SCOPE_HOLD")
+        if args.snapshot_full25 and (
+            args.case_limit != 25 or args.retry_baseline_dir is not None
+            or not args.isolate_technical_failures
+            or args.generation_snapshot_dir is None
+            or args.resume or args.snapshot_probe_cases
+            or args.literal_probe_cases or args.snapshot_primary_only
+            or args.quote_literal_repair or args.quote_shape_diagnostic
+            or args.repair_quote_shape
+        ):
+            raise Hold("SNAPSHOT_FULL25_SCOPE_HOLD")
         if args.snapshot_probe_cases and (
             not 1 <= args.snapshot_probe_cases <= 2
             or args.generation_snapshot_dir is None
@@ -409,7 +420,8 @@ def main() -> int:
         ):
             raise Hold("SNAPSHOT_PRIMARY_ONLY_SCOPE_HOLD")
         if args.generation_snapshot_dir is not None and (
-            not args.isolate_technical_failures or args.retry_baseline_dir is None
+            not args.isolate_technical_failures
+            or (args.retry_baseline_dir is None and not args.snapshot_full25)
             or args.resume or not args.quote_match_observer
         ):
             raise Hold("SNAPSHOT_ARGS_HOLD")
@@ -418,7 +430,7 @@ def main() -> int:
         if (args.generation_snapshot_dir is not None
                 and args.generation_snapshot_dir.resolve() in (
                     args.output_dir.resolve(),
-                    args.retry_baseline_dir.resolve(),
+                    *( [args.retry_baseline_dir.resolve()] if args.retry_baseline_dir is not None else [] ),
                     runner.parent.resolve())):
             raise Hold("SNAPSHOT_DESTINATION_SCOPE_HOLD")
         if args.case_limit > expected_count:
@@ -539,8 +551,15 @@ def main() -> int:
                      combined_unverified=12 - result["verified"],
                      complete_verified_25=result["all_verified"],
                      original_receipts_modified=False)
-            # 12 retry positions are local indices mapped by the verified
-            # baseline; original 13 validated checkpoints are untouched.
+            if args.snapshot_full25:
+                emit("SNAPSHOT_FULL25_SUMMARY", attempted=result["attempted"],
+                     verified=result["verified"],
+                     technical_failures=result["technical_failures"],
+                     snapshots_enabled=True,
+                     original_positions_identity=True,
+                     original_receipts_modified=False)
+            # Retry-subset positions use verified baseline mapping; full25
+            # positions are original positions, with independent new receipts.
             return 0 if result["all_verified"] else 42
         result = run_batches(
             worker, rows, args.output_dir, args.local_dir,
