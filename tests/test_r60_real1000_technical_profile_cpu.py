@@ -80,14 +80,16 @@ def test_incorrect_role_holds():
     raise AssertionError("expected HOLD")
 
 
-def test_do_not_infer_system_or_world():
+def test_system_and_world_metadata_are_not_technical_gates():
     rows = cases()
-    rows[0]["historical_system_provenance"] = "KNOWN"
-    try:
-        mod.profile(rows)
-    except mod.Hold:
-        return
-    raise AssertionError("expected HOLD")
+    rows[0]["historical_system_provenance"] = "VERIFIED"
+    rows[1]["world_component_status"] = "VERIFIED"
+    rows[2]["r50_complete_exclusion_status"] = "VERIFIED"
+    result = mod.profile(rows)
+    assert result["historical_system_not_verified"] == 999
+    assert result["world_component_unverified"] == 999
+    assert result["r50_exclusion_unverified"] == 999
+    assert result["train_admitted"] == 0
 
 
 def test_story_cap_holds():
