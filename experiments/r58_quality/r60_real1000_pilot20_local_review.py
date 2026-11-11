@@ -234,6 +234,28 @@ def safe_transport_code(exc: Exception) -> str:
     return "PROXY_CONNECTION_OTHER_HOLD"
 
 
+def parse_strict_model_json(content: str) -> object:
+    """Allow one terminal extra '}' only after a complete JSON object."""
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        pass
+    candidate = content.strip()
+    if not candidate.endswith("}}"):
+        raise Hold("PROXY_MODEL_JSON_HOLD")
+    try:
+        value, end = json.JSONDecoder().raw_decode(candidate)
+    except (ValueError, TypeError):
+        raise Hold("PROXY_MODEL_JSON_HOLD") from None
+    if not isinstance(value, dict) or candidate[end:] != "}":
+        raise Hold("PROXY_MODEL_JSON_HOLD")
+    # Confirm exactly one trailing brace is the sole defect.
+    try:
+        return json.loads(candidate[:-1])
+    except (ValueError, TypeError):
+        raise Hold("PROXY_MODEL_JSON_HOLD") from None
+
+
 def decoded_model_json(raw: bytes) -> object:
     """Decode only a complete model JSON object, including exact JSON fences."""
     try:
@@ -247,7 +269,7 @@ def decoded_model_json(raw: bytes) -> object:
             if not match:
                 raise Hold("PROXY_MODEL_JSON_HOLD")
             content = match.group(1)
-        return json.loads(content)
+        return parse_strict_model_json(content)
     except Hold:
         raise
     except (ValueError, TypeError, KeyError, IndexError, AttributeError):
@@ -290,7 +312,7 @@ def parse_proxy_response(raw: bytes) -> dict:
             raise Hold("PROXY_MODEL_JSON_HOLD")
         content = match.group(1)
     try:
-        model_json = json.loads(content)
+        model_json = parse_strict_model_json(content)
     except (ValueError, TypeError):
         raise Hold("PROXY_MODEL_JSON_HOLD") from None
     try:
