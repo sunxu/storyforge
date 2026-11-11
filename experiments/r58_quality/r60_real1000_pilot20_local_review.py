@@ -292,7 +292,7 @@ def replay_private_snapshot(output_dir: Path, *, position: int,
         raise Hold("SNAPSHOT_PROVENANCE_CONFIRMATION_REQUIRED")
     if type(position) is not int or not 1 <= position <= 20:
         raise Hold("POSITION_HOLD")
-    config, packets, current = get_state(output_dir)
+    config, _packets, current = get_state(output_dir)
     if position != current["model_reviewed"] + 1:
         raise Hold("REPLAY_POSITION_HOLD")
     diagnostics = output_dir.parent / (output_dir.name + "-response-diagnostics-v1")
