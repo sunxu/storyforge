@@ -1,5 +1,14 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 QD20五条严格双PASS候选独立盲审核查完成：两条共同PASS获独立PASS
+
+Owner Mac最新真实SAFE：`QD20_COMMON2_BLIND_REVIEW_VALIDATED__NOT_GROUND_TRUTH`，两组共同双PASS的2条样本，独立盲审`PASS=2,HOLD=0,REJECT=0`，两条引文逐字精确匹配；没有模型调用、数据库、GPU或公开私有值。审稿人独立性仅自报、并未客观证明，`quality_ground_truth_established=false`、`quality_v1_admitted=0`、`train_admitted=0`。
+
+结合先前三条双PASS分歧的已验收独立结果，本轮**五条候选**分布为：两组共同双PASS2条：独立PASS2/HOLD0/REJECT0；新Qwen+DeepSeek独有双PASS2条：独立PASS0/HOLD1/REJECT1；旧Claude+Codex独有双PASS1条：独立PASS0/HOLD1/REJECT0。合计PASS2/HOLD2/REJECT1，5条均有已通过严格逐字引用与六维/严重flag约束的独立盲审记录。这个5条的选择样本很小且被多模型投票预筛，**不能推断整个1000条的假阳性率或四模型方案普遍可靠**。仍不能将未完成6份provider审查算作HOLD/PASS。
+
+**当前主线决策**：冻结本轮5条证据审核与原模型快照，不再花费API盲重试。共同双PASS的两条进入`PRIORITY_QUALITY_CANDIDATE__NOT_TRAIN_ADMITTED`的*计划性*优先核验队列（不改变已有回执、没有自动生成最终准入标签）。先检查真实完整历史训练上下文、System是否有可靠来源、世界设定组件与角色约束的可验证关联、与R50已冻结评测集的完整排除，再决定是否编译成SFT样本。已知旧训练草稿`historical_system_recovered=false`、`world_components_verified=false`、`r50_complete_exclusion_verified=false`，不能把拼接的System伪装为历史原文或跳过该条件。下阶段工程任务应是**两条优先候选的CPU数据可训练性检查**，明确全部缺证据维度及HOLD原因，并生成不含私有正文/ID的SAFE结果；不把任何训练任务交给GPU，待Owner另行授权。
+
+
 ## 2026-11-11 R60 QD20共同双PASS的2条：独立盲审工程已准备（待Owner执行）
 
 此前真实证据：QD20三条分歧独立盲审+交叉表PASS，新模型独有双PASS2条独立判HOLD1/REJECT1、旧模型独有双PASS1条判HOLD1。两组共同双PASS2条未纳入上述三条独立审核，不能自动准入。保持34份成功审核、6份未完成审核、5份旧失败快照、3条分歧盲审及冻结20条输入不修改。
