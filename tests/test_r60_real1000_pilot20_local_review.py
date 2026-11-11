@@ -2,7 +2,12 @@
 from __future__ import annotations
 
 import importlib.util
+import io
+import json
+import socket
+import ssl
 import sys
+import urllib.error
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -208,3 +213,50 @@ def test_only_dedicated_4router_key_authorizes_calls(monkeypatch, tmp_path):
     else:
         raise AssertionError("must require dedicated Router key")
     assert mod.get_state(folder)[2]["model_reviewed"] == 0
+
+
+def test_http_error_status_and_provider_category():
+    def error(code, body):
+        return urllib.error.HTTPError(
+            "https://api.4router.ai/v1/chat/completions", code, "error", {},
+            io.BytesIO(json.dumps(body).encode()),
+        )
+    assert mod.safe_http_code(error(
+        400, {"error": {"type": "invalid_request_error", "message": "secret"}},
+    )) == "PROXY_HTTP_400_INVALID_REQUEST_HOLD"
+    assert mod.safe_http_code(error(
+        401, {"error": {"type": "authentication_error", "message": "secret"}},
+    )) == "PROXY_HTTP_401_AUTH_HOLD"
+    assert mod.safe_http_code(error(
+        429, {"error": {"type": "rate_limit_error", "code": "opaque-private"}},
+    )) == "PROXY_HTTP_429_RATE_LIMIT_HOLD"
+    assert mod.safe_http_code(error(
+        502, {"error": {"type": "unknown-sensitive", "message": "secret"}},
+    )) == "PROXY_HTTP_502_HOLD"
+
+
+def test_transport_diagnostics():
+    assert mod.safe_transport_code(
+        urllib.error.URLError(socket.gaierror(-2, "secret"))
+    ) == "PROXY_DNS_HOLD"
+    assert mod.safe_transport_code(
+        urllib.error.URLError(TimeoutError("private host"))
+    ) == "PROXY_TIMEOUT_HOLD"
+    assert mod.safe_transport_code(
+        urllib.error.URLError(ConnectionRefusedError("private host"))
+    ) == "PROXY_CONNECTION_REFUSED_HOLD"
+    assert mod.safe_transport_code(
+        urllib.error.URLError(ssl.SSLError("private TLS"))
+    ) == "PROXY_TLS_HANDSHAKE_HOLD"
+
+
+def test_detail_safe_reason_whitelist():
+    assert mod.safe_reason_code(mod.Hold(
+        "PROXY_HTTP_400_INVALID_REQUEST_HOLD"
+    )) == "PROXY_HTTP_400_INVALID_REQUEST_HOLD"
+    assert mod.safe_reason_code(mod.Hold(
+        "PROXY_HTTP_500_hidden-secret_HOLD"
+    )) == "REVIEW_CONTRACT_HOLD"
+    assert mod.safe_reason_code(mod.Hold(
+        "PROXY_TLS_CERT_VERIFY_HOLD"
+    )) == "PROXY_TLS_CERT_VERIFY_HOLD"
