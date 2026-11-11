@@ -30,3 +30,64 @@ Qwen 原 `experiments/r58_quality/r60_qwen_guidance_diagnostic.py` 已支持 SAF
 3. Qwen：CPU 验证前6个 checkpoint、冻结运行路径，再决定单条7号有明确诊断阶段的 HF Job。若复用 GLM 的某个结构化输出 API 问题被证实，优先修复 GLM 的共用工具后再迁移；否则两者分开推进。
 4. **本次没有发起 GPU Job、没有改动原始回执，没有开启训练准入**。结论由 Owner 返回的 SAFE 结果再定，不能预判 GPU 实验成功。
 
+
+## Owner Mac：GLM 冻结 Runner 的 CPU 集成预检
+
+这一步使用**私有原文中的真实连续片段，合成一个仅标点错误的审核回复**，调用冻结 `checkpoint_record` 原始函数及引用修复 wrapper，核验原审核应先拒绝、修复后原审核通过；不调用 GPU、不会持久化任何 Checkpoint。每个被引用的字段均保持当前 25 条输入 SHA 约束。
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+SOURCE="$PILOT/input_B_quote_observer_v1"
+TOOLS="$PILOT/glm-literal-cpu-tools-v1"
+PIN="2d3882acb1fc0ed2aaaf853f9efc10efa5bf41a2"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -f "$SOURCE/runner.py"
+test -f "$SOURCE/source.private.jsonl"
+test ! -e "$TOOLS"
+umask 077
+mkdir -m 700 "$TOOLS"
+for NAME in r60_glm4_exact_quote_repair.py r60_glm4_literal_repair_cpu_probe.py; do
+  git -C "$ROOT" show "$PIN:experiments/r58_quality/$NAME" > "$TOOLS/$NAME"
+done
+chmod 600 "$TOOLS"/*.py
+python3 -m py_compile "$TOOLS"/*.py
+python3 "$TOOLS/r60_glm4_literal_repair_cpu_probe.py" \
+  --runner "$SOURCE/runner.py" \
+  --input "$SOURCE/source.private.jsonl"
+```
+
+预期 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`。这只证明冻结校验器入口、源字段映射和标点修复在 CPU 合成数据上成立，**不保证上一轮 12 条真实模型引文能修复**。若 HOLD，停止新 GPU 试验，先检查私有 Runner 的结构兼容和候选唯一性，不要放宽阈值。
+
+## Owner Mac：Qwen 前 6 个回执的 CPU 恢复门槛
+
+必须先将原 Qwen 25 条冻结输入、Runner，以及从 HF Bucket 获取的前 6 个 Checkpoint 置于本地独立目录。运行：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PIN="2d3882acb1fc0ed2aaaf853f9efc10efa5bf41a2"
+DIR="$HOME/.local/share/storyforge/r60/private/qwen-resume7-cpu-tools-v1"
+test ! -e "$DIR"
+umask 077
+mkdir -m 700 "$DIR"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" show \
+  "$PIN:experiments/r58_quality/r60_qwen_resume7_cpu_gate.py" \
+  > "$DIR/r60_qwen_resume7_cpu_gate.py"
+python3 -m py_compile "$DIR/r60_qwen_resume7_cpu_gate.py"
+
+# 以下三个变量必须指向 Owner Mac 已实际准备的原始文件/目录：
+# QWEN_RUNNER=/.../runner.py
+# QWEN_INPUT=/.../source.private.jsonl
+# QWEN_RECEIPTS=/.../six-checkpoints
+
+python3 "$DIR/r60_qwen_resume7_cpu_gate.py" \
+  --runner "$QWEN_RUNNER" \
+  --input "$QWEN_INPUT" \
+  --receipts "$QWEN_RECEIPTS"
+```
+
+预期 `QWEN_RESUME7_CPU_GATE_PASS`，`checkpoint_prefix_verified=6`，`next_position=7`。若 Qwen 的文件目录还未从 HF Bucket 挂载或复制，**不能**声称已通过此门槛，更不能直接进行第 7 条付费恢复。
+
