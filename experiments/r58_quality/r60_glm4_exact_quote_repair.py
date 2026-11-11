@@ -11,6 +11,7 @@ provide a new independent endorsement of a model's literary assertion.
 from __future__ import annotations
 
 from difflib import SequenceMatcher
+from unicodedata import category
 
 FIELDS = (
     ("specific_source_quotes", "SOURCE"),
@@ -22,6 +23,14 @@ MAX_EDITS = 2
 MIN_RATIO = 0.90
 # Editing a negation/modality can completely invert an assertion.
 PROTECTED_CHARS = frozenset("不没无非未勿禁否")
+
+
+def _semantic_skeleton(value: str) -> str:
+    # Only punctuation and whitespace may change; lexical content stays
+    # byte-for-byte identical after removing these nonlexical code points.
+    return "".join(char for char in value
+                   if not category(char).startswith(("P", "Z"))
+                   and not char.isspace())
 
 
 def _candidates(quote: str, body: str):
@@ -78,6 +87,8 @@ def reconcile_quote(quote: object, bodies: list[str]) -> str | None:
             continue
         if any(quote.count(char) != candidate.count(char)
                for char in PROTECTED_CHARS):
+            continue
+        if _semantic_skeleton(quote) != _semantic_skeleton(candidate):
             continue
         if SequenceMatcher(None, quote, candidate, autojunk=False).ratio() < MIN_RATIO:
             continue
