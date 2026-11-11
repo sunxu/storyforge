@@ -1,5 +1,18 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Pilot20 模型审核全部完成：已处理20/20，质量裁决未启动
+
+Owner Mac 安全回执两次完全一致：`status=PILOT20_LOCAL_REVIEW_COMPLETE__OWNER_ADJUDICATION_PENDING`；`processed=20`、`remaining=0`、`model_reviewed=18`、`conflict_pending=2`。18份有效模型意见：PASS=4、HOLD=10、REJECT=4；2份原始PASS但低于冻结六维门槛的冲突隔离结果。严重标志触发次数：`hard_fact_or_ban=1`、`safety_exclusion=2`、`serious_player_agency=2`，属于flag计数，**不得未经逐例核对便推断为5条独立问题样本**。独立参考审核=0，`quality_v1_admitted=0`、`train_admitted=0`；无GPU、无数据库操作。真实数据曾被外发至4Router，不能将无数据库访问理解为无外发。
+
+**现阶段结论**：Pilot20 的模型请求、严格格式校验、CPU快照恢复、断点续跑及质量冲突隔离的工程验收完成；但20/20不是Quality-v1准入完成，不得把4条模型建议PASS直接写入训练，也不能把模型HOLD或分数线冲突未经人工/独立裁决即自动REJECT。保持全部Owner私有回执原件、样本hash和模型理由，不要上传GitHub/公开粘贴。
+
+**下一阶段优先级**：
+1. CPU本地从已有20条结果生成只含统计和位置的SAFE审核汇总，核对18个合格格式回执和2个冲突回执的连续性、checksum、冻结包绑定，无外发/付费。
+2. 对4个模型PASS做抽样或全量复核；10个HOLD区分证据不足、轻微质量问题及确需剔除的情况；4个REJECT核对严重标志及可见上下文依据；2个低分PASS冲突必须独立裁决并保留原始判定与评分。必要时升级Rubric但不可追溯性地偷改冻结标准。
+3. 输出结构化校准结论：模型判定/独立裁决交叉表、六维分布、冲突原因及采样误差。仅在质量标准清晰、Owner独立裁决或已授权AI替代审核方案明确、验收PASS后，考虑在剩余980条上执行下一批精筛。Pilot20样本不能代表Real1000最终合格率。
+4. 训练仍HOLD，需另行授权。后续新Agent从本节和当前GitHub真实HEAD及Owner安全汇总继续，不需重新调用已完成的20条。
+
+
 ## 2026-11-11 真实第8条无效JSON：尾部多余右花括号，可CPU离线恢复
 
 Owner最新真实回执 `processed=7, model_reviewed=6, conflict_pending=1, remaining=13`，批次在第8条 `PROXY_MODEL_JSON_HOLD` 停止；已成功生成的前7条不可重试/覆盖。Owner第8条私有4Router响应快照经安全本地格式诊断：`finish_reason=stop`、外层为完整JSON围栏，围栏内部有效JSON对象之后**恰好多余单个右花括号**，无文本附加；原模型建议结论为HOLD，保留原始六维评分和理由即可，不需要重复调用API。
