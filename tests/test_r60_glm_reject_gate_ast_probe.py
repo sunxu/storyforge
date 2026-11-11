@@ -1,4 +1,5 @@
-"""Synthetic tests for static, no-import reject predicate probe."""
+"""Synthetic tests for the no-import GLM reject predicate probe."""
+
 import importlib.util
 from pathlib import Path
 
@@ -20,7 +21,8 @@ def test_reject_scan_static_and_no_execute(tmp_path):
         "    return 'PASS'\n"
         "def checkpoint_record():\n"
         "    return 'REJECT'\n",
-        encoding="utf-8")
+        encoding="utf-8",
+    )
     result = mod.check(runner)
     assert result["status"] == "GLM_REJECT_GATE_AST_PASS"
     assert result["runner_imported"] is False
