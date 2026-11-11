@@ -220,7 +220,61 @@ def safe_transport_code(exc: Exception) -> str:
     return "PROXY_CONNECTION_OTHER_HOLD"
 
 
-def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
+def parse_proxy_response(raw: bytes) -> dict:
+    """Strict response parser; never expose remote text in exceptions."""
+    try:
+        envelope = json.loads(raw)
+    except (ValueError, UnicodeError) as exc:
+        raise Hold("PROXY_ENVELOPE_JSON_HOLD") from None
+    if not isinstance(envelope, dict):
+        raise Hold("PROXY_ENVELOPE_STRUCTURE_HOLD")
+    choices = envelope.get("choices")
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        raise Hold("PROXY_ENVELOPE_STRUCTURE_HOLD")
+    choice = choices[0]
+    if choice.get("finish_reason") == "length":
+        raise Hold("PROXY_TRUNCATED_HOLD")
+    message = choice.get("message")
+    if not isinstance(message, dict):
+        raise Hold("PROXY_ENVELOPE_STRUCTURE_HOLD")
+    content = message.get("content")
+    if isinstance(content, list):
+        if not all(isinstance(x, dict) and isinstance(x.get("text"), str)
+                   for x in content):
+            raise Hold("PROXY_CONTENT_STRUCTURE_HOLD")
+        content = "".join(x["text"] for x in content)
+    if not isinstance(content, str):
+        raise Hold("PROXY_CONTENT_STRUCTURE_HOLD")
+    if not content.strip():
+        raise Hold("PROXY_EMPTY_HOLD")
+    try:
+        model_json = json.loads(content)
+    except (ValueError, TypeError) as exc:
+        raise Hold("PROXY_MODEL_JSON_HOLD") from None
+    try:
+        return reviewer.parse_model_response(model_json)
+    except (ValueError, TypeError, KeyError, AttributeError, IndexError) as exc:
+        raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
+
+
+def save_failed_response(output_dir: Path, position: int, raw: bytes) -> None:
+    """Preserve private raw model reply for offline replay. No stdout content."""
+    if not 1 <= position <= 20:
+        raise Hold("POSITION_HOLD")
+    diagnostics = output_dir.parent / (output_dir.name + "-response-diagnostics-v1")
+    if diagnostics.exists():
+        private.private_dir(diagnostics, create=False)
+    else:
+        private.private_dir(diagnostics, create=True)
+    path = diagnostics / f"R60_PILOT20_FAILED_{position:04d}_PRIVATE.json"
+    if path.exists() or path.is_symlink():
+        # Never overwrite the first evidence snapshot.
+        return
+    private.write_new(path, raw)
+
+
+def proxy_request(endpoint: str, model: str, prompt: str, timeout: int,
+                  output_dir: Path | None = None, position: int | None = None) -> dict:
     key = os.environ.get(API_KEY_ENV)
     if not key:
         raise Hold("PROXY_API_KEY_REQUIRED")
@@ -233,8 +287,6 @@ def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
             "Accept": "application/json",
         },
     )
-    # Keep network behavior unchanged; classify failures without proxy
-    # speculation, private response bodies, or secrets in SAFE output.
     opener = urllib.request.build_opener(
         urllib.request.ProxyHandler({}), NoRedirect,
     )
@@ -249,25 +301,11 @@ def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
     if len(raw) > MAX_REPLY_BYTES:
         raise Hold("PROXY_RESPONSE_OVERSIZE_HOLD")
     try:
-        envelope = json.loads(raw)
-        choice = envelope["choices"][0]
-        if choice.get("finish_reason") == "length":
-            raise Hold("PROXY_TRUNCATED_HOLD")
-        content = choice["message"]["content"]
-        if isinstance(content, list):
-            content = "".join(
-                item.get("text", "") for item in content
-                if isinstance(item, dict)
-            )
-        if not isinstance(content, str) or not content.strip():
-            raise Hold("PROXY_EMPTY_HOLD")
-        parsed = json.loads(content)
-        return reviewer.parse_model_response(parsed)
-    except (ValueError, TypeError, KeyError, IndexError, AttributeError) as exc:
-        if isinstance(exc, Hold):
-            raise
-        raise Hold("PROXY_RESPONSE_SCHEMA_HOLD") from exc
-
+        return parse_proxy_response(raw)
+    except Hold:
+        if output_dir is not None and position is not None:
+            save_failed_response(output_dir, position, raw)
+        raise
 
 def validate_config(folder: Path) -> dict:
     private.private_dir(folder, create=False)
@@ -395,6 +433,7 @@ def advance(output_dir: Path, max_cases: int, *,
         })
         answer = proxy_request(
             config["endpoint"], config["model_id"], prompt, config["timeout"],
+            output_dir, i + 1,
         )
         receipt = {
             "schema": SCHEMA,
@@ -421,6 +460,9 @@ SAFE_REASON_CODES = frozenset({
     "PROXY_CONNECTION_OTHER_HOLD",
     "PROXY_RESPONSE_OVERSIZE_HOLD", "PROXY_TRUNCATED_HOLD",
     "PROXY_EMPTY_HOLD", "PROXY_RESPONSE_SCHEMA_HOLD",
+    "PROXY_ENVELOPE_JSON_HOLD", "PROXY_ENVELOPE_STRUCTURE_HOLD",
+    "PROXY_CONTENT_STRUCTURE_HOLD", "PROXY_MODEL_JSON_HOLD",
+    "PROXY_RUBRIC_SCHEMA_HOLD",
     "CONFIG_HOLD", "FOREIGN_FILE_HOLD", "NONCONTIGUOUS_HOLD",
     "RECEIPT_SCHEMA_HOLD", "RECEIPT_BINDING_HOLD", "PACKETS_MODIFIED_HOLD",
     "OUTPUT_EXISTS_HOLD", "CONFIG_ARGS_HOLD", "MAX_CASES_HOLD",
