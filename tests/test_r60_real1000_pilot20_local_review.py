@@ -1,4 +1,4 @@
-"""CPU synthetic tests for a localhost-only 20-case literary review pilot."""
+"""CPU synthetic tests for the explicit-egress 4Router Claude pilot20."""
 from __future__ import annotations
 
 import importlib.util
@@ -82,16 +82,21 @@ def test_local_resume_and_advisory_only(monkeypatch, tmp_path):
     def fake_request(*args):
         calls.append(1)
         return model_answer()
-    monkeypatch.setattr(mod.reviewer, "model_request", fake_request)
+    monkeypatch.setattr(mod, "proxy_request", fake_request)
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic-key")
     folder = tmp_path / "output"
-    result = mod.initialize(packets_dir, folder, "http://127.0.0.1:11434/v1",
-                            "local-test-model", True, 30)
+    result = mod.initialize(packets_dir, folder, "https://api.4router.ai/v1",
+                            "claude-opus-5-5", 30)
     assert result["model_reviewed"] == 0
-    result = mod.advance(folder, 5)
+    result = mod.advance(
+        folder, 5, execute=True, allow_private_data_egress=True,
+    )
     assert result["model_reviewed"] == 5
     assert result["model_decisions_advisory"]["REJECT"] == 5
     assert result["quality_v1_admitted"] == 0
-    result = mod.advance(folder, 5)
+    result = mod.advance(
+        folder, 5, execute=True, allow_private_data_egress=True,
+    )
     assert result["model_reviewed"] == 10
     assert len(calls) == 10
     assert mod.get_state(folder)[2]["model_reviewed"] == 10
@@ -100,13 +105,16 @@ def test_local_resume_and_advisory_only(monkeypatch, tmp_path):
 def test_failed_model_does_not_write_receipt(monkeypatch, tmp_path):
     packets_dir = setup_private(monkeypatch, tmp_path)
     folder = tmp_path / "out"
-    mod.initialize(packets_dir, folder, "http://localhost:11434/v1",
-                   "local-test-model", False, 20)
+    mod.initialize(packets_dir, folder, "https://api.4router.ai/v1",
+                   "claude-opus-5-5", 20)
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic-key")
     def fail(*args):
         raise mod.reviewer.Hold("MODEL_TRANSPORT_HOLD")
-    monkeypatch.setattr(mod.reviewer, "model_request", fail)
+    monkeypatch.setattr(mod, "proxy_request", fail)
     try:
-        mod.advance(folder, 1)
+        mod.advance(
+            folder, 1, execute=True, allow_private_data_egress=True,
+        )
     except mod.reviewer.Hold:
         pass
     else:
@@ -117,8 +125,8 @@ def test_failed_model_does_not_write_receipt(monkeypatch, tmp_path):
 def test_tampered_packet_rejected(monkeypatch, tmp_path):
     packets_dir = setup_private(monkeypatch, tmp_path)
     folder = tmp_path / "out"
-    mod.initialize(packets_dir, folder, "http://127.0.0.1:11434/v1",
-                   "local-test-model", False, 20)
+    mod.initialize(packets_dir, folder, "https://api.4router.ai/v1",
+                   "claude-opus-5-5", 20)
     p = packets_dir / mod.pilot.FILENAME
     p.write_bytes(p.read_bytes() + b" ")
     try:
@@ -128,11 +136,47 @@ def test_tampered_packet_rejected(monkeypatch, tmp_path):
     raise AssertionError("expected packet binding failure")
 
 
-def test_remote_endpoint_refused(monkeypatch, tmp_path):
+def test_unapproved_remote_host_refused(monkeypatch, tmp_path):
     packets_dir = setup_private(monkeypatch, tmp_path)
     try:
         mod.initialize(packets_dir, tmp_path / "out", "https://example.com/v1",
-                       "test-model", True, 20)
-    except mod.reviewer.Hold:
+                       "claude-opus-5-5", 20)
+    except mod.Hold:
         return
-    raise AssertionError("expected remote endpoint rejection")
+    raise AssertionError("expected endpoint rejection")
+
+
+def test_prior_claude_system_contract():
+    payload = mod.claude_payload("claude-opus-5-5", "private sample")
+    assert payload["messages"] == [{"role": "user", "content": "private sample"}]
+    assert payload["system"] == mod.reviewer.REVIEW_INSTRUCTIONS
+    assert "temperature" not in payload
+    assert "response_format" not in payload
+    assert payload["stream"] is False
+
+
+def test_explicit_egress_flags_required(monkeypatch, tmp_path):
+    packet_dir = setup_private(monkeypatch, tmp_path)
+    folder = tmp_path / "out"
+    mod.initialize(packet_dir, folder, "https://api.4router.ai/v1",
+                   "claude-opus-5-5", 20)
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic-key")
+    try:
+        mod.advance(folder, 1, execute=False, allow_private_data_egress=True)
+    except mod.Hold:
+        pass
+    else:
+        raise AssertionError("expected consent HOLD")
+    assert mod.get_state(folder)[2]["model_reviewed"] == 0
+
+
+def test_proxy_path_rejects_credentials_and_http():
+    for bad in ("http://api.4router.ai/v1",
+                "https://secret@api.4router.ai/v1",
+                "https://api.4router.ai/v1?key=secret",
+                "https://api.4router.ai.evil.example/v1"):
+        try:
+            mod.proxy_endpoint(bad)
+        except mod.Hold:
+            continue
+        raise AssertionError("invalid 4Router endpoint accepted")
