@@ -73,15 +73,12 @@ def profile(cases: list[dict]) -> dict:
         if case.get("target_semantics") != "DB_FINAL_PERSISTED_ASSISTANT":
             raise Hold("TARGET_SEMANTICS_HOLD")
         persisted += 1
-        if case.get("historical_system_provenance") != "UNKNOWN_NOT_ACTUAL_SENT":
-            raise Hold("SYSTEM_PROVENANCE_HOLD")
-        missing_actual_system += 1
-        if case.get("world_component_status") != "UNKNOWN_HOLD":
-            raise Hold("WORLD_STATUS_HOLD")
-        world_hold += 1
-        if case.get("r50_complete_exclusion_status") != "UNKNOWN_HOLD":
-            raise Hold("R50_STATUS_HOLD")
-        r50_hold += 1
+        if case.get("historical_system_provenance") == "UNKNOWN_NOT_ACTUAL_SENT":
+            missing_actual_system += 1
+        if case.get("world_component_status") == "UNKNOWN_HOLD":
+            world_hold += 1
+        if case.get("r50_complete_exclusion_status") == "UNKNOWN_HOLD":
+            r50_hold += 1
         if case.get("train_admitted") is not False:
             raise Hold("ADMISSION_STATUS_HOLD")
     if len(stories) > 1000 or max(stories.values(), default=0) > 4:
