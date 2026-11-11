@@ -1,5 +1,42 @@
 # R60 GLM 优先 + Qwen 并行故障修复任务书（2026-11-11）
 
+## 2026-11-11 GLM CPU 集成预检 HOLD：安全定位 v2
+
+Owner 实测初版 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_HOLD`，初版没有 reason_code，不能判断是模型引用修复失败还是测试夹具制造了无法修复的引用。初版合成方式 `target_text[:24] + 任意标点` 不保证候选在原文中唯一、不能作为修复通过的充分前提。
+
+修订后的 `r60_glm4_literal_repair_cpu_probe.py` 只选择**实际原文前缀的标点结尾片段**，替换末尾标点后必须事先由真实 `reconcile_quote` 确认能够唯一还原，才进入冻结 Runner 测试。HOLD 仅输出明确白名单 `reason_code`；所有私有异常和原文均隐藏。与 `r60_glm4_exact_quote_repair.py` 配套使用，不能只更新单个文件。新增 CPU 合成集成回归。
+
+在 Owner Mac 运行**新独立目录**（不要使用上一轮 `glm-literal-cpu-tools-v1` 的旧代码）：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+SOURCE="$PILOT/input_B_quote_observer_v1"
+DEST="$PILOT/glm-literal-cpu-tools-v2"
+PIN="bb1e7e3de6b72093d4a387f02c89247868c0fb1f"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" cat-file -e "$PIN^{commit}"
+test ! -e "$DEST"
+test -f "$SOURCE/runner.py"
+test -f "$SOURCE/source.private.jsonl"
+umask 077
+mkdir -m 700 "$DEST"
+for F in r60_glm4_exact_quote_repair.py r60_glm4_literal_repair_cpu_probe.py; do
+  git -C "$ROOT" show "$PIN:experiments/r58_quality/$F" > "$DEST/$F"
+done
+chmod 600 "$DEST"/*.py
+python3 -m py_compile "$DEST"/*.py
+python3 "$DEST/r60_glm4_literal_repair_cpu_probe.py" \
+  --runner "$SOURCE/runner.py" \
+  --input "$SOURCE/source.private.jsonl"
+```
+
+预期为 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，否则请回传包含 `reason_code` 的 SAFE JSON；**禁止打印原始私有 traceback**。本次依旧没有运行 GPU，没有改变历史回执。
+
+---
+
+
 ## 现有确定事实
 
 GLM B25：H200 定向诊断 Job `adradar/6af3f4e09737d9a9e092936e` 完成，12/12 重试 `MODEL_NONEXACT_QUOTE_HOLD`，新增有效 0，历史有效 13 保留。引文错误具体是 source 8 条/16 处、target 7 条/13 处，3 条重叠；全部字段均为合法 list，且未见数量超限或超长、空值。**模型生成引文未能逐字出现在原文**，不等于来源错误、质量本身 PASS/HOLD/REJECT，也不能擅自修复为任意其他证据。
