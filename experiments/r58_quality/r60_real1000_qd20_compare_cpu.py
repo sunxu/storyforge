@@ -8,12 +8,10 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections import Counter
 from pathlib import Path
 
 import r60_real1000_qwen_deepseek20_live as live
 import r60_real1000_s1_compare_cpu as s1
-import r60_real1000_pilot20_local_review as pilot
 import r60_real_private_batch as private
 
 SCHEMA = "storyforge_r60_real1000_qd20_compare_safe_v1"
