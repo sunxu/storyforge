@@ -319,6 +319,7 @@ def main() -> int:
     parser.add_argument("--max-output-tokens", type=int, default=2400)
     parser.add_argument("--wall-seconds", type=int, default=5400)
     parser.add_argument("--resume", action="store_true")
+    parser.add_argument("--isolate-technical-failures", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -351,6 +352,20 @@ def main() -> int:
         emit("CONTINUOUS_REVIEW_READY", input_count=expected_count,
              target=args.case_limit, batch_size=args.batch_size,
              integrity_mode=integrity, model_pinned=True)
+        if args.isolate_technical_failures:
+            from r60_review_isolation_core import run_isolated
+
+            result = run_isolated(
+                worker, rows, args.output_dir, args.local_dir,
+                model=MODEL, revision=REV,
+                limit=args.case_limit, batch_size=args.batch_size,
+                max_model_len=args.max_model_len,
+                max_output_tokens=args.max_output_tokens,
+                wall_seconds=args.wall_seconds, resume=args.resume,
+                hf_tokenizer=AutoTokenizer, vllm=vllm)
+            # All attempted with technical failures is an analysis artifact,
+            # NOT a complete validated review / training admission.
+            return 0 if result["all_attempted"] else 42
         result = run_batches(
             worker, rows, args.output_dir, args.local_dir,
             limit=args.case_limit, batch_size=args.batch_size,
