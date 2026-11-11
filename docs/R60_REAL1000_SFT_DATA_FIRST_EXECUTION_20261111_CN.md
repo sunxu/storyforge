@@ -1,5 +1,44 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 继续推进：3条SFT构造草稿 + 20条低成本API离线预算
+
+**现状：** 双PASS候选3条已经真实来源验证，已知R50五世界零story-id碰撞，但原始历史System、世界组件和更广的评测数据隔离未验证；Quality-v1正式训练准入仍0。以“可复用的工程试验”替代重复11条证据仲裁，绝不以双PASS自动给训练许可。
+
+新增两个CPU-only独立模块（均不发API/不操作GPU）：
+
+1. `experiments/r58_quality/r60_real1000_double_pass_sft_draft_cpu.py`：先调用现有context preflight复验冻结1000、Sample100和Pilot20的3条候选映射，再将各样本严格组织为`system/user/assistant/user/assistant`五条消息，使用显式统一的`TRAINING_CONSTRUCTED_CONTEXT__NOT_HISTORICAL`新建System文本，不虚称真实历史System，也不臆造世界卡。create-only写Owner私有`SFT_FORMAT_DRAFT__NOT_ADMITTED`，保存原上下文和目标的格式试验草稿。**它不是训练集，未进行Tokenizer/Collator，也未解除R50/世界组件门禁。**
+2. `experiments/r58_quality/r60_real1000_lowcost20_budget_cpu.py`：复用已冻结Pilot20 20条原始审核输入与既有六维Rubric，计算prompt总字符及长度最大值，并使用**命令行提供的同货币每百万token输入/输出标价**和上限输出token估计双模型费用。必须显式注明`actual_tokenizer_measurement=false`及`tokens_per_character`假设，不能把字符乘数当成真实token计算或收费保证。该工具不包含任何厂商API连接、无模型调用/数据外发。
+
+Owner在现有专用Mac worktree同步CI通过的PIN，运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_cpu_draft_budget.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_double_pass_sft_draft_cpu.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --candidate-file "$BASE/r60-real1000-double-pass-candidates-v1/R60_DOUBLE_PASS_TRAIN_CANDIDATES_PRIVATE.json" \
+  --output-dir "$BASE/r60-real1000-double-pass-sft-draft-v1"
+```
+
+费用预算命令（**下例价格仅为展示入参，不代表已核实当前厂商费率；以同一货币实时价替换**）：
+
+```bash
+python3 experiments/r58_quality/r60_real1000_lowcost20_budget_cpu.py \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --tokens-per-character 2.0 --max-output-tokens 1024 \
+  --a-input-price-per-million 0.2 --a-output-price-per-million 0.8 \
+  --b-input-price-per-million 1 --b-output-price-per-million 4
+```
+
+预期草稿状态`SFT_CONSTRUCTED_CONTEXT_DRAFT_READY__TRAIN_ADMISSION_HOLD`（3条）；预算状态`LOWCOST20_CHARACTER_ENVELOPE_READY__TOKENIZER_AND_AUTH_HOLD`（20条）。以上动作均为本地CPU工程预检，不意味着已完成真实System追溯、实际tokenizer、collator、厂商模型固定/报价或支付授权。
+
+**下一步**：在真实CPU通过后，可用同一草稿做Tokenizer/Collator dry-run；另外固定百炼Qwen与DeepSeek正式model ID、API响应兼容性、计费与数据外发边界，先测试20条双模型质量对照，不默认扩充80/980也不重新调用4Router。并行Agent对Qwen/GLM工作维持独立文件，不跨工作树修改其冻结结果。
+
+
 ## 2026-11-11 Owner R50已知5故事零重叠PASS；结合历史R50账本澄清边界
 
 Owner最新真实SAFE：`R50_KNOWN5_PARTIAL_CHECK_PASS__FULL_EXCLUSION_HOLD`：冻结池1000、双PASS候选3、R50已知来源故事5、`known5_story_overlap_count=0`、`r50_complete_exclusion_verified=false`、训练准入0；无DB/模型/GPU操作。
