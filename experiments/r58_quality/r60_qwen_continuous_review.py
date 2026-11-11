@@ -365,7 +365,7 @@ def main() -> int:
                 hf_tokenizer=AutoTokenizer, vllm=vllm)
             # All attempted with technical failures is an analysis artifact,
             # NOT a complete validated review / training admission.
-            return 0 if result["all_attempted"] else 42
+            return 0 if result["all_verified"] else 42
         result = run_batches(
             worker, rows, args.output_dir, args.local_dir,
             limit=args.case_limit, batch_size=args.batch_size,
