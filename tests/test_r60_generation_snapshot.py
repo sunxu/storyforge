@@ -127,3 +127,75 @@ def test_foreign_directory_and_wrong_identity_rejected(tmp_path):
             store.directory, worker=worker, model="model", revision="rev",
             runner_sha256=hashlib.sha256(b"source").hexdigest(),
             emit=lambda *args, **kw: None)
+
+
+
+def test_isolation_captures_raw_output_before_review_error(tmp_path):
+    """The real isolation runner must snapshot every generation before failure."""
+    core_spec = importlib.util.spec_from_file_location(
+        "r60_isolation_snapshot_integration",
+        BASE / "r60_review_isolation_core.py")
+    assert core_spec and core_spec.loader
+    core = importlib.util.module_from_spec(core_spec)
+    core_spec.loader.exec_module(core)
+
+    output, snapshots, local = (tmp_path / name for name in (
+        "receipts", "snapshots", "weights"))
+    for directory in (output, snapshots, local):
+        directory.mkdir()
+    rows = [{"pos": 1}, {"pos": 2}]
+    events = []
+    state = {"engines": 0, "generates": 0}
+    model = "zai-org/GLM-4-32B-0414"
+    revision = "a" * 40
+
+    class ReviewerError(ValueError):
+        pass
+
+    class Engine:
+        def generate(self, *args, **kwargs):
+            state["generates"] += 1
+            return _result('{"decision":"HOLD","private":"raw not validated"}')
+
+    def engine_factory(**kwargs):
+        state["engines"] += 1
+        return Engine()
+
+    vllm = SimpleNamespace(LLM=engine_factory)
+    tokenizer = SimpleNamespace(
+        from_pretrained=lambda *args, **kwargs: object())
+
+    def inference(input_rows, out, name, rev, pos, limit, *args):
+        assert limit == 1
+        wrapped = vllm.LLM(model=name, revision=rev, tokenizer_revision=rev)
+        wrapped.generate(["private prompt"])
+        raise ReviewerError("MODEL_NONEXACT_QUOTE_HOLD")
+
+    worker = SimpleNamespace(
+        POLICY="synthetic policy", ReviewError=ReviewerError,
+        input_digest=core.sha,
+        checkpoint_name=lambda pos: f"review_{pos:04d}.private.json",
+        read_checkpoint=lambda *args: None,
+        inference=inference,
+    )
+    store = snap.GenerationSnapshotStore(
+        snapshots, worker=worker, model=model, revision=revision,
+        runner_sha256="b" * 64,
+        emit=lambda event, **fields: events.append((event, fields)))
+    result = core.run_isolated(
+        worker, rows, output, local, model=model, revision=revision,
+        limit=2, batch_size=2, max_model_len=32768,
+        max_output_tokens=2400, wall_seconds=1200, resume=False,
+        hf_tokenizer=tokenizer, vllm=vllm,
+        generation_snapshot_store=store)
+    assert result["verified"] == 0
+    assert result["technical_failures"] == 2
+    assert state == {"engines": 1, "generates": 2}
+    assert (output / "technical_failure_0001.safe.json").exists()
+    assert (output / "technical_failure_0002.safe.json").exists()
+    assert sorted(x.name for x in snapshots.iterdir()) == [
+        "generation_0001_01.private.json",
+        "generation_0002_01.private.json",
+    ]
+    assert len(events) == 2
+    assert all("raw not validated" not in str(e) for e in events)
