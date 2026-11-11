@@ -61,7 +61,7 @@ python3 -m py_compile "$DEST"/*.py "$TOOLS"/*.py
 
 ### Owner Mac：一次 H200 Job 恢复第 7–25 条（仅在准备和 CI PASS 后）
 
-> 此处与新建输出目录不同：**明确复用原失败 Job 的 Checkpoint 输出目录，并启用 \`--resume\`**；H200 临时模型目录仍每次重新复制。先在同镜像上检查 \`guidance\` 后端依赖是否可 import，缺失则在复制大模型前 fail closed。不要无条件 pip 安装未固定版本的依赖。
+> 此处与新建输出目录不同：**明确复用原失败 Job 的 Checkpoint 输出目录，并启用 \`--resume\`**；H200 临时模型目录仍每次重新复制。先在同镜像上检查 \`llguidance\` / \`llguidance_hf\` / \`llguidance_torch\` 后端依赖是否可 import，缺失则在复制大模型前 fail closed。不要无条件 pip 安装未固定版本的依赖。
 
 \`\`\`bash
 set -euo pipefail
@@ -76,7 +76,7 @@ hf jobs run --namespace adradar --name r60-qwen-a25-guidance-resume \
   -v "hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy:/model-source:ro" \
   -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
   "$IMG" \
-  sh -c 'set -eu; /usr/bin/python3 -c "import guidance" || { echo GUIDANCE_BACKEND_NOT_INSTALLED_HOLD; exit 42; }; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; test -d "$OUT" || { echo RESUME_OUTPUT_MISSING_HOLD; exit 42; }; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 5 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --resume --confirm-paid-gpu'
+  sh -c 'set -eu; /usr/bin/python3 -c "import llguidance; import llguidance_hf; import llguidance_torch" || { echo LLGUIDANCE_BACKEND_NOT_INSTALLED_HOLD; exit 42; }; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; test -d "$OUT" || { echo RESUME_OUTPUT_MISSING_HOLD; exit 42; }; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 5 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --resume --confirm-paid-gpu'
 \`\`\`
 
 期望 \`REVIEW_PREFIX_VERIFIED count=6\` → \`BATCH_START start=7\` → \`REAL_ENGINE_READY\` → 后续 \`BATCH_COMPLETE\` → \`CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1\`。恢复 Job 会重新初始化**一次**模型，不是复用已经结束的 H200 的模型实例。**如 Guidance 依赖缺失，先单独评估固定镜像方案，不应盲目再次运行 GPU。**
