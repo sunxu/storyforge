@@ -63,15 +63,18 @@ def verify_baseline(worker: object, rows: list[dict], baseline: Path,
     return selected, FAILED_POSITIONS
 
 
-def quote_shape_diagnostic(worker: object, emit_fn: object):
+def quote_shape_diagnostic(worker: object, emit_fn: object, *, repair: bool = False):
     """Build a wrapper for the exact frozen checkpoint_record global.
 
     Emit only field identity and TYPE/COUNT error, never quotes or a response.
-    Then defer unchanged to the frozen validation and checkpoint writer.
+    Optional conservative repair only converts an already exact source quote
+    string to a one-item list or removes identical duplicate evidence quotes.
+    The original frozen verifier still validates the resulting record.
     """
     original = worker.checkpoint_record
 
     def observed(position, row, response, model, revision):
+        amended = response
         if isinstance(response, dict):
             for field, ident in (
                 ("specific_source_quotes", "SOURCE"),
@@ -84,6 +87,35 @@ def quote_shape_diagnostic(worker: object, emit_fn: object):
                 elif len(value) > 12:
                     emit_fn("QUOTE_SHAPE_DIAGNOSTIC", position=position,
                             field=ident, violation="OVER_LIMIT")
-        return original(position, row, response, model, revision)
+                if not repair:
+                    continue
+                bodies = (
+                    [x["content"] for x in row["visible_history"]]
+                    if ident == "SOURCE" else [row["target_text"]]
+                )
+                normalized = None
+                if (isinstance(value, str) and 0 < len(value) <= 300
+                        and value.strip()
+                        and any(value in body for body in bodies)):
+                    normalized = [value]
+                    operation = "EXACT_SINGLETON"
+                elif isinstance(value, list) and len(value) > 12:
+                    unique = list(dict.fromkeys(value)) if all(
+                        isinstance(item, str) for item in value
+                    ) else value
+                    if (len(unique) <= 12 and all(
+                            item and len(item) <= 300
+                            and any(item in body for body in bodies)
+                            for item in unique)):
+                        normalized = unique
+                        operation = "EXACT_DEDUPLICATE"
+                if normalized is not None:
+                    if amended is response:
+                        amended = dict(response)
+                    amended[field] = normalized
+                    emit_fn("QUOTE_SHAPE_REPAIR", position=position,
+                            field=ident, operation=operation,
+                            substantive_text_changed=False)
+        return original(position, row, amended, model, revision)
 
     return observed
