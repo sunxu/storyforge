@@ -1,5 +1,28 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：修正 GLM 引文 RHS 静态分析过度传播
+
+Owner Mac 的 `QUOTE_BINDING_CPU_PASS` 返回：`left_provenance` 与 `right_provenance` 都列出 SOURCE_QUOTE_FIELD / TARGET_QUOTE_FIELD / VISIBLE_HISTORY / TARGET_TEXT / MESSAGE_CONTENT；`right_scope=MIXED_HISTORY_TARGET`，`rhs_binding_candidates=1`。**该结果不是校验器真的混用了两种文本的证据。** 原探针全函数范围汇总了赋值、循环和推导式别名，导致来源过度传播，尤其同一个循环中对 source/target 共用变量时会丢失配对关系。
+
+新增 `experiments/r58_quality/r60_glm4_quote_pair_probe.py`：仅查找冻结 Runner AST 里**显式写出的** `(specific_source_quotes, body_expr)` / `(specific_target_quotes, body_expr)` 配对，从配对右侧独立追踪受限变量来源。每项输出 `field`、`candidate_body_scope`、`body_provenance`，不读取或打印原文、私有文本、源码，也不运行 Runner。若 `pair_count=0`，只表示当前模式无法识别配对，不能假定不存在相关校验。输出是静态候选，**不能确认运行时匹配规则正确，更不能将 12 条当作模型捏造引文**。
+
+Owner Mac CPU-only 命令：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+PIN="5e9ff687337ca96783e26fb55c874948986d53a1"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+python3 <(git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_glm4_quote_pair_probe.py") \
+  --runner "$PILOT/input_B_retry12_v1/runner.py"
+```
+
+**继续禁止新的 GLM H200 重试**；原有 13 个有效 checkpoint 以及两轮各 12 条技术失败仍独立保留。若输出能识别 source/target 对应候选文本范围，再设计本地 CPU-only 实际逐条 quote-verification 演练，必须保留原质量规则。
+
+---
+
+
 ## 2026-11-11：GLM 引文检查 RHS 绑定来源 CPU 追踪（无需 H200）
 
 Owner Mac 前两次离线输出：`QUOTE_RAISE_CPU_INSPECT_PASS` 找到 `validate_response` 内单一 `MODEL_NONEXACT_QUOTE_HOLD` 抛出点，条件为 `MEMBERSHIP_OR_TEXT_MATCH`；`QUOTE_SEMANTICS_CPU_PASS` 显示 `not any(QUOTED_ITEM IN OTHER_VARIABLE ...)` 类结构，候选字段包括 `visible_history`、`target_text`、`specific_source_quotes`、`specific_target_quotes`。因 `OTHER_VARIABLE` 是别名，之前无法确定 RHS 的真实来源。这既不证明 12 条是虚假引文，也不证明校验器有 bug。
