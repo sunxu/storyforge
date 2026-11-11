@@ -8,8 +8,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "experiments/r58_quality"))
-import r60_real1000_s0_audit_cpu as s0
 import r60_real1000_pilot20_local_review as review
+import r60_real1000_s0_audit_cpu as s0
 
 
 def setup(monkeypatch, tmp_path):
@@ -122,10 +122,9 @@ def test_receipt_tamper_detected(monkeypatch, tmp_path):
     path.write_bytes(review.canonical(value))
     try:
         s0.audit(sample_dir, out)
-    except Exception:
-        pass
-    else:
-        raise AssertionError("must reject modified receipt without valid checksum")
+    except (s0.Hold, review.Hold):
+        return
+    raise AssertionError("must reject modified receipt without valid checksum")
 
 
 def test_incomplete_pilot_must_hold(monkeypatch, tmp_path):
