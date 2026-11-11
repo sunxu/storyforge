@@ -35,7 +35,7 @@ PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
 SRC="$PILOT/input_A_continuous"
 DEST="$PILOT/input_A_guidance_resume"
 TOOLS="$BASE/r60-qwen-guidance-resume-tools-v1"
-REV="__A25_GUIDANCE_CODE_PIN__"
+REV="f5cec4a09777a308a5b885b03e8dafbfed190cce"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 test -d "$SRC"
 test ! -e "$DEST" || { echo A25_GUIDANCE_BUNDLE_EXISTS_HOLD; exit 42; }
