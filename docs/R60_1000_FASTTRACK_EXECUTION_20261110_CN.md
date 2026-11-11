@@ -1,5 +1,21 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：Guidance 恢复 Job 误拦截修复——不是模型失败
+
+Owner Job：https://huggingface.co/jobs/adradar/6af3cf14ab34849891ada999，2026-11-11 02:12:38 启动，在 shell 依赖预检抛出 `ModuleNotFoundError: No module named 'llguidance_hf'` → `LLGUIDANCE_BACKEND_NOT_INSTALLED_HOLD`。**这是执行书中错误的预检：`llguidance_hf` / `llguidance_torch` 是 vLLM 对 `llguidance.hf` / `llguidance.torch` 的内部别名，而非独立的顶层包。** 该 Job 尚未复制权重、加载模型或开始审核；原始 Qwen A25 仍为 6/25。此事件没有证据说明 Guidance 真正不可用，因此禁止据此安装未知版本依赖。
+
+已经修正上述 H200 命令：只以 `import llguidance` 加上 `GuidedDecodingParams(json={'type':'object'}, backend='guidance')` 来验证必要依赖及当前版本 API，**它仅是廉价预检，并不是 Guidance 在模型上生成正确 JSON 的证明**。请勿再运行旧命令中的 `import llguidance_hf`。仍应保留原输出目录及 `--resume` 验证六条连续 Checkpoint。不需要重新复制持久 Bucket 权重。
+
+如要零 GPU 成本地排查镜像预检，可在 Owner Mac 的本机 Docker/OrbStack 环境执行（本地未必已缓存镜像，可能发生镜像下载）：
+
+```bash
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+docker run --rm --entrypoint /usr/bin/python3 "$IMG" -c 'import llguidance; from vllm.sampling_params import GuidedDecodingParams; GuidedDecodingParams(json={"type":"object"}, backend="guidance"); print("GUIDANCE_IMPORT_API_PREFLIGHT_PASS")'
+```
+
+---
+
+
 ## 2026-11-11：GLM-4 B25 真实本地加载 PASS，但第一条审核发生 ReviewError（0/25）
 
 Owner 实际 HF Job：https://huggingface.co/jobs/adradar/6af3cc26ab34849891ada1e9
@@ -78,7 +94,7 @@ python3 -m py_compile "$DEST"/*.py "$TOOLS"/*.py
 
 ### Owner Mac：一次 H200 Job 恢复第 7–25 条（仅在准备和 CI PASS 后）
 
-> 此处与新建输出目录不同：**明确复用原失败 Job 的 Checkpoint 输出目录，并启用 \`--resume\`**；H200 临时模型目录仍每次重新复制。先在同镜像上检查 \`llguidance\` / \`llguidance_hf\` / \`llguidance_torch\` 后端依赖是否可 import，缺失则在复制大模型前 fail closed。不要无条件 pip 安装未固定版本的依赖。
+> 此处与新建输出目录不同：**明确复用原失败 Job 的 Checkpoint 输出目录，并启用 \`--resume\`**；H200 临时模型目录仍每次重新复制。先在同镜像上仅检查真正的 \`llguidance\` 包能否导入，并实例化当前固定版本的 \`GuidedDecodingParams(backend="guidance")\`；\`llguidance_hf\` / \`llguidance_torch\` 不是顶层模块，禁止当作检查项，缺失则在复制大模型前 fail closed。不要无条件 pip 安装未固定版本的依赖。
 
 \`\`\`bash
 set -euo pipefail
@@ -93,7 +109,7 @@ hf jobs run --namespace adradar --name r60-qwen-a25-guidance-resume \
   -v "hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy:/model-source:ro" \
   -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
   "$IMG" \
-  sh -c 'set -eu; /usr/bin/python3 -c "import llguidance; import llguidance_hf; import llguidance_torch" || { echo LLGUIDANCE_BACKEND_NOT_INSTALLED_HOLD; exit 42; }; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; test -d "$OUT" || { echo RESUME_OUTPUT_MISSING_HOLD; exit 42; }; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 5 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --resume --confirm-paid-gpu'
+  sh -c 'set -eu; /usr/bin/python3 -c "import llguidance; from vllm.sampling_params import GuidedDecodingParams; GuidedDecodingParams(json={\u0027type\u0027:\u0027object\u0027}, backend=\u0027guidance\u0027)" || { echo GUIDANCE_BACKEND_PREFLIGHT_HOLD; exit 42; }; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; test -d "$OUT" || { echo RESUME_OUTPUT_MISSING_HOLD; exit 42; }; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 5 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --resume --confirm-paid-gpu'
 \`\`\`
 
 期望 \`REVIEW_PREFIX_VERIFIED count=6\` → \`BATCH_START start=7\` → \`REAL_ENGINE_READY\` → 后续 \`BATCH_COMPLETE\` → \`CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1\`。恢复 Job 会重新初始化**一次**模型，不是复用已经结束的 H200 的模型实例。**如 Guidance 依赖缺失，先单独评估固定镜像方案，不应盲目再次运行 GPU。**
