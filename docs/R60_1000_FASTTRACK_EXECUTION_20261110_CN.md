@@ -1,5 +1,23 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM B25 隔离执行真实回执——25/25 尝试、13 有效、12 技术失败
+
+Owner Job：https://huggingface.co/jobs/adradar/6af3dbb69737d9a9e0927770
+
+完整日志中的尾部明确为 `ALL_CASES_ATTEMPTED attempted=25 verified=13 technical_failures=12 engine_init_count=1`。模型占用 60.6632 GiB、8.85 秒加载权重，KV Cache 48.41 GiB；**单引擎连续执行 25 条，错误隔离方案真实 PASS**。最终 exit 42 是预期的失败闭锁信号，因为不足 25 条有效 Checkpoint，不能把 25 次尝试称为完成质量审核。
+
+- 有效 checkpoint（13）：2、3、4、8、10、11、13、14、16、17、18、19、21。
+- 技术失败（12）：1、5、6、7、9、12、15、20、22、23、24、25。
+- 12 个失败均是 `MODEL_NONEXACT_QUOTE_HOLD`；没有新模型加载/显存/Token 预算失败，也没有更多非 ReviewError 异常。
+- 冻结审核器直接 `raise ReviewError("MODEL_NONEXACT_QUOTE_HOLD")` 的两个条件：`specific_source_quotes` 或 `specific_target_quotes` **不是 list**，或者其数量 **超过 12**。与另一个针对“原文逐字匹配不符”的 `QuoteValidationError`（进入 quote repair）不同。根据这次日志的 `exception_class=ReviewError`，**更可能是引用字段类型/条数**；仅凭 SAFE 日志无法区分字段和条件，不能断言 JSON 约束后端整体损坏。
+- 原 `response_schema()` 已给引用字段 `type=array,maxItems=12`，而实际校验仍拦截 12/25；下一步优先 CPU 核验结构化输出实现是否真实遵循 array/maxItems 约束，并让 SAFE 诊断只记录 `SOURCE/TARGET` 与 `NOT_LIST/OVER_LIMIT`，不记录原文、模型输出或引用列表。不得直接调宽 `maxItems=12`、跳过校验或把失败当质量 HOLD。
+- **保护成果**：旧输出目录 `/bucket/evaluation-runs/r60-glm4-b25-isolated-v1` 中的 13 个 `review_NNNN.private.json` 和 12 个 `technical_failure_NNNN.safe.json` 属于冻结证据，不覆盖、不删除、不用原 `--resume` 试图重跑技术失败。修复后应先在新隔离目录做针对这 12 条的精确范围重试，继续校验其来源、模型和评分标准，并合并报告，不冒充同一次原始尝试。具体重试工具及保留旧回执的合并机制尚未实现，不得立即安排下一次 H200 付费任务。
+
+总结：**批处理失败隔离工程目标已达到，GLM 质量审核整体准入尚未达到。** 13 条有效不等于质量 PASS：还需读取 Checkpoint 中 `decision` 汇总，不可将 `verified=13` 当成 13 条质量优秀样本。
+
+---
+
+
 ## 2026-11-11：P0 Qwen A25 Guidance ValueError 分阶段诊断（CPU-first，不自动 GPU）
 
 **真实问题**：Qwen 恢复 Job `6af3d3ec9737d9a9e0926d5e`：`GUIDANCE_PREFLIGHT_PASS`、本地加载 17/17、严格验证 1–6、`REAL_ENGINE_READY` 后，第 7 条出现 **`ValueError / UNKNOWN_REVIEW_FAILURE`**，该 ValueError 不是冻结审核器白名单内的 ReviewError；原日志没有 XGrammar FSM 报错。之前的预检仅实例化 `GuidedDecodingParams`，**没有实例化完整的 `SamplingParams(guided_decoding=...)`**，不能证明真实参数组合兼容。
