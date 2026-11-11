@@ -150,3 +150,53 @@ def test_receipt_tamper_rejected(monkeypatch, tmp_path):
         assert str(exc) == "RECEIPT_BINDING_HOLD"
     else:
         raise AssertionError("tampered model receipt accepted")
+
+
+def test_failed_model_snapshot_replay_without_network(monkeypatch, tmp_path):
+    cfg = fake_config()
+    monkeypatch.setattr(live.private, "write_new",
+                        lambda path, data: Path(path).write_bytes(data))
+    monkeypatch.setattr(live.private, "read_private",
+                        lambda path, max_bytes: Path(path).read_bytes())
+    raw = json.dumps({
+        **fake_answer("PASS"),
+        "scores": {**fake_answer("PASS")["scores"], "player_agency": 2},
+    }, ensure_ascii=False)
+    error = live.ModelResponseHold("QUALITY_FLOOR_DECISION_INCONSISTENT", raw)
+    assert live.save_failure_snapshot(tmp_path, cfg, 1, "deepseek", error)
+    safe = live.inspect_failure_snapshots(tmp_path, cfg)
+    assert safe["private_failed_model_snapshots"] == 1
+    assert safe["offline_replay_outcomes"]["STILL_INVALID_UNCHANGED"] == 1
+    assert safe["model_inference_calls_this_run"] == 0
+    assert live.save_failure_snapshot(tmp_path, cfg, 1, "deepseek", error)
+    assert (tmp_path / live.failed_name(1, "deepseek", 1)).exists()
+    assert (tmp_path / live.failed_name(1, "deepseek", 2)).exists()
+
+
+def test_invalid_model_decision_retains_raw_for_private_snapshot(monkeypatch):
+    class Reply:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+        def read(self, n):
+            bad = fake_answer("PASS")
+            bad["scores"]["player_agency"] = 1
+            return json.dumps({"choices": [{"message": {
+                "content": json.dumps(bad, ensure_ascii=False)
+            }}]}).encode()
+
+    class Opener:
+        def open(self, request, timeout):
+            return Reply()
+
+    monkeypatch.setattr(live.urllib.request, "build_opener",
+                        lambda *x: Opener())
+    try:
+        live.call_provider("https://api.deepseek.com/chat/completions",
+                           "deepseek-flash", "deepseek", "fake", "prompt", 30, True)
+    except live.ModelResponseHold as exc:
+        assert str(exc) == "QUALITY_FLOOR_DECISION_INCONSISTENT"
+        assert "player_agency" in exc.raw_response
+    else:
+        raise AssertionError("invalid PASS must not be admitted")
