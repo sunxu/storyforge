@@ -1,5 +1,28 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM 私有 Runner CPU 调用路径回执与下一步
+
+Owner Mac 对私有 `input_B_retry12_v1/runner.py` 的 AST 检查：`inference_calls_checkpoint_record=true`、`checkpoint_record_calls_validate_response=true`、`has_direct_validate_response=true`；**无** `QuoteValidationError` 类与 `repair_generated_quotes` 函数。说明私有冻结 Runner 不等同于 GitHub 通用 `hf_literary_review.py`。原先仅基于通用审核器推断的 QuoteValidationError 不能直接套用本私有 Runner。旧 quote-shape wrapper 静态可达，但无任何 `QUOTE_SHAPE_DIAGNOSTIC`，因此下一步优先 CPU 静态检查 **实际冻结 Runner 内 `MODEL_NONEXACT_QUOTE_HOLD` 所在条件**。不应继续重复 H200 12 条重试。
+
+新增 `experiments/r58_quality/r60_glm4_quote_raise_probe.py`：仅使用 AST 分析 error code 的 raise-site 所在函数与 guard 类型，输出标记 `TYPE_CHECK`、`LENGTH_CHECK`、`MEMBERSHIP_OR_TEXT_MATCH`、`OTHER_GUARD` 等，不导入、执行或泄露冻结 Runner 代码与私有内容。
+
+Owner Mac CPU-only 命令：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+PIN="79ede096f433e832d5dd284a03385aa1d02d1096"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+python3 <(git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_glm4_quote_raise_probe.py") \
+  --runner "$PILOT/input_B_retry12_v1/runner.py"
+```
+
+请提供仅 SAFE JSON 输出，观察 `sites` 与 `guard_categories`。静态调用路径与错误类型不能证明本次 12 条究竟命中了哪个条件，但可精确判断 Runner 是否会因**逐字包含关系错误**使用同一错误码，从而修正此前无效的数组结构修复策略。原 13 条有效 Checkpoint + 两轮 12 个技术失败回执保持不变，所有后续 HF Jobs 均需 Owner 单独在 Mac CLI 发起。
+
+---
+
+
 ## 2026-11-11：GLM B25 retry12 全部失败，停止 GPU 重试，改为 CPU 冻结 Runner 路径诊断
 
 Owner Job `6af3e542ab34849891adc624` 确认：本次 retry12 `attempted=12 verified=0 technical_failures=12 engine_init_count=1`，最终 `combined_verified=13 combined_unverified=12`，所有失败仍为 `MODEL_NONEXACT_QUOTE_HOLD`，未新增有效 Checkpoint；原 13 条未覆盖，exit42 正确。**本次日志没有任何 `QUOTE_SHAPE_DIAGNOSTIC` 或 `QUOTE_SHAPE_REPAIR` 事件。** 因此此前“肯定是数组类型/长度错误”的结论不充分。冻结 reviewer 的 `QuoteValidationError` **继承 `ReviewError`，并复用相同的错误字符串**，而旧隔离器只按错误字符串记录，不会区分类型；也可能是冻结私有 runner 的调用路径绕过了 `checkpoint_record` patch。
