@@ -42,7 +42,6 @@ def patch(source: Path, dest: Path) -> dict:
         raise Hold("PATCH_UTF8_HOLD") from exc
     if (script.count(NEEDLE) != 1
             or script.count("from vllm.sampling_params import GuidedDecodingParams") != 1
-            or script.count("guided_decoding=GuidedDecodingParams") != 0
             or 'backend="guidance"' in script):
         raise Hold("PATCH_FROZEN_RUNNER_SHAPE_HOLD")
     ast.parse(script)
