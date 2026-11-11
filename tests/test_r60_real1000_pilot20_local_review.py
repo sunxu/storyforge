@@ -292,3 +292,44 @@ def test_finished_length_is_technical_hold_not_reject(monkeypatch):
         assert str(exc) == "PROXY_TRUNCATED_HOLD"
     else:
         raise AssertionError("truncated output must remain a technical HOLD")
+
+
+def test_response_diagnostic_categories_are_specific_and_safe():
+    def envelope(content, finish="stop"):
+        return json.dumps({"choices": [{"finish_reason": finish,
+            "message": {"content": content}}]}).encode()
+    for raw, expected in [
+        (b"{not json", "PROXY_ENVELOPE_JSON_HOLD"),
+        (json.dumps({"choices": []}).encode(), "PROXY_ENVELOPE_STRUCTURE_HOLD"),
+        (envelope("not json"), "PROXY_MODEL_JSON_HOLD"),
+        (envelope("[]"), "PROXY_RUBRIC_SCHEMA_HOLD"),
+        (envelope(""), "PROXY_EMPTY_HOLD"),
+        (envelope("not json", "length"), "PROXY_TRUNCATED_HOLD"),
+    ]:
+        try:
+            mod.parse_proxy_response(raw)
+        except mod.Hold as exc:
+            assert str(exc) == expected
+            assert mod.safe_reason_code(exc) == expected
+        else:
+            raise AssertionError("expected specific technical HOLD")
+
+
+def test_failed_response_is_private_and_create_only(monkeypatch, tmp_path):
+    setup_private(monkeypatch, tmp_path)
+    folder = tmp_path / "out"
+    folder.mkdir()
+    raw = b'{"choices":[{"finish_reason":"stop","message":{"content":"secret"}}]}'
+    mod.save_failed_response(folder, 1, raw)
+    target = tmp_path / "out-response-diagnostics-v1" / (
+        "R60_PILOT20_FAILED_0001_PRIVATE.json"
+    )
+    assert target.read_bytes() == raw
+    mod.save_failed_response(folder, 1, b"do-not-overwrite")
+    assert target.read_bytes() == raw
+
+
+def test_successful_response_remains_valid():
+    raw = json.dumps({"choices": [{"finish_reason": "stop",
+        "message": {"content": json.dumps(model_answer())}}]}).encode()
+    assert mod.parse_proxy_response(raw) == model_answer()
