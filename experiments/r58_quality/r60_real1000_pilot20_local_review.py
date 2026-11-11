@@ -1,15 +1,19 @@
-"""R60 REAL pilot20: bounded Owner-local single-reviewer quality pilot.
+"""R60 REAL pilot20: bounded 4Router Claude quality pilot.
 
-Reuses the existing literary rubric and OpenAI-compatible client. One receipt
-per case, create-only. Model verdict is ADVISORY, never training admission.
-Only localhost endpoints are accepted; no DB/GPU job setup here.
+Reuses the existing literary rubric and validated Claude proxy system format.
+Create-only private receipts. Model verdicts remain advisory; no training.
+An explicit execution and private-egress opt-in is required for API requests.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 from collections import Counter
 from pathlib import Path
 
@@ -23,6 +27,9 @@ CONFIG = "R60_PILOT20_REVIEW_CONFIG_PRIVATE.json"
 MAX_PACKETS_BYTES = 200000
 MAX_RECEIPT_BYTES = 16000
 MAX_CASES_PER_CALL = 5
+MAX_REPLY_BYTES = 120000
+MODEL_DEFAULT = "claude-opus-5-5"
+API_KEY_ENV = "CLI_PROXY_API_KEY"
 
 
 class Hold(ValueError):
@@ -86,25 +93,115 @@ def receipt_name(i: int) -> str:
     return f"R60_PILOT20_REVIEW_{i:04d}_PRIVATE.json"
 
 
+def proxy_endpoint(base: str) -> str:
+    """Only HTTPS 4router.ai or a subdomain, no redirects or URL secrets."""
+    if not isinstance(base, str):
+        raise Hold("PROXY_ENDPOINT_HOLD")
+    try:
+        parsed = urllib.parse.urlsplit(base)
+        hostname = parsed.hostname
+        port = parsed.port
+    except ValueError as exc:
+        raise Hold("PROXY_ENDPOINT_HOLD") from exc
+    if (
+        parsed.scheme != "https"
+        or not hostname
+        or (hostname != "4router.ai" and not hostname.endswith(".4router.ai"))
+        or port not in (None, 443)
+        or parsed.username or parsed.password
+        or parsed.query or parsed.fragment
+    ):
+        raise Hold("PROXY_ENDPOINT_HOLD")
+    path = parsed.path.rstrip("/")
+    if path.endswith("/chat/completions"):
+        pass
+    elif path.endswith("/v1"):
+        path += "/chat/completions"
+    elif not path:
+        path = "/v1/chat/completions"
+    else:
+        raise Hold("PROXY_ENDPOINT_HOLD")
+    return urllib.parse.urlunsplit(("https", parsed.netloc, path, "", ""))
+
+
+def claude_payload(model: str, prompt: str) -> dict:
+    """Match prior successful R60 4Router contract: top-level system, no temp."""
+    return {
+        "model": model,
+        "system": reviewer.REVIEW_INSTRUCTIONS,
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 1600,
+        "stream": False,
+    }
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
+    key = os.environ.get(API_KEY_ENV) or os.environ.get("OPENAI_API_KEY")
+    if not key:
+        raise Hold("PROXY_API_KEY_REQUIRED")
+    body = claude_payload(model, prompt)
+    request = urllib.request.Request(
+        endpoint, data=canonical(body), method="POST",
+        headers={
+            "Authorization": "Bearer " + key,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+    )
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), NoRedirect,
+    )
+    try:
+        with opener.open(request, timeout=timeout) as response:
+            raw = response.read(MAX_REPLY_BYTES + 1)
+    except (urllib.error.HTTPError, urllib.error.URLError, OSError,
+            TimeoutError, ValueError) as exc:
+        raise Hold("PROXY_TRANSPORT_OR_HTTP_HOLD") from exc
+    if len(raw) > MAX_REPLY_BYTES:
+        raise Hold("PROXY_RESPONSE_OVERSIZE_HOLD")
+    try:
+        envelope = json.loads(raw)
+        choice = envelope["choices"][0]
+        if choice.get("finish_reason") == "length":
+            raise Hold("PROXY_TRUNCATED_HOLD")
+        content = choice["message"]["content"]
+        if isinstance(content, list):
+            content = "".join(
+                item.get("text", "") for item in content
+                if isinstance(item, dict)
+            )
+        if not isinstance(content, str) or not content.strip():
+            raise Hold("PROXY_EMPTY_HOLD")
+        parsed = json.loads(content)
+        return reviewer.parse_model_response(parsed)
+    except (ValueError, TypeError, KeyError, IndexError, AttributeError) as exc:
+        if isinstance(exc, Hold):
+            raise
+        raise Hold("PROXY_RESPONSE_SCHEMA_HOLD") from exc
+
+
 def validate_config(folder: Path) -> dict:
     private.private_dir(folder, create=False)
     config = json.loads(private.read_private(folder / CONFIG, MAX_RECEIPT_BYTES))
     if (
         not isinstance(config, dict)
         or set(config) != {"schema", "packet_dir", "packets_sha256", "model_id",
-                           "endpoint", "json_mode", "timeout"}
+                           "endpoint", "provider", "timeout"}
         or config["schema"] != SCHEMA
         or type(config["packet_dir"]) is not str
         or type(config["packets_sha256"]) is not str
         or len(config["packets_sha256"]) != 64
         or type(config["model_id"]) is not str
         or not config["model_id"].strip()
-        or type(config["json_mode"]) is not bool
+        or config["provider"] != "4router_claude_top_level_system"
         or type(config["timeout"]) is not int
         or not 10 <= config["timeout"] <= 300
-        or reviewer.validate_endpoint(
-            config["endpoint"][:-len("/chat/completions")], False
-        ) != config["endpoint"]
+        or proxy_endpoint(config["endpoint"]) != config["endpoint"]
     ):
         raise Hold("CONFIG_HOLD")
     return config
@@ -164,24 +261,25 @@ def read_progress(folder: Path, config: dict, packets: dict) -> dict:
         "train_admitted": 0,
         "database_accessed": False,
         "gpu_job_started": False,
+        "private_data_egress": True,
         "private_values_emitted": False,
     }
 
 
 def initialize(packets_dir: Path, output_dir: Path, endpoint: str,
-               model: str, json_mode: bool, timeout: int) -> dict:
+               model: str, timeout: int) -> dict:
     if output_dir.exists() or output_dir.is_symlink():
         raise Hold("OUTPUT_EXISTS_HOLD")
     packets, digest = load_packets(packets_dir)
     if not model.strip() or not 10 <= timeout <= 300:
         raise Hold("CONFIG_ARGS_HOLD")
-    local_endpoint = reviewer.validate_endpoint(endpoint, False)
+    remote_endpoint = proxy_endpoint(endpoint)
     private.private_dir(output_dir, create=True)
     config = {
         "schema": SCHEMA, "packet_dir": str(packets_dir),
         "packets_sha256": digest, "model_id": model,
-        "endpoint": local_endpoint, "json_mode": bool(json_mode),
-        "timeout": timeout,
+        "endpoint": remote_endpoint,
+        "provider": "4router_claude_top_level_system", "timeout": timeout,
     }
     private.write_new(output_dir / CONFIG, canonical(config))
     return read_progress(output_dir, config, packets)
@@ -195,9 +293,14 @@ def get_state(output_dir: Path) -> tuple[dict, dict, dict]:
     return config, packets, read_progress(output_dir, config, packets)
 
 
-def advance(output_dir: Path, max_cases: int) -> dict:
+def advance(output_dir: Path, max_cases: int, *,
+            execute: bool = False, allow_private_data_egress: bool = False) -> dict:
     if type(max_cases) is not int or not 1 <= max_cases <= MAX_CASES_PER_CALL:
         raise Hold("MAX_CASES_HOLD")
+    if not execute or not allow_private_data_egress:
+        raise Hold("EXPLICIT_EGRESS_APPROVAL_REQUIRED")
+    if not (os.environ.get(API_KEY_ENV) or os.environ.get("OPENAI_API_KEY")):
+        raise Hold("PROXY_API_KEY_REQUIRED")
     config, packets, current = get_state(output_dir)
     start = current["model_reviewed"]
     for i in range(start, min(start + max_cases, 20)):
@@ -206,9 +309,8 @@ def advance(output_dir: Path, max_cases: int) -> dict:
             "history_messages": packet["history_messages"],
             "target_text": packet["assistant_target"],
         })
-        answer = reviewer.model_request(
-            config["endpoint"], config["model_id"], "",
-            prompt, config["timeout"], config["json_mode"],
+        answer = proxy_request(
+            config["endpoint"], config["model_id"], prompt, config["timeout"],
         )
         receipt = {
             "schema": SCHEMA,
@@ -228,22 +330,26 @@ def main() -> int:
     init = sub.add_parser("init")
     init.add_argument("--packets-dir", type=Path, required=True)
     init.add_argument("--output-dir", type=Path, required=True)
-    init.add_argument("--endpoint", required=True)
-    init.add_argument("--model", required=True)
-    init.add_argument("--json-mode", action="store_true")
+    init.add_argument("--base-url", default=os.environ.get("CLI_PROXY_BASE_URL"))
+    init.add_argument("--model", default=os.environ.get("CLI_PROXY_MODEL", MODEL_DEFAULT))
     init.add_argument("--timeout", type=int, default=180)
     run = sub.add_parser("advance")
     run.add_argument("--output-dir", type=Path, required=True)
     run.add_argument("--max-cases", type=int, default=5)
+    run.add_argument("--execute", action="store_true")
+    run.add_argument("--allow-private-data-egress", action="store_true")
     inspect = sub.add_parser("inspect")
     inspect.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     try:
         if args.mode == "init":
-            result = initialize(args.packets_dir, args.output_dir, args.endpoint,
-                                args.model, args.json_mode, args.timeout)
+            result = initialize(args.packets_dir, args.output_dir, args.base_url,
+                                args.model, args.timeout)
         elif args.mode == "advance":
-            result = advance(args.output_dir, args.max_cases)
+            result = advance(
+                args.output_dir, args.max_cases, execute=args.execute,
+                allow_private_data_egress=args.allow_private_data_egress,
+            )
         else:
             result = get_state(args.output_dir)[2]
         print(json.dumps(result, sort_keys=True))
