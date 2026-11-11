@@ -1,5 +1,45 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 R60 QD20共同双PASS的2条：独立盲审工程已准备（待Owner执行）
+
+此前真实证据：QD20三条分歧独立盲审+交叉表PASS，新模型独有双PASS2条独立判HOLD1/REJECT1、旧模型独有双PASS1条判HOLD1。两组共同双PASS2条未纳入上述三条独立审核，不能自动准入。保持34份成功审核、6份未完成审核、5份旧失败快照、3条分歧盲审及冻结20条输入不修改。
+
+新增独立CPU-only `experiments/r58_quality/r60_real1000_qd20_common_pass_blind_cpu.py` 与合成测试 `tests/test_r60_real1000_qd20_common_pass_blind_cpu.py`：从Owner Mac已有S1 Claude/Codex源+Qwen/DeepSeek不可变成功收据重新推导两组严格双PASS交集（预期正好2条），新建私有文件`R60_QD20_COMMON2_BLIND_PRIVATE.json`和待填`R60_QD20_COMMON2_DECISIONS_TEMPLATE_PRIVATE.json`，绝不显示旧新模型投票、真实位置及私人ID，且与先前3条分歧审核使用**不同新目录**；verify时只读重新复算冻结源和blind SHA绑定、严格引文、六维最低分数/严重flag与中文理由。此脚本没有模型调用，不产生质量真值，不做训练准入。
+
+在Owner Mac现有专用worktree同步CI PASS固定提交（不可依赖漂移HEAD）后执行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_common_pass_blind_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_qd20_common_pass_blind_cpu.py prepare \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --s1-blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$BASE/r60-real1000-qwen-deepseek20-live-v1" \
+  --output-dir "$BASE/r60-real1000-qd20-common2-blind-v1"
+```
+
+预期`QD20_COMMON2_BLIND_PACKET_READY__REVIEW_PENDING`，仅2条私有盲审输入。独立审查Agent只读取新blind文件和冻结Rubric；不得先看到源收据、之前3条结果或模型得票。填充`R60_QD20_COMMON2_DECISIONS_PRIVATE.json`（根据模板：`blind_index`、`decision`、六维`scores`、三严重`severe_flags`、`quote_source`限定原四消息源、逐字`exact_quote`、`reason_cn`；`reviewer_independent_of_model_votes=true`只在确实未看投票时填写），文件权限0600，原盲包不改。然后：
+
+```bash
+python3 experiments/r58_quality/r60_real1000_qd20_common_pass_blind_cpu.py verify \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --s1-blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$BASE/r60-real1000-qwen-deepseek20-live-v1" \
+  --output-dir "$BASE/r60-real1000-qd20-common2-blind-v1" \
+  --decisions "$BASE/r60-real1000-qd20-common2-blind-v1/R60_QD20_COMMON2_DECISIONS_PRIVATE.json"
+```
+
+预期`QD20_COMMON2_BLIND_REVIEW_VALIDATED__NOT_GROUND_TRUTH`并返回PASS/HOLD/REJECT数。只据此估计五条候选中的证据可靠性；不得将2条试验统计外推至980条未审数据。没有R50完全排除/真实训练上下文等闭环证据时仍`train_admitted=0`且不启动GPU。
+
+
 ## 2026-11-11 QD20三条分歧盲审交叉核验真实PASS：新组合独有双PASS均未获独立PASS
 
 Owner Mac真实SAFE `QD20_THREE_REVIEW_CROSSWALK_VALIDATED__NOT_GROUND_TRUTH`：三条新旧双PASS分歧已通过CPU交叉绑定和逐字引用核验。新Qwen+DeepSeek独有双PASS2条，独立盲审结果`PASS=0,HOLD=1,REJECT=1`；旧Claude+Codex独有双PASS1条，独立盲审`PASS=0,HOLD=1,REJECT=0`。合计`PASS=0,HOLD=2,REJECT=1`，3/3引文逐字匹配；无数据库/API/GPU，Quality-v1和训练准入仍为0。独立性系审稿人自报，不是已独立证明，且该3条外的样本未在本轮证据核查，不能将其意见称为质量真值。
