@@ -253,8 +253,18 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
                 validate_failure(output / failure_name(pos), pos, worker,
                                  rows[pos - 1], model, revision)
                 failures += 1
+                # QuoteValidationError inherits ReviewError and uses the
+                # identical error string. Distinguish the exact exception
+                # class without exposing quotes or exception arguments.
+                kind = (
+                    "QUOTE_VALIDATION" if (
+                        hasattr(worker, "QuoteValidationError")
+                        and isinstance(exc, worker.QuoteValidationError)
+                    ) else "DIRECT_REVIEW_ERROR" if type(exc) is worker.ReviewError
+                    else "REVIEW_ERROR_SUBCLASS"
+                )
                 emit("CASE_TECHNICAL_FAILURE", position=pos,
-                     reason_code=reason)
+                     reason_code=reason, exception_kind=kind)
             else:
                 if worker.read_checkpoint(file, pos, rows[pos - 1],
                                           model, revision) is None:
