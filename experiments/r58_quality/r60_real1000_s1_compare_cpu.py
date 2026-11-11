@@ -77,7 +77,6 @@ def compare(sample_dir: Path, review_dir: Path, blind_dir: Path,
     matrix = Counter()
     codex_decisions = Counter()
     claude_decisions = Counter()
-    disagreements = Counter()
     codex_severe = Counter()
     exact_agreement = 0
     flags_disagreement = 0
@@ -104,7 +103,7 @@ def compare(sample_dir: Path, review_dir: Path, blind_dir: Path,
             if ad == cd:
                 exact_agreement += 1
         else:
-            disagreements["claude_invalid_pass_below_floor"] += 1
+            pass  # Original Claude PASS failed the frozen threshold.
         if c["severe_flags"] != a["severe_flags"]:
             flags_disagreement += 1
         codex_decisions[cd] += 1
@@ -127,10 +126,8 @@ def compare(sample_dir: Path, review_dir: Path, blind_dir: Path,
         })
     if len(entries) != 20 or len({x["pilot_position"] for x in entries}) != 20:
         raise Hold("CROSSWALK_DUPLICATE_HOLD")
-    if dict(codex_decisions) != {"PASS": 9, "HOLD": 8, "REJECT": 3}:
-        # Do not hard-code success to a particular historical output.
-        if sum(codex_decisions.values()) != 20:
-            raise Hold("CODEX_COUNT_HOLD")
+    if sum(codex_decisions.values()) != 20:
+        raise Hold("CODEX_COUNT_HOLD")
     report = {
         "schema": SCHEMA,
         "status": "S1_CODEX_CLAUDE_COMPARE_PASS__OWNER_ADJUDICATION_PENDING",
