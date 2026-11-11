@@ -1,5 +1,8 @@
 # 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
 
+> **2026-11-11 下一阶段交接切换：** 本文件下方的“唯一接手目标 P3 CPU-only”属于 2026-11-10 的历史任务描述，不能用来驱动当前 GLM 工作。现在请以 [R60 GLM 全25 Snapshot 下一 Agent 权威任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md) 和 [全25 Owner Runbook](R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md) 为准：已完成代码/CI和冻结 Runner 合成 Snapshot CPU 验收；仍需新 `--full25` CPU Gate、Owner Mac 手动启动独立25条 H200 Job、25个原始 Snapshot/回执验签与 CPU Replay。旧历史回执不覆盖、不启动 SFT/1000条批量筛选。其他 P0/P1/P2 历史已确认结果保持不变。
+
+
 **本节为当前唯一状态依据。下方较早日期的 P2-B/P3 未开始、Owner review pending、Verifier HOLD 等内容均为历史记录，不得作为当前待办。**
 
 ## 阶段状态
