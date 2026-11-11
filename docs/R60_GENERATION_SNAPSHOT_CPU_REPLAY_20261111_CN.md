@@ -1,6 +1,20 @@
 # StoryForge R60：GLM Generation Snapshot + CPU Replay v1
 
 
+## 2026-11-11：Owner Mac 真实冻结 Runner Snapshot + CPU Replay 集成 PASS
+
+Owner 回执：
+
+```json
+{"frozen_runner_used":true,"gpu_started":false,"literal_cpu_replay_validated":true,"model_inference_calls":0,"pinned_source_sha_verified":true,"private_values_emitted":false,"quality_v1_admitted":0,"schema":"storyforge_r60_glm4_cpu_snapshot_replay_safe_v1","scratch_removed":true,"status":"GLM_FROZEN_SNAPSHOT_CPU_REPLAY_PREFLIGHT_PASS","strict_original_quote_rejected":true,"training_authorized":false}
+```
+
+**验收结论：CPU 集成门槛 PASS**，无需再执行旧预检。已经在 Owner Mac 的真实冻结 Runner、真实签名输入上证明：合成生成结果的 Snapshot 持久化 → 原严格校验拒绝非精确引文 → CPU 标点级修复回放验证可运行；无模型推理、无 GPU、无遗留临时私有数据。
+
+**明确未完成：** 没有任何真实 GLM 生成快照，也没有真实生成结果的 CPU Replay；历史 GLM 仍为13有效 / 12技术失败，新增已验证 Checkpoint 为0，训练准入为0。下阶段只应准备独立私有输出目录、完整 Bundle 与启动前门槛，然后由 Owner 单独决定是否付费执行**最多1条**首次真实捕获；不能把此 CPU PASS 当作 GPU 授权。
+
+---
+
 ## 2026-11-11：Owner Mac 首次 CPU Replay HOLD 与兼容性修正
 
 首次 Owner 回执 `GLM_FROZEN_SNAPSHOT_CPU_REPLAY_PREFLIGHT_HOLD`，旧脚本因统一吞掉异常，没有安全阶段信息。**不能依据该回执判断快照机制不可用**。
@@ -55,7 +69,7 @@ GLM B25 已有 13 个有效 Checkpoint，另外 12 条因逐字引文不匹配�
 
 ## 当前状态与验收
 
-这是**工程实现 + CPU 合成验证**。已经取得 Owner Mac 原冻结 Runner 的 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，但尚未针对这个新的快照/回放组合完成 Owner Mac 私有 Runner CPU 集成，也没有产生真实 GLM 原始生成快照。过去 12 条失败没有保留下来的完整生成文本，无法从 SAFE 诊断日志重建；不能用本工具声称修复原来已完成的 12 条。原13有效/12技术失败、Quality-v1 admitted=0 不变。
+这是**工程实现 + CPU 合成验证**。已经取得 Owner Mac 原冻结 Runner 的 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，且已针对这个新的快照/回放组合完成 Owner Mac 私有 Runner CPU 集成，也没有产生真实 GLM 原始生成快照。过去 12 条失败没有保留下来的完整生成文本，无法从 SAFE 诊断日志重建；不能用本工具声称修复原来已完成的 12 条。原13有效/12技术失败、Quality-v1 admitted=0 不变。
 
 ### 第一阶段：Owner Mac CPU-only 工具准备
 
