@@ -1,5 +1,8 @@
 # R60 GLM 优先 + Qwen 并行故障修复任务书（2026-11-11）
 
+> **2026-11-11 当前 GLM 主线覆盖旧方案：** 请先阅读 [GLM 全25 Snapshot 下一 Agent 任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md)。Owner 明确要求 **一次独立生成原始25条，不使用1–2条试跑、不执行失败12条重试**。本文全部 `--literal-probe-cases 1|2`、`--snapshot-probe-cases 1|2` 和旧 GPU 重试建议仅供追溯，不是当前待执行事项。Qwen 第7条诊断仍属独立待办、不得混入本轮 GLM 25条；旧回执均不可覆盖。
+
+
 > **2026-11-11 执行优先级更新（覆盖旧版直接 H200 修复重试建议）：** GLM Debug 现优先采用 [Generation Snapshot + CPU Replay](R60_GENERATION_SNAPSHOT_CPU_REPLAY_20261111_CN.md)。先执行 CPU 集成预检，再由 Owner 明确批准时进行最多1–2条 **snapshot-primary-only** 定向生成；保留原始模型输出，之后在 CPU 上反复调试引用修复。旧 `--quote-literal-repair --literal-probe-cases 1|2` GPU 重试仍为历史试验方案，暂不执行；不得在未保存原始模型输出时继续重试。旧13个有效 Checkpoint 与12个技术失败保持不变。
 
 
