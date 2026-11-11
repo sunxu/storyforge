@@ -1,5 +1,32 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Qwen+DeepSeek补缺结果：34有效/40，停止同提示词盲重试，保守关闭质量筛选
+
+Owner真实新回执：补缺7次API请求仅成功1份新收据，历史33→34份（Qwen18：PASS9/HOLD0/REJECT9；DeepSeek16：PASS5/HOLD10/REJECT1），完整双模型配对仍14/20，新组合严格双PASS仍4。剩余6份provider审核缺失。失败6次：`MODEL_JSON_INVALID=1`、`MODEL_TRANSPORT_HOLD=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=3`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。5份新的失败原始响应已持久化为Owner私有不可变快照并用CPU重放，**5/5仍然不满足既定验证器**；传输失败没有可保存的模型文字。当前回执`QD20_FAILURE_SNAPSHOTS_CPU_REPLAY__NO_MODEL_CALLS`说明回放成功，不等于模型意见有效。**禁止再对相同缺失项反复付费重试**；如另设计提示词或修复协议，须作为新版本试验并保留冻结旧结果。
+
+**低成本数据筛选政策：** 不要求为使Pilot20实验形成整齐40/40而持续调用模型。缺失6份仍标记`INCOMPLETE`，**不得假造HOLD、REJECT或PASS**；对应6条未组成完整双模型的样本不进入严格双PASS候选。现有14对中4条新组合双PASS可作为质量候选（其中与旧Claude+Codex双PASS重合2条；新独有2条）。旧组合3条双PASS都已获得新组合的配对，因此旧独有1条。新旧差异3条可作为后续小范围证据质量抽检。任何双PASS仅是`QUALITY_CANDIDATE`，不等于训练准入；构造System/R50完整排除/世界组件仍未验证，`train_admitted=0`。
+
+新增 `experiments/r58_quality/r60_real1000_qd20_conservative_close_cpu.py` 和 `tests/test_r60_real1000_qd20_conservative_close_cpu.py`：只读重验冻结Claude/Codex、Qwen/DeepSeek有效收据和5份失败快照，输出全20条保守筛选SAFE。将实验标记`QD20_CONSERVATIVE_QUALITY_SCREEN_CLOSED__TRAIN_ADMISSION_HOLD`，并显式报告`cases_excluded_for_missing_provider_reviews=6`、`missing_reviews_imputed_as_hold=0`、`missing_reviews_imputed_as_pass=0`、旧新交集2、模型推理0、正式入训0。状态指**保守筛选结案**，不宣称40份实验审核全部完成。若之后用户另行授权新策略，必须形成新版本结果，不覆写原数据。
+
+Owner Mac现有专用worktree同步本阶段CI通过固定PIN并执行（无新API、无数据外发）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_conservative_close_cpu.py tests/test_r60_real1000_qd20_compare_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_qd20_conservative_close_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$BASE/r60-real1000-qwen-deepseek20-live-v1"
+```
+
+**后续主线**：利用保守通过的候选研究扩展审查协议的Prompt稳定性和严谨评分格式，不盲信Qwen0 HOLD的两极判定；优先对新独有2条做低成本证据核对，查明是旧模型过严还是新模型误放。若审核协议变更，先用合成/CPU规则测试，再有限真模型试点；在原版QD20已关闭保守筛选情况下不再为了凑40份而重复请求。
+
+
 ## 2026-11-11 真实Qwen/DeepSeek与Claude/Codex CPU对照结果：双PASS交集为2，缺7份审核
 
 Owner Mac 真实复核结果：`pytest 8 passed`；`diagnose`只读验证现存33份有效收据，14组完整配对，新组合已完成配对双PASS4；历史旧版请求没有持久化失败快照，`private_failed_model_snapshots=0`，`model_inference_calls_this_run=0`，这属预期而非失败记录无效。
