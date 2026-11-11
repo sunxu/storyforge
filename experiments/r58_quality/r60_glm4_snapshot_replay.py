@@ -165,7 +165,7 @@ def summarize(args) -> dict:
     counts = {"original_frozen": Counter(), "literal_experiment": Counter()}
     for position in positions:
         row = rows[position - 1]
-        def load(slot):
+        def load(slot, position=position, row=row):
             file = args.snapshots / filename(position, slot)
             if not file.exists() and not file.is_symlink():
                 return None
