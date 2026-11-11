@@ -571,3 +571,47 @@ def test_proxy_live_path_creates_recoverable_conflict_and_snapshot(
     snapshot = tmp_path / "out-response-diagnostics-v1" / (
         "R60_PILOT20_FAILED_0001_PRIVATE.json")
     assert snapshot.read_bytes() == payload
+
+
+def test_exact_single_extra_closing_brace_repaired_with_original_rubric():
+    answer = model_answer()
+    answer["decision"] = "HOLD"
+    answer["scores"]["chinese_prose"] = 3
+    text = json.dumps(answer, ensure_ascii=False)
+    raw = json.dumps({"choices": [{"finish_reason": "stop", "message": {
+        "content": "```json\n" + text + "}\n```"
+    }}]}).encode()
+    assert mod.parse_proxy_response(raw) == answer
+    assert mod.decoded_model_json(raw) == answer
+
+
+def test_terminal_extra_brace_repair_rejects_any_other_mutation():
+    raw = '{"decision":"HOLD"}'
+    for text in (
+        raw + "}}", raw + "} trailing", "prefix " + raw + "}",
+        raw[:-1] + "}} junk", '{"a":1}{"b":2}',
+        '{"a":1}}\nmore', '{"a":1} ]',
+    ):
+        try:
+            mod.parse_strict_model_json(text)
+        except mod.Hold as exc:
+            assert str(exc) == "PROXY_MODEL_JSON_HOLD"
+        else:
+            raise AssertionError("must reject anything but one extra terminal brace")
+    assert mod.parse_strict_model_json(raw + "}") == {"decision": "HOLD"}
+
+
+def test_extra_brace_does_not_bypass_frozen_rubric():
+    answer = model_answer()
+    answer["decision"] = "PASS"
+    answer["severe_flags"]["serious_player_agency"] = False
+    answer["scores"]["chinese_prose"] = 3
+    raw = json.dumps({"choices": [{"finish_reason": "stop", "message": {
+        "content": json.dumps(answer) + "}"
+    }}]}).encode()
+    try:
+        mod.parse_proxy_response(raw)
+    except mod.Hold as exc:
+        assert str(exc) == "PROXY_PASS_BELOW_FLOOR_HOLD"
+    else:
+        raise AssertionError("normalization must not weaken rubric")
