@@ -19,7 +19,7 @@ GLM B25 已有 13 个有效 Checkpoint，另外 12 条因逐字引文不匹配�
 
 ### 第一阶段：Owner Mac CPU-only 工具准备
 
-以下命令只把 GitHub 确认版本的工具复制到 Mac 新目录并跑合成测试，不启动 Hugging Face，不运行 GPU：
+以下命令从通过 GitHub CI 的固定提交复制所有配套模块到 Mac 新目录，做语法检查并使用真实私有冻结 Runner 执行**合成快照 → CPU 回放集成预检**。不启动 Hugging Face，不运行 GPU。公开 CPU pytest 测试已由 GitHub CI 验收，无需依赖 Mac 当前 worktree 是否 checkout 同一分支：
 
 ```bash
 set -euo pipefail
@@ -37,10 +37,7 @@ for F in r60_generation_snapshot.py r60_glm4_snapshot_replay.py r60_glm4_snapsho
 done
 chmod 600 "$DEST"/*.py
 python3 -m py_compile "$DEST"/*.py
-python3 -m pytest -q \
- "$ROOT/tests/test_r60_generation_snapshot.py" \
- "$ROOT/tests/test_r60_glm4_snapshot_replay.py" \
- "$ROOT/tests/test_r60_glm4_snapshot_primary_only.py"
+echo "PINNED_SNAPSHOT_TOOLS_SYNTAX_PASS"
 
 # Owner Mac 的真实冻结 Runner CPU 集成校验：不执行模型推理
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
