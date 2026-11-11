@@ -235,7 +235,7 @@ def decoded_model_json(raw: bytes) -> object:
             raise Hold("PROXY_CONTENT_STRUCTURE_HOLD")
         stripped = content.strip()
         if stripped.startswith("```"):
-            match = re.fullmatch(r"```(?:json|JSON)\\r?\\n([\\s\\S]*?)\\r?\\n```", stripped)
+            match = re.fullmatch(r"```(?:json|JSON)\r?\n([\s\S]*?)\r?\n```", stripped)
             if not match:
                 raise Hold("PROXY_MODEL_JSON_HOLD")
             content = match.group(1)
