@@ -62,7 +62,7 @@ done
 
 下面命令只需先完成上一节 CPU bundle 准备，不再执行独立单条 H200 测试。技术失败会留下 SAFE 诊断凭证并继续剩余条目（但不算质量 HOLD），直到 25 条全部尝试或遇到非 ReviewerError 的真实引擎异常。
 
-\`\`\`bash
+```bash
 set -euo pipefail
 BASE="$HOME/.local/share/storyforge/r60/private"
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
@@ -90,11 +90,11 @@ hf jobs run --namespace adradar --name r60-glm4-b25-isolation-v1 \
       --local-dir "$LOCAL" --case-limit 25 --batch-size 5 \
       --max-model-len 32768 --max-output-tokens 2400 \
       --wall-seconds 4800 --isolate-technical-failures --confirm-paid-gpu'
-\`\`\`
+```
 
 ### Qwen A25：执行前仍需定位未知 ValueError（不可当作普通审核技术错误）
 
-原 Guidance 恢复 Job 的 6 条前缀已经 verified，但新 Job 再次在第 7 条报 \`ValueError\`（而不是 \`ReviewError\`）；本轮代码仍会 fail closed，不应无条件重复提交 H200。准备好的 \`input_A_isolated_v1\` 与 \`--isolate-technical-failures\` 保持相同执行框架；一旦确定 Qwen \`ValueError\` 的安全处理方式，需要优先修复实际异常，再按**原**输出目录 \`r60-1000-pilot25-qwen-a-continuous-v1\` 与 \`--resume\` 继续，严格保护前 6 条 Checkpoint。
+原 Guidance 恢复 Job 的 6 条前缀已经 verified，但新 Job 再次在第 7 条报 `ValueError`（而不是 `ReviewError`）；本轮代码仍会 fail closed，不应无条件重复提交 H200。准备好的 `input_A_isolated_v1` 与 `--isolate-technical-failures` 保持相同执行框架；一旦确定 Qwen `ValueError` 的安全处理方式，需要优先修复实际异常，再按**原**输出目录 `r60-1000-pilot25-qwen-a-continuous-v1` 与 `--resume` 继续，严格保护前 6 条 Checkpoint。
 
 **费用建议：** Qwen 当前是非 \`ReviewError\` 的未知 \`ValueError\`，新隔离器仍会在第 7 条停机；除非取得进一步受控异常定位，不应为它重复启动 H200。GLM 的明确审核错误适合在 25 条批次验证这套隔离执行流程；但仍可能有其他非 ReviewError 异常导致停机。两者在运行后仍须按 \`verified\` / \`technical_failures\` 报告，不得混用为模型评分。
 
