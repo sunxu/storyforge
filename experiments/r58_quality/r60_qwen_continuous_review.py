@@ -153,6 +153,7 @@ def run_batches(worker: object, rows: list[dict], output: Path,
                 wall_seconds: int, resume: bool,
                 hf_tokenizer: object, vllm: object,
                 diagnose_generation: bool = False,
+                generation_snapshot_store: object = None,
                 min_remaining_seconds: int = 120) -> dict:
     if len(rows) not in (25, 1000) or not 1 <= limit <= len(rows):
         raise Hold("REVIEW_SCOPE_INVALID")
@@ -224,7 +225,10 @@ def run_batches(worker: object, rows: list[dict], output: Path,
         if diagnose_generation:
             from r60_qwen_guidance_diagnostic import TracedEngine
 
-            return TracedEngine(state["engine"], emit)
+            recording_engine = (generation_snapshot_store.wrap(state["engine"])
+                                if generation_snapshot_store is not None
+                                else state["engine"])
+            return TracedEngine(recording_engine, emit)
         return state["engine"]
 
     def guarded_write(path: Path, record: dict) -> None:
@@ -261,6 +265,10 @@ def run_batches(worker: object, rows: list[dict], output: Path,
             emit("BATCH_START", start=start, batch_size=this_batch,
                  already_completed=state["completed"])
             before = state["completed"]
+            if generation_snapshot_store is not None:
+                if this_batch != 1:
+                    raise Hold("SNAPSHOT_DIAGNOSTIC_BATCH_SCOPE_HOLD")
+                generation_snapshot_store.start(start, rows[start - 1])
             try:
                 if diagnose_generation:
                     import vllm.sampling_params as sampling_module
@@ -340,6 +348,7 @@ def main() -> int:
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--isolate-technical-failures", action="store_true")
     parser.add_argument("--diagnose-generation-stages", action="store_true")
+    parser.add_argument("--generation-snapshot-dir", type=Path)
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -388,6 +397,16 @@ def main() -> int:
             # All attempted with technical failures is an analysis artifact,
             # NOT a complete validated review / training admission.
             return 0 if result["all_verified"] else 42
+        snapshot_store = None
+        if args.generation_snapshot_dir is not None:
+            if (not args.diagnose_generation_stages or not args.resume
+                    or args.case_limit != 7 or args.batch_size != 1):
+                raise Hold("QWEN_SNAPSHOT_SCOPE_HOLD")
+            from r60_generation_snapshot import GenerationSnapshotStore
+
+            snapshot_store = GenerationSnapshotStore(
+                args.generation_snapshot_dir, worker=worker, model=MODEL,
+                revision=REV, runner_sha256=sha256_file(runner), emit=emit)
         result = run_batches(
             worker, rows, args.output_dir, args.local_dir,
             limit=args.case_limit, batch_size=args.batch_size,
@@ -395,7 +414,8 @@ def main() -> int:
             max_output_tokens=args.max_output_tokens,
             wall_seconds=args.wall_seconds, resume=args.resume,
             hf_tokenizer=AutoTokenizer, vllm=vllm,
-            diagnose_generation=args.diagnose_generation_stages)
+            diagnose_generation=args.diagnose_generation_stages,
+            generation_snapshot_store=snapshot_store)
         return 0 if result["complete"] else 42
     except Exception as exc:  # noqa: BLE001 - only bounded status, no input
         emit("CONTINUOUS_REVIEW_HOLD",
