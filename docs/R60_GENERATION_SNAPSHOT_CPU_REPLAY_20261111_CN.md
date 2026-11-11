@@ -17,7 +17,7 @@ ROOT="$HOME/workspace/storyforge"
 BASE="$HOME/.local/share/storyforge/r60/private"
 SOURCE="$BASE/r60-hf-quality-pilot25-vllm0100/input_B_quote_observer_v1"
 DEST="$BASE/r60-glm-snapshot-replay-tools-v2"
-PIN="ffd4b0449aa060210c9367e3268e0b17e114fa6e"
+PIN="f2315949861d7d71dec4598bd58a21c9bb3d9554"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 git -C "$ROOT" cat-file -e "$PIN^{commit}"
 test ! -e "$DEST"
