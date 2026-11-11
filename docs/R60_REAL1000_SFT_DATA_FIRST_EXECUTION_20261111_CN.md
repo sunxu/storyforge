@@ -1,5 +1,12 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 P1 分层校准100 真实抽样验收（覆盖下文 P1 抽样待执行文字）
+
+Owner Mac 在 `1b177eb77637c2e2b15def4272cc546c1665e6c3` 实测：4个CPU合成测试 PASS；`CALIBRATION_SAMPLE100_READY__NO_REVIEWS`，来自 **100个不同故事**，目标字数层55/38/7；`database_accessed=false`、`gpu_started=false`、`private_values_emitted=false`，质量审核与训练准入均为0。Owner 私有位置清单已创建于 `$HOME/.local/share/storyforge/r60/private/r60-real1000-calibration100-v1`，不可覆盖或重新抽样。
+
+**P1 抽样子项 PASS**；后续应该从固定100个位置中小批评审，而不是直接对整个1000条再次发起强制双模型GPU审核。先准备20条试点的私有、只读审阅包，按长度比例11/8/1，从100条已冻结抽样中确定性取样，开展单主审核器的真实评分与独立误判复核。只有实质评审结果才能计入质量进度。
+
+
 ## 2026-11-11 Owner P0 真实验收完成（覆盖下文 P0 待执行的历史说明）
 
 Owner Mac 已对冻结 `r60-expand-first-600` 执行原生 `inspect` 与新 CPU 画像，真实 SAFE：
