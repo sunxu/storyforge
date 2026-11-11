@@ -3,7 +3,7 @@
 ## 2026-11-11：两份完整 Job 日志校准与统一“逐条隔离”执行方案（真实 25 条）
 
 **本次完整回执**：
-- GLM：Owner Job https://huggingface.co/jobs/adradar/6af3d1c69737d9a9e09268bb ；\`LOCAL_WEIGHTS_READY\` (21 文件，60.68 GiB)，\`REAL_ENGINE_READY\`，然后 **\`REVIEW_BATCH_HOLD completed=0 exception_class=ReviewError safe_reason_code=MODEL_NONEXACT_QUOTE_HOLD\`**，0/25。核对冻结 reviewer：这里既可能是引用列表类型不合要求、超出 12 条等直接 \`ReviewError\`，也可能是 \`QuoteValidationError\` 继承的 \`ReviewError\`；日志仅有 \`exception_class=ReviewError\`，所以**不可仅凭这个字段断言具体引用错误形态**，更不能据此归因于模型质量差。必须保留严格原文引用校验。
+- GLM：Owner Job https://huggingface.co/jobs/adradar/6af3d1c69737d9a9e09268bb ；\`LOCAL_WEIGHTS_READY\` (21 文件，60.68 GiB)，\`REAL_ENGINE_READY\`，然后 **\`REVIEW_BATCH_HOLD completed=0 exception_class=ReviewError safe_reason_code=MODEL_NONEXACT_QUOTE_HOLD\`**，0/25。核对冻结 reviewer：此处记录的是**精确类名 \`ReviewError\`**（非子类 \`QuoteValidationError\`）。核对冻结审核器，直接触发该码的条件是引用字段不是数组或引用条数超过 12；逐字引用不匹配通常是独立的 \`QuoteValidationError\` 并进入一次修复。因此这次更符合**引用字段结构不合规**，仍无法得知具体字段和值，更不能据此归因于模型质量差。必须保留严格原文引用校验。
 - Qwen：Owner Job https://huggingface.co/jobs/adradar/6af3d3ec9737d9a9e0926d5e ；\`GUIDANCE_PREFLIGHT_PASS\` (只证明 import/API)，\`LOCAL_WEIGHTS_READY\` (24 文件，61.04 GiB)，\`REVIEW_PREFIX_VERIFIED count=6\`，\`REAL_ENGINE_READY\`，随后 **\`REVIEW_BATCH_HOLD completed=6 exception_class=ValueError safe_reason_code=UNKNOWN_REVIEW_FAILURE\`**。本次没有 XGrammar FSM 日志；Qwen 仍 6/25。这个 ValueError 不属于冻结 reviewer 定义的 \`ReviewError\`；可能来自 vLLM/Guidance/Python 实际运行，尚无法从脱敏日志确定。绝对不把未知 ValueError 伪装为单条质量问题。
 
 ### 统一代码
@@ -20,7 +20,7 @@ set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
 BASE="$HOME/.local/share/storyforge/r60/private"
 PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
-PIN="__ISOLATION_CODE_PIN__"
+PIN="5ec1ce16d8855548073019b352de4b57724d634c"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 umask 077
 for ARM in A B; do
