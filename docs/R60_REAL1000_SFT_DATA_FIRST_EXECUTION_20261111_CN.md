@@ -1,5 +1,42 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Owner P0 真实验收完成（覆盖下文 P0 待执行的历史说明）
+
+Owner Mac 已对冻结 `r60-expand-first-600` 执行原生 `inspect` 与新 CPU 画像，真实 SAFE：
+- 合成单测 `6 passed in 0.04s`；
+- `EXPANSION_TARGET_REACHED__NOT_ADMITTED`，6种子 +994扩容=1000、20页、扫描400故事；
+- `REAL1000_TECHNICAL_PROFILE_PASS__QUALITY_PENDING`，`cases_verified=1000`、`distinct_stories=285`、`max_cases_per_story=4`、三消息链和持久化目标各1000；
+- 目标回复长度分布：300–499字545条、500–999字380条、1000–1500字75条；
+- 历史实际System、世界组件、R50排除均有1000条状态未核证；这是后续训练前证据项，不应重新当成质量审核硬阻塞；
+- `quality_review_performed=false`、`quality_pass=0`、`train_admitted=0`，无数据库访问或 GPU。
+
+**因此 P0=PASS，下一项直接开始 P1质量校准抽样，不再重拉DB或 Tokenizer。**
+
+新增 `r60_real1000_calibration_sample_cpu.py`：调用既有 `frozen_pool` 重新只读验签后，从1000条中按冻结池指纹+case_key确定性选100条，长度层配额55（300–499）/38（500–999）/7（1000–1500），每故事仅1条；只在Owner Mac新私有0700目录保存原始位置+长度层，不复制或公开原文/故事ID，公开输出仅SAFE计数。若任一配额无法满足故事唯一性则HOLD，不降低配额或自动覆盖历史抽样。
+
+Owner Mac 下一命令（仅 CPU、无模型审核调用）：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BRANCH="r60/p4-generation-eval-framework"
+BASE="$HOME/.local/share/storyforge/r60/private"
+EXPAND="$BASE/r60-expand-first-600"
+SAMPLE="$BASE/r60-real1000-calibration100-v1"
+git -C "$ROOT" fetch origin "$BRANCH"
+PIN="$(git -C "$ROOT" rev-parse "origin/$BRANCH")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/r60-calibration100-XXXXXX")"
+git -C "$ROOT" worktree add --detach "$WORK" "$PIN"
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_calibration_sample_cpu.py
+test ! -e "$SAMPLE"
+python3 experiments/r58_quality/r60_real1000_calibration_sample_cpu.py \
+  --expand-dir "$EXPAND" --output-dir "$SAMPLE"
+```
+
+预期 `CALIBRATION_SAMPLE100_READY__NO_REVIEWS`，`sampled_cases=100`，`distinct_stories=100`，层配额55/38/7。**这只是可重复的独立抽样，不是100条质量已经 PASS。**
+
+
 > **当前优先级入口；替代同日 GLM/Qwen 全量调试继续扩大的待办。** 单 Agent 负责 `r60/p4-generation-eval-framework`。本任务书只授权 GitHub 代码/文档、CPU-only 只读诊断；**不授权新的远端付费任务、GPU 推理、训练、数据库更改、PR 合并或正式训练准入**。
 
 ## 1. 目标与当前事实
