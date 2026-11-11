@@ -1,5 +1,18 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 Owner真实CPU核验：两条共同PASS候选的源绑定通过，三类训练上下文证据仍HOLD
+
+Owner真实SAFE：`QD20_COMMON2_SOURCE_BINDING_PASS__TRAIN_CONTEXT_HOLD`。冻结池1000条、Pilot20、独立PASS 2条与原始目标/三条历史消息精确绑定通过。两条来自不同故事，目标唯一且长度都是300–499字符。缺证据：`historical_system_unverified=2`、`world_component_unverified=2`、`r50_full_exclusion_unverified=2`；已知R50五故事重叠0，但仅是部分检查，`r50_complete_exclusion_verified=false`。未进行DB、模型、GPU调用，私有值未公开，训练准入仍0。
+
+**下一步遵循“恢复证据优先，不能猜测”**：
+
+1. **实际System/完整上下文**：在Owner持有的历史请求日志、发送到模型的消息快照、服务端会话存档中，只读查找与这2个目标回复精确绑定的真实发送请求、实际System、先前全部历史消息及生成时版本。没有请求快照就明确标记`NOT_RECOVERABLE_FROM_AVAILABLE_EVIDENCE`；不可将现有`r60_real1000_double_pass_sft_draft_cpu.py`的`TRAINING_CONSTRUCTED_CONTEXT__NOT_HISTORICAL`伪装为历史真实System。构造System可以是另一个需明确授权和隔离标记的实验策略，不是恢复事实。
+2. **世界组件**：读取目标生成时间点有效的故事世界卡、角色卡、规则、其版本和生效区间，验证关联到具体目标回复；当前世界卡或同名角色不足以替代历史有效状态。若无证据则持续HOLD。
+3. **完整R50排除**：仓库`docs/r56/R56_R50_46_PROTECTED_GATE_NEXT_STEPS_20261022.md`及`docs/evidence/V03_R50_46_PRESEAL_GATE_DELTA_COUNT_ONLY_20261022.json`明确R50 46条仅PRESEAL，最终封存未完成、历史语义隔离仍HOLD。不能用“已知5故事重叠0”宣称完整排除。由隔离的Owner审计环境核验全量冻结R50/R45及其他protected评测集的同故事、同session、同目标、上下文及语义风险，只公开聚合SAFE计数，不向模型开发者泄露受保护测试。
+4. **最短路径**：先枚举Owner Mac**已有资料**是否覆盖两条的真实请求快照和历史世界组件，仅输出`PRESENT/ABSENT/UNKNOWN`及证据类型，不输出私有ID或正文。未能找到原始有效上下文则停止把这2条作为正式SFT样本构建目标，并将“真实上下文可恢复”列为下一批1000条候选的重要技术筛选条件。是否只读访问Supabase须单独遵循Owner授权。
+5. 两条当前仍是**质量候选**，不是正式训练准入。若补齐可验证上下文和隔离证据，下一步先用CPU完成实际Qwen tokenizer/collator格式测试，之后再由Owner决定是否启动GPU。保留现有冻结输入和审稿回执不修改。
+
+
 ## 2026-11-11 共同双PASS两条：从质量候选进入真实训练上下文CPU证据核验（代码已备好、Owner未执行）
 
 Owner最近真实SAFE：`QD20_COMMON2_BLIND_REVIEW_VALIDATED__NOT_GROUND_TRUTH`，共同双PASS2条独立审核PASS2/2、精确引用2/2，尚无客观审稿独立性证明，`quality_v1_admitted=0/train_admitted=0`。此前5条候选总盲审PASS2/HOLD2/REJECT1；不能将2/2当总体质量准确率。
