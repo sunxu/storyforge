@@ -1,5 +1,14 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 最新结论：第1条模型PASS但低于冻结质量门槛，不允许自动恢复为PASS
+
+Owner提供的首条4Router Claude-Opus-5.5原始快照确认：`finish_reason=stop`，模型以完整 `\`\`\`json` 围栏输出；严格格式剥离后原始判断 `decision=PASS`，六维分值中 `chinese_prose=3`。但冻结的 `r60_real_private_batch.FLOORS["chinese_prose"]=4`。**因此模型结论与现有准入规则矛盾**，不能直接把快照恢复为有效PASS，也不能把3分偷偷改为4分。这个冲突是质量审查需要解决的问题，不是网络/JSON故障。
+
+已保留对整块JSON围栏的严格剥离及CPU离线快照重放支持，但增加专门 SAFE 原因码 `PROXY_PASS_BELOW_FLOOR_HOLD`、`PROXY_SEVERE_FLAG_CONFLICT_HOLD`。尝试离线重放此快照将产生前者，不会写正式模型评分回执，`model_reviewed=0`，`quality_v1_admitted=0`，`train_admitted=0`。在明确的质量裁决机制确定应如何标注该样本前，不再为同一条重复付费模型请求，不降低现行分数门槛，不伪造模型判断，也不把技术失败计为REJECT。
+
+诊断快照中有私有文学正文。不要复制到GitHub Issues或公开日志；主线任务书只记录固定SAFE类别与无敏感分数，不记录模型原始长篇理由。Owner若需核对，使用现有 `~/workspace/storyforge-r60-4router-review` worktree原地同步，并运行无费用的 `pytest`、`inspect`；不得重新初始化或创建worktree。
+
+
 ## 2026-11-11 4Router 首条响应已定位：完整 JSON 围栏，CPU 离线恢复
 
 Owner 在现有私有诊断快照中确认：`finish_reason=stop`、`completion_tokens=1754`、正文1037字符，**以独立完整的 \`\`\`json 代码围栏包装原本有效JSON**。此前解析器直接 `json.loads(content)`，因第1字符为反引号而返回 `PROXY_MODEL_JSON_HOLD`。该问题是**格式包装**，不是模型审核失败；已有付费模型结果可以尝试本机离线恢复，无需再次调用API。
