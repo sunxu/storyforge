@@ -247,8 +247,7 @@ def parse_proxy_response(raw: bytes) -> dict:
         raise Hold("PROXY_CONTENT_STRUCTURE_HOLD")
     if not content.strip():
         raise Hold("PROXY_EMPTY_HOLD")
-    try:
-        model_json = json.loads(content)
+    # Only a complete, standalone Markdown JSON fence is normalized.\n    # Do not extract arbitrary braces or accept explanatory text outside it.\n    stripped = content.strip()\n    if stripped.startswith("```"):\n        match = re.fullmatch(r"```(?:json|JSON)\\r?\\n([\\s\\S]*?)\\r?\\n```", stripped)\n        if not match:\n            raise Hold("PROXY_MODEL_JSON_HOLD")\n        content = match.group(1)\n    try:\n        model_json = json.loads(content)
     except (ValueError, TypeError):
         raise Hold("PROXY_MODEL_JSON_HOLD") from None
     try:
@@ -271,6 +270,46 @@ def save_failed_response(output_dir: Path, position: int, raw: bytes) -> None:
         # Never overwrite the first evidence snapshot.
         return
     private.write_new(path, raw)
+
+
+def replay_private_snapshot(output_dir: Path, *, position: int,
+                            confirm_provenance: bool = False) -> dict:
+    """CPU-only recovery of one already generated review, never model inference.
+
+    Raw failed snapshots do not contain a cryptographic input-packet binding.
+    Explicit operator provenance confirmation is therefore required.
+    """
+    if not confirm_provenance:
+        raise Hold("SNAPSHOT_PROVENANCE_CONFIRMATION_REQUIRED")
+    if type(position) is not int or not 1 <= position <= 20:
+        raise Hold("POSITION_HOLD")
+    config, packets, current = get_state(output_dir)
+    if position != current["model_reviewed"] + 1:
+        raise Hold("REPLAY_POSITION_HOLD")
+    diagnostics = output_dir.parent / (output_dir.name + "-response-diagnostics-v1")
+    private.private_dir(diagnostics, create=False)
+    snapshot = diagnostics / f"R60_PILOT20_FAILED_{position:04d}_PRIVATE.json"
+    raw = private.read_private(snapshot, MAX_REPLY_BYTES)
+    try:
+        envelope = json.loads(raw)
+        if (not isinstance(envelope, dict)
+                or envelope.get("model") != config["model_id"]
+                or not isinstance(envelope.get("id"), str)
+                or not envelope["id"].strip()):
+            raise Hold("SNAPSHOT_MODEL_BINDING_HOLD")
+    except (ValueError, TypeError, AttributeError):
+        raise Hold("SNAPSHOT_MODEL_BINDING_HOLD") from None
+    answer = parse_proxy_response(raw)
+    receipt = {
+        "schema": SCHEMA,
+        "position": position,
+        "packets_sha256": config["packets_sha256"],
+        "model_id": config["model_id"],
+        **answer,
+    }
+    receipt["receipt_sha256"] = sha(canonical(receipt))
+    private.write_new(output_dir / receipt_name(position), canonical(receipt))
+    return get_state(output_dir)[2]
 
 
 def proxy_request(endpoint: str, model: str, prompt: str, timeout: int,
@@ -463,6 +502,8 @@ SAFE_REASON_CODES = frozenset({
     "PROXY_ENVELOPE_JSON_HOLD", "PROXY_ENVELOPE_STRUCTURE_HOLD",
     "PROXY_CONTENT_STRUCTURE_HOLD", "PROXY_MODEL_JSON_HOLD",
     "PROXY_RUBRIC_SCHEMA_HOLD",
+    "SNAPSHOT_PROVENANCE_CONFIRMATION_REQUIRED", "REPLAY_POSITION_HOLD",
+    "SNAPSHOT_MODEL_BINDING_HOLD",
     "CONFIG_HOLD", "FOREIGN_FILE_HOLD", "NONCONTIGUOUS_HOLD",
     "RECEIPT_SCHEMA_HOLD", "RECEIPT_BINDING_HOLD", "PACKETS_MODIFIED_HOLD",
     "OUTPUT_EXISTS_HOLD", "CONFIG_ARGS_HOLD", "MAX_CASES_HOLD",
@@ -510,6 +551,10 @@ def main() -> int:
     run.add_argument("--max-cases", type=int, default=5)
     run.add_argument("--execute", action="store_true")
     run.add_argument("--allow-private-data-egress", action="store_true")
+    replay = sub.add_parser("replay-snapshot")
+    replay.add_argument("--output-dir", type=Path, required=True)
+    replay.add_argument("--position", type=int, required=True)
+    replay.add_argument("--confirm-snapshot-provenance", action="store_true")
     inspect = sub.add_parser("inspect")
     inspect.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
@@ -517,6 +562,11 @@ def main() -> int:
         if args.mode == "init":
             result = initialize(args.packets_dir, args.output_dir, args.base_url,
                                 args.model, args.timeout)
+        elif args.mode == "replay-snapshot":
+            result = replay_private_snapshot(
+                args.output_dir, position=args.position,
+                confirm_provenance=args.confirm_snapshot_provenance,
+            )
         elif args.mode == "advance":
             result = advance(
                 args.output_dir, args.max_cases, execute=args.execute,
