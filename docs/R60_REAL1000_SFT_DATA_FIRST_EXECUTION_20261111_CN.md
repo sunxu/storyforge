@@ -5,7 +5,7 @@
 
 已沿用 2026-11-09 在 R60 P2-A 上成功运行的 4Router/Claude Opus 5.5 协议：**顶层 `system`、`messages` 只含 `user`、不传 `temperature` 和 `response_format`**。复用现有 `r60_real_ai_dual_review.py` 的六维 Rubric 与严格 JSON 校验，当前20条审阅包、原始1000条冻结池和sample100均不改变。
 
-`experiments/r58_quality/r60_real1000_pilot20_local_review.py` **保留历史文件名，但现只接受 `https://4router.ai` 及其HTTPS子域名**。Key 仅从 Owner Mac 环境变量 `CLI_PROXY_API_KEY`（兼容原客户端 `OPENAI_API_KEY`）读取；不会写入配置文件或日志。申请调用时同时要求 `--execute --allow-private-data-egress`，否则拒绝调用。无明示批准不得调用，**此前 Development20 向 4Router 外发授权不覆盖本批新20条**。
+`experiments/r58_quality/r60_real1000_pilot20_local_review.py` **保留历史文件名，但现只接受 `https://4router.ai` 及其HTTPS子域名**。Key **仅**从 Owner Mac 环境变量 `CLI_PROXY_API_KEY` 读取，不回退使用 `OPENAI_API_KEY`，避免把其他服务的凭据误发给4Router；Key不会写入配置文件或日志。申请调用时同时要求 `--execute --allow-private-data-egress`，否则拒绝调用。无明示批准不得调用，**此前 Development20 向 4Router 外发授权不覆盖本批新20条**。
 
 待 Owner 明确确认向4Router外发这批20条正文及支付API费用后，用当前CI PASS PIN的独立worktree执行：
 
