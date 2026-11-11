@@ -1,5 +1,42 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 已复查原始Supabase数据源：开始恢复两条共同PASS的完整持久化消息历史
+
+Owner已确认R60真实1000条源自Supabase，允许查阅原始记录继续推进。已通过可用的`StoryForge_Supabase_Read_Only`连接器**实际只读**核实public表结构和聚合事实，未读取/打印任何个人对话正文或目标ID，也未作数据库写入。
+
+已验证的事实：
+- 历史R60冻结抽取SQL在`experiments/r58_quality/r60_real_expand_private.py`，从`public.story_v2_sessions`连接`public.user_stories`，按固定`story_id/session_id`从`public.v2_chat_messages`提取每个已完成assistant之前的三条相邻消息（user/assistant/user）和目标，分别保留消息ID与目标turn_index。原始R60的三消息片段不是完整上下文，现有源ID可用于精确回查。
+- 当前数据库有`public.v2_chat_messages`（聚合查询确认已完成assistant约355万条）、`public.story_v2_sessions`（未删除约18.9万条）、`public.v2_session_checkpoints`（约69.6万条）；可查询target之前同一故事/会话的更早已完成持久化消息及生成前节点快照，**并不自动证明这些消息全部发送给模型或没有被摘要裁剪**。
+- `public.user_stories`含`initial_system_prompt`、`world_setting`、`version`、`updated_at`等**当前值**；聚合查询有37条非空System、37条非空world，`public.story_admin_versions`当前计数为0。当前故事设定不能直接冒充目标历史时刻的实际发送System。最近3000条已完成assistant的metadata字段主要为`parts`、`finishReason`等，未见通用`actual_sent_system`或整段request prompt字段；这是抽样不足以证明旧数据没有请求快照。R50完整隔离仍未证明。
+- 因连接器无Owner Mac私有冻结候选ID，**尚未对那2条目标执行逐案数据库回查**。必须在Owner Mac已有私有冻结池内绑定准确ID，绝不猜ID或通过模糊文本替代。
+
+新建只读Owner Mac脚本`experiments/r58_quality/r60_real1000_qd20_common2_supabase_recovery.py`与离线合成测试`tests/test_r60_real1000_qd20_common2_supabase_recovery.py`：复用已验收的2条共同PASS原文/冻结1000池完整绑定；使用环境变量`R60_SUPABASE_READONLY_DSN`和`psycopg`，强制`REPEATABLE READ READ ONLY`、`row_security=on`、限时查询及`private.assert_guard`校验当前DB角色；只按私有source story/session/assistant UUID参数化查目标及其之前500条以内的已完成消息，与冻结三消息的原文、消息ID、角色顺序严格对比。若已完成消息超过500条、已编辑/删除或目标不一致直接HOLD，**不声明恢复成功**。只在新的Owner私有0700目录内create-only写0600原始历史证据，标准输出仅计数。额外查询目标时刻之前checkpoint数量及故事**当前**System/world字段有无；实际发送System、历史世界组件和R50完整排除仍强制未核实，训练准入0。
+
+Owner Mac在现有专用worktree同步CI成功的固定提交后：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_common2_supabase_recovery.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+# 从既有Owner Mac私有环境导入只读DSN，不得直接把连接串粘贴在日志/聊天中
+test -n "${R60_SUPABASE_READONLY_DSN:-}"
+python3 experiments/r58_quality/r60_real1000_qd20_common2_supabase_recovery.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --s1-blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$BASE/r60-real1000-qwen-deepseek20-live-v1" \
+  --blind-dir "$BASE/r60-real1000-qd20-common2-blind-v1" \
+  --decisions "$BASE/r60-real1000-qd20-common2-blind-v1/R60_QD20_COMMON2_DECISIONS_PRIVATE.json" \
+  --output-dir "$BASE/r60-real1000-qd20-common2-supabase-recovery-v1"
+```
+
+成功时SAFE状态`QD20_COMMON2_PERSISTED_HISTORY_RECOVERED__TRAIN_CONTEXT_HOLD`，字段包含两条各自已完成历史消息数、已知当前System/world非空的计数、目标前checkpoint总数；**并非训练历史System已恢复**。任何HOLD须先检查角色、数据时序与源绑定，不可松掉私有模式、隐式修改原文或重新补造训练System。若Owner已授权受控历史完整请求快照读取，可在此只读结果基础上再定位时间有效的实际prompt和world设定。训练和Quality-v1准入均0、GPU不启动。
+
+
 ## 2026-11-12 Owner真实CPU核验：两条共同PASS候选的源绑定通过，三类训练上下文证据仍HOLD
 
 Owner真实SAFE：`QD20_COMMON2_SOURCE_BINDING_PASS__TRAIN_CONTEXT_HOLD`。冻结池1000条、Pilot20、独立PASS 2条与原始目标/三条历史消息精确绑定通过。两条来自不同故事，目标唯一且长度都是300–499字符。缺证据：`historical_system_unverified=2`、`world_component_unverified=2`、`r50_full_exclusion_unverified=2`；已知R50五故事重叠0，但仅是部分检查，`r50_complete_exclusion_verified=false`。未进行DB、模型、GPU调用，私有值未公开，训练准入仍0。
