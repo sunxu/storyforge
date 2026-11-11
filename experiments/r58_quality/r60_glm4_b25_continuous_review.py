@@ -407,6 +407,16 @@ def main() -> int:
                     hf_tokenizer=AutoTokenizer, vllm=vllm)
             finally:
                 worker.checkpoint_record = original_checkpoint_record
+            if args.retry_baseline_dir is not None:
+                emit("RETRY_COMBINED_ATTEMPT_SUMMARY",
+                     baseline_verified=13, baseline_failed=12,
+                     retry_attempted=result["attempted"],
+                     retry_verified=result["verified"],
+                     retry_technical_failures=result["technical_failures"],
+                     combined_verified=13 + result["verified"],
+                     combined_unverified=12 - result["verified"],
+                     complete_verified_25=result["all_verified"],
+                     original_receipts_modified=False)
             # 12 retry positions are local indices mapped by the verified
             # baseline; original 13 validated checkpoints are untouched.
             return 0 if result["all_verified"] else 42
