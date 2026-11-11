@@ -180,3 +180,31 @@ def test_proxy_path_rejects_credentials_and_http():
         except mod.Hold:
             continue
         raise AssertionError("invalid 4Router endpoint accepted")
+
+
+def test_safe_reason_code_allowlist_never_echoes_secrets():
+    assert mod.safe_reason_code(mod.Hold("PROXY_API_KEY_REQUIRED")) == (
+        "PROXY_API_KEY_REQUIRED"
+    )
+    assert mod.safe_reason_code(mod.Hold("private data or token secret")) == (
+        "REVIEW_CONTRACT_HOLD"
+    )
+    assert mod.safe_reason_code(FileNotFoundError("private/path")) == (
+        "PRIVATE_FILE_MISSING_HOLD"
+    )
+
+
+def test_only_dedicated_4router_key_authorizes_calls(monkeypatch, tmp_path):
+    packet_dir = setup_private(monkeypatch, tmp_path)
+    folder = tmp_path / "out"
+    mod.initialize(packet_dir, folder, "https://api.4router.ai/v1",
+                   "claude-opus-5-5", 20)
+    monkeypatch.delenv("CLI_PROXY_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "not-a-router-key")
+    try:
+        mod.advance(folder, 1, execute=True, allow_private_data_egress=True)
+    except mod.Hold as exc:
+        assert str(exc) == "PROXY_API_KEY_REQUIRED"
+    else:
+        raise AssertionError("must require dedicated Router key")
+    assert mod.get_state(folder)[2]["model_reviewed"] == 0
