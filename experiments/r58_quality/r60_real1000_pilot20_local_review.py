@@ -224,7 +224,7 @@ def parse_proxy_response(raw: bytes) -> dict:
     """Strict response parser; never expose remote text in exceptions."""
     try:
         envelope = json.loads(raw)
-    except (ValueError, UnicodeError) as exc:
+    except (ValueError, UnicodeError):
         raise Hold("PROXY_ENVELOPE_JSON_HOLD") from None
     if not isinstance(envelope, dict):
         raise Hold("PROXY_ENVELOPE_STRUCTURE_HOLD")
@@ -249,11 +249,11 @@ def parse_proxy_response(raw: bytes) -> dict:
         raise Hold("PROXY_EMPTY_HOLD")
     try:
         model_json = json.loads(content)
-    except (ValueError, TypeError) as exc:
+    except (ValueError, TypeError):
         raise Hold("PROXY_MODEL_JSON_HOLD") from None
     try:
         return reviewer.parse_model_response(model_json)
-    except (ValueError, TypeError, KeyError, AttributeError, IndexError) as exc:
+    except (ValueError, TypeError, KeyError, AttributeError, IndexError):
         raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
 
 
