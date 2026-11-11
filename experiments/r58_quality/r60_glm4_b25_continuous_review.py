@@ -338,6 +338,7 @@ def main() -> int:
     parser.add_argument("--repair-quote-shape", action="store_true")
     parser.add_argument("--quote-match-observer", action="store_true")
     parser.add_argument("--quote-literal-repair", action="store_true")
+    parser.add_argument("--literal-probe-cases", type=int, default=0)
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -374,6 +375,16 @@ def main() -> int:
             or args.repair_quote_shape
         ):
             raise Hold("LITERAL_REPAIR_SCOPE_HOLD")
+        if args.literal_probe_cases and (
+            not 1 <= args.literal_probe_cases <= 2
+            or not args.quote_literal_repair
+            or not args.quote_match_observer
+            or args.retry_baseline_dir is None
+            or args.resume
+        ):
+            raise Hold("LITERAL_PROBE_SCOPE_HOLD")
+        if args.literal_probe_cases < 0:
+            raise Hold("LITERAL_PROBE_SCOPE_HOLD")
         if args.case_limit > expected_count:
             raise Hold("REVIEW_SCOPE_INVALID")
         spec = importlib.util.spec_from_file_location("r60_frozen_reviewer", runner)
@@ -412,6 +423,11 @@ def main() -> int:
             original_validate_response = worker.validate_response
             observed_counts = {}
             attempt_guard = None
+            repair_telemetry = None
+            if args.literal_probe_cases:
+                from r60_glm4_repair_telemetry import RepairTelemetry
+
+                repair_telemetry = RepairTelemetry(emit)
             if args.quote_match_observer:
                 from r60_glm4_validation_observer import make_observer
 
@@ -432,7 +448,8 @@ def main() -> int:
             if args.quote_literal_repair:
                 from r60_glm4_exact_quote_repair import make_reconciler
 
-                worker.checkpoint_record = make_reconciler(worker, emit)
+                worker.checkpoint_record = make_reconciler(
+                    worker, repair_telemetry.record if repair_telemetry else emit)
                 emit("QUOTE_LITERAL_REPAIR_INSTALLED",
                      strict_exact_revalidation=True, nonquote_fields_unchanged=True)
             try:
@@ -444,10 +461,15 @@ def main() -> int:
                     max_output_tokens=args.max_output_tokens,
                     wall_seconds=args.wall_seconds, resume=args.resume,
                     hf_tokenizer=AutoTokenizer, vllm=vllm,
-                    attempt_diagnostic_guard=attempt_guard)
+                    attempt_diagnostic_guard=attempt_guard,
+                    stop_after_attempts=args.literal_probe_cases or None)
             finally:
                 worker.checkpoint_record = original_checkpoint_record
                 worker.validate_response = original_validate_response
+            if repair_telemetry is not None:
+                repair_telemetry.summarize(
+                    result["attempted"], result["verified"],
+                    result["technical_failures"])
             if args.retry_baseline_dir is not None:
                 emit("RETRY_COMBINED_ATTEMPT_SUMMARY",
                      baseline_verified=13, baseline_failed=12,
