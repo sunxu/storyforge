@@ -337,6 +337,7 @@ def main() -> int:
     parser.add_argument("--quote-shape-diagnostic", action="store_true")
     parser.add_argument("--repair-quote-shape", action="store_true")
     parser.add_argument("--quote-match-observer", action="store_true")
+    parser.add_argument("--quote-literal-repair", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -349,7 +350,8 @@ def main() -> int:
         if args.retry_baseline_dir is not None and (
             not args.isolate_technical_failures or args.resume
             or args.case_limit != 12
-            or not (args.quote_shape_diagnostic or args.quote_match_observer)
+            or not (args.quote_shape_diagnostic or args.quote_match_observer
+                    or args.quote_literal_repair)
         ):
             raise Hold("RETRY_ARGS_HOLD")
         if args.repair_quote_shape and (
@@ -365,6 +367,13 @@ def main() -> int:
             or args.repair_quote_shape
         ):
             raise Hold("MATCH_OBSERVER_SCOPE_HOLD")
+        if args.quote_literal_repair and (
+            args.retry_baseline_dir is None
+            or not args.isolate_technical_failures
+            or args.quote_shape_diagnostic
+            or args.repair_quote_shape
+        ):
+            raise Hold("LITERAL_REPAIR_SCOPE_HOLD")
         if args.case_limit > expected_count:
             raise Hold("REVIEW_SCOPE_INVALID")
         spec = importlib.util.spec_from_file_location("r60_frozen_reviewer", runner)
@@ -420,6 +429,12 @@ def main() -> int:
 
                 worker.checkpoint_record = quote_shape_diagnostic(
                     worker, emit, repair=args.repair_quote_shape)
+            if args.quote_literal_repair:
+                from r60_glm4_exact_quote_repair import make_reconciler
+
+                worker.checkpoint_record = make_reconciler(worker, emit)
+                emit("QUOTE_LITERAL_REPAIR_INSTALLED",
+                     strict_exact_revalidation=True, nonquote_fields_unchanged=True)
             try:
                 result = run_isolated(
                     worker, retry_rows, args.output_dir, args.local_dir,
