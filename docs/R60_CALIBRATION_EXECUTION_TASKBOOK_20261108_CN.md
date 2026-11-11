@@ -1,5 +1,6 @@
 # 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
 
+> **2026-11-11 主线重定向（优先于本文件其余历史 P3/P4/P5 计划）：** 当前第一目标已调整为核验现有真实1000条冻结候选、建立高质量训练候选、CPU 编译与 SFT 训练准备。执行入口为 [R60 真实1000条数据优先任务书](R60_REAL1000_SFT_DATA_FIRST_EXECUTION_20261111_CN.md)。既有 GLM 25份 Snapshot/CPU Replay 已完成，Qwen 第7条故障暂缓，三模型 Reviewer 工程不再阻塞1000条真实历史数据主线。旧段落中“尚未运行GLM全25”、“继续GPU评审/修复”均仅为历史记录。未批准付费GPU、训练或 PR 合并。\n\n
 > **2026-11-11 GLM 当前阶段覆盖说明：** 此文件保留 P0–P4 历史执行与验收证据，其中早期“P3 CPU 未完成/P4 未授权或未开始”的状态不再准确描述本轮 GLM B25 工程进展。当前 GLM 独立全25 Snapshot + CPU Replay 的唯一接手入口是 [R60 GLM 全25下一 Agent 任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md)，执行细节见 [Owner Runbook](R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md)。代码四组 CI 已通过，真实冻结 Runner 合成 Snapshot CPU PASS，**全25 Owner CPU 预检和真实 H200 全25仍待执行**；SFT与1000条批量筛选仍未由本交接批准。旧段落须按日期作为历史记录读取，不得据此让新 Agent 重跑旧 P3 或1–2条实验。
 
 
