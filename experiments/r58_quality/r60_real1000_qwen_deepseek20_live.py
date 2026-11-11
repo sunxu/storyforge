@@ -24,6 +24,8 @@ SCHEMA = "storyforge_r60_real1000_qwen_deepseek20_live_safe_v1"
 CONFIG_SCHEMA = "storyforge_r60_real1000_qwen_deepseek20_config_v1"
 RECEIPT_SCHEMA = "storyforge_r60_real1000_qwen_deepseek20_receipt_v1"
 CONFIG_NAME = "R60_QWEN_DEEPSEEK20_CONFIG_PRIVATE.json"
+FAILURE_SCHEMA = "storyforge_r60_qd20_failed_response_snapshot_private_v1"
+MAX_FAILURES_PER_PAIR = 10
 MAX_RECEIPT_BYTES = 6000
 MODELS = ("qwen", "deepseek")
 DEFAULT_URLS = {
@@ -39,6 +41,79 @@ KEY_ENV = {"qwen": "DASHSCOPE_API_KEY", "deepseek": "DEEPSEEK_API_KEY"}
 
 class Hold(ValueError):
     pass
+
+
+class ModelResponseHold(ai.Hold):
+    """Bounded raw model text for Owner-private diagnostics only."""
+
+    def __init__(self, reason: str, raw_response: str):
+        super().__init__(reason)
+        self.raw_response = raw_response
+
+
+def failed_name(position: int, model: str, index: int) -> str:
+    return f"R60_QD20_{position:02d}_{model.upper()}_FAIL_{index:02d}_PRIVATE.json"
+
+
+def save_failure_snapshot(out: Path, cfg: dict, pos: int,
+                          provider: str, exc: ModelResponseHold) -> bool:
+    """Create-only; no stdout raw content, no overwrite, bounded history."""
+    for index in range(1, MAX_FAILURES_PER_PAIR + 1):
+        path = out / failed_name(pos, provider, index)
+        if path.exists() or path.is_symlink():
+            continue
+        row = {
+            "schema": FAILURE_SCHEMA,
+            "packets_sha256": cfg["packets_sha256"],
+            "position": pos,
+            "provider": provider,
+            "model": cfg["reviewer_configs"][provider]["model"],
+            "reason_code": str(exc),
+            "raw_model_response": exc.raw_response,
+        }
+        row["sha256"] = pilot.sha(pilot.canonical(row))
+        private.write_new(path, pilot.canonical(row))
+        return True
+    return False
+
+
+def inspect_failure_snapshots(out: Path, cfg: dict) -> dict:
+    codes = Counter()
+    outcomes = Counter()
+    total = 0
+    for pos in range(1, 21):
+        for provider in MODELS:
+            for index in range(1, MAX_FAILURES_PER_PAIR + 1):
+                path = out / failed_name(pos, provider, index)
+                if not path.exists() and not path.is_symlink():
+                    continue
+                row = json.loads(private.read_private(path, 150000))
+                if (not isinstance(row, dict)
+                        or set(row) != {
+                            "schema", "packets_sha256", "position", "provider",
+                            "model", "reason_code", "raw_model_response", "sha256",
+                        }
+                        or row["schema"] != FAILURE_SCHEMA
+                        or row["packets_sha256"] != cfg["packets_sha256"]
+                        or row["position"] != pos or row["provider"] != provider
+                        or row["model"] != cfg["reviewer_configs"][provider]["model"]
+                        or row["sha256"] != pilot.sha(pilot.canonical({
+                            k: v for k, v in row.items() if k != "sha256"
+                        }))):
+                    raise Hold("FAILURE_SNAPSHOT_BINDING_HOLD")
+                total += 1
+                codes[row["reason_code"]] += 1
+                try:
+                    ai.parse_model_response(json.loads(row["raw_model_response"]))
+                    outcomes["NOW_VALID_UNCHANGED"] += 1
+                except (ValueError, TypeError, ai.Hold):
+                    outcomes["STILL_INVALID_UNCHANGED"] += 1
+    return {
+        "private_failed_model_snapshots": total,
+        "failure_reason_counts": dict(sorted(codes.items())),
+        "offline_replay_outcomes": dict(sorted(outcomes.items())),
+        "model_inference_calls_this_run": 0,
+    }
 
 
 def receipt_name(position: int, model: str) -> str:
@@ -175,6 +250,7 @@ def call_provider(endpoint: str, model: str, provider: str,
         raise ai.Hold("MODEL_TRANSPORT_HOLD") from exc
     if len(raw) > ai.MAX_REPLY_BYTES:
         raise ai.Hold("MODEL_REPLY_OVERSIZE")
+    content = ""
     try:
         payload = json.loads(raw)
         message = payload["choices"][0]["message"]
@@ -183,8 +259,12 @@ def call_provider(endpoint: str, model: str, provider: str,
             raise TypeError("empty content")
         result = json.loads(content)
     except (ValueError, TypeError, KeyError, IndexError) as exc:
-        raise ai.Hold("MODEL_JSON_INVALID") from exc
-    return ai.parse_model_response(result)
+        raise ModelResponseHold("MODEL_JSON_INVALID", content
+                                if isinstance(content, str) else "") from exc
+    try:
+        return ai.parse_model_response(result)
+    except ai.Hold as exc:
+        raise ModelResponseHold(str(exc), content) from exc
 
 
 def execute(args: argparse.Namespace) -> dict:
@@ -201,6 +281,11 @@ def execute(args: argparse.Namespace) -> dict:
                 "model_inference_calls_this_run": 0}
     if args.command == "inspect":
         return {**inspect(args.output_dir, cfg), "model_inference_calls_this_run": 0}
+    if args.command == "diagnose":
+        report = inspect(args.output_dir, cfg)
+        report.update(inspect_failure_snapshots(args.output_dir, cfg))
+        report["status"] = "QD20_FAILURE_SNAPSHOTS_CPU_REPLAY__NO_MODEL_CALLS"
+        return report
     if args.command != "run":
         raise Hold("COMMAND_HOLD")
     if not args.authorize_remote_private_review:
@@ -219,6 +304,7 @@ def execute(args: argparse.Namespace) -> dict:
     attempts = 0
     completed = 0
     failed = Counter()
+    snapshots = 0
     for pos, packet in enumerate(packets["packets"], 1):
         prompt = ai.prompt_for_case({
             "history_messages": packet["history_messages"],
@@ -238,6 +324,9 @@ def execute(args: argparse.Namespace) -> dict:
                     args.timeout, args.json_mode)
             except ai.Hold as exc:
                 failed[str(exc)] += 1
+                if isinstance(exc, ModelResponseHold):
+                    snapshots += save_failure_snapshot(
+                        args.output_dir, cfg, pos, model, exc)
                 continue
             row = {
                 "schema": RECEIPT_SCHEMA,
@@ -257,6 +346,7 @@ def execute(args: argparse.Namespace) -> dict:
     safe.update({
         "model_inference_calls_this_run": attempts,
         "valid_receipts_created_this_run": completed,
+        "failed_response_snapshots_created_this_run": snapshots,
         "technical_failure_counts": dict(sorted(failed.items())),
     })
     return safe
@@ -264,7 +354,7 @@ def execute(args: argparse.Namespace) -> dict:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=("init", "run", "inspect"))
+    parser.add_argument("command", choices=("init", "run", "inspect", "diagnose"))
     parser.add_argument("--review-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--qwen-url", default=DEFAULT_URLS["qwen"])
