@@ -38,7 +38,7 @@ STAGES = frozenset({
 })
 
 
-def probe(runner: Path, source: Path, *, on_stage=None) -> dict:
+def probe(runner: Path, source: Path, *, on_stage=None, full25: bool = False) -> dict:
     def phase(name: str):
         if name not in STAGES:
             raise PreflightHold("UNKNOWN_PHASE_HOLD")
@@ -48,7 +48,7 @@ def probe(runner: Path, source: Path, *, on_stage=None) -> dict:
     phase("FROZEN_IMPORT")
     worker = frozen(runner)
     phase("PINNED_INPUT")
-    rows = load_original_rows(source, worker)
+    rows = load_original_rows(source, worker, full25=full25)
     row = rows[0]
     phase("QUOTE_FIXTURE")
     try:
@@ -101,7 +101,7 @@ def probe(runner: Path, source: Path, *, on_stage=None) -> dict:
         phase("CPU_REPLAY")
         report = summarize(SimpleNamespace(
             runner=runner, input=source, snapshots=private_snapshots,
-            output=scratch / "report.safe.json"))
+            output=scratch / "report.safe.json", full25=full25))
         phase("ASSERTIONS")
         actual = report["cases"][0]
         if (len(events) != 1 or report["replayed_cases"] != 1
@@ -128,13 +128,15 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--input", required=True, type=Path)
+    parser.add_argument("--full25", action="store_true")
     args = parser.parse_args()
     stage = "FROZEN_IMPORT"
     def on_stage(name):
         nonlocal stage
         stage = name
     try:
-        print(json.dumps(probe(args.runner, args.input, on_stage=on_stage), sort_keys=True))
+        print(json.dumps(probe(args.runner, args.input, on_stage=on_stage,
+                               full25=args.full25), sort_keys=True))
         return 0
     except Exception as exc:  # noqa: BLE001 - no private exception messages
         reason = str(exc) if type(exc) is PreflightHold and str(exc) in {
