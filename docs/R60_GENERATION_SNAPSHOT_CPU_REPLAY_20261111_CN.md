@@ -39,6 +39,15 @@ python3 -m py_compile "$DEST"/*.py
 python3 -m pytest -q \
  "$ROOT/tests/test_r60_generation_snapshot.py" \
  "$ROOT/tests/test_r60_glm4_snapshot_replay.py"
+
+# Owner Mac 的真实冻结 Runner CPU 集成校验：不执行模型推理
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+GLM_INPUT_DIR="$PILOT/input_B_quote_observer_v1"
+test -f "$GLM_INPUT_DIR/runner.py"
+test -f "$GLM_INPUT_DIR/source.private.jsonl"
+python3 "$DEST/r60_glm4_snapshot_cpu_preflight.py" \
+  --runner "$GLM_INPUT_DIR/runner.py" \
+  --input "$GLM_INPUT_DIR/source.private.jsonl"
 ```
 
 ### 第二阶段：CPU Replay 真实回执使用方式
@@ -61,7 +70,7 @@ python3 "$DEST/r60_glm4_snapshot_replay.py" \
 
 1. 准备和冻结 Runner 相同的一套模型、revision、Tokenizer 和原25输入；所有新脚本固定在一个提交 SHA，禁止混用版本。
 2. 创建独立新目录：`/bucket/evaluation-runs/r60-glm-b25-generation-snapshot-v1` 用于经过原 Runner 校验的回执；`/bucket/private-generation-snapshots/r60-glm-b25-generation-snapshot-v1` 用于含敏感原始模型回复的快照（两者需不同、只读保护旧基线）。
-3. 新启用 `--generation-snapshot-dir ... --quote-match-observer --isolate-technical-failures --retry-baseline-dir ... --case-limit 12`；初次可先加 `--literal-probe-cases 1` 或直接将 Debug 拓展至多2条。**不建议先启用任何自动引用修复**：先获取原始模型输出与冻结 Validator 同样输入，防止把“重新生成”误认为算法修复收益。
+3. 新启用 `--generation-snapshot-dir ... --snapshot-probe-cases 1 --quote-match-observer --isolate-technical-failures --retry-baseline-dir ... --case-limit 12`；初次只捕捉1条，可以将 `--snapshot-probe-cases` 改为2。此模式不需要启用额外标点级自动修复（冻结 Runner 原有引用修复流程保留）。**不建议先启用任何额外自动引用修复**：先获取原始模型输出与冻结 Validator 同样输入，防止把“重新生成”误认为算法修复收益。
 4. 快照完整性验证通过后，在 CPU 多轮对照原严格校验/标点修复/后续证据引用方案；只有 GPU 生成策略本身变化时才重新生成。
 
 **不可混淆：** Snapshot `generation_0001_01.private.json` 对应重试子集第1条，而非原25条的全部第1条位置。报告同时包含 retry_position 与原始位置，绝不直接覆写原始 `technical_failure_0001.safe.json`。生成内容受到源输入隐私范围约束，禁止复制到公开 GitHub、Issue 评论或模型 Debug 输出中。
