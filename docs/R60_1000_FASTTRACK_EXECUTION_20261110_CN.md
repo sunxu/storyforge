@@ -1,5 +1,17 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM B25 H200 引文观察器真实回执，逐字不匹配根因方向确证
+
+- HF Job：`adradar/6af3f4e09737d9a9e092936e`；启用 `--quote-match-observer`，一台 H200、单引擎；日志出现 `REAL_ENGINE_READY`、逐位置 `VALIDATOR_ENTRY` 与 `VALIDATOR_QUOTE_DIAGNOSTIC`，观察器运行时真实生效。
+- 原25条冻结基线：13 有效、12 技术失败；此次原12条重试再次 `attempted=12, verified=0, technical_failures=12`，`combined_verified=13, combined_unverified=12`，原回执未修改。最终 exit 42 是 fail-closed，不能把 attempted 当质量已审核。
+- 12 条 `MODEL_NONEXACT_QUOTE_HOLD` 的诊断：每条均有至少一处 `not_in_body>0`。其中来源引文不匹配 8/12 条，目标引文不匹配 7/12 条，二者同时不匹配 3/12 条；来源累计不匹配引文数 16、目标累计 13。全部 `shape=LIST`，`over_limit=false`，`empty=0`，`non_string=0`，`too_long=0`，`missing=0`。
+- 结论：这批 GLM 失败的直接触发条件是**输出引文不满足相应原文字面包含校验**，不是数组类型/超限。这不等于证实所有引文皆由模型凭空捏造，也没有证据证明原文匹配范围配置错误。旧 shape repair 重试策略正式停止。
+- 后续：**不再原样 H200 重试12条**；先使用 CPU 合成样本设计「引用候选可验证来源 + 严格匹配 + 原模型质量判定不变」的新版本，再决定是否采用受控新 GPU 实验。不可静默替换与证据不符的引用从而制造质量通过。P1 双模型汇总按原基线计：GLM 13 VERIFIED + 12 TECHNICAL_FAILURE；本次 Job 只是额外诊断证据，不能把 retry12 的技术失败重复叠加为 24 条，也不能将技术失败归为质量 HOLD。
+- 尚未取得已通过冻结 Runner 验证的实际 PASS/HOLD/REJECT 数字，禁止把13个 VERIFIED 直接声称为13个 PASS。训练准入仍为0，GPU训练未授权。
+
+---
+
+
 ## 2026-11-11：GLM B25 改为冻结校验器入口的只读逐字匹配诊断（CPU tests first）
 
 前述 AST 已确认 `specific_source_quotes -> visible_history[].content`、`specific_target_quotes -> target_text`，但仅属静态配对，不证明运行时具体哪条引文失败。此前 H200 retry12 **0/12**，且引用 shape patch 没有任何触发事件。已停止之前使用 `--repair-quote-shape` 的旧方案，**不得再次原样运行**。
