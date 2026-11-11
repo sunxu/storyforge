@@ -1,5 +1,23 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 真实第8条无效JSON：尾部多余右花括号，可CPU离线恢复
+
+Owner最新真实回执 `processed=7, model_reviewed=6, conflict_pending=1, remaining=13`，批次在第8条 `PROXY_MODEL_JSON_HOLD` 停止；已成功生成的前7条不可重试/覆盖。Owner第8条私有4Router响应快照经安全本地格式诊断：`finish_reason=stop`、外层为完整JSON围栏，围栏内部有效JSON对象之后**恰好多余单个右花括号**，无文本附加；原模型建议结论为HOLD，保留原始六维评分和理由即可，不需要重复调用API。
+
+运行器新增`parse_strict_model_json`：首先尝试原文严格JSON；失败时仅接受**JSON对象可被原生JSONDecoder完整解码，且剩余部分精确为1个 `}` 字符**；再去掉该字符并通过原生JSON和冻结六维Rubric校验。拒绝其它多余字符、任意文本提取、修改评分/模型决定、补齐缺少字段、宽松JSON；原始HTTP快照只在Owner私有目录保留。任何不符合Rubric的内容仍HOLD，决不为入训改分。
+
+在固定worktree `~/workspace/storyforge-r60-4router-review` 原地同步到通过CI的具体提交，先跑 `python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py`，确认 `inspect` 仍是7条已处理。仅当Owner确认本机`R60_PILOT20_FAILED_0008_PRIVATE.json`确实属于冻结第8条并同一模型时，执行本机无API费用：
+
+```bash
+REVIEW="experiments/r58_quality/r60_real1000_pilot20_local_review.py"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"
+python3 "$REVIEW" replay-snapshot --output-dir "$OUT" --position 8 --confirm-snapshot-provenance
+python3 "$REVIEW" inspect --output-dir "$OUT"
+```
+
+预期恢复为`processed=8, remaining=12`，模型HOLD计入advisory；`quality_v1_admitted=0, train_admitted=0`继续不变。未经另行真实数据外发和计费授权，不继续`advance`。不得上传/公开原始快照。
+
+
 ## 2026-11-11 P20 第2条 PASS 后：自动隔离质量冲突、继续批量（CPU 合成验证）
 
 Owner 实测 `processed=2, model_reviewed=1, conflict_pending=1, remaining=18`：首条PASS低于冻结中文文笔门槛已隔离，第二条Claude审核有效PASS，训练准入依然0。原审核器每遇新的 `PROXY_PASS_BELOW_FLOOR_HOLD` 都会中断，需要手动将失败快照quarantine后再次开始，付费API调用效率低。
