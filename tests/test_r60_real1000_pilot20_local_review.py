@@ -470,3 +470,62 @@ def test_quarantine_conflict_preserves_original_and_unblocks_next(monkeypatch, t
         assert str(exc) == "REPLAY_POSITION_HOLD"
     else:
         raise AssertionError("must be create-only")
+
+
+def test_advance_auto_conflict_continues_batch_without_extra_request(
+        monkeypatch, tmp_path):
+    packets_dir = setup_private(monkeypatch, tmp_path)
+    output = tmp_path / "out"
+    mod.initialize(packets_dir, output, "https://4router.ai/v1",
+                   "claude-opus-5-5", 30)
+    conflict = model_answer()
+    conflict["decision"] = "PASS"
+    conflict["severe_flags"]["serious_player_agency"] = False
+    conflict["scores"]["chinese_prose"] = 3
+    replies = [mod.QualityConflict(conflict), model_answer()]
+    calls = []
+    def fake_proxy(*args):
+        calls.append(args[-1])
+        reply = replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic")
+    monkeypatch.setattr(mod, "proxy_request", fake_proxy)
+    state = mod.advance(output, 2, execute=True, allow_private_data_egress=True)
+    assert calls == [1, 2]
+    assert state["processed"] == 2
+    assert state["conflict_pending"] == 1
+    assert state["model_reviewed"] == 1
+    assert state["remaining"] == 18
+    assert state["train_admitted"] == 0
+    record = json.loads((output / mod.conflict_name(1)).read_bytes())
+    assert record["original_decision"] == "PASS"
+    assert record["scores"]["chinese_prose"] == 3
+    assert (output / mod.receipt_name(2)).exists()
+    assert not (output / mod.receipt_name(1)).exists()
+
+
+def test_batch_stops_on_technical_hold_and_preserves_prior(monkeypatch, tmp_path):
+    packets_dir = setup_private(monkeypatch, tmp_path)
+    output = tmp_path / "out"
+    mod.initialize(packets_dir, output, "https://4router.ai/v1",
+                   "claude-opus-5-5", 30)
+    calls = []
+    def fake_proxy(*args):
+        calls.append(args[-1])
+        if len(calls) == 2:
+            raise mod.Hold("PROXY_HTTP_502_HOLD")
+        return model_answer()
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic")
+    monkeypatch.setattr(mod, "proxy_request", fake_proxy)
+    try:
+        mod.advance(output, 3, execute=True, allow_private_data_egress=True)
+    except mod.Hold as exc:
+        assert str(exc) == "PROXY_HTTP_502_HOLD"
+    else:
+        raise AssertionError("technical HOLD must interrupt the batch")
+    assert calls == [1, 2]
+    assert mod.get_state(output)[2]["processed"] == 1
+    assert (output / mod.receipt_name(1)).exists()
+    assert not (output / mod.receipt_name(2)).exists()
