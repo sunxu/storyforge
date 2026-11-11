@@ -110,6 +110,8 @@ def _strict(worker: object, position: int, row: dict,
 def _evaluate(worker: object, position: int, row: dict,
               primary: dict, secondary: dict | None) -> tuple[dict, dict]:
     if primary["finish_reason"] != "stop":
+        if secondary is not None:
+            raise ReplayHold("SECONDARY_WITHOUT_VALID_PRIMARY_HOLD")
         error = {"technical_status": "REPLAY_FAILED",
                  "reason_code": "MODEL_GENERATION_INCOMPLETE_HOLD",
                  "quality_decision": None}
@@ -117,15 +119,21 @@ def _evaluate(worker: object, position: int, row: dict,
     try:
         response = json.loads(primary["text"])
     except (ValueError, TypeError):
+        if secondary is not None:
+            raise ReplayHold("SECONDARY_WITHOUT_VALID_PRIMARY_HOLD") from None
         error = {"technical_status": "REPLAY_FAILED",
                  "reason_code": "MODEL_JSON_HOLD", "quality_decision": None}
         return error, error.copy()
     try:
         strict = _strict(worker, position, row, response, MODEL, REV)
+        if secondary is not None:
+            raise ReplayHold("SECONDARY_WITHOUT_QUOTE_REPAIR_HOLD")
     except worker.ReviewError as exc:
         strict = {"technical_status": "REPLAY_FAILED",
                   "reason_code": _safe_error(exc, worker),
                   "quality_decision": None}
+        if secondary is not None and not isinstance(exc, worker.QuoteValidationError):
+            raise ReplayHold("SECONDARY_WITHOUT_QUOTE_REPAIR_HOLD") from None
         if (secondary is not None and secondary["finish_reason"] == "stop"
                 and isinstance(exc, worker.QuoteValidationError)):
             try:
