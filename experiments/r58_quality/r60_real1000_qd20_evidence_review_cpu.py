@@ -178,14 +178,19 @@ def main() -> int:
     parser.add_argument("--blind-dir", type=Path, required=True)
     parser.add_argument("--decisions", type=Path)
     args = parser.parse_args()
+    stage = "READ_SOURCE"
     try:
         source = load_source(args.source_dir)
+        stage = "PREPARE_OR_VERIFY"
         if args.command == "prepare":
             if args.blind_dir.exists() or args.blind_dir.is_symlink():
                 raise Hold("BLIND_OUTPUT_ALREADY_EXISTS_HOLD")
             blind, template = prepare(source)
+            stage = "CREATE_PRIVATE_DIR"
             private.private_dir(args.blind_dir, create=True)
+            stage = "WRITE_BLIND"
             private.write_new(args.blind_dir / PACK_NAME, pilot.canonical(blind))
+            stage = "WRITE_TEMPLATE"
             private.write_new(args.blind_dir / TEMPLATE_NAME,
                               pilot.canonical(template))
             result = {
@@ -198,10 +203,13 @@ def main() -> int:
             if args.decisions is None:
                 raise Hold("DECISIONS_PATH_REQUIRED_HOLD")
             private.private_dir(args.blind_dir, create=False)
+            stage = "READ_BLIND"
             blind = json.loads(private.read_private(
                 args.blind_dir / PACK_NAME, 200000))
+            stage = "READ_DECISIONS"
             decisions = json.loads(private.read_private(
                 args.decisions, 200000))
+            stage = "VERIFY_REVIEW"
             result = verify(source, blind, decisions)
         result.update({
             "quality_v1_admitted": 0, "train_admitted": 0,
@@ -212,10 +220,17 @@ def main() -> int:
         return 0
     except Exception as exc:  # noqa: BLE001 - do not reveal private data
         code = str(exc) if isinstance(exc, Hold) else "BLIND_EVIDENCE_INPUT_HOLD"
+        safe_errors = {"TypeError", "ValueError", "KeyError", "IndexError",
+                       "AttributeError", "FileNotFoundError", "PermissionError",
+                       "FileExistsError", "OSError", "IsADirectoryError",
+                       "JSONDecodeError", "UnicodeDecodeError"}
+        kind = type(exc).__name__
         print(json.dumps({
             "schema": SCHEMA,
             "status": "QD20_BLIND_EVIDENCE_HOLD",
             "reason_code": code,
+            "diagnostic_stage": stage,
+            "diagnostic_exception_type": kind if kind in safe_errors else "OTHER",
             "quality_v1_admitted": 0, "train_admitted": 0,
             "private_values_emitted": False,
             "model_inference_calls_by_this_script": 0,
