@@ -1,5 +1,31 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 P1 真实100条抽样 PASS → 20条小批质量审核包
+
+Owner CPU `4 passed in 0.05s`，`CALIBRATION_SAMPLE100_READY__NO_REVIEWS`，抽样100/100个不同故事，目标字数层55/38/7，私有目录 `$HOME/.local/share/storyforge/r60/private/r60-real1000-calibration100-v1` 已创建。**P1 抽样 PASS，不代表任何质量审查完成**。
+
+为避免再次因复杂GPU Reviewer耽误主线，新建 `r60_real1000_pilot20_packets_cpu.py`，对现有100条私有位置清单执行**全1000来源冻结摘要验签 + 按池指纹重新计算 sample100**，然后固定抽20条（11/8/1，仍每故事独立）。只在新的 Owner 私有目录创建一份含目标前三条历史与助手目标正文的审阅包；所有原文仅写本地0600文件，不能上传GitHub/CI或打印到对话。此时无AI审核调用、无训练准入。
+
+Owner Mac 在 CI 合格的固定 PIN 上执行：
+```bash
+set -euo pipefail
+umask 077
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PIN="$(git -C "$ROOT" rev-parse origin/r60/p4-generation-eval-framework)"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/r60-pilot20-cpu-XXXXXX")"
+git -C "$ROOT" worktree add --detach "$WORK" "$PIN"
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_packets_cpu.py
+test ! -e "$BASE/r60-real1000-pilot20-packets-v1"
+python3 experiments/r58_quality/r60_real1000_pilot20_packets_cpu.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --output-dir "$BASE/r60-real1000-pilot20-packets-v1"
+```
+SAFE 预期 `PILOT20_REVIEW_PACKETS_READY__NO_REVIEWS`，20条、层配额11/8/1。下一步用已可用的AI/OpenAI-compatible单主审核器依六维评分+严重证据进行20条**真实**审核，再抽查争议误判。20条工具完成 != 质量评审完成；未经独立参考，不报告误拒率。任何API审核费用/数据外传需另行确认。
+
+
 ## 2026-11-11 P1 分层校准100 真实抽样验收（覆盖下文 P1 抽样待执行文字）
 
 Owner Mac 在 `1b177eb77637c2e2b15def4272cc546c1665e6c3` 实测：4个CPU合成测试 PASS；`CALIBRATION_SAMPLE100_READY__NO_REVIEWS`，来自 **100个不同故事**，目标字数层55/38/7；`database_accessed=false`、`gpu_started=false`、`private_values_emitted=false`，质量审核与训练准入均为0。Owner 私有位置清单已创建于 `$HOME/.local/share/storyforge/r60/private/r60-real1000-calibration100-v1`，不可覆盖或重新抽样。
