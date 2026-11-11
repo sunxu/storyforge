@@ -18,7 +18,7 @@ assert spec and spec.loader
 replay = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(replay)
 
-from r60_generation_snapshot import GenerationSnapshotStore, digest
+from r60_generation_snapshot import GenerationSnapshotStore, SnapshotHold
 
 
 def _fixture(tmp_path, monkeypatch):
@@ -137,7 +137,7 @@ def test_tampered_signed_snapshot_halts_replay(tmp_path, monkeypatch):
     raw = json.loads(file.read_text())
     raw["text"] = "changed"
     file.write_text(json.dumps(raw))
-    with pytest.raises(Exception, match="SNAPSHOT_INTEGRITY_HOLD"):
+    with pytest.raises(SnapshotHold, match="SNAPSHOT_INTEGRITY_HOLD"):
         replay.summarize(SimpleNamespace(
             runner=runner, input=source, snapshots=snapshots,
             output=tmp_path / "summary.safe.json"))
