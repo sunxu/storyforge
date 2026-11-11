@@ -1,5 +1,28 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM 引文检查 RHS 绑定来源 CPU 追踪（无需 H200）
+
+Owner Mac 前两次离线输出：`QUOTE_RAISE_CPU_INSPECT_PASS` 找到 `validate_response` 内单一 `MODEL_NONEXACT_QUOTE_HOLD` 抛出点，条件为 `MEMBERSHIP_OR_TEXT_MATCH`；`QUOTE_SEMANTICS_CPU_PASS` 显示 `not any(QUOTED_ITEM IN OTHER_VARIABLE ...)` 类结构，候选字段包括 `visible_history`、`target_text`、`specific_source_quotes`、`specific_target_quotes`。因 `OTHER_VARIABLE` 是别名，之前无法确定 RHS 的真实来源。这既不证明 12 条是虚假引文，也不证明校验器有 bug。
+
+新增 `experiments/r58_quality/r60_glm4_quote_binding_probe.py`：仅在 Owner Mac 上 AST 静态解析冻结 Runner 的 RHS 变量赋值及循环/推导式来源，输出 `right_provenance` / `right_scope`（`HISTORY_OR_MESSAGE`、`TARGET_TEXT`、`MIXED_HISTORY_TARGET`、`UNKNOWN`），绝不打印源代码、引文内容、路径或未知变量名。不执行私有 Runner，也不运行 GPU。它属于**可能过度覆盖的静态别名分析**，不构成运行时逐条错误结论。
+
+Owner Mac CPU 命令：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+PIN="f25f18e6875d6037d099475e7cce9c82f8c9e616"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+python3 <(git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_glm4_quote_binding_probe.py") \
+  --runner "$PILOT/input_B_retry12_v1/runner.py"
+```
+
+若 `right_scope` 已确定，再比对 `SOURCE_QUOTE_FIELD` 与 `TARGET_QUOTE_FIELD` 的匹配范围、空引文行为和目标正文可见性。任何修复不得静默剔除原本不匹配的引文、放松逐字匹配，也不能覆盖 13 个有效 Checkpoint。**目前禁止重复执行已两次无效的 retry12 H200 命令。**
+
+---
+
+
 ## 2026-11-11：GLM 冻结 Runner 确认唯一引用错误为包含关系，暂停 GPU，下一步语义 CPU 检查
 
 Owner Mac 对实际执行的私有 `input_B_retry12_v1/runner.py` 的 CPU AST 输出：`direct_quote_error_possible=true`、`raise_site_count=1`、`sites=[{function:validate_response,guard_category:MEMBERSHIP_OR_TEXT_MATCH,guard_depth:1}]`。与前次 `inference_calls_checkpoint_record=true`、`checkpoint_record_calls_validate_response=true` 一致。此处**不是**此前假设的引用字段数组格式/条数限制；前轮 `QUOTE_SHAPE_DIAGNOSTIC` 没输出，不代表诊断 hook 不可达：其设计只在 NOT_LIST 或 OVER_LIMIT 时才输出，在“类型数量正确但逐字引用匹配失败”情况下本来就没有事件。此前 12 条新增 0 个有效结果和此现象相符，但**不能仅凭 AST 证明具体 12 条失败中的哪个 quote 没有逐字匹配**。
