@@ -31,10 +31,26 @@ class PreflightHold(ValueError):
     pass
 
 
-def probe(runner: Path, source: Path) -> dict:
+STAGES = frozenset({
+    "FROZEN_IMPORT", "PINNED_INPUT", "QUOTE_FIXTURE",
+    "FROZEN_VALIDATION", "SNAPSHOT_WRITE",
+    "CPU_REPLAY", "ASSERTIONS",
+})
+
+
+def probe(runner: Path, source: Path, *, on_stage=None) -> dict:
+    def phase(name: str):
+        if name not in STAGES:
+            raise PreflightHold("UNKNOWN_PHASE_HOLD")
+        if on_stage is not None:
+            on_stage(name)
+
+    phase("FROZEN_IMPORT")
     worker = frozen(runner)
+    phase("PINNED_INPUT")
     rows = load_original_rows(source, worker)
     row = rows[0]
+    phase("QUOTE_FIXTURE")
     try:
         exact, distorted = synthetic_punctuation_case(row["target_text"])
     except Exception as exc:
@@ -54,6 +70,7 @@ def probe(runner: Path, source: Path) -> dict:
         "uncertainty": "这是合成测试，不是质量审核结果。",
     }
 
+    phase("FROZEN_VALIDATION")
     # Before writing any synthetic snapshot, prove the original frozen runner
     # rejects it for the expected quote reason (not some unrelated shape error).
     try:
@@ -64,6 +81,7 @@ def probe(runner: Path, source: Path) -> dict:
     else:
         raise PreflightHold("FROZEN_EXPECTED_REJECTION_MISSING_HOLD")
 
+    phase("SNAPSHOT_WRITE")
     with tempfile.TemporaryDirectory(prefix="r60-glm-snapshot-cpu-") as temporary:
         scratch = Path(temporary)
         private_snapshots = scratch / "snapshots"
@@ -80,9 +98,11 @@ def probe(runner: Path, source: Path) -> dict:
             generate=lambda *args, **kwargs: [SimpleNamespace(
                 outputs=[SimpleNamespace(text=generated, finish_reason="stop")])])
         store.wrap(fake).generate(["synthetic prompt"])
+        phase("CPU_REPLAY")
         report = summarize(SimpleNamespace(
             runner=runner, input=source, snapshots=private_snapshots,
             output=scratch / "report.safe.json"))
+        phase("ASSERTIONS")
         actual = report["cases"][0]
         if (len(events) != 1 or report["replayed_cases"] != 1
                 or actual["original_frozen"]["technical_status"] != "REPLAY_FAILED"
@@ -109,12 +129,23 @@ def main() -> int:
     parser.add_argument("--runner", required=True, type=Path)
     parser.add_argument("--input", required=True, type=Path)
     args = parser.parse_args()
+    stage = "FROZEN_IMPORT"
+    def on_stage(name):
+        nonlocal stage
+        stage = name
     try:
-        print(json.dumps(probe(args.runner, args.input), sort_keys=True))
+        print(json.dumps(probe(args.runner, args.input, on_stage=on_stage), sort_keys=True))
         return 0
-    except Exception:  # noqa: BLE001 - no private exception strings
+    except Exception as exc:  # noqa: BLE001 - no private exception messages
+        reason = str(exc) if type(exc) is PreflightHold and str(exc) in {
+            "SYNTHETIC_QUOTE_CANDIDATE_HOLD",
+            "FROZEN_INITIAL_REASON_HOLD",
+            "FROZEN_EXPECTED_REJECTION_MISSING_HOLD",
+            "SNAPSHOT_REPLAY_INTEGRATION_HOLD",
+        } else "STAGE_EXCEPTION_REDACTED"
         print(json.dumps({
             "schema": SCHEMA, "status": "GLM_FROZEN_SNAPSHOT_CPU_REPLAY_PREFLIGHT_HOLD",
+            "stage": stage, "reason_code": reason,
             "private_values_emitted": False, "gpu_started": False,
         }, sort_keys=True))
         return 42
