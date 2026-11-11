@@ -13,6 +13,8 @@
 
 全量25条运行会在冻结 Runner 技术异常时继续保存签名技术失败回执；如果模型生成/快照写入出现非预期错误，可能提前停止，不能宣称25份 Snapshot 已保存。CPU Replay 的 `--full25` 可以读取完整或连续的部分前缀；只有 `replayed_cases=25` 且生成回执另行核验25/25，才算完整运行验收。
 
+新 Agent 接手时请先读[权威全25交接任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md)，并使用[新 Agent 启动提示词](R60_GLM_FULL25_NEW_AGENT_PROMPT_20261111_CN.md)。
+
 ## 准备
 
 从固定提交读取 r60_glm4_b25_continuous_review.py、r60_glm4_full25_snapshot_entrypoint.sh、r60_glm4_servercopy_localize.py、r60_generation_snapshot.py、r60_review_isolation_core.py、r60_glm4_snapshot_replay.py、r60_glm4_snapshot_cpu_preflight.py、r60_glm4_literal_repair_cpu_probe.py、r60_glm4_exact_quote_repair.py、r60_glm4_b25_retry_contract.py。把上述文件与冻结 runner.py、source.private.jsonl 复制到仅 Owner 可读的新独立输入目录；不可直接修改冻结原件。
