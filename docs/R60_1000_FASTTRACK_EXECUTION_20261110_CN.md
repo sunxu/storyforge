@@ -12,6 +12,10 @@
 - 新的调用选项为 `--quote-match-observer`，只允许 `--retry-baseline-dir` + `--isolate-technical-failures` 的12条任务，禁止与 `--quote-shape-diagnostic` 或 `--repair-quote-shape` 组合。原25条基线的13有效+12失败回执必须完整验证，写入**全新的**输出目录；旧的两轮结果禁止覆盖。
 - CPU 合成测试包括来源逐字不匹配、目标逐字不匹配、空字符串/非字符串/过长引文、合法逐字引文完全不变、未知输入拒绝、冻结模块内 `checkpoint_record` 全局调用确实走到新 wrapper。所有结论先在合成样本 CPU 上验证，**本次不发起 HF GPU Job**。
 
+**付费任务自动止损**：共享隔离器新增可选 `attempt_diagnostic_guard`；在每条尝试结束后立刻检查该位置是否至少产生一次 `VALIDATOR_ENTRY`。如果第1条没有进入冻结 validator，发出 `VALIDATOR_OBSERVER_COVERAGE_HOLD` 并立即停止，**不会继续尝试2–12条**。这只在显式 `--quote-match-observer` 时启用，Qwen 与 GLM 既有运行默认行为不变；CPU 合成测试覆盖首条报错、无观测事件时止损，以及观测正常时继续。
+
+**推荐后续 H200 调用参数（仅供计划，不在本轮执行）**：从上一次 `r60-glm4-b25-retry12-shape-v1` 的完整指令复制，改用最新受控代码 bundle 与全新输出目录（不得覆盖旧目录），并把 `--quote-shape-diagnostic --repair-quote-shape` 替换为单独的 `--quote-match-observer`，其余模型revision、SHA、固定镜像、`--isolate-technical-failures --retry-baseline-dir` 不变。正式发起前需完成新 bundle 和新目录不可覆盖检查；本轮不提供已授权的 GPU 执行回执。
+
 针对12条未来的定位任务，验收硬条件：除了 `ALL_CASES_ATTEMPTED`，必须出现 `VALIDATOR_OBSERVER_INSTALLED` 与每条至少一个 `VALIDATOR_QUOTE_DIAGNOSTIC`；如果仍未出现对应事件，说明诊断接入失效，停止而不是再次付费重试。此诊断并不承诺将失败转成有效 checkpoint；诊断完成后才讨论修改 Prompt 的单独实验版本。原Rubric和原13条有效结果保持不变。
 
 本轮交付只包含 GitHub 代码、CPU 合成测试和文档。待 GitHub CI PASS 后，Owner 可以自行决定是否在 Mac CLI 授权下一次有明确诊断目标的 H200 Job，**不得自动启动**。
