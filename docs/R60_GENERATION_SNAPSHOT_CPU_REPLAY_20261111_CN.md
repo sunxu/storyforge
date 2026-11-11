@@ -1,5 +1,8 @@
 # StoryForge R60：GLM Generation Snapshot + CPU Replay v1
 
+> **2026-11-11 当前执行路线已改变：** [GLM 全25 Snapshot 下一 Agent 权威任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md) 和 [Owner 执行手册](R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md) 优先于本文旧版单条/双条测试建议。Owner 已要求独立一次运行原始25条，保持 `--snapshot-full25 --case-limit 25`、独立新快照目录、CPU Replay `--full25`；本文“最多1条/1–2条/重试12条”的命令和建议均为**历史方案，不可执行**。历史真实冻结 Runner + 合成 Snapshot CPU PASS 有效，但仍待新的 `--full25` Owner Mac CPU 预检及真实 H200 运行。
+
+
 
 ## 2026-11-11：Owner Mac 真实冻结 Runner Snapshot + CPU Replay 集成 PASS
 
