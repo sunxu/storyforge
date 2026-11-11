@@ -401,13 +401,20 @@ def main() -> int:
                      selected_from_original_25=True)
             original_checkpoint_record = worker.checkpoint_record
             original_validate_response = worker.validate_response
+            observed_counts = {}
+            attempt_guard = None
             if args.quote_match_observer:
                 from r60_glm4_validation_observer import make_observer
 
                 worker.validate_response = make_observer(
-                    worker, retry_rows, emit)
+                    worker, retry_rows, emit, observed_counts)
                 emit("VALIDATOR_OBSERVER_INSTALLED", target="VALIDATE_RESPONSE",
                      observation_only=True)
+
+                def attempt_guard(pos):
+                    if observed_counts.get(pos, 0) < 1:
+                        emit("VALIDATOR_OBSERVER_COVERAGE_HOLD", position=pos)
+                        raise Hold("VALIDATOR_OBSERVER_NOT_REACHED_HOLD")
             if args.quote_shape_diagnostic:
                 from r60_glm4_b25_retry_contract import quote_shape_diagnostic
 
@@ -421,7 +428,8 @@ def main() -> int:
                     max_model_len=args.max_model_len,
                     max_output_tokens=args.max_output_tokens,
                     wall_seconds=args.wall_seconds, resume=args.resume,
-                    hf_tokenizer=AutoTokenizer, vllm=vllm)
+                    hf_tokenizer=AutoTokenizer, vllm=vllm,
+                    attempt_diagnostic_guard=attempt_guard)
             finally:
                 worker.checkpoint_record = original_checkpoint_record
                 worker.validate_response = original_validate_response
