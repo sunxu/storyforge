@@ -141,7 +141,7 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
-    key = os.environ.get(API_KEY_ENV) or os.environ.get("OPENAI_API_KEY")
+    key = os.environ.get(API_KEY_ENV)
     if not key:
         raise Hold("PROXY_API_KEY_REQUIRED")
     body = claude_payload(model, prompt)
