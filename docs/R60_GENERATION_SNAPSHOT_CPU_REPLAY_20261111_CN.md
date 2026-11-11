@@ -14,7 +14,7 @@ GLM B25 已有 13 个有效 Checkpoint，另外 12 条因逐字引文不匹配�
 
 ## 当前状态与验收
 
-这是**工程实现 + CPU 合成验证**。已经取得 Owner Mac 原冻结 Runner 的 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，但尚未针对这个新的快照/回放组合运行 Owner Mac 私有 Runner CPU 集成，也没有产生真实 GLM 原始生成快照。过去 12 条失败没有保留下来的完整生成文本，无法从 SAFE 诊断日志重建；不能用本工具声称修复原来已完成的 12 条。原13有效/12技术失败、Quality-v1 admitted=0 不变。
+这是**工程实现 + CPU 合成验证**。已经取得 Owner Mac 原冻结 Runner 的 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，但尚未针对这个新的快照/回放组合完成 Owner Mac 私有 Runner CPU 集成，也没有产生真实 GLM 原始生成快照。过去 12 条失败没有保留下来的完整生成文本，无法从 SAFE 诊断日志重建；不能用本工具声称修复原来已完成的 12 条。原13有效/12技术失败、Quality-v1 admitted=0 不变。
 
 ### 第一阶段：Owner Mac CPU-only 工具准备
 
@@ -25,13 +25,13 @@ set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
 BASE="$HOME/.local/share/storyforge/r60/private"
 DEST="$BASE/r60-glm-snapshot-replay-tools-v1"
-PIN="REPLACE_WITH_TESTED_COMMIT_SHA"
+PIN="3cbf7c75b8f978b3476013fc4c920e72b00ac5fc"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 git -C "$ROOT" cat-file -e "$PIN^{commit}"
 test ! -e "$DEST"
 umask 077
 mkdir -m 700 "$DEST"
-for F in r60_generation_snapshot.py r60_glm4_snapshot_replay.py r60_glm4_exact_quote_repair.py r60_glm4_b25_retry_contract.py r60_review_isolation_core.py; do
+for F in r60_generation_snapshot.py r60_glm4_snapshot_replay.py r60_glm4_snapshot_cpu_preflight.py r60_glm4_literal_repair_cpu_probe.py r60_glm4_exact_quote_repair.py r60_glm4_b25_retry_contract.py r60_review_isolation_core.py; do
   git -C "$ROOT" show "$PIN:experiments/r58_quality/$F" > "$DEST/$F"
 done
 chmod 600 "$DEST"/*.py
