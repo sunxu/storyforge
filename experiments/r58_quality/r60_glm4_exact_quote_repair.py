@@ -92,12 +92,12 @@ def reconcile_quote(quote: object, bodies: list[str]) -> str | None:
             continue
         if SequenceMatcher(None, quote, candidate, autojunk=False).ratio() < MIN_RATIO:
             continue
-        accepted.append((distance, candidate))
+        accepted.append((distance, abs(len(candidate) - len(quote)), candidate))
     if not accepted:
         return None
-    min_distance = min(distance for distance, _ in accepted)
-    best = {candidate for distance, candidate in accepted
-            if distance == min_distance}
+    best_rank = min((distance, size_diff) for distance, size_diff, _ in accepted)
+    best = {candidate for distance, size_diff, candidate in accepted
+            if (distance, size_diff) == best_rank}
     # Equal-edit alternatives are ambiguous; a unique closest exact source
     # substring is the only permissible candidate.
     return next(iter(best)) if len(best) == 1 else None
