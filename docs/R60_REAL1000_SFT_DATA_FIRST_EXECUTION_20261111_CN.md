@@ -1,5 +1,45 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Owner授权：跳过预算，直接运行Qwen + DeepSeek真实20条API试点
+
+Owner最新SAFE：`SFT_CONSTRUCTED_CONTEXT_DRAFT_READY__TRAIN_ADMISSION_HOLD`、`draft_cases=3`、每条5条messages、构造System明确标记，原历史System仍未恢复，R50完整隔离/世界卡未通过、正式入训0。Owner明确要求“不测算成本，直接开始Qwen、DeepSeek测试”。本次授权覆盖**仅使用已冻结Pilot20的20条私有审核样本，通过Qwen/DeepSeek两家官方API进行质量审核测试**，不包括新80/980条大批量、训练GPU或直接准入。
+
+已按2026-11-11官方文档核实：Qwen用阿里云百炼OpenAI兼容`/compatible-mode/v1/chat/completions`和`qwen3.7-flash`；DeepSeek现行官方模型ID是`deepseek-flash`，旧`deepseek-v4-flash`只是兼容别名，官方接口是`https://api.deepseek.com/chat/completions`；DeepSeek默认深度思考，应明确`thinking={"type":"disabled"}`才能在固定1600输出Token内更稳定地返回审核JSON。官方文档：`https://www.alibabacloud.com/help/en/model-studio/qwen-api-via-openai-chat-completions`、`https://api-docs.deepseek.com/quick_start/pricing/`、`https://api-docs.deepseek.com/api/create-chat-completion/`。
+
+新增可复用真实API运行器 `experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py` 和合成测试 `tests/test_r60_real1000_qwen_deepseek20_live.py`：
+- 仅复用冻结20条Pilot20，不交出Claude/Codex原判；复用冻结六维Rubric与`r60_real_ai_dual_review`的严格输出验证。
+- 官方HTTPS endpoint和model配置绑定、create-only私有配置与每模型每条收据、SHA校验、成功不可覆盖、失败仅记录SAFE错误类别；可重入只补未成功的条目。
+- API密钥只从Owner Mac环境变量`DASHSCOPE_API_KEY`、`DEEPSEEK_API_KEY`读取，不写入GitHub、收据或终端。禁重定向、禁环境代理。仅`run --authorize-remote-private-review`会实际向两家厂商发送冻结私人历史对话和目标回复（存在真实数据外发/计费）。
+- 默认20条×2模型=40次请求，可通过`--max-calls 2`先做单对兼容性检查，随后`--max-calls 40`补齐全部20对。该两阶段是限量验收与全量试点，**不改变既有Pilot20、Claude/Codex、SFT草稿**。
+- 只输出SAFE总计/各厂商PASS/HOLD/REJECT、有效回执数及双PASS数量。模型理由仅留Owner私有收据；API调用成功不代表质量标准可靠，不自动增加Quality-v1或train admitted。
+- 若Owner原配置用新的Workspace专属域名，使用`--qwen-url https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`，且`init/run/inspect`必须传同一URL。
+
+在Mac现有专用worktree先同步已通过CI的固定PIN。只在两API Key已经存在时执行（不要把凭据贴给Agent）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qwen_deepseek20_live.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+REVIEW="$BASE/r60-real1000-pilot20-4router-v1"
+OUT="$BASE/r60-real1000-qwen-deepseek20-live-v1"
+: "${DASHSCOPE_API_KEY:?missing DASHSCOPE_API_KEY}"
+: "${DEEPSEEK_API_KEY:?missing DEEPSEEK_API_KEY}"
+python3 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py init \
+  --review-dir "$REVIEW" --output-dir "$OUT"
+python3 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py run \
+  --review-dir "$REVIEW" --output-dir "$OUT" \
+  --max-calls 2 --json-mode --authorize-remote-private-review
+python3 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py run \
+  --review-dir "$REVIEW" --output-dir "$OUT" \
+  --max-calls 40 --json-mode --authorize-remote-private-review
+python3 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py inspect \
+  --review-dir "$REVIEW" --output-dir "$OUT"
+```
+
+预期最终`QD20_TWO_PROVIDER_COMPLETED__QUALITY_COMPARISON_PENDING`、`complete_provider_reviews=40`、`complete_two_provider_pairs=20`；如部分JSON/HTTP失败，保持`QD20_PARTIAL__RETRY_PENDING`并收集SAFE原因，勿清空目录或用旧结果冒充有效。之后才做与Claude/Codex同案的20条对照、双PASS候选质量风险分析；80/980扩展和GPU仍HOLD。
+
+
 ## 2026-11-11 继续推进：3条SFT构造草稿 + 20条低成本API离线预算
 
 **现状：** 双PASS候选3条已经真实来源验证，已知R50五世界零story-id碰撞，但原始历史System、世界组件和更广的评测数据隔离未验证；Quality-v1正式训练准入仍0。以“可复用的工程试验”替代重复11条证据仲裁，绝不以双PASS自动给训练许可。
