@@ -42,7 +42,8 @@ def _shape_and_match(value: object, bodies: list[str],
     }
 
 
-def make_observer(worker: object, rows: list[dict], emit: object):
+def make_observer(worker: object, rows: list[dict], emit: object,
+                  observed_counts: dict[int, int] | None = None):
     """Wrap exactly the frozen module's validate_response global.
 
     Rejected if the caller/row does not map to the expected private input
@@ -59,6 +60,8 @@ def make_observer(worker: object, rows: list[dict], emit: object):
         position = digests.get(key)
         if position is None:
             raise ValueError("UNEXPECTED_REVIEW_INPUT_HOLD")
+        if observed_counts is not None:
+            observed_counts[position] = observed_counts.get(position, 0) + 1
         if not isinstance(result, dict):
             emit("VALIDATOR_ENTRY", position=position,
                  shape="NOT_OBJECT")
