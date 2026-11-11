@@ -125,14 +125,42 @@ def test_unknown_or_duplicate_files_fail_closed(tmp_path):
         _summarize(rows, a, b, a_dir, b_dir)
 
 
-def test_no_cross_model_guessing_on_reordered_input(tmp_path):
+def test_cross_model_alignment_by_content_not_blind_id_or_position(tmp_path):
     rows, a, b, a_dir, b_dir = _fixture(tmp_path)
     sa = p1._one_model(rows, a, a_dir, p1.A_MODEL, p1.A_REV)
     sb = p1._one_model(rows, b, b_dir, p1.B_MODEL, p1.B_REV)
-    swapped = list(rows)
-    swapped[0], swapped[1] = swapped[1], swapped[0]
-    with pytest.raises(p1.SummaryHold, match="CROSS_MODEL_SOURCE_OR_ORDER_HOLD"):
-        p1.summarize(rows, swapped, sa, sb)
+    # The B input is independently blinded and shuffled. B results must be
+    # moved along with their original rows, never assumed to be position-wise.
+    order = [1, 0] + list(range(2, 25))
+    blinded = [{**rows[i], "blind_id": f"independent-B-{i}"}
+               for i in order]
+    b_reordered_results = [sb[i] for i in order]
+    report = p1.summarize(rows, blinded, sa, b_reordered_results)
+    assert report["both_verified"] == 2
+    assert report["cases"][0]["position_A"] == 1
+    assert report["cases"][0]["position_B"] == 2
+    assert report["cases"][0]["B"]["quality_decision"] == "PASS"
+    assert "independent-B" not in str(report)
+
+
+def test_mismatched_source_rejected_even_if_blind_ids_equal(tmp_path):
+    rows, a, b, a_dir, b_dir = _fixture(tmp_path)
+    sa = p1._one_model(rows, a, a_dir, p1.A_MODEL, p1.A_REV)
+    sb = p1._one_model(rows, b, b_dir, p1.B_MODEL, p1.B_REV)
+    other = [dict(x) for x in rows]
+    other[0]["payload"] = "different-source"
+    with pytest.raises(p1.SummaryHold, match="CROSS_MODEL_CONTENT_OR_UNIQUE_HOLD"):
+        p1.summarize(rows, other, sa, sb)
+
+
+def test_ambiguous_duplicate_content_refuses_pairing(tmp_path):
+    rows, a, b, a_dir, b_dir = _fixture(tmp_path)
+    sa = p1._one_model(rows, a, a_dir, p1.A_MODEL, p1.A_REV)
+    sb = p1._one_model(rows, b, b_dir, p1.B_MODEL, p1.B_REV)
+    duplicate = [dict(x) for x in rows]
+    duplicate[1] = {**duplicate[0], "blind_id": "different"}
+    with pytest.raises(p1.SummaryHold, match="CROSS_MODEL_CONTENT_OR_UNIQUE_HOLD"):
+        p1.summarize(duplicate, rows, sa, sb)
 
 
 def test_checkpoint_technical_missing_are_mutually_exclusive(tmp_path):
