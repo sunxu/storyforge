@@ -97,7 +97,7 @@ def main() -> int:
     try:
         print(json.dumps(check(arguments.runner), sort_keys=True))
         return 0
-    except Exception:
+    except (OSError, ValueError, SyntaxError, UnicodeError):
         print(
             json.dumps(
                 {
