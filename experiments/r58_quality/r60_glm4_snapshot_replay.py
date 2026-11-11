@@ -49,7 +49,7 @@ def frozen(path: Path):
     finally:
         sys.path.pop(0)
     for name in ("validate_input", "checkpoint_record", "validate_response",
-                 "input_digest", "response_schema"):
+                 "input_digest"):
         if not callable(getattr(worker, name, None)):
             raise ReplayHold("RUNNER_API_HOLD")
     optional = ("quote_candidates", "apply_repairs", "QuoteValidationError")
