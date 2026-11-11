@@ -162,6 +162,10 @@ def run_batches(worker: object, rows: list[dict], output: Path,
             or not 120 <= wall_seconds <= 43200):
         raise Hold("REVIEW_RUNTIME_CONFIG_HOLD")
     prefix = checked_prefix(worker, rows, output, resume=resume)
+    if generation_snapshot_store is not None and (
+            not resume or not diagnose_generation or limit != 7
+            or batch_size != 1 or prefix != 6):
+        raise Hold("QWEN_SNAPSHOT_RESUME_PREFIX6_HOLD")
     if prefix > limit:
         raise Hold("REVIEW_RESUME_SCOPE_HOLD")
     if prefix:
