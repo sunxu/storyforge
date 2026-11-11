@@ -259,10 +259,46 @@ def run_batches(worker: object, rows: list[dict], output: Path,
                     max_model_len, max_output_tokens,
                     max(min_remaining_seconds, int(remaining)))
             except Exception as exc:
+                # SAFE literal reviewer reasons only. Never log arbitrary
+                # exception messages, response text or private case content.
+                allowed = {
+                    "REVIEW_PROMPT_TOKEN_BUDGET_HOLD",
+                    "MODEL_GENERATION_INCOMPLETE_HOLD",
+                    "MODEL_JSON_HOLD",
+                    "MODEL_RESPONSE_SCHEMA_HOLD",
+                    "MODEL_SCORE_OR_SEVERE_HOLD",
+                    "MODEL_REASON_HOLD",
+                    "MODEL_NOTES_TYPE_HOLD",
+                    "MODEL_NOTES_TOO_SHORT_HOLD",
+                    "MODEL_UNCERTAINTY_TYPE_HOLD",
+                    "MODEL_SEVERE_EVIDENCE_HOLD",
+                    "MODEL_UNCERTAINTY_HOLD",
+                    "MODEL_NONEXACT_QUOTE_HOLD",
+                    "MODEL_SEVERE_MUST_REJECT",
+                    "MODEL_BELOW_QUALITY_FLOOR_HOLD",
+                    "QUOTE_REPAIR_FIELD_HOLD",
+                    "QUOTE_REPAIR_CANDIDATES_HOLD",
+                    "QUOTE_REPAIR_ITEMS_HOLD",
+                    "QUOTE_REPAIR_SELECTION_HOLD",
+                    "QUOTE_REPAIR_NONQUOTE_CHANGED_HOLD",
+                    "QUOTE_REPAIR_VALIDATION_HOLD",
+                    "QUOTE_REPAIR_TOKEN_ENCODING_HOLD",
+                    "QUOTE_REPAIR_TOKEN_BUDGET_HOLD",
+                    "QUOTE_REPAIR_GENERATION_HOLD",
+                    "QUOTE_REPAIR_INCOMPLETE_HOLD",
+                    "QUOTE_REPAIR_JSON_HOLD",
+                    "CHECKPOINT_OUTPUT_SIZE_HOLD",
+                    "CHECKPOINT_SOURCE_OR_MODEL_HOLD",
+                    "CHECKPOINT_SCHEMA_HOLD",
+                    "CHECKPOINT_FILE_HOLD",
+                }
+                candidate = str(exc) if type(exc).__name__ == "ReviewError" else ""
+                safe_code = candidate if candidate in allowed else "UNKNOWN_REVIEW_FAILURE"
                 emit("REVIEW_BATCH_HOLD", completed=state["completed"],
                      stage=("MODEL_INITIALIZATION" if state["engine_calls"] == 0
                             else "REVIEW_OR_CHECKPOINT"),
-                     exception_class=type(exc).__name__)
+                     exception_class=type(exc).__name__,
+                     safe_reason_code=safe_code)
                 raise
             if state["completed"] == before:
                 raise Hold("REVIEW_BATCH_NO_PROGRESS_HOLD")
