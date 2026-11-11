@@ -1,5 +1,30 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM B25 retry12 全部失败，停止 GPU 重试，改为 CPU 冻结 Runner 路径诊断
+
+Owner Job `6af3e542ab34849891adc624` 确认：本次 retry12 `attempted=12 verified=0 technical_failures=12 engine_init_count=1`，最终 `combined_verified=13 combined_unverified=12`，所有失败仍为 `MODEL_NONEXACT_QUOTE_HOLD`，未新增有效 Checkpoint；原 13 条未覆盖，exit42 正确。**本次日志没有任何 `QUOTE_SHAPE_DIAGNOSTIC` 或 `QUOTE_SHAPE_REPAIR` 事件。** 因此此前“肯定是数组类型/长度错误”的结论不充分。冻结 reviewer 的 `QuoteValidationError` **继承 `ReviewError`，并复用相同的错误字符串**，而旧隔离器只按错误字符串记录，不会区分类型；也可能是冻结私有 runner 的调用路径绕过了 `checkpoint_record` patch。
+
+**当前禁止再次运行上面的 retry12 H200 命令。** 上述命令留在执行书仅供审计历史，不再是当前推荐步骤。必须先离线确定冻结私有 Runner 的真实函数调用路径，再增加适当的类型和阶段诊断，避免无效 GPU 费用。
+
+CPU-only 新增 `experiments/r58_quality/r60_glm4_runner_route_probe.py`，使用 Python AST 只读分析 Owner Mac `input_B_retry12_v1/runner.py`。只输出布尔调用关系，不输出任何私有代码/引文/模型结果。运行：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+PIN="15c0a56fbf309b8ca5088385485563225ee13ba6"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+python3 <(git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_glm4_runner_route_probe.py") \
+  --runner "$PILOT/input_B_retry12_v1/runner.py"
+```
+
+结果中的 `old_checkpoint_record_hook_reachable` 若为 `false`，则上一次新增的 wrapper **根本未被调用**，应按冻结 Runner 实际调用路径重新挂载诊断，不修改私有 Runner 源码；若为 `true`，也只能说明静态存在此调用，仍需判断 `QuoteValidationError` 与 `ReviewError` 的区别，不能仅凭 AST 证明运行时路径。已同步修改共享隔离器的下一版 SAFE `CASE_TECHNICAL_FAILURE.exception_kind` 为 `QUOTE_VALIDATION` / `DIRECT_REVIEW_ERROR` / `REVIEW_ERROR_SUBCLASS`，但**新字段不会反向出现在已失败的 Job 日志中**。
+
+已执行的第三次付费 H200 重试没有恢复任何一条，不能无证据继续重复。Qwen Mac CPU Guidance Params 和 SamplingParams 均 PASS、保留 6 个 Checkpoint；之后单独定位其第 7 条真实 generate ValueError。
+
+---
+
+
 ## 2026-11-11 GLM 12 条技术失败受控重试 + Qwen CPU 回执
 
 GLM B25 第一次完整 25 条 H200 Job：13 个质量技术校验通过的 checkpoint、12 个 MODEL_NONEXACT_QUOTE_HOLD 技术失败；原位置 1/5/6/7/9/12/15/20/22/23/24/25。原 25 份证据不允许覆盖或删除。
