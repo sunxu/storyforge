@@ -336,6 +336,7 @@ def main() -> int:
     parser.add_argument("--retry-baseline-dir", type=Path)
     parser.add_argument("--quote-shape-diagnostic", action="store_true")
     parser.add_argument("--repair-quote-shape", action="store_true")
+    parser.add_argument("--quote-match-observer", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -347,7 +348,8 @@ def main() -> int:
         expected_count = verify_runner_and_input(runner, args.input)
         if args.retry_baseline_dir is not None and (
             not args.isolate_technical_failures or args.resume
-            or args.case_limit != 12 or not args.quote_shape_diagnostic
+            or args.case_limit != 12
+            or not (args.quote_shape_diagnostic or args.quote_match_observer)
         ):
             raise Hold("RETRY_ARGS_HOLD")
         if args.repair_quote_shape and (
@@ -356,6 +358,13 @@ def main() -> int:
             raise Hold("REPAIR_SCOPE_HOLD")
         if args.quote_shape_diagnostic and not args.isolate_technical_failures:
             raise Hold("SHAPE_DIAGNOSTIC_REQUIRES_ISOLATION_HOLD")
+        if args.quote_match_observer and (
+            args.retry_baseline_dir is None
+            or not args.isolate_technical_failures
+            or args.quote_shape_diagnostic
+            or args.repair_quote_shape
+        ):
+            raise Hold("MATCH_OBSERVER_SCOPE_HOLD")
         if args.case_limit > expected_count:
             raise Hold("REVIEW_SCOPE_INVALID")
         spec = importlib.util.spec_from_file_location("r60_frozen_reviewer", runner)
@@ -391,6 +400,14 @@ def main() -> int:
                 emit("RETRY_SUBSET_READY", retry_count=len(retry_rows),
                      selected_from_original_25=True)
             original_checkpoint_record = worker.checkpoint_record
+            original_validate_response = worker.validate_response
+            if args.quote_match_observer:
+                from r60_glm4_validation_observer import make_observer
+
+                worker.validate_response = make_observer(
+                    worker, retry_rows, emit)
+                emit("VALIDATOR_OBSERVER_INSTALLED", target="VALIDATE_RESPONSE",
+                     observation_only=True)
             if args.quote_shape_diagnostic:
                 from r60_glm4_b25_retry_contract import quote_shape_diagnostic
 
@@ -407,6 +424,7 @@ def main() -> int:
                     hf_tokenizer=AutoTokenizer, vllm=vllm)
             finally:
                 worker.checkpoint_record = original_checkpoint_record
+                worker.validate_response = original_validate_response
             if args.retry_baseline_dir is not None:
                 emit("RETRY_COMBINED_ATTEMPT_SUMMARY",
                      baseline_verified=13, baseline_failed=12,
