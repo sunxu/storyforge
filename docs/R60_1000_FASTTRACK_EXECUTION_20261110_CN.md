@@ -58,6 +58,44 @@ done
 
 执行方法与原「本地 Bucket 只读挂载 → H200 本地化 → 同一 Engine 审核」一致；需将 \`-v ...:/input:ro\` 改为相应 \`input_A_isolated_v1\` 或 \`input_B_isolated_v1\`，在 \`--confirm-paid-gpu\` 前新增 \`--isolate-technical-failures\`。**新 wrapper 依赖 /input 中同目录的 \`r60_review_isolation_core.py\`。** 对 Qwen 必须保持原 \`OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1\` 以及 \`--resume\` 才能保留旧 6 条；GLM 则用一个全新目录，例如 \`/bucket/evaluation-runs/r60-glm4-b25-isolated-v1\`，禁止覆盖旧失败 Job 的输出。请勿直接沿用旧输出目录或重新复制 Bucket 权重。
 
+### GLM B25：Owner Mac CLI 可直接执行完整 25 条（本次新输出目录）
+
+下面命令只需先完成上一节 CPU bundle 准备，不再执行独立单条 H200 测试。技术失败会留下 SAFE 诊断凭证并继续剩余条目（但不算质量 HOLD），直到 25 条全部尝试或遇到非 ReviewerError 的真实引擎异常。
+
+\`\`\`bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+CODE="$BASE/r60-glm4-b25-diagnostic-tools-v2"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+
+hf jobs run --namespace adradar --name r60-glm4-b25-isolation-v1 \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_B_isolated_v1:/input:ro" \
+  -v "$CODE:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training/model-cache/glm4-32b-8dea913-servercopy:/model-source:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu
+    LOCAL=/tmp/r60-glm4-isolated-v1
+    OUT=/bucket/evaluation-runs/r60-glm4-b25-isolated-v1
+    test ! -e "$OUT" || { echo ISOLATION_OUTPUT_EXISTS_HOLD; exit 42; }
+    /usr/bin/python3 -u /code/r60_glm4_servercopy_localize.py \
+      --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"
+    mkdir -p "$OUT"
+    exec /usr/bin/python3 -u /input/r60_glm4_b25_continuous_review.py \
+      --input /input/source.private.jsonl --output-dir "$OUT" \
+      --model zai-org/GLM-4-32B-0414 \
+      --revision 8dea913c41b543527c2860fb6f3c15c202f24aeb \
+      --local-dir "$LOCAL" --case-limit 25 --batch-size 5 \
+      --max-model-len 32768 --max-output-tokens 2400 \
+      --wall-seconds 4800 --isolate-technical-failures --confirm-paid-gpu'
+\`\`\`
+
+### Qwen A25：执行前仍需定位未知 ValueError（不可当作普通审核技术错误）
+
+原 Guidance 恢复 Job 的 6 条前缀已经 verified，但新 Job 再次在第 7 条报 \`ValueError\`（而不是 \`ReviewError\`）；本轮代码仍会 fail closed，不应无条件重复提交 H200。准备好的 \`input_A_isolated_v1\` 与 \`--isolate-technical-failures\` 保持相同执行框架；一旦确定 Qwen \`ValueError\` 的安全处理方式，需要优先修复实际异常，再按**原**输出目录 \`r60-1000-pilot25-qwen-a-continuous-v1\` 与 \`--resume\` 继续，严格保护前 6 条 Checkpoint。
+
 **费用建议：** Qwen 当前是非 \`ReviewError\` 的未知 \`ValueError\`，新隔离器仍会在第 7 条停机；除非取得进一步受控异常定位，不应为它重复启动 H200。GLM 的明确审核错误适合在 25 条批次验证这套隔离执行流程；但仍可能有其他非 ReviewError 异常导致停机。两者在运行后仍须按 \`verified\` / \`technical_failures\` 报告，不得混用为模型评分。
 
 ---
