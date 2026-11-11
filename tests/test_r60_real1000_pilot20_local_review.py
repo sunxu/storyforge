@@ -158,6 +158,7 @@ def test_prior_claude_system_contract():
     assert "temperature" not in payload
     assert "response_format" not in payload
     assert payload["stream"] is False
+    assert payload["max_tokens"] == 8192
 
 
 def test_explicit_egress_flags_required(monkeypatch, tmp_path):
@@ -260,3 +261,34 @@ def test_detail_safe_reason_whitelist():
     assert mod.safe_reason_code(mod.Hold(
         "PROXY_TLS_CERT_VERIFY_HOLD"
     )) == "PROXY_TLS_CERT_VERIFY_HOLD"
+
+
+def test_finished_length_is_technical_hold_not_reject(monkeypatch):
+    class MockResponse:
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return None
+        def read(self, _count):
+            return json.dumps({
+                "choices": [{"finish_reason": "length", "message": {
+                    "content": '{"decision":"REJ'
+                }}]
+            }).encode()
+    class MockOpener:
+        def open(self, req, timeout):
+            assert timeout == 20
+            payload = json.loads(req.data)
+            assert payload["max_tokens"] == 8192
+            return MockResponse()
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic-key")
+    monkeypatch.setattr(mod.urllib.request, "build_opener", lambda *args: MockOpener())
+    try:
+        mod.proxy_request(
+            "https://4router.ai/v1/chat/completions",
+            "claude-opus-5-5", "synthetic", 20,
+        )
+    except mod.Hold as exc:
+        assert str(exc) == "PROXY_TRUNCATED_HOLD"
+    else:
+        raise AssertionError("truncated output must remain a technical HOLD")
