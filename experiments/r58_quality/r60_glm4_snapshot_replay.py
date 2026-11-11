@@ -49,10 +49,23 @@ def frozen(path: Path):
     finally:
         sys.path.pop(0)
     for name in ("validate_input", "checkpoint_record", "validate_response",
-                 "input_digest", "apply_repairs", "quote_candidates"):
+                 "input_digest", "response_schema"):
         if not callable(getattr(worker, name, None)):
             raise ReplayHold("RUNNER_API_HOLD")
+    optional = ("quote_candidates", "apply_repairs", "QuoteValidationError")
+    present = [callable(getattr(worker, name, None))
+               if name != "QuoteValidationError"
+               else isinstance(getattr(worker, name, None), type)
+               for name in optional]
+    # Partial extension is not safe for replaying secondary generations.
+    # Primary-only replay remains supported; secondary snapshots will HOLD.
+    worker._r60_snapshot_secondary_supported = all(present)
     return worker
+
+
+def _quote_error(worker: object, exc: Exception) -> bool:
+    kind = getattr(worker, "QuoteValidationError", None)
+    return isinstance(kind, type) and isinstance(exc, kind)
 
 
 def load_original_rows(path: Path, worker: object) -> list[dict]:
@@ -109,6 +122,8 @@ def _strict(worker: object, position: int, row: dict,
 
 def _evaluate(worker: object, position: int, row: dict,
               primary: dict, secondary: dict | None) -> tuple[dict, dict]:
+    if secondary is not None and not getattr(worker, "_r60_snapshot_secondary_supported", False):
+        raise ReplayHold("FROZEN_SECONDARY_REPAIR_UNSUPPORTED_HOLD")
     if primary["finish_reason"] != "stop":
         if secondary is not None:
             raise ReplayHold("SECONDARY_WITHOUT_VALID_PRIMARY_HOLD")
@@ -132,10 +147,10 @@ def _evaluate(worker: object, position: int, row: dict,
         strict = {"technical_status": "REPLAY_FAILED",
                   "reason_code": _safe_error(exc, worker),
                   "quality_decision": None}
-        if secondary is not None and not isinstance(exc, worker.QuoteValidationError):
+        if secondary is not None and not _quote_error(worker, exc):
             raise ReplayHold("SECONDARY_WITHOUT_QUOTE_REPAIR_HOLD") from None
         if (secondary is not None and secondary["finish_reason"] == "stop"
-                and isinstance(exc, worker.QuoteValidationError)):
+                and _quote_error(worker, exc)):
             try:
                 selection = json.loads(secondary["text"])
                 candidates = {field: worker.quote_candidates(row, field)
