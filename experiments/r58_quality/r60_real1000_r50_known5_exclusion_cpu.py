@@ -11,9 +11,9 @@ import sys
 from pathlib import Path
 
 import r60_real1000_double_pass_candidates_cpu as double
+import r60_real1000_pilot20_local_review as pilot
 import r60_real_private_batch as private
 import r60_real_quality_batch as quality
-import r60_real1000_pilot20_local_review as pilot
 
 SCHEMA = "storyforge_r60_real1000_r50_known5_exclusion_safe_v1"
 REFERENCE_DOC = "docs/evidence/V03_R49_R50_16_20_SOURCE_INTAKE_20261015.md"
