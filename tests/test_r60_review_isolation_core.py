@@ -100,7 +100,7 @@ def test_glm_first_failure_then_24_pass_single_engine(tmp_path, capsys):
 
 def test_qwen_resumes_six_checkpoints_then_one_failure(tmp_path, capsys):
     data = fixture(tmp_path, fail_at=7)
-    worker, rows, out, _local, _tok, _vl, events, revision, model = data
+    worker, _rows, out, _local, _tok, _vl, events, _revision, _model = data
     for pos in range(1, 7):
         (out / worker.checkpoint_name(pos)).write_text(json.dumps({"pos": pos}))
     result = run(data, resume=True)
