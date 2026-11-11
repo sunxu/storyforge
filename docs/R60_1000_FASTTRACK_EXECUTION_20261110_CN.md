@@ -1,5 +1,40 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：P0 Qwen A25 Guidance ValueError 分阶段诊断（CPU-first，不自动 GPU）
+
+**真实问题**：Qwen 恢复 Job `6af3d3ec9737d9a9e0926d5e`：`GUIDANCE_PREFLIGHT_PASS`、本地加载 17/17、严格验证 1–6、`REAL_ENGINE_READY` 后，第 7 条出现 **`ValueError / UNKNOWN_REVIEW_FAILURE`**，该 ValueError 不是冻结审核器白名单内的 ReviewError；原日志没有 XGrammar FSM 报错。之前的预检仅实例化 `GuidedDecodingParams`，**没有实例化完整的 `SamplingParams(guided_decoding=...)`**，不能证明真实参数组合兼容。
+
+本次新增：
+- `experiments/r58_quality/r60_qwen_guidance_diagnostic.py`，CPU-only `--runner`：从当前隔离 `runner.py` 导入冻结 Schema，调用 **exact `GuidedDecodingParams(json=response_schema(), backend="guidance")` 和 `SamplingParams(temperature=0,max_tokens=2400,guided_decoding=guided)`**，不调用 vLLM LLM 初始化、模型权重、tokenizer 或推理。如果这里报错，可在 Mac Docker/OrbStack CPU 上直接确认 Guidance API 不兼容，并禁止下一次 H200。
+- `r60_qwen_continuous_review.py --diagnose-generation-stages` 是可选的**运行时诊断**，启用时仅输出常量阶段事件 `GUIDED_PARAMS_START/PASS/FAILURE`、`SAMPLING_PARAMS_START/PASS/FAILURE`、`GENERATE_START/PASS/FAILURE`，异常只输出固定类名，绝不输出异常字符串、token、原文、模型回复；不更改原冻住的审核 Prompt/规则/Schema/参数或 Checkpoint。严禁和 `--isolate-technical-failures` 同时开启，以免在未定位未知 ValueError 时不受控继续。
+- 已增 CPU 合成测试：正确构造通过、Sampler 构造 ValueError 阻断且脱敏、generate ValueError 阶段判定且脱敏，构造器 monkeypatch 必须还原。
+
+**第一步 Owner Mac 无 H200 CPU 预检（可以在当前 GLM B25 Job 运行期间执行）：**
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+PIN="e062cb9a5a3ede9f1254739edd443b62e352b822"
+DIR="$HOME/.local/share/storyforge/r60/private/qwen-guidance-diagnostics-v1"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -f "$PILOT/input_A_guidance_resume/runner.py"
+mkdir -p "$DIR"
+git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_qwen_guidance_diagnostic.py" > "$DIR/r60_qwen_guidance_diagnostic.py"
+python3 -m py_compile "$DIR/r60_qwen_guidance_diagnostic.py"
+docker run --rm --platform linux/amd64 --entrypoint /usr/bin/python3 \
+  -v "$DIR:/diagnostic:ro" -v "$PILOT/input_A_guidance_resume:/input:ro" \
+  "$IMG" /diagnostic/r60_qwen_guidance_diagnostic.py --runner /input/runner.py
+```
+
+预期 `GUIDANCE_CPU_PREFLIGHT_PASS`。如 `GUIDANCE_CPU_SAMPLING_PARAMS_HOLD`，说明 **Python API 参数组合本身不兼容**，不需要再提交 GPU Job。输出的错误码及 `exception_class` 足够决定是否修补参数适配，切勿粘贴私有对话内容。如果 `GUIDANCE_CPU_PREFLIGHT_PASS`，仅证明构造器通过，不能证明实际 generate 成功；此时可在下一次 Owner 独立授权的 H200 恢复 Job 中，在原 wrapper 加 `--diagnose-generation-stages`，保留原 Bucket 的 6 条已验证 Checkpoint 并 `--resume`，且不混用隔离模式。只有将报错定位到确切阶段后再修复真实原因。
+
+**不授权**：当前 P0 只执行 GitHub 代码、文档、CI 和 Mac CPU 预检准备，ChatGPT 不提交 HF Job、不修改 GLM 进行中的工作、不直接开新的 H200。
+
+---
+
+
 ## 2026-11-11：两份完整 Job 日志校准与统一“逐条隔离”执行方案（真实 25 条）
 
 **本次完整回执**：
