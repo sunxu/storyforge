@@ -1,5 +1,8 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+> **2026-11-11 执行优先级更新（覆盖旧版直接 H200 修复重试建议）：** GLM Debug 现优先采用 [Generation Snapshot + CPU Replay](R60_GENERATION_SNAPSHOT_CPU_REPLAY_20261111_CN.md)。先执行 CPU 集成预检，再由 Owner 明确批准时进行最多1–2条 **snapshot-primary-only** 定向生成；保留原始模型输出，之后在 CPU 上反复调试引用修复。旧 `--quote-literal-repair --literal-probe-cases 1|2` GPU 重试仍为历史试验方案，暂不执行；不得在未保存原始模型输出时继续重试。旧13个有效 Checkpoint 与12个技术失败保持不变。
+
+
 ## 2026-11-11：GLM B25 H200 引文观察器真实回执，逐字不匹配根因方向确证
 
 - HF Job：`adradar/6af3f4e09737d9a9e092936e`；启用 `--quote-match-observer`，一台 H200、单引擎；日志出现 `REAL_ENGINE_READY`、逐位置 `VALIDATOR_ENTRY` 与 `VALIDATOR_QUOTE_DIAGNOSTIC`，观察器运行时真实生效。
