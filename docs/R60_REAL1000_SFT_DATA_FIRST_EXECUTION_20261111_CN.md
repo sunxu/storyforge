@@ -1,5 +1,18 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Owner真实3条双PASS训练上下文预检PASS，但正式训练准入仍HOLD
+
+Owner Mac实测`DOUBLE_PASS_CONTEXT_PREFLIGHT_PASS__TRAIN_ADMISSION_HOLD`：冻结池1000、双PASS候选3、来自3个不同story及3个不重复assistant目标、均为300–499字（`target_length_bins={"300_499":3,"500_999":0,"1000_1500":0}`）。源原文绑定与上下文来源核验通过，数据库访问0、模型推理0、GPU0、Quality-v1/训练准入0。
+
+**关键阻塞均真实存在**：`historical_system_unverified=3`，`world_component_unverified=3`，`r50_exclusion_unverified=3`。仅表明元数据缺少可靠核验，不能推断内容质量不合格，也不能直接组建正式SFT训练样本。当前3条全部长度较短，不能代表中长篇质量。
+
+**接下来主线计划：**
+1. 先解决评测泄漏门禁：利用Owner已有R50冻结source/exclusion清单做只读、按键哈希/故事及session关联的交集核验，不披露R50正文；明确完整R50排除所需的主键范围，无法取到冻结清单则HOLD，不猜测清洁。
+2. 对3条恢复真实历史System与世界组件证据，优先只读追踪已冻结来源记录和已有日志/配置。若历史实际发送的System确实无法恢复，不得生成伪称“历史原文”的Prompt；可以设计新的明确`TRAINING_CONSTRUCTED_CONTEXT`训练格式，但必须独立记录事实缺口并做兼容性测试，不篡改原始来源证据。
+3. 工程试验可在仍未准入的3条上做CPU Tokenizer/Collator结构测试（显式`NOT_TRAINING_ADMITTED`），严禁以工程测试替代正式训练准入；不启动GPU。
+4. 对低成本替代4Router先冻结官方API规格、真实模型标识与报价时点，按实际prompt预算在已冻结20条上小规模对照，再决定80/980扩展；任何新真实外部模型调用/费用与数据外发必须单独许可。仍采用严格双PASS交集候选原则，并在扩充后检验长度分布，防止仅选入短回复。
+
+
 ## 2026-11-11 双PASS 3条Owner真实CPU生成PASS，训练上下文检查开始
 
 Owner 回执：`DOUBLE_PASS_CANDIDATES_READY__TRAIN_ADMISSION_HOLD`，`cases_checked=20`、`double_pass_candidates=3`、`not_double_pass=17`，推理0、数据库0、GPU0、Quality-v1及训练准入0。3条严格Claude∩Codex有效PASS的位置级Owner私有候选清单已生成，不得重跑覆盖或误报为正式入训。
