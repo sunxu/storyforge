@@ -405,3 +405,24 @@ def test_replay_rejects_wrong_model_snapshot(monkeypatch, tmp_path):
     else:
         raise AssertionError("wrong model snapshot accepted")
     assert mod.get_state(output)[2]["model_reviewed"] == 0
+
+
+def test_fenced_pass_below_frozen_floor_is_not_admitted():
+    answer = model_answer()
+    answer["decision"] = "PASS"
+    answer["severe_flags"] = {
+        "serious_player_agency": False, "hard_fact_or_ban": False,
+        "safety_exclusion": False,
+    }
+    # Frozen chinese_prose floor is 4; the reviewer scored 3.
+    answer["scores"]["chinese_prose"] = 3
+    raw = json.dumps({"choices": [{"finish_reason": "stop",
+        "message": {"content": "```json\n" +
+                    json.dumps(answer, ensure_ascii=False) + "\n```"}}]}).encode()
+    try:
+        mod.parse_proxy_response(raw)
+    except mod.Hold as exc:
+        assert str(exc) == "PROXY_PASS_BELOW_FLOOR_HOLD"
+        assert mod.safe_reason_code(exc) == "PROXY_PASS_BELOW_FLOOR_HOLD"
+    else:
+        raise AssertionError("PASS below frozen floor must not be accepted")
