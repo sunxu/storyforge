@@ -265,7 +265,9 @@ def run_batches(worker: object, rows: list[dict], output: Path,
                 if diagnose_generation:
                     import vllm.sampling_params as sampling_module
                     from r60_qwen_guidance_diagnostic import (
-                        trace_generation_stages, trace_reviewer_stages)
+                        trace_generation_stages,
+                        trace_reviewer_stages,
+                    )
 
                     with (trace_generation_stages(vllm, sampling_module, emit),
                           trace_reviewer_stages(worker, emit)):
