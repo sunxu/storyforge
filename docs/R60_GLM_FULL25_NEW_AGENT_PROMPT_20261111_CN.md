@@ -8,9 +8,16 @@
 
 ## 你的目标
 
-以 GitHub 当前真实状态为准，**完成 Owner Mac 上的全25 CPU preflight 与完整 H200 生成的交付准备**，由 Owner 在 Mac CLI 自行执行**一次完整25条 GLM 生成**，全部保留成功返回的原始模型输出快照，逐条保留冻结 Reviewer 新 Checkpoint 或技术失败回执。得到 Owner 的真实执行回执后，完成25份快照的身份/完整性验收和 `--full25` CPU Replay，汇总真实 Quality-v1 技术有效性与质量决定；不得直接将 Replay 技术有效视为训练准入。
+以 GitHub 当前真实状态为准，**先核验已经编制完成的交接资料与 Owner Mac 全25 CPU preflight / H200 命令，再推进下一阶段执行**，由 Owner 在 Mac CLI 自行执行**一次完整25条 GLM 生成**，全部保留成功返回的原始模型输出快照，逐条保留冻结 Reviewer 新 Checkpoint 或技术失败回执。得到 Owner 的真实执行回执后，完成25份快照的身份/完整性验收和 `--full25` CPU Replay，汇总真实 Quality-v1 技术有效性与质量决定；不得直接将 Replay 技术有效视为训练准入。
 
 **强制要求：取消1条或2条试跑上限。** 这是新的独立原始25条审查，**不是**失败12条子集隔离重试。你不应建议用户先单条运行；只有出现真实安全阻塞时才停止。旧13个有效及12个失败回执必须永久保留，新运行写独立目录。
+
+## 接手边界（本轮交接已完成的材料）
+
+- 权威任务书与 [Owner 全25操作手册](https://github.com/sunxu/storyforge/blob/r60/p4-generation-eval-framework/docs/R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md) 均已更新；操作手册新增 **Owner Mac 固定代码 staging + `--full25` CPU 预检、H200 CLI 完整命令、CPU Replay 命令**。请先检查这些现有命令，除非发现真实路径/参数阻塞，否则不重复开发另一套工具。
+- **文档 HEAD 和运行代码 PIN 是两件事**：固定运行版本仍是 `6f2a71f12f3a2408b4082d6f8b86e69e0b5cf384`；本轮仅交接文档更新不表示 GPU、Owner 全25 CPU 预检或训练已执行。首次回复必须区分准备已完成与真实运行未完成。
+- 交接完成不构成你自行启动付费任务的授权。所有 HF CLI 提交和本机私有操作由 Owner Mac 执行；你只提供可靠命令、核对 SAFE 回执并推进获得证据后的后续工作。
+
 
 ## 第一优先级：读取 GitHub 当前权威文档
 
