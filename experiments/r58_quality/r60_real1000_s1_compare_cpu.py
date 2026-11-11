@@ -11,9 +11,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+import r60_real1000_pilot20_local_review as pilot
 import r60_real1000_s0_audit_cpu as s0
 import r60_real1000_s1_blind20_prepare_cpu as blind
-import r60_real1000_pilot20_local_review as pilot
 import r60_real_ai_dual_review as reviewer
 import r60_real_private_batch as private
 
