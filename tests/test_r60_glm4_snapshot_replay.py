@@ -156,3 +156,43 @@ def test_absent_primary_or_foreign_file_holds(tmp_path, monkeypatch):
         replay.summarize(SimpleNamespace(
             runner=runner, input=source, snapshots=snapshots,
             output=tmp_path / "summary.safe.json"))
+
+
+def test_primary_only_frozen_runner_without_secondary_repair_api(tmp_path, monkeypatch):
+    runner, source, snapshots, rows, store = _fixture(tmp_path, monkeypatch)
+    runner.write_text(
+        runner.read_text().split("def quote_candidates(row,field):")[0],
+        encoding="utf-8")
+    assert replay.frozen(runner)._r60_snapshot_secondary_supported is False
+    worker = replay.frozen(runner)
+    store = GenerationSnapshotStore(
+        snapshots, worker=worker, model=replay.MODEL, revision=replay.REV,
+        runner_sha256=hashlib.sha256(runner.read_bytes()).hexdigest(),
+        emit=lambda *args, **kw: None)
+    selected = [rows[pos - 1] for pos in replay.FAILED_POSITIONS]
+    _save(store, 1, selected[0], _payload("窗外还在下雨，他缓缓说出了真相!"))
+    result = replay.summarize(SimpleNamespace(
+        runner=runner, input=source, snapshots=snapshots,
+        output=tmp_path / "report.safe.json"))
+    assert result["replayed_cases"] == 1
+    assert result["cases"][0]["original_frozen"]["technical_status"] == "REPLAY_FAILED"
+    assert result["cases"][0]["literal_experiment"]["technical_status"] == "REPLAY_VALIDATED"
+
+
+def test_secondary_snapshot_rejected_when_frozen_api_missing(tmp_path, monkeypatch):
+    runner, source, snapshots, rows, store = _fixture(tmp_path, monkeypatch)
+    runner.write_text(
+        runner.read_text().split("def quote_candidates(row,field):")[0],
+        encoding="utf-8")
+    worker = replay.frozen(runner)
+    store = GenerationSnapshotStore(
+        snapshots, worker=worker, model=replay.MODEL, revision=replay.REV,
+        runner_sha256=hashlib.sha256(runner.read_bytes()).hexdigest(),
+        emit=lambda *args, **kw: None)
+    selected = [rows[pos - 1] for pos in replay.FAILED_POSITIONS]
+    _save(store, 1, selected[0], _payload("原文不存在的引用文字"),
+          secondary='{"repairs":[]}')
+    with pytest.raises(replay.ReplayHold, match="FROZEN_SECONDARY_REPAIR_UNSUPPORTED_HOLD"):
+        replay.summarize(SimpleNamespace(
+            runner=runner, input=source, snapshots=snapshots,
+            output=tmp_path / "report.safe.json"))
