@@ -44,8 +44,17 @@ test ! -e "$OUT"
 A_SOURCE="$PILOT/input_A_guidance_resume"
 B_SOURCE="$PILOT/input_B_retry12_v1"
 
-python3 <(git -C "$ROOT" show \
-  "$PIN:experiments/r58_quality/r60_dual_model_review_summary.py") \
+TOOL_DIR="$BASE/r60-p1-dual-summary-tool-v1"
+test ! -e "$TOOL_DIR"
+umask 077
+mkdir -m 700 "$TOOL_DIR"
+for FILE in r60_dual_model_review_summary.py r60_review_isolation_core.py; do
+  git -C "$ROOT" show "$PIN:experiments/r58_quality/$FILE" > "$TOOL_DIR/$FILE"
+  chmod 600 "$TOOL_DIR/$FILE"
+done
+python3 -m py_compile "$TOOL_DIR"/*.py
+
+python3 "$TOOL_DIR/r60_dual_model_review_summary.py" \
   --runner-a "$A_SOURCE/runner.py" \
   --runner-b "$B_SOURCE/runner.py" \
   --input-a "$A_SOURCE/source.private.jsonl" \
