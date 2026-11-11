@@ -1,5 +1,35 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Qwen+DeepSeek 20案例真实40调用进展：33份有效，14对完整，7份缺失
+
+Owner真实回执：首次`run max_calls=2`请求2次、成功Qwen REJECT 1份、DeepSeek `QUALITY_FLOOR_DECISION_INCONSISTENT=1`；第二次`run max_calls=40`实际请求39次，成功32份有效收据，失败分布`MODEL_JSON_INVALID=2`、`MODEL_TRANSPORT_HOLD=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=3`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。累计41次API尝试、有效33份（Qwen 18、DeepSeek 15）、14个样本双模型均完成，其中Qwen+DeepSeek双PASS 4；剩余有效审核7份。DeepSeek有效结果HOLD9/PASS5/REJECT1，Qwen HOLD0/PASS9/REJECT9。**4条双PASS是14个完整配对中的结果，不能直接与旧Claude+Codex总20条3双PASS比较精确率；不代表训练准入。** 当前禁止无约束反复重试，无独立Owner真值。
+
+新增只读 `experiments/r58_quality/r60_real1000_qd20_compare_cpu.py` + `tests/test_r60_real1000_qd20_compare_cpu.py`：调用已有冻结S1 Claude/Codex核验与Qwen/DeepSeek 33份不可变收据，输出旧双PASS数、新完整14配对双PASS数、交集、单侧PASS差异、旧双PASS中尚缺新双模型的数量；不运行API、无模型原文、不会把任何一组模型结论当成真值。
+
+为后续**有限且用户确认的**缺失审核重试，已增强原 `r60_real1000_qwen_deepseek20_live.py`：对于API已返回、但本地JSON/评分规则验证失败的响应，create-only保存`R60_QD20_<位置>_<厂商>_FAIL_<序号>_PRIVATE.json` 私有原始模型文字，SHA绑定输入、位置、型号；`diagnose`仅CPU重放、返回失败类别与严格验证结果，不会自动修改判定或把低分PASS视为有效。历史已失败7次**没有被旧运行器保存原始响应，不可能追溯恢复**，新逻辑只适用于未来请求。HTTP传输错误可能没有响应正文，继续只输出SAFE计数。成功的33份均保持原样，不允许清空输出文件夹或重新初始化。
+
+Owner Mac先运行以下零模型调用步骤（同步最新CI通过PIN，保持现有专用worktree清洁）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_compare_cpu.py tests/test_r60_real1000_qwen_deepseek20_live.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+REVIEW="$BASE/r60-real1000-pilot20-4router-v1"
+LIVE="$BASE/r60-real1000-qwen-deepseek20-live-v1"
+python3 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py diagnose --review-dir "$REVIEW" --output-dir "$LIVE"
+python3 experiments/r58_quality/r60_real1000_qd20_compare_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$REVIEW" \
+  --blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$LIVE"
+```
+
+`diagnose`当前预期历史快照数0，因为修复之前未保存失败响应；它应回报33份有效收据不变。对照报告只反映14份完整配对且不是质量真值。之后若有必要，由Owner明确决定是否再发`run --max-calls 7`（仅补缺失，不会重发33个成功收据）；原先旧模型首轮失败与第二轮失败已产生费用，反复盲试大概率继续规则冲突。S2剩余80/980、正式GPU继续暂停，Quality-v1 train admitted 0。
+
+
 ## 2026-11-11 Owner授权：跳过预算，直接运行Qwen + DeepSeek真实20条API试点
 
 Owner最新SAFE：`SFT_CONSTRUCTED_CONTEXT_DRAFT_READY__TRAIN_ADMISSION_HOLD`、`draft_cases=3`、每条5条messages、构造System明确标记，原历史System仍未恢复，R50完整隔离/世界卡未通过、正式入训0。Owner明确要求“不测算成本，直接开始Qwen、DeepSeek测试”。本次授权覆盖**仅使用已冻结Pilot20的20条私有审核样本，通过Qwen/DeepSeek两家官方API进行质量审核测试**，不包括新80/980条大批量、训练GPU或直接准入。
