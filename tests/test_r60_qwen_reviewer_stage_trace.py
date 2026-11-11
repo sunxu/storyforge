@@ -42,10 +42,10 @@ class QwenReviewerTraceTests(unittest.TestCase):
         def fail(secret):
             raise SecretFailure("PRIVATE_TOKEN_DO_NOT_EMIT")
         worker = SimpleNamespace(validate_response=fail)
-        with self.assertRaisesRegex(SecretFailure, "PRIVATE_TOKEN"):
-            with diagnostic.trace_reviewer_stages(
-                    worker, lambda event, **kw: events.append((event, kw))):
-                worker.validate_response("private")
+        with (self.assertRaisesRegex(SecretFailure, "PRIVATE_TOKEN"),
+              diagnostic.trace_reviewer_stages(
+                  worker, lambda event, **kw: events.append((event, kw)))):
+            worker.validate_response("private")
         self.assertIs(worker.validate_response, fail)
         self.assertEqual(events, [
             ("VALIDATE_RESPONSE_START", {}),
