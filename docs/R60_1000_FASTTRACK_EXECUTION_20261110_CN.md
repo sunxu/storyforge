@@ -1,5 +1,28 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM 冻结 Runner 确认唯一引用错误为包含关系，暂停 GPU，下一步语义 CPU 检查
+
+Owner Mac 对实际执行的私有 `input_B_retry12_v1/runner.py` 的 CPU AST 输出：`direct_quote_error_possible=true`、`raise_site_count=1`、`sites=[{function:validate_response,guard_category:MEMBERSHIP_OR_TEXT_MATCH,guard_depth:1}]`。与前次 `inference_calls_checkpoint_record=true`、`checkpoint_record_calls_validate_response=true` 一致。此处**不是**此前假设的引用字段数组格式/条数限制；前轮 `QUOTE_SHAPE_DIAGNOSTIC` 没输出，不代表诊断 hook 不可达：其设计只在 NOT_LIST 或 OVER_LIMIT 时才输出，在“类型数量正确但逐字引用匹配失败”情况下本来就没有事件。此前 12 条新增 0 个有效结果和此现象相符，但**不能仅凭 AST 证明具体 12 条失败中的哪个 quote 没有逐字匹配**。
+
+暂停任何 GLM H200 重试。旧 13 条有效 checkpoint 和两轮 12 条失败凭据保持不动，不改 Quality-v1 Rubric，不把引文错误当质量 HOLD；本轮只需继续 CPU 检查私有冻结 Runner 的包含关系方向和原文匹配材料。新增 `experiments/r58_quality/r60_glm4_quote_semantics_probe.py`，AST 静态输出固定的 `validator_field_references`、`site.membership_predicates`、`uses_any`、`uses_not`、`has_generator`，不回显引文或任何用户私有代码。其检测只覆盖直接 AST 比较和已知字段，无法解析全部数据流，对未知情况保持 STATIC_ONLY。
+
+Owner Mac CPU-only：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+PIN="d59b00df74c49c8e66722fd168d45e08255d19c0"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+python3 <(git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_glm4_quote_semantics_probe.py") \
+  --runner "$PILOT/input_B_retry12_v1/runner.py"
+```
+
+审核其固定 SAFE 输出后再决策：可以考虑与冻结 Runner 同等严格的单次「只修复引用」步骤（从原始材料中选取精确片段，禁止篡改非引用评分/说明，修复后的引用仍必须全部经过冻结 validator）；但未保存的模型原始失败回答不能在 CPU 离线重建，**尚未实现有效的真实重试修复，绝不直接启动 H200**。
+
+---
+
+
 ## 2026-11-11：GLM 私有 Runner CPU 调用路径回执与下一步
 
 Owner Mac 对私有 `input_B_retry12_v1/runner.py` 的 AST 检查：`inference_calls_checkpoint_record=true`、`checkpoint_record_calls_validate_response=true`、`has_direct_validate_response=true`；**无** `QuoteValidationError` 类与 `repair_generated_quotes` 函数。说明私有冻结 Runner 不等同于 GitHub 通用 `hf_literary_review.py`。原先仅基于通用审核器推断的 QuoteValidationError 不能直接套用本私有 Runner。旧 quote-shape wrapper 静态可达，但无任何 `QUOTE_SHAPE_DIAGNOSTIC`，因此下一步优先 CPU 静态检查 **实际冻结 Runner 内 `MODEL_NONEXACT_QUOTE_HOLD` 所在条件**。不应继续重复 H200 12 条重试。
