@@ -1,5 +1,89 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：A25 第 7 条 XGrammar 状态机异常：保留 6 个 Checkpoint，受控切 Guidance 恢复
+
+Owner Job：https://huggingface.co/jobs/adradar/6af372469737d9a9e0916d28
+
+日志证据：\`CONTINUOUS_REVIEW_READY input_count=25\` → \`REAL_ENGINE_READY engine_init_count=1\` → \`FIRST_CHECKPOINT_GATE_PASS completed=1\` → \`vllm/v1/structured_output/backend_xgrammar.py:160 Failed to advance FSM for request 6 for tokens 92446\` → \`REVIEW_BATCH_HOLD completed=6 exception_class=ReviewError\` → \`CONTINUOUS_REVIEW_HOLD\`。已成功生成并校验**前 6 条**，第 7 条尚未生成有效 Checkpoint，当前 A25 **6/25**，不是 25/25。该 XGrammar 日志说明其 FSM 拒绝某个 token；相邻 \`ReviewError\` 的具体原因仍未被旧版 SAFE 日志暴露，不能断言 FSM 是唯一异常来源。vLLM v0.10.0 官方 \`GuidedDecodingParams\` 支持 \`backend="guidance"\`；使用其替代 XGrammar 是明确记载的解码后端改变，**不是声称相同生成结果的透明修复**。
+
+**现状**：本次 Qwen 已证明 32K 配置、真实长提示处理、真实结构化审核的前 6 条及一个引擎连续运行成立。避免再次走下载/挂载直载；不修改既有 6 条审核数据。
+
+**实现**：
+- \`experiments/r58_quality/r60_a25_guidance_reviewer_patch.py\`（create-only, CPU）：把冻结 \`input_A/runner.py\` 复制到**新隔离 bundle**，仅将一处 \`GuidedDecodingParams(json=response_schema())\` 改为 \`GuidedDecodingParams(json=response_schema(), backend="guidance")\`。先后 AST parse，必须精确匹配一次；不修改模型、Prompt、temperature=0、2400 tokens、schema、评分/引文校验或已有 Checkpoint；记录 source/patched SHA。不可原地改冻结原件。
+- \`r60_qwen_continuous_review.py\` 已新增 \`REVIEW_BATCH_HOLD.safe_reason_code\`（只允许经过审核的固定 ReviewError 字面值，否则 UNKNOWN），可判别输出不完整、JSON、引文修复等，而不输出内容。
+- **原模型身份及 Checkpoint identity 保持** \`Qwen/Qwen3-32B@9216db5781bf21249d130ec9da846c4624c16137\`，源输入 SHA \`492f24f7...\`，原 \`read_checkpoint\` 验证 1–6 后才允许继续。不同后端生成结果不可未经说明地当作一项相同条件下的模型质量横比；报告时必须标记 1–6 为旧 XGrammar、7–25 为 Guidance。
+- 原 \`--resume\` 只有输出目录文件全部为 \`review_0001.private.json\` 至 \`review_0006.private.json\` 连续且 6 条原版读回有效才会复用；若其中任何 Checkpoint 损坏/缺失/有非审核文件，直接 HOLD，不自动删除、覆盖或跳过。
+- 不启用“失败后无限重试”：Guidance 不可用、模型输出校验失败或第七条再次出现状态机问题都停止，保留本轮输出。
+
+### Owner Mac：先只读核对原输出目录（不启动 HF Job）
+
+\`\`\`bash
+hf buckets list \
+  adradar/storyforge-training/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1 \
+  -R -h
+\`\`\`
+
+预期仅 6 个 \`review_0001.private.json\` 至 \`review_0006.private.json\`，没有第 7 个；若不符合，**停止，不运行后续命令**。不在 Mac 下载私有 Checkpoint；真正的内容验收由 Runner 在 H200 的 \`checked_prefix\` 执行。
+
+### Owner Mac：CPU-only 新建恢复工具和隔离 Runner
+
+\`\`\`bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+SRC="$PILOT/input_A_continuous"
+DEST="$PILOT/input_A_guidance_resume"
+TOOLS="$BASE/r60-qwen-guidance-resume-tools-v1"
+REV="__A25_GUIDANCE_CODE_PIN__"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -d "$SRC"
+test ! -e "$DEST" || { echo A25_GUIDANCE_BUNDLE_EXISTS_HOLD; exit 42; }
+test ! -e "$TOOLS" || { echo A25_GUIDANCE_TOOLS_EXISTS_HOLD; exit 42; }
+umask 077
+mkdir -m 700 "$DEST" "$TOOLS"
+for name in source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+  cp "$SRC/$name" "$DEST/$name"
+  chmod 600 "$DEST/$name"
+done
+for name in r60_a25_guidance_reviewer_patch.py r60_qwen32b_servercopy_localize.py r60_qwen_continuous_review.py; do
+  git -C "$ROOT" show "$REV:experiments/r58_quality/$name" > "$TOOLS/$name"
+  chmod 600 "$TOOLS/$name"
+done
+python3 "$TOOLS/r60_a25_guidance_reviewer_patch.py" \
+  --source "$SRC/runner.py" --dest "$DEST/runner.py"
+cp "$TOOLS/r60_qwen_continuous_review.py" "$DEST/r60_qwen_continuous_review.py"
+chmod 600 "$DEST"/*.py
+test "$(shasum -a 256 "$DEST/source.private.jsonl" | awk '{print $1}')" = \
+  492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069 || { echo A25_INPUT_SHA_HOLD; exit 42; }
+python3 -m py_compile "$DEST"/*.py "$TOOLS"/*.py
+\`\`\`
+
+### Owner Mac：一次 H200 Job 恢复第 7–25 条（仅在准备和 CI PASS 后）
+
+> 此处与新建输出目录不同：**明确复用原失败 Job 的 Checkpoint 输出目录，并启用 \`--resume\`**；H200 临时模型目录仍每次重新复制。先在同镜像上检查 \`guidance\` 后端依赖是否可 import，缺失则在复制大模型前 fail closed。不要无条件 pip 安装未固定版本的依赖。
+
+\`\`\`bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+TOOLS="$BASE/r60-qwen-guidance-resume-tools-v1"
+IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+hf jobs run --namespace adradar --name r60-qwen-a25-guidance-resume \
+  --flavor h200 --timeout 90m --attempts 1 \
+  -v "$PILOT/input_A_guidance_resume:/input:ro" \
+  -v "$TOOLS:/code:ro" \
+  -v "hf://buckets/adradar/storyforge-training/model-cache/qwen3-32b-9216db5-servercopy:/model-source:ro" \
+  -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+  "$IMG" \
+  sh -c 'set -eu; /usr/bin/python3 -c "import guidance" || { echo GUIDANCE_BACKEND_NOT_INSTALLED_HOLD; exit 42; }; mkdir -p /tmp/r60-model-local; LOCAL=/tmp/r60-model-local/qwen3-32b-9216db5; OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1; test -d "$OUT" || { echo RESUME_OUTPUT_MISSING_HOLD; exit 42; }; /usr/bin/python3 -u /code/r60_qwen32b_servercopy_localize.py --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"; exec /usr/bin/python3 -u /input/r60_qwen_continuous_review.py --input /input/source.private.jsonl --output-dir "$OUT" --model Qwen/Qwen3-32B --revision 9216db5781bf21249d130ec9da846c4624c16137 --local-dir "$LOCAL" --case-limit 25 --batch-size 5 --max-model-len 32768 --max-output-tokens 2400 --wall-seconds 4800 --resume --confirm-paid-gpu'
+\`\`\`
+
+期望 \`REVIEW_PREFIX_VERIFIED count=6\` → \`BATCH_START start=7\` → \`REAL_ENGINE_READY\` → 后续 \`BATCH_COMPLETE\` → \`CONTINUOUS_REVIEW_COMPLETE completed=25 engine_init_count=1\`。恢复 Job 会重新初始化**一次**模型，不是复用已经结束的 H200 的模型实例。**如 Guidance 依赖缺失，先单独评估固定镜像方案，不应盲目再次运行 GPU。**
+
+---
+
+
 ## 2026-11-11：GLM-4 B25 由 Hub 直载改为服务器端复制 + H200 本地加载 + 单引擎连续批次
 
 **触发证据**：B25 Owner Job https://huggingface.co/jobs/adradar/6af36821ab34849891aca183 仅有 \`B25_GATE_READY\`，无权重、Tokenizer、真实引擎就绪/首条校验事件；不能判定具体卡点。旧 B25 直接从 \`zai-org/GLM-4-32B-0414\` 在线加载，存在与 Qwen 早期 Hub 直载相似的风险。项目已将修复实现提交，但**未运行 HF Job / 未取得 GLM B25 成功回执**。
