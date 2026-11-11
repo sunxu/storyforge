@@ -422,7 +422,8 @@ def main() -> int:
         if args.generation_snapshot_dir is not None and (
             not args.isolate_technical_failures
             or (args.retry_baseline_dir is None and not args.snapshot_full25)
-            or args.resume or not args.quote_match_observer
+            or args.resume
+            or (not args.quote_match_observer and not args.snapshot_full25)
         ):
             raise Hold("SNAPSHOT_ARGS_HOLD")
         # Private snapshots must never share the SAFE output directory or
