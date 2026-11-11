@@ -1,5 +1,39 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 第1条质量冲突隔离，不阻断后续19条（最新）
+
+Owner的 `replay-snapshot --position 1 --confirm-snapshot-provenance` 实际返回 `PROXY_PASS_BELOW_FLOOR_HOLD`，与原模型`PASS`但`chinese_prose=3`低于冻结门槛4一致。**不得反复重发首条、修改模型评分、降低门槛、把技术HOLD计作REJECT或把原始PASS直接当作入训PASS。**
+
+修复单一连续回执队列的首条阻塞：新增 CPU-only `quarantine-snapshot`（显式确认原快照就是当前位置的原模型响应），读取Owner现有私有快照，要求模型id吻合、stop结束、完整严格JSON、原结论PASS且原Rubric明确拒绝该结论因为分数门槛。创建不可覆盖的 `R60_PILOT20_CONFLICT_0001_PRIVATE.json`，只记录原模型意见/六维得分/失败原因及与原冻结数据绑定的哈希；此条作为**已处理但未合格的冲突样本**，只能等待后续质量裁决。保留原始FAIL快照与原始PASS、绝不改写成合格评分。工作流`processed=1, conflict_pending=1, model_reviewed=0, remaining=19, train_admitted=0`； `advance`改用 `processed` 继续第2条（仍须实际外发/费用许可），不再卡在第1条。原有效回执仍严格验证，允许原混合序列每个位置为一份有效评分或一份冲突记录、禁止重号及跳号，保证resume可靠。
+
+固定worktree原地同步并无费用验证：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+WORK="$HOME/workspace/storyforge-r60-4router-review"
+PIN="6046a595060718f00759a994f50ae5790ca1605b"
+test -z "$(git -C "$WORK" status --porcelain)" || exit 42
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" cat-file -e "$PIN^{commit}"
+git -C "$WORK" switch --detach "$PIN"
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+OUT="$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect --output-dir "$OUT"
+```
+
+只有Owner核实原快照确实属于冻结第1条时才隔离（CPU、无网络）：
+
+```bash
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py quarantine-snapshot \
+  --output-dir "$OUT" --position 1 --confirm-snapshot-provenance
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect --output-dir "$OUT"
+```
+
+验收 `processed=1, conflict_pending=1, model_reviewed=0, remaining=19`；后续可在Owner明确新一轮外发及费用许可后`advance --max-cases 1`从第2条开始。禁止在公开文档披露私人理由文本或导出私有回执。未独立裁决时依然不允许任何训练准入。
+
+
 ## 2026-11-11 最新结论：第1条模型PASS但低于冻结质量门槛，不允许自动恢复为PASS
 
 Owner提供的首条4Router Claude-Opus-5.5原始快照确认：`finish_reason=stop`，模型以完整 `\`\`\`json` 围栏输出；严格格式剥离后原始判断 `decision=PASS`，六维分值中 `chinese_prose=3`。但冻结的 `r60_real_private_batch.FLOORS["chinese_prose"]=4`。**因此模型结论与现有准入规则矛盾**，不能直接把快照恢复为有效PASS，也不能把3分偷偷改为4分。这个冲突是质量审查需要解决的问题，不是网络/JSON故障。
