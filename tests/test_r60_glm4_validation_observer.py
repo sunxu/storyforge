@@ -138,3 +138,35 @@ def test_no_prompt_or_quote_text_in_logs():
                  "specific_target_quotes": []}, row)
     assert "PRIVATE_UNMATCHED" not in repr(events)
     assert "第一段精确引文" not in repr(events)
+
+
+def test_frozen_module_checkpoint_global_resolves_wrapped_validator():
+    """Important: patch must affect a function's module global lookups."""
+    from types import ModuleType
+
+    row = source_row()
+    module = ModuleType("synthetic_frozen_runner")
+    exec(  # noqa: S102 - synthetic literal, no imported/private source
+        "def validate_response(response, row):\\n"
+        "    if not all(q in row['target_text'] for q in response['specific_target_quotes']):\\n"
+        "        raise ValueError('MODEL_NONEXACT_QUOTE_HOLD')\\n"
+        "    return 'PASS'\\n"
+        "def checkpoint_record(pos,row,response,model,revision):\\n"
+        "    return validate_response(response,row)\\n",
+        module.__dict__,
+    )
+    module.input_digest = lambda item: item["blind_id"]
+    events = []
+    previous = module.validate_response
+    module.validate_response = audit.make_observer(
+        module, [row], lambda event, **data: events.append((event, data)))
+    with pytest.raises(ValueError, match="MODEL_NONEXACT_QUOTE_HOLD"):
+        module.checkpoint_record(
+            1, row,
+            {"decision": "HOLD", "specific_source_quotes": ["精确引文"],
+             "specific_target_quotes": ["错误的目标引文"]},
+            "synthetic", "synthetic")
+    assert any(event == "VALIDATOR_QUOTE_DIAGNOSTIC"
+               and data["field"] == "TARGET"
+               and data["not_in_body"] == 1 for event, data in events)
+    module.validate_response = previous
