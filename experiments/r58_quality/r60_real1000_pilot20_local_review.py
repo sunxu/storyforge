@@ -34,6 +34,9 @@ MAX_CASES_PER_CALL = 5
 MAX_REPLY_BYTES = 120000
 MODEL_DEFAULT = "claude-opus-5-5"
 API_KEY_ENV = "CLI_PROXY_API_KEY"
+# A 1600-token budget caused a real 4Router response to finish with length.
+# Keep this request-only change separate from the frozen review contract.
+REVIEW_MAX_TOKENS = 8192
 
 
 class Hold(ValueError):
@@ -134,7 +137,7 @@ def claude_payload(model: str, prompt: str) -> dict:
         "model": model,
         "system": reviewer.REVIEW_INSTRUCTIONS,
         "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 1600,
+        "max_tokens": REVIEW_MAX_TOKENS,
         "stream": False,
     }
 
