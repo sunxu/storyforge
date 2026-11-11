@@ -1,5 +1,27 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 R50排除证据核验：先做已知五个来源世界的安全部分检查
+
+已确认仓库 `docs/evidence/V03_R49_R50_16_20_SOURCE_INTAKE_20261015.md` 记录 R49/R50历史测试素材16–20的五个不同story_id，**但该文件明确标注2026-10-15时`FRESH_TEST_NOT_SEALED`，不是完整封存的Held-out排除清单**。不能把“五个已知世界无交集”当作完整R50排除通过。
+
+新增只读 `experiments/r58_quality/r60_real1000_r50_known5_exclusion_cpu.py` 与 `tests/test_r60_real1000_r50_known5_exclusion_cpu.py`：复用真实冻结1000来源池及已验收Pilot20、双PASS三条位置级私有候选；绑定每条源历史三消息与目标原文，比较3条候选的source.story_id是否属于已记录的R50五故事；只输出SAFE交集数，不输出私有story ID、小说正文或候选位置。即使交集=0，必须输出`R50_KNOWN5_PARTIAL_CHECK_PASS__FULL_EXCLUSION_HOLD`，且`r50_complete_exclusion_verified=false`、`train_admitted=0`；若交集非零则输出`R50_KNOWN5_OVERLAP_FOUND__TRAIN_ADMISSION_HOLD`。此检查是部分证据，不能解除R50全量排除闸门。
+
+Owner Mac先同步该阶段CI通过的固定PIN，然后在现有`$HOME/workspace/storyforge-r60-4router-review`工作树执行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_r50_known5_exclusion_cpu.py tests/test_r60_real1000_double_pass_context_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_r50_known5_exclusion_cpu.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --candidate-file "$BASE/r60-real1000-double-pass-candidates-v1/R60_DOUBLE_PASS_TRAIN_CANDIDATES_PRIVATE.json"
+```
+
+下一步应查找Owner已有的R50最终Held-out 46/50条完整source provenance、冻结评测世界/alias和R45 Train/Val世界互斥索引，采用只读完整交集核验；缺少这些文件时必须HOLD，不要求用户将隐私原文上传GitHub，也不自动发GPU/付费推理。
+
+
 ## 2026-11-11 Owner真实3条双PASS训练上下文预检PASS，但正式训练准入仍HOLD
 
 Owner Mac实测`DOUBLE_PASS_CONTEXT_PREFLIGHT_PASS__TRAIN_ADMISSION_HOLD`：冻结池1000、双PASS候选3、来自3个不同story及3个不重复assistant目标、均为300–499字（`target_length_bins={"300_499":3,"500_999":0,"1000_1500":0}`）。源原文绑定与上下文来源核验通过，数据库访问0、模型推理0、GPU0、Quality-v1/训练准入0。
