@@ -43,7 +43,7 @@ def test_no_known5_overlap_remains_full_exclusion_hold():
 
 def test_known5_overlap_is_detected():
     cases, packets, manifest = fixture()
-    cases[0]["source"]["story_id"] = sorted(gate.KNOWN_R50_STORIES)[0]
+    cases[0]["source"]["story_id"] = min(gate.KNOWN_R50_STORIES)
     safe = gate.check(cases, packets, manifest)
     assert safe["status"] == "R50_KNOWN5_OVERLAP_FOUND__TRAIN_ADMISSION_HOLD"
     assert safe["known5_story_overlap_count"] == 1
