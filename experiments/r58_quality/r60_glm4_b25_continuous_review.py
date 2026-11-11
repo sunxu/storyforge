@@ -341,6 +341,7 @@ def main() -> int:
     parser.add_argument("--literal-probe-cases", type=int, default=0)
     parser.add_argument("--generation-snapshot-dir", type=Path)
     parser.add_argument("--snapshot-probe-cases", type=int, default=0)
+    parser.add_argument("--snapshot-primary-only", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -399,6 +400,14 @@ def main() -> int:
             and args.snapshot_probe_cases == 0
         ):
             raise Hold("SNAPSHOT_PROBE_SCOPE_HOLD")
+        if args.snapshot_primary_only and (
+            args.generation_snapshot_dir is None
+            or not args.snapshot_probe_cases
+            or args.quote_literal_repair
+            or args.quote_shape_diagnostic
+            or args.repair_quote_shape
+        ):
+            raise Hold("SNAPSHOT_PRIMARY_ONLY_SCOPE_HOLD")
         if args.generation_snapshot_dir is not None and (
             not args.isolate_technical_failures or args.retry_baseline_dir is None
             or args.resume or not args.quote_match_observer
@@ -482,6 +491,13 @@ def main() -> int:
 
                 worker.checkpoint_record = quote_shape_diagnostic(
                     worker, emit, repair=args.repair_quote_shape)
+            if args.snapshot_primary_only:
+                from r60_glm4_snapshot_primary_only import make_primary_only_checkpoint
+
+                worker.checkpoint_record = make_primary_only_checkpoint(worker, emit)
+                emit("SNAPSHOT_PRIMARY_ONLY_INSTALLED",
+                     original_quote_validation_preserved=True,
+                     secondary_model_repair_skipped=True)
             if args.quote_literal_repair:
                 from r60_glm4_exact_quote_repair import make_reconciler
 
