@@ -1,5 +1,68 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：两份完整 Job 日志校准与统一“逐条隔离”执行方案（真实 25 条）
+
+**本次完整回执**：
+- GLM：Owner Job https://huggingface.co/jobs/adradar/6af3d1c69737d9a9e09268bb ；\`LOCAL_WEIGHTS_READY\` (21 文件，60.68 GiB)，\`REAL_ENGINE_READY\`，然后 **\`REVIEW_BATCH_HOLD completed=0 exception_class=ReviewError safe_reason_code=MODEL_NONEXACT_QUOTE_HOLD\`**，0/25。核对冻结 reviewer：这里既可能是引用列表类型不合要求、超出 12 条等直接 \`ReviewError\`，也可能是 \`QuoteValidationError\` 继承的 \`ReviewError\`；日志仅有 \`exception_class=ReviewError\`，所以**不可仅凭这个字段断言具体引用错误形态**，更不能据此归因于模型质量差。必须保留严格原文引用校验。
+- Qwen：Owner Job https://huggingface.co/jobs/adradar/6af3d3ec9737d9a9e0926d5e ；\`GUIDANCE_PREFLIGHT_PASS\` (只证明 import/API)，\`LOCAL_WEIGHTS_READY\` (24 文件，61.04 GiB)，\`REVIEW_PREFIX_VERIFIED count=6\`，\`REAL_ENGINE_READY\`，随后 **\`REVIEW_BATCH_HOLD completed=6 exception_class=ValueError safe_reason_code=UNKNOWN_REVIEW_FAILURE\`**。本次没有 XGrammar FSM 日志；Qwen 仍 6/25。这个 ValueError 不属于冻结 reviewer 定义的 \`ReviewError\`；可能来自 vLLM/Guidance/Python 实际运行，尚无法从脱敏日志确定。绝对不把未知 ValueError 伪装为单条质量问题。
+
+### 统一代码
+
+- \`experiments/r58_quality/r60_review_isolation_core.py\` 是两模型共用的审核执行逻辑，默认关闭，只有显式 \`--isolate-technical-failures\` 才启用。保留两个模型原始 frozen reviewer、模型 revision、输入哈希门禁、temperature、schema、Prompt、Quote Repair、quality-v1 标准、输出 2400 tokens。
+- 单模型 H200 **只初始化一个引擎**，逐条调用 frozen reviewer，逐条立即验证原版质量 Checkpoint。若遇到明确、白名单之内的冻结 reviewer \`ReviewError\`，只创建 \`technical_failure_NNNN.safe.json\`（含位置、输入 SHA、模型及 revision、审核 policy、固定技术错误码、receipt SHA），不创建伪质量 Checkpoint，不记作质量 \`HOLD\`。然后继续下一条。**非 \`ReviewError\` 异常（如 Qwen 当前 \`ValueError\`）、未知代码、引擎异常、任何文件冲突/损坏仍 fail closed**，不能盲目忽略。无私有 prompt/模型答案/异常字符串入 SAFE 日志。
+- 允许前缀由质量 \`review_NNNN.private.json\` 与技术失败 \`technical_failure_NNNN.safe.json\` 混合，\`--resume\` 严格检查它们覆盖 1..N、无重复、内容/来源/模型/签名有效。保留 Qwen 已合法 1..6；若 GLM 旧输出目录为空，从 1 开始。**不允许在共享输出目录重跑已经尝试并留下凭证的样本，避免污染或丢失。**
+- 新状态 \`ALL_CASES_ATTEMPTED attempted=25 verified=X technical_failures=Y\` 表示**完成 25 次尝试，不代表 25 次通过**。只有 \`verified=25 technical_failures=0\` 才发 \`CONTINUOUS_REVIEW_COMPLETE\` 并返回 0；技术失败尚存时退出码 42。异常不中断或错误地批准训练：\`quality_v1_admitted=0\`、无训练授权。
+
+### Owner Mac：准备隔离执行 bundle（CPU-only；不得重复复制或覆盖旧私有输入）
+
+\`\`\`bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+PIN="__ISOLATION_CODE_PIN__"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+umask 077
+for ARM in A B; do
+  if [ "$ARM" = A ]; then
+    SRC="$PILOT/input_A_guidance_resume"
+    DEST="$PILOT/input_A_isolated_v1"
+    RUNNER=r60_qwen_continuous_review.py
+    EXPECTED=492f24f7cb6171481e0e6d176cfa862ec6f5223bdd7abc3cfb518335dc9ab069
+  else
+    SRC="$PILOT/input_B_diagnostic_v2"
+    DEST="$PILOT/input_B_isolated_v1"
+    RUNNER=r60_glm4_b25_continuous_review.py
+    EXPECTED=01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9
+  fi
+  test -d "$SRC"
+  test ! -e "$DEST" || { echo ISOLATION_BUNDLE_EXISTS_HOLD; exit 42; }
+  mkdir -m 700 "$DEST"
+  for F in runner.py source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+    test -f "$SRC/$F"
+    cp "$SRC/$F" "$DEST/$F"
+    chmod 600 "$DEST/$F"
+  done
+  for F in "$RUNNER" r60_review_isolation_core.py; do
+    git -C "$ROOT" show "$PIN:experiments/r58_quality/$F" > "$DEST/$F"
+    chmod 600 "$DEST/$F"
+  done
+  test "$(shasum -a 256 "$DEST/source.private.jsonl" | awk '{print $1}')" = "$EXPECTED" || { echo INPUT_SHA_HOLD; exit 42; }
+  python3 -m py_compile "$DEST"/*.py
+done
+\`\`\`
+
+准备后，验证 Qwen 新 bundle 的 \`runner.py\` 与上次 Guidance 恢复相同，并记录旧版 1–6 JSON 格式及校验通过。为避免新 Job 把失败当成功，不能用旧版 wrapper（不认识 \`--isolate-technical-failures\`）。
+
+### Owner Mac H200 执行规则
+
+执行方法与原「本地 Bucket 只读挂载 → H200 本地化 → 同一 Engine 审核」一致；需将 \`-v ...:/input:ro\` 改为相应 \`input_A_isolated_v1\` 或 \`input_B_isolated_v1\`，在 \`--confirm-paid-gpu\` 前新增 \`--isolate-technical-failures\`。**新 wrapper 依赖 /input 中同目录的 \`r60_review_isolation_core.py\`。** 对 Qwen 必须保持原 \`OUT=/bucket/evaluation-runs/r60-1000-pilot25-qwen-a-continuous-v1\` 以及 \`--resume\` 才能保留旧 6 条；GLM 则用一个全新目录，例如 \`/bucket/evaluation-runs/r60-glm4-b25-isolated-v1\`，禁止覆盖旧失败 Job 的输出。请勿直接沿用旧输出目录或重新复制 Bucket 权重。
+
+**费用建议：** Qwen 当前是非 \`ReviewError\` 的未知 \`ValueError\`，新隔离器仍会在第 7 条停机；除非取得进一步受控异常定位，不应为它重复启动 H200。GLM 的明确审核错误适合在 25 条批次验证这套隔离执行流程；但仍可能有其他非 ReviewError 异常导致停机。两者在运行后仍须按 \`verified\` / \`technical_failures\` 报告，不得混用为模型评分。
+
+---
+
+
 ## 2026-11-11：Guidance 恢复 Job 误拦截修复——不是模型失败
 
 Owner Job：https://huggingface.co/jobs/adradar/6af3cf14ab34849891ada999，2026-11-11 02:12:38 启动，在 shell 依赖预检抛出 `ModuleNotFoundError: No module named 'llguidance_hf'` → `LLGUIDANCE_BACKEND_NOT_INSTALLED_HOLD`。**这是执行书中错误的预检：`llguidance_hf` / `llguidance_torch` 是 vLLM 对 `llguidance.hf` / `llguidance.torch` 的内部别名，而非独立的顶层包。** 该 Job 尚未复制权重、加载模型或开始审核；原始 Qwen A25 仍为 6/25。此事件没有证据说明 Guidance 真正不可用，因此禁止据此安装未知版本依赖。
