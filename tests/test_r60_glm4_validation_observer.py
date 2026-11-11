@@ -147,12 +147,12 @@ def test_frozen_module_checkpoint_global_resolves_wrapped_validator():
     row = source_row()
     module = ModuleType("synthetic_frozen_runner")
     exec(  # noqa: S102 - synthetic literal, no imported/private source
-        "def validate_response(response, row):\\n"
-        "    if not all(q in row['target_text'] for q in response['specific_target_quotes']):\\n"
-        "        raise ValueError('MODEL_NONEXACT_QUOTE_HOLD')\\n"
-        "    return 'PASS'\\n"
-        "def checkpoint_record(pos,row,response,model,revision):\\n"
-        "    return validate_response(response,row)\\n",
+        "def validate_response(response, row):\n"
+        "    if not all(q in row['target_text'] for q in response['specific_target_quotes']):\n"
+        "        raise ValueError('MODEL_NONEXACT_QUOTE_HOLD')\n"
+        "    return 'PASS'\n"
+        "def checkpoint_record(pos,row,response,model,revision):\n"
+        "    return validate_response(response,row)\n",
         module.__dict__,
     )
     module.input_digest = lambda item: item["blind_id"]
