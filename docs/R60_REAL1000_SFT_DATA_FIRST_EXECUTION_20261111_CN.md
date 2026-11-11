@@ -1,5 +1,39 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 分歧证据包已由Owner Mac真实生成；下一步独立盲审三条
+
+Owner SAFE：`QD20_DISAGREEMENT_PACKET_READY__OWNER_EVIDENCE_PENDING`：确切3条分歧材料（新Qwen+DeepSeek独有双PASS 2，旧Claude+Codex独有双PASS 1，完整新模型配对14），无API/DB/GPU，质量和训练准入均0。证据包仅标记`owner_evidence_decision=NOT_REVIEWED`，不代表已完成质量复核。
+
+**审核独立性关键修正**：原分歧证据包同时包含Claude/Codex与Qwen/DeepSeek评分、结论和新模型理由，如果直接让新Agent先看这份文件，就已经失去盲审，可能被四个原模型投票锚定。故增加`experiments/r58_quality/r60_real1000_qd20_evidence_review_cpu.py`及5项合成测试`tests/test_r60_real1000_qd20_evidence_review_cpu.py`：
+- `prepare`：读取Owner私有分歧证据包，**只导出3条原始三消息上下文、目标回复、核对要点**到另一个create-only私有盲审目录，完全不带新旧模型评分、PASS/HOLD/REJECT、分歧类型或原始位置。生成初始待填的Reviewer模板。
+- 独立审稿人/新的独立AI Agent只能先读取`R60_QD20_DISAGREEMENT_BLIND_PRIVATE.json`与六维Rubric（`r60_real_private_batch.FLOORS/SEVERE`），不能先看原证据包、旧模型回执或对照结果。它填充3条结果到**新文件** `R60_QD20_DISAGREEMENT_DECISIONS_PRIVATE.json`，显式声明是否未看旧模型投票。AI新审查如实际调用模型或读取正文应由Owner在本地Agent执行并记录，CPU脚本本身不调用模型。
+- 逐条结果须包含`blind_index`、`decision=PASS|HOLD|REJECT`、六维1–5整数评分`scores`、三个布尔`severe_flags`、`quote_source`（assistant_target、history_user_1、history_assistant_2、history_user_3）、`exact_quote`（4–300个字符，必须在所选原始消息中逐字存在）、`reason_cn`（10–1200汉字）；不能用不存在的引文代替证据。PASS必须达冻结分数门槛且无严重标志，存在严重标志则必须REJECT。若局部上下文无法支持世界规则判断，应HOLD。
+- `verify`：只读重算原证据与盲审输入绑定、验证三条独立反馈及引文/分数逻辑，公开输出仅聚合SAFE计数，不自动替Owner决定训练准入、不向GitHub提交正文/候选位置。独立性为审稿人自我声明，脚本不能客观证明“没看其他评审结果”。
+
+在Owner Mac现有worktree同步本阶段通过CI的固定PIN，运行零模型请求的：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_evidence_review_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+SOURCE="$BASE/r60-real1000-qd20-disagreement-evidence-v1"
+BLIND="$BASE/r60-real1000-qd20-disagreement-blind-v1"
+python3 experiments/r58_quality/r60_real1000_qd20_evidence_review_cpu.py prepare \
+  --source-dir "$SOURCE" --blind-dir "$BLIND"
+```
+
+期望`QD20_THREE_BLIND_PACKETS_READY__REVIEW_PENDING`。使用Owner本地独立AI Agent或审稿人在**不知道旧模型判断**的前提下，阅读盲审包并另存三条决定至私有`$BLIND/R60_QD20_DISAGREEMENT_DECISIONS_PRIVATE.json`；保持源盲审包及初始模板不修改、不覆盖。填完后运行：
+
+```bash
+python3 experiments/r58_quality/r60_real1000_qd20_evidence_review_cpu.py verify \
+  --source-dir "$SOURCE" --blind-dir "$BLIND" \
+  --decisions "$BLIND/R60_QD20_DISAGREEMENT_DECISIONS_PRIVATE.json"
+```
+
+期望`QD20_THREE_BLIND_EVIDENCE_REVIEWS_VALIDATED__ADMISSION_HOLD`。若`REVIEW_NONEXACT_QUOTE_HOLD`、`PASS_CONTRACT_CONFLICT_HOLD`等错误，先校正审稿人的引用/分数，不能改原文、放宽冻结审核门槛、自动转PASS。最终只使用可信的私有核查依据来决定是否改善低成本模型审核协议，而不立即扩展80/980或放行SFT/GPU。
+
+
 ## 2026-11-11 Owner保守筛选正式回执PASS：3条新旧双PASS分歧证据包
 
 Owner Mac真实结果：`QD20_CONSERVATIVE_QUALITY_SCREEN_CLOSED__TRAIN_ADMISSION_HOLD`，已保存34/40份模型审核，有完整双模型审核14/20条，未完成6个样本（6份provider审核缺失），未补造任何HOLD/PASS。新Qwen+DeepSeek严格双PASS候选4，旧Claude+Codex双PASS3，两组交集2；新独有2、旧独有1。既存模型失败快照5份CPU重放仍严格无效，模型调用0，Quality-v1和训练准入0，R50完整排除和训练上下文仍未核验。
