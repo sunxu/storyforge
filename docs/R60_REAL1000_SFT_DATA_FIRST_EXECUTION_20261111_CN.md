@@ -1,5 +1,55 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 4Router 细分错误码 + 固定工作树（最新执行规则）
+
+用户确认此次问题**与代理无关**，禁止因推测代理而继续改变联网行为。最新审核器只修改诊断：保留原显式无代理的联网设置，针对 HTTP 数字状态（400/401/403/404/429/5xx）、已知4Router/Claude错误`type/code`（严格有限白名单映射）、DNS、TLS证书校验、TLS握手、超时、拒绝连接、重置连接、无路由等输出细分的 `reason_code`。绝不输出原始HTTP错误正文、异常字符串、Key、URL或私有案例。合成回归覆盖类别；**原20条审阅包、旧配置和0份成功回执不覆盖、不重建**。
+
+不再新建 worktree。Owner Mac 已有 worktree 清单显示 `/private/var/folders/fk/p_g8myrd27d3j7qp13zh_2gr0000gn/T/r60-4router-debug-kcZt62`（detached，旧e3e77759），把**这个现有worktree**迁移为唯一长期使用的 `/Users/keedle/workspace/storyforge-r60-4router-review`，前提是旧目录干净、目标不存在：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+OLD="/private/var/folders/fk/p_g8myrd27d3j7qp13zh_2gr0000gn/T/r60-4router-debug-kcZt62"
+WORK="$HOME/workspace/storyforge-r60-4router-review"
+test -d "$OLD"
+test ! -e "$WORK"
+test -z "$(git -C "$OLD" status --porcelain)"
+git -C "$ROOT" worktree move "$OLD" "$WORK"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$WORK" switch --detach origin/r60/p4-generation-eval-framework
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+```
+
+如旧worktree有未提交变更，停止移动与删除，不要使用 `--force`、`git reset --hard`、`rm -rf`。同一目录今后直接原地 `git fetch` + `git switch --detach`（仅在干净且无其他agent写入时）；不新建工作树。
+
+Owner 本次临时树可清理的仅以下明确列出的路径（**禁止删除**长期 `~/workspace/storyforge-*`、RolePlay、Gold Quality或本新固定树）：
+
+```bash
+ROOT="$HOME/workspace/storyforge"
+T="/private/var/folders/fk/p_g8myrd27d3j7qp13zh_2gr0000gn/T"
+for name in \
+  r60-4router-6uBSEb r60-4router-bJOHtG \
+  r60-calibration100-HWh8Jl r60-pilot20-ctAQkN \
+  r60-qwen-cpu-8VgNz4 r60-real1000-RHId9x \
+  r60-unified-2tai5e r60-unified-5Zm2gJ r60-unified-LFppup; do
+  path="$T/$name"
+  test -d "$path" || continue
+  if [ -z "$(git -C "$path" status --porcelain)" ]; then
+    git -C "$ROOT" worktree remove "$path"
+    echo "REMOVED_CLEAN_WORKTREE=$name"
+  else
+    echo "SKIPPED_DIRTY_WORKTREE=$name"
+  fi
+done
+git -C "$ROOT" worktree list
+```
+
+若旧debug树已成功迁移，它不应再出现在临时路径清理名单中。只执行 `git worktree remove`，不做 `prune --expire now`、`rm -rf` 或强制删除。清理前确认这些临时树没有正在运行的进程或其他Agent使用。
+
+Owner 实际调用前（先不重发真实请求）在固定目录直接：`python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect --output-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"`，无费用。下一次只有Owner确认新一轮真实外发/费用后，才执行 `advance --max-cases 1 --execute --allow-private-data-egress`，回报具体 `stage=ADVANCE` + `reason_code`，以便辨认 HTTP 400 格式或 401 Key、429限速或 DNS/TLS 等；失败不自动重试。
+
+
 ## 2026-11-11 Owner 目录复用要求及4Router最新无费用回执
 
 Owner 明确要求：**后续不要每次新建 worktree**；优先在已经存在、刚刚完成验收的同一工作目录中执行，不覆盖或重置并行Agent的工作树，也不为了每条SAFE回执重复`fetch`/`worktree add`/`init`。如果确实需要更新代码，只在确认目标工作目录无未提交改动、没有其他Agent占用后原地同步，或复用现有专用工作树；必须新建隔离目录时先说明原因。
