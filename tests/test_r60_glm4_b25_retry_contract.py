@@ -16,7 +16,7 @@ spec = importlib.util.spec_from_file_location(
 assert spec and spec.loader
 contract = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(contract)
-from r60_review_isolation_core import create_failure  # noqa: E402
+from r60_review_isolation_core import create_failure
 
 
 def cases(tmp_path):
