@@ -43,6 +43,14 @@ class Hold(ValueError):
     """Reject a missing or inconsistent local review artifact."""
 
 
+class QualityConflict(Hold):
+    """Only a validated PASS-below-floor model reply; private fields stay in memory."""
+
+    def __init__(self, answer: dict):
+        super().__init__("PROXY_PASS_BELOW_FLOOR_HOLD")
+        self.answer = answer
+
+
 def canonical(data: object) -> bytes:
     return (json.dumps(
         data, sort_keys=True, ensure_ascii=False,
@@ -313,6 +321,33 @@ def save_failed_response(output_dir: Path, position: int, raw: bytes) -> None:
     private.write_new(path, raw)
 
 
+def write_quality_conflict(output_dir: Path, position: int,
+                           config: dict, model_value: dict) -> None:
+    """Create-only advisory conflict; never make a qualifying review receipt."""
+    try:
+        reviewer.parse_model_response(model_value)
+    except reviewer.Hold as exc:
+        if str(exc) != "QUALITY_FLOOR_DECISION_INCONSISTENT":
+            raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
+    else:
+        raise Hold("NOT_A_QUALITY_CONFLICT_HOLD")
+    if model_value.get("decision") != "PASS":
+        raise Hold("PROXY_RUBRIC_SCHEMA_HOLD")
+    record = {
+        "schema": SCHEMA,
+        "position": position,
+        "packets_sha256": config["packets_sha256"],
+        "model_id": config["model_id"],
+        "conflict_code": "PROXY_PASS_BELOW_FLOOR_HOLD",
+        "original_decision": model_value["decision"],
+        "scores": model_value["scores"],
+        "severe_flags": model_value["severe_flags"],
+        "reason_cn": model_value["reason_cn"],
+    }
+    record["receipt_sha256"] = sha(canonical(record))
+    private.write_new(output_dir / conflict_name(position), canonical(record))
+
+
 def quarantine_private_conflict(output_dir: Path, *, position: int,
                                 confirm_provenance: bool = False) -> dict:
     """CPU-only: preserve model verdict without wrongly promoting it to PASS."""
@@ -340,28 +375,7 @@ def quarantine_private_conflict(output_dir: Path, *, position: int,
     model_value = decoded_model_json(raw)
     if not isinstance(model_value, dict):
         raise Hold("PROXY_RUBRIC_SCHEMA_HOLD")
-    try:
-        reviewer.parse_model_response(model_value)
-    except reviewer.Hold as exc:
-        if str(exc) != "QUALITY_FLOOR_DECISION_INCONSISTENT":
-            raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
-    else:
-        raise Hold("NOT_A_QUALITY_CONFLICT_HOLD")
-    if model_value.get("decision") != "PASS":
-        raise Hold("PROXY_RUBRIC_SCHEMA_HOLD")
-    record = {
-        "schema": SCHEMA,
-        "position": position,
-        "packets_sha256": config["packets_sha256"],
-        "model_id": config["model_id"],
-        "conflict_code": "PROXY_PASS_BELOW_FLOOR_HOLD",
-        "original_decision": model_value["decision"],
-        "scores": model_value["scores"],
-        "severe_flags": model_value["severe_flags"],
-        "reason_cn": model_value["reason_cn"],
-    }
-    record["receipt_sha256"] = sha(canonical(record))
-    private.write_new(output_dir / conflict_name(position), canonical(record))
+    write_quality_conflict(output_dir, position, config, model_value)
     return get_state(output_dir)[2]
 
 
@@ -434,9 +448,20 @@ def proxy_request(endpoint: str, model: str, prompt: str, timeout: int,
         raise Hold("PROXY_RESPONSE_OVERSIZE_HOLD")
     try:
         return parse_proxy_response(raw)
-    except Hold:
+    except Hold as exc:
         if output_dir is not None and position is not None:
             save_failed_response(output_dir, position, raw)
+        if str(exc) == "PROXY_PASS_BELOW_FLOOR_HOLD":
+            model_value = decoded_model_json(raw)
+            if not isinstance(model_value, dict):
+                raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
+            # Recheck the frozen rubric before exposing this recoverable conflict.
+            try:
+                reviewer.parse_model_response(model_value)
+            except reviewer.Hold as reason:
+                if str(reason) == "QUALITY_FLOOR_DECISION_INCONSISTENT":
+                    raise QualityConflict(model_value) from None
+            raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
         raise
 
 def validate_config(folder: Path) -> dict:
@@ -601,10 +626,16 @@ def advance(output_dir: Path, max_cases: int, *,
             "history_messages": packet["history_messages"],
             "target_text": packet["assistant_target"],
         })
-        answer = proxy_request(
-            config["endpoint"], config["model_id"], prompt, config["timeout"],
-            output_dir, i + 1,
-        )
+        try:
+            answer = proxy_request(
+                config["endpoint"], config["model_id"], prompt, config["timeout"],
+                output_dir, i + 1,
+            )
+        except QualityConflict as exc:
+            # This result came from this exact in-flight request, not a prior
+            # unbound snapshot; keep its model PASS and all original scores.
+            write_quality_conflict(output_dir, i + 1, config, exc.answer)
+            continue
         receipt = {
             "schema": SCHEMA,
             "position": i + 1,
