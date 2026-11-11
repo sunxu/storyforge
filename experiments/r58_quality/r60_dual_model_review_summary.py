@@ -22,7 +22,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from r60_review_isolation_core import failure_name, validate_failure
+from r60_review_isolation_core import canonical, failure_name, validate_failure
 
 SCHEMA = "storyforge_r60_p1_dual_model_review_summary_safe_v1"
 A_MODEL = "Qwen/Qwen3-32B"
@@ -153,17 +153,36 @@ def _counts(items: list[dict]) -> dict:
     }
 
 
+def _source_key(row: dict) -> str:
+    if not isinstance(row, dict) or not isinstance(row.get("blind_id"), str):
+        raise SummaryHold("CROSS_MODEL_ROW_SCHEMA_HOLD")
+    # The independent blind IDs may differ by model. Never join by blind ID
+    # alone, by ordinal position alone, or by source/target excerpts.
+    content = {key: val for key, val in row.items() if key != "blind_id"}
+    return hashlib.sha256(canonical(content)).hexdigest()
+
+
+def _align(a_rows: list[dict], b_rows: list[dict]) -> list[int]:
+    if len(a_rows) != N or len(b_rows) != N:
+        raise SummaryHold("CROSS_MODEL_COUNT_HOLD")
+    a_keys = [_source_key(row) for row in a_rows]
+    b_keys = [_source_key(row) for row in b_rows]
+    if (len(set(a_keys)) != N or len(set(b_keys)) != N
+            or set(a_keys) != set(b_keys)):
+        raise SummaryHold("CROSS_MODEL_CONTENT_OR_UNIQUE_HOLD")
+    b_positions = {key: i for i, key in enumerate(b_keys)}
+    return [b_positions[key] for key in a_keys]
+
+
 def summarize(a_rows: list[dict], b_rows: list[dict],
               a: list[dict], b: list[dict]) -> dict:
     if len(a_rows) != N or len(b_rows) != N or len(a) != N or len(b) != N:
         raise SummaryHold("SUMMARY_COUNT_HOLD")
-    # No guessed joins: the two isolated inputs must have exactly the same
-    # blind IDs and source contents at each position.
-    if any(x != y for x, y in zip(a_rows, b_rows)):
-        raise SummaryHold("CROSS_MODEL_SOURCE_OR_ORDER_HOLD")
+    alignment = _align(a_rows, b_rows)
     cases = []
     pairs = Counter()
-    for pos, (left, right) in enumerate(zip(a, b), 1):
+    for pos, (left, b_index) in enumerate(zip(a, alignment), 1):
+        right = b[b_index]
         if (left["technical_status"] == "VERIFIED"
                 and right["technical_status"] == "VERIFIED"):
             pairs[(left["quality_decision"], right["quality_decision"])] += 1
@@ -171,7 +190,8 @@ def summarize(a_rows: list[dict], b_rows: list[dict],
                           else "DISAGREE")
         else:
             comparison = "NOT_COMPARABLE"
-        cases.append({"position": pos, "A": left, "B": right,
+        cases.append({"position_A": pos, "position_B": b_index + 1,
+                      "A": left, "B": right,
                       "quality_comparison": comparison})
     agree = sum(v for (x, y), v in pairs.items() if x == y)
     compared = sum(pairs.values())
@@ -184,6 +204,7 @@ def summarize(a_rows: list[dict], b_rows: list[dict],
         "private_values_emitted": False,
         "gpu_started": False,
         "cases_total": N,
+        "cross_model_alignment": "EXACT_CONTENT_EXCLUDING_BLIND_ID",
         "model_A": {"model": A_MODEL, "revision": A_REV, **_counts(a)},
         "model_B": {"model": B_MODEL, "revision": B_REV, **_counts(b)},
         "both_verified": compared,
@@ -206,8 +227,7 @@ def run(args) -> dict:
     b_worker = _frozen_worker(args.runner_b, "r60_summary_frozen_B")
     a_rows = _rows(args.input_a, A_INPUT_SHA, a_worker)
     b_rows = _rows(args.input_b, B_INPUT_SHA, b_worker)
-    if any(x != y for x, y in zip(a_rows, b_rows)):
-        raise SummaryHold("CROSS_MODEL_SOURCE_OR_ORDER_HOLD")
+    _align(a_rows, b_rows)
     a = _one_model(a_rows, a_worker, args.reviews_a, A_MODEL, A_REV)
     b = _one_model(b_rows, b_worker, args.reviews_b, B_MODEL, B_REV)
     report = summarize(a_rows, b_rows, a, b)
