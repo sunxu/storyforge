@@ -335,6 +335,7 @@ def main() -> int:
     parser.add_argument("--isolate-technical-failures", action="store_true")
     parser.add_argument("--retry-baseline-dir", type=Path)
     parser.add_argument("--quote-shape-diagnostic", action="store_true")
+    parser.add_argument("--repair-quote-shape", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -349,6 +350,10 @@ def main() -> int:
             or args.case_limit != 12 or not args.quote_shape_diagnostic
         ):
             raise Hold("RETRY_ARGS_HOLD")
+        if args.repair_quote_shape and (
+            args.retry_baseline_dir is None or not args.quote_shape_diagnostic
+        ):
+            raise Hold("REPAIR_SCOPE_HOLD")
         if args.quote_shape_diagnostic and not args.isolate_technical_failures:
             raise Hold("SHAPE_DIAGNOSTIC_REQUIRES_ISOLATION_HOLD")
         if args.case_limit > expected_count:
@@ -389,7 +394,8 @@ def main() -> int:
             if args.quote_shape_diagnostic:
                 from r60_glm4_b25_retry_contract import quote_shape_diagnostic
 
-                worker.checkpoint_record = quote_shape_diagnostic(worker, emit)
+                worker.checkpoint_record = quote_shape_diagnostic(
+                    worker, emit, repair=args.repair_quote_shape)
             try:
                 result = run_isolated(
                     worker, retry_rows, args.output_dir, args.local_dir,
