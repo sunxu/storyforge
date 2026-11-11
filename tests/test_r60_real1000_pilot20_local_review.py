@@ -333,3 +333,75 @@ def test_successful_response_remains_valid():
     raw = json.dumps({"choices": [{"finish_reason": "stop",
         "message": {"content": json.dumps(model_answer())}}]}).encode()
     assert mod.parse_proxy_response(raw) == model_answer()
+
+
+def test_standalone_json_fence_validated_without_loose_extraction():
+    answer = json.dumps(model_answer(), ensure_ascii=False)
+    def wrapped(text, finish="stop"):
+        return json.dumps({"choices": [{"finish_reason": finish,
+            "message": {"content": text}}]}).encode()
+    for content in (f"```json\n{answer}\n```", f"```JSON\n{answer}\n```"):
+        assert mod.parse_proxy_response(wrapped(content)) == model_answer()
+    for content in (
+        f"Here is the review:\n```json\n{answer}\n```",
+        f"```json\n{answer}\n```\nextra",
+        f"```json\n{answer}",
+        f"```python\n{answer}\n```",
+    ):
+        try:
+            mod.parse_proxy_response(wrapped(content))
+        except mod.Hold as exc:
+            assert str(exc) == "PROXY_MODEL_JSON_HOLD"
+        else:
+            raise AssertionError("reject loose or malformed fence")
+
+
+def test_replay_snapshot_is_cpu_only_and_advisory(monkeypatch, tmp_path):
+    packet_dir = setup_private(monkeypatch, tmp_path)
+    output = tmp_path / "output"
+    mod.initialize(packet_dir, output, "https://4router.ai/v1",
+                   "claude-opus-5-5", 30)
+    raw = json.dumps({"id": "synthetic-message-1",
+        "model": "claude-opus-5-5",
+        "choices": [{"finish_reason": "stop", "message": {
+            "content": "```json\n" + json.dumps(model_answer()) + "\n```"
+        }}]}).encode()
+    mod.save_failed_response(output, 1, raw)
+    try:
+        mod.replay_private_snapshot(output, position=1)
+    except mod.Hold as exc:
+        assert str(exc) == "SNAPSHOT_PROVENANCE_CONFIRMATION_REQUIRED"
+    else:
+        raise AssertionError("provenance approval required")
+    progress = mod.replay_private_snapshot(
+        output, position=1, confirm_provenance=True)
+    assert progress["model_reviewed"] == 1
+    assert progress["model_decisions_advisory"]["REJECT"] == 1
+    assert progress["quality_v1_admitted"] == 0
+    assert progress["train_admitted"] == 0
+    try:
+        mod.replay_private_snapshot(
+            output, position=1, confirm_provenance=True)
+    except mod.Hold as exc:
+        assert str(exc) == "REPLAY_POSITION_HOLD"
+    else:
+        raise AssertionError("replay is create-only, no overwrite")
+
+
+def test_replay_rejects_wrong_model_snapshot(monkeypatch, tmp_path):
+    packets_dir = setup_private(monkeypatch, tmp_path)
+    output = tmp_path / "output"
+    mod.initialize(packets_dir, output, "https://4router.ai/v1",
+                   "claude-opus-5-5", 30)
+    raw = json.dumps({"id": "synthetic-message-1", "model": "wrong-model",
+        "choices": [{"finish_reason": "stop", "message": {
+            "content": json.dumps(model_answer())}}]}).encode()
+    mod.save_failed_response(output, 1, raw)
+    try:
+        mod.replay_private_snapshot(
+            output, position=1, confirm_provenance=True)
+    except mod.Hold as exc:
+        assert str(exc) == "SNAPSHOT_MODEL_BINDING_HOLD"
+    else:
+        raise AssertionError("wrong model snapshot accepted")
+    assert mod.get_state(output)[2]["model_reviewed"] == 0
