@@ -171,3 +171,42 @@ def test_all_valid_remains_full_completion(tmp_path, capsys):
     assert result["all_verified"]
     assert result["technical_failures"] == 0
     assert "CONTINUOUS_REVIEW_COMPLETE" in capsys.readouterr().out
+
+
+def test_no_validator_event_stops_after_first_paid_case(tmp_path, capsys):
+    data = fixture(tmp_path, fail_at=1, model="zai-org/GLM-4-32B-0414")
+    worker, rows, out, local, tok, vl, events, rev, model = data
+
+    def first_guard(pos):
+        assert pos == 1
+        raise core.IsolationHold("VALIDATOR_OBSERVER_NOT_REACHED_HOLD")
+
+    with pytest.raises(core.IsolationHold, match="VALIDATOR_OBSERVER_NOT_REACHED_HOLD"):
+        core.run_isolated(
+            worker, rows, out, local, model=model, revision=rev,
+            limit=12, batch_size=4, max_model_len=32768,
+            max_output_tokens=2400, wall_seconds=1200, resume=False,
+            hf_tokenizer=tok, vllm=vl,
+            attempt_diagnostic_guard=first_guard)
+    assert events["positions"] == [1]
+    assert events["engines"] == 1
+    assert (out / "technical_failure_0001.safe.json").exists()
+    assert not (out / "technical_failure_0002.safe.json").exists()
+    assert "ALL_CASES_ATTEMPTED" not in capsys.readouterr().out
+
+
+def test_observer_guard_accepts_per_case_events(tmp_path):
+    data = fixture(tmp_path)
+    checked = []
+
+    def guard(pos):
+        checked.append(pos)
+
+    worker, rows, out, local, tok, vl, _events, rev, model = data
+    result = core.run_isolated(
+        worker, rows, out, local, model=model, revision=rev,
+        limit=3, batch_size=2, max_model_len=32768,
+        max_output_tokens=2400, wall_seconds=1200, resume=False,
+        hf_tokenizer=tok, vllm=vl, attempt_diagnostic_guard=guard)
+    assert checked == [1, 2, 3]
+    assert result["all_verified"]
