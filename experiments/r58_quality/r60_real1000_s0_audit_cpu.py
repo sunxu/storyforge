@@ -189,7 +189,7 @@ def main() -> int:
             safe["private_ledger_written"] = False
         print(json.dumps(safe, sort_keys=True))
         return 0
-    except Exception as exc:  # No private values in error output.
+    except Exception as exc:  # noqa: BLE001 - never expose private error text
         code = str(exc) if isinstance(exc, Hold) else "S0_INPUT_OR_BINDING_HOLD"
         if not code.isascii() or len(code) > 80:
             code = "S0_INPUT_OR_BINDING_HOLD"
