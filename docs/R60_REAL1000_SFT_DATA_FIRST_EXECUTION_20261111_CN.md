@@ -1,5 +1,17 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 S1争议去重真实SAFE：优先11条证据复核
+
+Owner Mac 返回 `S1_DISPUTE_TRIAGE_CPU_PASS`：原始Pilot20共20条；`decision_disagreements_including_conflicts=10`（包含Claude低分PASS冲突2）、`severe_flag_disagreements=4`、`claude_quality_conflicts=2`，并集 `unique_priority_cases=11`，其余 `remaining_cases_for_control_review=9`。因此10条判定争议和4条严重flag差异重叠3条（剩余1条仅严重标志分歧），不可简单相加。Owner最终裁决0、训练准入0。只以SAFE归档，私有位置不写入GitHub。
+
+**接下来S1.4证据核对要求：**
+1. 复用已生成、不可覆盖的S1 Codex/Claude Owner私有逐位置比较台账，不再次调用两个模型做首轮质量评分。建立11条去重争议队列，优先`severe_flag_disagreement`、Claude REJECT→Codex非REJECT，再处理Claude HOLD→Codex PASS和2条规则冲突（重合只核查一次）。
+2. 以Pilot20冻结3条历史消息与目标回复对照Claude与Codex原始理由；逐条记录哪些具体片段支持或反驳hard fact、玩家能动性、安全排除及文笔/连续性打分。严禁补造真实System/世界组件。参考Gold72/P2-A/P2-B的证据规则，结果区分`SUPPORTED`、`NOT_SUPPORTED`、`INSUFFICIENT_CONTEXT`。优先复核归因并保留原始意见，不因模型多数票改分或直接入训。
+3. 另外9条无争议样本不能自动认定质量合格；建议先选3条覆盖PASS/HOLD/REJECT的分层对照验证，若发现严重漏判再扩大到余下6条。即使实际9条中某类别缺失也不得造样本；按实际分层抽取。
+4. Codex曾完成第二模型独立初审；若再让Codex阅读Claude+Codex对照材料开展证据仲裁，只能称`CODEX_FOLLOWUP_EVIDENCE_AUDIT_ADVISORY`，不得称第三独立模型或Owner人工真值，需新会话且原始输入与理由绑定。Owner人工最终裁决仍需明确；模型意见不能自证真值。
+5. 在获得去重争议证据核验、对照样本审查及可解释的审核质量结论前，S2的Sample100剩余80条付费推理保持HOLD，Quality-v1训练准入=0；不启动HF GPU或SFT。
+
+
 ## 2026-11-11 S1 Claude/Codex真实逐位置对账PASS：优先争议裁决
 
 Owner Mac SAFE：合成测试 `7 passed in 0.10s`，实际 `S1_CODEX_CLAUDE_COMPARE_PASS__OWNER_ADJUDICATION_PENDING`，20/20按冻结盲审输入与Owner跨表对齐；`private_comparison_written=true`，本轮模型推理0；Codex 20条PASS9/HOLD8/REJECT3；Claude有效18条PASS4/HOLD10/REJECT4 + 2条低分PASS原始冲突。
