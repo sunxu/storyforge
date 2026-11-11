@@ -10,6 +10,9 @@ import argparse
 import json
 import os
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 from collections import Counter
 from pathlib import Path
 
@@ -29,7 +32,7 @@ DEFAULT_URLS = {
 }
 DEFAULT_MODELS = {
     "qwen": "qwen3.7-flash",
-    "deepseek": "deepseek-v4-flash",
+    "deepseek": "deepseek-flash",
 }
 KEY_ENV = {"qwen": "DASHSCOPE_API_KEY", "deepseek": "DEEPSEEK_API_KEY"}
 
@@ -50,12 +53,14 @@ def config_payload(packet_hash: str, qwen_url: str, qwen_model: str,
         "deepseek": {"endpoint": ai.validate_endpoint(deepseek_url, True),
                      "model": deepseek_model},
     }
-    if (not qwen_model or not deepseek_model
+    qhost = urllib.parse.urlsplit(configs["qwen"]["endpoint"]).hostname
+    dhost = urllib.parse.urlsplit(configs["deepseek"]["endpoint"]).hostname
+    if (not qwen_model.startswith("qwen")
+            or not deepseek_model.startswith("deepseek-")
             or qwen_model.casefold() == deepseek_model.casefold()
-            or "aliyuncs.com" not in configs["qwen"]["endpoint"]
-            or not configs["qwen"]["endpoint"].startswith("https://")
-            or not configs["deepseek"]["endpoint"].startswith(
-                "https://api.deepseek.com/")):
+            or qhost not in {"dashscope.aliyuncs.com"}
+            and not (qhost and qhost.endswith(".maas.aliyuncs.com"))
+            or dhost != "api.deepseek.com"):
         raise Hold("MODEL_OR_ENDPOINT_HOLD")
     return {
         "schema": CONFIG_SCHEMA,
@@ -135,6 +140,53 @@ def inspect(out: Path, source: dict) -> dict:
     }
 
 
+def call_provider(endpoint: str, model: str, provider: str,
+                  key: str, prompt: str, timeout: int,
+                  json_mode: bool) -> dict:
+    """Single stateless call, with DeepSeek V4.1 thinking explicitly disabled."""
+    body = {
+        "model": model,
+        "messages": [
+            {"role": "system", "content": ai.REVIEW_INSTRUCTIONS},
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0,
+        "max_tokens": 1600,
+        "stream": False,
+    }
+    if provider == "deepseek":
+        body["thinking"] = {"type": "disabled"}
+    if json_mode:
+        body["response_format"] = {"type": "json_object"}
+    req = urllib.request.Request(
+        endpoint,
+        data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json",
+                 "Authorization": "Bearer " + key},
+        method="POST",
+    )
+    opener = urllib.request.build_opener(
+        urllib.request.ProxyHandler({}), ai.NoRedirect)
+    try:
+        with opener.open(req, timeout=timeout) as response:
+            raw = response.read(ai.MAX_REPLY_BYTES + 1)
+    except (urllib.error.HTTPError, urllib.error.URLError,
+            TimeoutError, OSError, ValueError) as exc:
+        raise ai.Hold("MODEL_TRANSPORT_HOLD") from exc
+    if len(raw) > ai.MAX_REPLY_BYTES:
+        raise ai.Hold("MODEL_REPLY_OVERSIZE")
+    try:
+        payload = json.loads(raw)
+        message = payload["choices"][0]["message"]
+        content = message["content"]
+        if not isinstance(content, str):
+            raise TypeError("empty content")
+        result = json.loads(content)
+    except (ValueError, TypeError, KeyError, IndexError) as exc:
+        raise ai.Hold("MODEL_JSON_INVALID") from exc
+    return ai.parse_model_response(result)
+
+
 def execute(args: argparse.Namespace) -> dict:
     source, packets, _ = load_input(args.review_dir)
     cfg = config_payload(
@@ -180,9 +232,10 @@ def execute(args: argparse.Namespace) -> dict:
             attempts += 1
             conf = cfg["reviewer_configs"][model]
             try:
-                answer = ai.model_request(
-                    conf["endpoint"], conf["model"], os.environ[KEY_ENV[model]],
-                    prompt, args.timeout, args.json_mode)
+                answer = call_provider(
+                    conf["endpoint"], conf["model"], model,
+                    os.environ[KEY_ENV[model]], prompt,
+                    args.timeout, args.json_mode)
             except ai.Hold as exc:
                 failed[str(exc)] += 1
                 continue
