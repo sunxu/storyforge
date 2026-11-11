@@ -2,7 +2,7 @@
 
 本轮 Owner 明确要求取消1~2条限制，直接生成完整25条原始 GLM B25 输入。此次是独立25条全量重审，而非12条失败样本子集重试。旧的13 VERIFIED/12 TECHNICAL_FAILURE 历史回执不可覆盖；新运行独立保存完整原始文本 Snapshot 和新的 Checkpoint/技术回执。
 
-代码固定提交：40b1389818e5368b1e110a57a31cbe5d338c1870。模型：zai-org/GLM-4-32B-0414；revision 8dea913c41b543527c2860fb6f3c15c202f24aeb；输入25条 SHA 01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9。
+代码固定提交：6f2a71f12f3a2408b4082d6f8b86e69e0b5cf384。模型：zai-org/GLM-4-32B-0414；revision 8dea913c41b543527c2860fb6f3c15c202f24aeb；输入25条 SHA 01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9。
 
 ## 2026-11-11 核验修复：全量模式与旧 probe 守卫冲突
 
