@@ -150,7 +150,8 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
                  limit: int, batch_size: int, max_model_len: int,
                  max_output_tokens: int, wall_seconds: int,
                  resume: bool, hf_tokenizer: object, vllm: object,
-                 min_remaining_seconds: int = 120) -> dict:
+                 min_remaining_seconds: int = 120,
+                 attempt_diagnostic_guard: object = None) -> dict:
     if (limit < 1 or limit > len(rows) or batch_size < 1 or batch_size > 100
             or max_model_len != 32768 or max_output_tokens != 2400
             or not 120 <= wall_seconds <= 43200):
@@ -271,6 +272,10 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
                     raise IsolationHold("MISSING_VALID_CHECKPOINT_HOLD")
                 successes += 1
                 emit("CASE_VERIFIED", position=pos)
+            # Fail before attempting a second paid case if the opt-in
+            # observer never saw the real validator's first case.
+            if attempt_diagnostic_guard is not None:
+                attempt_diagnostic_guard(pos)
             attempted += 1
             if attempted % batch_size == 0 or attempted == limit:
                 emit("BATCH_COMPLETE", attempted=attempted,
