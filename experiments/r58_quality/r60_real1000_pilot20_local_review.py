@@ -7,10 +7,13 @@ An explicit execution and private-egress opt-in is required for API requests.
 from __future__ import annotations
 
 import argparse
+import errno
 import hashlib
 import json
 import os
 import re
+import socket
+import ssl
 import sys
 import urllib.error
 import urllib.parse
@@ -141,6 +144,79 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
         return None
 
 
+# Do not emit provider messages or arbitrary error strings. Only known
+# diagnostic categories (or numeric HTTP statuses) may enter SAFE output.
+HTTP_PROVIDER_CATEGORIES = {
+    "authentication_error": "AUTH",
+    "authorization_error": "AUTH",
+    "permission_error": "PERMISSION",
+    "invalid_request_error": "INVALID_REQUEST",
+    "rate_limit_error": "RATE_LIMIT",
+    "overloaded_error": "OVERLOADED",
+    "not_found_error": "NOT_FOUND",
+    "insufficient_quota": "QUOTA",
+    "billing_error": "BILLING",
+    "model_not_found": "MODEL_NOT_FOUND",
+}
+
+
+def safe_http_code(exc: urllib.error.HTTPError) -> str:
+    status = exc.code
+    if type(status) is not int or not 300 <= status <= 599:
+        return "PROXY_HTTP_UNKNOWN_HOLD"
+    category = None
+    # Reading capped bytes only for fixed-enum diagnostics; never print
+    # provider bodies, error messages, URLs or arbitrary values.
+    try:
+        payload = json.loads(exc.read(8193))
+        detail = payload.get("error", payload)
+        if isinstance(detail, dict):
+            for field in ("type", "code"):
+                value = detail.get(field)
+                if type(value) is str and value in HTTP_PROVIDER_CATEGORIES:
+                    category = HTTP_PROVIDER_CATEGORIES[value]
+                    break
+    except (ValueError, TypeError, AttributeError, OSError):
+        pass
+    return (f"PROXY_HTTP_{status}_{category}_HOLD" if category
+            else f"PROXY_HTTP_{status}_HOLD")
+
+
+def safe_transport_code(exc: Exception) -> str:
+    reason = exc.reason if isinstance(exc, urllib.error.URLError) else exc
+    # Traverse only exception objects, never stringify them: transport
+    # exception text can contain private hostnames or other identifiers.
+    seen = set()
+    while isinstance(reason, BaseException) and id(reason) not in seen:
+        seen.add(id(reason))
+        if isinstance(reason, (socket.timeout, TimeoutError)):
+            return "PROXY_TIMEOUT_HOLD"
+        if isinstance(reason, ssl.SSLCertVerificationError):
+            return "PROXY_TLS_CERT_VERIFY_HOLD"
+        if isinstance(reason, ssl.SSLError):
+            return "PROXY_TLS_HANDSHAKE_HOLD"
+        if isinstance(reason, socket.gaierror):
+            return "PROXY_DNS_HOLD"
+        if isinstance(reason, ConnectionRefusedError):
+            return "PROXY_CONNECTION_REFUSED_HOLD"
+        if isinstance(reason, ConnectionResetError):
+            return "PROXY_CONNECTION_RESET_HOLD"
+        if isinstance(reason, BrokenPipeError):
+            return "PROXY_CONNECTION_BROKEN_PIPE_HOLD"
+        if isinstance(reason, OSError):
+            code = reason.errno
+            if code in (errno.ENETUNREACH, errno.EHOSTUNREACH):
+                return "PROXY_NETWORK_UNREACHABLE_HOLD"
+            if code == errno.ECONNREFUSED:
+                return "PROXY_CONNECTION_REFUSED_HOLD"
+            if code == errno.ECONNRESET:
+                return "PROXY_CONNECTION_RESET_HOLD"
+            if code == errno.ETIMEDOUT:
+                return "PROXY_TIMEOUT_HOLD"
+        reason = reason.__cause__ or reason.__context__
+    return "PROXY_CONNECTION_OTHER_HOLD"
+
+
 def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
     key = os.environ.get(API_KEY_ENV)
     if not key:
@@ -154,25 +230,19 @@ def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
             "Accept": "application/json",
         },
     )
-    # Match the previously verified R60 4Router client: honor the
-    # Owner Mac's standard HTTPS proxy configuration, but never redirect
-    # a bearer token or private story text to another origin.
+    # Keep network behavior unchanged; classify failures without proxy
+    # speculation, private response bodies, or secrets in SAFE output.
     opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler(), NoRedirect,
+        urllib.request.ProxyHandler({}), NoRedirect,
     )
     try:
         with opener.open(request, timeout=timeout) as response:
             raw = response.read(MAX_REPLY_BYTES + 1)
     except urllib.error.HTTPError as exc:
-        # HTTP status alone is safe. Never expose response body, headers,
-        # service error messages, credentials, or request details.
-        if type(exc.code) is int and 300 <= exc.code <= 599:
-            raise Hold(f"PROXY_HTTP_{exc.code}_HOLD") from None
-        raise Hold("PROXY_HTTP_UNKNOWN_HOLD") from None
-    except urllib.error.URLError as exc:
-        raise Hold("PROXY_CONNECTION_OR_TLS_HOLD") from None
-    except (TimeoutError, OSError, ValueError) as exc:
-        raise Hold("PROXY_CONNECTION_OR_TLS_HOLD") from None
+        raise Hold(safe_http_code(exc)) from None
+    except (urllib.error.URLError, TimeoutError, OSError,
+            ValueError) as exc:
+        raise Hold(safe_transport_code(exc)) from None
     if len(raw) > MAX_REPLY_BYTES:
         raise Hold("PROXY_RESPONSE_OVERSIZE_HOLD")
     try:
@@ -341,6 +411,11 @@ SAFE_REASON_CODES = frozenset({
     "PACKET_POSITION_DUPLICATE_HOLD", "PROXY_ENDPOINT_HOLD",
     "PROXY_API_KEY_REQUIRED", "PROXY_TRANSPORT_OR_HTTP_HOLD",
     "PROXY_HTTP_UNKNOWN_HOLD", "PROXY_CONNECTION_OR_TLS_HOLD",
+    "PROXY_TIMEOUT_HOLD", "PROXY_TLS_CERT_VERIFY_HOLD",
+    "PROXY_TLS_HANDSHAKE_HOLD", "PROXY_DNS_HOLD",
+    "PROXY_CONNECTION_REFUSED_HOLD", "PROXY_CONNECTION_RESET_HOLD",
+    "PROXY_CONNECTION_BROKEN_PIPE_HOLD", "PROXY_NETWORK_UNREACHABLE_HOLD",
+    "PROXY_CONNECTION_OTHER_HOLD",
     "PROXY_RESPONSE_OVERSIZE_HOLD", "PROXY_TRUNCATED_HOLD",
     "PROXY_EMPTY_HOLD", "PROXY_RESPONSE_SCHEMA_HOLD",
     "CONFIG_HOLD", "FOREIGN_FILE_HOLD", "NONCONTIGUOUS_HOLD",
@@ -356,7 +431,11 @@ SAFE_REASON_CODES = frozenset({
 def safe_reason_code(exc: Exception) -> str:
     if isinstance(exc, (Hold, reviewer.Hold)):
         code = str(exc)
-        if re.fullmatch(r"PROXY_HTTP_[345][0-9]{2}_HOLD", code):
+        if re.fullmatch(
+            r"PROXY_HTTP_[345][0-9]{2}(?:_(?:AUTH|PERMISSION|INVALID_REQUEST|"
+            r"RATE_LIMIT|OVERLOADED|NOT_FOUND|QUOTA|BILLING|MODEL_NOT_FOUND))?_HOLD",
+            code,
+        ):
             return code
         return code if code in SAFE_REASON_CODES else "REVIEW_CONTRACT_HOLD"
     if isinstance(exc, FileNotFoundError):
