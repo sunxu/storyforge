@@ -36,9 +36,8 @@ def _candidates(quote: str, body: str):
         for shift in (-2, -1, 0, 1, 2):
             lo = start + shift
             length = len(quote) + delta
-            if 0 <= lo < len(body) and 0 < length <= 300:
-                if lo + length <= len(body):
-                    found.add(body[lo:lo + length])
+            if 0 <= lo < len(body) and 0 < length <= 300 and lo + length <= len(body):
+                found.add(body[lo:lo + length])
     return found
 
 
@@ -74,16 +73,23 @@ def reconcile_quote(quote: object, bodies: list[str]) -> str | None:
     for candidate in candidates:
         if not candidate.strip() or candidate == quote:
             continue
-        if _edit_distance_bounded(quote, candidate) > MAX_EDITS:
+        distance = _edit_distance_bounded(quote, candidate)
+        if distance > MAX_EDITS:
             continue
         if any(quote.count(char) != candidate.count(char)
                for char in PROTECTED_CHARS):
             continue
         if SequenceMatcher(None, quote, candidate, autojunk=False).ratio() < MIN_RATIO:
             continue
-        accepted.append(candidate)
-    # Distinct even-near-identical candidates are ambiguous: no guesses.
-    return accepted[0] if len(accepted) == 1 else None
+        accepted.append((distance, candidate))
+    if not accepted:
+        return None
+    min_distance = min(distance for distance, _ in accepted)
+    best = {candidate for distance, candidate in accepted
+            if distance == min_distance}
+    # Equal-edit alternatives are ambiguous; a unique closest exact source
+    # substring is the only permissible candidate.
+    return next(iter(best)) if len(best) == 1 else None
 
 
 def make_reconciler(worker: object, emit: object):
