@@ -12,7 +12,6 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-import r60_real1000_qd20_disagreement_packet_cpu as evidence
 import r60_real1000_qd20_evidence_review_cpu as review
 import r60_real_private_batch as private
 
@@ -41,9 +40,11 @@ def reconcile(source: dict, blind: dict, decisions: dict) -> dict:
             or sum(cross[(CATEGORIES[0], d)] for d in DECISIONS) != 2
             or sum(cross[(CATEGORIES[1], d)] for d in DECISIONS) != 1
             or sum(cross[(c, d)] for c in CATEGORIES for d in DECISIONS) != 3
-            or sum(cross[(c, d)] for c in CATEGORIES)
-            != verified["review_decisions"].get(d)
-            for d in DECISIONS):
+            or any(
+                sum(cross[(c, d)] for c in CATEGORIES)
+                != verified["review_decisions"].get(d)
+                for d in DECISIONS
+            )):
         raise Hold("REVIEW_CATEGORY_BINDING_HOLD")
     return {
         "schema": SCHEMA,
