@@ -64,9 +64,9 @@ def _label(node: ast.AST) -> str:
 def _named_field_refs(node: ast.AST) -> list[str]:
     found = set()
     for part in ast.walk(node):
-        if isinstance(part, ast.Constant) and isinstance(part.value, str):
-            if part.value in WATCH:
-                found.add(part.value)
+        if (isinstance(part, ast.Constant) and isinstance(part.value, str)
+                and part.value in WATCH):
+            found.add(part.value)
     return sorted(found)
 
 
