@@ -1,5 +1,27 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 S1 Claude/Codex真实逐位置对账PASS：优先争议裁决
+
+Owner Mac SAFE：合成测试 `7 passed in 0.10s`，实际 `S1_CODEX_CLAUDE_COMPARE_PASS__OWNER_ADJUDICATION_PENDING`，20/20按冻结盲审输入与Owner跨表对齐；`private_comparison_written=true`，本轮模型推理0；Codex 20条PASS9/HOLD8/REJECT3；Claude有效18条PASS4/HOLD10/REJECT4 + 2条低分PASS原始冲突。
+
+**18条有效Claude的交叉表（Claude行，Codex列）：**
+
+| Claude \ Codex | PASS | HOLD | REJECT |
+| --- | ---: | ---: | ---: |
+| PASS | 3 | 1 | 0 |
+| HOLD | 4 | 5 | 1 |
+| REJECT | 1 | 1 | 2 |
+
+一致10/18 (55.6%)，判定分歧8/18；全部20条严重flag向量不一致4条。原Claude2条低分PASS模型冲突不计入18条判定一致率。注意严重flag分歧可能与判定分歧/冲突位置重叠，**不能将8+2+4直接算14条不同样本**。目前Owner最终裁决0、Quality-v1/训练准入0。没有任何可靠真值证明谁更准确，不能仅根据Codex PASS多而降低Rubric，不得用多数票直接准入。
+
+**下一阶段S1.4（CPU优先，最小审核范围）**：
+1. 先从已生成的Owner私有对账文件 `$HOME/.local/share/storyforge/r60/private/r60-real1000-s1-codex-claude-compare-v1/R60_S1_CODEX_CLAUDE_COMPARE_PRIVATE.json` 计算去重争议集合：`decision_disagreement` 或 `severe_flag_disagreement`；2个Claude冲突均必须包含。仅输出SAFE聚合，不向聊天/GitHub复制私有逐样本原文、逐案理由或crosswalk。
+2. 分配审查优先级：一是所有严重flag不一致与Claude REJECT→Codex非REJECT；二是Claude HOLD→Codex PASS、其它判定分歧；三是2条原始PASS低于冻结分数门槛冲突。重合样本仅审核一次。即使两模型一致，仍需评估误判风险与随机抽样验证，不把一致当真值。
+3. 对每个争议案例用冻结原始三条历史+目标文本，核对两模型具体理由所引用的证据是否真实存在，特别区分“局部可见事实违背”与“未知历史System/世界卡”，依据Gold72、P2-A/P2-B的严重语义证据规范给出`SUPPORTED / NOT_SUPPORTED / INSUFFICIENT_CONTEXT`。保留每条原始模型意见，不覆盖。
+4. 如使用Codex做**第三轮证据仲裁**，须将其标记为非独立（已经参与第二模型审核），不得报告为第三个独立Reviewer；须用隔离的新会话和明确的裁决任务，记录引用与理由，结果仍然是AI建议。若需独立第三模型或人类最终裁决，另行明确审核方式和费用。只在证据可靠后确定Quality-v1准入。
+5. 在争议分析达到稳定结论前，S2对既有Sample100剩余80条的低成本模型付费审核保持HOLD；不做SFT GPU。
+
+
 ## 2026-11-11 S1 Codex独立AI复核20/20结构PASS，开始Claude逐位置对账
 
 Owner返回`S1_CODEX20_SCHEMA_CHECK_PASS`：20条独立Codex结果，PASS=9/HOLD=8/REJECT=3、`rubric_conflicts=0`，`independent_owner_adjudications=0`、`train_admitted=0`。Codex 是第二AI意见，绝不自动当成人工Owner参考真值；未经逐条对账，不能由Codex PASS多于Claude推断Claude错误。
