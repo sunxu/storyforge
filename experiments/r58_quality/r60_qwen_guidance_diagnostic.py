@@ -26,7 +26,7 @@ def cpu_guidance_probe(worker: object, vllm: object,
     try:
         guided = sampling_module.GuidedDecodingParams(
             json=schema, backend="guidance")
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - redact arbitrary vLLM error messages
         emit("GUIDANCE_CPU_GUIDED_PARAMS_HOLD",
              exception_class=type(exc).__name__)
         raise DiagnosticHold("GUIDANCE_GUIDED_PARAMS_API_HOLD") from None
@@ -35,7 +35,7 @@ def cpu_guidance_probe(worker: object, vllm: object,
     try:
         vllm.SamplingParams(
             temperature=0, max_tokens=2400, guided_decoding=guided)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - redact arbitrary vLLM error messages
         emit("GUIDANCE_CPU_SAMPLING_PARAMS_HOLD",
              exception_class=type(exc).__name__)
         raise DiagnosticHold("GUIDANCE_SAMPLING_PARAMS_API_HOLD") from None
@@ -148,7 +148,7 @@ def main() -> int:
     except DiagnosticHold as exc:
         emit_safe("GUIDANCE_CPU_PREFLIGHT_HOLD", reason_code=str(exc))
         return 42
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - SAFE metadata only
         emit_safe("GUIDANCE_CPU_PREFLIGHT_HOLD",
                   reason_code="GUIDANCE_CPU_UNEXPECTED_HOLD",
                   exception_class=safe_exception_stage(exc))
