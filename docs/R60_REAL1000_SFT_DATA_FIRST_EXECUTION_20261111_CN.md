@@ -1,5 +1,20 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 S0 Owner Mac真实验收PASS（优先于先前“S0待执行”计划）
+
+Owner提供真实只读验收回执（未外发新数据、无模型推理、无GPU）：
+
+- 31项CPU合成测试：`31 passed in 0.09s`。
+- 已冻结扩展候选：`EXPANSION_TARGET_REACHED__NOT_ADMITTED`，6条seed + 994条新候选=1000，20私有页、扫描400故事；无数据库修改。
+- 全池技术画像：`REAL1000_TECHNICAL_PROFILE_PASS__QUALITY_PENDING`，1000/1000有3条真实历史消息和已完成assistant目标，285个不同故事，最多每故事4条，长度分布545/380/75（300–499/500–999/1000–1500）。
+- S0交叉绑定：`S0_PILOT20_SAMPLE100_AUDIT_PASS__ADJUDICATION_PENDING`；冻结Sample100=100，长度层55/38/7；Pilot20=20，长度层11/8/1、同Sample100确定性绑定PASS，18有效模型回执+2冲突、模型PASS/HOLD/REJECT=4/10/4；无新模型推理，模型/质量入训均0。
+- **已知后续阻塞**：历史实际System `historical_system_not_verified=1000`、世界组件 `world_component_unverified=1000`、R50排除 `r50_exclusion_unverified=1000`。均属于待核验的训练准备边界，不代表1000条不合格；不能因为技术PASS而宣称正式训练准入。
+
+**S0判定：PASS，仅针对已规定的冻结池、技术画像、Sample100→Pilot20与回执完整性。S1独立参考仍为0，质量未定案。**
+
+**S1下一步零费用工作**：复用 `r60_real1000_s0_audit_cpu.py` 的 `--private-report-dir`，在Owner私有新目录create-only生成20行模型意见/六维评分台账；该台账包含Claude原判定，必须在独立盲审期间隔离保存，不交给Reviewer。独立复核仅读取既有冻结Pilot20原始输入（不含Claude原判），并复用Gold72/P2-A/P2-B规则证据，不重复调用4Router、不再次抽样100。待取得独立裁决后才做模型原判/参考标签对照和误判率计算。没有提交新的付费审核授权，S2/S3继续HOLD。
+
+
 ### 2026-11-11 S0 CPU 验收工具已实现（Owner 私有真实数据尚未执行）
 
 已增加 `experiments/r58_quality/r60_real1000_s0_audit_cpu.py` 与 `tests/test_r60_real1000_s0_audit_cpu.py`。复用旧审核器的配置/20条私有回执完整性校验（原始hash、位置、模型、冻结packet sha、原始decision/Rubric），并把Pilot20的20个`sample100_position`及长度层同已冻结Sample100清单、确定性SHA排名精确对齐；验证100条清单位置唯一、排序、55/38/7配额。可选`--private-report-dir`在Owner私有位置新建且不覆盖20行结构化台账：每个位置、模型原判定、六维分数、严重flag、低于门槛维度、独立裁决状态；不包含小说正文/模型逐案理由。标准输出始终只输出SAFE计数。
