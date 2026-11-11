@@ -10,8 +10,8 @@ import json
 import sys
 from pathlib import Path
 
-import r60_real1000_double_pass_context_cpu as context
 import r60_real1000_double_pass_candidates_cpu as double
+import r60_real1000_double_pass_context_cpu as context
 import r60_real1000_pilot20_local_review as pilot
 import r60_real_private_batch as private
 
