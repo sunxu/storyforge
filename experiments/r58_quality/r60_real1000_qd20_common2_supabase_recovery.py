@@ -191,12 +191,14 @@ def run(args: argparse.Namespace) -> dict:
     if args.output_dir.exists() or args.output_dir.is_symlink():
         raise Hold("OUTPUT_EXISTS_HOLD")
     # Validate local evidence BEFORE any DB access.
-    baseline = context.run(args)
+    baseline_args = argparse.Namespace(**vars(args))
+    baseline_args.output_dir = args.blind_dir
+    baseline = context.run(baseline_args)
     if baseline["candidate_count"] != 2 or baseline["strict_independent_pass"] != 2:
         raise Hold("BASELINE_CONTEXT_HOLD")
     pool, _ = quality.frozen_pool(args.expand_dir)
     _cfg, packets, _ = pilot.get_state(args.review_dir)
-    private.private_dir(args.output_dir.parent, create=False) if False else None
+    private.private_dir(args.blind_dir, create=False)
     # read securely as already checked in context.run
     blind = json.loads(private.read_private(
         args.blind_dir / "R60_QD20_COMMON2_BLIND_PRIVATE.json", 200000))
