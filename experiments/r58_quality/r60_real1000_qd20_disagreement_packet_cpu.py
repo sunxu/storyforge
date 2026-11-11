@@ -51,10 +51,11 @@ def prepare(old_rows: list[dict], receipts: dict,
         )
         if old_pass:
             old_passes.add(pos)
-        if (pos, "qwen") in receipts and (pos, "deepseek") in receipts:
-            if (receipts[(pos, "qwen")]["result"]["decision"] == "PASS"
-                    and receipts[(pos, "deepseek")]["result"]["decision"] == "PASS"):
-                new_passes.add(pos)
+        if ((pos, "qwen") in receipts
+                and (pos, "deepseek") in receipts
+                and receipts[(pos, "qwen")]["result"]["decision"] == "PASS"
+                and receipts[(pos, "deepseek")]["result"]["decision"] == "PASS"):
+            new_passes.add(pos)
     disagreements = sorted(old_passes ^ new_passes)
     cases = []
     for pos in disagreements:
