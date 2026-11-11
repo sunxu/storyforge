@@ -247,7 +247,16 @@ def parse_proxy_response(raw: bytes) -> dict:
         raise Hold("PROXY_CONTENT_STRUCTURE_HOLD")
     if not content.strip():
         raise Hold("PROXY_EMPTY_HOLD")
-    # Only a complete, standalone Markdown JSON fence is normalized.\n    # Do not extract arbitrary braces or accept explanatory text outside it.\n    stripped = content.strip()\n    if stripped.startswith("```"):\n        match = re.fullmatch(r"```(?:json|JSON)\\r?\\n([\\s\\S]*?)\\r?\\n```", stripped)\n        if not match:\n            raise Hold("PROXY_MODEL_JSON_HOLD")\n        content = match.group(1)\n    try:\n        model_json = json.loads(content)
+    # Only a complete standalone JSON fence is normalized.
+    # Never extract arbitrary braces or accept text outside that fence.
+    stripped = content.strip()
+    if stripped.startswith("```"):
+        match = re.fullmatch(r"```(?:json|JSON)\r?\n([\s\S]*?)\r?\n```", stripped)
+        if not match:
+            raise Hold("PROXY_MODEL_JSON_HOLD")
+        content = match.group(1)
+    try:
+        model_json = json.loads(content)
     except (ValueError, TypeError):
         raise Hold("PROXY_MODEL_JSON_HOLD") from None
     try:
