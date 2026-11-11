@@ -152,7 +152,8 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
                  resume: bool, hf_tokenizer: object, vllm: object,
                  min_remaining_seconds: int = 120,
                  attempt_diagnostic_guard: object = None,
-                 stop_after_attempts: int | None = None) -> dict:
+                 stop_after_attempts: int | None = None,
+                 generation_snapshot_store: object = None) -> dict:
     if (limit < 1 or limit > len(rows) or batch_size < 1 or batch_size > 100
             or max_model_len != 32768 or max_output_tokens != 2400
             or not 120 <= wall_seconds <= 43200):
@@ -212,7 +213,8 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
                 raise
             engine_count += 1
             emit("REAL_ENGINE_READY", engine_init_count=engine_count)
-        return engine
+        return (generation_snapshot_store.wrap(engine)
+                if generation_snapshot_store is not None else engine)
 
     hf_tokenizer.from_pretrained = staticmethod(load_tokenizer)
     vllm.LLM = load_engine
@@ -239,6 +241,8 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
             if file.exists() or (output / failure_name(pos)).exists():
                 raise IsolationHold("POSITION_ALREADY_EXISTS_HOLD")
             emit("CASE_START", position=pos)
+            if generation_snapshot_store is not None:
+                generation_snapshot_store.start(pos, rows[pos - 1])
             try:
                 worker.inference(rows, output, model, revision, pos, 1,
                                  max_model_len, max_output_tokens,
