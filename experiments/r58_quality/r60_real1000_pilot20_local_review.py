@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -153,15 +154,25 @@ def proxy_request(endpoint: str, model: str, prompt: str, timeout: int) -> dict:
             "Accept": "application/json",
         },
     )
+    # Match the previously verified R60 4Router client: honor the
+    # Owner Mac's standard HTTPS proxy configuration, but never redirect
+    # a bearer token or private story text to another origin.
     opener = urllib.request.build_opener(
-        urllib.request.ProxyHandler({}), NoRedirect,
+        urllib.request.ProxyHandler(), NoRedirect,
     )
     try:
         with opener.open(request, timeout=timeout) as response:
             raw = response.read(MAX_REPLY_BYTES + 1)
-    except (urllib.error.HTTPError, urllib.error.URLError, OSError,
-            TimeoutError, ValueError) as exc:
-        raise Hold("PROXY_TRANSPORT_OR_HTTP_HOLD") from exc
+    except urllib.error.HTTPError as exc:
+        # HTTP status alone is safe. Never expose response body, headers,
+        # service error messages, credentials, or request details.
+        if type(exc.code) is int and 300 <= exc.code <= 599:
+            raise Hold(f"PROXY_HTTP_{exc.code}_HOLD") from None
+        raise Hold("PROXY_HTTP_UNKNOWN_HOLD") from None
+    except urllib.error.URLError as exc:
+        raise Hold("PROXY_CONNECTION_OR_TLS_HOLD") from None
+    except (TimeoutError, OSError, ValueError) as exc:
+        raise Hold("PROXY_CONNECTION_OR_TLS_HOLD") from None
     if len(raw) > MAX_REPLY_BYTES:
         raise Hold("PROXY_RESPONSE_OVERSIZE_HOLD")
     try:
@@ -329,6 +340,7 @@ SAFE_REASON_CODES = frozenset({
     "PACKETS_SCHEMA_HOLD", "PACKET_ENTRY_HOLD", "PACKETS_QUOTA_HOLD",
     "PACKET_POSITION_DUPLICATE_HOLD", "PROXY_ENDPOINT_HOLD",
     "PROXY_API_KEY_REQUIRED", "PROXY_TRANSPORT_OR_HTTP_HOLD",
+    "PROXY_HTTP_UNKNOWN_HOLD", "PROXY_CONNECTION_OR_TLS_HOLD",
     "PROXY_RESPONSE_OVERSIZE_HOLD", "PROXY_TRUNCATED_HOLD",
     "PROXY_EMPTY_HOLD", "PROXY_RESPONSE_SCHEMA_HOLD",
     "CONFIG_HOLD", "FOREIGN_FILE_HOLD", "NONCONTIGUOUS_HOLD",
@@ -344,6 +356,8 @@ SAFE_REASON_CODES = frozenset({
 def safe_reason_code(exc: Exception) -> str:
     if isinstance(exc, (Hold, reviewer.Hold)):
         code = str(exc)
+        if re.fullmatch(r"PROXY_HTTP_[345][0-9]{2}_HOLD", code):
+            return code
         return code if code in SAFE_REASON_CODES else "REVIEW_CONTRACT_HOLD"
     if isinstance(exc, FileNotFoundError):
         return "PRIVATE_FILE_MISSING_HOLD"
