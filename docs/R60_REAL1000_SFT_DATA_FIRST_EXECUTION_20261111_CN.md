@@ -1,5 +1,14 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 QD20三条分歧盲审交叉核验真实PASS：新组合独有双PASS均未获独立PASS
+
+Owner Mac真实SAFE `QD20_THREE_REVIEW_CROSSWALK_VALIDATED__NOT_GROUND_TRUTH`：三条新旧双PASS分歧已通过CPU交叉绑定和逐字引用核验。新Qwen+DeepSeek独有双PASS2条，独立盲审结果`PASS=0,HOLD=1,REJECT=1`；旧Claude+Codex独有双PASS1条，独立盲审`PASS=0,HOLD=1,REJECT=0`。合计`PASS=0,HOLD=2,REJECT=1`，3/3引文逐字匹配；无数据库/API/GPU，Quality-v1和训练准入仍为0。独立性系审稿人自报，不是已独立证明，且该3条外的样本未在本轮证据核查，不能将其意见称为质量真值。
+
+**工程决策：不直接将Qwen+DeepSeek用于剩余980条大规模筛选**。新组合2个额外双PASS未获盲审核准，1条明确被REJECT，现存明显误放风险；样本仅2条，不可外推总体假阳性率。旧组合独有1条亦HOLD，故Claude+Codex也并非质量真值，不能简单更换模型组合。已有14条配对中两组共同双PASS的另外2条**尚未参与本轮三条分歧盲审**，不得自动认为真实质量PASS或直接入训。
+
+**下一步更短路径**：用相同的独立、逐字证据协议检验两组共同双PASS的2条（仅新证据包和盲审，不额外模型调用）；若得不到独立PASS，则暂停当前模型投票准入路线，重新校准Rubric与上下文完整性，转向真实历史数据结构及世界组件的质量问题。若通过，也仅形成质量候选，还需要训练上下文和其它未闭合条件；Owner未授权GPU或自动入训。保留现存20条试验、34份有效收据、5份失败快照及3条盲审证据不变；不能改写冻结历史试验结果。
+
+
 ## 2026-11-11 QD20三条独立盲审严格验证PASS：全部无PASS，但类别交叉分析待运行
 
 Owner Mac真实验收：`QD20_THREE_BLIND_EVIDENCE_REVIEWS_VALIDATED__ADMISSION_HOLD`，3条盲审结果经原文逐字引用验证全部有效（exact_quote 3/3），`review_decisions={PASS:0,HOLD:2,REJECT:1}`；没有API、数据库、GPU；自报独立性尚未客观证明，质量真值未建立，Quality-v1与train均0。注意这是**3条新旧双PASS分歧样本的聚合结果**，还不能直接断言新组合独有2条分别是HOLD还是REJECT，也不能用此判定整个新组合误放2条。另已修正Owner Mac中quote_source的格式问题，审核决定和原文不应随意修改。
