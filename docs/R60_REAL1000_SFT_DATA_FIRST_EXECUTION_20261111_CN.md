@@ -1,5 +1,28 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Owner 目录复用要求及4Router最新无费用回执
+
+Owner 明确要求：**后续不要每次新建 worktree**；优先在已经存在、刚刚完成验收的同一工作目录中执行，不覆盖或重置并行Agent的工作树，也不为了每条SAFE回执重复`fetch`/`worktree add`/`init`。如果确实需要更新代码，只在确认目标工作目录无未提交改动、没有其他Agent占用后原地同步，或复用现有专用工作树；必须新建隔离目录时先说明原因。
+
+Owner 最新`inspect`：`PILOT20_LOCAL_REVIEW_PARTIAL__OWNER_ADJUDICATION_PENDING`、`total_cases=20`、`model_reviewed=0`、`remaining=20`、`private_data_egress=false`，专用 `CLI_PROXY_API_KEY_PRESENT=yes`。说明本地配置、私有20条审阅包与绑定校验已通过，尚未向4Router发出真实评分请求，故此前无原因`HOLD`不能认作质量拒绝。**不重新init、不删除目录，也不重新抽样。**
+
+在刚才成功`inspect`的工作目录下，且Owner明确确认本批新的20条正文外发及API费用后，直接执行：
+
+```bash
+set -euo pipefail
+BASE="$HOME/.local/share/storyforge/r60/private"
+REVIEW="experiments/r58_quality/r60_real1000_pilot20_local_review.py"
+OUT="$BASE/r60-real1000-pilot20-4router-v1"
+test -f "$REVIEW"
+test -n "${CLI_PROXY_API_KEY:-}"
+python3 "$REVIEW" advance --output-dir "$OUT" --max-cases 5 \
+  --execute --allow-private-data-egress
+python3 "$REVIEW" inspect --output-dir "$OUT"
+```
+
+首批5条仅视为模型ADVISORY，不自动训练准入。技术失败保留历史文件并回传SAFE `stage`/`reason_code`，勿盲目重复付费。未获单独批准不执行外发。
+
+
 ## 2026-11-11 4Router 技术 HOLD 定位修复（最新）
 
 Owner 的 `PILOT20_LOCAL_REVIEW_HOLD` 回执没有包含子原因，**不能解释成模型 REJECT 或样本不合格**。经代码审查发现 `advance` 曾接受 `OPENAI_API_KEY` 作为存在性检查，但真正的HTTP请求只读取 `CLI_PROXY_API_KEY`；并且所有错误均折叠成无原因 HOLD。现已统一要求 `CLI_PROXY_API_KEY`，并增加严格白名单 `stage` / `reason_code`，绝不回显私有报错字符串、URL、Key、文本或返回正文。
