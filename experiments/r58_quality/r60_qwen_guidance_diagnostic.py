@@ -107,6 +107,46 @@ class TracedEngine:
         return result
 
 
+
+@contextlib.contextmanager
+def trace_reviewer_stages(worker: object, emit: object):
+    """Trace frozen reviewer calls without changing their return or exceptions.
+
+    No private values, paths, exception strings, or traceback are emitted.
+    Instrumentation is strictly scoped and restored even on a failure.
+    """
+    targets = (
+        ("validate_response", "VALIDATE_RESPONSE"),
+        ("repair_generated_quotes", "QUOTE_REPAIR"),
+        ("write_checkpoint", "CHECKPOINT_WRITE"),
+    )
+    originals = {}
+
+    def wrapped(original, label):
+        def call(*args, **kwargs):
+            emit(label + "_START")
+            try:
+                result = original(*args, **kwargs)
+            except Exception as exc:
+                emit(label + "_FAILURE",
+                     exception_class=safe_exception_stage(exc))
+                raise
+            emit(label + "_PASS")
+            return result
+        return call
+
+    try:
+        for name, label in targets:
+            original = getattr(worker, name, None)
+            if callable(original):
+                originals[name] = original
+                setattr(worker, name, wrapped(original, label))
+        yield
+    finally:
+        for name, original in originals.items():
+            setattr(worker, name, original)
+
+
 def probe_runner_from_local_file(
     path: Path, *, vllm: object, sampling_module: object,
     emit: object,
