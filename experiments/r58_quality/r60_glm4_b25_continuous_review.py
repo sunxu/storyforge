@@ -333,6 +333,8 @@ def main() -> int:
     parser.add_argument("--wall-seconds", type=int, default=5400)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--isolate-technical-failures", action="store_true")
+    parser.add_argument("--retry-baseline-dir", type=Path)
+    parser.add_argument("--quote-shape-diagnostic", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -342,6 +344,13 @@ def main() -> int:
         integrity = verify_local_manifest(args.local_dir)
         runner = Path(__file__).resolve().parent / "runner.py"
         expected_count = verify_runner_and_input(runner, args.input)
+        if args.retry_baseline_dir is not None and (
+            not args.isolate_technical_failures or args.resume
+            or args.case_limit != 12 or not args.quote_shape_diagnostic
+        ):
+            raise Hold("RETRY_ARGS_HOLD")
+        if args.quote_shape_diagnostic and not args.isolate_technical_failures:
+            raise Hold("SHAPE_DIAGNOSTIC_REQUIRES_ISOLATION_HOLD")
         if args.case_limit > expected_count:
             raise Hold("REVIEW_SCOPE_INVALID")
         spec = importlib.util.spec_from_file_location("r60_frozen_reviewer", runner)
@@ -368,16 +377,32 @@ def main() -> int:
         if args.isolate_technical_failures:
             from r60_review_isolation_core import run_isolated
 
-            result = run_isolated(
-                worker, rows, args.output_dir, args.local_dir,
-                model=MODEL, revision=REV,
-                limit=args.case_limit, batch_size=args.batch_size,
-                max_model_len=args.max_model_len,
-                max_output_tokens=args.max_output_tokens,
-                wall_seconds=args.wall_seconds, resume=args.resume,
-                hf_tokenizer=AutoTokenizer, vllm=vllm)
-            # All attempted with technical failures is an analysis artifact,
-            # NOT a complete validated review / training admission.
+            retry_rows = rows
+            if args.retry_baseline_dir is not None:
+                from r60_glm4_b25_retry_contract import verify_baseline
+
+                retry_rows, _original_positions = verify_baseline(
+                    worker, rows, args.retry_baseline_dir, args.output_dir)
+                emit("RETRY_SUBSET_READY", retry_count=len(retry_rows),
+                     selected_from_original_25=True)
+            original_checkpoint_record = worker.checkpoint_record
+            if args.quote_shape_diagnostic:
+                from r60_glm4_b25_retry_contract import quote_shape_diagnostic
+
+                worker.checkpoint_record = quote_shape_diagnostic(worker, emit)
+            try:
+                result = run_isolated(
+                    worker, retry_rows, args.output_dir, args.local_dir,
+                    model=MODEL, revision=REV,
+                    limit=args.case_limit, batch_size=args.batch_size,
+                    max_model_len=args.max_model_len,
+                    max_output_tokens=args.max_output_tokens,
+                    wall_seconds=args.wall_seconds, resume=args.resume,
+                    hf_tokenizer=AutoTokenizer, vllm=vllm)
+            finally:
+                worker.checkpoint_record = original_checkpoint_record
+            # 12 retry positions are local indices mapped by the verified
+            # baseline; original 13 validated checkpoints are untouched.
             return 0 if result["all_verified"] else 42
         result = run_batches(
             worker, rows, args.output_dir, args.local_dir,
