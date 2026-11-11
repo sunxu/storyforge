@@ -553,7 +553,7 @@ def read_progress(folder: Path, config: dict, packets: dict) -> dict:
         "train_admitted": 0,
         "database_accessed": False,
         "gpu_job_started": False,
-        "private_data_egress": bool(receipts),
+        "private_data_egress": bool(processed),
         "private_values_emitted": False,
     }
 
