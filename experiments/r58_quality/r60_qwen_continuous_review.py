@@ -152,6 +152,7 @@ def run_batches(worker: object, rows: list[dict], output: Path,
                 max_model_len: int, max_output_tokens: int,
                 wall_seconds: int, resume: bool,
                 hf_tokenizer: object, vllm: object,
+                diagnose_generation: bool = False,
                 min_remaining_seconds: int = 120) -> dict:
     if len(rows) not in (25, 1000) or not 1 <= limit <= len(rows):
         raise Hold("REVIEW_SCOPE_INVALID")
@@ -220,6 +221,10 @@ def run_batches(worker: object, rows: list[dict], output: Path,
             emit("REAL_ENGINE_READY", engine_init_count=1)
         else:
             emit("REAL_ENGINE_REUSED", engine_init_count=state["engine_calls"])
+        if diagnose_generation:
+            from r60_qwen_guidance_diagnostic import TracedEngine
+
+            return TracedEngine(state["engine"], emit)
         return state["engine"]
 
     def guarded_write(path: Path, record: dict) -> None:
@@ -257,10 +262,20 @@ def run_batches(worker: object, rows: list[dict], output: Path,
                  already_completed=state["completed"])
             before = state["completed"]
             try:
-                original_inference(
-                    rows, output, MODEL, REV, start, this_batch,
-                    max_model_len, max_output_tokens,
-                    max(min_remaining_seconds, int(remaining)))
+                if diagnose_generation:
+                    import vllm.sampling_params as sampling_module
+                    from r60_qwen_guidance_diagnostic import trace_generation_stages
+
+                    with trace_generation_stages(vllm, sampling_module, emit):
+                        original_inference(
+                            rows, output, MODEL, REV, start, this_batch,
+                            max_model_len, max_output_tokens,
+                            max(min_remaining_seconds, int(remaining)))
+                else:
+                    original_inference(
+                        rows, output, MODEL, REV, start, this_batch,
+                        max_model_len, max_output_tokens,
+                        max(min_remaining_seconds, int(remaining)))
             except Exception as exc:
                 # Only immutable, reviewed errors from the frozen verifier;
                 # never expose arbitrary exception string or private payload.
@@ -320,6 +335,7 @@ def main() -> int:
     parser.add_argument("--wall-seconds", type=int, default=5400)
     parser.add_argument("--resume", action="store_true")
     parser.add_argument("--isolate-technical-failures", action="store_true")
+    parser.add_argument("--diagnose-generation-stages", action="store_true")
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -352,6 +368,8 @@ def main() -> int:
         emit("CONTINUOUS_REVIEW_READY", input_count=expected_count,
              target=args.case_limit, batch_size=args.batch_size,
              integrity_mode=integrity, model_pinned=True)
+        if args.isolate_technical_failures and args.diagnose_generation_stages:
+            raise Hold("DIAGNOSTIC_AND_ISOLATION_COMBINATION_HOLD")
         if args.isolate_technical_failures:
             from r60_review_isolation_core import run_isolated
 
@@ -372,7 +390,8 @@ def main() -> int:
             max_model_len=args.max_model_len,
             max_output_tokens=args.max_output_tokens,
             wall_seconds=args.wall_seconds, resume=args.resume,
-            hf_tokenizer=AutoTokenizer, vllm=vllm)
+            hf_tokenizer=AutoTokenizer, vllm=vllm,
+            diagnose_generation=args.diagnose_generation_stages)
         return 0 if result["complete"] else 42
     except Exception as exc:  # noqa: BLE001 - only bounded status, no input
         emit("CONTINUOUS_REVIEW_HOLD",
