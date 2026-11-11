@@ -1,5 +1,16 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 真实Qwen/DeepSeek与Claude/Codex CPU对照结果：双PASS交集为2，缺7份审核
+
+Owner Mac 真实复核结果：`pytest 8 passed`；`diagnose`只读验证现存33份有效收据，14组完整配对，新组合已完成配对双PASS4；历史旧版请求没有持久化失败快照，`private_failed_model_snapshots=0`，`model_inference_calls_this_run=0`，这属预期而非失败记录无效。
+
+`r60_real1000_qd20_compare_cpu.py` 实际SAFE：旧Claude+Codex全20条双PASS3；新Qwen+DeepSeek在14组完整配对中双PASS4；**交集2**；新组合独有双PASS2；旧组合独有双PASS1；旧3条没有任何缺失的新审核；其余6个样本存在缺失，合计7份provider收据。两组AI判断**都不是Owner质量真值**，尤其不能把“同为双PASS”当成真实合格或训练准入。正式Quality-v1、train admitted仍0。
+
+**下一步决策：** 停止重复运行已通过的8项合成检查；保持已有33份create-only收据，优先将旧新交集2条作为一致性候选观察组，新组合独有2条与旧组合独有1条作为最小3条争议证据检查对象。不要因新组合PASS更多就断言质量更好，也不要在新组合未完成20对之前宣称最终双PASS率。Qwen在18份有效审核中给出PASS9/HOLD0/REJECT9，与DeepSeek的PASS5/HOLD9/REJECT1差异较大，应检查是否存在隐式的分类倾向和打分冲突。
+
+补齐范围限于**缺失的7份provider审核**，可使用已升级的live runner `run --max-calls 7 --json-mode --authorize-remote-private-review`，仅尝试缺失项、不重发成功的33份；但`max-calls`是最多7次网络尝试、不是保证补成7份。新失败的API原始文本会作为受控Owner私有快照create-only保存，之后由`diagnose` CPU离线重放。若再出现评分门槛/严重flag冲突，不得自动改判PASS，也不应连续盲目付费重试；先返回SAFE以决定针对性修复。Owner已授权同一冻结20条两家官方API测试，但并未授权扩大到80/980条或GPU训练。
+
+
 ## 2026-11-11 Qwen+DeepSeek 20案例真实40调用进展：33份有效，14对完整，7份缺失
 
 Owner真实回执：首次`run max_calls=2`请求2次、成功Qwen REJECT 1份、DeepSeek `QUALITY_FLOOR_DECISION_INCONSISTENT=1`；第二次`run max_calls=40`实际请求39次，成功32份有效收据，失败分布`MODEL_JSON_INVALID=2`、`MODEL_TRANSPORT_HOLD=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=3`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。累计41次API尝试、有效33份（Qwen 18、DeepSeek 15）、14个样本双模型均完成，其中Qwen+DeepSeek双PASS 4；剩余有效审核7份。DeepSeek有效结果HOLD9/PASS5/REJECT1，Qwen HOLD0/PASS9/REJECT9。**4条双PASS是14个完整配对中的结果，不能直接与旧Claude+Codex总20条3双PASS比较精确率；不代表训练准入。** 当前禁止无约束反复重试，无独立Owner真值。
