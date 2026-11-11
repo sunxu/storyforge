@@ -1,5 +1,35 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 共同双PASS两条：从质量候选进入真实训练上下文CPU证据核验（代码已备好、Owner未执行）
+
+Owner最近真实SAFE：`QD20_COMMON2_BLIND_REVIEW_VALIDATED__NOT_GROUND_TRUTH`，共同双PASS2条独立审核PASS2/2、精确引用2/2，尚无客观审稿独立性证明，`quality_v1_admitted=0/train_admitted=0`。此前5条候选总盲审PASS2/HOLD2/REJECT1；不能将2/2当总体质量准确率。
+
+基于仓库已有`r60_real1000_double_pass_context_cpu.py`及已完成的旧三条候选检查，新增**独立的共同两条**CPU检查脚本`experiments/r58_quality/r60_real1000_qd20_common2_context_cpu.py`及合成测试`tests/test_r60_real1000_qd20_common2_context_cpu.py`，防止将旧Claude/Codex三条候选误当新四模型共同PASS的两条。读取并重新验证冻结1000真实记录来源池、技术profile、Sample100和20条Pilot冻结状态，重算S1 Claude/Codex+Qwen/DeepSeek严格双PASS交集2条、重验已独立PASS2条及逐字引文；从私有内容精确绑定对应Real1000目标与三消息，排查目标ID重复、故事数、target字符长度桶、历史真实System、世界组件证据、完整R50排除字段，以及已知五个R50故事是否重叠。**已知R50五世界无重叠仅能称部分排除；若上下文字段不存在、UNKNOWN或凭推测出现，均不能当完整证据。** 公开只输出聚合计数（无ID、正文、路径），不访问DB/API/GPU，也不产生训练准入。
+
+在Owner Mac专用worktree同步GitHub CI PASS固定PIN后运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_common2_context_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_qd20_common2_context_cpu.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --s1-blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$BASE/r60-real1000-qwen-deepseek20-live-v1" \
+  --output-dir "$BASE/r60-real1000-qd20-common2-blind-v1" \
+  --decisions "$BASE/r60-real1000-qd20-common2-blind-v1/R60_QD20_COMMON2_DECISIONS_PRIVATE.json"
+```
+
+预期质量与源绑定成功时`QD20_COMMON2_SOURCE_BINDING_PASS__TRAIN_CONTEXT_HOLD`、`candidate_count=2`、`strict_independent_pass=2`、`train_admitted=0`、`r50_complete_exclusion_verified=false`。如果出现技术HOLD，不可臆造证据或放松校验；修复输入和绑定后重跑CPU。真实System/世界组件若无可证实来源不宜把构造的System当历史实际发送值。
+
+下一步等Owner SAFE，根据缺失证据提出**最短路径补证据**，不自动请求Supabase或启动Hugging Face任务。若无法补足真实历史上下文和完整R50隔离，应保留两条为质量候选并继续寻找真正可训练的历史记录，而不是花GPU训练不足2条数据。
+
+
 ## 2026-11-11 QD20五条严格双PASS候选独立盲审核查完成：两条共同PASS获独立PASS
 
 Owner Mac最新真实SAFE：`QD20_COMMON2_BLIND_REVIEW_VALIDATED__NOT_GROUND_TRUTH`，两组共同双PASS的2条样本，独立盲审`PASS=2,HOLD=0,REJECT=0`，两条引文逐字精确匹配；没有模型调用、数据库、GPU或公开私有值。审稿人独立性仅自报、并未客观证明，`quality_ground_truth_established=false`、`quality_v1_admitted=0`、`train_admitted=0`。
