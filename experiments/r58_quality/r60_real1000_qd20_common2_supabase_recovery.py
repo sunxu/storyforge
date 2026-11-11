@@ -46,8 +46,8 @@ def select_sources(cases: list[dict], packets: list[dict],
         if type(i) is not int or not 1 <= i <= 1000:
             raise Hold("SOURCE_POSITION_HOLD")
         c = cases[i - 1]
-        if (c["history_messages"] != item["history_messages"]
-                or c["target_text"] != item["assistant_target"]):
+        if (c.get("history_messages") != item["history_messages"]
+                or c.get("target_text") != item["assistant_target"]):
             raise Hold("SOURCE_TEXT_BINDING_HOLD")
         src = c["source"]
         if not all(isinstance(src.get(key), str) and src[key] for key in (
