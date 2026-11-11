@@ -433,6 +433,10 @@ def main() -> int:
                      "checkpoint_name", "inference"):
             if not callable(getattr(worker, attr, None)):
                 raise Hold("REVIEWER_API_HOLD")
+        if args.snapshot_primary_only and not isinstance(
+            getattr(worker, "QuoteValidationError", None), type
+        ):
+            raise Hold("FROZEN_PRIMARY_ONLY_API_HOLD")
         rows = worker.read_input(args.input)
         if len(rows) != expected_count:
             raise Hold("REVIEW_INPUT_COUNT_HOLD")
