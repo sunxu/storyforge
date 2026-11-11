@@ -1,5 +1,31 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+### 2026-11-11 S0 CPU 验收工具已实现（Owner 私有真实数据尚未执行）
+
+已增加 `experiments/r58_quality/r60_real1000_s0_audit_cpu.py` 与 `tests/test_r60_real1000_s0_audit_cpu.py`。复用旧审核器的配置/20条私有回执完整性校验（原始hash、位置、模型、冻结packet sha、原始decision/Rubric），并把Pilot20的20个`sample100_position`及长度层同已冻结Sample100清单、确定性SHA排名精确对齐；验证100条清单位置唯一、排序、55/38/7配额。可选`--private-report-dir`在Owner私有位置新建且不覆盖20行结构化台账：每个位置、模型原判定、六维分数、严重flag、低于门槛维度、独立裁决状态；不包含小说正文/模型逐案理由。标准输出始终只输出SAFE计数。
+
+**约束：** S0工具的`sample100_pilot20_exact_binding`只证明Sample100 manifest与Pilot20的确定性子集匹配、Pilot20的回执绑定；**不独立证明源1000池未被修改**。须另外运行既有冻结池 `inspect` 和 `r60_real1000_technical_profile_cpu.py`（其当前 CLI 不含本工具自动执行）；1000池对账必须先有真实Owner SAFE，不可仅凭本工具宣布整个S0 Gate通过。快照/模型API不参与该过程。
+
+在现有且无并行Agent占用的Owner固定工作目录中，先同步通过CI的当前分支具体PIN，然后：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_s0_audit_cpu.py tests/test_r60_real1000_pilot20_local_review.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_s0_audit_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --output-dir "$BASE/r60-real1000-pilot20-4router-v1"
+# 仅在上行PASS后，才选择新目录生成S1私有工作台账：
+python3 experiments/r58_quality/r60_real1000_s0_audit_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --output-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --private-report-dir "$BASE/r60-real1000-s0-audit-v1"
+```
+
+预期模型advisory PASS=4/HOLD=10/REJECT=4、2冲突、Sample100=100、Pilot20=20、所有入训计数0。以上CPU命令不需4Router key、不外发、不启动HF、不产生模型API费用；如任何HOLD先检查SAFE错误码，不覆盖任何结果。若私有S0报告目录已存在，不应重复`--private-report-dir`覆盖它。
+
+
 ## 2026-11-11 权威后续计划：复用校准成果 → 补全冻结Sample100 → 分层筛选Real1000
 
 > **本节优先于本文早期阶段性建议。计划制定并不授权任何新的远端推理/私有外发、收费HF CPU/GPU、数据库读写、训练准入或训练。** 不新建worktree；复用Owner既有 `~/workspace/storyforge-r60-4router-review`。本节仅限Real1000数据质量主线，不改变并行GLM/Qwen Agent状态和文件。
