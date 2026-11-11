@@ -1,5 +1,40 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+
+## 2026-11-11 P1 Pilot20 审核协议切换至 4Router Claude（最新）
+
+已沿用 2026-11-09 在 R60 P2-A 上成功运行的 4Router/Claude Opus 5.5 协议：**顶层 `system`、`messages` 只含 `user`、不传 `temperature` 和 `response_format`**。复用现有 `r60_real_ai_dual_review.py` 的六维 Rubric 与严格 JSON 校验，当前20条审阅包、原始1000条冻结池和sample100均不改变。
+
+`experiments/r58_quality/r60_real1000_pilot20_local_review.py` **保留历史文件名，但现只接受 `https://4router.ai` 及其HTTPS子域名**。Key 仅从 Owner Mac 环境变量 `CLI_PROXY_API_KEY`（兼容原客户端 `OPENAI_API_KEY`）读取；不会写入配置文件或日志。申请调用时同时要求 `--execute --allow-private-data-egress`，否则拒绝调用。无明示批准不得调用，**此前 Development20 向 4Router 外发授权不覆盖本批新20条**。
+
+待 Owner 明确确认向4Router外发这批20条正文及支付API费用后，用当前CI PASS PIN的独立worktree执行：
+
+```bash
+set -euo pipefail
+umask 077
+BASE="$HOME/.local/share/storyforge/r60/private"
+REVIEW="experiments/r58_quality/r60_real1000_pilot20_local_review.py"
+OUT="$BASE/r60-real1000-pilot20-4router-v1"
+# 以下两项在当前 Owner Shell 中设置，禁止回显API Key：
+: "${CLI_PROXY_API_KEY:?set the key in your private shell environment}"
+: "${CLI_PROXY_BASE_URL:?set the previously verified 4Router HTTPS base URL}"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+test ! -e "$OUT"
+python3 "$REVIEW" init \
+  --packets-dir "$BASE/r60-real1000-pilot20-packets-v1" \
+  --output-dir "$OUT" \
+  --base-url "$CLI_PROXY_BASE_URL" --model claude-opus-5-5
+# 付费 / 真实正文外发；必须由 Owner 单独批准后手动运行：
+python3 "$REVIEW" advance --output-dir "$OUT" \
+  --max-cases 5 --execute --allow-private-data-egress
+python3 "$REVIEW" inspect --output-dir "$OUT"
+```
+
+`init` 不调用API，只持久化受约束的endpoint、模型、输入文件SHA；`advance` 最多5条，单条成功即创建不可覆盖0600回执，失败直接HOLD，不自动重试、不会记成质量REJECT；`inspect` 不外发，只统计ADVISORY PASS/HOLD/REJECT和严重标记。若5条全REJECT或严重标记异常高，先核验原因，不自动扩大15条。远程API的外发事实与本地GPU/HF GPU不同；代码不提交任何HF Job。即使模型报告PASS，正式训练准入仍为0。
+
+**下文旧 localhost / Ollama 执行片段已被本节替代，不要用旧参数 `--endpoint` / `--json-mode`。**
+
+
 ## 2026-11-11 首批20条审阅包 Owner 验收 PASS，开始单模型试点
 
 Owner Mac 对 `b6b25fb8c7a8a7db62db24375f323d23c63edabe` 报告：`4 passed in 0.06s`、`PILOT20_REVIEW_PACKETS_READY__NO_REVIEWS`、`cases_prepared=20`、`sample100_verified=true`、长度配额11/8/1；原始私有审阅包 `r60-real1000-pilot20-packets-v1` 已创建，尚无质量评分。
