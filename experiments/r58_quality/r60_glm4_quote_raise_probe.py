@@ -83,6 +83,8 @@ def inspect_runner(path: Path) -> dict:
             "validate_response", "checkpoint_record", "inference",
         }:
             continue
+        function_name = function.name
+
         def visit(node: ast.AST, guards: tuple[ast.AST, ...]) -> None:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 return
@@ -96,7 +98,7 @@ def inspect_runner(path: Path) -> dict:
                 return
             if isinstance(node, ast.Raise) and _raise_code(node):
                 sites.append({
-                    "function": function.name,
+                    "function": function_name,
                     "guard_category": _category(guards[-1] if guards else None),
                     "guard_depth": len(guards),
                 })
