@@ -1,5 +1,33 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 Owner保守筛选正式回执PASS：3条新旧双PASS分歧证据包
+
+Owner Mac真实结果：`QD20_CONSERVATIVE_QUALITY_SCREEN_CLOSED__TRAIN_ADMISSION_HOLD`，已保存34/40份模型审核，有完整双模型审核14/20条，未完成6个样本（6份provider审核缺失），未补造任何HOLD/PASS。新Qwen+DeepSeek严格双PASS候选4，旧Claude+Codex双PASS3，两组交集2；新独有2、旧独有1。既存模型失败快照5份CPU重放仍严格无效，模型调用0，Quality-v1和训练准入0，R50完整排除和训练上下文仍未核验。
+
+**决策**：该20条Pilot按保守质量候选筛选关闭，后续不得自动发相同Prompt追求40/40。保留冻结34份成功审核和5份失败快照。只对3条*新旧组合双PASS不同*的样本做小范围证据核查：新独有2条优先检查是否被模型误放，旧独有1条检查拒绝原因；不能将模型一致投票冒充Owner质量真值，也不要求恢复已关闭的11条旧审核分歧仲裁工作流。
+
+已增加 `experiments/r58_quality/r60_real1000_qd20_disagreement_packet_cpu.py` 与合成测试 `tests/test_r60_real1000_qd20_disagreement_packet_cpu.py`。新工具读Owner私有冻结S1原始交叉表、已验收Pilot20、Qwen+DeepSeek34份SHA绑定成功收据，挑选精确三条不一致候选，create-only生成Owner私有证据包：原始三消息、目标回复、旧模型决策/评分/严重标志、新模型严格审核JSON和中文理由，默认`owner_evidence_decision=NOT_REVIEWED`。只在SAFE回执披露数量，不显示位置、故事ID或原文；不调用API/DB/GPU，不自动评定训练准入。
+
+Mac工作树同步CI通过的新PIN后，执行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_disagreement_packet_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_qd20_disagreement_packet_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --live-dir "$BASE/r60-real1000-qwen-deepseek20-live-v1" \
+  --output-dir "$BASE/r60-real1000-qd20-disagreement-evidence-v1"
+```
+
+预期`QD20_DISAGREEMENT_PACKET_READY__OWNER_EVIDENCE_PENDING`、待核对样本3、新独有2/旧独有1、模型调用0、训练准入0。输出包不可上传公开GitHub。后续若Owner选择AI执行核对，应另外提供独立审查协议与证据方案；该脚本不自行生成评审真值。
+
+
 ## 2026-11-11 Qwen+DeepSeek补缺结果：34有效/40，停止同提示词盲重试，保守关闭质量筛选
 
 Owner真实新回执：补缺7次API请求仅成功1份新收据，历史33→34份（Qwen18：PASS9/HOLD0/REJECT9；DeepSeek16：PASS5/HOLD10/REJECT1），完整双模型配对仍14/20，新组合严格双PASS仍4。剩余6份provider审核缺失。失败6次：`MODEL_JSON_INVALID=1`、`MODEL_TRANSPORT_HOLD=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=3`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。5份新的失败原始响应已持久化为Owner私有不可变快照并用CPU重放，**5/5仍然不满足既定验证器**；传输失败没有可保存的模型文字。当前回执`QD20_FAILURE_SNAPSHOTS_CPU_REPLAY__NO_MODEL_CALLS`说明回放成功，不等于模型意见有效。**禁止再对相同缺失项反复付费重试**；如另设计提示词或修复协议，须作为新版本试验并保留冻结旧结果。
