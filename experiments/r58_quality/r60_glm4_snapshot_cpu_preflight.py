@@ -18,7 +18,12 @@ from types import SimpleNamespace
 from r60_generation_snapshot import GenerationSnapshotStore
 from r60_glm4_literal_repair_cpu_probe import synthetic_punctuation_case
 from r60_glm4_snapshot_replay import (
-    B25_SHA, MODEL, REV, SCHEMA, frozen, load_original_rows, summarize,
+    MODEL,
+    REV,
+    SCHEMA,
+    frozen,
+    load_original_rows,
+    summarize,
 )
 
 
