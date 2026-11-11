@@ -196,3 +196,30 @@ def test_secondary_snapshot_rejected_when_frozen_api_missing(tmp_path, monkeypat
         replay.summarize(SimpleNamespace(
             runner=runner, input=source, snapshots=snapshots,
             output=tmp_path / "report.safe.json"))
+
+
+def test_full25_uses_original_positions_and_complete_25_inventory(tmp_path, monkeypatch):
+    runner, source, snapshots, rows, store = _fixture(tmp_path, monkeypatch)
+    for pos in range(1, 26):
+        _save(store, pos, rows[pos - 1], _payload("窗外还在下雨，他缓缓说出了真相!"))
+    result = replay.summarize(SimpleNamespace(
+        runner=runner, input=source, snapshots=snapshots,
+        output=tmp_path / "full25-report.safe.json", full25=True))
+    assert result["replayed_cases"] == 25
+    assert result["scope"] == "FULL25"
+    assert [case["original_position"] for case in result["cases"]] == list(range(1, 26))
+    assert [case["retry_position"] for case in result["cases"]] == list(range(1, 26))
+    assert result["quality_v1_admitted"] == 0
+    assert result["training_authorized"] is False
+
+
+def test_full25_replay_rejects_missing_primary_middle_case(tmp_path, monkeypatch):
+    runner, source, snapshots, rows, store = _fixture(tmp_path, monkeypatch)
+    _save(store, 1, rows[0], _payload("原文中不存在的引用文字"))
+    store.start(2, rows[1])
+    # No primary for 2; a file for 3 must fail the contiguous inventory check.
+    _save(store, 3, rows[2], _payload("原文中不存在的引用文字"))
+    with pytest.raises(replay.ReplayHold, match="SNAPSHOT_NONCONTIGUOUS_HOLD"):
+        replay.summarize(SimpleNamespace(
+            runner=runner, input=source, snapshots=snapshots,
+            output=tmp_path / "full25-report.safe.json", full25=True))
