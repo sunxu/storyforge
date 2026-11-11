@@ -1,5 +1,31 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 4Router 真实首条 HTTP 200 后 Schema HOLD：离线快照诊断修复
+
+Owner 使用已验证的 `https://4router.ai/v1/chat/completions`、8192-token预算，实际首条 `advance` 返回 `PROXY_RESPONSE_SCHEMA_HOLD`；`inspect` 仍 0/20、无有效评分。这是响应解析/字段审核技术失败，**不能标记案例为REJECT**。此前合成同协议案例曾 HTTP200、`finish_reason=stop`、1402 completion tokens、Rubric_VALID，表明格式并非普遍失效。本次HTTP200响应正文**当时未存档，不能无费用追溯原因**。
+
+已修正审核器：细分 `PROXY_ENVELOPE_JSON_HOLD`（非JSON外壳）、`PROXY_ENVELOPE_STRUCTURE_HOLD`、`PROXY_CONTENT_STRUCTURE_HOLD`、`PROXY_MODEL_JSON_HOLD`（模型正文非JSON，Markdown围栏也仍属于无效JSON）、`PROXY_RUBRIC_SCHEMA_HOLD`（JSON可解析但未满足冻结Rubric），保留 `PROXY_TRUNCATED_HOLD` 和 `PROXY_EMPTY_HOLD`。只有严格通过原Rubric才写正式评分回执。模型返回但未通过解析时，新增仅在本机Owner私有根下、创建后不覆盖的原始响应快照（`$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1-response-diagnostics-v1/R60_PILOT20_FAILED_0001_PRIVATE.json`），限原本HTTP响应120000字节；**不能上传、粘贴、打印或提交此私有文件**。用CPU离线检查快照结构来修复，不依赖反复付费调用。由于原20条output目录有严格外来文件禁入规则，诊断快照保存在**同级独立私有目录**，不会破坏原`inspect`。
+
+执行固定worktree无费用验证：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+WORK="$HOME/workspace/storyforge-r60-4router-review"
+PIN="b97ff44798484bd22a4d603026ee0e89924ef631"
+test -z "$(git -C "$WORK" status --porcelain)" || exit 42
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" cat-file -e "$PIN^{commit}"
+git -C "$WORK" switch --detach "$PIN"
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect \
+ --output-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"
+```
+
+下一次真实`advance --max-cases 1`须Owner重新确认私有案例外发和费用；如果再次发生Schema HOLD，记录其细分类别并在Owner Mac上私密离线分析新快照。**不可因为0份成功评分推断之前请求未外发或未计费。** 目前不启动GPU、数据库或训练，不新增worktree，不重新初始化。 
+
+
 ## 2026-11-11 4Router 首条真实审核返回 length — 输出预算修复（最新）
 
 Owner 已将现有审核配置改为实测可用 `https://4router.ai/v1/chat/completions`，经 `inspect` 验证原私有20条审阅包配置可读；真实 `advance --max-cases 1` 返回 `PROXY_TRUNCATED_HOLD`，`model_reviewed=0`、`quality_v1_admitted=0`，原因是模型回复 `finish_reason=length`。这证明请求至少已获模型响应，不是初始HTTP断连；**可能已经发生私有数据外发及API计费**，不能按 `model_reviewed=0` 推断无费用或无外发。
