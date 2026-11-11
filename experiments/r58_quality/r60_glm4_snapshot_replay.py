@@ -68,7 +68,7 @@ def _quote_error(worker: object, exc: Exception) -> bool:
     return isinstance(kind, type) and isinstance(exc, kind)
 
 
-def load_original_rows(path: Path, worker: object) -> list[dict]:
+def load_original_rows(path: Path, worker: object, *, full25: bool = False) -> list[dict]:
     if path.is_symlink() or not path.is_file() or path.stat().st_size > 64 * 1024 * 1024:
         raise ReplayHold("INPUT_FILE_HOLD")
     source = path.read_bytes()
@@ -82,10 +82,10 @@ def load_original_rows(path: Path, worker: object) -> list[dict]:
         raise ReplayHold("INPUT_COUNT_HOLD")
     for row in rows:
         worker.validate_input(row)
-    return [rows[pos - 1] for pos in FAILED_POSITIONS]
+    return rows if full25 else [rows[pos - 1] for pos in FAILED_POSITIONS]
 
 
-def validate_inventory(directory: Path) -> list[int]:
+def validate_inventory(directory: Path, *, full25: bool = False) -> list[int]:
     verify_directory(directory, fresh=False)
     slots = {}
     for item in directory.iterdir():
@@ -95,7 +95,7 @@ def validate_inventory(directory: Path) -> list[int]:
         if not match:
             raise ReplayHold("SNAPSHOT_NAME_HOLD")
         position, slot = (int(x) for x in match.groups())
-        if not 1 <= position <= 12 or slot not in (1, 2):
+        if not 1 <= position <= (25 if full25 else 12) or slot not in (1, 2):
             raise ReplayHold("SNAPSHOT_POSITION_HOLD")
         slots.setdefault(position, set()).add(slot)
     if not slots or set(slots) != set(range(1, max(slots) + 1)):
@@ -181,8 +181,9 @@ def summarize(args) -> dict:
             or args.output.parent.is_symlink()):
         raise ReplayHold("PATH_SCOPE_HOLD")
     worker = frozen(args.runner)
-    rows = load_original_rows(args.input, worker)
-    positions = validate_inventory(args.snapshots)
+    full25 = getattr(args, "full25", False)
+    rows = load_original_rows(args.input, worker, full25=full25)
+    positions = validate_inventory(args.snapshots, full25=full25)
     runner_sha256 = hashlib.sha256(args.runner.read_bytes()).hexdigest()
     cases = []
     counts = {"original_frozen": Counter(), "literal_experiment": Counter()}
@@ -206,7 +207,7 @@ def summarize(args) -> dict:
         counts["literal_experiment"][literal["technical_status"]] += 1
         cases.append({
             "retry_position": position,
-            "original_position": FAILED_POSITIONS[position - 1],
+            "original_position": position if full25 else FAILED_POSITIONS[position - 1],
             "saved_generations": 1 + int(secondary is not None),
             "original_frozen": original,
             "literal_experiment": literal,
@@ -215,6 +216,7 @@ def summarize(args) -> dict:
         "schema": SCHEMA, "status": "CPU_SNAPSHOT_REPLAY_COMPLETE__NO_ADMISSION",
         "private_values_emitted": False, "gpu_started": False,
         "replayed_cases": len(cases),
+        "scope": "FULL25" if full25 else "RETRY12",
         "original_frozen": dict(sorted(counts["original_frozen"].items())),
         "literal_experiment": dict(sorted(counts["literal_experiment"].items())),
         "cases": cases,
@@ -227,6 +229,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     for arg in ("runner", "input", "snapshots", "output"):
         parser.add_argument("--" + arg, type=Path, required=True)
+    parser.add_argument("--full25", action="store_true")
     args = parser.parse_args()
     try:
         result = summarize(args)
