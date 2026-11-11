@@ -1,5 +1,26 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 P20 第2条 PASS 后：自动隔离质量冲突、继续批量（CPU 合成验证）
+
+Owner 实测 `processed=2, model_reviewed=1, conflict_pending=1, remaining=18`：首条PASS低于冻结中文文笔门槛已隔离，第二条Claude审核有效PASS，训练准入依然0。原审核器每遇新的 `PROXY_PASS_BELOW_FLOOR_HOLD` 都会中断，需要手动将失败快照quarantine后再次开始，付费API调用效率低。
+
+新版运行器针对**当次真实API返回**、且原冻结Rubric严格证实为 `QUALITY_FLOOR_DECISION_INCONSISTENT` 的**唯一可自动恢复质量冲突**，在进程内带原模型对象生成不可覆盖的私有 `R60_PILOT20_CONFLICT_{position}_PRIVATE.json`，保存原判定PASS、原六维原分值、原理由、冻结包哈希/模型ID、固定冲突码；不构造伪PASS、不改模型原评分、不改训练准入。若分数满足冻结标准则仍以原有有效回执格式保存。两者逐位互斥，自动推进 `processed` 至下一条。
+
+其他技术故障（HTTP/超时/截断/非法JSON/模型字段异常/严重标志矛盾）仍**立即停止批次**；已完成的回执/隔离记录保持原样，不覆盖，不自动重试、不继续付费。原始HTTP回复仍仅按需在Owner本地独立私有诊断目录保留。历史首条手动隔离记录和第二条有效回执无须迁移、重评分或重复提交。
+
+批次最大值仍是 `MAX_CASES_PER_CALL=5`，剩余18条可按 5/5/5/3 分段运行。先在原固定worktree更新到最新经过 CI 验证的提交、跑无费用测试及inspect；如果之前某条计费请求失败但模型响应存在私有快照，先考虑本地replay/quarantine，避免不必要的重复付费。**只有Owner明确继续允许新一轮真实样本外发/计费，才运行 `advance --execute --allow-private-data-egress`**。失败时根据SAFE原因码停止分析，不盲目对同一失败样本反复提交。
+
+```bash
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+REVIEW="experiments/r58_quality/r60_real1000_pilot20_local_review.py"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"
+python3 "$REVIEW" inspect --output-dir "$OUT"
+# Owner另行许可真实外发与费用后，再分批执行：
+# python3 "$REVIEW" advance --output-dir "$OUT" --max-cases 5 --execute --allow-private-data-egress
+```
+
+
 ## 2026-11-11 第1条质量冲突隔离，不阻断后续19条（最新）
 
 Owner的 `replay-snapshot --position 1 --confirm-snapshot-provenance` 实际返回 `PROXY_PASS_BELOW_FLOOR_HOLD`，与原模型`PASS`但`chinese_prose=3`低于冻结门槛4一致。**不得反复重发首条、修改模型评分、降低门槛、把技术HOLD计作REJECT或把原始PASS直接当作入训PASS。**
