@@ -1,5 +1,28 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 QD20三条独立盲审严格验证PASS：全部无PASS，但类别交叉分析待运行
+
+Owner Mac真实验收：`QD20_THREE_BLIND_EVIDENCE_REVIEWS_VALIDATED__ADMISSION_HOLD`，3条盲审结果经原文逐字引用验证全部有效（exact_quote 3/3），`review_decisions={PASS:0,HOLD:2,REJECT:1}`；没有API、数据库、GPU；自报独立性尚未客观证明，质量真值未建立，Quality-v1与train均0。注意这是**3条新旧双PASS分歧样本的聚合结果**，还不能直接断言新组合独有2条分别是HOLD还是REJECT，也不能用此判定整个新组合误放2条。另已修正Owner Mac中quote_source的格式问题，审核决定和原文不应随意修改。
+
+为回答“新组合独有2条具体被独立审核如何判断”，新增只读CPU `experiments/r58_quality/r60_real1000_qd20_evidence_reconcile_cpu.py` 和 `tests/test_r60_real1000_qd20_evidence_reconcile_cpu.py`。工具严格复核blind->source的sha绑定、精确引用、评分与严重标志，然后按旧新双PASS分歧类型汇总输出两个类别各自PASS/HOLD/REJECT数。输出不包含位置、正文、故事ID或理由，不写文件，不运行新模型，不做训练准入。
+
+Owner Mac在现有worktree同步通过CI固定PIN后运行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_qd20_evidence_reconcile_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+BLIND="$BASE/r60-real1000-qd20-disagreement-blind-v1"
+python3 experiments/r58_quality/r60_real1000_qd20_evidence_reconcile_cpu.py \
+  --source-dir "$BASE/r60-real1000-qd20-disagreement-evidence-v1" \
+  --blind-dir "$BLIND" \
+  --decisions "$BLIND/R60_QD20_DISAGREEMENT_DECISIONS_PRIVATE.json"
+```
+
+预期 `QD20_THREE_REVIEW_CROSSWALK_VALIDATED__NOT_GROUND_TRUTH`，`new_only_double_pass_reviews`恰有2条，`old_only_double_pass_reviews`恰有1条，合计PASS0/HOLD2/REJECT1。**此统计是基于一份盲审意见的对照，不是已验证的质量真值**。在拿到回执前，不扩大80/980数据筛选，也不重启SFT训练。
+
+
 ## 2026-11-11 分歧证据包已由Owner Mac真实生成；下一步独立盲审三条
 
 Owner SAFE：`QD20_DISAGREEMENT_PACKET_READY__OWNER_EVIDENCE_PENDING`：确切3条分歧材料（新Qwen+DeepSeek独有双PASS 2，旧Claude+Codex独有双PASS 1，完整新模型配对14），无API/DB/GPU，质量和训练准入均0。证据包仅标记`owner_evidence_decision=NOT_REVIEWED`，不代表已完成质量复核。
