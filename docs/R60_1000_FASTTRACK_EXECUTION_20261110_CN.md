@@ -12,7 +12,7 @@ Owner Mac CPU-only 命令：
 set -euo pipefail
 ROOT="$HOME/workspace/storyforge"
 PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
-PIN="79ede096f433e832d5dd284a03385aa1d02d1096"
+PIN="89231cfdc24543cfbdc0c15835fb9b73685ec305"
 git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
 python3 <(git -C "$ROOT" show "$PIN:experiments/r58_quality/r60_glm4_quote_raise_probe.py") \
   --runner "$PILOT/input_B_retry12_v1/runner.py"
