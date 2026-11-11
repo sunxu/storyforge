@@ -340,6 +340,7 @@ def main() -> int:
     parser.add_argument("--quote-literal-repair", action="store_true")
     parser.add_argument("--literal-probe-cases", type=int, default=0)
     parser.add_argument("--generation-snapshot-dir", type=Path)
+    parser.add_argument("--snapshot-probe-cases", type=int, default=0)
     parser.add_argument("--confirm-paid-gpu", action="store_true")
     args = parser.parse_args()
     try:
@@ -386,6 +387,18 @@ def main() -> int:
             raise Hold("LITERAL_PROBE_SCOPE_HOLD")
         if args.literal_probe_cases < 0:
             raise Hold("LITERAL_PROBE_SCOPE_HOLD")
+        if args.snapshot_probe_cases and (
+            not 1 <= args.snapshot_probe_cases <= 2
+            or args.generation_snapshot_dir is None
+            or args.literal_probe_cases
+            or args.resume
+        ):
+            raise Hold("SNAPSHOT_PROBE_SCOPE_HOLD")
+        if args.snapshot_probe_cases < 0 or (
+            args.generation_snapshot_dir is not None
+            and args.snapshot_probe_cases == 0
+        ):
+            raise Hold("SNAPSHOT_PROBE_SCOPE_HOLD")
         if args.generation_snapshot_dir is not None and (
             not args.isolate_technical_failures or args.retry_baseline_dir is None
             or args.resume or not args.quote_match_observer
@@ -486,7 +499,8 @@ def main() -> int:
                     wall_seconds=args.wall_seconds, resume=args.resume,
                     hf_tokenizer=AutoTokenizer, vllm=vllm,
                     attempt_diagnostic_guard=attempt_guard,
-                    stop_after_attempts=args.literal_probe_cases or None,
+                    stop_after_attempts=(args.snapshot_probe_cases
+                                         or args.literal_probe_cases or None),
                     generation_snapshot_store=snapshot_store)
             finally:
                 worker.checkpoint_record = original_checkpoint_record
