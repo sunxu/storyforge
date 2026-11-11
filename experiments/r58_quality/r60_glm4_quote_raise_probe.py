@@ -83,9 +83,8 @@ def inspect_runner(path: Path) -> dict:
             "validate_response", "checkpoint_record", "inference",
         }:
             continue
-        function_name = function.name
-
-        def visit(node: ast.AST, guards: tuple[ast.AST, ...]) -> None:
+        def visit(node: ast.AST, guards: tuple[ast.AST, ...],
+                  function_name: str = function.name) -> None:
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
                 return
             if isinstance(node, ast.If):
