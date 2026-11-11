@@ -1,5 +1,28 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 S0私有台账真实PASS，S1独立盲包准备工程
+
+Owner 最新SAFE：`S0_PILOT20_SAMPLE100_AUDIT_PASS__ADJUDICATION_PENDING`，`private_ledger_written=true`，20条位置/18有效评分/2冲突、冻结Sample100精确绑定全部保持PASS；`independent_reference_reviews=0`、`quality_v1_admitted=train_admitted=0`。20行台账包含Claude结论和六维评分，**仅可供事后对账，不得作为独立Reviewer输入或提前泄露给审核模型**。
+
+新增本地CPU-only脚本 `experiments/r58_quality/r60_real1000_s1_blind20_prepare_cpu.py` 和合成测试 `tests/test_r60_real1000_s1_blind20_prepare_cpu.py`。它先复用S0审计验证整个输入绑定，再从原始20条Pilot packets构造盲审输入，**只保留随机化盲ID、三条历史、目标回复和未裁决状态**；按冻结源指纹确定性打乱顺序，另行将blind ID↔原始位置、来源Sample100位置及输入hash写入Owner独立私有目录。盲审包中不含Claude原始评分、决策、严重flag、逐案理由、原始位置或模型名称。不能将三条历史说成完整多轮或真实System/世界组件。
+
+Owner Mac执行（必须先同步GitHub已通过CI的具体PIN，保持既有worktree干净，不建新worktree）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_s1_blind20_prepare_cpu.py tests/test_r60_real1000_s0_audit_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_s1_blind20_prepare_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --crosswalk-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1"
+```
+
+预期 `S1_BLIND20_PACKETS_READY__INDEPENDENT_REVIEW_PENDING`、`cases_prepared=20`、`unique_blind_ids=20`、`crosswalk_entries=20`、`model_advisory_excluded=true`、`model_inference_calls=0`。两个目录均必须此前不存在；成功后create-only，不重复运行覆盖。只将blind目录交给后续独立Reviewer，**不得将crosswalk、S0台账或Claude结果传入复核模型**。此阶段只准备材料，未调用任何独立AI，不意味着已完成S1的20条裁决；外部模型调用需要单独批准目的地与费用。
+
+
 ## 2026-11-11 S0 Owner Mac真实验收PASS（优先于先前“S0待执行”计划）
 
 Owner提供真实只读验收回执（未外发新数据、无模型推理、无GPU）：
