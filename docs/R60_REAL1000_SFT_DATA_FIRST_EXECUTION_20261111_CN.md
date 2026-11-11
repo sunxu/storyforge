@@ -1,5 +1,37 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 4Router 首条响应已定位：完整 JSON 围栏，CPU 离线恢复
+
+Owner 在现有私有诊断快照中确认：`finish_reason=stop`、`completion_tokens=1754`、正文1037字符，**以独立完整的 \`\`\`json 代码围栏包装原本有效JSON**。此前解析器直接 `json.loads(content)`，因第1字符为反引号而返回 `PROXY_MODEL_JSON_HOLD`。该问题是**格式包装**，不是模型审核失败；已有付费模型结果可以尝试本机离线恢复，无需再次调用API。
+
+本次只允许剥离**整个正文严格匹配**的 `\`\`\`json<换行>JSON正文<换行>\`\`\``（允许首尾空白、JSON大写标签）；不允许扫描任意第一对花括号、允许额外解释文字、修补非法JSON、或者绕过六维 Rubric 检查。只有剥离后 `json.loads` 与原 `reviewer.parse_model_response` 均通过，才可能恢复 advisory 回执。新增 CPU-only `replay-snapshot` 模式，要求操作人显式确认 **snapshot确实来自当前冻结packet对应位置**（原始HTTP响应没有原输入hash，不可独立密码学核验该对应关系）；对模型 ID、当前packet文件hash、位置连续性及已有回执不可覆盖做保护；仅以本机私有快照产生既有格式的 create-only private receipt，不调用4Router，不产生API费用。恢复结果仍是 **模型建议评分而非独立质检/训练准入**，`quality_v1_admitted=0`、`train_admitted=0`。
+
+在唯一固定 `~/workspace/storyforge-r60-4router-review` worktree 且工作区干净时原地同步代码：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+WORK="$HOME/workspace/storyforge-r60-4router-review"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+test -z "$(git -C "$WORK" status --porcelain)" || exit 42
+git -C "$WORK" switch --detach origin/r60/p4-generation-eval-framework
+cd "$WORK"
+python3 -m pytest -q tests/test_r60_real1000_pilot20_local_review.py
+OUT="$HOME/.local/share/storyforge/r60/private/r60-real1000-pilot20-4router-v1"
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect --output-dir "$OUT"
+```
+
+若操作人能确认本地`R60_PILOT20_FAILED_0001_PRIVATE.json`就是对应第1条同一冻结packet和本次Claude调用的失败快照，可自行在Mac执行本地无费用恢复，**不要再次发送模型请求**：
+
+```bash
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py replay-snapshot \
+  --output-dir "$OUT" --position 1 --confirm-snapshot-provenance
+python3 experiments/r58_quality/r60_real1000_pilot20_local_review.py inspect --output-dir "$OUT"
+```
+
+成功标准`model_reviewed=1, remaining=19`；若`PROXY_RUBRIC_SCHEMA_HOLD`仍出现，说明不是仅代码围栏问题，保持快照原样，分析评分字段，不要放宽Rubric或伪造PASS。真实模型内容和诊断快照不上传GitHub；不要在公开日志/聊天里粘贴模型的长篇隐私评语。
+
+
 ## 2026-11-11 4Router 真实首条 HTTP 200 后 Schema HOLD：离线快照诊断修复
 
 Owner 使用已验证的 `https://4router.ai/v1/chat/completions`、8192-token预算，实际首条 `advance` 返回 `PROXY_RESPONSE_SCHEMA_HOLD`；`inspect` 仍 0/20、无有效评分。这是响应解析/字段审核技术失败，**不能标记案例为REJECT**。此前合成同协议案例曾 HTTP200、`finish_reason=stop`、1402 completion tokens、Rubric_VALID，表明格式并非普遍失效。本次HTTP200响应正文**当时未存档，不能无费用追溯原因**。
