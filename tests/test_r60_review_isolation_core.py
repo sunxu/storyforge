@@ -210,3 +210,32 @@ def test_observer_guard_accepts_per_case_events(tmp_path):
         hf_tokenizer=tok, vllm=vl, attempt_diagnostic_guard=guard)
     assert checked == [1, 2, 3]
     assert result["all_verified"]
+
+
+def test_opt_in_probe_stops_after_two_attempts_without_touching_third(tmp_path, capsys):
+    data = fixture(tmp_path, fail_at=1, model="zai-org/GLM-4-32B-0414")
+    worker, rows, out, local, tok, vl, events, rev, model = data
+    result = core.run_isolated(
+        worker, rows, out, local, model=model, revision=rev,
+        limit=12, batch_size=4, max_model_len=32768,
+        max_output_tokens=2400, wall_seconds=1200, resume=False,
+        hf_tokenizer=tok, vllm=vl, stop_after_attempts=2)
+    assert result["attempted"] == 2
+    assert result["technical_failures"] == 1
+    assert result["verified"] == 1
+    assert not result["all_attempted"]
+    assert events["positions"] == [1, 2]
+    assert not (out / "review_0003.private.json").exists()
+    assert "ISOLATION_PROBE_STOP" in capsys.readouterr().out
+
+
+def test_probe_limit_invalid_or_resume_rejected(tmp_path):
+    data = fixture(tmp_path)
+    worker, rows, out, local, tok, vl, _events, rev, model = data
+    for stop, resume in ((0, False), (13, False), (2, True)):
+        with pytest.raises(core.IsolationHold, match="PROBE_STOP_SCOPE_HOLD"):
+            core.run_isolated(
+                worker, rows, out, local, model=model, revision=rev,
+                limit=12, batch_size=4, max_model_len=32768,
+                max_output_tokens=2400, wall_seconds=1200, resume=resume,
+                hf_tokenizer=tok, vllm=vl, stop_after_attempts=stop)
