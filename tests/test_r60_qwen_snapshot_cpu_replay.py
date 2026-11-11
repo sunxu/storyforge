@@ -10,8 +10,8 @@ from types import SimpleNamespace
 
 ROOT = pathlib.Path(__file__).resolve().parents[1] / "experiments" / "r58_quality"
 sys.path.insert(0, str(ROOT))
-from r60_generation_snapshot import GenerationSnapshotStore  # noqa: E402
-import r60_qwen_snapshot_cpu_replay as replay  # noqa: E402
+import r60_qwen_snapshot_cpu_replay as replay
+from r60_generation_snapshot import GenerationSnapshotStore, SnapshotHold
 
 FAKE_RUNNER = '''
 import hashlib
@@ -78,7 +78,7 @@ class QwenSnapshotReplayTests(unittest.TestCase):
         data = json.loads(path.read_text())
         data["text"] = "tampered"
         path.write_text(json.dumps(data))
-        with self.assertRaises(Exception):
+        with self.assertRaises(SnapshotHold):
             replay.inspect(self.runner, self.source, self.snapshots)
 
     def test_invalid_json_is_technical_failure(self):
@@ -95,7 +95,7 @@ class QwenSnapshotReplayTests(unittest.TestCase):
     def test_unknown_files_are_rejected(self):
         self.capture('{"decision":"HOLD"}')
         (self.snapshots / "foreign.txt").write_text("x")
-        with self.assertRaises(Exception):
+        with self.assertRaises(replay.ReplayHold):
             replay.inspect(self.runner, self.source, self.snapshots)
 
 
