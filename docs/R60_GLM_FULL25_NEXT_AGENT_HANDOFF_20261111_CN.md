@@ -4,6 +4,8 @@
 >
 > **本次交接工作只更新 GitHub 文档/任务书，不提交 HF Job，不执行 GPU，不改冻结 Runner/原始回执/Quality-v1 Rubric。** 后续所有 HF Job 均由 Owner 在 Mac CLI 手动执行。
 
+新 Agent 直接粘贴版提示词：[R60_GLM_FULL25_NEW_AGENT_PROMPT_20261111_CN.md](R60_GLM_FULL25_NEW_AGENT_PROMPT_20261111_CN.md)。
+
 ## 1. 目标、范围与状态
 
 **目标**：在一次 H200 Job 中加载固定 GLM-4-32B，对原始 B25 的全部25条（原始序号 1..25）连续进行生成；每次 `engine.generate()` 正常返回后，先把原始完整输出写入独立私有 Snapshot，再按冻结 Runner 原有标准校验，写新 Checkpoint 或技术失败回执；随后对真实快照进行 CPU-only Replay，统计严格校验与保守标点级修复的不同结果。
