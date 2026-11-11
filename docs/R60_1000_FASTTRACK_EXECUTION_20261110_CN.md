@@ -1,5 +1,78 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11 GLM 12 条技术失败受控重试 + Qwen CPU 回执
+
+GLM B25 第一次完整 25 条 H200 Job：13 个质量技术校验通过的 checkpoint、12 个 MODEL_NONEXACT_QUOTE_HOLD 技术失败；原位置 1/5/6/7/9/12/15/20/22/23/24/25。原 25 份证据不允许覆盖或删除。
+
+代码变更：新增 experiments/r58_quality/r60_glm4_b25_retry_contract.py，严格核对原目录 **13 份旧 checkpoint + 12 份旧技术失败回执**，并对固定 12 条失败行建立按原位置顺序排列的子集。子集内 review_0001 对应原位置 1、review_0002 对应原位置 5；不要误以为它与原位置的 checkpoint 同名同义。独立新目录输出，原 13 条 checkpoint 不会重新推理。开启 --quote-shape-diagnostic 后仅记录 SOURCE/TARGET + NOT_LIST/OVER_LIMIT（不记录引文、输入、模型文本）。可选 --repair-quote-shape 只对**与原文逐字匹配**的单个引文字符串转换成单元素数组，或者去除超过12条且所有文本均逐字匹配的完全重复引文，不生成新证据、不丢弃不同证据、不放宽审核校验；仍使用原 reviewer 完整评分/引用验证。该处理是单独标记的格式修复实验变体，不能与无修复原始输出直接混同。最终输出 RETRY_COMBINED_ATTEMPT_SUMMARY：旧验证13 + 本次新验证数；这只是技术审核完成数量，不是质量 PASS 或训练准入。未知异常仍阻断，未保证12条都可修复。
+
+Owner Mac 第一步：准备 CPU-only 新 bundle（不得覆盖已存在的新目录）
+
+    set -euo pipefail
+    ROOT="$HOME/workspace/storyforge"
+    PILOT="$HOME/.local/share/storyforge/r60/private/r60-hf-quality-pilot25-vllm0100"
+    SRC="$PILOT/input_B_isolated_v1"
+    DEST="$PILOT/input_B_retry12_v1"
+    PIN="3f668a225784141cedba3e7347d19a1ad64784c3"
+    EXPECTED="01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9"
+    git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+    test -d "$SRC"
+    test ! -e "$DEST" || { echo RETRY12_BUNDLE_ALREADY_EXISTS_HOLD; exit 42; }
+    umask 077
+    mkdir -m 700 "$DEST"
+    for F in runner.py source.private.jsonl token_core.py runtime_inputs.py runtime_resources.py; do
+      test -f "$SRC/$F"
+      cp "$SRC/$F" "$DEST/$F"
+      chmod 600 "$DEST/$F"
+    done
+    for F in r60_glm4_b25_continuous_review.py r60_review_isolation_core.py r60_glm4_b25_retry_contract.py; do
+      git -C "$ROOT" show "$PIN:experiments/r58_quality/$F" > "$DEST/$F"
+      chmod 600 "$DEST/$F"
+    done
+    test "$(shasum -a 256 "$DEST/source.private.jsonl" | awk '{print $1}')" = "$EXPECTED" || {
+      echo RETRY12_SOURCE_SHA_HOLD; exit 42;
+    }
+    python3 -m py_compile "$DEST"/*.py
+    echo GLM_B25_RETRY12_BUNDLE_READY
+
+Owner Mac 第二步（明确批准再次付费 H200 后执行）：一次性重试 12 条，不做单独一条 H200；如果 Bucket 已存在目标输出，必须拒绝写入。
+
+    set -euo pipefail
+    BASE="$HOME/.local/share/storyforge/r60/private"
+    PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+    CODE="$BASE/r60-glm4-b25-diagnostic-tools-v2"
+    IMG="docker.io/vllm/vllm-openai@sha256:05a31dc4185b042e91f4d2183689ac8a87bd845713d5c3f987563c5899878271"
+    hf jobs run --namespace adradar --name r60-glm4-b25-retry12-shape-v1 \
+      --flavor h200 --timeout 90m --attempts 1 \
+      -v "$PILOT/input_B_retry12_v1:/input:ro" \
+      -v "$CODE:/code:ro" \
+      -v "hf://buckets/adradar/storyforge-training/model-cache/glm4-32b-8dea913-servercopy:/model-source:ro" \
+      -v "hf://buckets/adradar/storyforge-training:/bucket:rw" \
+      "$IMG" \
+      sh -c 'set -eu
+        LOCAL=/tmp/r60-glm4-retry12-v1
+        OUT=/bucket/evaluation-runs/r60-glm4-b25-retry12-shape-v1
+        BASELINE=/bucket/evaluation-runs/r60-glm4-b25-isolated-v1
+        test ! -e "$OUT" || { echo RETRY12_OUTPUT_EXISTS_HOLD; exit 42; }
+        test -d "$BASELINE" || { echo RETRY12_BASELINE_MISSING_HOLD; exit 42; }
+        /usr/bin/python3 -u /code/r60_glm4_servercopy_localize.py \
+          --skip-weight-sha --bucket-dir /model-source --local-dir "$LOCAL"
+        mkdir -p "$OUT"
+        exec /usr/bin/python3 -u /input/r60_glm4_b25_continuous_review.py \
+          --input /input/source.private.jsonl --output-dir "$OUT" \
+          --model zai-org/GLM-4-32B-0414 \
+          --revision 8dea913c41b543527c2860fb6f3c15c202f24aeb \
+          --local-dir "$LOCAL" --case-limit 12 --batch-size 4 \
+          --max-model-len 32768 --max-output-tokens 2400 \
+          --wall-seconds 4800 --isolate-technical-failures \
+          --retry-baseline-dir "$BASELINE" --quote-shape-diagnostic \
+          --repair-quote-shape --confirm-paid-gpu'
+
+Qwen A25 Mac CPU 实测完整 Guidance 参数 API 预检三项 PASS：GUIDANCE_CPU_GUIDED_PARAMS_PASS、GUIDANCE_CPU_SAMPLING_PARAMS_PASS、GUIDANCE_CPU_PREFLIGHT_PASS。仅证明构造通过，实际 generate ValueError 尚未定位；保持 Qwen 原先 6 个 checkpoint 不变，不重复做 CPU API 测试，也不自动提交 Qwen H200。下一次需受控 --diagnose-generation-stages --resume 在原目录内准确定位，不得把未知 ValueError 直接记为技术质量 HOLD。
+
+---
+
+
 ## 2026-11-11：GLM B25 隔离执行真实回执——25/25 尝试、13 有效、12 技术失败
 
 Owner Job：https://huggingface.co/jobs/adradar/6af3dbb69737d9a9e0927770
