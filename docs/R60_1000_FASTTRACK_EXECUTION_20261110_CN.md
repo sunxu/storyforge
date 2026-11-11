@@ -1,5 +1,22 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM-4 B25 真实本地加载 PASS，但第一条审核发生 ReviewError（0/25）
+
+Owner 实际 HF Job：https://huggingface.co/jobs/adradar/6af3cc26ab34849891ada1e9
+
+确认的事件：14/14 safetensors 加载完成；GPU 权重占用 60.6632 GiB、实际加载耗时 9.010082 秒；KV Cache 48.41 GiB / 832112 tokens，32K 最大并发估算 25.39；随后 `VLLM_INTERNAL_LOCAL_TOKENIZER` 和 `REAL_ENGINE_READY engine_init_count=1`，但**第一个有效 Checkpoint 写入之前**即 `REVIEW_BATCH_HOLD completed=0 exception_class=ReviewError stage=REVIEW_OR_CHECKPOINT` → `CONTINUOUS_REVIEW_HOLD`。这证明 GLM 权重加载和 vLLM 初始化链路已经走通，而正式质量审核仍 **0/25**。
+
+必须注意：该日志没有出现 Qwen 的 `Failed to advance FSM` 行，所以**不能认定 GLM-4 与 Qwen 的 XGrammar 同因**。GLM 可能在输出提前截断、JSON 解析、目标 Schema、引文校验或者策略判断阶段产生 ReviewError；目前无法区分。不可未经证据更改 `max-output-tokens=2400`、Schema 或后端，避免不必要的评估条件变化。
+
+已补充最小、脱敏诊断：`experiments/r58_quality/r60_glm4_b25_continuous_review.py` 在 `REVIEW_BATCH_HOLD` 中只输出 `ReviewError` **白名单固定错误码**，例如 `MODEL_GENERATION_INCOMPLETE_HOLD`、`MODEL_JSON_HOLD`、`MODEL_RESPONSE_SCHEMA_HOLD`、`QUOTE_REPAIR_VALIDATION_HOLD`，其余为 `UNKNOWN_REVIEW_FAILURE`；不输出模型生成文本、私有输入、堆栈或未审核异常字符串。CPU 测试覆盖首条截断错误码能够显示、未认可字符串必须脱敏。
+
+**执行规则**：优先保存本次失败 Job 日志和 Bucket 的 Checkpoint 目录列表，只读核对实际 checkpoint 文件数；如果结果是 0，后续应先完成**单条真实审核的诊断门禁**，而不是马上为 25 条重复付费或复制前面已完成的 Smoke。新版单条诊断仍采用同一固定 GLM 模型和审核器，不更改采样、Schema、规则。只有首条成功 `FIRST_CHECKPOINT_GATE_PASS` 后，再进入 25 条连续处理。不得因为模型加载 PASS 声称审核通过。
+
+为降低重复付费和避免污染原输出，新诊断 Job 可通过已固定的连续审核器对新私有输出目录运行 `--case-limit 1 --batch-size 1`；但这需要再次从 Bucket 本地复制 ~61 GiB、初始化 H200，**仅在允许新的 GPU 费用且对应 CI PASS 后**才执行，且不能自动启动其他批次。此阶段记录待 Owner Mac CLI 执行结果，不允许由 ChatGPT 直接提交 Hugging Face Job。
+
+---
+
+
 ## 2026-11-11：A25 第 7 条 XGrammar 状态机异常：保留 6 个 Checkpoint，受控切 Guidance 恢复
 
 Owner Job：https://huggingface.co/jobs/adradar/6af372469737d9a9e0916d28
