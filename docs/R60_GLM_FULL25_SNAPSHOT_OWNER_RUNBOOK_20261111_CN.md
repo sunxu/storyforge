@@ -2,7 +2,13 @@
 
 本轮 Owner 明确要求取消1~2条限制，直接生成完整25条原始 GLM B25 输入。此次是独立25条全量重审，而非12条失败样本子集重试。旧的13 VERIFIED/12 TECHNICAL_FAILURE 历史回执不可覆盖；新运行独立保存完整原始文本 Snapshot 和新的 Checkpoint/技术回执。
 
-代码固定提交：77da8093c831a6cb3771385b1c673ffb82143529。模型：zai-org/GLM-4-32B-0414；revision 8dea913c41b543527c2860fb6f3c15c202f24aeb；输入25条 SHA 01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9。
+代码固定提交：40b1389818e5368b1e110a57a31cbe5d338c1870。模型：zai-org/GLM-4-32B-0414；revision 8dea913c41b543527c2860fb6f3c15c202f24aeb；输入25条 SHA 01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9。
+
+## 2026-11-11 核验修复：全量模式与旧 probe 守卫冲突
+
+旧提交 `77da8093c831a6cb3771385b1c673ffb82143529` 虽然四组 CI PASS，仍有参数冲突：`--snapshot-full25` 要求不传 `--snapshot-probe-cases`，但旧守卫只要有 Snapshot 目录且 probe=0 就拒绝，导致真实 H200 在加载前 `SNAPSHOT_PROBE_SCOPE_HOLD`。现已修改条件为 `and not args.snapshot_full25`，并增加 AST 执行式 CPU 回归验证全量/旧 probe 双路径。**旧 PIN 已废弃，不得拿它提交 H200。**
+
+全量25条运行会在冻结 Runner 技术异常时继续保存签名技术失败回执；如果模型生成/快照写入出现非预期错误，可能提前停止，不能宣称25份 Snapshot 已保存。CPU Replay 的 `--full25` 可以读取完整或连续的部分前缀；只有 `replayed_cases=25` 且生成回执另行核验25/25，才算完整运行验收。
 
 ## 准备
 
