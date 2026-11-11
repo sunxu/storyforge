@@ -6,6 +6,16 @@
 
 新 Agent 直接粘贴版提示词：[R60_GLM_FULL25_NEW_AGENT_PROMPT_20261111_CN.md](R60_GLM_FULL25_NEW_AGENT_PROMPT_20261111_CN.md)。
 
+## 交接封存检查点（2026-11-11）
+
+- **交接材料已编制**：本权威任务书、[Owner 执行手册](R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md)（含可复制的 Mac staging / H200 / Replay 命令）、[新 Agent 直接启动提示词](R60_GLM_FULL25_NEW_AGENT_PROMPT_20261111_CN.md)。
+- **交接工作与下一阶段执行严格分开**：本次仅修订文档和检查交接一致性，**尚未**在 Owner Mac 执行 `--full25` CPU Gate，**尚未**提交 H200，**尚未**产生本轮25份真实 Snapshot、Checkpoint 或 CPU Replay。新 Agent 接手后须获得真实回执才可改变状态。
+- **两个不同 SHA 的用途**：运行代码固定 `6f2a71f12f3a2408b4082d6f8b86e69e0b5cf384`；交接文档版本随 GitHub 分支 HEAD 前进，不能直接将文档 HEAD 用作实际运行代码 PIN，也不能把旧 PIN `77da809` 恢复使用。
+- 交接验收必须包括：读取实际 GitHub HEAD/PR/Issue/四组 CI；确认历史旧回执仍独立；检查私有 Owner Mac 输入/Runner、完整25模式参数及新输出目录不存在；新 Agent 给出的命令必须使用同一运行代码 PIN 并由 Owner 自己提交。
+- 如果后续需要修订运行代码：先新增合成回归并 CI PASS，再同步更新本任务书、Owner 手册及启动提示词内**全部**代码 PIN；未完成同步前禁止启动 GPU。若只是文档改动，不得静默修改固定代码 PIN。
+
+---
+
 ## 1. 目标、范围与状态
 
 **目标**：在一次 H200 Job 中加载固定 GLM-4-32B，对原始 B25 的全部25条（原始序号 1..25）连续进行生成；每次 `engine.generate()` 正常返回后，先把原始完整输出写入独立私有 Snapshot，再按冻结 Runner 原有标准校验，写新 Checkpoint 或技术失败回执；随后对真实快照进行 CPU-only Replay，统计严格校验与保守标点级修复的不同结果。
