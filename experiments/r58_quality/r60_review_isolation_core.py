@@ -151,11 +151,14 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
                  max_output_tokens: int, wall_seconds: int,
                  resume: bool, hf_tokenizer: object, vllm: object,
                  min_remaining_seconds: int = 120,
-                 attempt_diagnostic_guard: object = None) -> dict:
+                 attempt_diagnostic_guard: object = None,
+                 stop_after_attempts: int | None = None) -> dict:
     if (limit < 1 or limit > len(rows) or batch_size < 1 or batch_size > 100
             or max_model_len != 32768 or max_output_tokens != 2400
             or not 120 <= wall_seconds <= 43200):
         raise IsolationHold("ISOLATION_SCOPE_OR_BUDGET_HOLD")
+    if stop_after_attempts is not None and (not 1 <= stop_after_attempts <= limit or resume):
+        raise IsolationHold("PROBE_STOP_SCOPE_HOLD")
     attempted, successes, failures = inspect_attempts(
         worker, rows, output, model, revision, resume=resume, target=limit)
     if attempted:
@@ -216,6 +219,12 @@ def run_isolated(worker: object, rows: list[dict], output: Path,
     start_time = time.monotonic()
     try:
         while attempted < limit:
+            if stop_after_attempts is not None and attempted >= stop_after_attempts:
+                emit("ISOLATION_PROBE_STOP", attempted=attempted,
+                     stop_after_attempts=stop_after_attempts,
+                     target=limit, verified=successes,
+                     technical_failures=failures)
+                break
             remaining = wall_seconds - (time.monotonic() - start_time)
             if remaining < min_remaining_seconds:
                 emit("ISOLATION_WALL_BUDGET_HOLD", attempted=attempted,
