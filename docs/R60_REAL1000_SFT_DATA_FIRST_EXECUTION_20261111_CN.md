@@ -1,5 +1,30 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 S1 Codex独立AI复核20/20结构PASS，开始Claude逐位置对账
+
+Owner返回`S1_CODEX20_SCHEMA_CHECK_PASS`：20条独立Codex结果，PASS=9/HOLD=8/REJECT=3、`rubric_conflicts=0`，`independent_owner_adjudications=0`、`train_admitted=0`。Codex 是第二AI意见，绝不自动当成人工Owner参考真值；未经逐条对账，不能由Codex PASS多于Claude推断Claude错误。
+
+新增 `experiments/r58_quality/r60_real1000_s1_compare_cpu.py` 与 `tests/test_r60_real1000_s1_compare_cpu.py`：本地CPU只读加载既有S0审计和冻结S1盲包+Owner独立映射，校验Codex20条ID、冻结六维schema、原输入hash、20个唯一位置，对照原Claude18份有效回执及2份低分PASS冲突；以公开SAFE输出3×3 decision交叉表、有效Claude18条的一致/分歧、20条严重标志分歧数。可选create-only Owner私有对照台账记录各位置两模型评分和待裁决状态，不含原始小说/模型逐案理由。严禁在对账前向Codex泄露旧Claude意见；此时Codex原始审核已完成，进入事后对账。
+
+Owner Mac复用现有专用worktree，先确认最新commit的CI PASS，再原地同步固定PIN并执行：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_s1_compare_cpu.py tests/test_r60_real1000_s1_blind20_prepare_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_s1_compare_cpu.py \
+  --sample-dir "$BASE/r60-real1000-calibration100-v1" \
+  --review-dir "$BASE/r60-real1000-pilot20-4router-v1" \
+  --blind-dir "$BASE/r60-real1000-s1-blind20-input-v1" \
+  --owner-map-dir "$BASE/r60-real1000-s1-blind20-owner-map-v1" \
+  --codex-result "$BASE/r60-real1000-s1-codex-review-v1/R60_S1_CODEX20_RAW_PRIVATE.json" \
+  --private-report-dir "$BASE/r60-real1000-s1-codex-claude-compare-v1"
+```
+
+预期状态 `S1_CODEX_CLAUDE_COMPARE_PASS__OWNER_ADJUDICATION_PENDING`，原Claude有效18/冲突2、Codex20、质量训练准入0。若输出目录已存在，**只读对账时省略`--private-report-dir`**，不要覆盖旧台账。只有Owner提供真实SAFE分歧矩阵，才决定哪些条目优先独立证据裁决，不启动80条新付费筛选。
+
+
 ## 2026-11-11 S1独立盲审包Owner实测生成PASS（下一步为独立裁决）
 
 Owner真实Mac回执：`7 passed in 0.07s`；`S1_BLIND20_PACKETS_READY__INDEPENDENT_REVIEW_PENDING`、`cases_prepared=20`、`unique_blind_ids=20`、`crosswalk_entries=20`、`model_advisory_excluded=true`；新推理0、独立参考审核0、Quality-v1准入0、训练准入0。这只证明盲包制作完成，不等于已经独立审核。
