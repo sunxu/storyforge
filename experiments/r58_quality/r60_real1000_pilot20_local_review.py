@@ -261,6 +261,12 @@ def parse_proxy_response(raw: bytes) -> dict:
         raise Hold("PROXY_MODEL_JSON_HOLD") from None
     try:
         return reviewer.parse_model_response(model_json)
+    except reviewer.Hold as exc:
+        if str(exc) == "QUALITY_FLOOR_DECISION_INCONSISTENT":
+            raise Hold("PROXY_PASS_BELOW_FLOOR_HOLD") from None
+        if str(exc) == "SEVERE_FLAG_DECISION_INCONSISTENT":
+            raise Hold("PROXY_SEVERE_FLAG_CONFLICT_HOLD") from None
+        raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
     except (ValueError, TypeError, KeyError, AttributeError, IndexError):
         raise Hold("PROXY_RUBRIC_SCHEMA_HOLD") from None
 
@@ -510,7 +516,8 @@ SAFE_REASON_CODES = frozenset({
     "PROXY_EMPTY_HOLD", "PROXY_RESPONSE_SCHEMA_HOLD",
     "PROXY_ENVELOPE_JSON_HOLD", "PROXY_ENVELOPE_STRUCTURE_HOLD",
     "PROXY_CONTENT_STRUCTURE_HOLD", "PROXY_MODEL_JSON_HOLD",
-    "PROXY_RUBRIC_SCHEMA_HOLD",
+    "PROXY_RUBRIC_SCHEMA_HOLD", "PROXY_PASS_BELOW_FLOOR_HOLD",
+    "PROXY_SEVERE_FLAG_CONFLICT_HOLD",
     "SNAPSHOT_PROVENANCE_CONFIRMATION_REQUIRED", "REPLAY_POSITION_HOLD",
     "SNAPSHOT_MODEL_BINDING_HOLD",
     "CONFIG_HOLD", "FOREIGN_FILE_HOLD", "NONCONTIGUOUS_HOLD",
