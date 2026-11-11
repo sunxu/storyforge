@@ -1,5 +1,19 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-11 S1独立盲审包Owner实测生成PASS（下一步为独立裁决）
+
+Owner真实Mac回执：`7 passed in 0.07s`；`S1_BLIND20_PACKETS_READY__INDEPENDENT_REVIEW_PENDING`、`cases_prepared=20`、`unique_blind_ids=20`、`crosswalk_entries=20`、`model_advisory_excluded=true`；新推理0、独立参考审核0、Quality-v1准入0、训练准入0。这只证明盲包制作完成，不等于已经独立审核。
+
+冻结Owner两份产物（不重新生成、不覆盖）：
+- 盲审输入：`$HOME/.local/share/storyforge/r60/private/r60-real1000-s1-blind20-input-v1/R60_S1_BLIND20_INPUT_PRIVATE.json`
+- Owner映射：`$HOME/.local/share/storyforge/r60/private/r60-real1000-s1-blind20-owner-map-v1/R60_S1_BLIND20_OWNER_CROSSWALK_PRIVATE.json`
+- 独立参考Reviewer**只能接触盲审输入**，不可接触Owner映射、S0质量台账、Claude18份有效判定/2份冲突或后续模型对照表。冻结历史范围为3条相邻上下文，并非完整故事、真实历史System或世界卡。
+
+**下一行动S1.2**：复用 `r60_real_ai_dual_review.REVIEW_INSTRUCTIONS` 的六维Rubric与严重标志定义，准备独立Review结果契约：盲ID、decision、六维1–5分、3严重布尔、具体证据和`reason_cn`（仅Owner私有）。任何样本缺乏可见证据时必须HOLD；不要为了凑准入率重判。独立参考模型需要事先单独确定模型/执行通道/费用/私有外发许可；如果改由Owner人工或本地Agent审核，必须记录审核身份与过程，不得把同一个Claude旧结果包装成“独立”。**这一步尚未授权执行模型推理**。
+
+**S1.3**：拿到完整20条独立审核结果后，再通过Owner-only映射还原20位置，比较Claude的PASS4/HOLD10/REJECT4与冲突2，输出逐项原因和误拒/漏拒（仅在独立参考足够可靠时可称其为误判）。最终决定是否在现有Sample100剩余80条上进行低成本模型对照；S2费用和数据外发独立批准。
+
+
 ## 2026-11-11 S0私有台账真实PASS，S1独立盲包准备工程
 
 Owner 最新SAFE：`S0_PILOT20_SAMPLE100_AUDIT_PASS__ADJUDICATION_PENDING`，`private_ledger_written=true`，20条位置/18有效评分/2冲突、冻结Sample100精确绑定全部保持PASS；`independent_reference_reviews=0`、`quality_v1_admitted=train_admitted=0`。20行台账包含Claude结论和六维评分，**仅可供事后对账，不得作为独立Reviewer输入或提前泄露给审核模型**。
