@@ -20,6 +20,8 @@ MIN_QUOTE = 10
 MIN_ANCHOR = 6
 MAX_EDITS = 2
 MIN_RATIO = 0.90
+# Editing a negation/modality can completely invert an assertion.
+PROTECTED_CHARS = frozenset("不没无非未勿禁否")
 
 
 def _candidates(quote: str, body: str):
@@ -74,6 +76,9 @@ def reconcile_quote(quote: object, bodies: list[str]) -> str | None:
             continue
         if _edit_distance_bounded(quote, candidate) > MAX_EDITS:
             continue
+        if any(quote.count(char) != candidate.count(char)
+               for char in PROTECTED_CHARS):
+            continue
         if SequenceMatcher(None, quote, candidate, autojunk=False).ratio() < MIN_RATIO:
             continue
         accepted.append(candidate)
@@ -90,6 +95,7 @@ def make_reconciler(worker: object, emit: object):
             return original(position, row, response, model, revision)
         updated = None
         edits = 0
+        matched_fields = []
         unmatched = 0
         for field, label in FIELDS:
             value = response.get(field)
@@ -114,8 +120,7 @@ def make_reconciler(worker: object, emit: object):
                     updated["specific_target_quotes"] = list(response["specific_target_quotes"])
                 updated[field][index] = replacement
                 edits += 1
-                emit("QUOTE_LITERAL_RECONCILED", position=position,
-                     field=label, conservative=True, exact_source_backed=True)
+                matched_fields.append(label)
         if unmatched:
             emit("QUOTE_RECONCILIATION_HOLD", position=position,
                  unresolved_count=min(unmatched, 25), repaired_count=edits)
@@ -124,7 +129,9 @@ def make_reconciler(worker: object, emit: object):
             return original(position, row, response, model, revision)
         if updated is not None:
             emit("QUOTE_RECONCILIATION_CANDIDATE", position=position,
-                 repaired_count=edits, nonquote_fields_unchanged=True)
+                 repaired_count=edits, nonquote_fields_unchanged=True,
+                 source_repairs=matched_fields.count("SOURCE"),
+                 target_repairs=matched_fields.count("TARGET"))
         # No independent automatic quality admission; frozen validation applies
         # to the complete amended record and retains any non-quote violations.
         return original(position, row, updated if updated is not None else response,
