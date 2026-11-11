@@ -1,5 +1,8 @@
 # R60 GLM 完整25条 Snapshot 生成：Owner Mac 执行手册
 
+> **2026-11-11 新 Agent 交接权威入口：** [R60 GLM 全25下一 Agent 任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md)。本手册只负责 Owner Mac 命令与执行操作；当前方案是 **独立全25条一次生成**、`--full25` CPU 回放，**不允许**恢复1–2条试跑或失败12条重试。本手册的执行代码 PIN 固定为 `6f2a71f12f3a2408b4082d6f8b86e69e0b5cf384`；更新文档不意味着 GPU 已运行。最新 GitHub 状态由接手 Agent 重新核实。
+
+
 本轮 Owner 明确要求取消1~2条限制，直接生成完整25条原始 GLM B25 输入。此次是独立25条全量重审，而非12条失败样本子集重试。旧的13 VERIFIED/12 TECHNICAL_FAILURE 历史回执不可覆盖；新运行独立保存完整原始文本 Snapshot 和新的 Checkpoint/技术回执。
 
 代码固定提交：6f2a71f12f3a2408b4082d6f8b86e69e0b5cf384。模型：zai-org/GLM-4-32B-0414；revision 8dea913c41b543527c2860fb6f3c15c202f24aeb；输入25条 SHA 01639568cf21a7b98356f2b3b74f567943b4a6844edb9230b58759789ab67fc9。
