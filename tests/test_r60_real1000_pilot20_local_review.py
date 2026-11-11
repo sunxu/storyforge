@@ -426,3 +426,47 @@ def test_fenced_pass_below_frozen_floor_is_not_admitted():
         assert mod.safe_reason_code(exc) == "PROXY_PASS_BELOW_FLOOR_HOLD"
     else:
         raise AssertionError("PASS below frozen floor must not be accepted")
+
+
+def test_quarantine_conflict_preserves_original_and_unblocks_next(monkeypatch, tmp_path):
+    packet_dir = setup_private(monkeypatch, tmp_path)
+    output = tmp_path / "out"
+    mod.initialize(packet_dir, output, "https://4router.ai/v1",
+                   "claude-opus-5-5", 30)
+    answer = model_answer()
+    answer["decision"] = "PASS"
+    answer["severe_flags"]["serious_player_agency"] = False
+    answer["scores"]["chinese_prose"] = 3
+    raw = json.dumps({"id": "synthetic-message", "model": "claude-opus-5-5",
+        "choices": [{"finish_reason": "stop", "message": {
+            "content": "```json\n" + json.dumps(answer) + "\n```"
+        }}]}).encode()
+    mod.save_failed_response(output, 1, raw)
+    result = mod.quarantine_private_conflict(
+        output, position=1, confirm_provenance=True)
+    assert result["processed"] == 1
+    assert result["model_reviewed"] == 0
+    assert result["conflict_pending"] == 1
+    assert result["remaining"] == 19
+    assert result["quality_v1_admitted"] == 0
+    assert result["train_admitted"] == 0
+    assert not (output / mod.receipt_name(1)).exists()
+    row = json.loads((output / mod.conflict_name(1)).read_bytes())
+    assert row["original_decision"] == "PASS"
+    assert row["scores"]["chinese_prose"] == 3
+    monkeypatch.setenv("CLI_PROXY_API_KEY", "synthetic-key")
+    monkeypatch.setattr(mod, "proxy_request", lambda *args: model_answer())
+    next_state = mod.advance(output, 1, execute=True,
+                             allow_private_data_egress=True)
+    assert next_state["processed"] == 2
+    assert next_state["model_reviewed"] == 1
+    assert next_state["conflict_pending"] == 1
+    assert (output / mod.receipt_name(2)).exists()
+    assert not (output / mod.receipt_name(1)).exists()
+    try:
+        mod.quarantine_private_conflict(
+            output, position=1, confirm_provenance=True)
+    except mod.Hold as exc:
+        assert str(exc) == "REPLAY_POSITION_HOLD"
+    else:
+        raise AssertionError("must be create-only")
