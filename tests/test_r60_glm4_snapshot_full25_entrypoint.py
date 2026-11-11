@@ -45,14 +45,15 @@ def test_full25_snapshot_scope_guard_does_not_require_probe_cases():
         if not isinstance(node, ast.If):
             continue
         for child in node.body:
-            if isinstance(child, ast.Raise) and isinstance(child.exc, ast.Call):
-                if (isinstance(child.exc.func, ast.Name)
-                        and child.exc.func.id == "Hold"
-                        and child.exc.args
-                        and isinstance(child.exc.args[0], ast.Constant)
-                        and child.exc.args[0].value == "SNAPSHOT_PROBE_SCOPE_HOLD"):
-                    gate = node.test
-                    break
+            if (isinstance(child, ast.Raise)
+                    and isinstance(child.exc, ast.Call)
+                    and isinstance(child.exc.func, ast.Name)
+                    and child.exc.func.id == "Hold"
+                    and child.exc.args
+                    and isinstance(child.exc.args[0], ast.Constant)
+                    and child.exc.args[0].value == "SNAPSHOT_PROBE_SCOPE_HOLD"):
+                gate = node.test
+                break
     assert gate is not None
     condition = compile(ast.Expression(gate), "<snapshot-scope-gate>", "eval")
 
