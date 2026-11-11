@@ -1,5 +1,24 @@
 # R60：已有 1000 条训练候选精筛加速执行书（2026-11-10）
 
+## 2026-11-11：GLM B25 改为冻结校验器入口的只读逐字匹配诊断（CPU tests first）
+
+前述 AST 已确认 `specific_source_quotes -> visible_history[].content`、`specific_target_quotes -> target_text`，但仅属静态配对，不证明运行时具体哪条引文失败。此前 H200 retry12 **0/12**，且引用 shape patch 没有任何触发事件。已停止之前使用 `--repair-quote-shape` 的旧方案，**不得再次原样运行**。
+
+新模块：`experiments/r58_quality/r60_glm4_validation_observer.py`。在冻结 Runner 原生 `validate_response(result,row)` 全局入口处安装临时 wrapper，匹配来源使用与冻结校验器相同的 `quote in body` 判定，仅输出：
+- `VALIDATOR_OBSERVER_INSTALLED`，确认挂在 `validate_response` 而非旧的 `checkpoint_record`。
+- `VALIDATOR_ENTRY`：重试子集本地序号（1..12）；是否 OBJECT。
+- `VALIDATOR_QUOTE_DIAGNOSTIC`：`SOURCE/TARGET`、`LIST/NOT_LIST`、`over_limit`、`missing/empty/non_string/too_long/not_in_body` 计数。此处 `missing` 是决策为 PASS 却没有引文。**不输出引文、原文、模型输出、blind_id、异常字符串**。
+- 所有事件只读；原 `validate_response` **始终被原样调用**，不会转换引文、放宽逐字匹配、变更评分或影响错误类型。唯一新增的 guard 是意外输入摘要直接拒绝。
+- 新的调用选项为 `--quote-match-observer`，只允许 `--retry-baseline-dir` + `--isolate-technical-failures` 的12条任务，禁止与 `--quote-shape-diagnostic` 或 `--repair-quote-shape` 组合。原25条基线的13有效+12失败回执必须完整验证，写入**全新的**输出目录；旧的两轮结果禁止覆盖。
+- CPU 合成测试包括来源逐字不匹配、目标逐字不匹配、空字符串/非字符串/过长引文、合法逐字引文完全不变、未知输入拒绝、冻结模块内 `checkpoint_record` 全局调用确实走到新 wrapper。所有结论先在合成样本 CPU 上验证，**本次不发起 HF GPU Job**。
+
+针对12条未来的定位任务，验收硬条件：除了 `ALL_CASES_ATTEMPTED`，必须出现 `VALIDATOR_OBSERVER_INSTALLED` 与每条至少一个 `VALIDATOR_QUOTE_DIAGNOSTIC`；如果仍未出现对应事件，说明诊断接入失效，停止而不是再次付费重试。此诊断并不承诺将失败转成有效 checkpoint；诊断完成后才讨论修改 Prompt 的单独实验版本。原Rubric和原13条有效结果保持不变。
+
+本轮交付只包含 GitHub 代码、CPU 合成测试和文档。待 GitHub CI PASS 后，Owner 可以自行决定是否在 Mac CLI 授权下一次有明确诊断目标的 H200 Job，**不得自动启动**。
+
+---
+
+
 ## 2026-11-11：修正 GLM 引文 RHS 静态分析过度传播
 
 Owner Mac 的 `QUOTE_BINDING_CPU_PASS` 返回：`left_provenance` 与 `right_provenance` 都列出 SOURCE_QUOTE_FIELD / TARGET_QUOTE_FIELD / VISIBLE_HISTORY / TARGET_TEXT / MESSAGE_CONTENT；`right_scope=MIXED_HISTORY_TARGET`，`rhs_binding_candidates=1`。**该结果不是校验器真的混用了两种文本的证据。** 原探针全函数范围汇总了赋值、循环和推导式别名，导致来源过度传播，尤其同一个循环中对 source/target 共用变量时会丢失配对关系。
