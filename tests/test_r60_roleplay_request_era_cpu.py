@@ -1,7 +1,6 @@
 """Offline no-private-output tests for target-era classifier."""
 from __future__ import annotations
 
-import copy
 import sys
 from pathlib import Path
 
