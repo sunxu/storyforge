@@ -32,6 +32,7 @@ def test_reuse_guard_and_cli_flags_without_submission(tmp_path):
     assert argv.count("-v") == 2
     assert "--dry-run" in argv
     assert argv.index("--dry-run") < argv.index(cli.IMAGE)
+    assert argv[argv.index(cli.IMAGE) + 1] == "bash"
     assert "cpu-upgrade" in argv
     assert "--attempts" in argv and argv[argv.index("--attempts")+1] == "1"
     assert argv.count(":ro") == 0
