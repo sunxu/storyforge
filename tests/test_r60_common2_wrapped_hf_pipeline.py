@@ -308,8 +308,9 @@ def test_unknown_stage_error_stays_private(tmp_path, monkeypatch):
     monkeypatch.setattr(cli, "expected", fail_stage)
     out = cli.diagnose(folder, KEY)
     assert out["phase"] == "STAGE_VERIFY"
-    assert out["reason_code"] == "SDK_OR_RUNTIME_HOLD"
+    assert out["reason_code"] == "STAGE_INPUT_OR_RUNTIME_HOLD"
     assert "private source" not in json.dumps(out)
+    assert out["remote_input"] == "UNKNOWN"
 
 
 def test_stage_inventory_identifies_extra_files_without_names_or_sha(tmp_path, monkeypatch):
