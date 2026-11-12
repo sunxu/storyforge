@@ -75,3 +75,28 @@ git merge --ff-only origin/r60/common2-cpu2-owner
 PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
 "$PY" -m pytest -q tests/test_r60_real1000_r46_parameter_control_cpu.py
 ```
+
+## 2026-11-12 System差异直接来源证明（待Owner本机只读验收）
+
+本轮读取了历史公开构建器`scripts/v02_r46_build_dataset.py`的真实实现：它在原始R45 49/15训练源中严格要求`messages[0].role == "system"`、末两条`user → assistant`、除最后Assistant外所有消息`loss=False`。对应目前Common2的`experiments/r58_quality/r60_common2_sft_cpu_template_audit.py`：11条交替User/Assistant历史 + 最后Assistant，`system_prompt=None`、`world_card=None`，无`system`消息。这确认了两个来源合同的**可观察设计差异**，但仍不能由代码静态逻辑推出每个已冻结原数据行实际合约通过；更不能证明R46实际推理部署System/Swift模板与R60一致。
+
+新增`scripts/r60_r46_common2_system_contract_cpu.py`，利用此前已真实SHA核验的R45原始49/15文件以及现有Common2实验JSONL+manifest，仅在本机验证三份冻结文件的role结构与loss约束，输出**只含聚合数量**的SAFE。它不会打印任何system文本、story ID、原始hash、目标文本或文件路径，不重算Common2×R45/R50的来源交集，不启动HF/GPU，也不修改冻结文件。返回`R46_R60_SYSTEM_ROLE_CONTRACT_DIFFERENCE_CONFIRMED__TRAIN_HOLD`意味着差异已证实，**不是系统提示词/部署模板已达成一致**。
+
+Mac命令：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r46_common2_system_contract_cpu.py
+R46="$HOME/.local/share/storyforge/r46-primary-evidence-r46-20261014T070529Z-248172"
+"$PY" scripts/r60_r46_common2_system_contract_cpu.py \
+  --r45-original-train "$R46/source-data/train.jsonl" \
+  --r45-original-validation "$R46/source-data/validation.jsonl" \
+  --common2-input-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-common2-sft-experimental11-v1"
+```
+
+预期原R45总计49+15=64条包含首条System，Common2两条System为0。以上是**预期**，仅在Owner真实SAFE到达后将该数量标为实测；测试与真实运行都未在本Agent的Mac上执行。
+
+**决策建议：** 保留Common2原始无System的实验输入不可变，不声称与R46是严格单变量比较。后续若想严格只改变训练数据，则必须独立定义并签批统一的**新训练输入规范**，清楚标记后补的通用训练System为`EXPLICIT_NEW_TRAINING_WRAPPER`，不能声称它是历史实际Sent Prompt；并在相同规范下构建参照数据和新的Real1000训练数据，独立版本和新SHA。这属于未来D1/D2/D3的Owner决策和新实验，不可静默改原Common2文件或当前正式训练准入0。
