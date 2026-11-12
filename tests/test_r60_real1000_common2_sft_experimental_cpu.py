@@ -1,7 +1,6 @@
 """CPU synthetic test for source-bound Common2 experimental SFT output."""
 from __future__ import annotations
 
-import copy
 import sys
 from pathlib import Path
 
