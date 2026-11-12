@@ -1,7 +1,6 @@
 """Synthetic HF CLI 2.4.0 dry-run tests: no network and no submission."""
 from __future__ import annotations
 
-import os
 from types import SimpleNamespace
 
 import pytest
