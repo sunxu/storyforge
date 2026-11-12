@@ -57,12 +57,14 @@ def validate_payload(records: list[dict], manifest: dict, raw: bytes) -> None:
             raise Hold("EXPERIMENT_MESSAGE_SEQUENCE_HOLD")
 
 
-def inspect_rows(rows: list[dict], tokenizer, template=None) -> dict:
+def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict:
     results = []
     if template is not None and getattr(template.loss_scale, "base_strategy", None) != "last_round":
         raise Hold("SWIFT_LOSS_SCALE_HOLD")
     for number, row in enumerate(rows, 1):
         messages = row["messages"]
+        if phase is not None:
+            phase("TOKENIZER_ENCODE")
         ids = tokenizer.apply_chat_template(
             messages, tokenize=True, add_generation_prompt=False,
         )
@@ -74,6 +76,8 @@ def inspect_rows(rows: list[dict], tokenizer, template=None) -> dict:
             raise Hold("TOKEN_BUDGET_HOLD")
         result = {"input_tokens_with_target": n}
         if template is not None:
+            if phase is not None:
+                phase("SWIFT_COLLATOR_AUDIT")
             # Use the preexisting, audited R18 strict last_round verifier; its
             # optional decoded debug output MUST NEVER escape this process.
             sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
@@ -124,12 +128,26 @@ def inspect_rows(rows: list[dict], tokenizer, template=None) -> dict:
     }
 
 
+SAFE_PHASES = frozenset({
+    "SNAPSHOT_CHECK", "PRIVATE_INPUT_CHECK", "TOKENIZER_LOAD",
+    "SWIFT_PROCESSOR_LOAD", "SWIFT_TEMPLATE_INIT",
+    "TOKENIZER_ENCODE", "SWIFT_COLLATOR_AUDIT",
+})
+
+
 def run(args: argparse.Namespace) -> dict:
+    def set_phase(value: str) -> None:
+        if value not in SAFE_PHASES:
+            raise Hold("UNKNOWN_AUDIT_PHASE_HOLD")
+        args._safe_phase = value
+
+    set_phase("SNAPSHOT_CHECK")
     if args.snapshot.is_symlink() or PIN not in str(args.snapshot.resolve()):
         raise Hold("PINNED_LOCAL_SNAPSHOT_HOLD")
     for file in ("tokenizer.json", "tokenizer_config.json"):
         if not (args.snapshot / file).is_file():
             raise Hold("LOCAL_TOKENIZER_FILES_HOLD")
+    set_phase("PRIVATE_INPUT_CHECK")
     private.private_dir(args.input_dir, create=False)
     raw = private.read_private(args.input_dir / sft.DATA_NAME, LIMIT)
     manifest = json.loads(private.read_private(
@@ -139,6 +157,7 @@ def run(args: argparse.Namespace) -> dict:
     validate_payload(rows, manifest, raw)
     os.environ["HF_HUB_OFFLINE"] = "1"
     os.environ["TRANSFORMERS_OFFLINE"] = "1"
+    set_phase("TOKENIZER_LOAD")
     from transformers import AutoTokenizer
     tok = AutoTokenizer.from_pretrained(
         str(args.snapshot), local_files_only=True, trust_remote_code=False,
@@ -146,14 +165,17 @@ def run(args: argparse.Namespace) -> dict:
     )
     template = None
     if args.stage == "both":
+        set_phase("SWIFT_PROCESSOR_LOAD")
         from swift import get_processor, get_template
+        processor = get_processor(str(args.snapshot))
+        set_phase("SWIFT_TEMPLATE_INIT")
         template = get_template(
-            get_processor(str(args.snapshot)),
+            processor,
             loss_scale="last_round", max_length=CEILING,
             add_non_thinking_prefix=False,
         )
         template.set_mode("train")
-    return inspect_rows(rows, tok, template)
+    return inspect_rows(rows, tok, template, phase=set_phase)
 
 
 def main() -> int:
@@ -162,6 +184,7 @@ def main() -> int:
     p.add_argument("--snapshot", type=Path, required=True)
     p.add_argument("--stage", choices=("token", "both"), default="token")
     args = p.parse_args()
+    args._safe_phase = "SNAPSHOT_CHECK"
     try:
         result = run(args)
         print(json.dumps(result, sort_keys=True))
@@ -173,6 +196,10 @@ def main() -> int:
             "r50_complete_exclusion_verified": False, "train_admitted": 0,
             "model_inference_calls": 0, "gpu_started": False,
             "private_values_emitted": False,
+            "reason_code": (
+                args._safe_phase + "_HOLD"
+                if args._safe_phase in SAFE_PHASES else "SAFE_PHASE_UNKNOWN_HOLD"
+            ),
         }, sort_keys=True), file=sys.stderr)
         return 42
 
