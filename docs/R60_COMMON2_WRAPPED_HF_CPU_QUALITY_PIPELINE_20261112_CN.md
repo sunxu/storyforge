@@ -144,3 +144,28 @@ STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
 "$SDKPY" scripts/r60_common2_wrapped_hf_cli.py diagnose --stage "$STAGE" --run-key "$KEY"
 ```
 成功时可只读报告 `remote_input=EMPTY|PARTIAL_OR_MISMATCH|READY_FILESET`、`remote_output=EMPTY|NONEMPTY`、`submit_marker=ABSENT|PRESENT`；如果在某个阶段HOLD，将`phase`和`reason_code`用于后续针对性修复。**如果出现PARTIAL或READY，绝不继续执行只能同步EMPTY前缀的sync命令，优先核对远端来源完整性。** 原Stage不可覆盖。只有远端精确READY+输出EMPTY+marker ABSENT，CI与业务预检全部PASS后才能继续正式dry-run和CPU提交。
+
+## 2026-11-12 Owner Mac本地旧CLI与剩余Ruff I001
+
+Owner返回：Ruff仅剩 `scripts/r60_common2_wrapped_hf_worker.py` 和 `tests/test_r60_common2_wrapped_hf_pipeline.py` 两条 `I001`（前者需要两组import之间一个空行，后者需要移除多余空行）。已最小修正，不改HF逻辑。Owner调用`diagnose`时报 `invalid choice: 'diagnose'`，而远端Owner分支当前源码已明示`choices=["preflight", "sync", "ready", "submit", "diagnose"]`，证明调用的本地源码不是最新已提交版本，**不是HF SDK失败证据**。需要核对目标worktree/branch/HEAD、合并是否成功、本地脚本实际路径与GitHub一致；不覆盖本地私有Stage，且不继续`sync/ready/submit`。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+pwd
+git status --short
+git branch --show-current
+git rev-parse --short HEAD
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+grep -n 'choices=.*diagnose' scripts/r60_common2_wrapped_hf_cli.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+SDKPY="$HOME/.local/share/storyforge/venvs/hf-cli/bin/python"
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+"$SDKPY" scripts/r60_common2_wrapped_hf_cli.py diagnose --stage "$STAGE" --run-key "$KEY"
+```
+
+如 `git merge --ff-only` 报错（分叉或未提交工作），**停止**，先检查差异/工作树状态，不执行`git reset --hard`、不`stash`掉其他Agent工作。若 `grep`匹配失败，不要运行后续诊断命令。该只读诊断不提交HF Job，实际远端状态须由新SAFE回执决定。
