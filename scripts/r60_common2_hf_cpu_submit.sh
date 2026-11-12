@@ -49,26 +49,8 @@ if [[ "$MODE" == sync || "$MODE" == sync-existing ]]; then
   echo "R60_COMMON2_SYNC_READY__NO_JOB"
   exit 0
 fi
-# The explicit submit action starts the CPU job; no redundant paid-authorization flags.
-# Keep sync and submit separate, with no GPU, training or automatic retry.
-RUN_KEY="${2:?run key required}"
-STAGE="${3:?local immutable stage directory required}"
-[[ "$STAGE" == *"/$RUN_KEY" ]] || { echo R60_RUN_STAGE_MISMATCH >&2; exit 42; }
-python3 scripts/r60_common2_hf_cpu_bucket_guard.py ready "$RUN_KEY" --stage "$STAGE"
-(cd "$STAGE" && shasum -a 256 -c SHA256SUMS.txt >/dev/null) || {
-  echo R60_LOCAL_STAGE_SHA_HOLD >&2; exit 42;
-}
-# An atomic persistent marker prevents accidental duplicate billing for this exact run.
-# Fail closed even if HF CLI exits ambiguously after server-side job submission.
-ATTEMPT="${STAGE}.cpu-submit-attempted"
-if ! mkdir -m 700 "$ATTEMPT" 2>/dev/null; then
-  echo R60_CPU2_DUPLICATE_SUBMIT_HOLD >&2; exit 42
-fi
-# The remote CPU worker enforces exact stage SHA256 and never calls swift sft.
-echo "R60_COMMON2_CPU2_PAID_JOB_SUBMITTING=$RUN_KEY"
-hf jobs run --namespace adradar --name storyforge-r60-common2-cpu2-no-train \
-  --flavor cpu-upgrade --timeout 120m \
-  --env "STORYFORGE_R60_COMMON2_RUN_KEY=$RUN_KEY" \
-  -v "$BUCKET:/workspace:rw" \
-  pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime \
-  bash "/workspace/preflight/r60/common2/cpu2/runs/$RUN_KEY/code/scripts/r60_common2_hf_cpu_worker.sh"
+# Legacy submit is disabled: the old hf CLI parsed --name as a Docker image
+# and mounted the entire private bucket RW, contrary to AGENTS.md section 2.3.
+# Preserve sync/sync-existing modes; never create a new submit marker here.
+echo R60_COMMON2_LEGACY_CLI_SUBMIT_DISABLED_MOUNT_POLICY_HOLD >&2
+exit 42
