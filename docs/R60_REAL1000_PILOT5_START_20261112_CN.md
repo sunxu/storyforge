@@ -42,7 +42,7 @@ QUALITY="$BASE/r60-quality-first-1000"
 真实调用前先核对：
 - 两个**已安装或可用**的不同模型ID、endpoint，以及是否完全独立的无共享评分上下文；不能把同一模型不同别名冒充双独立审核。
 - 若是本机OpenAI-compatible接口（`127.0.0.1`），无第三方私有外发；若是远端HTTPS，逐一明确模型供应方与5条私有User/Assistant上下文外发授权才可加`--allow-remote-review`。
-- 只允许审核冻结池前5条，共10个独立模型请求；现有工具的`init`把两个模型配置冻结入新建0700目录，`advance`写入0600逐案不可覆盖回执。不在CLI中写API Key；如需要，环境变量`R60_REVIEW_A_KEY`/`R60_REVIEW_B_KEY`本地配置。
+- 只允许审核冻结池前5条，共10个独立模型请求；现有工具的`init`把两个模型配置冻结入新建0700目录，`advance`写入0600逐案不可覆盖回执。不在CLI中写API Key；如需要，环境变量`R60_CLAUDE_KEY`/`R60_DEEPSEEK_KEY`本地配置。
 - 只能在Owner确已核对独立性后使用`--owner-attest-independent-ai`；它不等于人类盲审或模型训练谱系的密码学独立性。
 
 下方以**仅本机模型**为执行模板，必须将两个`MODEL`值替换为已核实的不同模型，不能直接假定示例已经安装：
@@ -148,34 +148,34 @@ ruff check \
 
 ### Step 2：配置实际API（仅在Mac环境设置值，禁止粘贴秘钥）
 
-`R60_CLAUDE_URL`、`R60_CLAUDE_MODEL`分别对应**4Router经核实的OpenAI-compatible base URL和实际Claude Opus 5.5模型名**；`R60_DEEPSEEK_URL`、`R60_DEEPSEEK_MODEL`对应**DeepSeek官方OpenAI-compatible base URL与实际可用Flash模型ID**。切勿将历史模型别名当作已验证实时可用；应在Owner Mac本地核实。API密钥通过`R60_REVIEW_A_KEY`和`R60_REVIEW_B_KEY`从环境变量注入。所有远端必须HTTPS，不跟随重定向，不读取代理环境变量；`--allow-remote-review`必须显式传入。
+`R60_CLAUDE_URL`、`R60_CLAUDE_MODEL`分别对应**4Router经核实的OpenAI-compatible base URL和实际Claude Opus 5.5模型名**；`R60_DEEPSEEK_URL`、`R60_DEEPSEEK_MODEL`对应**DeepSeek官方OpenAI-compatible base URL与实际可用Flash模型ID**。切勿将历史模型别名当作已验证实时可用；应在Owner Mac本地核实。API密钥通过`R60_CLAUDE_KEY`和`R60_DEEPSEEK_KEY`从环境变量注入。所有远端必须HTTPS，不跟随重定向，不读取代理环境变量；`--allow-remote-review`必须显式传入。
 
 ```bash
 : "${R60_CLAUDE_URL:?需要已核实的Claude代理base URL}"
 : "${R60_CLAUDE_MODEL:?需要已核实的Claude实际模型ID}"
 : "${R60_DEEPSEEK_URL:?需要已核实的DeepSeek官方base URL}"
 : "${R60_DEEPSEEK_MODEL:?需要已核实的DeepSeek实际模型ID}"
-: "${R60_REVIEW_A_KEY:?Claude Key未在当前终端设置}"
-: "${R60_REVIEW_B_KEY:?DeepSeek Key未在当前终端设置}"
+: "${R60_CLAUDE_KEY:?Claude Key未在当前终端设置}"
+: "${R60_DEEPSEEK_KEY:?DeepSeek Key未在当前终端设置}"
 
 "$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
   --endpoint "$R60_CLAUDE_URL" --model "$R60_CLAUDE_MODEL" \
-  --protocol claude-proxy-top-system --key-env R60_REVIEW_A_KEY \
+  --protocol claude-proxy-top-system --key-env R60_CLAUDE_KEY \
   --allow-remote-review
 "$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
   --endpoint "$R60_DEEPSEEK_URL" --model "$R60_DEEPSEEK_MODEL" \
-  --protocol deepseek-chat --key-env R60_REVIEW_B_KEY \
+  --protocol deepseek-chat --key-env R60_DEEPSEEK_KEY \
   --allow-remote-review
 
 # 前两次PASS仅证明本地能构造正确请求；下面每个--execute
 # 才分别产生一次可能计费、但绝无真实私有故事的合成API请求。
 "$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
   --endpoint "$R60_CLAUDE_URL" --model "$R60_CLAUDE_MODEL" \
-  --protocol claude-proxy-top-system --key-env R60_REVIEW_A_KEY \
+  --protocol claude-proxy-top-system --key-env R60_CLAUDE_KEY \
   --allow-remote-review --execute
 "$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
   --endpoint "$R60_DEEPSEEK_URL" --model "$R60_DEEPSEEK_MODEL" \
-  --protocol deepseek-chat --key-env R60_REVIEW_B_KEY \
+  --protocol deepseek-chat --key-env R60_DEEPSEEK_KEY \
   --allow-remote-review --execute
 ```
 
@@ -218,3 +218,14 @@ test ! -e "$QUALITY"
 合成探针及正式双审采用同一套固定公开错误码：`MODEL_HTTP_400_HOLD`（API字段/格式拒绝）、`401/403`（凭证/权限）、`429`（速率限制）、`500/502/503/504`（服务端），此外还包括`404/408/413`。每个错误仅报告固定编号，不输出服务端响应正文、请求URL或原始提示词；未知错误保留`MODEL_TRANSPORT_HOLD`。失败时先核实API配置，不得把网络/格式失败算成文学质量REJECT，也不直接改写已持久化回执。
 
 两个Reviewer都遭遇HTTP/网络故障时，`advance`在当前案例写盘前返回`BOTH_REVIEW_MODELS_UNAVAILABLE`，保留此前有效checkpoint，可在服务恢复后对**同一原有目录**继续；如果单侧失败，仍只留下一份真实审核和部分HOLD回执，不能覆盖或伪造缺失第二方。不要因为429/500而错误删除候选或调用新RUN_KEY绕过既有审阅记录。
+
+## 10. DeepSeek官方QD20历史固定配置与2026-11-12环境变量改名
+
+已直接核对源码`experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py`：`DEFAULT_URLS["deepseek"]="https://api.deepseek.com"`，`DEFAULT_MODELS["deepseek"]="deepseek-flash"`，`KEY_ENV["deepseek"]="DEEPSEEK_API_KEY"`。历史请求包含`thinking={"type":"disabled"}`、`temperature=0`，与Claude 4Router顶层`system`不同。当前`deepseek-chat`薄适配器已复制**历史真实请求配置**，不将其当作新上线API兼容性已验证。
+
+本轮真实1000审阅的新Owner命名环境变量：
+- `R60_CLAUDE_KEY`：对应Claude Opus 5.5的4Router端点；
+- `R60_DEEPSEEK_KEY`：对应DeepSeek官方端点。
+- `R60_DEEPSEEK_URL=https://api.deepseek.com`；`R60_DEEPSEEK_MODEL=deepseek-flash`，均为历史代码明确的默认值。Owner需要先通过真实合成API probe验证当前可用性。
+
+历史QD20运行器仍读取原来的`DEEPSEEK_API_KEY`，这是已冻结历史实验，不做无关修改。现行`r60_real_quality_batch.py`使用新环境变量，不再读取`R60_REVIEW_A_KEY/R60_REVIEW_B_KEY`。合成探针`--key-env`可显式指定；如省略会按profile选用新变量。不要把key写入URL、GitHub、SAFE。
