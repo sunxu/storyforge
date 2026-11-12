@@ -46,6 +46,8 @@ def probe(api, stage: Path, key: str, old_job: str) -> dict:
     if key != retry.RUN_KEY or old_job != retry.OLD_JOB:
         result["reason_code"] = "FROZEN_BINDING_HOLD"
         return result
+    marker = stage.parent / (key + ".cpu-submit-image-fix-attempted")
+    result["retry_marker"] = "PRESENT" if marker.exists() else "ABSENT"
     try:
         check_local(stage, key)
         result["local_stage"] = "PASS"
@@ -59,7 +61,7 @@ def probe(api, stage: Path, key: str, old_job: str) -> dict:
         result["reason_code"] = guard.classify_failure(exc)
         return result
     try:
-        retry.validate_old_error(api.inspect_job(old_job, namespace="adradar"))
+        retry.validate_old_error(api.inspect_job(job_id=old_job, namespace="adradar"))
         result["old_job"] = "VERIFIED_IMAGE_ERROR"
     except Exception as exc:  # noqa: BLE001 - categorized without source text
         result["reason_code"] = (
@@ -67,8 +69,6 @@ def probe(api, stage: Path, key: str, old_job: str) -> dict:
             if isinstance(exc, ValueError)
             else guard.classify_failure(exc))
         return result
-    marker = stage.parent / (key + ".cpu-submit-image-fix-attempted")
-    result["retry_marker"] = "PRESENT" if marker.exists() else "ABSENT"
     result["status"] = "R60_CPU2_RETRY_READ_ONLY_PROBE_PASS"
     if marker.exists():
         result["reason_code"] = "RETRY_ATTEMPTED__CHECK_JOBS_BEFORE_ANY_ACTION"
