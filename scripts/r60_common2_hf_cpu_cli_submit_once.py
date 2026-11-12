@@ -46,8 +46,11 @@ def submit(stage: Path, key: str, *, execute: bool = False) -> dict:
         return result("CPU2_SUBMIT_HOLD", reason="EXPLICIT_EXECUTE_REQUIRED")
     if marker.exists():
         return result("CPU2_SUBMIT_HOLD", reason="ATTEMPT_MARKER_PRESENT")
+    phase = "SDK_IMPORT"
+    marker_created = False
     try:
         from huggingface_hub import HfApi
+        phase = "FINAL_GATE"
         report = gate.check(HfApi(), stage, key)
         if (report["status"] != "CPU2_HISTORY_PAGINATED_PASS__NO_JOB"
                 or report["history_exhaustive"] is not True
@@ -55,15 +58,18 @@ def submit(stage: Path, key: str, *, execute: bool = False) -> dict:
                 or report["submit_marker"] != "ABSENT"
                 or report["remote_output"] != "EMPTY_PASS"):
             return result("CPU2_SUBMIT_HOLD", reason="FINAL_GATE_FAILED")
+        phase = "HF_HELP"
         help_result = subprocess.run(
             ["hf", "jobs", "run", "--help"], capture_output=True,
             text=True, timeout=20, check=False,
         )
         if help_result.returncode != 0:
             return result("CPU2_SUBMIT_HOLD", reason="HF_HELP_HOLD")
+        phase = "CLI_PREPARE"
         argv = dry.prepare(stage, key, help_result.stdout)
         if "--dry-run" not in argv:
             return result("CPU2_SUBMIT_HOLD", reason="DRY_RUN_ARG_HOLD")
+        phase = "CLI_DRY_RUN"
         preflight = subprocess.run(
             argv, capture_output=True, text=True, timeout=60, check=False,
         )
@@ -71,19 +77,23 @@ def submit(stage: Path, key: str, *, execute: bool = False) -> dict:
                 or ("dry-run" not in (preflight.stdout + preflight.stderr).lower()
                     and "dry run" not in (preflight.stdout + preflight.stderr).lower())):
             return result("CPU2_SUBMIT_HOLD", reason="CLI_DRY_RUN_HOLD")
+        phase = "HF_AUTH"
         auth = subprocess.run(
             ["hf", "auth", "whoami"], capture_output=True,
             text=True, timeout=20, check=False,
         )
         if auth.returncode != 0:
             return result("CPU2_SUBMIT_HOLD", reason="HF_AUTH_HOLD")
+        phase = "SUBMISSION_POLICY"
         argv.remove("--dry-run")
         if argv.count("--attempts") != 1 or argv[argv.index("--attempts")+1] != "1":
             return result("CPU2_SUBMIT_HOLD", reason="ATTEMPT_POLICY_HOLD")
         if "--detach" not in argv or "--name" not in argv or dry.IMAGE not in argv:
             return result("CPU2_SUBMIT_HOLD", reason="SUBMISSION_POLICY_HOLD")
         # Create-only, durable marker BEFORE invoking the potentially billable API.
+        phase = "MARKER_CREATE"
         fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        marker_created = True
         with os.fdopen(fd, "w") as file:
             file.write(json.dumps({
                 "schema": SAFE_SCHEMA, "run_key": key,
@@ -91,6 +101,7 @@ def submit(stage: Path, key: str, *, execute: bool = False) -> dict:
             }, sort_keys=True) + "\n")
             file.flush()
             os.fsync(file.fileno())
+        phase = "SUBMISSION_CALL"
         try:
             process = subprocess.run(
                 argv, capture_output=True, text=True,
@@ -108,7 +119,9 @@ def submit(stage: Path, key: str, *, execute: bool = False) -> dict:
     except FileExistsError:
         return result("CPU2_SUBMIT_HOLD", reason="ATTEMPT_MARKER_PRESENT")
     except Exception:
-        return result("CPU2_SUBMIT_HOLD", reason="SAFE_RUNTIME_HOLD")
+        if marker_created or marker.exists():
+            return result("CPU2_SUBMISSION_UNCONFIRMED_HOLD", reason="POST_MARKER_" + phase + "_HOLD")
+        return result("CPU2_SUBMIT_HOLD", reason="PRE_MARKER_" + phase + "_HOLD")
 
 
 def main() -> int:
