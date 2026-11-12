@@ -40,6 +40,10 @@ description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行�
 
 Mac端统一使用独立`venvs/r60-owner`（Python3.11、仓库dev测试依赖、`huggingface_hub==1.33.0`）运行pytest/Ruff/HF CLI/私有Stage预检；旧`r60-tests`和`hf-cli`原环境不删除也不修改，HF CPU Job Linux 运行环境仍分开冻结。现有R60 Common2 wrapped Stage已出现`STAGE_FILES_HOLD`，优先`scripts/r60_common2_wrapped_hf_stage.py inventory`只读聚合SAFE；不删除`__pycache__`、不忽略未登记文件、不修改Stage Manifest、不在旧run key下重sync/submit。完整命令见`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`。
 
+### 2026-11-12 CLI无 --attempts 的精确兼容门禁
+
+HF Jobs官方文档确认默认Job执行1次。`r60_common2_wrapped_hf_cli.py`的本项目薄适配器仅在CLI help缺失项**恰好**为`--attempts`且Owner Python所用`huggingface_hub==1.33.0`时，以官方默认单次执行替代显示`--attempts 1`；保留所有其他安全选项与共享`hf_job_guard.py`不变。任何其他参数缺失、未固定SDK版本或CLI dry-run未确认必须HOLD。先运行`cli-flags`确认`attempts_mode=PINNED_CLI_DEFAULT_ONE`，然后`ready`，不得跳过提交前marker/组织历史检查。完整回归、Owner命令和当前状态见`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`。
+
 ## Runtime 使用约定
 
 - 只从 `storyforge_dataset.hf_runtime` 导入公共 API。
