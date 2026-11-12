@@ -189,3 +189,7 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 2026-11-11历史DeepSeek QD20：官方`deepseek-flash`有效16/20、阿里云百炼`qwen3.7-flash`有效18/20，配对完整14/20；与Claude+Codex的双PASS候选中3条争议随后独立复核PASS0/HOLD2/REJECT1，不足以指定正式最优Reviewer。Owner本轮授权当前真实1000 Quality Reviewer的全部私有数据外发，远端HTTPS仍需`--allow-remote-review`作为审计标记；不自动授权全量1000运行、GPU或SFT。
 
 对应执行Runbook：`docs/R60_REAL1000_PILOT5_START_20261112_CN.md`第8节。两个模型合成协议远程SAFE全部PASS后，才允许运行一次真实同源5案`advance --max-cases 5`；随后对严重标记的实际证据进行复核和统计，再决定25条扩批。可复用Skill为`skills/storyforge-real-quality-review/SKILL.md`。以上状态仅是代码/文档交付，真实远端合成API探针与5条批量SAFE未实际取得，不得标PASS。
+
+### 2026-11-12 公开HTTP错误状态保留策略
+
+通用请求层只输出固定允许的`MODEL_HTTP_400_HOLD`/`401`/`403`/`404`/`408`/`413`/`429`/`500`/`502`/`503`/`504`，其他HTTP/网络故障保持`MODEL_TRANSPORT_HOLD`。这些错误码同时由`r60_real_quality_batch.py`逐案回执重放验证器和合成API探针SAFE使用，禁止回显 HTTP URL、Error Body、Header、密钥或原文。400用于定位协议/字段被拒，401/403用于认证与权限，429用于限流，不是质量REJECT。网络失败也不得被统计为真实HOLD内容质量，应区分`model_attempt_hold_counts`与`quality_decisions`。
