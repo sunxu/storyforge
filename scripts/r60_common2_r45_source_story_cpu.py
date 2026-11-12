@@ -83,7 +83,7 @@ def common2(path):
 def audit(train, validation, recovery):
     result = {
         "schema": SCHEMA, "status": "COMMON2_R45_STORY_GATE_HOLD",
-        "reason_code": "UNVERIFIED", "r45_original_sha_verified": False,
+        "reason_code": "UNVERIFIED", "stage": "INPUTS", "r45_original_sha_verified": False,
         "r45_train_rows_checked": 0, "r45_validation_rows_checked": 0,
         "common2_cases_checked": 0, "train_story_overlap_count": None,
         "validation_story_overlap_count": None,
@@ -97,11 +97,14 @@ def audit(train, validation, recovery):
     try:
         if len({str(p.resolve(strict=False)) for p in (train, validation, recovery)}) != 3:
             raise Hold("INPUT_PATH_COLLISION_HOLD")
+        result["stage"] = "R45_SPLITS"
         tr, va = r45_split(train, "train"), r45_split(validation, "validation")
         result.update(r45_original_sha_verified=True, r45_train_rows_checked=49,
                       r45_validation_rows_checked=15)
+        result["stage"] = "COMMON2_RECOVERY"
         sources = common2(recovery)
         result["common2_cases_checked"] = 2
+        result["stage"] = "COMPARISON"
         result["train_story_overlap_count"] = len(sources & tr)
         result["validation_story_overlap_count"] = len(sources & va)
         clean = not result["train_story_overlap_count"] and not result["validation_story_overlap_count"]
@@ -117,7 +120,20 @@ def audit(train, validation, recovery):
             "COMMON2_RECOVERY_CONTRACT_HOLD", "COMMON2_SOURCE_ATTESTATION_HOLD",
             "COMMON2_DUPLICATE_TARGET_HOLD", "INPUT_PATH_COLLISION_HOLD",
         }
-        result["reason_code"] = str(e) if type(e) is Hold and str(e) in codes else "INPUT_OR_RUNTIME_HOLD"
+        if type(e) is Hold and str(e) in codes:
+            result["reason_code"] = str(e)
+        elif isinstance(e, FileNotFoundError):
+            result["reason_code"] = "INPUT_FILE_NOT_FOUND_HOLD"
+        elif isinstance(e, (PermissionError, IsADirectoryError)):
+            result["reason_code"] = "INPUT_FILE_ACCESS_HOLD"
+        elif isinstance(e, (json.JSONDecodeError, UnicodeDecodeError)):
+            result["reason_code"] = "INPUT_JSON_DECODE_HOLD"
+        elif isinstance(e, (KeyError, TypeError, IndexError)):
+            result["reason_code"] = "INPUT_SCHEMA_RUNTIME_HOLD"
+        elif isinstance(e, OSError):
+            result["reason_code"] = "INPUT_IO_HOLD"
+        else:
+            result["reason_code"] = "INPUT_OR_RUNTIME_HOLD"
     return result
 
 
