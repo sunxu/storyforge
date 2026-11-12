@@ -285,3 +285,28 @@ def test_remote_listing_rejects_unexpected_path_without_leaking(tmp_path):
     with pytest.raises(ValueError, match="REMOTE_PATH_HOLD"):
         cli.remote_set(api, "preflight/r60/common2/wrapped-cpu/runs/key/")
     assert cli.classify_safe_failure(ValueError("REMOTE_PATH_HOLD")) == "REMOTE_PATH_HOLD"
+
+
+def test_stage_verify_failure_is_not_misclassified_as_remote_sdk(tmp_path, monkeypatch):
+    folder = tmp_path / KEY
+    folder.mkdir()
+    def fail_stage(*args):
+        raise ValueError("INPUT_SHA256_MISMATCH")
+    monkeypatch.setattr(cli, "expected", fail_stage)
+    out = cli.diagnose(folder, KEY)
+    assert out["phase"] == "STAGE_VERIFY"
+    assert out["reason_code"] == "INPUT_SHA256_MISMATCH"
+    assert out["remote_input"] == "UNKNOWN"
+    assert out["job_submission_calls"] == 0
+
+
+def test_unknown_stage_error_stays_private(tmp_path, monkeypatch):
+    folder = tmp_path / KEY
+    folder.mkdir()
+    def fail_stage(*args):
+        raise RuntimeError("private source/secret should never print")
+    monkeypatch.setattr(cli, "expected", fail_stage)
+    out = cli.diagnose(folder, KEY)
+    assert out["phase"] == "STAGE_VERIFY"
+    assert out["reason_code"] == "SDK_OR_RUNTIME_HOLD"
+    assert "private source" not in json.dumps(out)
