@@ -100,3 +100,11 @@ Owner 已回复“按建议推进”，批准**切回真实1000候选的质量�
 ## 7. 当前结论
 
 **先完成 R60 P2 的规则校准与回执验证；Positive Gold 作为独立工作线，先冻结方法，再经 Owner 授权做小批真实筛选。** 当前没有证据证明 Gold72 Development-20 是优秀案例集，也没有证据证明 1,000 条候选池中已有任何一条达到当前 Positive Gold 标准。
+
+## 2026-11-12 Reviewer历史补正与授权范围
+
+此前Reviewer选型比较遗漏2026-11-11的20条`qwen3.7-flash`（阿里云百炼）+ `deepseek-flash`（DeepSeek官方）试评。Owner历史SAFE：34/40份有效、14/20完整配对、Qwen PASS9/HOLD0/REJECT9（18/20）、DeepSeek PASS5/HOLD10/REJECT1（16/20）；对比Claude+Codex，Qwen+DeepSeek双PASS4 vs Claude+Codex双PASS3、共同2；3条独有双PASS随后独立审核PASS0/HOLD2/REJECT1，尚非质量真值。不得以早期DeepSeek15/20阶段数据替代最终16/20。详见`R60_REAL1000_PILOT5_START_20261112_CN.md`第7节。
+
+Owner已在本轮对当前质量审核工作明确允许**所有私有数据外发**；这解除了“远程样本外发未批准”的限制，配置远程HTTPS时仍需显式`--allow-remote-review`并保持两个实际模型各自真实身份、独立无共享评审上下文、私有回执不可覆盖。模型外发许可不等于自动执行全量1000、改变R50世界设定/训练准入或启动GPU/SFT。
+
+现阶段推荐将Claude Opus 5.5+DeepSeek官方Flash列为首批严格同源5条校准的A/B优先候选，`qwen3.7-flash`与Codex列为分歧验证候选；此为待验证方案，不能断言其中任一组比另组准确。尤其原Claude 4Router与通用OpenAI-compatible客户端在system位置上曾不兼容，必须先无私有数据测试模型专属协议及Schema。不得再次误称Qwen3-32B与百炼qwen3.7-flash是同一个Reviewer。
