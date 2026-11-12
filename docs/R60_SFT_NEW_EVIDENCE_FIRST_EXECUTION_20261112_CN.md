@@ -1,5 +1,33 @@
 # StoryForge R60 — 新留证数据优先的SFT主线执行任务书（2026-11-12）
 
+## 十、2026-11-12 主线再次校准：当前无RolePlay生产权限，停止等待真实采集验收
+
+Owner已明确**当前没有RolePlay生产环境权限**。因此此前将`ACTIVE_DEPLOY_SHA/WORKER_STATUS/CAPTURE_SWITCH`列为“下一步唯一优先工作”的安排作废，改记`DEFERRED_NO_PRODUCTION_ACCESS`。后续没有生产权限时，**不得要求Owner先取得服务器权限才能继续StoryForge训练数据整理**。P0A离线合成合同已PASS；P0B为独立有授权才能进行的未来工作，不占当前主线关键路径。即使已部署留证SQL，6张相关表当前均0条，不能用未来采集来代替眼下可用历史数据。
+
+**现在的执行优先级（覆盖本文件前面的P0A→P0B→P1顺序）：**
+
+1. **MAIN-0：真实历史数据质量与SFT输入设计**。以现有Real1000冻结候选为基础，复用Pilot20质量审核、Common2独立PASS及Supabase恢复的103+243条持久化历史。明确两种训练输入策略：`SOURCE_BOUND_DERIVED_CONTEXT`（源历史可核对，System/窗口为当下实验构造）和未来的`CAPTURED_EFFECTIVE_REQUEST`（确有真实请求字节/来源）；两者分别标记，绝不混称原始请求。
+2. **MAIN-1：CPU技术筛选/上下文窗口方案**。先用本仓库`experiments/r58_quality/r60_real1000_history_window_cpu.py`对两条已经恢复的真实样本进行6/12/24/48条窗口**消息数与字符数**诊断，验证尾部三消息ID保持及角色顺序，输出SAFE聚合统计。**该脚本不运行Qwen tokenizer、不验证实际发送System、不生成训练样本，也不代表模型可在预算内训练**。窗口必须考虑从user起始、历史跨度与剧情连续性，不能无条件选最短窗口。
+3. **MAIN-2：扩大到1000条可审核候选**。已有冻结技术合规1000条不能自动算优质训练集。质量筛选按既定六维文学Rubric；先评估Pilot20审查分歧的来源，再分故事抽取覆盖不同剧情与角色的候选，不机械只取模型一致PASS。真实恢复上下文可按必要范围渐进读取，不要求恢复每条全部历史、更不改冻结数据。
+4. **MAIN-3：证据隔离与CPU训练格式验收**。完整核对R50保护集（已知五个story零重叠只是部分证据）、去重/故事分割、训练监督只落最后的assistant目标、固定Qwen tokenizer与chat template后CPU真实长度/Collator验证，形成可追踪的train/val/test候选，最后才由Owner决定GPU。
+5. **DEFERRED：RolePlay生产留证上线与新来源数据**。保持P0B单独批准门禁；未来有权访问且有完好留证新数据时，再将其纳入优先候选池，不阻塞MAIN-0至MAIN-3。
+
+**立即可执行的Owner Mac只读CPU步骤（与既有工作树无冲突，固定最新CI通过提交后运行）：**
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_history_window_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_real1000_history_window_cpu.py \
+  --recovery-dir "$BASE/r60-real1000-qd20-common2-supabase-recovery-v1"
+```
+
+预期回执`SOURCE_BOUND_PERSISTED_HISTORY_WINDOWS_ASSESSED__TRAIN_HOLD`，仅包含2条样本不同窗口的汇总消息数、字符数与角色起始数量。该回执无法判断SFT质量，也不能推导实际历史生成Prompt、真正token数、System/世界组件或全部R50隔离。
+
+**主线状态：`REAL1000_SFT_QUALITY_AND_CONTEXT_FIRST__ROLEPLAY_PRODUCTION_DEFERRED__TRAIN_0`。** 保留原始Real1000、历史审计、Owner私有恢复文件、冻结Rubric与训练门禁全部不变。禁止直接训练、自动GPU、修改源数据或生产。后续若AI质量评审需要模型调用，应保留独立执行授权与隐私保护，不在本CPU诊断里触发。
+
+
 ## 九、2026-11-12 P0B先决条件数据库核验已完成，接下来优先核对运行态
 
 已执行并成功复核独立可重复**只读SQL**：`experiments/r58_quality/r60_p0b_roleplay_capture_readiness_readonly.sql`，具体结果见[P0B联验前置清单](R60_P0B_ROLEPLAY_CAPTURE_ACCEPTANCE_GATES_20261112_CN.md)。六张留证相关表均存在、启用RLS，anon/authenticated无表级SELECT，六表记录数全部为0；五份基础生成证据迁移在迁移历史中各登记一次。此次操作不修改数据库，不含原始请求或用户ID。**这是数据库结构现况验证，不是完整生产SQL/权限安全验收，不能证明Worker已运行或抓取开启。**
