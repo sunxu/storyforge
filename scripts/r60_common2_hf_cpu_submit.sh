@@ -13,6 +13,11 @@ MODE="${1:-}"
 }
 command -v hf >/dev/null || { echo R60_HF_CLI_MISSING >&2; exit 42; }
 command -v python3 >/dev/null || { echo R60_PYTHON_MISSING >&2; exit 42; }
+# Homebrew HF CLI and HF SDK Python may live in different environments.
+HF_SDK_PYTHON="${R60_HF_SDK_PYTHON:-python3}"
+"$HF_SDK_PYTHON" -c "import huggingface_hub" >/dev/null 2>&1 || {
+  echo R60_HF_SDK_MISSING >&2; exit 42;
+}
 BUCKET="hf://buckets/adradar/storyforge-training"
 PREFIX="$BUCKET/preflight/r60/common2/cpu2"
 if [[ "$MODE" == sync ]]; then
@@ -36,14 +41,14 @@ if [[ "$MODE" == sync || "$MODE" == sync-existing ]]; then
   (cd "$STAGE" && shasum -a 256 -c SHA256SUMS.txt >/dev/null) || {
     echo R60_LOCAL_STAGE_SHA_HOLD >&2; exit 42;
   }
-  python3 scripts/r60_common2_hf_cpu_bucket_guard.py empty "$RUN_KEY" --stage "$STAGE"
+  "$HF_SDK_PYTHON" scripts/r60_common2_hf_cpu_bucket_guard.py empty "$RUN_KEY" --stage "$STAGE"
   while IFS= read -r -d '' source; do
     rel="${source#"$STAGE/"}"
     hf buckets cp "$source" "$PREFIX/runs/$RUN_KEY/$rel"
   done < <(find "$STAGE/code" "$STAGE/private_stage" -type f -print0)
   # Upload manifest last; a partially synced run cannot be executed.
   hf buckets cp "$STAGE/SHA256SUMS.txt" "$PREFIX/runs/$RUN_KEY/SHA256SUMS.txt"
-  python3 scripts/r60_common2_hf_cpu_bucket_guard.py ready "$RUN_KEY" --stage "$STAGE"
+  "$HF_SDK_PYTHON" scripts/r60_common2_hf_cpu_bucket_guard.py ready "$RUN_KEY" --stage "$STAGE"
   echo "R60_COMMON2_RUN_KEY=$RUN_KEY"
   echo "R60_COMMON2_PRIVATE_STAGE_DIR=$STAGE"
   echo "R60_COMMON2_SYNC_READY__NO_JOB"
