@@ -142,3 +142,24 @@ test -f "$P/f2" && test -f "$P/f3" && test -f "$P/f4" && test -f "$P/f5"
 ```
 
 输出SAFE JSON可用于后续精确工具设计；其中任何`string_or_unsupported`只是类型，不代表原值已审定。应按下一阶段新增显式允许的状态枚举校验器取证，不使用宽泛的「非空字符串=通过」逻辑。
+
+## 2026-11-12 Owner R50冻库状态类型投影：50→46数量吻合、最终seal仍HOLD
+
+Owner私有0600副本 `f2..f5` 的真实只读SAFE：`R50_FREEZE_STATUS_TYPES_READ__EXCLUSION_HOLD`，selection `original_case_count=50`、`selected_case_count=46`、`excluded_cases` 长度4、`owner_exclusion_authorized=true`；admission `candidate_case_count=46`、`excluded_case_count=4`、`exclude_ids` 长度4；worlds `same_story_id_pair_count=0`；R45 gate `frozen_r45_hashes_verified=true`、`exact_world_id_conflicts=0`、**`heldout_cases_sealed=0`**。`final_heldout_seal`、`promotion`、隐藏alias及world closure相关字段的真实字符串值尚未读取/解释，本次投影仅返回`string_or_unsupported`。**两处排除长度均为4，不等于排除ID列表已经证明相同**；也不能以世界ID冲突0代替完整语义隐藏别名审查。R50完整排除仍HOLD，训练准入0。
+
+新增本机纯标准库只读 `scripts/r60_r50_exclusion_pair_cpu.py` 与合成测试。它仅验证两个文件确实声明50→46、Owner授权true，且两个**标量ID**排除清单长度均4、各自唯一、成员集合一致；仅输出匹配布尔值和固定错误码，不打印ID。若真实`excluded_cases` 是对象列表或不同索引语义，该脚本返回 `EXCLUSION_ID_TYPE_HOLD` 或集合不一致，必须先依据实际Schema明确映射关系，而不是修改原件迎合测试。即使匹配，也仅为 `R50_PRESEAL_FOUR_EXCLUSIONS_MATCH__SEAL_HOLD`：**不会声明最终50案seal、R45隔离、Common2与R50无交集**。
+
+Owner可直接复用已核对SHA的私有副本：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_exclusion_pair_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_exclusion_pair_cpu.py
+P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
+"$PY" scripts/r60_r50_exclusion_pair_cpu.py --selection "$P/f2" --admission "$P/f3"
+```
+
+如果HOLD，仅回传SAFE原样，不要上传JSON报告原件、真实排除ID或自由文本状态。下一步需要独立核实封存状态的真实枚举含义、R45隐藏别名完整审查、最终50项全量保护以及Common2的实际来源交集。
