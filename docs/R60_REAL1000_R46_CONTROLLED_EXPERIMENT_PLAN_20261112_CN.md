@@ -126,3 +126,33 @@ PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
 ```
 
 预期`COMMON2_GENERIC_SYSTEM_IN_MEMORY_WRAPPER_PREVIEW_PASS__TRAIN_HOLD`、`system_text_pin_verified=true`、`original_input_sha_verified=true`、`wrapped_examples=2`、`synthetic_system_messages_added=2`、`files_written=0`、`train_admitted=0`。**尚待Owner真实SAFE，不可先声明预览PASS**。本轮不重复R45/R50故事/heldout隔离、无HF、无GPU、无推理。
+
+## 2026-11-12 Owner Common2冻结System内存预览真实PASS → 新包装输入的实际离线CPU验收待执行
+
+Owner Mac回执`COMMON2_GENERIC_SYSTEM_IN_MEMORY_WRAPPER_PREVIEW_PASS__TRAIN_HOLD`：`system_text_pin_verified=true`、`original_input_sha_verified=true`、`wrapped_examples=2`、`source_messages_preserved=true`、`original_targets_unchanged=true`、`supervision_only_final_assistant=true`、`synthetic_system_messages_added=2`、`files_written=0`。**这一内存输入结构已核验，勿重复。** 此前已通过的是**未添加System**的Swift Collator，两者绝对不可互换认定。
+
+已新增离线程序`scripts/r60_common2_wrapped_system_cpu_audit.py`及合成测试`tests/test_r60_common2_wrapped_system_cpu_audit.py`。它重用原Common2冻结JSONL+manifest、R27/R52精确449字节System pin、现有HF Qwen3.8实际Tokenizer/ms-swift 4.5.3模板+R18 last-round label校验逻辑，**全程内存包装**并对包装后的两个实例重新调用**真实**ms-swift Collator。全部失败只输出SAFE固定阶段和固定HOLD，不打印私有原文、哈希或Token IDs。它仅使用Owner**已经在Mac本地存在**的模型tokenizer/config快照，强制环境Offline，避免模型权重/GPU/新HF Job和训练输出文件。合成测试只是代码级验证，Mac真实模型/私有输入结果**尚待验收**。
+
+Mac本地先检查是否有现成Pinned Snapshot（模型revision：`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`）。**不要为本次任务在线下载27B权重**。只有确实存在带tokenizer.json/tokenizer_config.json/config.json的本地快照才运行；缺少则标`LOCAL_SNAPSHOT_HOLD`并保留技术未验，不得擅自发起HF Job。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_system_cpu_audit.py
+
+PIN="1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+# 下列SNAPSHOT须填写Owner已经有的真实本地快照，不要凭空设目录：
+SNAPSHOT="/已存在且路径含$PIN的本地Qwen3.8快照目录"
+if [ -f "$SNAPSHOT/tokenizer.json" ] && [ -f "$SNAPSHOT/tokenizer_config.json" ] && [ -f "$SNAPSHOT/config.json" ]; then
+ "$PY" scripts/r60_common2_wrapped_system_cpu_audit.py \
+   --input-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-common2-sft-experimental11-v1" \
+   --snapshot "$SNAPSHOT"
+else
+ echo "LOCAL_SNAPSHOT_HOLD: existing pinned tokenizer/config snapshot not found; no downloads/jobs"
+fi
+```
+
+预期（仅当真实运行成功后才能宣称）`COMMON2_WRAPPED_SYSTEM_ACTUAL_CPU_COLLATOR_PASS__TRAIN_HOLD`，返回包装后Tokenizer/Swift真实计数及最后Assistant监督token计数，不包含任何正文。即使此技术门禁PASS，`r60_input_design_approved=false`、`deployment_template_compatibility_verified=false`、`semantic_world_isolation_verified=false`、`train_admitted=0`保持不变。统一训练规范的D1/D2政策决策、语义隔离及新实验授权仍需Owner书面许可。
