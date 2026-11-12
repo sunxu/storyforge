@@ -5,8 +5,9 @@ umask 077
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 MODE="${1:-}"
-[[ "$MODE" == sync || "$MODE" == submit ]] || {
+[[ "$MODE" == sync || "$MODE" == sync-existing || "$MODE" == submit ]] || {
   echo "Usage: bash scripts/r60_common2_hf_cpu_submit.sh sync <input-dir> [output-stage-parent]" >&2
+  echo "OR: bash scripts/r60_common2_hf_cpu_submit.sh sync-existing <RUN_KEY> <STAGE_DIR>" >&2
   echo "OR: STORYFORGE_ALLOW_PAID_CPU=YES STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY=YES bash scripts/r60_common2_hf_cpu_submit.sh submit <RUN_KEY> <STAGE_DIR>" >&2
   exit 2
 }
@@ -23,6 +24,18 @@ if [[ "$MODE" == sync ]]; then
   STAGE="$STAGE_PARENT/$RUN_KEY"
   python3 scripts/r60_common2_hf_cpu_stage.py \
     --input-dir "$INPUT" --output-dir "$STAGE" --run-key "$RUN_KEY"
+fi
+if [[ "$MODE" == sync-existing ]]; then
+  RUN_KEY="${2:?Existing run key required}"
+  STAGE="${3:?Existing stage dir required}"
+  [[ "$STAGE" == *"/$RUN_KEY" && -f "$STAGE/SHA256SUMS.txt" ]] || {
+    echo R60_EXISTING_STAGE_MISMATCH >&2; exit 42;
+  }
+fi
+if [[ "$MODE" == sync || "$MODE" == sync-existing ]]; then
+  (cd "$STAGE" && shasum -a 256 -c SHA256SUMS.txt >/dev/null) || {
+    echo R60_LOCAL_STAGE_SHA_HOLD >&2; exit 42;
+  }
   python3 scripts/r60_common2_hf_cpu_bucket_guard.py empty "$RUN_KEY" --stage "$STAGE"
   while IFS= read -r -d '' source; do
     rel="${source#"$STAGE/"}"
