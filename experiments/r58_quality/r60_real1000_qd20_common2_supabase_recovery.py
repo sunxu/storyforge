@@ -22,6 +22,12 @@ SCHEMA = "storyforge_r60_qd20_common2_supabase_recovery_safe_v1"
 PRIVATE_SCHEMA = "storyforge_r60_qd20_common2_supabase_recovery_private_v1"
 FILENAME = "R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json"
 MAX_HISTORY = 500
+STAGE = "START"
+
+
+def mark(stage: str) -> None:
+    global STAGE
+    STAGE = stage
 
 
 class Hold(ValueError):
@@ -109,6 +115,7 @@ def read_one(cur, case: dict) -> dict:
     src = case["source"]
     story, session, target = (
         src["story_id"], src["session_id"], src["assistant_message_id"])
+    mark("READ_TARGET")
     cur.execute("""
         SELECT id::text, role, content, turn_index, created_at
         FROM public.v2_chat_messages
@@ -120,6 +127,7 @@ def read_one(cur, case: dict) -> dict:
             or row[3] != src["assistant_turn_index"]):
         raise Hold("TARGET_DB_BINDING_HOLD")
     target_created = row[4]
+    mark("READ_HISTORY")
     cur.execute("""
         SELECT id::text, role, content, turn_index, created_at
         FROM public.v2_chat_messages
@@ -130,8 +138,10 @@ def read_one(cur, case: dict) -> dict:
         ORDER BY turn_index DESC, created_at DESC, id DESC
         LIMIT %s
     """, (story, session, row[3], target_created, MAX_HISTORY + 1))
+    mark("VALIDATE_HISTORY")
     data = validate_history(case, cur.fetchall())
     # Current story settings may have changed since target response.
+    mark("READ_CURRENT_STORY")
     cur.execute("""
         SELECT version, updated_at,
                NULLIF(BTRIM(initial_system_prompt),'') IS NOT NULL,
@@ -139,6 +149,7 @@ def read_one(cur, case: dict) -> dict:
         FROM public.user_stories WHERE id=%s
     """, (story,))
     story_row = cur.fetchone()
+    mark("READ_PRIOR_CHECKPOINTS")
     cur.execute("""
         SELECT count(*) FROM public.v2_session_checkpoints
         WHERE story_id=%s AND session_id=%s AND turn_index <= %s
@@ -166,9 +177,11 @@ def read_one(cur, case: dict) -> dict:
 def recover(dsn: str, source_cases: list[dict]) -> list[dict]:
     import psycopg
 
+    mark("DB_CONNECT")
     with psycopg.connect(dsn, autocommit=False, connect_timeout=10) as db:
         try:
             with db.cursor() as cur:
+                mark("DB_READONLY_TRANSACTION")
                 cur.execute(
                     "SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
                 cur.execute("SET LOCAL row_security=on")
@@ -181,27 +194,33 @@ def recover(dsn: str, source_cases: list[dict]) -> list[dict]:
                            r.rolbypassrls, r.rolsuper
                     FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
                 """)
+                mark("DB_ROLE_GUARD")
                 private.assert_guard(cur.fetchone())
+                mark("READ_TARGET")
                 return [read_one(cur, c) for c in source_cases]
         finally:
             db.rollback()
 
 
 def run(args: argparse.Namespace) -> dict:
+    mark("OUTPUT_PRECHECK")
     if args.output_dir.exists() or args.output_dir.is_symlink():
         raise Hold("OUTPUT_EXISTS_HOLD")
     # Validate local evidence BEFORE any DB access.
     baseline_args = argparse.Namespace(**vars(args))
     baseline_args.output_dir = args.blind_dir
+    mark("FROZEN_CONTEXT_PREFLIGHT")
     baseline = context.run(baseline_args)
     if baseline["candidate_count"] != 2 or baseline["strict_independent_pass"] != 2:
         raise Hold("BASELINE_CONTEXT_HOLD")
+    mark("FROZEN_POOL_BINDING")
     pool, _ = quality.frozen_pool(args.expand_dir)
     _cfg, packets, _ = pilot.get_state(args.review_dir)
     private.private_dir(args.blind_dir, create=False)
     # read securely as already checked in context.run
     blind = json.loads(private.read_private(
         args.blind_dir / "R60_QD20_COMMON2_BLIND_PRIVATE.json", 200000))
+    mark("SELECT_TWO_PRIVATE_SOURCES")
     source_cases = select_sources(pool, packets["packets"], blind)
     dsn = os.getenv("R60_SUPABASE_READONLY_DSN", "")
     if not dsn:
@@ -216,7 +235,9 @@ def run(args: argparse.Namespace) -> dict:
         "cases": recovered,
         "train_admitted": 0,
     }
+    mark("CREATE_PRIVATE_OUTPUT")
     private.private_dir(args.output_dir, create=True)
+    mark("WRITE_PRIVATE_RESULT")
     private.write_new(args.output_dir / FILENAME, pilot.canonical(manifest))
     return {
         "schema": SCHEMA,
@@ -262,9 +283,18 @@ def main() -> int:
         return 0
     except Exception as exc:  # noqa: BLE001 - never output DB text/IDs/DSN
         reason = str(exc) if isinstance(exc, Hold) else "DB_HISTORY_RECOVERY_INPUT_HOLD"
+        safe_kinds = {"OperationalError", "ProgrammingError", "DataError",
+                      "IntegrityError", "InterfaceError", "FileNotFoundError",
+                      "PermissionError", "KeyError", "TypeError", "ValueError",
+                      "IndexError", "AttributeError", "JSONDecodeError",
+                      "UnicodeDecodeError", "OSError", "ModuleNotFoundError"}
+        kind = type(exc).__name__
         print(json.dumps({
             "schema": SCHEMA, "status": "QD20_COMMON2_DB_RECOVERY_HOLD",
-            "reason_code": reason, "quality_v1_admitted": 0,
+            "reason_code": reason,
+            "diagnostic_stage": STAGE,
+            "diagnostic_exception_type": kind if kind in safe_kinds else "OTHER",
+            "quality_v1_admitted": 0,
             "train_admitted": 0, "database_modified": False,
             "model_inference_calls": 0, "gpu_job_started": False,
             "private_values_emitted": False,
