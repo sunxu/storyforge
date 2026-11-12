@@ -71,3 +71,36 @@ def test_duplicate_target_holds(tmp_path, monkeypatch):
     doc["cases"][1]["assistant_message_id"] = doc["cases"][0]["assistant_message_id"]
     paths[-1].write_text(json.dumps(doc))
     assert m.audit(*paths)["reason_code"] == "COMMON2_DUPLICATE_TARGET_HOLD"
+
+
+def test_missing_common2_file_has_safe_stage_and_code(tmp_path, monkeypatch):
+    train, validation, recovery = fixture(tmp_path, monkeypatch)
+    recovery.unlink()
+    report = m.audit(train, validation, recovery)
+    assert report["stage"] == "COMMON2_RECOVERY"
+    assert report["reason_code"] == "INPUT_FILE_NOT_FOUND_HOLD"
+    assert report["r45_original_sha_verified"] is True
+    assert report["common2_cases_checked"] == 0
+    assert report["train_admitted"] == 0
+    assert str(recovery) not in json.dumps(report)
+
+
+def test_common2_invalid_json_has_safe_code(tmp_path, monkeypatch):
+    train, validation, recovery = fixture(tmp_path, monkeypatch)
+    recovery.write_text("{invalid private text")
+    report = m.audit(train, validation, recovery)
+    assert report["stage"] == "COMMON2_RECOVERY"
+    assert report["reason_code"] == "INPUT_JSON_DECODE_HOLD"
+    assert report["train_admitted"] == 0
+    assert "invalid private text" not in json.dumps(report)
+
+
+def test_common2_wrong_schema_rejects_without_leaking_string(tmp_path, monkeypatch):
+    train, validation, recovery = fixture(tmp_path, monkeypatch)
+    payload = json.loads(recovery.read_text())
+    payload["schema"] = "private-value-do-not-echo"
+    recovery.write_text(json.dumps(payload))
+    report = m.audit(train, validation, recovery)
+    assert report["stage"] == "COMMON2_RECOVERY"
+    assert report["reason_code"] == "COMMON2_RECOVERY_CONTRACT_HOLD"
+    assert "private-value-do-not-echo" not in json.dumps(report)
