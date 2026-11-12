@@ -1,3 +1,5 @@
+> **2026-11-12 技术执行下一步（覆盖历史Mac本地无Snapshot的旧建议）：** Owner Mac没有已固定revision的Qwen3.8本地Tokenizer快照，按项目`AGENTS.md`及`skills/storyforge-hf-jobs/SKILL.md`，**模型特定Tokenizer和实际ms-swift只能在HF CPU执行**；Mac只准备/同步私有Stage。新增[Wrapped HF CPU Quality Pipeline任务书](R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md)、独立Stage/CLI/Worker/回执校验及仅合成数据的Actions CI。该代码待Owner Mac+CI验收，**没有在本轮提交HF Job、没有新System版Collator真实PASS**，D1-D5仍待Owner签批且train_admitted0。不得复用此文先前要求Mac本地下载Snapshot或本地调用Swift的过时建议。
+
 # StoryForge R60 — 以R46为参照的Real1000 SFT单变量实验计划（2026-11-12）
 
 **状态：仅静态配置建议与质量准入设计，不是已启动或获批训练。** Owner独立分支 `r60/common2-cpu2-owner`；不修改历史R46、R50、R54、Common2冻结的私有数据，不提交HF Job、GPU或模型推理。
