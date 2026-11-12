@@ -104,3 +104,31 @@ STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$KEY"
 对既有成功Job结果应优先**只读**取回`hf://buckets/adradar/storyforge-training/preflight/r60/common2/cpu2/results/<RUN_KEY>/R60_COMMON2_CPU2_SAFE_RECEIPT.json`，验证schema、`cases=2`、Token与Label数量区间、成功状态、`collator_verified=true`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、`gpu_started=false`、`model_weights_loaded=false`、`native_template_token_parity_verified=false`，只输出聚合SAFE。这是已有Job证据回收，不启动任何新Job或覆盖Bucket。若某字段缺失/不符，保留HOLD。回执字节SHA可留Owner私有台账，不要公开源数据摘要。
 
 剩余门禁：真实发送的完整上下文/历史有效System与世界组件；原生Chat Template token不等价的规范决策；R50冻结完整来源集合/故事、session、message与Train候选的交集证明；独立Quality/Owner admission；训练授权。先解决这些门禁，不再为了已经PASS的2条重复花钱跑CPU Probe。任何新的训练、GPU、模型推理都需要显式工作范围，不由本CPU技术PASS自动许可。
+
+
+## 7. 第五轮已完成Job的 SAFE 回执只读回收命令（当前建议执行）
+
+此处不创建新的RUN_KEY、不提交任何Job。Owner Mac上只从固定成功结果前缀**读取**回执；代码中的KEY必须与成功Job一致。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+export PATH="/opt/homebrew/bin:$PATH"
+TEST_PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$TEST_PY" -m pytest -q tests/test_r60_common2_cpu2_receipt_verify.py
+KEY="r60-common2-cpu2-20261112T073854Z-e076f53c8eae"
+BASE="$HOME/.local/share/storyforge/r60/private"
+test -d "$BASE"
+umask 077
+RECEIPT_DIR="$(mktemp -d "$BASE/r60-cpu2-safe-receipt-XXXXXXXX")"
+chmod 700 "$RECEIPT_DIR"
+RECEIPT="$RECEIPT_DIR/R60_COMMON2_CPU2_SAFE_RECEIPT.json"
+REMOTE="hf://buckets/adradar/storyforge-training/preflight/r60/common2/cpu2/results/$KEY/R60_COMMON2_CPU2_SAFE_RECEIPT.json"
+# hf buckets cp可读取已有对象；此调用不改远端Bucket。
+hf buckets cp "$REMOTE" "$RECEIPT"
+test -f "$RECEIPT" && test ! -L "$RECEIPT"
+chmod 600 "$RECEIPT"
+"$TEST_PY" scripts/r60_common2_cpu2_receipt_verify.py --receipt "$RECEIPT"
+```
+
+预期：`CPU2_SAFE_RECEIPT_VERIFIED__R50_TRAIN_HOLD`，输出安全的2条Token/Collator/Supervised计数、固定未准入门禁。任何`CPU2_SAFE_RECEIPT_HOLD`即停，不能更改原始SAFE JSON让它PASS。下载后文件仍在Owner私有0700目录，可供后续只读取证；不要提交GitHub。此脚本只验证业务字段/有限范围、0600权限/普通文件，**不单独证明HF远端对象哈希一致性**；如需传输层完整字节证据，再在Owner私有台账本地计算哈希并将来源URI与HF Job ID绑定，不公开私有输入哈希。上述HF CLI远端→本地`cp`方向是建议操作，需由Owner在实际CLI2.4.0核实；未收到真实回执之前不得标为已完成归档。
