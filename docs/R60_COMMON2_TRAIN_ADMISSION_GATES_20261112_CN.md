@@ -465,3 +465,13 @@ Owner已经确认真实本地位置：
 - 已有HF CPU2 SAFE回执：`$HOME/.local/share/storyforge/r60/private/r60-cpu2-safe-receipt-2ZtCBlmk/R60_COMMON2_CPU2_SAFE_RECEIPT.json`
 
 下一步Owner仅更新隔离分支后运行`python -m pytest -q tests/test_r60_common2_training_readiness_cpu.py`，然后执行`scripts/r60_common2_training_readiness_cpu.py --input-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-common2-sft-experimental11-v1" --cpu2-receipt "$HOME/.local/share/storyforge/r60/private/r60-cpu2-safe-receipt-2ZtCBlmk/R60_COMMON2_CPU2_SAFE_RECEIPT.json"`。输出只需SAFE JSON；严格保持`train_admitted=0`，不开DB/HF/GPU/SFT。
+
+## 2026-11-12 Owner Common2实验输入×CPU2独立证据预检真实PASS（最新权威）
+
+Owner Mac真实SAFE：`status=COMMON2_INPUT_AND_CPU2_INDEPENDENT_CHECKS_PASS__ADMISSION_HOLD`、`reason_code=INDEPENDENT_ARTIFACT_CHECKS_ONLY`、`stage=READINESS_REPORTED`、`cases_verified=2`、`payload_sha_verified=true`、`derived_input_contract_verified=true`、`cpu2_existing_receipt_verified=true`、`tokenizer_token_counts=[2552,4048]`、`real_collator_token_counts=[2486,3982]`、`supervised_token_counts=[282,305]`。本轮未访问数据库、HF或GPU、未输出私有数据，`quality_v1_admitted=0`、`train_admitted=0`。严格理解：**实验SFT JSONL与HF CPU2聚合回执分别验签PASS，既有CPU2 SAFE缺少可验证的输入SHA绑定，不能声称该检查证明远端Job对该JSONL逐字节执行**。
+
+此前已闭环原始R50 50=46+4、Common2×原始50 Story/Session/Message交集0/0/0、Common2×R45原始Train49/Val15 Story交集0/0、R45×R50五世界机械精确审计PASS。以上冻结输入技术检查不得重复，且零精确ID交集不能推出别名和语义世界独立。
+
+**下一主线目标**仅是Common2两条的训练数据准入决策草案：固定已证实的`qwen3_8`/`last_round`/`max_length=16384`/`add_non_thinking_prefix=False`作为训练侧已测实现候选，明确部署侧未知且`train_deploy_template_policy_approved=false`；对两条和完整保护世界的语义证据给出真实出处或明确HOLD，任何缺证据不得伪造PASS；Owner书面审核并明确授权后才能改变`train_admitted`。本轮`semantic_world_alias_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`final_heldout_seal_verified=false`全部维持。不得把R50最终官方评测封存和W17其他历史争议无限插入Real1000 SFT主线，R50原始50条训练保护边界仍有效。
+
+扩大至Real1000更多高质量候选以前，优先复用该Common2输入-CPU技术预检模板与已冻结六维质量标准，不自动进行GPU/SFT或重新读取生产数据库。
