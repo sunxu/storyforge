@@ -1,5 +1,14 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 优先级正式调整（优先于本文之前所有P0顺序说明）
+
+用户已确认采用**新生成请求完整留证数据优先、旧真实1000条并行补充**的SFT路线。新主线权威实施书：[R60 新留证数据优先实施任务书](R60_SFT_NEW_EVIDENCE_FIRST_EXECUTION_20261112_CN.md)。原先“为两条旧Common2无限追查历史实际Prompt”为首要P0的要求即日起**降级为补充资料调查**，不再阻挡前向留证系统的P0验收。以下旧日志保留为审计事实，不代表当前执行顺序。
+
+**当前顺序：P0A RolePlay现有留证方案的离线合成/只读准备 → P0B 经独立批准的真实小范围联验及性能/权限验收 → P1 新留证数据技术筛选、完整R50隔离及冻结六维质量筛选 → P3 正式训练输入CPU检验与训练准入/另行GPU批准。旧1000条走P2并行，保留原2条独立PASS、103/243条历史恢复基线，但没有历史实际发送System/完整R50隔离就不升格为原始请求已证实。**
+
+最新只读Supabase现场再次核对：`v2_generation_evidence`、`v2_generation_evidence_exports`、`v2_generation_evidence_grants`、`v2_generation_evidence_request_links`均为0，当前无已留证候选可以直接进入P1。RolePlay已实现但**采集、Worker、导出实际未启用**；本轮“推进”不授权生产启用、SQL变更、付费Provider测试、读取真实用户原文或GPU。优先复用`sunxu/RolePlay/ops/evidence/`与现有`scripts/check-v2-generation-evidence-*.mjs`，不重复开发证据捕获服务。正式训练准入仍0。
+
+
 ## 2026-11-12 生产源码真实溯源已定位：RolePlay中已有Prompt构造及未来留证机制，下一步按目标时间固定历史版本
 
 已实际直接读取同帐号可访问的私有生产仓库`sunxu/RolePlay`：`src/app/api/chat/v2/route.ts`、`src/lib/story-v2/prompts/{index,base,runtime,runtime-rollout}.ts`，以及`.claude/plans/2026-11-07-v2-generation-evidence.md`、`.claude/docs/v2-production-release-20261110.md`。**详细权威取证记录及链接**：[R60 RolePlay生产请求还原专项审计](R60_ROLEPLAY_PRODUCTION_REQUEST_RECON_20261112_CN.md)。
