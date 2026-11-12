@@ -1,5 +1,10 @@
 # StoryForge HF Jobs 实战手册：Mac CLI、Bucket、CPU Tokenizer/Collator（2026-11-12）
 
+## 8. 第五轮最终SAFE回执二次核实（已完成）
+
+Owner已执行只读回收及`r60_common2_cpu2_receipt_verify.py`，返回`CPU2_SAFE_RECEIPT_VERIFIED__R50_TRAIN_HOLD`，cases2；原生Tokenizer `[2552,4048]`、Swift真实Collator `[2486,3982]`、监督token `[282,305]`。`tokenizer_verified=true`、`collator_verified=true`、`gpu_started=false`、`model_inference_calls=0`、`native_template_token_parity_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。两组数字均相差66，但**长度差仅是观察，不是已确认模板差异原因，更不是token级等价证明**。至此成功Job `6af570089737d9a9e093d501` 的日志标记及SAFE回执二次校验均已确认，禁止无新技术目的重复提交。私有原始SAFE和SHA留Owner私有台账；对外只保留本段聚合数据。
+
+
 > 证据等级：以下「已验证」基于 Owner Mac SAFE 回执和 HF Job inspect/日志；「限制/待核」不得误写为 PASS。本手册记录 R60 Common2 实际成功路径，其他模型或 GPU Job 不得机械套用。公共安全规范仍以 `docs/standards/HF_JOBS_ENGINEERING.md`、`skills/storyforge-hf-jobs/SKILL.md`、`scripts/hf_job_guard.py` 为准。
 
 ## 1. 已成功运行的环境与角色边界
