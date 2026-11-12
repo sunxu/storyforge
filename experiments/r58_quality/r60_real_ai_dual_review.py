@@ -15,6 +15,7 @@ import urllib.request
 from pathlib import Path
 
 import r60_real_private_batch as batch
+import r60_reviewer_transport as transport
 
 OUT_FILE = "R60_REAL_G1_AI_REVIEWS_PRIVATE.jsonl"
 MAX_REPLY_BYTES = 120_000
@@ -110,19 +111,20 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 
 def model_request(endpoint: str, model: str, key: str, prompt: str,
-                  timeout: int, json_mode: bool) -> dict:
-    body = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": REVIEW_INSTRUCTIONS},
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0,
-        "max_tokens": 1600,
-        "stream": False,
-    }
-    if json_mode:
-        body["response_format"] = {"type": "json_object"}
+                  timeout: int, json_mode: bool, *,
+                  protocol: str = "openai-chat") -> dict:
+    try:
+        body = transport.build_body(
+            model=model, prompt=prompt, instructions=REVIEW_INSTRUCTIONS,
+            profile=protocol, json_mode=json_mode,
+        )
+    except ValueError as exc:
+        # The only permitted reason is a fixed public enum, not input text.
+        code = str(exc)
+        if code in ("REVIEW_PROTOCOL_UNSUPPORTED",
+                    "CLAUDE_PROXY_JSON_MODE_UNSUPPORTED"):
+            raise Hold(code) from exc
+        raise Hold("MODEL_PROTOCOL_HOLD") from exc
     headers = {"Content-Type": "application/json"}
     if key:
         headers["Authorization"] = "Bearer " + key
