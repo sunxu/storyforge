@@ -35,7 +35,10 @@ def build_body(*, model: str, prompt: str, instructions: str,
         if profile == "openai-chat":
             # Preserve the historical generic client behavior.
             body["temperature"] = 0
-        # DeepSeek protocol is not assumed to share Qwen Thinking settings.
+        elif profile == "deepseek-chat":
+            # Reuse the actual 2026-11-11 QD20 official API request contract.
+            body["temperature"] = 0
+            body["thinking"] = {"type": "disabled"}
         if json_mode:
             body["response_format"] = {"type": "json_object"}
     return body
