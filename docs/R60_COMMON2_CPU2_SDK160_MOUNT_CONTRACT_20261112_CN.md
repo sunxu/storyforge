@@ -162,3 +162,12 @@ python3 scripts/r60_common2_hf_cpu_cli_submit_once.py --run-key "$KEY" --stage "
 ```
 
 该命令实际可能提交一条**付费CPU-only** Job；只有Owner明确希望提交时才执行。不得运行历史禁用的 `scripts/r60_common2_hf_cpu_submit.sh submit`，不得改用 `hf_job_guard.py --submit`（历史Guard在当前CLI下会把`--`传到错误位置），不得在失败时重放。`R50`全量隔离仍HOLD，`train_admitted=0`，不能自动开始GPU/训练。
+
+
+## 2026-11-12 真实CPU Collator Job首次运行：仅依赖门禁HOLD
+
+Owner经Mac Homebrew HF CLI 2.4.0成功一次性提交真实Common2 CPU-only Job `6af55aa9ab34849891aed9f4`（运行键`r60-common2-cpu2-20261112T054440Z-d5ad72dc667c`）。HF插件inspect确认`ERROR`，exit 42；Worker日志尾行`R60_CPU2_V2_DEPENDENCY_HOLD`。pip实际完成ms-swift4.5.3、transformers5.16.1、qwen-vl-utils0.0.14、decord0.6.0等安装；失败发生于`python -m pip check`。Tokenizer snapshot、ms-swift Collator、SAFE最终回执均**未执行**。该RUN_KEY与本地原子尝试标记永久保留，严禁对相同键重试、删除标记、覆盖Stage/远端前缀。
+
+为定位问题，HF插件以同一镜像及依赖集另行运行**无私有挂载**的独立CPU-basic诊断Job `6af55b6fab34849891aeda20`，状态`COMPLETED`，标准pip check返回1，**完整唯一**报错：`decord 0.6.0 is not supported on this platform`。这是pip平台元数据检查，尚不能代表实际视频解码能力；早先无挂载依赖Smoke仅确认过decord import，不能证明VideoReader运行。
+
+已修订GitHub Worker `scripts/r60_common2_hf_cpu_worker_v2.sh`：仅在pip check恰好返回1且stdout恰好为**唯一已知报错字符串**、stderr为空时允许进入额外`decord==0.6.0`、`import decord`、`from decord import cpu, VideoReader`、`cpu(0)`可用性验证；其他任何依赖冲突、信息变化、导入失败仍exit42，日志仅输出固定SAFE HOLD代码，不泄漏原始pip输出。此例外只解决已实测平台声明误报，**不表示实际VideoReader打开视频成功**；CPU Collator本身不处理视频。新增合成合同测试 `tests/test_r60_common2_cpu2_decord_dependency_gate.py`。禁止修改原远端Stage。新源码只会用于**下一个create-only RUN_KEY的Stage**，必须重新做单测、Stage SHA、HF CLI dry-run、远端empty→sync-existing→ready、完整Job分页排重、一次性marker。无新Common2私有Job提交、训练准入0、GPU禁用。
