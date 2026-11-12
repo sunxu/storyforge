@@ -13,7 +13,7 @@ try:
 except ModuleNotFoundError:
     from r60_r50_freeze_status_projection_cpu import read_private_json
 
-SCHEMA = "storyforge_r60_r50_exclusion_pair_safe_v1"
+SCHEMA = "storyforge_r60_r50_exclusion_pair_safe_v2"
 
 
 def safe_ids(items):
@@ -28,6 +28,27 @@ def safe_ids(items):
     if len(set(keys)) != 4:
         raise ValueError("EXCLUSION_ID_DUPLICATE_HOLD")
     return set(keys)
+
+
+def selection_ids(items):
+    """Explicitly map PRESEAL object records to the scalar case_id domain.
+
+    No canonicalization, stringification, implicit positional matching or
+    fallback to nested/source fields. Reject mixed object/scalar arrays.
+    """
+    if not isinstance(items, list) or len(items) != 4:
+        raise ValueError("FOUR_IDS_SHAPE_HOLD")
+    if all(type(row) is dict for row in items):
+        if any("case_id" not in row or "reason" not in row
+               or type(row["case_id"]) is not str
+               or not row["case_id"] or len(row["case_id"]) > 256
+               or type(row["reason"]) is not str or not row["reason"]
+               for row in items):
+            raise ValueError("EXCLUSION_OBJECT_SCHEMA_HOLD")
+        return safe_ids([row["case_id"] for row in items])
+    if all(type(row) in (str, int) for row in items):
+        return safe_ids(items)
+    raise ValueError("EXCLUSION_ID_TYPE_HOLD")
 
 
 def check(selection: Path, admission: Path):
@@ -63,7 +84,7 @@ def check(selection: Path, admission: Path):
         x, y = a.get("excluded_cases"), b.get("exclude_ids")
         result["selection_excluded_count"] = len(x) if isinstance(x, list) else 0
         result["admission_excluded_count"] = len(y) if isinstance(y, list) else 0
-        xids, yids = safe_ids(x), safe_ids(y)
+        xids, yids = selection_ids(x), safe_ids(y)
         result["exclusion_id_sets_equal"] = (xids == yids)
         if not result["exclusion_id_sets_equal"]:
             raise ValueError("EXCLUSION_ID_SET_MISMATCH_HOLD")
@@ -72,7 +93,7 @@ def check(selection: Path, admission: Path):
     except Exception as exc:
         known = {"DUPLICATE_INPUT_HOLD", "COUNT_OR_AUTH_HOLD",
                  "FOUR_IDS_SHAPE_HOLD", "EXCLUSION_ID_TYPE_HOLD",
-                 "EXCLUSION_ID_DUPLICATE_HOLD",
+                 "EXCLUSION_ID_DUPLICATE_HOLD", "EXCLUSION_OBJECT_SCHEMA_HOLD",
                  "EXCLUSION_ID_SET_MISMATCH_HOLD"}
         result["reason_code"] = str(exc) if isinstance(exc, ValueError) and str(exc) in known else "SOURCE_FORMAT_OR_RUNTIME_HOLD"
     return result
