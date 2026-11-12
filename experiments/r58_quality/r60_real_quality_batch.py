@@ -206,7 +206,11 @@ def case_receipt(case: dict, index: int, pool_hash: str,
     # If neither model can be reached, assume a configuration/service outage,
     # not 1000 examples of poor literary quality. Fail before committing a case.
     if not reviews and attempt_holds and all(
-            reason == "MODEL_TRANSPORT_HOLD" for reason in attempt_holds):
+            reason == "MODEL_TRANSPORT_HOLD" or reason in ai.SAFE_HTTP_HOLDS
+            for reason in attempt_holds):
+        # Both providers failed at transport/protocol/service level:
+        # fail before writing an irreversible per-case receipt. This
+        # preserves resumability after rate limit or service recovery.
         raise Hold("BOTH_REVIEW_MODELS_UNAVAILABLE")
     record = {
         "schema": CASE_SCHEMA, "position": index,
