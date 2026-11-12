@@ -346,3 +346,11 @@ Owner Mac 对此前经SHA校验的历史R45完整来源隔离报告副本`f5`执
 **仍需保留：** `r45_semantic_world_isolation_verified=false`、`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。R45报告本身标记隐藏别名与短句改写`PENDING`，历史R50正式`final_seal=NOT_PERFORMED`，两者是独立的剩余门禁。后续须对真实语义世界关联（角色别名、事件、共享设定、重写/早期评测暴露）做证据审核，不得以字符串零碰撞补写PASS。
 
 下一实际开发优先事项应转到**受控语义关联证据包及Owner裁决**，针对Common2真实2条与原R50全50/R45真实受保护训练及评测世界做语义闭环；并清理Qwen原生与ms-swift模板差异的准入合同。现有R50、R45机械来源门禁已关闭，不需要新增HF或GPU。
+
+## 2026-11-12 转入语义隔离新证据与Qwen/Swift模板决策（最新）
+
+已形成专门执行说明 [`R60_COMMON2_REMAINING_GATES_SEMANTIC_TEMPLATE_20261112_CN.md`](R60_COMMON2_REMAINING_GATES_SEMANTIC_TEMPLATE_20261112_CN.md)：划分G-S1 Common2两条 vs R50原始全50世界、G-S2 R45真实Train49/Val15 vs R50五世界、G-S3早期评测暴露与最终seal三个独立边界。现有原50=46+4、Common2×R50三级精确ID 0/0/0、R45五世界机械源碰撞0，以及真实HF CPU2 tokenizer/collator均PASS，**不再重复**。
+
+特别核实历史`docs/evidence/V03_R50_ROLE12_OWNER_INTAKE_SAFE_20261023.md`记录：W17 vs 旧世界02/04/10三对`INSUFFICIENT_EVIDENCE`；其后7项全消息审核仍`INSUFFICIENT_CONTEXT`，且截止时真实生效的卡/规则未核证。不能靠对同一证据再做AI审核来闭合；需要Owner本地新的cutoff时点快照、别名事件出处及能复核的世界连通分量，先审再裁决。若无新证据明确`SEMANTIC_SOURCE_EVIDENCE_HOLD`，不得虚构独立结论。
+
+模板方面的已证实情况：原生Qwen Tokenizer [2552,4048]、Swift Collator [2486,3982]、各差66，最终监督Token [282,305]且实际Collator通过；**差66根因及推理模板对齐未验证**。工程方案是提议将真正训练所用的Swift模板+Collator作为训练侧规范，原生审计仅用作长度预算独立参考；需Owner定下训练/推理双端合同，暂不能从这份提议推断新模板已获批，也不需要立刻再申请HF CPU Job。完整任务书和停止条件见新文档。所有HOLD及`train_admitted=0`保持不变。
