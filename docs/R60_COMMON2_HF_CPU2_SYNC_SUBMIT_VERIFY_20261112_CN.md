@@ -1,5 +1,10 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
+
+**最新Owner实际回执是 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD` / `SAFE_REMOTE_OR_RUNTIME_HOLD`，不是“新Job成功提交”。** 已知首次HF CLI Job `6af53990ab34849891aecb44` 因镜像参数 `docker.io/--name` ERROR；随后SDK镜像修复仍HOLD，不能确认是否另建Job。**禁止直接执行本文件下文的旧 `submit` 或SDK重试命令、删除重试标记或重传原stage。** 接手者必须先只读运行`scripts/r60_common2_hf_cpu_image_probe.py`、核对HF Job真实列表和标记。权威任务书：[R60下一Agent接手任务书](R60_COMMON2_NEXT_AGENT_HANDOFF_20261112_CN.md)；[可复制启动提示词](R60_COMMON2_NEXT_AGENT_START_PROMPT_20261112_CN.md)。Common2质量PASS2、实验输入2、Tokenizer2552/4048 PASS；**Collator真实验收未知/未通过、R50全量隔离HOLD、train_admitted=0、GPU禁止。** Wave40已选40条位置，但盲审暂停，生产留证因无权限DEFERRED。
+
+
 ## 2026-11-12 镜像修复脚本SAFE_REMOTE_OR_RUNTIME_HOLD：先只读定位，禁止二次提交
 
 Owner执行 `scripts/r60_common2_hf_cpu_image_retry.py` 返回 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD`、`reason_code=SAFE_REMOTE_OR_RUNTIME_HOLD`。该统一代码可能对应API版本/权限/旧Job读取/状态字段/提交失败；**无法凭回执证明是否已发出新Job请求**。不允许直接重试、删除任何 `.cpu-submit-image-fix-attempted` 标记或重新同步冻结数据。
