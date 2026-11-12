@@ -1,5 +1,25 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+## 2026-11-12 镜像修复脚本SAFE_REMOTE_OR_RUNTIME_HOLD：先只读定位，禁止二次提交
+
+Owner执行 `scripts/r60_common2_hf_cpu_image_retry.py` 返回 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD`、`reason_code=SAFE_REMOTE_OR_RUNTIME_HOLD`。该统一代码可能对应API版本/权限/旧Job读取/状态字段/提交失败；**无法凭回执证明是否已发出新Job请求**。不允许直接重试、删除任何 `.cpu-submit-image-fix-attempted` 标记或重新同步冻结数据。
+
+新增 `scripts/r60_common2_hf_cpu_image_probe.py`：只读确认本地27文件SHA256、已同步Bucket READY、旧Job是否实际为指定镜像解析ERROR、提交重试标记存在性，逐阶段仅发SAFE布尔状态及白名单原因；本脚本绝不调用run_job。
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+HF_ENV="$HOME/.local/share/storyforge/venvs/hf-cli"
+RUN_KEY="r60-common2-cpu2-20261112T032815Z-71c840b37254"
+STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$RUN_KEY"
+"$HF_ENV/bin/python" scripts/r60_common2_hf_cpu_image_probe.py \
+  --run-key "$RUN_KEY" --stage "$STAGE" \
+  --old-job 6af53990ab34849891aecb44
+```
+
+如果 `retry_marker=PRESENT`，必须先核实Owner HF Job列表是否新Job已创建；存在标记不是Job成功证据，但不能直接删除重试。若 `old_job=NOT_CHECKED`，先判断API/权限异常；若 `LOCAL_STAGE_HOLD` 或 `REMOTE_RUN_FILESET_HOLD`，核对源哈希和Bucket集合，不更改原始冻结数据。所有结果仍正式训练准入0、CPU-only、无GPU/训练。
+
+
 ## 2026-11-12：Job镜像解析失败，改用类型化SDK进行受控单次修复
 
 Owner Mac真实 Job `6af53990ab34849891aecb44` 终态 **Error**：`Job image specification error: Invalid image name ... docker.io/--name`。CLI将原 `--name` 误识别为IMAGE，此次Worker尚未运行，无法把它记作Collator失败，也不得重跑同一CLI命令。
