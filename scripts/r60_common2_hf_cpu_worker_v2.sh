@@ -44,7 +44,38 @@ python -m pip install --disable-pip-version-check \
   'ms-swift==4.5.3' 'transformers==5.16.1' \
   'huggingface_hub>=0.35,<3' 'qwen-vl-utils==0.0.14' \
   'decord' 'torchvision==0.21.0'
-python -m pip check >/dev/null || { echo R60_CPU2_V2_DEPENDENCY_HOLD >&2; exit 42; }
+# pip check raises a platform-metadata warning for decord 0.6.0 on this
+# linux/amd64 base image, although its Python import passed the independent
+# CPU-only Smoke. Allow ONLY this exact line after verifying actual import;
+# any additional error or a changed message fails closed. No raw pip output.
+python - <<'PY'
+import importlib.metadata
+import subprocess
+import sys
+
+check = subprocess.run(
+    [sys.executable, "-m", "pip", "check"],
+    capture_output=True, text=True, check=False,
+)
+lines = [line.strip() for line in check.stdout.splitlines() if line.strip()]
+stderr_empty = not check.stderr.strip()
+expected = ["decord 0.6.0 is not supported on this platform"]
+if check.returncode == 0 and not lines and stderr_empty:
+    pass
+elif check.returncode == 1 and lines == expected and stderr_empty:
+    try:
+        import decord
+        from decord import cpu, VideoReader
+        assert importlib.metadata.version("decord") == "0.6.0"
+        assert cpu(0) is not None
+        assert VideoReader is not None
+    except Exception:
+        print("R60_CPU2_V2_DECORD_IMPORT_HOLD", file=sys.stderr)
+        raise SystemExit(42)
+else:
+    print("R60_CPU2_V2_DEPENDENCY_HOLD", file=sys.stderr)
+    raise SystemExit(42)
+PY
 export SNAP
 python - <<'PY'
 import os
