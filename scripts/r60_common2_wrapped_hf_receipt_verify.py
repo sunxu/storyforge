@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from storyforge_dataset.hf_runtime import InputManager
+from storyforge_dataset.hf_runtime import InputManager  # noqa: E402
 
 SCHEMA = "storyforge_r60_common2_wrapped_hf_cpu_receipt_v1"
 SUCCESS = "R60_COMMON2_WRAPPED_HF_CPU_COLLATOR_PASS__TRAIN_HOLD"
