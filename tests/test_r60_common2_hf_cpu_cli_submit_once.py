@@ -86,3 +86,31 @@ def test_final_gate_hold_cannot_mark_or_submit(monkeypatch, tmp_path):
     r = submit.submit(stage, KEY, execute=True)
     assert r["reason_code"] == "FINAL_GATE_FAILED"
     assert not (tmp_path / (KEY + ".cpu-submit-v2-attempted")).exists()
+
+
+def test_prepare_exception_has_safe_phase_and_no_marker(monkeypatch, tmp_path):
+    stage = tmp_path / KEY
+    stage.mkdir()
+    install_mock(monkeypatch, stage)
+    monkeypatch.setattr(submit.dry, "prepare", lambda *a: (_ for _ in ()).throw(ValueError("secret private body")))
+    r = submit.submit(stage, KEY, execute=True)
+    assert r["reason_code"] == "PRE_MARKER_CLI_PREPARE_HOLD"
+    assert "secret" not in str(r)
+    assert not (tmp_path / (KEY + ".cpu-submit-v2-attempted")).exists()
+
+
+def test_post_marker_unknown_error_fails_closed(monkeypatch, tmp_path):
+    stage = tmp_path / KEY
+    stage.mkdir()
+    install_mock(monkeypatch, stage)
+    call = submit.subprocess.run
+    def broken(args, **kwargs):
+        if "--dry-run" not in args and args[:3] == ["hf", "jobs", "run"]:
+            raise RuntimeError("private confidential")
+        return call(args, **kwargs)
+    monkeypatch.setattr(submit.subprocess, "run", broken)
+    r = submit.submit(stage, KEY, execute=True)
+    assert r["status"] == "CPU2_SUBMISSION_UNCONFIRMED_HOLD"
+    assert r["reason_code"] == "POST_MARKER_SUBMISSION_CALL_HOLD"
+    assert "confidential" not in str(r)
+    assert (tmp_path / (KEY + ".cpu-submit-v2-attempted")).exists()
