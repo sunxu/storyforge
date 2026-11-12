@@ -204,3 +204,11 @@ P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
 ```
 
 预期只有当四个case ID完全同集合时才是`R50_PRESEAL_FOUR_EXCLUSIONS_MATCH__SEAL_HOLD`；如返回`EXCLUSION_OBJECT_SCHEMA_HOLD`或者`EXCLUSION_ID_SET_MISMATCH_HOLD`必须按真实文件合同继续审查，**不得为了PASS修改原件或隐式转换ID**。合成测试和Owner真实执行目前未验收，不能提前宣称v2通过。
+
+## 2026-11-12 Owner v2 排除四案精确成员对账 PASS（最新）
+
+Owner 在已固定SHA的私有副本`f2/f3`上执行v2检查，真实SAFE `R50_PRESEAL_FOUR_EXCLUSIONS_MATCH__SEAL_HOLD`，`schema=storyforge_r60_r50_exclusion_pair_safe_v2`、`selection_excluded_count=4`、`admission_excluded_count=4`、`exclusion_id_sets_equal=true`、`reason_code=FOUR_EXCLUSION_IDS_MATCH`。已确认 `selection.excluded_cases[].case_id` 与 `admission.exclude_ids[]` 的四案集合精确一致；46/46 PRESEAL来源行序一致另已核验。完全不打印ID/私有文本，未访问数据库或HF、未启动GPU/SFT，`train_admitted=0`。
+
+**不能由这个PASS证明**原始50条构成完整受保护全集、4条排除在原始50案确实存在且另外46案为精确补集、最终held-out已seal、R45隐藏别名/世界集合隔离已通过，或Common2两条与R50无story/session/message交集。相关现有SAFE仍为`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`。尤其已有R45报告`heldout_cases_sealed=0`，该报告不是最终封存通过的证据。
+
+下一真正任务不应继续重复验证4/4，而应从原R50 Selection Manifest的`original_sha256`、`case_source_line_sha256`、`provenance_source_line_sha256`、`selected_parent_line_numbers_1_based`和`final_heldout_seal`，及Admission/Worlds/R45报告的状态字段建立**值语义明确**的原始50案覆盖证明。先核对实际原始50份私有文件位置与这些摘要的定义，再做原始50 ID与当前46+4的严格补集关系。对未识别的字符串状态必须HOLD，不得仅凭存在或非空标为PASS。此后才在Common2两条完整来源键上执行R50三层集合交集检查，最后再由Owner决定是否训练。
