@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Owner Mac: create a private, immutable R60 Common2 HF CPU-only stage.
 
 Pure stdlib. Does NOT upload, install, run HF Jobs or disclose source text.
@@ -13,7 +12,6 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import stat
 import sys
 from pathlib import Path
@@ -152,7 +150,7 @@ def main() -> int:
         result = stage(args.input_dir, args.output_dir, args.run_key)
         print(json.dumps(result, sort_keys=True))
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - private contents must not leak in traceback
         print(json.dumps({
             "schema": "storyforge_r60_common2_hf_cpu_stage_safe_v1",
             "status": "R60_COMMON2_HF_CPU2_STAGE_HOLD", "train_admitted": 0,
