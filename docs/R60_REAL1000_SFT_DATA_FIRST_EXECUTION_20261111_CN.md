@@ -1,5 +1,14 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 Common2 Supabase真实恢复在私有结果写入阶段HOLD：已修复200KB遗留上限
+
+Owner SAFE `QD20_COMMON2_DB_RECOVERY_HOLD`、`diagnostic_stage=WRITE_PRIVATE_RESULT`、`diagnostic_exception_type=OTHER`。诊断阶段已经过两条私有源绑定、DB连接/只读角色校验、目标原文及其历史三消息对账；**未确认私有恢复文件成功落盘**。查看实现发现旧`private.write_new`使用最初6条样本导出写入接口的`MAX_CAPTURE_BYTES=200000`大小上限，当前恢复2条目标之前最多500条历史消息，序列化后容易超限并抛出被包装为OTHER的`private.Hold("OUTPUT_SIZE_HOLD")`；这是代码确认的**最可能原因**，尚需真实SAFE回执确认，不能直接断言源数据恢复已彻底成功。
+
+已改`r60_real1000_qd20_common2_supabase_recovery.py`：专用8MB封顶的私有历史文件写入，安全`O_EXCL/O_NOFOLLOW`、权限0600和fsync，超过限额显式`RECOVERY_PAYLOAD_OVER_LIMIT_HOLD`而不截断；允许复用**上次失败创建、经0700私有目录校验且完全为空**的结果目录，目录非空一律HOLD，决不删除/覆盖既有结果。补合成测试覆盖>200KB历史数据写入、保留已存在的输出与超限不创建目录。所有原冻结候选、审稿记录、库表不变，数据库仍为READ ONLY，训练准入0。
+
+Owner Mac在工作树无本地改动情况下，更新到通过CI的固定提交，先执行`python3 -m pytest -q tests/test_r60_real1000_qd20_common2_supabase_recovery.py`，后以**原CLI原目录**重跑恢复。不要删除`$BASE/r60-real1000-qd20-common2-supabase-recovery-v1`，新版会识别已有空目录并安全继续；若存在任何文件，停止并返回SAFE错误以保护数据。成功时`QD20_COMMON2_PERSISTED_HISTORY_RECOVERED__TRAIN_CONTEXT_HOLD`，还需要继续确定模型当时实际发送System/世界状态与R50完整隔离；历史持久化消息不等于原LLM完整请求。
+
+
 ## 2026-11-12 已复查原始Supabase数据源：开始恢复两条共同PASS的完整持久化消息历史
 
 Owner已确认R60真实1000条源自Supabase，允许查阅原始记录继续推进。已通过可用的`StoryForge_Supabase_Read_Only`连接器**实际只读**核实public表结构和聚合事实，未读取/打印任何个人对话正文或目标ID，也未作数据库写入。
