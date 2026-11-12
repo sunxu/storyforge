@@ -72,4 +72,10 @@ def test_v2_worker_is_cpu_only_ro_rw_create_only_and_no_training():
     assert '--stage both' in source
     assert 'swift sft ' not in source
     assert 'HF_HUB_OFFLINE=1' in source
+    assert 'PRIVATE_PARENT="$HOME/.local/share/storyforge/r60/private"' in source
+    assert 'PRIVATE_INPUT="$PRIVATE_PARENT/$KEY"' in source
+    assert '--input-dir "$PRIVATE_INPUT"' in source
+    assert 'mkdir -m 700 "$PRIVATE_INPUT"' in source
+    assert 'chmod 600 "$PRIVATE_INPUT/"*' in source
+    assert 'SCRATCH/private' not in source
     assert "/workspace" not in source
