@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from storyforge_dataset.hf_runtime import InputManager
+from storyforge_dataset.hf_runtime import InputManager  # noqa: E402
 
 RUN_RE = re.compile(r"r60-common2-wrapcpu-\d{8}T\d{6}Z-[a-f0-9]{12}\Z")
 SCHEMA = "storyforge_r60_common2_wrapped_hf_stage_private_v1"
