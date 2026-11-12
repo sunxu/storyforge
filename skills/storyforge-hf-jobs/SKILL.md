@@ -36,6 +36,10 @@ description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行�
 - 必须先Doctor、Ruff、Runtime/Volume、Token共享核心和业务合成测试，再新建私有Stage；真正远端只能`adradar`的CPU-upgrade/独立RO/RW，新的RUN_KEY/结果前缀，单次提交并保留提交marker。禁止向上游Quality Manifest自动导入这一技术回执。
 - 仅当业务SAFE被Owner下载并独立验证，才写技术PASS；`job COMPLETED`、本地Stage PASS或dry-run PASS都不等于实际Swift Collator PASS。当前正式SFT admission与GPU许可仍为0。
 
+### 2026-11-12 Mac统一Owner venv与只读Stage核验
+
+Mac端统一使用独立`venvs/r60-owner`（Python3.11、仓库dev测试依赖、`huggingface_hub==1.33.0`）运行pytest/Ruff/HF CLI/私有Stage预检；旧`r60-tests`和`hf-cli`原环境不删除也不修改，HF CPU Job Linux 运行环境仍分开冻结。现有R60 Common2 wrapped Stage已出现`STAGE_FILES_HOLD`，优先`scripts/r60_common2_wrapped_hf_stage.py inventory`只读聚合SAFE；不删除`__pycache__`、不忽略未登记文件、不修改Stage Manifest、不在旧run key下重sync/submit。完整命令见`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`。
+
 ## Runtime 使用约定
 
 - 只从 `storyforge_dataset.hf_runtime` 导入公共 API。
