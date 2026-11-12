@@ -152,7 +152,7 @@ def main() -> int:
             "private_values_emitted": False,
         }
     print(json.dumps(report, sort_keys=True))
-    return 42
+    return 0 if report["status"] == "CPU2_HISTORY_PAGINATED_PASS__NO_JOB" else 42
 
 
 if __name__ == "__main__":
