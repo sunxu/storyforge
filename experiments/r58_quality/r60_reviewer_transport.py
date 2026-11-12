@@ -9,7 +9,7 @@ PROFILES = frozenset({"openai-chat", "claude-proxy-top-system", "deepseek-chat"}
 
 
 def require_profile(profile: str) -> str:
-    if profile not in PROFILES:
+    if not isinstance(profile, str) or profile not in PROFILES:
         raise ValueError("REVIEW_PROTOCOL_UNSUPPORTED")
     return profile
 
