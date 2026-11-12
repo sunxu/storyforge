@@ -1,3 +1,5 @@
+> **2026-11-12 Real1000主线参数对照补充：** 新增[对照R46的受控实验计划](R60_REAL1000_R46_CONTROLLED_EXPERIMENT_PLAN_20261112_CN.md)、不可执行22项QLoRA参数合同与静态漂移守卫。保持R46风格rank64、学习率5e-5、1Epoch、last_round、max16384；**R46真实System与Common2无System仍是混杂因素，实际训练/部署模板等价未证**。此为拟议实验条件，不是数据入训/GPU授权；请先完成Common2 D1-D4必要裁决，再扩至Real1000优质候选。
+
 > **2026-11-12 当前最高优先级（覆盖下述11月12日早先CPU故障与候选准备旧状态）：** Common2两条实验SFT输入和原有HF CPU2 SAFE独立证据真实PASS；Common2对R45 Train49/Val15与R50原始50条的精确来源隔离真实PASS。现在进入 [Common2 Owner SFT训练准入决策书](R60_COMMON2_OWNER_SFT_ADMISSION_DECISION_20261112_CN.md) 的D1-D5决策：衍生输入资格、Swift训练模板、部署模板兼容、两条候选相关世界语义证据、独立发布授权。**这不是训练批准；quality_v1_admitted=0、train_admitted=0、GPU/SFT没有启动。** Wave40冻结选样仍待正式质量审核，不应超过Common2首批准入决策优先级。禁止按本文较旧的HF镜像错误记录重复提交Jobs。
 
 # StoryForge R60 — Real1000优质SFT数据主线决策（2026-11-12）
