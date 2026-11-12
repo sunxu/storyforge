@@ -293,3 +293,11 @@ RECOVERY="/将上条find查到的真实绝对路径填在这里"
 ```
 
 如果Common2清单权限不满足0600，按前述仅副本调整权限并与原件SHA比对的方法处理，**不能直接chmod历史原件**；如果源字段类型或Common2 schema与冻结合同不符，输出固定HOLD，不能猜测修复。Owner应仅回传SAFE JSON。下一任务是语义世界/隐藏别名以及真实seal状态证据审定；不再重复已通过50补集。
+
+## 2026-11-12 最终封存状态核查：不能将原始文件SHA固定误认为正式Held-out已seal
+
+对照仓库现存历史权威文档`docs/r56/R56_R50_46_PROTECTED_GATE_NEXT_STEPS_20261022.md`与`docs/evidence/V03_R50_46_PRESEAL_GATE_DELTA_COUNT_ONLY_20261022.json`：截至该历史证据2026-10-22，明确记载`final_seal=NOT_PERFORMED`、`official_heldout_test_admitted=0`、`cross_world_alias_and_temporal_semantics=HOLD`、`r49_r56_preregistration=NOT_APPROVED`。虽然当时Owner Mac已有原R45完整来源screen的部分PASS回执，语义别名及早期开发暴露仍HOLD；这一历史记录**不证明当前存在新的最终sealed版本**，也不能反过来断言当前根本不存在其他晚于2026-10-22的封存证据。结合本轮Owner真实私有R45 gate中的`heldout_cases_sealed=0`，本轮仍须严格`final_heldout_seal_verified=false`。
+
+已完成的原始50案固定SHA验证、50=46+4完整补集检查，是严格输入和成员身份冻结的技术证据；要使46条正式晋级Held-out测试，还需独立的最终sealed input/grader custody、角色拼接及Tokenizer合同、模型输入等价合同与Owner批准，不能通过脚本自动把`NOT_PERFORMED`变成`PASS`。**Common2的训练隔离策略须由Owner明确是否把原始50案全体当作受保护排除集（保守默认全体保护），与R50正式seal是两个独立决策维度**。
+
+新增的Common2三层来源检查仅对**原始50条全体**比对story/session/message ID，不以46条PRESEAL代替；精确不重叠即使PASS，也继续保持R45隐藏别名和语义独立HOLD、训练准入0。
