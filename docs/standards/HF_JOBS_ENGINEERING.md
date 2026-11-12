@@ -2,6 +2,8 @@
 
 状态：R60 v1.0；Python 3.11。公共实现以 `src/storyforge_dataset/hf_runtime/` 为唯一来源，操作入口见 `skills/storyforge-hf-jobs/SKILL.md`。
 
+> **R60 Common2 已验证操作实践（2026-11-12）**：Mac Homebrew HF CLI 2.4.0 / 独立HF SDK Python 1.6.0、组织私有Bucket精确RO/RW挂载、CPU-upgrade固定镜像、版本锁、单次提交/故障恢复、Qwen3.8 Processor/Template/无权重RoPE及实际2条严格Collator验收，统一见 [HF Jobs Mac CLI CPU2实战手册](HF_JOBS_MAC_CLI_CPU2_PLAYBOOK_20261112_CN.md)。技术PASS不代表训练许可或R50排除完成。
+
 ## 原则
 
 1. 本地优先：能在本地或 CI 证明的基础设施行为，不消耗付费 HF Job。
