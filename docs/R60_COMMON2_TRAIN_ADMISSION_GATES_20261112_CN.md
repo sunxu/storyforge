@@ -106,3 +106,10 @@ D="$B/run.dWgMu5/private/derived"
 ```
 
 若出现`FILE_PERMISSION_HOLD`或`SOURCE_PROVENANCE_HOLD`，不得更改冻结原件以迎合测试，应核对冻结数据的真实schema，再以显式审核的薄适配修正检查器。完成46/46结构级检查后，下一步要按照报告**值的安全语义投影**验证原始50→排除4→候选46、最终封存状态及R45世界排除；必须先核验报告值的枚举或schema合同，绝不根据字段名猜含义。
+
+
+## 2026-11-12 PRESEAL 跨文件检查遇到 FILE_PERMISSION_HOLD（最新状态）
+
+Owner实际SAFE：`R50_PRESEAL_CROSSWALK_HOLD` / `reason_code=FILE_PERMISSION_HOLD`，`preseal_cases_checked=0`、`case_id_order_exact=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。**尚未进入46例逐案核验**：当前`case_id_order_exact=false`只是默认占位，不能解释为发现错配。冻结原件存在权限模式不符合新脚本0600门禁的情况，具体哪个文件及其mode未得到Owner诊断。
+
+所有已定位的确切文件路径、已知真实字段和**不触碰原件的安全复制/验证方案**已归档至 [R50 Owner本机冻结文件定位与权限恢复手册](R60_R50_LOCAL_FROZEN_PATHS_20261112_CN.md)。先用只读源+0700临时目录中的0600副本做跨文件核验，逐份校对原文件与副本SHA256，在Owner本地完成、不公开原始哈希。不得直接`chmod`或重新生成冻结R50原件；不启动HF Job/GPU/训练。
