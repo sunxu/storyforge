@@ -1,5 +1,18 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 现行Common2 P0里程碑：两条真实CPU技术验收PASS，转向训练准入证据（高于以下旧P0描述）
+
+Owner 已通过 Mac 单次提交HF Job `6af570089737d9a9e093d501`，RUN_KEY `r60-common2-cpu2-20261112T073854Z-e076f53c8eae`；HF插件独立inspect为 COMPLETED，日志业务尾标记 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`。Worker严格验证内部SAFE为`cases=2`、`collator_verified=true`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、`gpu_started=false`后才O_EXCL写出SAFE成功标记。因此 **Common2实验性两条来源绑定训练输入的CPU Tokenizer/严格R18 last_round标签及真实ms-swift Collator工程验收已通过，不再为同一条件重复HF CPU Job**。完整token计数回执尚待从已成功的HF结果前缀只读取回并经`scripts/r60_common2_cpu2_receipt_verify.py`验证；不伪报独立回执已归档。
+
+**仍阻塞正式训练的数据门禁**：
+1. 11条历史输入属于`SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`，没有当时实际完整请求、System/世界组件与记忆证据；不可冒称原始生成输入。
+2. 固定Qwen3.8 `chat_template.jinja`原生输出与所用`ms-swift qwen3_8`模板并非token级等价；当前策略应明确该不等价的语义/风险及训练模板政策，不允许捏造System Prompt补齐。
+3. **R50全量排除尚未验证**：必须仅以原有完整冻结来源/世界、story/session/message映射验证交集；旧“已知五个故事零重叠”不等于全量PASS。
+4. 两条只是已有独立六维PASS的质量**候选**；Quality-v1正式训练准入与Owner确认、训练集世界级切分未由本CPU技术PASS自动满足；`train_admitted=0`。
+5. GPU/SFT另有审批边界；本任务未启动GPU、模型推理或训练。Wave40原冻结40位置维持暂停、不得重新选样。
+
+下一阶段优先顺序：**A** 只读取回并验签已存在HF SAFE回执（仅聚合token计数），**B** 公开合成、只读比较原生/Swift模板差异并提出训练模板规范，**C** 利用既有R50私有冻结元数据执行完整来源/世界交集门禁，**D** 形成Owner可审核的训练准入台账，不启动GPU/训练。HF环境、镜像Digest、CLI 2.4.0/SDK 1.6.0区别、RO/RW挂载、独立输出与失败经验见 [HF Jobs实战操作手册](standards/HF_JOBS_MAC_CLI_CPU2_PLAYBOOK_20261112_CN.md)。并行其他Agent分支不在本任务中修改。
+
 ## 2026-11-12 最新执行纠偏（覆盖本文其他所有近期优先级）：先完成Common2两条SFT可用性验证
 
 用户已确认：**不得因为已准备Wave40，就将40条独立盲审排在已有2条质量PASS候选训练输入验证之前。** 当前P0唯一目标：从Common2已验证2/2独立六维PASS、103/243条真实持久化历史和冻结Real1000精确目标，构造最小真实来源绑定的**实验性SFT输入**，做CPU真实tokenizer/ms-swift collator和完整R50隔离验收。40条已成功选样的位置清单保持原样，后续盲审与扩大候选池转为第二优先级，不重新抽样、不覆盖、不删除。
