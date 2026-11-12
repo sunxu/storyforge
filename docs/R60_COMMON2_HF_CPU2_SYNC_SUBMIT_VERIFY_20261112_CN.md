@@ -1,5 +1,27 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+## 2026-11-12：Job镜像解析失败，改用类型化SDK进行受控单次修复
+
+Owner Mac真实 Job `6af53990ab34849891aecb44` 终态 **Error**：`Job image specification error: Invalid image name ... docker.io/--name`。CLI将原 `--name` 误识别为IMAGE，此次Worker尚未运行，无法把它记作Collator失败，也不得重跑同一CLI命令。
+
+新脚本 `scripts/r60_common2_hf_cpu_image_retry.py` 不再从shell拼接 `hf jobs run` 位置参数，改用有名称的 `HfApi.run_job(image=..., command=..., volumes=..., namespace=..., flavor='cpu-upgrade')`，只允许固定原RUN_KEY和Job ID；先从Owner认证的HF API查明旧Job已经ERROR且消息确实包含镜像解析错误，再核对当前远端READY、27个Stage字节SHA256一致，使用 `cpu-submit-image-fix-attempted` 原子防重复标记，最多执行一次SDK调用，不改/重新上传数据、不中断其他Agent。
+
+执行前确保已切换到含修复的GitHub固定HEAD，且CI通过；用独立HF CLI Python环境执行（既有项目Transformer环境不用升级），不要使用已经创建旧Job的 `submit` 模式：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+HF_ENV="$HOME/.local/share/storyforge/venvs/hf-cli"
+RUN_KEY="r60-common2-cpu2-20261112T032815Z-71c840b37254"
+STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$RUN_KEY"
+"$HF_ENV/bin/python" scripts/r60_common2_hf_cpu_image_retry.py \
+  --run-key "$RUN_KEY" --stage "$STAGE" \
+  --old-job 6af53990ab34849891aecb44
+```
+
+成功返回 `R60_COMMON2_CPU2_IMAGE_FIX_JOB_SUBMITTED`及**新Job ID**，不是正式Collator PASS。若状态核实失败或重复提交标记已存在，安全HOLD，不能删除标记盲重试；请先只读核查旧Job及新Job状态。`HfApi.run_job`不需要Mac安装ms-swift/PyTorch，工作负载限定CPU-only，GPU/训练禁止。
+
+
 ## 2026-11-12 HF连接器403与Owner Mac执行路径
 
 用户已明确授权当前已同步RUN_KEY的CPU-only Collator审核。ChatGPT HF连接器使用 `namespace=adradar`、`flavor=cpu-upgrade`、同一Worker与私有Bucket挂载提交时，HF API返回 **403 Forbidden**，未取得Job ID和成功回执，不能声称已启动；不自动重试连接器。Mac端已有可用的HF CLI及Bucket READY PASS，因此由Owner Mac提交。
