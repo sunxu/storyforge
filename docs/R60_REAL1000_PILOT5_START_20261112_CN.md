@@ -229,3 +229,13 @@ test ! -e "$QUALITY"
 - `R60_DEEPSEEK_URL=https://api.deepseek.com`；`R60_DEEPSEEK_MODEL=deepseek-flash`，均为历史代码明确的默认值。Owner需要先通过真实合成API probe验证当前可用性。
 
 历史QD20运行器仍读取原来的`DEEPSEEK_API_KEY`，这是已冻结历史实验，不做无关修改。现行`r60_real_quality_batch.py`使用新环境变量，不再读取`R60_REVIEW_A_KEY/R60_REVIEW_B_KEY`。合成探针`--key-env`可显式指定；如省略会按profile选用新变量。不要把key写入URL、GitHub、SAFE。
+
+## 10. Claude JSON探针诊断（2026-11-13）
+
+已获得首轮SAFE：Claude的真实**合成**请求返回`MODEL_JSON_INVALID`，DeepSeek同轮`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`。两者均没有读取私有候选，质量PASS仍为0。**DeepSeek不再重复执行**。Claude原通用错误码混合了HTTP信封、模型内容和六维字段的多种故障，新版本`r60_real_ai_dual_review.py`仅在合成探针`diagnose_json=True`时细分公开常量：
+- `MODEL_ENVELOPE_JSON_INVALID`：HTTP响应不能解析为JSON
+- `MODEL_CONTENT_MISSING_OR_NONSTRING`：OpenAI-compatible响应没有`choices[0].message.content`字符串
+- `MODEL_CONTENT_JSON_INVALID`：message.content存在但不是合法JSON
+- `MODEL_REVIEW_SCHEMA_INVALID`：模型JSON无法通过冻结六维字段/类型/非空reason验证
+
+只要Claude首次SAFE没有通过，禁止初始化真实批次或运行5条。Owner Mac更新代码和CI通过后，仅对Claude运行1次合成`--execute`，回传SAFE错误码；不得为诊断打印原始API响应、带密钥URL或任何私有正文。下一步依据分类决定修复代理映射还是模型输出约束，不放宽Quality Pipeline。真实评审默认行为及严重问题语义审核保持不变。
