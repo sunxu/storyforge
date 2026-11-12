@@ -231,3 +231,12 @@ Owner正式Job `6af56b879737d9a9e093d221` (RUN_KEY `r60-common2-cpu2-20261112T07
 已在未来审核器源码新增`single_batch_ints`：仅接受恰好B=1的非空二维int数组或可`tolist()`的Tensor，拒绝rank1、B!=1、额外嵌套层、非整数字段，仍以原R18审查加严格未填充/填充的input_ids/labels前缀和长度检查。现在另将`SWIFT_COLLATOR_AUDIT`分成`R18_LABEL_MASK_AUDIT`、`SWIFT_ENCODE`、`SWIFT_BATCH_COLLATE`、`BATCH_LABEL_CONSISTENCY`几个公开枚举安全失败阶段，只输出枚举，不打印私有token、错误正文或Traceback。新增`tests/test_r60_common2_cpu_batch_shape.py` AST提取函数的无私有单元测试，覆盖合规及不合规形状。代码提交仍需Owner本地pytest/compileall验证。Stage构建器既有约束仅允许**下一轮随机create-only RUN_KEY**将新版审核器+Worker复制到新Stage，任何已经同步过的Stage原样保留。
 
 下一步首选Owner Mac独立工作树同步Owner分支，跑新增batch形状测试、模板phase安全测试及完整相关pytest，之后运行原`scripts/r60_common2_cpu2_prepare_next.sh`创建新Stage至READY，**不自动提交私有Job、不启动训练**。原生Chat Template token parity未证明、R50完全排除HOLD、train_admitted0和GPU禁用全部继续保持。
+
+
+## 2026-11-12 第五次Stage创建后远端EMPTY只读门禁HOLD（没有同步/Job）
+
+Owner运行最新`scripts/r60_common2_cpu2_prepare_next.sh`后返回`CPU2_V2_NEW_STAGE_READY__NO_SYNC_NO_JOB`、`files_staged=27`、`original_stage_untouched=true`，紧接着远端EMPTY查询`R60_COMMON2_HF_CPU2_REMOTE_PREFIX_HOLD`、`R60_COMMON2_REASON_CODE=REMOTE_SDK_OR_SERVICE_HOLD`。**尚未执行远端文件同步、HF CLI Dry-run、正式Job提交**；不得再运行prepare_next创建新Stage，也不得因兜底Reason猜测服务端宕机、权限不足或新前缀非空。HF插件whoami显示OAuth认证正常且adradar组织write，仅代表插件自身认证，不代表Owner Mac SDK/Token链路可用；HF插件的Bucket stat前缀`exists=false`也不能替代Mac对特定Run prefix的只读EMPTY检查。
+
+本轮增强`scripts/r60_common2_hf_cpu_bucket_guard.py`中`classify_failure`的纯SAFE分类：HTTP 429 → `REMOTE_RATE_LIMIT_HOLD`；HTTP 5xx → `REMOTE_SERVICE_5XX_HOLD`；httpx.TimeoutException → `REMOTE_TIMEOUT_HOLD`；httpx.TransportError → `REMOTE_CONNECTION_HOLD`。原401/403/404/非法文件集门禁和HOLD原样保留。绝不打印异常原文或URL/Token/私有路径。新增模拟HTTP与httpx的纯合成单测。这个改动仅改善分类，**不解除门禁、不重写旧Stage**。
+
+Owner在同一Mac worktree同步HEAD并运行 `tests/test_r60_common2_hf_cpu_bucket_failure_classification.py` 和其他必要测试；使用**已生成的最新本地Stage**（不是运行prepare_next再建）直接运行`python scripts/r60_common2_hf_cpu_bucket_guard.py empty RUN_KEY --stage STAGE`。若EMPTY_PASS，且确认远端该前缀此前确实无上传，才通过 `bash scripts/r60_common2_hf_cpu_submit.sh sync-existing RUN_KEY STAGE`（脚本自身再次执行EMPTY门禁→逐个上传→READY），随后手动dry-run和full history final_read_only。任何HOLD先停下；如发生部分上传，则不允许再用sync-existing盲目重复拷贝，必须只读比对文件集/校验后选择新独立RUN_KEY流程。禁止删除原子提交标记、覆盖远端文件、启动GPU或训练，train_admitted0，R50 exclusion HOLD。
