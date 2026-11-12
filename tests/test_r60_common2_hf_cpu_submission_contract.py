@@ -1,8 +1,6 @@
 """Synthetic read-only CPU2 contract checks; no HF calls."""
 from __future__ import annotations
 
-from types import SimpleNamespace
-
 from scripts import r60_common2_hf_cpu_submission_contract as contract
 from scripts import r60_common2_hf_cpu_image_retry as retry
 
