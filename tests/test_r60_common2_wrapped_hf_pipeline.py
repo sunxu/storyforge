@@ -139,3 +139,82 @@ def test_no_secret_exception_leaks(tmp_path):
     result = receipt.inspect(tmp_path / "SECRET_PATH" / receipt.EXPECTED_NAME, KEY)
     assert "SECRET_PATH" not in json.dumps(result)
     assert result["train_admitted"] == 0
+
+
+def test_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch):
+    """Synthetic remote never reaches Hugging Face; verify upload order."""
+    import types
+    stage_dir = tmp_path / KEY
+    stage_dir.mkdir()
+    targets = ["scripts/a.py", "private/sample.jsonl", "SHA256_MANIFEST_PRIVATE.json"]
+    for name in targets:
+        p = stage_dir / name
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("synthetic")
+    monkeypatch.setattr(cli, "expected", lambda *args: set(targets))
+    monkeypatch.setattr(cli, "remote_check", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "output_is_empty", lambda *args, **kwargs: None)
+    mock_hf = types.ModuleType("huggingface_hub")
+    mock_hf.HfApi = lambda: object()
+    monkeypatch.setitem(sys.modules, "huggingface_hub", mock_hf)
+    uploads = []
+
+    def fake_run(argv, **kwargs):
+        assert argv[:3] == ["hf", "buckets", "cp"]
+        uploads.append(argv[-1])
+        return types.SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    out = cli.execute("sync", stage_dir, KEY, False)
+    assert out["status"] == "WRAPPED_CPU_REMOTE_STAGE_READY__NO_JOB"
+    assert uploads[-1].endswith("SHA256_MANIFEST_PRIVATE.json")
+    assert len(uploads) == len(targets)
+    assert out["job_submission_calls"] == 0
+
+
+def test_submit_creates_marker_before_single_cli_call_and_replay_holds(
+        tmp_path, monkeypatch):
+    import types
+    stage_dir = tmp_path / KEY
+    stage_dir.mkdir()
+    monkeypatch.setattr(cli, "expected", lambda *args: {"fake"})
+    monkeypatch.setattr(cli, "remote_check", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "output_is_empty", lambda *args, **kwargs: None)
+    mock_hf = types.ModuleType("huggingface_hub")
+    mock_hf.HfApi = lambda: object()
+    monkeypatch.setitem(sys.modules, "huggingface_hub", mock_hf)
+    from r60_common2_hf_cpu_final_read_only import walk_job_history
+    import r60_common2_hf_cpu_final_read_only as historical
+    monkeypatch.setattr(historical, "walk_job_history", lambda *args: (2, 0))
+    marker = tmp_path / (KEY + ".wrapped-cpu-attempted")
+    seen_job_calls = []
+
+    def fake_run(argv, **kwargs):
+        if argv[:4] == ["hf", "jobs", "run", "--help"]:
+            return types.SimpleNamespace(
+                returncode=0, stdout="--namespace --name --flavor --timeout "
+                                    "--attempts --detach --volume --dry-run",
+                stderr="")
+        if argv[:3] == ["hf", "auth", "whoami"]:
+            return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+        if "--dry-run" in argv:
+            return types.SimpleNamespace(returncode=0, stdout="Dry run OK", stderr="")
+        seen_job_calls.append(argv)
+        assert marker.exists(), "create-only marker must precede HF API call"
+        return types.SimpleNamespace(
+            returncode=0, stdout="Job started with ID: 6af570089737d9a9e093d501",
+            stderr="",
+        )
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    out = cli.execute("submit", stage_dir, KEY, True)
+    assert out["status"] == "WRAPPED_CPU_JOB_SUBMITTED__TRAIN_HOLD"
+    assert out["job_submission_calls"] == 1
+    assert len(seen_job_calls) == 1
+    assert marker.exists()
+    try:
+        cli.execute("submit", stage_dir, KEY, True)
+        assert False, "replay must fail before any second submission"
+    except ValueError as exc:
+        assert str(exc) == "JOB_ATTEMPT_ALREADY_RECORDED_HOLD"
+    assert len(seen_job_calls) == 1
