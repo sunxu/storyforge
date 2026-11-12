@@ -7,13 +7,15 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import stat
 import sys
 from pathlib import Path
 
-import r60_common2_hf_cpu_bucket_guard as guard
+try:
+    from scripts import r60_common2_hf_cpu_bucket_guard as guard
+except ModuleNotFoundError:
+    import r60_common2_hf_cpu_bucket_guard as guard
 
 RUN_KEY = "r60-common2-cpu2-20261112T032815Z-71c840b37254"
 OLD_JOB = "6af53990ab34849891aecb44"
