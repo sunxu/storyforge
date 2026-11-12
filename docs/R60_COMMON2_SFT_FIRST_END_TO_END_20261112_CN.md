@@ -1,5 +1,7 @@
 # StoryForge R60 — 2条质量PASS候选的首个SFT输入端到端验收
 
+> **2026-11-12 现行状态更新（覆盖以下旧“Collator未知/未通过”叙述）**：Common2 两条源绑定实验 SFT 输入已由 Owner Mac 使用固定 Qwen3.8 revision、ms-swift4.5.3、transformers5.16.1 经真实 HF `cpu-upgrade` Job `6af570089737d9a9e093d501` 验收；HF插件inspect `COMPLETED`、Worker尾日志 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`。真实2条的Tokenizer、严格R18 final-assistant label-mask及原ms-swift data_collator **CPU工程验收已PASS**。完整SAFE回执字段/token计数仍待Owner从已有HF结果目录只读复核。明确仍为 `SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`、原生HF Chat Template token等价未证、完整R50排除HOLD、train_admitted0、GPU/训练禁止；**不再提交重复Collator CPU Job**。工程经验与精确命令以 [HF Jobs Mac CLI CPU2实战手册](standards/HF_JOBS_MAC_CLI_CPU2_PLAYBOOK_20261112_CN.md) 为准，已提供本地只读 `scripts/r60_common2_cpu2_receipt_verify.py` 验签器。旧文“Collator未通过/下一步继续提交旧Job”仅作为历史记录，不是当前执行指令。
+
 ## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
 
 **最新Owner实际回执是 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD` / `SAFE_REMOTE_OR_RUNTIME_HOLD`，不是“新Job成功提交”。** 已知首次HF CLI Job `6af53990ab34849891aecb44` 因镜像参数 `docker.io/--name` ERROR；随后SDK镜像修复仍HOLD，不能确认是否另建Job。**禁止直接执行本文件下文的旧 `submit` 或SDK重试命令、删除重试标记或重传原stage。** 接手者必须先只读运行`scripts/r60_common2_hf_cpu_image_probe.py`、核对HF Job真实列表和标记。权威任务书：[R60下一Agent接手任务书](R60_COMMON2_NEXT_AGENT_HANDOFF_20261112_CN.md)；[可复制启动提示词](R60_COMMON2_NEXT_AGENT_START_PROMPT_20261112_CN.md)。Common2质量PASS2、实验输入2、Tokenizer2552/4048 PASS；**Collator真实验收未知/未通过、R50全量隔离HOLD、train_admitted=0、GPU禁止。** Wave40已选40条位置，但盲审暂停，生产留证因无权限DEFERRED。
