@@ -33,6 +33,8 @@ def test_reuse_guard_and_cli_flags_without_submission(tmp_path):
     assert "--dry-run" in argv
     assert argv.index("--dry-run") < argv.index(cli.IMAGE)
     assert argv[argv.index(cli.IMAGE) + 1] == "bash"
+    assert "--env" in argv
+    assert argv[argv.index("--env") + 1] == f"STORYFORGE_R60_COMMON2_RUN_KEY={KEY}"
     assert "cpu-upgrade" in argv
     assert "--attempts" in argv and argv[argv.index("--attempts")+1] == "1"
     assert argv.count(":ro") == 0
