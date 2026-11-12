@@ -44,6 +44,10 @@ Mac端统一使用独立`venvs/r60-owner`（Python3.11、仓库dev测试依赖�
 
 HF Jobs官方文档确认默认Job执行1次。`r60_common2_wrapped_hf_cli.py`的本项目薄适配器仅在CLI help缺失项**恰好**为`--attempts`且Owner Python所用`huggingface_hub==1.33.0`时，以官方默认单次执行替代显示`--attempts 1`；保留所有其他安全选项与共享`hf_job_guard.py`不变。任何其他参数缺失、未固定SDK版本或CLI dry-run未确认必须HOLD。先运行`cli-flags`确认`attempts_mode=PINNED_CLI_DEFAULT_ONE`，然后`ready`，不得跳过提交前marker/组织历史检查。完整回归、Owner命令和当前状态见`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`。
 
+### 2026-11-12 R60 Common2 Wrapped CPU技术门禁正式关闭
+
+已使用从HF Bucket下载的原始0600私有SAFE回执通过独立`r60_common2_wrapped_hf_receipt_verify.py`：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`、`cases_verified=2`、`real_swift_collator_verified=true`、R18 last-round Assistant标签掩码PASS，tokenizer计数[2643,4139]、collator计数[2581,4077]、监督计数[282,305]。RUN_KEY `r60-common2-wrapcpu-20261112T122746Z-5a612325db98`，CPU Job `6af5c24737daa033b6283b0a`；此轮不再重新提交Job。保留`train_admitted=0`，部署模板兼容、世界设定隔离和R60输入设计批准均未完成。完整记录见`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`。
+
 ## Runtime 使用约定
 
 - 只从 `storyforge_dataset.hf_runtime` 导入公共 API。
