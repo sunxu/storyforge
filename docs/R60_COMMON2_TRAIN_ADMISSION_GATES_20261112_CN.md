@@ -113,3 +113,9 @@ D="$B/run.dWgMu5/private/derived"
 Owner实际SAFE：`R50_PRESEAL_CROSSWALK_HOLD` / `reason_code=FILE_PERMISSION_HOLD`，`preseal_cases_checked=0`、`case_id_order_exact=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。**尚未进入46例逐案核验**：当前`case_id_order_exact=false`只是默认占位，不能解释为发现错配。冻结原件存在权限模式不符合新脚本0600门禁的情况，具体哪个文件及其mode未得到Owner诊断。
 
 所有已定位的确切文件路径、已知真实字段和**不触碰原件的安全复制/验证方案**已归档至 [R50 Owner本机冻结文件定位与权限恢复手册](R60_R50_LOCAL_FROZEN_PATHS_20261112_CN.md)。先用只读源+0700临时目录中的0600副本做跨文件核验，逐份校对原文件与副本SHA256，在Owner本地完成、不公开原始哈希。不得直接`chmod`或重新生成冻结R50原件；不启动HF Job/GPU/训练。
+
+## 2026-11-12 Owner 46/46 PRESEAL 跨文件真实检查 PASS（最新）
+
+Owner 在私有 `r50-crosswalk-copy-whznSMXy` 目录用6份源文件**字节SHA256一致**的0600副本进行只读检查，`R50_COPY_0..5=SHA256_MATCH`，原R50冻结文件一律未更改。最终SAFE为 `R50_PRESEAL_46_CROSSWALK_PASS__FINAL_COVERAGE_HOLD`，`preseal_cases_checked=46`、`case_id_order_exact=true`、`provenance_story_fields_present=true`、`history_reference_fields_present=true`、`selection_expected_fields_present=true`、`admission_expected_fields_present=true`、`worlds_expected_fields_present=true`、`r45_gate_expected_fields_present=true`。没有数据库、HF Job、GPU或模型推理；`frozen_protection_50_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。
+
+这证明46个PRESEAL的case ID顺序一一相等、来源story/session/history非空且关联报告预期字段存在。**没有检查原始50案的缺失4案是否正确排除、报告值是否代表最终seal、R45跨世界语义别名隔离，也没有将Common2源标识同R50做交集。** 下阶段必须只读检查selection、admission、worlds及R45 gate的类型化状态值，并保留HOLD。可复用已创建且逐份SHA MATCH的临时副本（Owner本机路径详见 `R60_R50_LOCAL_FROZEN_PATHS_20261112_CN.md`），无需重新复制/更改原件。
