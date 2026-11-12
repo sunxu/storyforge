@@ -274,3 +274,54 @@ def test_full_1000_case_expansion_source_loaded_without_network(tmp_path, monkey
     assert cases[0]["schema"] == g1.CAPTURE_SCHEMA
     assert q.frozen_pool(folder)[1] == pool_sha
     # No production connectivity or model inference is used.
+
+
+def test_reviewer_protocols_frozen_in_config_and_used_on_five_case_pipeline(
+        tmp_path, monkeypatch):
+    base, source, _old, _cases, _ = setup_batch(tmp_path, monkeypatch)
+    folder = base / "new-claude-deepseek-batch"
+    created = q.create_config(
+        folder, source,
+        "https://claude.example/v1", "claude-synthetic",
+        "https://deepseek.example/v1", "deepseek-synthetic",
+        True, False, False, 120,
+        "claude-proxy-top-system", "deepseek-chat",
+    )
+    assert created["status"] == "QUALITY_BATCH_INITIALIZED__NO_REVIEWS"
+    config = q.validate_config(folder)
+    assert config["protocol_a"] == "claude-proxy-top-system"
+    assert config["protocol_b"] == "deepseek-chat"
+    calls = []
+
+    def mock_request(endpoint, model, key, prompt, timeout, json_mode, *,
+                     protocol="openai-chat"):
+        calls.append((model, protocol, prompt))
+        return synthetic_answer()
+
+    monkeypatch.setattr(ai, "model_request", mock_request)
+    receipt = q.advance(folder, 2)
+    assert receipt["cases_reviewed"] == 2
+    assert len(calls) == 4
+    assert [x[1] for x in calls] == [
+        "claude-proxy-top-system", "deepseek-chat",
+        "claude-proxy-top-system", "deepseek-chat",
+    ]
+    assert calls[0][2] == calls[1][2]
+    assert receipt["quality_pass"] == 0  # independence not Owner-attested
+    assert receipt["train_admitted"] == 0
+    assert q.inspect(folder)["cases_reviewed"] == 2
+
+
+def test_claude_proxy_json_mode_fails_before_private_dir_create(
+        tmp_path, monkeypatch):
+    base, source, _old, _cases, _ = setup_batch(tmp_path, monkeypatch)
+    destination = base / "must-not-create"
+    with pytest.raises(q.Hold, match="CLAUDE_PROXY_JSON_MODE_UNSUPPORTED"):
+        q.create_config(
+            destination, source,
+            "https://claude.example/v1", "claude-synthetic",
+            "https://deepseek.example/v1", "deepseek-synthetic",
+            True, False, True, 120,
+            "claude-proxy-top-system", "deepseek-chat",
+        )
+    assert not destination.exists()
