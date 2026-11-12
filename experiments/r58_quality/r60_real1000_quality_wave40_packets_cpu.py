@@ -15,6 +15,7 @@ import sys
 from pathlib import Path
 
 import r60_real1000_quality_wave40_cpu as wave
+import r60_real1000_calibration_sample_cpu as sample
 import r60_real1000_pilot20_local_review as pilot
 import r60_real_private_batch as private
 import r60_real_quality_batch as quality
@@ -34,7 +35,7 @@ class Hold(ValueError):
     pass
 
 
-def construct(cases: list[dict], digest: str, locators: dict) -> tuple[dict, dict, dict]:
+def construct(cases: list[dict], digest: str, locators: dict, frozen_sample: dict) -> tuple[dict, dict, dict]:
     # Full recomputation is necessary: hash alone does not verify selected
     # positions were derived under the frozen Sample100 exclusion policy.
     if (locators.get("schema") != wave.SCHEMA
@@ -45,6 +46,8 @@ def construct(cases: list[dict], digest: str, locators: dict) -> tuple[dict, dic
             or locators.get("quality_review_performed") is not False
             or locators.get("train_admitted") != 0):
         raise Hold("WAVE40_SOURCE_CONTRACT_HOLD")
+    if locators != wave.select(cases, digest, frozen_sample):
+        raise Hold("WAVE40_SOURCE_RECOMPUTE_HOLD")
     rows = locators.get("cases")
     if not isinstance(rows, list) or len(rows) != 40:
         raise Hold("WAVE40_COUNT_HOLD")
@@ -75,7 +78,10 @@ def construct(cases: list[dict], digest: str, locators: dict) -> tuple[dict, dic
             raise Hold("WAVE40_THREE_MSG_HOLD")
         blind_rows.append({
             "blind_index": i,
-            "history_messages": history,
+            "history_messages": [
+                {"role": msg["role"], "content": msg["content"]}
+                for msg in history
+            ],
             "assistant_target": case["target_text"],
         })
         crosswalk_rows.append({
@@ -134,7 +140,11 @@ def run(args: argparse.Namespace) -> dict:
     raw = private.read_private(args.wave_dir / wave.FILENAME, MAX_WAVE_BYTES)
     locators = json.loads(raw)
     cases, digest = quality.frozen_pool(args.expand_dir)
-    blind, xwalk, template = construct(cases, digest, locators)
+    private.private_dir(args.sample_dir, create=False)
+    frozen_sample = json.loads(private.read_private(
+        args.sample_dir / sample.FILENAME, 65_536,
+    ))
+    blind, xwalk, template = construct(cases, digest, locators, frozen_sample)
     private.private_dir(args.output_dir, create=True)
     write_new(args.output_dir, BLIND_NAME, blind)
     write_new(args.output_dir, MAP_NAME, xwalk)
@@ -158,6 +168,7 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--expand-dir", type=Path, required=True)
     p.add_argument("--wave-dir", type=Path, required=True)
+    p.add_argument("--sample-dir", type=Path, required=True)
     p.add_argument("--output-dir", type=Path, required=True)
     args = p.parse_args()
     try:
