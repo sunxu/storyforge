@@ -230,3 +230,20 @@ python scripts/r60_common2_wrapped_hf_stage.py inventory \
 ```
 
 对于既有Stage，先使用`inventory`提供SAFE的文件类别与计数。如果只是额外Python缓存，也不自动删除；先取得Owner明示对该Stage清理动作的授权，或另建**新RUN_KEY + 独立新Stage**并重新跑严格SHA本地和远端门禁；**不得把旧RUN_KEY的不完整远端Prefix或旧Job回执混入新Stage**。若有缺失或未知额外文件，优先保全证据、查清来源，暂不提交HF CPU。
+
+## 2026-11-12 Owner合成测试18 PASS / 1 FAIL：未知Stage异常分类修复
+
+Owner`pytest tests/test_r60_common2_wrapped_hf_pipeline.py`返回18 PASS、1 FAIL。唯一失败`test_unknown_stage_error_stays_private`：测试模拟`STAGE_VERIFY`发生未知`RuntimeError("private source/secret should never print")`；代码继承远端SDK分类器，误报`REMOTE_SDK_OR_SERVICE_HOLD`。**没有发现实际远端SDK故障，也不是Stage SHA失败的证据。** 已在`diagnose`按`phase`分类：处于`STAGE_VERIFY`时只保留已定义的本地Stage/`InputManager`固定错误码；任何其他未知错误统一`STAGE_INPUT_OR_RUNTIME_HOLD`，绝不将未知本地异常声称为HF远端问题，且不泄露异常正文。同步更新1个合成测试断言，当前改动待Owner Mac复测。**真实Stage的`STAGE_FILES_HOLD`仍未解决**，下一步仍先运行只读`stage.py inventory`，不要重sync、ready或submit。
+
+复测：
+```bash
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+"$PY" scripts/r60_common2_wrapped_hf_stage.py inventory --stage "$STAGE" --run-key "$KEY"
+```
