@@ -128,3 +128,18 @@ input, requests or tokens. Real batch default retains strict generic
 synthetic probe** and inspect the SAFE code; isolate minimal transport
 or response-shape fix with synthetic regression before any real private
 review.
+
+### Reuse historically successful Claude transport before retrying
+
+The proven `scripts/r60_p2b_claude_review_client_v1.py` supported:
+top-level `system`, `max_tokens=12000`, OpenAI `choices[0].message.content`
+as either a string or ordered text blocks, plus `finish_reason`.
+REAL1000 uses these again. Complete single JSON markdown fences are
+stripped only as format wrappers; **strict** six-dimension and severe-flag
+validation remains unchanged. A length/max_tokens finish reason must HOLD,
+never PASS. Earlier Claude `MODEL_CONTENT_JSON_INVALID` was not conclusively
+explained by the 1600 cap; it was a regression risk and is fixed with tests.
+If the next single synthetic Claude probe still fails, stop further trial
+requests and inspect private, access-controlled metadata/raw HTTP evidence
+under a dedicated debug workflow; never publish provider responses or
+lower the quality threshold. DeepSeek synthetic API already PASS, no reruns.
