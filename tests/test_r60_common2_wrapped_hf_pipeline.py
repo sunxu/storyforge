@@ -193,7 +193,7 @@ def test_submit_creates_marker_before_single_cli_call_and_replay_holds(
         if argv[:4] == ["hf", "jobs", "run", "--help"]:
             return types.SimpleNamespace(
                 returncode=0, stdout="--namespace --name --flavor --timeout "
-                                    "--attempts --detach --volume --dry-run",
+                                    "--attempts --detach --volume --env --dry-run",
                 stderr="")
         if argv[:3] == ["hf", "auth", "whoami"]:
             return types.SimpleNamespace(returncode=0, stdout="", stderr="")
@@ -375,3 +375,44 @@ def test_hf_cli_flags_accept_documented_short_v_without_relaxing_others():
     )
     assert cli.missing_job_cli_flags(help_text) == []
     assert cli.missing_job_cli_flags(help_text.replace("--dry-run", "")) == ["--dry-run"]
+
+
+def test_missing_only_attempts_uses_pinned_documented_default(monkeypatch):
+    help_text = "--namespace --name --flavor --timeout --detach -v --env --dry-run"
+    monkeypatch.setattr(cli, "version", lambda pkg: "1.33.0")
+    assert cli.missing_job_cli_flags(help_text) == ["--attempts"]
+    assert cli.use_documented_default_attempts(help_text) is True
+    argv = cli.job_command(KEY, help_text)
+    assert "--attempts" not in argv
+    assert "--flavor" in argv and argv[argv.index("--flavor") + 1] == "cpu-upgrade"
+    assert "--namespace" in argv and argv[argv.index("--namespace") + 1] == "adradar"
+
+
+def test_missing_attempts_rejects_unpinned_sdk_or_more_missing_flags(monkeypatch):
+    help_text = "--namespace --name --flavor --timeout --detach -v --env --dry-run"
+    monkeypatch.setattr(cli, "version", lambda pkg: "1.32.0")
+    assert cli.use_documented_default_attempts(help_text) is False
+    with pytest.raises(ValueError, match="HF_CLI_FLAGS_HOLD"):
+        cli.job_command(KEY, help_text)
+    monkeypatch.setattr(cli, "version", lambda pkg: "1.33.0")
+    with pytest.raises(ValueError, match="HF_CLI_FLAGS_HOLD"):
+        cli.job_command(KEY, help_text.replace("--env", ""))
+
+
+def test_pinned_missing_attempts_probed_as_safe_default(monkeypatch):
+    import types
+
+    monkeypatch.setattr(cli, "version", lambda pkg: "1.33.0")
+    monkeypatch.setattr(
+        cli.subprocess, "run",
+        lambda argv, **kwargs: types.SimpleNamespace(
+            returncode=0,
+            stdout="--namespace --name --flavor --timeout --detach -v --env --dry-run",
+            stderr="",
+        ),
+    )
+    report = cli.inspect_job_cli_flags()
+    assert report["status"] == "WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB"
+    assert report["attempts_mode"] == "PINNED_CLI_DEFAULT_ONE"
+    assert report["missing_cli_flags"] == []
+    assert report["job_submission_calls"] == 0
