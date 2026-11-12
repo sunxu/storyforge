@@ -1,5 +1,8 @@
 # 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
 
+> **2026-11-11 下一阶段交接切换：** 本文件下方的“唯一接手目标 P3 CPU-only”属于 2026-11-10 的历史任务描述，不能用来驱动当前 GLM 工作。现在请以 [R60 GLM 全25 Snapshot 下一 Agent 权威任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md) 和 [全25 Owner Runbook](R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md) 为准：已完成代码/CI和冻结 Runner 合成 Snapshot CPU 验收；仍需新 `--full25` CPU Gate、Owner Mac 手动启动独立25条 H200 Job、25个原始 Snapshot/回执验签与 CPU Replay。旧历史回执不覆盖、不启动 SFT/1000条批量筛选。其他 P0/P1/P2 历史已确认结果保持不变。
+
+
 **本节为当前唯一状态依据。下方较早日期的 P2-B/P3 未开始、Owner review pending、Verifier HOLD 等内容均为历史记录，不得作为当前待办。**
 
 ## 阶段状态
@@ -379,3 +382,14 @@ GLM-Z1 是 GLM-4 同家族推理增强 Challenger，不是第三个完全独立�
 - Quality-v1 admitted=0；training_authorized=false；GPU/1000 条批量审核/SFT 均未授权。
 
 详细可执行命令与验收见 [下一 Agent 任务书 v1.1](R60_NEXT_AGENT_HANDOFF_TASKBOOK_20261109_CN.md) 与 [执行任务书 v1.3](R60_CALIBRATION_EXECUTION_TASKBOOK_20261108_CN.md)。
+
+
+## 2026-11-10：ChatGPT HF OAuth / Bucket RW 提交故障（权威状态）
+
+插件 Hugging Face v0.1.4（关联日期 2026-11-04；Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`；OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`；RELEASED）。ChatGPT 连接器身份 `greenkeedle`，`adradar` role=write，scopes=`openid profile read-mcp read-repos jobs contribute-repos inference-api`。
+
+对照证据：ChatGPT 无 Volume CPU Job `6af2ec43ab34849891ab279c` 执行成功；ChatGPT RW Bucket 提交返回 403。Owner Mac CLI 在同一 `adradar` namespace、`python:3.12`、`cpu-basic`、volume `hf://buckets/adradar/storyforge-training:/output` 成功完成 Job `6af2ee90ab34849891ab2f6e`，文件写入、读回 `PASS`、删除均成功。RO Job `6af2ec64ab34849891ab27f8` 只有提交接受证据，无执行/读回证据。
+
+诊断：故障定位到 ChatGPT HF 连接器的 Bucket RW 提交/授权链路；不是 Bucket 普遍不可写，也不是 Jobs 创建权限/余额整体故障。缺少 write-repos 或专用 Bucket scope 只是待核实假设，不能作为已证实根因。需 HF 检查该 OAuth App 的 Bucket RW capability、adradar grant、请求序列化和服务端 403 原因。
+
+状态：ChatGPT RW 持久化 `BLOCKED_403`，P4 私有输出验收 HOLD；Owner Mac CLI RW 已 PASS，只能作为受控临时路径。不得切换个人 namespace、索取长期 PAT、修改 Bucket ACL、配置 Trusted Publishers 或把私有正文写入 GitHub/Actions/SAFE。不要盲目重复提交 RW Job。正式评估推理仍不得启动。

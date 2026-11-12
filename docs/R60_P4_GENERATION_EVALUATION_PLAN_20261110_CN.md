@@ -1,3 +1,15 @@
+## 2026-11-10 最新执行状态
+
+当前执行任务书与 Agent 入口：
+- [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md)
+- [P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)
+
+Worker CLI 已实现，运行镜像和依赖锁已在 digest-pinned linux/amd64 容器中通过 CI 合同验证。当前 HEAD `a1db1ac70fd3777d78460eee58e7d2b891867c40` 三项 CI 全部 PASS。接下来不重复已通过的 P3 或短输入 GPU Smoke，而是完成 Worker CLI/bootstrap CPU-only 端到端验收、Owner Mac CLI 执行包、32K 资源预算和最终 Profile Freeze Review。
+
+HF 连接器 403/OAuth/Bucket 排查按 Owner 决定暂停；HF 任务由 Owner 在 Mac CLI 执行。当前正式 Profile Freeze、正式推理、GPU 和训练授权仍为 false。
+
+---
+
 # StoryForge R60 P4 Generation Runtime & Evaluation Plan（2026-11-10）
 
 > 状态：**PROPOSAL_ONLY__OWNER_AUTHORIZATION_REQUIRED**
@@ -164,3 +176,61 @@ P4.3 暂不定量、不报价。必须先确认：
 - Jobs Configuration / hardware flavor：<https://huggingface.co/docs/hub/en/jobs-configuration>
 
 检索日：2026-11-10。本文价格为当日官方页面参考价，不构成账户报价或资源可用性保证。
+
+## 2026-11-10：Owner 批准评估契约与联合 Freeze Review
+
+Owner 已批准 Prompt v1 与 Output JSON Schema v1。批准只针对这两份内容，分别以 Profile 中记录的 SHA-256 为准；未授权 Profile freeze、真实数据访问、推理、GPU Job、Locked30 或训练。
+
+新增/完善的 CPU-only Freeze Review 入口：
+
+    PYTHONPATH=src python -m storyforge_dataset.generation_eval \
+      experiments/r60_quality/p4_generation_profile_candidate_v1.json \
+      --purpose freeze_review
+
+该入口同时校验：
+- P4 Profile 的三模型 Revision、Tokenizer/Template/Generation Config fingerprints、EOS/PAD、sampling 与 token budget；
+- Owner-approved Prompt/Schema receipt 与两份文件的 SHA-256；
+- Development20 primary/sensitivity arm matrix 与 Locked30 primary-only 禁调参约束；
+- Profile freeze、inference、GPU、training 授权继续关闭。
+
+通过时输出 P4_FREEZE_REVIEW_READY_NOT_FROZEN，只代表 CPU 配置检查通过，不会冻结 Profile，不会创建 HF Job，也不会加载权重或启动推理。CI 将保存不含私有案例或生成正文的 SAFE artifact：r60-p4-freeze-review-safe。
+
+仍待解决：
+1. 正式长上下文硬件 / 单模型运行预算的 Owner 确认。H200 是当前候选，不是已授权资源。
+2. HF Bucket /output:rw 对本 P4 Job 的真实可写性与回收路径验证。历史 Bucket 中存在旧评估产物，证明该 Bucket 曾被写入，但不等于本次运行身份和挂载已验证。此前 ChatGPT 直连 Xet 写入曾返回 403；不得把该路径标为当前已验收。
+3. 当前 Job plan 引用的 python -m storyforge_dataset.generation_eval.worker CLI 交付及端到端本地/合成验收。
+4. 以上完成后再由 Owner 单独决定是否冻结 Profile；Freeze 不自动授权推理或 GPU。
+
+## 2026-11-10：ChatGPT HF OAuth / Bucket RW 提交故障（权威状态）
+
+插件 Hugging Face v0.1.4（关联日期 2026-11-04；Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`；OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`；RELEASED）。ChatGPT 连接器身份 `greenkeedle`，`adradar` role=write，scopes=`openid profile read-mcp read-repos jobs contribute-repos inference-api`。
+
+对照证据：ChatGPT 无 Volume CPU Job `6af2ec43ab34849891ab279c` 执行成功；ChatGPT RW Bucket 提交返回 403。Owner Mac CLI 在同一 `adradar` namespace、`python:3.12`、`cpu-basic`、volume `hf://buckets/adradar/storyforge-training:/output` 成功完成 Job `6af2ee90ab34849891ab2f6e`，文件写入、读回 `PASS`、删除均成功。RO Job `6af2ec64ab34849891ab27f8` 只有提交接受证据，无执行/读回证据。
+
+诊断：故障定位到 ChatGPT HF 连接器的 Bucket RW 提交/授权链路；不是 Bucket 普遍不可写，也不是 Jobs 创建权限/余额整体故障。缺少 write-repos 或专用 Bucket scope 只是待核实假设，不能作为已证实根因。需 HF 检查该 OAuth App 的 Bucket RW capability、adradar grant、请求序列化和服务端 403 原因。
+
+状态：ChatGPT RW 持久化 `BLOCKED_403`，P4 私有输出验收 HOLD；Owner Mac CLI RW 已 PASS，只能作为受控临时路径。不得切换个人 namespace、索取长期 PAT、修改 Bucket ACL、配置 Trusted Publishers 或把私有正文写入 GitHub/Actions/SAFE。不要盲目重复提交 RW Job。正式评估推理仍不得启动。
+
+## 2026-11-10 主线续进：Worker CLI / Job bootstrap 工程实现
+
+Owner 已暂停 ChatGPT-HF OAuth / Bucket RW 故障排查，并将自行在 Mac CLI 执行 HF 任务。ChatGPT 不再提交 HF Job、不测试 Bucket、不更改 OAuth；后续只提供可复用代码、命令、SAFE schema 与回执审查。
+
+当前分支 `r60/p4-generation-eval-framework` 正在完成 P4 Worker CLI / Job execution plan 闭环：
+- `worker.py` 保持模型无关的 generation batch engine，不导入 torch / transformers / HF Hub。
+- 新增独立 `worker_cli.py`，作为真正的 `python -m storyforge_dataset.generation_eval.worker_cli` 执行入口；必须先通过 Profile freeze/inference/GPU 授权检查，再校验依赖 lock、runtime、manifest、input SHA、输出目录和私有输出权限；未授权时只输出 SAFE HOLD，不加载模型。
+- Job plan 固定从 GitHub codeload 下载精确 `code_revision` 的仓库归档，限制归档大小/文件数/解压总量并拒绝路径穿越、符号链接和特殊文件；不依赖 PyTorch 基础镜像预装 git。
+- Job 启动后按 `requirements/hf-generation-eval.lock` 使用 `--require-hashes` 安装依赖，再执行独立 Worker CLI；输入挂载路径为 `/input/generation-profile.json`、`/input/manifest.json`、`/input/inputs.jsonl`，输出目录必须为 `/output` 的全新直接子目录。
+- Worker 仅将私有生成正文写入 `/output/<run-id>/<role>-outputs.private.json`，create-only、0600；stdout 只输出 SAFE 元数据，不输出生成正文。
+- 当前提交 `219fd80f35d8b8e3c2da8a1b2d64a8dddeae008c` 的 Repository CI 与 R60 Generation Eval CI 已 PASS；Runtime Image Candidate 正在执行，尚未报告最终结果。
+
+此代码目前仍是执行入口工程候选，不代表正式 Profile 已冻结或获准执行。未完成实际容器启动/归档下载的无 GPU 验证、运行镜像验证、Owner 本地 HF 端到端执行及 32K 资源预算复核前，不提交正式评估 Job。
+
+### 后续主线顺序
+1. 等待当前 HEAD 的 Runtime Image Candidate 真实回执；失败按日志修复，不沿用旧 SHA 的 CI 结果。
+2. 增加 Worker CLI 归档 bootstrap 的语法/边界测试及 CPU-only container entrypoint test；确认镜像不依赖未安装的 git。
+3. 由 Owner 在 Mac CLI 进行无 GPU/无私有数据的执行入口检查；如需 HF Job，由 Owner 决定并执行。ChatGPT 不代为提交。
+4. 复核输出目录契约、SAFE 回收方式和私有正文保管；HF Bucket RW 问题暂时不在 ChatGPT 执行范围内。
+5. 完成 32K 长上下文显存/时间/费用上限证据后，生成最终 Profile Freeze Review 包，等待 Owner 单独批准 Profile Freeze。Freeze 不自动授权正式推理。
+
+### 不变的授权边界
+`profile_freeze_authorized=false`、`inference_authorized=false`、`gpu_authorized=false`、`training_authorized=false`。不启动 Development20 / Locked30 正式推理、1000 条审核或 SFT；不读取 Locked30 私有案例。

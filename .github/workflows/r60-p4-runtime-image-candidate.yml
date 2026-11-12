@@ -1,0 +1,201 @@
+name: R60 P4 Runtime Image Candidate
+
+on:
+  push:
+    branches: [r60/p4-generation-eval-framework]
+    paths:
+      - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - 'requirements/hf-generation-eval.in'
+      - '.github/workflows/r60-p4-runtime-image-candidate.yml'
+  pull_request:
+    paths:
+      - 'experiments/r60_quality/p4_generation_profile_candidate_v1.json'
+      - 'requirements/hf-generation-eval.in'
+      - '.github/workflows/r60-p4-runtime-image-candidate.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  base-image-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      IMAGE: docker.io/pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - name: Pull exact amd64 image digest
+        run: docker pull --platform linux/amd64 "$IMAGE"
+      - name: Verify base Python and CUDA-enabled PyTorch build (no GPU)
+        run: |
+          docker run --rm --platform linux/amd64 --entrypoint python "$IMAGE" -c '
+          import json, tarfile, urllib.request, sys, torch
+          report = {
+              "python": sys.version.split()[0],
+              "torch": torch.__version__,
+              "cuda_build": torch.version.cuda,
+              "cuda_available_on_ci_runner": torch.cuda.is_available(),
+              "source_archive_stdlib_available": callable(tarfile.open) and callable(urllib.request.urlopen),
+          }
+          assert report["source_archive_stdlib_available"], report
+          assert sys.version_info[:2] == (3, 11), report
+          assert torch.__version__.startswith("2.6.0"), report
+          assert torch.version.cuda is not None and torch.version.cuda.startswith("12.4"), report
+          print(json.dumps(report, sort_keys=True))
+          '
+
+      - name: Generate hash-locked dependencies and validate in the pinned base image
+        run: |
+          docker run --rm --platform linux/amd64 \
+            -v "$GITHUB_WORKSPACE:/workspace" -w /workspace \
+            --entrypoint bash "$IMAGE" -lc '
+              set -euo pipefail
+              python -m pip install --disable-pip-version-check "pip-tools==7.5.1"
+              pip-compile --generate-hashes --resolver=backtracking \
+                --output-file requirements/hf-generation-eval.lock \
+                requirements/hf-generation-eval.in
+              python -m pip install --dry-run --require-hashes \
+                -r requirements/hf-generation-eval.lock
+              python -c "import torch; assert torch.__version__ == \"2.6.0+cu124\"; assert torch.version.cuda == \"12.4\"; print(torch.__version__, torch.version.cuda)"
+            '
+
+      - name: Build exact-commit source archive bootstrap fixture
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          PYTHONPATH=src python - <<'PY'
+          import base64
+          import importlib.util
+          import json
+          import os
+          from pathlib import Path
+          from storyforge_dataset.generation_eval.plan import build_generation_plan
+
+          spec = importlib.util.spec_from_file_location(
+              "p4_plan_tests", "tests/test_generation_eval_plan.py"
+          )
+          module = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(module)
+          args = module.plan_args(module.ready_profile())
+          args["code_revision"] = os.environ["PR_HEAD_SHA"]
+          plan = build_generation_plan(**args)
+          assert plan.status == "P4_JOB_PLAN_READY_NOT_SUBMITTED"
+          shell = plan.argv[plan.argv.index("bash") + 2]
+          encoded = shell.split("base64.b64decode('", 1)[1].split("')", 1)[0]
+          script = base64.b64decode(encoded)
+          compile(script, "<p4-bootstrap>", "exec")
+          Path(os.environ["RUNNER_TEMP"], "p4-source-archive-bootstrap.py").write_bytes(script)
+          print(json.dumps({
+              "status": "BOOTSTRAP_FIXTURE_READY",
+              "code_revision": args["code_revision"],
+              "bootstrap_bytes": len(script),
+              "job_submitted": False,
+              "inference_started": False,
+              "gpu_started": False,
+          }, sort_keys=True))
+          PY
+
+      - name: Prepare CPU-only Worker CLI fail-closed assertion
+        run: |
+          cat > "$RUNNER_TEMP/p4-cli-smoke.py" <<'PY'
+          import builtins
+          import contextlib
+          import io
+          import json
+          import socket
+          import sys
+          from pathlib import Path
+
+          blocked = {"torch", "transformers", "huggingface_hub"}
+          original_import = builtins.__import__
+          def guarded_import(name, *args, **kwargs):
+              if name.split(".", 1)[0] in blocked:
+                  raise AssertionError("unauthorized runtime import: " + name)
+              return original_import(name, *args, **kwargs)
+          builtins.__import__ = guarded_import
+          def blocked_network(*args, **kwargs):
+              raise AssertionError("network access attempted in fail-closed CLI")
+          socket.create_connection = blocked_network
+          socket.socket.connect = blocked_network
+
+          from storyforge_dataset.generation_eval.worker_cli import main
+          root = Path("/workspace/storyforge")
+          output = io.StringIO()
+          with contextlib.redirect_stdout(output):
+              code = main([
+                  "--model-role", "A",
+                  "--profile", str(root / "experiments/r60_quality/p4_generation_profile_candidate_v1.json"),
+                  "--manifest", "/input/manifest.json",
+                  "--input", "/input/inputs.jsonl",
+                  "--output-dir", "/output/unauthorized-run",
+                  "--repo-root", str(root),
+              ])
+          report = json.loads(output.getvalue())
+          assert code == 2, (code, report)
+          assert report["status"] == "GENERATION_WORKER_HOLD", report
+          assert report["reason_code"] == "GENERATION_PROFILE_NOT_AUTHORIZED", report
+          assert report["private_values_emitted"] is False, report
+          assert report["inference_started"] is False, report
+          assert report["gpu_started"] is False, report
+          assert report["training_started"] is False, report
+          assert not Path("/output/unauthorized-run").exists()
+          assert not any(name in sys.modules for name in blocked)
+          print(json.dumps({
+              "schema": "storyforge_r60_worker_cli_container_smoke_safe_v1",
+              "status": "CPU_CONTAINER_ENTRYPOINT_FAIL_CLOSED_PASS",
+              "cli_help": True,
+              "bootstrap_archive_executed": True,
+              "dependencies_installed_with_hashes": True,
+              "unauthorized_profile_rejected": True,
+              "runtime_imports_blocked_and_not_attempted": True,
+              "network_blocked_and_not_attempted": True,
+              "output_directory_created": False,
+              "private_values_emitted": False,
+              "inference_started": False,
+              "gpu_started": False,
+              "training_started": False,
+          }, sort_keys=True))
+          PY
+          cat > "$RUNNER_TEMP/p4-container-smoke.sh" <<'SH'
+          set -euo pipefail
+          python /tmp/p4-bootstrap.py
+          test -f /workspace/storyforge/src/storyforge_dataset/generation_eval/worker_cli.py
+          test -f /workspace/storyforge/requirements/hf-generation-eval.lock
+          python -m pip install --disable-pip-version-check --require-hashes -r /workspace/storyforge/requirements/hf-generation-eval.lock
+          export STORYFORGE_RUNTIME_IMAGE_DIGEST=sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee
+          export PYTHONPATH=/workspace/storyforge/src
+          python -m storyforge_dataset.generation_eval.worker_cli --help >/tmp/worker-cli-help.txt
+          grep -q -- "--model-role" /tmp/worker-cli-help.txt
+          mkdir -p /output
+          python /tmp/p4-cli-smoke.py
+          SH
+          chmod 0600 "$RUNNER_TEMP/p4-cli-smoke.py" "$RUNNER_TEMP/p4-container-smoke.sh"
+
+      - name: Execute bootstrap and Worker CLI inside exact digest-pinned container (CPU-only)
+        run: |
+          docker run --rm --platform linux/amd64 \
+            -v "$RUNNER_TEMP/p4-source-archive-bootstrap.py:/tmp/p4-bootstrap.py:ro" \
+            -v "$RUNNER_TEMP/p4-cli-smoke.py:/tmp/p4-cli-smoke.py:ro" \
+            -v "$RUNNER_TEMP/p4-container-smoke.sh:/tmp/p4-container-smoke.sh:ro" \
+            --entrypoint bash "$IMAGE" /tmp/p4-container-smoke.sh
+
+      - name: Commit generated lock on branch pushes
+        if: github.event_name == 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -f requirements/hf-generation-eval.lock ]] && \\
+             git ls-files --error-unmatch requirements/hf-generation-eval.lock >/dev/null 2>&1 && \\
+             git diff --quiet -- requirements/hf-generation-eval.lock; then
+            echo "Dependency lock is unchanged."
+          else
+            git add requirements/hf-generation-eval.lock
+            if git diff --cached --quiet; then
+              echo "No dependency lock changes to commit."
+            else
+              git commit -m "R60 P4: add hash-locked generation runtime dependencies"
+              git push origin "HEAD:$GITHUB_REF_NAME"
+            fi
+          fi

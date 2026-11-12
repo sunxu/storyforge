@@ -1,0 +1,255 @@
+## 2026-11-10 最新状态覆盖说明（Worker CLI / Runtime Image）
+
+当前权威后续任务书：[P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md)；启动提示词：[P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)。
+
+此前本文中“Worker CLI 未交付”“Runtime Image Candidate 未验证”等章节属于实现过程记录，现已由最新回执取代：
+- `worker_cli.py` 已实现独立 fail-closed CLI。
+- bootstrap 已实现固定 Commit 源码归档下载、安全解压和 hash-locked dependency install。
+- HEAD `a1db1ac70fd3777d78460eee58e7d2b891867c40` 的 Repository CI、Generation Eval CI、Runtime Image Candidate 均 PASS。
+- Runtime Image 已在 linux/amd64 容器中验证：Python 3.11.11、torch 2.6.0+cu124、CUDA build 12.4；`pip install --dry-run --require-hashes` PASS。Hosted runner 无 GPU。
+- Freeze Review SAFE 为 `P4_FREEZE_REVIEW_READY_NOT_FROZEN`，ready=true、blockers=[]；仍未冻结。
+- 仍待：Worker CLI/bootstrap CPU-only 端到端容器自检、Owner Mac CLI 执行包及输出回收验证、32K 长上下文显存/耗时/费用证据。
+- HF 403/OAuth/Bucket 排查暂停，HF Job 由 Owner 在 Mac CLI 执行；ChatGPT 不提交 Job、不测试 Bucket、不改 OAuth。
+
+不得把上述 CI/镜像契约 PASS 解释为实际 HF Job、GPU 长上下文或正式推理已验收。
+
+---
+
+# R60 P4 Generation Eval Framework（2026-11-10）
+
+## 决策
+
+采用方案 B：新建独立 storyforge_dataset.generation_eval，复用现有 HF Jobs Runtime；不改写 hf_runtime、token_preflight.py、旧 hf_job_guard.py 或训练 Runner。
+
+## P3 实际前置结果
+
+最近一次 P3 SAFE 状态为 P3_SYNTHETIC_CPU_PREFLIGHT_PASS__GENERATION_PROFILE_PENDING：
+
+- 三个模型的 tokenizer / chat template 合成预检完成，90 条合成输入 × 3 个模型 = 270/270。
+- 三模型 Revision 与模板来源已固定；A 使用 tokenizer 内嵌模板，B 与 challenger 使用独立 chat_template.jinja。
+- 共享上下文上限 32,768 tokens；输入预算 28,672，生成预留 4,096。
+- 本次仅做 CPU tokenizer/template 检查；没有下载模型权重、提交 HF Job、初始化 GPU 或执行推理。
+- 运行依赖基线：transformers==4.57.1、sentencepiece==0.2.1、jinja2==3.1.6。
+
+P3 PASS 只证明合成 tokenizer/template 路径可用，不代表逐模型 Generation Profile 已冻结，也不构成推理/GPU 授权。现有 P3 候选配置中的预算、seed、runtime digest、tokenizer hashes 与授权字段仍需正式写入并复核；不得仅凭 SAFE 摘要自动修改源配置。
+
+## 当前实现范围
+
+本阶段仅实现 P4 配置结构校验和 readiness assessment。它是 CPU-only 的配置检查，不导入 Transformers/PyTorch、不访问网络、不提交 HF Job、不下载权重、不运行推理或训练。
+
+```bash
+PYTHONPATH=src python -m storyforge_dataset.generation_eval \
+  experiments/r60_quality/p3_model_profiles_candidate_v1.json
+```
+
+当前候选配置应返回 P4_PROFILE_INCOMPLETE_HOLD，并明确列出缺失的模型采样配置、预算、seed、runtime digest、tokenizer hashes 和授权字段。不会用 Qwen 参数替代 GLM 参数。
+
+## 固定边界
+
+- 模型与 revision 必须与 P3 冻结候选一致：A / B / challenger 三个角色，不允许 main 或自动升级。
+- 每个模型单独 Generation Profile；不同模型的采样参数不可隐式继承。
+- profile freeze、inference、GPU 三项授权必须分别显式为 true；训练授权不由本框架推导。
+- 只有 context ceiling、input/output budget、seed、runtime digest、tokenizer hashes、模板 hash 和逐模型 sampling 参数完整时，assessment 才可报告 ready。
+- SAFE assessment 仅输出角色名、状态和固定 blocker code，不输出模型仓库路径、prompt、输入、输出或凭据。
+- readiness PASS 仍不等于 HF Job 已提交或推理已授权；提交必须经过后续独立 orchestrator 与 Owner 授权。
+
+## 已知模型参数证据与未决项
+
+- Qwen3-32B 官方模型卡给出 thinking 模式 temperature=0.6, top_p=0.95, top_k=20, min_p=0；当前 P3 候选已记录该配置。
+- GLM-4-32B-0414 与 GLM-Z1-32B-0414 的模型卡示例/建议并不构成当前 R60 评估任务已批准的逐模型 generation profile。特别是 GLM-4 文档示例 do_sample=True，GLM-Z1 文档给出 temperature=0.6, top_p=0.95, top_k=40, max_new_tokens=30000，但这些不能自动覆盖既定评估设计或消解采样/greedy 冲突。因此两个 GLM profile 暂时保持未配置，等待明确 Owner 决策。
+- 三模型 template hash 已在 P3 SAFE 结果中核验；P4 仍需核对各 tokenizer 的独立文件 hash、运行镜像 digest 与依赖锁 hash，再完成 profile freeze。
+- training_authorized=false；P4 Generation Eval 不会启动训练。
+
+## 下一阶段
+
+1. 将 P3 最终 CPU SAFE 回执与三模型配置逐项对齐，确认 revision/template/tokenizer hash。
+2. 解决 GLM-4 与 GLM-Z1 的采样模式冲突，冻结每模型独立参数。
+3. 将 28,672 输入预算、4,096 生成预算、seed、runtime 镜像 digest 和依赖 lock 写入独立 P4 profile candidate，并完成校验。
+4. 实现通用 worker（模型加载、输入校验、生成、输出隔离、SAFE 回执）及单 Job 计划生成器。
+5. 本地/CI 合成测试全绿后，才提交一项独立的 HF GPU Synthetic Smoke；提交前再次核验 namespace、flavor、timeout、挂载和成本上限。
+
+## 当前授权状态
+
+inference_authorized=false、gpu_authorized=false、training_authorized=false。当前提交不创建或运行任何 Hugging Face Job。
+
+
+## P4.1：单模型 Job 计划生成器（已实现，未提交）
+
+新增 `generation_eval.plan`，只生成确定性的单模型 HF Job 计划，不调用网络、不执行 subprocess、不提交 Job。
+
+安全约束：
+
+- namespace 固定为组织 `adradar`，拒绝个人 namespace fallback。
+- 仅允许明确列出的 GPU flavor（A100 Large / H200 / RTX PRO 6000）；不自动选择或升级硬件。
+- 镜像必须使用 SHA-256 digest，代码必须固定到 40 位 commit SHA。
+- 输入仅允许项目 bucket 的 `/input:ro` 挂载；输出必须是独立 `/output:rw` 挂载。
+- 输入/输出 bucket 路径不得相同或互相包含。
+- 每个计划仅一个 attempt、detach、超时上限 60 分钟。
+- 计划 SAFE 回执不输出 bucket 路径、镜像地址或命令行，不代表 Job 已提交。
+- 现有 P3 候选仍未完成 profile freeze，实际调用计划生成器时应得到 HOLD；合成测试只验证完整假配置可以生成确定性计划。
+
+命令行参数中的 image digest、flavor、timeout、bucket subpath、dataset manifest 和 code revision 都必须由后续经批准的执行配置显式提供，本阶段没有替用户选定这些运行参数。
+
+### 尚未进入真实执行
+
+Job 计划目前引用的 Worker 入口尚未交付，因此即使合成 profile 能通过，也不构成可提交的运行包。下一步需实现并测试通用 Worker、模型后端适配、输出隔离与 SAFE 运行回执；随后再增加单独的 GPU 提交守卫。不得直接使用计划中的 argv 绕过该守卫。
+
+
+
+## P4.2：通用 Generation Worker API（已实现，合成后端验证）
+
+新增 `generation_eval.worker.run_generation_batch`。Worker 与模型加载框架解耦，通过 `GenerationBackend` Protocol 接收后端实例：
+
+- 严格校验 profile 已冻结且 inference/GPU 授权均显式为 true。
+- 输入文件通过现有 HF Runtime 的 no-follow、文件类型、大小、SHA-256 校验。
+- 输入 JSONL 严格限定为 `sample_id + messages`，校验角色、末尾 user 消息、ID 唯一性和消息数量。
+- 逐条调用后端，并校验实际输入 token 数、生成 token 数不超过 manifest/profile 预算。
+- 生成结果只写入独立私有文件，create-only、0600 权限；拒绝覆盖已有文件。
+- SAFE 回执只返回模型角色、数量、字节数、SHA-256、权限和执行标志，不包含 prompt 或生成文本。
+- Worker 不导入 Transformers/PyTorch，不负责模型下载或 Job 提交；模型后端必须实现 GPU 状态报告，真实 GPU adapter 尚未接入。
+
+当前 Worker 仅使用 FakeBackend 完成合成测试。不能把 FakeBackend 测试解释为真实模型推理或 GPU 验收。
+
+### P4.3 后续阻塞
+
+1. 编写并冻结 Qwen / GLM 各自的 backend adapter，明确模型类、dtype、chat template 加载方式、设备映射与停止条件。
+2. 将 P3 tokenizer/template 文件 hash、运行镜像 digest、依赖 lock hash 写入独立 P4 Frozen Profile；目前 P3 候选源文件仍保持未冻结状态。
+3. 增加 Worker CLI 和独立 GPU Job submit guard；当前 Job Plan 只用于审查，不得直接执行其 argv。
+4. 在完成 Owner profile freeze 和 GPU 授权后，才进行一个模型、一个样本的 Synthetic GPU Smoke。
+
+
+## P4.3：Pinned Transformers Backend（已实现适配器，未加载权重）
+
+新增 `generation_eval.backend.TransformersGenerationBackend`：
+
+- 使用 `AutoTokenizer` / `AutoModelForCausalLM`，固定 model ID 与 revision；明确 `trust_remote_code=False`。
+- Qwen 从 pinned tokenizer config 读取内嵌 chat template；GLM-4 / GLM-Z1 从独立模板文件加载。两条路径都必须匹配 P3 的 SHA-256。
+- 固定 BF16 与 `device_map="auto"`；拒绝 CPU/disk offload，检查 CUDA 与 BF16 支持。
+- 通过 tokenizer 的 `apply_chat_template` 进行真实 tokenization；按 profile sampling 参数生成，并返回实际 input/output token 数。
+- 模型库仅在显式调用 `from_pretrained` 时延迟导入；profile、plan、CI 和 worker API 的合成测试不会下载模型权重。
+
+### 三个模型的官方仓库配置核对
+
+| 模型 | 架构 | 权重 dtype | 模型配置 context |
+|---|---|---|---:|
+| Qwen3-32B | Qwen3ForCausalLM | BF16 | 40,960 |
+| GLM-4-32B-0414 | Glm4ForCausalLM | BF16 | 32,768 |
+| GLM-Z1-32B-0414 | Glm4ForCausalLM | BF16 | 32,768 |
+
+因此共享 32,768 token ceiling 不超过三个模型中的最小模型 context。
+
+采样证据：
+
+- Qwen3-32B 模型卡对 thinking 模式明确建议 `do_sample=true`、temperature 0.6、top_p 0.95、top_k 20、min_p 0；并明确警告不要使用 greedy decoding。候选 A 的采样设置与该建议一致。
+- GLM-4-32B-0414 的 README 推理示例设置 `do_sample=true`，但模型仓库的 generation_config 没有给出 temperature / top_p / top_k 默认值。不能把 Qwen 参数直接移植给它。
+- GLM-Z1-32B-0414 的 README 参数表建议 temperature 0.6、top_p 0.95、top_k 40；但同一 README 的 generate 示例使用 `do_sample=false`。这是明确的文档内部冲突，不能由代码替 Owner 裁决。
+- GLM-4 与 GLM-Z1 的 generation_config 仅固定 eos_token_id / pad_token_id，没有可据以冻结采样模式的默认参数。
+
+因此 GLM 两个 profile 继续 HOLD。后端已支持两种采样模式，但不会替模型选择模式或参数。
+
+### 尚未验收
+
+本次没有真实导入 Transformers、下载权重、初始化 CUDA 或运行模型。当前后端通过 FakeTorch / FakeTransformers 做接口合成测试；还需在实际 HF GPU 环境验证版本兼容、模型加载、模板 tokenization、显存占用和生成结果。
+
+
+## 2026-11-10 采样策略决策补充
+
+Owner 已确认按建议推进采样方案。逐模型主实验配置、GLM-4/GLM-Z1 Development20 敏感性对照及约束见 [R60 P4 Sampling Policy Decision](R60_P4_SAMPLING_POLICY_DECISION_20261110_CN.md) 与机器可读候选 `experiments/r60_quality/r60_sampling_decision_candidate_v1.json`。该决定只批准实验设计，不冻结 Generation Profile；所有 inference/GPU/training 授权仍为 false。GLM-4 主配置已校正为 `do_sample=true`，与其模型卡示例一致；GLM-Z1 greedy 与官方 sampling 表分别作为主基线和 Development20 对照。
+
+
+## 2026-11-10：P4 Profile Evidence Binding 与 Stop Policy
+
+新增 `experiments/r60_quality/p4_generation_profile_candidate_v1.json`，将 P3 SAFE 中三个模型的 18 个文件 SHA-256、generation_config SHA、EOS/PAD token IDs、模板来源与采样参数绑定到 P4 候选配置。P4 validator 会校验文件集合、哈希交叉一致性、revision 对应的 EOS/PAD IDs，以及不支持的自定义 stop sequence。
+
+Generation Backend 现在只从已验证的本地 tokenizer snapshot 加载 tokenizer：下载器只允许请求 manifest 中的六个文件，固定 revision；snapshot 的每个文件在 AutoTokenizer local-only 加载前重新校验 SHA-256。模型权重仍只会在显式调用 pinned `AutoModelForCausalLM.from_pretrained` 时加载。
+
+Worker/Backend 已增加 EOS / length / unrecognized-stop 分类、显式 EOS/PAD token 传递、per-sample effective seed 和 SAFE finish-reason 计数。未识别停止原因会使批次 HOLD；达到 `max_new_tokens` 会单独统计，不会伪装为 EOS。
+
+运行镜像候选及 CPU-only Docker contract workflow 见：
+- `experiments/r60_quality/p4_generation_profile_candidate_v1.json`
+- `requirements/hf-generation-eval.in`
+- `.github/workflows/r60-p4-runtime-image-candidate.yml`
+- `docs/R60_P4_RUNTIME_AND_STOP_POLICY_20261110_CN.md`
+
+Base image digest 已通过 GitHub Actions 的 linux/amd64 CPU-only contract，验证值为 Python 3.11.11、PyTorch 2.6.0+cu124、CUDA build 12.4。此结果不代表有 CUDA 设备可用，也不代表 HF GPU runtime 的 BF16 能力已验证。`runtime_digest` 已绑定此 base image digest；GPU generation dependency lock 已生成并提交，SHA-256 为 `81b0006536695f1552161302515f1f154d65b3b32a8520a34e774b4e518ceb4c`，已写入 profile。锁文件在固定 CUDA base image 中通过 `pip install --dry-run --require-hashes`；PyTorch 仍为 `2.6.0+cu124`。HF GPU runtime 的 BF16 能力尚未验证，所有推理/GPU/训练授权仍关闭。此阶段没有提交 HF Job、下载权重、执行推理或训练。
+
+
+## P4.4：Owner 单独授权的三模型 Runtime Smoke
+
+新增 `generation_eval.runtime_smoke` 独立入口。它只读取 P4 candidate 与 pinned tokenizer manifest，不读取评估数据集；固定一条内置合成提示，每个模型仅生成一次，三模型在单张 GPU 上顺序加载。运行时只保留 SAFE 统计与生成文本 hash，不保存生成文本。该入口要求 `runtime_smoke_authorized=true`，但明确拒绝把生产 profile freeze、批量 inference、GPU generation 或 training 授权标志改为 true。正式 Worker 仍通过默认 `assess_profile(..., purpose="generation")`，因此不能借 Smoke 授权执行正式批量生成。
+
+## 2026-11-10：Owner 批准评估契约与联合 Freeze Review
+
+Owner 已批准 Prompt v1 与 Output JSON Schema v1。批准只针对这两份内容，分别以 Profile 中记录的 SHA-256 为准；未授权 Profile freeze、真实数据访问、推理、GPU Job、Locked30 或训练。
+
+新增/完善的 CPU-only Freeze Review 入口：
+
+    PYTHONPATH=src python -m storyforge_dataset.generation_eval \
+      experiments/r60_quality/p4_generation_profile_candidate_v1.json \
+      --purpose freeze_review
+
+该入口同时校验：
+- P4 Profile 的三模型 Revision、Tokenizer/Template/Generation Config fingerprints、EOS/PAD、sampling 与 token budget；
+- Owner-approved Prompt/Schema receipt 与两份文件的 SHA-256；
+- Development20 primary/sensitivity arm matrix 与 Locked30 primary-only 禁调参约束；
+- Profile freeze、inference、GPU、training 授权继续关闭。
+
+通过时输出 P4_FREEZE_REVIEW_READY_NOT_FROZEN，只代表 CPU 配置检查通过，不会冻结 Profile，不会创建 HF Job，也不会加载权重或启动推理。CI 将保存不含私有案例或生成正文的 SAFE artifact：r60-p4-freeze-review-safe。
+
+仍待解决：
+1. 正式长上下文硬件 / 单模型运行预算的 Owner 确认。H200 是当前候选，不是已授权资源。
+2. HF Bucket /output:rw 对本 P4 Job 的真实可写性与回收路径验证。历史 Bucket 中存在旧评估产物，证明该 Bucket 曾被写入，但不等于本次运行身份和挂载已验证。此前 ChatGPT 直连 Xet 写入曾返回 403；不得把该路径标为当前已验收。
+3. 当前 Job plan 引用的 python -m storyforge_dataset.generation_eval.worker CLI 交付及端到端本地/合成验收。
+4. 以上完成后再由 Owner 单独决定是否冻结 Profile；Freeze 不自动授权推理或 GPU。
+
+## 2026-11-10：HF OAuth App / Bucket RW 故障更新
+
+ChatGPT Hugging Face Plugin v0.1.4，OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`，Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`，RELEASED。连接器 `hf_whoami` scopes：`openid profile read-mcp read-repos jobs contribute-repos inference-api`；账号 `greenkeedle`，组织 `adradar` role=write。
+
+Mac CLI 对同一组织 Bucket 的默认 RW mount `hf://buckets/adradar/storyforge-training:/output` 已真实验收：Job `6af2ee90ab34849891ab2f6e` 写入、读回 `PASS`、删除成功。ChatGPT 连接器无 Volume CPU Job `6af2ec43ab34849891ab279c` 成功，但带 RW Volume 提交返回 403。RO Job `6af2ec64ab34849891ab27f8` 仅提交被接受，未取得执行与读回证据。
+
+因此，Bucket 普遍不可写、组织 Jobs 余额/创建权限整体故障已被对照实验排除。根因仍未确认：可能涉及 OAuth App capability / org grant / connector volume 参数序列化 / HF 服务端策略。缺少 `write-repos` 不得直接等同于 Bucket RW 权限缺失。
+
+行动：要求 HF 检查上述 OAuth App 是否允许 Jobs 挂载既有私有组织 Bucket RW，核对 `adradar` grant，并解释对应 403。ChatGPT RW persistence 保持 HOLD；Mac CLI RW 仅是 Owner 受控临时路径。不得更换个人 namespace、索取长期 PAT、修改 ACL、配置 Trusted Publishers 或启动正式评估推理。
+
+## 2026-11-10 补充证据：OAuth 授权确认页面截图（Owner 提供）
+
+Owner 提供的 Hugging Face OAuth 授权页面截图显示：
+- Repositories / Read repositories：读取用户可访问的私有及 gated repos。
+- Repositories / Contribute to repositories：创建 repos 并管理由该 app 创建的 repos；页面明确注明 `Cannot access other repos`。
+- Compute / Jobs：`Start Jobs on your behalf and read their status, logs and outputs`。
+- Compute / Inference Providers：代表用户调用 Inference Providers。
+- Account / MCP tools：读取 MCP tools。
+- Organization grant 选择 `Grant ChatGPT the same access to selected organizations`，且 `Hong Kong Adradar Technology Limited` 已勾选（同时页面显示 Select all organizations 已勾选）。
+
+### 对诊断的影响
+该截图确认授权界面确实授予 Jobs 和指定组织访问，但没有单独列出 Bucket / Storage write permission。`Contribute to repositories` 的界面描述明确限定为 app-created repositories，不能据此推导它允许写入既有 `adradar/storyforge-training` Bucket。结合 ChatGPT RW Job 403 与 Mac CLI 同 Bucket RW 成功，最值得 HF 核查的是：Jobs OAuth 授权是否包含对既有组织 Bucket 的 RW mount / Xet write-token 签发能力，或该能力是否需要 OAuth App 额外 capability / grant。
+
+此截图仍不能单独证明根因：页面未展示底层 OAuth scopes、Bucket-specific permission model 或 403 服务端拒绝码。不得把“缺少 Bucket write scope”写成已确认事实。应向 Hugging Face 提供 OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`、Plugin v0.1.4、此授权页面截图、Mac CLI Job `6af2ee90ab34849891ab2f6e` 和 ChatGPT RW 403 对照，请其确认 Jobs token 是否能签发既有 Bucket 的 Xet write token。
+
+### Owner 授权范围说明
+截图中组织授权范围为选定组织（当前截图同时勾选 Select all organizations 与 Hong Kong Adradar Technology Limited）。后续若重新授权，应只选择完成 StoryForge 工作所需的 `Hong Kong Adradar Technology Limited`，除非 Owner 明确希望授权其他组织；本截图不构成要求扩大组织授权范围的理由。
+
+## 2026-11-10 主线续进：Worker CLI / Job bootstrap 工程实现
+
+Owner 已暂停 ChatGPT-HF OAuth / Bucket RW 故障排查，并将自行在 Mac CLI 执行 HF 任务。ChatGPT 不再提交 HF Job、不测试 Bucket、不更改 OAuth；后续只提供可复用代码、命令、SAFE schema 与回执审查。
+
+当前分支 `r60/p4-generation-eval-framework` 正在完成 P4 Worker CLI / Job execution plan 闭环：
+- `worker.py` 保持模型无关的 generation batch engine，不导入 torch / transformers / HF Hub。
+- 新增独立 `worker_cli.py`，作为真正的 `python -m storyforge_dataset.generation_eval.worker_cli` 执行入口；必须先通过 Profile freeze/inference/GPU 授权检查，再校验依赖 lock、runtime、manifest、input SHA、输出目录和私有输出权限；未授权时只输出 SAFE HOLD，不加载模型。
+- Job plan 固定从 GitHub codeload 下载精确 `code_revision` 的仓库归档，限制归档大小/文件数/解压总量并拒绝路径穿越、符号链接和特殊文件；不依赖 PyTorch 基础镜像预装 git。
+- Job 启动后按 `requirements/hf-generation-eval.lock` 使用 `--require-hashes` 安装依赖，再执行独立 Worker CLI；输入挂载路径为 `/input/generation-profile.json`、`/input/manifest.json`、`/input/inputs.jsonl`，输出目录必须为 `/output` 的全新直接子目录。
+- Worker 仅将私有生成正文写入 `/output/<run-id>/<role>-outputs.private.json`，create-only、0600；stdout 只输出 SAFE 元数据，不输出生成正文。
+- 当前提交 `219fd80f35d8b8e3c2da8a1b2d64a8dddeae008c` 的 Repository CI 与 R60 Generation Eval CI 已 PASS；Runtime Image Candidate 正在执行，尚未报告最终结果。
+
+此代码目前仍是执行入口工程候选，不代表正式 Profile 已冻结或获准执行。未完成实际容器启动/归档下载的无 GPU 验证、运行镜像验证、Owner 本地 HF 端到端执行及 32K 资源预算复核前，不提交正式评估 Job。
+
+### 后续主线顺序
+1. 等待当前 HEAD 的 Runtime Image Candidate 真实回执；失败按日志修复，不沿用旧 SHA 的 CI 结果。
+2. 增加 Worker CLI 归档 bootstrap 的语法/边界测试及 CPU-only container entrypoint test；确认镜像不依赖未安装的 git。
+3. 由 Owner 在 Mac CLI 进行无 GPU/无私有数据的执行入口检查；如需 HF Job，由 Owner 决定并执行。ChatGPT 不代为提交。
+4. 复核输出目录契约、SAFE 回收方式和私有正文保管；HF Bucket RW 问题暂时不在 ChatGPT 执行范围内。
+5. 完成 32K 长上下文显存/时间/费用上限证据后，生成最终 Profile Freeze Review 包，等待 Owner 单独批准 Profile Freeze。Freeze 不自动授权正式推理。
+
+### 不变的授权边界
+`profile_freeze_authorized=false`、`inference_authorized=false`、`gpu_authorized=false`、`training_authorized=false`。不启动 Development20 / Locked30 正式推理、1000 条审核或 SFT；不读取 Locked30 私有案例。

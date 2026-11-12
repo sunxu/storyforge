@@ -1,0 +1,133 @@
+# StoryForge R60：GLM Generation Snapshot + CPU Replay v1
+
+> **2026-11-11 当前执行路线已改变：** [GLM 全25 Snapshot 下一 Agent 权威任务书](R60_GLM_FULL25_NEXT_AGENT_HANDOFF_20261111_CN.md) 和 [Owner 执行手册](R60_GLM_FULL25_SNAPSHOT_OWNER_RUNBOOK_20261111_CN.md) 优先于本文旧版单条/双条测试建议。Owner 已要求独立一次运行原始25条，保持 `--snapshot-full25 --case-limit 25`、独立新快照目录、CPU Replay `--full25`；本文“最多1条/1–2条/重试12条”的命令和建议均为**历史方案，不可执行**。历史真实冻结 Runner + 合成 Snapshot CPU PASS 有效，但仍待新的 `--full25` Owner Mac CPU 预检及真实 H200 运行。
+
+
+
+## 2026-11-11：Owner Mac 真实冻结 Runner Snapshot + CPU Replay 集成 PASS
+
+Owner 回执：
+
+```json
+{"frozen_runner_used":true,"gpu_started":false,"literal_cpu_replay_validated":true,"model_inference_calls":0,"pinned_source_sha_verified":true,"private_values_emitted":false,"quality_v1_admitted":0,"schema":"storyforge_r60_glm4_cpu_snapshot_replay_safe_v1","scratch_removed":true,"status":"GLM_FROZEN_SNAPSHOT_CPU_REPLAY_PREFLIGHT_PASS","strict_original_quote_rejected":true,"training_authorized":false}
+```
+
+**验收结论：CPU 集成门槛 PASS**，无需再执行旧预检。已经在 Owner Mac 的真实冻结 Runner、真实签名输入上证明：合成生成结果的 Snapshot 持久化 → 原严格校验拒绝非精确引文 → CPU 标点级修复回放验证可运行；无模型推理、无 GPU、无遗留临时私有数据。
+
+**明确未完成：** 没有任何真实 GLM 生成快照，也没有真实生成结果的 CPU Replay；历史 GLM 仍为13有效 / 12技术失败，新增已验证 Checkpoint 为0，训练准入为0。下阶段只应准备独立私有输出目录、完整 Bundle 与启动前门槛，然后由 Owner 单独决定是否付费执行**最多1条**首次真实捕获；不能把此 CPU PASS 当作 GPU 授权。
+
+---
+
+## 2026-11-11：Owner Mac 首次 CPU Replay HOLD 与兼容性修正
+
+首次 Owner 回执 `GLM_FROZEN_SNAPSHOT_CPU_REPLAY_PREFLIGHT_HOLD`，旧脚本因统一吞掉异常，没有安全阶段信息。**不能依据该回执判断快照机制不可用**。
+
+代码核查：初版 `frozen()` 把 `quote_candidates` 和 `apply_repairs` 设为必需，而前期 GLM 冻结 Runner 探测未证实存在这些二次修复 API。现在二次修复成为**可选扩展**：主生成快照 + 原严格校验 + 标点 CPU 对照无需二次 API；存在 slot02 却无对应冻结 API 则严格 HOLD。诊断程序新增白名单 `stage` 与 `reason_code`，不输出私有异常文本。
+
+特别注意：`--snapshot-primary-only` 仍依赖冻结 Runner 的 `QuoteValidationError`。当前入口已添加启动前守卫；若私有 Runner 无该类型，必须**不使用** `--snapshot-primary-only`，不得为了绕过错误模拟一个异常类型。即使不启用 primary-only，slot01 原始生成仍会在原验证之前留存，后续是否产生 slot02 完全由冻结 Runner 原路径决定。
+
+### 新版 CPU 验证（与旧工具目录严格隔离）
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+SOURCE="$BASE/r60-hf-quality-pilot25-vllm0100/input_B_quote_observer_v1"
+DEST="$BASE/r60-glm-snapshot-replay-tools-v2"
+PIN="f2315949861d7d71dec4598bd58a21c9bb3d9554"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" cat-file -e "$PIN^{commit}"
+test ! -e "$DEST"
+test -f "$SOURCE/runner.py"
+test -f "$SOURCE/source.private.jsonl"
+umask 077
+mkdir -m 700 "$DEST"
+for F in r60_generation_snapshot.py r60_glm4_snapshot_replay.py r60_glm4_snapshot_cpu_preflight.py r60_glm4_snapshot_primary_only.py r60_glm4_literal_repair_cpu_probe.py r60_glm4_exact_quote_repair.py r60_glm4_b25_retry_contract.py r60_review_isolation_core.py; do
+  git -C "$ROOT" show "$PIN:experiments/r58_quality/$F" > "$DEST/$F"
+done
+chmod 600 "$DEST"/*.py
+python3 -m py_compile "$DEST"/*.py
+python3 "$DEST/r60_glm4_snapshot_cpu_preflight.py" \
+  --runner "$SOURCE/runner.py" \
+  --input "$SOURCE/source.private.jsonl"
+```
+
+目标 `GLM_FROZEN_SNAPSHOT_CPU_REPLAY_PREFLIGHT_PASS`；若仍 HOLD，发送**仅 SAFE JSON** 中的 `stage` 和 `reason_code`，不要输出 traceback/原文。修订不等于真实私有 Runner 已验收，禁止据此启动 GPU。
+
+---
+
+
+## 为什么改架构
+
+GLM B25 已有 13 个有效 Checkpoint，另外 12 条因逐字引文不匹配失败。此前三次付费生成/重试中，每次冻结 Runner 在 `engine.generate()` 后直接校验，并且仅将失败状态码保存。**失败原始模型文本被丢弃**，导致调整任何引文诊断/修复算法都可能要求再次付费。现在将一次 GPU 输出的原始生成文本留在仅限 Owner 的私有目录，CPU 可重复回放（同一输入/输出/冻结验证器）验证不同修复逻辑。
+
+## 新实现
+
+- `experiments/r58_quality/r60_generation_snapshot.py`：纯 Python，不依赖 vLLM。对 `engine.generate()` 返回的单项输出在冻结校验之前持久化，**每个 case 两个 generation slot**：slot01 主生成、slot02 冻结 Runner 产生的二次引用修复生成。每个文件使用 `O_EXCL`、0600、flush+fsync、JSON 规范化 SHA 和绑定身份（原样行 input_digest、model/revision、frozen runner 文件 SHA、policy、position、generation_index、finish_reason、原始文本 SHA），回读验证。不可覆盖；私有正文只存入 Owner 私有目录，绝不输出到 CI/GitHub/SAFE 日志。写入失败立即终止，不会当成技术审核失败或伪造 Checkpoint。
+- `r60_review_isolation_core.run_isolated(generation_snapshot_store=...)`：可选插桩；每条发起推理前设置位置，再将该条所有 `engine.generate` 调用返回的输出绑定到同一案例（两个编号）。默认 `None` 时，原始 Qwen/GLM 路径完全不变。
+- `r60_glm4_b25_continuous_review.py --generation-snapshot-dir`：仅可在原25条签名基线核验、12条 GLM 隔离重试、`--quote-match-observer` 观察器启用且 `--resume` 禁用时使用。快照目录必须是**预先存在的空目录**，与原始输入、基线、技术回执输出目录相互独立。可结合 `--literal-probe-cases 1|2` 有限样本实验；不强制开启标点修复。若未显式设此参数，则不会生成快照。
+- `--snapshot-primary-only`（仅与 `--generation-snapshot-dir --snapshot-probe-cases 1|2` 配合）：保留冻结 Validator 的 QuoteValidationError 判定，但转换为相同白名单技术错误直接终止该条，避免在 Debug 阶段额外触发二次模型生成。只用于受控快照实验，不用于正常完整质量审核；原可选双生成模式仍保留。
+- `experiments/r58_quality/r60_glm4_snapshot_replay.py`：离线 CPU 重放，核对固定原25条 B 输入 SHA，按冻结 `FAILED_POSITIONS` 映射为本地子集1..12；验证快照原始文件、槽位顺序、runner 文件 SHA 和 model/revision/row digest。先尝试冻结 `checkpoint_record()`；如果 slot02 存在且初次出现 `QuoteValidationError`，允许使用**冻结 Runner 原生 `quote_candidates` + `apply_repairs`**离线重放模型提供的修复选择；另用只允许标点/空白的 `make_reconciler` 对原主回复进行独立 CPU 对照。输出唯一新增 SAFE JSON 报告（O_EXCL、0600），只计 `REPLAY_VALIDATED` / `REPLAY_FAILED` 和单条 `PASS/HOLD/REJECT`，**仅为回放结果、不等于真实审核 Checkpoint 或训练准入**。原始模型输出绝不出现在报告。
+- `tests/test_r60_generation_snapshot.py`、`tests/test_r60_glm4_snapshot_replay.py`：CPU 回归测试，覆盖 2 次生成捕捉、文本篡改拒绝、原始快照不可覆盖、非 stop 原文捕获、模型引用无法匹配与标点修复 CPU 对比、次级修复回复回放、文件目录夹杂/缺失拒绝。
+
+## 当前状态与验收
+
+这是**工程实现 + CPU 合成验证**。已经取得 Owner Mac 原冻结 Runner 的 `GLM_LITERAL_FROZEN_CPU_INTEGRATION_PASS`，且已针对这个新的快照/回放组合完成 Owner Mac 私有 Runner CPU 集成，也没有产生真实 GLM 原始生成快照。过去 12 条失败没有保留下来的完整生成文本，无法从 SAFE 诊断日志重建；不能用本工具声称修复原来已完成的 12 条。原13有效/12技术失败、Quality-v1 admitted=0 不变。
+
+### 第一阶段：Owner Mac CPU-only 工具准备
+
+以下命令从通过 GitHub CI 的固定提交复制所有配套模块到 Mac 新目录，做语法检查并使用真实私有冻结 Runner 执行**合成快照 → CPU 回放集成预检**。不启动 Hugging Face，不运行 GPU。公开 CPU pytest 测试已由 GitHub CI 验收，无需依赖 Mac 当前 worktree 是否 checkout 同一分支：
+
+```bash
+set -euo pipefail
+ROOT="$HOME/workspace/storyforge"
+BASE="$HOME/.local/share/storyforge/r60/private"
+DEST="$BASE/r60-glm-snapshot-replay-tools-v1"
+PIN="e5d07e52206dbc90085774e333b48117c4a836b4"
+git -C "$ROOT" fetch origin r60/p4-generation-eval-framework
+git -C "$ROOT" cat-file -e "$PIN^{commit}"
+test ! -e "$DEST"
+umask 077
+mkdir -m 700 "$DEST"
+for F in r60_generation_snapshot.py r60_glm4_snapshot_replay.py r60_glm4_snapshot_cpu_preflight.py r60_glm4_snapshot_primary_only.py r60_glm4_literal_repair_cpu_probe.py r60_glm4_exact_quote_repair.py r60_glm4_b25_retry_contract.py r60_review_isolation_core.py; do
+  git -C "$ROOT" show "$PIN:experiments/r58_quality/$F" > "$DEST/$F"
+done
+chmod 600 "$DEST"/*.py
+python3 -m py_compile "$DEST"/*.py
+echo "PINNED_SNAPSHOT_TOOLS_SYNTAX_PASS"
+
+# Owner Mac 的真实冻结 Runner CPU 集成校验：不执行模型推理
+PILOT="$BASE/r60-hf-quality-pilot25-vllm0100"
+GLM_INPUT_DIR="$PILOT/input_B_quote_observer_v1"
+test -f "$GLM_INPUT_DIR/runner.py"
+test -f "$GLM_INPUT_DIR/source.private.jsonl"
+python3 "$DEST/r60_glm4_snapshot_cpu_preflight.py" \
+  --runner "$GLM_INPUT_DIR/runner.py" \
+  --input "$GLM_INPUT_DIR/source.private.jsonl"
+```
+
+### 第二阶段：CPU Replay 真实回执使用方式
+
+只针对**未来已实际捕获、独立保存的 Generation Snapshot**，从 Owner Mac 或受控容器读取私有目录与原冻结 Runner：
+
+```bash
+python3 "$DEST/r60_glm4_snapshot_replay.py" \
+  --runner "$GLM_INPUT_DIR/runner.py" \
+  --input "$GLM_INPUT_DIR/source.private.jsonl" \
+  --snapshots "$GLM_PRIVATE_SNAPSHOTS" \
+  --output "$BASE/r60-glm-cpu-replay-report-v1.safe.json"
+```
+
+原始输入 SHA、Runner digest、模型 pin 与 slot 均需完全匹配。注意真实快照目录严格只允许 `generation_NNNN_SS.private.json` 文件，独立存放，不要添加 `logs` 等文件。如果不知道 `GLM_PRIVATE_SNAPSHOTS` 的真实路径，**不要推测或伪造**。本步骤没有快照时必须 HOLD，不能把过去的 SAFE 统计冒充快照。
+
+## 下一次 GPU 实验（尚未发起）
+
+在已经 CPU 测试 PASS、Owner 审批付费预算后：
+
+1. 准备和冻结 Runner 相同的一套模型、revision、Tokenizer 和原25输入；所有新脚本固定在一个提交 SHA，禁止混用版本。
+2. 创建独立新目录：`/bucket/evaluation-runs/r60-glm-b25-generation-snapshot-v1` 用于经过原 Runner 校验的回执；`/bucket/private-generation-snapshots/r60-glm-b25-generation-snapshot-v1` 用于含敏感原始模型回复的快照（两者需不同、只读保护旧基线）。
+3. 新启用 `--generation-snapshot-dir ... --snapshot-probe-cases 1 --quote-match-observer --isolate-technical-failures --retry-baseline-dir ... --case-limit 12`；初次只捕捉1条，可以将 `--snapshot-probe-cases` 改为2。仅在冻结 Runner 实际提供 `QuoteValidationError` 时才可考虑启用 `--snapshot-primary-only`：它只在冻结校验器报出精确 QuoteValidationError 后终止二次模型引用修复，以原技术错误码留证，降低调试 GPU 生成次数；有效结果及原冻结校验逻辑不变。**不建议先启用任何额外自动引用修复**：先获取原始模型输出与冻结 Validator 同样输入，防止把“重新生成”误认为算法修复收益。
+4. 快照完整性验证通过后，在 CPU 多轮对照原严格校验/标点修复/后续证据引用方案；只有 GPU 生成策略本身变化时才重新生成。
+
+**不可混淆：** Snapshot `generation_0001_01.private.json` 对应重试子集第1条，而非原25条的全部第1条位置。报告同时包含 retry_position 与原始位置，绝不直接覆写原始 `technical_failure_0001.safe.json`。生成内容受到源输入隐私范围约束，禁止复制到公开 GitHub、Issue 评论或模型 Debug 输出中。
+

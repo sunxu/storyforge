@@ -1,3 +1,7 @@
+> **当前执行入口（2026-11-10，优先级最高）：** 本任务书后续大量章节属于 P0–P3 历史记录，不能据此启动旧任务。当前阶段是 P4 Worker CLI 工程验收。请先阅读 [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md) 与 [P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)。最新已核验基线 HEAD 为 `a1db1ac70fd3777d78460eee58e7d2b891867c40`，三项 CI 全部 PASS；后续 HEAD 的 CI 必须重新核验。HF 403/OAuth/Bucket 排查已按 Owner 要求暂停，HF 任务由 Owner 在 Mac CLI 执行；ChatGPT 不提交 Job、不测试 Bucket、不修改 OAuth。不得启动正式推理、GPU、1000 条审核或 SFT。
+
+---
+
 # 2026-11-10 最新权威执行状态（P2-B 官方 Verifier 已完成；优先于本文全部历史状态）
 
 **本节为当前唯一状态依据。下方较早日期的 P2-B/P3 未开始、Owner review pending、Verifier HOLD 等内容均为历史记录，不得作为当前待办。**
@@ -1447,3 +1451,66 @@ Owner 提交的真实 SAFE 回执：
 客户端顶层 `system` 兼容修复对应分支 HEAD `1d337afcea22a52ec0b553b730d3f9b2200fa5c5` 的五项 Actions 均 completed/success：CI、R60 HF Runtime CI、R60 HF CPU dependency profiles、Gold Quality Pipeline、R58 scoped synthetic。该结果验证代码/合成回归，不等于 Owner 内容裁决通过。
 
 **当前唯一下一步：Owner 对 60 项 Claude Advisory 与原始 20 条 Owner results / Rubric v2.1 逐项核对，形成自己的 60 项最终语义判断。** Claude 结论不能自动采纳、不能回填成 Owner semantic checks；逐项保留分歧和真实 HOLD。Owner 最终记录须使用正式七字段合同并由官方 verifier 验证。P2-A 在 Owner 60 项最终复核及官方 verifier PASS 前仍为 HOLD；不启动 P2-B、P3、GPU/HF Job、1000 条审核或 SFT。
+
+
+## 2026-11-10 权威更新：ChatGPT Hugging Face OAuth / Bucket RW 故障
+
+- 插件：Hugging Face Plugin v0.1.4，关联日期 2026-11-04，Version ID `asdk_app_v_225a5afb50248191aaab67016a94edc0`，OAuth Application ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`，状态 RELEASED。
+- ChatGPT `hf_whoami`：账号 `greenkeedle`，`adradar` 组织角色 `write`；OAuth scopes 为 `openid profile read-mcp read-repos jobs contribute-repos inference-api`。
+- ChatGPT 连接器可创建并执行无 Volume CPU Job；提交 `hf://buckets/adradar/storyforge-training:/output` RW Job 返回 HTTP 403。
+- Owner Mac CLI 使用同一 `adradar` namespace、`python:3.12`、`cpu-basic` 和相同默认 RW volume 成功完成 Job `6af2ee90ab34849891ab2f6e`：写入 `/output/.p4-rw-probe`、读回 `PASS`、删除文件。
+- ChatGPT 无 Volume CPU Job `6af2ec43ab34849891ab279c` 成功。RO Job `6af2ec64ab34849891ab27f8` 仅有提交接受记录，没有可用执行/读回证据，不得写成 RO 端到端 PASS。
+- Owner 提供的 Bucket Settings 页面显示 `adradar/storyforge-training` 为组织 Private Bucket，组织成员可查看和上传；未修改 ACL、可见性或 Trusted Publishers。
+
+### 诊断边界
+证据将故障收敛到 ChatGPT HF 连接器的 Bucket RW 提交/授权链路，而非 Bucket 普遍不可写、组织余额不足或 Jobs 创建权限整体失效。当前 OAuth scope 缺少 `write-repos` / 专用 Bucket write scope 是待验证假设，不是已证实根因；公开文档没有明确证明其必然导致 Jobs Bucket RW 403。仍需 HF 检查该 OAuth App 的 capability、组织 grant、请求序列化及 403 服务端拒绝原因。
+
+### 后续执行规则
+- ChatGPT 直连 Bucket RW：`BLOCKED_403`；P4 私有输出持久化保持 HOLD。Mac CLI 同 Bucket RW：PASS，只是 Owner 受控临时路径，不代表 ChatGPT 链路通过。
+- 要求 Hugging Face 检查 OAuth App `asdk_app_6ac752d4c640819191c206f9cb0dafad`（Plugin v0.1.4）是否允许挂载既有组织私有 Bucket RW、`adradar` grant 是否完整，并解释 403。
+- 不切个人 namespace，不索取长期 PAT，不修改 Bucket ACL，不配置 Trusted Publishers，不将私有生成正文写入 GitHub / Actions logs / SAFE。
+- 不盲目重复提交 RW Job；等待 HF 答复或连接器修复。该问题不影响 CPU Freeze Review SAFE，但阻止正式评估私有输出通道验收。
+- 后续 Agent 必须先检查 PR #30 最新评论及本节，避免重复早期“组织余额/Jobs 权限不足”诊断。
+- CLI 成功 Job：`https://huggingface.co/jobs/adradar/6af2ee90ab34849891ab2f6e`；ChatGPT 无 Volume Job：`https://huggingface.co/jobs/adradar/6af2ec43ab34849891ab279c`。
+
+## 2026-11-10 补充证据：OAuth 授权确认页面截图（Owner 提供）
+
+Owner 提供的 Hugging Face OAuth 授权页面截图显示：
+- Repositories / Read repositories：读取用户可访问的私有及 gated repos。
+- Repositories / Contribute to repositories：创建 repos 并管理由该 app 创建的 repos；页面明确注明 `Cannot access other repos`。
+- Compute / Jobs：`Start Jobs on your behalf and read their status, logs and outputs`。
+- Compute / Inference Providers：代表用户调用 Inference Providers。
+- Account / MCP tools：读取 MCP tools。
+- Organization grant 选择 `Grant ChatGPT the same access to selected organizations`，且 `Hong Kong Adradar Technology Limited` 已勾选（同时页面显示 Select all organizations 已勾选）。
+
+### 对诊断的影响
+该截图确认授权界面确实授予 Jobs 和指定组织访问，但没有单独列出 Bucket / Storage write permission。`Contribute to repositories` 的界面描述明确限定为 app-created repositories，不能据此推导它允许写入既有 `adradar/storyforge-training` Bucket。结合 ChatGPT RW Job 403 与 Mac CLI 同 Bucket RW 成功，最值得 HF 核查的是：Jobs OAuth 授权是否包含对既有组织 Bucket 的 RW mount / Xet write-token 签发能力，或该能力是否需要 OAuth App 额外 capability / grant。
+
+此截图仍不能单独证明根因：页面未展示底层 OAuth scopes、Bucket-specific permission model 或 403 服务端拒绝码。不得把“缺少 Bucket write scope”写成已确认事实。应向 Hugging Face 提供 OAuth App ID `asdk_app_6ac752d4c640819191c206f9cb0dafad`、Plugin v0.1.4、此授权页面截图、Mac CLI Job `6af2ee90ab34849891ab2f6e` 和 ChatGPT RW 403 对照，请其确认 Jobs token 是否能签发既有 Bucket 的 Xet write token。
+
+### Owner 授权范围说明
+截图中组织授权范围为选定组织（当前截图同时勾选 Select all organizations 与 Hong Kong Adradar Technology Limited）。后续若重新授权，应只选择完成 StoryForge 工作所需的 `Hong Kong Adradar Technology Limited`，除非 Owner 明确希望授权其他组织；本截图不构成要求扩大组织授权范围的理由。
+
+## 2026-11-10 主线续进：Worker CLI / Job bootstrap 工程实现
+
+Owner 已暂停 ChatGPT-HF OAuth / Bucket RW 故障排查，并将自行在 Mac CLI 执行 HF 任务。ChatGPT 不再提交 HF Job、不测试 Bucket、不更改 OAuth；后续只提供可复用代码、命令、SAFE schema 与回执审查。
+
+当前分支 `r60/p4-generation-eval-framework` 正在完成 P4 Worker CLI / Job execution plan 闭环：
+- `worker.py` 保持模型无关的 generation batch engine，不导入 torch / transformers / HF Hub。
+- 新增独立 `worker_cli.py`，作为真正的 `python -m storyforge_dataset.generation_eval.worker_cli` 执行入口；必须先通过 Profile freeze/inference/GPU 授权检查，再校验依赖 lock、runtime、manifest、input SHA、输出目录和私有输出权限；未授权时只输出 SAFE HOLD，不加载模型。
+- Job plan 固定从 GitHub codeload 下载精确 `code_revision` 的仓库归档，限制归档大小/文件数/解压总量并拒绝路径穿越、符号链接和特殊文件；不依赖 PyTorch 基础镜像预装 git。
+- Job 启动后按 `requirements/hf-generation-eval.lock` 使用 `--require-hashes` 安装依赖，再执行独立 Worker CLI；输入挂载路径为 `/input/generation-profile.json`、`/input/manifest.json`、`/input/inputs.jsonl`，输出目录必须为 `/output` 的全新直接子目录。
+- Worker 仅将私有生成正文写入 `/output/<run-id>/<role>-outputs.private.json`，create-only、0600；stdout 只输出 SAFE 元数据，不输出生成正文。
+- 当前提交 `219fd80f35d8b8e3c2da8a1b2d64a8dddeae008c` 的 Repository CI 与 R60 Generation Eval CI 已 PASS；Runtime Image Candidate 正在执行，尚未报告最终结果。
+
+此代码目前仍是执行入口工程候选，不代表正式 Profile 已冻结或获准执行。未完成实际容器启动/归档下载的无 GPU 验证、运行镜像验证、Owner 本地 HF 端到端执行及 32K 资源预算复核前，不提交正式评估 Job。
+
+### 后续主线顺序
+1. 等待当前 HEAD 的 Runtime Image Candidate 真实回执；失败按日志修复，不沿用旧 SHA 的 CI 结果。
+2. 增加 Worker CLI 归档 bootstrap 的语法/边界测试及 CPU-only container entrypoint test；确认镜像不依赖未安装的 git。
+3. 由 Owner 在 Mac CLI 进行无 GPU/无私有数据的执行入口检查；如需 HF Job，由 Owner 决定并执行。ChatGPT 不代为提交。
+4. 复核输出目录契约、SAFE 回收方式和私有正文保管；HF Bucket RW 问题暂时不在 ChatGPT 执行范围内。
+5. 完成 32K 长上下文显存/时间/费用上限证据后，生成最终 Profile Freeze Review 包，等待 Owner 单独批准 Profile Freeze。Freeze 不自动授权正式推理。
+
+### 不变的授权边界
+`profile_freeze_authorized=false`、`inference_authorized=false`、`gpu_authorized=false`、`training_authorized=false`。不启动 Development20 / Locked30 正式推理、1000 条审核或 SFT；不读取 Locked30 私有案例。

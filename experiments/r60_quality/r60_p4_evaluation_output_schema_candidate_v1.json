@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "storyforge:r60:p4:evaluation-output:v1",
+  "title": "StoryForge R60 P4 Evaluation Output v1",
+  "description": "Owner-review candidate schema for one case's three-dimensional evidence review.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "case_id", "rubric_version", "verdicts"],
+  "properties": {
+    "schema": {"const": "storyforge_r60_p4_evaluation_output_v1"},
+    "case_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "rubric_version": {"const": "r60_severity_rubric_v2_1"},
+    "verdicts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hard_rule", "player_agency", "safety"],
+      "properties": {
+        "hard_rule": {"$ref": "#/$defs/dimension_result"},
+        "player_agency": {"$ref": "#/$defs/dimension_result"},
+        "safety": {"$ref": "#/$defs/dimension_result"}
+      }
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "quote", "start_char", "end_char"],
+      "properties": {
+        "source": {"enum": ["history", "target", "verified_world_component"]},
+        "quote": {"type": "string", "minLength": 1},
+        "start_char": {"type": "integer", "minimum": 0},
+        "end_char": {"type": "integer", "minimum": 1}
+      }
+    },
+    "rule_basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id", "version", "scope", "source", "quote", "start_char", "end_char"],
+      "properties": {
+        "rule_id": {"type": ["string", "null"]},
+        "version": {"type": ["string", "null"]},
+        "scope": {"type": ["string", "null"]},
+        "source": {"enum": ["history", "verified_world_component"]},
+        "quote": {"type": "string", "minLength": 1},
+        "start_char": {"type": "integer", "minimum": 0},
+        "end_char": {"type": "integer", "minimum": 1}
+      }
+    },
+    "dimension_result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verdict", "confidence", "evidence", "rule_basis", "missing_context", "rationale"],
+      "properties": {
+        "verdict": {"enum": ["SUPPORTED", "NOT_SUPPORTED", "INSUFFICIENT_CONTEXT"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
+        "rule_basis": {"type": ["array", "null"], "items": {"$ref": "#/$defs/rule_basis"}},
+        "missing_context": {"type": "array", "items": {"type": "string"}},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}
