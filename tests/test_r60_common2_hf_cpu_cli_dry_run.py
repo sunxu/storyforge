@@ -91,3 +91,17 @@ def test_mock_dry_run_failure_never_leaks_source(tmp_path, monkeypatch):
     assert result["status"] == "CLI_PREFLIGHT_HOLD"
     assert result["reason_code"] == "HF_CLI_DRY_RUN_HOLD"
     assert "private-secret" not in repr(result)
+
+
+def test_cli_exact_short_volume_alias_is_accepted(tmp_path):
+    _, stage = new_stage(tmp_path)
+    help_short = HELP.replace("--volume", "-v")
+    argv = cli.prepare(stage, KEY, help_short)
+    assert argv.count("-v") == 2
+
+
+def test_cli_fake_volume_prefix_does_not_bypass_guard(tmp_path):
+    _, stage = new_stage(tmp_path)
+    help_fake = HELP.replace("--volume", "-verbose")
+    with pytest.raises(ValueError, match="HF_CLI_FLAGS_HOLD"):
+        cli.prepare(stage, KEY, help_fake)
