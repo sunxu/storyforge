@@ -1,5 +1,23 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+## 2026-11-12 HF连接器403与Owner Mac执行路径
+
+用户已明确授权当前已同步RUN_KEY的CPU-only Collator审核。ChatGPT HF连接器使用 `namespace=adradar`、`flavor=cpu-upgrade`、同一Worker与私有Bucket挂载提交时，HF API返回 **403 Forbidden**，未取得Job ID和成功回执，不能声称已启动；不自动重试连接器。Mac端已有可用的HF CLI及Bucket READY PASS，因此由Owner Mac提交。
+
+当前项目的 `AGENTS.md §2.1` 已声明用户明确要求的CPU预检不需逐Job成本再授权。已从本轮R60 `submit.sh` 删除额外的付费授权变量，并保留远程READY、本地SHA256和一次性submit本地锁。
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+HF_ENV="$HOME/.local/share/storyforge/venvs/hf-cli"
+RUN_KEY="r60-common2-cpu2-20261112T032815Z-71c840b37254"
+STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$RUN_KEY"
+PATH="$HF_ENV/bin:$PATH" bash scripts/r60_common2_hf_cpu_submit.sh submit "$RUN_KEY" "$STAGE"
+```
+
+如HF CLI发生含糊错误，不得删除 `$STAGE.cpu-submit-attempted` 标记盲目重试，先用Mac `hf jobs ps --namespace adradar` 及远程日志确认是否已创建Job。此次仍只允许CPU真实Collator验证、禁止模型训练/GPU，训练准入为0。
+
+
 ## 2026-11-12 最新Owner决策：取消额外付费授权门禁，Common2 CPU2 已授权
 
 Owner明确授权本次 `r60-common2-cpu2-20261112T032815Z-71c840b37254` 的HF CPU-only真实Collator验证，同时要求移除StoryForge额外“付费CPU需逐次再确认并通过环境变量批准”的工程约定。**本次授权已满足，正常执行 `submit` 无需 `STORYFORGE_ALLOW_PAID_CPU` / `STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY`。** 保留`sync`与`submit`独立操作、仅CPU、无GPU、无训练、源文件SHA256绑定、远端文件集合严格验收及防重复提交标记；不扩大为任何模型训练、推理、未来收费工作或其他RUN_KEY的自动发起授权。
