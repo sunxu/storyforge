@@ -85,3 +85,13 @@ ruff check \
 A real HF Job receipt or model HTTP success is not sufficient; verify the
 actual applicable frozen source and evidence. Skill text is guidance, not an
 execution trigger. Never auto-send private data, start GPU, or train.
+
+## HTTP-safe diagnostics (2026-11-12)
+Both synthetic probe and real private batch share public, allowlisted
+`MODEL_HTTP_<code>_HOLD` for 400, 401, 403, 404, 408, 413, 429,
+500, 502, 503 and 504. Other network failures are
+`MODEL_TRANSPORT_HOLD`. Never print raw 4Router/DeepSeek error responses,
+endpoint URLs, headers, tokens, or private prompts. 400 indicates
+request incompatibility, 429 rate-limit; neither is evidence that an
+interactive-fiction response is low quality. Diagnose this before
+resuming the same frozen checkpoint directory.
