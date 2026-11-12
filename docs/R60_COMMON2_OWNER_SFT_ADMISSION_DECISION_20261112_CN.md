@@ -1,3 +1,5 @@
+> **2026-11-12 R46对照变量冻结补充：** 已新增[Real1000 R46参数对照实验计划](R60_REAL1000_R46_CONTROLLED_EXPERIMENT_PLAN_20261112_CN.md)和不可执行`configs/r60_real1000_r46_controlled_sft_policy.json`，固定22项R46风格QLoRA参数供Owner审查；**只核对历史基线YAML的静态字段，没有证明R46实际System/模板与R60实验输入一致**。D1-D5仍全部待批准、训练准入0；不得把超参匹配说成“只改变数据”的正式实验已成立。
+
 # StoryForge R60 — Common2 两条实验性SFT输入：Owner准入裁决书（2026-11-12）
 
 **文件性质：待Owner签批的主线决策草案；当前批准状态全部为 NOT_APPROVED，正式训练准入为0。** 不包含私有故事正文、目标ID、角色名、token IDs、密钥和原始哈希。所有此前真实SAFE与上游验证器保持不变，文档不调用训练。
