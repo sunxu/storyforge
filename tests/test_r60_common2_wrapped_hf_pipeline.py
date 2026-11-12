@@ -61,7 +61,7 @@ def test_extra_stage_file_fails_closed(tmp_path, monkeypatch):
 
 def test_job_cli_keeps_cpu_ro_rw_fixed_and_correct_image_position():
     help_text = ("--namespace --name --flavor --timeout --attempts "
-                 "--detach --volume --dry-run")
+                 "--detach --volume --env --dry-run")
     argv = cli.job_command(KEY, help_text)
     assert "--namespace" in argv and argv[argv.index("--namespace") + 1] == "adradar"
     assert "--flavor" in argv and argv[argv.index("--flavor") + 1] == "cpu-upgrade"
@@ -345,3 +345,33 @@ def test_stage_inventory_detects_missing_declared_file(tmp_path, monkeypatch):
     assert report["missing_files"] == 1
     assert report["extra_files"] == 0
     assert report["file_sha_verified"] is False
+
+
+def test_hf_cli_flags_probe_reports_only_allowlisted_missing_names(monkeypatch):
+    """No job calls; the raw CLI help must never be emitted to SAFE output."""
+    import types
+
+    def fake_run(argv, **kwargs):
+        assert argv == ["hf", "jobs", "run", "--help"]
+        return types.SimpleNamespace(
+            returncode=0,
+            stdout="--namespace --name --flavor --timeout --detach -v --env "
+                   "--dry-run PRIVATE_SECRET",
+            stderr="",
+        )
+
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    report = cli.inspect_job_cli_flags()
+    assert report["status"] == "WRAPPED_CPU_CLI_FLAGS_HOLD__NO_JOB"
+    assert report["missing_cli_flags"] == ["--attempts"]
+    assert report["job_submission_calls"] == 0
+    assert "PRIVATE_SECRET" not in json.dumps(report)
+
+
+def test_hf_cli_flags_accept_documented_short_v_without_relaxing_others():
+    help_text = (
+        "--namespace --name --flavor --timeout --attempts --detach "
+        "-v, --volume TEXT --env --dry-run"
+    )
+    assert cli.missing_job_cli_flags(help_text) == []
+    assert cli.missing_job_cli_flags(help_text.replace("--dry-run", "")) == ["--dry-run"]
