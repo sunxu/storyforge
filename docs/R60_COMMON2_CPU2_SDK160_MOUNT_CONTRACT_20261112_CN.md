@@ -137,3 +137,28 @@ Owner运行 `docker buildx imagetools inspect pytorch/pytorch:2.6.0-cuda12.4-cud
 已把只读`scripts/r60_common2_hf_cpu_cli_dry_run.py`的镜像从可变Tag替换成不可变 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，并加合成断言；**不改已同步Stage**。镜像Tag清单可访问、Manifest Digest已知，但尚未验证HF Jobs服务端接受此digest引用及镜像内部的Python、torch、torchvision / ms-swift依赖能按目标CPU-only Worker安装，所以下一次必须先真实`--dry-run`，且`train_admitted=0`。
 
 下一步从**最初冻结Stage**（`r60-common2-cpu2-20261112T032815Z-71c840b37254`）用现有stage_v2创建另一独立键；不要在已经远端ready的`r60-common2-cpu2-20261112T050556Z-d26519574fe7`内替换Worker。新键只用于这个修订的27文件Stage，先校验SHA与依赖文本、CLI dry-run，再新前缀empty、sync-existing、ready；所有检查通过后仍需真实容器环境兼容性证据、Job最新排重/原子防重复门禁。严禁把本节当作真实HF Job已启动。
+
+
+## 2026-11-12 HF插件RW403后Mac CLI单次提交恢复
+
+已连接HF插件成功执行**无Bucket挂载**的依赖Smoke，Job `6af55450ab34849891aed739` 在远端COMPLETED，结果`CPU2_DEPENDENCY_SMOKE_PASS`：Python 3.11.11，torch 2.6.0+cu124，torchvision 0.21.0+cu124，Transformers 5.16.1，ms-swift 4.5.3，qwen-vl-utils 0.0.14，decord 0.6.0，CUDA=false。然后仅一次用HF插件提交带独立private RO和RW Bucket挂载的Common2 Collator Job，收到`403 Forbidden`无Job ID，判为不确定提交、未自动重试。Owner随后以Mac HF CLI的只读工具重新遍历**215**个可见历史Job，0匹配；当前新RUN_KEY`r60-common2-cpu2-20261112T054440Z-d5ad72dc667c`，远端Input READY、Output EMPTY、标记ABSENT，再次`CPU2_HISTORY_PAGINATED_PASS__NO_JOB`。此前HF插件只返回100条不等于全量；后续禁止再走HF插件私有RW挂载路径。
+
+新增独立Mac单次提交入口 `scripts/r60_common2_hf_cpu_cli_submit_once.py`，调用现有`final_read_only.check`（SHA、Bucket READY、输出EMPTY、完整分页0匹配）、`cli_dry_run.prepare`（复用共享HF Guard，固定镜像SHA、唯一RO/RW挂载、Worker路径、run_key环境变量）、HF CLI `--dry-run`、`hf auth whoami`。全部通过后才于本地Stage父目录以`O_EXCL`创建0600持久标记 `<RUN_KEY>.cpu-submit-v2-attempted`，**先标记，再执行一次** `hf jobs run --attempts 1 --detach`。不支持再次提交相同RUN_KEY，不删除失败/不确定提交标记；仅在CLI成功输出可识别的唯一Job ID后返回`CPU2_JOB_SUBMITTED__TRAIN_HOLD`。任何CLI失败、超时、日志不明都HOLD并要求重新检查远端，不自动重试；不打印原始CLI输出或私有内容。对应4个纯合成测试覆盖无--execute、首轮成功、失败保留marker、最终门禁HOLD禁止提交。**这些新增测试和入口尚待Owner在Mac真实本地环境验收。**
+
+Owner命令：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git status --short
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_hf_cpu_cli_submit_once.py tests/test_r60_common2_hf_cpu_cli_dry_run.py tests/test_r60_common2_hf_cpu_final_read_only.py
+export PATH="$HOME/.local/share/storyforge/venvs/hf-cli/bin:$PATH"
+KEY="r60-common2-cpu2-20261112T054440Z-d5ad72dc667c"
+STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$KEY"
+python3 scripts/r60_common2_hf_cpu_cli_submit_once.py --run-key "$KEY" --stage "$STAGE" --execute
+```
+
+该命令实际可能提交一条**付费CPU-only** Job；只有Owner明确希望提交时才执行。不得运行历史禁用的 `scripts/r60_common2_hf_cpu_submit.sh submit`，不得改用 `hf_job_guard.py --submit`（历史Guard在当前CLI下会把`--`传到错误位置），不得在失败时重放。`R50`全量隔离仍HOLD，`train_admitted=0`，不能自动开始GPU/训练。
