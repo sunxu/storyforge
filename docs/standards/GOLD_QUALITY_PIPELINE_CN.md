@@ -205,3 +205,7 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 ### 合成探针JSON结构分阶段诊断（2026-11-13）
 
 当前首轮远端SAFE：Claude 4Router `REVIEWER_PROTOCOL_HOLD / MODEL_JSON_INVALID`，DeepSeek官方 `REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`。**DeepSeek已经通过，不再重复请求。** 为避免对真实1000池进行不必要重试，`model_request(..., diagnose_json=True)`仅供合成probe显式执行1次；固定SAFE细分：`MODEL_ENVELOPE_JSON_INVALID`（HTTP 200响应体非JSON）、`MODEL_CONTENT_MISSING_OR_NONSTRING`（OpenAI choices[0].message.content缺失或非字符串）、`MODEL_CONTENT_JSON_INVALID`（message.content不是可解析JSON）、`MODEL_REVIEW_SCHEMA_INVALID`（已解析模型对象字段/类型不符合冻结六维合同）。诊断只处理结构，不输出响应、原文、URL、模型内部推理、密钥或私有路径。正式批量审核仍使用原通用`MODEL_JSON_INVALID`，评分/严重标志门槛一律不降级。Claude无私有内容探针复核取得更细错误码后再讨论最小协议修复；真实5案继续HOLD。
+
+### 2026-11-13 Claude 4Router 历史成功协议回归（避免反复试探）
+
+此前Claude合成HTTP成功但`MODEL_CONTENT_JSON_INVALID`，不是DeepSeek或数据池故障。复核历史成功`scripts/r60_p2b_claude_review_client_v1.py`：顶层system、`max_tokens=12000`、`content`既可能为字符串也可能为纯文本块列表，返回`finish_reason`。新`r60_reviewer_transport.py`恢复Claude 12000限制（旧新探针1600可能截断），共享`r60_real_ai_dual_review.py`支持两种文本表示、完整单层`\`\`\`json`代码围栏的格式规范化，并在`finish_reason=length/max_tokens`时拒绝为成功，合成SAFE标记`MODEL_OUTPUT_TRUNCATED`。这属于**未改变文本语义和评分**的协议兼容；不允许抽取任意JSON子串、截断长文章、解析非标准模型推理文本或降低六维/严重标记检查。仍无证据证明此前实际`MODEL_CONTENT_JSON_INVALID`就是1600截断或代码围栏；本修正只是先复用已成功证据。DeepSeek合成通过不可重复测试；Claude完成新代码CI后最多一次受控合成验证，仍HOLD则优先使用此前可审计的私有原始Claude响应诊断，不再盲试。
