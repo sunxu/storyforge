@@ -105,7 +105,7 @@ def test_source_selection_unique_exact_target():
 def test_large_history_writer_and_empty_directory_recovery(tmp_path, monkeypatch):
     monkeypatch.setattr(target.private, "BASE", tmp_path)
     source = {"schema": "synthetic", "cases": [{"history_messages": [
-        {"content": "示例历史消息" * 9000},
+        {"content": "示例历史消息" * 40000},
     ]}]}
     directory = tmp_path / "recovery"
     directory.mkdir(mode=0o700)
