@@ -24,9 +24,7 @@ trap 'rm -rf "$SCRATCH"' EXIT
 # Pin the successful Common2 CPU2 runtime; do not install model weights.
 # Captured logs MUST NOT be copied to HF stdout or public Git.
 if ! python -m pip install --disable-pip-version-check -q \
-  'ms-swift==4.5.3' 'transformers==5.16.1' 'tokenizers==0.23.3' \
-  'huggingface_hub==1.33.0' 'qwen-vl-utils==0.0.14' \
-  'decord==0.6.0' 'torchvision==0.21.0' 'jinja2==3.1.6' \
+  -r /input/common2/requirements/r60-common2-wrapped-cpu.in \
   > "$SCRATCH/pip.log" 2>&1; then
   echo R60_WRAPPED_CPU_INSTALL_HOLD >&2
   exit 42
