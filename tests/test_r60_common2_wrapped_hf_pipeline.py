@@ -417,3 +417,40 @@ def test_pinned_missing_attempts_probed_as_safe_default(monkeypatch):
     assert report["attempts_mode"] == "PINNED_CLI_DEFAULT_ONE"
     assert report["missing_cli_flags"] == []
     assert report["job_submission_calls"] == 0
+
+
+def test_receipt_missing_file_reports_safe_specific_code(tmp_path):
+    missing = tmp_path / receipt.EXPECTED_NAME
+    report = receipt.inspect(missing, KEY)
+    assert report["status"] == "WRAPPED_CPU_RECEIPT_HOLD"
+    assert report["reason_code"] == "RECEIPT_FILE_NOT_FOUND_HOLD"
+    assert str(tmp_path) not in json.dumps(report)
+    assert report["cases_verified"] == 0
+
+
+def test_receipt_symlink_rejected_without_disclosing_path(tmp_path):
+    target, _ = safe_receipt(tmp_path)
+    other = tmp_path / "safe-link-folder"
+    other.mkdir()
+    link = other / receipt.EXPECTED_NAME
+    link.symlink_to(target)
+    report = receipt.inspect(link, KEY)
+    assert report["reason_code"] == "INPUT_SYMLINK_REJECTED"
+    assert str(target) not in json.dumps(report)
+    assert report["train_admitted"] == 0
+
+
+def test_receipt_oversize_file_reports_safe_limit(tmp_path):
+    target = tmp_path / receipt.EXPECTED_NAME
+    target.write_bytes(b"x" * (receipt.MAX_BYTES + 1))
+    report = receipt.inspect(target, KEY)
+    assert report["reason_code"] == "INPUT_SIZE_LIMIT_EXCEEDED"
+    assert report["cases_verified"] == 0
+
+
+def test_receipt_invalid_json_stays_private(tmp_path):
+    target = tmp_path / receipt.EXPECTED_NAME
+    target.write_text("SECRET:not json", encoding="utf-8")
+    report = receipt.inspect(target, KEY)
+    assert report["reason_code"] == "RECEIPT_INPUT_OR_RUNTIME_HOLD"
+    assert "SECRET" not in json.dumps(report)
