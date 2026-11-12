@@ -50,6 +50,13 @@ class Hold(ValueError):
     pass
 
 
+# Public status numbers only. Never print HTTP response text, URL or headers.
+SAFE_HTTP_CODES = frozenset({400, 401, 403, 404, 408, 413, 429, 500, 502, 503, 504})
+SAFE_HTTP_HOLDS = frozenset(
+    f"MODEL_HTTP_{code}_HOLD" for code in SAFE_HTTP_CODES
+)
+
+
 def validate_endpoint(url: str, allow_remote: bool) -> str:
     try:
         parts = urllib.parse.urlsplit(url)
@@ -137,8 +144,11 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
     try:
         with opener.open(request, timeout=timeout) as response:
             data = response.read(MAX_REPLY_BYTES + 1)
-    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError,
-            OSError, ValueError) as exc:
+    except urllib.error.HTTPError as exc:
+        if exc.code in SAFE_HTTP_CODES:
+            raise Hold(f"MODEL_HTTP_{exc.code}_HOLD") from exc
+        raise Hold("MODEL_TRANSPORT_HOLD") from exc
+    except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
         raise Hold("MODEL_TRANSPORT_HOLD") from exc
     if len(data) > MAX_REPLY_BYTES:
         raise Hold("MODEL_REPLY_OVERSIZE")
