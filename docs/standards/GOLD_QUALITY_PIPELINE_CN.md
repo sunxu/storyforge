@@ -174,3 +174,18 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 此门禁是与Gold Quality Manifest相邻的**训练技术证据**，不是新的文学Reviewer或批次数据导入器。Common2质量双审PASS2是冻结旧证据；R27/R52冻结449字节通用System只作为`EXPLICIT_NEW_TRAINING_WRAPPER`独立新输入版本的建议，不得声称源历史真实发送Prompt有System。Owner已真实验收内存包装PASS2/2，原未加System的CPU2 PASS不得冒称本次新版输入Token/Collator PASS。
 
 完整业务细节见[Wrapped HF CPU Quality Pipeline运行手册](../R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md)；只读输入/唯一输出、doctor、共享Token核心和Runtime、失败停机及回执边界以`skills/storyforge-hf-jobs/SKILL.md`与`skills/storyforge-roleplay-sft/SKILL.md`为准。新增脚本只处理本批的System包装、私有Stage、真实R18/Swift Collator、聚合SAFE验收；**不增加Gold Pipeline的自由可执行命令、不自动append-review或import独立Quality-v1事件、不更改`quality_v1_admitted=0`与`train_admitted=0`。** 后续新批次应复用公共Stage/Guard/回执层，但按来源Schema实现独立薄适配器，且每批均有独立质量、语义隔离和发布裁决。
+
+## 2026-11-12 REAL1000双Reviewer协议与Quality Pipeline复用
+
+本段记录**模型HTTP协议兼容层**，不是新的文学质量Rubric或Quality-v1自动准入入口。冻结1000池Owner已通过`EXPANSION_TARGET_REACHED__NOT_ADMITTED`(seed6+994)。Common2 HF CPU包装System真实Collator与原始SAFE Receipt独立2/2 PASS，但与文学质量审核分轨。
+
+唯一实现层次：
+1. `experiments/r58_quality/r60_reviewer_transport.py`：纯函数`require_profile/build_body`，统一维护请求协议，严禁复制评分、tokenizer或私有回执算法。已登记`openai-chat`（旧默认）、`claude-proxy-top-system`（历史Claude 4Router要求顶层system且不支持强制json_object）、`deepseek-chat`（标准OpenAI消息system，避免套用Qwen Thinking参数）。
+2. `r60_real_ai_dual_review.py`：复用原Quality-v1六维评分、三个严重布尔标记、schema校验和私有请求通道；只在`model_request`以显式`protocol`调用上述纯协议层，防止任何外部原文或不可信模型输出作为代码指令。
+3. `r60_real_quality_batch.py`：两个独立`--protocol-a/b`固定到create-only私有Batch Config，每案对**相同**target/history作A/B独立请求并独占落盘；历史已初始化配置缺失protocol时兼容`openai-chat`，绝不覆盖原始回执、改变审阅者或混入旧批。
+4. `r60_reviewer_protocol_probe.py`：默认无网络，`--execute`只发送固定合成3消息，至少分别取得每个服务端的一次实际JSON schema验证SAFE，先排除Claude代理顶层system差异、DeepSeek JSON成功率问题，再允许任何真实私有样本外发。其SAFE不输出prompt、HTTP响应、API Key、Endpoint URL或私有路径。
+5. 质量/语义门禁不变：六维最低`4/4/3/4/4/4`；只有Owner确实确认模型独立性才能标记`owner_attested_independent_ai=true`，否则双模型均PASS仍HOLD。现有`reason_cn`字段不强制精确引用，不能用“JSON通过”宣称三维严重标记语义证据或世界设定隔离已验证。严重问题或无法确定的世界事实须按Rubric v2.1另行保留HOLD并进行证据级复核，不能直接由此产出`POSITIVE_GOLD_OWNER_APPROVED`。
+
+2026-11-11历史DeepSeek QD20：官方`deepseek-flash`有效16/20、阿里云百炼`qwen3.7-flash`有效18/20，配对完整14/20；与Claude+Codex的双PASS候选中3条争议随后独立复核PASS0/HOLD2/REJECT1，不足以指定正式最优Reviewer。Owner本轮授权当前真实1000 Quality Reviewer的全部私有数据外发，远端HTTPS仍需`--allow-remote-review`作为审计标记；不自动授权全量1000运行、GPU或SFT。
+
+对应执行Runbook：`docs/R60_REAL1000_PILOT5_START_20261112_CN.md`第8节。两个模型合成协议远程SAFE全部PASS后，才允许运行一次真实同源5案`advance --max-cases 5`；随后对严重标记的实际证据进行复核和统计，再决定25条扩批。可复用Skill为`skills/storyforge-real-quality-review/SKILL.md`。以上状态仅是代码/文档交付，真实远端合成API探针与5条批量SAFE未实际取得，不得标PASS。
