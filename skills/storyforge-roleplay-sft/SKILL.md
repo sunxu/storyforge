@@ -66,6 +66,13 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 
 上一轮本地Stage 44文件曾验签PASS，但最新两个Mac Python环境的同一Stage均HOLD，SAFE诊断`STAGE_FILES_HOLD`，仍属于冻结输入的工程验签缺口，不影响已经独立完成的两条文学质量PASS审查，也**不授权入训**。先使用HF Jobs Skill定义的统一Owner venv及只读`stage.py inventory`获取文件类别/数量，坚守严格SHA：禁止把未登记的Python缓存等自动当作忽略项，也不把技术Stage失败映射成文学质量REJECT。CPU/GPU训练门禁均继续HOLD。
 
+
+### 2026-11-12 REAL1000文学质量筛选入口（覆盖早期Common2未执行状态）
+
+Common2包装通用System的HF CPU真实Qwen/Swift Collator和最后一轮Assistant监督掩码均已完成、从原始HF Bucket下载的SAFE回执独立验收2/2 PASS：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`。旧章节“尚未执行真实新Job”“真实验证仍未执行”仅保留历史背景，**不得重新提交CPU Job**。这只是训练输入工程证据，`train_admitted=quality_v1_admitted=0`。
+
+Owner的真实1000池（6+994）已经只读确认`EXPANSION_TARGET_REACHED__NOT_ADMITTED`，现在切回六维正向Gold质量精筛。请求协议与A/B分工直接复用`experiments/r58_quality/r60_reviewer_transport.py`、`r60_real_ai_dual_review.py`、`r60_real_quality_batch.py`，完整操作与合成探针见`skills/storyforge-real-quality-review/SKILL.md`。首轮只允许同源5条校准；Owner明确允许当前工作线私有数据外发，但合成协议验证通过前不运行真实模型，模型身份/Reviewer独立性/严重标记语义仍需实证。不要引入第三套Quality评分器、复制Prompt与引文验证逻辑、重写Gold或启动GPU/SFT。
+
 ## 数据与质量主线
 
 ### 优先级
