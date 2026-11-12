@@ -48,3 +48,27 @@
 4. 待两个门禁都能形成证据后，生成可审计的Owner训练准入提案，仍保持`train_admitted=0`，由Owner独立授权训练及GPU。
 
 维护独立Owner分支；其他Agent并行进行Wave40/GLM/Qwen评测时，不修改它们的脚本、冻结R50数据或相应文档主权区。
+
+
+## R50 Owner本地只读第一步（本轮已实现、尚未真实执行）
+
+新增`scripts/r60_r50_frozen_metadata_inventory.py`只对**Owner明确指定的3个现有冻结文件**做结构/权限/JSON解码检查，不访问数据库、HF、模型、不修改文件。对公开聚合输出严格不含路径/字段名/ID/哈希/原文。即使全部可解析，也**仅返回`R50_METADATA_FILES_PARSEABLE__COVERAGE_HOLD`**，不声称全量排除。必须在拿到元数据Schema和真实记录覆盖证明后再实现下一阶段交集核对，不要猜映射规则。
+
+先在Owner私有环境自己找到文件（文件路径不要贴到公开Issue），以下命令要求手动填入3个已确认文件，`--exclusion`应是**最终冻结的受保护排除/heldout关联文件**而非临时脚本输出：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_frozen_metadata_inventory.py
+
+# 只填已经由Owner确认的真实冻结文件路径；不要凭名称伪造
+CASES="/Owner私有/R50_FRESH_HELDOUT_50.jsonl"
+PROV="/Owner私有/R50_CASE_PROVENANCE_50.jsonl"
+EXCLUSION="/Owner私有/R50最终冻结排除或heldout关联文件.json"
+
+"$PY" scripts/r60_r50_frozen_metadata_inventory.py \
+  --cases "$CASES" --provenance "$PROV" --exclusion "$EXCLUSION"
+```
+
+若文件不存在、名字只是历史示例、权限非0600或出现HOLD，停止并仅修正**文件定位/只读权限前提**，不修改冻结内容、不开训练、不要通过降低计数或更换其他文件绕过。预期只返回各文件记录数和`r50_complete_exclusion_verified=false`。后续完整排除必须使用确定的Schema、最终冻结版本、全量故事/会话/消息来源映射和R45 split索引，不由这个inventory工具完成。
