@@ -1,5 +1,10 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 Common2已完成CPU SAFE回执只读二次验签（当前最高优先级）
+
+Owner本机已从第五轮成功Job的既存输出读取 `R60_COMMON2_CPU2_SAFE_RECEIPT.json`，并用仓库只读校验器获得 `CPU2_SAFE_RECEIPT_VERIFIED__R50_TRAIN_HOLD`。正式SAFE数据：`cases_verified=2`、`tokenizer_verified=true`、`collator_verified=true`、`tokenizer_token_counts=[2552,4048]`、`real_collator_token_counts=[2486,3982]`、`supervised_token_counts=[282,305]`、`model_inference_calls=0`、`gpu_started=false`、`native_template_token_parity_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、`private_values_emitted=false`。原生Tokenizer与Swift Collator长度分别相差66 token；此长度差不能证明逐token一致、推断原因或覆盖模板HOLD。**原CPU验收及只读回执闭环已完成，不再提交重复HF CPU Job。** 下一优先级：只读查明模板差异与政策、R50冻结完整来源元数据排除、Owner训练准入书面裁决。完整SAFE原件只保留私有位置，公开文档仅记录聚合数字。
+
+
 ## 2026-11-12 现行Common2 P0里程碑：两条真实CPU技术验收PASS，转向训练准入证据（高于以下旧P0描述）
 
 Owner 已通过 Mac 单次提交HF Job `6af570089737d9a9e093d501`，RUN_KEY `r60-common2-cpu2-20261112T073854Z-e076f53c8eae`；HF插件独立inspect为 COMPLETED，日志业务尾标记 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`。Worker严格验证内部SAFE为`cases=2`、`collator_verified=true`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、`gpu_started=false`后才O_EXCL写出SAFE成功标记。因此 **Common2实验性两条来源绑定训练输入的CPU Tokenizer/严格R18 last_round标签及真实ms-swift Collator工程验收已通过，不再为同一条件重复HF CPU Job**。完整token计数回执尚待从已成功的HF结果前缀只读取回并经`scripts/r60_common2_cpu2_receipt_verify.py`验证；不伪报独立回执已归档。
