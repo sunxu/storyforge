@@ -5,6 +5,7 @@ needed by the existing business auditor; never duplicates tokenizer algorithms.
 Mac-side actions are create-only and do not submit, tokenize or access HF.
 """
 from __future__ import annotations
+
 import argparse
 import ast
 import hashlib
@@ -16,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from storyforge_dataset.hf_runtime import InputManager  # noqa: E402
+from storyforge_dataset.hf_runtime import InputManager
 
 RUN_RE = re.compile(r"r60-common2-wrapcpu-\d{8}T\d{6}Z-[a-f0-9]{12}\Z")
 SCHEMA = "storyforge_r60_common2_wrapped_hf_stage_private_v1"
@@ -177,7 +178,7 @@ def main() -> int:
                   else (_ for _ in ()).throw(ValueError("ARGUMENTS_HOLD")))
         print(json.dumps(result, sort_keys=True))
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - fail closed; SAFE only
         print(json.dumps({"schema": "storyforge_r60_common2_wrapped_hf_stage_safe_v1",
                           "status": "WRAPPED_CPU_STAGE_HOLD",
                           "reason_code": "INPUT_STAGE_OR_RUNTIME_HOLD",
