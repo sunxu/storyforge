@@ -185,9 +185,9 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
     # A single complete Markdown JSON fence has no semantic effect.
     # Strict schema validation still applies to the decoded JSON object.
     stripped = content.strip()
-    if stripped.startswith("```json\\n") and stripped.endswith("\\n```"):
+    if stripped.startswith("```json\n") and stripped.endswith("\n```"):
         stripped = stripped[8:-4].strip()
-    elif stripped.startswith("```\\n") and stripped.endswith("\\n```"):
+    elif stripped.startswith("```\n") and stripped.endswith("\n```"):
         stripped = stripped[4:-4].strip()
     try:
         model_output = json.loads(stripped)
