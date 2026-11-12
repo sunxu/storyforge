@@ -1,3 +1,5 @@
+> **2026-11-12 包装System的下一技术门禁（最新）：** 已有Owner真实SAFE证实R27/R52冻结System内存包装2/2 PASS；无System原CPU2已PASS且无须重复。包装后新输入尚未做实际Qwen/Swift CPU验证，Mac无模型Snapshot。已新增 [R60 Wrapped HF CPU Quality Pipeline可复用任务书](R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md)，统一通过共享HF Runtime、Skill和Gold Quality Pipeline工程门禁在HF CPU完成，防止Mac新下27B/重复实现Token算法。Owner先完成synthetic/CI与私有Stage，再单次CPU Job，SAFE回收；不触及R50正文/旧冻结源，`quality_v1_admitted=0`、`train_admitted=0`、GPU0。以上覆盖本文旧的“Mac直接做真实Tokenizer/Collator或重新跑无System CPU2”操作建议。
+
 > **2026-11-12 主线下一步（最新）：** Common2真实两条实验输入和HF CPU2独立证据均PASS；R45原Train49/Val15、R50原50条的精确来源隔离均PASS。已生成待Owner裁决的 [Common2 两条 SFT 正式训练准入决策书](R60_COMMON2_OWNER_SFT_ADMISSION_DECISION_20261112_CN.md)，将剩余工作收敛为D1衍生输入策略、D2 Swift训练模板、D3真实部署模板兼容、D4仅Common2相关世界语义证据、D5独立发布/训练许可。**所有D1-D5尚未Owner批准，train_admitted=0；不重复机械来源检查、CPU Job、不自动训练。** 本句覆盖本文历史“待执行CPU2、未核实R50原50”类旧执行建议。
 
 # StoryForge R60 Common2：CPU PASS 之后训练准入证据与下一步任务书（2026-11-12）
