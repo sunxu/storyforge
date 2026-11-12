@@ -298,3 +298,25 @@ STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
 ```
 
 先确认CLI flags返回 `WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB` 且attempts_mode=PINNED_CLI_DEFAULT_ONE，再要求ready状态 `WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB`。若任一步失败保留HOLD，不自动submit或创建新RUN_KEY。
+
+## 2026-11-12 21:37 Owner最新回执：24/24合成PASS，CLI和Dry-run PASS
+
+Owner Mac真实回执：`24 passed in 0.52s`；`cli-flags`为`WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB`、`attempts_mode=PINNED_CLI_DEFAULT_ONE`、缺失参数空；`ready`为`WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB`且`PAGINATED_NO_JOB`。这是远端文件名集合匹配、原Stage严格SHA、CLI预检的成功证据；不是远端每一文件的独立SHA验证或Swift Collator真实成功。
+Ruff仅剩1个`I001`（from importlib.metadata排序），Owner隔离分支已最小改动；修改后尚需Mac重新跑Ruff确认全绿。
+
+单次HF CPU执行边界：仅Owner再次确认Ruff PASS且`ready` PASS后，才可显式执行`submit --execute`（一个可能计费的CPU Job，不是GPU或SFT）。在调用前CLI检查当前组织历史和本地O_EXCL marker；不自动重试/重命名run key，返回未确认状态时只读核实，不重复submit。结果必须回传`job_id`与SAFE CPU回执并由独立receipt_verify检查；`train_admitted=0`保持。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+export PATH="$(dirname "$PY"):$PATH"
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+"$PY" scripts/r60_common2_wrapped_hf_cli.py ready --stage "$STAGE" --run-key "$KEY"
+# 仅Owner明确决定启动单次CPU Job时才执行：
+# "$PY" scripts/r60_common2_wrapped_hf_cli.py submit --execute --stage "$STAGE" --run-key "$KEY"
+```
