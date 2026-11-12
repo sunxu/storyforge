@@ -325,3 +325,24 @@ def test_claude_proxy_json_mode_fails_before_private_dir_create(
             "claude-proxy-top-system", "deepseek-chat",
         )
     assert not destination.exists()
+
+
+def test_safe_http_429_attempt_replays_without_private_error(tmp_path, monkeypatch):
+    _base, _source, folder, _cases, _safe = setup_batch(
+        tmp_path, monkeypatch, attest=False,
+    )
+
+    def fake_request(endpoint, model, key, prompt, timeout, json_mode):
+        if model == "model-alpha":
+            raise ai.Hold("MODEL_HTTP_429_HOLD")
+        return synthetic_answer()
+
+    monkeypatch.setattr(ai, "model_request", fake_request)
+    result = q.advance(folder, 1)
+    assert result["cases_reviewed"] == 1
+    assert result["quality_decisions"]["HOLD"] == 1
+    assert result["model_attempt_hold_counts"] == {"MODEL_HTTP_429_HOLD": 1}
+    assert q.inspect(folder)["model_attempt_hold_counts"] == {
+        "MODEL_HTTP_429_HOLD": 1
+    }
+    assert result["train_admitted"] == 0
