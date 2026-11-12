@@ -1,5 +1,6 @@
 # StoryForge R60 — Common2 HF CPU2 下一Agent权威交接任务书
-> 2026-11-12；以GitHub目标分支当前HEAD、Owner私有SAFE回执及最新只读现场核验为准。本文件是**交接材料**，不是授权新Agent立刻提交Job。
+
+> **2026-11-12 最新权威覆盖声明：Common2 CPU技术验收已PASS（优先于以下全部旧“IMAGE_FIX_HOLD/Collator未知”段落）。** 第五轮真实HF Job `6af570089737d9a9e093d501` 已 `COMPLETED`，Worker输出 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`；已验证两条实验输入的Tokenizer、严格R18 Label Mask、实际ms-swift Collator。**不再执行下文任何旧Submit、重试、Stage重建命令**。当下只读验签既有SAFE回执、分析原生/Swift模板不等价、核验完整R50排除、形成Owner训练准入决策；`SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`、`native_template_token_parity_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、GPU/SFT HOLD。环境和可复用命令详见 [HF Jobs Mac CLI CPU2实战手册](standards/HF_JOBS_MAC_CLI_CPU2_PLAYBOOK_20261112_CN.md)。本覆盖声明只更新Common2，不替代其他Agent并行状态。\n\n> 2026-11-12；以GitHub目标分支当前HEAD、Owner私有SAFE回执及最新只读现场核验为准。本文件是**交接材料**，不是授权新Agent立刻提交Job。
 
 ## 一、目标、当前结论与最重要的纠错
 
