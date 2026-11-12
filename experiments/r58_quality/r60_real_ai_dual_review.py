@@ -119,7 +119,8 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 
 def model_request(endpoint: str, model: str, key: str, prompt: str,
                   timeout: int, json_mode: bool, *,
-                  protocol: str = "openai-chat") -> dict:
+                  protocol: str = "openai-chat",
+                  diagnose_json: bool = False) -> dict:
     try:
         body = transport.build_body(
             model=model, prompt=prompt, instructions=REVIEW_INSTRUCTIONS,
@@ -152,15 +153,31 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
         raise Hold("MODEL_TRANSPORT_HOLD") from exc
     if len(data) > MAX_REPLY_BYTES:
         raise Hold("MODEL_REPLY_OVERSIZE")
+    # Diagnostic mode is opt-in for a synthetic-only API probe. Never emit
+    # provider payloads or exception text; only fixed structural reason codes.
     try:
         envelope = json.loads(data)
+    except (ValueError, TypeError) as exc:
+        code = "MODEL_ENVELOPE_JSON_INVALID" if diagnose_json else "MODEL_JSON_INVALID"
+        raise Hold(code) from exc
+    try:
         content = envelope["choices"][0]["message"]["content"]
         if not isinstance(content, str):
             raise TypeError("not a textual response")
+    except (KeyError, TypeError, IndexError) as exc:
+        code = "MODEL_CONTENT_MISSING_OR_NONSTRING" if diagnose_json else "MODEL_JSON_INVALID"
+        raise Hold(code) from exc
+    try:
         model_output = json.loads(content)
-    except (ValueError, KeyError, TypeError, IndexError) as exc:
-        raise Hold("MODEL_JSON_INVALID") from exc
-    return parse_model_response(model_output)
+    except (ValueError, TypeError) as exc:
+        code = "MODEL_CONTENT_JSON_INVALID" if diagnose_json else "MODEL_JSON_INVALID"
+        raise Hold(code) from exc
+    try:
+        return parse_model_response(model_output)
+    except Hold as exc:
+        if diagnose_json and str(exc) == "MODEL_JSON_INVALID":
+            raise Hold("MODEL_REVIEW_SCHEMA_INVALID") from exc
+        raise
 
 
 def evaluate(cases: list[dict], configs: list[tuple[str, str, str]],
