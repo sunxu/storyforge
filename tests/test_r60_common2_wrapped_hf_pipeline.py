@@ -219,3 +219,70 @@ def test_submit_creates_marker_before_single_cli_call_and_replay_holds(
     except ValueError as exc:
         assert str(exc) == "JOB_ATTEMPT_ALREADY_RECORDED_HOLD"
     assert len(seen_job_calls) == 1
+
+
+def test_diagnose_is_read_only_and_reports_empty_or_partial(tmp_path, monkeypatch):
+    import types
+
+    folder = tmp_path / KEY
+    folder.mkdir()
+    expected_files = {"private/data.jsonl", "SHA256_MANIFEST_PRIVATE.json"}
+    monkeypatch.setattr(cli, "expected", lambda *args: expected_files)
+    mock_hf = types.ModuleType("huggingface_hub")
+    mock_hf.HfApi = lambda: object()
+    monkeypatch.setitem(sys.modules, "huggingface_hub", mock_hf)
+    prefixes = []
+
+    def fake_remote_set(api, prefix):
+        prefixes.append(prefix)
+        return {"private/data.jsonl"} if "/runs/" in prefix else set()
+
+    monkeypatch.setattr(cli, "remote_set", fake_remote_set)
+    monkeypatch.setattr(
+        cli.subprocess, "run",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            AssertionError("diagnose must never call hf CLI")
+        ),
+    )
+    result = cli.diagnose(folder, KEY)
+    assert result["status"] == "WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB"
+    assert result["remote_input"] == "PARTIAL_OR_MISMATCH"
+    assert result["remote_output"] == "EMPTY"
+    assert result["submit_marker"] == "ABSENT"
+    assert result["job_submission_calls"] == 0
+    assert len(prefixes) == 2
+
+
+def test_diagnose_reports_sdk_category_without_exception_leak(tmp_path, monkeypatch):
+    import types
+
+    folder = tmp_path / KEY
+    folder.mkdir()
+    monkeypatch.setattr(cli, "expected", lambda *args: {"a"})
+    mock_hf = types.ModuleType("huggingface_hub")
+    mock_hf.HfApi = lambda: object()
+    monkeypatch.setitem(sys.modules, "huggingface_hub", mock_hf)
+
+    def broken_remote_set(*args):
+        raise AttributeError("PRIVATE HF AUTH TOKEN OR USER DATA")
+
+    monkeypatch.setattr(cli, "remote_set", broken_remote_set)
+    result = cli.diagnose(folder, KEY)
+    assert result["status"] == "WRAPPED_CPU_REMOTE_DIAGNOSTIC_HOLD"
+    assert result["phase"] == "REMOTE_INPUT_LIST"
+    assert result["reason_code"] == "SDK_API_UNAVAILABLE"
+    assert "PRIVATE HF AUTH TOKEN" not in json.dumps(result)
+    assert result["job_submission_calls"] == 0
+
+
+def test_remote_listing_rejects_unexpected_path_without_leaking(tmp_path):
+    import types
+
+    api = types.SimpleNamespace(
+        list_bucket_tree=lambda *args, **kwargs: [
+            types.SimpleNamespace(path="unexpected/private/id", type="file"),
+        ]
+    )
+    with pytest.raises(ValueError, match="REMOTE_PATH_HOLD"):
+        cli.remote_set(api, "preflight/r60/common2/wrapped-cpu/runs/key/")
+    assert cli.classify_safe_failure(ValueError("REMOTE_PATH_HOLD")) == "REMOTE_PATH_HOLD"
