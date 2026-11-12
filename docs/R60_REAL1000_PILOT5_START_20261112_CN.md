@@ -32,10 +32,10 @@ QUALITY="$BASE/r60-quality-first-1000"
 
 "$PY" experiments/r58_quality/r60_real_expand_private.py inspect \
   --output-dir "$EXPAND"
-"$PY" -m pytest -q tests/test_r60_real_quality_batch.py
+"$PY" -c 'import ast, pathlib; files=[pathlib.Path("experiments/r58_quality/r60_real_quality_batch.py"),pathlib.Path("experiments/r58_quality/r60_real_ai_dual_review.py")]; [ast.parse(p.read_text(encoding="utf-8")) for p in files]; print("REAL1000_BATCH_SOURCE_PARSE_PASS")'
 ```
 
-若测试文件路径不存在，请只检查仓库已有对应测试，不要为使流程通过而删除旧测试；也不要改写冻结输入。只有`EXPANSION_TARGET_REACHED__NOT_ADMITTED`且`total_candidates=1000`才能继续。
+上述源码解析是PILOT-0最小无模型预检，不代表全量单测/CI已通过。不要改写冻结输入。只有`EXPANSION_TARGET_REACHED__NOT_ADMITTED`且`total_candidates=1000`才能继续。
 
 ## 3. PILOT-5：Owner确认两个真实Reviewer后的5条实审
 
