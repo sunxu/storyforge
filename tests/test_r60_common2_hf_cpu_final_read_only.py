@@ -107,6 +107,8 @@ def test_walk_link_pagination_and_hidden_job(monkeypatch):
         def __init__(self):
             self.calls = []
         def get(self, url, **kwargs):
+            assert kwargs.get("follow_redirects") is False
+            assert "allow_redirects" not in kwargs
             self.calls.append(url)
             return pages[len(self.calls)-1]
     session = FakeSession()
@@ -133,6 +135,8 @@ def test_link_redirect_to_foreign_host_fails_closed(monkeypatch):
             return [{"id": "one"}]
     class Session:
         def get(self, url, **kwargs):
+            assert kwargs.get("follow_redirects") is False
+            assert "allow_redirects" not in kwargs
             assert url == "https://huggingface.co/api/jobs/adradar"
             return Response()
     monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(get_session=lambda: Session()))
