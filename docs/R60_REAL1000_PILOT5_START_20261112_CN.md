@@ -212,3 +212,7 @@ test ! -e "$QUALITY"
 新增`.github/workflows/r60-real1000-quality-review.yml`。其Push限定Owner隔离分支，PR仅在Reviewer相关代码或Workflow修改时触发；执行Python3.11、Ruff及`test_r60_real_ai_dual_review.py`与`test_r60_real_quality_batch.py`离线合成测试，不配置任何HF Job、API密钥、私有故事或远程端点。这个CI不是云端API可用性证明；真实合成probe仅能由Owner认证Mac受控执行。
 
 质量架构总规范：`docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。复用Skill：`skills/storyforge-real-quality-review/SKILL.md`；既有RolePlay SFT Skill已同步说明Common2技术验收关闭及REAL1000双Reviewer调用分层。当前所有代码仅通过GitHub提交，Owner Mac pytest/Ruff/实际合成Claude/DeepSeek端点验收仍需SAFE证据；在这些真实检查完成之前不宣称任何真实5条AI审阅。
+
+### HTTP错误与SAFE定位
+
+合成探针及正式双审采用同一套固定公开错误码：`MODEL_HTTP_400_HOLD`（API字段/格式拒绝）、`401/403`（凭证/权限）、`429`（速率限制）、`500/502/503/504`（服务端），此外还包括`404/408/413`。每个错误仅报告固定编号，不输出服务端响应正文、请求URL或原始提示词；未知错误保留`MODEL_TRANSPORT_HOLD`。失败时先核实API配置，不得把网络/格式失败算成文学质量REJECT，也不直接改写已持久化回执。
