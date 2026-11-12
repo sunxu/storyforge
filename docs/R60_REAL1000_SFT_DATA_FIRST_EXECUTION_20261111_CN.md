@@ -1,5 +1,19 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 Owner真实Supabase恢复成功：两条共346条原始持久化历史消息
+
+Owner返回`QD20_COMMON2_PERSISTED_HISTORY_RECOVERED__TRAIN_CONTEXT_HOLD`：已用只读数据库连接按冻结source ID回查两条共同双PASS（独立质量PASS2/2）目标此前的**持久化、已完成历史消息**，分别成功恢复**103条和243条，共346条**；与原冻结Pilot20历史三消息的精确ID/原文匹配2/2。数据库已读取、未修改，输出已写Owner私有结果文件，私有文本/ID不在SAFE输出中，模型/GPU调用0。
+
+真实回执同时说明：`current_story_system_present_count=0`、`current_story_world_present_count=0`、`prior_checkpoint_count_total=0`、`actual_sent_system_verified_count=0`、`historical_world_components_verified_count=0`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。这些是**两条候选对应的字段/记录检查**，不是全数据库没有System或世界卡的结论；checkpoint为0也只是目标之前符合查询条件的已保存快照数。当前数据库持久化消息历史不等于当时实际发送给模型的请求历史窗口，不能自动判断全部103/243条均进入过LLM上下文。不要再把最初导出的三消息当成全部可用历史。
+
+**优先任务顺序**：
+1. 将本次Owner私有恢复结果视为历史消息只读基线，保存其SHA、两条来源target绑定与消息顺序证据，不更改原始源、盲审与已创建的600/700私有权限。
+2. 追溯生成服务代码（**不是**只看`user_stories.initial_system_prompt`）里实际在目标时间运行的prompt构造、历史窗口长度、摘要注入、系统模板、世界/角色组件及版本。若无法获取目标生成时请求日志快照，明确分开`PERSISTED_HISTORY_RECOVERED`、`TRAINING_CONSTRUCTED_CONTEXT`与`ACTUALLY_SENT_PROMPT_VERIFIED`；不能将后来构造的System称作历史事实。
+3. 先在CPU运行真实目标Qwen tokenizer，测量103/243条持久化历史在候选消息格式与构造System下的token长度，给出`max_length`内可复现的截断/摘要政策备选与对话连续性风险。**Token预检是实验性数据可用性检查，不是训练准入，不可悄悄将全历史当成实际发送的上下文。**
+4. 完整R50隔离依旧HOLD；已知5个R50源故事0重叠只是部分事实。正式质量/训练准入均0，不启动GPU。
+5. 主线评估应从两条样本沉淀可复用的**1000条历史上下文恢复流程**，后续筛选时按可恢复性、有效上下文、文学质量、R50隔离逐级处理，而不是用四模型继续重复投票。
+
+
 ## 2026-11-12 Common2 Supabase真实恢复在私有结果写入阶段HOLD：已修复200KB遗留上限
 
 Owner SAFE `QD20_COMMON2_DB_RECOVERY_HOLD`、`diagnostic_stage=WRITE_PRIVATE_RESULT`、`diagnostic_exception_type=OTHER`。诊断阶段已经过两条私有源绑定、DB连接/只读角色校验、目标原文及其历史三消息对账；**未确认私有恢复文件成功落盘**。查看实现发现旧`private.write_new`使用最初6条样本导出写入接口的`MAX_CAPTURE_BYTES=200000`大小上限，当前恢复2条目标之前最多500条历史消息，序列化后容易超限并抛出被包装为OTHER的`private.Hold("OUTPUT_SIZE_HOLD")`；这是代码确认的**最可能原因**，尚需真实SAFE回执确认，不能直接断言源数据恢复已彻底成功。
