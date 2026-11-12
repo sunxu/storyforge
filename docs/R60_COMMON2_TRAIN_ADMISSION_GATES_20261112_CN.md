@@ -119,3 +119,26 @@ Owner实际SAFE：`R50_PRESEAL_CROSSWALK_HOLD` / `reason_code=FILE_PERMISSION_HO
 Owner 在私有 `r50-crosswalk-copy-whznSMXy` 目录用6份源文件**字节SHA256一致**的0600副本进行只读检查，`R50_COPY_0..5=SHA256_MATCH`，原R50冻结文件一律未更改。最终SAFE为 `R50_PRESEAL_46_CROSSWALK_PASS__FINAL_COVERAGE_HOLD`，`preseal_cases_checked=46`、`case_id_order_exact=true`、`provenance_story_fields_present=true`、`history_reference_fields_present=true`、`selection_expected_fields_present=true`、`admission_expected_fields_present=true`、`worlds_expected_fields_present=true`、`r45_gate_expected_fields_present=true`。没有数据库、HF Job、GPU或模型推理；`frozen_protection_50_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。
 
 这证明46个PRESEAL的case ID顺序一一相等、来源story/session/history非空且关联报告预期字段存在。**没有检查原始50案的缺失4案是否正确排除、报告值是否代表最终seal、R45跨世界语义别名隔离，也没有将Common2源标识同R50做交集。** 下阶段必须只读检查selection、admission、worlds及R45 gate的类型化状态值，并保留HOLD。可复用已创建且逐份SHA MATCH的临时副本（Owner本机路径详见 `R60_R50_LOCAL_FROZEN_PATHS_20261112_CN.md`），无需重新复制/更改原件。
+
+## 2026-11-12 下一步：只读投影4份冻结状态报告的值类型与安全计数
+
+新增`scripts/r60_r50_freeze_status_projection_cpu.py`，只接受**已核对SHA的六份Owner私有副本**中四份报告`f2..f5`；输出预期字段的布尔值/安全范围内整数/数组长度/对象键数/字符串类型，不输出字符串原值、ID、哈希、路径或正文。严格维持`R50_FREEZE_STATUS_TYPES_READ__EXCLUSION_HOLD`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。仅供下一阶段决定如何按真实值类型解释50→46、4项剔除和报告HOLD状态，**不是最终50案封存或Common2交集证明**。
+
+Owner复用已产生的私人副本（若已删除，则按 `R60_R50_LOCAL_FROZEN_PATHS_20261112_CN.md` 的SHA流程重新复制），不要改动R50原件：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_freeze_status_projection_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_freeze_status_projection_cpu.py
+P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
+test -f "$P/f2" && test -f "$P/f3" && test -f "$P/f4" && test -f "$P/f5"
+"$PY" scripts/r60_r50_freeze_status_projection_cpu.py \
+  --selection "$P/f2" --admission "$P/f3" \
+  --worlds "$P/f4" --r45-gate "$P/f5"
+```
+
+输出SAFE JSON可用于后续精确工具设计；其中任何`string_or_unsupported`只是类型，不代表原值已审定。应按下一阶段新增显式允许的状态枚举校验器取证，不使用宽泛的「非空字符串=通过」逻辑。
