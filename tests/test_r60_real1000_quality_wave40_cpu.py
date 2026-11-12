@@ -53,5 +53,5 @@ def test_fail_closed_when_distinct_story_quota_unavailable(monkeypatch):
     cases, frozen = build(monkeypatch)
     for i in range(100, 1000):
         cases[i]["source"]["story_id"] = "already-in-sample-1"
-    with pytest.raises(wave.Hold, match="STORY_DISTINCT_QUOTA_HOLD"):
+    with pytest.raises(wave.Hold, match="WAVE40_COUNT_HOLD"):
         wave.select(cases, "a" * 64, frozen)
