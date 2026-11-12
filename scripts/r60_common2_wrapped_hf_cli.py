@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from importlib.metadata import PackageNotFoundError, version
 import os
 import re
 import subprocess
@@ -67,6 +68,21 @@ def output_is_empty(api, key: str) -> None:
         raise ValueError("REMOTE_RESULT_ALREADY_EXISTS_HOLD")
 
 
+def use_documented_default_attempts(help_text: str) -> bool:
+    """Accept one old CLI omission only with known pinned local HF SDK.
+
+    HF Jobs defaults to exactly one attempt when --attempts is absent.
+    Never accept missing flags other than this one; keep the explicit
+    --attempts=1 path when supported.
+    """
+    if missing_job_cli_flags(help_text) != ["--attempts"]:
+        return False
+    try:
+        return version("huggingface_hub") == "1.33.0"
+    except PackageNotFoundError:
+        return False
+
+
 def missing_job_cli_flags(help_text: str) -> list[str]:
     """Return only known public option names; never emit complete CLI help."""
     missing = hf_job_guard.missing_hf_cli_options(help_text)
@@ -95,13 +111,20 @@ def inspect_job_cli_flags() -> dict:
         if probe.returncode:
             return result
         missing = missing_job_cli_flags(probe.stdout)
-        result["missing_cli_flags"] = missing
+        default_attempts = use_documented_default_attempts(probe.stdout)
+        result["missing_cli_flags"] = [] if default_attempts else missing
+        result["attempts_mode"] = (
+            "PINNED_CLI_DEFAULT_ONE" if default_attempts
+            else "EXPLICIT_ONE" if not missing else "UNVERIFIED"
+        )
         result["status"] = (
-            "WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB" if not missing
+            "WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB" if not missing or default_attempts
             else "WRAPPED_CPU_CLI_FLAGS_HOLD__NO_JOB"
         )
         result["reason_code"] = (
-            "REQUIRED_OPTIONS_PRESENT" if not missing else "MISSING_REQUIRED_OPTIONS"
+            "DOCUMENTED_DEFAULT_ONE" if default_attempts
+            else "REQUIRED_OPTIONS_PRESENT" if not missing
+            else "MISSING_REQUIRED_OPTIONS"
         )
     except (OSError, subprocess.TimeoutExpired):
         pass
@@ -109,7 +132,9 @@ def inspect_job_cli_flags() -> dict:
 
 
 def job_command(key: str, help_text: str) -> list[str]:
-    if missing_job_cli_flags(help_text):
+    missing = missing_job_cli_flags(help_text)
+    default_attempts = use_documented_default_attempts(help_text)
+    if missing and not default_attempts:
         raise ValueError("HF_CLI_FLAGS_HOLD")
     base = "hf://buckets/" + BUCKET
     inputs = [f"{base}/{PREFIX}/runs/{key}:/input/common2:ro"]
@@ -125,6 +150,13 @@ def job_command(key: str, help_text: str) -> list[str]:
         input_volumes=inputs, output_volume=output,
         image=IMAGE, command=command
     )
+    if default_attempts:
+        # Shared builder remains unchanged for all other pipelines.
+        # HF documented default is 1; the pinned CLI does not expose flag.
+        index = argv.index("--attempts")
+        if argv[index + 1] != "1":
+            raise ValueError("HF_CLI_FLAGS_HOLD")
+        del argv[index:index + 2]
     pos = argv.index(IMAGE)
     argv[pos:pos] = ["--env", f"STORYFORGE_R60_WRAPCPU_KEY={key}"]
     pos = argv.index(IMAGE)
