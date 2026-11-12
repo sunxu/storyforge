@@ -493,6 +493,7 @@ def test_claude_historical_response_shapes_reuse_strict_validator(
 
 def test_claude_truncation_has_fixed_safe_code_and_never_passes(monkeypatch):
     import io
+
     import r60_reviewer_protocol_probe as probe
 
     response_body = json.dumps({
