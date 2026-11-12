@@ -1,5 +1,34 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+## 2026-11-12：Owner真实Stage 27文件PASS，远程前缀HOLD专项修复
+
+Owner返回：`R60_COMMON2_HF_CPU2_STAGE_READY__NO_JOB`，`private_examples=2`、`files_staged=27`、`run_key=r60-common2-cpu2-20261112T032815Z-71c840b37254`，随后`R60_COMMON2_HF_CPU2_REMOTE_PREFIX_HOLD`。**这代表本地数据及源码已成功stage，但Bucket前缀检查没有通过；并不是Collator或数据的失败，未创建Job，也不能推断上传成功。** 通过HF Bucket只读列表检查，该RUN_KEY目录目前为空，仍须以Owner本地权限及接口核验为准。不能绕过fail-closed检查，不能重跑付费Job。
+
+已修复`scripts/r60_common2_hf_cpu_bucket_guard.py`，保留严格HOLD的同时只输出 allowlist 的`R60_COMMON2_REASON_CODE`，区分`SDK_MODULE_MISSING`、`SDK_API_UNAVAILABLE`、`SDK_API_INCOMPATIBLE`、`REMOTE_AUTHORIZATION_HOLD`、`REMOTE_CONNECTION_HOLD`与其他验证问题。**所有异常原文/路径/私有IDs不输出。** 历史`hf` CLI可单独安装，Mac当前`python3`未必使用同一环境的`huggingface_hub`，故优先核实SDK兼容性，不能盲目修私有数据。
+
+在最新版本代码上执行（**只检查，不上传、不创建Job**）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+RUN_KEY="r60-common2-cpu2-20261112T032815Z-71c840b37254"
+STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$RUN_KEY"
+test -s "$STAGE/SHA256SUMS.txt"
+python3 -m pytest -q tests/test_r60_common2_hf_cpu_stage.py
+python3 scripts/r60_common2_hf_cpu_bucket_guard.py empty "$RUN_KEY" --stage "$STAGE"
+```
+
+若返回`R60_COMMON2_REASON_CODE=SDK_MODULE_MISSING`或`SDK_API_UNAVAILABLE`，优先检查`python3`是否可以访问包含`HfApi.list_bucket_tree`的`huggingface_hub`（无需Mac安装ms-swift/torch）；若是`REMOTE_AUTHORIZATION_HOLD`，检查当前HF认证身份与私有Bucket只读权限；若是`REMOTE_CONNECTION_HOLD`，检查Mac代理及到HF的网络。**不要在无法确定原因时更改Bucket或重建冻结数据。**
+
+只有旧RUN_KEY真实前缀仍空，且本地源SHA256和新版guard都PASS时，才能复用旧stage，不重新产生私有源文件：
+
+```bash
+bash scripts/r60_common2_hf_cpu_submit.sh sync-existing "$RUN_KEY" "$STAGE"
+```
+
+`sync-existing`先执行本地sha256校验、远端empty校验、上传源文件和最后的SHA256SUMS，再执行远端ready文件集检查。**这一步只sync，不提交收费Job**。如果部分同步中断，远端非空时会拒绝重用运行键，须分析恢复策略，不能覆盖或删除远端证据。直到`R60_COMMON2_SYNC_READY__NO_JOB`明确输出之前不得执行`submit`。
+
+
 2026-11-12。Owner明确：**不在Mac安装ms-swift或完整训练栈**；使用曾在R53/R27/R18中验证的HF CPU no-training流程。此处只准备脚本与Owner Mac指令，**当前未同步私有数据、未创建付费CPU Job，也未启动GPU**。
 
 ## 当前真实事实与边界
