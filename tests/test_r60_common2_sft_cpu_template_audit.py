@@ -68,7 +68,7 @@ def test_wrong_order_rejected():
 
 
 def test_token_overflow_holds():
-    rows, raw, manifest = fixture()
+    rows, _, _ = fixture()
     class Overflow:
         def apply_chat_template(self, messages, tokenize, add_generation_prompt):
             return list(range(runner.CEILING + 1))
