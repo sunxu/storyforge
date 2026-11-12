@@ -59,3 +59,16 @@ PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
 现有静态合同脚本`scripts/r60_common2_hf_cpu_submission_contract.py`已切换到v2 Worker、新RUN_KEY和共享Guard；真实Owner的1.6.0 SDK在无挂载API时应返回`SDK_MOUNT_API_UNAVAILABLE`，即使Worker本身已改造，也不等于可提交。
 
 **全部工作状态仍为 NO_JOB / train_admitted=0 / R50全量隔离HOLD / Wave40暂停。**
+
+
+## 2026-11-12 Owner 25/25 本地回归 PASS 与 R53 路径修复
+
+Owner在Mac的`r60-tests`隔离虚拟环境运行6组R60合成测试：**25 passed in 0.58s**；`bash -n`两个脚本和`compileall`均无报错。这是Owner本地P2工程检查，不是HF Job PASS，也不是新代码修复后的再次验收。
+
+对照R53历史成功报告：`6ad8a7af0a35baab53a1ced2` 的40/40真实单样本ms-swift Collator和final Assistant标签监督已有Owner原始回执接受；新R60无需改写`hf_label_mask_audit.py`。但R53的模板输入和这次2条真实历史衍生上下文不同，不能直接继承逐案PASS。R53早期也有 `transformers_vs_swift_input_identical=false` 和远程多样本padding未覆盖的限制。
+
+从`experiments/r58_quality/r60_real_private_batch.py::private_dir`发现强制目录合同：只接受`$HOME/.local/share/storyforge/r60/private/<单层目录>`，其父目录必须0700，输入目录0700，文件0600。v2 Worker最初使用`$SCRATCH/private`会在Collator之前HOLD；已将它改为私有HOME路径、按RUN_KEY单层0700创建、0600复制、退出清理，并新增静态合成断言；**尚待Owner重新跑测试**。不更改审计核心，不触碰原Stage。
+
+HF官方文档确认CLI 支持`hf jobs run -v hf://buckets/adradar/storyforge-training/preflight/r60/common2/cpu2/runs/<NEW_KEY>:/input/common2:ro`和独立结果前缀`.../results/<NEW_KEY>:/output:rw`；但SDK Volume API要求`huggingface_hub>=1.8.0`，Owner的1.6.0不具备此能力。具体HF CLI参数仍必须通过Owner本机`hf jobs run --help`静态核对，不能推导该已安装版本一定支持`--dry-run`、`--name`、`--attempts`或分段Bucket挂载。**禁用的旧submit入口继续禁用**；R60不得复用R53的整Bucket `/workspace:rw`。
+
+后续严格顺序：Owner拉取最新独立分支并再次本地回归→验证本机HF CLI参数和调用参数位置→新Worker容器镜像/依赖校验与Linux CI→唯一RO/RW输入输出新前缀→完整远端Job历史排重→才考虑单次CPU真实Collator；不以R53技术成功豁免R60数据级测试。无付费提交、无训练准入、无GPU。
