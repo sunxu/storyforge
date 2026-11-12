@@ -52,6 +52,32 @@ def check(mode: str, run_key: str, stage: Path, api) -> None:
         raise ValueError("MODE_HOLD")
 
 
+def classify_failure(exc: Exception) -> str:
+    """Only allowlisted failure categories; never print remote/private details."""
+    if isinstance(exc, ModuleNotFoundError):
+        return "SDK_MODULE_MISSING"
+    if isinstance(exc, AttributeError):
+        return "SDK_API_UNAVAILABLE"
+    if isinstance(exc, TypeError):
+        return "SDK_API_INCOMPATIBLE"
+    if isinstance(exc, ValueError):
+        valid = {
+            "RUN_KEY_HOLD", "REMOTE_PREFIX_ENTRY_HOLD",
+            "REMOTE_DUPLICATE_ENTRY_HOLD", "REMOTE_RUN_ALREADY_EXISTS",
+            "REMOTE_RUN_FILESET_HOLD", "MODE_HOLD",
+            "LOCAL_MANIFEST_MISSING", "LOCAL_MANIFEST_UNSAFE",
+        }
+        return str(exc) if str(exc) in valid else "INPUT_VALIDATION_HOLD"
+    status = getattr(getattr(exc, "response", None), "status_code", None)
+    if status in (401, 403):
+        return "REMOTE_AUTHORIZATION_HOLD"
+    if status == 404:
+        return "REMOTE_BUCKET_OR_PATH_NOT_FOUND_HOLD"
+    if isinstance(exc, (ConnectionError, TimeoutError, OSError)):
+        return "REMOTE_CONNECTION_HOLD"
+    return "REMOTE_SDK_OR_SERVICE_HOLD"
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("mode", choices=("empty", "ready"))
@@ -63,8 +89,9 @@ def main() -> int:
         check(a.mode, a.run_key, a.stage, HfApi())
         print("R60_COMMON2_HF_CPU2_REMOTE_" + a.mode.upper() + "_PASS")
         return 0
-    except Exception:  # noqa: BLE001 - never leak remote identity or paths
+    except Exception as exc:  # noqa: BLE001 - fail closed; only expose allowlisted reason
         print("R60_COMMON2_HF_CPU2_REMOTE_PREFIX_HOLD", file=sys.stderr)
+        print("R60_COMMON2_REASON_CODE=" + classify_failure(exc), file=sys.stderr)
         return 42
 
 
