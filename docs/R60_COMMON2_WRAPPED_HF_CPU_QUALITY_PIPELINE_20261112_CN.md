@@ -195,3 +195,38 @@ ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf
 ```
 
 **解释顺序：** 若仅SDKPY的Stage验证失败，先诊断本地Python版本、加载路径及共享Runtime兼容，不执行远端操作；若两者都失败，优先对比原Stage未动源字节和清单（私有哈希不外发）；若两者均PASS才查看新`diagnose`远端SAFE。如新版仍笼统HOLD，保留phase并进一步添加允许字段的边界测试，禁止打印异常正文。成功`Stage VERIFY`只是文件字节合同一致，不批准训练。
+
+## 2026-11-12 Owner Mac统一Python环境与STAGE_FILES_HOLD
+
+Owner两套Python运行`stage.py verify`均返回`WRAPPED_CPU_STAGE_HOLD`，更新后的只读`diagnose`指出`phase=STAGE_VERIFY`、`reason_code=STAGE_FILES_HOLD`。因此当前**不是HF SDK/网络认证故障**；冻结Stage的实际文件集合与原SHA Manifest登记集合不一致。常见但尚未证实的原因是额外`__pycache__/*.pyc`或macOS`.DS_Store`；绝不能据此擅自忽略文件、删除Stage文件或篡改SHA清单。
+
+新加`scripts/r60_common2_wrapped_hf_stage.py inventory`只读审计，返回`declared_files`、`actual_files`、`extra_files`、`missing_files`、`extra_python_bytecode`、`extra_macos_metadata`、`extra_other`及`fileset_equal`；**不输出文件名、文件路径、私有SHA、文本或内容**。仅文件集合完全匹配并且原`verify`逐个SHA通过才会返回`WRAPPED_CPU_STAGE_INVENTORY_PASS__NO_JOB`。否则仍HOLD，继续禁止sync/submit。
+
+### 统一Mac Owner工具环境（独立新venv，不破坏旧环境）
+
+Mac本机只做私有Stage、共享Runtime、HF Bucket/CLI编排与测试，不装27B权重、不运行Qwen Tokenizer/Swift Collator；这些只在独立HF CPU Linux容器运行。创建一个可重复使用的Owner Python3.11 venv：`$HOME/.local/share/storyforge/venvs/r60-owner`。依赖按仓库`pyproject.toml`的dev组与已验证的HF CLI Python SDK版本固定；Ruff可使用该venv内的二进制。执行前需本机已有`python3.11`和有效Python包镜像源，首次安装仅允许软件包网络访问，与HF Job提交无关。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+VENV="$HOME/.local/share/storyforge/venvs/r60-owner"
+if [ ! -e "$VENV/bin/python" ]; then
+  python3.11 -m venv "$VENV"
+fi
+"$VENV/bin/python" -m pip install -e '.[dev]' 'huggingface_hub==1.33.0'
+export PATH="$VENV/bin:$PATH"
+export PYTHONPATH="$PWD/src:$PWD/scripts:$PWD/experiments/r58_quality"
+python -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+hf --help >/dev/null
+
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+python scripts/r60_common2_wrapped_hf_stage.py inventory \
+  --stage "$STAGE" --run-key "$KEY"
+```
+
+对于既有Stage，先使用`inventory`提供SAFE的文件类别与计数。如果只是额外Python缓存，也不自动删除；先取得Owner明示对该Stage清理动作的授权，或另建**新RUN_KEY + 独立新Stage**并重新跑严格SHA本地和远端门禁；**不得把旧RUN_KEY的不完整远端Prefix或旧Job回执混入新Stage**。若有缺失或未知额外文件，优先保全证据、查清来源，暂不提交HF CPU。
