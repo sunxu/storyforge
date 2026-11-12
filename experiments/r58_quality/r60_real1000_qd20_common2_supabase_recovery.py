@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import stat
 import sys
 from pathlib import Path
 
@@ -22,6 +23,7 @@ SCHEMA = "storyforge_r60_qd20_common2_supabase_recovery_safe_v1"
 PRIVATE_SCHEMA = "storyforge_r60_qd20_common2_supabase_recovery_private_v1"
 FILENAME = "R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json"
 MAX_HISTORY = 500
+MAX_RECOVERY_BYTES = 8_000_000
 STAGE = "START"
 
 
@@ -208,10 +210,47 @@ def recover(dsn: str, source_cases: list[dict]) -> list[dict]:
             db.rollback()
 
 
+def write_recovery(directory: Path, manifest: dict) -> None:
+    """Create-only output; permit a prior failed run's EMPTY secure directory.
+
+    Unlike private.write_new (200 KB for the original six-case capture),
+    500 turns x two sessions may legitimately need a larger bounded file.
+    Refuse nonempty dirs; preserve any existing evidence without overwrite.
+    """
+    data = pilot.canonical(manifest)
+    if len(data) > MAX_RECOVERY_BYTES:
+        raise Hold("RECOVERY_PAYLOAD_OVER_LIMIT_HOLD")
+    mark("CREATE_PRIVATE_OUTPUT")
+    if directory.is_symlink():
+        raise Hold("RECOVERY_OUTPUT_SYMLINK_HOLD")
+    if directory.exists():
+        private.private_dir(directory, create=False)
+        if any(directory.iterdir()):
+            raise Hold("RECOVERY_OUTPUT_NOT_EMPTY_HOLD")
+    else:
+        private.private_dir(directory, create=True)
+    mark("WRITE_PRIVATE_RESULT")
+    file = directory / FILENAME
+    fd = os.open(
+        file, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+        getattr(os, "O_NOFOLLOW", 0), 0o600,
+    )
+    with os.fdopen(fd, "wb") as out:
+        out.write(data)
+        out.flush()
+        os.fsync(out.fileno())
+    if stat.S_IMODE(file.stat().st_mode) != 0o600:
+        raise Hold("RECOVERY_OUTPUT_MODE_HOLD")
+
+
 def run(args: argparse.Namespace) -> dict:
     mark("OUTPUT_PRECHECK")
-    if args.output_dir.exists() or args.output_dir.is_symlink():
-        raise Hold("OUTPUT_EXISTS_HOLD")
+    if args.output_dir.is_symlink():
+        raise Hold("OUTPUT_SYMLINK_HOLD")
+    if args.output_dir.exists():
+        private.private_dir(args.output_dir, create=False)
+        if any(args.output_dir.iterdir()):
+            raise Hold("RECOVERY_OUTPUT_NOT_EMPTY_HOLD")
     # Validate local evidence BEFORE any DB access.
     baseline_args = argparse.Namespace(**vars(args))
     baseline_args.output_dir = args.blind_dir
@@ -241,10 +280,7 @@ def run(args: argparse.Namespace) -> dict:
         "cases": recovered,
         "train_admitted": 0,
     }
-    mark("CREATE_PRIVATE_OUTPUT")
-    private.private_dir(args.output_dir, create=True)
-    mark("WRITE_PRIVATE_RESULT")
-    private.write_new(args.output_dir / FILENAME, pilot.canonical(manifest))
+    write_recovery(args.output_dir, manifest)
     return {
         "schema": SCHEMA,
         "status": "QD20_COMMON2_PERSISTED_HISTORY_RECOVERED__TRAIN_CONTEXT_HOLD",
@@ -288,7 +324,12 @@ def main() -> int:
         print(json.dumps(run(args), sort_keys=True))
         return 0
     except Exception as exc:  # noqa: BLE001 - never output DB text/IDs/DSN
-        reason = str(exc) if isinstance(exc, Hold) else "DB_HISTORY_RECOVERY_INPUT_HOLD"
+        reason = str(exc) if isinstance(exc, Hold) else (
+            "LEGACY_PRIVATE_CAPTURE_SIZE_LIMIT_HOLD"
+            if isinstance(exc, private.Hold)
+            and str(exc) == "OUTPUT_SIZE_HOLD"
+            else "DB_HISTORY_RECOVERY_INPUT_HOLD"
+        )
         safe_kinds = {"OperationalError", "ProgrammingError", "DataError",
                       "IntegrityError", "InterfaceError", "FileNotFoundError",
                       "PermissionError", "KeyError", "TypeError", "ValueError",
