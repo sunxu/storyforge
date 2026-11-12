@@ -122,3 +122,25 @@ PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
 "$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py tests/test_r60_common2_wrapped_system_cpu_audit.py
 bash -n scripts/r60_common2_wrapped_hf_worker.sh
 ```
+
+## 2026-11-12 Owner真实Stage已PASS、远端编排HOLD定位修复
+
+Owner SAFE：`run_key=r60-common2-wrapcpu-20261112T122746Z-5a612325db98`；现有Stage `$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$RUN_KEY`已独立哈希检验44文件（包括2个私有源），`WRAPPED_CPU_STAGE_VERIFIED__NO_JOB`、`hf_jobs_submitted=0`、`train_admitted=0`。随后Owner的`sync`和`ready`均返回`WRAPPED_CPU_ORCHESTRATION_HOLD / SDK_OR_RUNTIME_HOLD`；这**不能证明**哪一步SDK/认证/远端状态发生故障，也**不能据此证明远端为空**。不得为排错新建Stage、重试上传、改写旧Stage或提交CPU。
+
+修正业务CLI错误码：原`main()`遗漏了`REMOTE_PATH_HOLD`/`REMOTE_LIST_HOLD`分类，并将来自HF SDK的AttributeError/TypeError/HTTP/连接错误概括为`SDK_OR_RUNTIME_HOLD`；新`classify_safe_failure`复用原已成功的`r60_common2_hf_cpu_bucket_guard.classify_failure`，保持异常内容不泄露。新增显式`diagnose`（纯只读）分别检查已验签本地Stage、SDK初始化、远端input目录条目集合、output目录是否为空和本地尝试marker；不复制/上传/删除任何文件，不调用Job提交API；遇到故障只返回固定阶段`phase`和allowlisted安全分类。新合成测试覆盖远端部分Stage、SDK异常、非法返回路径。**新代码仍待Owner本机实测，不声称远端恢复**。
+
+Owner Mac只读下一步（沿用原RUN_KEY；先别执行`sync/ready/submit`）：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+SDKPY="$HOME/.local/share/storyforge/venvs/hf-cli/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+"$SDKPY" scripts/r60_common2_wrapped_hf_cli.py diagnose --stage "$STAGE" --run-key "$KEY"
+```
+成功时可只读报告 `remote_input=EMPTY|PARTIAL_OR_MISMATCH|READY_FILESET`、`remote_output=EMPTY|NONEMPTY`、`submit_marker=ABSENT|PRESENT`；如果在某个阶段HOLD，将`phase`和`reason_code`用于后续针对性修复。**如果出现PARTIAL或READY，绝不继续执行只能同步EMPTY前缀的sync命令，优先核对远端来源完整性。** 原Stage不可覆盖。只有远端精确READY+输出EMPTY+marker ABSENT，CI与业务预检全部PASS后才能继续正式dry-run和CPU提交。
