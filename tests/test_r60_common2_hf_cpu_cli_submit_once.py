@@ -94,7 +94,7 @@ def test_prepare_exception_has_safe_phase_and_no_marker(monkeypatch, tmp_path):
     install_mock(monkeypatch, stage)
     monkeypatch.setattr(submit.dry, "prepare", lambda *a: (_ for _ in ()).throw(ValueError("secret private body")))
     r = submit.submit(stage, KEY, execute=True)
-    assert r["reason_code"] == "PRE_MARKER_CLI_PREPARE_HOLD"
+    assert r["reason_code"] == "PRE_MARKER_CLI_PREPARE_VALUE_ERROR_HOLD"
     assert "secret" not in str(r)
     assert not (tmp_path / (KEY + ".cpu-submit-v2-attempted")).exists()
 
@@ -115,3 +115,13 @@ def test_post_marker_unknown_error_fails_closed(monkeypatch, tmp_path):
     assert r["reason_code"] == "POST_MARKER_SUBMISSION_CALL_HOLD"
     assert "confidential" not in str(r)
     assert (tmp_path / (KEY + ".cpu-submit-v2-attempted")).exists()
+
+
+def test_known_prepare_error_exposes_only_safe_code(monkeypatch, tmp_path):
+    stage = tmp_path / KEY
+    stage.mkdir()
+    install_mock(monkeypatch, stage)
+    monkeypatch.setattr(submit.dry, "prepare", lambda *a: (_ for _ in ()).throw(ValueError("HF_CLI_FLAGS_HOLD")))
+    r = submit.submit(stage, KEY, execute=True)
+    assert r["reason_code"] == "CLI_PREPARE_HF_CLI_FLAGS_HOLD"
+    assert not (tmp_path / (KEY + ".cpu-submit-v2-attempted")).exists()
