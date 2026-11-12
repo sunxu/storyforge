@@ -96,3 +96,21 @@ PILOT-5经Owner确认后，单独批准`advance --max-cases 25`处理**接下来
 本任务只批准首批5条**准备工作与本地只读预检**。没有确定的两个本机模型，不访问私人正文外部推理端点；远端模型外发必须Owner另行明确批准提供方及范围。正式`train_admitted=0`、`quality_v1_admitted=0`、`gpu_started=false`；Common2历史HF CPU Job不得重复提交。任何实际Reviewer调用是否发生、得分多少，以Owner Mac SAFE回执为准。
 
 现有工具只读技术池、逐条续审，不因上一阶段技术PASS而自动提升任何文学质量标签。此文件是当前阶段执行基线；旧任务书中“不得启动1000条审核”应理解为当时校准阶段限制，不再阻止PILOT-0准备，但不自动授权远端外发或整批1000实审。
+
+## 7. 2026-11-12 DeepSeek历史评审追溯与远端Reviewer授权更新
+
+Owner指出此前遗漏2026-11-11的**20条Qwen+DeepSeek与Claude+Codex对照试评**。以下为既有会话中的Owner SAFE结案记录，并非当前Agent重新打开私有文件或重新计算评审：
+- Qwen使用阿里云百炼`qwen3.7-flash`；DeepSeek使用**官方**`deepseek-flash`（曾口头称DeepSeek V4.1 Flash；以实际API响应model字段为准）。**均不同于历史HF H200 Qwen3-32B / GLM-4-32B实验**。
+- 最终20条范围，40个模型审核槽位中34份有效、14/20完整配对、6份缺失；Qwen有效18/20（PASS9/HOLD0/REJECT9），DeepSeek有效16/20（PASS5/HOLD10/REJECT1）。此前中间快照DeepSeek15/20、HOLD9，不得误当最终值。最终SAFE状态`QD20_CONSERVATIVE_QUALITY_SCREEN_CLOSED__TRAIN_ADMISSION_HOLD`，训练准入0。
+- 新Qwen+DeepSeek配对双PASS4；旧Claude+Codex配对双PASS3；共同双PASS2；新组合独有2、旧组合独有1。数量不是跨模型评审质量真值。
+- 随后独立盲审这3条争议双PASS：新组合独有2条为HOLD1/REJECT1（PASS0），旧组合独有1条HOLD1（PASS0）；全部PASS0/HOLD2/REJECT1。独立性仅为自证，尚未确立质量真值；严重问题判定不能凭双PASS多数票。
+- DeepSeek存在输出有效率16/20与快照重放仍失败的工程历史；必须把传输、JSON/Schema、严重标记一致性、严格引文和语义支持分别考核。Claude+Codex与Qwen+DeepSeek各自不是已证实最优的生产双Reviewer组合。
+
+**Owner本轮明确允许所有私有数据外发**：对当前StoryForge真实1000候选质量审核工作线，私有样本可以发送到远程Reviewer API；无需再次索取同一“是否允许外发”许可。现有`r60_real_quality_batch.py`仍要求调用时显式`--allow-remote-review`以保证参数审计；实际具体endpoint、模型ID、密钥、模型可用性与工作者盲审隔离仍需核验；私有样本内容、密钥、模型原始输出不写入GitHub/SAFE公开日志。**这不等于立即执行全部1000条、认可远端模型训练数据用途、改变R50/世界隔离门禁或授权SFT/GPU**。
+
+### 选型变更
+
+先不要把初版Qwen3-32B+Claude Opus 5.5写成“生产双审已定”。首批5条应比较**不同提供方**的历史表现：建议优先把`Claude Opus 5.5`及官方`deepseek-flash`作为候选A/B（Claude此前20/60校准Advisory可用、DeepSeek已有20条试评但16/20有效）；`qwen3.7-flash`与Codex作为分歧复核/替补；原Qwen3-32B、GLM-4及GLM-Z1保留历史独立训练/模型选型实验，不混同模型ID。实际两位Reviewer仅在首批同源5条中报告模型版本、全响应成功率、严标语义漏误报、证据可核性、相互独立性后确定；如果DeepSeek首批出现不完整回复，停止扩批并定位工程故障，不能补出假评分。
+
+**重要兼容性**：现有`r60_real_ai_dual_review.py`采用`messages[0].role=system`、`temperature=0`、可选`response_format=json_object`；此前Claude 4Router的Opus 5.5请求曾要求顶层`system`字段，不能假定这个旧客户端能原样调用该代理。开始私有模型外发前，先用无私人内容的合成探针验证Claude/DeepSeek各自endpoint及模型专属请求协议、真实模型身份与JSON结构；若不兼容，修改薄适配层并合成测试/CI后再使用原1000池。历史DeepSeek成功API不证明当前所有协议相容。
+
