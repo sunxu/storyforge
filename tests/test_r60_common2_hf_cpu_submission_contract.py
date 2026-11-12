@@ -6,6 +6,8 @@ from types import SimpleNamespace
 from scripts import r60_common2_hf_cpu_submission_contract as contract
 from scripts import r60_common2_hf_cpu_image_retry as retry
 
+NEW_KEY = "r60-common2-cpu2-20261112T090000Z-bbbbbbbbbbbb"
+
 
 def test_sdk_160_without_mount_contract_holds(tmp_path):
     class Hub160:
@@ -13,7 +15,7 @@ def test_sdk_160_without_mount_contract_holds(tmp_path):
                     timeout=None, labels=None, namespace=None, token=None):
             raise AssertionError("must never run")
     result = contract.check_contract(
-        Hub160(), tmp_path / retry.RUN_KEY, retry.RUN_KEY,
+        Hub160(), tmp_path / NEW_KEY, NEW_KEY,
         "BASE=/workspace/preflight/r60/common2/cpu2",
     )
     assert result["status"] == "CPU2_SUBMIT_CONTRACT_HOLD"
@@ -27,7 +29,7 @@ def test_frozen_worker_requires_new_verified_artifact(tmp_path):
         def run_job(self, *, image, command, volumes):
             raise AssertionError("must never run")
     result = contract.check_contract(
-        MountCapable(), tmp_path / retry.RUN_KEY, retry.RUN_KEY,
+        MountCapable(), tmp_path / NEW_KEY, NEW_KEY,
         "BASE=/workspace/preflight/r60/common2/cpu2",
     )
     assert result["reason_code"] == "FROZEN_WORKER_MOUNT_CONTRACT_HOLD"
@@ -44,7 +46,7 @@ def test_policy_rejects_incorrect_binding_without_sdk_calls(tmp_path):
 
 def test_shared_guard_keeps_input_ro_output_rw_disjoint():
     from scripts import hf_job_guard
-    key = retry.RUN_KEY
+    key = NEW_KEY
     root = contract.ROOT
     inputs, output = hf_job_guard.validate_spec(
         namespace="adradar", flavor="cpu-upgrade", timeout_minutes=120,
@@ -55,3 +57,18 @@ def test_shared_guard_keeps_input_ro_output_rw_disjoint():
     assert all(i.mode == "ro" for i in inputs)
     assert output.mode == "rw"
     assert output.destination == "/output"
+
+
+def test_v2_worker_passes_policy_only_with_mount_capable_api(tmp_path):
+    from scripts import r60_common2_hf_cpu_stage_v2 as v2
+
+    class MountCapable:
+        def run_job(self, *, image, command, volumes):
+            raise AssertionError("no actual jobs")
+
+    result = contract.check_contract(
+        MountCapable(), tmp_path / NEW_KEY, NEW_KEY,
+        v2.WORKER.read_text(),
+    )
+    assert result["status"] == "CPU2_SUBMIT_CONTRACT_PREFLIGHT_PASS__NO_JOB"
+    assert result["job_submission_calls"] == 0
