@@ -102,7 +102,7 @@ def main() -> int:
             else "R60_DEEPSEEK_KEY" if args.protocol == "deepseek-chat"
             else "R60_CLAUDE_KEY"
         ),
-        allow_remote=args.allow_remote,
+        allow_remote=args.allow_remote_review,
         json_mode=args.json_mode, execute=args.execute,
     )
     print(json.dumps(report, sort_keys=True))
