@@ -66,7 +66,22 @@ def submit(stage: Path, key: str, *, execute: bool = False) -> dict:
         if help_result.returncode != 0:
             return result("CPU2_SUBMIT_HOLD", reason="HF_HELP_HOLD")
         phase = "CLI_PREPARE"
-        argv = dry.prepare(stage, key, help_result.stdout)
+        try:
+            argv = dry.prepare(stage, key, help_result.stdout)
+        except ValueError as exc:
+            # Only expose known public contract errors, never arbitrary text.
+            allowed = {
+                "NEW_KEY_HOLD", "NEW_WORKER_HOLD",
+                "NEW_WORKER_CONTRACT_HOLD", "HF_CLI_FLAGS_HOLD",
+            }
+            code = str(exc)
+            return result(
+                "CPU2_SUBMIT_HOLD",
+                reason=("CLI_PREPARE_" + code if code in allowed
+                        else "PRE_MARKER_CLI_PREPARE_VALUE_ERROR_HOLD"),
+            )
+        except Exception:
+            return result("CPU2_SUBMIT_HOLD", reason="PRE_MARKER_CLI_PREPARE_OTHER_HOLD")
         if "--dry-run" not in argv:
             return result("CPU2_SUBMIT_HOLD", reason="DRY_RUN_ARG_HOLD")
         phase = "CLI_DRY_RUN"
