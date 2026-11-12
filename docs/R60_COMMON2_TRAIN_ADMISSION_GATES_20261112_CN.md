@@ -312,3 +312,25 @@ Owner在Mac本地用历史固定SHA原始50条provenance与原有Common2私有�
 **这一项正式闭环：Common2两条与R50原始50条之间的故事/会话/历史及目标消息三级精确ID没有交集。** 不应再将其写为未执行，也不需要重复此严格交集计算。仍然`semantic_world_alias_isolation_verified=false`、`r45_full_source_isolation_verified=false`、`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`；任何ID无交集不能替代异名世界、共享角色/同事件改写、旧评测暴露或R45完整语义来源隔离。
 
 下一步按优先级：(1) 已有R45原始49 Train/15 Val完整来源报告及多世界别名/语义审查状态进行带证据的Owner收敛，尽量复用现有CPU检查结果；(2) R50正式seal属于单独评测治理合同，历史材料明确未执行，禁止以原始文件SHA固定替代Owner封存；(3) 决定Qwen原生与Swift训练/推理模板政策并在现有CPU证据上验证，不再重发HF Job；(4) 全门禁与Owner签准前保持`train_admitted=0`。
+
+## 2026-11-12 R45既有机械来源隔离报告：固定历史合同复核（新增，待Owner本地SAFE）
+
+已从历史固定代码commit `92828ac0e47c8f7f7307851b8e171f564fd065ed` 真正读取 `scripts/v03_r50_private_r45_isolation.py` 源代码，明确既有报告的结构和状态合同：`schema=storyforge-r50-private-r45-isolation-v1`，`status=R45_FROZEN_49_15_EXACT_SCREEN_PASS__SEMANTIC_REVIEW_PENDING`，`verified_r45_counts.train=49`、`validation=15`、`new_world_count=5`、`frozen_r45_hashes_verified=true`，三项机械精确碰撞`exact_world_id_conflicts/exact_long_message_hit_count/all_offset_120_codepoint_window_hit_count`严格整数0，并要求`short_or_paraphrased_context_review=PENDING`、`incomplete_or_hidden_world_aliases=PENDING`、`heldout_cases_sealed=0`及未输出私有内容、未用GPU、未promotion。**这是完整5世界来源对R45 Train49/Val15的机械精确筛查合同，而非语义隔离签署。**
+
+复用此前已SHA复制且只读的Owner报告`$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy/f5`，新增`scripts/r60_r45_existing_full_source_receipt_cpu.py`、`tests/test_r60_r45_existing_full_source_receipt_cpu.py`。它只验证报告固有字段精确值/类型、计数、状态枚举，不自动重跑源历史，不打印未知字符串、私有字段或路径；合成测试覆盖正确合同、错误状态、非零冲突、无效布尔0、权限等。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r45_existing_full_source_receipt_cpu.py
+"$PY" -m compileall -q scripts/r60_r45_existing_full_source_receipt_cpu.py
+P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
+"$PY" scripts/r60_r45_existing_full_source_receipt_cpu.py --r45-report "$P/f5"
+```
+
+真实回执**还未验收**；预期满足该历史合同仅`R45_EXISTING_EXACT_SOURCE_SCREEN_PASS__SEMANTIC_SEAL_HOLD`，`r45_exact_source_screen_verified=true`；`r45_semantic_world_isolation_verified=false`、`final_heldout_seal_verified=false`、`train_admitted=0`始终不变。若不同版本报告不匹配则HOLD，必须查看报告来源合同而不是任意放松值校验。
+
+**当前未解决的下一实质性风险**为跨世界隐藏别名、人物/事件共用与改写、既有开发/评测暴露；机械筛查无法取代此类审核。R50正式heldout seal也是另一个独立、仍未完成的评测合同，不能为了Common2训练把R50的正式评测封存政策悄悄更改。
