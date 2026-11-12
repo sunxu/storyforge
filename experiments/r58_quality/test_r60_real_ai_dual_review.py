@@ -391,6 +391,7 @@ def test_synthetic_probe_main_without_remote_flag_does_not_opt_in(monkeypatch):
 def test_synthetic_probe_response_json_failure_stages_are_safe(
         monkeypatch, wire_data, code):
     import io
+
     import r60_reviewer_protocol_probe as probe
 
     class SyntheticResponse(io.BytesIO):
