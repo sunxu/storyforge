@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+from collections.abc import Mapping
 import hashlib
 import io
 import json
@@ -65,9 +66,12 @@ def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict
         messages = row["messages"]
         if phase is not None:
             phase("TOKENIZER_ENCODE")
-        ids = tokenizer.apply_chat_template(
+        output = tokenizer.apply_chat_template(
             messages, tokenize=True, add_generation_prompt=False,
         )
+        # transformers 5.16.1 returns BatchEncoding for Qwen3.8.
+        # Use only its input_ids field; never silently flatten nested batches.
+        ids = output.get("input_ids") if isinstance(output, Mapping) else output
         if (not isinstance(ids, list) or not ids
                 or any(type(x) is not int for x in ids)):
             raise Hold("TOKENIZER_OUTPUT_HOLD")
@@ -167,10 +171,14 @@ def run(args: argparse.Namespace) -> dict:
     if args.stage == "both":
         set_phase("SWIFT_PROCESSOR_LOAD")
         from swift import get_processor, get_template
-        processor = get_processor(str(args.snapshot))
+        # Qwen3.8 config.model_type=qwen3_5; ms-swift 4.5.3 cannot
+        # resolve this multimodal Processor unless model_type is explicit.
+        processor = get_processor(str(args.snapshot), model_type="qwen3_5")
         set_phase("SWIFT_TEMPLATE_INIT")
+        # Both qwen3_5 and qwen3_8 templates are registered: require the
+        # model-specific Qwen3.8 template rather than picking arbitrarily.
         template = get_template(
-            processor,
+            processor, template_type="qwen3_8",
             loss_scale="last_round", max_length=CEILING,
             add_non_thinking_prefix=False,
         )
