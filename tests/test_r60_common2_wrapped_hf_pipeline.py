@@ -310,3 +310,37 @@ def test_unknown_stage_error_stays_private(tmp_path, monkeypatch):
     assert out["phase"] == "STAGE_VERIFY"
     assert out["reason_code"] == "SDK_OR_RUNTIME_HOLD"
     assert "private source" not in json.dumps(out)
+
+
+def test_stage_inventory_identifies_extra_files_without_names_or_sha(tmp_path, monkeypatch):
+    path = synthetic_stage(tmp_path, monkeypatch)
+    extra = path / "scripts" / "__pycache__" / "secret-name.cpython-311.pyc"
+    extra.parent.mkdir(exist_ok=True)
+    extra.write_bytes(b"test")
+    report = stage.inventory(path, KEY)
+    assert report["status"] == "WRAPPED_CPU_STAGE_INVENTORY_HOLD"
+    assert report["reason_code"] == "STAGE_FILES_HOLD"
+    assert report["extra_files"] == 1
+    assert report["extra_python_bytecode"] == 1
+    assert report["missing_files"] == 0
+    assert report["file_sha_verified"] is False
+    assert "secret-name" not in json.dumps(report)
+
+
+def test_stage_inventory_accepts_exact_frozen_stage(tmp_path, monkeypatch):
+    path = synthetic_stage(tmp_path, monkeypatch)
+    report = stage.inventory(path, KEY)
+    assert report["status"] == "WRAPPED_CPU_STAGE_INVENTORY_PASS__NO_JOB"
+    assert report["fileset_equal"] is True
+    assert report["file_sha_verified"] is True
+    assert report["train_admitted"] == 0
+
+
+def test_stage_inventory_detects_missing_declared_file(tmp_path, monkeypatch):
+    path = synthetic_stage(tmp_path, monkeypatch)
+    (path / "src/storyforge_dataset/token_preflight.py").unlink()
+    report = stage.inventory(path, KEY)
+    assert report["status"] == "WRAPPED_CPU_STAGE_INVENTORY_HOLD"
+    assert report["missing_files"] == 1
+    assert report["extra_files"] == 0
+    assert report["file_sha_verified"] is False
