@@ -71,3 +71,7 @@ done
 - `R50_PRESEAL_46_CROSSWALK_PASS__FINAL_COVERAGE_HOLD` 最多证明46条PRESEAL `case_id`逐行匹配与报告关键字段存在。
 - `FILE_PERMISSION_HOLD` 不是来源不一致；`case_id_order_exact=false`在`preseal_cases_checked=0`时只是初始默认值。
 - 最终隔离还要核对原始50→剔除4→46、最终seal与R45全来源别名/世界隔离、Common2两个训练候选的故事/会话/消息交集。以上全部尚未完成，不自动启动GPU/SFT。
+
+## 2026-11-12 ChatGPT资料库恢复位置（最新）
+
+**已找到、已校验但尚未转存到Mac本地的原始50条文件**：ChatGPT资料库根目录 `/StoryForge_R50_PRIVATE_NewChat_Handoff_20261016.zip`、`/R50_FRESH_HELDOUT_50.jsonl`、`/R50_CASE_PROVENANCE_50.jsonl`。历史私有ZIP 368932字节、16条目ZIP校验通过；两个JSONL分别422562/31758字节，SHA256与2026-10-16冻结交接记录和ZIP内原件严格一致。SHA和具体证据见 `R60_COMMON2_TRAIN_ADMISSION_GATES_20261112_CN.md`。这些资料库路径不是Mac绝对路径，**不能把ChatGPT资料库读取成功当作文件已经存在Mac本地**。在Owner手动下载并核对后，才补充Mac最终安全存放位置；保持0600/0700、禁止公开Git提交原件或更改既有PRESEAL副本。以前“原始50份找不到”状态被此条更新取代，但最终R50封存和完整排除仍HOLD。
