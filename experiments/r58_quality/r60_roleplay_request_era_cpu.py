@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import r60_real_private_batch as private
@@ -57,7 +57,7 @@ def assess(data: dict) -> dict:
             raise Hold("TARGET_TIMESTAMP_HOLD") from None
         if dt.tzinfo is None or dt.utcoffset() is None:
             raise Hold("TARGET_TIMESTAMP_TIMEZONE_HOLD")
-        if dt.astimezone(timezone.utc) < RELEASE.astimezone(timezone.utc):
+        if dt.astimezone(UTC) < RELEASE.astimezone(UTC):
             earlier += 1
         else:
             later += 1
