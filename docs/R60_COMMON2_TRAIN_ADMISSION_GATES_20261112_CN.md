@@ -222,3 +222,31 @@ Owner 在已固定SHA的私有副本`f2/f3`上执行v2检查，真实SAFE `R50_P
 - ZIP中的 `R50_AUTHORING_REPORT.md` SHA256也与原历史收据 `7d0862300d8a729f893f66c092dfa74a6e2adb75d85eae0cfe2276e105bdf8bd` 一致。
 
 **此前`R50_SOURCE_RECOVERY_HOLD`的“找不到原始50题”定位障碍已解除。** 上述证据是文件级“身份/完整性验证”，不是50→46补集验证、最终held-out seal、R45隐藏别名/世界隔离、Common2三层交集；它们仍HOLD，`train_admitted=0`，GPU/SFT禁止。ZIP和JSONL都只是用户ChatGPT资料库来源及工作容器的私有副本，**尚未上传到Owner Mac本机冻结目录，不能宣称Mac路径已经存在**；后续Owner应通过会话安全下载到Mac的独立私有目录，逐份本地shasum对照后再与已存在PRESEAL46+4进行严格补集核验。严禁把恢复原件写入公开Git、Issue或当作已签署最终seal。
+
+## 2026-11-12 Owner Mac原始50文件SHA实测通过；可执行完整50=46+4补集验收（最新）
+
+Owner报告两份独立原始文件已安置到 `$HOME/.local/share/storyforge/r50/original-frozen-20261016/`，Mac本地 `shasum -a 256` 分别精确等于历史冻结SHA：cases `8dbb66aeb47fd1fec34718d31b228c0378a79f43b7b847eb3e403752d8139781`、provenance `9306af53c6a53fbe46a6675c50e5fac4753162a5c19d6f3c1a0072919306b280`。**R50原始50文件的Mac定位+身份完整性恢复现已PASS**，原有PRESEAL46和排除4名单字节保持不变；最终heldout seal/R45世界隔离/Common2来源交集未解除。
+
+本轮新增 `scripts/r60_r50_original50_complement_cpu.py` 和纯合成测试。只读验证：2份原始50的固定字节数、SHA256、50行唯一`case_id`与provenance顺序一一对应；原46/46来源顺序对应；现有Selection/Admission的50→46与4条排除清单精确成员一致；原始50减46的集合**恰好是那4条排除ID**，且46恰好对应Selection记录的46个原始1-based行号；保留的46条 `source_story_id/source_session_id/cutoff_message_id/history_message_ids` 与原始50的对应source provenance精确一致。不读取数据库、不调用模型、HF、GPU，不向stdout公开原始ID、世界卡、文本或哈希。仅通过全部严格校验才返回 `R50_ORIGINAL50_46_PLUS4_EXACT_COHORT_PASS__SEAL_R45_TRAIN_HOLD` 和 `original_50_complete_cohort_verified=true`；**始终** `final_heldout_seal_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。
+
+Owner独立工作树完成合成测试后在原始私有文件以及已SHA MATCH的46/4副本上运行；若原始50权限不是0600，先按同一SHA副本策略处理（不chmod冻结原件）：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_original50_complement_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_original50_complement_cpu.py
+
+R="$HOME/.local/share/storyforge/r50/original-frozen-20261016"
+P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
+"$PY" scripts/r60_r50_original50_complement_cpu.py \
+  --original-cases "$R/R50_FRESH_HELDOUT_50.jsonl" \
+  --original-provenance "$R/R50_CASE_PROVENANCE_50.jsonl" \
+  --derived-cases "$P/f0" --derived-provenance "$P/f1" \
+  --selection "$P/f2" --admission "$P/f3"
+```
+
+**若报`SOURCE_PROVENANCE_MISMATCH_HOLD`或`PARENT_LINE_MAPPING_HOLD`，不修改原件，不默认放宽规则；先核对Selection Manifest是否规定真实来源行号、46的历史变换规则与原始50的字段语义。** 本脚本是已创建但尚未在Owner Mac实跑的下一验收项，禁止提前声称50补集检查已PASS。
