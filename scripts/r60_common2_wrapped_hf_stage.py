@@ -27,6 +27,7 @@ ENTRY = [
     "scripts/r60_common2_wrapped_hf_worker.sh",
     "scripts/r60_common2_wrapped_hf_worker.py",
     "scripts/r60_common2_wrapped_system_cpu_audit.py",
+    "requirements/r60-common2-wrapped-cpu.in",
 ]
 EXTRA = [
     "src/storyforge_dataset/token_preflight.py",
