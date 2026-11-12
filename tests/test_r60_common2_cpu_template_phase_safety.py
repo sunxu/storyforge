@@ -32,3 +32,16 @@ def test_new_stage_copies_reviewed_audit_without_modifying_private_input():
     assert "files[NEW_WORKER] = worker" in builder
     assert "original_stage_untouched" in builder
     assert "destination.exists()" in builder
+
+
+def test_qwen38_processor_and_template_are_explicit():
+    assert 'get_processor(str(args.snapshot), model_type="qwen3_5")' in SRC
+    assert 'processor, template_type="qwen3_8"' in SRC
+    assert 'loss_scale="last_round", max_length=CEILING' in SRC
+    assert 'add_non_thinking_prefix=False' in SRC
+    assert 'from collections.abc import Mapping' in SRC
+    assert 'ids = output.get("input_ids") if isinstance(output, Mapping) else output' in SRC
+    assert 'any(type(x) is not int for x in ids)' in SRC
+    assert 'raise Hold("TOKENIZER_OUTPUT_HOLD")' in SRC
+    assert "eval(" not in SRC
+    assert "traceback.print_exc" not in SRC
