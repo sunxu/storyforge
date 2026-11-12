@@ -14,7 +14,7 @@ def fixture() -> dict:
         history = [
             {
                 "id": f"synthetic-{n}-{i}",
-                "role": "user" if (i % 2 == n % 2) else "assistant",
+                "role": "user" if (i % 2 == 0) else "assistant",
                 "content": "合成消息" * (i % 4 + 1),
                 "turn_index": i,
             }
