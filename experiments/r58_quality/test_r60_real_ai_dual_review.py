@@ -293,3 +293,26 @@ def test_synthetic_probe_rejects_remote_without_explicit_opt_in():
     assert result["status"] == "REVIEWER_PROTOCOL_HOLD"
     assert result["reason_code"] == "REMOTE_REVIEW_REQUIRES_EXPLICIT_HTTPS_OPT_IN"
     assert result["model_requests"] == 0
+
+
+def test_http_400_is_fixed_safe_error_without_raw_private_body(monkeypatch):
+    import urllib.error
+
+    class RejectingOpener:
+        def open(self, request, timeout):
+            raise urllib.error.HTTPError(
+                "https://provider.example/path?secret=PRIVATE",
+                400, "PRIVATE_ERROR_BODY", None, None,
+            )
+
+    monkeypatch.setattr(
+        ai.urllib.request, "build_opener",
+        lambda *args: RejectingOpener(),
+    )
+    with pytest.raises(ai.Hold, match="^MODEL_HTTP_400_HOLD$") as caught:
+        ai.model_request(
+            "https://provider.example/v1/chat/completions",
+            "claude-synthetic", "", "FAKE_ONLY", 10, False,
+            protocol="claude-proxy-top-system",
+        )
+    assert "PRIVATE" not in str(caught.value)
