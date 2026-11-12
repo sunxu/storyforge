@@ -8,8 +8,8 @@ from pathlib import Path
 
 import pytest
 
-from scripts import r60_common2_hf_cpu_stage as stage
 from scripts import r60_common2_hf_cpu_bucket_guard as guard
+from scripts import r60_common2_hf_cpu_stage as stage
 
 
 def fixture(tmp_path: Path):
