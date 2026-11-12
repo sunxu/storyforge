@@ -119,3 +119,12 @@ Owner实际回执：`CPU2_HISTORY_PAGINATED_PASS__NO_JOB`；`history_exhaustive=
 执行策略：从2026-11-12原始不可变冻结Stage `r60-common2-cpu2-20261112T032815Z-71c840b37254` 使用现有`scripts/r60_common2_hf_cpu_stage_v2.py` 重新构建一个全新run key。原始失败Stage和最近一次已上传Stage `r60-common2-cpu2-20261112T050556Z-d26519574fe7` 均保留不动；不要从后者作为stage_v2的old_stage。新Stage只变化Worker及清单，业务私有输入保持原始字节，且未来采用新独立run/output前缀。先通过本地pytest、bash -n、compileall，再按现有CLI dry-run与Bucket empty→sync-existing→ready流程。若任何一步HOLD，不自动重复提交或覆盖。
 
 **仍未解决的生产阻塞**：v2 CLI镜像目前只是`pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime`可变Tag，没有已验证镜像Digest；pip依赖没有完整离线锁定，且R59环境为Python3.11而此镜像中的Python/已预装torch可能不同。依赖更改仅证明源码合同对齐，**不能宣称运行时安装与Processor import可用**。在完成镜像与基础环境版本验证前，继续真实CPU Job提交HOLD，不能把生成新Stage等同于授权启动。
+
+
+## 2026-11-12 Docker Manifest与Torch/Torchvision官方版本矩阵复核
+
+Owner在Mac运行`docker manifest inspect pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime`取得Schema2 manifest：config digest为`sha256:40472de84a38292fd1a8f38fbd75ca2e96804c314a18601ec1ccd06bacb525fc`、5个layers。**此hash是image config digest，不是可用于 image@sha256 引用的manifest digest**。清单读取成功仅证明镜像Tag存在，不证明容器内Python及pip依赖可用；不能因此解除真实Job HOLD。
+
+查阅PyTorch官方版本矩阵（`https://docs.pytorch.org/get-started/previous-versions/`）和TorchVision官方兼容矩阵（`https://github.com/pytorch/vision`）后发现：`torch==2.6.0`官方配套`torchvision==0.21.0`，而之前从R59运行注记直接继承的`torchvision==0.29.2`是与torch>=2.14兼容的新版，**不能在保留torch2.6基础镜像时无验证复用**。本轮将尚未重新上传的GitHub Worker源码改为`torchvision==0.21.0`，保持`decord`和`qwen-vl-utils==0.0.14`，并更改合成测试断言。R59历史成功记录不能作为“不同torch基础镜像上任意torchvision版本兼容”的证明。
+
+已上传的`r60-common2-cpu2-20261112T050556Z-d26519574fe7`仍完全不可变；最新Worker修订只会进入**未来新的**Stage。仍必须取得manifest digest，核对运行时Python/torch版本和依赖安装一致性，之后才考虑新Stage与CPU Collator单次验收。没有Job提交，没有训练准入。
