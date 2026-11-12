@@ -1,5 +1,20 @@
 # StoryForge R60 — 新留证数据优先的SFT主线执行任务书（2026-11-12）
 
+## 八、2026-11-12 Owner实际执行P0A离线合成预检：主要工程门禁PASS，P0B仍需独立审批
+
+Owner提供的真实本地运行回执（**Owner陈述/日志，GitHub或本环境未独立复核本地result.json原件**）：
+
+- `ops/evidence/validate-acceptance-request.mjs --mode draft`：schema `v2-evidence-acceptance-preflight/1`、`requestState=DRAFT_NOT_AUTHORIZED`、`validationPassed=true`、`preflightPassed=false`、`failures=[]`、`executionAuthorized=false`、`productionAcceptance=false`、`trainingDisposition=HOLD`。申请文件SHA256 `e4c238ac31c95dfcff5674efdbb2567525e4371cadc889785d238e68e4b9ba97`。**此PASS只表示草稿校验，不表示ready或生产授权。**
+- `check-v2-generation-evidence-preflight.mjs`：`PASS: acceptance preflight; 69 rejected mutations, 8 CLI cases; draft cannot authorize execution`。
+- `check-v2-generation-evidence-witness.mjs`：合成scope下模板不得启用真实调用、最坏费用预留/并发与总额度、费用/token/批准到期校验、协议边界、固定上游、原始字节SSE对照及独立日志映射均PASS。超时/重定向/缺Usage/超额/编码/协议错误场景拒绝继续发送；未启动获批真实模型请求。具体逐条PASS以Owner提供回执为准。
+- `check-v2-generation-evidence-consumer.mjs`：`PASS: independent consumer comparison, 31 mutations rejected; no evidence upgrade`。
+- Owner保留结果文件：`/Users/keedle/workspace/RolePlay/.claude/temp/v2-provider-witness/1794447385440-29103/result.json`；保留清单：同目录`temporary-files.json`。此为Owner Mac本地私有材料，不将文件内容/秘钥/受控原始请求上传到StoryForge普通GitHub。
+
+**P0A现状：离线合成验证环节PASS；完整P0A验收若包含本机运行环境/实际部署SHA、SQL实例探针与Worker安装状态等仍需只读现场记录。P0B真实生产/外连验收HOLD。** 不能把独立合成Provider接收端当成真实供应商入口；不能把CI、旧Web关闭态发布当成真实采集启用。
+
+下一项明确任务是编制`P0B`独立审批执行包（默认全false），逐项列出`APPROVAL_AUTHENTICITY`、`ENVIRONMENT_AND_ARTIFACT_IDENTITY`、`SQL_EXECUTION_AND_PROBES`、`RUNTIME_ACCESS_AND_RESOURCE_LIMITS`、`LIVE_BUDGET_ENFORCEMENT`、`GRANT_CONTROL_AND_TLS_GATEWAY`、`INDEPENDENT_WITNESS`、`CHAT_EXPERIENCE_AND_BILLING`、`STORYFORGE_SIGNOFF`的缺口、负责人和可验收证据。模板`ready`不能通过前不要进行外连或开启生产Worker/采集；不得推定用户泛化“继续推进”等于这些权限已批准。保持旧1000条P2独立推进，训练准入0、GPU0。
+
+
 **状态：OWNER方向批准、文档及只读准备已实施；RolePlay真实留证启用/付费调用/生产SQL/训练均未获本轮独立批准。** 本文件明确覆盖原主线任务书中“持续追查旧两条实际历史Prompt是P0”的优先级，但不篡改早期审计记录、冻结Rubric或训练准入门禁。
 
 ## 一、目标与原则
