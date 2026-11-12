@@ -1,3 +1,5 @@
+> **2026-11-12 System合同对照专项：** 已从真实R46历史构建器`scripts/v02_r46_build_dataset.py`确认原R45 49/15输入首条必须`system`，Common2两条衍生输入则无`system`。为避免虚称严格“只变数据”，新增不含私有输出的冻结源Role计数器 `scripts/r60_r46_common2_system_contract_cpu.py` 与合成测试，并提供[执行任务书](R60_REAL1000_R46_CONTROLLED_EXPERIMENT_PLAN_20261112_CN.md)。Owner本地真实SAFE尚未运行。D1/D2仍然待签，**任何人为补造System都只能作为另立版本的明示训练wrapper，绝不能冒称历史真实请求**。此新增核验不包含R45/R50重叠复扫、不启动训练。
+
 > **2026-11-12 R46对照变量冻结补充：** 已新增[Real1000 R46参数对照实验计划](R60_REAL1000_R46_CONTROLLED_EXPERIMENT_PLAN_20261112_CN.md)和不可执行`configs/r60_real1000_r46_controlled_sft_policy.json`，固定22项R46风格QLoRA参数供Owner审查；**只核对历史基线YAML的静态字段，没有证明R46实际System/模板与R60实验输入一致**。D1-D5仍全部待批准、训练准入0；不得把超参匹配说成“只改变数据”的正式实验已成立。
 
 # StoryForge R60 — Common2 两条实验性SFT输入：Owner准入裁决书（2026-11-12）
