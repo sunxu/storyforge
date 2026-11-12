@@ -168,3 +168,9 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 这是**新批次公共 Card-independent 路线**；Gold195 R58 冻结旧 Reviewer 仍用于审查其历史旧批次，不能为 R60 虚构 `card_snapshot_suitable_for_offline_training=true`。PASS 仍只证明局部可见历史质量判断，R50/world/历史 System/CPU Collator/GPU 训练独立门槛不被改变。
 
 完整命令、Hugging Face namespace `adradar`、独立 RO/RW volume、模型 pin、CPU/GPU 授权及 SAFE 验收见 `docs/R60_HF_QUALITY_PIPELINE_REUSABLE_1000_CN.md`。
+
+## R60 Common2 包装通用System的HF CPU工程门禁（2026-11-12；尚未执行真实新Job）
+
+此门禁是与Gold Quality Manifest相邻的**训练技术证据**，不是新的文学Reviewer或批次数据导入器。Common2质量双审PASS2是冻结旧证据；R27/R52冻结449字节通用System只作为`EXPLICIT_NEW_TRAINING_WRAPPER`独立新输入版本的建议，不得声称源历史真实发送Prompt有System。Owner已真实验收内存包装PASS2/2，原未加System的CPU2 PASS不得冒称本次新版输入Token/Collator PASS。
+
+完整业务细节见[Wrapped HF CPU Quality Pipeline运行手册](../R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md)；只读输入/唯一输出、doctor、共享Token核心和Runtime、失败停机及回执边界以`skills/storyforge-hf-jobs/SKILL.md`与`skills/storyforge-roleplay-sft/SKILL.md`为准。新增脚本只处理本批的System包装、私有Stage、真实R18/Swift Collator、聚合SAFE验收；**不增加Gold Pipeline的自由可执行命令、不自动append-review或import独立Quality-v1事件、不更改`quality_v1_admitted=0`与`train_admitted=0`。** 后续新批次应复用公共Stage/Guard/回执层，但按来源Schema实现独立薄适配器，且每批均有独立质量、语义隔离和发布裁决。
