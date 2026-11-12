@@ -30,3 +30,32 @@
 ## 验收状态
 
 本次变更是**旧危险入口封禁 + 静态安全合同/合成测试**，不表示已解决实际挂载/部署兼容性，也不表示实际Collator验收。所有私有正文、R50保护集与密钥不进入GitHub。
+
+
+## 2026-11-12 P2 v2 Worker / Stage 准备（优先于旧的运行命令）
+
+新增 `scripts/r60_common2_hf_cpu_worker_v2.sh`，在 `/input/common2` RO 校验SHA256，将两条私有实验记录复制到CPU临时0700/0600空间；Tokenizer固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，启用 `USE_HF=true`；复用R53固定 `hf_label_mask_audit.py` 与已有 `r60_common2_sft_cpu_template_audit.py --stage both` 的真实 `last_round`/Collator检查；结果只在独立 `/output` create-only写SAFE JSON（0600），不加载模型权重，不运行 `swift sft`，不启动GPU。当前仅为静态/合成实现，未真实HF CPU运行。
+
+新增 `scripts/r60_common2_hf_cpu_stage_v2.py`：只读验证原冻结Stage的完整SHA，复制原样本及代码，**仅移除旧Worker并加入新Worker**，在新0700目录中重新生成SHA256SUMS；原始RUN_KEY、27文件、初次和重试标记不变。此过程不上传、不调用HF API或任何Job。新运行键必须独立、不可复用原RUN_KEY。新stage仍需在最终提交前进行远端唯一前缀、回执存储和精确字节核验；目前没有执行新stage的Owner回执。
+
+本地合成验证（在独立Owner工作树fast-forward本分支之后，使用已有独立pytest环境，**不要在Mac安装Torch/Swift**）：
+
+```bash
+cd "$HOME/workspace/storyforge-r60-4router-review"
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q \
+  tests/test_r60_common2_hf_cpu_stage.py \
+  tests/test_r60_common2_hf_cpu_image_probe.py \
+  tests/test_r60_common2_hf_cpu_image_retry.py \
+  tests/test_r60_common2_hf_cpu_submission_contract.py \
+  tests/test_r60_common2_hf_cpu_legacy_cli_disabled.py \
+  tests/test_r60_common2_hf_cpu_stage_v2.py
+```
+
+**暂不执行新stage生成或HF Bucket同步**，先完成上述测试和目标分支CI，再由Owner核对目标代码版本及运行环境。之后如果需要创建新stage，使用Owner现存原始冻结stage，不重新恢复Supabase、不重新抽样、不重新上传原Stage。新stage的键和目录应由Owner在本机创建并保留私有；不要在公开Issue记录真实私有输入哈希。
+
+当前SDK 1.6.0不能通过`HfApi.run_job`传RO/RW挂载。共享`hf_job_guard.validate_spec`只能证明参数策略，**不代表CLI版本已支持对应实际提交参数**。未来应读取Owner CLI `hf jobs run --help` 对实际参数进行静态兼容检查；不得使用旧 `--name` 镜像误解析形式，且必须使用有效的镜像和真正独立的RO/RW挂载路径。如果无法证实兼容，继续HOLD而不是降级为整Bucket RW。
+
+现有静态合同脚本`scripts/r60_common2_hf_cpu_submission_contract.py`已切换到v2 Worker、新RUN_KEY和共享Guard；真实Owner的1.6.0 SDK在无挂载API时应返回`SDK_MOUNT_API_UNAVAILABLE`，即使Worker本身已改造，也不等于可提交。
+
+**全部工作状态仍为 NO_JOB / train_admitted=0 / R50全量隔离HOLD / Wave40暂停。**
