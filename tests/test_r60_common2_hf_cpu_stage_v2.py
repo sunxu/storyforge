@@ -83,6 +83,7 @@ def test_v2_worker_is_cpu_only_ro_rw_create_only_and_no_training():
     assert "'transformers==5.16.1'" in source
     assert "'qwen-vl-utils==0.0.14'" in source
     assert "'decord'" in source
-    assert "'torchvision==0.29.2'" in source
+    assert "'torchvision==0.21.0'" in source
+    assert "'torchvision==0.29.2'" not in source
     assert "'qwen-vl-utils>=0.0.14'" not in source
     assert 'export USE_HF=true' in source
