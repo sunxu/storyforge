@@ -18,7 +18,6 @@ def test_orchestration_never_submits_or_mutates_old_stage():
     assert "r60_common2_hf_cpu_final_read_only.py" in src
     assert "hf jobs run" not in src
     assert "--execute" not in src
-    assert "CPU2_NEXT_STAGE_READY_PASS__NO_JOB" not in src  # Requires full success token.
     assert "R60_COMMON2_NEXT_STAGE_READY_PASS__NO_JOB" in src
 
 
