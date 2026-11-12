@@ -95,3 +95,13 @@ python3 experiments/r58_quality/r60_real_quality_batch.py inspect \
 4. 申请 Owner 明确授权 HF GPU 训练。禁止自动运行 GPU。
 
 **截至这份执行书提交：本次 Owner 的 1000 条真实采集已完成；新的 AI 批量审阅代码和合成测试已落地，但真实 AI 评审尚未在 Owner Mac 执行，质量 PASS 仍为 0、训练准入仍为 0。**
+
+## 2026-11-12 真实1000候选精筛重启决策
+
+Owner 已批准按“先5条校准→再25条→分批扩展剩余970条”的方案推进。**当前完成的是启动流程与PILOT-0只读准备，不是任何真实5条模型评分成功回执。** 正式执行基线：[`R60_REAL1000_PILOT5_START_20261112_CN.md`](R60_REAL1000_PILOT5_START_20261112_CN.md)。
+
+- 冻结1000池为6 seed + 994增量，禁止重扩样；复用现有`r60_real_quality_batch.py`的`init / advance / inspect`。两个Reviewer必须核实身份、独立无结论共享；远端API私有正文外发必须单独确认范围；默认不增加`--owner-attest-independent-ai`，避免虚假独立性声明。
+- 首批5条只能从同一冻结1000池进入**相同来源**双模型审核；回执私有0600且create-only。严格六维(4/4/3/4/4/4)、严重标记及证据语义复核，所有上下文无法证实之处保持HOLD。不要复用旧A/B的两个不同5条样本做配对结论。
+- 已独立验收的Common2包装System 2/2真实Swift Collator仅关闭**技术门禁**，不代表1000条已经文学精筛，更不能授予Train Admission。
+- 较早校准阶段的“不得启动1000条审核”是当时执行范围；现在仅解锁当前5条的准备与只读预检。不自动授权第三方API外发、不运行批量25/1000模型调用、不改旧Gold/不访问R50正文、不启动训练GPU，`train_admitted=quality_v1_admitted=0`。
+- 本线限定`r60/common2-cpu2-owner`隔离分支，其他Agent各自负责的Qwen/GLM/R60并行评审工件仍只读，不跨分支合并未核验修改。
