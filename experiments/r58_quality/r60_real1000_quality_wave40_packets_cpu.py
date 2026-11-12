@@ -14,9 +14,9 @@ import stat
 import sys
 from pathlib import Path
 
-import r60_real1000_quality_wave40_cpu as wave
 import r60_real1000_calibration_sample_cpu as sample
 import r60_real1000_pilot20_local_review as pilot
+import r60_real1000_quality_wave40_cpu as wave
 import r60_real_private_batch as private
 import r60_real_quality_batch as quality
 
