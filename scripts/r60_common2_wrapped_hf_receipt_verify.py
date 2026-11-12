@@ -39,6 +39,10 @@ def inspect(path: Path, run_key: str, expected_sha256: str | None = None) -> dic
     try:
         if path.name != EXPECTED_NAME or not RUN_RE.fullmatch(run_key):
             raise ValueError("RECEIPT_IDENTITY_HOLD")
+        # A wrong local download destination is distinct from malformed
+        # receipt content. The JSON path is never emitted in SAFE output.
+        if not path.exists() and not path.is_symlink():
+            raise ValueError("RECEIPT_FILE_NOT_FOUND_HOLD")
         data = InputManager.open_verified(
             path, max_bytes=MAX_BYTES, expected_sha256=expected_sha256,
         ).read_bytes()
@@ -89,8 +93,15 @@ def inspect(path: Path, run_key: str, expected_sha256: str | None = None) -> dic
         )
     except Exception as exc:  # noqa: BLE001 - SAFE only, never echo private errors
         allowed = {
-            "RECEIPT_IDENTITY_HOLD", "RECEIPT_CONTRACT_HOLD",
-            "RECEIPT_ARRAY_SHAPE_HOLD", "RECEIPT_COUNT_RANGE_HOLD",
+            "RECEIPT_IDENTITY_HOLD", "RECEIPT_FILE_NOT_FOUND_HOLD",
+            "RECEIPT_CONTRACT_HOLD", "RECEIPT_ARRAY_SHAPE_HOLD",
+            "RECEIPT_COUNT_RANGE_HOLD",
+            # All are fixed, privacy-safe error codes defined by shared
+            # InputManager.open_verified. Never reveal exception chains.
+            "INPUT_SYMLINK_REJECTED", "INPUT_OPEN_FAILED",
+            "INPUT_NOT_REGULAR_FILE", "INPUT_SIZE_LIMIT_EXCEEDED",
+            "INPUT_DESCRIPTOR_CHANGED", "INPUT_SHA256_MISMATCH",
+            "INPUT_READ_FAILED",
         }
         out["reason_code"] = (
             str(exc) if type(exc) is ValueError and str(exc) in allowed
