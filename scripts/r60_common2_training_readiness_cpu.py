@@ -101,7 +101,7 @@ def inspect(input_dir: Path, receipt_path: Path) -> dict:
             "PRIVATE_EXPERIMENT_CONTRACT_HOLD", "EXPERIMENT_MESSAGE_SEQUENCE_HOLD",
         }
         out["reason_code"] = (
-            str(exc) if type(exc) is ValueError and str(exc) in allowed
+            str(exc) if isinstance(exc, ValueError) and str(exc) in allowed
             else "PRIVATE_INPUT_OR_RUNTIME_HOLD"
         )
     return out
