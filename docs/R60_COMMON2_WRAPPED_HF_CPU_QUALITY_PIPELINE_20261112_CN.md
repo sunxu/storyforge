@@ -320,3 +320,11 @@ STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
 # 仅Owner明确决定启动单次CPU Job时才执行：
 # "$PY" scripts/r60_common2_wrapped_hf_cli.py submit --execute --stage "$STAGE" --run-key "$KEY"
 ```
+
+## 2026-11-12 Owner正式单次提交回执：Job 6af5c24737daa033b6283b0a
+
+Owner确认新修复Ruff`All checks passed!`，提交前`ready`为`WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB / PAGINATED_NO_JOB`，随后显式执行`submit --execute`并返回`WRAPPED_CPU_JOB_SUBMITTED__TRAIN_HOLD`、`job_submission_calls=1`、`job_id=6af5c24737daa033b6283b0a`、`gpu_started=false`、`train_admitted=0`。原RUN_KEY `r60-common2-wrapcpu-20261112T122746Z-5a612325db98`。
+
+重要区分：以上证明本地CLI**成功收到一次Job提交回执**，不能证明云端执行成功或两条Swift Collator通过。通过当前ChatGPT HF连接器inspect该Job返回`404 Not Found`（可能是授权身份、namespace或可见性，不能推断Job失败）；因此后续以Owner本机已通过认证的HF CLI只读检查为准，绝不可因为连接器404重试submit或新建RUN_KEY。
+
+下一步Owner Mac仅只读：`hf jobs inspect 6af5c24737daa033b6283b0a`；`hf jobs logs 6af5c24737daa033b6283b0a`（日志必须检查后才外发，只传SAFE阶段码，不传任何原文/路径）；根据已冻结输出Bucket和文件名获取`R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json`，调用`scripts/r60_common2_wrapped_hf_receipt_verify.py --receipt ... --run-key ...`独立验收。下载回执须私有0600并避免覆盖；可先使用`hf jobs inspect --help`、`hf buckets cp --help`确认CLI参数。任何失败/未知状态不得提交第二次Job。SUCCESS的最低标准是独立验收输出`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`、cases_verified=2、real_swift_collator_verified=true、train_admitted=0。
