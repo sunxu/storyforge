@@ -338,3 +338,29 @@ Owner从单次HF CPU Job `6af5c24737daa033b6283b0a`提供SAFE业务报告：`R60
 **证据等级：**当前已看到Owner贴回的HF SAFE业务JSON，字段与仓库中独立`r60_common2_wrapped_hf_receipt_verify.py`预期成功合同相符；但尚未实际读取其Bucket原始回执字节并运行独立`receipt_verify`，因此不能标为`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`。外层Job提交数=1；worker回执字段`hf_jobs_submitted=0`是worker内部未提交下游Job，不代表外层Job没有提交。不得用该字段覆盖提交日志。
 
 Owner后续只读独立验收：通过同一个HF认证上下文下载原始 `hf://buckets/adradar/storyforge-training/preflight/r60/common2/wrapped-cpu/results/r60-common2-wrapcpu-20261112T122746Z-5a612325db98/R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json` 到Owner私有目录，权限0600，**不使用聊天粘贴JSON重建回执**。执行`python scripts/r60_common2_wrapped_hf_receipt_verify.py --receipt "$RECEIPT" --run-key "$KEY"`。成功标准：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`、cases_verified=2、real_swift_collator_verified=true、train_admitted=0。可再选择传入已在私有渠道核对的`--expected-sha256`。只有独立验收通过才将此二例技术门禁置为已完成；不改变Quality-v1文学质量门禁，也不启动模型训练。
+
+## 2026-11-12 独立Receipt首次HOLD：精确文件输入诊断
+
+Owner执行独立receipt验收返回`WRAPPED_CPU_RECEIPT_HOLD / RECEIPT_INPUT_OR_RUNTIME_HOLD / cases_verified=0`，这**不能推翻**HF业务原生SAFE报告的2/2 Collator PASS，但独立字节验收仍不成立。经检查共享`InputManager.open_verified`，原版本receipt验收把文件打开失败、符号链接、文件过大等固定安全错误合并为泛化HOLD。已增加`RECEIPT_FILE_NOT_FOUND_HOLD`以及安全的`INPUT_OPEN_FAILED`、`INPUT_NOT_REGULAR_FILE`、`INPUT_SYMLINK_REJECTED`、`INPUT_SIZE_LIMIT_EXCEEDED`、`INPUT_DESCRIPTOR_CHANGED`、`INPUT_SHA256_MISMATCH`、`INPUT_READ_FAILED`分类；未知/JSON无效继续保持不泄露正文的`RECEIPT_INPUT_OR_RUNTIME_HOLD`。绝不将不存在的本地文件当作已下载Receipt，也不把聊天中JSON重建为所谓原始Receipt。
+
+Owner同一Mac环境只读检查与修复（没有任何Job提交）：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+RECEIPT="$HOME/.local/share/storyforge/r60/private/R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json"
+if [ -f "$RECEIPT" ] && [ ! -L "$RECEIPT" ]; then
+    stat -f 'receipt size=%z mode=%Lp' "$RECEIPT"  # macOS只输出元数据
+else
+    echo 'RECEIPT_LOCAL_FILE_MISSING_OR_SYMLINK_HOLD'
+fi
+"$PY" scripts/r60_common2_wrapped_hf_receipt_verify.py --receipt "$RECEIPT" --run-key "$KEY"
+```
+
+如果返回`RECEIPT_FILE_NOT_FOUND_HOLD`，说明之前Runbook给出的Receipt路径只是**预期目标路径**，Owner须先从HF Bucket真实输出下载：`hf://buckets/adradar/storyforge-training/preflight/r60/common2/wrapped-cpu/results/$KEY/R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json`；可用`hf buckets cp --help`确认CLI版本语法，目标路径必须属于Owner私有目录、0600、不能覆盖已有文件。下载后仅通过原始字节运行receipt验收；若仍HOLD依精确安全错误码定位。
