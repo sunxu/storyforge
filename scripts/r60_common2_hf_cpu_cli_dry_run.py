@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -43,6 +44,14 @@ def prepare(stage: Path, key: str, help_text: str) -> list[str]:
             or "os.O_EXCL" not in source):
         raise ValueError("NEW_WORKER_CONTRACT_HOLD")
     missing = hf_job_guard.missing_hf_cli_options(help_text)
+    # The v2 launch argv uses -v, so an exact documented -v switch is
+    # equivalent to the long --volume spelling for this R60-only adapter.
+    # Never accept -verbose or free prose containing the letters "-v".
+    has_short_volume = bool(re.search(
+        r"(?<![A-Za-z0-9_-])-v(?![A-Za-z0-9_-])", help_text,
+    ))
+    if has_short_volume:
+        missing = [option for option in missing if option != "--volume"]
     if missing or "--dry-run" not in help_text:
         raise ValueError("HF_CLI_FLAGS_HOLD")
     inputs = [f"{PREFIX}/runs/{key}:/input/common2:ro"]
