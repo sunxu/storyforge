@@ -72,3 +72,14 @@ Owner在Mac的`r60-tests`隔离虚拟环境运行6组R60合成测试：**25 pass
 HF官方文档确认CLI 支持`hf jobs run -v hf://buckets/adradar/storyforge-training/preflight/r60/common2/cpu2/runs/<NEW_KEY>:/input/common2:ro`和独立结果前缀`.../results/<NEW_KEY>:/output:rw`；但SDK Volume API要求`huggingface_hub>=1.8.0`，Owner的1.6.0不具备此能力。具体HF CLI参数仍必须通过Owner本机`hf jobs run --help`静态核对，不能推导该已安装版本一定支持`--dry-run`、`--name`、`--attempts`或分段Bucket挂载。**禁用的旧submit入口继续禁用**；R60不得复用R53的整Bucket `/workspace:rw`。
 
 后续严格顺序：Owner拉取最新独立分支并再次本地回归→验证本机HF CLI参数和调用参数位置→新Worker容器镜像/依赖校验与Linux CI→唯一RO/RW输入输出新前缀→完整远端Job历史排重→才考虑单次CPU真实Collator；不以R53技术成功豁免R60数据级测试。无付费提交、无训练准入、无GPU。
+
+
+## 2026-11-12 HF CLI 2.4.0 直接实测帮助（Owner提供，已消除CLI参数未知）
+
+Owner机器 `hf --version` 为 **2.4.0**，`hf jobs run --help` 明确接受 `--name`、`--namespace`、`-v/--volume`（`hf://buckets/...:/路径:ro|rw`）、`--flavor`、`--timeout`、`--attempts`、`--detach`、`--dry-run`。旧`docker.io/--name`错误来自过去命令语法/运行状态，而不能据此称当前CLI 2.4.0不支持`--name`。不再以SDK1.6.0挂载参数限制阻塞**CLI**路线，也不必升级SDK或重写ms-swift算法。
+
+新只读入口 `scripts/r60_common2_hf_cpu_cli_dry_run.py`：在验证**新stage** SHA和Worker策略后，复用共享`hf_job_guard.validate_spec`、`build_hf_argv`产生`--dry-run`命令；不含`--submit`，不显示HF CLI原始输出，公开回执只包含SAFE状态。它不会同步Bucket或提交Job。对应合成回归 `tests/test_r60_common2_hf_cpu_cli_dry_run.py`。
+
+执行次序必须先将新版本测试加入验收并重跑：`python -m pytest -q tests/test_r60_common2_hf_cpu_cli_dry_run.py tests/test_r60_common2_hf_cpu_stage_v2.py tests/test_r60_common2_hf_cpu_submission_contract.py`。之后Owner才可在本地用原冻结stage构建新的唯一stage（原数据内容不变、只更新独立v2 Worker）；再执行CLI只读/干运行验证。**注意：Dry-run能解析参数，不代表远端Bucket子目录挂载已经存在/具备权限，更不等于远端运行PASS。**
+
+CLI路径不再依赖`scripts/r60_common2_hf_cpu_submission_contract.py`中旧SDK模拟的`sdk_mount_api_supported`布尔值。旧SDK只读探针保留为历史兼容性诊断，不是唯一执行路径。新工具并未加入任何真实Job提交函数；正式付费CPU2执行必须在CI、输入输出唯一前缀、独立/不可覆盖回执、Job排重与准入边界完成后另行决定。
