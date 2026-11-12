@@ -270,11 +270,14 @@ def inspected_records(folder: Path, config: dict, cases: list[dict],
                     "model_" + side] or entry.get("method") != (
                     "ISOLATED_STATELESS_MODEL_REQUEST"):
                 raise Hold("QUALITY_REVIEW_MODEL_MISMATCH_HOLD")
-        if any(not isinstance(x, str) or x not in (
-                "MODEL_TRANSPORT_HOLD", "MODEL_JSON_INVALID",
-                "MODEL_REPLY_OVERSIZE", "SEVERE_FLAG_DECISION_INCONSISTENT",
-                "QUALITY_FLOOR_DECISION_INCONSISTENT") for x in
-               record["attempt_holds"]):
+        valid_attempt_holds = {
+            "MODEL_TRANSPORT_HOLD", "MODEL_JSON_INVALID",
+            "MODEL_REPLY_OVERSIZE", "MODEL_PROTOCOL_HOLD",
+            "SEVERE_FLAG_DECISION_INCONSISTENT",
+            "QUALITY_FLOOR_DECISION_INCONSISTENT",
+        } | ai.SAFE_HTTP_HOLDS
+        if any(not isinstance(x, str) or x not in valid_attempt_holds
+               for x in record["attempt_holds"]):
             raise Hold("QUALITY_ATTEMPT_ERROR_CODE_HOLD")
         status, reason = g1.validated_review(
             {**record, "schema": g1.REVIEW_SCHEMA}, case)
