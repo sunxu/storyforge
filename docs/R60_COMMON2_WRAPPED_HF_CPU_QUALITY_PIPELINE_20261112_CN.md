@@ -271,3 +271,30 @@ STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
 ```
 
 若CLI flags HOLD，先依据SAFE missing_cli_flags判断兼容性，不要直接submit；若CLI flags PASS，再重新执行ready。必要时核对 command -v hf 是否属于当前统一venv。
+
+## 2026-11-12 CLI缺少--attempts：已知SDK版本的官方单次默认兼容
+
+Owner现有Mac CLI真实SAFE显示 missing_cli_flags=['--attempts']，ruff PASS；合成测试20 PASS / 1 FAIL，唯一失败是旧的模拟HF help没有--env，新runner现在要求--env。该失败为测试夹具落后，不是HF真实CPU故障。
+Hugging Face官方 Jobs 配置文档指出**默认Job只执行1次**；只有显式 `--attempts N` 才开启额外重试。参考 https://huggingface.co/docs/hub/jobs-configuration 和 https://huggingface.co/docs/huggingface_hub/en/package_reference/cli 。
+已更新 wrapped CLI 的薄兼容适配器：若help缺失项恰好为--attempts并且同一Python环境中huggingface_hub精确为1.33.0，则允许使用文档默认1次，构建命令时仅移除本CLI不支持的 --attempts 1；任何其他缺失项、未知SDK版本继续HOLD。共享 hf_job_guard 构造器不变，Namespace/CPU flavor/RO-RW/unique output/timeout/本地O_EXCL marker/组织历史检查均保持。
+cli-flags SAFE会输出 attempts_mode=PINNED_CLI_DEFAULT_ONE 或 EXPLICIT_ONE，绝不打印CLI原始help、身份或私有值。新增缺参数负例、固定版本、非固定版本、其他参数缺失和完整单次提交模拟回归。
+此规则**只保证本机HF CLI参数兼容和文档默认重试行为**；不证明云端Job已提交、服务端执行次数或实际Qwen/Swift Collator结果。Owner仍须拿到ready PASS才能提交一个CPU-only Job，再独立核对SAFE回执。已经上传的冻结Stage不需要改写；此修复只影响Mac本地编排器。
+
+Mac验收：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+export PATH="$(dirname "$PY"):$PATH"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+"$PY" scripts/r60_common2_wrapped_hf_cli.py cli-flags --stage "$STAGE" --run-key "$KEY"
+"$PY" scripts/r60_common2_wrapped_hf_cli.py ready --stage "$STAGE" --run-key "$KEY"
+```
+
+先确认CLI flags返回 `WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB` 且attempts_mode=PINNED_CLI_DEFAULT_ONE，再要求ready状态 `WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB`。若任一步失败保留HOLD，不自动submit或创建新RUN_KEY。
