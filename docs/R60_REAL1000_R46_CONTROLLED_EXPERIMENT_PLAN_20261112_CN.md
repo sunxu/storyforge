@@ -100,3 +100,9 @@ R46="$HOME/.local/share/storyforge/r46-primary-evidence-r46-20261014T070529Z-248
 预期原R45总计49+15=64条包含首条System，Common2两条System为0。以上是**预期**，仅在Owner真实SAFE到达后将该数量标为实测；测试与真实运行都未在本Agent的Mac上执行。
 
 **决策建议：** 保留Common2原始无System的实验输入不可变，不声称与R46是严格单变量比较。后续若想严格只改变训练数据，则必须独立定义并签批统一的**新训练输入规范**，清楚标记后补的通用训练System为`EXPLICIT_NEW_TRAINING_WRAPPER`，不能声称它是历史实际Sent Prompt；并在相同规范下构建参照数据和新的Real1000训练数据，独立版本和新SHA。这属于未来D1/D2/D3的Owner决策和新实验，不可静默改原Common2文件或当前正式训练准入0。
+
+## 2026-11-12 Owner真实System合同核验PASS：新旧输入结构确实不同
+
+Owner Mac已实际执行`scripts/r60_r46_common2_system_contract_cpu.py`。SAFE状态：`R46_R60_SYSTEM_ROLE_CONTRACT_DIFFERENCE_CONFIRMED__TRAIN_HOLD`，`stage=CONTRACT_COMPARISON`、`reason_code=HISTORICAL_SYSTEM_PRESENT_CURRENT_SYSTEM_ABSENT`；`r45_source_sha_verified=true`、`r45_train_rows=49`、`r45_validation_rows=15`、`r45_rows_with_initial_system=64`；`common2_input_sha_verified=true`、`common2_rows=2`、`common2_rows_with_system=0`、`historical_vs_current_system_contract_equal=false`。既有R46实际System文本是否等价、真实运行模板等价均未证，`training_input_policy_approved=false`、`train_admitted=0`。未访问数据库/HF/GPU、无私有值输出。
+
+**因此R60和R46当前不能声称只改变训练数据。** 已排查的新旧System角色差异已经PASS，不再重复扫描同一冻结文件。下一步不是原地改写Common2或假造历史Sent Prompt，而是Owner决定是否在独立训练版本中引入`EXPLICIT_NEW_TRAINING_WRAPPER`通用System（其文本、SHA、版本必须另行确定）及统一推理端模板；如要形成严格“只变数据”的比较，历史R46旧Adapter只作为非同输入合同参考，需要使用新统一规范构建的对照条件并在另行授权后训练。此处不批准D1/D2/D3、正式数据入训或GPU。
