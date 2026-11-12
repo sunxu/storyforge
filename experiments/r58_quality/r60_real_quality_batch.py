@@ -178,7 +178,10 @@ def case_receipt(case: dict, index: int, pool_hash: str,
     prompt = ai.prompt_for_case(case)
     for side in ("a", "b"):
         model = config["model_" + side]
-        key = os.getenv("R60_REVIEW_" + side.upper() + "_KEY", "")
+        # Owner-facing names for the frozen A=Claude, B=DeepSeek pilot.
+        # Do not change legacy QD20's separate DASHSCOPE/DEEPSEEK_API_KEY.
+        key = os.getenv("R60_CLAUDE_KEY" if side == "a"
+                        else "R60_DEEPSEEK_KEY", "")
         try:
             profile = config.get("protocol_" + side, "openai-chat")
             if profile == "openai-chat":
