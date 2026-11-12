@@ -364,3 +364,17 @@ fi
 ```
 
 如果返回`RECEIPT_FILE_NOT_FOUND_HOLD`，说明之前Runbook给出的Receipt路径只是**预期目标路径**，Owner须先从HF Bucket真实输出下载：`hf://buckets/adradar/storyforge-training/preflight/r60/common2/wrapped-cpu/results/$KEY/R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json`；可用`hf buckets cp --help`确认CLI版本语法，目标路径必须属于Owner私有目录、0600、不能覆盖已有文件。下载后仅通过原始字节运行receipt验收；若仍HOLD依精确安全错误码定位。
+
+## 2026-11-12 最终关闭回执：原始HF Bucket SAFE Receipt独立验收PASS
+
+Owner使用已从HF Bucket真实下载并设置0600权限的`R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json`（保存于Owner私有`wrapped-receipts/<RUN_KEY>/`目录），执行冻结验收器`r60_common2_wrapped_hf_receipt_verify.py --receipt ... --run-key ...`，得到以下完整SAFE验收结果：
+
+```json
+{"cases_verified":2,"gpu_started":false,"hf_jobs_submitted":0,"private_values_emitted":false,"real_collator_token_counts":[2581,4077],"real_swift_collator_verified":true,"reason_code":"ACTUAL_SWIFT_R18_LABEL_MASK_TWO_OF_TWO","schema":"storyforge_r60_common2_wrapped_hf_receipt_verify_safe_v1","status":"WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD","supervised_token_counts":[282,305],"tokenizer_token_counts":[2643,4139],"train_admitted":0}
+```
+
+结论：针对RUN_KEY `r60-common2-wrapcpu-20261112T122746Z-5a612325db98`、外层HF CPU Job `6af5c24737daa033b6283b0a`，此前的Stage/远端文件/CLI/Dry-run门禁以及两条Qwen3.8实际Swift Collator和last-round Assistant标签掩码技术验证均已关闭，原始HF业务SAFE回执也经Owner独立验收为`2/2 PASS`。不再重复CPU Job/更换RUN_KEY/追加上传。不将worker回执`hf_jobs_submitted=0`误解为外层Job没有提交。
+
+边界：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`不代表`quality_v1_admitted`或`train_admitted`获准，仍为0；此前业务报告中的`deployment_template_compatibility_verified=false`、`semantic_world_isolation_verified=false`和`r60_input_design_approved=false`保持开放。R27/R52合成System不是历史真实发送System，文档及训练输入必须持续标注来源。
+
+下一阶段只处理冻结部署模板兼容性、世界设定隔离与输入设计审批的证据和准入门禁；禁止自动启动SFT/GPU、改变训练样本集合，且注意与其他Agent并行工作的分支隔离。
