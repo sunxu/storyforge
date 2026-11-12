@@ -265,12 +265,12 @@ def test_synthetic_probe_never_loads_private_source(monkeypatch):
         return model_answer()
 
     monkeypatch.setattr(ai, "model_request", fake_request)
-    args = dict(
-        endpoint="https://example.org/v1", model="claude-synthetic",
-        protocol="claude-proxy-top-system",
-        key_env="R60_REVIEW_A_KEY", allow_remote=True,
-        json_mode=False,
-    )
+    args = {
+        "endpoint": "https://example.org/v1", "model": "claude-synthetic",
+        "protocol": "claude-proxy-top-system",
+        "key_env": "R60_REVIEW_A_KEY", "allow_remote": True,
+        "json_mode": False,
+    }
     result = probe.inspect(**args, execute=False)
     assert result["status"] == "REVIEWER_PROTOCOL_PREFLIGHT_PASS__NO_REQUEST"
     assert result["model_requests"] == 0
