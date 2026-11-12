@@ -39,7 +39,7 @@ is **technical input evidence**, not a quality review of the 1000 candidates.
    The proxy may reject `messages[0].role=system`; its profile puts the
    instruction in top-level `system` without forced json_object or temperature.
    DeepSeek uses ordinary system messages; do not apply Qwen Thinking sampler.
-4. Set `R60_REVIEW_A_KEY`/`R60_REVIEW_B_KEY` in private shell env.
+4. Set `R60_CLAUDE_KEY`/`R60_DEEPSEEK_KEY` in private shell env.
    Owner approved remote private-data egress for this quality workflow;
    pass explicit `--allow-remote-review`; never log API keys, raw outputs,
    original source text, local private paths or IDs.
@@ -102,3 +102,13 @@ case receipt. After fixing the provider, rerun `advance` using the
 same frozen config. A single-reviewer failure persists one partial HOLD
 receipt; never overwrite it, auto-retry in place, or invent the missing
 review.
+
+## Owner key naming / historical DeepSeek provenance (2026-11-12)
+The REAL1000 new paired batch uses `R60_CLAUDE_KEY` for A and
+`R60_DEEPSEEK_KEY` for B. The synthetic probe defaults by profile.
+Historical QD20 is separate: `r60_real1000_qwen_deepseek20_live.py`
+used `https://api.deepseek.com`, `deepseek-flash`, `DEEPSEEK_API_KEY`,
+`temperature=0`, `thinking={"type":"disabled"}`. Keep that runner unchanged.
+`R60_DEEPSEEK_URL` and `R60_DEEPSEEK_MODEL` may be set to these
+historical exact values, but verify current access with synthetic API first.
+Never echo secret environment values in CLI logs.
