@@ -94,3 +94,12 @@ Owner固定新RUN_KEY：`r60-common2-cpu2-20261112T050556Z-d26519574fe7`。新St
 新增 `scripts/r60_common2_hf_cpu_final_read_only.py`，复用原SHA256检查和Bucket Guard，核查本地 `<RUN_KEY>.cpu-submit-v2-attempted` 标记、远端输入ready、结果前缀为空、可见Jobs匹配；不会提交Job也不会读取/输出私有正文。100条列表按`JOB_HISTORY_INCOMPLETE_HOLD`处理，绝不自动推导“完全无重复Job”。它是诊断入口，返回42/HOLD属于预期，**不得为绕过HOLD删除标记、修改Job列表判断或直接提交**。
 
 当前`worker_v2.sh`已写入已同步Stage，使用Image Tag而非digest，runtime的锁定依赖尚待完整核验（`decord`、`torchvision`等以本项目已冻结R59环境标准为准）；HF CLI dry-run不能证明这些实际可用，也不能证明新输出子前缀可远端写入。仍不得启动付费Job。后续先补齐CI和运行时依赖证据，再在原Stage完全不变前提下选择最小兼容方案；不可静默覆盖已同步前缀。
+
+
+## 2026-11-12 Jobs服务端分页证据及修复
+
+Owner在Mac读官方 `GET /api/jobs/adradar` 得到 HTTP 200、`RETURNED_JOBS=100`、`PAGINATION_LINK=True`，但无`Content-Range`或`X-Total-Count`。说明原SDK1.6.0 `HfApi.list_jobs` 只处理首页，`MATCHING_JOBS=0`不能用于全量排重，且不能以“100一定完整”作判断。官方HF Jobs管理文档支持全状态查询/命名标签过滤；分页查询需跟随服务端`Link: rel=next`。
+
+已更新 `scripts/r60_common2_hf_cpu_final_read_only.py`：通过同一已认证session按`Link rel=next`只读遍历，要求每一页HTTP成功、JSON是数组、Job ID有效且不重复、下一URL与原HF endpoint同host且路径固定`/api/jobs/adradar`、禁止重定向、禁止循环与超出100页；发现任一匹配RUN_KEY（name/labels/environment/command）则HOLD，无法完整走到无next的最后一页亦HOLD。只有完整遍历且0匹配时返回 `CPU2_HISTORY_PAGINATED_PASS__NO_JOB`、退出码0。对返回的Job ID、命令与环境变量不公开打印。测试增加多页101条、隐藏在第二页Job、跨域Link和HOLD回归。**这只是可见服务端分页完整性证明，不是未发生任何并发提交的锁，也不能解除镜像/依赖合同HOLD。**
+
+请Owner先同步GitHub分支并运行新合成回归，再以`$HOME/.local/share/storyforge/venvs/hf-cli/bin/python scripts/r60_common2_hf_cpu_final_read_only.py --run-key r60-common2-cpu2-20261112T050556Z-d26519574fe7 --stage $HOME/.local/share/storyforge/r60/hf-cpu2-stages/r60-common2-cpu2-20261112T050556Z-d26519574fe7`执行只读分页验收。**未重新提交Job，没有训练准入。**
