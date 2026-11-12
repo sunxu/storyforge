@@ -204,3 +204,19 @@ bash scripts/r60_common2_cpu2_prepare_next.sh
 为避免连续盲目付费重试，审核脚本 `experiments/r58_quality/r60_common2_sft_cpu_template_audit.py` 已添加公开枚举阶段 `SNAPSHOT_CHECK`、`PRIVATE_INPUT_CHECK`、`TOKENIZER_LOAD`、`SWIFT_PROCESSOR_LOAD`、`SWIFT_TEMPLATE_INIT`、`TOKENIZER_ENCODE`、`SWIFT_COLLATOR_AUDIT`，异常仅发出对应 `reason_code: <PHASE>_HOLD`，不打印异常正文、样本正文、Tokenizer IDs、解码结果或调用栈，训练准入与R50隔离状态不变。特别注意：原 `stage_v2.py` 仅替换Worker，不会带上新的审计代码，所以也已修改为只在**全新create-only Stage**替换受审核审计脚本和Worker两个代码文件；原始私有两条数据及Manifest保持字节不变，旧Stage一律保留。新增纯合成安全合同测试。
 
 下一步Owner在独立Mac worktree同步新HEAD；先以r60-tests环境跑 `tests/test_r60_common2_cpu_template_phase_safety.py`、`tests/test_r60_common2_cpu2_prepare_next_contract.py`、`tests/test_r60_common2_cpu2_decord_dependency_gate.py` 等回归和 `python -m compileall -q experiments/r58_quality/r60_common2_sft_cpu_template_audit.py scripts/r60_common2_hf_cpu_stage_v2.py`、`bash -n`。然后沿用 `bash scripts/r60_common2_cpu2_prepare_next.sh` **创建并同步第三个新Stage**；只到 `R60_COMMON2_NEXT_STAGE_READY_PASS__NO_JOB`，不会提交Job。只有新的Stage、CLI dry-run、完整Job历史排重全部PASS时，再由Owner明确执行专用CLI单次提交。任何HOLD保持0训练准入；严禁GPU或修改已使用RUN_KEY。
+
+
+## 2026-11-12 第三轮Processor故障定位及无权重纯文本RoPE适配（未重新提交私有Job）
+
+第三次真实Common2 CPU Job `6af560849737d9a9e093cb46` 已ERROR exit42，Owner SAFE理由 `SWIFT_PROCESSOR_LOAD_HOLD`。HF插件确认固定Tokenizer快照下载完成，错误发生在原`get_processor(str(snapshot))`。为保护源数据、节省盲目反复提交成本，使用同镜像/同包版本/同固定公开Qwen3.8-27B revision，实施多条**不挂载任何私有Bucket、不加载模型权重**的公开合成CPU诊断：
+
+- `6af561a7ab34849891aedce8`：HF `AutoTokenizer` PASS，原 `swift.get_processor(snapshot)` ValueError，因 `qwen3_5` 模型注册匹配不唯一；`model_type="qwen3_5"`可显式加载 Processor。
+- `6af5621cab34849891aedd2f`：直接传`AutoTokenizer`给ms-swift`get_template`失败，缺少model_info/model_meta，不能作为正式替代。
+- `6af5629a9737d9a9e093cc7e`、`6af56310ab34849891aedda0`：Processor使用显式模型类型后，模板自动选择仍失败，因为注册候选包含`qwen3_5`和`qwen3_8`。显式`template_type="qwen3_8"`在ms-swift4.5.3存在并能做文本基础编码；`last_round`标签初步检查通过。
+- `6af564329737d9a9e093cd9d`：HF Tokenizer`apply_chat_template`返回`BatchEncoding`而非plain list，其`input_ids`必须通过Mapping读取并严格验证一维int数组；原审计代码会因返回类型错误在后续阶段再次HOLD。
+- `6af564e79737d9a9e093cdf3`：直接执行Qwen3.8模板`data_collator`遇到内部`_get_model()`自动创建dummy_model的未绑定模型类型故障；尝试`get_model_processor(...,return_dummy_model=True)`的纯CPU合成Job `6af5657cab34849891aeded8` OOMKilled(exit137)，日志含`torch.float32`及`device_map=cpu`；**绝不能在27B上使用此创建模型的路径，也不能为了CPU preflight直接提升大内存硬件**。
+- 调查固定源代码确认：ms-swift4.5.3的Qwen3VL/Qwen3.8模板`_data_collator`在非padding-free模式中调用`_get_position_ids`，其默认`_get_get_rope_index`需`_get_model`。Transformers5.16.1的`Qwen3_5Model.get_rope_index`使用config与`mm_token_type_ids`，纯文本无图像/视频grid时无需权重。于是仅在CPU审核器为Qwen3.8模板安装**限定纯文本、使用官方未改写RoPE函数的config-only callback**，拒绝任何非零modality type、缺少modality标记、image/video grid，禁止真实模型初始化；仍实际调用原ms-swift `template.data_collator([encoded])`。
+- 公共无私有数据CPU Job `6af566a0ab34849891aedf71` 已COMPLETED：2组纯文本合成对话都通过实际ms-swift Collator input_ids/labels对齐和基础final-round监督检查，模型权重未加载、推理0、CUDA不使用；它**不代表严格R18语义标签审查或私有两条样本已通过**。
+- `6af567d4ab34849891aee01c`为公开额外Reasoning parity诊断的错误revision造成404，无关冻结业务Stage；修正同固定revision后 `6af5683aab34849891aee060` COMPLETED：同一批公开短对话，HF原生`reasoning_effort="medium"`产生16/32 tokens，ms-swift`qwen3_8`产生12/24，原生默认`xhigh`产生58/74。HF固定`chat_template.jinja`在xhigh下默认添加英文Reasoning Effort system指令；两种处理目前**不是token级相等**。禁止捏造System Prompt、将不等价宣称为等价，或把纯文本基础Collator技术PASS当作训练准入。
+
+本轮GitHub审计代码仅在未来创建的新Stage中启用：显式`get_processor(snapshot,model_type="qwen3_5")`、`get_template(...,template_type="qwen3_8",loss_scale="last_round",add_non_thinking_prefix=False)`，严格识别BatchEncoding`input_ids`和纯文本官方config-only RoPE；保留`hf_label_mask_audit.audit_row`真实Label Mask强门禁和原ms-swift`data_collator`调用；成功SAFE回执新增`model_weights_loaded=false`和`native_template_token_parity_verified=false`，直示原生模板未完成等价证明。没有删除或松动任何历史的语义监督检查。此源码仍需要Owner Mac合成单测、compileall，下一轮全新create-only Stage的SHA、sync-ready、CLI dry-run、完整Jobs排重通过，才能另行授权/执行唯一CPU真实审核。旧Job/Stage/marker不重试。R50排除HOLD，train_admitted0，GPU/训练禁止。
