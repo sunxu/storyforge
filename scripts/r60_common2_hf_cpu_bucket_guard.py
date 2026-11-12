@@ -73,6 +73,20 @@ def classify_failure(exc: Exception) -> str:
         return "REMOTE_AUTHORIZATION_HOLD"
     if status == 404:
         return "REMOTE_BUCKET_OR_PATH_NOT_FOUND_HOLD"
+    if status == 429:
+        return "REMOTE_RATE_LIMIT_HOLD"
+    if isinstance(status, int) and 500 <= status <= 599:
+        return "REMOTE_SERVICE_5XX_HOLD"
+    # HfApi uses httpx; its timeout/transport exception classes are not
+    # subclasses of built-in ConnectionError on all platforms.
+    try:
+        import httpx
+        if isinstance(exc, httpx.TimeoutException):
+            return "REMOTE_TIMEOUT_HOLD"
+        if isinstance(exc, httpx.TransportError):
+            return "REMOTE_CONNECTION_HOLD"
+    except ImportError:
+        pass
     if isinstance(exc, (ConnectionError, TimeoutError, OSError)):
         return "REMOTE_CONNECTION_HOLD"
     return "REMOTE_SDK_OR_SERVICE_HOLD"
