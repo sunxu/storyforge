@@ -411,3 +411,15 @@ PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
  --common2-recovery "$RECOVERY"
 ```
 请仅回传新SAFE JSON的`stage`和`reason_code`及完整聚合字段，不贴原文/路径。若为`INPUT_FILE_NOT_FOUND_HOLD`，应重新定位此前已通过R50×Common2三级交集检查所使用的**同一份**`R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json`，不自行造JSON或重跑Supabase。若JSON及Schema均通过才真正比较Common2×R45来源故事。已有R50排除/机械检验PASS保持不变，`train_admitted=0`。
+
+## 2026-11-12 Owner真实验收：Common2 × R45原始Train49/Val15 故事ID隔离 PASS（最新）
+
+Owner Mac使用已SHA验证的R45原始未编译Train49/Validation15及`$HOME/.local/share/storyforge/r60/private/r60-real1000-qd20-common2-supabase-recovery-v1/R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json`执行`scripts/r60_common2_r45_source_story_cpu.py`，真实SAFE：
+
+`status=COMMON2_R45_ORIGINAL_STORY_IDS_DISJOINT__SEMANTIC_TRAIN_HOLD`，`reason_code=EXACT_R45_SPLIT_STORY_DISJOINT`、`stage=COMPARISON`、`r45_original_sha_verified=true`、`r45_train_rows_checked=49`、`r45_validation_rows_checked=15`、`common2_cases_checked=2`、`train_story_overlap_count=0`、`validation_story_overlap_count=0`、`common2_r45_exact_story_disjoint_verified=true`。无数据库、HF Job、GPU或私有信息输出。
+
+**训练主线源隔离进度：** 原R50完整50=46+4补集PASS；Common2 × R50原50案精确Story/Session/Message ID三层交集0/0/0 PASS；R45 × R50五世界历史机械精确检查PASS；现在 **Common2 × R45 Train49/Val15原始故事ID交集0/0 PASS**。以上均已闭环，不应反复要求同一冻结输入扫描。
+
+**剩余且尚未被本回执解决：** `r45_semantic_world_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`final_heldout_seal_verified=false`、`train_admitted=0`。含义为精确UUID没有碰撞不代表跨世界别名、事件、转述已排除；正式R50评测seal也未完成。Common2衍生输入仍非真实历史发送Prompt，训练/推理模板政策尚未批准。
+
+**下一步严格围绕Real1000高质量SFT主线**：复用已通过的Common2两条做可审核的正式数据准入决策框架，优先明确Swift训练/部署模板政策和针对这两条的最小必要世界语义证据；确认后将同一准入流程批量扩展到更多已冻结的质量候选。不要把R50最终评测封存作为必须优先完成的额外旁支，不重复跑HF或机械来源检查，不自动训练。
