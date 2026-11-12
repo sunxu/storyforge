@@ -1,0 +1,53 @@
+name: R60 REAL1000 Quality Reviewer (synthetic only)
+
+on:
+  push:
+    branches:
+      - r60/common2-cpu2-owner
+    paths:
+      - "experiments/r58_quality/r60_reviewer_transport.py"
+      - "experiments/r58_quality/r60_reviewer_protocol_probe.py"
+      - "experiments/r58_quality/r60_real_ai_dual_review.py"
+      - "experiments/r58_quality/r60_real_quality_batch.py"
+      - "experiments/r58_quality/test_r60_real_ai_dual_review.py"
+      - "experiments/r58_quality/test_r60_real_quality_batch.py"
+      - ".github/workflows/r60-real1000-quality-review.yml"
+  pull_request:
+    paths:
+      - "experiments/r58_quality/r60_reviewer_transport.py"
+      - "experiments/r58_quality/r60_reviewer_protocol_probe.py"
+      - "experiments/r58_quality/r60_real_ai_dual_review.py"
+      - "experiments/r58_quality/r60_real_quality_batch.py"
+      - "experiments/r58_quality/test_r60_real_ai_dual_review.py"
+      - "experiments/r58_quality/test_r60_real_quality_batch.py"
+      - ".github/workflows/r60-real1000-quality-review.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  safe-review-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install only local dev/test dependencies
+        run: python -m pip install -e '.[dev]'
+      - name: Lint R60 REAL1000 shared reviewer modules
+        run: |
+          ruff check \
+            experiments/r58_quality/r60_reviewer_transport.py \
+            experiments/r58_quality/r60_reviewer_protocol_probe.py \
+            experiments/r58_quality/r60_real_ai_dual_review.py \
+            experiments/r58_quality/r60_real_quality_batch.py \
+            experiments/r58_quality/test_r60_real_ai_dual_review.py \
+            experiments/r58_quality/test_r60_real_quality_batch.py
+      - name: Offline synthetic-only paired reviewer regression
+        run: |
+          python -m pytest -q \
+            experiments/r58_quality/test_r60_real_ai_dual_review.py \
+            experiments/r58_quality/test_r60_real_quality_batch.py
