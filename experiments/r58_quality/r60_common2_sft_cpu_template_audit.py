@@ -91,13 +91,23 @@ def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict
                 {**message, "loss": i == len(messages) - 1}
                 for i, message in enumerate(messages)
             ]}
+            # Step-specific SAFE phase codes: never print R18's internal
+            # decoded-token leak diagnostics, source text, or exceptions.
             with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                if phase is not None:
+                    phase("R18_LABEL_MASK_AUDIT")
                 audit.audit_row(template, swift_row, number)
+                if phase is not None:
+                    phase("SWIFT_ENCODE")
                 encoded = template.encode(swift_row)
+                if phase is not None:
+                    phase("SWIFT_BATCH_COLLATE")
                 collator = getattr(template, "data_collator", None)
                 if not callable(collator):
                     raise Hold("REAL_COLLATOR_UNAVAILABLE_HOLD")
                 batch = collator([encoded])
+            if phase is not None:
+                phase("BATCH_LABEL_CONSISTENCY")
             unbatched_ids = audit._list_ints(encoded["input_ids"])
             unbatched_labels = audit._list_ints(encoded["labels"])
             batched_ids = audit._list_ints(batch["input_ids"])
@@ -177,6 +187,8 @@ SAFE_PHASES = frozenset({
     "SNAPSHOT_CHECK", "PRIVATE_INPUT_CHECK", "TOKENIZER_LOAD",
     "SWIFT_PROCESSOR_LOAD", "SWIFT_TEMPLATE_INIT", "TEXT_ONLY_ROPE_SETUP",
     "TOKENIZER_ENCODE", "SWIFT_COLLATOR_AUDIT",
+    "R18_LABEL_MASK_AUDIT", "SWIFT_ENCODE", "SWIFT_BATCH_COLLATE",
+    "BATCH_LABEL_CONSISTENCY",
 })
 
 
