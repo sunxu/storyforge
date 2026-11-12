@@ -1,5 +1,37 @@
 # StoryForge R60 — Real1000优质SFT数据主线决策（2026-11-12）
 
+## 2026-11-12 Owner Wave40已实际选样PASS → 下一步独立盲审包
+
+Owner Mac实际SAFE回执为`storyforge_r60_real1000_quality_wave40_safe_v1`、`QUALITY_WAVE40_LOCATORS_READY__NOT_REVIEWED`，`prepared=40`、`distinct_new_stories=40`、`sample100_story_overlap=0`、真实长度配额`300_499=20`、`500_999=16`、`1000_1500=4`，`quota_shortfalls_before_fill={}`，`database_accessed=false`、`model_inference_calls=0`、`gpu_started=false`、`train_admitted=0`。**只表示40条跨故事源位置已生成，不是40条文学质量PASS，也不是训练准入。**
+
+已补齐`experiments/r58_quality/r60_real1000_quality_wave40_packets_cpu.py`以及`tests/test_r60_real1000_quality_wave40_packets_cpu.py`：再冻结核验源Real1000、Sample100并重新计算Wave40位置，独立打散盲审顺序；只将三条历史的角色/正文、目标回复放进盲审包，不含故事ID、源位置或旧模型投票。Owner私有交叉映射单独存放，独立决策模板六维字段保持既有冻结标准，所有审核状态为`NOT_REVIEWED`。拒绝篡改、不覆盖私有文件；新建0700输出目录3份0600文件；不访问DB、模型或GPU。
+
+Owner Mac在已有工作树同步固定最新提交且确保工作区干净后运行（**不需要再次生成那40条**）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_real1000_quality_wave40_packets_cpu.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+SAMPLE_DIR="$BASE/r60-real1000-calibration100-v1"
+WAVE_DIR="$BASE/r60-real1000-quality-wave40-v1"
+# 从以前成功运行Wave40的 --expand-dir 参数复用真实路径；不可猜测、不可重新生成冻结源池
+EXPAND_DIR="/Owner已经核实的Real1000冻结展开目录"
+OUT_DIR="$BASE/r60-real1000-quality-wave40-blind-v1"
+test -f "$WAVE_DIR/R60_REAL1000_QUALITY_WAVE40_PRIVATE.json"
+test -f "$SAMPLE_DIR/R60_CALIBRATION_SAMPLE100_PRIVATE.json"
+test -f "$EXPAND_DIR/R60_EXPAND_CONFIG_PRIVATE.json"
+test ! -e "$OUT_DIR"
+python3 experiments/r58_quality/r60_real1000_quality_wave40_packets_cpu.py \
+  --expand-dir "$EXPAND_DIR" \
+  --wave-dir "$WAVE_DIR" \
+  --sample-dir "$SAMPLE_DIR" \
+  --output-dir "$OUT_DIR"
+```
+
+预期`WAVE40_BLIND_PACKETS_READY__REVIEW_NOT_STARTED`。之后应当**仅分享独立盲审包**给审核者，不发送Owner私有crosswalk、既有模型判决或来源标识。审阅三消息不足以判断的世界设定必须标HOLD，不得脑补。模型审稿若需要外部API，另行获准之后才发起；先不发起任何模型调用，不启动GPU或训练。
+
+
 ## 当前唯一主线方向
 
 **保留已经冻结并完成技术粗筛的Real1000，先做文学质量精筛、可复现上下文、R50完整隔离及CPU实际训练格式验收。**
