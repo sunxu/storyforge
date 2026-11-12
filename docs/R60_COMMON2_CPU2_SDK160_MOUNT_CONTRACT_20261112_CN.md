@@ -108,3 +108,14 @@ Owner在Mac读官方 `GET /api/jobs/adradar` 得到 HTTP 200、`RETURNED_JOBS=10
 ## 2026-11-12 SDK_API_INCOMPATIBLE 只读分页修复
 
 Owner在`hf-cli` venv的Hub SDK 1.6.0运行分页门禁，返回`SDK_API_INCOMPATIBLE`、可见Jobs0，但Stage本地PASS、远端输入READY、输出EMPTY。这是请求尚未返回第一页时的Python `TypeError` 分类，并不表示HF服务端没有Job。核对HF Hub 1.x使用`httpx.Client`：`httpx.Client.get`禁重定向参数为`follow_redirects=False`，**不是requests风格**`allow_redirects=False`。更正分页调用参数并加Mock测试强制检查；不安装依赖、不访问私有正文、不改stage或远端前缀。修复尚待Owner复测。分页遍历成功且0匹配才放行这一项；镜像/依赖及最终唯一提交门禁仍分开HOLD。
+
+
+## 2026-11-12 214条完整Job历史PASS，R59依赖复用修复
+
+Owner实际回执：`CPU2_HISTORY_PAGINATED_PASS__NO_JOB`；`history_exhaustive=true`，`visible_jobs=214`，`matching_jobs=0`，`submit_marker=ABSENT`；本地Stage PASS、远端输入READY、输出EMPTY。这是该检查时刻的全部可见历史记录，不是未来并发提交互斥锁。未提交HF Job。
+
+已核对R59成功的真实Qwen Processor经验：`ms-swift==4.5.3`、`transformers==5.16.1`、`qwen-vl-utils==0.0.14`、`decord` 和 `torchvision==0.29.2`，需 `USE_HF=true` 才能解析HF固定revision。当前仓库版本 `scripts/r60_common2_hf_cpu_worker_v2.sh` 仅修复pip依赖行（增加decord/torchvision并将qwen-vl-utils由范围改为0.0.14）；其余真实ms-swift Collator审计仍复用原`hf_label_mask_audit.py`，且新测试检查这些字符串及CPU-only策略。**此前已同步的27文件Stage没有被修改或重新上传**。
+
+执行策略：从2026-11-12原始不可变冻结Stage `r60-common2-cpu2-20261112T032815Z-71c840b37254` 使用现有`scripts/r60_common2_hf_cpu_stage_v2.py` 重新构建一个全新run key。原始失败Stage和最近一次已上传Stage `r60-common2-cpu2-20261112T050556Z-d26519574fe7` 均保留不动；不要从后者作为stage_v2的old_stage。新Stage只变化Worker及清单，业务私有输入保持原始字节，且未来采用新独立run/output前缀。先通过本地pytest、bash -n、compileall，再按现有CLI dry-run与Bucket empty→sync-existing→ready流程。若任何一步HOLD，不自动重复提交或覆盖。
+
+**仍未解决的生产阻塞**：v2 CLI镜像目前只是`pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime`可变Tag，没有已验证镜像Digest；pip依赖没有完整离线锁定，且R59环境为Python3.11而此镜像中的Python/已预装torch可能不同。依赖更改仅证明源码合同对齐，**不能宣称运行时安装与Processor import可用**。在完成镜像与基础环境版本验证前，继续真实CPU Job提交HOLD，不能把生成新Stage等同于授权启动。
