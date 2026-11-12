@@ -453,3 +453,15 @@ RECEIPT="/填写现有R60_COMMON2_CPU2_SAFE_RECEIPT.json的绝对路径"
 ```
 
 若find结果为空或文件权限有问题，先只定位并核对私有文件，**不要重新构造或重跑HF CPU Job**。下一步优先让Owner就Swift `qwen3_8`/ `last_round`/ max16384/no fabricated system的训练实现以及推理端输入模板做书面政策决策；补上Common2两条与真实完整受保护世界的语义证据，必要时正式HOLD。不要把R50最后评测seal或W17内部其它争议无限放在Real1000 SFT主线之前。
+
+## 2026-11-12 Common2 readiness合成测试失败修复及真实路径已定位
+
+Owner真实Mac执行`tests/test_r60_common2_training_readiness_cpu.py`时，`test_world_card_injected_rejected`预期`EXPERIMENT_MESSAGE_SEQUENCE_HOLD`而程序误报`PRIVATE_INPUT_OR_RUNTIME_HOLD`。原因已核定：现有`audit.validate_payload`使用`Hold(ValueError)`派生异常；新readiness包装器错误使用`type(exc) is ValueError`，使继承ValueError的合法固定Hold错误码被吞掉。**这是错误码投影bug，不是实际私有World Card被修改的证据。**
+
+已把白名单匹配改为`isinstance(exc, ValueError)`且仍要求错误字符串精确等于固定allowlist才输出；未知异常始终仅`PRIVATE_INPUT_OR_RUNTIME_HOLD`，不泄露原始私有文本、路径。新增已知Hold与未知敏感消息两项合成负测，既有伪造world_card被拒绝测试继续保留。待Owner Mac重新跑全套单测；未取得成功回执前不得宣称本次测试PASS。
+
+Owner已经确认真实本地位置：
+- 实验性Common2 SFT目录：`$HOME/.local/share/storyforge/r60/private/r60-real1000-common2-sft-experimental11-v1`
+- 已有HF CPU2 SAFE回执：`$HOME/.local/share/storyforge/r60/private/r60-cpu2-safe-receipt-2ZtCBlmk/R60_COMMON2_CPU2_SAFE_RECEIPT.json`
+
+下一步Owner仅更新隔离分支后运行`python -m pytest -q tests/test_r60_common2_training_readiness_cpu.py`，然后执行`scripts/r60_common2_training_readiness_cpu.py --input-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-common2-sft-experimental11-v1" --cpu2-receipt "$HOME/.local/share/storyforge/r60/private/r60-cpu2-safe-receipt-2ZtCBlmk/R60_COMMON2_CPU2_SAFE_RECEIPT.json"`。输出只需SAFE JSON；严格保持`train_admitted=0`，不开DB/HF/GPU/SFT。
