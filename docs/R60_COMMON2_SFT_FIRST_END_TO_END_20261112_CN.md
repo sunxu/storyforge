@@ -1,5 +1,10 @@
 # StoryForge R60 — 2条质量PASS候选的首个SFT输入端到端验收
 
+## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
+
+**最新Owner实际回执是 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD` / `SAFE_REMOTE_OR_RUNTIME_HOLD`，不是“新Job成功提交”。** 已知首次HF CLI Job `6af53990ab34849891aecb44` 因镜像参数 `docker.io/--name` ERROR；随后SDK镜像修复仍HOLD，不能确认是否另建Job。**禁止直接执行本文件下文的旧 `submit` 或SDK重试命令、删除重试标记或重传原stage。** 接手者必须先只读运行`scripts/r60_common2_hf_cpu_image_probe.py`、核对HF Job真实列表和标记。权威任务书：[R60下一Agent接手任务书](R60_COMMON2_NEXT_AGENT_HANDOFF_20261112_CN.md)；[可复制启动提示词](R60_COMMON2_NEXT_AGENT_START_PROMPT_20261112_CN.md)。Common2质量PASS2、实验输入2、Tokenizer2552/4048 PASS；**Collator真实验收未知/未通过、R50全量隔离HOLD、train_admitted=0、GPU禁止。** Wave40已选40条位置，但盲审暂停，生产留证因无权限DEFERRED。
+
+
 ## 2026-11-12 Owner付费CPU流程决策（现行）
 
 按仓库 `AGENTS.md §2.1` 既有约定，**用户明确请求的HF CPU预检不需要逐个Job再次费用授权**；此前R60 CLI双重 `STORYFORGE_ALLOW_PAID_CPU=YES` / `STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY=YES` 是冗余门禁，现已移除。继续保留CPU-only、严格Stage哈希、远程Bucket ready、每RUN_KEY一次提交防重、本轮只检验ms-swift Collator不训练、不使用GPU，R50全量隔离与训练准入仍HOLD。
