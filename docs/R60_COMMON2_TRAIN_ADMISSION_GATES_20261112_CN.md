@@ -301,3 +301,14 @@ RECOVERY="/将上条find查到的真实绝对路径填在这里"
 已完成的原始50案固定SHA验证、50=46+4完整补集检查，是严格输入和成员身份冻结的技术证据；要使46条正式晋级Held-out测试，还需独立的最终sealed input/grader custody、角色拼接及Tokenizer合同、模型输入等价合同与Owner批准，不能通过脚本自动把`NOT_PERFORMED`变成`PASS`。**Common2的训练隔离策略须由Owner明确是否把原始50案全体当作受保护排除集（保守默认全体保护），与R50正式seal是两个独立决策维度**。
 
 新增的Common2三层来源检查仅对**原始50条全体**比对story/session/message ID，不以46条PRESEAL代替；精确不重叠即使PASS，也继续保持R45隐藏别名和语义独立HOLD、训练准入0。
+
+
+## 2026-11-12 Owner R50原始50案 × Common2两案三级精确来源隔离 PASS（最新）
+
+Owner在Mac本地用历史固定SHA原始50条provenance与原有Common2私有历史恢复清单执行`scripts/r60_r50_common2_exact_source_isolation_cpu.py`，得到真实SAFE：
+
+`R50_COMMON2_EXACT_KEYS_DISJOINT__SEMANTIC_R45_SEAL_HOLD`，`reason_code=EXACT_THREE_LEVEL_DISJOINT`，`r50_original_sha_verified=true`、`r50_cases_checked=50`、`common2_cases_checked=2`、`exact_story_overlap_count=0`、`exact_session_overlap_count=0`、`exact_message_overlap_count=0`、`exact_source_id_disjoint_verified=true`。不读取数据库、不开HF Job、GPU或SFT，不输出私有来源ID/正文，`train_admitted=0`。
+
+**这一项正式闭环：Common2两条与R50原始50条之间的故事/会话/历史及目标消息三级精确ID没有交集。** 不应再将其写为未执行，也不需要重复此严格交集计算。仍然`semantic_world_alias_isolation_verified=false`、`r45_full_source_isolation_verified=false`、`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`；任何ID无交集不能替代异名世界、共享角色/同事件改写、旧评测暴露或R45完整语义来源隔离。
+
+下一步按优先级：(1) 已有R45原始49 Train/15 Val完整来源报告及多世界别名/语义审查状态进行带证据的Owner收敛，尽量复用现有CPU检查结果；(2) R50正式seal属于单独评测治理合同，历史材料明确未执行，禁止以原始文件SHA固定替代Owner封存；(3) 决定Qwen原生与Swift训练/推理模板政策并在现有CPU证据上验证，不再重发HF Job；(4) 全门禁与Owner签准前保持`train_admitted=0`。
