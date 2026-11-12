@@ -112,3 +112,19 @@ used `https://api.deepseek.com`, `deepseek-flash`, `DEEPSEEK_API_KEY`,
 `R60_DEEPSEEK_URL` and `R60_DEEPSEEK_MODEL` may be set to these
 historical exact values, but verify current access with synthetic API first.
 Never echo secret environment values in CLI logs.
+
+## Claude SAFE JSON diagnostic after DeepSeek synthetic PASS
+If the Claude 4Router synthetic request returns `MODEL_JSON_INVALID`,
+do not start REAL1000 `init/advance`, and **do not rerun DeepSeek** if it
+already returned `REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`.
+The shared real reviewer `model_request` now accepts opt-in
+`diagnose_json=True` from the synthetic-only protocol probe: fixed
+codes are `MODEL_ENVELOPE_JSON_INVALID`,
+`MODEL_CONTENT_MISSING_OR_NONSTRING`,
+`MODEL_CONTENT_JSON_INVALID`, and
+`MODEL_REVIEW_SCHEMA_INVALID`. Never show raw responses, private
+input, requests or tokens. Real batch default retains strict generic
+`MODEL_JSON_INVALID`. After Mac CLI update, rerun **only one Claude
+synthetic probe** and inspect the SAFE code; isolate minimal transport
+or response-shape fix with synthetic regression before any real private
+review.
