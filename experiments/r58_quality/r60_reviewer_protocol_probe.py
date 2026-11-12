@@ -66,7 +66,7 @@ def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
             "QUALITY_FLOOR_DECISION_INCONSISTENT",
             "ENDPOINT_INVALID",
             "REMOTE_REVIEW_REQUIRES_EXPLICIT_HTTPS_OPT_IN",
-        }
+        } | reviewer.SAFE_HTTP_HOLDS
         out["reason_code"] = (
             str(exc) if str(exc) in safe else "PROBE_RUNTIME_HOLD"
         )
