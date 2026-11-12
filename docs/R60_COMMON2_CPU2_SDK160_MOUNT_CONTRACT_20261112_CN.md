@@ -171,3 +171,27 @@ Owner经Mac Homebrew HF CLI 2.4.0成功一次性提交真实Common2 CPU-only Job
 为定位问题，HF插件以同一镜像及依赖集另行运行**无私有挂载**的独立CPU-basic诊断Job `6af55b6fab34849891aeda20`，状态`COMPLETED`，标准pip check返回1，**完整唯一**报错：`decord 0.6.0 is not supported on this platform`。这是pip平台元数据检查，尚不能代表实际视频解码能力；早先无挂载依赖Smoke仅确认过decord import，不能证明VideoReader运行。
 
 已修订GitHub Worker `scripts/r60_common2_hf_cpu_worker_v2.sh`：仅在pip check恰好返回1且stdout恰好为**唯一已知报错字符串**、stderr为空时允许进入额外`decord==0.6.0`、`import decord`、`from decord import cpu, VideoReader`、`cpu(0)`可用性验证；其他任何依赖冲突、信息变化、导入失败仍exit42，日志仅输出固定SAFE HOLD代码，不泄漏原始pip输出。此例外只解决已实测平台声明误报，**不表示实际VideoReader打开视频成功**；CPU Collator本身不处理视频。新增合成合同测试 `tests/test_r60_common2_cpu2_decord_dependency_gate.py`。禁止修改原远端Stage。新源码只会用于**下一个create-only RUN_KEY的Stage**，必须重新做单测、Stage SHA、HF CLI dry-run、远端empty→sync-existing→ready、完整Job分页排重、一次性marker。无新Common2私有Job提交、训练准入0、GPU禁用。
+
+
+## 2026-11-12 下一次新Stage准备工具（未提交任何新Common2 Job）
+
+在原私有Common2 Job失败且独立decord依赖诊断完成后，新增 `scripts/r60_common2_cpu2_prepare_next.sh` 作为**只准备，不提交**的Owner Mac工作流。脚本先要求当前`hf`确实解析为`/opt/homebrew/bin/hf` 2.4.0，HF SDK单独使用`R60_HF_SDK_PYTHON`（默认Owner venv）；强制从**原始冻结** `r60-common2-cpu2-20261112T032815Z-71c840b37254` 生成随机唯一create-only新键，而非从失败的 `...054440Z-d5ad72dc667c` 派生；用stage_v2仅替换Worker、保留两条私有输入和其他原文件字节；检查SHA；先判断远端Input EMPTY，再复用`sync-existing`将新版27文件上传至新前缀、上传manifest最后，检查READY；使用HF CLI 2.4.0 Dry-run，并通过完整Jobs历史+输出EMPTY+本地marker ABSENT的最终只读门禁。返回`R60_COMMON2_NEXT_STAGE_READY_PASS__NO_JOB`时，仅代表远端输入准备完成和提交门禁当时通过，**绝不代表真实Job启动或Collator通过**。
+
+此前 `scripts/r60_common2_hf_cpu_submit.sh sync-existing` 隐式调用默认python3的Bucket guard，现在支持 `R60_HF_SDK_PYTHON` 显式指定，以避免此前Mac虚拟环境HF CLI1.6与Homebrew CLI2.4冲突。 `submit` 模式仍不可用；只有独立的单次提交入口 `scripts/r60_common2_hf_cpu_cli_submit_once.py --execute` 能发起正式CPU Job，且会再次检查所有门禁并在提交前原子写入防重复标记。任何错误不重放旧RUN_KEY，不覆盖任何已同步Stage或结果。
+
+Owner运行（先同步分支并验证本地测试）：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+TEST_PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$TEST_PY" -m pytest -q tests/test_r60_common2_cpu2_prepare_next_contract.py tests/test_r60_common2_cpu2_decord_dependency_gate.py tests/test_r60_common2_hf_cpu_cli_dry_run.py tests/test_r60_common2_hf_cpu_cli_submit_once.py
+bash -n scripts/r60_common2_cpu2_prepare_next.sh scripts/r60_common2_hf_cpu_worker_v2.sh scripts/r60_common2_hf_cpu_submit.sh
+export PATH="/opt/homebrew/bin:$PATH"
+export R60_HF_SDK_PYTHON="$HOME/.local/share/storyforge/venvs/hf-cli/bin/python"
+bash scripts/r60_common2_cpu2_prepare_next.sh
+```
+
+注意：第三个阶段（真实CPU Job提交）**不包含在准备脚本内**。只有Owner查看新生成RUN_KEY、全量历史0匹配与SAFE回执后，才使用上述一次性提交入口；R50全量排除仍HOLD，训练准入0，GPU禁止。
