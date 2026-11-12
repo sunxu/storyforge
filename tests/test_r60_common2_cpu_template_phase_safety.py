@@ -45,3 +45,23 @@ def test_qwen38_processor_and_template_are_explicit():
     assert 'raise Hold("TOKENIZER_OUTPUT_HOLD")' in SRC
     assert "eval(" not in SRC
     assert "traceback.print_exc" not in SRC
+
+
+def test_model_free_qwen38_rope_is_text_only_and_fails_closed():
+    assert "def bind_text_only_rope(template, snapshot: Path)" in SRC
+    assert "from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5Model" in SRC
+    assert "config_only = SimpleNamespace(config=config)" in SRC
+    assert 'getattr(config, "model_type", None) != "qwen3_5"' in SRC
+    assert 'type(template).__name__ != "Qwen3_8Template"' in SRC
+    assert 'kwargs.get("image_grid_thw") is not None' in SRC
+    assert 'kwargs.get("video_grid_thw") is not None' in SRC
+    assert "mm_types is None" in SRC
+    assert "torch.any(mm_types != 0)" in SRC
+    assert "Qwen3_5Model.get_rope_index(" in SRC
+    assert "template._get_get_rope_index = lambda: text_rope" in SRC
+    assert "bind_text_only_rope(template, args.snapshot)" in SRC
+    assert '"TEXT_ONLY_ROPE_SETUP"' in SRC
+    assert '"model_weights_loaded": False' in SRC
+    assert '"native_template_token_parity_verified": False' in SRC
+    assert "return_dummy_model=True" not in SRC
+    assert "get_model_processor(" not in SRC
