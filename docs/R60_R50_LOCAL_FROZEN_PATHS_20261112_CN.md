@@ -75,3 +75,12 @@ done
 ## 2026-11-12 ChatGPT资料库恢复位置（最新）
 
 **已找到、已校验但尚未转存到Mac本地的原始50条文件**：ChatGPT资料库根目录 `/StoryForge_R50_PRIVATE_NewChat_Handoff_20261016.zip`、`/R50_FRESH_HELDOUT_50.jsonl`、`/R50_CASE_PROVENANCE_50.jsonl`。历史私有ZIP 368932字节、16条目ZIP校验通过；两个JSONL分别422562/31758字节，SHA256与2026-10-16冻结交接记录和ZIP内原件严格一致。SHA和具体证据见 `R60_COMMON2_TRAIN_ADMISSION_GATES_20261112_CN.md`。这些资料库路径不是Mac绝对路径，**不能把ChatGPT资料库读取成功当作文件已经存在Mac本地**。在Owner手动下载并核对后，才补充Mac最终安全存放位置；保持0600/0700、禁止公开Git提交原件或更改既有PRESEAL副本。以前“原始50份找不到”状态被此条更新取代，但最终R50封存和完整排除仍HOLD。
+
+## 2026-11-12 Owner Mac原始50条落盘完成（替代此前“尚未转存Mac”描述）
+
+已得到Owner真实Mac `shasum -a 256` 收据：以下两份文件现已存在 `/Users/keedle/.local/share/storyforge/r50/original-frozen-20261016/`，并与2026-10-16历史原始冻结字节SHA256精确一致：
+
+- `R50_FRESH_HELDOUT_50.jsonl` SHA256 `8dbb66aeb47fd1fec34718d31b228c0378a79f43b7b847eb3e403752d8139781`
+- `R50_CASE_PROVENANCE_50.jsonl` SHA256 `9306af53c6a53fbe46a6675c50e5fac4753162a5c19d6f3c1a0072919306b280`
+
+该目录为原始50案冻结资料的Mac长期只读引用位置，禁止程序覆盖或将文件提交公开Git。ZIP是否同时落盘至该目录当前未经Owner收据确认，**不要把JSONL恢复PASS解释为ZIP也已在Mac**。下步使用新脚本 `scripts/r60_r50_original50_complement_cpu.py` 与已存在PRESEAL46及排除4的SHA副本只读核验完整50=46+4补集；完整R50 seal、R45世界级隔离和Common2与R50故事/会话/消息交集仍HOLD，训练准入0。
