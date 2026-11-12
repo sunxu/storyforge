@@ -29,6 +29,13 @@ description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行�
 6. **记录证据**：提交安全聚合证据、精确 Commit、Job ID、镜像/依赖版本、测试命令和剩余限制。不得提交 PRIVATE 正文、逐案 ID、私有哈希或凭据。
 7. **停止在授权边界**：CPU 预检结束后，不得自动推理、评审、准入或训练。GPU/训练须另行明确授权。
 
+## R60 Common2 添加合成System后的CPU2复用入口（2026-11-12）
+
+- 本轮属模型特定**业务CPU预检**，复用此前真实CPU2固定镜像、Qwen3.8/ms-swift环境和R18真实Collator；不使用Mac本地Token、没有27B权重下载/训练/GPU。新的R27/R52冻结System导致输入变化，旧无System CPU2不能作新输入PASS。
+- 业务工程入口：`scripts/r60_common2_wrapped_hf_stage.py`（create-only SHA Stage）、`scripts/r60_common2_wrapped_hf_cli.py`（preflight/sync/ready/submit --execute；共享`hf_job_guard`）、`scripts/r60_common2_wrapped_hf_worker.py`（共用Runtime Input/Output/Resource），`scripts/r60_common2_wrapped_hf_receipt_verify.py`（Owner只读回执验证）。完整命令和Schema在`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`，Skill不复制代码或算法。
+- 必须先Doctor、Ruff、Runtime/Volume、Token共享核心和业务合成测试，再新建私有Stage；真正远端只能`adradar`的CPU-upgrade/独立RO/RW，新的RUN_KEY/结果前缀，单次提交并保留提交marker。禁止向上游Quality Manifest自动导入这一技术回执。
+- 仅当业务SAFE被Owner下载并独立验证，才写技术PASS；`job COMPLETED`、本地Stage PASS或dry-run PASS都不等于实际Swift Collator PASS。当前正式SFT admission与GPU许可仍为0。
+
 ## Runtime 使用约定
 
 - 只从 `storyforge_dataset.hf_runtime` 导入公共 API。
