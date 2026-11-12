@@ -21,3 +21,14 @@ def test_safe_phases_are_explicit_and_do_not_disclose_input():
     assert '"train_admitted": 0' in SRC
     assert "traceback.print_exc" not in SRC
     assert "repr(exc)" not in SRC
+
+
+def test_new_stage_copies_reviewed_audit_without_modifying_private_input():
+    builder = (Path(__file__).resolve().parents[1]
+               / "scripts/r60_common2_hf_cpu_stage_v2.py").read_text()
+    assert 'AUDIT_RELPATH = "code/experiments/r58_quality/r60_common2_sft_cpu_template_audit.py"' in builder
+    assert "if AUDIT_RELPATH not in files" in builder
+    assert "files[AUDIT_RELPATH] = audit_bytes" in builder
+    assert "files[NEW_WORKER] = worker" in builder
+    assert "original_stage_untouched" in builder
+    assert "destination.exists()" in builder
