@@ -8,7 +8,7 @@ MODE="${1:-}"
 [[ "$MODE" == sync || "$MODE" == sync-existing || "$MODE" == submit ]] || {
   echo "Usage: bash scripts/r60_common2_hf_cpu_submit.sh sync <input-dir> [output-stage-parent]" >&2
   echo "OR: bash scripts/r60_common2_hf_cpu_submit.sh sync-existing <RUN_KEY> <STAGE_DIR>" >&2
-  echo "OR: STORYFORGE_ALLOW_PAID_CPU=YES STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY=YES bash scripts/r60_common2_hf_cpu_submit.sh submit <RUN_KEY> <STAGE_DIR>" >&2
+  echo "OR: bash scripts/r60_common2_hf_cpu_submit.sh submit <RUN_KEY> <STAGE_DIR>" >&2
   exit 2
 }
 command -v hf >/dev/null || { echo R60_HF_CLI_MISSING >&2; exit 42; }
@@ -49,13 +49,21 @@ if [[ "$MODE" == sync || "$MODE" == sync-existing ]]; then
   echo "R60_COMMON2_SYNC_READY__NO_JOB"
   exit 0
 fi
-# Paid remote CPU is deliberately NOT included in the sync step.
-[[ "${STORYFORGE_ALLOW_PAID_CPU:-}" == YES ]] || { echo R60_PAID_CPU_AUTHORIZATION_REQUIRED >&2; exit 3; }
-[[ "${STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY:-}" == YES ]] || { echo R60_NO_TRAIN_AUTHORIZATION_REQUIRED >&2; exit 3; }
+# The explicit submit action starts the CPU job; no redundant paid-authorization flags.
+# Keep sync and submit separate, with no GPU, training or automatic retry.
 RUN_KEY="${2:?run key required}"
 STAGE="${3:?local immutable stage directory required}"
 [[ "$STAGE" == *"/$RUN_KEY" ]] || { echo R60_RUN_STAGE_MISMATCH >&2; exit 42; }
 python3 scripts/r60_common2_hf_cpu_bucket_guard.py ready "$RUN_KEY" --stage "$STAGE"
+(cd "$STAGE" && shasum -a 256 -c SHA256SUMS.txt >/dev/null) || {
+  echo R60_LOCAL_STAGE_SHA_HOLD >&2; exit 42;
+}
+# An atomic persistent marker prevents accidental duplicate billing for this exact run.
+# Fail closed even if HF CLI exits ambiguously after server-side job submission.
+ATTEMPT="${STAGE}.cpu-submit-attempted"
+if ! mkdir -m 700 "$ATTEMPT" 2>/dev/null; then
+  echo R60_CPU2_DUPLICATE_SUBMIT_HOLD >&2; exit 42
+fi
 # The remote CPU worker enforces exact stage SHA256 and never calls swift sft.
 echo "R60_COMMON2_CPU2_PAID_JOB_SUBMITTING=$RUN_KEY"
 hf jobs run --namespace adradar --name storyforge-r60-common2-cpu2-no-train \
