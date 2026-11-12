@@ -1,6 +1,7 @@
 """Synthetic final CPU2 preflight checks; no service calls."""
 from __future__ import annotations
 
+import sys
 from types import SimpleNamespace
 
 from scripts import r60_common2_hf_cpu_final_read_only as final_gate
@@ -84,7 +85,6 @@ def test_named_existing_job_holds(tmp_path, monkeypatch):
     assert result["job_submission_calls"] == 0
 
 def test_walk_link_pagination_and_hidden_job(monkeypatch):
-    import huggingface_hub
     key = KEY
     class Response:
         def __init__(self, entries, links):
@@ -110,7 +110,7 @@ def test_walk_link_pagination_and_hidden_job(monkeypatch):
             self.calls.append(url)
             return pages[len(self.calls)-1]
     session = FakeSession()
-    monkeypatch.setattr(huggingface_hub, "get_session", lambda: session)
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(get_session=lambda: session))
     api = SimpleNamespace(
         endpoint="https://huggingface.co",
         _build_hf_headers=lambda: {"authorization": "Bearer private"},
@@ -124,7 +124,6 @@ def test_walk_link_pagination_and_hidden_job(monkeypatch):
 
 
 def test_link_redirect_to_foreign_host_fails_closed(monkeypatch):
-    import huggingface_hub
     from pytest import raises
     class Response:
         links = {"next": {"url": "https://evil.example/api/jobs/adradar"}}
@@ -136,7 +135,7 @@ def test_link_redirect_to_foreign_host_fails_closed(monkeypatch):
         def get(self, url, **kwargs):
             assert url == "https://huggingface.co/api/jobs/adradar"
             return Response()
-    monkeypatch.setattr(huggingface_hub, "get_session", lambda: Session())
+    monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(get_session=lambda: Session()))
     api = SimpleNamespace(
         endpoint="https://huggingface.co",
         _build_hf_headers=lambda: {"authorization": "Bearer private"},
