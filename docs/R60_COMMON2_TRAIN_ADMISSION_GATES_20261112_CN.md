@@ -354,3 +354,39 @@ Owner Mac 对此前经SHA校验的历史R45完整来源隔离报告副本`f5`执
 特别核实历史`docs/evidence/V03_R50_ROLE12_OWNER_INTAKE_SAFE_20261023.md`记录：W17 vs 旧世界02/04/10三对`INSUFFICIENT_EVIDENCE`；其后7项全消息审核仍`INSUFFICIENT_CONTEXT`，且截止时真实生效的卡/规则未核证。不能靠对同一证据再做AI审核来闭合；需要Owner本地新的cutoff时点快照、别名事件出处及能复核的世界连通分量，先审再裁决。若无新证据明确`SEMANTIC_SOURCE_EVIDENCE_HOLD`，不得虚构独立结论。
 
 模板方面的已证实情况：原生Qwen Tokenizer [2552,4048]、Swift Collator [2486,3982]、各差66，最终监督Token [282,305]且实际Collator通过；**差66根因及推理模板对齐未验证**。工程方案是提议将真正训练所用的Swift模板+Collator作为训练侧规范，原生审计仅用作长度预算独立参考；需Owner定下训练/推理双端合同，暂不能从这份提议推断新模板已获批，也不需要立刻再申请HF CPU Job。完整任务书和停止条件见新文档。所有HOLD及`train_admitted=0`保持不变。
+
+## 2026-11-12 主线纠偏：新增Common2直接对R45真实训练与验证来源的故事隔离（待Owner实跑）
+
+**主线始终为`Real1000 → 独立六维质量精筛 → 可复现SFT输入 → 训练/验证/保护集隔离 → Owner准入 → 后续训练`。** R50最终正式Held-out评测seal和W17内部语义争议属于评测治理旁支，不能为推进两条Common2衍生SFT输入而无限延伸；但原R50全50案继续作为训练保护集。已PASS的R50 50=46+4、Common2×R50 story/session/message 0/0/0、R45×R50五世界机械碰撞0以及真实HF CPU tokenizer/collator不再重复。
+
+发现**直接影响训练分割**的未检查空白：此前R45×R50无重叠，不能推出Common2×R45 Train49/Validation15无重叠。新建纯本地只读检查器 `scripts/r60_common2_r45_source_story_cpu.py`、合成单测 `tests/test_r60_common2_r45_source_story_cpu.py`，严格读取R45未编译原始Train49/Validation15的历史SHA256 `e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742`/`5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963`，只从每行`metadata.source_story_id`取故事ID；Common2从现有SHA验证的两条Supabase recovery来源清单取`story_id`，分别计算与R45 Train和Val的精确故事集合交集。**既有R45完整源报告f5不包含这些逐故事ID，不可拿f5替代原始49+15。**
+
+仅输出两项重叠计数及固定状态，不打印故事ID、私有正文或路径，不访问数据库、GPU/HF/model。若零交集，只能得到`COMMON2_R45_ORIGINAL_STORY_IDS_DISJOINT__SEMANTIC_TRAIN_HOLD`，不证明跨世界别名或场景内容独立，也不直接开放训练。若有重叠返回`COMMON2_R45_ORIGINAL_STORY_OVERLAP__TRAIN_HOLD`并保持`train_admitted=0`，禁止仅用全局去重或重新编号掩盖重叠。
+
+本次合成检查器的Mac执行：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_r45_source_story_cpu.py
+"$PY" -m compileall -q scripts/r60_common2_r45_source_story_cpu.py
+
+# 先查已有Owner本机R46原始导出，不重下载/不新建Job：
+R46="$HOME/.local/share/storyforge/r46-primary-evidence-r46-20261014T070529Z-248172"
+find "$R46" -type f -name 'train.jsonl' -o -name 'validation.jsonl'
+# 从find结果中选择确实位于source-data/下的原始未编译49/15，不能使用compiled输入
+TRAIN="$R46/source-data/train.jsonl"
+VAL="$R46/source-data/validation.jsonl"
+test -f "$TRAIN" && test -f "$VAL"
+# 复用上一项已经执行通过的那份Common2私有恢复清单：
+RECOVERY="/填写前次已验收的R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json绝对路径"
+
+"$PY" scripts/r60_common2_r45_source_story_cpu.py \
+ --r45-original-train "$TRAIN" \
+ --r45-original-validation "$VAL" \
+ --common2-recovery "$RECOVERY"
+```
+
+**本机路径仅是历史R46导出证据提供的候选位置，必须以实际存在与检查器内置SHA比对为准**。合成测试与Owner真实SAFE尚待验收；若目录不存在，优先复用Mac历史R45 ZIP和R46主证据的其他副本，不自行造原始数据、不访问HF。该检查是Common2阶段临门一脚的直接训练集来源门禁；后续语义裁决及训练/部署模板政策仍需事实证据，Owner尚未授予正式数据准入/GPU许可。
