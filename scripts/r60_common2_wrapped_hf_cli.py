@@ -182,32 +182,81 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
     return report
 
 
+def diagnose(stage: Path, key: str) -> dict:
+    """Read-only remote state. Never uploads, creates a job or emits remote paths."""
+    out = safe("WRAPPED_CPU_REMOTE_DIAGNOSTIC_HOLD", "NOT_CHECKED")
+    out.update(phase="STAGE_VERIFY", remote_input="UNKNOWN",
+               remote_output="UNKNOWN", submit_marker="UNKNOWN")
+    try:
+        if not stage_tool.RUN_RE.fullmatch(key) or stage.name != key:
+            raise ValueError("RUN_KEY_HOLD")
+        expected_files = expected(stage, key)
+        out["phase"] = "SDK_IMPORT"
+        from huggingface_hub import HfApi
+        api = HfApi()
+        out["phase"] = "REMOTE_INPUT_LIST"
+        found = remote_set(api, f"{PREFIX}/runs/{key}/")
+        out["remote_input"] = (
+            "EMPTY" if not found else
+            "READY_FILESET" if found == expected_files else "PARTIAL_OR_MISMATCH"
+        )
+        out["phase"] = "REMOTE_OUTPUT_LIST"
+        outputs = remote_set(api, f"{PREFIX}/results/{key}/")
+        out["remote_output"] = "EMPTY" if not outputs else "NONEMPTY"
+        out["phase"] = "MARKER_CHECK"
+        marker = stage.parent / (key + ".wrapped-cpu-attempted")
+        out["submit_marker"] = "PRESENT" if marker.exists() or marker.is_symlink() else "ABSENT"
+        out.update(status="WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB",
+                   reason_code="READ_ONLY_INSPECTION", phase="COMPLETE")
+    except Exception as exc:  # noqa: BLE001 - never expose remote/private exception text
+        out["reason_code"] = classify_safe_failure(exc)
+    return out
+
+
+def classify_safe_failure(exc: Exception) -> str:
+    """Use the existing HF CPU2 classifier without leaking exception messages."""
+    allowed = {
+        "RUN_KEY_HOLD", "REMOTE_PATH_HOLD", "REMOTE_LIST_HOLD",
+        "REMOTE_STAGE_FILESET_HOLD", "REMOTE_STAGE_ALREADY_EXISTS_HOLD",
+        "REMOTE_RESULT_ALREADY_EXISTS_HOLD", "REMOTE_UPLOAD_INCOMPLETE_HOLD",
+        "REMOTE_MANIFEST_UPLOAD_HOLD", "JOB_ATTEMPT_ALREADY_RECORDED_HOLD",
+        "EXISTING_JOB_HOLD", "HF_CLI_HELP_HOLD", "HF_CLI_FLAGS_HOLD",
+        "HF_CLI_DRY_RUN_HOLD", "HF_AUTH_HOLD", "EXPLICIT_EXECUTE_REQUIRED",
+    }
+    if type(exc) is ValueError and str(exc) in allowed:
+        return str(exc)
+    from r60_common2_hf_cpu_bucket_guard import classify_failure
+    code = classify_failure(exc)
+    if code in {
+        "SDK_MODULE_MISSING", "SDK_API_UNAVAILABLE", "SDK_API_INCOMPATIBLE",
+        "REMOTE_AUTHORIZATION_HOLD", "REMOTE_BUCKET_OR_PATH_NOT_FOUND_HOLD",
+        "REMOTE_RATE_LIMIT_HOLD", "REMOTE_SERVICE_5XX_HOLD",
+        "REMOTE_TIMEOUT_HOLD", "REMOTE_CONNECTION_HOLD",
+        "REMOTE_SDK_OR_SERVICE_HOLD",
+    }:
+        return code
+    return "SDK_OR_RUNTIME_HOLD"
+
+
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("action", choices=["preflight", "sync", "ready", "submit"])
+    p.add_argument("action", choices=["preflight", "sync", "ready", "submit", "diagnose"])
     p.add_argument("--stage", type=Path, required=True)
     p.add_argument("--run-key", required=True)
     p.add_argument("--execute", action="store_true")
     a = p.parse_args()
     try:
-        out = execute(a.action, a.stage, a.run_key, a.execute)
+        out = (diagnose(a.stage, a.run_key) if a.action == "diagnose"
+               else execute(a.action, a.stage, a.run_key, a.execute))
     except Exception as exc:  # noqa: BLE001 - fail closed, never leak private errors
-        codes = {
-            "RUN_KEY_HOLD", "REMOTE_STAGE_FILESET_HOLD", "REMOTE_STAGE_ALREADY_EXISTS_HOLD",
-            "REMOTE_RESULT_ALREADY_EXISTS_HOLD", "REMOTE_UPLOAD_INCOMPLETE_HOLD",
-            "REMOTE_MANIFEST_UPLOAD_HOLD", "JOB_ATTEMPT_ALREADY_RECORDED_HOLD",
-            "EXISTING_JOB_HOLD", "HF_CLI_HELP_HOLD", "HF_CLI_FLAGS_HOLD",
-            "HF_CLI_DRY_RUN_HOLD", "HF_AUTH_HOLD", "EXPLICIT_EXECUTE_REQUIRED",
-        }
-        out = safe("WRAPPED_CPU_ORCHESTRATION_HOLD",
-                   str(exc) if type(exc) is ValueError and str(exc) in codes
-                   else "SDK_OR_RUNTIME_HOLD")
+        out = safe("WRAPPED_CPU_ORCHESTRATION_HOLD", classify_safe_failure(exc))
     print(json.dumps(out, sort_keys=True))
     return 0 if out["status"] in {
         "WRAPPED_CPU_LOCAL_STAGE_PASS__NO_JOB",
         "WRAPPED_CPU_REMOTE_STAGE_READY__NO_JOB",
         "WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB",
         "WRAPPED_CPU_JOB_SUBMITTED__TRAIN_HOLD",
+        "WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB",
     } else 42
 
 
