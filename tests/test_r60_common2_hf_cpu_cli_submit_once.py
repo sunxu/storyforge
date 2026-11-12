@@ -105,7 +105,8 @@ def test_post_marker_unknown_error_fails_closed(monkeypatch, tmp_path):
     install_mock(monkeypatch, stage)
     call = submit.subprocess.run
     def broken(args, **kwargs):
-        if "--dry-run" not in args and args[:3] == ["hf", "jobs", "run"]:
+        if (args[:3] == ["hf", "jobs", "run"]
+                and "--dry-run" not in args and "--help" not in args):
             raise RuntimeError("private confidential")
         return call(args, **kwargs)
     monkeypatch.setattr(submit.subprocess, "run", broken)
