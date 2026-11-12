@@ -106,3 +106,23 @@ R46="$HOME/.local/share/storyforge/r46-primary-evidence-r46-20261014T070529Z-248
 Owner Mac已实际执行`scripts/r60_r46_common2_system_contract_cpu.py`。SAFE状态：`R46_R60_SYSTEM_ROLE_CONTRACT_DIFFERENCE_CONFIRMED__TRAIN_HOLD`，`stage=CONTRACT_COMPARISON`、`reason_code=HISTORICAL_SYSTEM_PRESENT_CURRENT_SYSTEM_ABSENT`；`r45_source_sha_verified=true`、`r45_train_rows=49`、`r45_validation_rows=15`、`r45_rows_with_initial_system=64`；`common2_input_sha_verified=true`、`common2_rows=2`、`common2_rows_with_system=0`、`historical_vs_current_system_contract_equal=false`。既有R46实际System文本是否等价、真实运行模板等价均未证，`training_input_policy_approved=false`、`train_admitted=0`。未访问数据库/HF/GPU、无私有值输出。
 
 **因此R60和R46当前不能声称只改变训练数据。** 已排查的新旧System角色差异已经PASS，不再重复扫描同一冻结文件。下一步不是原地改写Common2或假造历史Sent Prompt，而是Owner决定是否在独立训练版本中引入`EXPLICIT_NEW_TRAINING_WRAPPER`通用System（其文本、SHA、版本必须另行确定）及统一推理端模板；如要形成严格“只变数据”的比较，历史R46旧Adapter只作为非同输入合同参考，需要使用新统一规范构建的对照条件并在另行授权后训练。此处不批准D1/D2/D3、正式数据入训或GPU。
+
+## 2026-11-12 统一System来源已找回：复用R27/R52冻结449字节指令（新实验包装器，Owner真实预检待执行）
+
+查得原有权威证据`docs/evidence/V03_R52_NO_CARD_INPUT_DESIGN_APPROVAL_20261021.md`：冻结无角色卡通用System来自原R27私有档案，在117条R27行中一致，精确UTF-8 **449字节**、SHA256 `5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83`。**文本末尾无额外换行**，本轮已用该SHA核对末尾换行的影响并修正代码。R52已有Owner授权的是R52/v0.3的**实验输入设计**，其状态为`OWNER_APPROVED_INPUT_DESIGN_ONLY__NO_TRAINING_ADMISSION__NO_GPU_AUTHORIZATION`；它不是R60 Common2两条直接正式入训的批准。R46历史R45原数据64条均首条System已由Owner真实核实，但R46每一条System原文字节是否等于此449字节尚未在本次直接比较，**不能由R27/R52出处或R45 System角色存在推断已逐字相同**。
+
+新增只读内存`scripts/r60_common2_generic_system_wrapper_preview_cpu.py`，可接受已冻结Common2原11历史+目标2行及原manifest，先验证原始SHA、role/目标合同，然后**只在内存临时拟加入**上述精确冻结System（`loss=false`），只监督最后Assistant原回复（`loss=true`），不写任何实际训练文件、私有故事、system衍生版本或新manifest。运行结果只含SAFE聚合（2个拟包装案例、2条拟新增System等），保留`train_admitted=0`、`new_swift_collator_verified=false`、`deployment_template_compatibility_verified=false`、`r60_input_design_approved=false`。不修改Common2源JSONL、不虚称历史`ACTUAL_SENT_PROMPT`。这也不是正式的训练侧新输入Token/Mask复审；**任何正式创建新包装版数据都必须先D1/D2签批，随后对新真实字节重新执行CPU Collator/label完整验收**。
+
+Mac只读命令：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_generic_system_wrapper_preview_cpu.py
+"$PY" scripts/r60_common2_generic_system_wrapper_preview_cpu.py \
+ --input-dir "$HOME/.local/share/storyforge/r60/private/r60-real1000-common2-sft-experimental11-v1"
+```
+
+预期`COMMON2_GENERIC_SYSTEM_IN_MEMORY_WRAPPER_PREVIEW_PASS__TRAIN_HOLD`、`system_text_pin_verified=true`、`original_input_sha_verified=true`、`wrapped_examples=2`、`synthetic_system_messages_added=2`、`files_written=0`、`train_admitted=0`。**尚待Owner真实SAFE，不可先声明预览PASS**。本轮不重复R45/R50故事/heldout隔离、无HF、无GPU、无推理。
