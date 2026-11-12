@@ -59,3 +59,19 @@ PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
 ```
 
 预期`R60_R46_PROPOSED_HYPERPARAMETER_CONTROL_PASS__SYSTEM_TEMPLATE_ADMISSION_HOLD`，`hyperparameters_checked=22`，所有训练/部署/语义准入和GPU标志保持false、训练准入0。若HOLD，仅修正错误的配置或代码，不修改旧R46、Common2原始证据或已冻结数据。
+
+## 2026-11-12 Owner Mac真实验收 + 合成测试分支覆盖修正
+
+Owner Mac已返回真实静态参数检查SAFE：`status=R60_R46_PROPOSED_HYPERPARAMETER_CONTROL_PASS__SYSTEM_TEMPLATE_ADMISSION_HOLD`、`hyperparameters_checked=22`、`hyperparameters_equal_to_baseline=true`、`reason_code=STATIC_BASELINE_MATCH_ONLY`、`train_admitted=0`。这是**真实通过的静态配置一致性结果**，不是R46远端System/模板或实际训练的等价证明。
+
+同次pytest为6通过、1失败：`test_unknown_private_runtime_error_is_never_reflected`用19字节无效JSON代替配置，检查器按设计先因`<100`字节触发`POLICY_SIZE_HOLD`，未进入预期的JSON解析/通用HOLD分支。仅修正合成测试：使用大于100字节但语法仍无效的JSON输入，以验证通用HOLD与私有文本抑制；另新增过短输入返回`POLICY_SIZE_HOLD`的独立测试。**不修改安全检查器、不放宽准入、不修改22项训练参数、不提交GPU/HF Job。** 新pytest共8项，尚待Owner Mac复测；不可提前声称8/8 PASS。
+
+重跑命令：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_real1000_r46_parameter_control_cpu.py
+```
