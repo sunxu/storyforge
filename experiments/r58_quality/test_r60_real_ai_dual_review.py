@@ -239,7 +239,8 @@ def test_reusable_protocol_profiles_have_strict_isolated_requests():
         "role": "system", "content": "STATIC_RUBRIC"
     }
     assert "system" not in deepseek
-    assert "temperature" not in deepseek
+    assert deepseek["temperature"] == 0
+    assert deepseek["thinking"] == {"type": "disabled"}
     generic = profiles.build_body(**kwargs, profile="openai-chat")
     assert generic["temperature"] == 0
     assert len(generic["messages"]) == 2
