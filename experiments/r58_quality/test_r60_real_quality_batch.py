@@ -346,3 +346,19 @@ def test_safe_http_429_attempt_replays_without_private_error(tmp_path, monkeypat
         "MODEL_HTTP_429_HOLD": 1
     }
     assert result["train_admitted"] == 0
+
+
+def test_two_http_rate_limits_hold_before_irreversible_case_receipt(
+        tmp_path, monkeypatch):
+    _base, _source, folder, _cases, _safe = setup_batch(
+        tmp_path, monkeypatch, attest=False,
+    )
+
+    def rate_limited(*args):
+        raise ai.Hold("MODEL_HTTP_429_HOLD")
+
+    monkeypatch.setattr(ai, "model_request", rate_limited)
+    with pytest.raises(q.Hold, match="BOTH_REVIEW_MODELS_UNAVAILABLE"):
+        q.advance(folder, 5)
+    assert not (folder / q.receipt_name(1)).exists()
+    assert q.inspect(folder)["cases_reviewed"] == 0
