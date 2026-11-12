@@ -212,3 +212,13 @@ Owner 在已固定SHA的私有副本`f2/f3`上执行v2检查，真实SAFE `R50_P
 **不能由这个PASS证明**原始50条构成完整受保护全集、4条排除在原始50案确实存在且另外46案为精确补集、最终held-out已seal、R45隐藏别名/世界集合隔离已通过，或Common2两条与R50无story/session/message交集。相关现有SAFE仍为`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`。尤其已有R45报告`heldout_cases_sealed=0`，该报告不是最终封存通过的证据。
 
 下一真正任务不应继续重复验证4/4，而应从原R50 Selection Manifest的`original_sha256`、`case_source_line_sha256`、`provenance_source_line_sha256`、`selected_parent_line_numbers_1_based`和`final_heldout_seal`，及Admission/Worlds/R45报告的状态字段建立**值语义明确**的原始50案覆盖证明。先核对实际原始50份私有文件位置与这些摘要的定义，再做原始50 ID与当前46+4的严格补集关系。对未识别的字符串状态必须HOLD，不得仅凭存在或非空标为PASS。此后才在Common2两条完整来源键上执行R50三层集合交集检查，最后再由Owner决定是否训练。
+
+## 2026-11-12 资料库恢复原始R50 50案：精确SHA256验证通过（最新）
+
+在ChatGPT用户资料库**根目录**实际发现 `StoryForge_R50_PRIVATE_NewChat_Handoff_20261016.zip`（368932 bytes）、`R50_FRESH_HELDOUT_50.jsonl`（422562 bytes）、`R50_CASE_PROVENANCE_50.jsonl`（31758 bytes）。历史全量私有ZIP已经在工作容器中成功取回，ZIP CRC `testzip()==None`、16个条目。两份独立JSONL文件与ZIP内对应同名条目分别**逐字节SHA256与2026-10-16历史交接收据完全一致**：
+
+- R50_FRESH_HELDOUT_50.jsonl: `8dbb66aeb47fd1fec34718d31b228c0378a79f43b7b847eb3e403752d8139781`
+- R50_CASE_PROVENANCE_50.jsonl: `9306af53c6a53fbe46a6675c50e5fac4753162a5c19d6f3c1a0072919306b280`
+- ZIP中的 `R50_AUTHORING_REPORT.md` SHA256也与原历史收据 `7d0862300d8a729f893f66c092dfa74a6e2adb75d85eae0cfe2276e105bdf8bd` 一致。
+
+**此前`R50_SOURCE_RECOVERY_HOLD`的“找不到原始50题”定位障碍已解除。** 上述证据是文件级“身份/完整性验证”，不是50→46补集验证、最终held-out seal、R45隐藏别名/世界隔离、Common2三层交集；它们仍HOLD，`train_admitted=0`，GPU/SFT禁止。ZIP和JSONL都只是用户ChatGPT资料库来源及工作容器的私有副本，**尚未上传到Owner Mac本机冻结目录，不能宣称Mac路径已经存在**；后续Owner应通过会话安全下载到Mac的独立私有目录，逐份本地shasum对照后再与已存在PRESEAL46+4进行严格补集核验。严禁把恢复原件写入公开Git、Issue或当作已签署最终seal。
