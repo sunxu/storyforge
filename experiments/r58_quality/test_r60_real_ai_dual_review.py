@@ -317,3 +317,60 @@ def test_http_400_is_fixed_safe_error_without_raw_private_body(monkeypatch):
             protocol="claude-proxy-top-system",
         )
     assert "PRIVATE" not in str(caught.value)
+
+
+def test_synthetic_probe_main_parses_remote_review_flag_and_new_key(monkeypatch, capsys):
+    import r60_reviewer_protocol_probe as probe
+
+    captured = {}
+
+    def fake_inspect(**kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "REVIEWER_PROTOCOL_PREFLIGHT_PASS__NO_REQUEST",
+            "reason_code": "SYNTHETIC_REQUEST_BUILT",
+            "model_requests": 0,
+            "private_source_accessed": False,
+        }
+
+    monkeypatch.setattr(probe, "inspect", fake_inspect)
+    monkeypatch.setattr(
+        probe.sys, "argv",
+        [
+            "r60_reviewer_protocol_probe.py",
+            "--endpoint", "https://api.deepseek.com",
+            "--model", "deepseek-flash",
+            "--protocol", "deepseek-chat",
+            "--allow-remote-review",
+        ],
+    )
+    assert probe.main() == 0
+    assert captured["allow_remote"] is True
+    assert captured["key_env"] == "R60_DEEPSEEK_KEY"
+    assert captured["execute"] is False
+    assert "PRIVATE" not in capsys.readouterr().out
+
+
+def test_synthetic_probe_main_without_remote_flag_does_not_opt_in(monkeypatch):
+    import r60_reviewer_protocol_probe as probe
+
+    captured = {}
+
+    def fake_inspect(**kwargs):
+        captured.update(kwargs)
+        return {"status": "REVIEWER_PROTOCOL_HOLD"}
+
+    monkeypatch.setattr(probe, "inspect", fake_inspect)
+    monkeypatch.setattr(
+        probe.sys, "argv",
+        [
+            "r60_reviewer_protocol_probe.py",
+            "--endpoint", "http://localhost:11434/v1",
+            "--model", "claude-synthetic",
+            "--protocol", "claude-proxy-top-system",
+        ],
+    )
+    assert probe.main() == 42
+    assert captured["allow_remote"] is False
+    assert captured["key_env"] == "R60_CLAUDE_KEY"
+    assert captured["execute"] is False
