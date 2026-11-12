@@ -116,6 +116,15 @@ def run(stage: Path, key: str, execute_dry_run: bool) -> dict:
         result.update(status="CLI_PREFLIGHT_HOLD", reason_code="CLI_UNAVAILABLE_OR_TIMEOUT")
     except ValueError as exc:
         result.update(status="CLI_PREFLIGHT_HOLD", reason_code=str(exc))
+        if str(exc) == "HF_CLI_FLAGS_HOLD":
+            # Only print safe option names, never raw CLI help, args, or paths.
+            help_text = help_process.stdout if "help_process" in locals() else ""
+            missing = hf_job_guard.missing_hf_cli_options(help_text)
+            if re.search(r"(?<![A-Za-z0-9_-])-v(?![A-Za-z0-9_-])", help_text):
+                missing = [option for option in missing if option != "--volume"]
+            if "--dry-run" not in help_text:
+                missing.append("--dry-run")
+            result["missing_cli_flags"] = sorted(set(missing))
     except Exception:
         result.update(status="CLI_PREFLIGHT_HOLD", reason_code="SAFE_LOCAL_HOLD")
     return result
