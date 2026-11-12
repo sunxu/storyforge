@@ -66,10 +66,21 @@ def test_false_template_parity_rejected(tmp_path):
 
 def test_unknown_private_runtime_error_is_never_reflected(tmp_path):
     p,b,config = sources(tmp_path)
-    p.write_text("{secret-private-data")
+    # Keep the file within the explicit size bounds so malformed JSON
+    # reaches the decoding/unknown-error branch rather than the size guard.
+    p.write_text("{secret-private-data" + ("x" * 120))
     result = m.inspect(p,b)
     assert result["reason_code"] == "INPUT_OR_RUNTIME_HOLD"
     assert "secret-private-data" not in json.dumps(result)
+
+
+def test_undersized_policy_is_rejected_before_json_decode(tmp_path):
+    p,b,config = sources(tmp_path)
+    p.write_text("{secret-private-data")
+    result = m.inspect(p,b)
+    assert result["reason_code"] == "POLICY_SIZE_HOLD"
+    assert "secret-private-data" not in json.dumps(result)
+    assert result["train_admitted"] == 0
 
 
 def test_duplicate_yaml_key_rejected(tmp_path):
