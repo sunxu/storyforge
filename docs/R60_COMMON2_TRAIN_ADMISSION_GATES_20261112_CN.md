@@ -390,3 +390,24 @@ RECOVERY="/填写前次已验收的R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.js
 ```
 
 **本机路径仅是历史R46导出证据提供的候选位置，必须以实际存在与检查器内置SHA比对为准**。合成测试与Owner真实SAFE尚待验收；若目录不存在，优先复用Mac历史R45 ZIP和R46主证据的其他副本，不自行造原始数据、不访问HF。该检查是Common2阶段临门一脚的直接训练集来源门禁；后续语义裁决及训练/部署模板政策仍需事实证据，Owner尚未授予正式数据准入/GPU许可。
+
+## 2026-11-12 Common2×R45真实首轮技术HOLD：已补安全诊断（最新）
+
+Owner执行`scripts/r60_common2_r45_source_story_cpu.py`真实SAFE为`COMMON2_R45_STORY_GATE_HOLD`、`reason_code=INPUT_OR_RUNTIME_HOLD`。中间量`r45_original_sha_verified=true`、`r45_train_rows_checked=49`、`r45_validation_rows_checked=15`，**Common2尚未读入**（`common2_cases_checked=0`），训练/验证交集均为`null`。这表明R45原始文件的哈希、元数据已有效读取，而失败发生于后续Common2私有恢复清单读取/解析/Schema或运行时；**不能断言重叠为0或非0**。
+
+原v1将非`Hold`异常隐藏成统一`INPUT_OR_RUNTIME_HOLD`。现新增SAFE固定阶段`stage`（`INPUTS/R45_SPLITS/COMMON2_RECOVERY/COMPARISON`）以及有限固定错误码：`INPUT_FILE_NOT_FOUND_HOLD`、`INPUT_FILE_ACCESS_HOLD`、`INPUT_JSON_DECODE_HOLD`、`INPUT_SCHEMA_RUNTIME_HOLD`、`INPUT_IO_HOLD`；未知异常仍统一掩盖。不得把异常原文、回溯、文件绝对路径或私有内容打印至Issue。合成回归覆盖不存在、无效JSON及错误Schema。
+
+Mac复验只需：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_r45_source_story_cpu.py
+# 此处复用上一轮真实、SHA匹配的TRAIN/VAL/RECOVERY变量；不要覆盖或重建原文件
+"$PY" scripts/r60_common2_r45_source_story_cpu.py \
+ --r45-original-train "$TRAIN" --r45-original-validation "$VAL" \
+ --common2-recovery "$RECOVERY"
+```
+请仅回传新SAFE JSON的`stage`和`reason_code`及完整聚合字段，不贴原文/路径。若为`INPUT_FILE_NOT_FOUND_HOLD`，应重新定位此前已通过R50×Common2三级交集检查所使用的**同一份**`R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json`，不自行造JSON或重跑Supabase。若JSON及Schema均通过才真正比较Common2×R45来源故事。已有R50排除/机械检验PASS保持不变，`train_admitted=0`。
