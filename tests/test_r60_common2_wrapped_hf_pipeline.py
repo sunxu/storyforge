@@ -361,6 +361,7 @@ def test_hf_cli_flags_probe_reports_only_allowlisted_missing_names(monkeypatch):
         )
 
     monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    monkeypatch.setattr(cli, "version", lambda pkg: "1.32.0")
     report = cli.inspect_job_cli_flags()
     assert report["status"] == "WRAPPED_CPU_CLI_FLAGS_HOLD__NO_JOB"
     assert report["missing_cli_flags"] == ["--attempts"]
