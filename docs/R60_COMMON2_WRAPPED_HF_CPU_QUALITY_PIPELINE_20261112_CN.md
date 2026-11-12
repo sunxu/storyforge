@@ -247,3 +247,27 @@ KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
 STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
 "$PY" scripts/r60_common2_wrapped_hf_stage.py inventory --stage "$STAGE" --run-key "$KEY"
 ```
+
+## 2026-11-12 HF_CLI_FLAGS_HOLD 定位
+
+Owner 已确认原RUN_KEY远端 READY_FILESET、输出 EMPTY、marker ABSENT；随后 ready 返回 HF_CLI_FLAGS_HOLD，尚未提交新Job。
+新增只读 cli-flags 子命令，调用 hf jobs run --help，SAFE只输出缺失的公共参数名 missing_cli_flags，绝不打印原始help、token或私有数据。
+复用共享 hf_job_guard.missing_hf_cli_options；保留 -v/--volume 等价检查，新增 --env 和 --dry-run 必需项，绝不降低单次attempt/CPU/RO-RW的保护。
+测试覆盖缺失 --attempts、-v 短参数及 --dry-run；此次变更不上传/覆写原Stage，不提交Job。
+
+Owner执行：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+"$PY" scripts/r60_common2_wrapped_hf_cli.py cli-flags --stage "$STAGE" --run-key "$KEY"
+```
+
+若CLI flags HOLD，先依据SAFE missing_cli_flags判断兼容性，不要直接submit；若CLI flags PASS，再重新执行ready。必要时核对 command -v hf 是否属于当前统一venv。
