@@ -328,3 +328,13 @@ Owner确认新修复Ruff`All checks passed!`，提交前`ready`为`WRAPPED_CPU_R
 重要区分：以上证明本地CLI**成功收到一次Job提交回执**，不能证明云端执行成功或两条Swift Collator通过。通过当前ChatGPT HF连接器inspect该Job返回`404 Not Found`（可能是授权身份、namespace或可见性，不能推断Job失败）；因此后续以Owner本机已通过认证的HF CLI只读检查为准，绝不可因为连接器404重试submit或新建RUN_KEY。
 
 下一步Owner Mac仅只读：`hf jobs inspect 6af5c24737daa033b6283b0a`；`hf jobs logs 6af5c24737daa033b6283b0a`（日志必须检查后才外发，只传SAFE阶段码，不传任何原文/路径）；根据已冻结输出Bucket和文件名获取`R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json`，调用`scripts/r60_common2_wrapped_hf_receipt_verify.py --receipt ... --run-key ...`独立验收。下载回执须私有0600并避免覆盖；可先使用`hf jobs inspect --help`、`hf buckets cp --help`确认CLI参数。任何失败/未知状态不得提交第二次Job。SUCCESS的最低标准是独立验收输出`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`、cases_verified=2、real_swift_collator_verified=true、train_admitted=0。
+
+## 2026-11-12 HF CPU真实业务SAFE回执：两条Wrapped Common2 Collator PASS，仍TRAIN HOLD
+
+Owner从单次HF CPU Job `6af5c24737daa033b6283b0a`提供SAFE业务报告：`R60_COMMON2_WRAPPED_HF_CPU_COLLATOR_PASS__TRAIN_HOLD`，`run_key=r60-common2-wrapcpu-20261112T122746Z-5a612325db98`，`stage=AUDIT_COMPLETE`，`model=Qwen/Qwen3.8-27B`，固定revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`。
+结果：source_examples=2、wrapped_examples=2、tokenizer_verified=true、actual_swift_collator_verified=true、last_assistant_label_mask_verified=true、stage_sha_verified=true、original_input_sha_verified=true；tokenizer_token_counts=[2643,4139]、real_collator_token_counts=[2581,4077]、supervised_token_counts=[282,305]。model_weights_loaded=false、model_inference_calls=0、gpu_started=false、training_dataset_files_written=0、train_admitted=0、quality_v1_admitted=0。
+未解除门禁：deployment_template_compatibility_verified=false、semantic_world_isolation_verified=false、r60_input_design_approved=false。合成System来源仍是`R27_R52_FROZEN_SYNTHETIC_NOT_HISTORICAL_SENT`，不是历史真实发送的System。
+
+**证据等级：**当前已看到Owner贴回的HF SAFE业务JSON，字段与仓库中独立`r60_common2_wrapped_hf_receipt_verify.py`预期成功合同相符；但尚未实际读取其Bucket原始回执字节并运行独立`receipt_verify`，因此不能标为`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`。外层Job提交数=1；worker回执字段`hf_jobs_submitted=0`是worker内部未提交下游Job，不代表外层Job没有提交。不得用该字段覆盖提交日志。
+
+Owner后续只读独立验收：通过同一个HF认证上下文下载原始 `hf://buckets/adradar/storyforge-training/preflight/r60/common2/wrapped-cpu/results/r60-common2-wrapcpu-20261112T122746Z-5a612325db98/R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json` 到Owner私有目录，权限0600，**不使用聊天粘贴JSON重建回执**。执行`python scripts/r60_common2_wrapped_hf_receipt_verify.py --receipt "$RECEIPT" --run-key "$KEY"`。成功标准：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`、cases_verified=2、real_swift_collator_verified=true、train_admitted=0。可再选择传入已在私有渠道核对的`--expected-sha256`。只有独立验收通过才将此二例技术门禁置为已完成；不改变Quality-v1文学质量门禁，也不启动模型训练。
