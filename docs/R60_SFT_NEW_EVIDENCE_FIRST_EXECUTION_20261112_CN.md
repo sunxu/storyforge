@@ -1,5 +1,12 @@
 # StoryForge R60 — 新留证数据优先的SFT主线执行任务书（2026-11-12）
 
+## 九、2026-11-12 P0B先决条件数据库核验已完成，接下来优先核对运行态
+
+已执行并成功复核独立可重复**只读SQL**：`experiments/r58_quality/r60_p0b_roleplay_capture_readiness_readonly.sql`，具体结果见[P0B联验前置清单](R60_P0B_ROLEPLAY_CAPTURE_ACCEPTANCE_GATES_20261112_CN.md)。六张留证相关表均存在、启用RLS，anon/authenticated无表级SELECT，六表记录数全部为0；五份基础生成证据迁移在迁移历史中各登记一次。此次操作不修改数据库，不含原始请求或用户ID。**这是数据库结构现况验证，不是完整生产SQL/权限安全验收，不能证明Worker已运行或抓取开启。**
+
+接下来不应再反复执行相同离线合成测试或对空留证表尝试P1训练提取。P0A离线验证PASS；P0B拆为已完成的**DB_EXISTENCE/BASE_ACL/MIGRATION_REGISTRY**只读子门禁和未完成的**ACTIVE_DEPLOY_SHA/WORKER_INSTALL_AND_STATUS/CAPTURE_SWITCH/GATEWAY_TLS/KEY_STORAGE/PERFORMANCE_BUDGET/INDEPENDENT_WITNESS**。请RolePlay生产Owner在受控环境提供SAFE只读状态、其来源及部署时刻证据，不能由StoryForge连接器猜测生产机器上的进程。任何需要部署/开采集/签发Grant/真实模型联验的动作另行明确批准。训练准入保持0，GPU保持未启动。
+
+
 **P0B九项外部门禁、已存在的RolePlay工具入口与Owner只读交接命令请见：[R60 P0B留证联验审批前置清单](R60_P0B_ROLEPLAY_CAPTURE_ACCEPTANCE_GATES_20261112_CN.md)。真实采集仍HOLD。**
 
 ## 八、2026-11-12 Owner实际执行P0A离线合成预检：主要工程门禁PASS，P0B仍需独立审批
