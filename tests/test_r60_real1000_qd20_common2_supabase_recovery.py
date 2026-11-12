@@ -100,3 +100,35 @@ def test_source_selection_unique_exact_target():
         assert str(exc) == "SOURCE_TEXT_BINDING_HOLD"
     else:
         raise AssertionError("unknown second case must not silently bind")
+
+
+def test_large_history_writer_and_empty_directory_recovery(tmp_path, monkeypatch):
+    monkeypatch.setattr(target.private, "BASE", tmp_path)
+    source = {"schema": "synthetic", "cases": [{"history_messages": [
+        {"content": "示例历史消息" * 9000},
+    ]}]}
+    directory = tmp_path / "recovery"
+    directory.mkdir(mode=0o700)
+    target.write_recovery(directory, source)
+    written = directory / target.FILENAME
+    assert written.stat().st_size > target.private.MAX_CAPTURE_BYTES
+    assert written.stat().st_mode & 0o777 == 0o600
+    try:
+        target.write_recovery(directory, source)
+    except target.Hold as exc:
+        assert str(exc) == "RECOVERY_OUTPUT_NOT_EMPTY_HOLD"
+    else:
+        raise AssertionError("a previous result must never be overwritten")
+
+
+def test_recovery_size_limit_does_not_create_directory(tmp_path, monkeypatch):
+    monkeypatch.setattr(target.private, "BASE", tmp_path)
+    monkeypatch.setattr(target, "MAX_RECOVERY_BYTES", 30)
+    directory = tmp_path / "recovery"
+    try:
+        target.write_recovery(directory, {"cases": ["some case data"]})
+    except target.Hold as exc:
+        assert str(exc) == "RECOVERY_PAYLOAD_OVER_LIMIT_HOLD"
+    else:
+        raise AssertionError("size should be rejected")
+    assert not directory.exists()
