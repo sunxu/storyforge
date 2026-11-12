@@ -103,3 +103,8 @@ Owner在Mac读官方 `GET /api/jobs/adradar` 得到 HTTP 200、`RETURNED_JOBS=10
 已更新 `scripts/r60_common2_hf_cpu_final_read_only.py`：通过同一已认证session按`Link rel=next`只读遍历，要求每一页HTTP成功、JSON是数组、Job ID有效且不重复、下一URL与原HF endpoint同host且路径固定`/api/jobs/adradar`、禁止重定向、禁止循环与超出100页；发现任一匹配RUN_KEY（name/labels/environment/command）则HOLD，无法完整走到无next的最后一页亦HOLD。只有完整遍历且0匹配时返回 `CPU2_HISTORY_PAGINATED_PASS__NO_JOB`、退出码0。对返回的Job ID、命令与环境变量不公开打印。测试增加多页101条、隐藏在第二页Job、跨域Link和HOLD回归。**这只是可见服务端分页完整性证明，不是未发生任何并发提交的锁，也不能解除镜像/依赖合同HOLD。**
 
 请Owner先同步GitHub分支并运行新合成回归，再以`$HOME/.local/share/storyforge/venvs/hf-cli/bin/python scripts/r60_common2_hf_cpu_final_read_only.py --run-key r60-common2-cpu2-20261112T050556Z-d26519574fe7 --stage $HOME/.local/share/storyforge/r60/hf-cpu2-stages/r60-common2-cpu2-20261112T050556Z-d26519574fe7`执行只读分页验收。**未重新提交Job，没有训练准入。**
+
+
+## 2026-11-12 SDK_API_INCOMPATIBLE 只读分页修复
+
+Owner在`hf-cli` venv的Hub SDK 1.6.0运行分页门禁，返回`SDK_API_INCOMPATIBLE`、可见Jobs0，但Stage本地PASS、远端输入READY、输出EMPTY。这是请求尚未返回第一页时的Python `TypeError` 分类，并不表示HF服务端没有Job。核对HF Hub 1.x使用`httpx.Client`：`httpx.Client.get`禁重定向参数为`follow_redirects=False`，**不是requests风格**`allow_redirects=False`。更正分页调用参数并加Mock测试强制检查；不安装依赖、不访问私有正文、不改stage或远端前缀。修复尚待Owner复测。分页遍历成功且0匹配才放行这一项；镜像/依赖及最终唯一提交门禁仍分开HOLD。
