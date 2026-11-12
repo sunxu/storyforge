@@ -4,6 +4,7 @@ Pure CPU + pinned tokenizer/processor, no model weights or training. The only
 persistent output is a create-only SAFE receipt via shared OutputManager.
 """
 from __future__ import annotations
+
 import argparse
 import hashlib
 import json
@@ -17,13 +18,16 @@ sys.path[:0] = [
     str(ROOT / "src"), str(ROOT / "scripts"),
     str(ROOT / "experiments" / "r58_quality"),
 ]
-from storyforge_dataset.hf_runtime import (  # noqa: E402
-    InputManager, OutputManager, ResourceGuard, RuntimeContext,
+import r60_common2_generic_system_wrapper_preview_cpu as wrapper
+import r60_common2_wrapped_hf_stage as stage_tools
+import r60_common2_wrapped_system_cpu_audit as audit
+import r60_real1000_common2_sft_experimental_cpu as sft
+from storyforge_dataset.hf_runtime import (
+    InputManager,
+    OutputManager,
+    ResourceGuard,
+    RuntimeContext,
 )
-import r60_common2_wrapped_hf_stage as stage_tools  # noqa: E402
-import r60_common2_wrapped_system_cpu_audit as audit  # noqa: E402
-import r60_common2_generic_system_wrapper_preview_cpu as wrapper  # noqa: E402
-import r60_real1000_common2_sft_experimental_cpu as sft  # noqa: E402
 
 SCHEMA = "storyforge_r60_common2_wrapped_hf_cpu_receipt_v1"
 RECEIPT_NAME = "R60_COMMON2_WRAPPED_CPU_SAFE_RECEIPT.json"
@@ -82,8 +86,9 @@ def run(stage: Path, output: Path, key: str) -> dict:
         out["stage"] = "MODEL_FILES_ONLY"
         # Hub may be accessed for small tokenizer/config/processor assets only.
         # No *.safetensors/*.bin/model weights are requested or loaded.
-        from huggingface_hub import snapshot_download
         from importlib.metadata import version
+
+        from huggingface_hub import snapshot_download
         required = {
             "ms-swift": "4.5.3", "transformers": "5.16.1",
             "tokenizers": "0.23.3", "huggingface_hub": "1.33.0",
@@ -131,7 +136,7 @@ def run(stage: Path, output: Path, key: str) -> dict:
                 real_collator_token_counts=verified_input["real_collator_token_counts"],
                 supervised_token_counts=verified_input["supervised_token_counts"],
             )
-    except Exception:
+    except Exception:  # noqa: BLE001 - privacy-safe stage hold
         out["reason_code"] = out["stage"] + "_HOLD"
     # A dedicated RW output mounted outside the RO input is mandatory.
     return out
@@ -148,7 +153,7 @@ def main() -> int:
         OutputManager.probe(a.output)
         # Persist even failures as SAFE to prevent expensive opaque retries.
         OutputManager.write_safe(a.output / RECEIPT_NAME, result)
-    except Exception:
+    except Exception:  # noqa: BLE001 - never publish raw exception
         print("R60_WRAPPED_CPU_OUTPUT_PUBLICATION_HOLD")
         return 42
     # No output content other than bounded SAFE result status.
