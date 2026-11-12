@@ -59,6 +59,10 @@ def prepare(stage: Path, key: str, help_text: str) -> list[str]:
         command=command,
     )
     # Add only the documented dry-run flag, before IMAGE; do not enable submit.
+    # The frozen v2 worker requires this environment binding to start.
+    argv[argv.index(IMAGE):argv.index(IMAGE)] = [
+        "--env", f"STORYFORGE_R60_COMMON2_RUN_KEY={key}",
+    ]
     argv.insert(argv.index(IMAGE), "--dry-run")
     # hf 2.4.0 documents IMAGE COMMAND..., with no extra separator in COMMAND.
     # Keep the shared builder unchanged for other projects, adapt only here.
