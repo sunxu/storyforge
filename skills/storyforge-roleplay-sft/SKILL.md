@@ -54,6 +54,14 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - A/B2 一致率、分歧和评分差异只是证据对照，不自动构成双审独立性或 Quality-v1 准入。A 双审独立性、B2 独立性验证、密码学独立性均保持 false；admission=0。
 - 完整 Schema、失败码、输入权限、幂等规则和合成测试见 docs/standards/GOLD_QUALITY_PIPELINE_CN.md；Skill 不复制实现。
 
+### R60 Common2：Quality Pipeline 新System包装的CPU工程证据（2026-11-12）
+
+- Common2 两条的独立六维质量审核、原始衍生输入 SHA 和旧版无System CPU2验证均已分别取得真实 SAFE；`SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`不能冒称历史真实模型请求。
+- 冻结R27/R52 449字节通用无角色卡System只是**明示的新训练包装候选**，不是历史原System。Owner真实内存预览2/2 PASS，但加System后的真实Qwen/Swift验证仍未执行。
+- 新预检必须沿用`skills/storyforge-hf-jobs/SKILL.md`顺序和`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`，在HF CPU只核验新增System后两条的tokenizer、真实`qwen3_8`模板、`last_round`监督、Collator；不得在Mac运行模型Token预检，不再运行旧无System CPU2。
+- `src/storyforge_dataset/hf_runtime`与`token_preflight.py`是共享基础。业务包装放薄适配器、复用R18审核；质量流水线不复制Token算法、不允许HF Worker修改冻结源输入、放宽R50/语义世界隔离或改变Owner裁决。
+- Wrapped CPU SAFE `PASS`只可成为`TRAINING`技术证据，**不得自动生成Gold Quality Pipeline的六维Review或append-review事件，不改变`quality_v1_admitted=0`/`train_admitted=0`**。完整编排、预检、远端一次提交及回收接口见上述Runbook。
+
 ## 数据与质量主线
 
 ### 优先级
