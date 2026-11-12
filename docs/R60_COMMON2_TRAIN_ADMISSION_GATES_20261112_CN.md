@@ -423,3 +423,33 @@ Owner Mac使用已SHA验证的R45原始未编译Train49/Validation15及`$HOME/.l
 **剩余且尚未被本回执解决：** `r45_semantic_world_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`final_heldout_seal_verified=false`、`train_admitted=0`。含义为精确UUID没有碰撞不代表跨世界别名、事件、转述已排除；正式R50评测seal也未完成。Common2衍生输入仍非真实历史发送Prompt，训练/推理模板政策尚未批准。
 
 **下一步严格围绕Real1000高质量SFT主线**：复用已通过的Common2两条做可审核的正式数据准入决策框架，优先明确Swift训练/部署模板政策和针对这两条的最小必要世界语义证据；确认后将同一准入流程批量扩展到更多已冻结的质量候选。不要把R50最终评测封存作为必须优先完成的额外旁支，不重复跑HF或机械来源检查，不自动训练。
+
+## 2026-11-12 主线：Common2衍生SFT输入与已有CPU2证据一站式离线预检（待Owner真实执行）
+
+继Owner真实PASS的R50原50=46+4、Common2×R50 Story/Session/Message 0/0/0、Common2×R45原始Train49/Val15 Story 0/0、R45×R50机械来源PASS以及Common2原生Tokenizer/真实Swift Collator 2/2 PASS之后，下一项**不是继续重复这些来源筛查**，而是把两条实验输入的可复现身份与CPU工程证据合并成安全的、尚未入训的readiness回执。
+
+新增 `scripts/r60_common2_training_readiness_cpu.py` 与 `tests/test_r60_common2_training_readiness_cpu.py`。输入仅为**已经存在的**11历史消息+最终Assistant共12条的原私有SFT JSONL及manifest、先前HF Job已保存的`R60_COMMON2_CPU2_SAFE_RECEIPT.json`；调用原构造审计器的`validate_payload`校验manifest字节SHA/2行消息结构与无虚构System/世界卡，再调用已有`scripts/r60_common2_cpu2_receipt_verify.py`复验HF CPU聚合回执及每条token与supervision数；不下载模型/访问HF或Supabase、不新建任何文件，不打印私有正文、ID、SHA或路径。**注意这两项证据是分别核对的；CPU SAFE计数型回执本身没有输入payload SHA，故此程序不声称证明HF Job与这份私有JSONL的逐字节绑定**。冻结实测数2552/4048、2486/3982、282/305仍应从真实回执获取而非脚本硬编码。
+
+成功状态只可能`COMMON2_INPUT_AND_CPU2_INDEPENDENT_CHECKS_PASS__ADMISSION_HOLD`，始终`train_admitted=0`、`quality_v1_admitted=0`、`train_deploy_template_policy_approved=false`、`semantic_world_alias_isolation_verified=false`、`r50_complete_exclusion_verified=false`；这是准备训练准入裁决所需的**技术证据汇总**，绝非数据放行或GPU授权。合成测试已提交，Owner真实SAFE待执行。
+
+Mac本地最短路径（不使用猜测的既有回执目录）：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_training_readiness_cpu.py
+"$PY" -m compileall -q scripts/r60_common2_training_readiness_cpu.py
+
+B="$HOME/.local/share/storyforge/r60/private"
+# 先定位实际存在的冻结输入与先前二次验签PASS的CPU2 SAFE回执；不得覆盖原始文件：
+find "$B" -type f \( -name 'R60_COMMON2_SFT_EXPERIMENTAL_MANIFEST_PRIVATE.json' -o -name 'R60_COMMON2_CPU2_SAFE_RECEIPT.json' \) -print
+# 必须由Owner核对find结果后再填写；INPUT_DIR指向数据与manifest所在同一个原始目录：
+INPUT_DIR="/填写现有实验性Common2 SFT输入目录"
+RECEIPT="/填写现有R60_COMMON2_CPU2_SAFE_RECEIPT.json的绝对路径"
+"$PY" scripts/r60_common2_training_readiness_cpu.py --input-dir "$INPUT_DIR" --cpu2-receipt "$RECEIPT"
+```
+
+若find结果为空或文件权限有问题，先只定位并核对私有文件，**不要重新构造或重跑HF CPU Job**。下一步优先让Owner就Swift `qwen3_8`/ `last_round`/ max16384/no fabricated system的训练实现以及推理端输入模板做书面政策决策；补上Common2两条与真实完整受保护世界的语义证据，必要时正式HOLD。不要把R50最后评测seal或W17内部其它争议无限放在Real1000 SFT主线之前。
