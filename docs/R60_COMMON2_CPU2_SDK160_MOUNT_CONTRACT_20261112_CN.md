@@ -195,3 +195,12 @@ bash scripts/r60_common2_cpu2_prepare_next.sh
 ```
 
 注意：第三个阶段（真实CPU Job提交）**不包含在准备脚本内**。只有Owner查看新生成RUN_KEY、全量历史0匹配与SAFE回执后，才使用上述一次性提交入口；R50全量排除仍HOLD，训练准入0，GPU禁止。
+
+
+## 2026-11-12 第二次真实CPU Job模板审核HOLD与安全分阶段诊断
+
+第二次正式CPU Job `6af55dd2ab34849891aedb20`（RUN_KEY `r60-common2-cpu2-20261112T062943Z-837f53e69025`）HF插件inspect：`ERROR` exit42，结束时间06:35:40Z。日志显示已通过依赖安装并下载9个固定Qwen Tokenizer文件（不含权重），最后输出 `COMMON2_CPU_TEMPLATE_AUDIT_HOLD`、`tokenizer_verified=false`、`collator_verified=false`、`R60_CPU2_V2_AUDIT_HOLD`。不能据此判断错误发生于Tokenizer、ms-swift Processor、Template还是某条数据的Label Mask；当前公共SAFE返回笼统捕获异常。原运行键、提交标记、私有输入和远端结果不可覆盖/重试。
+
+为避免连续盲目付费重试，审核脚本 `experiments/r58_quality/r60_common2_sft_cpu_template_audit.py` 已添加公开枚举阶段 `SNAPSHOT_CHECK`、`PRIVATE_INPUT_CHECK`、`TOKENIZER_LOAD`、`SWIFT_PROCESSOR_LOAD`、`SWIFT_TEMPLATE_INIT`、`TOKENIZER_ENCODE`、`SWIFT_COLLATOR_AUDIT`，异常仅发出对应 `reason_code: <PHASE>_HOLD`，不打印异常正文、样本正文、Tokenizer IDs、解码结果或调用栈，训练准入与R50隔离状态不变。特别注意：原 `stage_v2.py` 仅替换Worker，不会带上新的审计代码，所以也已修改为只在**全新create-only Stage**替换受审核审计脚本和Worker两个代码文件；原始私有两条数据及Manifest保持字节不变，旧Stage一律保留。新增纯合成安全合同测试。
+
+下一步Owner在独立Mac worktree同步新HEAD；先以r60-tests环境跑 `tests/test_r60_common2_cpu_template_phase_safety.py`、`tests/test_r60_common2_cpu2_prepare_next_contract.py`、`tests/test_r60_common2_cpu2_decord_dependency_gate.py` 等回归和 `python -m compileall -q experiments/r58_quality/r60_common2_sft_cpu_template_audit.py scripts/r60_common2_hf_cpu_stage_v2.py`、`bash -n`。然后沿用 `bash scripts/r60_common2_cpu2_prepare_next.sh` **创建并同步第三个新Stage**；只到 `R60_COMMON2_NEXT_STAGE_READY_PASS__NO_JOB`，不会提交Job。只有新的Stage、CLI dry-run、完整Job历史排重全部PASS时，再由Owner明确执行专用CLI单次提交。任何HOLD保持0训练准入；严禁GPU或修改已使用RUN_KEY。
