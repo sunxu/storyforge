@@ -1,5 +1,10 @@
 # StoryForge R60 — Real1000优质SFT数据主线决策（2026-11-12）
 
+## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
+
+**最新Owner实际回执是 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD` / `SAFE_REMOTE_OR_RUNTIME_HOLD`，不是“新Job成功提交”。** 已知首次HF CLI Job `6af53990ab34849891aecb44` 因镜像参数 `docker.io/--name` ERROR；随后SDK镜像修复仍HOLD，不能确认是否另建Job。**禁止直接执行本文件下文的旧 `submit` 或SDK重试命令、删除重试标记或重传原stage。** 接手者必须先只读运行`scripts/r60_common2_hf_cpu_image_probe.py`、核对HF Job真实列表和标记。权威任务书：[R60下一Agent接手任务书](R60_COMMON2_NEXT_AGENT_HANDOFF_20261112_CN.md)；[可复制启动提示词](R60_COMMON2_NEXT_AGENT_START_PROMPT_20261112_CN.md)。Common2质量PASS2、实验输入2、Tokenizer2552/4048 PASS；**Collator真实验收未知/未通过、R50全量隔离HOLD、train_admitted=0、GPU禁止。** Wave40已选40条位置，但盲审暂停，生产留证因无权限DEFERRED。
+
+
 ## 2026-11-12 最新执行纠偏（覆盖本文其他所有近期优先级）：先完成Common2两条SFT可用性验证
 
 用户已确认：**不得因为已准备Wave40，就将40条独立盲审排在已有2条质量PASS候选训练输入验证之前。** 当前P0唯一目标：从Common2已验证2/2独立六维PASS、103/243条真实持久化历史和冻结Real1000精确目标，构造最小真实来源绑定的**实验性SFT输入**，做CPU真实tokenizer/ms-swift collator和完整R50隔离验收。40条已成功选样的位置清单保持原样，后续盲审与扩大候选池转为第二优先级，不重新抽样、不覆盖、不删除。
