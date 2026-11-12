@@ -334,3 +334,15 @@ P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
 真实回执**还未验收**；预期满足该历史合同仅`R45_EXISTING_EXACT_SOURCE_SCREEN_PASS__SEMANTIC_SEAL_HOLD`，`r45_exact_source_screen_verified=true`；`r45_semantic_world_isolation_verified=false`、`final_heldout_seal_verified=false`、`train_admitted=0`始终不变。若不同版本报告不匹配则HOLD，必须查看报告来源合同而不是任意放松值校验。
 
 **当前未解决的下一实质性风险**为跨世界隐藏别名、人物/事件共用与改写、既有开发/评测暴露；机械筛查无法取代此类审核。R50正式heldout seal也是另一个独立、仍未完成的评测合同，不能为了Common2训练把R50的正式评测封存政策悄悄更改。
+
+## 2026-11-12 Owner R45完整五世界机械来源验收真实PASS（最新）
+
+Owner Mac 对此前经SHA校验的历史R45完整来源隔离报告副本`f5`执行`scripts/r60_r45_existing_full_source_receipt_cpu.py`，真实SAFE：
+
+`status=R45_EXISTING_EXACT_SOURCE_SCREEN_PASS__SEMANTIC_SEAL_HOLD`、`reason_code=FROZEN_R45_49_15_EXACT_REPORT_VERIFIED`、`r45_original_hashes_verified=true`、`r45_train_count_verified=true`、`r45_validation_count_verified=true`、`r50_source_world_count_verified=true`、`exact_world_collision_zero=true`、`exact_long_message_hits_zero=true`、`all_offset_120_window_hits_zero=true`、`r45_exact_source_screen_verified=true`。所有结果只确认历史固定审计器已记录的R45 Train49/Validation15 对R50五个原始世界机械检查；是**历史真实报告的合同二次验收**，而非本次重新扫描所有原始正文。
+
+**已关闭：** R45冻结来源报告的SHA、49/15数量、五世界数量、世界ID冲突0、长消息精确重合0、连续120字符全偏移窗口碰撞0的验收项。不得重复提交R45机械隔离Job或再称该项未验证。
+
+**仍需保留：** `r45_semantic_world_isolation_verified=false`、`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。R45报告本身标记隐藏别名与短句改写`PENDING`，历史R50正式`final_seal=NOT_PERFORMED`，两者是独立的剩余门禁。后续须对真实语义世界关联（角色别名、事件、共享设定、重写/早期评测暴露）做证据审核，不得以字符串零碰撞补写PASS。
+
+下一实际开发优先事项应转到**受控语义关联证据包及Owner裁决**，针对Common2真实2条与原R50全50/R45真实受保护训练及评测世界做语义闭环；并清理Qwen原生与ms-swift模板差异的准入合同。现有R50、R45机械来源门禁已关闭，不需要新增HF或GPU。
