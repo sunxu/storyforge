@@ -245,3 +245,17 @@ test ! -e "$QUALITY"
 针对之前Claude`MODEL_CONTENT_JSON_INVALID`，核查`scripts/r60_p2b_claude_review_client_v1.py`历史成功客户端，发现当前REAL1000审阅器与其不同：旧默认`max_tokens=12000`、新仅1600；旧支持content文本块列表、新只接收字符串；旧读取`finish_reason`、新未读取。现已在共享协议层恢复历史Claude请求预算12000，在共享响应层支持字符串和纯文本块列表、规范化唯一完整Markdown JSON围栏，并禁止`finish_reason=length/max_tokens`产出成功。所有内容仍通过冻结六维和严重标记校验，不修改Quality Pipeline门槛、不猜测响应正文、不改原始审核结果。
 
 之前CLAUDE输出不可解析的**确切原因尚无足够证据**；尤其不能断言只是截断。DeepSeek首轮合成已经`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`，不允许重复请求。Owner更新代码且GitHub离线CI通过后，至多执行一次Claude合成探针。如果仍然`MODEL_CONTENT_JSON_INVALID`，停止盲试，单独走私有诊断工序，而非继续付费猜测。不启动1000池`init/advance`直至两个Reviewer都满足严格SAFE。
+
+## 12. Pilot5-v2 首批证据只读核验（2026-11-13）
+
+Owner上传冻结seed6条及首批5份create-only回执供独立线下核验，未上传GitHub或任何公共文件，原件不修改。由公开脚本 `experiments/r58_quality/r60_pilot5_v2_safe_audit.py` 对源文本UTF-8 SHA256、历史消息canonical JSON SHA256、逐案绑定、回执摘要进行只读核验，公开只返回固定SAFE计数，输出无文本、case_key、SHA、私有文件路径及API Key。此工具只确认完整性，**不自动推翻v1 Reviewer决定、补全缺失模型回复或判定Gold**。使用：
+
+```bash
+python experiments/r58_quality/r60_pilot5_v2_safe_audit.py \
+  --seed "$HOME/.local/share/storyforge/r60/private/g1-pilot-20261108140353/R60_REAL_G1_CAPTURE_PRIVATE.jsonl" \
+  --quality-dir "$HOME/.local/share/storyforge/r60/private/r60-quality-first-1000"
+```
+
+首批v1 SAFE：5/1000已审核，HOLD3 REJECT2 PASS0；逐案审阅技术失败：#1仅Claude HOLD、DeepSeek `QUALITY_FLOOR_DECISION_INCONSISTENT`；#3 Claude和DeepSeek均`MODEL_JSON_INVALID`；#2 Claude REJECT/DeepSeek HOLD；#4 Claude PASS/DeepSeek HOLD；#5 双REJECT。**首批不符合扩批条件，剩余995条HOLD**。没有原始失败响应，不能假装从固定SAFE错误码推断模型实际文本或是否截断。须单独版本化新增补审证据（create-only；保留v1哈希及所有有效模型意见），不重跑已成功审核的一方、不覆盖/回写v1。#2/#4/#5先做独立局部三消息语义裁决；#5不得仅凭制服字样推断实际年龄。R50隔离、世界规则、历史System、Owner独立性认证仍不完整，`train_admitted=0`。本阶段不对接Supabase、不启动GPU或任何模型API、不自动扩批。
+
+CI脚本与synthetic-only测试见 `.github/workflows/r60-real1000-quality-review.yml`，只有在Owner本机明确执行时才读取该机私有目录。公开仓库严禁上传Owner私有回执或候选正文。
