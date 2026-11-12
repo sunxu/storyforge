@@ -1,5 +1,8 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+> **2026-11-12 Common2准入门禁实施（覆盖旧重复HF CPU建议）**：已创建 [CPU通过后训练准入证据任务书](R60_COMMON2_TRAIN_ADMISSION_GATES_20261112_CN.md)，列出Gate T（原生HF与Swift模板规范/差异）、Gate R（R50完整冻结provenance保护集覆盖）、Gate A（Owner准入/世界级切分）；新增 `scripts/r60_r50_frozen_metadata_inventory.py`与纯合成测试，只读检查由Owner明确选择的R50文件**可解析性**，永远输出`r50_complete_exclusion_verified=false`；这是初步证据入口，尚未在真实Owner私有R50文件上运行，绝不是排除PASS。Common2真实CPU验收及SAFE二次验证仍2/2 PASS，不得重复提交HF Job；正式训练准入0，GPU和训练禁用。
+
+
 ## 2026-11-12 Common2已完成CPU SAFE回执只读二次验签（当前最高优先级）
 
 Owner本机已从第五轮成功Job的既存输出读取 `R60_COMMON2_CPU2_SAFE_RECEIPT.json`，并用仓库只读校验器获得 `CPU2_SAFE_RECEIPT_VERIFIED__R50_TRAIN_HOLD`。正式SAFE数据：`cases_verified=2`、`tokenizer_verified=true`、`collator_verified=true`、`tokenizer_token_counts=[2552,4048]`、`real_collator_token_counts=[2486,3982]`、`supervised_token_counts=[282,305]`、`model_inference_calls=0`、`gpu_started=false`、`native_template_token_parity_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、`private_values_emitted=false`。原生Tokenizer与Swift Collator长度分别相差66 token；此长度差不能证明逐token一致、推断原因或覆盖模板HOLD。**原CPU验收及只读回执闭环已完成，不再提交重复HF CPU Job。** 下一优先级：只读查明模板差异与政策、R50冻结完整来源元数据排除、Owner训练准入书面裁决。完整SAFE原件只保留私有位置，公开文档仅记录聚合数字。
