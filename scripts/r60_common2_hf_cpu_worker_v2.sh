@@ -5,6 +5,7 @@ set -euo pipefail
 umask 077
 export CUDA_VISIBLE_DEVICES=""
 export TOKENIZERS_PARALLELISM=false
+export USE_HF=true
 export PYTHONUNBUFFERED=1
 
 KEY="${STORYFORGE_R60_COMMON2_RUN_KEY:?RUN_KEY_REQUIRED}"
