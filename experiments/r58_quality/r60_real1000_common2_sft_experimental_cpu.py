@@ -15,8 +15,8 @@ import stat
 import sys
 from pathlib import Path
 
-import r60_real1000_qd20_common_pass_blind_cpu as common
 import r60_real1000_qd20_common2_supabase_recovery as recovery
+import r60_real1000_qd20_common_pass_blind_cpu as common
 import r60_real_private_batch as private
 import r60_real_quality_batch as quality
 
