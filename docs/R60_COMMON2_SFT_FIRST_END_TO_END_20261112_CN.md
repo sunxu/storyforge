@@ -1,10 +1,17 @@
 # StoryForge R60 — 2条质量PASS候选的首个SFT输入端到端验收
 
+## 2026-11-12 Owner付费CPU流程决策（现行）
+
+按仓库 `AGENTS.md §2.1` 既有约定，**用户明确请求的HF CPU预检不需要逐个Job再次费用授权**；此前R60 CLI双重 `STORYFORGE_ALLOW_PAID_CPU=YES` / `STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY=YES` 是冗余门禁，现已移除。继续保留CPU-only、严格Stage哈希、远程Bucket ready、每RUN_KEY一次提交防重、本轮只检验ms-swift Collator不训练、不使用GPU，R50全量隔离与训练准入仍HOLD。
+
+Owner回执 `R60_COMMON2_HF_CPU2_REMOTE_READY_PASS` + `R60_COMMON2_SYNC_READY__NO_JOB`（RUN_KEY `r60-common2-cpu2-20261112T032815Z-71c840b37254`），已确认两条实验数据在受限Bucket完成同步。2026-11-12尝试使用ChatGPT HF连接器提交此Job遇到 **403 Forbidden**，未取得Job ID；不得声称Job已执行，后续使用Owner Mac有权限的 `hf` CLI直接提交一次，不得自动重试连接器。详见 [HF CPU2操作手册](R60_COMMON2_HF_CPU2_SYNC_SUBMIT_VERIFY_20261112_CN.md)。
+
+
 ## 2026-11-12 最新环境纠偏：改用已验证HF CPU，不在Owner Mac安装Swift完整栈
 
 Owner本机已真实完成Qwen冻结revision Tokenizer计数：2条分别**2552/4048**、16,384上限内；随后Mac本地`--stage both`返回`COMMON2_CPU_TEMPLATE_AUDIT_HOLD`，其统一错误状态无法证明数据或Collator本身有缺陷。回查R18/R27/R53成功流程：Mac主要做纯标准库代码/私有数据校验、`hf` CLI和结果验收；**真实ms-swift+transformers+Collator在HF CPU Job中运行**，不要求Mac安装Swift/PyTorch完整训练栈。此前本任务书关于Mac本地运行`--stage both`的说明不再是当前推荐步骤。
 
-已新增独立可复用HF CPU交接工程，详见 **[R60 Common2 HF CPU2 sync/submit/verify执行手册](R60_COMMON2_HF_CPU2_SYNC_SUBMIT_VERIFY_20261112_CN.md)**：先Mac纯标准库打包、私有Bucket精确对象及SHA绑定、`sync`零Job；再由Owner对指定RUN_KEY**另行授权**付费CPU `submit`，使用`ms-swift==4.5.3`、`transformers==5.16.1`及真实R53固定审计器执行2条最后Assistant的标签掩码/Collator审核。**本轮没有调用HF CPU、没有上传私有数据、没有GPU、没有改变训练准入0。** Wave40仍暂停，完整R50隔离仍HOLD。
+已新增独立可复用HF CPU交接工程，详见 **[R60 Common2 HF CPU2 sync/submit/verify执行手册](R60_COMMON2_HF_CPU2_SYNC_SUBMIT_VERIFY_20261112_CN.md)**：先Mac纯标准库打包、私有Bucket精确对象及SHA绑定、`sync`零Job；Owner已经授权当前RUN_KEY的CPU-only `submit`，无需额外付费许可变量，使用`ms-swift==4.5.3`、`transformers==5.16.1`及真实R53固定审计器执行2条最后Assistant的标签掩码/Collator审核。**本轮没有调用HF CPU、没有上传私有数据、没有GPU、没有改变训练准入0。** Wave40仍暂停，完整R50隔离仍HOLD。
 
 
 ## 2026-11-12 Owner真实构造成功，直接推进Qwen CPU Tokenizer/Collator
