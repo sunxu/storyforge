@@ -250,3 +250,13 @@ P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
 ```
 
 **若报`SOURCE_PROVENANCE_MISMATCH_HOLD`或`PARENT_LINE_MAPPING_HOLD`，不修改原件，不默认放宽规则；先核对Selection Manifest是否规定真实来源行号、46的历史变换规则与原始50的字段语义。** 本脚本是已创建但尚未在Owner Mac实跑的下一验收项，禁止提前声称50补集检查已PASS。
+
+## 2026-11-12 Owner Mac原始50=46+4严格补集真实 PASS（最新权威回执）
+
+Owner在Mac私有冻结原件+此前SHA完全一致的46/4副本上执行 `scripts/r60_r50_original50_complement_cpu.py`，得到真实SAFE状态：
+
+`R50_ORIGINAL50_46_PLUS4_EXACT_COHORT_PASS__SEAL_R45_TRAIN_HOLD`，`reason_code=FROZEN_ORIGINAL_COMPLEMENT_AND_SOURCE_MAPPING_PASS`；`original_hashes_verified=true`、`original_case_provenance_order_verified=true`、`derived_case_provenance_order_verified=true`、`derived_46_match_manifest_selected_lines=true`、`excluded_four_match_original_complement=true`、`selected_source_provenance_matches_original=true`、`original_50_complete_cohort_verified=true`。所核证精确覆盖的是历史固定SHA的原始50文件、Selection记录的46个原始行号、4个唯一排除ID及被选46条的四类来源字段一致性。文件字节未改动、不输出私有ID/正文、数据库/HF Job/GPU均未启动。
+
+**截至本回执，原始50文件定位和完整补集不再是阻塞项**，不应继续将“缺失原始50案”或“未验证50→46补集”写为最新OPEN。剩余准入硬门槛仍有 `final_heldout_seal_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。注意`original_50_complete_cohort_verified=true`仅证明被恢复的原始50与46+4构成完整集合，**不能自动提升为R50受保护全集与R45训练/测试隔离已通过**。
+
+下一步仅聚焦：1) 核实R50 final seal真实字段语义/Owner封存合同，不以非空字符串判通过；2) 用完整R45冻结私有训练/验证世界、故事/会话/消息ID和别名审查证据做R50世界级隔离，警惕历史R45 gate的`heldout_cases_sealed=0`；3) 在同一冻结身份策略下对Common2两条候选做story/session/message交集和任何语义世界别名排查；4) 固定Qwen原生与Swift训练/推理模板政策，按Owner审批维持训练准入0至门禁全过。所有私有内容继续留在Mac或ChatGPT资料库，不写GitHub。
