@@ -1,17 +1,19 @@
 """No HF, model weights, private story files or paid actions in these tests."""
 from __future__ import annotations
+
 import hashlib
 import json
 import sys
 from pathlib import Path
+
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "src"))
-import r60_common2_wrapped_hf_stage as stage  # noqa: E402
-import r60_common2_wrapped_hf_cli as cli  # noqa: E402
-import r60_common2_wrapped_hf_receipt_verify as receipt  # noqa: E402
+import r60_common2_wrapped_hf_cli as cli
+import r60_common2_wrapped_hf_receipt_verify as receipt
+import r60_common2_wrapped_hf_stage as stage
 
 
 KEY = "r60-common2-wrapcpu-20261112T120000Z-abc123456789"
