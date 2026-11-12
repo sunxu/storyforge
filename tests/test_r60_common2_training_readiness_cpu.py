@@ -127,3 +127,28 @@ def test_receipt_open_permissions_holds(tmp_path):
     out = m.inspect(folder, path)
     assert out["reason_code"] == "CPU2_RECEIPT_CONTRACT_HOLD"
     assert out["train_admitted"] == 0
+
+
+def test_hold_subclass_reason_code_remains_allowlisted(tmp_path, monkeypatch):
+    folder, path = make(tmp_path)
+    monkeypatch.setattr(
+        m.audit, "validate_payload",
+        lambda *args: (_ for _ in ()).throw(
+            m.audit.Hold("PRIVATE_EXPERIMENT_CONTRACT_HOLD")
+        ),
+    )
+    out = m.inspect(folder, path)
+    assert out["reason_code"] == "PRIVATE_EXPERIMENT_CONTRACT_HOLD"
+    assert out["train_admitted"] == 0
+    assert "PRIVATE_INPUT_OR_RUNTIME_HOLD" not in json.dumps(out)
+
+
+def test_unknown_hold_reason_cannot_leak_private_text(tmp_path, monkeypatch):
+    folder, path = make(tmp_path)
+    monkeypatch.setattr(
+        m.audit, "validate_payload",
+        lambda *args: (_ for _ in ()).throw(m.audit.Hold("secret narrative")),
+    )
+    out = m.inspect(folder, path)
+    assert out["reason_code"] == "PRIVATE_INPUT_OR_RUNTIME_HOLD"
+    assert "secret narrative" not in json.dumps(out)
