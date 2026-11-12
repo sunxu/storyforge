@@ -23,7 +23,6 @@ def synthetic_stage(tmp_path, monkeypatch):
     for name in (stage.DATA, stage.MANIFEST):
         (source / name).write_text("synthetic-only", encoding="utf-8")
         (source / name).chmod(0o600)
-    from r60_common2_generic_system_wrapper_preview_cpu import preview
     import r60_common2_generic_system_wrapper_preview_cpu as wrapper
     monkeypatch.setattr(wrapper, "preview", lambda path: {
         "status": "COMMON2_GENERIC_SYSTEM_IN_MEMORY_WRAPPER_PREVIEW_PASS__TRAIN_HOLD",
