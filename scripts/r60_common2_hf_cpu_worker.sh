@@ -54,6 +54,16 @@ PY
 export HF_HUB_OFFLINE=1
 export TRANSFORMERS_OFFLINE=1
 mkdir -p "$OUT"
+# Existing R60 audit demands Owner-style 0700 single-level private directory.
+# Work on a private CPU-only runtime copy; never modify staged originals.
+PRIVATE_BASE="$HOME/.local/share/storyforge/r60/private"
+mkdir -p "$PRIVATE_BASE"
+chmod 700 "$PRIVATE_BASE"
+PRIVATE_INPUT="$PRIVATE_BASE/$KEY"
+mkdir -m 700 "$PRIVATE_INPUT"
+cp "$ROOT/private_stage/R60_COMMON2_SFT_EXPERIMENTAL_NOT_ADMITTED_PRIVATE.jsonl" "$PRIVATE_INPUT/"
+cp "$ROOT/private_stage/R60_COMMON2_SFT_EXPERIMENTAL_MANIFEST_PRIVATE.json" "$PRIVATE_INPUT/"
+chmod 600 "$PRIVATE_INPUT/"*
 cd "$CODE"
 python -u "$CODE/experiments/r58_quality/r60_common2_sft_cpu_template_audit.py" \
  --input-dir "$ROOT/private_stage" --snapshot "$SNAP" --stage both \
