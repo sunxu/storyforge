@@ -190,6 +190,8 @@ def diagnose(stage: Path, key: str) -> dict:
     try:
         if not stage_tool.RUN_RE.fullmatch(key) or stage.name != key:
             raise ValueError("RUN_KEY_HOLD")
+        # This is read-only. A previously verified stage that now fails is
+        # never silently repaired, restaged, overwritten or uploaded.
         expected_files = expected(stage, key)
         out["phase"] = "SDK_IMPORT"
         from huggingface_hub import HfApi
@@ -223,6 +225,15 @@ def classify_safe_failure(exc: Exception) -> str:
         "EXISTING_JOB_HOLD", "HF_CLI_HELP_HOLD", "HF_CLI_FLAGS_HOLD",
         "HF_CLI_DRY_RUN_HOLD", "HF_AUTH_HOLD", "EXPLICIT_EXECUTE_REQUIRED",
     }
+    # Stage and shared InputManager failures must be distinguishable from
+    # remote SDK faults. These labels are fixed public codes, never file text.
+    allowed.update({
+        "STAGE_DIR_HOLD", "STAGE_MANIFEST_HOLD", "STAGE_FILES_HOLD",
+        "STAGE_HASH_SCHEMA_HOLD", "STAGE_PATH_HOLD", "STAGE_CONTRACT_HOLD",
+        "INPUT_SYMLINK_REJECTED", "INPUT_OPEN_FAILED", "INPUT_NOT_REGULAR_FILE",
+        "INPUT_SIZE_LIMIT_EXCEEDED", "INPUT_DESCRIPTOR_CHANGED",
+        "INPUT_SHA256_MISMATCH", "INPUT_READ_FAILED", "INPUT_JSON_INVALID",
+    })
     if type(exc) is ValueError and str(exc) in allowed:
         return str(exc)
     from r60_common2_hf_cpu_bucket_guard import classify_failure
