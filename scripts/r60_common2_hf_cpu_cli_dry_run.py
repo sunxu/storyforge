@@ -53,7 +53,7 @@ def prepare(stage: Path, key: str, help_text: str) -> list[str]:
         input_volumes=inputs, output_volume=output, command=command,
     )
     argv = hf_job_guard.build_hf_argv(
-        namespace="adradar", name="storyforge-r60-common2-cpu2-no-train",
+        namespace="adradar", name=f"r60-cpu2-{key}",
         flavor="cpu-upgrade", timeout_minutes=120,
         input_volumes=inputs, output_volume=output, image=IMAGE,
         command=command,
