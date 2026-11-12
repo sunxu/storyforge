@@ -123,7 +123,7 @@ def test_large_history_writer_and_empty_directory_recovery(tmp_path, monkeypatch
 
 def test_recovery_size_limit_does_not_create_directory(tmp_path, monkeypatch):
     monkeypatch.setattr(target.private, "BASE", tmp_path)
-    monkeypatch.setattr(target, "MAX_RECOVERY_BYTES", 30)
+    monkeypatch.setattr(target, "MAX_RECOVERY_BYTES", 10)
     directory = tmp_path / "recovery"
     try:
         target.write_recovery(directory, {"cases": ["some case data"]})
