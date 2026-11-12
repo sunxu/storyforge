@@ -1,5 +1,25 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+## 2026-11-12 最新Owner决策：取消额外付费授权门禁，Common2 CPU2 已授权
+
+Owner明确授权本次 `r60-common2-cpu2-20261112T032815Z-71c840b37254` 的HF CPU-only真实Collator验证，同时要求移除StoryForge额外“付费CPU需逐次再确认并通过环境变量批准”的工程约定。**本次授权已满足，正常执行 `submit` 无需 `STORYFORGE_ALLOW_PAID_CPU` / `STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY`。** 保留`sync`与`submit`独立操作、仅CPU、无GPU、无训练、源文件SHA256绑定、远端文件集合严格验收及防重复提交标记；不扩大为任何模型训练、推理、未来收费工作或其他RUN_KEY的自动发起授权。
+
+Owner刚确认 `R60_COMMON2_HF_CPU2_REMOTE_READY_PASS`、`R60_COMMON2_SYNC_READY__NO_JOB`：27个暂存文件已同步并完成集合校验，**无需重复sync或重建数据**。本轮使用同步时冻结的Worker源码；更新Mac本地 `submit.sh` 即可，不需要重新上传已有stage的内容。
+
+Mac执行（确保本工作树已切换到含新`submit`代码的最新固定提交；使用原有的独立HF CLI venv）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+HF_ENV="$HOME/.local/share/storyforge/venvs/hf-cli"
+RUN_KEY="r60-common2-cpu2-20261112T032815Z-71c840b37254"
+STAGE="$HOME/.local/share/storyforge/r60/hf-cpu2-stages/$RUN_KEY"
+PATH="$HF_ENV/bin:$PATH" bash scripts/r60_common2_hf_cpu_submit.sh submit "$RUN_KEY" "$STAGE"
+```
+
+`submit`执行前会重复验证Bucket就绪和Stage SHA256，使用`$STAGE.cpu-submit-attempted`作为原子本地防重复提交标记。若CLI返回含糊的错误，**不要删除标记盲目重复计费**，先核查`hf jobs ps`和真实Job状态。不要在Mac装ms-swift/torch；不要上传R50保护集或启动GPU。
+
+
 ## 2026-11-12：Owner真实Stage 27文件PASS，远程前缀HOLD专项修复
 
 Owner返回：`R60_COMMON2_HF_CPU2_STAGE_READY__NO_JOB`，`private_examples=2`、`files_staged=27`、`run_key=r60-common2-cpu2-20261112T032815Z-71c840b37254`，随后`R60_COMMON2_HF_CPU2_REMOTE_PREFIX_HOLD`。**这代表本地数据及源码已成功stage，但Bucket前缀检查没有通过；并不是Collator或数据的失败，未创建Job，也不能推断上传成功。** 通过HF Bucket只读列表检查，该RUN_KEY目录目前为空，仍须以Owner本地权限及接口核验为准。不能绕过fail-closed检查，不能重跑付费Job。
@@ -42,7 +62,7 @@ bash scripts/r60_common2_hf_cpu_submit.sh sync-existing "$RUN_KEY" "$STAGE"
 
 - `scripts/r60_common2_hf_cpu_stage.py`：Mac纯标准库，检查私有输入源文件权限及sha、2/2数据合同、目标仅最后assistant、训练准入0；递归收集实际脚本所依赖的本仓库Python模块，并强制官方`hf_label_mask_audit.py` Git blob保持`15296f1d8438f40d727c84913ac658cf6de01cb4`。构造**不覆盖**的0700私有stage文件夹及SHA256SUMS；没有外部调用。
 - `scripts/r60_common2_hf_cpu_bucket_guard.py`：复用R53 read-only `HfApi.list_bucket_tree`，**确认远程新运行键不存在、同步后文件集合与本地manifest完全一致**；鉴权错误即拒绝，不能把空`hf buckets ls`返回码当作成功证据。
-- `scripts/r60_common2_hf_cpu_submit.sh`：`sync`仅上传数据/代码与最后的hash清单，不启动Job；`submit`需要`STORYFORGE_ALLOW_PAID_CPU=YES`与`STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY=YES`双重明确授权，同时重复核对Bucket文件集合。
+- `scripts/r60_common2_hf_cpu_submit.sh`：`sync`仅上传数据/代码与最后的hash清单，不启动Job；`submit`无需付费授权环境变量；保留远程文件集合校验、本地SHA256验收及每个RUN_KEY仅一次提交的本地持久标记。
 - `scripts/r60_common2_hf_cpu_worker.sh`：仅`cpu-upgrade` Flavor、`CUDA_VISIBLE_DEVICES=\"\"`，先验证所有stage SHA256，再按R53成功依赖安装`ms-swift==4.5.3`、`transformers==5.16.1`，仅下载冻结Qwen tokenizer/config/模板**不下载模型权重**；将只读私有源复制到HF Job专属0700/0600目录，调用已有`r60_common2_sft_cpu_template_audit.py --stage both`，继续使用R18/R53真实`hf_label_mask_audit.py`检查`last_round`、最终Assistant-only Loss、真实Collator后标签。**不执行`swift sft`或任何训练**。仅向Bucket保存SAFE JSON和运行状态，不公开私有正文。
 
 ## Mac：先完成离线测试，再选择同步
@@ -83,14 +103,12 @@ R60_COMMON2_SYNC_READY__NO_JOB
 
 ### 2. `submit`：单独明确付费CPU批准后才执行
 
-`cpu-upgrade`可能收费。只有Owner另行授权**这一次特定运行键**才使用下列命令：
+`cpu-upgrade`可能收费。只有Owner无需重复授权**这一次特定运行键**才使用下列命令：
 
 ```bash
 RUN_KEY="前一步真实打印的键"
 STAGE_DIR="前一步真实打印的本地stage目录"
 
-STORYFORGE_ALLOW_PAID_CPU=YES \
-STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY=YES \
 bash scripts/r60_common2_hf_cpu_submit.sh submit "$RUN_KEY" "$STAGE_DIR"
 ```
 
