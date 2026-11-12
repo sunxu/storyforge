@@ -183,3 +183,24 @@ P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
 ```
 
 不启动HF Job/GPU/训练，保留`r50_complete_exclusion_verified=false`及`train_admitted=0`。如果列表元素是嵌套对象，后续必须按真实字段与冻结报告语义先明确映射关系，再执行安全的**逐案ID**对账。
+
+## 2026-11-12 Owner真实排除清单元素形状已证实；升级显式ID映射 v2
+
+Owner SAFE形状回执`R50_EXCLUSION_SHAPES_IDENTIFIED__MAPPING_HOLD`：`selection.excluded_cases`为**4个object**，至少出现预定义白名单键`case_id`和`reason`，有8次非白名单键出现（不公开字段名/值），无内嵌容器；`admission.exclude_ids`为**4个string**。此前`EXCLUSION_ID_TYPE_HOLD`属于旧v1只接受标量输入的技术门禁，不构成来源成员冲突。
+
+已在原校验器`scripts/r60_r50_exclusion_pair_cpu.py`做**可复用的v2映射**：selection四条全为对象时，仅提取每条`case_id`（必须非空str、长度<=256），`reason`必须为非空str，不解释理由含义、忽略其他不公开字段；另一边`exclude_ids`四条仍采用原有标量约束。比较两边精确case ID集合并拒绝重复、非标量、混合结构、缺失case_id/reason及成员不一致。**不做字符串改写、大小写归一、索引号猜测、对象序列化或列表顺序强制要求**。保持以前全标量selection的兼容路径，最终seal/R45/完整50保护和训练准入字段全部保持false/0，SAFE schema更新`storyforge_r60_r50_exclusion_pair_safe_v2`。
+
+Owner在现有私有副本上运行前先合成测试；只复制/更改GitHub代码，不接触原始R50源文件：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_exclusion_pair_cpu.py tests/test_r60_r50_exclusion_shape_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_exclusion_pair_cpu.py
+P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
+"$PY" scripts/r60_r50_exclusion_pair_cpu.py --selection "$P/f2" --admission "$P/f3"
+```
+
+预期只有当四个case ID完全同集合时才是`R50_PRESEAL_FOUR_EXCLUSIONS_MATCH__SEAL_HOLD`；如返回`EXCLUSION_OBJECT_SCHEMA_HOLD`或者`EXCLUSION_ID_SET_MISMATCH_HOLD`必须按真实文件合同继续审查，**不得为了PASS修改原件或隐式转换ID**。合成测试和Owner真实执行目前未验收，不能提前宣称v2通过。
