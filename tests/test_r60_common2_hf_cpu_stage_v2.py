@@ -79,3 +79,10 @@ def test_v2_worker_is_cpu_only_ro_rw_create_only_and_no_training():
     assert 'chmod 600 "$PRIVATE_INPUT/"*' in source
     assert 'SCRATCH/private' not in source
     assert "/workspace" not in source
+    assert "'ms-swift==4.5.3'" in source
+    assert "'transformers==5.16.1'" in source
+    assert "'qwen-vl-utils==0.0.14'" in source
+    assert "'decord'" in source
+    assert "'torchvision==0.29.2'" in source
+    assert "'qwen-vl-utils>=0.0.14'" not in source
+    assert 'export USE_HF=true' in source
