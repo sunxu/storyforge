@@ -183,7 +183,6 @@ def test_submit_creates_marker_before_single_cli_call_and_replay_holds(
     mock_hf = types.ModuleType("huggingface_hub")
     mock_hf.HfApi = lambda: object()
     monkeypatch.setitem(sys.modules, "huggingface_hub", mock_hf)
-    from r60_common2_hf_cpu_final_read_only import walk_job_history
     import r60_common2_hf_cpu_final_read_only as historical
     monkeypatch.setattr(historical, "walk_job_history", lambda *args: (2, 0))
     marker = tmp_path / (KEY + ".wrapped-cpu-attempted")
