@@ -131,7 +131,7 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
     # The only no-existing-job check reuses the exhaustive pagination helper
     # from the already-tested Common2 CPU2 pipeline.
     from r60_common2_hf_cpu_final_read_only import walk_job_history
-    total, matching = walk_job_history(api, key)
+    _, matching = walk_job_history(api, key)
     if matching:
         raise ValueError("EXISTING_JOB_HOLD")
     helper = subprocess.run(["hf", "jobs", "run", "--help"],
