@@ -23,7 +23,7 @@ SCHEMA = "storyforge_r60_common2_generic_system_wrapper_preview_safe_v1"
 PINNED_R27_R52_SYSTEM = (
     "你是互动叙事模型。仅根据本次给出的可见历史对话与当前玩家输入继续故事。\n"
     "保持已经在对话中出现的人物事实和关系、时间空间连续性、角色口吻与玩家自主权；不编造已确定的旧事，不提前使用未来剧情。\n"
-    "不替玩家作出未表达的选择，不越过内容安全边界。若必要信息不足，在故事内自然保留未确定部分，不将假设写成既定事实。\n"
+    "不替玩家作出未表达的选择，不越过内容安全边界。若必要信息不足，在故事内自然保留未确定部分，不将假设写成既定事实。"
 )
 SYSTEM_SHA256 = "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83"
 SYSTEM_SOURCE = "docs/evidence/V03_R52_NO_CARD_INPUT_DESIGN_APPROVAL_20261021.md"
