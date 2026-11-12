@@ -1,5 +1,34 @@
 # StoryForge R60 — 2条质量PASS候选的首个SFT输入端到端验收
 
+## 2026-11-12 Owner真实构造成功，直接推进Qwen CPU Tokenizer/Collator
+
+Owner实际SAFE回执`storyforge_r60_common2_sft_experimental_safe_v1`：`COMMON2_SFT_EXPERIMENTAL_2_READY__TRAIN_HOLD`，`cases=2`、`input_window=11`、`system_prompt_fabricated=false`、`input_kind=SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`、`tokenizer_verified=false`、`collator_verified=false`、`full_r50_exclusion_verified=false`、`train_admitted=0`、模型/GPU 0。**两行来源绑定私有实验SFT JSONL真实已在Owner Mac上生成**；这是数据构造阶段PASS，不代表训练准入完成。
+
+下一步新增`experiments/r58_quality/r60_common2_sft_cpu_template_audit.py`及`tests/test_r60_common2_sft_cpu_template_audit.py`。该工具先核对现有实验JSONL/清单sha与role顺序，不含System和世界卡，**仅支持本次实际构造的11条窗口**，避免未经审查更改窗口；使用本地已固定的Qwen tokenizer快照 revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，`local_files_only`/HF offline，明确token上限16384，禁止下载。先用`--stage token`实际测试 tokenizer；只有ms-swift和依赖在Owner本地已可用时再用`--stage both`，复用现有`scripts/hf_label_mask_audit.audit_row`验证`last_round`只监督最后Assistant、再检查实际ms-swift模板/collator标签一致性。**严格吞掉所有内部诊断/异常原文**，只回SAFE计数；不会加载完整模型、不会产生GPU训练。即使both通过，`r50_complete_exclusion_verified=false`、`train_admitted=0`。
+
+Owner Mac CPU命令（在确认新提交CI PASS且现有工作树干净后）：
+
+```bash
+set -euo pipefail
+cd "$HOME/workspace/storyforge-r60-4router-review"
+python3 -m pytest -q tests/test_r60_common2_sft_cpu_template_audit.py
+BASE="$HOME/.local/share/storyforge/r60/private"
+INPUT_DIR="$BASE/r60-real1000-common2-sft-experimental11-v1"
+# 只能填已在本机下载并固定revision的Qwen tokenizer路径；
+# 不能把任意最新版或不明快照伪称冻结revision。
+TOKENIZER_SNAPSHOT="/已有真实Qwen tokenizer本地快照/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+test -f "$INPUT_DIR/R60_COMMON2_SFT_EXPERIMENTAL_MANIFEST_PRIVATE.json"
+test -f "$TOKENIZER_SNAPSHOT/tokenizer.json"
+python3 experiments/r58_quality/r60_common2_sft_cpu_template_audit.py \
+ --input-dir "$INPUT_DIR" --snapshot "$TOKENIZER_SNAPSHOT" --stage token
+# 仅在本机已安装匹配的ms-swift及完整离线依赖后单独执行：
+python3 experiments/r58_quality/r60_common2_sft_cpu_template_audit.py \
+ --input-dir "$INPUT_DIR" --snapshot "$TOKENIZER_SNAPSHOT" --stage both
+```
+
+预期`COMMON2_CPU_TOKENIZER_PASS__COLLATOR_R50_HOLD`或`COMMON2_CPU_TOKENIZER_COLLATOR_PASS__R50_TRAIN_HOLD`。若本地没有已pin的tokenizer，回`COMMON2_CPU_TEMPLATE_AUDIT_HOLD`即停，不能悄悄改model revision、在线加载模型权重或启动HF Job。此前R50整体保护集没有完整对账回执，后续须单独复核冻结R50数据的来源ID和训练story/session/message重叠，绝不能仅使用五个已知故事。Wave40仍暂停。
+
+
 日期：2026-11-12。**本任务优先于Wave40追加盲审。** 目标是先把既有独立六维PASS 2/2和真实持久化历史（103/243）连成一条可复现的SFT输入样例，查清真实瓶颈，然后才扩大优质数据精筛规模。不自动将PASS升级为训练准入，不申请GPU，不访问RolePlay生产。
 
 ## 事实与当前状态
