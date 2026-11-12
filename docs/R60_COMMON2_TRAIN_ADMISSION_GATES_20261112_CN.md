@@ -260,3 +260,36 @@ Owner在Mac私有冻结原件+此前SHA完全一致的46/4副本上执行 `scrip
 **截至本回执，原始50文件定位和完整补集不再是阻塞项**，不应继续将“缺失原始50案”或“未验证50→46补集”写为最新OPEN。剩余准入硬门槛仍有 `final_heldout_seal_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。注意`original_50_complete_cohort_verified=true`仅证明被恢复的原始50与46+4构成完整集合，**不能自动提升为R50受保护全集与R45训练/测试隔离已通过**。
 
 下一步仅聚焦：1) 核实R50 final seal真实字段语义/Owner封存合同，不以非空字符串判通过；2) 用完整R45冻结私有训练/验证世界、故事/会话/消息ID和别名审查证据做R50世界级隔离，警惕历史R45 gate的`heldout_cases_sealed=0`；3) 在同一冻结身份策略下对Common2两条候选做story/session/message交集和任何语义世界别名排查；4) 固定Qwen原生与Swift训练/推理模板政策，按Owner审批维持训练准入0至门禁全过。所有私有内容继续留在Mac或ChatGPT资料库，不写GitHub。
+
+## 2026-11-12 新增 Common2 vs R50 原始50案三层ID精确隔离检查（待Owner Mac执行）
+
+已完成的`R50_ORIGINAL50_46_PLUS4_EXACT_COHORT_PASS__SEAL_R45_TRAIN_HOLD`只验证原50与46+4精确补集；训练候选是否与R50的源故事/会话/消息重合，必须使用**原始50条provenance全量**检查，而不能仅比较46条PRESEAL或五世界描述性名称。
+
+本轮新建`scripts/r60_r50_common2_exact_source_isolation_cpu.py`与`tests/test_r60_r50_common2_exact_source_isolation_cpu.py`：固定原始50来源JSONL大小/历史SHA256、50份来源结构、完整`source_story_id`集合/`source_session_id`集合/`history_message_ids`及`cutoff_message_id`集合；从早已存在的Common2历史恢复清单 `R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json` 中只读验证两条独立目标、两条story/session、每条`history_messages[].id`及目标`assistant_message_id`，在本地做三类精确ID交集。只输出三类交集计数与状态，不输出任一来源ID、路径、历史消息或哈希；无网络、数据库、HF Job、模型/GPU。
+
+**即使三类精确交集全0，仍返回**`R50_COMMON2_EXACT_KEYS_DISJOINT__SEMANTIC_R45_SEAL_HOLD`，`exact_source_id_disjoint_verified=true`，但`semantic_world_alias_isolation_verified=false`、`r45_full_source_isolation_verified=false`、`final_heldout_seal_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。不能把精确ID无重叠自动等同R45隐藏别名、内容复述或R50最终封存通过。
+
+Owner Mac运行（不覆盖/修改私有原件；只访问本机已存在R50 50案，Common2既有恢复清单）：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_common2_exact_source_isolation_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_common2_exact_source_isolation_cpu.py
+
+R="$HOME/.local/share/storyforge/r50/original-frozen-20261016"
+B="$HOME/.local/share/storyforge/r60/private"
+# 只读定位已有Common2原始历史恢复清单，不要重新运行DB查询或新建数据：
+find "$B" -type f -name 'R60_QD20_COMMON2_SUPABASE_RECOVERY_PRIVATE.json' -print
+# 从查到的真实、权限0600的文件中选定一个确切位置：
+RECOVERY="/将上条find查到的真实绝对路径填在这里"
+"$PY" scripts/r60_r50_common2_exact_source_isolation_cpu.py \
+  --r50-original-provenance "$R/R50_CASE_PROVENANCE_50.jsonl" \
+  --common2-recovery "$RECOVERY"
+```
+
+如果Common2清单权限不满足0600，按前述仅副本调整权限并与原件SHA比对的方法处理，**不能直接chmod历史原件**；如果源字段类型或Common2 schema与冻结合同不符，输出固定HOLD，不能猜测修复。Owner应仅回传SAFE JSON。下一任务是语义世界/隐藏别名以及真实seal状态证据审定；不再重复已通过50补集。
