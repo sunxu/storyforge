@@ -362,3 +362,34 @@ def test_two_http_rate_limits_hold_before_irreversible_case_receipt(
         q.advance(folder, 5)
     assert not (folder / q.receipt_name(1)).exists()
     assert q.inspect(folder)["cases_reviewed"] == 0
+
+
+def test_named_claude_and_deepseek_api_keys_are_used(tmp_path, monkeypatch):
+    base, source, _old, _cases, _ = setup_batch(tmp_path, monkeypatch)
+    folder = base / "named-env-review-batch"
+    q.create_config(
+        folder, source,
+        "https://claude.example/v1", "claude-synthetic",
+        "https://deepseek.example/v1", "deepseek-synthetic",
+        True, False, False, 120,
+        "claude-proxy-top-system", "deepseek-chat",
+    )
+    monkeypatch.setenv("R60_CLAUDE_KEY", "claude-synthetic-secret")
+    monkeypatch.setenv("R60_DEEPSEEK_KEY", "deepseek-synthetic-secret")
+    monkeypatch.setenv("R60_REVIEW_A_KEY", "obsolete-a")
+    monkeypatch.setenv("R60_REVIEW_B_KEY", "obsolete-b")
+    captured = []
+
+    def mock_request(endpoint, model, key, prompt, timeout, json_mode, *,
+                     protocol="openai-chat"):
+        captured.append((model, key, protocol))
+        return synthetic_answer()
+
+    monkeypatch.setattr(ai, "model_request", mock_request)
+    result = q.advance(folder, 1)
+    assert result["cases_reviewed"] == 1
+    assert [v[1] for v in captured] == [
+        "claude-synthetic-secret", "deepseek-synthetic-secret"
+    ]
+    assert not any("synthetic-secret" in str(v)
+                   for v in result.values())
