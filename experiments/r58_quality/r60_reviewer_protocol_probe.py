@@ -77,7 +77,7 @@ def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
                 "CLAUDE_PROXY_JSON_MODE_UNSUPPORTED", "MODEL_ID_REQUIRED"
             } else "PROBE_RUNTIME_HOLD"
         )
-    except Exception:
+    except (OSError, TypeError, KeyError, IndexError, AttributeError):
         out["reason_code"] = "PROBE_RUNTIME_HOLD"
     return out
 
