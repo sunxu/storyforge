@@ -175,7 +175,13 @@ def read_one(cur, case: dict) -> dict:
 
 
 def recover(dsn: str, source_cases: list[dict]) -> list[dict]:
-    import psycopg
+    mark("DB_DRIVER_IMPORT")
+    try:
+        import psycopg
+    except ModuleNotFoundError as exc:
+        if exc.name == "psycopg":
+            raise Hold("PSYCOPG_DRIVER_MISSING_HOLD") from exc
+        raise
 
     mark("DB_CONNECT")
     with psycopg.connect(dsn, autocommit=False, connect_timeout=10) as db:
