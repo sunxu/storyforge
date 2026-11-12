@@ -1,8 +1,6 @@
 """CPU2 v2 stage tests, synthetic private records only; no network."""
 from __future__ import annotations
 
-import hashlib
-import os
 from pathlib import Path
 
 import pytest
