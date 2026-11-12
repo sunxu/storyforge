@@ -211,7 +211,24 @@ def diagnose(stage: Path, key: str) -> dict:
         out.update(status="WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB",
                    reason_code="READ_ONLY_INSPECTION", phase="COMPLETE")
     except Exception as exc:  # noqa: BLE001 - never expose remote/private exception text
-        out["reason_code"] = classify_safe_failure(exc)
+        if out["phase"] == "STAGE_VERIFY":
+            # Before SDK_IMPORT this is a local failure. Never report a
+            # fabricated remote SDK/service cause for arbitrary local errors.
+            reason = classify_safe_failure(exc)
+            stage_codes = {
+                "RUN_KEY_HOLD", "STAGE_DIR_HOLD", "STAGE_MANIFEST_HOLD",
+                "STAGE_FILES_HOLD", "STAGE_HASH_SCHEMA_HOLD",
+                "STAGE_PATH_HOLD", "STAGE_CONTRACT_HOLD",
+                "INPUT_SYMLINK_REJECTED", "INPUT_OPEN_FAILED",
+                "INPUT_NOT_REGULAR_FILE", "INPUT_SIZE_LIMIT_EXCEEDED",
+                "INPUT_DESCRIPTOR_CHANGED", "INPUT_SHA256_MISMATCH",
+                "INPUT_READ_FAILED", "INPUT_JSON_INVALID",
+            }
+            out["reason_code"] = (
+                reason if reason in stage_codes else "STAGE_INPUT_OR_RUNTIME_HOLD"
+            )
+        else:
+            out["reason_code"] = classify_safe_failure(exc)
     return out
 
 
