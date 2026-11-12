@@ -62,6 +62,10 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 - `src/storyforge_dataset/hf_runtime`与`token_preflight.py`是共享基础。业务包装放薄适配器、复用R18审核；质量流水线不复制Token算法、不允许HF Worker修改冻结源输入、放宽R50/语义世界隔离或改变Owner裁决。
 - Wrapped CPU SAFE `PASS`只可成为`TRAINING`技术证据，**不得自动生成Gold Quality Pipeline的六维Review或append-review事件，不改变`quality_v1_admitted=0`/`train_admitted=0`**。完整编排、预检、远端一次提交及回收接口见上述Runbook。
 
+### 2026-11-12 Wrapped Common2 Stage文件集合HOLD
+
+上一轮本地Stage 44文件曾验签PASS，但最新两个Mac Python环境的同一Stage均HOLD，SAFE诊断`STAGE_FILES_HOLD`，仍属于冻结输入的工程验签缺口，不影响已经独立完成的两条文学质量PASS审查，也**不授权入训**。先使用HF Jobs Skill定义的统一Owner venv及只读`stage.py inventory`获取文件类别/数量，坚守严格SHA：禁止把未登记的Python缓存等自动当作忽略项，也不把技术Stage失败映射成文学质量REJECT。CPU/GPU训练门禁均继续HOLD。
+
 ## 数据与质量主线
 
 ### 优先级
