@@ -45,7 +45,7 @@ def walk_job_history(api, key: str, *, max_pages: int = 100) -> tuple[int, int]:
                 or target in seen_urls):
             raise ValueError("PAGINATION_URL_HOLD")
         seen_urls.add(target)
-        response = session.get(target, headers=headers, timeout=20)
+        response = session.get(target, headers=headers, timeout=20, allow_redirects=False)
         response.raise_for_status()
         records = response.json()
         if not isinstance(records, list):
