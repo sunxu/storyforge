@@ -439,3 +439,83 @@ def test_regular_reviewer_keeps_legacy_generic_json_error(monkeypatch):
             "claude-synthetic", "", "synthetic only", 10, False,
             protocol="claude-proxy-top-system",
         )
+
+
+def test_claude_successful_historical_budget_and_json_fence():
+    import r60_reviewer_transport as transport
+
+    payload = transport.build_body(
+        model="claude-synthetic", prompt="synthetic only",
+        instructions="SIX_DIMENSION_RUBRIC", profile="claude-proxy-top-system",
+        json_mode=False,
+    )
+    assert payload["max_tokens"] == 12000
+    assert payload["system"] == "SIX_DIMENSION_RUBRIC"
+    assert payload["messages"] == [{"role": "user", "content": "synthetic only"}]
+    assert "temperature" not in payload
+
+
+@pytest.mark.parametrize("format_kind", ["plain", "fenced", "text_blocks"])
+def test_claude_historical_response_shapes_reuse_strict_validator(
+        monkeypatch, format_kind):
+    import io
+
+    output = json.dumps(model_answer(), ensure_ascii=False)
+    if format_kind == "fenced":
+        output = "```json\n" + output + "\n```"
+    content = (
+        [{"type": "text", "text": output[:25]},
+         {"type": "text", "text": output[25:]}]
+        if format_kind == "text_blocks" else output
+    )
+    response_body = json.dumps({
+        "choices": [{
+            "finish_reason": "stop",
+            "message": {"content": content},
+        }],
+    }, ensure_ascii=False).encode()
+
+    class SyntheticOpener:
+        def open(self, request, timeout):
+            return io.BytesIO(response_body)
+
+    monkeypatch.setattr(
+        ai.urllib.request, "build_opener",
+        lambda *args: SyntheticOpener(),
+    )
+    parsed = ai.model_request(
+        "https://provider.example/v1/chat/completions",
+        "claude-synthetic", "", "synthetic only", 10, False,
+        protocol="claude-proxy-top-system",
+    )
+    assert parsed == model_answer()
+
+
+def test_claude_truncation_has_fixed_safe_code_and_never_passes(monkeypatch):
+    import io
+    import r60_reviewer_protocol_probe as probe
+
+    response_body = json.dumps({
+        "choices": [{
+            "finish_reason": "length",
+            "message": {"content": json.dumps(model_answer())},
+        }],
+    }).encode()
+
+    class SyntheticOpener:
+        def open(self, request, timeout):
+            return io.BytesIO(response_body)
+
+    monkeypatch.setattr(
+        ai.urllib.request, "build_opener",
+        lambda *args: SyntheticOpener(),
+    )
+    result = probe.inspect(
+        endpoint="https://provider.example/v1",
+        model="claude-synthetic", protocol="claude-proxy-top-system",
+        key_env="R60_CLAUDE_KEY", allow_remote=True, json_mode=False,
+        execute=True,
+    )
+    assert result["status"] == "REVIEWER_PROTOCOL_HOLD"
+    assert result["reason_code"] == "MODEL_OUTPUT_TRUNCATED"
+    assert result["train_admitted"] == 0
