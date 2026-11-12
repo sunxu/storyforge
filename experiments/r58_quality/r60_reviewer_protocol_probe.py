@@ -88,7 +88,7 @@ def main() -> int:
     parser.add_argument("--model", required=True)
     parser.add_argument("--protocol", required=True,
                         choices=sorted(transport.PROFILES))
-    parser.add_argument("--key-env", default="R60_REVIEW_A_KEY")
+    parser.add_argument("--key-env", default=None)
     parser.add_argument("--allow-remote-review", action="store_true")
     parser.add_argument("--json-mode", action="store_true")
     parser.add_argument("--execute", action="store_true",
@@ -96,7 +96,12 @@ def main() -> int:
     args = parser.parse_args()
     report = inspect(
         endpoint=args.endpoint, model=args.model,
-        protocol=args.protocol, key_env=args.key_env,
+        protocol=args.protocol,
+        key_env=args.key_env or (
+            "R60_CLAUDE_KEY" if args.protocol == "claude-proxy-top-system"
+            else "R60_DEEPSEEK_KEY" if args.protocol == "deepseek-chat"
+            else "R60_CLAUDE_KEY"
+        ),
         allow_remote=args.allow_remote,
         json_mode=args.json_mode, execute=args.execute,
     )
