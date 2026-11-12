@@ -4,6 +4,7 @@ Subcommands: preflight, sync, ready, submit. Only 'submit --execute' can
 create a CPU job. No fallback/retry and no GPU. Reuses shared hf_job_guard.
 """
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -14,8 +15,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-import hf_job_guard  # noqa: E402
-import r60_common2_wrapped_hf_stage as stage_tool  # noqa: E402
+import hf_job_guard
+import r60_common2_wrapped_hf_stage as stage_tool
 
 BUCKET = "adradar/storyforge-training"
 PREFIX = "preflight/r60/common2/wrapped-cpu"
@@ -135,13 +136,13 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
     if matching:
         raise ValueError("EXISTING_JOB_HOLD")
     helper = subprocess.run(["hf", "jobs", "run", "--help"],
-                            capture_output=True, text=True, timeout=20)
+                            capture_output=True, text=True, timeout=20, check=False)
     if helper.returncode:
         raise ValueError("HF_CLI_HELP_HOLD")
     argv = job_command(key, helper.stdout)
     if action == "ready":
         argv.insert(argv.index(IMAGE), "--dry-run")
-        result = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=60, check=False)
         if (result.returncode != 0 or
             not any(s in (result.stdout + result.stderr).lower()
                     for s in ("dry-run", "dry run"))):
@@ -150,12 +151,12 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
     if action != "submit" or not allow_submit:
         raise ValueError("EXPLICIT_EXECUTE_REQUIRED")
     argv.insert(argv.index(IMAGE), "--dry-run")
-    trial = subprocess.run(argv, capture_output=True, text=True, timeout=60)
+    trial = subprocess.run(argv, capture_output=True, text=True, timeout=60, check=False)
     if (trial.returncode or
         not any(s in (trial.stdout + trial.stderr).lower()
                 for s in ("dry-run", "dry run"))):
         raise ValueError("HF_CLI_DRY_RUN_HOLD")
-    auth = subprocess.run(["hf", "auth", "whoami"], capture_output=True, text=True, timeout=20)
+    auth = subprocess.run(["hf", "auth", "whoami"], capture_output=True, text=True, timeout=20, check=False)
     if auth.returncode:
         raise ValueError("HF_AUTH_HOLD")
     argv.remove("--dry-run")
@@ -166,7 +167,7 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
         stream.flush()
         os.fsync(stream.fileno())
     try:
-        result = subprocess.run(argv, capture_output=True, text=True, timeout=120)
+        result = subprocess.run(argv, capture_output=True, text=True, timeout=120, check=False)
     except (subprocess.TimeoutExpired, OSError):
         return safe("WRAPPED_CPU_JOB_SUBMISSION_UNCONFIRMED", "CHECK_ORG_HISTORY_NO_RETRY")
     if result.returncode:
@@ -190,7 +191,7 @@ def main() -> int:
     a = p.parse_args()
     try:
         out = execute(a.action, a.stage, a.run_key, a.execute)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - fail closed, never leak private errors
         codes = {
             "RUN_KEY_HOLD", "REMOTE_STAGE_FILESET_HOLD", "REMOTE_STAGE_ALREADY_EXISTS_HOLD",
             "REMOTE_RESULT_ALREADY_EXISTS_HOLD", "REMOTE_UPLOAD_INCOMPLETE_HOLD",
