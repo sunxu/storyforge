@@ -11,8 +11,12 @@ import re
 import sys
 from pathlib import Path
 
-from scripts import r60_common2_hf_cpu_bucket_guard as guard
-from scripts import r60_common2_hf_cpu_image_retry as retry
+try:
+    from scripts import r60_common2_hf_cpu_bucket_guard as guard
+    from scripts import r60_common2_hf_cpu_image_retry as retry
+except ModuleNotFoundError:
+    import r60_common2_hf_cpu_bucket_guard as guard
+    import r60_common2_hf_cpu_image_retry as retry
 
 
 def check_local(stage: Path, key: str) -> None:
