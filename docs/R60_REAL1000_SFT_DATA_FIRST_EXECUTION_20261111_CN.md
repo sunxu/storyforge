@@ -1,5 +1,22 @@
 # StoryForge R60 — 真实1000条优质历史数据 → SFT 数据优先执行任务书（2026-11-11）
 
+## 2026-11-12 生产源码真实溯源已定位：RolePlay中已有Prompt构造及未来留证机制，下一步按目标时间固定历史版本
+
+已实际直接读取同帐号可访问的私有生产仓库`sunxu/RolePlay`：`src/app/api/chat/v2/route.ts`、`src/lib/story-v2/prompts/{index,base,runtime,runtime-rollout}.ts`，以及`.claude/plans/2026-11-07-v2-generation-evidence.md`、`.claude/docs/v2-production-release-20261110.md`。**详细权威取证记录及链接**：[R60 RolePlay生产请求还原专项审计](R60_ROLEPLAY_PRODUCTION_REQUEST_RECON_20261112_CN.md)。
+
+确认当前V2实际调用使用`user_stories.v2_data`加运行时Prompt模板、故事/人物/记忆/动态约束，System不来自老字段`initial_system_prompt`；历史由DB读取后裁剪/清洗（当前默认保留12条消息，空输出重试可缩6条），对两条R60的103/243条持久化历史**不能直接等同实际LLM请求**。真实生产发布已于2026-11-10 10:52:02.950 UTC+8恢复生成，固定部署SHA`118090a637356686701fd4a2825f3d75f30c031f`，但证据采集/Worker/原文导出当时关闭；2026-11-12连接器只读核验`v2_generation_evidence`、exports、grants、request_links四张表均为0。既有新留证机制不可倒填旧请求。
+
+下一步Owner运行新脚本`experiments/r58_quality/r60_roleplay_request_era_cpu.py`，直接从已经恢复的两条私有原始target时间戳给出相对2026-11-10固定切换时点的计数桶，绝不输出精确日期/ID/正文或查DB。先执行`python3 -m pytest -q tests/test_r60_roleplay_request_era_cpu.py`，后执行：
+
+```bash
+BASE="$HOME/.local/share/storyforge/r60/private"
+python3 experiments/r58_quality/r60_roleplay_request_era_cpu.py \
+  --recovery-dir "$BASE/r60-real1000-qd20-common2-supabase-recovery-v1"
+```
+
+预期`ROLEPLAY_TARGET_ERA_CLASSIFIED__HISTORICAL_REQUEST_UNVERIFIED`。若在发布前，则必须查更早的RolePlay实际部署/提交和当时Prompt裁剪规则；发布后仍须证明使用哪个部署版本和动态开关。再只读核对历史请求关联和可能仍在保留期内的metrics/trace，核对时间有效`v2_data`及memory，缺失保留HOLD。**不要触发生产采集、重放真实请求或安装Worker/执行迁移**；R50与训练门禁不变，GPU 0。
+
+
 ## 2026-11-12 Owner真实Supabase恢复成功：两条共346条原始持久化历史消息
 
 Owner返回`QD20_COMMON2_PERSISTED_HISTORY_RECOVERED__TRAIN_CONTEXT_HOLD`：已用只读数据库连接按冻结source ID回查两条共同双PASS（独立质量PASS2/2）目标此前的**持久化、已完成历史消息**，分别成功恢复**103条和243条，共346条**；与原冻结Pilot20历史三消息的精确ID/原文匹配2/2。数据库已读取、未修改，输出已写Owner私有结果文件，私有文本/ID不在SAFE输出中，模型/GPU调用0。
