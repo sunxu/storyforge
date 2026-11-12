@@ -8,6 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from urllib.parse import urljoin, urlparse
 
 try:
     from scripts import r60_common2_hf_cpu_bucket_guard as bucket
@@ -21,6 +22,61 @@ except ModuleNotFoundError:
     import r60_common2_hf_cpu_stage as stage_contract
 
 RESULTS = "preflight/r60/common2/cpu2/results"
+
+
+def walk_job_history(api, key: str, *, max_pages: int = 100) -> tuple[int, int]:
+    """Walk all authoritative API pages. Never emit any job body or token."""
+    from huggingface_hub import get_session
+
+    origin = api.endpoint.rstrip("/")
+    base_path = "/api/jobs/adradar"
+    target = origin + base_path
+    parsed_base = urlparse(target)
+    headers = api._build_hf_headers()
+    session = get_session()
+    seen_urls: set[str] = set()
+    seen_ids: set[str] = set()
+    total = 0
+    matching = 0
+    for _ in range(max_pages):
+        parsed = urlparse(target)
+        if (parsed.scheme != "https" or parsed.netloc != parsed_base.netloc
+                or parsed.path != base_path or parsed.fragment
+                or target in seen_urls):
+            raise ValueError("PAGINATION_URL_HOLD")
+        seen_urls.add(target)
+        response = session.get(target, headers=headers, timeout=20)
+        response.raise_for_status()
+        records = response.json()
+        if not isinstance(records, list):
+            raise ValueError("PAGINATION_RESPONSE_HOLD")
+        for record in records:
+            if not isinstance(record, dict):
+                raise ValueError("PAGINATION_RESPONSE_HOLD")
+            job_id = record.get("id")
+            if not isinstance(job_id, str) or not job_id or job_id in seen_ids:
+                raise ValueError("PAGINATION_DUPLICATE_OR_INVALID_JOB_HOLD")
+            seen_ids.add(job_id)
+            total += 1
+            labels = record.get("labels") or {}
+            name = record.get("name") or (labels.get("name") if isinstance(labels, dict) else "")
+            environment = record.get("environment") or {}
+            # A job can be submitted without a name containing the key.
+            if (key in str(name or "")
+                    or key in str(labels)
+                    or (isinstance(environment, dict)
+                        and environment.get("STORYFORGE_R60_COMMON2_RUN_KEY") == key)
+                    or any(key in str(x) for x in (record.get("command") or []))):
+                matching += 1
+        next_page = response.links.get("next")
+        if not next_page:
+            return total, matching
+        href = next_page.get("url")
+        if not isinstance(href, str) or not href:
+            raise ValueError("PAGINATION_URL_HOLD")
+        target = urljoin(target, href)
+    raise ValueError("PAGINATION_LIMIT_HOLD")
+
 
 
 def check(api, stage: Path, key: str) -> dict:
@@ -62,21 +118,15 @@ def check(api, stage: Path, key: str) -> dict:
             report["reason_code"] = "OUTPUT_ALREADY_PRESENT"
             return report
         report["remote_output"] = "EMPTY_PASS"
-        jobs = api.list_jobs(namespace="adradar")
-        report["visible_jobs"] = len(jobs)
-        matches = [
-            j for j in jobs
-            if key in str(getattr(j, "name", ""))
-            or key in str(getattr(j, "labels", ""))
-        ]
-        report["matching_jobs"] = len(matches)
-        if matches:
-            report["reason_code"] = "VISIBLE_JOB_MATCH_HOLD"
-        elif len(jobs) >= 100:
-            report["reason_code"] = "JOB_HISTORY_INCOMPLETE_HOLD"
+        total, matched = walk_job_history(api, key)
+        report["visible_jobs"] = total
+        report["matching_jobs"] = matched
+        report["history_exhaustive"] = True
+        if matched:
+            report["reason_code"] = "PAGINATED_JOB_MATCH_HOLD"
         else:
-            # The endpoint has no documented exhaustion guarantee.
-            report["reason_code"] = "JOB_HISTORY_NOT_PROVEN_EXHAUSTIVE"
+            report["status"] = "CPU2_HISTORY_PAGINATED_PASS__NO_JOB"
+            report["reason_code"] = "JOB_HISTORY_EXHAUSTIVE_NO_MATCH"
         return report
     except Exception as exc:
         report["reason_code"] = bucket.classify_failure(exc)
