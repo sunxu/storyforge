@@ -89,7 +89,16 @@ def frozen_pool(source: Path) -> tuple[list[dict], str]:
 def create_config(folder: Path, source: Path, endpoint_a: str,
                   model_a: str, endpoint_b: str, model_b: str,
                   allow_remote: bool, attest: bool, json_mode: bool,
-                  timeout: int) -> dict:
+                  timeout: int, protocol_a: str = "openai-chat",
+                  protocol_b: str = "openai-chat") -> dict:
+    try:
+        ai.transport.require_profile(protocol_a)
+        ai.transport.require_profile(protocol_b)
+    except ValueError as exc:
+        raise Hold("REVIEW_PROTOCOL_UNSUPPORTED") from exc
+    if (protocol_a == "claude-proxy-top-system" or
+            protocol_b == "claude-proxy-top-system") and json_mode:
+        raise Hold("CLAUDE_PROXY_JSON_MODE_UNSUPPORTED")
     if folder.exists():
         raise Hold("QUALITY_OUTPUT_EXISTS_HOLD")
     if type(timeout) is not int or not 10 <= timeout <= 300:
@@ -109,6 +118,7 @@ def create_config(folder: Path, source: Path, endpoint_a: str,
         "allow_remote": bool(allow_remote),
         "owner_attested_independent_ai": bool(attest),
         "json_mode": bool(json_mode), "timeout": timeout,
+        "protocol_a": protocol_a, "protocol_b": protocol_b,
     }
     g1.write_new(folder / CONFIG_FILE, expand.private_bytes(config))
     return {
@@ -140,6 +150,13 @@ def validate_config(folder: Path) -> dict:
             or config["model_a"].casefold() == config["model_b"].casefold()):
         raise Hold("QUALITY_CONFIG_INTEGRITY_HOLD")
     for part in ("a", "b"):
+        try:
+            ai.transport.require_profile(config.get("protocol_" + part, "openai-chat"))
+        except ValueError as exc:
+            raise Hold("REVIEW_PROTOCOL_UNSUPPORTED") from exc
+        if (config.get("protocol_" + part) == "claude-proxy-top-system"
+                and config["json_mode"]):
+            raise Hold("CLAUDE_PROXY_JSON_MODE_UNSUPPORTED")
         endpoint = config["endpoint_" + part]
         # validator only accepts a base URL, and the frozen URL is already a
         # completions endpoint. Remove the exact suffix before revalidation.
@@ -163,9 +180,16 @@ def case_receipt(case: dict, index: int, pool_hash: str,
         model = config["model_" + side]
         key = os.getenv("R60_REVIEW_" + side.upper() + "_KEY", "")
         try:
-            answer = ai.model_request(config["endpoint_" + side], model, key,
-                                      prompt, config["timeout"],
-                                      config["json_mode"])
+            profile = config.get("protocol_" + side, "openai-chat")
+            if profile == "openai-chat":
+                # Retain historical positional interface for existing batches.
+                answer = ai.model_request(config["endpoint_" + side], model, key,
+                                          prompt, config["timeout"],
+                                          config["json_mode"])
+            else:
+                answer = ai.model_request(config["endpoint_" + side], model, key,
+                                          prompt, config["timeout"],
+                                          config["json_mode"], protocol=profile)
         except ai.Hold as exc:
             attempt_holds.append(str(exc))
             continue
@@ -356,6 +380,10 @@ def main() -> int:
     init.add_argument("--allow-remote-review", action="store_true")
     init.add_argument("--owner-attest-independent-ai", action="store_true")
     init.add_argument("--json-mode", action="store_true")
+    init.add_argument("--protocol-a", default="openai-chat",
+                      choices=sorted(ai.transport.PROFILES))
+    init.add_argument("--protocol-b", default="openai-chat",
+                      choices=sorted(ai.transport.PROFILES))
     init.add_argument("--timeout", type=int, default=180)
     run = subs.add_parser("advance")
     run.add_argument("--output-dir", type=Path, required=True)
@@ -369,7 +397,8 @@ def main() -> int:
                 args.output_dir, args.expand_dir,
                 args.endpoint_a, args.model_a, args.endpoint_b, args.model_b,
                 args.allow_remote_review, args.owner_attest_independent_ai,
-                args.json_mode, args.timeout)
+                args.json_mode, args.timeout,
+                args.protocol_a, args.protocol_b)
         elif args.mode == "advance":
             safe = advance(args.output_dir, args.max_cases)
         else:
