@@ -220,3 +220,76 @@ def test_one_model_refusal_does_not_launder_quality_pass(monkeypatch):
     assert safe["review_decisions"]["PASS"] == 0
     assert safe["review_decisions"]["HOLD"] == 1
     assert safe["train_admitted"] == 0
+
+
+def test_reusable_protocol_profiles_have_strict_isolated_requests():
+    import r60_reviewer_transport as profiles
+
+    kwargs = {
+        "model": "synthetic-model", "prompt": "PRIVATE_FAKE_PROMPT",
+        "instructions": "STATIC_RUBRIC", "json_mode": False,
+    }
+    claude = profiles.build_body(**kwargs, profile="claude-proxy-top-system")
+    assert claude["system"] == "STATIC_RUBRIC"
+    assert claude["messages"] == [{"role": "user", "content": "PRIVATE_FAKE_PROMPT"}]
+    assert "temperature" not in claude
+    assert "response_format" not in claude
+    deepseek = profiles.build_body(**kwargs, profile="deepseek-chat")
+    assert deepseek["messages"][0] == {
+        "role": "system", "content": "STATIC_RUBRIC"
+    }
+    assert "system" not in deepseek
+    assert "temperature" not in deepseek
+    generic = profiles.build_body(**kwargs, profile="openai-chat")
+    assert generic["temperature"] == 0
+    assert len(generic["messages"]) == 2
+    with pytest.raises(ValueError, match="CLAUDE_PROXY_JSON_MODE_UNSUPPORTED"):
+        profiles.build_body(
+            **{**kwargs, "json_mode": True},
+            profile="claude-proxy-top-system",
+        )
+    with pytest.raises(ValueError, match="REVIEW_PROTOCOL_UNSUPPORTED"):
+        profiles.build_body(**kwargs, profile="unknown")
+    with pytest.raises(ValueError, match="REVIEW_PROTOCOL_UNSUPPORTED"):
+        profiles.require_profile({"unsafe": "type"})
+
+
+def test_synthetic_probe_never_loads_private_source(monkeypatch):
+    import r60_reviewer_protocol_probe as probe
+    calls = []
+
+    def fake_request(endpoint, model, key, prompt, timeout, json_mode, *,
+                     protocol="openai-chat"):
+        calls.append((endpoint, model, protocol, prompt))
+        assert "合成测试" in prompt
+        return model_answer()
+
+    monkeypatch.setattr(ai, "model_request", fake_request)
+    args = dict(
+        endpoint="https://example.org/v1", model="claude-synthetic",
+        protocol="claude-proxy-top-system",
+        key_env="R60_REVIEW_A_KEY", allow_remote=True,
+        json_mode=False,
+    )
+    result = probe.inspect(**args, execute=False)
+    assert result["status"] == "REVIEWER_PROTOCOL_PREFLIGHT_PASS__NO_REQUEST"
+    assert result["model_requests"] == 0
+    assert not calls
+    result = probe.inspect(**args, execute=True)
+    assert result["status"] == "REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE"
+    assert result["model_requests"] == 1
+    assert calls[0][2] == "claude-proxy-top-system"
+    assert "PRIVATE_FAKE_PROMPT" not in json.dumps(result)
+
+
+def test_synthetic_probe_rejects_remote_without_explicit_opt_in():
+    import r60_reviewer_protocol_probe as probe
+
+    result = probe.inspect(
+        endpoint="https://provider.example/v1", model="deepseek-synthetic",
+        protocol="deepseek-chat", key_env="R60_REVIEW_B_KEY",
+        allow_remote=False, json_mode=False, execute=True,
+    )
+    assert result["status"] == "REVIEWER_PROTOCOL_HOLD"
+    assert result["reason_code"] == "REMOTE_REVIEW_REQUIRES_EXPLICIT_HTTPS_OPT_IN"
+    assert result["model_requests"] == 0
