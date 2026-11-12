@@ -14,8 +14,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
-import hf_job_guard
-import r60_common2_wrapped_hf_stage as stage_tool
+import hf_job_guard  # noqa: E402
+import r60_common2_wrapped_hf_stage as stage_tool  # noqa: E402
 
 BUCKET = "adradar/storyforge-training"
 PREFIX = "preflight/r60/common2/wrapped-cpu"
