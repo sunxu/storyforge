@@ -67,11 +67,49 @@ def output_is_empty(api, key: str) -> None:
         raise ValueError("REMOTE_RESULT_ALREADY_EXISTS_HOLD")
 
 
-def job_command(key: str, help_text: str) -> list[str]:
+def missing_job_cli_flags(help_text: str) -> list[str]:
+    """Return only known public option names; never emit complete CLI help."""
     missing = hf_job_guard.missing_hf_cli_options(help_text)
+    # Existing verified CPU2 supports HF's exact short -v alias.
     if re.search(r"(?<![A-Za-z0-9_-])-v(?![A-Za-z0-9_-])", help_text):
-        missing = [x for x in missing if x != "--volume"]
-    if missing or "--dry-run" not in help_text:
+        missing = [flag for flag in missing if flag != "--volume"]
+    # The runner uses --env and --dry-run; both must be documented.
+    for option in ("--env", "--dry-run"):
+        if re.search(
+            r"(?<![A-Za-z0-9_-])" + re.escape(option) + r"(?![A-Za-z0-9_-])",
+            help_text,
+        ) is None:
+            missing.append(option)
+    return sorted(set(missing))
+
+
+def inspect_job_cli_flags() -> dict:
+    """Read-only local HF CLI inspection, no token, remote access or submission."""
+    result = safe("WRAPPED_CPU_CLI_FLAGS_HOLD__NO_JOB", "CLI_HELP_UNAVAILABLE")
+    result["missing_cli_flags"] = []
+    try:
+        probe = subprocess.run(
+            ["hf", "jobs", "run", "--help"],
+            capture_output=True, text=True, timeout=20, check=False,
+        )
+        if probe.returncode:
+            return result
+        missing = missing_job_cli_flags(probe.stdout)
+        result["missing_cli_flags"] = missing
+        result["status"] = (
+            "WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB" if not missing
+            else "WRAPPED_CPU_CLI_FLAGS_HOLD__NO_JOB"
+        )
+        result["reason_code"] = (
+            "REQUIRED_OPTIONS_PRESENT" if not missing else "MISSING_REQUIRED_OPTIONS"
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    return result
+
+
+def job_command(key: str, help_text: str) -> list[str]:
+    if missing_job_cli_flags(help_text):
         raise ValueError("HF_CLI_FLAGS_HOLD")
     base = "hf://buckets/" + BUCKET
     inputs = [f"{base}/{PREFIX}/runs/{key}:/input/common2:ro"]
@@ -268,13 +306,16 @@ def classify_safe_failure(exc: Exception) -> str:
 
 def main() -> int:
     p = argparse.ArgumentParser()
-    p.add_argument("action", choices=["preflight", "sync", "ready", "submit", "diagnose"])
+    p.add_argument(
+        "action", choices=["preflight", "sync", "ready", "submit", "diagnose", "cli-flags"],
+    )
     p.add_argument("--stage", type=Path, required=True)
     p.add_argument("--run-key", required=True)
     p.add_argument("--execute", action="store_true")
     a = p.parse_args()
     try:
-        out = (diagnose(a.stage, a.run_key) if a.action == "diagnose"
+        out = (inspect_job_cli_flags() if a.action == "cli-flags"
+               else diagnose(a.stage, a.run_key) if a.action == "diagnose"
                else execute(a.action, a.stage, a.run_key, a.execute))
     except Exception as exc:  # noqa: BLE001 - fail closed, never leak private errors
         out = safe("WRAPPED_CPU_ORCHESTRATION_HOLD", classify_safe_failure(exc))
@@ -285,6 +326,7 @@ def main() -> int:
         "WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB",
         "WRAPPED_CPU_JOB_SUBMITTED__TRAIN_HOLD",
         "WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB",
+        "WRAPPED_CPU_CLI_FLAGS_PASS__NO_JOB",
     } else 42
 
 
