@@ -52,6 +52,7 @@ def select(cases: list[dict], pool_sha: str, frozen: dict) -> dict:
         choices.append((priority, position, category, case["source"]["story_id"]))
     selected: list[dict] = []
     used_stories: set[str] = set()
+    shortfall: dict[str, int] = {}
     for category, quota in QUOTAS.items():
         count = 0
         for _rank, position, cat, story_id in sorted(choices):
@@ -62,8 +63,18 @@ def select(cases: list[dict], pool_sha: str, frozen: dict) -> dict:
             count += 1
             if count == quota:
                 break
-        if count != quota:
-            raise Hold("STORY_DISTINCT_QUOTA_HOLD")
+        if count < quota:
+            shortfall[category] = quota - count
+    # Sparse long-target bins must not force a made-up quota: fill remaining
+    # positions deterministically from eligible distinct stories; report the
+    # actual distribution rather than pretending exact target ratios passed.
+    for _rank, position, cat, story_id in sorted(choices):
+        if len(selected) == 40:
+            break
+        if story_id in used_stories:
+            continue
+        used_stories.add(story_id)
+        selected.append({"position": position, "target_char_bin": cat})
     selected.sort(key=lambda x: x["position"])
     if len(selected) != 40 or len(used_stories) != 40:
         raise Hold("WAVE40_COUNT_HOLD")
@@ -75,6 +86,7 @@ def select(cases: list[dict], pool_sha: str, frozen: dict) -> dict:
         "excludes_all_sample100_stories": True,
         "method": "sha256_rank_distinct_stories_outside_sample100_v1",
         "cases": selected,
+        "quota_shortfalls_before_fill": shortfall,
         "quality_review_performed": False,
         "r50_complete_exclusion_verified": False,
         "train_admitted": 0,
@@ -109,6 +121,7 @@ def main() -> int:
             "distinct_new_stories": 40,
             "sample100_story_overlap": 0,
             "distribution": dict(distribution),
+            "quota_shortfalls_before_fill": result["quota_shortfalls_before_fill"],
             "quality_review_performed": False,
             "r50_complete_exclusion_verified": False,
             "train_admitted": 0,
