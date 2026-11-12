@@ -60,6 +60,11 @@ def prepare(stage: Path, key: str, help_text: str) -> list[str]:
     )
     # Add only the documented dry-run flag, before IMAGE; do not enable submit.
     argv.insert(argv.index(IMAGE), "--dry-run")
+    # hf 2.4.0 documents IMAGE COMMAND..., with no extra separator in COMMAND.
+    # Keep the shared builder unchanged for other projects, adapt only here.
+    image_index = argv.index(IMAGE)
+    if argv[image_index + 1:image_index + 2] == ["--"]:
+        argv.pop(image_index + 1)
     return argv
 
 
