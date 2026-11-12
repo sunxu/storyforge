@@ -1,5 +1,12 @@
 # StoryForge R60 — Real1000优质SFT数据主线决策（2026-11-12）
 
+## 2026-11-12 最新执行纠偏（覆盖本文其他所有近期优先级）：先完成Common2两条SFT可用性验证
+
+用户已确认：**不得因为已准备Wave40，就将40条独立盲审排在已有2条质量PASS候选训练输入验证之前。** 当前P0唯一目标：从Common2已验证2/2独立六维PASS、103/243条真实持久化历史和冻结Real1000精确目标，构造最小真实来源绑定的**实验性SFT输入**，做CPU真实tokenizer/ms-swift collator和完整R50隔离验收。40条已成功选样的位置清单保持原样，后续盲审与扩大候选池转为第二优先级，不重新抽样、不覆盖、不删除。
+
+本轮新增工作及Owner私有只读运行指令见：[R60 Common2两条优先端到端SFT验收任务书](R60_COMMON2_SFT_FIRST_END_TO_END_20261112_CN.md)。已有训练构造器`experiments/r58_quality/r60_real1000_common2_sft_experimental_cpu.py`强制检查源story/session/target绑定、独立原判决2PASS与冻结三消息一致性；以实验性的最近11条持久化历史（可对照7/23条）构造**无虚构System/世界卡**的两行私有样本。它不是原始实际生成请求，不做tokenizer/collator，也**不允许直接训练**，正式`train_admitted=0`、完整R50隔离仍HOLD，GPU未启动。
+
+
 ## 2026-11-12 Owner Wave40已实际选样PASS → 下一步独立盲审包
 
 Owner Mac实际SAFE回执为`storyforge_r60_real1000_quality_wave40_safe_v1`、`QUALITY_WAVE40_LOCATORS_READY__NOT_REVIEWED`，`prepared=40`、`distinct_new_stories=40`、`sample100_story_overlap=0`、真实长度配额`300_499=20`、`500_999=16`、`1000_1500=4`，`quota_shortfalls_before_fill={}`，`database_accessed=false`、`model_inference_calls=0`、`gpu_started=false`、`train_admitted=0`。**只表示40条跨故事源位置已生成，不是40条文学质量PASS，也不是训练准入。**
