@@ -61,7 +61,7 @@ python3 experiments/r58_quality/r60_real_quality_batch.py init \
   --owner-attest-independent-ai
 ```
 
-`--owner-attest-independent-ai` 只能在你确已验证两个模型独立执行时使用；否则省略，SAFE 会显示质量 HOLD。若需审阅云端 AI API，必须对每个远程 URL 使用 HTTPS，主动加 `--allow-remote-review`，并确认私有 User/Assistant 内容将传给该提供商；各自 API Key 只由 `R60_REVIEW_A_KEY` / `R60_REVIEW_B_KEY` 环境变量提供，不能写入 Shell 参数、GitHub、SAFE 或聊天。
+`--owner-attest-independent-ai` 只能在你确已验证两个模型独立执行时使用；否则省略，SAFE 会显示质量 HOLD。若需审阅云端 AI API，必须对每个远程 URL 使用 HTTPS，主动加 `--allow-remote-review`，并确认私有 User/Assistant 内容将传给该提供商；各自 API Key 只由 `R60_CLAUDE_KEY` / `R60_DEEPSEEK_KEY` 环境变量提供，不能写入 Shell 参数、GitHub、SAFE 或聊天。
 
 先运行只含 5 条的**受控校准批**：
 
