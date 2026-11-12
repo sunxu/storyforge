@@ -114,6 +114,92 @@ def verify(stage: Path, run_key: str) -> dict:
             "private_values_emitted": False}
 
 
+def inventory(stage: Path, run_key: str) -> dict:
+    """Read-only file-set diagnostic; never prints paths, filenames or hashes.
+
+    The strict verify() gate remains unchanged. No extras are silently ignored.
+    """
+    out = {
+        "schema": "storyforge_r60_common2_wrapped_stage_inventory_safe_v1",
+        "status": "WRAPPED_CPU_STAGE_INVENTORY_HOLD",
+        "reason_code": "INPUT_OR_RUNTIME_HOLD",
+        "declared_files": 0,
+        "actual_files": 0,
+        "extra_files": 0,
+        "missing_files": 0,
+        "extra_python_bytecode": 0,
+        "extra_macos_metadata": 0,
+        "extra_other": 0,
+        "manifest_schema_valid": False,
+        "fileset_equal": False,
+        "file_sha_verified": False,
+        "train_admitted": 0,
+        "gpu_started": False,
+        "hf_jobs_submitted": 0,
+        "private_values_emitted": False,
+    }
+    try:
+        if not RUN_RE.fullmatch(run_key) or stage.is_symlink() or not stage.is_dir():
+            raise ValueError("STAGE_IDENTITY_HOLD")
+        manifest = InputManager.validate_json(
+            input_bytes(stage / "SHA256_MANIFEST_PRIVATE.json", 32768)
+        )
+        if (type(manifest) is not dict or manifest.get("schema") != SCHEMA
+                or manifest.get("run_key") != run_key
+                or manifest.get("status") != "STAGED_NOT_SUBMITTED"
+                or manifest.get("train_admitted") != 0
+                or type(manifest.get("files")) is not dict):
+            raise ValueError("STAGE_MANIFEST_HOLD")
+        declared = manifest["files"]
+        if any(type(k) is not str or not k or k.startswith("/")
+               or ".." in Path(k).parts or type(v) is not str
+               or re.fullmatch(r"[a-f0-9]{64}", v) is None
+               for k, v in declared.items()):
+            raise ValueError("STAGE_MANIFEST_HOLD")
+        out["manifest_schema_valid"] = True
+        expected = set(declared) | {"SHA256_MANIFEST_PRIVATE.json"}
+        actual = {
+            p.relative_to(stage).as_posix() for p in stage.rglob("*")
+            if p.is_file() or p.is_symlink()
+        }
+        extra = actual - expected
+        missing = expected - actual
+        out.update(
+            declared_files=len(declared),
+            actual_files=len(actual),
+            extra_files=len(extra),
+            missing_files=len(missing),
+            extra_python_bytecode=sum(
+                "__pycache__" in Path(n).parts or n.endswith((".pyc", ".pyo"))
+                for n in extra
+            ),
+            extra_macos_metadata=sum(
+                Path(n).name in {".DS_Store", "._.DS_Store"} or Path(n).name.startswith("._")
+                for n in extra
+            ),
+            fileset_equal=not extra and not missing,
+        )
+        out["extra_other"] = len(extra) - len({
+            n for n in extra
+            if "__pycache__" in Path(n).parts or n.endswith((".pyc", ".pyo"))
+            or Path(n).name == ".DS_Store" or Path(n).name.startswith("._")
+        })
+        if extra or missing:
+            out["reason_code"] = "STAGE_FILES_HOLD"
+            return out
+        # Reuse exact strict SHA/contract checks; do not report PASS for a mere
+        # file-count match.
+        verify(stage, run_key)
+        out.update(
+            status="WRAPPED_CPU_STAGE_INVENTORY_PASS__NO_JOB",
+            reason_code="EXACT_FILESET_AND_SHA",
+            file_sha_verified=True,
+        )
+    except Exception:  # noqa: BLE001 - intentionally expose only safe counters/codes
+        out["reason_code"] = "STAGE_INPUT_OR_RUNTIME_HOLD"
+    return out
+
+
 def prepare(input_dir: Path, stage: Path, run_key: str) -> dict:
     if not RUN_RE.fullmatch(run_key):
         raise ValueError("RUN_KEY_HOLD")
@@ -166,7 +252,7 @@ def prepare(input_dir: Path, stage: Path, run_key: str) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("action", choices=["prepare", "verify"])
+    ap.add_argument("action", choices=["prepare", "verify", "inventory"])
     ap.add_argument("--input-dir", type=Path)
     ap.add_argument("--stage", required=True, type=Path)
     ap.add_argument("--run-key", required=True)
@@ -175,9 +261,10 @@ def main() -> int:
         result = (prepare(args.input_dir, args.stage, args.run_key)
                   if args.action == "prepare" and args.input_dir is not None
                   else verify(args.stage, args.run_key) if args.action == "verify"
+                  else inventory(args.stage, args.run_key) if args.action == "inventory"
                   else (_ for _ in ()).throw(ValueError("ARGUMENTS_HOLD")))
         print(json.dumps(result, sort_keys=True))
-        return 0
+        return 0 if result["status"] != "WRAPPED_CPU_STAGE_INVENTORY_HOLD" else 42
     except Exception:  # noqa: BLE001 - fail closed; SAFE only
         print(json.dumps({"schema": "storyforge_r60_common2_wrapped_hf_stage_safe_v1",
                           "status": "WRAPPED_CPU_STAGE_HOLD",
