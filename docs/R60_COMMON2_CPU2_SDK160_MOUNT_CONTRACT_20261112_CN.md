@@ -83,3 +83,14 @@ Owner机器 `hf --version` 为 **2.4.0**，`hf jobs run --help` 明确接受 `--
 执行次序必须先将新版本测试加入验收并重跑：`python -m pytest -q tests/test_r60_common2_hf_cpu_cli_dry_run.py tests/test_r60_common2_hf_cpu_stage_v2.py tests/test_r60_common2_hf_cpu_submission_contract.py`。之后Owner才可在本地用原冻结stage构建新的唯一stage（原数据内容不变、只更新独立v2 Worker）；再执行CLI只读/干运行验证。**注意：Dry-run能解析参数，不代表远端Bucket子目录挂载已经存在/具备权限，更不等于远端运行PASS。**
 
 CLI路径不再依赖`scripts/r60_common2_hf_cpu_submission_contract.py`中旧SDK模拟的`sdk_mount_api_supported`布尔值。旧SDK只读探针保留为历史兼容性诊断，不是唯一执行路径。新工具并未加入任何真实Job提交函数；正式付费CPU2执行必须在CI、输入输出唯一前缀、独立/不可覆盖回执、Job排重与准入边界完成后另行决定。
+
+
+## 2026-11-12 Owner新Stage远端同步完成与提交前最后HOLD
+
+Owner固定新RUN_KEY：`r60-common2-cpu2-20261112T050556Z-d26519574fe7`。新Stage构建结果`CPU2_V2_NEW_STAGE_READY__NO_SYNC_NO_JOB`，27文件且原Stage未修改；CLI 2.4.0真实`CLI_DRY_RUN_PASS__NO_JOB`；Mac hf-cli Python hub1.6.0 的Bucket Guard `REMOTE_EMPTY_PASS`→`sync-existing`→`REMOTE_READY_PASS`；独立结果前缀 `OUTPUT_PREFIX_FILES=0`。Owner可见Job列表100条，匹配新键0；这不是完整Job历史排除凭证。所有核验均未创建新HF Job。
+
+进一步源码核对发现上一版dry-run命令**遗漏Worker必需的**`STORYFORGE_R60_COMMON2_RUN_KEY`，即使dry-run PASS，真正运行会在shell入口立刻失败。已在`r60_common2_hf_cpu_cli_dry_run.py::prepare`增加 `--env STORYFORGE_R60_COMMON2_RUN_KEY=<NEW_KEY>`，并用合成测试绑定；只改CLI启动参数，**不改已冻结的27文件Stage**。Job name现在携带新键以便远端搜索。旧`--dry-run` PASS属于修正前版本；Owner必须同步GitHub新HEAD后重新执行dry-run。
+
+新增 `scripts/r60_common2_hf_cpu_final_read_only.py`，复用原SHA256检查和Bucket Guard，核查本地 `<RUN_KEY>.cpu-submit-v2-attempted` 标记、远端输入ready、结果前缀为空、可见Jobs匹配；不会提交Job也不会读取/输出私有正文。100条列表按`JOB_HISTORY_INCOMPLETE_HOLD`处理，绝不自动推导“完全无重复Job”。它是诊断入口，返回42/HOLD属于预期，**不得为绕过HOLD删除标记、修改Job列表判断或直接提交**。
+
+当前`worker_v2.sh`已写入已同步Stage，使用Image Tag而非digest，runtime的锁定依赖尚待完整核验（`decord`、`torchvision`等以本项目已冻结R59环境标准为准）；HF CLI dry-run不能证明这些实际可用，也不能证明新输出子前缀可远端写入。仍不得启动付费Job。后续先补齐CI和运行时依赖证据，再在原Stage完全不变前提下选择最小兼容方案；不可静默覆盖已同步前缀。
