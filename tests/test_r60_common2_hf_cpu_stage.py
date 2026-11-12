@@ -112,14 +112,12 @@ def test_bucket_guard_safe_failure_categories():
     assert guard.classify_failure(RuntimeError("secrets and private IDs")) == "REMOTE_SDK_OR_SERVICE_HOLD"
 
 
-def test_submit_has_no_extra_paid_consent_flags_but_prevents_duplicates():
-    """CPU stage submit is intentional; keep hash/prefix/idempotence gates."""
+def test_legacy_submit_retains_sync_but_fails_closed_on_submit():
+    """The original CLI image/whole-bucket RW submit must stay disabled."""
     script = (stage.REPO / "scripts/r60_common2_hf_cpu_submit.sh").read_text()
     assert "STORYFORGE_ALLOW_PAID_CPU" not in script
     assert "STORYFORGE_R60_COMMON2_NO_TRAIN_ONLY" not in script
     assert 'r60_common2_hf_cpu_bucket_guard.py ready "$RUN_KEY"' in script
     assert 'shasum -a 256 -c SHA256SUMS.txt' in script
-    assert 'ATTEMPT="${STAGE}.cpu-submit-attempted"' in script
-    assert "R60_CPU2_DUPLICATE_SUBMIT_HOLD" in script
-    assert '--flavor cpu-upgrade' in script
-    assert 'gpu' not in script.lower().split('hf jobs run', 1)[-1]
+    assert "R60_COMMON2_LEGACY_CLI_SUBMIT_DISABLED_MOUNT_POLICY_HOLD" in script
+    assert "hf jobs run" not in script
