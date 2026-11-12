@@ -1,5 +1,6 @@
 # StoryForge R60 — Common2 两条实验性SFT：复用R53 HF CPU真实Collator验收
 
+> **2026-11-12 最新权威覆盖声明：Common2 CPU技术验收已PASS（优先于以下全部旧“IMAGE_FIX_HOLD/Collator未知”段落）。** 第五轮真实HF Job `6af570089737d9a9e093d501` 已 `COMPLETED`，Worker输出 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`；已验证两条实验输入的Tokenizer、严格R18 Label Mask、实际ms-swift Collator。**不再执行下文任何旧Submit、重试、Stage重建命令**。当下只读验签既有SAFE回执、分析原生/Swift模板不等价、核验完整R50排除、形成Owner训练准入决策；`SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`、`native_template_token_parity_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、GPU/SFT HOLD。环境和可复用命令详见 [HF Jobs Mac CLI CPU2实战手册](standards/HF_JOBS_MAC_CLI_CPU2_PLAYBOOK_20261112_CN.md)。本覆盖声明只更新Common2，不替代其他Agent并行状态。\n\n
 ## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
 
 **最新Owner实际回执是 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD` / `SAFE_REMOTE_OR_RUNTIME_HOLD`，不是“新Job成功提交”。** 已知首次HF CLI Job `6af53990ab34849891aecb44` 因镜像参数 `docker.io/--name` ERROR；随后SDK镜像修复仍HOLD，不能确认是否另建Job。**禁止直接执行本文件下文的旧 `submit` 或SDK重试命令、删除重试标记或重传原stage。** 接手者必须先只读运行`scripts/r60_common2_hf_cpu_image_probe.py`、核对HF Job真实列表和标记。权威任务书：[R60下一Agent接手任务书](R60_COMMON2_NEXT_AGENT_HANDOFF_20261112_CN.md)；[可复制启动提示词](R60_COMMON2_NEXT_AGENT_START_PROMPT_20261112_CN.md)。Common2质量PASS2、实验输入2、Tokenizer2552/4048 PASS；**Collator真实验收未知/未通过、R50全量隔离HOLD、train_admitted=0、GPU禁止。** Wave40已选40条位置，但盲审暂停，生产留证因无权限DEFERRED。
