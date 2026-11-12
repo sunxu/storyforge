@@ -26,6 +26,8 @@ except ModuleNotFoundError:
 WORKER = Path(__file__).with_name("r60_common2_hf_cpu_worker_v2.sh")
 OLD_WORKER = "code/scripts/r60_common2_hf_cpu_worker.sh"
 NEW_WORKER = "code/scripts/r60_common2_hf_cpu_worker_v2.sh"
+AUDIT_RELPATH = "code/experiments/r58_quality/r60_common2_sft_cpu_template_audit.py"
+AUDIT_SOURCE = Path(__file__).resolve().parents[1] / "experiments/r58_quality/r60_common2_sft_cpu_template_audit.py"
 
 
 def build(old_stage: Path, destination: Path, new_key: str) -> dict:
@@ -50,6 +52,17 @@ def build(old_stage: Path, destination: Path, new_key: str) -> dict:
         _, _, rel = line.partition("  ")
         if rel != OLD_WORKER:
             files[rel] = (old_stage / rel).read_bytes()
+    # Preserve the original private input bytes. Only reviewed source code is
+    # replaced when creating a NEW Stage; never mutate any existing Stage.
+    if AUDIT_RELPATH not in files or not AUDIT_SOURCE.is_file() or AUDIT_SOURCE.is_symlink():
+        raise ValueError("AUDIT_SOURCE_BINDING_HOLD")
+    audit_bytes = AUDIT_SOURCE.read_bytes()
+    if (b"SAFE_PHASES = frozenset(" not in audit_bytes
+            or b"private_values_emitted" not in audit_bytes
+            or b"train_admitted" not in audit_bytes
+            or b"traceback.print_exc" in audit_bytes):
+        raise ValueError("AUDIT_SAFE_DIAGNOSTIC_HOLD")
+    files[AUDIT_RELPATH] = audit_bytes
     files[NEW_WORKER] = worker
     if len(files) != len(source_lines):
         raise ValueError("WORKER_REPLACEMENT_HOLD")
