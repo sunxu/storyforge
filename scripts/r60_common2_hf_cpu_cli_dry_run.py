@@ -24,8 +24,8 @@ except ModuleNotFoundError:
 
 PREFIX = "hf://buckets/adradar/storyforge-training/preflight/r60/common2/cpu2"
 WORKER = "code/scripts/r60_common2_hf_cpu_worker_v2.sh"
-# Deliberately an ordinary image name; production digest is not verified yet.
-IMAGE = "pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime"
+# Owner-verified Docker manifest digest (not config digest) for the 2.6.0 image.
+IMAGE = "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
 NEEDED_OPTIONS = (*hf_job_guard.REQUIRED_HF_RUN_FLAGS, "--dry-run")
 
 
