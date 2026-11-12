@@ -1,5 +1,7 @@
 # StoryForge R60 — 新留证数据优先的SFT主线执行任务书（2026-11-12）
 
+**P0B九项外部门禁、已存在的RolePlay工具入口与Owner只读交接命令请见：[R60 P0B留证联验审批前置清单](R60_P0B_ROLEPLAY_CAPTURE_ACCEPTANCE_GATES_20261112_CN.md)。真实采集仍HOLD。**
+
 ## 八、2026-11-12 Owner实际执行P0A离线合成预检：主要工程门禁PASS，P0B仍需独立审批
 
 Owner提供的真实本地运行回执（**Owner陈述/日志，GitHub或本环境未独立复核本地result.json原件**）：
