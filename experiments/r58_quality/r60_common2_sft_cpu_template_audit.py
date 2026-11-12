@@ -59,6 +59,25 @@ def validate_payload(records: list[dict], manifest: dict, raw: bytes) -> None:
             raise Hold("EXPERIMENT_MESSAGE_SEQUENCE_HOLD")
 
 
+def single_batch_ints(value) -> list[int]:
+    """Read exactly one collated batch row without flattening extra examples.
+
+    ms-swift returns rank-2 batch tensors (B,T), while the historical R18
+    _list_ints utility intentionally only handles unbatched rank-1 vectors.
+    Shape or dtype changes must HOLD, not be silently coerced.
+    """
+    if hasattr(value, "detach"):
+        value = value.detach().cpu().tolist()
+    elif hasattr(value, "tolist"):
+        value = value.tolist()
+    if (not isinstance(value, list) or len(value) != 1
+            or not isinstance(value[0], list)
+            or not value[0]
+            or any(type(x) is not int for x in value[0])):
+        raise Hold("SINGLE_BATCH_SHAPE_HOLD")
+    return value[0]
+
+
 def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict:
     results = []
     if template is not None and getattr(template.loss_scale, "base_strategy", None) != "last_round":
@@ -110,8 +129,8 @@ def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict
                 phase("BATCH_LABEL_CONSISTENCY")
             unbatched_ids = audit._list_ints(encoded["input_ids"])
             unbatched_labels = audit._list_ints(encoded["labels"])
-            batched_ids = audit._list_ints(batch["input_ids"])
-            batched_labels = audit._list_ints(batch["labels"])
+            batched_ids = single_batch_ints(batch["input_ids"])
+            batched_labels = single_batch_ints(batch["labels"])
             if (not unbatched_ids or len(unbatched_ids) != len(unbatched_labels)
                     or len(unbatched_ids) > CEILING
                     or batched_ids[:len(unbatched_ids)] != unbatched_ids
