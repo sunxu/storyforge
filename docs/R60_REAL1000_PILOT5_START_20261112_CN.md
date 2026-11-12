@@ -239,3 +239,9 @@ test ! -e "$QUALITY"
 - `MODEL_REVIEW_SCHEMA_INVALID`：模型JSON无法通过冻结六维字段/类型/非空reason验证
 
 只要Claude首次SAFE没有通过，禁止初始化真实批次或运行5条。Owner Mac更新代码和CI通过后，仅对Claude运行1次合成`--execute`，回传SAFE错误码；不得为诊断打印原始API响应、带密钥URL或任何私有正文。下一步依据分类决定修复代理映射还是模型输出约束，不放宽Quality Pipeline。真实评审默认行为及严重问题语义审核保持不变。
+
+## 11. Claude复用历史成功客户端修复（2026-11-13）
+
+针对之前Claude`MODEL_CONTENT_JSON_INVALID`，核查`scripts/r60_p2b_claude_review_client_v1.py`历史成功客户端，发现当前REAL1000审阅器与其不同：旧默认`max_tokens=12000`、新仅1600；旧支持content文本块列表、新只接收字符串；旧读取`finish_reason`、新未读取。现已在共享协议层恢复历史Claude请求预算12000，在共享响应层支持字符串和纯文本块列表、规范化唯一完整Markdown JSON围栏，并禁止`finish_reason=length/max_tokens`产出成功。所有内容仍通过冻结六维和严重标记校验，不修改Quality Pipeline门槛、不猜测响应正文、不改原始审核结果。
+
+之前CLAUDE输出不可解析的**确切原因尚无足够证据**；尤其不能断言只是截断。DeepSeek首轮合成已经`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`，不允许重复请求。Owner更新代码且GitHub离线CI通过后，至多执行一次Claude合成探针。如果仍然`MODEL_CONTENT_JSON_INVALID`，停止盲试，单独走私有诊断工序，而非继续付费猜测。不启动1000池`init/advance`直至两个Reviewer都满足严格SAFE。
