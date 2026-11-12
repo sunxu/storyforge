@@ -163,3 +163,23 @@ P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
 ```
 
 如果HOLD，仅回传SAFE原样，不要上传JSON报告原件、真实排除ID或自由文本状态。下一步需要独立核实封存状态的真实枚举含义、R45隐藏别名完整审查、最终50项全量保护以及Common2的实际来源交集。
+
+## 2026-11-12 最新：排除两清单为不同元素形态，尚不能判断成员是否一致
+
+Owner运行`r60_r50_exclusion_pair_cpu.py`真实SAFE为`R50_EXCLUSION_PAIR_HOLD`/`EXCLUSION_ID_TYPE_HOLD`，两清单数量均为4，`exclusion_id_sets_equal=false`仍是**未通过类型校验时的默认值**，不是已经发现成员不一致。旧脚本仅接受每个元素均为标量`str/int`的数组，真实至少有一份含非标量、非预期类型或超长元素。必须先确认两种元素结构，再设计明确的字段映射，不得直接`str(dict)`或靠列表下标比对，也不得修改冻结原件。
+
+新`scripts/r60_r50_exclusion_shape_cpu.py`只读对Owner现有SHA相同的`f2`选择清单、`f3`准入报告进行形状分析：仅输出4元素各自的类型计数、**预定白名单字段名**、非白名单字段出现次数及嵌套容器计数；不输出任意来源字段名、私有字符串值、ID、哈希、原始JSON。即使结构读取成功也仅返回`R50_EXCLUSION_SHAPES_IDENTIFIED__MAPPING_HOLD`，仍未验证排除ID集合等价或最终seal。合成测试已提交，Owner真实运行待回执。
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_exclusion_shape_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_exclusion_shape_cpu.py
+P="$HOME/.local/share/storyforge/r60/private/r50-crosswalk-copy-whznSMXy"
+"$PY" scripts/r60_r50_exclusion_shape_cpu.py --selection "$P/f2" --admission "$P/f3"
+```
+
+不启动HF Job/GPU/训练，保留`r50_complete_exclusion_verified=false`及`train_admitted=0`。如果列表元素是嵌套对象，后续必须按真实字段与冻结报告语义先明确映射关系，再执行安全的**逐案ID**对账。
