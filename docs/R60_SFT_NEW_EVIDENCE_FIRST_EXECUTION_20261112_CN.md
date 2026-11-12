@@ -1,5 +1,10 @@
 # StoryForge R60 — 新留证数据优先的SFT主线执行任务书（2026-11-12）
 
+## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
+
+**最新Owner实际回执是 `R60_COMMON2_CPU2_IMAGE_FIX_HOLD` / `SAFE_REMOTE_OR_RUNTIME_HOLD`，不是“新Job成功提交”。** 已知首次HF CLI Job `6af53990ab34849891aecb44` 因镜像参数 `docker.io/--name` ERROR；随后SDK镜像修复仍HOLD，不能确认是否另建Job。**禁止直接执行本文件下文的旧 `submit` 或SDK重试命令、删除重试标记或重传原stage。** 接手者必须先只读运行`scripts/r60_common2_hf_cpu_image_probe.py`、核对HF Job真实列表和标记。权威任务书：[R60下一Agent接手任务书](R60_COMMON2_NEXT_AGENT_HANDOFF_20261112_CN.md)；[可复制启动提示词](R60_COMMON2_NEXT_AGENT_START_PROMPT_20261112_CN.md)。Common2质量PASS2、实验输入2、Tokenizer2552/4048 PASS；**Collator真实验收未知/未通过、R50全量隔离HOLD、train_admitted=0、GPU禁止。** Wave40已选40条位置，但盲审暂停，生产留证因无权限DEFERRED。
+
+
 ## 2026-11-12 最新Owner裁决：Real1000质量优先，撤销按11月10日后数据日期优先（本节覆盖以下旧优先级）
 
 已确认：RolePlay在11月10日后生成的普通数据**未证明质量或真实生成输入证据优于已有Real1000**；上线留证代码不等于启用真实留证，六张留证表当前无记录。Owner不具备生产服务器权限，本轮不得继续推动无权限的生产环境留证/真实外连/部署，也没有必要仅以日期重新粗筛新数据。**权威主线改为：[R60 Real1000质量优先最终执行决策](R60_REAL1000_QUALITY_FIRST_DECISION_20261112_CN.md)。** 当前任务顺序是：Real1000冻结数据的六维质量精筛→跨故事新40条私有质量审核候选准备→源绑定训练上下文及CPU tokenizer/collator→完整R50隔离→Owner明确训练准入/另行GPU审批。两条Common2独立文学PASS与历史103/243条恢复继续有效，但不等于已还原原生成Prompt或正式可训练。
