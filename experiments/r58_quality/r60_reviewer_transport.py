@@ -25,6 +25,9 @@ def build_body(*, model: str, prompt: str, instructions: str,
         "stream": False,
     }
     if profile == "claude-proxy-top-system":
+        # Reuse the successful R60 P2-B Claude 4Router protocol. Its default
+        # output budget was 12000; the new 1600 cap could truncate JSON.
+        body["max_tokens"] = 12000
         # Historical 4Router Claude endpoint rejected messages[0].role=system.
         body["system"] = instructions
         # Do not force temperature or unsupported JSON-mode on this proxy.
