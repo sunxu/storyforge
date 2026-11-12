@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Read-only HF Bucket run-prefix guard; fail closed on API failure."""
 from __future__ import annotations
 
@@ -64,7 +63,7 @@ def main() -> int:
         check(a.mode, a.run_key, a.stage, HfApi())
         print("R60_COMMON2_HF_CPU2_REMOTE_" + a.mode.upper() + "_PASS")
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - never leak remote identity or paths
         print("R60_COMMON2_HF_CPU2_REMOTE_PREFIX_HOLD", file=sys.stderr)
         return 42
 
