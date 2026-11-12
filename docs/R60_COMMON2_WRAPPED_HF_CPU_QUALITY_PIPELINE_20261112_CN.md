@@ -169,3 +169,29 @@ STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
 ```
 
 如 `git merge --ff-only` 报错（分叉或未提交工作），**停止**，先检查差异/工作树状态，不执行`git reset --hard`、不`stash`掉其他Agent工作。若 `grep`匹配失败，不要运行后续诊断命令。该只读诊断不提交HF Job，实际远端状态须由新SAFE回执决定。
+
+## 2026-11-12 STAGE_VERIFY先于SDK：本地解释器差异与固定失败码修正
+
+Owner最新真实只读诊断返回`phase=STAGE_VERIFY`、`reason_code=SDK_OR_RUNTIME_HOLD`、`remote_input=UNKNOWN`、`remote_output=UNKNOWN`；**此处尚未初始化HfApi，也没查询远端**。此前Stage的44个文件使用`r60-tests`环境验证PASS，此诊断使用`hf-cli`环境。原因尚未确认：可能是两套Python环境使用不同包/SDK、Stage源字节发生变化、文件打开错误或诊断分类遗漏，不应把它推断为HF授权问题。
+
+本次把Stage/共享InputManager的固定异常码（例如`INPUT_SHA256_MISMATCH`、`INPUT_OPEN_FAILED`、`STAGE_FILES_HOLD`、`INPUT_JSON_INVALID`）纳入诊断SAFE分类，仍不输出原始异常、私有路径或私有SHA；单测覆盖Stage失败和未知异常不泄露。**现有Stage不改、不复制、不重建，不重新sync、ready或submit。**
+
+Owner使用相同代码、相同Stage，在两个Python解释器分别运行纯本地Stage验证，并核对`diagnose`是否继续停在同一阶段：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+KEY="r60-common2-wrapcpu-20261112T122746Z-5a612325db98"
+STAGE="$HOME/.local/share/storyforge/r60/private/hf-wrapped-cpu-stages/$KEY"
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+SDKPY="$HOME/.local/share/storyforge/venvs/hf-cli/bin/python"
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py
+"$PY" scripts/r60_common2_wrapped_hf_stage.py verify --stage "$STAGE" --run-key "$KEY"
+"$SDKPY" scripts/r60_common2_wrapped_hf_stage.py verify --stage "$STAGE" --run-key "$KEY"
+"$SDKPY" scripts/r60_common2_wrapped_hf_cli.py diagnose --stage "$STAGE" --run-key "$KEY"
+```
+
+**解释顺序：** 若仅SDKPY的Stage验证失败，先诊断本地Python版本、加载路径及共享Runtime兼容，不执行远端操作；若两者都失败，优先对比原Stage未动源字节和清单（私有哈希不外发）；若两者均PASS才查看新`diagnose`远端SAFE。如新版仍笼统HOLD，保留phase并进一步添加允许字段的边界测试，禁止打印异常正文。成功`Stage VERIFY`只是文件字节合同一致，不批准训练。
