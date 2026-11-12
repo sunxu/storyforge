@@ -240,3 +240,12 @@ Owner运行最新`scripts/r60_common2_cpu2_prepare_next.sh`后返回`CPU2_V2_NEW
 本轮增强`scripts/r60_common2_hf_cpu_bucket_guard.py`中`classify_failure`的纯SAFE分类：HTTP 429 → `REMOTE_RATE_LIMIT_HOLD`；HTTP 5xx → `REMOTE_SERVICE_5XX_HOLD`；httpx.TimeoutException → `REMOTE_TIMEOUT_HOLD`；httpx.TransportError → `REMOTE_CONNECTION_HOLD`。原401/403/404/非法文件集门禁和HOLD原样保留。绝不打印异常原文或URL/Token/私有路径。新增模拟HTTP与httpx的纯合成单测。这个改动仅改善分类，**不解除门禁、不重写旧Stage**。
 
 Owner在同一Mac worktree同步HEAD并运行 `tests/test_r60_common2_hf_cpu_bucket_failure_classification.py` 和其他必要测试；使用**已生成的最新本地Stage**（不是运行prepare_next再建）直接运行`python scripts/r60_common2_hf_cpu_bucket_guard.py empty RUN_KEY --stage STAGE`。若EMPTY_PASS，且确认远端该前缀此前确实无上传，才通过 `bash scripts/r60_common2_hf_cpu_submit.sh sync-existing RUN_KEY STAGE`（脚本自身再次执行EMPTY门禁→逐个上传→READY），随后手动dry-run和full history final_read_only。任何HOLD先停下；如发生部分上传，则不允许再用sync-existing盲目重复拷贝，必须只读比对文件集/校验后选择新独立RUN_KEY流程。禁止删除原子提交标记、覆盖远端文件、启动GPU或训练，train_admitted0，R50 exclusion HOLD。
+
+
+## 2026-11-12 第五轮真实私有Common2 CPU验收最终PASS（仅技术验收，不准训练）
+
+Owner Mac 单次CLI受控提交RUN_KEY `r60-common2-cpu2-20261112T073854Z-e076f53c8eae`，Hugging Face Job `6af570089737d9a9e093d501`，https://huggingface.co/jobs/adradar/6af570089737d9a9e093d501 。HF插件独立inspect确认Job `COMPLETED`、创建2026-11-12 07:51:36.301Z、结束2026-11-12 07:53:46.143Z、flavor `cpu-upgrade`、固定PyTorch镜像digest、Worker `r60_common2_hf_cpu_worker_v2.sh`。HF日志最终标记 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`。
+
+审核Worker只有在真正运行已冻结输入的2条实验样本、完成CPU Tokenizer和严格`hf_label_mask_audit.audit_row`及实际ms-swift data_collator之后，并且校验SAFE JSON的`status=COMMON2_CPU_TOKENIZER_COLLATOR_PASS__R50_TRAIN_HOLD`、`cases=2`、`collator_verified=true`、`r50_complete_exclusion_verified=false`、`train_admitted=0`、`gpu_started=false`、`private_values_emitted=false`，才以 O_EXCL / mode600 原子创建`/output/R60_COMMON2_CPU2_SAFE_RECEIPT.json`并打印该标记。**因此本次已独立确认严格2例CPU技术审核达到Worker PASS门槛**，不再重复提交旧RUN_KEY或重做已验收计算。完整SAFE JSON及token统计未在公开日志输出，仍应从本次**既有结果目录**只读核对文件字段（只报告SAFE数值，不公开私有文本/token IDs），并保存证据引用。
+
+未解除的界限：该数据输入标识仍是`SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`，不视为真实发送历史；原生HF Chat Template与ms-swift qwen3_8编码尚未token完全等价且对应SAFE字段`native_template_token_parity_verified=false`；R50 complete exclusion 未证实；`train_admitted=0`；GPU/训练禁止。下一工程阶段应**暂停进一步私有HF CPU探针**，先完成静态证据核对、模板差异语义/准入决策、R50排除审核和任务书状态同步。不得把CPU Collator PASS直接升级为训练许可。
