@@ -220,3 +220,14 @@ bash scripts/r60_common2_cpu2_prepare_next.sh
 - `6af567d4ab34849891aee01c`为公开额外Reasoning parity诊断的错误revision造成404，无关冻结业务Stage；修正同固定revision后 `6af5683aab34849891aee060` COMPLETED：同一批公开短对话，HF原生`reasoning_effort="medium"`产生16/32 tokens，ms-swift`qwen3_8`产生12/24，原生默认`xhigh`产生58/74。HF固定`chat_template.jinja`在xhigh下默认添加英文Reasoning Effort system指令；两种处理目前**不是token级相等**。禁止捏造System Prompt、将不等价宣称为等价，或把纯文本基础Collator技术PASS当作训练准入。
 
 本轮GitHub审计代码仅在未来创建的新Stage中启用：显式`get_processor(snapshot,model_type="qwen3_5")`、`get_template(...,template_type="qwen3_8",loss_scale="last_round",add_non_thinking_prefix=False)`，严格识别BatchEncoding`input_ids`和纯文本官方config-only RoPE；保留`hf_label_mask_audit.audit_row`真实Label Mask强门禁和原ms-swift`data_collator`调用；成功SAFE回执新增`model_weights_loaded=false`和`native_template_token_parity_verified=false`，直示原生模板未完成等价证明。没有删除或松动任何历史的语义监督检查。此源码仍需要Owner Mac合成单测、compileall，下一轮全新create-only Stage的SHA、sync-ready、CLI dry-run、完整Jobs排重通过，才能另行授权/执行唯一CPU真实审核。旧Job/Stage/marker不重试。R50排除HOLD，train_admitted0，GPU/训练禁止。
+
+
+## 2026-11-12 第四次真实CPU Common2运行：R18通过路径与二维Batch形状误判
+
+Owner正式Job `6af56b879737d9a9e093d221` (RUN_KEY `r60-common2-cpu2-20261112T072753Z-db08e8d72e3d`) HF插件inspect确认ERROR、exit42、结束2026-11-12 07:33:32 UTC。SAFE阶段`SWIFT_COLLATOR_AUDIT_HOLD`；依赖、Tokenizer下载、显式Processor+qwen3_8模板+text-only RoPE setup均已越过，但该阶段同时包含严格R18 audit、重复encode、实际Collator与一致性检查，故**不能依据这条回执判断私有样本语义监督错误**。旧RUN_KEY/Stage/submit marker保持不可变，禁止重试。
+
+使用同固定公开Qwen revision、ms-swift4.5.3、transformers5.16.1、无私有挂载的独立合成CPU Job `6af56c429737d9a9e093d28e`，真正加载仓库`scripts/hf_label_mask_audit.py` 的代码，并采用相同的Qwen3.8 Processor/Template与无权重text-only RoPE路径，两条公开合成对话（2与12条消息）**严格R18 `audit_row()`均PASS**。紧接着批次结果提取时两例均报 `TypeError: int() argument ... not 'list'`。具体是旧代码对rank-2 `batch["input_ids"]`和`batch["labels"]`误用只接收rank-1的`audit._list_ints()`，而ms-swift batch本来就是(B,T)，单条结果应严格解包[0]。这是一种审核器接口/形状错误，**不是已证实真实私有数据错误**。该公开Job已COMPLETED。
+
+已在未来审核器源码新增`single_batch_ints`：仅接受恰好B=1的非空二维int数组或可`tolist()`的Tensor，拒绝rank1、B!=1、额外嵌套层、非整数字段，仍以原R18审查加严格未填充/填充的input_ids/labels前缀和长度检查。现在另将`SWIFT_COLLATOR_AUDIT`分成`R18_LABEL_MASK_AUDIT`、`SWIFT_ENCODE`、`SWIFT_BATCH_COLLATE`、`BATCH_LABEL_CONSISTENCY`几个公开枚举安全失败阶段，只输出枚举，不打印私有token、错误正文或Traceback。新增`tests/test_r60_common2_cpu_batch_shape.py` AST提取函数的无私有单元测试，覆盖合规及不合规形状。代码提交仍需Owner本地pytest/compileall验证。Stage构建器既有约束仅允许**下一轮随机create-only RUN_KEY**将新版审核器+Worker复制到新Stage，任何已经同步过的Stage原样保留。
+
+下一步首选Owner Mac独立工作树同步Owner分支，跑新增batch形状测试、模板phase安全测试及完整相关pytest，之后运行原`scripts/r60_common2_cpu2_prepare_next.sh`创建新Stage至READY，**不自动提交私有Job、不启动训练**。原生Chat Template token parity未证明、R50完全排除HOLD、train_admitted0和GPU禁用全部继续保持。
