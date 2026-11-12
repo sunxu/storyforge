@@ -1,6 +1,7 @@
 """Synthetic only: HF Bucket read-only failure codes, no private values."""
 from pathlib import Path
 import importlib.util
+import pytest
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +27,7 @@ def test_http_error_codes_do_not_emit_exception_message():
 
 
 def test_httpx_timeout_and_connect_without_private_text():
-    import httpx
+    httpx = pytest.importorskip('httpx', reason='httpx is installed in the HF SDK Python environment')
 
     req = httpx.Request("GET", "https://huggingface.co/")
     assert guard.classify_failure(httpx.ReadTimeout("secret", request=req)) == "REMOTE_TIMEOUT_HOLD"
