@@ -201,3 +201,7 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 ### 2026-11-12 Reviewer密钥与DeepSeek历史协议
 
 新REAL1000双审A/B密钥变量分别固定`R60_CLAUDE_KEY` / `R60_DEEPSEEK_KEY`，不使用旧的R60_REVIEW_A/B_KEY。历史QD20源码`r60_real1000_qwen_deepseek20_live.py`的DeepSeek默认`https://api.deepseek.com` + `deepseek-flash`、历史密钥变量`DEEPSEEK_API_KEY`，请求显式`temperature=0`及`thinking={"type":"disabled"}`；旧QD20执行器不修改。合成协议探针当前可用性才是新一轮实际请求的依据。
+
+### 合成探针JSON结构分阶段诊断（2026-11-13）
+
+当前首轮远端SAFE：Claude 4Router `REVIEWER_PROTOCOL_HOLD / MODEL_JSON_INVALID`，DeepSeek官方 `REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`。**DeepSeek已经通过，不再重复请求。** 为避免对真实1000池进行不必要重试，`model_request(..., diagnose_json=True)`仅供合成probe显式执行1次；固定SAFE细分：`MODEL_ENVELOPE_JSON_INVALID`（HTTP 200响应体非JSON）、`MODEL_CONTENT_MISSING_OR_NONSTRING`（OpenAI choices[0].message.content缺失或非字符串）、`MODEL_CONTENT_JSON_INVALID`（message.content不是可解析JSON）、`MODEL_REVIEW_SCHEMA_INVALID`（已解析模型对象字段/类型不符合冻结六维合同）。诊断只处理结构，不输出响应、原文、URL、模型内部推理、密钥或私有路径。正式批量审核仍使用原通用`MODEL_JSON_INVALID`，评分/严重标志门槛一律不降级。Claude无私有内容探针复核取得更细错误码后再讨论最小协议修复；真实5案继续HOLD。
