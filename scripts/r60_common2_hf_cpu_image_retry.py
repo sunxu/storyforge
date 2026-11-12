@@ -7,8 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
-import stat
 import sys
 from pathlib import Path
 
@@ -36,41 +34,16 @@ def validate_old_error(info) -> None:
 
 
 def submit_one(api, volume_class, key: str, stage: Path, old_job: str):
+    """Legacy API intentionally disabled until guarded RO/RW mounting is supported.
+
+    The original 1.6.0 run_job signature does not accept volumes/name.  The
+    frozen worker expects a whole-bucket writable /workspace mount, violating
+    AGENTS.md and the shared hf_job_guard.validate_spec contract.  Do not
+    create an attempt marker or call run_job from this legacy entrypoint.
+    """
     if key != RUN_KEY or old_job != OLD_JOB or stage.name != key:
         raise ValueError("FROZEN_RUN_BINDING_HOLD")
-    if (stage.is_symlink() or not stage.is_dir()
-            or stat.S_IMODE(stage.stat().st_mode) & 0o077):
-        raise ValueError("PRIVATE_STAGE_MODE_HOLD")
-    guard.check("ready", key, stage, api)
-    from hashlib import sha256
-    # Verify every original staged byte before submitting.
-    for line in (stage / "SHA256SUMS.txt").read_text().splitlines():
-        digest, sep, rel = line.partition("  ")
-        if (not sep or not re.fullmatch(r"[a-f0-9]{64}", digest)
-                or not rel.startswith(("code/", "private_stage/"))
-                or ".." in Path(rel).parts):
-            raise ValueError("STAGE_MANIFEST_UNSAFE")
-        file = stage / rel
-        if file.is_symlink() or not file.is_file() or sha256(file.read_bytes()).hexdigest() != digest:
-            raise ValueError("STAGE_SOURCE_SHA_HOLD")
-    validate_old_error(api.inspect_job(old_job, namespace="adradar"))
-    # Atomic persistent attempt marker; do not delete even after a network error.
-    attempt = stage.parent / (key + ".cpu-submit-image-fix-attempted")
-    attempt.mkdir(mode=0o700)
-    job = api.run_job(
-        image=IMAGE,
-        command=["bash", f"/workspace/preflight/r60/common2/cpu2/runs/{key}/code/scripts/r60_common2_hf_cpu_worker.sh"],
-        namespace="adradar",
-        name="storyforge-r60-common2-cpu2-image-fixed-no-train",
-        flavor="cpu-upgrade",
-        timeout="120m",
-        env={"STORYFORGE_R60_COMMON2_RUN_KEY": key},
-        volumes=[volume_class(type="bucket", source="adradar/storyforge-training", mount_path="/workspace", read_only=False)],
-    )
-    job_id = getattr(job, "id", None)
-    if not isinstance(job_id, str) or not re.fullmatch(r"[a-f0-9]{24}", job_id):
-        raise ValueError("NEW_JOB_ID_MISSING")
-    return job_id
+    raise ValueError("LEGACY_SUBMISSION_MOUNT_POLICY_HOLD")
 
 
 def main() -> int:
@@ -80,8 +53,8 @@ def main() -> int:
     p.add_argument("--old-job", required=True)
     args = p.parse_args()
     try:
-        from huggingface_hub import HfApi, Volume
-        new_id = submit_one(HfApi(), Volume, args.run_key, args.stage, args.old_job)
+        from huggingface_hub import HfApi
+        new_id = submit_one(HfApi(), None, args.run_key, args.stage, args.old_job)
         print(json.dumps({
             "status": "R60_COMMON2_CPU2_IMAGE_FIX_JOB_SUBMITTED",
             "job_id": new_id, "gpu_started": False,
@@ -93,6 +66,7 @@ def main() -> int:
             "OLD_IMAGE_ERROR_NOT_VERIFIED", "FROZEN_RUN_BINDING_HOLD",
             "PRIVATE_STAGE_MODE_HOLD", "STAGE_MANIFEST_UNSAFE",
             "STAGE_SOURCE_SHA_HOLD", "NEW_JOB_ID_MISSING",
+            "LEGACY_SUBMISSION_MOUNT_POLICY_HOLD",
         } else "SAFE_REMOTE_OR_RUNTIME_HOLD"
         if isinstance(exc, FileExistsError):
             reason = "RETRY_ALREADY_ATTEMPTED"
