@@ -106,3 +106,19 @@ chmod 600 "$RECEIPT"
 ## 停机与主线衔接
 
 这一步只是 Quality Pipeline 的**TRAINING阶段CPU工程门禁**，不是文学审核，也不重新开展R50源隔离/全文语义判断。包装后PASS仍不证明历史R46 System原文字节与新通用System完全一致或实际部署模板一致。下一阶段Owner单独决策D1衍生输入资格、D2统一训练包装政策、D3部署输入合同、D4相关世界语义隔离、D5正式Train/Val发布与GPU训练许可。任何失效保持HOLD，旧Stage/Job/回执保留原样，不重试同RUN_KEY。
+
+## 2026-11-12 Ruff静态检查修正（Owner贴回日志30项）
+
+Owner Mac运行`ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py`曾返回**30个静态检查问题**：`I001` import块排序、`RUF100` 未启用E402时多余`noqa`、`PLW1510` subprocess调用未明确`check=False`、`BLE001` SAFE保护所需异常兜底缺少逐处说明。已对所列4个业务Python和1个合成测试文件做最小修复：显式`check=False`依然根据returncode判断失败；保留隐私异常边界并在具体`except Exception`加`# noqa: BLE001`及原因；删多余E402 directive和排序import。**未关闭Ruff规则、未改CPU提交/RO-RW/模型模板/入训策略。** 最新代码尚待Owner复跑lint和pytest，不可宣称已全PASS。遇到剩余错误按实际日志修正，不提交新HF CPU Job直到测试及CI均绿。
+
+复测：
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+ruff check scripts/r60_common2_wrapped_hf_*.py tests/test_r60_common2_wrapped_hf_pipeline.py
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_common2_wrapped_hf_pipeline.py tests/test_r60_common2_wrapped_system_cpu_audit.py
+bash -n scripts/r60_common2_wrapped_hf_worker.sh
+```
