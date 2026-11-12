@@ -114,3 +114,95 @@ Owner指出此前遗漏2026-11-11的**20条Qwen+DeepSeek与Claude+Codex对照试
 
 **重要兼容性**：现有`r60_real_ai_dual_review.py`采用`messages[0].role=system`、`temperature=0`、可选`response_format=json_object`；此前Claude 4Router的Opus 5.5请求曾要求顶层`system`字段，不能假定这个旧客户端能原样调用该代理。开始私有模型外发前，先用无私人内容的合成探针验证Claude/DeepSeek各自endpoint及模型专属请求协议、真实模型身份与JSON结构；若不兼容，修改薄适配层并合成测试/CI后再使用原1000池。历史DeepSeek成功API不证明当前所有协议相容。
 
+
+## 8. 2026-11-12 可复用Claude/DeepSeek协议适配与首5执行入口（覆盖上文旧本地示例）
+
+**唯一评分/审阅数据核心**仍为：
+- `experiments/r58_quality/r60_real_ai_dual_review.py`：六维Rubric、JSON和严重标记验证、网络请求与私有正文。
+- `experiments/r58_quality/r60_reviewer_transport.py`：不接触网络/私有数据的纯协议构造层，`openai-chat`（旧配置行为）、`claude-proxy-top-system`（顶层system，消息只含user，不强制temperature或json_object）、`deepseek-chat`（标准system消息，不强加Qwen采样）。不复制Rubric/门槛。
+- `experiments/r58_quality/r60_real_quality_batch.py`：原生`init/advance/inspect`、两个Reviewer各自固定profile、只增0600回执/来源指纹/断点续审，老版配置缺省`openai-chat`，不静默迁移。
+- `experiments/r58_quality/r60_reviewer_protocol_probe.py`：默认仅构造合成协议不发请求，`--execute`每次只发**1次完全合成**的中文故事给指定API，验证完整六维JSON + 严重标记合同，stdout仅SAFE，不读取真实1000池。
+
+Owner已批准本任务的私有样本远程外发。以下新流程取代上文原先只以本地Ollama为例的接口和重复外发授权要求；但不授权全量1000自动执行、训练或其他数据操作。
+
+### Step 1：本机离线测试
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+"$PY" -m pytest -q \
+  experiments/r58_quality/test_r60_real_ai_dual_review.py \
+  experiments/r58_quality/test_r60_real_quality_batch.py
+ruff check \
+  experiments/r58_quality/r60_reviewer_transport.py \
+  experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  experiments/r58_quality/r60_real_ai_dual_review.py \
+  experiments/r58_quality/r60_real_quality_batch.py \
+  experiments/r58_quality/test_r60_real_ai_dual_review.py \
+  experiments/r58_quality/test_r60_real_quality_batch.py
+```
+
+### Step 2：配置实际API（仅在Mac环境设置值，禁止粘贴秘钥）
+
+`R60_CLAUDE_URL`、`R60_CLAUDE_MODEL`分别对应**4Router经核实的OpenAI-compatible base URL和实际Claude Opus 5.5模型名**；`R60_DEEPSEEK_URL`、`R60_DEEPSEEK_MODEL`对应**DeepSeek官方OpenAI-compatible base URL与实际可用Flash模型ID**。切勿将历史模型别名当作已验证实时可用；应在Owner Mac本地核实。API密钥通过`R60_REVIEW_A_KEY`和`R60_REVIEW_B_KEY`从环境变量注入。所有远端必须HTTPS，不跟随重定向，不读取代理环境变量；`--allow-remote-review`必须显式传入。
+
+```bash
+: "${R60_CLAUDE_URL:?需要已核实的Claude代理base URL}"
+: "${R60_CLAUDE_MODEL:?需要已核实的Claude实际模型ID}"
+: "${R60_DEEPSEEK_URL:?需要已核实的DeepSeek官方base URL}"
+: "${R60_DEEPSEEK_MODEL:?需要已核实的DeepSeek实际模型ID}"
+: "${R60_REVIEW_A_KEY:?Claude Key未在当前终端设置}"
+: "${R60_REVIEW_B_KEY:?DeepSeek Key未在当前终端设置}"
+
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint "$R60_CLAUDE_URL" --model "$R60_CLAUDE_MODEL" \
+  --protocol claude-proxy-top-system --key-env R60_REVIEW_A_KEY \
+  --allow-remote-review
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint "$R60_DEEPSEEK_URL" --model "$R60_DEEPSEEK_MODEL" \
+  --protocol deepseek-chat --key-env R60_REVIEW_B_KEY \
+  --allow-remote-review
+
+# 前两次PASS仅证明本地能构造正确请求；下面每个--execute
+# 才分别产生一次可能计费、但绝无真实私有故事的合成API请求。
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint "$R60_CLAUDE_URL" --model "$R60_CLAUDE_MODEL" \
+  --protocol claude-proxy-top-system --key-env R60_REVIEW_A_KEY \
+  --allow-remote-review --execute
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint "$R60_DEEPSEEK_URL" --model "$R60_DEEPSEEK_MODEL" \
+  --protocol deepseek-chat --key-env R60_REVIEW_B_KEY \
+  --allow-remote-review --execute
+```
+
+要求两个API的`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`；如HOLD，**不**执行`init/advance`。Claude代理不启用`--json-mode`，否则`CLAUDE_PROXY_JSON_MODE_UNSUPPORTED`；这保留了真实服务端协议限制，而非静默降级。
+
+### Step 3：同源真实5条校准（必须两种合成API均PASS）
+
+```bash
+BASE="$HOME/.local/share/storyforge/r60/private"
+EXPAND="$BASE/r60-expand-first-600"
+QUALITY="$BASE/r60-quality-first-1000"
+test ! -e "$QUALITY"
+
+"$PY" experiments/r58_quality/r60_real_quality_batch.py init \
+  --expand-dir "$EXPAND" --output-dir "$QUALITY" \
+  --endpoint-a "$R60_CLAUDE_URL" --model-a "$R60_CLAUDE_MODEL" \
+  --protocol-a claude-proxy-top-system \
+  --endpoint-b "$R60_DEEPSEEK_URL" --model-b "$R60_DEEPSEEK_MODEL" \
+  --protocol-b deepseek-chat \
+  --allow-remote-review
+
+"$PY" experiments/r58_quality/r60_real_quality_batch.py advance \
+  --output-dir "$QUALITY" --max-cases 5
+"$PY" experiments/r58_quality/r60_real_quality_batch.py inspect \
+  --output-dir "$QUALITY"
+```
+
+不加`--owner-attest-independent-ai`，除非Owner已实际核验两Reviewer互不读取对方判断及身份；不加`--json-mode`因为Claude代理协议差异。每案双审严格同源；若输出协议无效、无精确证据、争议严重Flag或缺少世界设定，不得直接升级Positive Gold。**现有Reviewer JSON Schema还不提供三维严重证据的精确逐字引文，审计只能判定格式一致与局部文本质量；真正的严重问题语义结案依赖后续冻结Rubric v2.1证据级复核，不允许AI双PASS自动入训。**
+
+旧`QUALITY`目录若已存在，先执行`inspect`，不得再次`init`覆盖，也不得将不同Reviewer混入已冻结的同一轮配置。首批5条SAFE回执到手后才决定是否扩批25；全量1000批量运行不得自动启动。
