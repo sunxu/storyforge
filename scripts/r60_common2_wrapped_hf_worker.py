@@ -8,8 +8,6 @@ import argparse
 import hashlib
 import json
 import os
-import re
-import shutil
 import sys
 import tempfile
 from pathlib import Path
