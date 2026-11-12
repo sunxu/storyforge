@@ -101,3 +101,12 @@ def test_bucket_guard_fails_closed_on_missing_file(tmp_path):
         guard.check("ready", key, out, FakeApi(["SHA256SUMS.txt"]))
     with pytest.raises(ValueError, match="REMOTE_RUN_ALREADY_EXISTS"):
         guard.check("empty", key, out, FakeApi(sorted(names)))
+
+
+def test_bucket_guard_safe_failure_categories():
+    assert guard.classify_failure(ModuleNotFoundError("secret")) == "SDK_MODULE_MISSING"
+    assert guard.classify_failure(AttributeError("leaky private path")) == "SDK_API_UNAVAILABLE"
+    assert guard.classify_failure(TypeError("token leaked")) == "SDK_API_INCOMPATIBLE"
+    assert guard.classify_failure(ValueError("REMOTE_RUN_ALREADY_EXISTS")) == "REMOTE_RUN_ALREADY_EXISTS"
+    assert guard.classify_failure(ValueError("private path")) == "INPUT_VALIDATION_HOLD"
+    assert guard.classify_failure(RuntimeError("secrets and private IDs")) == "REMOTE_SDK_OR_SERVICE_HOLD"
