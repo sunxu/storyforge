@@ -197,3 +197,7 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 ### 双模型同时不可用的不可覆盖回执保护
 
 当两个Reviewer均返回传输HOLD或以上固定HTTP错误、**没有一份有效审核**时，`advance`返回`BOTH_REVIEW_MODELS_UNAVAILABLE`并在本案例写盘前停止，保留上次完整checkpoint序列可恢复。避免把429/500工程故障固化为永久文学质量HOLD。仅一个模型失败时仍逐案保存部分审核与真实错误码（决策HOLD），不自动二次请求、不补造评分；后续纠错必须独立版本化，不能覆盖已有文件。合成测试覆盖两429无回执、单429可重放。
+
+### 2026-11-12 Reviewer密钥与DeepSeek历史协议
+
+新REAL1000双审A/B密钥变量分别固定`R60_CLAUDE_KEY` / `R60_DEEPSEEK_KEY`，不使用旧的R60_REVIEW_A/B_KEY。历史QD20源码`r60_real1000_qwen_deepseek20_live.py`的DeepSeek默认`https://api.deepseek.com` + `deepseek-flash`、历史密钥变量`DEEPSEEK_API_KEY`，请求显式`temperature=0`及`thinking={"type":"disabled"}`；旧QD20执行器不修改。合成协议探针当前可用性才是新一轮实际请求的依据。
