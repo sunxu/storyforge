@@ -53,12 +53,17 @@ def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
         # This is the only network call; private data is never loaded.
         out["model_requests"] = 1
         reviewer.model_request(url, model, key, SYNTHETIC_PROMPT,
-                               120, json_mode, protocol=protocol)
+                               120, json_mode, protocol=protocol,
+                               diagnose_json=True)
         out.update(status="REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE",
                    reason_code="SCHEMA_VALID")
     except reviewer.Hold as exc:
         safe = {
             "MODEL_TRANSPORT_HOLD", "MODEL_JSON_INVALID",
+            "MODEL_ENVELOPE_JSON_INVALID",
+            "MODEL_CONTENT_MISSING_OR_NONSTRING",
+            "MODEL_CONTENT_JSON_INVALID",
+            "MODEL_REVIEW_SCHEMA_INVALID",
             "MODEL_REPLY_OVERSIZE", "MODEL_PROTOCOL_HOLD",
             "REVIEW_PROTOCOL_UNSUPPORTED",
             "CLAUDE_PROXY_JSON_MODE_UNSUPPORTED",
