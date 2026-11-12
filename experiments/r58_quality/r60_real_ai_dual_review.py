@@ -161,14 +161,36 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
         code = "MODEL_ENVELOPE_JSON_INVALID" if diagnose_json else "MODEL_JSON_INVALID"
         raise Hold(code) from exc
     try:
-        content = envelope["choices"][0]["message"]["content"]
-        if not isinstance(content, str):
-            raise TypeError("not a textual response")
+        choice = envelope["choices"][0]
+        finish = choice.get("finish_reason")
+        content = choice["message"]["content"]
+        # The successful P2-B Claude 4Router client supported text-block
+        # arrays. Preserve their order, without inventing missing text.
+        if isinstance(content, list):
+            if not content or any(
+                not isinstance(part, dict)
+                or not isinstance(part.get("text"), str)
+                for part in content
+            ):
+                raise TypeError("non-text content block")
+            content = "".join(part["text"] for part in content)
+        if not isinstance(content, str) or not content.strip():
+            raise TypeError("empty or non-text response")
     except (KeyError, TypeError, IndexError) as exc:
         code = "MODEL_CONTENT_MISSING_OR_NONSTRING" if diagnose_json else "MODEL_JSON_INVALID"
         raise Hold(code) from exc
+    if finish in ("length", "max_tokens"):
+        code = "MODEL_OUTPUT_TRUNCATED" if diagnose_json else "MODEL_JSON_INVALID"
+        raise Hold(code)
+    # A single complete Markdown JSON fence has no semantic effect.
+    # Strict schema validation still applies to the decoded JSON object.
+    stripped = content.strip()
+    if stripped.startswith("```json\\n") and stripped.endswith("\\n```"):
+        stripped = stripped[8:-4].strip()
+    elif stripped.startswith("```\\n") and stripped.endswith("\\n```"):
+        stripped = stripped[4:-4].strip()
     try:
-        model_output = json.loads(content)
+        model_output = json.loads(stripped)
     except (ValueError, TypeError) as exc:
         code = "MODEL_CONTENT_JSON_INVALID" if diagnose_json else "MODEL_JSON_INVALID"
         raise Hold(code) from exc
