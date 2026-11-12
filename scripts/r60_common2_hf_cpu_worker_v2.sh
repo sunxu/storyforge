@@ -28,11 +28,15 @@ OUT="/output"
 # Never change RO input. The existing audit validates local private mode bits.
 SCRATCH="$(mktemp -d)"
 chmod 700 "$SCRATCH"
-trap 'rm -rf -- "$SCRATCH"' EXIT
-mkdir -m 700 "$SCRATCH/private"
-cp -- "$INPUT/R60_COMMON2_SFT_EXPERIMENTAL_NOT_ADMITTED_PRIVATE.jsonl" "$SCRATCH/private/"
-cp -- "$INPUT/R60_COMMON2_SFT_EXPERIMENTAL_MANIFEST_PRIVATE.json" "$SCRATCH/private/"
-chmod 600 "$SCRATCH/private/"*
+PRIVATE_PARENT="$HOME/.local/share/storyforge/r60/private"
+mkdir -p "$PRIVATE_PARENT"
+chmod 700 "$PRIVATE_PARENT"
+PRIVATE_INPUT="$PRIVATE_PARENT/$KEY"
+mkdir -m 700 "$PRIVATE_INPUT" || { echo R60_CPU2_V2_PRIVATE_DIR_EXISTS_HOLD >&2; exit 42; }
+trap 'rm -rf -- "$SCRATCH" "$PRIVATE_INPUT"' EXIT
+cp -- "$INPUT/R60_COMMON2_SFT_EXPERIMENTAL_NOT_ADMITTED_PRIVATE.jsonl" "$PRIVATE_INPUT/"
+cp -- "$INPUT/R60_COMMON2_SFT_EXPERIMENTAL_MANIFEST_PRIVATE.json" "$PRIVATE_INPUT/"
+chmod 600 "$PRIVATE_INPUT/"*
 SNAP="$SCRATCH/tokenizer/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
 mkdir -p "$SNAP"
 
@@ -61,7 +65,7 @@ export TRANSFORMERS_OFFLINE=1
 export PYTHONPATH="$CODE/experiments/r58_quality:$CODE/scripts"
 # Capture stdout to scratch, never stream private internals to logs.
 python -u "$CODE/experiments/r58_quality/r60_common2_sft_cpu_template_audit.py" \
-  --input-dir "$SCRATCH/private" --snapshot "$SNAP" --stage both \
+  --input-dir "$PRIVATE_INPUT" --snapshot "$SNAP" --stage both \
   > "$SCRATCH/receipt.json" || { echo R60_CPU2_V2_AUDIT_HOLD >&2; exit 42; }
 
 # Strict schema and create-only SAFE publish. No final stdout of raw receipt.
