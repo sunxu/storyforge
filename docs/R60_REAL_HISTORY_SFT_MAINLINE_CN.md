@@ -143,3 +143,13 @@ Owner 在本轮新增授权：现有 ChatGPT Supabase 只读连接器可对所�
 - [历史权益/参与者来源目录审计](R60_REAL_HISTORY_RIGHTS_PROVENANCE_AUDIT_20261108_CN.md)：`voice_consents` 不可代替文字授权；original/private/author==player 30+ 轮 1,039 Session/814 Story、16 Story 新 Pilot 77 技术优先。
 - P0 核心阻断 Issue [#27](https://github.com/sunxu/storyforge/issues/27)，跟踪历史版本条款/作品与参与者权利来源及合法 G1 小批范围。
 - 最新的跨全库 G0 只是元数据授权；任何未获得独立许可的完整正文均未导出，不能宣称已 Quality PASS。正式训练准入 0/0，GPU 未启动。
+
+## 2026-11-12 主线状态：真实1000质量精筛准备
+
+Owner 已批准按“先5条校准→再25条→分批扩展剩余970条”的方案推进。**当前完成的是启动流程与PILOT-0只读准备，不是任何真实5条模型评分成功回执。** 正式执行基线：[`R60_REAL1000_PILOT5_START_20261112_CN.md`](R60_REAL1000_PILOT5_START_20261112_CN.md)。
+
+- 冻结1000池为6 seed + 994增量，禁止重扩样；复用现有`r60_real_quality_batch.py`的`init / advance / inspect`。两个Reviewer必须核实身份、独立无结论共享；远端API私有正文外发必须单独确认范围；默认不增加`--owner-attest-independent-ai`，避免虚假独立性声明。
+- 首批5条只能从同一冻结1000池进入**相同来源**双模型审核；回执私有0600且create-only。严格六维(4/4/3/4/4/4)、严重标记及证据语义复核，所有上下文无法证实之处保持HOLD。不要复用旧A/B的两个不同5条样本做配对结论。
+- 已独立验收的Common2包装System 2/2真实Swift Collator仅关闭**技术门禁**，不代表1000条已经文学精筛，更不能授予Train Admission。
+- 较早校准阶段的“不得启动1000条审核”是当时执行范围；现在仅解锁当前5条的准备与只读预检。不自动授权第三方API外发、不运行批量25/1000模型调用、不改旧Gold/不访问R50正文、不启动训练GPU，`train_admitted=quality_v1_admitted=0`。
+- 本线限定`r60/common2-cpu2-owner`隔离分支，其他Agent各自负责的Qwen/GLM/R60并行评审工件仍只读，不跨分支合并未核验修改。
