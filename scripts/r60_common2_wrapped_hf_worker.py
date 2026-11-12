@@ -17,7 +17,9 @@ sys.path[:0] = [
     str(ROOT / "src"), str(ROOT / "scripts"),
     str(ROOT / "experiments" / "r58_quality"),
 ]
-from storyforge_dataset.hf_runtime import InputManager, OutputManager, ResourceGuard  # noqa: E402
+from storyforge_dataset.hf_runtime import (  # noqa: E402
+    InputManager, OutputManager, ResourceGuard, RuntimeContext,
+)
 import r60_common2_wrapped_hf_stage as stage_tools  # noqa: E402
 import r60_common2_wrapped_system_cpu_audit as audit  # noqa: E402
 import r60_common2_generic_system_wrapper_preview_cpu as wrapper  # noqa: E402
@@ -63,6 +65,9 @@ def run(stage: Path, output: Path, key: str) -> dict:
         if not stage_tools.RUN_RE.fullmatch(key):
             raise ValueError("KEY_HOLD")
         out["stage"] = "CPU_RESOURCE_GUARD"
+        context = RuntimeContext.detect(profile="cpu")
+        if context.operating_system != "linux" or context.python_version.split(".")[:2] != ["3", "11"]:
+            raise ValueError("EXPECTED_HF_CPU_RUNTIME_HOLD")
         resource = ResourceGuard.check_cpu_only()
         if resource.status != "PASS":
             raise ValueError("CPU_RESOURCE_HOLD")
