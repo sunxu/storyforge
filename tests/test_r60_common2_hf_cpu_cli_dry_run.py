@@ -33,6 +33,8 @@ def test_reuse_guard_and_cli_flags_without_submission(tmp_path):
     assert argv.count("-v") == 2
     assert "--dry-run" in argv
     assert argv.index("--dry-run") < argv.index(cli.IMAGE)
+    assert cli.IMAGE == "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
+    assert ":2.6.0-" not in cli.IMAGE
     assert argv[argv.index(cli.IMAGE) + 1] == "bash"
     assert "--env" in argv
     assert argv[argv.index("--env") + 1] == f"STORYFORGE_R60_COMMON2_RUN_KEY={KEY}"
