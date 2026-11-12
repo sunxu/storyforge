@@ -43,7 +43,7 @@ mkdir -p "$SNAP"
 python -m pip install --disable-pip-version-check \
   'ms-swift==4.5.3' 'transformers==5.16.1' \
   'huggingface_hub>=0.35,<3' 'qwen-vl-utils==0.0.14' \
-  'decord' 'torchvision==0.29.2'
+  'decord' 'torchvision==0.21.0'
 python -m pip check >/dev/null || { echo R60_CPU2_V2_DEPENDENCY_HOLD >&2; exit 42; }
 export SNAP
 python - <<'PY'
