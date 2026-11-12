@@ -54,7 +54,8 @@ def base_report(key: str) -> dict:
         "quality_v1_admitted": 0, "model_weights_loaded": False,
         "model_inference_calls": 0, "gpu_started": False,
         "hf_jobs_submitted": 0, "private_values_emitted": False,
-        "files_written": 0,
+        "training_dataset_files_written": 0,
+        "safe_receipt_publication_expected": True,
     }
 
 
