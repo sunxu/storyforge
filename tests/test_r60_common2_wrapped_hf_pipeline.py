@@ -15,7 +15,6 @@ import r60_common2_wrapped_hf_cli as cli
 import r60_common2_wrapped_hf_receipt_verify as receipt
 import r60_common2_wrapped_hf_stage as stage
 
-
 KEY = "r60-common2-wrapcpu-20261112T120000Z-abc123456789"
 
 
