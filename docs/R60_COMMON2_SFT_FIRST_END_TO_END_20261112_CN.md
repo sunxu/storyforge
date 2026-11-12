@@ -1,5 +1,8 @@
 # StoryForge R60 — 2条质量PASS候选的首个SFT输入端到端验收
 
+> **2026-11-12 最新完成状态：SAFE回执已二次验签PASS。** `CPU2_SAFE_RECEIPT_VERIFIED__R50_TRAIN_HOLD`、cases2、Tokenizer token `[2552,4048]`、真实Swift Collator token `[2486,3982]`、最终监督token `[282,305]`；两例各有66个token的长度差。CPU Label Mask/Collator技术验收完毕，不需继续HF Job；但`native_template_token_parity_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`，非正式可训数据。后续转模板规范/完整R50排除/Owner准入决策。
+
+
 > **2026-11-12 现行状态更新（覆盖以下旧“Collator未知/未通过”叙述）**：Common2 两条源绑定实验 SFT 输入已由 Owner Mac 使用固定 Qwen3.8 revision、ms-swift4.5.3、transformers5.16.1 经真实 HF `cpu-upgrade` Job `6af570089737d9a9e093d501` 验收；HF插件inspect `COMPLETED`、Worker尾日志 `R60_CPU2_V2_REAL_COLLATOR_PASS__R50_TRAIN_HOLD`。真实2条的Tokenizer、严格R18 final-assistant label-mask及原ms-swift data_collator **CPU工程验收已PASS**。完整SAFE回执字段/token计数仍待Owner从已有HF结果目录只读复核。明确仍为 `SOURCE_BOUND_DERIVED_CONTEXT_NOT_ACTUAL_SENT`、原生HF Chat Template token等价未证、完整R50排除HOLD、train_admitted0、GPU/训练禁止；**不再提交重复Collator CPU Job**。工程经验与精确命令以 [HF Jobs Mac CLI CPU2实战手册](standards/HF_JOBS_MAC_CLI_CPU2_PLAYBOOK_20261112_CN.md) 为准，已提供本地只读 `scripts/r60_common2_cpu2_receipt_verify.py` 验签器。旧文“Collator未通过/下一步继续提交旧Job”仅作为历史记录，不是当前执行指令。
 
 ## 2026-11-12 权威交接状态（优先于本文所有较旧操作建议）
