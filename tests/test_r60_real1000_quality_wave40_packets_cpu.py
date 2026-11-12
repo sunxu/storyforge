@@ -60,6 +60,8 @@ def test_blind_excludes_source_votes_and_positions(monkeypatch):
 
 def test_reject_tampered_frozen_wave(monkeypatch):
     cases, locators, frozen = synthetic(monkeypatch)
+    frozen_valid_locators = copy.deepcopy(locators)
+    monkeypatch.setattr(packets.wave, "select", lambda *_: copy.deepcopy(frozen_valid_locators))
     locators["cases"][0]["position"] = 88
     with pytest.raises(packets.Hold, match="WAVE40_SOURCE_RECOMPUTE_HOLD"):
         packets.construct(cases, "a" * 64, locators, frozen)
