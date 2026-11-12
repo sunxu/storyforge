@@ -5,6 +5,7 @@ Reuses shared InputManager; optionally verifies expected byte SHA as a
 private Owner-only argument (never printed).
 """
 from __future__ import annotations
+
 import argparse
 import json
 import re
@@ -13,7 +14,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from storyforge_dataset.hf_runtime import InputManager  # noqa: E402
+from storyforge_dataset.hf_runtime import InputManager
 
 SCHEMA = "storyforge_r60_common2_wrapped_hf_cpu_receipt_v1"
 SUCCESS = "R60_COMMON2_WRAPPED_HF_CPU_COLLATOR_PASS__TRAIN_HOLD"
@@ -86,7 +87,7 @@ def inspect(path: Path, run_key: str, expected_sha256: str | None = None) -> dic
             real_collator_token_counts=swift,
             supervised_token_counts=supervised,
         )
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - SAFE only, never echo private errors
         allowed = {
             "RECEIPT_IDENTITY_HOLD", "RECEIPT_CONTRACT_HOLD",
             "RECEIPT_ARRAY_SHAPE_HOLD", "RECEIPT_COUNT_RANGE_HOLD",
