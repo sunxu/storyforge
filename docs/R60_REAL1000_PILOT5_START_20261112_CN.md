@@ -206,3 +206,9 @@ test ! -e "$QUALITY"
 不加`--owner-attest-independent-ai`，除非Owner已实际核验两Reviewer互不读取对方判断及身份；不加`--json-mode`因为Claude代理协议差异。每案双审严格同源；若输出协议无效、无精确证据、争议严重Flag或缺少世界设定，不得直接升级Positive Gold。**现有Reviewer JSON Schema还不提供三维严重证据的精确逐字引文，审计只能判定格式一致与局部文本质量；真正的严重问题语义结案依赖后续冻结Rubric v2.1证据级复核，不允许AI双PASS自动入训。**
 
 旧`QUALITY`目录若已存在，先执行`inspect`，不得再次`init`覆盖，也不得将不同Reviewer混入已冻结的同一轮配置。首批5条SAFE回执到手后才决定是否扩批25；全量1000批量运行不得自动启动。
+
+## 9. CI覆盖与阶段回执（2026-11-12）
+
+新增`.github/workflows/r60-real1000-quality-review.yml`。其Push限定Owner隔离分支，PR仅在Reviewer相关代码或Workflow修改时触发；执行Python3.11、Ruff及`test_r60_real_ai_dual_review.py`与`test_r60_real_quality_batch.py`离线合成测试，不配置任何HF Job、API密钥、私有故事或远程端点。这个CI不是云端API可用性证明；真实合成probe仅能由Owner认证Mac受控执行。
+
+质量架构总规范：`docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。复用Skill：`skills/storyforge-real-quality-review/SKILL.md`；既有RolePlay SFT Skill已同步说明Common2技术验收关闭及REAL1000双Reviewer调用分层。当前所有代码仅通过GitHub提交，Owner Mac pytest/Ruff/实际合成Claude/DeepSeek端点验收仍需SAFE证据；在这些真实检查完成之前不宣称任何真实5条AI审阅。
