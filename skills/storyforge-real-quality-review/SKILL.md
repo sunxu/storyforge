@@ -95,3 +95,10 @@ endpoint URLs, headers, tokens, or private prompts. 400 indicates
 request incompatibility, 429 rate-limit; neither is evidence that an
 interactive-fiction response is low quality. Diagnose this before
 resuming the same frozen checkpoint directory.
+
+If both reviewers report transport/HTTP errors, the batch now fails
+`BOTH_REVIEW_MODELS_UNAVAILABLE` **before writing** an irreversible
+case receipt. After fixing the provider, rerun `advance` using the
+same frozen config. A single-reviewer failure persists one partial HOLD
+receipt; never overwrite it, auto-retry in place, or invent the missing
+review.
