@@ -29,6 +29,7 @@ def test_reuse_guard_and_cli_flags_without_submission(tmp_path):
     original_sha = (original / "SHA256SUMS.txt").read_bytes()
     argv = cli.prepare(stage, KEY, HELP)
     assert argv[:3] == ["hf", "jobs", "run"]
+    assert argv[argv.index("--name") + 1] == f"r60-cpu2-{KEY}"
     assert argv.count("-v") == 2
     assert "--dry-run" in argv
     assert argv.index("--dry-run") < argv.index(cli.IMAGE)
