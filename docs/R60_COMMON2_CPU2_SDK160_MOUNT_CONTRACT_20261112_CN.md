@@ -128,3 +128,12 @@ Owner在Mac运行`docker manifest inspect pytorch/pytorch:2.6.0-cuda12.4-cudnn9-
 查阅PyTorch官方版本矩阵（`https://docs.pytorch.org/get-started/previous-versions/`）和TorchVision官方兼容矩阵（`https://github.com/pytorch/vision`）后发现：`torch==2.6.0`官方配套`torchvision==0.21.0`，而之前从R59运行注记直接继承的`torchvision==0.29.2`是与torch>=2.14兼容的新版，**不能在保留torch2.6基础镜像时无验证复用**。本轮将尚未重新上传的GitHub Worker源码改为`torchvision==0.21.0`，保持`decord`和`qwen-vl-utils==0.0.14`，并更改合成测试断言。R59历史成功记录不能作为“不同torch基础镜像上任意torchvision版本兼容”的证明。
 
 已上传的`r60-common2-cpu2-20261112T050556Z-d26519574fe7`仍完全不可变；最新Worker修订只会进入**未来新的**Stage。仍必须取得manifest digest，核对运行时Python/torch版本和依赖安装一致性，之后才考虑新Stage与CPU Collator单次验收。没有Job提交，没有训练准入。
+
+
+## 2026-11-12 镜像Manifest Digest 固定（Owner实际回执）
+
+Owner运行 `docker buildx imagetools inspect pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime`，返回Docker schema2 **manifest digest** `sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`。这与之前`docker manifest inspect`中的**config digest** `sha256:40472de84a38292fd1a8f38fbd75ca2e96804c314a18601ec1ccd06bacb525fc`不同，不能混用。Owner在该次依赖修复后本地3组测试`15 passed in 0.75s`（不是远端容器实跑）。
+
+已把只读`scripts/r60_common2_hf_cpu_cli_dry_run.py`的镜像从可变Tag替换成不可变 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，并加合成断言；**不改已同步Stage**。镜像Tag清单可访问、Manifest Digest已知，但尚未验证HF Jobs服务端接受此digest引用及镜像内部的Python、torch、torchvision / ms-swift依赖能按目标CPU-only Worker安装，所以下一次必须先真实`--dry-run`，且`train_admitted=0`。
+
+下一步从**最初冻结Stage**（`r60-common2-cpu2-20261112T032815Z-71c840b37254`）用现有stage_v2创建另一独立键；不要在已经远端ready的`r60-common2-cpu2-20261112T050556Z-d26519574fe7`内替换Worker。新键只用于这个修订的27文件Stage，先校验SHA与依赖文本、CLI dry-run，再新前缀empty、sync-existing、ready；所有检查通过后仍需真实容器环境兼容性证据、Job最新排重/原子防重复门禁。严禁把本节当作真实HF Job已启动。
