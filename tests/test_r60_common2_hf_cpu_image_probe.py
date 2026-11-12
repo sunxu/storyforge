@@ -19,7 +19,7 @@ class MockApi:
         return [SimpleNamespace(path=prefix + p, type="file")
                 for p in sorted(self.files)]
 
-    def inspect_job(self, job_id, namespace):
+    def inspect_job(self, *, job_id, namespace):
         self.called.append("inspect_job")
         return SimpleNamespace(id=job_id, status=SimpleNamespace(
             stage="ERROR", message="Job image specification error: docker.io/--name"))
@@ -54,3 +54,25 @@ def test_probe_rejects_unready_bucket_without_inspection(tmp_path):
     assert result["remote_ready"] == "NOT_CHECKED"
     assert result["reason_code"] == "REMOTE_RUN_FILESET_HOLD"
     assert api.called == ["read_bucket"]
+
+
+def test_probe_preserves_retry_marker_on_sdk_inspection_error(tmp_path):
+    input_dir = fixture(tmp_path)
+    out = tmp_path / retry.RUN_KEY
+    stage.stage(input_dir, out, retry.RUN_KEY)
+    (tmp_path / (retry.RUN_KEY + ".cpu-submit-image-fix-attempted")).mkdir()
+
+    class BrokenInspectApi(MockApi):
+        def inspect_job(self, *, job_id, namespace):
+            self.called.append("inspect_job")
+            raise TypeError("synthetic SDK incompatibility")
+
+    api = BrokenInspectApi(probe.guard.expected(out))
+    result = probe.probe(api, out, retry.RUN_KEY, retry.OLD_JOB)
+    assert result["status"] == "R60_CPU2_RETRY_READ_ONLY_PROBE_HOLD"
+    assert result["reason_code"] == "SDK_API_INCOMPATIBLE"
+    assert result["local_stage"] == "PASS"
+    assert result["remote_ready"] == "PASS"
+    assert result["retry_marker"] == "PRESENT"
+    assert result["job_submission_calls"] == 0
+    assert api.called == ["read_bucket", "inspect_job"]
