@@ -16,6 +16,7 @@ import json
 import os
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import r60_real1000_common2_sft_experimental_cpu as sft
 import r60_real_private_batch as private
@@ -127,14 +128,54 @@ def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict
         ] if template is not None else [],
         "tokenizer_verified": True, "collator_verified": template is not None,
         "r50_complete_exclusion_verified": False, "train_admitted": 0,
-        "model_inference_calls": 0, "gpu_started": False,
-        "private_values_emitted": False, "database_accessed": False,
+        "model_inference_calls": 0, "model_weights_loaded": False,
+        "native_template_token_parity_verified": False,
+        "gpu_started": False, "private_values_emitted": False,
+        "database_accessed": False,
     }
+
+
+def bind_text_only_rope(template, snapshot: Path) -> None:
+    """Use the official Transformers Qwen3.5 RoPE method without model weights.
+
+    This is a narrow workaround for ms-swift's default CPU collator, which
+    otherwise builds a full 27B CPU dummy_model while computing position_ids.
+    The actual ms-swift data_collator remains in use; the model lookup used
+    to supply its text-only RoPE callback is replaced. No multimodal batches.
+    """
+    import torch
+    from transformers import AutoConfig
+    from transformers.models.qwen3_5.modeling_qwen3_5 import Qwen3_5Model
+
+    config = AutoConfig.from_pretrained(
+        str(snapshot), local_files_only=True, trust_remote_code=False,
+    )
+    if getattr(config, "model_type", None) != "qwen3_5":
+        raise Hold("TEXT_ROPE_CONFIG_HOLD")
+    config_only = SimpleNamespace(config=config)
+
+    def text_rope(input_ids, **kwargs):
+        mm_types = kwargs.get("mm_token_type_ids")
+        if (kwargs.get("image_grid_thw") is not None
+                or kwargs.get("video_grid_thw") is not None
+                or mm_types is None
+                or not isinstance(mm_types, torch.Tensor)
+                or bool(torch.any(mm_types != 0).item())):
+            raise Hold("TEXT_ONLY_ROPE_MODALITY_HOLD")
+        # Calls the exact official v5.16.1 RoPE implementation. The
+        # config-only receiver has no parameters, weights or inference API.
+        return Qwen3_5Model.get_rope_index(
+            config_only, input_ids, **kwargs,
+        )
+
+    if type(template).__name__ != "Qwen3_8Template":
+        raise Hold("QWEN38_TEMPLATE_BINDING_HOLD")
+    template._get_get_rope_index = lambda: text_rope
 
 
 SAFE_PHASES = frozenset({
     "SNAPSHOT_CHECK", "PRIVATE_INPUT_CHECK", "TOKENIZER_LOAD",
-    "SWIFT_PROCESSOR_LOAD", "SWIFT_TEMPLATE_INIT",
+    "SWIFT_PROCESSOR_LOAD", "SWIFT_TEMPLATE_INIT", "TEXT_ONLY_ROPE_SETUP",
     "TOKENIZER_ENCODE", "SWIFT_COLLATOR_AUDIT",
 })
 
@@ -183,6 +224,8 @@ def run(args: argparse.Namespace) -> dict:
             add_non_thinking_prefix=False,
         )
         template.set_mode("train")
+        set_phase("TEXT_ONLY_ROPE_SETUP")
+        bind_text_only_rope(template, args.snapshot)
     return inspect_rows(rows, tok, template, phase=set_phase)
 
 
@@ -202,8 +245,8 @@ def main() -> int:
             "schema": SCHEMA, "status": "COMMON2_CPU_TEMPLATE_AUDIT_HOLD",
             "tokenizer_verified": False, "collator_verified": False,
             "r50_complete_exclusion_verified": False, "train_admitted": 0,
-            "model_inference_calls": 0, "gpu_started": False,
-            "private_values_emitted": False,
+            "model_inference_calls": 0, "model_weights_loaded": False,
+            "gpu_started": False, "private_values_emitted": False,
             "reason_code": (
                 args._safe_phase + "_HOLD"
                 if args._safe_phase in SAFE_PHASES else "SAFE_PHASE_UNKNOWN_HOLD"
