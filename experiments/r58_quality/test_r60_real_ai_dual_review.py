@@ -260,7 +260,7 @@ def test_synthetic_probe_never_loads_private_source(monkeypatch):
     calls = []
 
     def fake_request(endpoint, model, key, prompt, timeout, json_mode, *,
-                     protocol="openai-chat"):
+                     protocol="openai-chat", diagnose_json=False):
         calls.append((endpoint, model, protocol, prompt))
         assert "合成测试" in prompt
         return model_answer()
@@ -374,3 +374,67 @@ def test_synthetic_probe_main_without_remote_flag_does_not_opt_in(monkeypatch):
     assert captured["allow_remote"] is False
     assert captured["key_env"] == "R60_CLAUDE_KEY"
     assert captured["execute"] is False
+
+
+@pytest.mark.parametrize(
+    ("wire_data", "code"),
+    [
+        (b"not-json", "MODEL_ENVELOPE_JSON_INVALID"),
+        (b'{"choices":[{"message":{"content":null}}]}',
+         "MODEL_CONTENT_MISSING_OR_NONSTRING"),
+        (b'{"choices":[{"message":{"content":"NOT_JSON"}}]}',
+         "MODEL_CONTENT_JSON_INVALID"),
+        (b'{"choices":[{"message":{"content":"{}"}}]}',
+         "MODEL_REVIEW_SCHEMA_INVALID"),
+    ],
+)
+def test_synthetic_probe_response_json_failure_stages_are_safe(
+        monkeypatch, wire_data, code):
+    import io
+    import r60_reviewer_protocol_probe as probe
+
+    class SyntheticResponse(io.BytesIO):
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            self.close()
+
+    class SyntheticOpener:
+        def open(self, request, timeout):
+            return SyntheticResponse(wire_data)
+
+    monkeypatch.setattr(
+        ai.urllib.request, "build_opener",
+        lambda *args: SyntheticOpener(),
+    )
+    result = probe.inspect(
+        endpoint="https://provider.example/v1", model="claude-synthetic",
+        protocol="claude-proxy-top-system", key_env="R60_CLAUDE_KEY",
+        allow_remote=True, json_mode=False, execute=True,
+    )
+    assert result["status"] == "REVIEWER_PROTOCOL_HOLD"
+    assert result["reason_code"] == code
+    assert result["model_requests"] == 1
+    assert result["private_source_accessed"] is False
+    assert "NOT_JSON" not in json.dumps(result)
+    assert result["train_admitted"] == 0
+
+
+def test_regular_reviewer_keeps_legacy_generic_json_error(monkeypatch):
+    import io
+
+    class SyntheticOpener:
+        def open(self, request, timeout):
+            return io.BytesIO(b'{"choices":[{"message":{"content":"NOT_JSON"}}]}')
+
+    monkeypatch.setattr(
+        ai.urllib.request, "build_opener",
+        lambda *args: SyntheticOpener(),
+    )
+    with pytest.raises(ai.Hold, match="^MODEL_JSON_INVALID$"):
+        ai.model_request(
+            "https://provider.example/v1/chat/completions",
+            "claude-synthetic", "", "synthetic only", 10, False,
+            protocol="claude-proxy-top-system",
+        )
