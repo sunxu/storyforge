@@ -193,3 +193,7 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 ### 2026-11-12 公开HTTP错误状态保留策略
 
 通用请求层只输出固定允许的`MODEL_HTTP_400_HOLD`/`401`/`403`/`404`/`408`/`413`/`429`/`500`/`502`/`503`/`504`，其他HTTP/网络故障保持`MODEL_TRANSPORT_HOLD`。这些错误码同时由`r60_real_quality_batch.py`逐案回执重放验证器和合成API探针SAFE使用，禁止回显 HTTP URL、Error Body、Header、密钥或原文。400用于定位协议/字段被拒，401/403用于认证与权限，429用于限流，不是质量REJECT。网络失败也不得被统计为真实HOLD内容质量，应区分`model_attempt_hold_counts`与`quality_decisions`。
+
+### 双模型同时不可用的不可覆盖回执保护
+
+当两个Reviewer均返回传输HOLD或以上固定HTTP错误、**没有一份有效审核**时，`advance`返回`BOTH_REVIEW_MODELS_UNAVAILABLE`并在本案例写盘前停止，保留上次完整checkpoint序列可恢复。避免把429/500工程故障固化为永久文学质量HOLD。仅一个模型失败时仍逐案保存部分审核与真实错误码（决策HOLD），不自动二次请求、不补造评分；后续纠错必须独立版本化，不能覆盖已有文件。合成测试覆盖两429无回执、单429可重放。
