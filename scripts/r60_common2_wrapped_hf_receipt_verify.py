@@ -59,7 +59,8 @@ def inspect(path: Path, run_key: str, expected_sha256: str | None = None) -> dic
             "model_weights_loaded": False,
             "model_inference_calls": 0, "gpu_started": False,
             "hf_jobs_submitted": 0, "private_values_emitted": False,
-            "files_written": 0,
+            "training_dataset_files_written": 0,
+            "safe_receipt_publication_expected": True,
             "system_origin": "R27_R52_FROZEN_SYNTHETIC_NOT_HISTORICAL_SENT",
         }
         if type(receipt) is not dict or any(
