@@ -78,3 +78,31 @@ EXCLUSION="/Owner私有/R50最终冻结排除或heldout关联文件.json"
 Owner Mac SAFE结果：`R50_METADATA_FILES_PARSEABLE__COVERAGE_HOLD`；`all_files_checked=3`、`cases_file_rows=46`、`provenance_file_rows=46`、`exclusion_file_entries=21`；数据库/GPU/HF Job 0，`r50_complete_exclusion_verified=false`，`train_admitted=0`。所用输入：R50 `run.dWgMu5/private/derived` 中46条 `PRESEAL` 候选及46条 `PRESEAL` 来源映射，以及 `R50_46_R45_ORIGINAL_EXACT_SUBSET_SCREEN.json`。**21是该JSON根对象的键数，不是排除的21条样本。** 两个46的数量相等尚未证明逐行映射正确。该第三文件是R45精确子集屏查而非最终R50保护集。不能提升为R50完整排除。
 
 已找到的其他后续只读辅助证据：`r50/full-original-worlds/run.cGUPnjdx/R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json`、`r50/r45-full-source-gate/R50_R45_FULL_SOURCE_GATE_20261022_220215.json`、`r50/run.dWgMu5/private/R50_46_ADMISSION_STATUS_20261016.json`和`run.dWgMu5/private/derived/R50_46_PRESEAL_SELECTION_MANIFEST_PRIVATE.json`。真实原始50案及最终保护集版本仍未证实。下一步**必须先安全查看Schema/结构而非私有字段值**，核对46/50、4条排除去向、每条的story/session/message来源绑定及R45世界级排除。禁止为了通过门禁把PRESEAL/21字段报告冒充完整排除资料。
+
+
+## 2026-11-12 R50字段Schema已核实；新增PRESEAL跨文件检查器（待Owner实跑）
+
+Owner回传仅字段名称，已确认：候选46行含`case_id,world_id,history,world_card,user_input,long_term_rules,focus_tags`；provenance46行含`case_id,source_story_id,source_session_id,history_message_ids,cutoff_message_id,story_number,card_evidence`。另外选择清单含`original_case_count,selected_case_count,excluded_cases,final_heldout_seal`；准入状态含`candidate_case_count,excluded_case_count,exclude_ids,final_heldout_seal,promotion`；world inventory含`same_story_id_pair_count,heldout_final_seal,semantic_hidden_alias_and_world_component_closure`；R45 gate含`frozen_r45_hashes_verified,heldout_cases_sealed,incomplete_or_hidden_world_aliases`。**这只说明键存在，不代表其值构成PASS。**
+
+基于真实字段结构新增`scripts/r60_r50_preseal_crosswalk_cpu.py`和`tests/test_r60_r50_preseal_crosswalk_cpu.py`：纯标准库/本机只读校验6个Owner指定文件、46/46唯一`case_id`及顺序逐案对应、来源story/session/history ID字段存在且非空、四份报告必要键存在。输出只有安全布尔状态及计数，不泄露私有ID/正文/哈希/路径；即使全部通过仍只返回`R50_PRESEAL_46_CROSSWALK_PASS__FINAL_COVERAGE_HOLD`，`frozen_protection_50_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。**这个工具尚不验证R50 50→46的4例筛除语义、原始文件SHA/封存状态，也不比较Common2训练故事，绝不能冒充最终排除。**
+
+Owner Mac，在独立分支同步代码并确认工作树干净后：
+
+```bash
+set -euo pipefail
+cd ~/workspace/storyforge-r60-4router-review
+PY="$HOME/.local/share/storyforge/venvs/r60-tests/bin/python"
+"$PY" -m pytest -q tests/test_r60_r50_preseal_crosswalk_cpu.py
+"$PY" -m compileall -q scripts/r60_r50_preseal_crosswalk_cpu.py
+B="$HOME/.local/share/storyforge/r50"
+D="$B/run.dWgMu5/private/derived"
+"$PY" scripts/r60_r50_preseal_crosswalk_cpu.py \
+  --cases "$D/R50_CANDIDATE_46_PRESEAL_PRIVATE.jsonl" \
+  --provenance "$D/R50_PROVENANCE_46_PRESEAL_PRIVATE.jsonl" \
+  --selection "$D/R50_46_PRESEAL_SELECTION_MANIFEST_PRIVATE.json" \
+  --admission "$B/run.dWgMu5/private/R50_46_ADMISSION_STATUS_20261016.json" \
+  --worlds "$B/full-original-worlds/run.cGUPnjdx/R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json" \
+  --r45-gate "$B/r45-full-source-gate/R50_R45_FULL_SOURCE_GATE_20261022_220215.json"
+```
+
+若出现`FILE_PERMISSION_HOLD`或`SOURCE_PROVENANCE_HOLD`，不得更改冻结原件以迎合测试，应核对冻结数据的真实schema，再以显式审核的薄适配修正检查器。完成46/46结构级检查后，下一步要按照报告**值的安全语义投影**验证原始50→排除4→候选46、最终封存状态及R45世界排除；必须先核验报告值的枚举或schema合同，绝不根据字段名猜含义。
