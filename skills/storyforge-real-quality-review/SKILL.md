@@ -5,6 +5,9 @@ description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-mo
 
 # StoryForge REAL1000 Quality Reviewer Skill
 
+> **Owner Mac 2026-11-13 实际 SAFE 更新**：`PILOT5_V2_REPLAY_PREFLIGHT_PASS__NO_REQUEST` 已由 Owner 回传，planned=3、recorded=0、model_requests=0。原“预检未报告”属于历史状态。直接从既存 v2 计划继续；不重做 API probe、Reviewer、v1 init/advance。新 `experiments/r58_quality/r60_pilot5_v2_crosswalk.py` 只读复用 `replay.verify` / `verify_existing_slot` 完整性校验，无请求、无Gold晋升。真实三个槽位仍需 Owner 明确批准。
+
+
 > **Active handoff 2026-11-13**: Read `docs/R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md` first. The 5-case real pilot HAS run; v1: HOLD3/REJECT2/PASS0, 7 valid reviewer outputs, only missing technical slots `(1,b),(3,a),(3,b)`. Owner Mac evidence integrity and the create-only v2 plan are PASS; CI synthetic replay runner Ruff+63/63 PASS; Owner Mac replay-runner preflight **not yet reported**. Do NOT rerun synthetic provider probes, `init`, `advance --max-cases 5`, or the successful 7 model reviews. The next action is offline `r60_pilot5_v2_replay_execute.py` **without execute flags**; after actual Mac SAFE and explicit Owner approval, the executor can do ONLY 3 missing-side calls with `--execute --allow-private-data-egress`. No overwrite, auto-retry, expand, GPU or train; all admission remains 0. Historical instructions below are retained for traceability.
 
 ## Scope
