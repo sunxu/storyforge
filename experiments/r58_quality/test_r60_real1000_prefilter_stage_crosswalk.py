@@ -6,7 +6,6 @@ import json
 import r60_real1000_offline_prefilter as prefilter
 import r60_real1000_prefilter_stage_crosswalk as gate
 import r60_real_private_batch as private
-
 from test_r60_real1000_offline_prefilter import candidates
 
 
