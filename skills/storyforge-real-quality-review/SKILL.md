@@ -5,6 +5,9 @@ description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-mo
 
 # StoryForge REAL1000 Quality Reviewer Skill
 
+> **补充诊断（2026-11-13，Owner Mac 固定错误码聚合）**：已记录的 v2 三次请求结果为 `SUCCESS=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=1`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。已核对 `r60_real_ai_dual_review.parse_model_response`：前者精确表示 Reviewer 声明 `decision=PASS`，但至少一项六维分数低于冻结最低分；后者精确表示至少一个严重标记为 `true`，但 `decision!=REJECT`。两个失败均是**决策与分数/严重标记合同不一致**，不是已证实的传输或 JSON 语法失败。当前冻结下限为 `chinese_prose=4,character_consistency=4,npc_initiative=3,player_agency=4,rule_fidelity=4,narrative_continuity=4`，严标为 `serious_player_agency,hard_fact_or_ban,safety_exclusion`。公开 SAFE 不绑定具体失败侧、原始分数或严重标记明细，不能推断是哪一槽位、分数是多少或哪项标记为真。**不修正模型决定、不降低阈值、不覆盖任何 v2 HOLD，不重跑 Reviewer。** 后续独立语义判断需要 Owner 私有证据的单独只读路径；仅凭聚合 SAFE 无法形成逐案裁决。Pilot25、Gold准入与训练持续 HOLD。
+
+
 > **最新执行结果（2026-11-13 Owner Mac SAFE，覆盖下方旧阶段说明）**：Owner 已明确授权且通过现有定向执行器完成全部3个模型请求；返回 `PILOT5_V2_REPLAY_ATTEMPTS_SAVED__NO_PROMOTION`（`model_requests=3`、`successes=1`、`attempt_holds=2`、`already_recorded_slots=0`）。随后只读 crosswalk 返回 `PILOT5_V2_CROSSWALK_INTEGRITY_PASS__QUALITY_HOLD`（`v1_cases=5`、`v1_valid_reviews=7`、`v2_recorded=3`、`v2_success=1`、`v2_attempt_holds=2`、`unresolved_slots=2`）。3份 v2 回执均已记录且不可覆盖；**只有1份新增有效审核意见，总有效意见8份**，另外2份是技术失败，不是文学REJECT或有效质量HOLD评分。SAFE 不揭示具体成功/失败侧与失败原因，不能猜测。**停止此 v2 命名空间任何自动重跑、删改或同计划重试**；后续只能做只读证据核验与已有8份意见的局部语义复核。技术失败是否另立 v3 纠错须先做私有失败原因/请求边界调查、单独版本化方案与Owner再次授权。#2/#3/#4/#5 未完成独立语义裁决，Pilot25/Gold/训练全部 HOLD；`train_admitted=0`，未写DB、未启GPU/HF Jobs。
 
 
