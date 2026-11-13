@@ -28,9 +28,11 @@ def _fixture(tmp_path, monkeypatch):
     monkeypatch.setattr(crosswalk.replay, "verify", lambda a, b: ({}, [], slots))
     monkeypatch.setattr(crosswalk.quality, "receipt_name", lambda p: f"{p}.json")
     for i, count in enumerate((1, 2, 0, 2, 2), start=1):
-        (qdir / f"{i}.json").write_text(json.dumps({
+        receipt = qdir / f"{i}.json"
+        receipt.write_text(json.dumps({
             "reviews": [{"decision": "HOLD"}] * count,
         }))
+        receipt.chmod(0o600)
     # Existing-slot checks are deliberately reused and independently exercised
     # in test_r60_pilot5_v2_replay_execute.py.
     return qdir, vdir, slots
@@ -56,6 +58,7 @@ def test_three_receipts_still_hold_quality(tmp_path, monkeypatch):
         )
         path.write_text(json.dumps({"attempt_status": "HOLD"
                                     if slot["position"] == 1 else "SUCCESS"}))
+        path.chmod(0o600)
     monkeypatch.setattr(crosswalk.replay, "verify_existing_slot",
                         lambda path, slot: True)
     safe = crosswalk.audit(qdir, vdir)
@@ -69,6 +72,7 @@ def test_three_receipts_still_hold_quality(tmp_path, monkeypatch):
 def test_inconsistent_v1_review_count_fails_closed(tmp_path, monkeypatch):
     qdir, vdir, _ = _fixture(tmp_path, monkeypatch)
     (qdir / "5.json").write_text(json.dumps({"reviews": []}))
+    (qdir / "5.json").chmod(0o600)
     assert crosswalk.audit(qdir, vdir)["status"] == "PILOT5_V2_CROSSWALK_HOLD"
 
 
