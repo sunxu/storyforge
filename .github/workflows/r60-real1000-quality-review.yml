@@ -13,6 +13,8 @@ on:
       - "experiments/r58_quality/test_r60_real_quality_batch.py"
       - "experiments/r58_quality/r60_pilot5_v2_safe_audit.py"
       - "experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py"
+      - "experiments/r58_quality/r60_pilot5_v2_replay_plan.py"
+      - "experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -24,6 +26,8 @@ on:
       - "experiments/r58_quality/test_r60_real_quality_batch.py"
       - "experiments/r58_quality/r60_pilot5_v2_safe_audit.py"
       - "experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py"
+      - "experiments/r58_quality/r60_pilot5_v2_replay_plan.py"
+      - "experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -49,12 +53,15 @@ jobs:
             experiments/r58_quality/r60_real_ai_dual_review.py \
             experiments/r58_quality/r60_real_quality_batch.py \
             experiments/r58_quality/r60_pilot5_v2_safe_audit.py \
+            experiments/r58_quality/r60_pilot5_v2_replay_plan.py \
             experiments/r58_quality/test_r60_real_ai_dual_review.py \
             experiments/r58_quality/test_r60_real_quality_batch.py \
             experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py
+            experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
             experiments/r58_quality/test_r60_real_ai_dual_review.py \
             experiments/r58_quality/test_r60_real_quality_batch.py \
             experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py
+            experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py
