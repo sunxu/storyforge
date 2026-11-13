@@ -1,4 +1,7 @@
 ---
+
+> **2026-11-13 通用1000筛选方向（优先于旧Pilot5专属步骤）**：当前主目标是对完整冻结1000池建立来源→结构→独立双审→技术HOLD→语义仲裁→Gold候选→训练隔离的通用流程，不能继续仅为旧5案优化Reviewer。权威新方案 `docs/R60_REAL1000_GENERAL_SCREENING_PIPELINE_20261113_CN.md`。纯函数分流器 `src/storyforge_gold_quality/real1000_screening_policy.py` 只接受已来源绑定的证据标记，不读取私有文本或请求模型；仅输出 `QUALITY_CANDIDATE_NOT_ADMITTED` 等状态及1000全局SAFE聚合，**不能替代**现有 `hf_literary_review` / `hf_blind_stage` / 统一Quality Manifest与冻结六维Rubric。HF已完成Stage优先只读audit，不重复prepare，下一批需独立Owner授权。Gold/训练准入仍为0。
+
 name: storyforge-real-quality-review
 description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-model Quality-v1 screening through shared protocol profiles, synthetic preflight, private resumable receipts, and independent evidence-based adjudication."
 ---
