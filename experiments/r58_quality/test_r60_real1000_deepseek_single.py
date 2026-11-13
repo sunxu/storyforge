@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 import r60_real1000_deepseek_single as single
 import r60_real_private_batch as private
 from test_r60_real1000_offline_prefilter import candidates
