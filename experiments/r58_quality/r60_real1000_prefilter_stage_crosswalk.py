@@ -13,6 +13,7 @@ from pathlib import Path
 import r60_real1000_offline_prefilter as prefilter
 import r60_real_private_batch as private
 import r60_real_quality_batch as quality
+
 from storyforge_gold_quality import hf_blind_stage
 
 SCHEMA = "storyforge_r60_prefilter_hf_stage_crosswalk_safe_v1"
@@ -43,7 +44,7 @@ def verify_receipts(directory: Path, cases: list[dict], pool_sha: str) -> dict:
         if not isinstance(entry, dict) or entry.get("name") != filename:
             raise Hold("PREFILTER_PAGE_INDEX_HOLD")
         page = json.loads(private.read_private(
-            directory / filename, quality.MAX_CASE_BYTES,
+            directory / filename, 100_000,
         ))
         if (page.get("schema") != prefilter.SCHEMA
                 or page.get("pool_sha256") != pool_sha
