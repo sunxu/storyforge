@@ -4,7 +4,6 @@ from __future__ import annotations
 import copy
 
 import pytest
-
 import r60_real1000_offline_prefilter as module
 import r60_real_private_batch as private
 
