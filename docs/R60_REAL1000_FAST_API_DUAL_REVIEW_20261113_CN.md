@@ -198,3 +198,46 @@ R60_CLAUDE_KEY="$DASHSCOPE_API_KEY" R60_DEEPSEEK_KEY="$DEEPSEEK_API_KEY" \
 ~~~
 
 预期`cases_reviewed=255`（若成功推进），之前累计HTTP401为100。若本轮401超过100，不再执行任何真实`advance`，转入凭证/模型权限复查；若无新增401，恢复受控25条批量。新模型结果可能仍出现`QUALITY_FLOOR_DECISION_INCONSISTENT`，保持技术HOLD、不降低评分门槛。原250条失败槽位只能版本化补审，不能覆盖旧回执。
+
+
+## 2026-11-13 REAL1000 255实际回执：401恢复测试失败，暂停任何advance
+
+Owner两次回传同一SAFE：`cases_reviewed=255`，`MODEL_HTTP_401_HOLD=105`（此前250为100），`QUALITY_FLOOR_DECISION_INCONSISTENT=76`（此前75），`TWO_INDEPENDENT_REVIEWS_REQUIRED=177`（此前172），`HOLD244/REJECT11/PASS0`，剩余745。与此前合成Qwen`QUALITY_FLOOR_DECISION_INCONSISTENT`（未401）对比，只能证明合成请求到达过解析器，**不能宣布真实审核认证修复**。继续试用原`advance`将把认证故障不可逆地固定为单侧HOLD，因此停止调用。
+
+接下来只运行零模型请求的故障归属及本机批次配置对照，**不要输出实际Endpoint/模型凭据/私有正文**：
+
+~~~bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-quality-fast1000-api-v1"
+
+"$PY" experiments/r58_quality/r60_real1000_reviewer_failure_side.py --output-dir "$OUT"
+
+"$PY" - "$OUT" <<'PY'
+import importlib.util
+import pathlib
+import sys
+root = pathlib.Path("experiments/r58_quality").resolve()
+sys.path.insert(0, str(root))
+import r60_real_quality_batch as batch
+c = batch.validate_config(pathlib.Path(sys.argv[1]))
+checks = {
+    "qwen_endpoint_expected": c["endpoint_a"] == "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+    "qwen_model_expected": c["model_a"] == "qwen3.7-flash",
+    "qwen_protocol_expected": c["protocol_a"] == "openai-chat",
+    "deepseek_endpoint_expected": c["endpoint_b"] == "https://api.deepseek.com/chat/completions",
+    "deepseek_model_expected": c["model_b"] == "deepseek-flash",
+    "deepseek_protocol_expected": c["protocol_b"] == "deepseek-chat",
+}
+import json
+print(json.dumps({"config_matches_expected": checks, "model_requests": 0, "private_values_emitted": False}, sort_keys=True))
+PY
+~~~
+
+这将进一步明确是否为A侧新401（新增5个的错误归属可能在全部0有效的案中无法辨别），以及实际Batch冻结配置是否同合成探针一致。如配置吻合且A确实持续401，后续需直接在百炼平台检查Key所属工作空间、有效性和`qwen3.7-flash`可用性。B侧不得因A认证失败反复消耗费用。
+
+**加速目标仍是完成1000条筛选，但不允许把745条全部标为认证失败来冒充实际质量筛选。** 如果A无法及时恢复，应明确切换为“B单侧快速筛选＋A补审的独立新路线”，先保留已存在255条原始证据；新路线需要额外新私有回执和定义单侧候选而非伪造双审。当前仍无Gold/训练准入。
