@@ -84,3 +84,38 @@ done
 已有`inspect`提供`candidate_total`、`cases_reviewed`、`quality_decisions`、`hold_reject_codes`、`model_attempt_hold_counts`。由于未自动认可Reviewer独立性，`quality_pass`不代表预备双PASS总量；任何进一步“提取训练候选”须从Owner-only回执读取并按原冻结六维/严重标记及精确证据核验后，在新的私有候选集单独汇总，**不得篡改已有回执或自动Gold晋升**。
 
 当前保持`quality_v1_admitted=0`、`train_admitted=0`、`gpu_started=false`、`r50_complete_exclusion_verified=false`、`historical_system_snapshot_verified=false`、`world_isolation_verified=false`。
+
+
+## 2026-11-13 Owner真实首25 SAFE：建议累计100，不重跑已完成样本
+
+Owner提供的两份 `inspect` SAFE 完全相同：`QUALITY_BATCH_IN_PROGRESS__TRAIN_ADMISSION_HOLD`，`cases_reviewed=25`，`remaining_cases=975`，`quality_decisions={PASS:0,HOLD:24,REJECT:1}`，`quality_pass=0`，`reviewer_independence_attested_by_owner=false`，`train_admitted=0`。HOLD/REJECT原因：`INDEPENDENCE_NOT_ATTESTED=2`、`REVIEW_INCOMPLETE=9`、`TWO_INDEPENDENT_REVIEWS_REQUIRED=13`、`SEVERE_OR_REVIEWER_REJECT=1`，合计25。
+
+**技术失败共15次/最多50审核槽位（30%）**：`MODEL_HTTP_400_HOLD=2`、`MODEL_JSON_INVALID=2`、`QUALITY_FLOOR_DECISION_INCONSISTENT=8`、`SEVERE_FLAG_DECISION_INCONSISTENT=3`。这15是模型**尝试槽位**计数，不是15条错误案例；其余35次不能仅凭SAFE证明质量正确。不要把`PASS=0`解释成只有0条值得训练，或把技术错误算文学REJECT。
+
+按既定**每25条技术失败超过20槽位才停止**的工程门槛，本轮15/50未触发该止损，允许继续推进75条到累计100；若连续下一批出现两侧服务不可用/来源SHA改变/回执报错，应立即保留现有源、停止扩批。文学评分HOLD/REJECT不自动停机。
+
+在同一Owner Mac终端恢复，**不要重新执行init，不删除/覆盖目录**；凭据通过现有私有环境加载：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-quality-fast1000-api-v1"
+: "${DASHSCOPE_API_KEY:?Missing Qwen API key}"
+: "${DEEPSEEK_API_KEY:?Missing DeepSeek API key}"
+test -d "$OUT"
+"$PY" experiments/r58_quality/r60_real_quality_batch.py inspect --output-dir "$OUT"
+for pass in 1 2 3; do
+  R60_CLAUDE_KEY="$DASHSCOPE_API_KEY" R60_DEEPSEEK_KEY="$DEEPSEEK_API_KEY" \
+  "$PY" experiments/r58_quality/r60_real_quality_batch.py advance --output-dir "$OUT" --max-cases 25
+  "$PY" experiments/r58_quality/r60_real_quality_batch.py inspect --output-dir "$OUT"
+done
+~~~
+
+预期累计`cases_reviewed=100`、`remaining_cases=900`，但这不是预先宣称真实成功。**不要把随后975条交给无费用上限的后台循环**。如果Owner确认100条运行稳定，可以继续以25条前台批次推进、适时检查配额/余额并主动停止，不额外反复模型选型或对前25失败样本重复调用。
+
+分流后续不能仅依赖汇总`quality_pass`，因为当前Reviewer独立性未Owner认证；需追加一个**只读**的原回执视图，报告两侧有效数量、有效双审完整对、双PASS但独立性HOLD等数量后，再决定是否做集中复核和训练候选提取。不能在没有真实语义来源证据前把双PASS提升为Gold。
