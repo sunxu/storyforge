@@ -259,3 +259,17 @@ python experiments/r58_quality/r60_pilot5_v2_safe_audit.py \
 首批v1 SAFE：5/1000已审核，HOLD3 REJECT2 PASS0；逐案审阅技术失败：#1仅Claude HOLD、DeepSeek `QUALITY_FLOOR_DECISION_INCONSISTENT`；#3 Claude和DeepSeek均`MODEL_JSON_INVALID`；#2 Claude REJECT/DeepSeek HOLD；#4 Claude PASS/DeepSeek HOLD；#5 双REJECT。**首批不符合扩批条件，剩余995条HOLD**。没有原始失败响应，不能假装从固定SAFE错误码推断模型实际文本或是否截断。须单独版本化新增补审证据（create-only；保留v1哈希及所有有效模型意见），不重跑已成功审核的一方、不覆盖/回写v1。#2/#4/#5先做独立局部三消息语义裁决；#5不得仅凭制服字样推断实际年龄。R50隔离、世界规则、历史System、Owner独立性认证仍不完整，`train_admitted=0`。本阶段不对接Supabase、不启动GPU或任何模型API、不自动扩批。
 
 CI脚本与synthetic-only测试见 `.github/workflows/r60-real1000-quality-review.yml`，只有在Owner本机明确执行时才读取该机私有目录。公开仓库严禁上传Owner私有回执或候选正文。
+
+## 13. Pilot5-v2 失败槽位只读补审计划（2026-11-13）
+
+Owner本机的`r60_pilot5_v2_safe_audit.py`已返回`PILOT5_V2_EVIDENCE_INTEGRITY_PASS__NO_PROMOTION`，审核5/5、技术失败3个槽位，`train_admitted=0`。新增独立的`r60_pilot5_v2_replay_plan.py`：仅当生产源码冻结池1000条可验证、5份v1回执可验证、失败槽位恰为3个时，create-only生成独立私有目录（0700）和补审计划（0600），不触发模型/网络/训练或覆盖v1。只计划`#1-B`（原`QUALITY_FLOOR_DECISION_INCONSISTENT`）、`#3-A`和`#3-B`（均`MODEL_JSON_INVALID`），明确`REPLAY_NOT_AUTHORIZED`。计划绑定原v1回执SHA256、源SHA和冻结模型/协议；保留其他7份已验证Reviewer结果，不将既有HOLD/REJECT视为技术失败重试，不自动修复分数或扩大准入。
+
+Owner Mac在确保`r60-pilot5-v2-replay`目录**尚不存在**的前提下执行：
+
+```bash
+python experiments/r58_quality/r60_pilot5_v2_replay_plan.py \
+  --quality-dir "$HOME/.local/share/storyforge/r60/private/r60-quality-first-1000" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/r60-pilot5-v2-replay"
+```
+
+预期：`PILOT5_V2_REPLAY_PLAN_PREPARED__NO_REQUEST`、`failed_slots=3`、`planned_positions=2`。若已经存在目录或源不一致则HOLD，严禁删除已有输出以求重跑。只有Owner另行批准并验证补审执行器后，才允许依据此计划做*失败侧*的API补审；本命令完全离线。GitHub Actions离线CI https://github.com/sunxu/storyforge/actions/runs/43334525258 PASS，Ruff All checks passed，pytest 58 passed。
