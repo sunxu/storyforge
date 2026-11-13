@@ -273,3 +273,17 @@ python experiments/r58_quality/r60_pilot5_v2_replay_plan.py \
 ```
 
 预期：`PILOT5_V2_REPLAY_PLAN_PREPARED__NO_REQUEST`、`failed_slots=3`、`planned_positions=2`。若已经存在目录或源不一致则HOLD，严禁删除已有输出以求重跑。只有Owner另行批准并验证补审执行器后，才允许依据此计划做*失败侧*的API补审；本命令完全离线。GitHub Actions离线CI https://github.com/sunxu/storyforge/actions/runs/43334525258 PASS，Ruff All checks passed，pytest 58 passed。
+
+## 14. Pilot5-v2 失败侧执行器离线预检（2026-11-13）
+
+Owner Mac已取得`PILOT5_V2_REPLAY_PLAN_PREPARED__NO_REQUEST`（3失败槽位/2条，未启动模型）。已新增独立执行器 `experiments/r58_quality/r60_pilot5_v2_replay_execute.py`，默认预检，不读取任何外部模型API、无训练与DB。运行器会重新调用冻结池的`quality.inspect`与`frozen_pool`校验1000来源、原5条v1回执、v2计划摘要/槽位/模型/协议及源hash；只接受槽位(1,b),(3,a),(3,b)，并使用v2目录独占锁避免并发重复请求。已有v2结果严格检查绑定和冻结6维模型响应结构，不覆盖、不重试已有槽位。
+
+仅执行**无模型请求**的Owner Mac预检：
+
+```bash
+python experiments/r58_quality/r60_pilot5_v2_replay_execute.py \
+  --quality-dir "$HOME/.local/share/storyforge/r60/private/r60-quality-first-1000" \
+  --output-dir "$HOME/.local/share/storyforge/r60/private/r60-pilot5-v2-replay"
+```
+
+预期 `PILOT5_V2_REPLAY_PREFLIGHT_PASS__NO_REQUEST`，`planned_slots=3`、`already_recorded_slots=0`、`model_requests=0`。后续执行明确要求`--execute --allow-private-data-egress`，并可用`--max-requests 1..3`限定每次最大发送数；目前**尚未进行真实补审调用，亦不在本阶段自行发起**。无论执行成败，每个已尝试槽位只写全新0600私有结果，失败也记HOLD且不自动重试。v1原件不变，不准入训练，补审结果也不自动提升到Quality Gold。禁止重复调用已有效的原7份审稿人意见。CI https://github.com/sunxu/storyforge/actions/runs/43337488525 PASS（Ruff通过、63项合成测试通过）。
