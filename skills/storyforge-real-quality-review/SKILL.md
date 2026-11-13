@@ -1,5 +1,4 @@
 ---
-
 name: storyforge-real-quality-review
 description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-model Quality-v1 screening through shared protocol profiles, synthetic preflight, private resumable receipts, and independent evidence-based adjudication."
 ---
