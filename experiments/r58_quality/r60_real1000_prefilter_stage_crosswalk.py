@@ -23,11 +23,20 @@ class Hold(ValueError):
     pass
 
 
+def read_record(path: Path, size_limit: int) -> dict:
+    """Parse existing immutable receipts; accept legacy literal backslash-n."""
+    raw = private.read_private(path, size_limit)
+    if raw.endswith(b"\\\\n"):
+        raw = raw[:-2]
+    parsed = json.loads(raw)
+    if not isinstance(parsed, dict):
+        raise Hold("PREFILTER_RECORD_TYPE_HOLD")
+    return parsed
+
+
 def verify_receipts(directory: Path, cases: list[dict], pool_sha: str) -> dict:
     private.private_dir(directory, create=False)
-    summary = json.loads(private.read_private(
-        directory / prefilter.OUTPUT, quality.MAX_CASE_BYTES,
-    ))
+    summary = read_record(directory / prefilter.OUTPUT, quality.MAX_CASE_BYTES)
     if (summary.get("schema") != prefilter.SCHEMA
             or summary.get("pool_sha256") != pool_sha
             or summary.get("cases_total") != prefilter.EXPECTED
@@ -43,9 +52,7 @@ def verify_receipts(directory: Path, cases: list[dict], pool_sha: str) -> dict:
         filename = f"R60_REAL1000_PREFILTER_PAGE_{index:04d}_PRIVATE.json"
         if not isinstance(entry, dict) or entry.get("name") != filename:
             raise Hold("PREFILTER_PAGE_INDEX_HOLD")
-        page = json.loads(private.read_private(
-            directory / filename, 100_000,
-        ))
+        page = read_record(directory / filename, 100_000)
         if (page.get("schema") != prefilter.SCHEMA
                 or page.get("pool_sha256") != pool_sha
                 or page.get("page_index") != index
