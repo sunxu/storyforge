@@ -1,5 +1,8 @@
 # StoryForge R60 REAL1000 / Pilot5-v2 新 Agent 接手任务书
 
+> **最新执行结果（2026-11-13 Owner Mac SAFE，覆盖下方旧阶段说明）**：Owner 已明确授权且通过现有定向执行器完成全部3个模型请求；返回 `PILOT5_V2_REPLAY_ATTEMPTS_SAVED__NO_PROMOTION`（`model_requests=3`、`successes=1`、`attempt_holds=2`、`already_recorded_slots=0`）。随后只读 crosswalk 返回 `PILOT5_V2_CROSSWALK_INTEGRITY_PASS__QUALITY_HOLD`（`v1_cases=5`、`v1_valid_reviews=7`、`v2_recorded=3`、`v2_success=1`、`v2_attempt_holds=2`、`unresolved_slots=2`）。3份 v2 回执均已记录且不可覆盖；**只有1份新增有效审核意见，总有效意见8份**，另外2份是技术失败，不是文学REJECT或有效质量HOLD评分。SAFE 不揭示具体成功/失败侧与失败原因，不能猜测。**停止此 v2 命名空间任何自动重跑、删改或同计划重试**；后续只能做只读证据核验与已有8份意见的局部语义复核。技术失败是否另立 v3 纠错须先做私有失败原因/请求边界调查、单独版本化方案与Owner再次授权。#2/#3/#4/#5 未完成独立语义裁决，Pilot25/Gold/训练全部 HOLD；`train_admitted=0`，未写DB、未启GPU/HF Jobs。
+
+
 > **2026-11-13 Owner Mac 新 SAFE（优先于下文历史状态）**：Owner 已回传执行器真实无网络预检 `PILOT5_V2_REPLAY_PREFLIGHT_PASS__NO_REQUEST`：`planned_slots=3`、`already_recorded_slots=0`、`model_requests=0`、`train_admitted=0`、`database_modified=false`、`gpu_started=false`。当前不再等待预检，下一门禁是 Owner 对 #1-B/#3-A/#3-B 三个真实模型调用的单独明确批准。新增独立 `r60_pilot5_v2_crosswalk.py` 复用既有 verify / verify_existing_slot 做只读 v1/v2 完整性核查；在未补审时输出 `PILOT5_V2_CROSSWALK_PARTIAL__QUALITY_HOLD`，不能升级 Gold。HF CPU、GPU、训练、DB、R50正文与剩余995均不执行。
 
 
