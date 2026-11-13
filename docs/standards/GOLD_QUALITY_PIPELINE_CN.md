@@ -1,5 +1,8 @@
 # StoryForge Gold Quality Pipeline
 
+> **R60 REAL1000 更新（2026-11-13）**：首批5条真实审核已经完成（HOLD3/REJECT2/PASS0），7份有效Reviewer结果加3个失败槽位；真实Owner Mac SAFE完整性5/5 PASS，v2计划 `PILOT5_V2_REPLAY_PLAN_PREPARED__NO_REQUEST` 已生成。定向补审执行器合成CI Ruff+pytest63/63通过，但**Owner Mac预检和真实3槽位补审仍未取得回执**；不得把早期“真实5案未开始”历史段落当现状，也不得删除/覆盖旧回执。所有入训门禁继续HOLD：`train_admitted=0`。后续工作和操作限制以 [Pilot5-v2 接手任务书](../R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md) 与 [Pilot5 Runbook](../R60_REAL1000_PILOT5_START_20261112_CN.md) 为准。
+
+
 ## Purpose
 
 One private append-only event Manifest for frozen source pins, legacy review evidence, historical exposure, incremental blind reviews, exclusions and adjudication. The CLI is an audit orchestrator, not a reviewer or training-admission shortcut.
