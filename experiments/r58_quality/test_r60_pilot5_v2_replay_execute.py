@@ -77,7 +77,9 @@ def test_only_three_failed_slots_and_resume_skips_written(tmp_path, monkeypatch)
     def fake_api(endpoint, model, key, prompt, timeout, json_mode, *, protocol):
         calls.append((model, protocol))
         return {
-            "decision": "HOLD", "scores": {}, "severe_flags": {},
+            "decision": "HOLD",
+            "scores": {k: 3 for k in runner.private.FLOORS},
+            "severe_flags": {k: False for k in runner.private.SEVERE},
             "reason_cn": "synthetic test only",
         }
 
