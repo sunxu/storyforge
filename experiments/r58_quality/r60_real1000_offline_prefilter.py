@@ -171,7 +171,7 @@ def run(expand_dir: Path, output_dir: Path) -> dict:
                 "page_index": index, "rows": rows[offset:offset + PAGE_SIZE],
             }
             raw = (json.dumps(page, ensure_ascii=False, sort_keys=True)
-                   + "\\n").encode("utf-8")
+                   + "\n").encode("utf-8")
             private.write_new(output_dir / name, raw)
             pages.append({"name": name, "sha256": private.digest(page)})
         # Only a complete create-only page set receives its final marker.
@@ -183,7 +183,7 @@ def run(expand_dir: Path, output_dir: Path) -> dict:
         private.write_new(
             output_dir / OUTPUT,
             (json.dumps(payload, ensure_ascii=False, sort_keys=True)
-             + "\\n").encode("utf-8"),
+             + "\n").encode("utf-8"),
         )
         return status
     except (OSError, ValueError, TypeError, KeyError, IndexError):
