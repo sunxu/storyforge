@@ -5,6 +5,9 @@ description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-mo
 
 # StoryForge REAL1000 Quality Reviewer Skill
 
+> **最新执行结果（2026-11-13 Owner Mac SAFE，覆盖下方旧阶段说明）**：Owner 已明确授权且通过现有定向执行器完成全部3个模型请求；返回 `PILOT5_V2_REPLAY_ATTEMPTS_SAVED__NO_PROMOTION`（`model_requests=3`、`successes=1`、`attempt_holds=2`、`already_recorded_slots=0`）。随后只读 crosswalk 返回 `PILOT5_V2_CROSSWALK_INTEGRITY_PASS__QUALITY_HOLD`（`v1_cases=5`、`v1_valid_reviews=7`、`v2_recorded=3`、`v2_success=1`、`v2_attempt_holds=2`、`unresolved_slots=2`）。3份 v2 回执均已记录且不可覆盖；**只有1份新增有效审核意见，总有效意见8份**，另外2份是技术失败，不是文学REJECT或有效质量HOLD评分。SAFE 不揭示具体成功/失败侧与失败原因，不能猜测。**停止此 v2 命名空间任何自动重跑、删改或同计划重试**；后续只能做只读证据核验与已有8份意见的局部语义复核。技术失败是否另立 v3 纠错须先做私有失败原因/请求边界调查、单独版本化方案与Owner再次授权。#2/#3/#4/#5 未完成独立语义裁决，Pilot25/Gold/训练全部 HOLD；`train_admitted=0`，未写DB、未启GPU/HF Jobs。
+
+
 > **Owner Mac 2026-11-13 实际 SAFE 更新**：`PILOT5_V2_REPLAY_PREFLIGHT_PASS__NO_REQUEST` 已由 Owner 回传，planned=3、recorded=0、model_requests=0。原“预检未报告”属于历史状态。直接从既存 v2 计划继续；不重做 API probe、Reviewer、v1 init/advance。新 `experiments/r58_quality/r60_pilot5_v2_crosswalk.py` 只读复用 `replay.verify` / `verify_existing_slot` 完整性校验，无请求、无Gold晋升。真实三个槽位仍需 Owner 明确批准。
 
 
