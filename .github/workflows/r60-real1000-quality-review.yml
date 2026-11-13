@@ -63,5 +63,5 @@ jobs:
           python -m pytest -q \
             experiments/r58_quality/test_r60_real_ai_dual_review.py \
             experiments/r58_quality/test_r60_real_quality_batch.py \
-            experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py
+            experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py \
             experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py
