@@ -78,7 +78,10 @@ def verify(directory: Path, old_dir: Path) -> tuple[dict, list[dict], dict]:
     if config["receipt_sha256"] != private.digest(signed):
         raise Hold("SINGLE_CONFIG_SIGNATURE_HOLD")
 
-    positions = sorted(directory.glob(PREFIX + "*_PRIVATE.json"))
+    positions = sorted(
+        path for path in directory.glob(PREFIX + "*_PRIVATE.json")
+        if path.name != CONFIG
+    )
     status = Counter()
     errors = Counter()
     expected_position = FIRST
