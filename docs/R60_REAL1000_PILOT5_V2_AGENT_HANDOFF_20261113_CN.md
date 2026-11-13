@@ -1,5 +1,8 @@
 # StoryForge R60 REAL1000 / Pilot5-v2 新 Agent 接手任务书
 
+> **2026-11-13 冻结证据语义复核（新最新状态）**：Owner 本轮提供6条冻结源JSONL、v2计划和3个槽位回执，结合已在 ChatGPT 文件库的5份v1原始回执完成前5案来源身份/摘要5/5与v2槽位绑定3/3校验（未重新完整验证1000池）。明确槽位：#1-B=`QUALITY_FLOOR_DECISION_INCONSISTENT`技术HOLD；#3-A=有效 `REJECT`（严重玩家能动性）；#3-B=`SEVERE_FLAG_DECISION_INCONSISTENT`技术HOLD。有效 Reviewer 仍为7+1=8，两项技术HOLD不可覆盖。对5案进行新的证据级语义分析：PASS0/HOLD2/REJECT3；具体对应#1 HOLD、#2 REJECT、#3 REJECT、#4 HOLD、#5 REJECT。**这是看到既有评分后的非盲语义复核，不能冒充独立盲审或冻结 v1/v2 裁决改写。** 私有逐案引文/评分/理由仅在Owner获取的单独私有裁决文件中；GitHub仅公开聚合 `docs/evidence/R60_REAL1000_PILOT5_V2_SEMANTIC_SAFE_20261113.json`。继续禁止当前v2重试/覆盖，Pilot25、Gold、训练、HF Jobs/GPU/DB均HOLD；世界事实、历史System、R50排除及Reviewer独立性未完成。
+
+
 > **补充诊断（2026-11-13，Owner Mac 固定错误码聚合）**：已记录的 v2 三次请求结果为 `SUCCESS=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=1`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。已核对 `r60_real_ai_dual_review.parse_model_response`：前者精确表示 Reviewer 声明 `decision=PASS`，但至少一项六维分数低于冻结最低分；后者精确表示至少一个严重标记为 `true`，但 `decision!=REJECT`。两个失败均是**决策与分数/严重标记合同不一致**，不是已证实的传输或 JSON 语法失败。当前冻结下限为 `chinese_prose=4,character_consistency=4,npc_initiative=3,player_agency=4,rule_fidelity=4,narrative_continuity=4`，严标为 `serious_player_agency,hard_fact_or_ban,safety_exclusion`。公开 SAFE 不绑定具体失败侧、原始分数或严重标记明细，不能推断是哪一槽位、分数是多少或哪项标记为真。**不修正模型决定、不降低阈值、不覆盖任何 v2 HOLD，不重跑 Reviewer。** 后续独立语义判断需要 Owner 私有证据的单独只读路径；仅凭聚合 SAFE 无法形成逐案裁决。Pilot25、Gold准入与训练持续 HOLD。
 
 
