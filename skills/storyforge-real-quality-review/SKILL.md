@@ -5,6 +5,8 @@ description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-mo
 
 # StoryForge REAL1000 Quality Reviewer Skill
 
+> **Active handoff 2026-11-13**: Read `docs/R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md` first. The 5-case real pilot HAS run; v1: HOLD3/REJECT2/PASS0, 7 valid reviewer outputs, only missing technical slots `(1,b),(3,a),(3,b)`. Owner Mac evidence integrity and the create-only v2 plan are PASS; CI synthetic replay runner Ruff+63/63 PASS; Owner Mac replay-runner preflight **not yet reported**. Do NOT rerun synthetic provider probes, `init`, `advance --max-cases 5`, or the successful 7 model reviews. The next action is offline `r60_pilot5_v2_replay_execute.py` **without execute flags**; after actual Mac SAFE and explicit Owner approval, the executor can do ONLY 3 missing-side calls with `--execute --allow-private-data-egress`. No overwrite, auto-retry, expand, GPU or train; all admission remains 0. Historical instructions below are retained for traceability.
+
 ## Scope
 Only for the Owner's frozen R60 REAL1000 candidate pool (6 seed + 994 expansion).
 Use on branch `r60/common2-cpu2-owner`, without editing another Agent's worktree.
