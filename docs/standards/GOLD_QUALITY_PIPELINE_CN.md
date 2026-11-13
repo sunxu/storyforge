@@ -1,5 +1,8 @@
 # StoryForge Gold Quality Pipeline
 
+> **2026-11-13 通用1000筛选方向（优先于旧Pilot5专属步骤）**：当前主目标是对完整冻结1000池建立来源→结构→独立双审→技术HOLD→语义仲裁→Gold候选→训练隔离的通用流程，不能继续仅为旧5案优化Reviewer。权威新方案 `docs/R60_REAL1000_GENERAL_SCREENING_PIPELINE_20261113_CN.md`。纯函数分流器 `src/storyforge_gold_quality/real1000_screening_policy.py` 只接受已来源绑定的证据标记，不读取私有文本或请求模型；仅输出 `QUALITY_CANDIDATE_NOT_ADMITTED` 等状态及1000全局SAFE聚合，**不能替代**现有 `hf_literary_review` / `hf_blind_stage` / 统一Quality Manifest与冻结六维Rubric。HF已完成Stage优先只读audit，不重复prepare，下一批需独立Owner授权。Gold/训练准入仍为0。
+
+
 > **R60 REAL1000 更新（2026-11-13）**：首批5条真实审核已经完成（HOLD3/REJECT2/PASS0），7份有效Reviewer结果加3个失败槽位；真实Owner Mac SAFE完整性5/5 PASS，v2计划 `PILOT5_V2_REPLAY_PLAN_PREPARED__NO_REQUEST` 已生成。定向补审执行器合成CI Ruff+pytest63/63通过，但**Owner Mac预检和真实3槽位补审仍未取得回执**；不得把早期“真实5案未开始”历史段落当现状，也不得删除/覆盖旧回执。所有入训门禁继续HOLD：`train_admitted=0`。后续工作和操作限制以 [Pilot5-v2 接手任务书](../R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md) 与 [Pilot5 Runbook](../R60_REAL1000_PILOT5_START_20261112_CN.md) 为准。
 
 
