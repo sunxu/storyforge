@@ -156,3 +156,25 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 
 预筛排除为0意味着任何进一步“上下文不符合要求”的排除，必须引入**语义证据**而非新正则或臆测历史卡。建议先进行跨故事分层的小规模内容判断基准，记录有明确来源引文的「局部矛盾」「玩家代写」「难以判断」与「内容通过」四种情形，再冻结审核策略和预算。不能用Pilot5 PASS率估计1000的质量；是否采用“单模型先查上下文，再对候选双审”必须先明确**整体成本、漏检风险和现有双审完整性/Gold Manifest对全覆盖的要求**。在批准前不得调用新模型、GPU、收费CPU或训练。
 
+
+## 10. 2026-11-13 实测交叉核验正式PASS：结构预筛关门，启动内容审核方案设计
+
+Owner返回不可推断的真实 SAFE：`PREFILTER_STAGE_ALL_ELIGIBLE__CONTENT_REVIEW_PENDING`、`cases_total=1000`、`prefilter_pass=1000`、`prefilter_excluded=0`、`prefilter_context_hold=0`、`stage_identity_verified=1000`、`model_requests=0`、`staged_model_reviews_verified=false`、`quality_v1_admitted=0`、`train_admitted=0`。之前HF Stage只读audit为A/B=0/0、完整对=0。**冻结源 ↔ 预筛结果 ↔ 已建A/B盲审输入，三者在当前身份校验范围内一致；本轮未验证任何新的模型审稿内容**。
+
+**阶段决策**：停止添加基于正则/格式的排除器；保留已Stage的全部1000输入，进入内容语义质量审核设计。现有旧Stage适用1000原始候选，无须重新prepare；如果未来决定只对部分候选双审，需要新版本子集路由/Stage并证明交叉映射，不允许悄然筛掉行。
+
+### 10.1 内容前置预筛与直接双审的两种经济路线
+
+- 路线A（先语义硬伤门禁，再双审）对每条预筛一次，且对通过者再进行A/B评审。总成本约为 `1000×C_pre + N_pass×(C_A+C_B) + C_arbitration`；风险是预筛的**错误排除**，须对被筛掉的样本做独立抽检并核对原文精确证据。
+- 路线B（直接已有A/B Stage双审，按需要触发语义仲裁）成本约为 `1000×(C_A+C_B) + C_arbitration`；不存在第一层的额外误筛，但会在明显不合格的文本上支付双审成本。
+- 只有 `1000×C_pre < (1000-N_pass)×(C_A+C_B) - ΔC_arbitration` 且被错拒的风险达到预先约定的上限时，路线A才可能更划算。公式是规划估算，不代表已测量的实际金额/漏检率。不要因Pilot5两条技术HOLD就认定某模型大规模表现。
+
+### 10.2 无真实推理的下一阶段准备
+
+1. 确认现有HF双模型Stage代码SHA、模型revision、A/B盲审映射、CPU Tokenizer/资源守卫的既有SAFE；不重复Stage prepare，也不新建第三套模型Reviewer。
+2. 用**独立于Pilot5**、分散故事且运行前冻结的样本评估两条路线：相同冻结来源、相同六维rubric/严重标记，统计有效率、能识别的严重语义问题、审查成本、引用真伪及误筛审查工作量。建议初步25条只是规划，不表示已经获准调用。
+3. 若采用路线A，语义前置输出必须是`CLEAR_FAIL_WITH_EXACT_EVIDENCE`、`NEEDS_CONTEXT`、`PROVISIONALLY_CONTINUE`等独立版本化事件；前置环节不能发布最终Gold PASS，且对`CLEAR_FAIL`做一定比例的独立复核，防止丢失高价值训练候选。
+4. 对模型审核技术错误、JSON/评分自相矛盾分流为`TECHNICAL_HOLD`；不得按文本内容质量计入拒绝率，也不得自动修改原判。
+5. 只在预先冻结的请求数、成本和停止条件内执行；HF GPU即使只推理、不训练也需要Owner明确授权，任何付费CPU、对外私有数据发送、Gold Manifest写入及训练同样单独过门禁。
+
+**当前可确定事实**：1000条结构可进入内容审核；尚无1000条的语义筛选结果、完整双审回执或可发布训练数据。
