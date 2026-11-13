@@ -107,4 +107,5 @@ jobs:
             experiments/r58_quality/r60_real1000_offline_prefilter.py \
             experiments/r58_quality/test_r60_real1000_offline_prefilter.py \
             experiments/r58_quality/r60_real1000_prefilter_stage_crosswalk.py \
-            experiments/r58_quality/test_r60_real1000_prefilter_stage_crosswalk.py
+            experiments/r58_quality/test_r60_real1000_prefilter_stage_crosswalk.py \
+            experiments/r58_quality/test_r60_real1000_deepseek_single.py
