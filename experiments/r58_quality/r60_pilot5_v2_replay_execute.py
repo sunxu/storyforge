@@ -87,7 +87,37 @@ def verify(quality_dir: Path, output_dir: Path) -> tuple[dict, list[dict], list[
     return config, cases, slots
 
 
-def run(quality_dir: Path, output_dir: Path, *, execute: bool,
+
+def verify_existing_slot(path: Path, slot: dict) -> bool:
+    if path.is_symlink():
+        raise Hold("V2_RECEIPT_SYMLINK_HOLD")
+    if not path.exists():
+        return False
+    row = json.loads(private.read_private(path, quality.MAX_CASE_BYTES))
+    if (
+        row.get("schema") != SCHEMA
+        or row.get("position") != slot["position"]
+        or row.get("side") != slot["side"]
+        or row.get("original_receipt_sha256") != slot["original_receipt_sha256"]
+        or row.get("history_messages_sha256") != slot["history_messages_sha256"]
+        or row.get("assistant_target_sha256") != slot["assistant_target_sha256"]
+        or row.get("original_failure") != slot["original_failure"]
+        or row.get("model_id") != slot["model_id"]
+        or row.get("protocol") != slot["protocol"]
+        or row.get("attempt_status") not in ("SUCCESS", "HOLD")
+        or row.get("train_admitted") != 0
+    ):
+        raise Hold("V2_RECEIPT_BINDING_HOLD")
+    if row["attempt_status"] == "SUCCESS":
+        if row.get("failure_code") is not None:
+            raise Hold("V2_RECEIPT_STATUS_HOLD")
+        ai.parse_model_response(row.get("review"))
+    elif row.get("review") is not None or row.get("failure_code") not in HOLD_CODES:
+        raise Hold("V2_RECEIPT_STATUS_HOLD")
+    return True
+
+
+def _run_locked(quality_dir: Path, output_dir: Path, *, execute: bool,
         allow_private_data_egress: bool, max_requests: int) -> dict:
     safe = {
         "schema": SAFE,
@@ -101,8 +131,9 @@ def run(quality_dir: Path, output_dir: Path, *, execute: bool,
         if type(max_requests) is not int or not 1 <= max_requests <= 3:
             raise Hold("MAX_REQUESTS_BOUNDS_HOLD")
         config, cases, slots = verify(quality_dir, output_dir)
-        existing = [receipt_file(output_dir, s["position"], s["side"]).exists()
-                    for s in slots]
+        existing = [verify_existing_slot(
+            receipt_file(output_dir, s["position"], s["side"]), s,
+        ) for s in slots]
         safe["planned_slots"] = len(slots)
         safe["already_recorded_slots"] = sum(existing)
         if not execute:
@@ -154,6 +185,28 @@ def run(quality_dir: Path, output_dir: Path, *, execute: bool,
     except (ValueError, OSError, TypeError, KeyError, IndexError, UnicodeError):
         safe["status"] = "PILOT5_V2_REPLAY_HOLD"
     return safe
+
+
+
+def run(quality_dir: Path, output_dir: Path, *, execute: bool,
+        allow_private_data_egress: bool, max_requests: int) -> dict:
+    try:
+        # Single writer for the same v2 namespace. Protect check-then-request
+        # from concurrent processes that would otherwise double-bill a slot.
+        with quality.expand.locked(output_dir):
+            return _run_locked(
+                quality_dir, output_dir, execute=execute,
+                allow_private_data_egress=allow_private_data_egress,
+                max_requests=max_requests,
+            )
+    except (ValueError, OSError, TypeError, KeyError):
+        return {
+            "schema": SAFE, "status": "PILOT5_V2_REPLAY_HOLD",
+            "planned_slots": 0, "already_recorded_slots": 0,
+            "model_requests": 0, "successes": 0, "attempt_holds": 0,
+            "gpu_started": False, "database_modified": False,
+            "train_admitted": 0, "private_values_emitted": False,
+        }
 
 
 def main() -> int:
