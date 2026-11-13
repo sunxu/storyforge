@@ -1,5 +1,8 @@
 # StoryForge R60 REAL1000 / Pilot5-v2 新 Agent 接手任务书
 
+> **2026-11-13 Owner Mac 新 SAFE（优先于下文历史状态）**：Owner 已回传执行器真实无网络预检 `PILOT5_V2_REPLAY_PREFLIGHT_PASS__NO_REQUEST`：`planned_slots=3`、`already_recorded_slots=0`、`model_requests=0`、`train_admitted=0`、`database_modified=false`、`gpu_started=false`。当前不再等待预检，下一门禁是 Owner 对 #1-B/#3-A/#3-B 三个真实模型调用的单独明确批准。新增独立 `r60_pilot5_v2_crosswalk.py` 复用既有 verify / verify_existing_slot 做只读 v1/v2 完整性核查；在未补审时输出 `PILOT5_V2_CROSSWALK_PARTIAL__QUALITY_HOLD`，不能升级 Gold。HF CPU、GPU、训练、DB、R50正文与剩余995均不执行。
+
+
 > 状态基准：2026-11-13；仅针对隔离 Owner 分支 `r60/common2-cpu2-owner`。新 Agent 必须重新核实 GitHub 当前 HEAD / Actions / 已冻结 Mac SAFE 回执，不能用本文件推定未来状态。
 
 ## 1. 本轮目标与执行权
@@ -104,3 +107,17 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 请将下列提示直接用于新对话；以GitHub实时HEAD和Owner Mac实际SAFE为准，禁止仅按本提示词宣称已执行。 
 
 > 你现在接手 `sunxu/storyforge` 的 **R60 REAL1000 Pilot5-v2 定向补审与质量裁决**。先完整阅读本文件、运行手册、GOLD_QUALITY_PIPELINE_CN.md、Reviewer Skill，核对隔离Owner分支 `r60/common2-cpu2-owner` 当前HEAD、Issue #26、GitHub Actions。已知5案v1来源与回执完整性 PASS，计划 `PILOT5_V2_REPLAY_PLAN_PREPARED__NO_REQUEST`（失败槽位#1-B/#3-A/#3-B共3次；已有效7份不得重跑），定向执行器CI Ruff+63/63 PASS。**尚未收到Owner Mac执行器预检或真实v2补审SAFE。** 先让Owner在 `~/workspace/storyforge-r60-4router-review` 同步分支，执行不带 `--execute` 的 `r60_pilot5_v2_replay_execute.py` 离线预检，取得 `PILOT5_V2_REPLAY_PREFLIGHT_PASS__NO_REQUEST`。没有此回执不得调用模型。Owner明确批准后方可用双参数定向执行最多3槽位；严禁改v1、重复成功侧、自动扩批、训练/GPU或写DB。输出每阶段SAFE及不可变v2回执状态，继续独立裁决#2/#3/#4/#5、编制v1+v2只读crosswalk并用合成测试+CI验证。与其他Agent分支隔离修改、更新手册及Issue #26。不要回显任何私有正文/认证信息。所有训练准入保持0，历史System/R50/world/Owner独立性证据继续HOLD。
+
+## 9. Owner Mac 预检已完成后的只读配对（2026-11-13 增量）
+
+Owner 回传的 SAFE 如上，预检门禁已过。正式补审仅在 Owner 单独批准且两参数显式提供时执行既有冻结执行器，绝不重新调用7份有效 Reviewer，也不重新生成计划。
+
+只读 crosswalk 现可在 Mac 上直接执行（不需要 API Key / 外发许可）：
+
+```bash
+"$PY" experiments/r58_quality/r60_pilot5_v2_crosswalk.py \\
+  --quality-dir "$BASE/r60-quality-first-1000" \\
+  --output-dir "$BASE/r60-pilot5-v2-replay"
+```
+
+首次运行应为 `PILOT5_V2_CROSSWALK_PARTIAL__QUALITY_HOLD`，`v1_cases=5`、`v1_valid_reviews=7`、`planned_slots=3`、`v2_recorded=0`、`unresolved_slots=3`。所有3份补审回执落盘并通过身份与Schema验证后，状态转为 `PILOT5_V2_CROSSWALK_INTEGRITY_PASS__QUALITY_HOLD`；其中失败回执仍然作为未解决槽位，不能重试覆盖或将格式成功视为文学质量 PASS。独立语义裁决与25条扩批决策仍HOLD。
