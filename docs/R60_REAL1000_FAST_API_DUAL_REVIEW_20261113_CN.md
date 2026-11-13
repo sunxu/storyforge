@@ -241,3 +241,49 @@ PY
 这将进一步明确是否为A侧新401（新增5个的错误归属可能在全部0有效的案中无法辨别），以及实际Batch冻结配置是否同合成探针一致。如配置吻合且A确实持续401，后续需直接在百炼平台检查Key所属工作空间、有效性和`qwen3.7-flash`可用性。B侧不得因A认证失败反复消耗费用。
 
 **加速目标仍是完成1000条筛选，但不允许把745条全部标为认证失败来冒充实际质量筛选。** 如果A无法及时恢复，应明确切换为“B单侧快速筛选＋A补审的独立新路线”，先保留已存在255条原始证据；新路线需要额外新私有回执和定义单侧候选而非伪造双审。当前仍无Gold/训练准入。
+
+
+## 2026-11-13 快速路线切换：前255保留，新增DeepSeek单侧256—1000
+
+Owner只读审计`cases_reviewed=255`，`both_valid=78`、`only_a_valid=37`、`only_b_valid=107`、`neither_valid=33`。已知A/Qwen 401累计80，另25次双失败401未归属；双模型endpoint/model/protocol六项布尔检查全true。实际第251–255条又增加5次401，确认现有双模型Runner持续写入单侧HOLD，不能继续跑旧`advance`。
+
+为满足“优先完成1000条筛选覆盖，接受不完美”而保留证据，新增`experiments/r58_quality/r60_real1000_deepseek_single.py`：
+- 仅处理冻结1000条的**第256—1000条**，完全复用原`frozen_pool`、单模型`ai.model_request`、冻结六维/严重标记校验，始终使用DeepSeek官方Flash。
+- `init`需要旧私有批次严格255条且source SHA/DeepSeek配置一致，创建独立`0700`目录；原255份文件原样保留。
+- `advance`要求明确`--execute --allow-private-data-egress`、`DEEPSEEK_API_KEY`，每批最多25条；模型认证/服务故障在**写盘前HOLD**以便恢复，解析/评分不一致保存为`TECHNICAL_HOLD`，不做重试。
+- 回执为0600不可覆盖、来源case身份+源哈希+不可改SHA，进度可`inspect`核验；技术HOLD、`PROVISIONAL_PASS`、`PROVISIONAL_HOLD`、`PROVISIONAL_REJECT`分开统计，**明确不是正式双审、Gold或训练准入**。
+- 这里“已覆盖1000条”最后的含义是旧255条双模型尝试及新增745条DeepSeek单模型尝试，不表示1000个有效质量决定，也不表示缺失A/B审稿已经补全。旧255里的32+1两侧均失败仍需将来单独补审。
+
+在Mac使用原本的R60 Owner工作树，注意不要重新启动旧双模型的`advance`：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+test "$(git branch --show-current)" = "r60/common2-cpu2-owner"
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+NEW="$BASE/r60-quality-fast1000-deepseek-single-v1"
+: "${DEEPSEEK_API_KEY:?Missing DeepSeek key}"
+test ! -e "$NEW"
+
+# 初始化只读旧255+独立新Stage；不调用模型
+"$PY" experiments/r58_quality/r60_real1000_deepseek_single.py init \
+  --old-dir "$OLD" --output-dir "$NEW"
+
+# 首25单侧真实模型请求，由Owner明确执行
+"$PY" experiments/r58_quality/r60_real1000_deepseek_single.py advance \
+  --old-dir "$OLD" --output-dir "$NEW" --max-cases 25 \
+  --execute --allow-private-data-egress
+
+"$PY" experiments/r58_quality/r60_real1000_deepseek_single.py inspect \
+  --old-dir "$OLD" --output-dir "$NEW"
+~~~
+
+首批成功时，`single_cases_reviewed=25`、`total_positions_attempted=280`、`remaining_single_cases=720`。如返回`SINGLE_REVIEW_HOLD`，立即暂停并保留所有输出，不删除重建。确认没有认证/服务故障及预算足够后，同一`advance --max-cases 25 --execute --allow-private-data-egress`分批续跑剩余720条；单批请求最多25次，且要观察服务费用/余额。不要在无自动预算保护时做无人监管循环。
+
+合成回归详见同目录`test_r60_real1000_deepseek_single.py`；1000条真实数据只在Owner Mac读取，CI不会触达。
