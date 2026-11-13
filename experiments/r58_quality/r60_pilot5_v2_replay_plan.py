@@ -10,8 +10,8 @@ import argparse
 import json
 from pathlib import Path
 
-import r60_real_quality_batch as quality
 import r60_real_private_batch as private
+import r60_real_quality_batch as quality
 
 PLAN_NAME = "R60_PILOT5_V2_REPLAY_PLAN_PRIVATE.json"
 SCHEMA = "storyforge_r60_pilot5_v2_replay_plan_private_v1"
