@@ -84,8 +84,8 @@ def test_legacy_literal_newline_receipts_are_read_only_supported(
     before = []
     for path in paths:
         original = path.read_bytes()
-        assert original.endswith(b"\\n")
-        legacy = original[:-1] + b"\\\\n"
+        assert original.endswith(b"\n")
+        legacy = original[:-1] + b"\\n"
         path.write_bytes(legacy)
         path.chmod(0o600)
         before.append(legacy)
