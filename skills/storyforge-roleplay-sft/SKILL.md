@@ -7,6 +7,8 @@ description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据
 
 # StoryForge RolePlay SFT · R58
 
+> **REAL1000 current handoff (2026-11-13)**: Pilot5-v1 HAS run (HOLD3/REJECT2/PASS0), 7 valid Reviewer outcomes plus 3 missing technical slots. Owner Mac v2 replay plan created, synthetic-only CI of targeted executor 63/63 PASS, but actual Owner Mac executor preflight and replay are NOT yet verified. For ongoing REAL1000 reviewer work consult `docs/R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md` and `skills/storyforge-real-quality-review/SKILL.md`. Do not confuse reviewer replay with HF CPU collator or SFT training. No admission and no GPU/DB jobs.
+
 ## 目标与适用范围
 
 本 Skill 用于 StoryForge 的 RolePlay 来源盘点、世界隔离、多轮 SFT 候选构建、质量审核、冻结与训练前验证。唯一产品目标是训练更擅长高质量中文互动剧情的 Qwen LoRA，重点关注中文表达、人物/世界及跨轮事实一致性、NPC 主动推进、硬规则和玩家自主权。
