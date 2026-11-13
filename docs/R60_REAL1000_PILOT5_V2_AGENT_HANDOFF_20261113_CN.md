@@ -1,5 +1,8 @@
 # StoryForge R60 REAL1000 / Pilot5-v2 新 Agent 接手任务书
 
+> **2026-11-13 下一阶段门禁决策（权威增量）**：本轮原始来源/回执与非盲语义证据已核对，Pilot5 诊断结案，PASS0/HOLD2/REJECT3；继续 `PILOT25_HOLD`、Gold/训练准入0。两个v2技术HOLD均在 Reviewer B，明确不再直接重试同一B侧或重造冻结 v2；新增公开非敏感决策书 `docs/R60_REAL1000_PILOT5_V2_NEXT_GATE_20261113_CN.md`（最新前进条件、停止条件、HF复用及Owner证据输入）。只有Owner独立批准，且具备新的来源/审阅假设与版本化执行计划，才能进入下一轮真实请求。此处最新决策优先于本文件历史步骤。
+
+
 > **2026-11-13 冻结证据语义复核（新最新状态）**：Owner 本轮提供6条冻结源JSONL、v2计划和3个槽位回执，结合已在 ChatGPT 文件库的5份v1原始回执完成前5案来源身份/摘要5/5与v2槽位绑定3/3校验（未重新完整验证1000池）。明确槽位：#1-B=`QUALITY_FLOOR_DECISION_INCONSISTENT`技术HOLD；#3-A=有效 `REJECT`（严重玩家能动性）；#3-B=`SEVERE_FLAG_DECISION_INCONSISTENT`技术HOLD。有效 Reviewer 仍为7+1=8，两项技术HOLD不可覆盖。对5案进行新的证据级语义分析：PASS0/HOLD2/REJECT3；具体对应#1 HOLD、#2 REJECT、#3 REJECT、#4 HOLD、#5 REJECT。**这是看到既有评分后的非盲语义复核，不能冒充独立盲审或冻结 v1/v2 裁决改写。** 私有逐案引文/评分/理由仅在Owner获取的单独私有裁决文件中；GitHub仅公开聚合 `docs/evidence/R60_REAL1000_PILOT5_V2_SEMANTIC_SAFE_20261113.json`。继续禁止当前v2重试/覆盖，Pilot25、Gold、训练、HF Jobs/GPU/DB均HOLD；世界事实、历史System、R50排除及Reviewer独立性未完成。
 
 
