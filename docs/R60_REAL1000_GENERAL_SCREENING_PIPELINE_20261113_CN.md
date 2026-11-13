@@ -90,3 +90,38 @@
 ## 7. 执行授权状态
 
 本次只授权代码/文档/合成CI层面的通用方案推进；**不授权下一批私人文本外发、HF Job费用、GPU、训练、更新正式Gold Manifest或修改任何冻结Owner v1/v2回执**。如需这些动作，提交精确新计划/成本界限，由Owner再确认。
+
+## 8. 2026-11-13：1000条冻结源离线结构预筛已实现（先跑，不发模型请求）
+
+当前HF Stage只读audit状态为 `HF_QUALITY_DUAL_PARTIAL__NO_ADMISSION`：`cases_total=1000`、`model_a_reviewed=0`、`model_b_reviewed=0`、`complete_pairs=0`、`quality_decisions.HOLD=1000`。**这是1000条尚未文学审核，不是1000条被结构或内容判定不合格。** 不重复Stage prepare、不启动HF Jobs。
+
+新增一次性薄适配器：`experiments/r58_quality/r60_real1000_offline_prefilter.py`。先调用 `r60_real_quality_batch.frozen_pool` 对完整1000来源/封存页/SHA验真，再执行完全离线的确定性检测：
+- 必要源字段及历史身份、至少4轮目标索引；三条历史必须为user/assistant/user且内容非空，目标正文非空。
+- 仅对**确切相同**目标正文或完全相同历史+正文做稳定去重，保留来源冻结顺序中的第一条，将后续精确副本标 `EXCLUDE`。
+- 同一三消息历史对应不同目标只标 `CONTEXT_HOLD` 请求后续来源核对；不同故事、人物关系、未知卡片规则、实际System不可由脚本推断，绝不做语义拒收。
+- 如果不可变源SHA、原始消息ID重复或源文件完整性出错，则**整体安全HOLD**，不私自把该问题记录为可忽略的内容排除。
+- 输出：`STRUCTURE_PASS`、`EXCLUDE`、`CONTEXT_HOLD` 三类，以及固定原因码的聚合SAFE；不做`quality_v1_admitted`，不输出任何私有故事正文。逐案身份与原因写入0700/0600私有目录中10份create-only分片，最后生成完整写盘标记；每份不可覆盖，不回写旧1000池或已Stage HF输入。
+
+Owner Mac 在原隔离工作树上（仅需已有私有文件，无API Key）：
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+test "$(git branch --show-current)" = "r60/common2-cpu2-owner"
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OUT="$BASE/r60-real1000-prefilter-v1"
+test ! -e "$OUT"
+"$PY" experiments/r58_quality/r60_real1000_offline_prefilter.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --output-dir "$OUT"
+~~~
+
+成功SAFE为 `REAL1000_PREFILTER_COMPLETE__QUALITY_NOT_EVALUATED`，汇报 `cases_total=1000`、`structure_pass`、`excluded`、`context_hold`、`reason_counts`、`quality_reviewed=0`。合成CI [Ruff及pytest82/82 PASS](https://github.com/sunxu/storyforge/actions/runs/43395852572)；**Owner Mac尚未返回真实1000预筛SAFE**，不得猜测实际合格/排除数字。
+
+注意：预筛只是确定性技术质量门禁；叙事连贯、人物关系与玩家能动性属于实质内容判断，无法只靠三消息格式证明。下一阶段须根据实际SAFE确认筛后有效数量，再以冻结抽样+已有HF盲审链对**预筛通过的候选**开展内容评级；需要先做支持筛后子集的独立版本化Stage/路由验收，不能把旧已Stage的原1000条直接当作已过滤子集，也不能暗改既有盲审输入。新真实模型请求/GPU/收费CPU/训练仍需Owner单独授权。
+
