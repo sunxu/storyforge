@@ -162,3 +162,12 @@ OUT="$HOME/.local/share/storyforge/r60/private/r60-quality-fast1000-api-v1"
 只有故障侧真实合成请求返回`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`才恢复真实1000池。修复密钥后，**当前250条回执仍不会自动补审**；后续先对新样本执行最多1批25条验证恢复，之后再推进剩余750条；第151–250条失败槽位留待版本化单侧补审，不覆写旧回执。
 
 **注意**：此前“快速首25模型技术失败15/50”不含后续401；当前250条的模型失败共`16+100+5+75+8=204`个尝试槽位，其中100为明确的HTTP401。若401尚未解决，不继续付费审核新样本；若修复后需要重复某一侧输出，必须新建create-only补审空间并严格复用原case SHA和模型绑定。
+
+
+## 2026-11-13 REAL1000 250条故障侧只读审计 PASS
+
+Owner实测 `REVIEWER_FAILURE_SIDE_AUDIT_PASS__NO_REQUEST`：`cases_reviewed=250`、`both_valid=78`、`only_a_valid=37`、`only_b_valid=103`、`neither_valid=32`。因此A有115个有效侧结果、B有181个有效侧结果；140条仅一侧有效、32条两侧无有效结果。
+
+按单侧已知回执定位：A(Qwen) `MODEL_HTTP_401_HOLD=76`、`MODEL_HTTP_400_HOLD=14`、`QUALITY_FLOOR_DECISION_INCONSISTENT=13`；B(DeepSeek) `MODEL_JSON_INVALID=4`、`QUALITY_FLOOR_DECISION_INCONSISTENT=30`、`SEVERE_FLAG_DECISION_INCONSISTENT=3`。32条两侧无效共含**未归属的401×24**、400×2、JSON×1、评分×32、严重×5，不能擅自分配给A/B。**可以确定A存在显著认证故障，不能断言全部100次401来自A。**
+
+下一行动：**仅执行Qwen侧合成请求诊断一次**，采用现有 `experiments/r58_quality/r60_reviewer_protocol_probe.py --endpoint https://dashscope.aliyuncs.com/compatible-mode/v1 --model qwen3.7-flash --protocol openai-chat --key-env DASHSCOPE_API_KEY --allow-remote-review --execute`（Owner Mac, 无私有数据）。若`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`，则先对原目录仅新案例跑一批25条、核验新增401=0后继续。若401或其他非PASS，停机诊断密钥、权限或协议，不继续把失败写成不可覆盖回执。不对旧250条重跑；额外补审需create-only独立新版本。原Quality合同、训练准入与R50隔离仍HOLD。
