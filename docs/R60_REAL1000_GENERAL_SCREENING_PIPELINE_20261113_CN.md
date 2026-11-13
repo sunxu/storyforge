@@ -125,3 +125,34 @@ test ! -e "$OUT"
 
 注意：预筛只是确定性技术质量门禁；叙事连贯、人物关系与玩家能动性属于实质内容判断，无法只靠三消息格式证明。下一阶段须根据实际SAFE确认筛后有效数量，再以冻结抽样+已有HF盲审链对**预筛通过的候选**开展内容评级；需要先做支持筛后子集的独立版本化Stage/路由验收，不能把旧已Stage的原1000条直接当作已过滤子集，也不能暗改既有盲审输入。新真实模型请求/GPU/收费CPU/训练仍需Owner单独授权。
 
+## 9. Owner Mac 全量离线预筛实测 PASS（2026-11-13）
+
+Owner回传真实 SAFE `REAL1000_PREFILTER_COMPLETE__QUALITY_NOT_EVALUATED`：`cases_total=1000`、`structure_pass=1000`、`excluded=0`、`context_hold=0`、`reason_counts={}`，`model_requests=0`、`quality_reviewed=0`、`train_admitted=0`。此结果只证明**冻结字段、三消息边界、精确重复等当前确定性预筛通过**，不能推断历史世界/人物规则完备、玩家能动性、语义连续性或Gold质量已通过。R50排除、历史System和世界隔离仍未验证。
+
+此前Owner实际执行的HF Stage `audit` 仍是 `cases_total=1000`、A/B有效审阅0/0、`complete_pairs=0`、`HOLD=1000`，全部指向“未文学评审”。
+
+### 预筛与旧Stage不可覆盖的只读身份交叉核验
+
+新增 `experiments/r58_quality/r60_real1000_prefilter_stage_crosswalk.py`，复用 `r60_real_quality_batch.frozen_pool()` 和 `storyforge_gold_quality.hf_blind_stage.verified_stage()`，核对预筛10个分片、完成标记及Stage A/B盲审crosswalk的每一条身份、来源哈希、代码/输入锁定，不发模型请求。兼容已存在Owner预筛结果结尾的字面反斜杠n标记，**只读识别，不编辑Owner历史文件**；未来新产物写盘的换行已修复。
+
+Owner Mac：
+~~~bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_real1000_prefilter_stage_crosswalk.py \
+  --expand-dir "$BASE/r60-expand-first-600" \
+  --prefilter-dir "$BASE/r60-real1000-prefilter-v1" \
+  --stage-dir "$BASE/r60-hf-quality-first-1000"
+~~~
+
+由于当前1000条全部结构通过，若来源身份/字节完全一致，预期 `PREFILTER_STAGE_ALL_ELIGIBLE__CONTENT_REVIEW_PENDING` 和 `stage_identity_verified=1000`。若发生版本漂移或文件格式/权限不符，则 `PREFILTER_STAGE_CROSSWALK_HOLD`；**不能删除旧预筛或盲审Stage绕过**。如果未来筛选结果不全为通过，状态为 `PREFILTER_STAGE_SUBSET_REQUIRED__NO_MODEL_REQUEST`，先重新版本化Stage并明确授权，不修改已有Stage。
+
+### 后续内容筛选的成本策略
+
+预筛排除为0意味着任何进一步“上下文不符合要求”的排除，必须引入**语义证据**而非新正则或臆测历史卡。建议先进行跨故事分层的小规模内容判断基准，记录有明确来源引文的「局部矛盾」「玩家代写」「难以判断」与「内容通过」四种情形，再冻结审核策略和预算。不能用Pilot5 PASS率估计1000的质量；是否采用“单模型先查上下文，再对候选双审”必须先明确**整体成本、漏检风险和现有双审完整性/Gold Manifest对全覆盖的要求**。在批准前不得调用新模型、GPU、收费CPU或训练。
+
