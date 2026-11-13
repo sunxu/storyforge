@@ -1,5 +1,8 @@
 # StoryForge R60｜冻结真实1000候选：首批5条精筛启动手册
 
+> **最新执行结果（2026-11-13 Owner Mac SAFE，覆盖下方旧阶段说明）**：Owner 已明确授权且通过现有定向执行器完成全部3个模型请求；返回 `PILOT5_V2_REPLAY_ATTEMPTS_SAVED__NO_PROMOTION`（`model_requests=3`、`successes=1`、`attempt_holds=2`、`already_recorded_slots=0`）。随后只读 crosswalk 返回 `PILOT5_V2_CROSSWALK_INTEGRITY_PASS__QUALITY_HOLD`（`v1_cases=5`、`v1_valid_reviews=7`、`v2_recorded=3`、`v2_success=1`、`v2_attempt_holds=2`、`unresolved_slots=2`）。3份 v2 回执均已记录且不可覆盖；**只有1份新增有效审核意见，总有效意见8份**，另外2份是技术失败，不是文学REJECT或有效质量HOLD评分。SAFE 不揭示具体成功/失败侧与失败原因，不能猜测。**停止此 v2 命名空间任何自动重跑、删改或同计划重试**；后续只能做只读证据核验与已有8份意见的局部语义复核。技术失败是否另立 v3 纠错须先做私有失败原因/请求边界调查、单独版本化方案与Owner再次授权。#2/#3/#4/#5 未完成独立语义裁决，Pilot25/Gold/训练全部 HOLD；`train_admitted=0`，未写DB、未启GPU/HF Jobs。
+
+
 > **最新状态（2026-11-13；请先阅读）**：真实Pilot5-v1已审核5条、HOLD3/REJECT2/PASS0；Owner Mac证据完整性5/5 PASS，版本化v2补审计划已存在（3失败槽位：#1-B/#3-A/#3-B），并非等待初始化。最新阶段**执行器尚缺 Owner Mac 的真实离线预检回执**，不得重跑旧合成probe、`init`或`advance --max-cases 5`。执行器合成CI Ruff+63/63 PASS，不能替代Owner Mac私有预检。新 Agent 从[《Pilot5-v2 接手任务书》](R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md)开始；以下旧步骤仅保留历史追溯。
 
 
