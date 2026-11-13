@@ -119,3 +119,46 @@ done
 预期累计`cases_reviewed=100`、`remaining_cases=900`，但这不是预先宣称真实成功。**不要把随后975条交给无费用上限的后台循环**。如果Owner确认100条运行稳定，可以继续以25条前台批次推进、适时检查配额/余额并主动停止，不额外反复模型选型或对前25失败样本重复调用。
 
 分流后续不能仅依赖汇总`quality_pass`，因为当前Reviewer独立性未Owner认证；需追加一个**只读**的原回执视图，报告两侧有效数量、有效双审完整对、双PASS但独立性HOLD等数量后，再决定是否做集中复核和训练候选提取。不能在没有真实语义来源证据前把双PASS提升为Gold。
+
+
+## 2026-11-13 最新真实250 SAFE：持续HTTP401，必须先定位再续跑
+
+Owner实测`cases_reviewed=250`、`remaining_cases=750`、`quality_decisions=HOLD239/REJECT11/PASS0`。前150无401，而新增100条恰有`MODEL_HTTP_401_HOLD=100`，同时`TWO_INDEPENDENT_REVIEWS_REQUIRED`从72增至172；强烈提示某一Reviewer凭证或服务端权限持续失效，而非文学质量下降。继续盲跑将产生更多不可覆盖的单侧回执。
+
+新的**只读** `r60_real1000_reviewer_failure_side.py`验证原1000冻结来源、每条已提交回执、原SHA，然后在**只剩单个有效Reviewer**时推断失败方；如果两侧都失败，旧receipt没保存`attempt_holds`侧别，不作猜测。全部输出只有聚合SAFE，无私有正文、case ID、密钥、endpoint、单案哈希。无任何API请求。
+
+**先执行本地侧别审计，绝不重新init或advance：**
+
+~~~bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-quality-fast1000-api-v1"
+"$PY" experiments/r58_quality/r60_real1000_reviewer_failure_side.py \
+  --output-dir "$OUT"
+~~~
+
+如有`REVIEWER_FAILURE_SIDE_AUDIT_PASS__NO_REQUEST`，根据`known_error_counts_by_side`里的HTTP401分布确认故障方。A=`qwen3.7-flash`，B=`deepseek-flash`。由于回执里未必能标明双失败时每个错误的侧别，`unassigned_error_counts`必须单列不可认领。
+
+**再用现有合成探针验证，不发送任何原小说文本**。Owner端的`DASHSCOPE_API_KEY`和`DEEPSEEK_API_KEY`应在当前私有终端已设置。只针对401故障模型执行一次：
+
+~~~bash
+# Qwen侧A出现401时:
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint https://dashscope.aliyuncs.com/compatible-mode/v1 \
+  --model qwen3.7-flash --protocol openai-chat \
+  --key-env DASHSCOPE_API_KEY --allow-remote-review --execute
+
+# DeepSeek侧B出现401时（与Qwen二选一）:
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint https://api.deepseek.com \
+  --model deepseek-flash --protocol deepseek-chat \
+  --key-env DEEPSEEK_API_KEY --allow-remote-review --execute
+~~~
+
+只有故障侧真实合成请求返回`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`才恢复真实1000池。修复密钥后，**当前250条回执仍不会自动补审**；后续先对新样本执行最多1批25条验证恢复，之后再推进剩余750条；第151–250条失败槽位留待版本化单侧补审，不覆写旧回执。
+
+**注意**：此前“快速首25模型技术失败15/50”不含后续401；当前250条的模型失败共`16+100+5+75+8=204`个尝试槽位，其中100为明确的HTTP401。若401尚未解决，不继续付费审核新样本；若修复后需要重复某一侧输出，必须新建create-only补审空间并严格复用原case SHA和模型绑定。
