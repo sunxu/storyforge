@@ -171,3 +171,30 @@ Owner实测 `REVIEWER_FAILURE_SIDE_AUDIT_PASS__NO_REQUEST`：`cases_reviewed=250
 按单侧已知回执定位：A(Qwen) `MODEL_HTTP_401_HOLD=76`、`MODEL_HTTP_400_HOLD=14`、`QUALITY_FLOOR_DECISION_INCONSISTENT=13`；B(DeepSeek) `MODEL_JSON_INVALID=4`、`QUALITY_FLOOR_DECISION_INCONSISTENT=30`、`SEVERE_FLAG_DECISION_INCONSISTENT=3`。32条两侧无效共含**未归属的401×24**、400×2、JSON×1、评分×32、严重×5，不能擅自分配给A/B。**可以确定A存在显著认证故障，不能断言全部100次401来自A。**
 
 下一行动：**仅执行Qwen侧合成请求诊断一次**，采用现有 `experiments/r58_quality/r60_reviewer_protocol_probe.py --endpoint https://dashscope.aliyuncs.com/compatible-mode/v1 --model qwen3.7-flash --protocol openai-chat --key-env DASHSCOPE_API_KEY --allow-remote-review --execute`（Owner Mac, 无私有数据）。若`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`，则先对原目录仅新案例跑一批25条、核验新增401=0后继续。若401或其他非PASS，停机诊断密钥、权限或协议，不继续把失败写成不可覆盖回执。不对旧250条重跑；额外补审需create-only独立新版本。原Quality合同、训练准入与R50隔离仍HOLD。
+
+
+## 2026-11-13 Qwen真实合成探针：HTTP已通过，质量决策一致性未通过
+
+Owner回传 `REVIEWER_PROTOCOL_HOLD`/`QUALITY_FLOOR_DECISION_INCONSISTENT`，`model_requests=1`，`synthetic_only=true`，`private_source_accessed=false`。阅读冻结源码可确认 `r60_real_ai_dual_review.model_request` 只有在网络响应内容已解析为JSON且到达 `parse_model_response` 后才会抛此码；此次请求**没有返回HTTP401**，但`reviewer schema/decision` **没有通过完整质量合同**。不能报告为`REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`，也不能视作Qwen所有真实后续请求都可用。
+
+根据Owner“尽快覆盖1000、接受技术HOLD”的优先级，建议用现有原批次创建**仅5个新样本**的受限真实恢复验证，不重试251之前的任何旧样本、不重跑合成探针、不修改Rubric/自动Gold入训。条件是Owner愿意承担这5例最多10次远端审核尝试及费用。执行前后分别`inspect`，只观察**新增401**和有效双侧数量变化。如果出现任一新的401，立即停止；如无401且结果可继续，则每批25并在每批后统计新增认证错误和技术失败，避免重演151–250段的100次401。现有runner自身**不会因单侧401自动停**，因此不要直接运行长循环。
+
+Owner Mac：
+
+~~~bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-quality-fast1000-api-v1"
+: "${DASHSCOPE_API_KEY:?Missing Qwen key}"
+: "${DEEPSEEK_API_KEY:?Missing DeepSeek key}"
+"$PY" experiments/r58_quality/r60_real_quality_batch.py inspect --output-dir "$OUT"
+R60_CLAUDE_KEY="$DASHSCOPE_API_KEY" R60_DEEPSEEK_KEY="$DEEPSEEK_API_KEY" \
+  "$PY" experiments/r58_quality/r60_real_quality_batch.py advance --output-dir "$OUT" --max-cases 5
+"$PY" experiments/r58_quality/r60_real_quality_batch.py inspect --output-dir "$OUT"
+~~~
+
+预期`cases_reviewed=255`（若成功推进），之前累计HTTP401为100。若本轮401超过100，不再执行任何真实`advance`，转入凭证/模型权限复查；若无新增401，恢复受控25条批量。新模型结果可能仍出现`QUALITY_FLOOR_DECISION_INCONSISTENT`，保持技术HOLD、不降低评分门槛。原250条失败槽位只能版本化补审，不能覆盖旧回执。
