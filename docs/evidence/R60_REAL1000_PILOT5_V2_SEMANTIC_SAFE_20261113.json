@@ -1,0 +1,29 @@
+{
+  "schema": "storyforge_r60_pilot5_semantic_safe_v1",
+  "status": "PILOT5_SEMANTIC_EVIDENCE_REVIEW_COMPLETE__GOLD_HOLD",
+  "frozen_case_identity_verified": 5,
+  "v1_receipt_digest_verified": 5,
+  "v2_slot_binding_verified": 3,
+  "v1_valid_reviews": 7,
+  "v2_valid_reviews": 1,
+  "v2_technical_holds": 2,
+  "v2_slots_recorded": 3,
+  "case_scope": 5,
+  "semantic_decisions": {
+    "PASS": 0,
+    "HOLD": 2,
+    "REJECT": 3
+  },
+  "blinded_independent_review": false,
+  "reason": "PRIOR_REVIEWER_RESULTS_VISIBLE",
+  "all_world_facts_verified": false,
+  "prior_system_provenance_verified": false,
+  "r50_complete_exclusion_verified": false,
+  "model_independence_verified": false,
+  "pilot25_authorized": false,
+  "train_admitted": 0,
+  "gpu_started": false,
+  "hf_jobs_started": false,
+  "database_modified": false,
+  "private_values_emitted": false
+}
