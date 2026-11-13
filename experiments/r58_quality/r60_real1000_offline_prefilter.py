@@ -18,6 +18,7 @@ import r60_real_quality_batch as quality
 SCHEMA = "storyforge_r60_real1000_prefilter_private_v1"
 SAFE = "storyforge_r60_real1000_prefilter_safe_v1"
 OUTPUT = "R60_REAL1000_PREFILTER_PRIVATE.json"
+PAGE_SIZE = 100
 EXPECTED = 1000
 HISTORY_ROLES = ("user", "assistant", "user")
 SOURCE_FIELDS = (
@@ -160,17 +161,29 @@ def run(expand_dir: Path, output_dir: Path) -> dict:
             raise Hold("PRIVATE_OUTPUT_PATH_HOLD")
         cases, pool_sha = quality.frozen_pool(expand_dir)
         rows = classify_cases(cases)
-        payload = {
-            "schema": SCHEMA, "pool_sha256": pool_sha,
-            "cases_total": EXPECTED, "rows": rows,
-            "quality_evaluated": False, "train_admitted": 0,
-        }
         status = summarize(rows)
         private.private_dir(output_dir, create=True)
+        pages = []
+        for index, offset in enumerate(range(0, EXPECTED, PAGE_SIZE), 1):
+            name = f"R60_REAL1000_PREFILTER_PAGE_{index:04d}_PRIVATE.json"
+            page = {
+                "schema": SCHEMA, "pool_sha256": pool_sha,
+                "page_index": index, "rows": rows[offset:offset + PAGE_SIZE],
+            }
+            raw = (json.dumps(page, ensure_ascii=False, sort_keys=True)
+                   + "\\n").encode("utf-8")
+            private.write_new(output_dir / name, raw)
+            pages.append({"name": name, "sha256": private.digest(page)})
+        # Only a complete create-only page set receives its final marker.
+        payload = {
+            "schema": SCHEMA, "pool_sha256": pool_sha,
+            "cases_total": EXPECTED, "pages": pages,
+            "safe": status, "quality_evaluated": False, "train_admitted": 0,
+        }
         private.write_new(
             output_dir / OUTPUT,
-            (json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
-            .encode("utf-8"),
+            (json.dumps(payload, ensure_ascii=False, sort_keys=True)
+             + "\\n").encode("utf-8"),
         )
         return status
     except (OSError, ValueError, TypeError, KeyError, IndexError):
