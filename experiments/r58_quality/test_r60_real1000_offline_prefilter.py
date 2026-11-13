@@ -5,8 +5,8 @@ import copy
 
 import pytest
 
-import r60_real_private_batch as private
 import r60_real1000_offline_prefilter as module
+import r60_real_private_batch as private
 
 
 def make_case(i: int) -> dict:
