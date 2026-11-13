@@ -67,3 +67,31 @@ def test_subset_requires_new_stage_not_implicit_filter(tmp_path, monkeypatch):
         "PREFILTER_STAGE_SUBSET_REQUIRED__NO_MODEL_REQUEST"
     )
     assert result["prefilter_excluded"] == 1
+
+def test_legacy_literal_newline_receipts_are_read_only_supported(
+        tmp_path, monkeypatch):
+    cases = candidates()
+    monkeypatch.setattr(gate.quality, "frozen_pool",
+                        lambda _d: (cases, "synthetic-pool"))
+    monkeypatch.setattr(gate.hf_blind_stage, "verified_stage", stage_verified)
+    monkeypatch.setattr(gate.private, "BASE", tmp_path)
+    directory = tmp_path / "r60-real1000-prefilter-synthetic"
+    prefilter.run(tmp_path, directory)
+    paths = [
+        directory / prefilter.OUTPUT,
+        directory / "R60_REAL1000_PREFILTER_PAGE_0001_PRIVATE.json",
+    ]
+    before = []
+    for path in paths:
+        original = path.read_bytes()
+        assert original.endswith(b"\\n")
+        legacy = original[:-1] + b"\\\\n"
+        path.write_bytes(legacy)
+        path.chmod(0o600)
+        before.append(legacy)
+    status = gate.audit(tmp_path, directory, tmp_path / "old-stage")
+    assert status["status"] == (
+        "PREFILTER_STAGE_ALL_ELIGIBLE__CONTENT_REVIEW_PENDING"
+    )
+    assert [path.read_bytes() for path in paths] == before
+
