@@ -45,9 +45,9 @@ def arrange(tmp_path, monkeypatch):
             "attempt_holds": holds,
         }
         record["receipt_sha256"] = priv.digest(record)
-        (folder / q.receipt_name(i)).write_text(
-            json.dumps(record), encoding="utf-8"
-        )
+        receipt_path = folder / q.receipt_name(i)
+        receipt_path.write_text(json.dumps(record), encoding="utf-8")
+        receipt_path.chmod(0o600)
     return folder, base / "pilot5-v2", base
 
 
