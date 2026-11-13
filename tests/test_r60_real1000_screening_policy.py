@@ -4,7 +4,8 @@ from __future__ import annotations
 import pytest
 
 from storyforge_gold_quality.real1000_screening_policy import (
-    classify, summarize,
+    classify,
+    summarize,
 )
 
 
