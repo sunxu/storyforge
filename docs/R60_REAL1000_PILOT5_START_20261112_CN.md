@@ -1,5 +1,8 @@
 # StoryForge R60｜冻结真实1000候选：首批5条精筛启动手册
 
+> **最新状态（2026-11-13；请先阅读）**：真实Pilot5-v1已审核5条、HOLD3/REJECT2/PASS0；Owner Mac证据完整性5/5 PASS，版本化v2补审计划已存在（3失败槽位：#1-B/#3-A/#3-B），并非等待初始化。最新阶段**执行器尚缺 Owner Mac 的真实离线预检回执**，不得重跑旧合成probe、`init`或`advance --max-cases 5`。执行器合成CI Ruff+63/63 PASS，不能替代Owner Mac私有预检。新 Agent 从[《Pilot5-v2 接手任务书》](R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md)开始；以下旧步骤仅保留历史追溯。
+
+
 日期：2026-11-12  
 执行分支：`r60/common2-cpu2-owner`（仅 Owner 这条隔离工作线；其他 Agent 的并行分支不合并/覆盖）  
 目标：从已经冻结的1000条技术候选中构建高质量中文互动小说 Positive Gold 候选；**不启动SFT、不修改现有Gold**。
