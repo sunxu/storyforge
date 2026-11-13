@@ -26,7 +26,7 @@ class Hold(ValueError):
 def read_record(path: Path, size_limit: int) -> dict:
     """Parse existing immutable receipts; accept legacy literal backslash-n."""
     raw = private.read_private(path, size_limit)
-    if raw.endswith(b"\\\\n"):
+    if raw.endswith(b"\\n"):
         raw = raw[:-2]
     parsed = json.loads(raw)
     if not isinstance(parsed, dict):
