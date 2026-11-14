@@ -204,6 +204,7 @@ def test_oversize_report_fails_without_creating_directory(tmp_path, monkeypatch)
                                           "remaining_slots": 0}))
     monkeypatch.setattr(crosswalk.v2, "_inspect",
                         lambda *args: ({}, [], [], {"reviewed_slots": 0}))
+    monkeypatch.setattr(private, "read_private", lambda *args: b"{}")
     monkeypatch.setattr(crosswalk, "_apply", lambda *args: {
         "candidate_count": 1,
         "outcome_counts": {},
