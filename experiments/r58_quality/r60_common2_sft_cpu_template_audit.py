@@ -147,7 +147,7 @@ def inspect_rows(rows: list[dict], tokenizer, template=None, phase=None) -> dict
         "status": ("COMMON2_CPU_TOKENIZER_COLLATOR_PASS__R50_TRAIN_HOLD"
                    if template is not None else
                    "COMMON2_CPU_TOKENIZER_PASS__COLLATOR_R50_HOLD"),
-        "cases": 2,
+        "cases": len(rows),
         "tokenizer_input_token_counts": [v["input_tokens_with_target"] for v in results],
         "real_collator_token_counts": [
             v["actual_collator_tokens"] for v in results
