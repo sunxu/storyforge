@@ -23,6 +23,7 @@ SCHEMA = "storyforge_r60_base_cpu336_stage_private_v1"
 DATA = "R60_BASE_CPU336_TECHNICAL_NOT_ADMITTED_PRIVATE.jsonl"
 MANIFEST = "R60_BASE_CPU336_TECHNICAL_MANIFEST_PRIVATE.json"
 ENTRY = [
+    "scripts/r60_base_cpu336_hf_worker.sh",
     "scripts/r60_base_cpu336_hf_worker.py",
     "scripts/r60_base_cpu336_hf_stage.py",
     "requirements/r60-common2-wrapped-cpu.in",
