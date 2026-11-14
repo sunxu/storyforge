@@ -1,6 +1,5 @@
 """Synthetic-only 336 frozen reviewer evidence aggregation."""
 import pytest
-
 import r60_base336_reviewer_provenance_cpu as reviewer
 import r60_real_quality_batch as batch
 from test_r60_base_start_cpu336_template_audit import sample
