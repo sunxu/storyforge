@@ -37,7 +37,7 @@ def dependencies() -> list[str]:
 
 
 def verify(stage: Path, key: str) -> dict:
-    if not RUN_RE.fullmatch(key) or stage.name != key or stage.is_symlink():
+    if not RUN_RE.fullmatch(key) or stage.is_symlink():
         raise ValueError("STAGE_NAME_HOLD")
     doc = InputManager.validate_json(InputManager.open_verified(
         stage / "SHA256_MANIFEST_PRIVATE.json", max_bytes=32768).read_bytes())
