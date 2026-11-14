@@ -590,3 +590,36 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 ```
 
 预期`BASE336_EIGHT_GROUP_DECISION_TEMPLATE_PRIVATE_READY__ALL_HOLD`。严格不要上传roster/模板到公开仓库，不在终端打印任何私有ID/原文。**下一步实质性工作必须以8个组source引用为依据，在授权且隔离的本地私有环境中核实世界内容、角色卡和实际版本来源，才能做语义审核。** 模板不替代审核。旧276/60、全部336条HOLD，Train 0，GPU/HF Job 0。
+
+
+## 2026-11-15：8组世界重复的第一阶段内容证据提取（仅Owner Mac私有）
+
+Owner上一SAFE确认`BASE336_EIGHT_GROUP_DECISION_TEMPLATE_PRIVATE_READY__ALL_HOLD`，原始8组索引与来源SHA绑定审核模板已在Mac 0700/0600私有文件中创建，8组全部HOLD且尚未看过原文。
+
+现新增`experiments/r58_quality/r60_base336_world_group_source_evidence_cpu.py`，不是重新生成roster/模板，而是**在只读DB同一个REPEATABLE READ事务中重新运行8组精确World JSONB分组SQL**，与Mac私有roster中的每个group ordinal/Story ID/split/是否当前匹配/归档version ID逐项严格比对，若任何漂移则fail-closed，不出私有文件。通过后每组仅选**一个**与该组相等的代表性`v2_data.world`原始JSON值（首选当前匹配Story；仅归档匹配时按roster指定story_content_versions.id绑定），从DB返回并新建Mac本地`R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`文件，大小上限190KB、每组world JSON上限16KB，文件0600、原roster和decision template保持原样、不覆盖。公开终端只输出8组、38 Story、82 case等不敏感SAFE状态，**绝不打印world JSON、Story ID、DSN、正文或摘要**。保证来源合约、当前与归档定义区分；这不是8组完整角色/人物关系审核，世界定义相等可能仍是通用模板，`semantic_review_completed=false`、`train_admitted=0`。
+
+安全工程：冻结V123/known5来源→172 Story ID范围重建；登录必须`r58_export_reader`且RLS/READ ONLY检查；world SQL只能读取roster中代表性Story ID和绑定归档version ID（匹配前先复核完整8组）；默认NO_DB预检；后续`--execute`限一次新建私有证据。Ruff + [CI #43630312472](https://github.com/sunxu/storyforge/actions/runs/43630312472) **210 synthetic tests PASS**，测试覆盖roster漂移拒绝、私有0600/不可覆盖、默认无DB。
+
+Mac：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+ --roster-dir "$BASE/r60-base336-world-cross-review-20261115"
+)
+"$PY" experiments/r58_quality/r60_base336_world_group_source_evidence_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_world_group_source_evidence_cpu.py "${ARGS[@]}" --execute
+```
+
+预期`BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE_READY__REVIEW_HOLD`，只回传SAFE JSON；勿上传私有文件或直接打印其中原文。**下一阶段**阅读这8个world定义原文并逐组归因是否通用模板或真实共享设定，同时必须进一步补充成员角色卡对照、历史实际发送版本证据；不能仅凭8组代表JSON完成隔离结论。旧276/60预演、R50完整排除、Reviewer执行独立性和历史System仍HOLD，GPU/HF Jobs 0。
