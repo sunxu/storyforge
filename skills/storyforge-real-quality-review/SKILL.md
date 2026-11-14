@@ -186,3 +186,11 @@ Owner实际SAFE：V123 339双PASS；已知R50来源交叉3条/1世界，独立�
 Owner `BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`：A V1/V2/V3为305/27/4；B V1/V2/V3为187/11/138。不同配置Model ID及冻结收据链均已验证，但V1 Owner独立性声明未提供，Provider实际请求/共享上下文独立证据未完成，任何审稿独立性结论继续HOLD，不能后补自证性声明自动放行。
 
 下个只读CPU证据阶段`experiments/r58_quality/r60_base336_world_linkage_screen_cpu.py`：只对已冻结336条，检测跨story_id目标/三消息历史精确SHA共享、来源session及message ID共享，使用并查集合并结构关联组件，核对当前276/60 story_id预演拆分是否跨结构关联组件。全程无敏感字段输出、无训练准入，不从精确图推断别名/世界语义图已完整。Owner命令及SAFE解释见Base-start任务书；`world_component_isolation_verified=false`保留，直至额外语义/资料源绑定复核。
+
+
+## 2026-11-15：R60 Base336原始世界/角色元数据覆盖门禁
+
+- 336例/172 Story ID四类精确链接0与Train/Val结构跨组0已由Owner SAFE证实，但不是语义World隔离。当前`r60_real_private_batch.parse_rows`仅冻结story/session/message/turn精确键，不含权威故事标题、角色卡、world组件关系；三消息文本不能据此推断完整世界。
+- 新只读`experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py`复用全部V123 receipts重建和3/336 quarantine，安全统计可选World/卡片等元数据字段覆盖率、冻结历史System与世界状态标记分布；绝不打印故事名/ID或文本，不请求模型、DB、HF。
+- R57旧`r57_g2_alias_name_hints`/`r57_g2_alias_pair_review`的标题hint非同一性结论方法可以参考，但其独立冻结八源及29个世界不对应本次336例，禁止直接交叉拼接或假设某别名关系。
+- 若现有333+3冻结样本无World/card数据，下一步先有Owner限定的数据库schema/权限/元数据来源调查和source pin，不能在未审慎确认来源时生成卡片、将同名汉字角色自动合并或宣布语义隔离。完整命令见`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`；train_admitted=0、Reviewer Independence HOLD。
