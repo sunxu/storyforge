@@ -201,3 +201,10 @@ Owner `BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`：A V1/V2/V3为305/27/4
 Owner SAFE确认`BASE336_SOURCE_METADATA_COVERAGE_PASS__SEMANTIC_SOURCE_HOLD`，结构化字段9类全0，历史System真实发送快照0/336；不要把这一发现误判为数据库没有故事/角色定义。连接Supabase只读Schema可验证`public.user_stories.id`存故事定义与世界/角色/System字段、`public.story_content_versions.story_id`外键定位修订版本；`public.character_states`为运行态不等于权威角色卡，`public.characters`与`user_stories`没有直接所示外键，名字重合不是同一世界证据。
 
 新工具`experiments/r58_quality/r60_base336_story_db_locator_cpu.py`严格复用冻结源重建与3/336 quarantine，以及既有`r60_real_private_batch.assert_guard`。默认只本地验证172 story ID来源；显式`--execute`才允许Owner限定数据库read-only事务（`r58_export_reader`、RLS ON），参数化只匹配这172个ID，仅计数`user_stories`与`story_content_versions`覆盖/非空字段/版本数量。不SELECT故事正文、角色卡/System内容，不导出ID，不写库；无法核实历史真实发送版本，故始终Train 0、World semantic HOLD、Reviewer independent HOLD。Owner执行命令、后续授权边界见Base-start任务书。
+
+
+## 2026-11-15：172/200 V2卡片真实结构已核验；下一门禁为world值类型及运行时分支
+
+Owner SAFE `BASE336_V2_CARD_STRUCTURE_COVERAGE__SEMANTIC_HISTORY_HOLD`：当前172条`cardType='story'`157，其余其他非空值15；历史200版本story 165、其他35；`characters`数组当前172/172但非空171/172，版本非空200/200；`character` object、`opening`与`world`键当前172/172、版本200/200。禁止从字段存在、非空或同名人名推断语义世界独立、历史使用版本或是否可训练。
+
+新增仅聚合`experiments/r58_quality/r60_base336_v2_world_branch_shape_cpu.py`，仍只用冻结336→172 Story ID的read-only cohort，统计`world`对象/数组/字符串/null、空结构、`opening`类型和`cardType==='story'`两种运行时角色路径的有效形状。绝不读取或输出世界/人物正文，所有结果都是当前DB及归档静态结构，非历史actual-sent prompt。具体Owner命令在Base训练任务书；Train 0、Reviewer执行独立性/R50完整语义保护继续HOLD。
