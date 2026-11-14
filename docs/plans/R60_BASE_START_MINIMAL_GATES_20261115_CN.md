@@ -248,3 +248,31 @@ R50_ORIGINAL="/请填写上述实际存在的原始50条provenance绝对路径"
 ```
 
 只有`R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`且`remaining_336_exact_key_overlap=0`才算**精确来源键**检查通过，所有准入仍HOLD。若同名文件多个，不能盲选；工具会用冻结SHA/长度校验，绝不复制或调整R50原始文件。后续才核验Reviewer独立性及跨故事语义组件，不能把现有5故事UUID核对视为完整保护的证明。
+
+
+## 2026-11-15：R50原始50精确键隔离已通过，继续Reviewer证据绑定
+
+Owner Mac实际SAFE `R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`：冻结原始50 provenance SHA校验通过、R60 339候选已核对；全部339与R50交集Story 3条/Session 3条/Message 0条，重叠3条恰好位于known5 quarantine，**剩余336条story/session/message精确键交集均为0**。该结果可以关闭“R50原始50精确ID隔离”子门禁，但不等于R50最终封签、跨UUID别名世界独立或训练准入。
+
+新增`experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py`：只读重建冻结1000 V1/V2/V3收据和339双PASS报告，精确绑定3/336 quarantine；读取V1冻结Reviewer配置，通过现有`batch.validate_config`校验，检查336条双侧`a/b`来源链、独立模型ID配置、PASS收据引用和来源版本计数。V2/V3模型ID/receipt签名绑定已由`identity.verified_cases_report`重放验证。**配置写有独立性声明也不能证明Provider实际独立执行**，回执总是`reviewer_independence_verified=false`、`train_admitted=0`。不重复请求模型、不打印模型名、URL或私有收据摘要。
+
+Owner Mac只读命令：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py \
+  --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+```
+
+预期`BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`、`cases_checked=336`、a/b每侧336个有效证据。后续针对Reviewer来源独立性需单独核实Provider分路、上下文不共享的执行证据；针对World必须另做源绑定的语义组件关联（同名歧义不能直接认定），不能用story_id不相交替代。依旧Train 0、无GPU/HF Job。
