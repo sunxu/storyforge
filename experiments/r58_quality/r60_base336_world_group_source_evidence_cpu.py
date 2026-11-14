@@ -24,8 +24,8 @@ import r60_real_private_batch as private
 SCHEMA = "storyforge_r60_base336_world_evidence_private_v1"
 SAFE = "storyforge_r60_base336_world_evidence_safe_v1"
 FILENAME = "R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json"
-MAX_EVIDENCE_BYTES = 400_000
-MAX_ONE_WORLD_BYTES = 32_000
+MAX_EVIDENCE_BYTES = 190_000
+MAX_ONE_WORLD_BYTES = 16_000
 
 SQL_CURRENT = """
 SELECT v2_data->'world' FROM public.user_stories
@@ -90,7 +90,7 @@ def normalize_db_rows(rows: list[tuple]) -> list[tuple]:
 def source_member(group: dict) -> dict:
     members = group["members_PRIVATE"]
     matching = [m for m in members if m["current_world_match"]]
-    return sorted(matching or members, key=lambda m: m["story_id_PRIVATE"])[0]
+    return min(matching or members, key=lambda m: m["story_id_PRIVATE"])
 
 
 def collect(cur, stories: list[str], groups: list[dict]) -> list[dict]:
