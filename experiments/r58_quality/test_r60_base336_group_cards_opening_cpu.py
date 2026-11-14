@@ -1,10 +1,12 @@
 """No-real-DB tests for world-group role card/opening evidence capture."""
+import hashlib
 import json
 import stat
 from types import SimpleNamespace
 
 import pytest
 import r60_base336_group_cards_opening_cpu as audit
+from r60_base336_world_review_decisions_template_cpu import build_template
 from test_r60_base336_world_review_decisions_template_cpu import payload
 
 
@@ -44,9 +46,6 @@ def test_no_db_precheck_and_output_create_only(monkeypatch, tmp_path):
     source = evidence_dir / audit.roster.FILENAME
     p = payload()
     audit.private.write_new(source, (json.dumps(p) + "\n").encode())
-    import hashlib
-    from r60_base336_world_review_decisions_template_cpu import build_template
-
     template = build_template(audit.world.decisions.validate(p),
                               hashlib.sha256(source.read_bytes()).hexdigest())
     audit.private.write_new(
@@ -76,9 +75,6 @@ def test_synthetic_capture_writes_eight_private_files(monkeypatch, tmp_path):
     p = payload()
     source = roster_dir / audit.roster.FILENAME
     audit.private.write_new(source, (json.dumps(p) + "\n").encode())
-    import hashlib
-    from r60_base336_world_review_decisions_template_cpu import build_template
-
     doc = build_template(audit.world.decisions.validate(p),
                          hashlib.sha256(source.read_bytes()).hexdigest())
     audit.private.write_new(
