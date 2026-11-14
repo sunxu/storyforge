@@ -124,3 +124,84 @@ COMMON=(
 若当前环境缺少已固定snapshot，请先定位本地已存在的同revision快照，再运行，**不要将示例路径当作实际文件**。两阶段可分别返回`BASE_CPU336_TOKENIZER_PASS__COLLATOR_HOLD`与`BASE_CPU336_TOKENIZER_COLLATOR_PASS__ALL_HELD`（只有实际完成才可使用）；同时需检查`cases_checked=336`、`model_weights_loaded=false`、`training_dataset_created=false`、`train_admitted=0`。任何阶段遇错误仅SAFE阶段码HOLD，不打印敏感异常。请回传输出SAFE。
 
 注：这只是`THREE_PERSISTED_MESSAGES_NO_SYSTEM`合同的技术诊断；正式训练输入结构、R50及世界组件排除、独立审稿证据仍需另审，不能把技术PASS等同质量PASS或GPU授权。
+
+
+## 2026-11-15：转HF CPU336的可复用Quality Pipeline技术门禁（本轮尚未提交Job）
+
+Owner Mac静态结果：`BASE_SFT_STATIC_SHAPE_PASS__ALL_HELD`、336/336来源绑定、System全部`UNKNOWN_NOT_ACTUAL_SENT`。Mac没有固定Qwen tokenizer snapshot，故改用已证实的HF CPU执行路径；**不在Mac下载完整27B权重**，HF只拉取Tokenizer、Config与模板相关文件。
+
+严格遵循`skills/storyforge-real-quality-review/SKILL.md`与`skills/storyforge-hf-jobs/SKILL.md`：
+
+- Quality pipeline冻结来源/双审/R50保护的业务决策在本地执行，公共`src/storyforge_dataset/hf_runtime/`提供`InputManager`/`OutputManager`/`ResourceGuard`。本次**没有增加另一套评分/质量准入逻辑**，`336 FULL_R50_HOLD`照旧。
+- 技术输入`experiments/r58_quality/r60_base_cpu336_hf_packet.py`只读重新验证V123和私有隔离清单，新建独立`0600`私有**技术测试包**336行`user,assistant,user,assistant`；不构造System，不生成或归档Train/Val JSONL，不将预演276/60转成训练集。
+- `scripts/r60_base_cpu336_hf_stage.py`重用`r60_common2_wrapped_hf_stage.local_dependencies(entries,extras)`与共享`InputManager`，生成不可覆盖SHA绑定Stage；完整内容和代码先于上传得到固定哈希。旧Common2 Stage不动。
+- `scripts/r60_base_cpu336_hf_cli.py`将独立Bucket前缀及Worker挂载配置交给现有`r60_common2_wrapped_hf_cli`通用安全流程，继承`hf_job_guard`、RO输入/RW独立输出、单次提交marker、完整Job历史查询及dry-run，避免另写Orchestrator。**未执行`sync`/Job**。
+- HF Worker`scripts/r60_base_cpu336_hf_worker.py`重用`r60_common2_sft_cpu_template_audit.inspect_rows`的真实Qwen3.8Tokenizer + ms-swift/R18严格最后轮Assistant监督检查；不加载模型权重、不GPU、不推理。原Common2审计核心中的`cases`汇总已改为`len(rows)`（2条业务结果不变），336条结果仅发布聚合min/median/p95/max，不输出逐条长度、内容、case IDs、来源哈希。
+- `scripts/r60_base_cpu336_hf_receipt_verify.py`使用共享`InputManager`严格验收SAFE回执、336计数、三个长度聚合、固定Model Revision、逐门禁FALSE、run_key以及可选精确字节SHA。Job COMPLETED不等于业务技术PASS。
+- 仍未完成：HF CPU真机执行、真正独立Reviewer证明、R50完整排除/跨故事组件隔离、最终有卡/统一System训练输入合同、实际Train/Validation冻结、GPU授权/训练；上述全部保持HOLD。
+
+### Owner Mac：先执行本地纯离线预检及私有技术Stage
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+PACKET="$BASE/r60-base-cpu336-hf-packet-v1"
+COMMON=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+ --output-dir "$PACKET"
+)
+"$PY" experiments/r58_quality/r60_base_cpu336_hf_packet.py "${COMMON[@]}"
+# 上述只读PASS后，以下只创建新的0700/0600私有技术输入：
+"$PY" experiments/r58_quality/r60_base_cpu336_hf_packet.py "${COMMON[@]}" --write
+RUN_KEY="r60-base-cpu336-$(date -u +%Y%m%dT%H%M%SZ)-$("$PY" -c 'import secrets; print(secrets.token_hex(6))')"
+STAGE_PARENT="$BASE/r60-base-cpu336-hf-stages"
+mkdir -p "$STAGE_PARENT"
+chmod 700 "$STAGE_PARENT"
+STAGE="$STAGE_PARENT/$RUN_KEY"
+"$PY" scripts/r60_base_cpu336_hf_stage.py prepare \
+ --private-dir "$PACKET" --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_cpu336_hf_stage.py verify \
+ --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_cpu336_hf_cli.py cli-flags \
+ --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_cpu336_hf_cli.py preflight \
+ --stage "$STAGE" --run-key "$RUN_KEY"
+# 记录RUN_KEY与STAGE到Owner私有位置，不上传到GitHub。
+```
+
+**上述命令不访问HF、不会提交Job**；packet第二次运行有意create-only，不要重复执行同一目录。若某一步HOLD，停止，不要改写旧Stage或删除marker。只需回传SAFE聚合。
+
+### 后续HF执行边界（先验收Stage后再进入）
+
+```bash
+# 注意：sync会将336条私有小说对话数据发送至Owner的HF私有Bucket；
+# 仅在确认来源授权、数据托管范围和安全控制后运行。
+"$PY" scripts/r60_base_cpu336_hf_cli.py sync \
+ --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_cpu336_hf_cli.py ready \
+ --stage "$STAGE" --run-key "$RUN_KEY"
+# 严禁把ready=PASS当作真实CPU验收。
+# 真正的Job提交必须另行明确指令，显式使用submit --execute且只执行一次。
+```
+
+HF返回SAFE后，Owner通过`hf buckets cp`从隔离结果前缀`preflight/r60/base-start/cpu336/results/$RUN_KEY/`下载`R60_BASE_CPU336_HF_SAFE_RECEIPT.json`到私有本地0600文件，随后运行：
+
+```bash
+"$PY" scripts/r60_base_cpu336_hf_receipt_verify.py \
+ --run-key "$RUN_KEY" --receipt "/实际本地0600路径/R60_BASE_CPU336_HF_SAFE_RECEIPT.json"
+```
+
+验收必须`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`、`verified_cases=336`、`actual_collator_verified=true`、`train_admitted=0`。任何失败应保留原回执，安全诊断后新命名空间/新Run Key，不覆盖/盲重试。
+
+**当前状态：**`BASE_CPU336_LOCAL_PIPELINE_IMPLEMENTED__HF_JOB_NOT_SUBMITTED__TRAIN_HOLD`。只允许继续CPU技术验证，不推断训练授权。
