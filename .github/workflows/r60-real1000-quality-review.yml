@@ -45,6 +45,14 @@ on:
       - "experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py"
       - "experiments/r58_quality/r60_base_start_cpu336_template_audit.py"
       - "experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py"
+      - "experiments/r58_quality/r60_base_cpu336_hf_packet.py"
+      - "experiments/r58_quality/test_r60_base_cpu336_hf_pipeline.py"
+      - "scripts/r60_base_cpu336_hf_stage.py"
+      - "scripts/r60_base_cpu336_hf_worker.py"
+      - "scripts/r60_base_cpu336_hf_worker.sh"
+      - "scripts/r60_base_cpu336_hf_cli.py"
+      - "scripts/r60_common2_wrapped_hf_stage.py"
+      - "experiments/r58_quality/r60_common2_sft_cpu_template_audit.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -88,6 +96,14 @@ on:
       - "experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py"
       - "experiments/r58_quality/r60_base_start_cpu336_template_audit.py"
       - "experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py"
+      - "experiments/r58_quality/r60_base_cpu336_hf_packet.py"
+      - "experiments/r58_quality/test_r60_base_cpu336_hf_pipeline.py"
+      - "scripts/r60_base_cpu336_hf_stage.py"
+      - "scripts/r60_base_cpu336_hf_worker.py"
+      - "scripts/r60_base_cpu336_hf_worker.sh"
+      - "scripts/r60_base_cpu336_hf_cli.py"
+      - "scripts/r60_common2_wrapped_hf_stage.py"
+      - "experiments/r58_quality/r60_common2_sft_cpu_template_audit.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -147,7 +163,14 @@ jobs:
             experiments/r58_quality/r60_base_start_sft_shape_cpu.py \
             experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py \
             experiments/r58_quality/r60_base_start_cpu336_template_audit.py \
-            experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py
+            experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py \
+            experiments/r58_quality/r60_base_cpu336_hf_packet.py \
+            experiments/r58_quality/test_r60_base_cpu336_hf_pipeline.py \
+            scripts/r60_base_cpu336_hf_stage.py \
+            scripts/r60_base_cpu336_hf_worker.py \
+            scripts/r60_base_cpu336_hf_cli.py \
+            scripts/r60_common2_wrapped_hf_stage.py \
+            experiments/r58_quality/r60_common2_sft_cpu_template_audit.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -171,4 +194,5 @@ jobs:
             experiments/r58_quality/test_r60_real1000_r50_known5_quarantine.py \
             experiments/r58_quality/test_r60_base_start_world_split_preview.py \
             experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py \
-            experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py
+            experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py \
+            experiments/r58_quality/test_r60_base_cpu336_hf_pipeline.py
