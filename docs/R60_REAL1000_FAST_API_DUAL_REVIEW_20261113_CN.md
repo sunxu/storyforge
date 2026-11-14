@@ -499,3 +499,34 @@ AUDIT="$BASE/r60-real1000-v123-crosswalk-v1"
 预期`v2_verified_receipts=155`、`v3_verified_receipts=166`、`candidate_dual_pass=339`（最终以Owner实际安全审计为准）、`model_requests=0`、`train_admitted=0`。若返回`CROSSWALK_HOLD`，不要删除私有目录或绕过验证，回传固定安全`reason_code`。**339只表示两侧有效PASS且分数满足冻结门槛；仍未通过独立性核验、完整R50排除、历史System快照和世界隔离，Gold/Train准入保持0。**
 
 下一阶段在此只读交叉审计通过之后单独开展候选集去重、R50排除、历史System和世界隔离证据核验；原V1/V2/V3和本报告都不允许回写、重判或提拔。
+
+
+## 2026-11-14 Crosswalk 339条只读核验PASS，报告写入限制修复
+
+Owner Mac真实SAFE：`CROSSWALK_PREFLIGHT_PASS__NO_FILES`，`candidate_dual_pass=339`，`outcome_counts={"dual_pass_candidate":339,"neither_valid":64,"one_valid":216,"two_valid_not_dual_pass":381}`，`dual_pass_provenance={"V1+V1":159,"V1+V2":11,"V1+V3":138,"V2+V1":27,"V3+V1":4}`。V2=155、V3=166份不可覆盖回执验证通过。独立性、R50排除、历史System、世界隔离的完整验证仍false，Gold/Train准入0。
+
+写私有报告时Owner收到 `CROSSWALK_HOLD:OUTPUT_SIZE_HOLD`。已查明：Crosswalk报告允许最多900,000字节，但错误调用`r60_real_private_batch.write_new`，该通用函数对捕获文件固定设置200,000字节上限；目录创建成功、报告创建失败。这并非339条数据质量或来源问题。现改由Crosswalk专用安全写入器：先序列化并限制900,000字节，再使用`O_EXCL|O_NOFOLLOW`仅创建0600报告并`fsync`。只允许复用**完全空的0700旧失败目录**，有文件时拒绝覆盖，不自动删除或更改V1/V2/V3及任何候选。GitHub CI Ruff PASS、pytest **115 passed**：[workflow #43610092528](https://github.com/sunxu/storyforge/actions/runs/43610092528)。
+
+Owner Mac修复后复用原输出目录（**不要rm -rf**）：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+V2="$BASE/r60-real1000-v2-priority-replay-v1"
+V3="$BASE/r60-real1000-v3-consistent-replay-v1"
+AUDIT="$BASE/r60-real1000-v123-crosswalk-v1"
+
+"$PY" experiments/r58_quality/r60_real1000_v123_crosswalk.py \
+ --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" \
+ --v3-dir "$V3" --output-dir "$AUDIT" --write-private-report
+~~~
+
+预期`CROSSWALK_PRIVATE_REPORT_SAVED__NO_ADMISSION`，`candidate_dual_pass=339`、`model_requests=0`、`train_admitted=0`。如`CROSSWALK_OUTPUT_NONEMPTY_HOLD`，说明目标目录非空，**不允许覆盖，先只读确认文件**。只有生成可核验的候选清单后，才能推进下一阶段的去重和各项证据门禁。
