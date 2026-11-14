@@ -75,6 +75,8 @@ on:
       - "experiments/r58_quality/test_r60_base336_world_exact_value_cpu.py"
       - "experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py"
       - "experiments/r58_quality/test_r60_base336_world_cross_split_impact_cpu.py"
+      - "experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py"
+      - "experiments/r58_quality/test_r60_base336_world_cross_split_private_roster_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -148,6 +150,8 @@ on:
       - "experiments/r58_quality/test_r60_base336_world_exact_value_cpu.py"
       - "experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py"
       - "experiments/r58_quality/test_r60_base336_world_cross_split_impact_cpu.py"
+      - "experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py"
+      - "experiments/r58_quality/test_r60_base336_world_cross_split_private_roster_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -234,7 +238,9 @@ jobs:
             experiments/r58_quality/r60_base336_world_exact_value_cpu.py \
             experiments/r58_quality/test_r60_base336_world_exact_value_cpu.py \
             experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py \
-            experiments/r58_quality/test_r60_base336_world_cross_split_impact_cpu.py
+            experiments/r58_quality/test_r60_base336_world_cross_split_impact_cpu.py \
+            experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py \
+            experiments/r58_quality/test_r60_base336_world_cross_split_private_roster_cpu.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -270,4 +276,5 @@ jobs:
             experiments/r58_quality/test_r60_base336_v2_card_contract_cpu.py \
             experiments/r58_quality/test_r60_base336_v2_world_branch_shape_cpu.py \
             experiments/r58_quality/test_r60_base336_world_exact_value_cpu.py \
-            experiments/r58_quality/test_r60_base336_world_cross_split_impact_cpu.py
+            experiments/r58_quality/test_r60_base336_world_cross_split_impact_cpu.py \
+            experiments/r58_quality/test_r60_base336_world_cross_split_private_roster_cpu.py
