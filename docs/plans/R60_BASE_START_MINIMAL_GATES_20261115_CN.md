@@ -568,3 +568,25 @@ ARGS=(
 ```
 
 第一条只重建冻结来源、不读数据库、不创建私有目录；第二条read-only SQL并**新建**私有文件，同一目录不可覆盖或重复执行。只回传SAFE JSON，不上传私有审阅包。后续需要依8组的`story_id`与`story_content_versions.id`在**限定权限**下独立读取可证实的当前/归档来源，以核对相等对象到底是通用模板还是具体共享角色/世界，并保留语义证据出处。不得提前升级Reviewer独立性、R50全保护或历史实际请求System门禁，`train_admitted=0`、GPU/HF Job 0。
+
+
+## 2026-11-15：Owner 8组/38 Story/82 Case私有索引PASS；独立审核决策模板创建
+
+Owner实际`BASE336_CROSS_SPLIT_EIGHT_GROUP_PRIVATE_REVIEW_READY__SEMANTIC_HOLD`：8个JSON相等世界候选组（当前版本即跨旧Train/Val的7组），涉及去重38个Story ID、Train 28 Story/65 case、Validation 10 Story/17 case，create-only私有审阅源索引已在Owner Mac生成；8组`semantic_verdict=UNREVIEWED`。仅索引成功，不等于8组已被实际审核，不等于已证实世界泄漏或R50完整排除。
+
+新增`experiments/r58_quality/r60_base336_world_review_decisions_template_cpu.py`，默认**只读Owner Mac现有私有roster文件**、不访问DB、不请求模型、不读取实际世界JSON。严格要求来源Schema、8个组序号、7个当前跨组、38个去重Story IDs、原审阅状态UNREVIEWED且Train 0；按原roster原始字节SHA256绑定新独立模板。输出`R60_BASE336_WORLD_GROUP_DECISIONS_TEMPLATE_PRIVATE.json`（原roster同目录，文件0600，create-only不覆盖原件）。8组decision初始一律HOLD，要求未来另行填写每组`world_source_exact_quote_PRIVATE`、`world_source_field_PRIVATE`、`source_revision_evidence_PRIVATE`、`generic_template_vs_shared_world_analysis_PRIVATE`，以及不可猜测的历史实际发送版本证明；模板本身不证明任何世界语义结论。公开只SAFE计数。CI Ruff+205 synthetic tests PASS：[workflow #43629597456](https://github.com/sunxu/storyforge/actions/runs/43629597456)。
+
+Owner Mac：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_base336_world_review_decisions_template_cpu.py \
+  --roster-dir "$BASE/r60-base336-world-cross-review-20261115"
+```
+
+预期`BASE336_EIGHT_GROUP_DECISION_TEMPLATE_PRIVATE_READY__ALL_HOLD`。严格不要上传roster/模板到公开仓库，不在终端打印任何私有ID/原文。**下一步实质性工作必须以8个组source引用为依据，在授权且隔离的本地私有环境中核实世界内容、角色卡和实际版本来源，才能做语义审核。** 模板不替代审核。旧276/60、全部336条HOLD，Train 0，GPU/HF Job 0。
