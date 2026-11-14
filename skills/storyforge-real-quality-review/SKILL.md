@@ -220,3 +220,10 @@ Owner真实SAFE `BASE336_V2_WORLD_BRANCH_COUNTS__SEMANTIC_HISTORY_HOLD`确认当
 Owner `BASE336_WORLD_EXACT_VALUE_SCREEN__SEMANTIC_HISTORY_HOLD`：172当前Stories共139种world JSON，10跨Story共享组/130 pair-instances，**7组跨旧276/60 train/validation**；当前+200历史versions共152种world值，10共享组/140 pair-instances，**8组跨split**。相同world JSON只为待复核的结构证据，可能是公用模板；不能自动合并Story、认定语义泄漏数量、永久剔除样本或训练。但旧276/60不可继续称世界隔离已通过，不得准入SFT。
 
 新`experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py`仍按冻结336/172 scope + R58只读账户，数据库内以精确world JSON相等分组，聚合当前及含归档范围跨边界的**去重Story数、对应case数**，分Train/Validation，仅输出SAFE aggregate，不输出ID/JSON/摘要/原文。先运行默认NO_DB预检，再显式`--execute`；命令见权威Base-start任务书。语义alias/历史使用版本/R50完整排除/Reviewer实际执行独立性全部HOLD，Train 0。
+
+
+## 2026-11-15：8组/38世界/82候选的Owner私有语义复核来源索引
+
+Owner只读SAFE确认：按当前world精确相等跨旧Train/Validation的影响是26 Train Story/63 case + 10 Validation Story/17 case=36 Story/80 case；加入归档world精确相等后28 Train Story/65 case + 10 Validation Story/17 case=38 Story/82 case。**不是82条已证实语义泄漏，旧276/60划分仍隔离HOLD，不得拿剩余254条自动准入。**
+
+新增`experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py`：沿用冻结V123/known5隔离及严格read-only角色，在数据库内部比较world JSONB，形成8组交叉精确值的`story_id`、当前/归档`story_content_versions.id`来源映射，只写Mac Owner私有0700目录+create-only 0600文件，所有语义判决UNREVIEWED；终端只SAFE计数，不输出Story IDs/JSON/摘要。Owner操作详见`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。Ruff和201合成测试PASS。下一步不是重分split或训练，而是私有源绑定复核8个跨组原因（通用模板vs真实故事世界），并区分归档版本与历史实际发送版本。Reviewer执行独立性、R50全保护、实际System与Train准入继续HOLD。
