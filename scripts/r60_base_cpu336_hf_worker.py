@@ -21,7 +21,10 @@ import r60_base_cpu336_hf_stage as stage_tools
 import r60_common2_sft_cpu_template_audit as common
 
 from storyforge_dataset.hf_runtime import (
-    InputManager, OutputManager, ResourceGuard, RuntimeContext,
+    InputManager,
+    OutputManager,
+    ResourceGuard,
+    RuntimeContext,
 )
 
 SCHEMA = "storyforge_r60_base_cpu336_hf_receipt_safe_v1"
