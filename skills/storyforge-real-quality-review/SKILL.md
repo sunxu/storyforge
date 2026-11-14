@@ -165,3 +165,10 @@ Owner实际SAFE：V123 339双PASS；已知R50来源交叉3条/1世界，独立�
 用户选择下轮从**冻结 Qwen Base 创建新 LoRA**，不继承R46/R54 Adapter；历史Provider HTTP逐字回放、旧LoRA来源逐案追溯退出本轮门禁，但**R50/Val保护来源、质量双审真实性、世界隔离、真实训练输入和CPU Collator**不能绕过。
 
 新增可复用CPU技术门禁由`skills/storyforge-hf-jobs/SKILL.md`与`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`管理，不在Quality Skill复制HF命令或Tokenizer实现。仅Owner本地通过冻结来源与R50 known5 quarantine构造336条不可训练的技术包（无System四消息），HF CPU运行共享Tokenizer/ms-swift/R18技术审计，并独立接受SAFE回执。技术PASS绝不代表Gold晋升、双审证据真实性或`train_admitted>0`。不要读取R50密封题文、不要改写原339报告、不要自动触发HF Job/GPU。
+
+
+## 2026-11-15：Base CPU336关闭、R50原始50精确ID隔离审计
+
+- Owner Mac已经完成`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`，336/336真实Qwen3.8 tokenizer与ms-swift最后Assistant Label Mask技术审计通过；不用再运行HF CPU或复制HF Worker。所有候选`train_admitted=0`。
+- 下一单独只读门禁`experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py`：严格复用R50冻结原始50条provenance SHA校验、已有原始来源字段抽取、V123 crosswalk重建和3/336 quarantine。只公开339候选与R50原始50的story/session/message精确ID交集计数，不公开任何源ID、原文或私有哈希；Owner命令及解释在`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。
+- `R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`只代表已提供的、通过固定SHA验证的原始R50 50 provenance之间**精确键**无交集，不代表跨UUID别名世界隔离、最终R50封签有效、独立Reviewer真实或允许训练。`r50_complete_exclusion_verified=false`始终保留。若原始50 provenance缺失或哈希不匹配，HOLD，不从46条补猜。
