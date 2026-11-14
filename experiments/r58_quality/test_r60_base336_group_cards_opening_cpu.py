@@ -44,8 +44,8 @@ def test_no_db_precheck_and_output_create_only(monkeypatch, tmp_path):
     source = evidence_dir / audit.roster.FILENAME
     p = payload()
     audit.private.write_new(source, (json.dumps(p) + "\n").encode())
-    from r60_base336_world_review_decisions_template_cpu import build_template
     import hashlib
+    from r60_base336_world_review_decisions_template_cpu import build_template
 
     template = build_template(audit.world.decisions.validate(p),
                               hashlib.sha256(source.read_bytes()).hexdigest())
@@ -54,7 +54,7 @@ def test_no_db_precheck_and_output_create_only(monkeypatch, tmp_path):
         (json.dumps(template) + "\n").encode())
     monkeypatch.setattr(audit.frozen, "_frozen", lambda args: ([], {}))
     monkeypatch.setattr(audit.locator, "scoped_stories", lambda *_: (
-        [f"s-{n}" for n in range(38)] + [f"other-{n}" for n in range(134)
+        [f"s-{n}" for n in range(38)] + [f"other-{n}" for n in range(134)]
     ))
     monkeypatch.setattr(audit, "capture", lambda *_: pytest.fail("DB called"))
     args = SimpleNamespace(
@@ -76,8 +76,8 @@ def test_synthetic_capture_writes_eight_private_files(monkeypatch, tmp_path):
     p = payload()
     source = roster_dir / audit.roster.FILENAME
     audit.private.write_new(source, (json.dumps(p) + "\n").encode())
-    from r60_base336_world_review_decisions_template_cpu import build_template
     import hashlib
+    from r60_base336_world_review_decisions_template_cpu import build_template
 
     doc = build_template(audit.world.decisions.validate(p),
                          hashlib.sha256(source.read_bytes()).hexdigest())
@@ -86,7 +86,7 @@ def test_synthetic_capture_writes_eight_private_files(monkeypatch, tmp_path):
         (json.dumps(doc) + "\n").encode())
     monkeypatch.setattr(audit.frozen, "_frozen", lambda args: ([], {}))
     monkeypatch.setattr(audit.locator, "scoped_stories", lambda *_: (
-        [f"s-{n}" for n in range(38)] + [f"other-{n}" for n in range(134)
+        [f"s-{n}" for n in range(38)] + [f"other-{n}" for n in range(134)]
     ))
     groups = [
         {"group_ordinal": i, "current_world_cross_split": i != 8,
