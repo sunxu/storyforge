@@ -9,7 +9,7 @@ import argparse
 import json
 import re
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 import r60_real1000_v3_consistent_replay as v3
