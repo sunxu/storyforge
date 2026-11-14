@@ -156,3 +156,12 @@ If the next single synthetic Claude probe still fails, stop further trial
 requests and inspect private, access-controlled metadata/raw HTTP evidence
 under a dedicated debug workflow; never publish provider responses or
 lower the quality threshold. DeepSeek synthetic API already PASS, no reruns.
+
+
+## 2026-11-15 REAL1000 339候选 → Base CPU336 技术审计交接
+
+Owner实际SAFE：V123 339双PASS；已知R50来源交叉3条/1世界，独立私有隔离清单保存；余336条/172故事质量候选均`FULL_R50_HOLD`。确定性按story_id只读预演Train276/136故事、Val60/36故事，不跨story_id；静态消息`user→assistant→user`及目标SHA 336/336 PASS。注意：未验证跨UUID语义组件、Reviewer独立性、完整R50保护来源、历史System、真实Collator或任何训练准入。
+
+用户选择下轮从**冻结 Qwen Base 创建新 LoRA**，不继承R46/R54 Adapter；历史Provider HTTP逐字回放、旧LoRA来源逐案追溯退出本轮门禁，但**R50/Val保护来源、质量双审真实性、世界隔离、真实训练输入和CPU Collator**不能绕过。
+
+新增可复用CPU技术门禁由`skills/storyforge-hf-jobs/SKILL.md`与`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`管理，不在Quality Skill复制HF命令或Tokenizer实现。仅Owner本地通过冻结来源与R50 known5 quarantine构造336条不可训练的技术包（无System四消息），HF CPU运行共享Tokenizer/ms-swift/R18技术审计，并独立接受SAFE回执。技术PASS绝不代表Gold晋升、双审证据真实性或`train_admitted>0`。不要读取R50密封题文、不要改写原339报告、不要自动触发HF Job/GPU。
