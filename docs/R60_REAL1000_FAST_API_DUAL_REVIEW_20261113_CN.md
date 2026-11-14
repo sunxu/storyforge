@@ -458,3 +458,44 @@ fi
 ~~~
 
 最多5次请求及相应费用；不推荐在未核对这5个的`result_counts`之前推进剩余全部。如果需要验证造成DeepSeek输出自相矛盾的真实原因，必须使用隔离脱敏合成样本做正式A/B对照；V1/V2`TECHNICAL_HOLD`回执不含被拒绝的原始生成文本，因此**无法靠这些回执还原模型到底给了哪些分数或原因文字**，不要求用户上传密钥或原始小说正文。
+
+
+## 2026-11-14 V1+V2+V3 只读跨版本合并审计：候选集冻结准备
+
+Owner 已报告 `V3_CONSISTENT_REPLAY_COMPLETE__NO_ADMISSION`：V3处理166/166，`V3_PASS=142`、`V3_HOLD=18`、`V3_REJECT=2`、`TECHNICAL_HOLD=4`，V2原始155份回执保持只读不变。V1双PASS待独立性验证159条，V2成功PASS38条，V3成功PASS142条，理论潜在双PASS为339条，但不可未经逐条签名/来源/侧别交叉校验直接认可。
+
+新增离线`experiments/r58_quality/r60_real1000_v123_crosswalk.py`与合成测试。审计前强制使用现有V3和V2严格验证器重新检查冻结的1000条V1来源、155条V2回执与166条V3回执、SHA签名/回执链/队列/源身份。合并规则：V1各侧已有效结果优先且不覆盖；V2仅补缺失侧有效回复，TECHNICAL_HOLD不当有效审稿；V3仅在该侧仍缺失时补有效回复，不能覆盖已有有效V1/V2；所有合并有效审核都重新应用既有冻结六维`parse_model_response`。只把两侧均PASS的条目写入新的create-only私有候选交叉验证报告；记录各侧来源版本及回执SHA，不保存审稿文字/小说正文，也不判定独立性或Gold/Train准入。合成CI `Ruff PASS / pytest 113 passed`：https://github.com/sunxu/storyforge/actions/runs/43609541887 。
+
+Owner Mac本地执行：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+V2="$BASE/r60-real1000-v2-priority-replay-v1"
+V3="$BASE/r60-real1000-v3-consistent-replay-v1"
+AUDIT="$BASE/r60-real1000-v123-crosswalk-v1"
+
+# 纯只读预检：不创建文件，不调用模型
+"$PY" experiments/r58_quality/r60_real1000_v123_crosswalk.py \
+  --old-dir "$OLD" --plan-dir "$PLAN" \
+  --v2-dir "$V2" --v3-dir "$V3" --output-dir "$AUDIT"
+
+# 仅预检成功后在新0700私有目录创建0600候选交叉验证清单
+"$PY" experiments/r58_quality/r60_real1000_v123_crosswalk.py \
+  --old-dir "$OLD" --plan-dir "$PLAN" \
+  --v2-dir "$V2" --v3-dir "$V3" --output-dir "$AUDIT" \
+  --write-private-report
+~~~
+
+预期`v2_verified_receipts=155`、`v3_verified_receipts=166`、`candidate_dual_pass=339`（最终以Owner实际安全审计为准）、`model_requests=0`、`train_admitted=0`。若返回`CROSSWALK_HOLD`，不要删除私有目录或绕过验证，回传固定安全`reason_code`。**339只表示两侧有效PASS且分数满足冻结门槛；仍未通过独立性核验、完整R50排除、历史System快照和世界隔离，Gold/Train准入保持0。**
+
+下一阶段在此只读交叉审计通过之后单独开展候选集去重、R50排除、历史System和世界隔离证据核验；原V1/V2/V3和本报告都不允许回写、重判或提拔。
