@@ -58,3 +58,31 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 主实验建议A：从Base重新训练，使用新审核/准入数据；旧R46/R54不用于初始化。未来如需回答“旧模型续训是否更省数据或提高质量”，B实验用同一冻结数据在R46 Adapter上续训，须声明追加暴露与训练步骤的差异，不能将A/B差异都归因于起点。新实验的评价结果先标开发回归，不将旧R47/R48/R55已暴露题作为正式晋升测试。R50存在已知来源重叠，绝不用于当前调参。
 
 **执行状态：**`BASE_START_PREVIEW_ONLY__SOURCE_ISOLATION_AND_ADMISSION_HOLD`。全部安全标志维持FALSE；本文件没有批准本次训练、推理、GPU或促成任何Gold发布。
+
+
+## 2026-11-15 Owner Mac首轮划分预演已确认
+
+Owner SAFE：`BASE_START_SPLIT_PREVIEW_ONLY__ALL_HELD_NO_ADMISSION`，已知R50三条隔离；剩余336条来自172故事，确定性预览Train 276条/136故事、Val 60条/36故事，Train与Val的**story_id严格不相交**。但R50完整范围、跨UUID组件隔离、Reviewer独立性、实际Tokenizer/Collator未认证；336条仍全部HOLD，未写训练文件。
+
+下一步不付费的静态SFT输入检查：新增`experiments/r58_quality/r60_base_start_sft_shape_cpu.py`，只读重新绑定V1/V2/V3、Crosswalk、已保存quarantine，检查336条的三消息角色`user,assistant,user`、输入和最终目标非空、历史/目标哈希不漂移，并统计目标/历史字符长度。它**不生成训练数据，不加载模型、不调用tokenizer/collator，也不自行补System或故事卡**，不会将静态格式通过冒充实际Qwen Collator通过。
+
+Mac命令：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_base_start_sft_shape_cpu.py \
+  --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+```
+
+预期`candidate_count=336`，`validated_three_message_cases=336`，失败分类为空（若检测出异常则HOLD），`actual_collator_last_assistant_mask_verified=false`、`real_tokenizer_verified=false`、`training_dataset_created=false`、`train_admitted=0`。继续隔离R50和其他实际用于正式测试的数据来源，待通过后再准备真实CPU tokenizer/collator与来源准入流程。
