@@ -1,6 +1,5 @@
 """Synthetic exact world linkage screen; no semantic inferences or admissions."""
 import pytest
-
 import r60_base336_world_linkage_screen_cpu as linkage
 from test_r60_base_start_cpu336_template_audit import sample
 
