@@ -12,6 +12,7 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
+import r60_real1000_r50_known5_exclusion_cpu as r50_known
 import r60_real1000_v3_consistent_replay as v3
 import r60_real1000_v123_crosswalk as crosswalk
 import r60_real_private_batch as private
@@ -78,6 +79,13 @@ def audit(cases: list[dict], report: dict) -> dict:
         "unique_assistant_message_ids": len(message_ids),
         "unique_story_count": len(stories),
         "unique_story_session_count": len(sessions),
+        "r50_known5_source_reference": r50_known.REFERENCE_DOC,
+        "r50_known5_reference_stories": len(r50_known.KNOWN_R50_STORIES),
+        "r50_known5_candidate_overlap_count": sum(
+            len(positions) for story_id, positions in stories.items()
+            if story_id in r50_known.KNOWN_R50_STORIES),
+        "r50_known5_overlapping_story_count": sum(
+            story_id in r50_known.KNOWN_R50_STORIES for story_id in stories),
         "stories_with_multiple_candidates": sum(
             len(p) > 1 for p in stories.values()),
         "max_candidates_per_story": max(map(len, stories.values())),
