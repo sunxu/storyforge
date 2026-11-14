@@ -213,3 +213,10 @@ Owner SAFE `BASE336_V2_CARD_STRUCTURE_COVERAGE__SEMANTIC_HISTORY_HOLD`：当前1
 ## 2026-11-15：World JSONB精确相等跨Story候选门禁
 
 Owner真实SAFE `BASE336_V2_WORLD_BRANCH_COUNTS__SEMANTIC_HISTORY_HOLD`确认当前172/172与历史200/200的`v2_data.world`均为非空object，且对应V2卡片运行路径的角色对象/数组结构有效。此时不重复测试空值，改用`experiments/r58_quality/r60_base336_world_exact_value_cpu.py`的**数据库内部JSONB完全值相等分组**，只统计当前及当前+归档版本不同Story ID共享world完整JSON的组/对/预演Train-Val交叉数；不输出JSON值、hash、人名、ID，严格绑定冻结172 ID和r58只读角色。相等只是可能为同一世界或共享模板的线索，绝非自动语义同一结论；不等也不能证明无近重复别名。历史actual-sent、R50完整保护、Reviewer独立与SFT准入均HOLD。Owner命令见Base-start任务书。
+
+
+## 2026-11-15：已发现同world JSON跨预演Train/Val；隔离阻断升级
+
+Owner `BASE336_WORLD_EXACT_VALUE_SCREEN__SEMANTIC_HISTORY_HOLD`：172当前Stories共139种world JSON，10跨Story共享组/130 pair-instances，**7组跨旧276/60 train/validation**；当前+200历史versions共152种world值，10共享组/140 pair-instances，**8组跨split**。相同world JSON只为待复核的结构证据，可能是公用模板；不能自动合并Story、认定语义泄漏数量、永久剔除样本或训练。但旧276/60不可继续称世界隔离已通过，不得准入SFT。
+
+新`experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py`仍按冻结336/172 scope + R58只读账户，数据库内以精确world JSON相等分组，聚合当前及含归档范围跨边界的**去重Story数、对应case数**，分Train/Validation，仅输出SAFE aggregate，不输出ID/JSON/摘要/原文。先运行默认NO_DB预检，再显式`--execute`；命令见权威Base-start任务书。语义alias/历史使用版本/R50完整排除/Reviewer实际执行独立性全部HOLD，Train 0。
