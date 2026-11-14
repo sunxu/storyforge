@@ -6,7 +6,6 @@ every frozen V1 record, V2 record and V3 record via the existing validators.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import re
 import sys
