@@ -11,7 +11,7 @@ import json
 import os
 import stat
 import sys
-from collections import Counter, defaultdict
+from collections import defaultdict
 from pathlib import Path
 
 import r60_base336_story_db_locator_cpu as locator
