@@ -530,3 +530,30 @@ AUDIT="$BASE/r60-real1000-v123-crosswalk-v1"
 ~~~
 
 预期`CROSSWALK_PRIVATE_REPORT_SAVED__NO_ADMISSION`，`candidate_dual_pass=339`、`model_requests=0`、`train_admitted=0`。如`CROSSWALK_OUTPUT_NONEMPTY_HOLD`，说明目标目录非空，**不允许覆盖，先只读确认文件**。只有生成可核验的候选清单后，才能推进下一阶段的去重和各项证据门禁。
+
+
+## 2026-11-14 339候选成功保存，下一步只读来源身份/去重审计
+
+Owner SAFE 已确认`CROSSWALK_PRIVATE_REPORT_SAVED__NO_ADMISSION`，339条双PASS候选的V1/V2/V3交叉证据已保存于Mac私有目录（新0700目录、0600报告），来源V1+V1=159、V1+V2=11、V1+V3=138、V2+V1=27、V3+V1=4，总数339，不涉及模型/DB/GPU。**这些是质量候选，Gold/Train仍为0**。
+
+新增离线工具`experiments/r58_quality/r60_real1000_candidate_identity_audit.py`：严格重新验证1000条V1、155份V2、166份V3以及保存的339条crosswalk报告与重构结果精确一致；只读读取冻结`source.story_id`、`session_id`、`assistant_message_id`，统计339候选的唯一消息数、故事数、同回复SHA重复组与同(历史SHA+回复SHA)重复组。**同一故事有多个候选是采样规则允许的，不自动当作重复/污染；仅返回汇总SAFE，不输出原始ID、小说文字或SHA，不向GitHub上传私有内容。** 该检查不能代替R50完整排除、独立性、历史System或世界隔离核验，因此所有这些门禁继续FALSE。
+
+Mac执行命令：
+
+~~~bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_real1000_candidate_identity_audit.py \
+ --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+~~~
+
+预期`CANDIDATE_IDENTITY_PREFLIGHT_PASS__NO_ADMISSION`、`candidate_count=339`、`unique_case_keys=339`、`unique_assistant_message_ids=339`、`model_requests=0`、`train_admitted=0`。同回复/历史哈希重复的实际数量以Mac真实SAFE为准，不能猜测。尚未接入R50私有完整来源，禁止在本阶段将`r50_complete_exclusion_verified`设为true。
