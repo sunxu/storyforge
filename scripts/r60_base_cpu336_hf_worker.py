@@ -17,11 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "scripts"),
                 str(ROOT / "experiments/r58_quality")]
 
+import r60_base_cpu336_hf_stage as stage_tools
+import r60_common2_sft_cpu_template_audit as common
+
 from storyforge_dataset.hf_runtime import (
     InputManager, OutputManager, ResourceGuard, RuntimeContext,
 )
-import r60_base_cpu336_hf_stage as stage_tools
-import r60_common2_sft_cpu_template_audit as common
 
 SCHEMA = "storyforge_r60_base_cpu336_hf_receipt_safe_v1"
 RECEIPT = "R60_BASE_CPU336_HF_SAFE_RECEIPT.json"
@@ -123,8 +124,8 @@ def run(stage: Path, key: str) -> dict:
             if version(name) != expected:
                 raise ValueError("PIN_HOLD")
         from huggingface_hub import snapshot_download
-        from transformers import AutoTokenizer
         from swift import get_processor, get_template
+        from transformers import AutoTokenizer
 
         with tempfile.TemporaryDirectory(prefix="r60-cpu336-") as scratch:
             snapshot = Path(scratch) / common.PIN
