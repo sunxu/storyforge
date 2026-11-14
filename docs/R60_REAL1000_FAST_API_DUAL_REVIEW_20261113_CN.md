@@ -400,3 +400,12 @@ fi
 ~~~
 
 若`V2_OUTPUT_PATH_HOLD`说明目标目录已存在时误重跑了init；若`PLAN_OR_V1_CHANGED_HOLD`需核对计划/V1是否已被修改；若`PRIVATE_INPUT_NOT_FOUND`核查本地路径存在及0600访问保护；不要在未查明前删除重建或改权限绕过保护。Owner回传脱敏`reason_code`后，再定向修复。整个诊断无模型请求、无训练准入。
+
+
+## 2026-11-14 V2 155/237：DeepSeek一致性故障专项处理
+
+Owner真实V2回执只读统计：`reviewed_slots=155`、`remaining_slots=82`、`V2_PASS=38`、`V2_HOLD=31`、`V2_REJECT=2`、`TECHNICAL_HOLD=84`。技术错误按侧别分解：A侧HTTP400=3、A侧QUALITY_FLOOR_DECISION_INCONSISTENT=1，B侧QUALITY_FLOOR_DECISION_INCONSISTENT=77、B侧SEVERE_FLAG_DECISION_INCONSISTENT=3。这84次与155条当前回执自洽；之前68次来自130条时的较早快照。现有`model_request`在`parse_model_response`发现`decision=PASS`而至少一个维度低于冻结门槛时拒绝；发现严重标记为true而未REJECT也拒绝。**V2 TECHNICAL_HOLD不保存被拒的完整原始响应，无法从回执离线恢复评分或判定。不得凭错误码猜测或改写分数。**
+
+代码新增 opt-in `r60_real_ai_dual_review.REVIEW_INSTRUCTIONS_V3_CONSISTENT`，显式包含六维floor `4,4,3,4,4,4`、`serious flags→REJECT`，低于门槛不得PASS，禁止为PASS抬高评分或消除严重标记；仅以`model_request(..., instructions=...)`明确选用，不修改V1/V2既有默认调用或冻结校验。此阶段**只完成离线准备，尚未启动V3模型请求或修改V2已写入155条**。CI `Ruff PASS / pytest 103 passed`：https://github.com/sunxu/storyforge/actions/runs/43604872300 。
+
+后续需独立V3 create-only子批次对B侧未完成/结构失败条目先跑合成测试和小样本对照，保留V2 SHA绑定，不在原V2目录原地更改提示词或覆盖回执。V1原159条+V2 38条`V2_PASS`只是**潜在双PASS 197条**，必须逐条验证绑定、独立性、R50完整排除、历史System与世界隔离，仍`train_admitted=0`。在V3工具准备好之前请勿继续付费运行V2 `advance`。
