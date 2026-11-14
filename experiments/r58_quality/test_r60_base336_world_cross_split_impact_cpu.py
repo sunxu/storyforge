@@ -45,3 +45,32 @@ def test_cases_must_not_exceed_336():
 def test_types_fail_closed():
     with pytest.raises(subject.Hold, match="IMPACT_RESULT_TYPE_HOLD"):
         subject.verify([("current", True, 1, 2, 1)])
+
+
+def test_cli_directory_options_are_paths(monkeypatch, capsys):
+    from pathlib import Path
+    import sys
+
+    cases, manifest = cohort()
+    stories = sorted({
+        cases[x["position"] - 1]["source"]["story_id"]
+        for x in manifest["remaining_full_r50_hold"]
+    })
+
+    def frozen(args):
+        assert isinstance(args.audit_dir, Path)
+        assert isinstance(args.quarantine_dir, Path)
+        return cases, manifest
+
+    monkeypatch.setattr(subject.prior, "_frozen", frozen)
+    monkeypatch.setattr(subject.locator, "scoped_stories", lambda *_: stories)
+    monkeypatch.setattr(sys, "argv", [
+        "r60_base336_world_cross_split_impact_cpu.py",
+        "--old-dir", "/tmp/a", "--plan-dir", "/tmp/b",
+        "--v2-dir", "/tmp/c", "--v3-dir", "/tmp/d",
+        "--audit-dir", "/tmp/e", "--quarantine-dir", "/tmp/f",
+    ])
+    assert subject.main() == 0
+    assert "BASE336_WORLD_CROSS_SPLIT_IMPACT_PRECHECK__NO_DB" in (
+        capsys.readouterr().out
+    )
