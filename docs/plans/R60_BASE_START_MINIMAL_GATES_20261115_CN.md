@@ -382,3 +382,28 @@ ARGS=(
 Owner Mac第一次`--execute`只收到`BASE336_SCOPED_STORY_DB_LOCATOR_HOLD`/`SOURCE_SCOPE_DB_ROLE_OR_RUNTIME_HOLD`，这**不能推断Story ID不存在**。原脚本异常入口丢弃具体失败阶段，已在`experiments/r58_quality/r60_base336_story_db_locator_cpu.py`修复：对`FROZEN_SOURCE`/`DB_DSN`/`DB_CONNECT`/`DB_TRANSACTION_GUARD`/`DB_STORY_AGGREGATE`/`DB_VERSION_AGGREGATE`/`DB_RESULT_VALIDATE`打固定阶段标记，异常只输出受控`reason_code`与`failure_phase`，不输出异常原文/DSN/Story ID/SQL参数/卡片内容。无误判`database_accessed=false`：失败时标记null（未确认），成功后才TRUE。原`r58_export_reader`/RLS/REPEATABLE READ READ ONLY及172 ID参数化聚合范围不变。合成回归涵盖秘密异常无泄漏，Ruff/pytest 169 PASS，[CI #43625075659](https://github.com/sunxu/storyforge/actions/runs/43625075659)。
 
 Mac Owner拉取该分支后，用先前完全相同`--execute`命令复跑一次，观察新的`failure_phase`/`reason_code`，并只回传SAFE。若`DB_DSN`/`DSN_NOT_SET_HOLD`，检查`R60_READONLY_DATABASE_URL`是否在同一shell导出；若`DB_CONNECT`，核查只读网络/TLS/登录但禁止贴密码；若`DB_TRANSACTION_GUARD`，检查登录用户是否恰为r58_export_reader及只读/RLS防线，不要为“通过测试”禁用guard；若`DB_STORY_AGGREGATE`或`DB_VERSION_AGGREGATE`，优先核实该reader是否有相应表的SELECT权限，而不是改用管理员。保持Train 0，GPU/HF Job 0。
+
+
+## 2026-11-15：Owner Scoped 172-Story DB聚合成功及下一步JSON形状审计
+
+Owner真实SAFE `BASE336_SCOPED_STORY_DB_METADATA_COUNTS__HISTORICAL_HOLD`：172/172 `user_stories`精确ID命中，`characters`非NULL 172、`v2_data`非NULL 172，独立`world_setting`、`initial_system_prompt`非NULL均0，删除0；`story_content_versions`覆盖67个Story ID共200个版本，200/200 `v2_data`非NULL且`source_updated_at`非NULL。以上仅代表当前/归档记录字段非NULL，不能确定JSON有效内容、角色卡具体结构，更不能验证历史实际发送的System/故事版本。冻结336 SFT继续仅三消息+目标，全部HOLD不准入。
+
+新CPU脚本`experiments/r58_quality/r60_base336_story_json_shape_cpu.py`，使用现有`locator.scoped_stories`和同一严格只读`r58_export_reader`/RLS/READ ONLY权限门禁，默认不访问DB。仅对冻结172 Story IDs，返回当前`user_stories.characters`与`v2_data`、归档`story_content_versions.v2_data`的JSONB object/array/空object/空array的**聚合数量**；无原始JSON正文、字段名、人物名字、标题、System内容或Story ID输出。不依据字段形状自动判定世界语义同一性。此工具即使检查通过，`semantic_world_alias_verified=false`、`historical_actual_sent_system_verified=false`及`train_admitted=0`不变。
+
+Owner Mac调用：更新`r60/common2-cpu2-owner`后，
+```bash
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+)
+"$PY" experiments/r58_quality/r60_base336_story_json_shape_cpu.py "${ARGS[@]}"
+# 如果已有权限确认并仍使用原严格只读DSN：
+"$PY" experiments/r58_quality/r60_base336_story_json_shape_cpu.py "${ARGS[@]}" --execute
+```
+预期`BASE336_STORY_JSON_SHAPE_COUNTS__SEMANTIC_HISTORICAL_HOLD`，只回传SAFE计数。后续若JSON对象有实际结构，再另行确认可审核的字段合同及来源版本锚点，而非直接批量读取172条私有故事卡原文。
