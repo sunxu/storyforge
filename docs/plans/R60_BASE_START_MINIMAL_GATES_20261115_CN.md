@@ -86,3 +86,41 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 ```
 
 预期`candidate_count=336`，`validated_three_message_cases=336`，失败分类为空（若检测出异常则HOLD），`actual_collator_last_assistant_mask_verified=false`、`real_tokenizer_verified=false`、`training_dataset_created=false`、`train_admitted=0`。继续隔离R50和其他实际用于正式测试的数据来源，待通过后再准备真实CPU tokenizer/collator与来源准入流程。
+
+
+## 2026-11-15：336条真实来源静态SFT格式PASS，下一步本地CPU Tokenizer/Collator
+
+Owner真实SAFE：`BASE_SFT_STATIC_SHAPE_PASS__ALL_HELD`，336/336冻结三消息`user,assistant,user`，历史与目标来源SHA无错误；历史字符数min227/mean680.31/max2167，目标min300/mean544.12/max1497。全部336的历史System标记`UNKNOWN_NOT_ACTUAL_SENT`，**禁止把这误认为真实历史System已复原**。Tokenizer和Collator仍未执行，train_admitted=0。
+
+新实现：`experiments/r58_quality/r60_base_start_cpu336_template_audit.py`。复用已在`r60_common2_sft_cpu_template_audit.py`实现的Qwen3.8本地tokenizer、ms-swift`last_round`真实collator和R18严格Label Mask检查。它从冻结V1/V2/V3和独立quarantine在内存中构造4条消息(`user,assistant,user,assistant`)，不新造System/卡片；仅测试这套明确声明的**最小训练输入候选合同**，不认为它等价于有卡的产品输入。只读本地冻结`1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` tokenizer/config snapshot，不下载模型权重、不调用网络或推理、不产生训练JSONL。不在SAFE中输出各条Token数、内容、来源ID。336条继续FULL_R50_HOLD；正式训练前仍需确认如何提供合理世界规则与历史上下文。
+
+Owner Mac同一venv执行（先token，再both）：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+SNAPSHOT="/workspace/models--Qwen--Qwen3.8-27B/snapshots/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+# SNAPSHOT是示例占位路径！替换为该Mac或HF CPU环境中已存在的固定revision本地文件夹；
+# 必须含tokenizer.json/tokenizer_config.json/config.json。不可自动下载GPU权重。
+COMMON=(
+  --old-dir "$BASE/r60-quality-fast1000-api-v1"
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+  --snapshot "$SNAPSHOT"
+)
+"$PY" experiments/r58_quality/r60_base_start_cpu336_template_audit.py "${COMMON[@]}" --stage token
+"$PY" experiments/r58_quality/r60_base_start_cpu336_template_audit.py "${COMMON[@]}" --stage both
+```
+
+若当前环境缺少已固定snapshot，请先定位本地已存在的同revision快照，再运行，**不要将示例路径当作实际文件**。两阶段可分别返回`BASE_CPU336_TOKENIZER_PASS__COLLATOR_HOLD`与`BASE_CPU336_TOKENIZER_COLLATOR_PASS__ALL_HELD`（只有实际完成才可使用）；同时需检查`cases_checked=336`、`model_weights_loaded=false`、`training_dataset_created=false`、`train_admitted=0`。任何阶段遇错误仅SAFE阶段码HOLD，不打印敏感异常。请回传输出SAFE。
+
+注：这只是`THREE_PERSISTED_MESSAGES_NO_SYSTEM`合同的技术诊断；正式训练输入结构、R50及世界组件排除、独立审稿证据仍需另审，不能把技术PASS等同质量PASS或GPU授权。
