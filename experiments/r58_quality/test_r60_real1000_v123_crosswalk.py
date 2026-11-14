@@ -135,3 +135,85 @@ def test_zero_admission_and_no_private_text_in_entries():
     assert "target_text" not in json.dumps(report)
     assert report["independence_verified"] is False
     assert report["r50_complete_exclusion_verified"] is False
+
+
+def test_large_report_uses_bounded_create_only_writer(tmp_path, monkeypatch):
+    from contextlib import nullcontext
+
+    monkeypatch.setattr(private, "BASE", tmp_path)
+    monkeypatch.setattr(crosswalk.batch.expand, "locked",
+                        lambda path: nullcontext())
+    monkeypatch.setattr(crosswalk.v3, "_inspect",
+                        lambda *args: (
+                            {"pool_sha256": "synthetic"}, ["fake-case"],
+                            [], {"reviewed_slots": 1, "planned_slots": 1,
+                                 "remaining_slots": 0}))
+    monkeypatch.setattr(crosswalk.v2, "_inspect",
+                        lambda *args: (
+                            {"pool_sha256": "synthetic"}, ["fake-case"],
+                            [], {"reviewed_slots": 0}))
+    monkeypatch.setattr(private, "read_private",
+                        lambda *args: b"{}")
+    monkeypatch.setattr(crosswalk, "_apply", lambda *args: {
+        "schema": crosswalk.SCHEMA,
+        "candidate_count": 339,
+        "outcome_counts": {"dual_pass_candidate": 339},
+        "dual_pass_provenance": {"V1+V1": 159, "V1+V3": 138,
+                                 "V1+V2": 11, "V2+V1": 27,
+                                 "V3+V1": 4},
+        "entries": [{"position": i, "synthetic_padding": "x" * 950}
+                    for i in range(339)],
+        "gold_promoted": False,
+        "train_admitted": 0,
+    })
+    dest = tmp_path / "r60-real1000-v123-crosswalk-synthetic"
+
+    def invoke(write):
+        return crosswalk.inspect(
+            tmp_path / "v1", tmp_path / "plan", tmp_path / "v2",
+            tmp_path / "v3", dest, write=write)
+
+    preflight = invoke(False)
+    assert preflight["status"] == "CROSSWALK_PREFLIGHT_PASS__NO_FILES"
+    assert not dest.exists()
+    # Simulate the empty 0700 directory left by the earlier failed write.
+    dest.mkdir(mode=0o700)
+    saved = invoke(True)
+    assert saved["status"] == "CROSSWALK_PRIVATE_REPORT_SAVED__NO_ADMISSION"
+    out = dest / crosswalk.FILENAME
+    assert out.stat().st_size > private.MAX_CAPTURE_BYTES
+    assert out.stat().st_size <= crosswalk.MAX_REPORT
+    assert out.stat().st_mode & 0o777 == 0o600
+    assert json.loads(out.read_text())["candidate_count"] == 339
+    with pytest.raises(crosswalk.Hold,
+                       match="CROSSWALK_OUTPUT_NONEMPTY_HOLD"):
+        invoke(True)
+    assert json.loads(out.read_text())["candidate_count"] == 339
+
+
+def test_oversize_report_fails_without_creating_directory(tmp_path, monkeypatch):
+    from contextlib import nullcontext
+
+    monkeypatch.setattr(private, "BASE", tmp_path)
+    monkeypatch.setattr(crosswalk.batch.expand, "locked",
+                        lambda path: nullcontext())
+    monkeypatch.setattr(crosswalk.v3, "_inspect",
+                        lambda *args: (
+                            {}, [], [], {"reviewed_slots": 0,
+                                          "planned_slots": 0,
+                                          "remaining_slots": 0}))
+    monkeypatch.setattr(crosswalk.v2, "_inspect",
+                        lambda *args: ({}, [], [], {"reviewed_slots": 0}))
+    monkeypatch.setattr(crosswalk, "_apply", lambda *args: {
+        "candidate_count": 1,
+        "outcome_counts": {},
+        "dual_pass_provenance": {},
+        "huge": "x" * (crosswalk.MAX_REPORT + 1),
+    })
+    dest = tmp_path / "r60-real1000-v123-crosswalk-oversize"
+    with pytest.raises(crosswalk.Hold,
+                       match="CROSSWALK_REPORT_OVERSIZE_HOLD"):
+        crosswalk.inspect(
+            tmp_path / "v1", tmp_path / "plan", tmp_path / "v2",
+            tmp_path / "v3", dest, write=True)
+    assert not dest.exists()
