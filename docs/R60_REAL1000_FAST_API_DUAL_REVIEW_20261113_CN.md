@@ -566,3 +566,42 @@ Owner真实SAFE：`CANDIDATE_IDENTITY_PREFLIGHT_PASS__NO_ADMISSION`，339唯一�
 已有`r60_real1000_r50_known5_exclusion_cpu.py`包含从`docs/evidence/V03_R49_R50_16_20_SOURCE_INTAKE_20261015.md`提取的五个已知R50故事UUID。现已复用它，在339候选只读身份审计中新增`r50_known5_reference_stories=5`、`r50_known5_candidate_overlap_count`和`r50_known5_overlapping_story_count`，仍固定`r50_complete_exclusion_verified=false`。若存在交叉说明候选与已知R50故事有重合，需隔离；若0重合**仅能确认这5个已知故事不重合**，不能据此宣称完成所有R50测试集排除。无模型、DB、GPU、Gold/Train操作。CI Ruff PASS、pytest **121 passed**：[run #43611030298](https://github.com/sunxu/storyforge/actions/runs/43611030298)。
 
 Owner更新GitHub后重跑前述`r60_real1000_candidate_identity_audit.py`相同只读命令即可获取新增SAFE字段。**不要上传R50私有case正文或来源UUID到公开GitHub。** 后续如需核验完整R50 heldout，应先核对冻结R50 provenance文件和完整来源范围，使用Owner本地只读完整集合交集；不能从5个known故事和339候选本身推断完整排除。
+
+
+## 2026-11-14：339候选出现R50已知来源重叠，隔离3条（完整隔离继续HOLD）
+
+Owner SAFE：339双PASS样本通过精确身份去重；`r50_known5_candidate_overlap_count=3`、`r50_known5_overlapping_story_count=1`，五个已知R50来源故事中的1个故事和3条候选交叉。此为有证据的held-out来源冲突；**这3条必须从任何潜在训练准入中隔离，不能通过质量双PASS豁免**。保留原339跨版本质量报告不变，剩余336条仍`FULL_R50_HOLD`，不能称为安全训练样本。历史System、世界组件、审稿独立性亦保持HOLD。
+
+代码新增`experiments/r58_quality/r60_real1000_r50_known5_quarantine.py`：复用`candidate_identity_audit.verified_cases_report`从冻结V1/V2/V3和339候选文件完整重建验证，按现有冻结known5故事来源交集分别生成3条`R50_KNOWN5_SOURCE_STORY_OVERLAP`和336条`PARTIAL_KNOWN5_CLEAR__FULL_R50_HOLD`，使用私有create-only文件，绑定原crosswalk SHA，绝不修改339原始报告/训练数据或将336放行。不在公开SAFE输出故事UUID、消息ID或正文。若原目录存在则拒绝覆写。**R50全部Held-out来源尚不完整，这份隔离仅为部分检查。** CI `Ruff PASS / pytest 124 passed`：https://github.com/sunxu/storyforge/actions/runs/43611815513 。
+
+Owner Mac执行：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+V2="$BASE/r60-real1000-v2-priority-replay-v1"
+V3="$BASE/r60-real1000-v3-consistent-replay-v1"
+AUDIT="$BASE/r60-real1000-v123-crosswalk-v1"
+Q="$BASE/r60-real1000-r50-known5-quarantine-v1"
+
+# 先只读预检，0文件输出、0模型请求。
+"$PY" experiments/r58_quality/r60_real1000_r50_known5_quarantine.py \
+  --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" \
+  --v3-dir "$V3" --audit-dir "$AUDIT" --output-dir "$Q"
+
+# 仅当上一步PASS后，新建私有0700目录及0600隔离清单。
+"$PY" experiments/r58_quality/r60_real1000_r50_known5_quarantine.py \
+  --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" \
+  --v3-dir "$V3" --audit-dir "$AUDIT" --output-dir "$Q" \
+  --write-private-report
+~~~
+
+预期`original_candidate_count=339`、`known5_excluded_count=3`、`known5_overlapping_story_count=1`、`remaining_full_r50_hold=336`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。下一步须找到**冻结完整R50 Held-out来源provenance**，仅在Owner本地严格验证所有源story/message/历史SHA和回复SHA覆盖范围，扩展隔离；未经完整来源证明仍HOLD。
