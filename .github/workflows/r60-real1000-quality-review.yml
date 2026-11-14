@@ -57,6 +57,8 @@ on:
       - "experiments/r58_quality/test_r60_base_cpu336_hf_receipt_verify.py"
       - "experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py"
       - "experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py"
+      - "experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py"
+      - "experiments/r58_quality/test_r60_base336_reviewer_provenance_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -112,6 +114,8 @@ on:
       - "experiments/r58_quality/test_r60_base_cpu336_hf_receipt_verify.py"
       - "experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py"
       - "experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py"
+      - "experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py"
+      - "experiments/r58_quality/test_r60_base336_reviewer_provenance_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -180,7 +184,9 @@ jobs:
             scripts/r60_common2_wrapped_hf_stage.py \
             experiments/r58_quality/r60_common2_sft_cpu_template_audit.py \
             experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py \
-            experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py
+            experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py \
+            experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py \
+            experiments/r58_quality/test_r60_base336_reviewer_provenance_cpu.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -207,4 +213,5 @@ jobs:
             experiments/r58_quality/test_r60_base_start_cpu336_template_audit.py \
             experiments/r58_quality/test_r60_base_cpu336_hf_pipeline.py \
             experiments/r58_quality/test_r60_base_cpu336_hf_receipt_verify.py \
-            experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py
+            experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py \
+            experiments/r58_quality/test_r60_base336_reviewer_provenance_cpu.py
