@@ -63,6 +63,8 @@ on:
       - "experiments/r58_quality/test_r60_base336_world_linkage_screen_cpu.py"
       - "experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py"
       - "experiments/r58_quality/test_r60_base336_world_metadata_coverage_cpu.py"
+      - "experiments/r58_quality/r60_base336_story_db_locator_cpu.py"
+      - "experiments/r58_quality/test_r60_base336_story_db_locator_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -124,6 +126,8 @@ on:
       - "experiments/r58_quality/test_r60_base336_world_linkage_screen_cpu.py"
       - "experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py"
       - "experiments/r58_quality/test_r60_base336_world_metadata_coverage_cpu.py"
+      - "experiments/r58_quality/r60_base336_story_db_locator_cpu.py"
+      - "experiments/r58_quality/test_r60_base336_story_db_locator_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -198,7 +202,9 @@ jobs:
             experiments/r58_quality/r60_base336_world_linkage_screen_cpu.py \
             experiments/r58_quality/test_r60_base336_world_linkage_screen_cpu.py \
             experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py \
-            experiments/r58_quality/test_r60_base336_world_metadata_coverage_cpu.py
+            experiments/r58_quality/test_r60_base336_world_metadata_coverage_cpu.py \
+            experiments/r58_quality/r60_base336_story_db_locator_cpu.py \
+            experiments/r58_quality/test_r60_base336_story_db_locator_cpu.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -228,4 +234,5 @@ jobs:
             experiments/r58_quality/test_r60_base339_r50_original50_exact_cpu.py \
             experiments/r58_quality/test_r60_base336_reviewer_provenance_cpu.py \
             experiments/r58_quality/test_r60_base336_world_linkage_screen_cpu.py \
-            experiments/r58_quality/test_r60_base336_world_metadata_coverage_cpu.py
+            experiments/r58_quality/test_r60_base336_world_metadata_coverage_cpu.py \
+            experiments/r58_quality/test_r60_base336_story_db_locator_cpu.py
