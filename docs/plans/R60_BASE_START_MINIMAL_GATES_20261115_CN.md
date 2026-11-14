@@ -311,3 +311,31 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 Owner Mac SAFE `BASE336_EXACT_WORLD_LINK_SCREEN_PASS__SEMANTIC_HOLD`，`cases_checked=336`，`distinct_story_ids=172`，`exact_linked_story_pairs=0`，四类关联边`history_exact_sha/source_message/source_session/target_exact_sha`均为0，`multi_story_components=0`，`structural_components=172`，`cross_train_validation_components=0`，`structural_linked_split_disjoint=true`。此前只读276/60按story_id预演在四类**已测试的精确链接**下无需调整；但不存在跨ID链接并不证明不同UUID没有角色别名、共享世界设定或同故事不同封装，`semantic_alias_completeness_verified=false`、`world_component_isolation_verified=false`仍保持。
 
 这一子门禁关闭后，优先确定结构化世界来源（例如原始story metadata/角色卡及可验证主键）是否存在，设计**源绑定、可追溯的语义疑点审阅**。禁止仅按通用角色名、绵绵等描述词或文本近似自动连接世界；不能把三个消息所见当作完整世界设定。不应再为已PASS的Tokenizer、R50 exact-ID、四类结构边增加重复HF Job。Reviewer执行独立性缺乏Owner原始声明和独立请求路由证据，仍HOLD；产品System输入合同也未冻结。训练准入0，GPU未启动。
+
+
+## 2026-11-15：世界/角色元数据来源契约调查与336覆盖诊断
+
+经检视当前Git代码：`r60_real_private_batch.parse_rows`从DB结果仅构造`source.story_id/session_id/assistant_message_id/prior_user_message_id/previous_assistant_message_id/previous_user_message_id/assistant_turn_index`；冻结case还保留3条history+target及`historical_system_provenance=UNKNOWN_NOT_ACTUAL_SENT`、`normalized_system_provenance=RECONSTRUCTED_NOT_ACTUAL_SENT`、`world_component_status=UNKNOWN_HOLD`。原始SQL与`r60_real_expand_private.parse_page_rows`并未提取story title、story card、character card、世界设定关系。不能根据三条聊天文本推导已知完整世界或自动合并同名角色。R57 `r57_g2_alias_name_hints`和`r57_g2_alias_pair_review`可复用“先锚定证据、标题只是hint、未审不得自动链接”原则，但其冻结八源和29/55对范围**不是R60 336样本直接来源**，不得混作同一权威素材。
+
+新增`experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py`：只读重建V123与quarantine、复用冻结数据核验，统计实际336 case的来源字段布局、8类可选结构化世界资料字段覆盖、原始/归一化System和world_component状态的聚合覆盖。SAFE不出原文、world ID、文件位置、未知私有字段名；即使出现story_title等字段也只算覆盖，`original_story_metadata_authenticated=false`、`original_character_cards_authenticated=false`、`semantic_world_alias_complete=false`、`world_component_isolation_verified=false`。代码和4项synthetic测试经Ruff与[CI #43623302538](https://github.com/sunxu/storyforge/actions/runs/43623302538) 163/163 PASS；没有DB查询、HF Job或GPU。
+
+Owner Mac只读命令：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py \
+ --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+```
+
+预期`BASE336_SOURCE_METADATA_COVERAGE_PASS__SEMANTIC_SOURCE_HOLD`（真实覆盖计数须以Owner运行SAFE为准）。下一阶段若覆盖缺失，先调查实际Story/card等数据库实体、外键、权限与历史时点，再在Owner明确授权范围内设计**独立只读元数据source locator**及可追溯证据，不能直接发起全库敏感正文读取、生成自动假设别名或修改冻结案例。Reviewer独立性、R50最终密封/语义保护、产品System训练合同继续HOLD；Train 0。
