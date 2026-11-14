@@ -135,3 +135,18 @@ def test_execute_flags_required(tmp_path, monkeypatch):
     with pytest.raises(v2.Hold, match="V2_EXPLICIT_EXECUTION_REQUIRED"):
         v2.advance(out, old, plan, 1, execute=False,
                    allow_private_data_egress=False)
+
+
+def test_safe_failure_reason_redacts_exception_text():
+    assert v2.safe_reason(v2.Hold("PLAN_OR_V1_CHANGED_HOLD")) == (
+        "PLAN_OR_V1_CHANGED_HOLD"
+    )
+    assert v2.safe_reason(FileNotFoundError("/private/secret.json")) == (
+        "PRIVATE_INPUT_NOT_FOUND"
+    )
+    assert v2.safe_reason(RuntimeError("token=secret story=private")) == (
+        "V2_LOCAL_RUNTIME_HOLD"
+    )
+    assert v2.safe_reason(v2.Hold("key=abc123")) == (
+        "V2_LOCAL_RUNTIME_HOLD"
+    )
