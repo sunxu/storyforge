@@ -14,9 +14,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "src"), str(ROOT / "scripts")]
-from storyforge_dataset.hf_runtime import InputManager
-
 import r60_common2_wrapped_hf_stage as shared_stage
+
+from storyforge_dataset.hf_runtime import InputManager
 
 RUN_RE = re.compile(r"r60-base-cpu336-\d{8}T\d{6}Z-[a-f0-9]{12}\Z")
 SCHEMA = "storyforge_r60_base_cpu336_stage_private_v1"
@@ -47,7 +47,7 @@ def verify(stage: Path, key: str) -> dict:
         raise ValueError("STAGE_MANIFEST_HOLD")
     files = doc.get("files")
     if not isinstance(files, dict):
-        raise ValueError("STAGE_FILES_HOLD")
+        raise TypeError("STAGE_FILES_HOLD")
     actual = {p.relative_to(stage).as_posix()
               for p in stage.rglob("*") if p.is_file() or p.is_symlink()}
     if actual != set(files) | {"SHA256_MANIFEST_PRIVATE.json"}:
