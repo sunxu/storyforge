@@ -59,8 +59,8 @@ affected AS (
 )
 SELECT
  comparison,
- count(*) FILTER (WHERE split='train')::int AS train_stories,
- count(*) FILTER (WHERE split='validation')::int AS val_stories,
+ count(*) FILTER (WHERE a.split='train')::int AS train_stories,
+ count(*) FILTER (WHERE a.split='validation')::int AS val_stories,
  coalesce(sum(s.case_count) FILTER (WHERE a.split='train'),0)::int
     AS train_cases,
  coalesce(sum(s.case_count) FILTER (WHERE a.split='validation'),0)::int
