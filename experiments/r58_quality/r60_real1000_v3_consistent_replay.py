@@ -199,7 +199,7 @@ def initialize(directory, old_dir, plan_dir, v2_dir):
                 "r60-real1000-v3-consistent-replay-")
             or directory in (old_dir, plan_dir, v2_dir)):
         raise Hold("V3_OUTPUT_PATH_HOLD")
-    old, _cases, _queue, fingerprint = source_state(
+    _old, _cases, _queue, fingerprint = source_state(
         old_dir, plan_dir, v2_dir)
     private.private_dir(directory, create=True)
     content = (json.dumps(
