@@ -31,6 +31,8 @@ on:
       - "experiments/r58_quality/test_r60_real1000_v1_repair_plan.py"
       - "experiments/r58_quality/r60_real1000_v2_priority_replay.py"
       - "experiments/r58_quality/test_r60_real1000_v2_priority_replay.py"
+      - "experiments/r58_quality/r60_real1000_v3_consistent_replay.py"
+      - "experiments/r58_quality/test_r60_real1000_v3_consistent_replay.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -60,6 +62,8 @@ on:
       - "experiments/r58_quality/test_r60_real1000_v1_repair_plan.py"
       - "experiments/r58_quality/r60_real1000_v2_priority_replay.py"
       - "experiments/r58_quality/test_r60_real1000_v2_priority_replay.py"
+      - "experiments/r58_quality/r60_real1000_v3_consistent_replay.py"
+      - "experiments/r58_quality/test_r60_real1000_v3_consistent_replay.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -105,7 +109,9 @@ jobs:
             experiments/r58_quality/r60_real1000_v1_repair_plan.py \
             experiments/r58_quality/test_r60_real1000_v1_repair_plan.py \
             experiments/r58_quality/r60_real1000_v2_priority_replay.py \
-            experiments/r58_quality/test_r60_real1000_v2_priority_replay.py
+            experiments/r58_quality/test_r60_real1000_v2_priority_replay.py \
+            experiments/r58_quality/r60_real1000_v3_consistent_replay.py \
+            experiments/r58_quality/test_r60_real1000_v3_consistent_replay.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -122,4 +128,5 @@ jobs:
             experiments/r58_quality/test_r60_real1000_prefilter_stage_crosswalk.py \
             experiments/r58_quality/test_r60_real1000_deepseek_single.py \
             experiments/r58_quality/test_r60_real1000_v1_repair_plan.py \
-            experiments/r58_quality/test_r60_real1000_v2_priority_replay.py
+            experiments/r58_quality/test_r60_real1000_v2_priority_replay.py \
+            experiments/r58_quality/test_r60_real1000_v3_consistent_replay.py
