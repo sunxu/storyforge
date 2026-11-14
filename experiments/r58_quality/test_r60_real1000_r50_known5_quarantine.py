@@ -2,8 +2,8 @@
 import json
 
 import pytest
-import r60_real1000_r50_known5_quarantine as quarantine
 import r60_real1000_candidate_identity_audit as identity
+import r60_real1000_r50_known5_quarantine as quarantine
 import r60_real_private_batch as private
 
 
