@@ -28,8 +28,7 @@ class Hold(ValueError):
 
 
 def evaluate(cases: list[dict], manifest: dict, r50_rows: list[dict]) -> dict:
-    partition = quarantine.construct(
-        cases, {"candidate_count": 339, "entries": []}, "") if False else manifest
+    partition = manifest
     if (partition.get("schema") != quarantine.SCHEMA
             or len(partition.get("excluded_known5", [])) != 3
             or len(partition.get("remaining_full_r50_hold", [])) != 336
