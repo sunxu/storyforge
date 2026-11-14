@@ -108,8 +108,8 @@ def audit(cases: list[dict], report: dict) -> dict:
     }
 
 
-def execute(old_dir: Path, plan_dir: Path, v2_dir: Path,
-            v3_dir: Path, audit_dir: Path) -> dict:
+def verified_cases_report(old_dir: Path, plan_dir: Path, v2_dir: Path,
+                          v3_dir: Path, audit_dir: Path) -> tuple[list[dict], dict]:
     private.private_dir(audit_dir, create=False)
     with batch.expand.locked(v3_dir):
         old, cases, _queue, progress = v3._inspect(
@@ -145,7 +145,14 @@ def execute(old_dir: Path, plan_dir: Path, v2_dir: Path,
             cases, v1_rows, v2_rows, v3_rows, selected, _queue)
         if report != expected:
             raise Hold("PRIVATE_CANDIDATE_REPORT_DRIFT_HOLD")
-        return audit(cases, report)
+        return cases, report
+
+
+def execute(old_dir: Path, plan_dir: Path, v2_dir: Path,
+            v3_dir: Path, audit_dir: Path) -> dict:
+    cases, report = verified_cases_report(
+        old_dir, plan_dir, v2_dir, v3_dir, audit_dir)
+    return audit(cases, report)
 
 
 def main() -> int:
