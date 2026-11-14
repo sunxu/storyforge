@@ -12,6 +12,7 @@ import json
 import os
 import sys
 from collections import Counter
+from pathlib import Path
 
 import r60_base336_story_db_locator_cpu as locator
 import r60_base336_story_json_shape_cpu as prior
@@ -155,7 +156,7 @@ def query(stories: list[str], counts: list[int], dsn: str) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("old", "plan", "v2", "v3", "audit", "quarantine"):
-        parser.add_argument(f"--{name}-dir", required=True)
+        parser.add_argument(f"--{name}-dir", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     try:
