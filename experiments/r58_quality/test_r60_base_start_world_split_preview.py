@@ -1,12 +1,11 @@
 """Synthetic tests; no private records, training or GPU."""
 import pytest
-
 import r60_base_start_world_split_preview as split
 import r60_real1000_r50_known5_quarantine as quarantine
 
 
 def sample():
-    known = sorted(quarantine.known.KNOWN_R50_STORIES)[0]
+    known = min(quarantine.known.KNOWN_R50_STORIES)
     cases = []
     for i in range(1, 1001):
         cases.append({"source": {
