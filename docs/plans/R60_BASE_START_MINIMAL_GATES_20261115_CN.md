@@ -339,3 +339,39 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 ```
 
 预期`BASE336_SOURCE_METADATA_COVERAGE_PASS__SEMANTIC_SOURCE_HOLD`（真实覆盖计数须以Owner运行SAFE为准）。下一阶段若覆盖缺失，先调查实际Story/card等数据库实体、外键、权限与历史时点，再在Owner明确授权范围内设计**独立只读元数据source locator**及可追溯证据，不能直接发起全库敏感正文读取、生成自动假设别名或修改冻结案例。Reviewer独立性、R50最终密封/语义保护、产品System训练合同继续HOLD；Train 0。
+
+
+## 2026-11-15：Owner世界元数据0/336覆盖；Supabase真实表关系与限定DB调查
+
+Owner Mac实际`BASE336_SOURCE_METADATA_COVERAGE_PASS__SEMANTIC_SOURCE_HOLD`：`source_cases=336`，172个Story ID，来源布局仅1种，9类可选世界/角色字段覆盖率全部0，原历史System来源全部`UNKNOWN_NOT_ACTUAL_SENT`、规范System为`RECONSTRUCTED_NOT_ACTUAL_SENT`、World组件均`UNKNOWN_HOLD`。不能拿无卡片的冻结技术样本说语义世界独立；训练准入仍0。
+
+通过**已连接StoryForge Supabase只读Schema**核实：
+- `public.user_stories.id`（text）可对应冻结`source.story_id`（text）；表中有`world_setting`、`initial_system_prompt`、`characters`、`v2_data`、`updated_at`、`public_content_revision`等字段。
+- `public.story_content_versions.story_id`（text，已声明外键到`public.user_stories.id`），含`content_revision`、`title`、`v2_data`、`source_updated_at`、`archived_at`等。**这些字段可以定位当前/归档来源，不能在没有按目标轮次时间与历史调用路径证据时推断当时实际发送了哪版System/世界卡**。
+- `public.story_v2_sessions`有`story_id/session_id`（text）、`character_stages`、`created_at`等；`public.character_states`含`story_id/session_id/character_id`，但这些是运行态数据，不等于故事创作卡权威定义。
+- `public.characters`独立角色表存在，但Schema未发现以`user_stories`为父表的直接角色卡FK。不能无依据把角色名字或单独表的ID与故事卡做自动语义JOIN。个人数据、正文、System、卡片内容均未查询/输出。
+
+新增`experiments/r58_quality/r60_base336_story_db_locator_cpu.py`：从冻结V123收据严格重建339 candidate及3/336隔离，**仅**提取336对应172 Story ID并参数化限定`user_stories`与`story_content_versions`两张表；只返回当前故事记录覆盖、非NULL世界/System/角色JSON字段数、历史版本记录聚合数量；没有`SELECT title/world_setting/characters/initial_system_prompt/v2_data`内容，也不查全部数据。默认不读数据库（`--execute`才查），DB严格沿用`r60_real_private_batch.assert_guard`要求`r58_export_reader`、事务REPEATABLE READ READ ONLY、RLS ON、非superuser且不可bypassrls；任一失败HOLD，回滚，不写数据库。注意Schema检查不能证明Owner Mac的DB连接权限或私有内容已授权，不能推断最终输入System。
+
+Mac首先运行只读*本地*预检：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+  --old-dir "$BASE/r60-quality-fast1000-api-v1"
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+)
+"$PY" experiments/r58_quality/r60_base336_story_db_locator_cpu.py "${ARGS[@]}"
+```
+
+预期`BASE336_SCOPED_STORY_DB_PRECHECK__NO_DB`。**只有当Owner确认本次只读范围与数据库使用权限后**，才可在Mac已有只读DSN`R60_READONLY_DATABASE_URL`可用时加`--execute`，运行后回传仅计数SAFE。此次不取正文、角色人名、实际System内容或任何用户数据，绝不生成SFT或修改冻结文件；即使数据库匹配172条仍HOLD语义别名、历史Source version以及Reviewer真实独立性。
