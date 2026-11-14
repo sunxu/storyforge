@@ -5,6 +5,9 @@ description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-mo
 
 # StoryForge REAL1000 Quality Reviewer Skill
 
+> **2026-11-15 最新执行方向（Base首训就绪，优先于下方旧取证步骤）**：见`docs/plans/R60_BASE_FIRST_TRAIN_READINESS_20261115_CN.md`。中止默认重试全量8组`r60_base336_group_cards_opening_cpu.py --execute`（Owner执行HOLD，原因未知）；Codex世界定义盲审已报7组通用模板/1组不足，8组隔离仍HOLD。三线并行：A 优先1组不足/7组仅定向疑点，按来源证实的共享组件构建新Train/Val；B 现有336双侧Review收据直接核实Provider执行独立性，避免再次全量审核；C 构造型System和SFT目标输入合同`docs/plans/R60_BASE_CONSTRUCTED_SYSTEM_SFT_CONTRACT_V1_CN.md`与少量CPU合成测试。已通过HF CPU336真实Tokenizer/Collator、R50原始50精确键隔离子检查不重跑。历史实际发送完整System不是本次Base必要门禁，但来源绑定的世界/角色事实和目标时序仍必要。任何脚本必须能关闭一项真正准入门禁；全部336现仍HOLD，Train 0，GPU/HF 0。
+
+
 > **2026-11-13 通用1000筛选方向（优先于旧Pilot5专属步骤）**：当前主目标是对完整冻结1000池建立来源→结构→独立双审→技术HOLD→语义仲裁→Gold候选→训练隔离的通用流程，不能继续仅为旧5案优化Reviewer。权威新方案 `docs/R60_REAL1000_GENERAL_SCREENING_PIPELINE_20261113_CN.md`。纯函数分流器 `src/storyforge_gold_quality/real1000_screening_policy.py` 只接受已来源绑定的证据标记，不读取私有文本或请求模型；仅输出 `QUALITY_CANDIDATE_NOT_ADMITTED` 等状态及1000全局SAFE聚合，**不能替代**现有 `hf_literary_review` / `hf_blind_stage` / 统一Quality Manifest与冻结六维Rubric。HF已完成Stage优先只读audit，不重复prepare，下一批需独立Owner授权。Gold/训练准入仍为0。
 
 > **补充诊断（2026-11-13，Owner Mac 固定错误码聚合）**：已记录的 v2 三次请求结果为 `SUCCESS=1`、`QUALITY_FLOOR_DECISION_INCONSISTENT=1`、`SEVERE_FLAG_DECISION_INCONSISTENT=1`。已核对 `r60_real_ai_dual_review.parse_model_response`：前者精确表示 Reviewer 声明 `decision=PASS`，但至少一项六维分数低于冻结最低分；后者精确表示至少一个严重标记为 `true`，但 `decision!=REJECT`。两个失败均是**决策与分数/严重标记合同不一致**，不是已证实的传输或 JSON 语法失败。当前冻结下限为 `chinese_prose=4,character_consistency=4,npc_initiative=3,player_agency=4,rule_fidelity=4,narrative_continuity=4`，严标为 `serious_player_agency,hard_fact_or_ban,safety_exclusion`。公开 SAFE 不绑定具体失败侧、原始分数或严重标记明细，不能推断是哪一槽位、分数是多少或哪项标记为真。**不修正模型决定、不降低阈值、不覆盖任何 v2 HOLD，不重跑 Reviewer。** 后续独立语义判断需要 Owner 私有证据的单独只读路径；仅凭聚合 SAFE 无法形成逐案裁决。Pilot25、Gold准入与训练持续 HOLD。
