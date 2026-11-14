@@ -48,3 +48,23 @@ def test_known5_leak_rejected():
         target.quarantine.known.KNOWN_R50_STORIES)
     with pytest.raises(target.Hold, match="R50_KNOWN5_LEAK_HOLD"):
         target.scoped_stories(cases, manifest)
+
+
+def test_failed_connection_phase_does_not_publish_dsn(monkeypatch, capsys):
+    def fake_run(args):
+        args._phase = "DB_CONNECT"
+        raise RuntimeError("secret-dsn-and-private-id")
+
+    monkeypatch.setattr(target, "run", fake_run)
+    monkeypatch.setattr("sys.argv", [
+        "r60_base336_story_db_locator_cpu.py",
+        "--old-dir", "/tmp/a", "--plan-dir", "/tmp/b",
+        "--v2-dir", "/tmp/c", "--v3-dir", "/tmp/d",
+        "--audit-dir", "/tmp/e", "--quarantine-dir", "/tmp/f",
+        "--execute",
+    ])
+    assert target.main() == 42
+    output = capsys.readouterr().out
+    assert "DB_CONNECTION_HOLD" in output
+    assert "secret-dsn" not in output
+    assert "private-id" not in output
