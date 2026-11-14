@@ -45,6 +45,22 @@ decision 只允许 PASS、HOLD、REJECT；发现严重标志应 REJECT；
 reason_cn 只能保存在本地私有审阅文件，不用于任何公开日志。
 """
 
+# Optional V3 instruction profile. V1/V2 default requests remain bit-for-bit
+# unchanged; only an explicitly opted-in replay may select this profile.
+REVIEW_INSTRUCTIONS_V3_CONSISTENT = REVIEW_INSTRUCTIONS + """
+务必先独立确定六维分数和三项严重标志，再依冻结门槛填 decision。
+冻结门槛（含）为：chinese_prose≥4、character_consistency≥4、
+npc_initiative≥3、player_agency≥4、rule_fidelity≥4、
+narrative_continuity≥4。不可为获得PASS而提高任何分数。
+填 decision 前进行严格一致性自检：
+1. 任一严重标志为 true，decision 必须 REJECT。
+2. 无严重标志但任一维度低于上述门槛，decision 不得 PASS；
+   根据证据选择 HOLD 或 REJECT，不得篡改分数消除冲突。
+3. 六维均达到门槛且无严重标志，也不能自动 PASS；
+   对事实依据不足、潜在设定不确定的样本仍须 HOLD。
+只返回约定的原始四字段JSON；不要输出自检过程或额外字段。
+"""
+
 
 class Hold(ValueError):
     pass
@@ -120,10 +136,11 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def model_request(endpoint: str, model: str, key: str, prompt: str,
                   timeout: int, json_mode: bool, *,
                   protocol: str = "openai-chat",
-                  diagnose_json: bool = False) -> dict:
+                  diagnose_json: bool = False,
+                  instructions: str = REVIEW_INSTRUCTIONS) -> dict:
     try:
         body = transport.build_body(
-            model=model, prompt=prompt, instructions=REVIEW_INSTRUCTIONS,
+            model=model, prompt=prompt, instructions=instructions,
             profile=protocol, json_mode=json_mode,
         )
     except ValueError as exc:
