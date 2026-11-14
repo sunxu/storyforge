@@ -470,3 +470,33 @@ ARGS=(
 ```
 
 若`world`多数为nonempty object，则下一步**先审查已pin的V2 TypeScript定义中world内部允许字段/来源时间合同**，再在相同172 ID范围内做键集合计数与来源绑定审阅；不得直接导出世界内容、不按同名角色合并世界。若`world`为string/null等则按实际类型修订预期，不假造`world`结构。R50/Reviewer真实独立/历史请求/语义隔离/训练仍HOLD。
+
+
+## 2026-11-15：172/200 V2 World与运行时卡片分支形状PASS；开始精确世界定义关联门禁
+
+Owner真实SAFE `BASE336_V2_WORLD_BRANCH_COUNTS__SEMANTIC_HISTORY_HOLD`：当前172/172以及归档200/200的`v2_data.world`均为**非空JSON object**，`opening`均为JSON object；当前story分支157/157`characters`数组非空，nonstory分支15/15`character`为object；归档story分支165/165及nonstory分支35/35也符合这些对应角色路径形状。这证明冻结对应故事有当前/归档的结构性素材，不证明世界定义彼此独立、不是通用模板，也不证明历史请求使用了当前或该归档版本。
+
+下一步转向**世界定义JSONB的精确值复用**而非继续做空/非空字段测试。新增`experiments/r58_quality/r60_base336_world_exact_value_cpu.py`：同样从冻结V123证据及known5隔离严格得到172 Story IDs，用既定`r58_export_reader` RLS/REPEATABLE READ READ ONLY角色保护；SQL在数据库内部按`v2_data->'world'` JSONB完整对象精确相等分组，仅返回四类聚合数字：非空定义值数量、跨不同Story ID共享定义组数、跨故事候选对实例数、这些组中跨预演Train/Validation的数量；分别统计当前172条、当前+200条归档版本两个范围。**数据库不会向客户端返回world JSON、摘要指纹、角色名字或Story ID；不写文件或数据库。** 当前/归档出现相同世界对象可能源于公用模板，必须视为待复核线索，**禁止自动合并世界或更改276/60预演拆分**。版本组与当时实际发送版本无绑定。代码通过Ruff与[CI #43627698135](https://github.com/sunxu/storyforge/actions/runs/43627698135)合成188测试。
+
+Mac：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+)
+"$PY" experiments/r58_quality/r60_base336_world_exact_value_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_world_exact_value_cpu.py "${ARGS[@]}" --execute
+```
+
+预期`BASE336_WORLD_EXACT_VALUE_SCREEN__SEMANTIC_HISTORY_HOLD`。如果跨预演Train/Validation的共享定义组>0，保留隔离HOLD并人工核实是否为通用模板或真实共享世界；若=0，也只说明全对象**精确相等**未穿越，无法排除语义别名/近重复。无Reviewer独立性/R50全保护/实际历史System放行，`train_admitted=0`、GPU/HF Job 0。
