@@ -33,7 +33,8 @@ def _receipt(i, reviews, holds, reason):
         "history_messages_sha256": case["history_messages_sha256"],
         "assistant_target_sha256": case["assistant_target_sha256"],
         "reviews": reviews, "attempt_holds": holds,
-        "quality_decision": "HOLD",
+        "quality_decision": ("REJECT" if reason == "SEVERE_OR_REVIEWER_REJECT"
+                             else "HOLD"),
         "quality_reason_code": reason,
         "receipt_sha256": f"immutable-{i}",
     }
