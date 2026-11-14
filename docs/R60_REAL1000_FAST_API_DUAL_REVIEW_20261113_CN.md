@@ -321,3 +321,50 @@ PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
 ~~~
 
 预期第一条 `REPAIR_PLAN_PREFLIGHT_PASS__NO_FILES`，第二条 `REPAIR_PLAN_SAVED__NO_MODEL_REQUEST`。两条的 `missing_slots_total` 应为577、`missing_slots_by_side` 为`{"a":297,"b":280}`，`cases_total=1000`。规划输出的各优先级精确数量**以Owner Mac真实SAFE为准**，不能由此前aggregate伪造。只有在读出具体`SINGLE_PASS_REPAIR_FIRST`规模与真实ROI后，再决定下一版本的create-only selective replay；严禁重新运行V1`advance`或把原159条自动提拔为Gold。
+
+
+## 2026-11-14 Owner补审规划已落盘：V2只补237条单侧PASS缺失侧
+
+Owner Mac两份真实SAFE分别为`REPAIR_PLAN_PREFLIGHT_PASS__NO_FILES`与`REPAIR_PLAN_SAVED__NO_MODEL_REQUEST`，`cases_total=1000`、`missing_slots_total=577`、`missing_slots_by_side={"a":297,"b":280}`。优先级分布：`READY_DUAL_PASS_NEEDS_ATTESTATION=159`、`SINGLE_PASS_REPAIR_FIRST=237`、`DUAL_VALID_OTHER_REVIEW=200`、`SINGLE_OTHER_DEFER=96`、`SINGLE_REJECT_DEFER=116`、`EXISTING_REJECT_REVIEW=128`、`BOTH_MISSING_LOW_PRIORITY=64`。两份SAFE一致，真实补审manifest已经保存于Owner Mac新私有目录。
+
+已实现`experiments/r58_quality/r60_real1000_v2_priority_replay.py`及合成测试：只选择`SINGLE_PASS_REPAIR_FIRST`队列的**237个槽位**，不把其余340个缺失槽位一起重跑。每次均核验V1原始1000份签名回执、冻结源pool SHA，以及私有补审计划本身和V1重新计算的计划精确一致性；第N次只请求对应条目的缺失侧，优先只读保留另一侧的有效审核结果。A/Qwen直接使用`DASHSCOPE_API_KEY`，B/DeepSeek直接使用`DEEPSEEK_API_KEY`，**不再把Claude密钥环境变量当Qwen密钥**。新V2独立目录0700，每侧回执0600、create-only且SHA绑定V1原回执及源身份；可批次续跑，遇401/403/429/网络服务故障在写入前停止。模型语义或结构判决不一致记`TECHNICAL_HOLD`，不偷改质量标准。全程`train_admitted=0`、`quality_v1_admitted=0`、`gold_promoted=false`语义，不补审/重评159条已双PASS候选。
+
+GitHub Actions 合成回归：Ruff PASS、pytest 100/100 PASS，[`workflow #43601450037`](https://github.com/sunxu/storyforge/actions/runs/43601450037)。
+
+### Mac执行命令：初始化＋首5条
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+V2="$BASE/r60-real1000-v2-priority-replay-v1"
+
+: "${DASHSCOPE_API_KEY:?Missing Qwen key}"
+: "${DEEPSEEK_API_KEY:?Missing DeepSeek key}"
+test ! -e "$V2"
+
+# 只读V1/Plan校验，然后create-only生成V2配置：无远端请求
+"$PY" experiments/r58_quality/r60_real1000_v2_priority_replay.py init \
+  --old-dir "$OLD" --plan-dir "$PLAN" --output-dir "$V2"
+"$PY" experiments/r58_quality/r60_real1000_v2_priority_replay.py inspect \
+  --old-dir "$OLD" --plan-dir "$PLAN" --output-dir "$V2"
+
+# Owner明确允许本命令向两个API中各自需要的模型发送私有小说上下文
+# 首批5个缺失槽位，不调用成功那一侧，不启动GPU
+"$PY" experiments/r58_quality/r60_real1000_v2_priority_replay.py advance \
+  --old-dir "$OLD" --plan-dir "$PLAN" --output-dir "$V2" \
+  --max-cases 5 --execute --allow-private-data-egress
+"$PY" experiments/r58_quality/r60_real1000_v2_priority_replay.py inspect \
+  --old-dir "$OLD" --plan-dir "$PLAN" --output-dir "$V2"
+~~~
+
+`init`后预期`planned_slots=237,reviewed_slots=0,remaining_slots=237`；首5执行成功后`reviewed_slots=5,remaining_slots=232`。请求最多5次（非10次），计费；若收到`V2_PRIORITY_REPLAY_HOLD`，停止并保留目录，不能删除或重做。确认SAFE和实际预算后，继续对同V2目录前台执行`advance --max-cases 25 --execute --allow-private-data-egress`，每批`inspect`。完成237后应**重新只读综合V1/V2**，对最终双方有效且同时PASS的样本再进行独立性/历史System/世界隔离/R50排除核验，不自动当训练准入。
+
+注意：旧项目里另有`r60_real1000_deepseek_single.py`，它仅能用于原255条时的独立分岔方案。现已经1000/1000双侧尝试完成，**禁止运行这个旧分岔入口**。
