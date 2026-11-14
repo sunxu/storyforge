@@ -9,6 +9,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 from collections import Counter
 from pathlib import Path
@@ -236,6 +237,21 @@ def advance(directory: Path, old_dir: Path, plan_dir: Path, count: int,
         return _inspect(directory, old_dir, plan_dir)[3]
 
 
+def safe_reason(exc: Exception) -> str:
+    """Expose only bounded static error enums, never exception prose or paths."""
+    code = str(exc)
+    if (type(exc) in {Hold, batch.Hold, private.Hold, planner.Hold, ai.Hold}
+            and re.fullmatch(r"[A-Z][A-Z0-9_]{3,79}", code)):
+        return code
+    if isinstance(exc, FileNotFoundError):
+        return "PRIVATE_INPUT_NOT_FOUND"
+    if isinstance(exc, PermissionError):
+        return "PRIVATE_INPUT_PERMISSION_HOLD"
+    if isinstance(exc, OSError):
+        return "LOCAL_FILE_IO_HOLD"
+    return "V2_LOCAL_RUNTIME_HOLD"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest="command", required=True)
@@ -262,11 +278,14 @@ def main() -> int:
             )
         print(json.dumps(result, sort_keys=True))
         return 0
-    except (OSError, ValueError, TypeError, KeyError, IndexError):
+    except (OSError, ValueError, TypeError, KeyError, IndexError) as exc:
         print(json.dumps({
             "schema": SAFE, "status": "V2_PRIORITY_REPLAY_HOLD",
-            "model_requests": 0, "gpu_started": False,
-            "train_admitted": 0, "private_values_emitted": False,
+            "reason_code": safe_reason(exc),
+            "model_requests": (0 if args.command in ("init", "inspect")
+                               else None),
+            "gpu_started": False, "train_admitted": 0,
+            "private_values_emitted": False,
         }, sort_keys=True))
         return 42
 
