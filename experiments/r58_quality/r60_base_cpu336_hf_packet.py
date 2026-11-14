@@ -51,6 +51,15 @@ def packet(cases: list[dict], frozen: dict) -> tuple[bytes, bytes]:
     return data, m
 
 
+def write_new(path: Path, payload: bytes) -> None:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
+    descriptor = os.open(path, flags, 0o600)
+    with os.fdopen(descriptor, "wb") as stream:
+        stream.write(payload)
+        stream.flush()
+        os.fsync(stream.fileno())
+
+
 def run(args: argparse.Namespace) -> dict:
     if (args.output_dir.parent != private.BASE
             or not args.output_dir.name.startswith("r60-base-cpu336-hf-packet-")
@@ -72,8 +81,8 @@ def run(args: argparse.Namespace) -> dict:
     data, manifest = packet(cases, saved)
     if args.write:
         private.private_dir(args.output_dir, create=True)
-        private.write_new(args.output_dir / DATA, data)
-        private.write_new(args.output_dir / MANIFEST, manifest)
+        write_new(args.output_dir / DATA, data)
+        write_new(args.output_dir / MANIFEST, manifest)
     return {
         "schema": SAFE,
         "status": ("BASE_CPU336_TECHNICAL_PACKET_SAVED__TRAIN_HOLD"
