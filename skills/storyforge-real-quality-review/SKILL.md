@@ -179,3 +179,10 @@ Owner实际SAFE：V123 339双PASS；已知R50来源交叉3条/1世界，独立�
 - Owner Mac确认：`R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`，原始50冻结provenance SHA验证，通过339候选核对；与R50故事ID重叠3条、会话ID重叠3条、消息ID重叠0条；已known5隔离3条后剩余336精确键交集为0。仍`r50_complete_exclusion_verified=false`，因为未证明最终密封和跨UUID世界别名隔离。
 - 复用`identity.verified_cases_report`、`quarantine.construct`、`r60_real_quality_batch.validate_config`的只读Reviewer来源绑定审计新增`experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py`，统计V1/V2/V3的a/b PASS收据链和冻结不同model_id配置；没有任何新Reviewer模型请求。
 - 只验证**证据链与配置身份**，不以两个model_id、配置中的owner_attested标志或两个PASS推断Provider执行独立性；`reviewer_independence_verified=false`固定，继续HOLD。执行命令在Base训练任务书。世界组件隔离/产品最终训练输入也仍HOLD。
+
+
+## 2026-11-15：336条Reviewer来源完整、真实独立性HOLD，世界关联筛查
+
+Owner `BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`：A V1/V2/V3为305/27/4；B V1/V2/V3为187/11/138。不同配置Model ID及冻结收据链均已验证，但V1 Owner独立性声明未提供，Provider实际请求/共享上下文独立证据未完成，任何审稿独立性结论继续HOLD，不能后补自证性声明自动放行。
+
+下个只读CPU证据阶段`experiments/r58_quality/r60_base336_world_linkage_screen_cpu.py`：只对已冻结336条，检测跨story_id目标/三消息历史精确SHA共享、来源session及message ID共享，使用并查集合并结构关联组件，核对当前276/60 story_id预演拆分是否跨结构关联组件。全程无敏感字段输出、无训练准入，不从精确图推断别名/世界语义图已完整。Owner命令及SAFE解释见Base-start任务书；`world_component_isolation_verified=false`保留，直至额外语义/资料源绑定复核。
