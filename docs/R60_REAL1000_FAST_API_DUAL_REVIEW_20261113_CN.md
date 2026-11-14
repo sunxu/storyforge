@@ -409,3 +409,52 @@ Owner真实V2回执只读统计：`reviewed_slots=155`、`remaining_slots=82`、
 代码新增 opt-in `r60_real_ai_dual_review.REVIEW_INSTRUCTIONS_V3_CONSISTENT`，显式包含六维floor `4,4,3,4,4,4`、`serious flags→REJECT`，低于门槛不得PASS，禁止为PASS抬高评分或消除严重标记；仅以`model_request(..., instructions=...)`明确选用，不修改V1/V2既有默认调用或冻结校验。此阶段**只完成离线准备，尚未启动V3模型请求或修改V2已写入155条**。CI `Ruff PASS / pytest 103 passed`：https://github.com/sunxu/storyforge/actions/runs/43604872300 。
 
 后续需独立V3 create-only子批次对B侧未完成/结构失败条目先跑合成测试和小样本对照，保留V2 SHA绑定，不在原V2目录原地更改提示词或覆盖回执。V1原159条+V2 38条`V2_PASS`只是**潜在双PASS 197条**，必须逐条验证绑定、独立性、R50完整排除、历史System与世界隔离，仍`train_admitted=0`。在V3工具准备好之前请勿继续付费运行V2 `advance`。
+
+
+## 2026-11-14 V3独立create-only精准补审（DeepSeek严格决定提示词）
+
+针对已知Owner V2状态`155/237`：`TECHNICAL_HOLD=84`、`V2_HOLD=31`、`V2_PASS=38`、`V2_REJECT=2`、未处理82。新增`experiments/r58_quality/r60_real1000_v3_consistent_replay.py`。**V2目录只读，V3创建全新私有目录**；严格重验V1 1000份和V2现有不可覆盖回执，并固定V2当前完整回执链SHA、已完成计数、队列SHA及新的B提示词SHA。V3按已知状态只请求84次技术失败及82次未审核的槽位（预计166），跳过V2已有效PASS/HOLD/REJECT的71槽。队列优先B侧`QUALITY_FLOOR_DECISION_INCONSISTENT`和`SEVERE_FLAG_DECISION_INCONSISTENT`，随后其他技术失败，最后未审核。若V2继续写入，V3立刻`V3_SOURCE_OR_CONFIG_DRIFT_HOLD`停止，不继续请求；不允许并行修改V2。
+
+B/DeepSeek明确选用`REVIEW_INSTRUCTIONS_V3_CONSISTENT`，A/Qwen仍用原`REVIEW_INSTRUCTIONS`。**冻结校验与六维分数门槛不变**；不按无效结果自动改分、改决定或提拔Gold。V3每个响应写入独立0600不可覆盖私有回执并绑定原V1签名、若存在则V2回执SHA、源身份与提示词类型，只有`--execute --allow-private-data-egress`同时指定才请求远程API；此阶段无GPU或数据库操作。合成CI Ruff及pytest PASS，见 https://github.com/sunxu/storyforge/actions/runs/43605250491 。
+
+Owner Mac先执行**纯本地初始化和检查**（无需提供私有文件到ChatGPT，SAFE输出即可）：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+V2="$BASE/r60-real1000-v2-priority-replay-v1"
+V3="$BASE/r60-real1000-v3-consistent-replay-v1"
+
+if [ ! -e "$V3" ]; then
+  "$PY" experiments/r58_quality/r60_real1000_v3_consistent_replay.py init \
+    --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" --output-dir "$V3"
+fi
+
+"$PY" experiments/r58_quality/r60_real1000_v3_consistent_replay.py inspect \
+  --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" --output-dir "$V3"
+~~~
+
+若仍处于V2 155条且无新回执，预期`v2_receipts_preserved=155,planned_slots=166,reviewed_slots=0,remaining_slots=166,model_requests=0`。如返回`V3_CONSISTENT_REPLAY_HOLD`，保留原文件并回传脱敏`reason_code`；**不要删除或覆盖目录**。
+
+获得init/inspect SAFE通过后可进行小样本真实API对照；**需明确接受费用/私有上下文外发**：
+
+~~~bash
+: "${DASHSCOPE_API_KEY:?Missing Qwen key}"
+: "${DEEPSEEK_API_KEY:?Missing DeepSeek key}"
+"$PY" experiments/r58_quality/r60_real1000_v3_consistent_replay.py advance \
+  --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" --output-dir "$V3" \
+  --max-cases 5 --execute --allow-private-data-egress
+"$PY" experiments/r58_quality/r60_real1000_v3_consistent_replay.py inspect \
+  --old-dir "$OLD" --plan-dir "$PLAN" --v2-dir "$V2" --output-dir "$V3"
+~~~
+
+最多5次请求及相应费用；不推荐在未核对这5个的`result_counts`之前推进剩余全部。如果需要验证造成DeepSeek输出自相矛盾的真实原因，必须使用隔离脱敏合成样本做正式A/B对照；V1/V2`TECHNICAL_HOLD`回执不含被拒绝的原始生成文本，因此**无法靠这些回执还原模型到底给了哪些分数或原因文字**，不要求用户上传密钥或原始小说正文。
