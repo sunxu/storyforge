@@ -205,3 +205,14 @@ HF返回SAFE后，Owner通过`hf buckets cp`从隔离结果前缀`preflight/r60/
 验收必须`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`、`verified_cases=336`、`actual_collator_verified=true`、`train_admitted=0`。任何失败应保留原回执，安全诊断后新命名空间/新Run Key，不覆盖/盲重试。
 
 **当前状态：**`BASE_CPU336_LOCAL_PIPELINE_IMPLEMENTED__HF_JOB_NOT_SUBMITTED__TRAIN_HOLD`。只允许继续CPU技术验证，不推断训练授权。
+
+
+## 2026-11-15：HF CPU336真实技术审计完成（远端只读回执验证）
+
+Owner回传SAFE，并由HF私有Bucket原路径只读获取原始918字节JSON，确认与Owner回传字段吻合。运行键`r60-base-cpu336-20261114T165256Z-9e35795990aa`，CPU Job `6af894de29dd05ff036789ed`，固定基座`Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`。回执状态`BASE_CPU336_ACTUAL_COLLATOR_PASS__ALL_HELD`、336/336、`input_sha_verified=true`、`tokenizer_verified=true`、`actual_collator_verified=true`、`last_assistant_label_mask_verified=true`。Tokenizer长度min441/median779/p95 1622/max2404；实际Collator min391/median729/p95 1572/max2354；最后Assistant监督token min192/median315/p95 736/max995。未加载权重、没有推理或GPU、没有训练数据集输出，`train_admitted=0`。
+
+远端只读来源：`hf://buckets/adradar/storyforge-training/preflight/r60/base-start/cpu336/results/r60-base-cpu336-20261114T165256Z-9e35795990aa/R60_BASE_CPU336_HF_SAFE_RECEIPT.json`。这是**远端只读文本核实**，尚未在Owner Mac运行`r60_base_cpu336_hf_receipt_verify.py`对下载字节及完整字段执行独立接受流程，故不可伪称`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`已由Owner本地实际产生。技术回执本身足以支持336条技术审计PASS，但不支持训练准入。
+
+后续不可再发起同RUN_KEY HF Job。Owner可执行原有`hf buckets cp`取回SAFE JSON到0600本地私有路径，运行`scripts/r60_base_cpu336_hf_receipt_verify.py --run-key ... --receipt ...`，以获得`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`独立验收；不得改动原远端回执。
+
+**剩余准入门禁：**`r50_complete_exclusion_verified=false`、`reviewer_independence_verified=false`、`world_component_isolation_verified=false`，而且当前技术输入是`THREE_PERSISTED_MESSAGES_NO_SYSTEM`，不是已确认的产品System/世界卡训练合同。继续先做冻结保护来源差集、独立双审证据与语义世界组件隔离，再设计产品兼容输入；本轮GPU训练未授权，Train 0。
