@@ -557,3 +557,12 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 ~~~
 
 预期`CANDIDATE_IDENTITY_PREFLIGHT_PASS__NO_ADMISSION`、`candidate_count=339`、`unique_case_keys=339`、`unique_assistant_message_ids=339`、`model_requests=0`、`train_admitted=0`。同回复/历史哈希重复的实际数量以Mac真实SAFE为准，不能猜测。尚未接入R50私有完整来源，禁止在本阶段将`r50_complete_exclusion_verified`设为true。
+
+
+## 2026-11-14 339候选身份去重通过，R50已知5故事交叉检查
+
+Owner真实SAFE：`CANDIDATE_IDENTITY_PREFLIGHT_PASS__NO_ADMISSION`，339唯一候选case_key，339唯一assistant_message_id，173不同story，173不同story/session，100个story有多条，最多4条/story；相同目标SHA组0、完全相同(历史SHA+目标SHA)组0。**只代表检查的精确重复与身份，不涵盖语义相似和所有held-out排除。**
+
+已有`r60_real1000_r50_known5_exclusion_cpu.py`包含从`docs/evidence/V03_R49_R50_16_20_SOURCE_INTAKE_20261015.md`提取的五个已知R50故事UUID。现已复用它，在339候选只读身份审计中新增`r50_known5_reference_stories=5`、`r50_known5_candidate_overlap_count`和`r50_known5_overlapping_story_count`，仍固定`r50_complete_exclusion_verified=false`。若存在交叉说明候选与已知R50故事有重合，需隔离；若0重合**仅能确认这5个已知故事不重合**，不能据此宣称完成所有R50测试集排除。无模型、DB、GPU、Gold/Train操作。CI Ruff PASS、pytest **121 passed**：[run #43611030298](https://github.com/sunxu/storyforge/actions/runs/43611030298)。
+
+Owner更新GitHub后重跑前述`r60_real1000_candidate_identity_audit.py`相同只读命令即可获取新增SAFE字段。**不要上传R50私有case正文或来源UUID到公开GitHub。** 后续如需核验完整R50 heldout，应先核对冻结R50 provenance文件和完整来源范围，使用Owner本地只读完整集合交集；不能从5个known故事和339候选本身推断完整排除。
