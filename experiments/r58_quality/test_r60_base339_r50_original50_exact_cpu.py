@@ -1,6 +1,5 @@
 """Synthetic R50 exact overlap regression; no real private sources."""
 import pytest
-
 import r60_base339_r50_original50_exact_cpu as audit
 from test_r60_base_start_cpu336_template_audit import sample
 
