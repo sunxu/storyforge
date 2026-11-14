@@ -368,3 +368,35 @@ test ! -e "$V2"
 `init`后预期`planned_slots=237,reviewed_slots=0,remaining_slots=237`；首5执行成功后`reviewed_slots=5,remaining_slots=232`。请求最多5次（非10次），计费；若收到`V2_PRIORITY_REPLAY_HOLD`，停止并保留目录，不能删除或重做。确认SAFE和实际预算后，继续对同V2目录前台执行`advance --max-cases 25 --execute --allow-private-data-egress`，每批`inspect`。完成237后应**重新只读综合V1/V2**，对最终双方有效且同时PASS的样本再进行独立性/历史System/世界隔离/R50排除核验，不自动当训练准入。
 
 注意：旧项目里另有`r60_real1000_deepseek_single.py`，它仅能用于原255条时的独立分岔方案。现已经1000/1000双侧尝试完成，**禁止运行这个旧分岔入口**。
+
+
+## 2026-11-14 V2首运行只返回裸HOLD：已增加脱敏本地诊断
+
+Owner回传`{"status":"V2_PRIORITY_REPLAY_HOLD","model_requests":0}`，旧CLI吞掉所有异常原因。**不能由此断定init/inspect/advance哪个环节失败，也不确定V2目录是否已经创建**。修复`r60_real1000_v2_priority_replay.py`：仍不打印私有内容、密钥、路径、异常正文，仅在`reason_code`返回已知静态错误枚举；文件不存在/权限异常使用固定码。execute异常时`model_requests:null`表示不能从错误结果确认是否已对外发送请求，避免误报为零。CI Ruff与pytest 101/101 PASS: https://github.com/sunxu/storyforge/actions/runs/43601856839 。
+
+在Owner Mac前台**只运行本地诊断，不执行远程advance，不删旧目录**：
+
+~~~bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+V2="$BASE/r60-real1000-v2-priority-replay-v1"
+if [ -d "$V2" ]; then
+  "$PY" experiments/r58_quality/r60_real1000_v2_priority_replay.py inspect \
+    --old-dir "$OLD" --plan-dir "$PLAN" --output-dir "$V2"
+elif [ ! -e "$V2" ]; then
+  "$PY" experiments/r58_quality/r60_real1000_v2_priority_replay.py init \
+    --old-dir "$OLD" --plan-dir "$PLAN" --output-dir "$V2"
+else
+  echo "V2_PATH_EXISTS_BUT_NOT_DIRECTORY_HOLD"
+  exit 42
+fi
+~~~
+
+若`V2_OUTPUT_PATH_HOLD`说明目标目录已存在时误重跑了init；若`PLAN_OR_V1_CHANGED_HOLD`需核对计划/V1是否已被修改；若`PRIVATE_INPUT_NOT_FOUND`核查本地路径存在及0600访问保护；不要在未查明前删除重建或改权限绕过保护。Owner回传脱敏`reason_code`后，再定向修复。整个诊断无模型请求、无训练准入。
