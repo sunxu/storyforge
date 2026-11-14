@@ -237,3 +237,8 @@ Owner SAFE确认8组、38 Story、82候选的0700/0600私有索引已经创建�
 ## 2026-11-15：8组世界来源正文的Owner私有提取已实现（仍须复核）
 
 Owner SAFE确认8组私有审核模板全部创建，语义状态仍HOLD。新增`experiments/r58_quality/r60_base336_world_group_source_evidence_cpu.py`，在数据库只读事务里先复算完整8组JSONB精确相等成员与归档版本ID，与已保存私有roster逐项核对，再每组选1个源绑定`v2_data.world`完整JSON代表值保存在Mac私有同目录create-only 0600文件（单组≤16KB、全文件≤190KB），不打印内容、不改原roster/决策模板。预检不访问DB，显式`--execute`才执行；[CI #43630312472](https://github.com/sunxu/storyforge/actions/runs/43630312472) Ruff/210合成测试PASS。运行命令与后续必须人工或独立AI核对角色卡/历史实际发送来源的限制详见权威Base-start任务书。世界值文本仅是8个分组各一份代表证据，不能直接完成全部成员语义审核；train_admitted=0。
+
+
+## 2026-11-15：Codex 8组语义审核7通用/1不足；成员卡片与Opening对照门禁
+
+Owner Codex SAFE：7组`GENERIC_TEMPLATE`、1组`INSUFFICIENT_EVIDENCE`，无`SPECIFIC_SHARED_WORLD`；8组隔离决定全部HOLD，原文件及精确引文校验通过。不能凭7组通用模板直接PASS训练隔离，需补充组内全体成员匹配当前/归档来源的角色卡与opening。新增`experiments/r58_quality/r60_base336_group_cards_opening_cpu.py`：严格只读`r58_export_reader`+RLS、先复算8组关联及成员版本，再限38个Story ID提取roster明确匹配`v2_data.character/characters/opening`至Mac私有0700新目录8个0600文件，超限/漂移HOLD且不输出原文、不自动做语义判定；合成CI 215 PASS。Owner命令在Base-start权威任务书。历史actual-sent、R50完整排除、Reviewer独立性和336条Train准入仍HOLD。
