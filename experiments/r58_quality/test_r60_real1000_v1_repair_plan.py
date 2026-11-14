@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 import pytest
+
 import r60_real1000_v1_repair_plan as plan
 import r60_real_private_batch as private
 
@@ -110,5 +111,5 @@ def test_serialized_private_manifest_has_no_target_body(monkeypatch):
                   "TWO_INDEPENDENT_REVIEWS_REQUIRED")],
         "synthetic-source",
     )
-    assert "assistant_target" not in json.dumps(result, ensure_ascii=False)
+    assert "target_text" not in json.dumps(result, ensure_ascii=False)
     assert result["entries"][0]["missing_slots"][0]["side"] == "b"
