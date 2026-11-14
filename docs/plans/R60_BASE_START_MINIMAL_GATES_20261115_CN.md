@@ -439,3 +439,34 @@ ARGS=(
 ```
 
 预期`BASE336_V2_CARD_STRUCTURE_COVERAGE__SEMANTIC_HISTORY_HOLD`。依据聚合覆盖再决定是否需要严格源绑定的私有语义复核，禁止因为`cardType`/角色名相同自动跨UUID合并世界。
+
+
+## 2026-11-15：Owner V2角色卡结构真实计数与世界值类型下一门禁
+
+Owner Mac实际SAFE `BASE336_V2_CARD_STRUCTURE_COVERAGE__SEMANTIC_HISTORY_HOLD`：当前172条中`v2_data.cardType='story'`为157，`='character'`为0，缺失0，因此**另外15条为其他非空类型值**；历史200版本分别165/0/0，另35条为其他非空类型。当前172条`v2_data.characters`均为array，其中171条非空，1条空；200版本均为非空array；当前172条及200版本`v2_data.character`均为object；`opening`/`world`键覆盖均为172/172与200/200。注意`cardType`有其他值并不一定是不合法；已pin运行时逻辑`cardType==='story' ? characters : [character]`，因此15/35样本走非story分支，正好需要验证`character`对象结构。**字段存在/非空不等于实际发送历史System或世界语义独立。**
+
+新增`experiments/r58_quality/r60_base336_v2_world_branch_shape_cpu.py`与合成回归；只使用172个冻结Story ID的`user_stories.v2_data`、`story_content_versions.v2_data`，聚合当前与版本的`world` JSON类型(object/array/string/null)、空对象/数组/字符串和非空对象数，`opening` JSON类型，同时统计`cardType='story'`分支的非空/空`characters`数组与**所有非story分支**的`character`对象结构。直接复用冻结V123/known5隔离、R58只读Role/RLS及已有参数化SQL安全合同；不SELECT角色名称、world文本、Prompt、JSON值或原始Story ID，也不自动判定跨UUID世界同一性。默认不查DB，显式`--execute`才查询。
+
+Owner Mac命令：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+)
+"$PY" experiments/r58_quality/r60_base336_v2_world_branch_shape_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_v2_world_branch_shape_cpu.py "${ARGS[@]}" --execute
+```
+
+若`world`多数为nonempty object，则下一步**先审查已pin的V2 TypeScript定义中world内部允许字段/来源时间合同**，再在相同172 ID范围内做键集合计数与来源绑定审阅；不得直接导出世界内容、不按同名角色合并世界。若`world`为string/null等则按实际类型修订预期，不假造`world`结构。R50/Reviewer真实独立/历史请求/语义隔离/训练仍HOLD。
