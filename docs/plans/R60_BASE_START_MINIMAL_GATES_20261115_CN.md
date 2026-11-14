@@ -407,3 +407,35 @@ ARGS=(
 "$PY" experiments/r58_quality/r60_base336_story_json_shape_cpu.py "${ARGS[@]}" --execute
 ```
 预期`BASE336_STORY_JSON_SHAPE_COUNTS__SEMANTIC_HISTORICAL_HOLD`，只回传SAFE计数。后续若JSON对象有实际结构，再另行确认可审核的字段合同及来源版本锚点，而非直接批量读取172条私有故事卡原文。
+
+
+## 2026-11-15：Owner真实JSON结构覆盖PASS；V2运行时角色卡字段已源码锚定
+
+Owner实际`BASE336_STORY_JSON_SHAPE_COUNTS__SEMANTIC_HISTORICAL_HOLD`：172/172当前`user_stories.characters`为**空数组[]**（非NULL≠有内容）；172/172`user_stories.v2_data`均为非空JSON object；200/200`story_content_versions.v2_data`均为非空JSON object。确认不能用顶层`characters`生成训练角色卡；v2_data对象本身非空，但其实际业务字段、语义设定和原历史请求仍未证明。
+
+检查项目早期源码冻结`sunxu/RolePlay` commit `ccdf2e8dc2723f481cd0392883bc359e9e341c66` 的`src/app/api/chat/v2/route.ts`：V2路由直接从`storyRow.v2_data`构造`canonicalEventDraft`，经本地化得到`v2Draft`；运行时明确按`v2Draft.cardType === 'story' ? v2Draft.characters : [v2Draft.character]`选角色列表，访问`v2Draft.opening`。这是源代码合同证据，**不是**336例真实历史请求或已验证历史v2_data版本。
+
+新增`experiments/r58_quality/r60_base336_v2_card_contract_cpu.py`：对冻结172 Story ID所匹配当前story及200条版本，仅统计`v2_data.cardType`值为story/character/缺失数量、`characters`数组类型和非空数量、`character`对象类型及`opening`、`world`**键存在性**。无原始JSON、角色名称、世界文本、UID或Prompt导出；`world`仅为可选键覆盖观察，不默认此键有业务含义。沿用R58只读用户/RLS、scope参数化、默认不访问DB。Ruff/合成`177 passed`，[CI #43626606502](https://github.com/sunxu/storyforge/actions/runs/43626606502)。所有语义/历史版本/Reviewer及训练门禁仍HOLD。
+
+Mac Owner执行：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+  --old-dir "$BASE/r60-quality-fast1000-api-v1"
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+)
+"$PY" experiments/r58_quality/r60_base336_v2_card_contract_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_v2_card_contract_cpu.py "${ARGS[@]}" --execute
+```
+
+预期`BASE336_V2_CARD_STRUCTURE_COVERAGE__SEMANTIC_HISTORY_HOLD`。依据聚合覆盖再决定是否需要严格源绑定的私有语义复核，禁止因为`cardType`/角色名相同自动跨UUID合并世界。
