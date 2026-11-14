@@ -114,13 +114,19 @@ def aggregate(stories: list[str], story_row: tuple, version_row: tuple) -> dict:
     }
 
 
-def fetch(dsn: str, stories: list[str]) -> dict:
+def fetch(dsn: str, stories: list[str], *, phase=None) -> dict:
+    def mark(name: str) -> None:
+        if phase is not None:
+            phase(name)
+
     import psycopg
 
     if not dsn:
         raise Hold("DSN_NOT_SET_HOLD")
+    mark("DB_CONNECT")
     with psycopg.connect(dsn, connect_timeout=10, autocommit=False) as conn:
         try:
+            mark("DB_TRANSACTION_GUARD")
             with conn.cursor() as cur:
                 cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
                 cur.execute("SET LOCAL statement_timeout='15000ms'")
@@ -132,16 +138,20 @@ def fetch(dsn: str, stories: list[str]) -> dict:
                     FROM pg_catalog.pg_roles r WHERE r.rolname = current_user
                 """)
                 private.assert_guard(cur.fetchone())
+                mark("DB_STORY_AGGREGATE")
                 cur.execute(SQL_STORIES, (stories,))
                 story_row = cur.fetchone()
+                mark("DB_VERSION_AGGREGATE")
                 cur.execute(SQL_VERSIONS, (stories,))
                 version_row = cur.fetchone()
+                mark("DB_RESULT_VALIDATE")
                 return aggregate(stories, story_row, version_row)
         finally:
             conn.rollback()
 
 
 def run(args: argparse.Namespace) -> dict:
+    args._phase = "FROZEN_SOURCE"
     cases, crosswalk = identity.verified_cases_report(
         args.old_dir, args.plan_dir, args.v2_dir, args.v3_dir, args.audit_dir)
     raw = private.read_private(
@@ -167,7 +177,11 @@ def run(args: argparse.Namespace) -> dict:
             "gpu_started": False,
             "private_values_emitted": False,
         }
-    result = fetch(os.getenv("R60_READONLY_DATABASE_URL", ""), stories)
+    args._phase = "DB_DSN"
+    result = fetch(
+        os.getenv("R60_READONLY_DATABASE_URL", ""), stories,
+        phase=lambda phase: setattr(args, "_phase", phase),
+    )
     result["database_accessed"] = True
     return result
 
@@ -178,14 +192,35 @@ def main() -> int:
         parser.add_argument(f"--{name}-dir", type=Path, required=True)
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
+    args._phase = "FROZEN_SOURCE"
     try:
         out = run(args)
         print(json.dumps(out, sort_keys=True))
         return 0
-    except Exception:  # noqa: BLE001 - private IDs and DB diagnostics suppressed
+    except Exception as exc:  # noqa: BLE001 - private IDs and DB diagnostics suppressed
+        known = {
+            "DSN_NOT_SET_HOLD", "SCOPE_HOLD", "HELD_POSITION_HOLD",
+            "STORY_ID_HOLD", "R50_KNOWN5_LEAK_HOLD",
+            "EXPECTED_336_172_HOLD", "QUARANTINE_DRIFT_HOLD",
+            "RESULT_SHAPE_HOLD", "RESULT_BOUNDS_HOLD",
+        }
+        safe_code = (
+            str(exc) if type(exc) is Hold and str(exc) in known
+            else {
+                "FROZEN_SOURCE": "FROZEN_SOURCE_OR_RUNTIME_HOLD",
+                "DB_DSN": "DB_DSN_OR_RUNTIME_HOLD",
+                "DB_CONNECT": "DB_CONNECTION_HOLD",
+                "DB_TRANSACTION_GUARD": "DB_READONLY_ROLE_OR_RLS_HOLD",
+                "DB_STORY_AGGREGATE": "DB_STORY_AGGREGATE_HOLD",
+                "DB_VERSION_AGGREGATE": "DB_VERSION_AGGREGATE_HOLD",
+                "DB_RESULT_VALIDATE": "DB_AGGREGATE_RESULT_HOLD",
+            }.get(args._phase, "LOCATOR_RUNTIME_HOLD")
+        )
         print(json.dumps({
             "schema": SCHEMA, "status": "BASE336_SCOPED_STORY_DB_LOCATOR_HOLD",
-            "reason_code": "SOURCE_SCOPE_DB_ROLE_OR_RUNTIME_HOLD",
+            "reason_code": safe_code,
+            "failure_phase": args._phase,
+            "database_accessed": None,
             "database_modified": False, "train_admitted": 0,
             "gpu_started": False, "private_values_emitted": False,
         }, sort_keys=True))
