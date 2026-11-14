@@ -36,13 +36,13 @@ ROOTS = ("scripts", "experiments/r58_quality")
 MAX_CODE_FILES = 70
 
 
-def local_dependencies() -> list[str]:
+def local_dependencies(entries=None, extras=None) -> list[str]:
     names = {}
     for root in ROOTS:
         for path in (ROOT / root).glob("*.py"):
             names[path.stem] = path.relative_to(ROOT).as_posix()
     seen = set()
-    pending = list(ENTRY) + EXTRA
+    pending = list(ENTRY if entries is None else entries) + (EXTRA if extras is None else extras)
     while pending:
         relative = pending.pop()
         if relative in seen:
