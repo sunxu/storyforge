@@ -216,3 +216,35 @@ Owner回传SAFE，并由HF私有Bucket原路径只读获取原始918字节JSON�
 后续不可再发起同RUN_KEY HF Job。Owner可执行原有`hf buckets cp`取回SAFE JSON到0600本地私有路径，运行`scripts/r60_base_cpu336_hf_receipt_verify.py --run-key ... --receipt ...`，以获得`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`独立验收；不得改动原远端回执。
 
 **剩余准入门禁：**`r50_complete_exclusion_verified=false`、`reviewer_independence_verified=false`、`world_component_isolation_verified=false`，而且当前技术输入是`THREE_PERSISTED_MESSAGES_NO_SYSTEM`，不是已确认的产品System/世界卡训练合同。继续先做冻结保护来源差集、独立双审证据与语义世界组件隔离，再设计产品兼容输入；本轮GPU训练未授权，Train 0。
+
+
+## 2026-11-15：336条真实Collator独立验收PASS，转向R50原始50来源精确交集
+
+Owner Mac实测`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`、`verified_cases=336`、`actual_collator_verified=true`，Tokenizer/Collator技术问题正式关闭，不重交HF Job；冻结输入仍为无System四消息**技术测试合同**而非产品最终训练合同。
+
+新增只读CPU脚本`experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py`，**复用**`scripts/r60_r50_original50_complement_cpu.jsonl`（R50原始50 provenance固定长度+SHA）、`scripts/r60_r50_common2_exact_source_isolation_cpu.r50_sources/source_id`、既有`identity.verified_cases_report`和`quarantine.construct`。验证冻结339候选与原始R50 50条全体的story/session/message精确ID交集；对已隔离的3条和剩余336条分别计数，SAFE只输出聚合。R50原始50 provenance已核对 ≠ R50最终密封评测封签 ≠ 跨UUID共享世界或别名语义隔离；哪怕剩余336条精确ID无交集，`r50_complete_exclusion_verified`仍强制FALSE，`train_admitted=0`。合成CI [#43620807618](https://github.com/sunxu/storyforge/actions/runs/43620807618) Ruff PASS、150 tests PASS，无GPU/请求/数据库。
+
+Owner Mac只读验证：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+# 找到原始的R50_CASE_PROVENANCE_50.jsonl，而不是派生46条的同名或替代文件。
+find "$HOME/.local/share/storyforge" -type f -name 'R50_CASE_PROVENANCE_50.jsonl' -print
+R50_ORIGINAL="/请填写上述实际存在的原始50条provenance绝对路径"
+"$PY" experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py \
+ --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1" \
+ --r50-original-provenance "$R50_ORIGINAL"
+```
+
+只有`R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`且`remaining_336_exact_key_overlap=0`才算**精确来源键**检查通过，所有准入仍HOLD。若同名文件多个，不能盲选；工具会用冻结SHA/长度校验，绝不复制或调整R50原始文件。后续才核验Reviewer独立性及跨故事语义组件，不能把现有5故事UUID核对视为完整保护的证明。
