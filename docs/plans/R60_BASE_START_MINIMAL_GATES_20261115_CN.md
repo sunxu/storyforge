@@ -1,5 +1,7 @@
 # StoryForge R60 下一轮：Base 重新训练与最小有效隔离合同
 
+> **2026-11-15 最新执行决议（覆盖本文件下方旧的“继续全量取证”命令）**：已转向[Base First-Train Readiness三线并行收敛](R60_BASE_FIRST_TRAIN_READINESS_20261115_CN.md)。暂停`r60_base336_group_cards_opening_cpu.py --execute`全量8组取证；Owner真实回执为NO_DB预检PASS、执行`BASE336_CARD_OPENING_EVIDENCE_HOLD`，根因尚不明确，不能推断已获取角色卡或世界污染。Codex 8组World盲审7组通用模板、1组证据不足、8组隔离HOLD。立即并行：A定向世界/保护集组件隔离（先1组不足）、B核实Reviewer真实执行独立性、C设计和CPU验证[构造型System合同V1](R60_BASE_CONSTRUCTED_SYSTEM_SFT_CONTRACT_V1_CN.md)。**历史完整actual-sent System不再是新Base实验准入门禁；真实卡片来源、时序和最终目标标签仍必须准确。** 已通过336真实Tokenizer/Collator和R50原始50精确键隔离子检查无需重跑。全部336继续HOLD，旧276/60不得放行，Train 0，GPU/HF Job 0。
+
 日期：2026-11-15。适用工作分支：`r60/common2-cpu2-owner`。**这是工程规划和候选预演，不是训练授权或数据准入。**
 
 ## 明确选择：从冻结 Qwen Base 开始
