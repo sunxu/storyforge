@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import argparse
 import contextlib
-from collections.abc import Mapping
 import hashlib
 import io
 import json
 import os
 import sys
+from collections.abc import Mapping
 from pathlib import Path
 from types import SimpleNamespace
 
