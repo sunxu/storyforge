@@ -36,7 +36,6 @@ def validate(payload: dict) -> list[dict]:
             or [g.get("group_ordinal") for g in groups] != list(range(1, 9))
             or sum(g.get("current_world_cross_split") is True for g in groups) != 7):
         raise Hold("GROUP_CONTRACT_HOLD")
-    seen = set()
     affected = set()
     for group in groups:
         if (group.get("semantic_verdict") != "UNREVIEWED"
@@ -57,11 +56,6 @@ def validate(payload: dict) -> list[dict]:
                     or any(type(x) is not int or x < 1 for x in versions)
                     or type(current) is not bool or (not current and not versions)):
                 raise Hold("MEMBER_CONTRACT_HOLD")
-            key = (sid, split)
-            if key in seen and sid not in affected:
-                # A Story may legitimately occur in multiple groups.
-                pass
-            seen.add(key)
             affected.add(sid)
             splits.add(split)
         if splits != {"train", "validation"}:
