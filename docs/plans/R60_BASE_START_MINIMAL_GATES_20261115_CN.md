@@ -529,3 +529,10 @@ ARGS=(
 "$PY" experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py "${ARGS[@]}" --execute
 ```
 预期`BASE336_EXACT_WORLD_CROSS_SPLIT_IMPACT__SPLIT_HOLD`。后续先源绑定判断重复对象是泛化模板还是具体世界，以及它涉及哪些历史版本，再按证据生成私有（0600）人工/独立AI审阅问题清单；不得输出故事内容到公开Git仓库或通过公开CI读取原文。继续`train_admitted=0`、HF/GPU 0、Reviewer独立性HOLD、R50全保护HOLD。
+
+
+## 2026-11-15：Owner跨预演影响统计首次泛化HOLD：路径解析错误已修复
+
+Owner Mac回执仅`BASE336_WORLD_CROSS_SPLIT_IMPACT_HOLD`/`database_accessed=null`，无失败阶段，**不等于已发生SQL或数据库权限问题**。检查发现`experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py` CLI的6个`--*-dir`参数未标记`type=Path`，导致`prior._frozen(args)`按冻结文件路径拼接时潜在TypeError；此前其他成功的Owner CPU诊断工具均要求`Path`。修复commit `1604c7d7be8ae60a4fc116a62eec5f4e4dc01122`，并增加合成`main()`完整CLI只读预检回归，验证传入`Path`及成功`BASE336_WORLD_CROSS_SPLIT_IMPACT_PRECHECK__NO_DB`；修复测试Ruff导入排序后[CI #43628671788](https://github.com/sunxu/storyforge/actions/runs/43628671788) **195 PASS**。
+
+Owner更新branch后先跑**默认无DB预检**；若返回预期，再运行同一`--execute`只读聚合，回传SAFE计数。全程只针对既有336→172冻结ID，保持原`r58_export_reader`事务只读/RLS，不修改旧276/60预演、不放行任何SFT。现已明确7个当前世界重复组、8个含历史归档组跨旧Train/Validation，必须继续世界隔离HOLD。
