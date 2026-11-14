@@ -605,3 +605,10 @@ Q="$BASE/r60-real1000-r50-known5-quarantine-v1"
 ~~~
 
 预期`original_candidate_count=339`、`known5_excluded_count=3`、`known5_overlapping_story_count=1`、`remaining_full_r50_hold=336`、`r50_complete_exclusion_verified=false`、`train_admitted=0`。下一步须找到**冻结完整R50 Held-out来源provenance**，仅在Owner本地严格验证所有源story/message/历史SHA和回复SHA覆盖范围，扩展隔离；未经完整来源证明仍HOLD。
+
+
+## 2026-11-15 下一轮训练路线调整：Base起步、精简最低来源隔离（未授权GPU）
+
+Owner明确选择按建议推进：**从冻结的Qwen Base独立初始化新LoRA，不续训R46或R54权重**。主线任务书见 `docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。解除与本轮起点无关的历史LoRA来源逐条追溯、历史生产请求HTTP字节和旧System逐字复原的阻塞；仍保留数据使用权、真实且自洽的训练输入、独立质量审核、测试保护来源排除及Train/Validation按世界分组、CPU tokenizer/collator和正式GPU授权。旧R46/R54只用作只读对照。不会把`336 FULL_R50_HOLD`按“Base起步”直接放行。
+
+新增离线`experiments/r58_quality/r60_base_start_world_split_preview.py`：只读验证全部历史Crosswalk+私有R50 known5 quarantine，按`story_id`做固定可复现80/20**预览**，统计Train/Val候选数量及世界数，仅输出聚合SAFE，无真实ID/故事正文输出；不生成训练数据或确认世界组件独立，仍`train_admitted=0`。命令、约束与下一步所需的完整R50测试来源差集详见新任务书。此工具所产生的provisional Train/Val计数**不是已准入的训练/验证集**。
