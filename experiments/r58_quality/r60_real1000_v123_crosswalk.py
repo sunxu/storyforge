@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import sys
 from collections import Counter
@@ -147,9 +148,14 @@ def inspect(old_dir: Path, plan_dir: Path, v2_dir: Path,
     if (output_dir.parent != private.BASE
             or not output_dir.name.startswith("r60-real1000-v123-crosswalk-")
             or output_dir.is_symlink() or output_dir in (
-                old_dir, plan_dir, v2_dir, v3_dir)
-            or (write and output_dir.exists())):
+                old_dir, plan_dir, v2_dir, v3_dir)):
         raise Hold("CROSSWALK_OUTPUT_PATH_HOLD")
+    # Permit recovery only from the empty 0700 directory left by the
+    # previous failed oversized write. Existing reports cannot be replaced.
+    if write and output_dir.exists():
+        private.private_dir(output_dir, create=False)
+        if any(output_dir.iterdir()):
+            raise Hold("CROSSWALK_OUTPUT_NONEMPTY_HOLD")
     with batch.expand.locked(v3_dir):
         old, cases, v3_queue, progress = v3._inspect(
             v3_dir, old_dir, plan_dir, v2_dir)
@@ -197,12 +203,25 @@ def inspect(old_dir: Path, plan_dir: Path, v2_dir: Path,
         "database_modified": False,
     }
     if write:
-        private.private_dir(output_dir, create=True)
+        # Serialize and enforce its own 900KB limit before creating a folder.
         blob = (json.dumps(report, ensure_ascii=False, sort_keys=True,
                            separators=(",", ":")) + "\n").encode()
         if len(blob) > MAX_REPORT:
             raise Hold("CROSSWALK_REPORT_OVERSIZE_HOLD")
-        private.write_new(output_dir / FILENAME, blob)
+        if not output_dir.exists():
+            private.private_dir(output_dir, create=True)
+        else:
+            private.private_dir(output_dir, create=False)
+            if any(output_dir.iterdir()):
+                raise Hold("CROSSWALK_OUTPUT_NONEMPTY_HOLD")
+        # The shared capture writer caps output at 200KB. This create-only,
+        # no-follow writer respects the crosswalk-specific bounded maximum.
+        fd = os.open(output_dir / FILENAME, os.O_WRONLY | os.O_CREAT |
+                     os.O_EXCL | getattr(os, "O_NOFOLLOW", 0), 0o600)
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(blob)
+            handle.flush()
+            os.fsync(handle.fileno())
     return safe
 
 
