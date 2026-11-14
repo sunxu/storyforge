@@ -194,3 +194,10 @@ Owner `BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`：A V1/V2/V3为305/27/4
 - 新只读`experiments/r58_quality/r60_base336_world_metadata_coverage_cpu.py`复用全部V123 receipts重建和3/336 quarantine，安全统计可选World/卡片等元数据字段覆盖率、冻结历史System与世界状态标记分布；绝不打印故事名/ID或文本，不请求模型、DB、HF。
 - R57旧`r57_g2_alias_name_hints`/`r57_g2_alias_pair_review`的标题hint非同一性结论方法可以参考，但其独立冻结八源及29个世界不对应本次336例，禁止直接交叉拼接或假设某别名关系。
 - 若现有333+3冻结样本无World/card数据，下一步先有Owner限定的数据库schema/权限/元数据来源调查和source pin，不能在未审慎确认来源时生成卡片、将同名汉字角色自动合并或宣布语义隔离。完整命令见`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`；train_admitted=0、Reviewer Independence HOLD。
+
+
+## 2026-11-15：真实Story/Card来源不在冻结336；DB Schema限定元数据定位
+
+Owner SAFE确认`BASE336_SOURCE_METADATA_COVERAGE_PASS__SEMANTIC_SOURCE_HOLD`，结构化字段9类全0，历史System真实发送快照0/336；不要把这一发现误判为数据库没有故事/角色定义。连接Supabase只读Schema可验证`public.user_stories.id`存故事定义与世界/角色/System字段、`public.story_content_versions.story_id`外键定位修订版本；`public.character_states`为运行态不等于权威角色卡，`public.characters`与`user_stories`没有直接所示外键，名字重合不是同一世界证据。
+
+新工具`experiments/r58_quality/r60_base336_story_db_locator_cpu.py`严格复用冻结源重建与3/336 quarantine，以及既有`r60_real_private_batch.assert_guard`。默认只本地验证172 story ID来源；显式`--execute`才允许Owner限定数据库read-only事务（`r58_export_reader`、RLS ON），参数化只匹配这172个ID，仅计数`user_stories`与`story_content_versions`覆盖/非空字段/版本数量。不SELECT故事正文、角色卡/System内容，不导出ID，不写库；无法核实历史真实发送版本，故始终Train 0、World semantic HOLD、Reviewer independent HOLD。Owner执行命令、后续授权边界见Base-start任务书。
