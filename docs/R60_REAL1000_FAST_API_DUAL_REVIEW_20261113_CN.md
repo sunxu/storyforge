@@ -287,3 +287,37 @@ test ! -e "$NEW"
 首批成功时，`single_cases_reviewed=25`、`total_positions_attempted=280`、`remaining_single_cases=720`。如返回`SINGLE_REVIEW_HOLD`，立即暂停并保留所有输出，不删除重建。确认没有认证/服务故障及预算足够后，同一`advance --max-cases 25 --execute --allow-private-data-egress`分批续跑剩余720条；单批请求最多25次，且要观察服务费用/余额。不要在无自动预算保护时做无人监管循环。
 
 合成回归详见同目录`test_r60_real1000_deepseek_single.py`；1000条真实数据只在Owner Mac读取，CI不会触达。
+
+
+## 2026-11-14 REAL1000 V1审核1000/1000完成：只读补审优先级规划
+
+Owner SAFE 确认 `QUALITY_BATCH_REVIEWED__TRAIN_ADMISSION_HOLD`，1000/1000次双侧审核尝试写入V1不可覆盖回执，`HOLD=872,REJECT=128,PASS=0`（独立性未认证门禁使正式PASS为0）。原因分布：`INDEPENDENCE_NOT_ATTESTED=159`、`REVIEW_INCOMPLETE=200`、`TWO_INDEPENDENT_REVIEWS_REQUIRED=513`、`SEVERE_OR_REVIEWER_REJECT=128`。缺失的模型审核槽位合计577，不等于577条不同样本。
+
+Owner只读侧别 SAFE `REVIEWER_FAILURE_SIDE_AUDIT_PASS__NO_REQUEST`：`both_valid=487`、`only_a_valid=216`、`only_b_valid=233`、`neither_valid=64`，因此A/Qwen有效703次、B/DeepSeek有效720次。应补失败侧合计A297、B280，包括64条两侧均失败。此前失败侧未归属时，不能按原`attempt_holds`列表位置武断决定哪侧是哪种错误。
+
+新只读规划器 `experiments/r58_quality/r60_real1000_v1_repair_plan.py`：基于冻结1000源`pool_sha256`和现有V1签名回执（先严格运行`batch.inspected_records`），按照以下**不更改六维门槛**的类别分组：`READY_DUAL_PASS_NEEDS_ATTESTATION`（预计159，需真实Owner独立性认证/事实来源审查，不能自动认定）；`SINGLE_PASS_REPAIR_FIRST`（有效一侧PASS且未触发严重标记和六维floor，优先补另一侧）；`DUAL_VALID_OTHER_REVIEW`（完整双侧但非双PASS/拒绝）；`SINGLE_OTHER_DEFER`、`SINGLE_REJECT_DEFER`；`EXISTING_REJECT_REVIEW`；`BOTH_MISSING_LOW_PRIORITY`。会在新的私有0700目录中写入唯一0600不可覆盖manifest；记录原case_key、source SHA、旧receipt SHA和缺失侧别，不含小说正文。仅输出汇总SAFE。此阶段**不发模型请求，不执行任何补审，不启动GPU/训练或准入**。
+
+Owner Mac命令：
+
+~~~bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+OLD="$BASE/r60-quality-fast1000-api-v1"
+PLAN="$BASE/r60-real1000-v1-repair-plan-20261114"
+
+# 无网络预检，验证1000个原始不可覆盖回执
+"$PY" experiments/r58_quality/r60_real1000_v1_repair_plan.py \
+  --old-dir "$OLD" --output-dir "$PLAN"
+
+# 预检通过后，创建只读V1结果导出的新私有规划目录
+"$PY" experiments/r58_quality/r60_real1000_v1_repair_plan.py \
+  --old-dir "$OLD" --output-dir "$PLAN" --write-private-plan
+~~~
+
+预期第一条 `REPAIR_PLAN_PREFLIGHT_PASS__NO_FILES`，第二条 `REPAIR_PLAN_SAVED__NO_MODEL_REQUEST`。两条的 `missing_slots_total` 应为577、`missing_slots_by_side` 为`{"a":297,"b":280}`，`cases_total=1000`。规划输出的各优先级精确数量**以Owner Mac真实SAFE为准**，不能由此前aggregate伪造。只有在读出具体`SINGLE_PASS_REPAIR_FIRST`规模与真实ROI后，再决定下一版本的create-only selective replay；严禁重新运行V1`advance`或把原159条自动提拔为Gold。
