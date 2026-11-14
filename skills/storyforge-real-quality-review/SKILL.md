@@ -208,3 +208,8 @@ Owner SAFE确认`BASE336_SOURCE_METADATA_COVERAGE_PASS__SEMANTIC_SOURCE_HOLD`，
 Owner SAFE `BASE336_V2_CARD_STRUCTURE_COVERAGE__SEMANTIC_HISTORY_HOLD`：当前172条`cardType='story'`157，其余其他非空值15；历史200版本story 165、其他35；`characters`数组当前172/172但非空171/172，版本非空200/200；`character` object、`opening`与`world`键当前172/172、版本200/200。禁止从字段存在、非空或同名人名推断语义世界独立、历史使用版本或是否可训练。
 
 新增仅聚合`experiments/r58_quality/r60_base336_v2_world_branch_shape_cpu.py`，仍只用冻结336→172 Story ID的read-only cohort，统计`world`对象/数组/字符串/null、空结构、`opening`类型和`cardType==='story'`两种运行时角色路径的有效形状。绝不读取或输出世界/人物正文，所有结果都是当前DB及归档静态结构，非历史actual-sent prompt。具体Owner命令在Base训练任务书；Train 0、Reviewer执行独立性/R50完整语义保护继续HOLD。
+
+
+## 2026-11-15：World JSONB精确相等跨Story候选门禁
+
+Owner真实SAFE `BASE336_V2_WORLD_BRANCH_COUNTS__SEMANTIC_HISTORY_HOLD`确认当前172/172与历史200/200的`v2_data.world`均为非空object，且对应V2卡片运行路径的角色对象/数组结构有效。此时不重复测试空值，改用`experiments/r58_quality/r60_base336_world_exact_value_cpu.py`的**数据库内部JSONB完全值相等分组**，只统计当前及当前+归档版本不同Story ID共享world完整JSON的组/对/预演Train-Val交叉数；不输出JSON值、hash、人名、ID，严格绑定冻结172 ID和r58只读角色。相等只是可能为同一世界或共享模板的线索，绝非自动语义同一结论；不等也不能证明无近重复别名。历史actual-sent、R50完整保护、Reviewer独立与SFT准入均HOLD。Owner命令见Base-start任务书。
