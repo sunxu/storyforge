@@ -304,3 +304,10 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 ```
 
 预期`BASE336_EXACT_WORLD_LINK_SCREEN_PASS__SEMANTIC_HOLD`。如果`cross_train_validation_components>0`，即使当前story_id分组不交叉，也已有确切结构链接跨训练验证，需要调整预演分组；如果为0，只能关闭“当前四类已知精确链接未跨组”子门禁，**不能宣称世界语义独立**。下阶段应基于源绑定的世界/角色明确关联证据，限制语义疑点候选供Owner复核，避免仅按相同中文人名误合并世界。持续`train_admitted=0`、不新建HF Job/GPU。
+
+
+## 2026-11-15：Owner跨故事精确结构关联筛查真实PASS
+
+Owner Mac SAFE `BASE336_EXACT_WORLD_LINK_SCREEN_PASS__SEMANTIC_HOLD`，`cases_checked=336`，`distinct_story_ids=172`，`exact_linked_story_pairs=0`，四类关联边`history_exact_sha/source_message/source_session/target_exact_sha`均为0，`multi_story_components=0`，`structural_components=172`，`cross_train_validation_components=0`，`structural_linked_split_disjoint=true`。此前只读276/60按story_id预演在四类**已测试的精确链接**下无需调整；但不存在跨ID链接并不证明不同UUID没有角色别名、共享世界设定或同故事不同封装，`semantic_alias_completeness_verified=false`、`world_component_isolation_verified=false`仍保持。
+
+这一子门禁关闭后，优先确定结构化世界来源（例如原始story metadata/角色卡及可验证主键）是否存在，设计**源绑定、可追溯的语义疑点审阅**。禁止仅按通用角色名、绵绵等描述词或文本近似自动连接世界；不能把三个消息所见当作完整世界设定。不应再为已PASS的Tokenizer、R50 exact-ID、四类结构边增加重复HF Job。Reviewer执行独立性缺乏Owner原始声明和独立请求路由证据，仍HOLD；产品System输入合同也未冻结。训练准入0，GPU未启动。
