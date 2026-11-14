@@ -128,7 +128,8 @@ def _inspect(directory: Path, old_dir: Path, plan_dir: Path,
         directory / CONFIG, MAX_CONFIG))
     if config != _config(old_dir, plan_dir, v2_dir, fingerprint):
         raise Hold("V3_SOURCE_OR_CONFIG_DRIFT_HOLD")
-    files = sorted(directory.glob(PREFIX + "*_PRIVATE.json"))
+    files = sorted(path for path in directory.glob(PREFIX + "*_PRIVATE.json")
+                   if path.name != CONFIG)
     if len(files) > len(queue):
         raise Hold("V3_OVERFLOW_HOLD")
     counts = Counter()
