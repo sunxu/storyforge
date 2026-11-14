@@ -536,3 +536,35 @@ ARGS=(
 Owner Mac回执仅`BASE336_WORLD_CROSS_SPLIT_IMPACT_HOLD`/`database_accessed=null`，无失败阶段，**不等于已发生SQL或数据库权限问题**。检查发现`experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py` CLI的6个`--*-dir`参数未标记`type=Path`，导致`prior._frozen(args)`按冻结文件路径拼接时潜在TypeError；此前其他成功的Owner CPU诊断工具均要求`Path`。修复commit `1604c7d7be8ae60a4fc116a62eec5f4e4dc01122`，并增加合成`main()`完整CLI只读预检回归，验证传入`Path`及成功`BASE336_WORLD_CROSS_SPLIT_IMPACT_PRECHECK__NO_DB`；修复测试Ruff导入排序后[CI #43628671788](https://github.com/sunxu/storyforge/actions/runs/43628671788) **195 PASS**。
 
 Owner更新branch后先跑**默认无DB预检**；若返回预期，再运行同一`--execute`只读聚合，回传SAFE计数。全程只针对既有336→172冻结ID，保持原`r58_export_reader`事务只读/RLS，不修改旧276/60预演、不放行任何SFT。现已明确7个当前世界重复组、8个含历史归档组跨旧Train/Validation，必须继续世界隔离HOLD。
+
+
+## 2026-11-15：跨预演World精确重复影响量已实测，进入Owner私有分组语义审阅
+
+Owner Mac SAFE `BASE336_EXACT_WORLD_CROSS_SPLIT_IMPACT__SPLIT_HOLD`：**当前**重复World值影响Train 26个Story/63条候选、Validation 10个Story/17条候选，去重合计36个Story/80条候选；**当前+归档200版本**的保守口径是Train 28 Story/65候选、Validation 10 Story/17候选，去重合计**38个Story/82条候选**。本轮数据库未修改，未读取世界JSON内容，无HF/GPU。其余254条不自动判定已语义隔离；旧276/60预演拆分不可用于SFT。前序精确JSONB分组证据：当前7组、含归档8组跨预演边界，共8组需分组核查；结构相等不是世界语义同一的最终结论，版本记录不是历史实际发送的版本证据。
+
+新增`experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py`：数据库仍绑定冻结336候选→172 Story ID和SHA固定split，以`r58_export_reader`强制RLS ON、REPEATABLE READ READ ONLY；SQL**只在数据库端比较完整JSONB World值**并按世界定义分为8个跨旧Train/Val分组，返回`group_ordinal`、`story_id`、`split`、是否与当前版匹配、对应`story_content_versions.id`列表。世界正文/角色文本/JSON/摘要不返回客户端。Mac代码把这8组映射到冻结候选来源位置，create-only写入Owner Mac私有路径`R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json`，目录0700/文件0600，所有8组`semantic_verdict=UNREVIEWED`，不生成训练数据、不合并Story、不改预演split。输出到终端的SAFE只含8组、7组当前、38个Story、28/10个Story及65/17个样本的受影响**去重计数**；若实际DB数据与此次Owner已签收SAFE范围不同则fail-closed为HOLD，不创建私有审阅文件。该证据包仅是**可追溯的审核问题清单**，尚未含对每组世界事实的语义裁决，不能声称训练隔离通过。
+
+Ruff/201 synthetic-only tests PASS：[CI #43629142597](https://github.com/sunxu/storyforge/actions/runs/43629142597)。Owner Mac执行一次，**不得放入Git checkout或上传对话**：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+ --private-output-dir "$BASE/r60-base336-world-cross-review-20261115"
+)
+"$PY" experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py "${ARGS[@]}" --execute
+```
+
+第一条只重建冻结来源、不读数据库、不创建私有目录；第二条read-only SQL并**新建**私有文件，同一目录不可覆盖或重复执行。只回传SAFE JSON，不上传私有审阅包。后续需要依8组的`story_id`与`story_content_versions.id`在**限定权限**下独立读取可证实的当前/归档来源，以核对相等对象到底是通用模板还是具体共享角色/世界，并保留语义证据出处。不得提前升级Reviewer独立性、R50全保护或历史实际请求System门禁，`train_admitted=0`、GPU/HF Job 0。
