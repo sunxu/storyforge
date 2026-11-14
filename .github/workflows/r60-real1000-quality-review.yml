@@ -41,6 +41,8 @@ on:
       - "experiments/r58_quality/test_r60_real1000_r50_known5_quarantine.py"
       - "experiments/r58_quality/r60_base_start_world_split_preview.py"
       - "experiments/r58_quality/test_r60_base_start_world_split_preview.py"
+      - "experiments/r58_quality/r60_base_start_sft_shape_cpu.py"
+      - "experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -80,6 +82,8 @@ on:
       - "experiments/r58_quality/test_r60_real1000_r50_known5_quarantine.py"
       - "experiments/r58_quality/r60_base_start_world_split_preview.py"
       - "experiments/r58_quality/test_r60_base_start_world_split_preview.py"
+      - "experiments/r58_quality/r60_base_start_sft_shape_cpu.py"
+      - "experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -135,7 +139,9 @@ jobs:
             experiments/r58_quality/r60_real1000_r50_known5_quarantine.py \
             experiments/r58_quality/test_r60_real1000_r50_known5_quarantine.py \
             experiments/r58_quality/r60_base_start_world_split_preview.py \
-            experiments/r58_quality/test_r60_base_start_world_split_preview.py
+            experiments/r58_quality/test_r60_base_start_world_split_preview.py \
+            experiments/r58_quality/r60_base_start_sft_shape_cpu.py \
+            experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -157,4 +163,5 @@ jobs:
             experiments/r58_quality/test_r60_real1000_v123_crosswalk.py \
             experiments/r58_quality/test_r60_real1000_candidate_identity_audit.py \
             experiments/r58_quality/test_r60_real1000_r50_known5_quarantine.py \
-            experiments/r58_quality/test_r60_base_start_world_split_preview.py
+            experiments/r58_quality/test_r60_base_start_world_split_preview.py \
+            experiments/r58_quality/test_r60_base_start_sft_shape_cpu.py
