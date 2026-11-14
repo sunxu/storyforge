@@ -84,3 +84,12 @@ python -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
 ## 明确非目标
 
 本 Skill 不修改 Gold87/108/192/195、R50、R59 冻结 Prompt/来源/私有输入，不做 Quality-v1 admission，不自动提交 Job，不自动启动 GPU、模型推理或训练。
+
+
+## 2026-11-15 Base-start 336条 CPU 技术门禁：复用而不分叉
+
+- 入口参见 `docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md` 新增HF CPU336章节。336/336真实来源静态SFT形状PASS，但仍`FULL_R50_HOLD`。
+- **共用** `src/storyforge_dataset/hf_runtime`、`r60_common2_wrapped_hf_stage.local_dependencies(entries,extras)`、`r60_common2_wrapped_hf_cli`及`hf_job_guard`，禁止独立重写HF提交/Volume/Retry逻辑；业务脚本只提供独立Bucket前缀与任务输入合同。
+- **共用** `r60_common2_sft_cpu_template_audit.inspect_rows`和R18 last-round真实掩码审计；本次按336条输出聚合统计，不能把逐条tokens/私有IDs带出Worker。冻结历史System不恢复、不新造；本阶段无System，仅测试四消息技术输入。没有可训练JSONL/世界卡语义验收。
+- 新增薄适配器：`experiments/r58_quality/r60_base_cpu336_hf_packet.py`、`scripts/r60_base_cpu336_hf_stage.py`、`scripts/r60_base_cpu336_hf_cli.py`、`scripts/r60_base_cpu336_hf_worker.py`、`scripts/r60_base_cpu336_hf_receipt_verify.py`。按`packet preflight → packet --write → stage prepare/verify → CLI cli-flags/preflight → sync → ready`执行；**submit --execute明确另行授权**。默认零HF Jobs，已有冻结旧Common2 Stage不能重用或改写。
+- Worker下载 pinned Qwen3.8 Revision 的Tokenizer/Config/Chat Template文件，绝不下载模型权重；CPU ResourceGuard PASS后才可跑，输出仅SAFE聚合，通过Owner本地独立验收后仍`train_admitted=0`。如果Source/Stage失败、输出存在、Job历史匹配或者未知状态，不重试、不开启GPU，先诊断。
