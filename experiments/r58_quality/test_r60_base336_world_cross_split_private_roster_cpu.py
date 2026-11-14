@@ -1,6 +1,5 @@
 """Synthetic, CPU-only tests for create-only private eight-group roster."""
 import stat
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
