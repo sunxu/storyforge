@@ -1,0 +1,65 @@
+# R60 Base First-Train Readiness：最短有效准入路径（2026-11-15）
+
+> **执行优先级高于旧R60任务书尾部逐步取证命令。** 本文件收敛执行目标，不修改原冻结证据，不赋予训练或GPU授权。工作分支 `r60/common2-cpu2-owner`，只改各自负责的源文件；不与并行Agent抢同一文件。完整来源合同：`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。
+
+## 主目标及暂停指令
+
+唯一下一目标：**找到可被证明合法、质量可信、与评测隔离的首批新Base SFT候选，冻结训练输入与Train/Val组件划分，完成CPU技术门禁；必要准入与Owner GPU授权之后才训练。** 不要求一次性用满336条。禁止将探索性技术验证伪称正式Train/Val准入。
+
+立即暂停 `r60_base336_group_cards_opening_cpu.py --execute` 及其全量8组卡片/Opening取证、额外JSON形状统计、再次HF CPU336、再生成旧roster/template、重复世界定义盲审。其 `BASE336_CARD_OPENING_EVIDENCE_HOLD` 只代表工具运行失败，未知根因；**不能推断数据污染、数据库RLS故障或已输出8份证据**。无需修复它才能开始三项工作。若定向审核发现材料必需且无其他证据，则只对相关组/成员做最小范围只读补证；保留所有旧私有文件。
+
+## 冻结的实证基线（不是新认证）
+
+| 事实 | 当前证据 | 对首轮实验的意义 |
+|---|---|---|
+| 冻结来源 | V123 339双PASS、已知R50重复3条排除、336条/172 Story待准入 | 不重选、不覆盖、不默认为Train |
+| Qwen Base技术 | `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`；HF CPU336真实Tokenizer/Collator/last-assistant label mask通过且Owner回执已接受 | **不重跑**；仅新最终合同需要CPU抽样和后续全量校验 |
+| R50 | 原始50的story/session/message精确来源键与保留336不交叉，三条被known5隔离 | 关闭精确ID子门禁；跨UUID世界/未覆盖保护集仍不能推断通过 |
+| Reviewer | 336 A/B来源收据及配置可追溯，模型ID不同 | Provider真实调用独立、盲审互不串评仍HOLD |
+| 跨故事World | 当前7组、含归档8组精确JSON相同跨旧Train/Val；影响38 Story/82候选 | 旧276/60预演不能直接使用；不等于82条真实泄漏 |
+| Codex世界盲审 | 8组：通用模板7、证据不足1、具体共享0、隔离PASS 0/HOLD 8 | 聚焦1个不足组，7组按可证实风险处理，禁止自动PASS |
+| 最近全量卡片工具 | NO_DB预检成功，`--execute`泛化HOLD | 暂停，不作为训练准入门禁 |
+
+## 三条并行工作线（各自明确交付/验收）
+
+### A. World/R50隔离：最小来源组件方案
+
+**交付**：Mac私有 `R60_BASE_FIRST_TRAIN_WORLD_COMPONENTS_PRIVATE.json` 和公开SAFE聚合（组数、Story数、排除/待核查数、交叉组件数，**无原始ID/内容**）。
+
+1. 只读现存8组roster、来源world证据及Codex私有语义审核文件，核对SHA/0600/组序号。**优先唯一的INSUFFICIENT_EVIDENCE组**，按需要查询该组最少成员的角色卡、Opening及历史来源；其他7组只针对Codex报告中的**具体风险疑点**定向补证。若无疑点仍要记录“仅World层模板、角色/剧情未审”而非PASS。
+2. 同步对照真正作为本轮保护集的R50与其他独立测试集。已核实的R50原始50精确ID隔离保持PASS；未提供可靠保护范围的，阻止对应候选进入正式Train/Val，**不无限追求所有历史文件**。
+3. 用**已证实**的共享角色、特定世界事实或剧情关系建立跨Story无向边及连通组件；引用精确来源字段/版本和引文（私有），语义证据不足的边/组记录HOLD而非猜测删除或合并。单纯完整world JSON相同且属通用模板**不自动合并**。
+4. 基于组件而非原旧hash故事分配冻结新的Train/Validation：同一Story/已证实共享组件不得跨组；未决关联优先整个组件隔离到待决，不进入正式数据。已有准确排除的故事永久排除。输出真实可选样本规模，允许少于336；不可在新数据规模未确认时沿用276/60标签。
+5. **验收**：候选组件来源有精确证据，保护集交集为0、无已证实组件跨Train/Validation、未决故事未放行；若不满足则仍HOLD，明确缺什么证据才能推进。
+
+### B. Reviewer独立性：核实证据，不重复336×2请求
+
+**交付**：只读审计 `R60_BASE_FIRST_TRAIN_REVIEWER_INDEPENDENCE_PRIVATE.json` + SAFE `PASS/HOLD` 和有证据的336条中可准入数量；不读取对方先前的质量评分来指导复评。
+
+1. 复用 `r60_base336_reviewer_provenance_cpu.py` 已验收的两路336个PASS收据、冻结模型ID与收据SHA；不重新评分全部336。
+2. 检查现存原始执行日志/阶段回执能否证明两个Reviewer实际分别调用、独立上下文、无跨路文本/评分串评，确认调用来源与模型别名确实分路。**配置字段和Owner声明不是执行独立性证据**。
+3. 把“证据充分可核准”的样本与“缺少执行证据的HOLD”分开，若只有部分受影响，优先补特定缺口而不是重跑全部双审。没有可信证据时不可将该门禁默认PASS。
+4. **验收**：逐候选绑定已执行且相互独立的两份Review证据；必须依照冻结六维下限、严重标记和原资格，不可降低标准。未知维持HOLD、模型调用需单独授权。
+
+### C. 新Base构造型System/SFT合同：直接冻结，不等历史原始System
+
+**交付**：版本化 `R60_BASE_CONSTRUCTED_SYSTEM_SFT_CONTRACT_V1_CN.md`、合成测试、在**不准入训练的CPU沙盒**对少量代表样本进行真实Tokenizer/Collator/监督Mask检验；待A/B收敛后复验最终合格子集。
+
+1. 选择统一输入结构：独立显式标记 `TRAINING_CONSTRUCTED_NOT_HISTORICAL`，包含**版本绑定且经证实的**世界规则/角色、仅目标前的真实历史User/Assistant轮次、最后唯一待监督Assistant；不需要R46/R54旧LoRA、原online Provider HTTP字节或历史实际System完全恢复。
+2. System字段分为`GENERIC_INVARIANT`（固定模板、不得凭空加故事事实）、`SOURCE_BOUND_WORLD`（仅经证明的本Story世界/角色原文）、`PROVENANCE_LABEL`（明确不是历史System）。缺少源绑定世界/角色时不得虚构；可选择**无卡的明确受限技术合同**用于内部对比，但不得将无卡结果宣称与产品有卡输入等效。
+3. 严守冻结目标作为唯一最后Assistant label；没有目标之后的内容、没有未来世界修订的误用、没有玩家行为代写；Token长度预算按固定Base revision执行，并完整复用已通过的ms-swift真实collator、R18严格label mask。
+4. CPU先用合成和数个有合法源绑定的代表样本检查，最后才对**A/B已准入子集**进行冻结全量CPU复验。已有无System的336/336技术PASS保留为历史对照，不用重跑那一套合同。
+5. **验收**：模板固定、source trace与目标监督核验、真实Tokenizer+Collator+mask PASS，训练前模型revision/数据SHA/Train Val隔离可复现。
+
+## 单一就绪判定：禁止“技术PASS即Train PASS”
+
+下列门禁均须 **PASS且具有可核验来源** 才可提交首批训练候选：`source_quality`、`reviewer_execution_independence`、`evaluation_protection`、`world_component_disjointness`、`constructed_sft_contract`、`actual_collator_on_final_contract`。上述任意为UNKNOWN/HOLD/FAIL => `BASE_FIRST_TRAIN_READINESS_HOLD`、`train_admitted=0`、`gpu_started=false`。
+
+即便六项全部PASS，也只代表`BASE_FIRST_TRAIN_READY_FOR_OWNER_APPROVAL`；必须**另行取得Owner明确授权**，独立创建新RUN_KEY方可启动GPU/HF训练。训练阶段产物默认私有；不将R50密封集当开发数据反复调参。
+
+## 任务调度：并行但避免冲突
+
+- A只操作World/R50组件隔离方案与Mac私有审阅结果；B只操作Reviewer执行独立性方案/报告；C只操作最终SFT合同和CPU测试。各Agent在自己的工作分支/工作树提交，禁止同时修改本文件。
+- Coordinator负责合并经CI验证的产物，汇总一张SAFE就绪表；每轮只问“哪个门禁离PASS更近？”，不按工具数或新增证据数统计进度。
+- 任何新脚本必须声明：直接关闭哪项门禁、复用什么旧代码、实际输入/输出、失败时采取的**一次定向恢复**、能否在无需付费/私有数据出境的情况下执行。不能关闭门禁的泛化诊断脚本暂缓。
+- **当前**：A/B/C均未按本计划重新核验，仍为HOLD。R50原始50精确ID、336真实CPU技术检查作为“通过的子证据”保留，不允许用它们自动提升整项门禁。
