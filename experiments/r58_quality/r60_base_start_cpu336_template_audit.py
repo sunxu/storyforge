@@ -117,7 +117,7 @@ def run(args: argparse.Namespace) -> dict:
         common.bind_text_only_rope(template, args.snapshot)
     phase("BUILD_IN_MEMORY")
     report = common.inspect_rows(rows, tok, template, phase=phase)
-    if report.get("cases") != 2:
+    if report.get("cases") != EXPECTED:
         raise Hold("REUSED_AUDITOR_CONTRACT_HOLD")
     token_stats = _stats(report["tokenizer_input_token_counts"])
     collator_stats = (_stats(report["real_collator_token_counts"])
