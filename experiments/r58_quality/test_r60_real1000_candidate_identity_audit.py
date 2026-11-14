@@ -73,3 +73,23 @@ def test_distinguishes_exact_pair_from_text_only_repeat():
     out = audit.audit(cases, report)
     assert out["same_target_hash_groups"] == 1
     assert out["same_history_and_target_hash_groups"] == 1
+
+
+def test_known_r50_five_story_overlap_is_partial_only():
+    cases, report = fixture()
+    known = sorted(audit.r50_known.KNOWN_R50_STORIES)
+    cases[0]["source"]["story_id"] = known[0]
+    cases[1]["source"]["story_id"] = known[0]
+    cases[2]["source"]["story_id"] = known[1]
+    result = audit.audit(cases, report)
+    assert result["r50_known5_candidate_overlap_count"] == 3
+    assert result["r50_known5_overlapping_story_count"] == 2
+    assert result["r50_known5_reference_stories"] == 5
+    assert result["r50_complete_exclusion_verified"] is False
+
+
+def test_no_known_r50_overlap_does_not_claim_full_exclusion():
+    cases, report = fixture()
+    result = audit.audit(cases, report)
+    assert result["r50_known5_candidate_overlap_count"] == 0
+    assert result["r50_complete_exclusion_verified"] is False
