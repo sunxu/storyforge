@@ -520,3 +520,65 @@ def test_claude_truncation_has_fixed_safe_code_and_never_passes(monkeypatch):
     assert result["status"] == "REVIEWER_PROTOCOL_HOLD"
     assert result["reason_code"] == "MODEL_OUTPUT_TRUNCATED"
     assert result["train_admitted"] == 0
+
+
+def test_v3_consistency_profile_keeps_frozen_floors_and_default(monkeypatch):
+    import urllib.request
+
+    import r60_reviewer_transport as transport
+
+    assert "npc_initiative≥3" in ai.REVIEW_INSTRUCTIONS_V3_CONSISTENT
+    for name, floor in batch.FLOORS.items():
+        assert name in ai.REVIEW_INSTRUCTIONS_V3_CONSISTENT
+        assert f"{name}≥{floor}" in ai.REVIEW_INSTRUCTIONS_V3_CONSISTENT
+    assert "不得为获得PASS而提高" not in ai.REVIEW_INSTRUCTIONS
+    assert "不可为获得PASS而提高" in ai.REVIEW_INSTRUCTIONS_V3_CONSISTENT
+
+    bodies = []
+
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self, *args):
+            return json.dumps({
+                "choices": [{"message": {
+                    "content": json.dumps(model_answer(), ensure_ascii=False)
+                }, "finish_reason": "stop"}]
+            }).encode()
+
+    class Opener:
+        def open(self, request, timeout):
+            bodies.append(json.loads(request.data.decode()))
+            return Response()
+
+    monkeypatch.setattr(urllib.request, "build_opener", lambda *args: Opener())
+    args = ("https://example.com/chat/completions", "synthetic-model",
+            "synthetic-key", "synthetic-only", 3, False)
+    assert ai.model_request(*args, protocol="deepseek-chat")["decision"] == "PASS"
+    assert ai.model_request(
+        *args, protocol="deepseek-chat",
+        instructions=ai.REVIEW_INSTRUCTIONS_V3_CONSISTENT,
+    )["decision"] == "PASS"
+    assert bodies[0]["messages"][0]["content"] == ai.REVIEW_INSTRUCTIONS
+    assert bodies[1]["messages"][0]["content"] == ai.REVIEW_INSTRUCTIONS_V3_CONSISTENT
+    assert bodies[0]["messages"][1] == bodies[1]["messages"][1]
+    assert bodies[0]["model"] == bodies[1]["model"]
+    assert bodies[0]["thinking"] == bodies[1]["thinking"]
+    assert transport.PROFILES == frozenset({
+        "openai-chat", "claude-proxy-top-system", "deepseek-chat"
+    })
+
+
+def test_v3_instructions_do_not_weaken_validation():
+    below = model_answer()
+    below["scores"]["character_consistency"] = 2
+    with pytest.raises(ai.Hold, match="QUALITY_FLOOR_DECISION_INCONSISTENT"):
+        ai.parse_model_response(below)
+    flagged = model_answer()
+    flagged["severe_flags"]["hard_fact_or_ban"] = True
+    with pytest.raises(ai.Hold, match="SEVERE_FLAG_DECISION_INCONSISTENT"):
+        ai.parse_model_response(flagged)
