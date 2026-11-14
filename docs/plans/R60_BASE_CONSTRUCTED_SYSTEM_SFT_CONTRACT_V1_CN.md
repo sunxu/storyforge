@@ -47,3 +47,10 @@
 ## 未解决的关键选择
 
 产品实际推理是否向模型传入完整World/角色设定，以及每个历史目标所适用的版本，必须通过RolePlay冻结V2 runtime `sunxu/RolePlay@ccdf2e8dc2723f481cd0392883bc359e9e341c66` 的实际分支和真实来源核验；不能简单用今天的`v2_data`填补历史空缺。若找不到足够的有卡、可证明的样本，C可交付`MINIMAL_NO_CARD`技术合同，但需标记产品等价性HOLD并交Owner决策，而非凭空补卡。
+
+
+## 2026-11-15 工程落地：纯函数构造器已接入CI
+
+已增加`experiments/r58_quality/r60_base_constructed_system_contract_v1.py`与7条合成回归`test_r60_base_constructed_system_contract_v1.py`。构造器明确输出`TRAINING_CONSTRUCTED_NOT_HISTORICAL`，强制三消息`user,assistant,user`轮次严格早于最后Assistant目标，拒绝错误角色序列、没有版本定位的`latest/current/unknown`卡片、来自不同Story的World/角色引用。无卡时只采用本文件冻结通用System，保留来源/实际collator/Reviewer/R50/世界准入标志均False且Train 0。它**不能**独立核实调用者伪造的`target_time_proof_ref`，不能替代数据库来源绑定、目标SHA或ms-swift实际collator，所以当前状态仍为`CONTRACT_DESIGNED__ACTUAL_COLLATOR_HOLD`。
+
+[GitHub Actions #43633850974](https://github.com/sunxu/storyforge/actions/runs/43633850974) Ruff及222项合成测试PASS；不是Owner真实336条训练准入或新合同实际CPU collator PASS。C线下一步应复用已有HF CPU336模块作**有限的合成/受控私有样本**真实Tokenizer/Collator检查，并冻结编码后的System字节、输入版本、上下文时序与source hash，不再重复旧无System336全量审计。
