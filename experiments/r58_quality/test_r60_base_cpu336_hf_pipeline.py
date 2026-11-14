@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-import r60_base_cpu336_hf_stage as stage
-import r60_base_cpu336_hf_worker as worker
+from scripts import r60_base_cpu336_hf_stage as stage
+from scripts import r60_base_cpu336_hf_worker as worker
 import r60_base_cpu336_hf_packet as packet
 from test_r60_base_start_cpu336_template_audit import sample
 
