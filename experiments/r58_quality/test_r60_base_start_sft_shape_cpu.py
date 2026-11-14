@@ -1,6 +1,5 @@
 """Synthetic-only Base SFT shape tests; all rows remain unadmitted."""
 import pytest
-
 import r60_base_start_sft_shape_cpu as shape
 import r60_real1000_r50_known5_quarantine as quarantine
 import r60_real_private_batch as private
