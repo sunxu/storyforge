@@ -4,7 +4,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 import r60_real1000_v1_repair_plan as plan
 import r60_real_private_batch as private
 
