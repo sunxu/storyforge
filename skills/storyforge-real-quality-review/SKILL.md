@@ -172,3 +172,10 @@ Owner实际SAFE：V123 339双PASS；已知R50来源交叉3条/1世界，独立�
 - Owner Mac已经完成`BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD`，336/336真实Qwen3.8 tokenizer与ms-swift最后Assistant Label Mask技术审计通过；不用再运行HF CPU或复制HF Worker。所有候选`train_admitted=0`。
 - 下一单独只读门禁`experiments/r58_quality/r60_base339_r50_original50_exact_cpu.py`：严格复用R50冻结原始50条provenance SHA校验、已有原始来源字段抽取、V123 crosswalk重建和3/336 quarantine。只公开339候选与R50原始50的story/session/message精确ID交集计数，不公开任何源ID、原文或私有哈希；Owner命令及解释在`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。
 - `R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`只代表已提供的、通过固定SHA验证的原始R50 50 provenance之间**精确键**无交集，不代表跨UUID别名世界隔离、最终R50封签有效、独立Reviewer真实或允许训练。`r50_complete_exclusion_verified=false`始终保留。若原始50 provenance缺失或哈希不匹配，HOLD，不从46条补猜。
+
+
+## 2026-11-15：Base336 R50原始50精确隔离PASS后的Reviewer证据追踪
+
+- Owner Mac确认：`R50_ORIGINAL50_EXACT_HELD_KEYS_DISJOINT__OTHER_GATES_HOLD`，原始50冻结provenance SHA验证，通过339候选核对；与R50故事ID重叠3条、会话ID重叠3条、消息ID重叠0条；已known5隔离3条后剩余336精确键交集为0。仍`r50_complete_exclusion_verified=false`，因为未证明最终密封和跨UUID世界别名隔离。
+- 复用`identity.verified_cases_report`、`quarantine.construct`、`r60_real_quality_batch.validate_config`的只读Reviewer来源绑定审计新增`experiments/r58_quality/r60_base336_reviewer_provenance_cpu.py`，统计V1/V2/V3的a/b PASS收据链和冻结不同model_id配置；没有任何新Reviewer模型请求。
+- 只验证**证据链与配置身份**，不以两个model_id、配置中的owner_attested标志或两个PASS推断Provider执行独立性；`reviewer_independence_verified=false`固定，继续HOLD。执行命令在Base训练任务书。世界组件隔离/产品最终训练输入也仍HOLD。
