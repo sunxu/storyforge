@@ -12,8 +12,8 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-import r60_real1000_v123_crosswalk as crosswalk
 import r60_real1000_v3_consistent_replay as v3
+import r60_real1000_v123_crosswalk as crosswalk
 import r60_real_private_batch as private
 import r60_real_quality_batch as batch
 
