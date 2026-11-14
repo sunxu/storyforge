@@ -1,6 +1,9 @@
 """Synthetic-only SAFE receipt verification; no HF remote or model."""
 import hashlib
 import json
+import subprocess
+import sys
+from pathlib import Path
 
 from scripts import r60_base_cpu336_hf_receipt_verify as verifier
 from scripts import r60_base_cpu336_hf_worker as worker
@@ -56,3 +59,17 @@ def test_bad_aggregate_or_wrong_key_rejected(tmp_path):
     path.write_text(json.dumps(record))
     assert verifier.accept(path, key)["actual_collator_verified"] is False
     assert verifier.accept(path, "wrong")["actual_collator_verified"] is False
+
+
+def test_direct_script_invocation_outside_repo(tmp_path):
+    """Regression: on Mac 'python scripts/foo.py' must find scripts package."""
+    root = Path(__file__).resolve().parents[2]
+    script = root / "scripts/r60_base_cpu336_hf_receipt_verify.py"
+    process = subprocess.run(
+        [sys.executable, str(script), "--help"],
+        cwd=tmp_path, capture_output=True, text=True, check=False,
+        timeout=15,
+    )
+    assert process.returncode == 0
+    assert "--receipt" in process.stdout
+    assert "ModuleNotFoundError" not in process.stderr
