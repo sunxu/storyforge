@@ -48,8 +48,8 @@ def test_types_fail_closed():
 
 
 def test_cli_directory_options_are_paths(monkeypatch, capsys):
-    from pathlib import Path
     import sys
+    from pathlib import Path
 
     cases, manifest = cohort()
     stories = sorted({
