@@ -227,3 +227,8 @@ Owner `BASE336_WORLD_EXACT_VALUE_SCREEN__SEMANTIC_HISTORY_HOLD`：172当前Stori
 Owner只读SAFE确认：按当前world精确相等跨旧Train/Validation的影响是26 Train Story/63 case + 10 Validation Story/17 case=36 Story/80 case；加入归档world精确相等后28 Train Story/65 case + 10 Validation Story/17 case=38 Story/82 case。**不是82条已证实语义泄漏，旧276/60划分仍隔离HOLD，不得拿剩余254条自动准入。**
 
 新增`experiments/r58_quality/r60_base336_world_cross_split_private_roster_cpu.py`：沿用冻结V123/known5隔离及严格read-only角色，在数据库内部比较world JSONB，形成8组交叉精确值的`story_id`、当前/归档`story_content_versions.id`来源映射，只写Mac Owner私有0700目录+create-only 0600文件，所有语义判决UNREVIEWED；终端只SAFE计数，不输出Story IDs/JSON/摘要。Owner操作详见`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。Ruff和201合成测试PASS。下一步不是重分split或训练，而是私有源绑定复核8个跨组原因（通用模板vs真实故事世界），并区分归档版本与历史实际发送版本。Reviewer执行独立性、R50全保护、实际System与Train准入继续HOLD。
+
+
+## 2026-11-15：8组私有索引完成后，先构建来源绑定审核模板
+
+Owner SAFE确认8组、38 Story、82候选的0700/0600私有索引已经创建；8组全部UNREVIEWED。新增`experiments/r58_quality/r60_base336_world_review_decisions_template_cpu.py`只读取Mac已有私有roster，不查询DB，不调用模型，不读原文，按原始roster SHA256绑定独立create-only 0600审核模板。8组初始HOLD，必须基于原文引用/来源字段、当前和历史版本语义证据独立填写，不能仅凭相同world JSON或来源索引提升PASS。Owner命令及CI链接见Base-start任务书。R50全保护、Reviewer独立、历史actual-sent System、世界语义隔离及Train准入仍HOLD。
