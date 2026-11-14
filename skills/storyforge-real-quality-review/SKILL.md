@@ -232,3 +232,8 @@ Owner只读SAFE确认：按当前world精确相等跨旧Train/Validation的影�
 ## 2026-11-15：8组私有索引完成后，先构建来源绑定审核模板
 
 Owner SAFE确认8组、38 Story、82候选的0700/0600私有索引已经创建；8组全部UNREVIEWED。新增`experiments/r58_quality/r60_base336_world_review_decisions_template_cpu.py`只读取Mac已有私有roster，不查询DB，不调用模型，不读原文，按原始roster SHA256绑定独立create-only 0600审核模板。8组初始HOLD，必须基于原文引用/来源字段、当前和历史版本语义证据独立填写，不能仅凭相同world JSON或来源索引提升PASS。Owner命令及CI链接见Base-start任务书。R50全保护、Reviewer独立、历史actual-sent System、世界语义隔离及Train准入仍HOLD。
+
+
+## 2026-11-15：8组世界来源正文的Owner私有提取已实现（仍须复核）
+
+Owner SAFE确认8组私有审核模板全部创建，语义状态仍HOLD。新增`experiments/r58_quality/r60_base336_world_group_source_evidence_cpu.py`，在数据库只读事务里先复算完整8组JSONB精确相等成员与归档版本ID，与已保存私有roster逐项核对，再每组选1个源绑定`v2_data.world`完整JSON代表值保存在Mac私有同目录create-only 0600文件（单组≤16KB、全文件≤190KB），不打印内容、不改原roster/决策模板。预检不访问DB，显式`--execute`才执行；[CI #43630312472](https://github.com/sunxu/storyforge/actions/runs/43630312472) Ruff/210合成测试PASS。运行命令与后续必须人工或独立AI核对角色卡/历史实际发送来源的限制详见权威Base-start任务书。世界值文本仅是8个分组各一份代表证据，不能直接完成全部成员语义审核；train_admitted=0。
