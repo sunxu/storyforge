@@ -276,3 +276,31 @@ BASE="$HOME/.local/share/storyforge/r60/private"
 ```
 
 预期`BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`、`cases_checked=336`、a/b每侧336个有效证据。后续针对Reviewer来源独立性需单独核实Provider分路、上下文不共享的执行证据；针对World必须另做源绑定的语义组件关联（同名歧义不能直接认定），不能用story_id不相交替代。依旧Train 0、无GPU/HF Job。
+
+
+## 2026-11-15：Owner Reviewer来源证据PASS（实际独立性仍HOLD），世界跨ID精确关联下一步
+
+Owner Mac `BASE336_REVIEW_EVIDENCE_BOUND__INDEPENDENCE_HOLD`，336条全部有两个有效来源收据，冻结不同Model ID已验证：A侧V1=305/V2=27/V3=4，B侧V1=187/V2=11/V3=138。冻结V1配置`owner_attested_independent_ai=false`；`provider_execution_independence_verified=false`与`reviewer_independence_verified=false`继续HOLD。这说明证据链完整，不能推导Provider真实执行独立或无共享上下文；不要重新评分或自动补造Owner独立声明。
+
+新增不付费`experiments/r58_quality/r60_base336_world_linkage_screen_cpu.py`，复用V123完整来源重建、private known5隔离、`split.preview`已经冻结的336/172与预演分组。以四种**精确关联**构建跨Story ID无向图：相同目标SHA、相同三消息历史SHA、相同来源Session ID、复用历史/目标Message ID。只输出不同故事关联边数、关联组件数、跨当前Train/Val预演边界组件数；无ID、世界正文、每案长度或SHA出现在SAFE。这个检查能指出可能的结构跨世界组件，但无法识别仅有同名/别名/设定相似的语义关联，`world_component_isolation_verified=false`始终保留。CI [#43622428862](https://github.com/sunxu/storyforge/actions/runs/43622428862) Ruff和159项合成测试PASS。
+
+Mac只读运行：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+"$PY" experiments/r58_quality/r60_base336_world_linkage_screen_cpu.py \
+ --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+```
+
+预期`BASE336_EXACT_WORLD_LINK_SCREEN_PASS__SEMANTIC_HOLD`。如果`cross_train_validation_components>0`，即使当前story_id分组不交叉，也已有确切结构链接跨训练验证，需要调整预演分组；如果为0，只能关闭“当前四类已知精确链接未跨组”子门禁，**不能宣称世界语义独立**。下阶段应基于源绑定的世界/角色明确关联证据，限制语义疑点候选供Owner复核，避免仅按相同中文人名误合并世界。持续`train_admitted=0`、不新建HF Job/GPU。
