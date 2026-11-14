@@ -500,3 +500,32 @@ ARGS=(
 ```
 
 预期`BASE336_WORLD_EXACT_VALUE_SCREEN__SEMANTIC_HISTORY_HOLD`。如果跨预演Train/Validation的共享定义组>0，保留隔离HOLD并人工核实是否为通用模板或真实共享世界；若=0，也只说明全对象**精确相等**未穿越，无法排除语义别名/近重复。无Reviewer独立性/R50全保护/实际历史System放行，`train_admitted=0`、GPU/HF Job 0。
+
+
+## 2026-11-15：Owner发现跨预演Train/Val相同世界定义——原276/60划分进入隔离HOLD
+
+Owner Mac真实`BASE336_WORLD_EXACT_VALUE_SCREEN__SEMANTIC_HISTORY_HOLD`：当前172个故事的`v2_data.world`有139种精确不同JSON对象，其中10组对象跨Story ID共享、共130个跨故事pair-instance，**7组跨Train/Validation预演边界**；当前+200条历史归档共152种JSON对象，10组跨故事共享、140个pair-instance，**8组跨预演边界**。此pair-instance是按每个world值组内不同Story ID组合数相加，**未验证对同一Story对的跨组去重**；不等于最终唯一故事对数。7/8为世界JSON相等的**结构候选信号**，不是7/8个已证实语义世界泄漏；标准模板或通用字段也可能精确相等。不过在消除风险前，**原276/60只能作为旧版只读划分预演，不得用于SFT准入/训练/验证隔离宣称**。禁止自动剔除候选、自动连边、自动改split或自动载入训练。
+
+下一步先量化有多少Story ID与336条候选实际落入跨预演的精确JSON共享组，避免把7组误认为7条样本。新增`experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py`。它严格重建冻结V1/V2/V3及known5 quarantine得336条、172 Story IDs，在数据库内通过JSONB完整相等分组找出跨预演Train/Val共享`world`值；对**每种比较范围**（仅当前、当前+归档），只统计受影响的**去重Story数**与对应336条候选case数，分别按旧Train/Validation分组；不输出Story ID、世界正文/JSON、指纹、名字、版本字段，不写私有文件或数据库。仍沿用限定172 Story IDs、`r58_export_reader`、RLS ON、REPEATABLE READ READ ONLY、默认无DB/显式`--execute`。计数不能验证语义别名，也不能绑定历史actual-sent版本，全部门禁依旧HOLD。
+
+Mac Owner只读运行：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+)
+"$PY" experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_world_cross_split_impact_cpu.py "${ARGS[@]}" --execute
+```
+预期`BASE336_EXACT_WORLD_CROSS_SPLIT_IMPACT__SPLIT_HOLD`。后续先源绑定判断重复对象是泛化模板还是具体世界，以及它涉及哪些历史版本，再按证据生成私有（0600）人工/独立AI审阅问题清单；不得输出故事内容到公开Git仓库或通过公开CI读取原文。继续`train_admitted=0`、HF/GPU 0、Reviewer独立性HOLD、R50全保护HOLD。
