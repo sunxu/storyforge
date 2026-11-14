@@ -623,3 +623,34 @@ ARGS=(
 ```
 
 预期`BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE_READY__REVIEW_HOLD`，只回传SAFE JSON；勿上传私有文件或直接打印其中原文。**下一阶段**阅读这8个world定义原文并逐组归因是否通用模板或真实共享设定，同时必须进一步补充成员角色卡对照、历史实际发送版本证据；不能仅凭8组代表JSON完成隔离结论。旧276/60预演、R50完整排除、Reviewer执行独立性和历史System仍HOLD，GPU/HF Jobs 0。
+
+
+## 2026-11-15：Codex语义盲审7组通用模板/1组不足，继续角色卡与Opening源证据
+
+Owner提供的Codex SAFE `SEMANTIC_REVIEW_COMPLETE_WITH_HOLDS`：8组独立审核完成，其中`GENERIC_TEMPLATE=7`，`SPECIFIC_SHARED_WORLD=0`，`INSUFFICIENT_EVIDENCE=1`；8组均隔离HOLD、PASS 0、REJECT 0；原文引文、来源绑定通过，原始文件不变，独立Codex新报告0600，不调用外部模型。该回执只表示Codex判断，当前工程Agent未读其私有原文，不能代替来源证据逐条复审；不能将通用模板直接放行。后续重点是**全部成员匹配来源的角色卡与opening交叉对照**，优先处理证据不足组，其他7组仍要查是否共享独有剧情和人物。
+
+新增`experiments/r58_quality/r60_base336_group_cards_opening_cpu.py`（合成Ruff/215 tests通过，[CI #43632672681](https://github.com/sunxu/storyforge/actions/runs/43632672681)）。复用原8组私有roster和SHA绑定原决策模板，重建冻结336→172范围、确保来源成员限38个Story ID，并在同一`r58_export_reader` READ ONLY REPEATABLE READ事务中先重新核对8组精确JSONB关联。接着**仅对索引成员**读取其匹配的`user_stories.v2_data.{character,characters,opening}`或roster中确切version ID指定的`story_content_versions.v2_data`对应字段；不扫描其他Story或非匹配版本。按8组分开写入Mac Owner新建0700私有目录的8个0600 JSON文件，每组原文字段大小≤24KB、文件≤185KB、最多256个当前/归档来源行；文件超限/来源漂移/输出目录已存在时HOLD，不自动截断、不覆盖、不做语义结论。所有文件内容只在Owner本地，GitHub CI只用合成数据，终端只SAFE数字；原roster、world evidence、Codex decisions原样不变。历史actual-sent仍HOLD。
+
+Mac Owner命令（仅运行一次`--execute`，若结果HOLD则先报告SAFE，再诊断，切勿手工删除原始证据）：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+ --roster-dir "$BASE/r60-base336-world-cross-review-20261115"
+ --output-dir "$BASE/r60-base336-group-cards-opening-20261115"
+)
+"$PY" experiments/r58_quality/r60_base336_group_cards_opening_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base336_group_cards_opening_cpu.py "${ARGS[@]}" --execute
+```
+预期`BASE336_EIGHT_GROUP_CARD_OPENING_PRIVATE_READY__SEMANTIC_HOLD`，只回传SAFE JSON。下一轮使用已经冻结的Codex盲审文件与新成员卡片/Opening证据做来源级复核，独立记录角色和剧情关联；不能凭1组证据不足提前推断具体共享世界，不按JSON精确相等自动重分276/60；336全HOLD、train_admitted=0、GPU/HF 0。
