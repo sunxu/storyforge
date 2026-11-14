@@ -375,3 +375,10 @@ ARGS=(
 ```
 
 预期`BASE336_SCOPED_STORY_DB_PRECHECK__NO_DB`。**只有当Owner确认本次只读范围与数据库使用权限后**，才可在Mac已有只读DSN`R60_READONLY_DATABASE_URL`可用时加`--execute`，运行后回传仅计数SAFE。此次不取正文、角色人名、实际System内容或任何用户数据，绝不生成SFT或修改冻结文件；即使数据库匹配172条仍HOLD语义别名、历史Source version以及Reviewer真实独立性。
+
+
+## 2026-11-15：172 Story DB locator首次--execute泛化HOLD与安全分类诊断修复
+
+Owner Mac第一次`--execute`只收到`BASE336_SCOPED_STORY_DB_LOCATOR_HOLD`/`SOURCE_SCOPE_DB_ROLE_OR_RUNTIME_HOLD`，这**不能推断Story ID不存在**。原脚本异常入口丢弃具体失败阶段，已在`experiments/r58_quality/r60_base336_story_db_locator_cpu.py`修复：对`FROZEN_SOURCE`/`DB_DSN`/`DB_CONNECT`/`DB_TRANSACTION_GUARD`/`DB_STORY_AGGREGATE`/`DB_VERSION_AGGREGATE`/`DB_RESULT_VALIDATE`打固定阶段标记，异常只输出受控`reason_code`与`failure_phase`，不输出异常原文/DSN/Story ID/SQL参数/卡片内容。无误判`database_accessed=false`：失败时标记null（未确认），成功后才TRUE。原`r58_export_reader`/RLS/REPEATABLE READ READ ONLY及172 ID参数化聚合范围不变。合成回归涵盖秘密异常无泄漏，Ruff/pytest 169 PASS，[CI #43625075659](https://github.com/sunxu/storyforge/actions/runs/43625075659)。
+
+Mac Owner拉取该分支后，用先前完全相同`--execute`命令复跑一次，观察新的`failure_phase`/`reason_code`，并只回传SAFE。若`DB_DSN`/`DSN_NOT_SET_HOLD`，检查`R60_READONLY_DATABASE_URL`是否在同一shell导出；若`DB_CONNECT`，核查只读网络/TLS/登录但禁止贴密码；若`DB_TRANSACTION_GUARD`，检查登录用户是否恰为r58_export_reader及只读/RLS防线，不要为“通过测试”禁用guard；若`DB_STORY_AGGREGATE`或`DB_VERSION_AGGREGATE`，优先核实该reader是否有相应表的SELECT权限，而不是改用管理员。保持Train 0，GPU/HF Job 0。
