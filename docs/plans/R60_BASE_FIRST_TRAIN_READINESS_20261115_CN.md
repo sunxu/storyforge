@@ -283,3 +283,12 @@ Owner按已冻结顺序回传两份SAFE：Qwen3.7 `REVIEWER_SYNTHETIC_API_PASS__
 - Qwen/DeepSeek真实HTTP返回的id/response SHA只是客户端观测；Provider后台外部鉴证与Reviewer执行独立性仍B线HOLD。Runner只可返回`FORWARD_OFFICIAL_V2_EXECUTED__INDEPENDENCE_HOLD`，Train永远0；不能用完整合成CI将其写成生产PASS。
 - **目前不要用旧336条或未独立认证的任意真实样本调用`--execute`。** 下一工作是将独立验收的完整R50保护manifest和世界组件判定与新V2输入绑定；在审核前就生成经过独立审核的凭证。没有上述认证，保持预检HOLD，不会以重复调API解决。
 - 所有外部Reviewer请求费用、私有正文外发都只发生在Owner明确执行且来源已预认证时，不默许自动启动。C线HF CPU3合成技术PASS保留，不再重跑。
+
+
+## 2026-11-15：P0正式Reviewer V2强制磁盘Manifest闭环
+
+现已更改`experiments/r58_quality/r60_forward_official_review_v2.py`，`validated_bundle`只接收`schema/source/case`，遇到`protection/world`调用方裸字典立即拒绝。CLI强制提供`--protection-manifest`、`--world-manifest`，路径必须位于Owner本机私有根目录；复用`r60_forward_manifest_binding_v1.require_pre_review_from_manifests`的0600文件守卫、自身内容哈希检查及针对case的component定位，再运行`require_pre_review`。任何缺失、篡改、Gold72/P2B保护未完整覆盖、语义组件未决或Train/Val划分未绑定，皆**发生在API密钥读取及网络请求前**。旧冻结Runner、旧336/原QD20不改。GitHub Actions [#43724011504](https://github.com/sunxu/storyforge/actions/runs/43724011504) Ruff PASS、286项合成单测PASS（含裸字典、缺失路径、未覆盖保护和无请求断言）。
+
+**重要边界**：Manifest自哈希核验防止意外漂移，不是原始内容真实性的独立签名；不能依赖攻击者可同步重算的SHA+布尔值获得A线PASS。Owner的实际Gold72/P2B保护范围和16条语义比对仍需来自私有原始资料、可审核证据和独立决策。此时现有保护manifest的`covers_all_protected_sets=false`，因此即使提供CLI两条Manifest路径，也应在前置阶段HOLD、零模型请求。没有放行候选就不执行`--execute`。
+
+P1/P2最小取证：先仅在Owner Mac检查Gold72、P2B原始文件的出处（包括其初始source provenance、case-to-story crosswalk、hash与0600封存），禁止靠顶层manifest无法恢复ID就推定不存在；再对16条优先候选通过独立语义审核记录具体的角色、Opening、世界版本、剧情关联来源与不确定边。只冻结确已独立证实的组件；不复审旧336/不重跑HF；16条当前均HOLD。最终签发需把来源审批记录与保护集SHA、世界component manifest/实际历史截止版本联系起来。
