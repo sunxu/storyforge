@@ -63,3 +63,23 @@
 - Coordinator负责合并经CI验证的产物，汇总一张SAFE就绪表；每轮只问“哪个门禁离PASS更近？”，不按工具数或新增证据数统计进度。
 - 任何新脚本必须声明：直接关闭哪项门禁、复用什么旧代码、实际输入/输出、失败时采取的**一次定向恢复**、能否在无需付费/私有数据出境的情况下执行。不能关闭门禁的泛化诊断脚本暂缓。
 - **当前**：A/B/C均未按本计划重新核验，仍为HOLD。R50原始50精确ID、336真实CPU技术检查作为“通过的子证据”保留，不允许用它们自动提升整项门禁。
+
+
+## 2026-11-15 工程推进：C线实际Tokenizer/Collator合成Smoke入口已交付
+
+新增`experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py`及`test_r60_base_constructed_sft_cpu_smoke.py`，沿用已通过HF CPU336的`r60_common2_sft_cpu_template_audit.inspect_rows`、`bind_text_only_rope`和R18严格最后Assistant-only标签；不复刻第二套ms-swift实现。3条**完全合成**输入覆盖纯通用System、通用System+World、通用System+World+角色卡（合成story ID和revision，不能作为真实来源认证）。固定`Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`本地快照，只准读取tokenizer/config文件；`--stage both`调用实际ms-swift`qwen3_8`模板/`last_round`、严格R18 mask及实际DataCollator；完全CPU、断网、无模型权重/DB/私有样本/训练准入。只输出SAFE；错误时仅给固定阶段HOLD。GitHub Actions [#43680126553](https://github.com/sunxu/storyforge/actions/runs/43680126553) Ruff及228项合成测试PASS。
+
+**注意** CI仅验证代码/合成单元测试，**没有在真实固定快照执行ms-swift**，不称`ACTUAL_COLLATOR...PASS`。先使用已有的本地固定snapshot（若无则等待已有合规HF CPU环境；绝不为本Smoke下载27B权重或直接提交付费Job）：
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+# 必须替换为已有的、固定revision且有config.json/tokenizer.json/tokenizer_config.json的快照
+SNAPSHOT="/实际已存在的固定revision本地snapshot"
+"$PY" experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py \
+  --snapshot "$SNAPSHOT" --stage both
+```
+若snapshot缺失，不要用示例路径，也不应启动HF Job；记录`C_SNAPSHOT_UNAVAILABLE_HOLD`。本次只验证**合成V1合同兼容性**，不证明336真实训练数据可用、来源时序可信、A/B PASS或产品有卡等效。A/B继续并行，只能在来源隔离等必要门禁通过后才允许正式候选训练。
