@@ -27,7 +27,8 @@ SYNTHETIC_PROMPT = (
 
 def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
             allow_remote: bool, json_mode: bool, execute: bool,
-            evidence_dir: Path | None = None) -> dict:
+            evidence_dir: Path | None = None,
+            consistent_rubric: bool = False) -> dict:
     out = {
         "schema": "storyforge_r60_reviewer_protocol_probe_safe_v1",
         "status": "REVIEWER_PROTOCOL_HOLD",
@@ -41,9 +42,13 @@ def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
     }
     try:
         url = reviewer.validate_endpoint(endpoint, allow_remote)
+        instructions = (
+            reviewer.REVIEW_INSTRUCTIONS_V3_CONSISTENT
+            if consistent_rubric else reviewer.REVIEW_INSTRUCTIONS
+        )
         transport.build_body(
             model=model, prompt=SYNTHETIC_PROMPT,
-            instructions=reviewer.REVIEW_INSTRUCTIONS,
+            instructions=instructions,
             profile=protocol, json_mode=json_mode,
         )
         if not isinstance(model, str) or not model.strip():
@@ -64,12 +69,19 @@ def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
                     "schema": "storyforge_r60_synthetic_probe_observation_v1",
                     "status": "ATTEMPT_CREATED_BEFORE_REQUEST",
                     "model": model, "protocol": protocol,
+                    "rubric_profile": (
+                        "V3_CONSISTENT" if consistent_rubric else "LEGACY"
+                    ),
                     "synthetic_only": True, "train_admitted": 0,
                 }, sort_keys=True).encode(),
             )
         # This is the only network call; private source is never loaded.
         out["model_requests"] = 1
-        kwargs = {"protocol": protocol, "diagnose_json": True}
+        kwargs = {
+            "protocol": protocol, "diagnose_json": True,
+        }
+        if consistent_rubric:
+            kwargs["instructions"] = instructions
         if evidence_dir is not None:
             kwargs["evidence_sink"] = observations.append
         try:
@@ -131,6 +143,8 @@ def main() -> int:
     parser.add_argument("--key-env", default=None)
     parser.add_argument("--allow-remote-review", action="store_true")
     parser.add_argument("--json-mode", action="store_true")
+    parser.add_argument("--consistent-rubric", action="store_true",
+                        help="Use existing frozen-floor V3 prompt on this probe")
     parser.add_argument("--evidence-dir", type=Path, default=None,
                         help="Create-only private 0700 observation directory")
     parser.add_argument("--execute", action="store_true",
@@ -147,6 +161,7 @@ def main() -> int:
         allow_remote=args.allow_remote_review,
         json_mode=args.json_mode, execute=args.execute,
         evidence_dir=args.evidence_dir,
+        consistent_rubric=args.consistent_rubric,
     )
     print(json.dumps(report, sort_keys=True))
     return 0 if report["status"] in {
