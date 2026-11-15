@@ -10,6 +10,9 @@ import argparse
 import json
 import os
 import sys
+from pathlib import Path
+
+import r60_real_private_batch as private
 
 import r60_real_ai_dual_review as reviewer
 import r60_reviewer_transport as transport
@@ -24,7 +27,8 @@ SYNTHETIC_PROMPT = (
 
 
 def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
-            allow_remote: bool, json_mode: bool, execute: bool) -> dict:
+            allow_remote: bool, json_mode: bool, execute: bool,
+            evidence_dir: Path | None = None) -> dict:
     out = {
         "schema": "storyforge_r60_reviewer_protocol_probe_safe_v1",
         "status": "REVIEWER_PROTOCOL_HOLD",
@@ -50,11 +54,42 @@ def inspect(*, endpoint: str, model: str, protocol: str, key_env: str,
                        reason_code="SYNTHETIC_REQUEST_BUILT")
             return out
         key = os.environ.get(key_env, "")
-        # This is the only network call; private data is never loaded.
+        # For V2 evidence capture, seal a create-only private attempt BEFORE
+        # transport. This path is optional; old probes are unchanged.
+        observations = []
+        if evidence_dir is not None:
+            private.private_dir(evidence_dir, create=True)
+            private.write_new(
+                evidence_dir / "ATTEMPT_PRIVATE.json",
+                json.dumps({
+                    "schema": "storyforge_r60_synthetic_probe_observation_v1",
+                    "status": "ATTEMPT_CREATED_BEFORE_REQUEST",
+                    "model": model, "protocol": protocol,
+                    "synthetic_only": True, "train_admitted": 0,
+                }, sort_keys=True).encode(),
+            )
+        # This is the only network call; private source is never loaded.
         out["model_requests"] = 1
-        reviewer.model_request(url, model, key, SYNTHETIC_PROMPT,
-                               120, json_mode, protocol=protocol,
-                               diagnose_json=True)
+        kwargs = {"protocol": protocol, "diagnose_json": True}
+        if evidence_dir is not None:
+            kwargs["evidence_sink"] = observations.append
+        try:
+            reviewer.model_request(
+                url, model, key, SYNTHETIC_PROMPT,
+                120, json_mode, **kwargs,
+            )
+        finally:
+            if evidence_dir is not None:
+                private.write_new(
+                    evidence_dir / "OUTCOME_PRIVATE.json",
+                    json.dumps({
+                        "schema": "storyforge_r60_synthetic_probe_observation_v1",
+                        "status": "TRANSPORT_OBSERVATION_ONLY__INDEPENDENCE_HOLD",
+                        "observations": observations,
+                        "provider_execution_independence_verified": False,
+                        "train_admitted": 0,
+                    }, sort_keys=True).encode(),
+                )
         out.update(status="REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE",
                    reason_code="SCHEMA_VALID")
     except reviewer.Hold as exc:
@@ -97,6 +132,8 @@ def main() -> int:
     parser.add_argument("--key-env", default=None)
     parser.add_argument("--allow-remote-review", action="store_true")
     parser.add_argument("--json-mode", action="store_true")
+    parser.add_argument("--evidence-dir", type=Path, default=None,
+                        help="Create-only private 0700 observation directory")
     parser.add_argument("--execute", action="store_true",
                         help="Explicitly issue one synthetic API request")
     args = parser.parse_args()
@@ -110,6 +147,7 @@ def main() -> int:
         ),
         allow_remote=args.allow_remote_review,
         json_mode=args.json_mode, execute=args.execute,
+        evidence_dir=args.evidence_dir,
     )
     print(json.dumps(report, sort_keys=True))
     return 0 if report["status"] in {
