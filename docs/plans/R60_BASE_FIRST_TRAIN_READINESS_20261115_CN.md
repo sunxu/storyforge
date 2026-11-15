@@ -190,3 +190,10 @@ ARGS=(
 - `R60_BASE_FIRST_TRAIN_B_REVIEWER_EVIDENCE_PRIVATE.json`：336双侧来源统计与独立性证据缺口清单；现存原Runner代码确认V1对A/B各自构造相同原始Case prompt并调用不同配置模型，**只是代码路径证明，不能单凭此证明远端实际执行**。继续检查有无独立Provider服务日志/调用快照、V2/V3隔离证据；实在没有则按证据不足HOLD并提供最小补审选项，不自动全量重跑。
 
 Coordinator下次应报告**未决世界Story/案例数、可核实的实际双路Provider执行证据条数**，而不是再创造无限诊断脚本；A/B都不能通过时明确阻塞点及可选首训规模，暂不启动GPU。
+
+
+## 2026-11-15 A/B Owner实跑结果及下一实际裁决
+
+Owner已执行 `r60_base_first_train_ab_scope_cpu.py` 的precheck和`--execute`，两次SAFE一致：冻结336条、8组已知World精确重复风险82条（38 Story）、其余254条未命中这8组，Reviewer原始双侧PASS来源绑定，私有新文件2份已创建，DB/HF/GPU/模型请求均为0。真实隔离与Provider独立性均未完成，因此`BASE_FIRST_TRAIN_AB_SCOPE_BOUND__BOTH_HOLD`是**成功分组仍HOLD**；并非重新准入。
+
+下一步**不再跑同一分组脚本**、不重查336、也不重新提取8组完整Card/Opening。按[Mac私有A/B独立裁决交接](R60_BASE_FIRST_TRAIN_AB_PRIVATE_DECISION_HANDOFF_20261115_CN.md)分别完成 A 组来源语义判决、R50与组件隔离决策，和 B 组原Reviewer执行证据L1/L2/L3分级。仅输出不含Story ID/正文的SAFE，实际私有判决写0600 create-only。只有可确认的独立Provider执行证据才有资格将B提升PASS；代码路径及不同model ID只能支持L2。所有无法证明的内容继续HOLD，Train 0，GPU未启动。
