@@ -197,3 +197,19 @@ Coordinator下次应报告**未决世界Story/案例数、可核实的实际双�
 Owner已执行 `r60_base_first_train_ab_scope_cpu.py` 的precheck和`--execute`，两次SAFE一致：冻结336条、8组已知World精确重复风险82条（38 Story）、其余254条未命中这8组，Reviewer原始双侧PASS来源绑定，私有新文件2份已创建，DB/HF/GPU/模型请求均为0。真实隔离与Provider独立性均未完成，因此`BASE_FIRST_TRAIN_AB_SCOPE_BOUND__BOTH_HOLD`是**成功分组仍HOLD**；并非重新准入。
 
 下一步**不再跑同一分组脚本**、不重查336、也不重新提取8组完整Card/Opening。按[Mac私有A/B独立裁决交接](R60_BASE_FIRST_TRAIN_AB_PRIVATE_DECISION_HANDOFF_20261115_CN.md)分别完成 A 组来源语义判决、R50与组件隔离决策，和 B 组原Reviewer执行证据L1/L2/L3分级。仅输出不含Story ID/正文的SAFE，实际私有判决写0600 create-only。只有可确认的独立Provider执行证据才有资格将B提升PASS；代码路径及不同model ID只能支持L2。所有无法证明的内容继续HOLD，Train 0，GPU未启动。
+
+
+## 2026-11-15：把不可补回的证明前置到新候选工作流（Forward Evidence Gate V1）
+
+问题复盘：R60旧336条的质量回执缺乏逐侧Provider独立执行的可鉴别记录，旧日志无法凭后验字段重新生成。因此针对**今后新采样/补审**增加双阶段证明，而不是继续对旧336事后推断。新增纯离线`experiments/r58_quality/r60_forward_evidence_gate_v1.py`及合成单元测试；旧V1/V2/V3冻结Runner**不修改**。CI包含本模块的synthetic fail-closed检验。
+
+**时间顺序与验收责任**：
+
+1. **采样前**：冻结完整保护集manifest（R50完整50及本轮独立Eval集合、Story/Session/Message身份、跨UUID语义关联风险边）；未经保护范围审核不得开始候选抽样。由Owner/独立审核者批准`covers_all_protected_sets`，不能用known5的3条冒充全部保护集。
+2. **采样时**：固定来源Snapshot SHA、历史截止时间、Story World/角色/Opening具体修订及无未来泄漏的证据。对所有训练/Validation/评测Story构建来源绑定的语义组件（不确定关联组件整组HOLD/隔离）；冻结全局组件manifest，而不是每条候选只看独立hash。
+3. **模型调用前**：验证来源/保护集/世界组件凭证绑定与完整性，调用`require_pre_review(source, protection, world)`生成`PRE_REVIEW_SOURCE_AND_EVAL_FROZEN` seal；**未通过不得进入API队列**。当前模块仅是守卫函数，须由新Runner显式调用并以create-only 0600存储真实seal，尚未接入任何生产模型调度路径。
+4. **每次Reviewer调用时**：由独立执行器记录实际HTTP/Provider来源的请求ID、UTC开始/结束、状态码、Provider/模型路由、prompt/input/response摘要、是否包含对方意见、隔离/随机分路和准确源绑定。执行记录只写私有0600，禁止输出Header、Bearer、原始小说正文或响应。**本地自编UUID或自填布尔值不构成认证来源证据**。不同Endpoint/Model只是路由区分，不能代替实际相互独立证明。
+5. **发布候选前**：逐侧验证冻结准入标准与严重标记、外部日志可信性及请求/响应的真实绑定；调用`require_post_review(seal, executions)`。这个纯函数仅验证输入合同/部分自洽，布尔字段的真实性仍要求外部可信鉴别与独立审核。返回`FORWARD_EVIDENCE_BOUND__TRAIN_HOLD`，**仍不会自动Train PASS**，须有独立的来源验收和最终SFT CPU合同。
+6. **训练前**：最终数据和Split组件全量复核；Owner授权后才可能启动GPU。旧336保持HOLD、不追认、不重跑HF336/CPU3。
+
+重要：本次只交付**独立于冻结Runner的函数级前置门禁及合成测试**；未完成把真实保护集、语义判定、Provider可验证执行日志连接到新Runner的工作，不能声称生产接入/独立证据已经实现。下一步应先针对**新鲜且完全合成的双侧Review请求**打通可信执行证据链，再选择第一小批实际来源候选。所有写入create-only，发生任意HOLD立即中止而非重新评分；避免将证明再次拖到训练前。
