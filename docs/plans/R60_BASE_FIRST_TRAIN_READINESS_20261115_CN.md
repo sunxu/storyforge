@@ -133,3 +133,21 @@ printf 'RUN_KEY=%s\nSTAGE=%s\n' "$RUN_KEY" "$STAGE"
 ```
 
 必须获得`WRAPPED_CPU_JOB_SUBMITTED__TRAIN_HOLD`及可追踪Job ID才能认定提交；如果超时或不确认，绝对不盲重试，运行`diagnose`并查HF组织作业历史。Job成功后仅从`hf://buckets/adradar/storyforge-training/preflight/r60/base-start/constructed-system-cpu3/results/$RUN_KEY/R60_BASE_CONSTRUCTED_HF_CPU_SAFE_RECEIPT.json`只读查SAFE；预期`BASE_CONSTRUCTED_HF_CPU3_ACTUAL_COLLATOR_PASS__TRAIN_HOLD`。**这仍只证明3条合成合同的真实Collator兼容，A/B/真实最终来源未PASS，336候选保持Train 0。**
+
+## 2026-11-15 HF CPU3 实际验收：C线合成Collator技术子门禁 PASS
+
+Owner回传真实HF CPU3 SAFE，随后独立从私有Bucket固定路径只读`cat`核对完整文件，JSON逐字段一致：
+
+- `run_key=r60-constructcpu-20261115T061708Z-75c7f143b67d`；`schema=storyforge_r60_base_constructed_hf_cpu_safe_v1`。
+- `status=BASE_CONSTRUCTED_HF_CPU3_ACTUAL_COLLATOR_PASS__TRAIN_HOLD`；`phase=AUDIT_COMPLETE`；`synthetic_cases=3`。
+- `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`；`input_contract=R60_BASE_CONSTRUCTED_SYSTEM_V1`；`provenance=TRAINING_CONSTRUCTED_NOT_HISTORICAL`。
+- `tokenizer_verified=true`、`actual_collator_verified=true`、`last_assistant_only_mask_verified=true`。
+- `generic_system_sha256=a3e8fad23151b7cfbbe29d5a876d6d50c1d0225d6482173b307621db523d5a25`、`source_sha256=0c98a68091d91b203563ea1cc0bae5f1b75cc3ba129820b333fff24ea382a1c9`。
+- `gpu_started=false`、`model_weights_loaded=false`、`model_requests=0`、`database_accessed=false`、`train_admitted=0`、`private_values_emitted=false`。
+- **未验证** `real_candidate_contract_verified`、`real_source_content_verified`、`reviewer_independence_verified`、`world_component_isolation_verified`、`r50_complete_exclusion_verified`。
+
+权威SAFE回执：
+`hf://buckets/adradar/storyforge-training/preflight/r60/base-start/constructed-system-cpu3/results/r60-constructcpu-20261115T061708Z-75c7f143b67d/R60_BASE_CONSTRUCTED_HF_CPU_SAFE_RECEIPT.json`。
+
+**决定：冻结C线3条合成System+实际ms-swift/R18技术子门禁为PASS，不重复HF CPU3，不要求本地Mac补27B config。该成功不等于“最终真实候选SFT合同全量PASS”；C线剩余工作仅限于A/B准入后实际候选来源绑定、目标Mask与最终Train/Val冻结验证。下一主线切换到A（World/R50组件隔离）和B（Reviewer真实执行独立性）的证据收敛。** 原336候选依旧全部HOLD，GPU未获授权，Train 0。
+
