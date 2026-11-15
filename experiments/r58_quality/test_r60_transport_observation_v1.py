@@ -29,7 +29,9 @@ def test_observer_records_actual_mock_envelope_metadata(monkeypatch):
                      "message": {"content": json.dumps(sample())}}],
     }).encode()
     class FakeResponse(io.BytesIO):
-        headers = {"x-request-id": "mock-header-678910"}
+        def __init__(self, payload):
+            super().__init__(payload)
+            self.headers = {"x-request-id": "mock-header-678910"}
 
     class FakeOpener:
         def open(self, request, timeout):
