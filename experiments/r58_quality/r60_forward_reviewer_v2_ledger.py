@@ -9,7 +9,6 @@ Provider IDs seen in a mock/HTTP envelope are not authenticated independently.
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
 from typing import Callable
 
