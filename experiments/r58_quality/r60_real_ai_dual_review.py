@@ -6,7 +6,9 @@ API keys or paths. No database access; no R50 bodies; no GPU jobs.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+from datetime import datetime, timezone
 import os
 import sys
 import urllib.error
@@ -137,7 +139,8 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
                   timeout: int, json_mode: bool, *,
                   protocol: str = "openai-chat",
                   diagnose_json: bool = False,
-                  instructions: str = REVIEW_INSTRUCTIONS) -> dict:
+                  instructions: str = REVIEW_INSTRUCTIONS,
+                  evidence_sink=None) -> dict:
     try:
         body = transport.build_body(
             model=model, prompt=prompt, instructions=instructions,
@@ -153,21 +156,54 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
     headers = {"Content-Type": "application/json"}
     if key:
         headers["Authorization"] = "Bearer " + key
+    wire_request = json.dumps(body, ensure_ascii=False).encode("utf-8")
     request = urllib.request.Request(
-        endpoint, data=json.dumps(body, ensure_ascii=False).encode("utf-8"),
+        endpoint, data=wire_request,
         method="POST", headers=headers,
     )
     # Never follow redirects with private content or use a machine-wide proxy.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
+    started = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     try:
         with opener.open(request, timeout=timeout) as response:
             data = response.read(MAX_REPLY_BYTES + 1)
+            header_request_id = (
+                response.headers.get("x-request-id", "")
+                if hasattr(response, "headers") else ""
+            )
+        finished = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     except urllib.error.HTTPError as exc:
         if exc.code in SAFE_HTTP_CODES:
             raise Hold(f"MODEL_HTTP_{exc.code}_HOLD") from exc
         raise Hold("MODEL_TRANSPORT_HOLD") from exc
     except (urllib.error.URLError, TimeoutError, OSError, ValueError) as exc:
         raise Hold("MODEL_TRANSPORT_HOLD") from exc
+    if evidence_sink is not None:
+        # Captured BEFORE strict parsing, including invalid JSON outcomes.
+        # Observations are NOT authenticated Provider execution proofs.
+        try:
+            metadata = json.loads(data)
+            envelope_id = metadata.get("id") if type(metadata) is dict else None
+        except (ValueError, UnicodeError):
+            envelope_id = None
+        evidence_sink({
+            "schema": "storyforge_r60_reviewer_transport_observation_v1",
+            "started_at_utc": started,
+            "finished_at_utc": finished,
+            "request_body_sha256": hashlib.sha256(wire_request).hexdigest(),
+            "response_wire_sha256": hashlib.sha256(data).hexdigest(),
+            "provider_response_id_observed": (
+                envelope_id if type(envelope_id) is str
+                and 0 < len(envelope_id) <= 128 else None
+            ),
+            "provider_header_request_id_observed": (
+                header_request_id if type(header_request_id) is str
+                and 0 < len(header_request_id) <= 128 else None
+            ),
+            "provider_evidence_authenticated": False,
+            "model_id_requested": model,
+            "http_status_observed": 200,
+        })
     if len(data) > MAX_REPLY_BYTES:
         raise Hold("MODEL_REPLY_OVERSIZE")
     # Diagnostic mode is opt-in for a synthetic-only API probe. Never emit
