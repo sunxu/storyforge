@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 import os
 import sys
 import urllib.error
@@ -163,7 +163,7 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
     )
     # Never follow redirects with private content or use a machine-wide proxy.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect)
-    started = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    started = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     try:
         with opener.open(request, timeout=timeout) as response:
             data = response.read(MAX_REPLY_BYTES + 1)
@@ -171,7 +171,7 @@ def model_request(endpoint: str, model: str, key: str, prompt: str,
                 response.headers.get("x-request-id", "")
                 if hasattr(response, "headers") else ""
             )
-        finished = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        finished = datetime.now(UTC).isoformat().replace("+00:00", "Z")
     except urllib.error.HTTPError as exc:
         if exc.code in SAFE_HTTP_CODES:
             raise Hold(f"MODEL_HTTP_{exc.code}_HOLD") from exc
