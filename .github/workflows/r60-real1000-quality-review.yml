@@ -8,6 +8,7 @@ on:
       - "experiments/r58_quality/r60_reviewer_transport.py"
       - "experiments/r58_quality/r60_reviewer_protocol_probe.py"
       - "experiments/r58_quality/r60_real_ai_dual_review.py"
+      - "experiments/r58_quality/test_r60_transport_observation_v1.py"
       - "experiments/r58_quality/r60_real_quality_batch.py"
       - "experiments/r58_quality/test_r60_real_ai_dual_review.py"
       - "experiments/r58_quality/test_r60_real_quality_batch.py"
@@ -104,6 +105,7 @@ on:
       - "experiments/r58_quality/r60_reviewer_transport.py"
       - "experiments/r58_quality/r60_reviewer_protocol_probe.py"
       - "experiments/r58_quality/r60_real_ai_dual_review.py"
+      - "experiments/r58_quality/test_r60_transport_observation_v1.py"
       - "experiments/r58_quality/r60_real_quality_batch.py"
       - "experiments/r58_quality/test_r60_real_ai_dual_review.py"
       - "experiments/r58_quality/test_r60_real_quality_batch.py"
@@ -223,6 +225,7 @@ jobs:
             experiments/r58_quality/r60_pilot5_v2_replay_execute.py \
             experiments/r58_quality/r60_pilot5_v2_crosswalk.py \
             experiments/r58_quality/test_r60_real_ai_dual_review.py \
+            experiments/r58_quality/test_r60_transport_observation_v1.py \
             experiments/r58_quality/test_r60_real_quality_batch.py \
             experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py \
             experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py \
@@ -301,6 +304,7 @@ jobs:
         run: |
           python -m pytest -q \
             experiments/r58_quality/test_r60_real_ai_dual_review.py \
+            experiments/r58_quality/test_r60_transport_observation_v1.py \
             experiments/r58_quality/test_r60_real_quality_batch.py \
             experiments/r58_quality/test_r60_pilot5_v2_safe_audit.py \
             experiments/r58_quality/test_r60_pilot5_v2_replay_plan.py \
