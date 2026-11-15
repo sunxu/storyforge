@@ -1,8 +1,6 @@
 """Synthetic-only immutable HF CPU3 stage/worker checks, no HF request."""
 import hashlib
 import json
-import stat
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
