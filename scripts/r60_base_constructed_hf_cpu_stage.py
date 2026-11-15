@@ -38,7 +38,7 @@ def dependencies() -> list[str]:
 
 
 def verify(stage: Path, key: str) -> dict:
-    if (not RUN_RE.fullmatch(key) or stage.name != key or stage.is_symlink()
+    if (not RUN_RE.fullmatch(key) or stage.is_symlink()
             or not stage.is_dir()):
         raise ValueError("STAGE_IDENTITY_HOLD")
     manifest = InputManager.validate_json(InputManager.open_verified(
