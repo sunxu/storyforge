@@ -81,3 +81,76 @@ def test_legacy_no_observer_unchanged(monkeypatch):
     monkeypatch.setattr(ai.urllib.request, "build_opener",
                         lambda *args: FakeOpener())
     assert ai.model_request("https://example.invalid", "test", "", "x", 10, False) == sample()
+
+
+def test_probe_create_only_observation_binds_to_existing_client(monkeypatch, tmp_path):
+    import r60_real_private_batch as private
+    import r60_reviewer_protocol_probe as probe
+
+    root = tmp_path / "private"
+    root.mkdir(mode=0o700)
+    monkeypatch.setattr(private, "BASE", root)
+    target = root / "qwen-test"
+    calls = []
+
+    def fake_request(endpoint, model, key, prompt, timeout, json_mode, **kwargs):
+        assert (target / "ATTEMPT_PRIVATE.json").exists()
+        calls.append(model)
+        kwargs["evidence_sink"]({
+            "provider_response_id_observed": "synthetic-qwen-id",
+            "provider_evidence_authenticated": False,
+        })
+        return sample()
+
+    monkeypatch.setattr(ai, "model_request", fake_request)
+    result = probe.inspect(
+        endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        model="qwen3.7-flash", protocol="openai-chat",
+        key_env="DASHSCOPE_API_KEY", allow_remote=True,
+        json_mode=True, execute=True, evidence_dir=target,
+    )
+    assert calls == ["qwen3.7-flash"]
+    assert result["status"] == "REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE"
+    data = json.loads((target / "OUTCOME_PRIVATE.json").read_text())
+    assert data["provider_execution_independence_verified"] is False
+    assert data["observations"][0]["provider_response_id_observed"] == "synthetic-qwen-id"
+    assert all(f.stat().st_mode & 0o777 == 0o600 for f in target.iterdir())
+    again = probe.inspect(
+        endpoint="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        model="qwen3.7-flash", protocol="openai-chat",
+        key_env="DASHSCOPE_API_KEY", allow_remote=True,
+        json_mode=True, execute=True, evidence_dir=target,
+    )
+    assert again["status"] == "REVIEWER_PROTOCOL_HOLD"
+    assert calls == ["qwen3.7-flash"]
+
+
+def test_probe_observation_retained_when_invalid_json(monkeypatch, tmp_path):
+    import r60_real_private_batch as private
+    import r60_reviewer_protocol_probe as probe
+
+    root = tmp_path / "private"
+    root.mkdir(mode=0o700)
+    monkeypatch.setattr(private, "BASE", root)
+    target = root / "deepseek-test"
+
+    def fake_request(endpoint, model, key, prompt, timeout, json_mode, **kwargs):
+        kwargs["evidence_sink"]({
+            "provider_response_id_observed": "synthetic-deepseek-id",
+            "provider_evidence_authenticated": False,
+        })
+        raise ai.Hold("MODEL_JSON_INVALID")
+
+    monkeypatch.setattr(ai, "model_request", fake_request)
+    result = probe.inspect(
+        endpoint="https://api.deepseek.com",
+        model="deepseek-flash", protocol="deepseek-chat",
+        key_env="R60_DEEPSEEK_KEY", allow_remote=True,
+        json_mode=True, execute=True, evidence_dir=target,
+    )
+    assert result["reason_code"] == "MODEL_JSON_INVALID"
+    observed = json.loads((target / "OUTCOME_PRIVATE.json").read_text())
+    assert observed["observations"][0]["provider_response_id_observed"] == (
+        "synthetic-deepseek-id"
+    )
+    assert observed["provider_execution_independence_verified"] is False
