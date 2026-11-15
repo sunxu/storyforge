@@ -92,6 +92,8 @@ on:
       - "scripts/r60_base_constructed_hf_cpu_worker.sh"
       - "scripts/r60_base_constructed_hf_cpu_cli.py"
       - "experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py"
+      - "experiments/r58_quality/r60_forward_reviewer_v2_ledger.py"
+      - "experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py"
       - "experiments/r58_quality/r60_forward_evidence_gate_v1.py"
       - "experiments/r58_quality/test_r60_forward_evidence_gate_v1.py"
       - "experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py"
@@ -186,6 +188,8 @@ on:
       - "scripts/r60_base_constructed_hf_cpu_worker.sh"
       - "scripts/r60_base_constructed_hf_cpu_cli.py"
       - "experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py"
+      - "experiments/r58_quality/r60_forward_reviewer_v2_ledger.py"
+      - "experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py"
       - "experiments/r58_quality/r60_forward_evidence_gate_v1.py"
       - "experiments/r58_quality/test_r60_forward_evidence_gate_v1.py"
       - "experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py"
@@ -338,4 +342,6 @@ jobs:
             experiments/r58_quality/test_r60_base_first_train_ab_scope_cpu.py \
             experiments/r58_quality/r60_forward_evidence_gate_v1.py \
             experiments/r58_quality/test_r60_forward_evidence_gate_v1.py \
+            experiments/r58_quality/r60_forward_reviewer_v2_ledger.py \
+            experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py \
             experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
