@@ -268,3 +268,18 @@ Owner按已冻结顺序回传两份SAFE：Qwen3.7 `REVIEWER_SYNTHETIC_API_PASS__
 最小修改：现有`r60_reviewer_protocol_probe.py`新增**可选**`--consistent-rubric`，只在此选项生效时向现有`model_request`传旧有V3冻结门槛提示词，并在create-only私有`ATTEMPT_PRIVATE.json`标记`rubric_profile=V3_CONSISTENT`；旧调用默认不改、历史回执不动、不新造模型适配器。CI [#43694248463](https://github.com/sunxu/storyforge/actions/runs/43694248463) Ruff、268/268合成测试PASS。**未重复实际API调用**。既有`OUTCOME_PRIVATE.json`仅保留观测ID和请求/响应SHA，不含原始Reviewer JSON，因此不可能从该文件逆推出失败评分；需要新鲜请求才能验证V3实战表现，但不得覆盖旧目录或把新结果替代冻结结论。
 
 下一步优先只读检查已有两条OUTCOME的观测字段完整性，随后将新Runner显式绑定V3审核提示词、可信执行日志/Provider证明和前置A线来源保护；未完成前不允许真实候选审核或训练。新合成V3重试**不是必须立即执行的准入门禁**，不为修复历史SAFE而重复发送。
+
+
+## 2026-11-15：Qwen+DeepSeek前置审核V2入口接通（尚未批准真实候选）
+
+新增`experiments/r58_quality/r60_forward_official_review_v2.py`及`test_r60_forward_official_review_v2.py`。GitHub Actions [#43694584107](https://github.com/sunxu/storyforge/actions/runs/43694584107)：Ruff PASS、276合成测试PASS。
+
+与原QD20历史调用相同，**不再发明新Provider客户端**：Reviewer A固定`qwen3.7-flash`/百炼、`DASHSCOPE_API_KEY`；Reviewer B固定`deepseek-flash`/DeepSeek官方、`R60_DEEPSEEK_KEY`，仅复用`r60_real_ai_dual_review.model_request`与`r60_reviewer_transport.build_body`。两侧都按`REVIEW_INSTRUCTIONS_V3_CONSISTENT`冻结数值下限审核，原V1/V2/V3旧回执/原QD20旧版本不变。
+
+新输入是单个Owner Mac私有0600 JSON（`schema=storyforge_r60_forward_official_review_input_private_v1`，仅五个字段`schema/source/protection/world/case`）。预检查：`case`历史3消息+target摘要必须与`source`声明严格相等；`require_pre_review`要求全部评测保护及来源组件凭证明确齐全。只有同时传`--execute --allow-remote-private-review`才可读取模型API Keys、执行真实网络请求，默认不发请求。真实执行采用0700新私有目录，创建仅一次的0600前置Seal及逐侧REQUEST/OUTCOME文件，A失败即停止不请求B；不覆盖、不重试、不修改冻结数据。已覆盖门禁缺失时0调用、篡改时0调用、禁止重复提交、合成双侧mock通路及冻结评分不一致时停止。
+
+**范围严禁误判**：
+- 新Runner检查的是传入声明与JSON摘要绑定、时序顺序及私有执行观测；`source/protection/world`中的布尔声明**不能自动由本Runner证明真实**，目前真实R50保护集、Story语义组件的独立可信来源认证仍为A线HOLD。
+- Qwen/DeepSeek真实HTTP返回的id/response SHA只是客户端观测；Provider后台外部鉴证与Reviewer执行独立性仍B线HOLD。Runner只可返回`FORWARD_OFFICIAL_V2_EXECUTED__INDEPENDENCE_HOLD`，Train永远0；不能用完整合成CI将其写成生产PASS。
+- **目前不要用旧336条或未独立认证的任意真实样本调用`--execute`。** 下一工作是将独立验收的完整R50保护manifest和世界组件判定与新V2输入绑定；在审核前就生成经过独立审核的凭证。没有上述认证，保持预检HOLD，不会以重复调API解决。
+- 所有外部Reviewer请求费用、私有正文外发都只发生在Owner明确执行且来源已预认证时，不默许自动启动。C线HF CPU3合成技术PASS保留，不再重跑。
