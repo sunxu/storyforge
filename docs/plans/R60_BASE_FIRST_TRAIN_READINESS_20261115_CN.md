@@ -223,3 +223,39 @@ Owner已执行 `r60_base_first_train_ab_scope_cpu.py` 的precheck和`--execute`�
 - 此阶段**不支持live HTTP调用**。模拟Provider请求ID只属于未经认证的`TRANSPORT_OBSERVATION_ONLY__NOT_AUTHENTICATED`。两侧合成成功只返回`SYNTHETIC_TWO_SIDE_LEDGER_COMPLETE__INDEPENDENCE_HOLD`，**绝不可填入后置Gate需要的`provider_evidence_authenticated=true`**；没有独立Provider服务器日志或可鉴别网关审计，就只能HOLD。
 - CI覆盖缺保护集→零请求、封存先于请求、review内容不串入另一方、第一次失败→不请求B、不可重复执行、0600权限。当前未在Owner Mac创建任何V2私有审计文件或实际请求，也未为旧336条追认任何执行独立性。
 - **下一个可交付的最小缺口**：为新Runner建立受信的Provider/4Router审计记录签名或只读查询（实际请求ID、响应ID、UTC时间、模型/路由、原始请求体哈希、响应哈希、可关联不可篡改的日志）。只有可核实来源的记录才交给`require_post_review`；本地代码自填时间戳、自造UUID或声明隔离均不够。上线前必须先用合成案例实测接入、复核匿名日志与真实请求绑定，明确单次真实API调用需要Owner授权和费用。
+
+
+## 2026-11-15：复用Qwen3.7 Flash / DeepSeek Flash历史真实调用，不重复适配
+
+已复核原有`experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py`：模型ID为`qwen3.7-flash`、`deepseek-flash`；百炼`https://dashscope.aliyuncs.com/compatible-mode/v1`与官方`https://api.deepseek.com`，历史20条实审采用冻结六维JSON与DeepSeek`thinking=disabled`。旧QD20配置与历史私有回执不动；原模型请求实现`r60_real_ai_dual_review.model_request`、`r60_reviewer_transport.build_body`和单模型`r60_reviewer_protocol_probe.py`均直接复用。密钥**严格区分**：`DASHSCOPE_API_KEY`用于Qwen；`R60_DEEPSEEK_KEY`用于新DeepSeek探针（旧QD20脚本仍读`DEEPSEEK_API_KEY`）；`R60_CLAUDE_KEY`只用于Claude，不得重绑定。
+
+新增仅**可选**的`model_request(..., evidence_sink=...)`（旧调用默认无变化）：请求/响应SHA、开始/结束UTC、HTTP成功状态、Provider响应JSON顶层id及响应Header的`x-request-id`，**在严格JSON校验之前**传给sink。因此无效JSON也能保留不含原始内容的观测信息，失败不改冻结门槛。此数据标记`provider_evidence_authenticated=false`，ID只是传输观测，不是第三方验签。
+
+既有`r60_reviewer_protocol_probe.py`新增可选`--evidence-dir`：先创建Owner Mac的0700私有目录及0600尝试文件，再做一次**完全合成**真实API调用，最终保存0600`OUTCOME_PRIVATE.json`（即便JSON无效），不重复使用相同目录。仍不读取小说/R50、无GPU/Train。CI [#43693036620](https://github.com/sunxu/storyforge/actions/runs/43693036620)：Ruff PASS、266合成测试PASS。此前旧QD20历史调用不在本次重执行范围之内。
+
+**Owner Mac两次单模型合成探针（每模型一次，不读取任何私有故事）**：
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+test -n "${DASHSCOPE_API_KEY:-}"
+test -n "${R60_DEEPSEEK_KEY:-}"
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint https://dashscope.aliyuncs.com/compatible-mode/v1 \
+  --model qwen3.7-flash --protocol openai-chat \
+  --key-env DASHSCOPE_API_KEY --json-mode --allow-remote-review --execute \
+  --evidence-dir "$BASE/r60-qwen37-v2probe-20261115"
+"$PY" experiments/r58_quality/r60_reviewer_protocol_probe.py \
+  --endpoint https://api.deepseek.com \
+  --model deepseek-flash --protocol deepseek-chat \
+  --key-env R60_DEEPSEEK_KEY --json-mode --allow-remote-review --execute \
+  --evidence-dir "$BASE/r60-deepseek-flash-v2probe-20261115"
+```
+
+若任意一条HOLD，不得再次使用同一目录重试；检查其`OUTCOME_PRIVATE.json`及SAFE，保持无内容输出。两者成功也只说明合成请求协议和本地证据采集兼容，不代表Provider独立日志已认证、更不代表真实336条来源准入。正式批次仍以`require_pre_review`通过和可外部鉴别的Provider执行证据为硬门禁。
