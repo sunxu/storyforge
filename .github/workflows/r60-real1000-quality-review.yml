@@ -93,6 +93,8 @@ on:
       - "scripts/r60_base_constructed_hf_cpu_worker.sh"
       - "scripts/r60_base_constructed_hf_cpu_cli.py"
       - "experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py"
+      - "experiments/r58_quality/r60_base336_exploratory_split.py"
+      - "experiments/r58_quality/test_r60_base336_exploratory_split.py"
       - "experiments/r58_quality/r60_forward_official_review_v2.py"
       - "experiments/r58_quality/test_r60_forward_official_review_v2.py"
       - "experiments/r58_quality/r60_forward_reviewer_v2_ledger.py"
@@ -194,6 +196,8 @@ on:
       - "scripts/r60_base_constructed_hf_cpu_worker.sh"
       - "scripts/r60_base_constructed_hf_cpu_cli.py"
       - "experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py"
+      - "experiments/r58_quality/r60_base336_exploratory_split.py"
+      - "experiments/r58_quality/test_r60_base336_exploratory_split.py"
       - "experiments/r58_quality/r60_forward_official_review_v2.py"
       - "experiments/r58_quality/test_r60_forward_official_review_v2.py"
       - "experiments/r58_quality/r60_forward_reviewer_v2_ledger.py"
@@ -360,6 +364,8 @@ jobs:
             experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py \
             experiments/r58_quality/r60_forward_official_review_v2.py \
             experiments/r58_quality/test_r60_forward_official_review_v2.py \
+            experiments/r58_quality/r60_base336_exploratory_split.py \
+            experiments/r58_quality/test_r60_base336_exploratory_split.py \
             experiments/r58_quality/r60_forward_manifest_binding_v1.py \
             experiments/r58_quality/test_r60_forward_manifest_binding_v1.py \
             experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
