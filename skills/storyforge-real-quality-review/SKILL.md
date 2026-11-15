@@ -245,3 +245,8 @@ Owner SAFE确认8组私有审核模板全部创建，语义状态仍HOLD。新�
 ## 2026-11-15：Codex 8组语义审核7通用/1不足；成员卡片与Opening对照门禁
 
 Owner Codex SAFE：7组`GENERIC_TEMPLATE`、1组`INSUFFICIENT_EVIDENCE`，无`SPECIFIC_SHARED_WORLD`；8组隔离决定全部HOLD，原文件及精确引文校验通过。不能凭7组通用模板直接PASS训练隔离，需补充组内全体成员匹配当前/归档来源的角色卡与opening。新增`experiments/r58_quality/r60_base336_group_cards_opening_cpu.py`：严格只读`r58_export_reader`+RLS、先复算8组关联及成员版本，再限38个Story ID提取roster明确匹配`v2_data.character/characters/opening`至Mac私有0700新目录8个0600文件，超限/漂移HOLD且不输出原文、不自动做语义判定；合成CI 215 PASS。Owner命令在Base-start权威任务书。历史actual-sent、R50完整排除、Reviewer独立性和336条Train准入仍HOLD。
+
+
+## 2026-11-15：Base首训C线合成真实Collator Smoke
+
+`experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py`是C线最短技术验收入口：3条合成的无卡/World/World+角色System，直接复用`r60_common2_sft_cpu_template_audit.inspect_rows`、实际ms-swift `qwen3_8` `last_round`和R18严格标签审计，不重复336条旧输入，不请求模型或读取私有内容。CI [#43680126553](https://github.com/sunxu/storyforge/actions/runs/43680126553) 228项合成PASS，**真实固定快照上的CPU Collator尚未执行**；只有在已有本地固定Snapshot时才运行`--stage both`。缺少Snapshot保持HOLD，不自动启动付费HF CPU/GPU任务。该Smoke通过仍不证明真实目标来源/世界隔离/Reviewer独立性或产品等效。执行规则和命令见`docs/plans/R60_BASE_FIRST_TRAIN_READINESS_20261115_CN.md`。
