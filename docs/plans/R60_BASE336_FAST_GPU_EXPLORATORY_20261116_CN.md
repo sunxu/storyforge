@@ -37,3 +37,44 @@
 
 ## 交付清单（只输出SAFE）
 本次实验有效执行前应得到：336原始身份匹配统计、Train/Val数量、两组Story数量、跨组已知World JSON组件数=0、Known5排除=3、R50原始50精确身份交集=0、各数据文件SHA、真实Collator PASS、固定GPU模型配置SHA、独立GPU RUN_KEY、远端Bucket stage READY回执。任一校验失败则不submit并说明HOLD类别，不伪称GPU已启动。
+
+
+## 2026-11-16：336专用划分器已实现，Owner Mac下一条命令
+
+代码：`experiments/r58_quality/r60_base336_exploratory_split.py` + `test_r60_base336_exploratory_split.py`；CI [#43743627660](https://github.com/sunxu/storyforge/actions/runs/43743627660) Ruff PASS、291项测试PASS。此处CI是**合成336行**，没有访问Mac真实私有文件，**尚未产生实际Train/Validation JSONL，也未提交GPU**。
+
+本脚本沿用`identity.verified_cases_report`、`quarantine.construct`、`audit.prepare`、`preview.preview`和已保存8组World私有roster，不开发第二套原始数据提取、训练格式或模型评分器。8组中的同World JSON成员（含历史版本）作为保守的不可跨split约束；保持其他Story原始确定性slot，混合Train/Val的已知组件整体调整到Train，最终重新核验8组均不跨split。此前82条仅说明已知World风险范围；此方法不能证明语义世界隔离或R50跨世界不相交，结果必须只标`EXPLORATORY`。
+
+**在Owner Mac执行，仅可安全显示SAFE聚合：**
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+RUN_KEY="r60-base336-exploratory-$(date -u +%Y%m%dT%H%M%SZ)-$("$PY" -c 'import secrets; print(secrets.token_hex(6))')"
+OUT="$BASE/$RUN_KEY"
+COMMON=(
+  --old-dir "$BASE/r60-quality-fast1000-api-v1"
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+  --roster-dir "$BASE/r60-base336-world-cross-review-20261115"
+  --output-dir "$OUT"
+)
+"$PY" experiments/r58_quality/r60_base336_exploratory_split.py "${COMMON[@]}"
+# 仅上一行返回BASE336_EXPLORATORY_SPLIT_PREFLIGHT__NO_WRITE才执行:
+"$PY" experiments/r58_quality/r60_base336_exploratory_split.py "${COMMON[@]}" --write
+# output只在0600的Owner Mac私有目录；不要上传/打印正文。
+```
+
+验收：`candidate_rows=336`、`train_rows+validation_rows=336`、两侧非零、`known_world_cross_split_groups=0`、`train_admitted=0`、`gpu_started=false`，并确认`OUT`中仅有`train.jsonl`、`validation.jsonl`和SHA绑定Manifest、权限0600。**CPU旧技术Stage不允许代替这三个文件**。
+
+下一阶段：用最终字节SHA执行现有ms-swift真实Collator/LabelMask验证、为本R60 release实现独立且不可覆盖的GPU Stage与R54的已验收QLoRA运行方案绑定；严禁直接运行写死31/9、16步及旧SHA的R54 submit脚本。没有Owner Mac发布结果前，`GPU_STAGE_READY=false`、GPU Job 0。
