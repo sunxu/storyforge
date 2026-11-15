@@ -259,3 +259,12 @@ test -n "${R60_DEEPSEEK_KEY:-}"
 ```
 
 若任意一条HOLD，不得再次使用同一目录重试；检查其`OUTCOME_PRIVATE.json`及SAFE，保持无内容输出。两者成功也只说明合成请求协议和本地证据采集兼容，不代表Provider独立日志已认证、更不代表真实336条来源准入。正式批次仍以`require_pre_review`通过和可外部鉴别的Provider执行证据为硬门禁。
+
+
+## 2026-11-15：Qwen3.7/DeepSeek Flash首次新合成API观测
+
+Owner按已冻结顺序回传两份SAFE：Qwen3.7 `REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE`（1请求、`SCHEMA_VALID`）；DeepSeek Flash `REVIEWER_PROTOCOL_HOLD`（1请求、`QUALITY_FLOOR_DECISION_INCONSISTENT`）。两次均synthetic only、私有来源读取0、GPU0、Train0。旧严格校验器对PASS评分低于冻结门槛阻断正确：不可改分、自动降级、自动补全或追认。已检查旧探针使用`REVIEW_INSTRUCTIONS`，包含六维要求但未明确写出数值下限；仓库已存在`REVIEW_INSTRUCTIONS_V3_CONSISTENT`，明确六维下限和严重标志。此为合理可能原因，不能仅凭SAFE判断DeepSeek实际给了哪个低分或原始意图。
+
+最小修改：现有`r60_reviewer_protocol_probe.py`新增**可选**`--consistent-rubric`，只在此选项生效时向现有`model_request`传旧有V3冻结门槛提示词，并在create-only私有`ATTEMPT_PRIVATE.json`标记`rubric_profile=V3_CONSISTENT`；旧调用默认不改、历史回执不动、不新造模型适配器。CI [#43694248463](https://github.com/sunxu/storyforge/actions/runs/43694248463) Ruff、268/268合成测试PASS。**未重复实际API调用**。既有`OUTCOME_PRIVATE.json`仅保留观测ID和请求/响应SHA，不含原始Reviewer JSON，因此不可能从该文件逆推出失败评分；需要新鲜请求才能验证V3实战表现，但不得覆盖旧目录或把新结果替代冻结结论。
+
+下一步优先只读检查已有两条OUTCOME的观测字段完整性，随后将新Runner显式绑定V3审核提示词、可信执行日志/Provider证明和前置A线来源保护；未完成前不允许真实候选审核或训练。新合成V3重试**不是必须立即执行的准入门禁**，不为修复历史SAFE而重复发送。
