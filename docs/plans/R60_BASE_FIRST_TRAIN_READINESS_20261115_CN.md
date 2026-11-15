@@ -151,3 +151,42 @@ Owner回传真实HF CPU3 SAFE，随后独立从私有Bucket固定路径只读`ca
 
 **决定：冻结C线3条合成System+实际ms-swift/R18技术子门禁为PASS，不重复HF CPU3，不要求本地Mac补27B config。该成功不等于“最终真实候选SFT合同全量PASS”；C线剩余工作仅限于A/B准入后实际候选来源绑定、目标Mask与最终Train/Val冻结验证。下一主线切换到A（World/R50组件隔离）和B（Reviewer真实执行独立性）的证据收敛。** 原336候选依旧全部HOLD，GPU未获授权，Train 0。
 
+
+
+## 2026-11-15：A/B首训风险快速收敛（不再重复质量审核）
+
+新增`experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py`与合成测试。它**离线重放**原始V1/V2/V3 Crosswalk及冻结R50 Known5 quarantine的完整验证，不重新打模型分；只读8组来源roster、重算336 Reviewer双侧来源PASS绑定，不请求DB、不访问HF/GPU。对336条精确划分：**82条命中8组已知跨Story World JSON重复风险，254条未命中这8组**（仅表示未命中这些精确组，不表示语义隔离/评测保护已PASS）；分别生成两个私有0600 create-only报告，用于A优先定向补证、B定位执行证明缺口。Review实际Provider独立性、R50完整保护、World组件隔离仍HOLD，训练准入0。CI [#43686589680](https://github.com/sunxu/storyforge/actions/runs/43686589680) Ruff+241合成测试PASS（不代表Mac私有真实审计已执行）。
+
+Mac Owner执行（只读原来源，输出新文件；首次执行使用相同目录和参数，`--execute`仅在预检PASS后运行一次）：
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+ARGS=(
+ --old-dir "$BASE/r60-quality-fast1000-api-v1"
+ --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114"
+ --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1"
+ --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1"
+ --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1"
+ --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1"
+ --roster-dir "$BASE/r60-base336-world-cross-review-20261115"
+ --output-dir "$BASE/r60-base-first-train-ab-scope-20261115"
+)
+
+"$PY" experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py "${ARGS[@]}"
+"$PY" experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py "${ARGS[@]}" --execute
+```
+
+预期`BASE_FIRST_TRAIN_AB_SCOPE_BOUND__BOTH_HOLD`，明确是**成功分组但仍待准入**，不是失败。输出：
+
+- `R60_BASE_FIRST_TRAIN_A_KNOWN_WORLD_RISK_PRIVATE.json`：82风险位置、254未命中位置、8组Codex原SAFE摘要（仅Owner回执，不冒充独立重新盲审）。下一步仅对那1组证据不足及7组明确疑点进行定向关联判断；不要把254自动当正式Train。
+- `R60_BASE_FIRST_TRAIN_B_REVIEWER_EVIDENCE_PRIVATE.json`：336双侧来源统计与独立性证据缺口清单；现存原Runner代码确认V1对A/B各自构造相同原始Case prompt并调用不同配置模型，**只是代码路径证明，不能单凭此证明远端实际执行**。继续检查有无独立Provider服务日志/调用快照、V2/V3隔离证据；实在没有则按证据不足HOLD并提供最小补审选项，不自动全量重跑。
+
+Coordinator下次应报告**未决世界Story/案例数、可核实的实际双路Provider执行证据条数**，而不是再创造无限诊断脚本；A/B都不能通过时明确阻塞点及可选首训规模，暂不启动GPU。
