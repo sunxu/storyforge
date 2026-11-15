@@ -83,3 +83,53 @@ SNAPSHOT="/实际已存在的固定revision本地snapshot"
   --snapshot "$SNAPSHOT" --stage both
 ```
 若snapshot缺失，不要用示例路径，也不应启动HF Job；记录`C_SNAPSHOT_UNAVAILABLE_HOLD`。本次只验证**合成V1合同兼容性**，不证明336真实训练数据可用、来源时序可信、A/B PASS或产品有卡等效。A/B继续并行，只能在来源隔离等必要门禁通过后才允许正式候选训练。
+
+
+## 2026-11-15：C线正式切换到HF CPU3合成合同验证（不再修Mac config）
+
+历史HF CPU336已成功的私有Bucket远端原代码可只读确认，`scripts/r60_base_cpu336_hf_worker.py`的`snapshot_download`按固定revision仅获取`config.json/tokenizer.json/tokenizer_config.json`等允许的小文件，已有实际ms-swift`qwen3_8/last_round`和R18审计336/336通过。Mac本地`~/.local/share/storyforge/qwen-tokenizer/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`缺`config.json`，标准HF缓存也不存在，**不再在Mac补这个文件作为C线阻塞**。
+
+新实现（独立于旧336）：`scripts/r60_base_constructed_hf_cpu_stage.py`、`r60_base_constructed_hf_cpu_worker.py`、`r60_base_constructed_hf_cpu_worker.sh`、`r60_base_constructed_hf_cpu_cli.py`。采用已有`r60_common2_wrapped_hf_stage.local_dependencies`SHA闭包、`r60_common2_wrapped_hf_cli`的远端文件集检查/单次提交marker/分页历史/CLI Dry Run安全合同，**不重复实现HF调度器**。Stage仅包含合成Generator、V1 System合同和相关代码/依赖，没有任何Story内容、R50或训练数据；Worker在HF `cpu-upgrade`下载固定revision仅Tokenizer/Config/Processor，复用`r60_base_constructed_sft_cpu_smoke.run`、`r60_common2_sft_cpu_template_audit.inspect_rows`与R18严格最后Assistant标签检查。三条合成：无卡/World/World+角色，全部Train 0，模型权重/推理/GPU为0。只输出独立SAFE回执至`preflight/r60/base-start/constructed-system-cpu3/results/<RUN_KEY>/`，不可覆盖旧336产物。CI [#43682266393](https://github.com/sunxu/storyforge/actions/runs/43682266393) **Ruff+236合成测试PASS**，包括实际Stage依赖闭包和远端mount名适配；**当前不代表HF真实Job已运行**。
+
+### Owner Mac：只生成/验收合成Stage，再上传并Dry Run
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+STAGE_PARENT="$BASE/r60-base-constructed-cpu3-stages"
+mkdir -p "$STAGE_PARENT"
+chmod 700 "$STAGE_PARENT"
+RUN_KEY="r60-constructcpu-$(date -u +%Y%m%dT%H%M%SZ)-$("$PY" -c 'import secrets; print(secrets.token_hex(6))')"
+STAGE="$STAGE_PARENT/$RUN_KEY"
+
+"$PY" scripts/r60_base_constructed_hf_cpu_stage.py prepare \
+  --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_constructed_hf_cpu_stage.py verify \
+  --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_constructed_hf_cpu_cli.py cli-flags \
+  --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_constructed_hf_cpu_cli.py preflight \
+  --stage "$STAGE" --run-key "$RUN_KEY"
+
+# 此命令仅上传完全合成的代码Stage，不包含私有真实Story文本：
+"$PY" scripts/r60_base_constructed_hf_cpu_cli.py sync \
+  --stage "$STAGE" --run-key "$RUN_KEY"
+"$PY" scripts/r60_base_constructed_hf_cpu_cli.py ready \
+  --stage "$STAGE" --run-key "$RUN_KEY"
+
+printf 'RUN_KEY=%s\nSTAGE=%s\n' "$RUN_KEY" "$STAGE"
+```
+
+如果返回`WRAPPED_CPU_REMOTE_AND_CLI_READY__NO_JOB`且整个链无HOLD，才进入一次CPU提交；`ready`不是实际运行成功。CPU会产生费用，但没有27B权重或GPU。Owner执行单次提交命令：
+```bash
+"$PY" scripts/r60_base_constructed_hf_cpu_cli.py submit \
+  --stage "$STAGE" --run-key "$RUN_KEY" --execute
+```
+
+必须获得`WRAPPED_CPU_JOB_SUBMITTED__TRAIN_HOLD`及可追踪Job ID才能认定提交；如果超时或不确认，绝对不盲重试，运行`diagnose`并查HF组织作业历史。Job成功后仅从`hf://buckets/adradar/storyforge-training/preflight/r60/base-start/constructed-system-cpu3/results/$RUN_KEY/R60_BASE_CONSTRUCTED_HF_CPU_SAFE_RECEIPT.json`只读查SAFE；预期`BASE_CONSTRUCTED_HF_CPU3_ACTUAL_COLLATOR_PASS__TRAIN_HOLD`。**这仍只证明3条合成合同的真实Collator兼容，A/B/真实最终来源未PASS，336候选保持Train 0。**
