@@ -154,3 +154,46 @@ def test_probe_observation_retained_when_invalid_json(monkeypatch, tmp_path):
         "synthetic-deepseek-id"
     )
     assert observed["provider_execution_independence_verified"] is False
+
+
+def test_probe_opt_in_v3_rubric_has_exact_floors_before_request(monkeypatch):
+    import r60_reviewer_protocol_probe as probe
+
+    inspected = []
+
+    def fake_model_request(endpoint, model, key, prompt, timeout, json_mode, **kwargs):
+        inspected.append(kwargs)
+        assert "chinese_prose≥4" in kwargs["instructions"]
+        assert "npc_initiative≥3" in kwargs["instructions"]
+        assert "严重标志" in kwargs["instructions"]
+        return sample()
+
+    monkeypatch.setattr(ai, "model_request", fake_model_request)
+    out = probe.inspect(
+        endpoint="https://api.deepseek.com",
+        model="deepseek-flash", protocol="deepseek-chat",
+        key_env="R60_DEEPSEEK_KEY", allow_remote=True,
+        json_mode=True, execute=True, consistent_rubric=True,
+    )
+    assert out["status"] == "REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE"
+    assert len(inspected) == 1
+
+
+def test_probe_legacy_prompt_remains_default(monkeypatch):
+    import r60_reviewer_protocol_probe as probe
+
+    observed = []
+
+    def fake_model_request(endpoint, model, key, prompt, timeout, json_mode, **kwargs):
+        observed.append(kwargs)
+        return sample()
+
+    monkeypatch.setattr(ai, "model_request", fake_model_request)
+    out = probe.inspect(
+        endpoint="https://api.deepseek.com",
+        model="deepseek-flash", protocol="deepseek-chat",
+        key_env="R60_DEEPSEEK_KEY", allow_remote=True,
+        json_mode=True, execute=True,
+    )
+    assert out["status"] == "REVIEWER_SYNTHETIC_API_PASS__NO_PRIVATE"
+    assert "instructions" not in observed[0]
