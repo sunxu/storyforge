@@ -87,6 +87,11 @@ on:
       - "experiments/r58_quality/test_r60_base_constructed_system_contract_v1.py"
       - "experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py"
       - "experiments/r58_quality/test_r60_base_constructed_sft_cpu_smoke.py"
+      - "scripts/r60_base_constructed_hf_cpu_stage.py"
+      - "scripts/r60_base_constructed_hf_cpu_worker.py"
+      - "scripts/r60_base_constructed_hf_cpu_worker.sh"
+      - "scripts/r60_base_constructed_hf_cpu_cli.py"
+      - "experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -172,6 +177,11 @@ on:
       - "experiments/r58_quality/test_r60_base_constructed_system_contract_v1.py"
       - "experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py"
       - "experiments/r58_quality/test_r60_base_constructed_sft_cpu_smoke.py"
+      - "scripts/r60_base_constructed_hf_cpu_stage.py"
+      - "scripts/r60_base_constructed_hf_cpu_worker.py"
+      - "scripts/r60_base_constructed_hf_cpu_worker.sh"
+      - "scripts/r60_base_constructed_hf_cpu_cli.py"
+      - "experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
   workflow_dispatch:
 
@@ -270,7 +280,11 @@ jobs:
             experiments/r58_quality/r60_base_constructed_system_contract_v1.py \
             experiments/r58_quality/test_r60_base_constructed_system_contract_v1.py \
             experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py \
-            experiments/r58_quality/test_r60_base_constructed_sft_cpu_smoke.py
+            experiments/r58_quality/test_r60_base_constructed_sft_cpu_smoke.py \
+            scripts/r60_base_constructed_hf_cpu_stage.py \
+            scripts/r60_base_constructed_hf_cpu_worker.py \
+            scripts/r60_base_constructed_hf_cpu_cli.py \
+            experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
           python -m pytest -q \
@@ -312,4 +326,5 @@ jobs:
             experiments/r58_quality/test_r60_base336_world_group_source_evidence_cpu.py \
             experiments/r58_quality/test_r60_base336_group_cards_opening_cpu.py \
             experiments/r58_quality/test_r60_base_constructed_system_contract_v1.py \
-            experiments/r58_quality/test_r60_base_constructed_sft_cpu_smoke.py
+            experiments/r58_quality/test_r60_base_constructed_sft_cpu_smoke.py \
+            experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
