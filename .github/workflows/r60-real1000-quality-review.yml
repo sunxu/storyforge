@@ -99,6 +99,8 @@ on:
       - "experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py"
       - "experiments/r58_quality/r60_forward_evidence_gate_v1.py"
       - "experiments/r58_quality/test_r60_forward_evidence_gate_v1.py"
+      - "experiments/r58_quality/r60_forward_manifest_binding_v1.py"
+      - "experiments/r58_quality/test_r60_forward_manifest_binding_v1.py"
       - "experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py"
       - "experiments/r58_quality/test_r60_base_first_train_ab_scope_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
@@ -198,6 +200,8 @@ on:
       - "experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py"
       - "experiments/r58_quality/r60_forward_evidence_gate_v1.py"
       - "experiments/r58_quality/test_r60_forward_evidence_gate_v1.py"
+      - "experiments/r58_quality/r60_forward_manifest_binding_v1.py"
+      - "experiments/r58_quality/test_r60_forward_manifest_binding_v1.py"
       - "experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py"
       - "experiments/r58_quality/test_r60_base_first_train_ab_scope_cpu.py"
       - ".github/workflows/r60-real1000-quality-review.yml"
@@ -303,6 +307,8 @@ jobs:
             scripts/r60_base_constructed_hf_cpu_stage.py \
             scripts/r60_base_constructed_hf_cpu_worker.py \
             scripts/r60_base_constructed_hf_cpu_cli.py \
+            experiments/r58_quality/r60_forward_manifest_binding_v1.py \
+            experiments/r58_quality/test_r60_forward_manifest_binding_v1.py \
             experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
       - name: Offline synthetic-only paired reviewer regression
         run: |
@@ -354,4 +360,6 @@ jobs:
             experiments/r58_quality/test_r60_forward_reviewer_v2_ledger.py \
             experiments/r58_quality/r60_forward_official_review_v2.py \
             experiments/r58_quality/test_r60_forward_official_review_v2.py \
+            experiments/r58_quality/r60_forward_manifest_binding_v1.py \
+            experiments/r58_quality/test_r60_forward_manifest_binding_v1.py \
             experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
