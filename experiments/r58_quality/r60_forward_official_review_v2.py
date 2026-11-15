@@ -1,8 +1,9 @@
 """R60 forward-only *candidate* Reviewer V2. No legacy receipt modifications.
 
 Uses existing Qwen/DeepSeek API client and frozen V3 rubric. Candidate/source
-attestations must come from independently reviewed private evidence. A Boolean
-in the input is NOT independent proof; this runner never admits training.
+attestations must come from independently reviewed private evidence. The
+runner REQUIRES on-disk protection/world manifests, forbids loose booleans in
+the input, and never admits training. Self-hashes alone are NOT attestation.
 No API requests unless explicit --execute and --allow-remote-private-review.
 """
 from __future__ import annotations
@@ -14,6 +15,7 @@ import sys
 from pathlib import Path
 
 import r60_forward_evidence_gate_v1 as gate
+import r60_forward_manifest_binding_v1 as binding
 import r60_forward_reviewer_v2_ledger as ledger
 import r60_real_ai_dual_review as ai
 import r60_real_private_batch as private
@@ -32,10 +34,13 @@ class Hold(ValueError):
     pass
 
 
-def validated_bundle(bundle: object) -> tuple[dict, dict, str]:
+def validated_bundle(
+    bundle: object, *, protection_manifest_path: Path,
+    world_manifest_path: Path,
+) -> tuple[dict, dict, str]:
     if type(bundle) is not dict or bundle.get("schema") != INPUT_SCHEMA:
         raise Hold("BUNDLE_SCHEMA_HOLD")
-    if set(bundle) != {"schema", "source", "protection", "world", "case"}:
+    if set(bundle) != {"schema", "source", "case"}:
         raise Hold("BUNDLE_KEYS_HOLD")
     case = bundle["case"]
     if type(case) is not dict or set(case) != {
@@ -50,17 +55,33 @@ def validated_bundle(bundle: object) -> tuple[dict, dict, str]:
         or source.get("case_sha256") != private.digest(case)
     ):
         raise Hold("SOURCE_CONTENT_BINDING_HOLD")
-    seal = gate.require_pre_review(
-        source, bundle["protection"], bundle["world"])
+    # Derive all protection/world facts from sealed on-disk manifests.
+    # Caller-supplied booleans are forbidden, including in preflight.
+    for manifest_path in (protection_manifest_path, world_manifest_path):
+        if (not isinstance(manifest_path, Path)
+                or not manifest_path.is_absolute()
+                or not manifest_path.is_relative_to(private.BASE)):
+            raise Hold("MANIFEST_PRIVATE_PATH_HOLD")
+    seal = binding.require_pre_review_from_manifests(
+        source=source,
+        protection_manifest_path=protection_manifest_path,
+        world_manifest_path=world_manifest_path,
+    )
     prompt = ai.prompt_for_case(case)
     return seal, case, prompt
 
 
 def run(
     bundle: dict, output_dir: Path, *, execute: bool,
-    allow_remote_private_review: bool, model_request=None,
+    allow_remote_private_review: bool,
+    protection_manifest_path: Path | None = None,
+    world_manifest_path: Path | None = None,
+    model_request=None,
 ) -> dict:
-    seal, _case, prompt = validated_bundle(bundle)
+    seal, _case, prompt = validated_bundle(
+        bundle, protection_manifest_path=protection_manifest_path,
+        world_manifest_path=world_manifest_path,
+    )
     if output_dir.parent != private.BASE or output_dir.is_symlink():
         raise Hold("PRIVATE_DESTINATION_HOLD")
     if output_dir.exists():
@@ -151,6 +172,8 @@ def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--input", type=Path, required=True)
     p.add_argument("--output-dir", type=Path, required=True)
+    p.add_argument("--protection-manifest", type=Path, required=True)
+    p.add_argument("--world-manifest", type=Path, required=True)
     p.add_argument("--execute", action="store_true")
     p.add_argument("--allow-remote-private-review", action="store_true")
     args = p.parse_args()
@@ -161,6 +184,8 @@ def main() -> int:
         out = run(
             json.loads(raw), args.output_dir, execute=args.execute,
             allow_remote_private_review=args.allow_remote_private_review,
+            protection_manifest_path=args.protection_manifest,
+            world_manifest_path=args.world_manifest,
         )
         print(json.dumps(out, sort_keys=True))
         return 0
