@@ -80,3 +80,11 @@ def test_stage_code_source_dependencies_exist():
 def test_synthetic_stage_does_not_contain_private_story_inputs():
     assert not any("PRIVATE.jsonl" in name for name in stage.ENTRY)
     assert not any(name.startswith("private/") for name in stage.ENTRY)
+
+
+def test_dependency_closure_includes_audited_collator_and_r18():
+    files = stage.dependencies()
+    assert "scripts/hf_label_mask_audit.py" in files
+    assert "experiments/r58_quality/r60_common2_sft_cpu_template_audit.py" in files
+    assert "experiments/r58_quality/r60_base_constructed_sft_cpu_smoke.py" in files
+    assert len(files) == len(set(files))
