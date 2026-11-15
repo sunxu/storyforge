@@ -12,9 +12,8 @@ import os
 import sys
 from pathlib import Path
 
-import r60_real_private_batch as private
-
 import r60_real_ai_dual_review as reviewer
+import r60_real_private_batch as private
 import r60_reviewer_transport as transport
 
 SYNTHETIC_PROMPT = (
