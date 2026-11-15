@@ -213,3 +213,13 @@ Owner已执行 `r60_base_first_train_ab_scope_cpu.py` 的precheck和`--execute`�
 6. **训练前**：最终数据和Split组件全量复核；Owner授权后才可能启动GPU。旧336保持HOLD、不追认、不重跑HF336/CPU3。
 
 重要：本次只交付**独立于冻结Runner的函数级前置门禁及合成测试**；未完成把真实保护集、语义判定、Provider可验证执行日志连接到新Runner的工作，不能声称生产接入/独立证据已经实现。下一步应先针对**新鲜且完全合成的双侧Review请求**打通可信执行证据链，再选择第一小批实际来源候选。所有写入create-only，发生任意HOLD立即中止而非重新评分；避免将证明再次拖到训练前。
+
+
+## 2026-11-15：Reviewer V2 synthetic proof-order Ledger 已实现并通过CI
+
+新入口：`experiments/r58_quality/r60_forward_reviewer_v2_ledger.py`，合成测试：`test_r60_forward_reviewer_v2_ledger.py`。CI [#43691626895](https://github.com/sunxu/storyforge/actions/runs/43691626895) Ruff PASS、261项测试PASS。复用既有`r60_reviewer_transport.build_body`、`r60_real_ai_dual_review.prompt_for_case/parse_model_response`、`r60_real_private_batch.private_dir/write_new`，而非复制评分逻辑。
+
+- 实施`execute_synthetic(...,transport=stub)`：先`require_pre_review`，验证Case摘要绑定，使用0700 create-only目录和0600文件写入`PRE_REVIEW_SEAL_PRIVATE.json`；再为A/B分别**先写请求尝试记录**，再调用合成stub，写`OUTCOME_A/B_PRIVATE.json`。共5文件。任一请求失败后写HOLD而非自动重试/调用另一侧；重新执行拒绝覆盖已有目录。模拟输入始终只含原Case，无另一Review结论。
+- 此阶段**不支持live HTTP调用**。模拟Provider请求ID只属于未经认证的`TRANSPORT_OBSERVATION_ONLY__NOT_AUTHENTICATED`。两侧合成成功只返回`SYNTHETIC_TWO_SIDE_LEDGER_COMPLETE__INDEPENDENCE_HOLD`，**绝不可填入后置Gate需要的`provider_evidence_authenticated=true`**；没有独立Provider服务器日志或可鉴别网关审计，就只能HOLD。
+- CI覆盖缺保护集→零请求、封存先于请求、review内容不串入另一方、第一次失败→不请求B、不可重复执行、0600权限。当前未在Owner Mac创建任何V2私有审计文件或实际请求，也未为旧336条追认任何执行独立性。
+- **下一个可交付的最小缺口**：为新Runner建立受信的Provider/4Router审计记录签名或只读查询（实际请求ID、响应ID、UTC时间、模型/路由、原始请求体哈希、响应哈希、可关联不可篡改的日志）。只有可核实来源的记录才交给`require_post_review`；本地代码自填时间戳、自造UUID或声明隔离均不够。上线前必须先用合成案例实测接入、复核匿名日志与真实请求绑定，明确单次真实API调用需要Owner授权和费用。
