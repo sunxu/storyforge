@@ -414,3 +414,15 @@ not a code PASS or a code-level test failure. Preserve the run URL and retry
 only after the GitHub Actions runner service is available. Do not use a failed
 pre-runner check as evidence that the change passed CI.
 
+## R60 Base336 GPU：专用执行边界（2026-11-16）
+
+本节只约束新的R60 Base336探索性GPU路线；历史R54命令仅供审计参考，不应直接复用其31/9数据合同、16步配置或整Bucket RW挂载方式。
+
+- 当前293/43已通过旧HF CPU336真实Tokenizer/Collator/R18 Label Mask证明的严格字节转移；不需要也不得重复提交CPU336 Job。P0 SAFE不代表Quality-v1准入或GPU授权。
+- `scripts/hf_job_guard.py`只接受CPU Flavor，GPU流程不得使用它的CPU提交校验，也不得为GPU而放宽它。GPU提交应由R60专用合同显式绑定Owner授权、唯一Run Key、指定GPU Flavor、时长、镜像Digest、模型Revision与预算。
+- 输入Volume必须是Bucket中的单个Run Stage前缀，显式`:ro`，挂载到`/input/r60-base336`；输出Volume必须是另一个不重叠的唯一结果前缀，显式`:rw`，挂载到`/output`。禁止整桶`storyforge-training:/workspace:rw`挂载。
+- Mac端负责本地私有Stage创建/验签、一次性同步、远端文件集/SHA复核、完整组织Job历史分页、CLI参数检查与dry-run。dry-run与远端READY均不创建GPU Job。
+- Worker必须先验证完整Stage清单、输入SHA、293/43行数、固定Qwen Revision、配置/依赖和单A100 80GB设备资源；所有门禁通过后才允许加载模型权重。训练日志不得原样输出到HF Job logs；只输出SAFE状态与批准的聚合值。
+- 每个Run Key使用create-only Stage/结果前缀和提交前O_EXCL marker。提交结果不确定时检查组织Job历史，不自动重试、不换Namespace、不覆盖旧结果。训练后验收末步Checkpoint、Adapter Reload与Owner SAFE回执。
+
+权威实现计划见`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`，决策顺序见`skills/storyforge-hf-jobs/SKILL.md`。
