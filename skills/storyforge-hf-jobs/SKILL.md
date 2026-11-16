@@ -1,6 +1,6 @@
 ---
 name: storyforge-hf-jobs
-version: 1.0.0
+version: 1.0.1
 language: zh-CN
 description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行和诊断 CPU Jobs；本地优先、合成测试优先、GPU 默认拒绝。
 ---
@@ -10,6 +10,8 @@ description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行�
 ## 目标
 
 本 Skill 是后续 ChatGPT Agent、Codex 和本地开发者使用公共 Runtime 的操作入口。它不是 Job 提交器、模型加载器、训练器或数据审核器。完整 API 与稳定 Schema 以 `src/storyforge_dataset/hf_runtime/` 和 `docs/standards/HF_JOBS_ENGINEERING.md` 为准；本 Skill 不复制算法。
+
+> **R60 Base336 当前状态（2026-11-16）**：Owner Mac已取得293/43最终发布包的严格Collator证明转移SAFE PASS（旧CPU336回执接受 + 原始JSONL行SHA多重集合完全相同）。**不得重复提交CPU336 Job或重新构造数据**。当前GPU Stage尚未准备、GPU Job未提交、`train_admitted=0`。后续入口：`docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`。
 
 ## 开始前必须做
 
@@ -47,6 +49,16 @@ HF Jobs官方文档确认默认Job执行1次。`r60_common2_wrapped_hf_cli.py`�
 ### 2026-11-12 R60 Common2 Wrapped CPU技术门禁正式关闭
 
 已使用从HF Bucket下载的原始0600私有SAFE回执通过独立`r60_common2_wrapped_hf_receipt_verify.py`：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`、`cases_verified=2`、`real_swift_collator_verified=true`、R18 last-round Assistant标签掩码PASS，tokenizer计数[2643,4139]、collator计数[2581,4077]、监督计数[282,305]。RUN_KEY `r60-common2-wrapcpu-20261112T122746Z-5a612325db98`，CPU Job `6af5c24737daa033b6283b0a`；此轮不再重新提交Job。保留`train_admitted=0`，部署模板兼容、世界设定隔离和R60输入设计批准均未完成。完整记录见`docs/R60_COMMON2_WRAPPED_HF_CPU_QUALITY_PIPELINE_20261112_CN.md`。
+
+## R60 Base336 GPU实验的复用和Volume边界（2026-11-16）
+
+- 已完成的CPU336证明转移只读复用旧HF SAFE回执；不再创建CPU Job、不重复下载Tokenizer、不重跑ms-swift Collator。若模型Revision、消息合同、System/世界卡、模板、Label Mask算法或293/43任一原始行字节变化，转移证据失效，必须先停下并重新评估所需技术审计，不能沿用PASS。
+- GPU实现复用 `storyforge_dataset.hf_runtime` 的输入/输出/诊断能力、`r60_common2_wrapped_hf_stage.local_dependencies` 的依赖闭包算法，以及R54已验证的GPU设备门禁、QLoRA参数、终端Checkpoint与Adapter Reload方法；项目差异放在R60薄适配器。禁止复制Runtime、token_preflight或R18 Label Mask算法。
+- `scripts/hf_job_guard.py` 明确只允许CPU Flavor，**不得用于GPU提交**。R54专用脚本只作方法参考：不能复用其31/9数据SHA、16步、旧Stage或整Bucket RW挂载。
+- R60 GPU Job必须使用 `adradar`；输入Stage使用独立、精确前缀RO挂载，输出/实验结果使用另一个唯一前缀RW挂载；禁止把整个 `storyforge-training` Bucket RW挂载。固定模型Revision、镜像Digest和依赖版本；验证远端精确文件集、SHA和组织Job历史。
+- 每个Run使用唯一Run Key、create-only Stage/结果前缀和提交前O_EXCL marker；单次提交、不自动重试、不自动切Namespace、不覆盖旧结果。HF CLI dry-run、远端READY与GPU提交是不同阶段，dry-run不等于提交成功。
+- GPU Worker日志与stdout只允许SAFE阶段/聚合，不打印私有数据、任意异常、环境变量、凭据或私有路径。训练完成还必须验证实际末步Checkpoint、Adapter Reload及私有SAFE结果。
+- GPU训练必须取得针对具体Run Key、Flavor、时长、模型Revision、配置和预算的Owner明确授权；本Skill、CPU Job PASS、Stage READY和dry-run均不授予该权限。
 
 ## Runtime 使用约定
 
