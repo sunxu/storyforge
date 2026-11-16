@@ -1,5 +1,8 @@
 # R60 Base336：最短探索性GPU训练执行合同（2026-11-16）
 
+> **2026-11-16 最新执行入口（给新Agent）：** [R60 Base336 CPU336证明转移与GPU交接](R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md)。Owner真实`293/43`发布成功，独立Manifest和SHA验收PASS；**CPU336最终证明转移尚无Owner真实PASS回执**。优先在Mac运行该交接文档的转移命令；不要重复跑HF CPU或重新构造JSONL。此前正文中“按实际字节重新执行ms-swift CPU验证”的历史步骤已由**逐行字节一致性 + 旧HF PASS回执**严格证明转移路线取代；若转移HOLD，再按证据评估是否确需重新执行。GPU Job 0，`train_admitted=0`，保持探索性合同。
+
+
 ## Owner当前目标
 仅使用冻结V1/V2/V3双PASS交集339中剔除Known5精确R50重复3条后的**336个候选**，尽快做一次Qwen Base QLoRA**探索性**训练。禁止引入Gold72、P2B、R50、旧R45或任何其他来源为本次Train/Val数据。**“只使用336候选”并不强制全部336条变成梯度样本：Train、内部Validation均必须从336池出，且不能同一条两边共用。**
 
