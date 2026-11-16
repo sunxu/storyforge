@@ -215,3 +215,14 @@ HF 工作器由 Owner Mac 仅准备私有 A/B 输入及 Owner-only crosswalk；�
 ### 2026-11-13 Claude 4Router 历史成功协议回归（避免反复试探）
 
 此前Claude合成HTTP成功但`MODEL_CONTENT_JSON_INVALID`，不是DeepSeek或数据池故障。复核历史成功`scripts/r60_p2b_claude_review_client_v1.py`：顶层system、`max_tokens=12000`、`content`既可能为字符串也可能为纯文本块列表，返回`finish_reason`。新`r60_reviewer_transport.py`恢复Claude 12000限制（旧新探针1600可能截断），共享`r60_real_ai_dual_review.py`支持两种文本表示、完整单层`\`\`\`json`代码围栏的格式规范化，并在`finish_reason=length/max_tokens`时拒绝为成功，合成SAFE标记`MODEL_OUTPUT_TRUNCATED`。这属于**未改变文本语义和评分**的协议兼容；不允许抽取任意JSON子串、截断长文章、解析非标准模型推理文本或降低六维/严重标记检查。仍无证据证明此前实际`MODEL_CONTENT_JSON_INVALID`就是1600截断或代码围栏；本修正只是先复用已成功证据。DeepSeek合成通过不可重复测试；Claude完成新代码CI后最多一次受控合成验证，仍HOLD则优先使用此前可审计的私有原始Claude响应诊断，不再盲试。
+
+## R60 Base336 探索性训练：与 Gold Quality Pipeline 的隔离边界（2026-11-16）
+
+Base336 的293 Train / 43 Validation仅用于单独批准的探索性Base QLoRA工程实验，不是Gold Quality Pipeline的新批次，也不是Quality-v1准入流程的替代入口。
+
+- 既有336条候选的A/B质量证据、来源证据、Known5隔离、World JSON拆分和CPU Collator证据各自保持原始身份；不得因本次293/43字节发布或Collator证明转移PASS而追加、合成、改写任何逐案Review/Source/Exclusion/Reconciliation事件。
+- 本次 `BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD` 只证明最终293+43行与旧HF CPU336实际Tokenizer/Collator/R18 Label Mask审计输入逐行字节多重集合相同。它不是新Review，不是Quality-v1准入，也不证明Reviewer执行独立性、R50语义隔离或完整World语义隔离。
+- 不为Base336新增Gold Quality CLI命令、Manifest事件类型、Reviewer评分器或独立准入算法。质量门槛仍由现有Quality Pipeline和对应Owner裁决承载；本实验只消费已冻结证据，不修改其含义。
+- 当前 `quality_v1_admitted=0`、`train_admitted=0`；任何后续训练结果只能标记 `EXPLORATORY_*__NOT_PROMOTED`。正式Quality-v1训练与模型晋升仍须按既有六门禁独立处理。
+
+权威实验状态与交接见 `docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`；本节不改变既有Gold批次、Rubric、事件Schema或冻结文件。
