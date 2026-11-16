@@ -78,3 +78,14 @@ COMMON=(
 验收：`candidate_rows=336`、`train_rows+validation_rows=336`、两侧非零、`known_world_cross_split_groups=0`、`train_admitted=0`、`gpu_started=false`，并确认`OUT`中仅有`train.jsonl`、`validation.jsonl`和SHA绑定Manifest、权限0600。**CPU旧技术Stage不允许代替这三个文件**。
 
 下一阶段：用最终字节SHA执行现有ms-swift真实Collator/LabelMask验证、为本R60 release实现独立且不可覆盖的GPU Stage与R54的已验收QLoRA运行方案绑定；严禁直接运行写死31/9、16步及旧SHA的R54 submit脚本。没有Owner Mac发布结果前，`GPU_STAGE_READY=false`、GPU Job 0。
+
+
+## 2026-11-16：真实Mac写盘HOLD定向修复
+
+Owner真实SAFE：`BASE336_EXPLORATORY_SPLIT_PREFLIGHT__NO_WRITE`，293 Train / 146 Story、43 Val / 26 Story，共336条，`known_world_cross_split_groups=0`；随后`--write`泛化`BASE336_EXPLORATORY_SPLIT_HOLD`，**未确认实际文件创建到哪一步**。源检查发现旧`private.write_new`有200000字节单文件上限，和新数据集最大4MB合同不一致；这是一个具体、可重现的潜在根因，无法仅凭泛化HOLD确认唯一原因。
+
+修复`r60_base336_exploratory_split.py`：数据集改用有4MB严格上限的本模块`_write_dataset_new`（O_EXCL/O_NOFOLLOW、0600、flush/fsync）；Manifest继续旧200KB保护接口；写盘前完成数据大小检验，文件和目录一律create-only。加入210KB回归测试及≥4MB拒绝测试。GitHub Actions [#43789265866](https://github.com/sunxu/storyforge/actions/runs/43789265866)：Ruff PASS，293项pytest PASS。
+
+**只重试写盘一次，必须用全新run key**；任何上一轮留下的输出目录、部分文件都不要删除、覆盖或复用。先`git fetch/merge --ff-only`更新脚本，然后在此前命令中只重新生成`RUN_KEY`和`OUT`，调用`--write`。不要把新JSONL公开上传或打印。
+
+成功后必须本地只读验证：`train.jsonl`确实293行、`validation.jsonl`确实43行；文件权限0600、大小<4MB，Manifest SHA与字节精确匹配；目录0700；无其他未知文件。若仍HOLD，保持输出原样，使用安全阶段码检查，不通过暴露异常/路径/正文来诊断，GPU保持零。
