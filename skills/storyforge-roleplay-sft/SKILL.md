@@ -7,7 +7,7 @@ description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据
 
 # StoryForge RolePlay SFT · R58
 
-> **REAL1000 current handoff (2026-11-13)**: Pilot5-v1 HAS run (HOLD3/REJECT2/PASS0), 7 valid Reviewer outcomes plus 3 missing technical slots. Owner Mac v2 replay plan created, synthetic-only CI of targeted executor 63/63 PASS, but actual Owner Mac executor preflight and replay are NOT yet verified. For ongoing REAL1000 reviewer work consult `docs/R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md` and `skills/storyforge-real-quality-review/SKILL.md`. Do not confuse reviewer replay with HF CPU collator or SFT training. No admission and no GPU/DB jobs.
+> **REAL1000 / Pilot5 当前结案状态（2026-11-16）**：Pilot5-v1原始5案结论HOLD3/REJECT2/PASS0、7份有效意见保留；Pilot5-v2已完成3/3定向请求，新增有效意见1份、技术HOLD 2份，累计有效意见8份。v1/v2 crosswalk完整性PASS但质量仍HOLD；非盲诊断PASS0/HOLD2/REJECT3，Pilot25 HOLD。**Pilot5已结案，不得再次请求、重跑或覆盖回执。** REAL1000 V3已完成166/166（142 PASS/18 HOLD/2 REJECT/4 TECHNICAL_HOLD）；339双PASS仅为候选，R50排除、Reviewer执行独立性、历史System和World语义隔离仍未通过。Gold/训练准入仍0。仅在用户明确恢复REAL1000审核任务时，才按 `skills/storyforge-real-quality-review/SKILL.md` 与权威交接文档继续；当前主线是独立Base336探索性训练准备。
 
 > **R60 Base336 当前执行状态（2026-11-16）**：293 Train / 43 Validation 的发布字节已通过独立验收；Owner Mac 随后取得 `BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`，严格证明新拆分的336行字节多重集合与旧HF CPU336真实Tokenizer/Collator/R18 Label Mask审计输入完全一致。该PASS是历史技术证明转移，不是本轮重新执行Collator，也不是Quality-v1准入。当前探索性训练仍 `train_admitted=0`、GPU未提交；Reviewer执行独立性、R50语义隔离和完整语义World隔离仍HOLD。权威交接见 `docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`，训练合同见 `docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`。
 
