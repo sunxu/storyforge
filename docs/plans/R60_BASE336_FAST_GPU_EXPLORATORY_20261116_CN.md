@@ -150,3 +150,41 @@ chmod 600 "$RECEIPT"
 ```
 
 若Owner旧技术包位于不同的0600目录，替换`TECHNICAL`为原已经存在且保留的对应目录，**不可重新构造一份新技术包来冒充原HF审核输入**。成功应是`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`、`all_final_rows_byte_identical_to_audited_rows=true`、`actual_final_collator_verified=true`、`collator_executed_in_this_run=false`、`gpu_started=false`。失败为HOLD，需复核真实来源而不是关闭哈希检查。
+
+## Quality Pipeline 与代码复用边界（2026-11-16，实施时必须遵守）
+
+### Quality Pipeline：只消费冻结证据，不制造新事件
+
+- 293/43来自已冻结336候选；本实验不重做336×2文学评审，不改Gold/R50/Review历史，不创建新的Quality评分器、Rubric、Manifest或Admission入口。
+- Gold Quality Pipeline只保留原有A/B审核和仲裁事件。本次Collator证明转移SAFE不得导入为Review、Source、Exclusion或Reconciliation事件；不运行 `append-review`、`import-review-reconciliation`。
+- 技术PASS与质量PASS分离：`quality_v1_admitted=0`、`train_admitted=0`；Reviewer执行独立性、R50语义隔离和完整World语义隔离仍HOLD。训练若获授权，只能是探索性结果，`EXPLORATORY_*__NOT_PROMOTED`。
+
+### 组件复用矩阵
+
+| 层 | 复用现有实现 | R60允许新增的最小差异 |
+|---|---|---|
+| 数据身份/发布 | `r60_base336_exploratory_split.py`、`r60_base336_exploratory_release_verify.py`、`r60_base336_exploratory_collator_transfer.py` | 只读绑定真实P0 SAFE与Manifest；不重建JSONL |
+| 输入/输出/诊断 | `storyforge_dataset.hf_runtime.InputManager`、`OutputManager`、`DiagnosticReporter` | GPU业务回执Schema和训练阶段SAFE字段 |
+| Stage依赖闭包 | `r60_common2_wrapped_hf_stage.local_dependencies(entries, extras)` | R60 GPU专属入口文件、配置和固定依赖文件清单 |
+| HF CPU审计 | `r60_common2_sft_cpu_template_audit.inspect_rows`、R18 Label Mask | 不新增Token算法/Collator；本次证明已转移，不重跑 |
+| HF CLI/远端检查 | 复用Common2的Bucket文件集检查模式、`r60_common2_hf_cpu_final_read_only.walk_job_history`分页Job历史检查 | 独立GPU Flavor/命令参数和R60专属输入/输出前缀；不能调用CPU提交策略 |
+| GPU训练方法 | `v03_r54_gpu_runner.py`中的设备资格、QLoRA、训练状态、末步Checkpoint和Adapter Reload方法 | R60数据SHA、293/43数量、训练步数、保存/评估计划、SAFE输出与独立Run Key |
+
+### 禁止的错误复用
+
+- `scripts/hf_job_guard.py`和Common2 CPU CLI的Flavor/提交策略只允许CPU；不可通过绕过校验或修改CPU Guard来提交GPU。
+- R54 Runner/Stage/Submit只作方法参考；不能复用31/9 SHA、16步、R54 release、旧Run Key或旧Bucket前缀。
+- R54将整个项目Bucket RW挂载的旧拓扑不适用于新R60：输入必须精确前缀RO，输出必须独立前缀RW，二者不得重叠；不能为方便而将整桶RW。
+- 不复制 `token_preflight.py`、R18 mask、Gold Quality Manifest、HF Runtime、Job历史分页和SAFE写入算法。只有证明某个通用能力缺失且至少存在明确复用场景，才考虑提取共享核心；单次实验差异先放薄适配器。
+- 不把完整训练日志、任意异常、Prompt、私有路径、样本ID、正文或目标文本输出到HF Job stdout/logs；只发布SAFE状态和允许的聚合统计。
+
+### R60 GPU链路阶段（GPU Job仍为0）
+
+1. Mac只读检查：当前分支/HEAD/工作树、293/43 Manifest、P0 SAFE、固定模型Revision和已存在证据；不重复跑已完成的release verify/transfer。
+2. 生成唯一私有Stage（0700/0600、create-only），只放293/43输入、Manifest、P0 SAFE、固定配置、必要代码和依赖闭包；每个文件SHA绑定。私有输入不得进入GitHub或CI。
+3. Stage Worker只读挂载；结果使用独立唯一前缀RW挂载。远端文件清单必须与本地Manifest精确一致；组织Job历史必须完整分页，确认该Run Key无既有Job/提交marker/结果文件。
+4. HF CLI参数、Flavor、镜像Digest、依赖版本、Volume RO/RW和dry-run逐项核验。dry-run只代表参数可解析，不代表GPU已提交。
+5. Worker先校验Stage完整SHA、模型Revision、数据SHA/行数、依赖和单A100 80GB可用性；全部PASS后才下载固定Revision模型权重并开始QLoRA。
+6. 训练步数按真实293行、per-device batch、gradient accumulation、world size和epoch计算；eval/save计划必须确保真实终端Optimizer Step有Checkpoint。训练后验证末步状态、Adapter Reload、SAFE回执和私有产物SHA。
+7. 唯一Run Key提交前先写O_EXCL marker；GPU提交单次、不自动重试。未获针对该Run Key、Flavor、时长、模型Revision、配置和预算的Owner明确授权，只能到远端READY + dry-run，不能提交付费Job。
+
