@@ -1,6 +1,6 @@
 # R60 Base336：最短探索性GPU训练执行合同（2026-11-16）
 
-> **2026-11-16 最新执行入口（给新Agent）：** [R60 Base336 CPU336证明转移与GPU交接](R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md)。Owner真实`293/43`发布成功，独立Manifest和SHA验收PASS；**CPU336最终证明转移尚无Owner真实PASS回执**。优先在Mac运行该交接文档的转移命令；不要重复跑HF CPU或重新构造JSONL。此前正文中“按实际字节重新执行ms-swift CPU验证”的历史步骤已由**逐行字节一致性 + 旧HF PASS回执**严格证明转移路线取代；若转移HOLD，再按证据评估是否确需重新执行。GPU Job 0，`train_admitted=0`，保持探索性合同。
+> **2026-11-16 最新执行入口：** [R60 Base336 CPU336证明转移与GPU交接](R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md)。Owner真实293/43发布包独立字节验收PASS，随后Mac真实取得`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`：旧HF CPU336回执已接受，293+43原始行SHA多重集合与旧336完全一致，`actual_final_collator_verified=true`、`collator_executed_in_this_run=false`。**P0已完成，不要重复运行转移命令、重跑HF CPU或重建JSONL。** 下一步是按本合同实现独立R60 GPU Stage/Worker/CLI，并维护Quality Pipeline与Skills边界。GPU Job 0，`train_admitted=0`，保持探索性合同。
 
 
 ## Owner当前目标
@@ -24,7 +24,7 @@
 3. 从336中生成不相交`train.jsonl`和`validation.jsonl`，每条只有已验证3条历史user/assistant/user + 原冻结assistant target监督，明确`THREE_PERSISTED_MESSAGES_NO_SYSTEM`实验合同；不要伪造Source-bound世界卡或历史实际System。世界/卡缺失影响外推，应作为实验限制而不是隐性补写。
 4. 划分验收：训练+验证总数336（除非明确产生新的隔离清单，严禁悄悄丢行）；3条Known5永不出现；无任何case跨组；story_ID不跨组；8组关联component不跨组；各split非空；保持原始目标hash、输入三消息及来源hash；评测保护只声明已证实的原始50**精确ID**差集，任何未确认的语义关系显式HOLD。
 5. 在Owner Mac新建0700/0600、create-only的新私有发布目录，保存输入证据SHA、split组件信息与`train.jsonl`/`validation.jsonl`、来源336身份及格式审计回执、`EXPLORATORY_ONLY__NO_TRAIN_ADMISSION`标签。**不得复用HF CPU336技术Stage或R54正式release**。
-6. 最终Train/Val按照实际发布字节运行一次真实ms-swift actual collator+last-assistant label mask（可以使用现有已验证HF CPU环境，不下载27B权重）。这一项是本次新split特有的预检，不是重复跑旧336技术包。
+6. **已完成**：最终293/43发布包通过独立SHA/结构验收；随后旧336真实HF CPU Collator/R18 Mask证明通过原始行字节SHA多重集合完全一致性严格转移。Owner SAFE为`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`。不得再跑CPU336 Job或重建数据。若后续改变输入/模板/掩码合同，才按变化范围重新评估实际CPU审计。
 7. GPU新建R60独立run_key和Bucket前缀`experiments/r60-base336-exploratory/<RUN_KEY>`，输出和stage强制create-only；从R54复制参数合同：`Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`、NF4/bfloat16、LoRA rank64/alpha128/dropout0.05、max_length16384、last_round、1 Epoch。**训练步数、eval/save节奏必须按实际最终Train数量计算**，并保证最后一步checkpoint与adapter reload。不能沿用R54的16step和硬编码SHA。
 8. GPU发送前严格验证私有stage完整文件清单、SHA、model revision、ms-swift/transformers/bitsandbytes版本、单A100-80GB VRAM、资源额度、Bucket RW隔离和GPU计费任务的唯一提交锁。先写submit marker再提交；不自动重试不覆盖旧Run。用户本轮“尽快推进GPU训练”作为推进新实验的请求，但GPU提交仍必须以实际Stage可核验且预检PASS为前提。
 9. 开始模型评测时，旧R47/R48/R55已暴露20题只能作为开发回归；R50在世界语义/曝光未完成审计前不能声称正式独立测试。Gold72/P2B既不作为训练源，也不必自动提升为本轮正式独立测试；其历史暴露用途需留档。
