@@ -1,6 +1,6 @@
 # R60 Base First-Train Readiness：最短有效准入路径（2026-11-15）
 
-> **当前Owner最新执行主线（2026-11-16）：** 另立的336候选**探索性**Base QLoRA，不修改本文件冻结正式准入门禁。已在Owner Mac真实发布293 Train /43 Validation，并完成私有Manifest、SHA、消息格式独立验证；**下一步**为验证旧HF CPU336真Collator技术证明是否可严格转移到这份293/43发布包（旧原始字节行多重集合完全相同 + 原HF回执受信）。优先阅读 [新Agent交接与CPU336证明转移](R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md) 和 [Base336实验合同](R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md)。无Owner真实转移PASS之前，`actual_final_collator_verified=false`；GPU Stage未准备、GPU Job 0、`train_admitted=0`。此前本文件正式训练六门禁及Gold72/P2B讨论**不得直接变成探索性实验的付费GPU前置要求，也不能据此宣称正式准入PASS**。旧HF CPU336和新293/43未经严格字节证明前不能直接等同。
+> **当前Owner最新执行主线（2026-11-16）：** 另立的336候选**探索性**Base QLoRA，不修改本文件冻结的正式准入门禁。Owner Mac已完成293/43真实发布包独立SHA/格式验收，并取得`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`：原HF CPU336 SAFE回执接受，旧336与新293+43原始行SHA多重集合完全相同，`actual_final_collator_verified=true`、`collator_executed_in_this_run=false`。**P0已关闭，不要重复跑CPU Job、重建数据或重跑转移命令。** 下一步按 [新Agent交接](R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md) 和 [Base336实验合同](R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md) 实现独立R60 GPU Stage/Worker/CLI，并维护Quality Pipeline/Skill边界。GPU Stage未准备、GPU Job 0、`train_admitted=0`。本文件正式训练六门禁仍独立有效，不能被探索性Collator PASS替代；同时，正式训练六门禁及Gold72/P2B讨论也**不得未经重新评估就被改写成探索性实验的质量PASS或隐性前置授权**。Reviewer独立性、R50语义隔离和完整World语义隔离仍HOLD。
 
 
 > **执行优先级高于旧R60任务书尾部逐步取证命令。** 本文件收敛执行目标，不修改原冻结证据，不赋予训练或GPU授权。工作分支 `r60/common2-cpu2-owner`，只改各自负责的源文件；不与并行Agent抢同一文件。完整来源合同：`docs/plans/R60_BASE_START_MINIMAL_GATES_20261115_CN.md`。
