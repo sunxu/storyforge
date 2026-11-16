@@ -20,6 +20,8 @@ def setup(monkeypatch, tmp_path):
         for i in range(336)
     ]
     original = b"".join(rows)
+    monkeypatch.setattr(target, "PINNED_AUDITED_DATA_SHA256",
+                        hashlib.sha256(original).hexdigest())
     manifest = {
         "schema": target.packet.SCHEMA,
         "status": "TECHNICAL_INPUT_ONLY__ALL_HELD",
@@ -83,5 +85,12 @@ def test_original_packet_mutated_rejected(monkeypatch, tmp_path):
     source, dest, receipt, _ = setup(monkeypatch, tmp_path)
     with (source / target.packet.DATA).open("ab") as stream:
         stream.write(b"x")
+    with pytest.raises(target.Hold, match="TECHNICAL_PACKET_DIGEST_HOLD"):
+        target.verify(dest, source, receipt)
+
+
+def test_wrong_historical_stage_sha_rejected(monkeypatch, tmp_path):
+    source, dest, receipt, _ = setup(monkeypatch, tmp_path)
+    monkeypatch.setattr(target, "PINNED_AUDITED_DATA_SHA256", "0" * 64)
     with pytest.raises(target.Hold, match="TECHNICAL_PACKET_DIGEST_HOLD"):
         target.verify(dest, source, receipt)
