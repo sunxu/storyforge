@@ -168,7 +168,7 @@ chmod 600 "$RECEIPT"
 | Stage依赖闭包 | `r60_common2_wrapped_hf_stage.local_dependencies(entries, extras)` | R60 GPU专属入口文件、配置和固定依赖文件清单 |
 | HF CPU审计 | `r60_common2_sft_cpu_template_audit.inspect_rows`、R18 Label Mask | 不新增Token算法/Collator；本次证明已转移，不重跑 |
 | HF CLI/远端检查 | 复用Common2的Bucket文件集检查模式、`r60_common2_hf_cpu_final_read_only.walk_job_history`分页Job历史检查 | 独立GPU Flavor/命令参数和R60专属输入/输出前缀；不能调用CPU提交策略 |
-| GPU训练方法 | `v03_r54_gpu_runner.py`中的设备资格、QLoRA、训练状态、末步Checkpoint和Adapter Reload方法 | R60数据SHA、293/43数量、训练步数、保存/评估计划、SAFE输出与独立Run Key |
+| GPU训练方法 | `v03_r54_gpu_runner.py`中的设备资格/QLoRA/训练门禁；`hf_job_runner.py`中的`training_evidence`、`make_inference_input`、`check_inference_result`、`GpuMonitor`通用辅助 | R60数据SHA、293/43数量、训练步数、保存/评估计划、SAFE输出与独立Run Key；不复制已有通用函数 |
 
 ### 禁止的错误复用
 
