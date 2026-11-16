@@ -112,3 +112,22 @@ def test_private_new_file_is_exclusive(tmp_path):
     assert stat.S_IMODE(target_file.stat().st_mode) == 0o600
     with pytest.raises(FileExistsError):
         target.private.write_new(target_file, b"tamper\n")
+
+
+def test_large_dataset_release_beyond_legacy_200kb(tmp_path):
+    path = tmp_path / "train.jsonl"
+    payload = b"x" * 210_000
+    assert len(payload) > target.private.MAX_CAPTURE_BYTES
+    target._write_dataset_new(path, payload)
+    assert path.read_bytes() == payload
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    with pytest.raises(FileExistsError):
+        target._write_dataset_new(path, payload)
+    assert path.read_bytes() == payload
+
+
+def test_dataset_bounded_before_create(tmp_path):
+    path = tmp_path / "oversized.jsonl"
+    with pytest.raises(target.Hold, match="DATASET_SIZE_HOLD"):
+        target._write_dataset_new(path, b"x" * target.MAX_DATA_FILE)
+    assert not path.exists()
