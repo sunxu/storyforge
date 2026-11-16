@@ -24,6 +24,9 @@ import r60_base_cpu336_hf_receipt_verify as receipt_verifier  # noqa: E402
 
 SAFE = "storyforge_r60_base336_exploratory_collator_transfer_safe_v1"
 PINNED_KEY = "r60-base-cpu336-20261114T165256Z-9e35795990aa"
+# Source digest independently read from the frozen HF CPU336 stage manifest.
+# Never display it in SAFE output.
+PINNED_AUDITED_DATA_SHA256 = "2ea139a7038a6665f19827b2f8091c86c2de51e97e2f0839d9b581dfe3160d5c"
 MAX_DATA = 4_000_000
 
 
@@ -56,7 +59,8 @@ def verify(release_dir: Path, technical_dir: Path, receipt: Path) -> dict:
             "THREE_PERSISTED_MESSAGES_NO_SYSTEM"):
         raise Hold("TECHNICAL_PACKET_CONTRACT_HOLD")
     source_bytes = private.read_private(technical_dir / packet.DATA, MAX_DATA)
-    if hashlib.sha256(source_bytes).hexdigest() != technical_manifest.get("data_sha256"):
+    if (hashlib.sha256(source_bytes).hexdigest() != PINNED_AUDITED_DATA_SHA256
+            or technical_manifest.get("data_sha256") != PINNED_AUDITED_DATA_SHA256):
         raise Hold("TECHNICAL_PACKET_DIGEST_HOLD")
     result = receipt_verifier.accept(receipt, PINNED_KEY)
     if (result.get("status") != "BASE_CPU336_RECEIPT_ACCEPTED__TRAIN_HOLD"
