@@ -1,6 +1,18 @@
 # AGENTS.md
 
 ## Project
+## Active R60 workstream override (2026-11-16)
+
+The legacy v0.3 baseline below remains historical project context. The active R60 Base336 exploratory work is on `r60/common2-cpu2-owner`; read these before changing training, Quality or HF execution code:
+
+- `docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`
+- `docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`
+- `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`
+- `skills/storyforge-roleplay-sft/SKILL.md`
+- `skills/storyforge-hf-jobs/SKILL.md`
+
+The 293/43 final dataset has a real Owner SAFE PASS for strict transfer of the old HF CPU336 tokenizer/collator/R18 label-mask proof. Do not rerun CPU336, recreate the dataset or treat this engineering proof as Quality-v1 admission. Keep `quality_v1_admitted=0`, `train_admitted=0`; GPU is not submitted and requires separate scope-specific Owner authorization. Reuse the shared HF Runtime and token-preflight core; do not fork Quality Pipeline, collator or HF job infrastructure.
+
 
 StoryForge is the training and evaluation pipeline for interactive narrative language models.
 
