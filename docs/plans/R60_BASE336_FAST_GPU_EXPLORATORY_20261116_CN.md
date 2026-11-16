@@ -109,3 +109,41 @@ OUT="$HOME/.local/share/storyforge/r60/private/r60-base336-exploratory-20261116T
 ```
 
 必须收到`BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD`、`sha256_verified=true`、293/43、`train_admitted=0`，才能准备后续真实Collator审计Stage和独立R60 GPU runner。**不可用R54脚本直接提交**，旧CPU336 remote TECHNICAL Stage也不等于GPU发布包。当前`gpu_stage_prepared=false`、`gpu_started=false`。
+
+
+## 2026-11-16：293/43真实发布包独立字节验收PASS，CPU336 Collator复用证据门禁
+
+Owner实际SAFE：`BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD`，`manifest_verified=true`、`sha256_verified=true`，293/43。只证明发布包三文件完整、逐行原始格式正确；不能称GPU已启动。
+
+新的`experiments/r58_quality/r60_base336_exploratory_collator_transfer.py`完全只读：校验Owner Mac旧`R60_BASE_CPU336_TECHNICAL_NOT_ADMITTED_PRIVATE.jsonl`原始字节SHA与HF已执行CPU336 Stage原始source SHA相同；复用`scripts/r60_base_cpu336_hf_receipt_verify.accept`对原HF回执做严格接受；再比较旧336行和新293+43行**原始JSONL行字节SHA多重集合一致**。匹配才可把之前真实ms-swift Collator/R18 Mask验证的技术结果转移到重新划分后的同一批样本；此轮不再跑Tokenizer或Collator，不虚称二次执行。若最终配置更改System、世界卡、模板或标签算法，此复用立即失效，须重新实际执行CPU审计。原R50语义、Provider独立、正式训练准入仍HOLD。
+
+源技术Stage事实由HF Bucket只读核验：
+`preflight/r60/base-start/cpu336/runs/r60-base-cpu336-20261114T165256Z-9e35795990aa/SHA256_MANIFEST_PRIVATE.json`，源数据SHA在代码常量中固定、不在SAFE stdout显示；旧CPU336回执保留原名且须验收成功。CI [#43790711112](https://github.com/sunxu/storyforge/actions/runs/43790711112)：Ruff PASS、304测试PASS。
+
+Mac命令（下载旧SAFE审核回执，不上传任何小说或候选数据，不覆盖现存文件）：
+
+```bash
+set -euo pipefail
+set +x
+umask 077
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+BASE="$HOME/.local/share/storyforge/r60/private"
+RELEASE="$BASE/r60-base336-exploratory-20261116T020325Z-4314ad84d5cc"
+TECHNICAL="$BASE/r60-base-cpu336-hf-packet-v1"
+RECEIPT_DIR="$(mktemp -d "$BASE/r60-base336-proof-XXXXXXXX")"
+chmod 700 "$RECEIPT_DIR"
+RECEIPT="$RECEIPT_DIR/R60_BASE_CPU336_HF_SAFE_RECEIPT.json"
+hf buckets cp \
+  "hf://buckets/adradar/storyforge-training/preflight/r60/base-start/cpu336/results/r60-base-cpu336-20261114T165256Z-9e35795990aa/R60_BASE_CPU336_HF_SAFE_RECEIPT.json" \
+  "$RECEIPT"
+chmod 600 "$RECEIPT"
+"$PY" experiments/r58_quality/r60_base336_exploratory_collator_transfer.py \
+  --release-dir "$RELEASE" \
+  --technical-dir "$TECHNICAL" \
+  --cpu336-receipt "$RECEIPT"
+```
+
+若Owner旧技术包位于不同的0600目录，替换`TECHNICAL`为原已经存在且保留的对应目录，**不可重新构造一份新技术包来冒充原HF审核输入**。成功应是`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`、`all_final_rows_byte_identical_to_audited_rows=true`、`actual_final_collator_verified=true`、`collator_executed_in_this_run=false`、`gpu_started=false`。失败为HOLD，需复核真实来源而不是关闭哈希检查。
