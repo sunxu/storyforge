@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.14
+version: 0.1.15
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -8,6 +8,8 @@ description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据
 # StoryForge RolePlay SFT · R58
 
 > **REAL1000 current handoff (2026-11-13)**: Pilot5-v1 HAS run (HOLD3/REJECT2/PASS0), 7 valid Reviewer outcomes plus 3 missing technical slots. Owner Mac v2 replay plan created, synthetic-only CI of targeted executor 63/63 PASS, but actual Owner Mac executor preflight and replay are NOT yet verified. For ongoing REAL1000 reviewer work consult `docs/R60_REAL1000_PILOT5_V2_AGENT_HANDOFF_20261113_CN.md` and `skills/storyforge-real-quality-review/SKILL.md`. Do not confuse reviewer replay with HF CPU collator or SFT training. No admission and no GPU/DB jobs.
+
+> **R60 Base336 当前执行状态（2026-11-16）**：293 Train / 43 Validation 的发布字节已通过独立验收；Owner Mac 随后取得 `BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`，严格证明新拆分的336行字节多重集合与旧HF CPU336真实Tokenizer/Collator/R18 Label Mask审计输入完全一致。该PASS是历史技术证明转移，不是本轮重新执行Collator，也不是Quality-v1准入。当前探索性训练仍 `train_admitted=0`、GPU未提交；Reviewer执行独立性、R50语义隔离和完整语义World隔离仍HOLD。权威交接见 `docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`，训练合同见 `docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`。
 
 ## 目标与适用范围
 
@@ -74,6 +76,14 @@ Owner 已明确：不要求将样本认证为原始生产 Provider 请求，也�
 Common2包装通用System的HF CPU真实Qwen/Swift Collator和最后一轮Assistant监督掩码均已完成、从原始HF Bucket下载的SAFE回执独立验收2/2 PASS：`WRAPPED_CPU_RECEIPT_ACCEPTED__TRAIN_HOLD`。旧章节“尚未执行真实新Job”“真实验证仍未执行”仅保留历史背景，**不得重新提交CPU Job**。这只是训练输入工程证据，`train_admitted=quality_v1_admitted=0`。
 
 Owner的真实1000池（6+994）已经只读确认`EXPANSION_TARGET_REACHED__NOT_ADMITTED`，现在切回六维正向Gold质量精筛。请求协议与A/B分工直接复用`experiments/r58_quality/r60_reviewer_transport.py`、`r60_real_ai_dual_review.py`、`r60_real_quality_batch.py`，完整操作与合成探针见`skills/storyforge-real-quality-review/SKILL.md`。首轮只允许同源5条校准；Owner明确允许当前工作线私有数据外发，但合成协议验证通过前不运行真实模型，模型身份/Reviewer独立性/严重标记语义仍需实证。不要引入第三套Quality评分器、复制Prompt与引文验证逻辑、重写Gold或启动GPU/SFT。
+
+## R60 Base336 探索性训练的质量边界（2026-11-16）
+
+- Base336 293/43 是从既有冻结336候选按Story/已知World JSON关联拆分出的技术实验数据；本轮不重新进行336×2文学审核，不重选、不重写、不增补候选。
+- 本批既有A/B审核证据与技术Collator证据必须分层记录。Collator证明转移PASS只关闭输入技术一致性子门禁，**不**证明Reviewer实际执行独立、语义World隔离、R50跨UUID隔离、来源时序或正式Quality-v1准入。
+- 不向 `storyforge-gold-quality` Manifest追加合成/推断的逐案Review、Reconciliation、Source或Exclusion事件；不调用 `append-review`、`import-review-reconciliation` 来表达技术PASS。保持 `quality_v1_admitted=0`、`train_admitted=0`。
+- 本轮只允许按独立探索性合同继续工程验证与未来单次QLoRA实验，结果必须 `EXPLORATORY_*__NOT_PROMOTED`。旧R47/R48/R55暴露题只能用于开发回归，R50密封内容不得访问或用于调参。
+- 先查已有Runtime、Stage、CLI、Receipt、Runner和CI；共享算法不复制，业务差异放薄适配器。HF CPU/GPU权限严格分离；CPU技术PASS不授予GPU权限。
 
 ## 数据与质量主线
 
