@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from collections import Counter, defaultdict
 from pathlib import Path
@@ -25,6 +26,7 @@ SCHEMA = "storyforge_r60_base336_exploratory_split_private_v1"
 SAFE = "storyforge_r60_base336_exploratory_split_safe_v1"
 ROSTER = roster.FILENAME
 MAX_ROSTER = 300_000
+MAX_DATA_FILE = 4_000_000
 
 
 class Hold(ValueError):
@@ -41,6 +43,20 @@ def _encode(rows: list[dict]) -> bytes:
                     separators=(",", ":")) + "\n").encode()
         for r in rows
     )
+
+
+def _write_dataset_new(path: Path, data: bytes) -> None:
+    """Bounded create-only dataset write; receipts keep 200 KB private.write_new."""
+    if not 0 < len(data) < MAX_DATA_FILE:
+        raise Hold("DATASET_SIZE_HOLD")
+    fd = os.open(
+        path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+        getattr(os, "O_NOFOLLOW", 0), 0o600,
+    )
+    with os.fdopen(fd, "wb") as output:
+        output.write(data)
+        output.flush()
+        os.fsync(output.fileno())
 
 
 def split(cases: list[dict], frozen: dict, roster_doc: dict) -> tuple[dict, dict]:
@@ -206,10 +222,14 @@ def execute(args: argparse.Namespace) -> dict:
         "train_admitted": 0,
         "gpu_started": False,
     }
+    # Check bounds before creating output directory; failed writes are
+    # intentionally never deleted or overwritten automatically.
+    if any(not 0 < len(raw) < MAX_DATA_FILE for raw in payload.values()):
+        raise Hold("DATASET_SIZE_HOLD")
     if args.write:
         private.private_dir(args.output_dir, create=True)
         for name in ("train", "validation"):
-            private.write_new(args.output_dir / f"{name}.jsonl", payload[name])
+            _write_dataset_new(args.output_dir / f"{name}.jsonl", payload[name])
         private.write_new(
             args.output_dir / "R60_BASE336_EXPLORATORY_MANIFEST_PRIVATE.json",
             _encode([manifest]),
