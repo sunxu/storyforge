@@ -1,6 +1,6 @@
 # StoryForge R60 Base336：新Agent交接与立即执行指令（2026-11-16）
 
-> **本文件是本轮快速探索性GPU训练的最近状态交接，优先于较早任务书中「再跑一次CPU336/293+43真实Collator」的步骤。** CPU旧证明只有通过原始行字节多重集合及历史HF回执双重严格核验后才可转移，不可根据旧CPU336口头PASS直接跳步。本文件不构成自动提交HF GPU的授权。
+> **2026-11-16 最新状态：P0 已由 Owner Mac 真实完成。** 原始336行与新293+43行字节多重集合完全一致，旧HF CPU336 SAFE回执被独立接受，真实结果为 `BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`。不得重复运行转移命令、重新跑HF CPU或重建数据。本文件后续重点转为：维护Quality Pipeline边界、更新Skill，并以共享Runtime和R54已验证方法为基础实现独立R60 GPU Stage/Worker/CLI。本文不构成GPU提交授权。
 
 ## 一、Owner决策与范围（不得擅自扩大）
 
@@ -15,7 +15,7 @@
 1. `BASE336_EXPLORATORY_SPLIT_CREATED__GPU_HOLD`，293/43、336总计、已知World跨组0；
 2. `BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD`，`manifest_verified=true`、`sha256_verified=true`，对现有真实发布包字节和格式完成独立验证。
 
-**尚无Owner实测**`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`的SAFE回执；该项就是**新Agent的第一项任务**。此时`actual_final_collator_verified=false`，GPU Stage未准备，GPU Job未提交。不得将GitHub CI合成单测PASS写成Mac真实转移PASS。
+**Owner Mac 已实际完成** `BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`。SAFE回执确认：293 Train / 43 Validation；旧336条全部字节行与新拆分多重集合完全一致；原CPU336回执接受；`actual_final_collator_verified=true`；`collator_executed_in_this_run=false`。这证明技术结果可严格转移，不是本轮重新执行ms-swift。仍保持`formal_source_admission_verified=false`、`train_admitted=0`、`gpu_stage_prepared=false`、`gpu_started=false`。
 
 分支：`r60/common2-cpu2-owner`；Mac工作树：`~/workspace/storyforge-r60-4router-review`；仓库：`https://github.com/sunxu/storyforge`。严格尊重并行Agent的改动：先fetch/比较当前树与最新分支、避免覆盖他人提交、不大范围重构，commit后验证CI。
 
@@ -37,7 +37,7 @@ $HOME/.local/share/storyforge/r60/private/
 - `scripts/r60_base_cpu336_hf_receipt_verify.py`：不可跳过的历史HF回执接受函数。
 - CI [#43790711112](https://github.com/sunxu/storyforge/actions/runs/43790711112)：Ruff PASS，304项合成测试PASS。CI没有读Owner的私有数据，**不能代替下一步Mac验证**。
 
-## 三、第一步：Mac实际CPU336证明转移（仅旧SAFE回执下载，无HF CPU Job）
+## 三、P0：Mac实际CPU336证明转移（已完成；以下命令仅作历史复现，不要重跑）
 
 请直接使用以下命令。只有技术包真实目录与以下`TECHNICAL`不同，才只修改该变量为已存在的旧技术包位置；不能重新拼装技术包冒充旧HF源。
 
@@ -90,12 +90,14 @@ chmod 600 "$RECEIPT"
 
 ## 五、优先级与退出标准
 
-**当前唯一P0**：拿到Mac真实`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`，或拿到可复现、原因明确的HOLD，并安全地处理。**先完成P0再展开GPU实现**，不要并行重复做CPU worker、重构冻结数据，避免改坏现有技术证明。
+**P0 已关闭**：Owner Mac真实SAFE已取得并通过全部验收。不得再次下载或重跑HF CPU336，不得重复校验已通过的发布包，不得重建293/43。下一阶段是质量边界/Skill维护和R60 GPU工程：先盘点可复用组件，再设计最小差异的独立Stage/Worker/CLI；CI合成测试通过后，Owner Mac仅做只读/Stage准备、HF Bucket同步、远端READY和CLI dry-run。未获针对该具体Run Key与规格的Owner GPU授权，不提交付费Job。
 
 P0 PASS后，交付R60独立GPU构建/校验/提交链路，附Ruff/pytest GitHub CI、Mac SAFE stage receipt、远端READY、dry-run；符合要求后再进入单次A100提交。若不能完成，明确阻塞点，不猜测PASS。
 
 ## 六、给新Agent的启动提示词
 
-请阅读本文件和`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`，以及最新的`r60_base336_exploratory_collator_transfer.py`、`scripts/r60_base_cpu336_hf_receipt_verify.py`源代码。
+请阅读本文件、`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`、`docs/standards/GOLD_QUALITY_PIPELINE_CN.md`、`skills/storyforge-roleplay-sft/SKILL.md`、`skills/storyforge-hf-jobs/SKILL.md`及R54 GPU实现。
 
-你的**第一个实际任务**不是编写GPU训练器：先指导Owner在Mac执行本文件第三节的CPU336原证明转移。严格复核旧HF回执、旧336技术包、最终293/43行字节集合，一切真正PASS基于实际SAFE。不要重复跑HF CPU、不重做数据划分、不扩增训练样本。成功后继续实现独立R60 GPU Stage/Worker/CLI并在真实SHA、模型固定revision、GPU运行保护下准备A100 QLoRA探索性首训。保持`train_admitted=0`与`NOT_PROMOTED`、不更改正式六门禁、不把合成CI当实战。只读源、create-only写新证据、0600/0700、禁止私有数据输出。遇到HOLD报告固定SAFE原因码并停止，不得自作主张放宽SHA、替换冻结来源、重试GPU。所有公开代码提交GitHub并验证CI，不与其他Agent冲突。
+P0证明转移已经由Owner Mac真实PASS，**不要再运行第三节命令、不要重跑CPU Job或重建数据**。下一任务是先核对293/43发布Manifest与P0 SAFE的绑定关系，再完成R60 GPU Stage/Worker/CLI。必须复用`storyforge_dataset.hf_runtime`、`r60_common2_wrapped_hf_stage.local_dependencies`、现有HF Bucket同步/远端文件集/Job历史检查模式，以及R54已验证的GPU设备门禁、QLoRA参数、终端Checkpoint和Adapter Reload方法；不得复制Token算法、Label Mask、HF Runtime或Quality Pipeline。注意`hf_job_guard.py`是CPU-only，不能用于GPU提交；R54整桶RW挂载也不能照搬，R60必须分离输入RO与输出RW前缀。
+
+293/43仅为`THREE_PERSISTED_MESSAGES_NO_SYSTEM`探索性输入。保持Gold Quality Manifest不变，不导入虚构Review事件，不提升`quality_v1_admitted`或`train_admitted`；Reviewer独立性、R50语义隔离、完整语义World隔离仍HOLD。保持`NOT_PROMOTED`，不将R47/R48/R55已暴露题冒充独立测试。先完成合成回归、Ruff和GitHub CI；Mac只做私有Stage准备/同步/SAFE验收，HF使用`adradar`与固定模型Revision、独立RO/RW前缀、唯一Run Key、create-only和提交前marker。GPU Job必须等待针对该Run Key、flavor、时长和配置的Owner明确授权。
