@@ -89,3 +89,23 @@ Owner真实SAFE：`BASE336_EXPLORATORY_SPLIT_PREFLIGHT__NO_WRITE`，293 Train / 
 **只重试写盘一次，必须用全新run key**；任何上一轮留下的输出目录、部分文件都不要删除、覆盖或复用。先`git fetch/merge --ff-only`更新脚本，然后在此前命令中只重新生成`RUN_KEY`和`OUT`，调用`--write`。不要把新JSONL公开上传或打印。
 
 成功后必须本地只读验证：`train.jsonl`确实293行、`validation.jsonl`确实43行；文件权限0600、大小<4MB，Manifest SHA与字节精确匹配；目录0700；无其他未知文件。若仍HOLD，保持输出原样，使用安全阶段码检查，不通过暴露异常/路径/正文来诊断，GPU保持零。
+
+
+## 2026-11-16：真实293/43数据发布成功，新增独立字节验收器
+
+Owner真实`--write`回执为`BASE336_EXPLORATORY_SPLIT_CREATED__GPU_HOLD`、293 Train / 146 Story、43 Validation / 26 Story、336总计，已知World跨组=0；create-only发布目录：`$HOME/.local/share/storyforge/r60/private/r60-base336-exploratory-20261116T020325Z-4314ad84d5cc`。**尚未独立二次读取这三个私有文件/校验字节SHA；不能仅凭成功写盘回执称最终发布验收PASS**。
+
+实现`experiments/r58_quality/r60_base336_exploratory_release_verify.py`和测试：只读、0600/0700、文件集必须恰好三个、Manifest固定schema/336/293/43/世界跨组0/风险声明保留、独立重算两份JSONL SHA、逐行四消息和最后Assistant结构检查；不可篡改旧manifest，无GPU、模型、网络或DB。CI [#43790052539](https://github.com/sunxu/storyforge/actions/runs/43790052539)：Ruff PASS、298项合成测试PASS。真实Owner Mac运行命令：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-base336-exploratory-20261116T020325Z-4314ad84d5cc"
+"$PY" experiments/r58_quality/r60_base336_exploratory_release_verify.py --release-dir "$OUT"
+```
+
+必须收到`BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD`、`sha256_verified=true`、293/43、`train_admitted=0`，才能准备后续真实Collator审计Stage和独立R60 GPU runner。**不可用R54脚本直接提交**，旧CPU336 remote TECHNICAL Stage也不等于GPU发布包。当前`gpu_stage_prepared=false`、`gpu_started=false`。
