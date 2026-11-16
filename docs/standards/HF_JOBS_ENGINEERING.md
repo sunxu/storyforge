@@ -57,3 +57,15 @@ Runtime 核心 Python 3.11 标准库，无第三方运行时依赖。Tokenizer �
 ## 状态边界
 
 Runtime PASS 只表示基础设施检查通过。Token PASS 不等于语义审核 PASS；语义 PASS 不等于 Quality-v1 admission；Quality-v1 admission 不等于 GPU 训练授权。
+
+## R60 Base336 GPU实验：复用与专用边界（2026-11-16）
+
+- CPU336真实Tokenizer/Collator/R18 Label Mask证明已通过293/43原始行字节多重集合一致性转移；不重复提交CPU Job或重跑Tokenizer/Collator。只有输入字节、模型Revision、消息合同、Template、System/World卡或Label Mask算法变化时，才重新评估CPU技术审计范围。
+- GPU实现复用 `storyforge_dataset.hf_runtime` 的通用输入/输出/诊断能力，复用 `r60_common2_wrapped_hf_stage.local_dependencies` 的依赖闭包方法；R54 GPU Runner仅作为已验证训练/设备/checkpoint/reload方法参考。业务差异留在R60薄适配器。
+- `scripts/hf_job_guard.py` 是CPU专用Guard，拒绝GPU Flavor；不得通过放宽它来提交GPU。GPU提交必须使用独立的付费GPU执行合同和明确授权。
+- R60 GPU输入Stage必须挂载精确的唯一Bucket前缀并显式RO；训练输出使用另一个独立唯一前缀并显式RW。禁止整桶 `storyforge-training:/workspace:rw` 挂载；也禁止输入与输出前缀重叠。
+- 固定 `adradar` Namespace、精确模型Revision、镜像Digest、直接依赖与实际安装版本；Mac端先本地验证Stage、同步文件、核验远端完整文件集与SHA、检查组织Job历史并做CLI dry-run。Dry-run、远端READY、Job提交是不同状态。
+- 每次GPU提交使用唯一Run Key、create-only Stage/结果目录、提交前O_EXCL marker和单次尝试；提交不确定时只检查组织Job历史，不自动重试、不自动切换Namespace、不覆盖旧Stage或结果。
+- GPU Worker在真实输入/配置/依赖/设备门禁全部通过前不得下载模型权重或启动训练；日志/stdout只输出SAFE状态。训练后验证真实终端Optimizer Checkpoint、Adapter Reload及Owner端SAFE回执。GPU授权必须绑定具体Run Key、Flavor、时长、模型Revision、配置与预算。
+
+权威执行合同：`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`。本节不把CPU-only Guard改成GPU Guard，也不改变现有HF Runtime API。
