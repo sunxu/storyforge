@@ -1,0 +1,41 @@
+# R60 Base336 exploratory only. NOT a formally admitted training run.
+# SOURCE: exactly 293 Train + 43 Val from frozen 336; actual paths override at runtime.
+# One epoch, batch 1, grad accumulation 8 -> ceil(293 / 8) = 37 optimizer steps.
+model: Qwen/Qwen3.8-27B
+use_hf: true
+tuner_type: lora
+target_modules: all-linear
+lora_rank: 64
+lora_alpha: 128
+lora_dropout: 0.05
+dataset:
+  - /workspace/preflight/r60/base336-gpu/runs/REPLACE_RUN_KEY/private/release/train.jsonl
+val_dataset:
+  - /workspace/preflight/r60/base336-gpu/runs/REPLACE_RUN_KEY/private/release/validation.jsonl
+torch_dtype: bfloat16
+quant_method: bnb
+quant_bits: 4
+bnb_4bit_compute_dtype: bfloat16
+bnb_4bit_quant_type: nf4
+bnb_4bit_use_double_quant: true
+max_length: 16384
+loss_scale: last_round
+disable_ignore_empty_think: true
+add_non_thinking_prefix: false
+per_device_train_batch_size: 1
+per_device_eval_batch_size: 1
+gradient_accumulation_steps: 8
+learning_rate: 0.00005
+num_train_epochs: 1
+warmup_ratio: 0.05
+logging_steps: 1
+eval_strategy: steps
+save_strategy: steps
+eval_steps: 37
+save_steps: 37
+save_total_limit: 2
+load_best_model_at_end: false
+gradient_checkpointing: true
+dataloader_num_workers: 2
+dataset_num_proc: 2
+output_dir: /workspace/experiments/r60-base336-exploratory/REPLACE_RUN_KEY/output
