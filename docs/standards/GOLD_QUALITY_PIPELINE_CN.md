@@ -241,11 +241,11 @@ Base336 的293 Train / 43 Validation仅用于单独批准的探索性Base QLoRA�
 `src/storyforge_dataset/world_isolation.py` 是结构化世界组件隔离的共享实现：
 
 - `component_split_conflicts()` 只比较上游已审核分配的 `world_component_id` 与 split，不从 Story ID、精确 JSONB、MD5/SHA、标题/角色同名或时间戳推断语义身份。
-- `validate_component_review_assignments()` 校验逐来源语义组件分配是否完整、来源版本声明是否通过、审核状态是否完成，并检测同一语义组件是否横跨 Train/Validation。
+- `validate_component_review_assignments()` 要求与预期 roster 精确覆盖，校验逐来源 evidence ref、64位 source snapshot SHA256 pin、来源版本核验声明、语义审核完成声明与决策枚举，并检测同一语义组件是否横跨 Train/Validation。未提供完整 expected roster 时不能 PASS。
 - `experiments/r58_quality/quality_v1.py` 已复用该共享冲突检测函数；Quality-v1 六维门槛与严重标记仍只在 `quality_v1.py` 定义，不复制到新工具。
-- 该模块的 PASS 仅表示提交的来源绑定组件分配完整且没有声明的跨 split 冲突；它不证明 Reviewer 独立性、历史实际发送版本、权利范围、R50 完整排除或训练授权。
+- 该模块的 PASS 仅表示提交的来源绑定组件分配在结构上完整且没有声明的跨 split 冲突；SAFE 中 `world_component_isolation_verified` 固定为 false。它不独立证明语义身份、Reviewer 独立性、历史实际发送版本、权利范围、R50 完整排除或训练授权。
 - SAFE 输出只包含聚合计数，不包含来源键、组件 ID、Story ID、哈希或原文。不得将私有交叉表提交 GitHub/CI。
 - 精确 World JSON 相同只能作为候选关联线索。若审核判为 `GENERIC_TEMPLATE`，仍须逐成员分配独立的语义组件 ID，并以角色卡、Opening、故事专属事实和版本证据支持；“通用模板”标签本身不能自动消除 Train/Validation 隔离风险。
 - Base336 的 8 组私有世界来源回执目前全部 HOLD（7 组当前版本跨 split，语义审核未完成，历史 actual-sent 未验证）。它不是 Gold Manifest 事件，不得导入 Source/Review/Exclusion/Reconciliation，也不改变 `quality_v1_admitted=0`、`train_admitted=0`。
 
-新审核流程必须先核对来源版本和成员覆盖，再填写语义组件分配，最后运行共享结构门禁。缺失成员、缺失证据、重复来源键、未完成审核或跨 split 组件均失败关闭；不得通过重算 hash、改名或手动修改 SAFE 绕过。
+新审核流程必须先核对来源版本和成员覆盖，再填写语义组件分配，最后运行共享结构门禁。缺失成员、缺失证据、重复来源键、未完成审核或跨 split 组件均失败关闭；不得通过重算 hash、改名或手动修改 SAFE 绕过。当前 HEAD 的 R60 REAL1000 synthetic-only Actions 已通过：Ruff PASS、338 passed / 2 subtests、Skill contract 7 passed；对应 run `44127200498`。
