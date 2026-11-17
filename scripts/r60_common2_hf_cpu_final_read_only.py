@@ -22,6 +22,7 @@ except ModuleNotFoundError:
     import r60_common2_hf_cpu_stage as stage_contract
 
 RESULTS = "preflight/r60/common2/cpu2/results"
+NAMESPACE = "adradar"
 
 
 def walk_job_history(api, key: str, *, max_pages: int = 100) -> tuple[int, int]:
@@ -29,7 +30,7 @@ def walk_job_history(api, key: str, *, max_pages: int = 100) -> tuple[int, int]:
     from huggingface_hub import get_session
 
     origin = api.endpoint.rstrip("/")
-    base_path = "/api/jobs/adradar"
+    base_path = f"/api/jobs/{NAMESPACE}"
     target = origin + base_path
     parsed_base = urlparse(target)
     headers = api._build_hf_headers()
