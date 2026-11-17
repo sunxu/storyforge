@@ -221,6 +221,8 @@ chmod 600 "$RECEIPT"
 - Stage同步先上传所有文件，最后上传SHA Manifest；READY阶段逐个下载远端对象回Mac并与本地SHA比较，同时要求远端文件集完全相同。POSIX 0700/0600是Owner Mac本地Stage约束，不假定HF远端挂载保留这些mode bits。Stage Manifest同时固定Git HEAD、Bucket、Namespace、RO/RW前缀、GPU Flavor、时长、镜像Digest和GPU Scope；本地verify/sync/ready必须确认当前分支干净且HEAD与Stage一致。
 - Job历史使用既有分页器完整走完，不以最近N条记录推断“没有Job”。
 - dry-run设置 \`STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED\`；Worker只接受真实Scope值 \`R60_BASE336_293_43_ONE_EPOCH_A10080GB\`。即使有人误删dry-run参数，Worker Shell也会因Scope不符而拒绝执行。
+- Worker Shell现在会正确展开HF注入的Run Key/Scope。执行依赖安装前，Worker preflight还校验HF自动注入的 `JOB_ID`、Run Key/Scope和`/output`可写性；`JOB_ID`是HF Jobs平台提供的内建环境变量。
+- Stage根目录及全部嵌套目录均强制0700，文件0600；本地verify逐项复核mode与symlink，避免宽松umask留下可遍历目录。
 - CLI动作列表**没有submit**。当前只能执行 \`preflight\`、\`sync\`、\`ready\`、\`diagnose\`、\`cli-flags\`；不具备付费Job提交路径。
 
 ### Owner Mac下一步（仅Stage / HF READY / dry-run）
