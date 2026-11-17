@@ -47,11 +47,44 @@ def _sha(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _ensure_private_parents(stage: Path, parent: Path) -> None:
+    try:
+        relative = parent.relative_to(stage)
+    except ValueError as exc:
+        raise ValueError("STAGE_PATH_HOLD") from exc
+    current = stage
+    for part in relative.parts:
+        if part in {"", ".", ".."}:
+            raise ValueError("STAGE_PATH_HOLD")
+        current = current / part
+        if current.is_symlink():
+            raise ValueError("STAGE_DIRECTORY_SYMLINK_HOLD")
+        if current.exists():
+            if not current.is_dir():
+                raise ValueError("STAGE_DIRECTORY_TYPE_HOLD")
+        else:
+            current.mkdir(mode=0o700)
+        os.chmod(current, 0o700)
+
+
+def _verify_local_modes(stage: Path) -> None:
+    if stat.S_IMODE(stage.stat().st_mode) != 0o700:
+        raise ValueError("STAGE_ROOT_MODE_HOLD")
+    for item in stage.rglob("*"):
+        if item.is_symlink():
+            raise ValueError("STAGE_SYMLINK_HOLD")
+        mode = stat.S_IMODE(item.lstat().st_mode)
+        if item.is_dir() and mode != 0o700:
+            raise ValueError("STAGE_DIRECTORY_MODE_HOLD")
+        if item.is_file() and mode != 0o600:
+            raise ValueError("STAGE_FILE_MODE_HOLD")
+
+
 def _copy_new(stage: Path, relative: str, raw: bytes) -> str:
     if relative.startswith("/") or ".." in Path(relative).parts:
         raise ValueError("STAGE_PATH_HOLD")
     target = stage / relative
-    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    _ensure_private_parents(stage, target.parent)
     if target.parent.is_symlink() or target.exists() or target.is_symlink():
         raise ValueError("STAGE_CREATE_ONLY_HOLD")
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
@@ -100,6 +133,7 @@ def _git_commit() -> str:
 
 
 def verify(stage: Path, run_key: str) -> dict:
+    _verify_local_modes(stage)
     result = contract.verify_stage(stage, run_key)
     manifest = contract.read_json(stage / "SHA256_MANIFEST_PRIVATE.json")
     if manifest.get("git_commit") != _git_commit():
