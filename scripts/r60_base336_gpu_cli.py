@@ -17,13 +17,13 @@ import r60_base336_gpu_contract as contract
 import r60_base336_gpu_stage as stage_tool
 import r60_common2_wrapped_hf_cli as shared_cli
 
-BUCKET = "adradar/storyforge-training"
-STAGE_PREFIX = "preflight/r60/base336-gpu/runs"
-RESULT_PREFIX = "experiments/r60-base336-exploratory"
-SUBMISSION_PREFIX = "preflight/r60/base336-gpu/submissions"
-IMAGE = "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
+BUCKET = contract.HF_BUCKET
+STAGE_PREFIX = contract.HF_STAGE_PREFIX
+RESULT_PREFIX = contract.HF_RESULT_PREFIX
+SUBMISSION_PREFIX = contract.HF_SUBMISSION_PREFIX
+IMAGE = contract.HF_IMAGE
 WORKER = "/input/r60-base336/scripts/r60_base336_gpu_worker.sh"
-GPU_SCOPE = "R60_BASE336_293_43_ONE_EPOCH_A10080GB"
+GPU_SCOPE = contract.GPU_SCOPE
 SCHEMA = "storyforge_r60_base336_gpu_cli_safe_v1"
 
 
@@ -131,10 +131,10 @@ def job_command(key: str, help_text: str) -> list[str]:
     # Reuse the generic argv builder only. Do not call the CPU-only policy
     # validator or relax its CPU flavor allowlist.
     argv = hf_job_guard.build_hf_argv(
-        namespace="adradar",
+        namespace=contract.HF_NAMESPACE,
         name=f"r60-base336-{key}",
-        flavor="a100-large",
-        timeout_minutes=120,
+        flavor=contract.HF_FLAVOR,
+        timeout_minutes=contract.HF_TIMEOUT_MINUTES,
         input_volumes=input_volumes,
         output_volume=output_volume,
         image=IMAGE,
@@ -214,7 +214,7 @@ def ready(stage: Path, key: str, api) -> dict:
         "visible_jobs": history["visible_jobs"],
         "matching_jobs": history["matching_jobs"],
         "stage_files": len(expected),
-        "gpu_flavor_preflighted": "a100-large",
+        "gpu_flavor_preflighted": contract.HF_FLAVOR,
         "image_digest_pinned": True,
     }
 
