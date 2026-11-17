@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.18
+# R58 RolePlay → StoryForge SFT Skill v0.1.19
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -47,6 +47,6 @@ python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.
 Batch Quote Repair v2 / checkpoint v3 A/B GPU Pilot 已完成：A/Qwen 2/2 PASS，B/GLM 1 PASS + 1 HOLD；4 个 checkpoint 通过 CPU 身份和引用复核。只有一个共同配对样本，不能据此判断模型整体优劣。Gold195 Grok Web 三案试点也已结案：2 案双审暂定通过但语义仍 HOLD，Case02 严重争议未决；3/3 历史 Manifest 身份匹配，192 条不在该 Manifest 中。未证明文学质量/审核者独立性/世界隔离；其余 60 条没有 Grok 外发授权，132 条 Assistant-first 语义策略未解决。Quality-v1 admission=0，训练未授权。
 
 
-## 当前 R60 Base336 状态（2026-11-17）
+## 当前 R60 Base336 状态（2026-11-18）
 
-Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 steps、终端Checkpoint和Adapter Reload PASS，状态为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。这不是模型质量通过。 33/33个输出对象已完成Owner Mac本地SHA256 inventory（5,604,774,224 bytes），Worker SAFE、Checkpoint和Adapter Reload复核PASS；这是本地对象inventory，不是与Worker原始逐文件SHA比对，也不是文学质量PASS。43条Validation参与了训练期Eval/Checkpoint选择，不能作为独立Held-out；R50仍禁止访问，旧暴露题不能冒充独立测试。当前P2独立Held-out来源仍HOLD；必须先核验来源权利、未暴露状态与世界隔离，禁止从未准入池/数据库自动抽样。生成评估优先复用 `generation_eval.worker` 与共享 HF Runtime；旧 P4 三模型配置、三臂 Pairing Gate 和五维 Scorecard 不直接适用，具体适配边界见评估计划。下一阶段、工具复用与GPU推理授权边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。
+Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 steps、终端Checkpoint和Adapter Reload PASS，状态为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。这不是模型质量通过。 33/33个输出对象已完成Owner Mac本地SHA256 inventory（5,604,774,224 bytes），Worker SAFE、Checkpoint和Adapter Reload复核PASS；这是本地对象inventory，不是与Worker原始逐文件SHA比对，也不是文学质量PASS。43条Validation参与了训练期Eval/Checkpoint选择，不能作为独立Held-out；R50仍禁止访问，旧暴露题不能冒充独立测试。当前P2仍HOLD：已收到8组World来源证据，8/8 HOLD、7/8当前版本跨Train/Validation，语义审核和历史actual-sent均未验证；真实48条提示JSONL/Manifest尚未生成。必须先复核38个成员的当前/归档角色卡与Opening，完成语义组件分配及R50仅元数据、R47/R48/R55暴露排除，禁止从未准入池/数据库自动抽样。生成评估优先复用 `generation_eval.worker` 与共享 HF Runtime；旧 P4 三模型配置、三臂 Pairing Gate 和五维 Scorecard 不直接适用，具体适配边界见评估计划。下一阶段、工具复用与GPU推理授权边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。
