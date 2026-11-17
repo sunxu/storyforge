@@ -205,6 +205,25 @@ def verify_stage(stage: Path, run_key: str) -> dict:
         for name, digest in files.items()
     ):
         raise ValueError("STAGE_FILE_MANIFEST_HOLD")
+    required_files = {
+        "scripts/r60_base336_gpu_worker.py",
+        "scripts/r60_base336_gpu_worker.sh",
+        "scripts/r60_base336_gpu_contract.py",
+        "scripts/hf_job_runner.py",
+        "scripts/hf_smoke_guard.py",
+        "requirements/r60-base336-gpu.in",
+        "config/template.yaml",
+        CONFIG_NAME,
+        "private/release/train.jsonl",
+        "private/release/validation.jsonl",
+        "private/release/" + RELEASE_MANIFEST,
+        "private/proof/" + PROOF_NAME,
+        "src/storyforge_dataset/hf_runtime/__init__.py",
+        "src/storyforge_dataset/hf_runtime/inputs.py",
+        "src/storyforge_dataset/hf_runtime/outputs.py",
+    }
+    if not required_files.issubset(files):
+        raise ValueError("STAGE_REQUIRED_FILES_HOLD")
     expected = set(files) | {"SHA256_MANIFEST_PRIVATE.json"}
     actual = {
         item.relative_to(stage).as_posix()
