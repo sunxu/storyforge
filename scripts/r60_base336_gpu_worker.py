@@ -17,13 +17,14 @@ sys.path[:0] = [
     str(ROOT / "experiments" / "r58_quality"),
 ]
 
+import r60_base336_gpu_contract as contract
 from hf_job_runner import (
     GpuMonitor,
     check_inference_result,
     make_inference_input,
     training_evidence,
 )
-import r60_base336_gpu_contract as contract
+
 from storyforge_dataset.hf_runtime import InputManager, OutputManager
 
 GPU_SCOPE = "R60_BASE336_293_43_ONE_EPOCH_A10080GB"
@@ -92,8 +93,9 @@ def _gpu_gate() -> dict:
 
 
 def _dependency_gate() -> dict:
-    import torch
     from importlib.metadata import version
+
+    import torch
 
     if sys.version_info[:2] != (3, 11):
         raise ValueError("PYTHON_VERSION_HOLD")
