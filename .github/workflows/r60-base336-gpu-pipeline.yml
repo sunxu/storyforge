@@ -19,6 +19,7 @@ on:
       - 'configs/r60_base336_exploratory_293_43.yaml'
       - 'requirements/r60-base336-gpu.in'
       - 'tests/test_r60_base336_gpu_pipeline.py'
+      - 'tests/test_r60_base336_gpu_result_audit.py'
       - 'tests/test_r60_common2_hf_cpu_final_read_only.py'
       - 'experiments/r58_quality/test_r60_base336_exploratory_release_verify.py'
       - '.github/workflows/r60-base336-gpu-pipeline.yml'
@@ -49,7 +50,8 @@ jobs:
             scripts/r60_base336_gpu_contract.py \
             scripts/r60_base336_gpu_stage.py \
             scripts/r60_base336_gpu_worker.py \
-            scripts/r60_base336_gpu_cli.py
+            scripts/r60_base336_gpu_cli.py \
+            scripts/r60_base336_gpu_result_audit.py
           bash -n scripts/r60_base336_gpu_worker.sh
       - name: Ruff new pipeline code
         run: |
@@ -58,7 +60,8 @@ jobs:
             scripts/r60_base336_gpu_stage.py \
             scripts/r60_base336_gpu_worker.py \
             scripts/r60_base336_gpu_cli.py \
-            tests/test_r60_base336_gpu_pipeline.py
+            tests/test_r60_base336_gpu_pipeline.py \
+            tests/test_r60_base336_gpu_result_audit.py
       - name: Synthetic GPU pipeline and reused runtime regressions
         run: |
           python -m pytest -q \

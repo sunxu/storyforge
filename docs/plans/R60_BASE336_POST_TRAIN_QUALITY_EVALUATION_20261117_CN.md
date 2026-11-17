@@ -48,7 +48,7 @@ Owner 已对独立输出前缀完成递归文件盘点：
 - Worker SAFE、运行日志、reload 输入/输出、Trainer state、adapter config、训练日志、图表和 TensorBoard 事件均存在。
 - HF Job 状态为 COMPLETED；最终 checkpoint、terminal eval、one epoch 和 adapter reload 均由 Worker SAFE 确认。
 
-**尚未完成：** 远端目录列表和对象大小是元数据盘点，不是文件内容 SHA 证明。当前输出目录未发现由 Worker 生成的全量结果 SHA256 Manifest。因此不能声称 33 个输出对象已经完成独立内容哈希验收。下一步应由 Owner Mac 在私有目录下载所需产物、只读计算 SHA256，并创建本地 0700/0600 私有审计 Manifest；不上传、不覆盖 HF 输出、不把私有哈希写入 GitHub。若需要全量 33 文件审计，先检查本地可用磁盘空间（至少覆盖约 5.61 GB 下载量及安全余量）。
+**尚未完成：** 远端目录列表和对象大小是元数据盘点，不是文件内容 SHA 证明。当前输出目录未发现由 Worker 生成的全量结果 SHA256 Manifest。因此不能声称 33 个输出对象已经完成独立内容哈希验收。只读下载与本地 SHA 清单工具已实现为 `scripts/r60_base336_gpu_result_audit.py`，复用 `r60_base336_gpu_cli._remote_set/_remote_uri` 和 `hf_job_runner.sha256`，不会写入 Bucket、提交 Job 或启动 GPU。Owner Mac 执行前先检查至少约 6.61 GB 可用空间；本地输出目录必须是私有根目录下的新目录。该 Manifest 是下载对象的本地 SHA256 inventory，不是与 Worker 原始逐文件 SHA 的比较，因为本轮 Worker 没有发布原始结果 SHA。
 
 ## 4. 为什么 43 条 Validation 不能作为独立质量测试
 
@@ -87,7 +87,7 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 | 顺序 | 工作 | 当前状态 |
 |---|---|---|
 | P0 | 训练 Job / SAFE / Checkpoint / Adapter Reload 证据核验 | PASS |
-| P1 | 33 个远端对象的 Owner 本地 SHA 审计 | 待执行 |
+| P1 | 33 个远端对象的 Owner 本地 SHA 审计（`scripts/r60_base336_gpu_result_audit.py`） | 待Owner执行 |
 | P2 | 新的独立测试来源、权限、来源 SHA 与世界隔离确认 | HOLD |
 | P3 | 复用既有 Runner / Pairer，完成六维生成评估薄适配器及合成测试 | 等 P2 |
 | P4 | Base/Adapter 配对 GPU 推理 | 需单独授权 |
@@ -95,3 +95,17 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 | P6 | 模型质量结论与是否继续下一轮实验 | HOLD |
 
 **当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。GPU 工程实验成功完成；模型质量尚未得到独立验证。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`，不追加训练、不启动推理、不访问 R50、不写数据库。
+
+
+### Owner Mac 只读产物审计命令
+
+```bash
+cd ~/workspace/storyforge-r60-4router-review
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+RUN_KEY="r60-base336-gpu-20261117T055622Z-b609cb78661d"
+OUT="$HOME/.local/share/storyforge/r60/private/r60-base336-result-audit-$RUN_KEY"
+export PYTHONPATH=src:scripts:experiments/r58_quality
+"$PY" scripts/r60_base336_gpu_result_audit.py --run-key "$RUN_KEY" --output-dir "$OUT"
+```
+
+该命令只读HF Bucket并逐个下载33个结果对象到新建私有目录，计算本地SHA256并写0600 Manifest；预计下载约5.61GB。下载失败留下的目录不得删除后复用；应先只读检查失败原因并另用新目录。SAFE只报告文件数/字节数，不输出私有路径、文件名、内容或哈希。
