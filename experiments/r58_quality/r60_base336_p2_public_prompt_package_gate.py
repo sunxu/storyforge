@@ -12,6 +12,7 @@ import hashlib
 import json
 import sys
 from collections import Counter
+from datetime import datetime
 from pathlib import Path
 
 SCHEMA = "storyforge_r60_base336_p2_public_prompt_package_draft_v1"
@@ -29,6 +30,8 @@ EXPECTED_ROLES = ("user", "assistant", "user")
 MAX_PROMPT_BYTES = 1_000_000
 MAX_MANIFEST_BYTES = 100_000
 MAX_MESSAGE_CHARS = 4_096
+BASE336_CUTOFF = "2026-11-16T02:03:25Z"
+GPU_RUN_START = "2026-11-17T05:56:22Z"
 RECORD_KEYS = {
     "sample_id", "source_key", "source_story_id", "source_revision",
     "source_snapshot_sha256", "world_json_md5_nonsemantic",
@@ -85,7 +88,7 @@ def validate(prompt_path: Path, manifest_path: Path) -> dict:
 
     selection = manifest.get("source_selection")
     if (type(selection) is not dict
-            or selection.get("base336_release_cutoff_utc") != "2026-11-16T02:03:25Z"
+            or selection.get("base336_release_cutoff_utc") != BASE336_CUTOFF
             or selection.get("selected_stories") != 8
             or selection.get("lineages") != 8
             or selection.get("authors") != 5
@@ -100,25 +103,51 @@ def validate(prompt_path: Path, manifest_path: Path) -> dict:
         raise Hold("SOURCE_COUNT_HOLD")
     source_map: dict[str, dict] = {}
     source_ids: set[str] = set()
+    before_gpu = 0
+    after_gpu = 0
+    cutoff = datetime.fromisoformat(BASE336_CUTOFF.replace("Z", "+00:00"))
+    gpu_start = datetime.fromisoformat(GPU_RUN_START.replace("Z", "+00:00"))
     for source in sources:
         if type(source) is not dict:
             raise Hold("SOURCE_ROW_HOLD")
         key = source.get("source_key")
         story_id = source.get("story_id")
         revision = source.get("public_content_revision")
+        try:
+            created_at = datetime.fromisoformat(
+                source.get("created_at_utc", "").replace("Z", "+00:00")
+            )
+            approved_at = datetime.fromisoformat(
+                source.get("first_public_approved_at_utc", "").replace("Z", "+00:00")
+            )
+        except (AttributeError, ValueError) as exc:
+            raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
         if (type(key) is not str or not key or key in source_map
                 or type(story_id) is not str or not story_id
                 or story_id in source_ids
                 or type(revision) is not int or revision < 0
+                or created_at.tzinfo is None or approved_at.tzinfo is None
+                or created_at < cutoff or approved_at < created_at
                 or not _is_sha256(source.get("submission_snapshot_sha256"))
                 or type(source.get("world_json_md5")) is not str
                 or len(source.get("world_json_md5")) != 32
                 or any(ch not in "0123456789abcdef" for ch in source.get("world_json_md5"))
+                or source.get("requested_visibility") != "public"
+                or source.get("permission_to_visibility") != "public"
+                or source.get("permission_submission_id") != source.get("moderation_submission_id")
                 or source.get("permission_submission_bound") is not True
-                or source.get("permission_result") not in {"ai_approved", "approved"}):
+                or source.get("permission_result") not in {"ai_approved", "approved"}
+                or source.get("snapshot_matches_current_public_v2") is not True
+                or source.get("snapshot_hash_matches_submission_sha256") is not True):
             raise Hold("SOURCE_BINDING_HOLD")
+        if created_at < gpu_start:
+            before_gpu += 1
+        else:
+            after_gpu += 1
         source_map[key] = source
         source_ids.add(story_id)
+    if before_gpu != 3 or after_gpu != 5:
+        raise Hold("SOURCE_TIME_ACCOUNTING_HOLD")
 
     if len(rows) != 48:
         raise Hold("PROMPT_ROW_COUNT_HOLD")
