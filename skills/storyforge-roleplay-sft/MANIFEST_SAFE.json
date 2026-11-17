@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.14",
-  "date": "2026-11-06",
-  "tests": "v0.1.14: shared batch-level review reconciliation import; Gold72 A/B2 aggregate receipt binding; append-only private provenance pins; report-safe aggregate-only output; synthetic tests; reviewer independence unverified; quality_v1_admitted=0; training_authorized=false",
+  "version": "0.1.16",
+  "date": "2026-11-17",
+  "tests": "v0.1.16: Base336 exploratory GPU job completed; post-training quality evaluation remains HOLD; 43 validation rows are not independent held-out; six-dimension Quality-v1 reuse and GPU inference authorization boundaries; synthetic Skill contract test",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "4adddcab0d4ab5b3a40c4ef5357d63783e09677a11c77074ddd5819aaadd4470",
-      "bytes": 11298
+      "sha256": "9178b750517eda2c1240db3330393ccfb8b0881d2f300122c312d3f2dd7dc7f3",
+      "bytes": 11956
     },
     {
       "path": "README.md",
-      "sha256": "91678c8c50dc4aa9b4b5ff269a10e554f1d77f3cbd7486b6ef0a1d40592dbde7",
-      "bytes": 3442
+      "sha256": "998416e82e666a67e3f09a60d89c6451ba7eeeea0ff0c21760ab2f5b5368f6b8",
+      "bytes": 4030
     },
     {
       "path": "SKILL.md",
-      "sha256": "dfbdae83796696bb53acb4af70e8f6f2d5b0f77147a4a1f509d8221c4d607558",
-      "bytes": 13288
+      "sha256": "104ab82f5a97cf572071a374b3accea74664af3b629f875a3e5565585ac7c4ae",
+      "bytes": 20061
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "0f3f794b728c3f07e1b8698a0194ee4f4b38c0bec500858b97707bc47513eee0",
-      "bytes": 7845
+      "sha256": "6167ef2d12aefd36e9b9db2efff5710436c4b4faa4b77b40222a805dff52b01b",
+      "bytes": 8158
     }
   ]
 }

@@ -5,7 +5,7 @@ description: "Run frozen StoryForge REAL1000 Chinese interactive-fiction dual-mo
 
 # StoryForge REAL1000 Quality Reviewer Skill
 
-> **2026-11-16 最新状态**：当前执行主线已切换至Base336探索性QLoRA准备，293/43真实发布包已取得旧HF CPU336实际Tokenizer/Collator/R18 Label Mask证明的严格字节转移PASS；该PASS只关闭技术输入一致性子门禁，不构成Quality-v1准入。当前GPU Stage未准备、GPU Job 0、`train_admitted=0`。交接见`docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`。REAL1000/Pilot5仅作为已结案质量证据维护：Pilot5-v2 3/3请求均已落盘（新增有效意见1、技术HOLD 2），累计有效意见8；crosswalk完整性PASS、质量HOLD，非盲诊断PASS0/HOLD2/REJECT3，Pilot25 HOLD。**不得重跑Pilot5、再次请求Reviewer或覆盖回执。** REAL1000 V3 166/166完成（142 PASS/18 HOLD/2 REJECT/4 TECHNICAL_HOLD），339双PASS仍只是候选；R50排除、Reviewer执行独立性、历史System和World语义隔离未通过。Gold/Quality-v1/训练准入仍0。此Skill只在用户明确恢复REAL1000审核时使用，不得把旧Reviewer流程混入Base336技术训练准备。
+> **2026-11-17 Base336训练后边界**：Base336探索性QLoRA Job已完成，SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`；这不是REAL1000质量审核，也不改变Quality-v1/Gold/训练准入。43条Validation已参与训练期Eval/Checkpoint选择，不能作为独立Held-out。此Skill仍只服务冻结REAL1000来源绑定的文学审核；不得把Base/Adapter生成输出直接塞入REAL1000私有批次、冒充`DB_FINAL_PERSISTED_ASSISTANT`，或向Gold Manifest追加生成评估事件。Base336后续独立评估按`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`执行；复用冻结六维Rubric，不重跑Pilot5、不访问R50、不把已暴露开发题当Held-out。
 
 
 > **2026-11-13 通用1000筛选方向（优先于旧Pilot5专属步骤）**：当前主目标是对完整冻结1000池建立来源→结构→独立双审→技术HOLD→语义仲裁→Gold候选→训练隔离的通用流程，不能继续仅为旧5案优化Reviewer。权威新方案 `docs/R60_REAL1000_GENERAL_SCREENING_PIPELINE_20261113_CN.md`。纯函数分流器 `src/storyforge_gold_quality/real1000_screening_policy.py` 只接受已来源绑定的证据标记，不读取私有文本或请求模型；仅输出 `QUALITY_CANDIDATE_NOT_ADMITTED` 等状态及1000全局SAFE聚合，**不能替代**现有 `hf_literary_review` / `hf_blind_stage` / 统一Quality Manifest与冻结六维Rubric。HF已完成Stage优先只读audit，不重复prepare，下一批需独立Owner授权。Gold/训练准入仍为0。

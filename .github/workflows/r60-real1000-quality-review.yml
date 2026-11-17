@@ -109,6 +109,12 @@ on:
       - "experiments/r58_quality/test_r60_forward_manifest_binding_v1.py"
       - "experiments/r58_quality/r60_base_first_train_ab_scope_cpu.py"
       - "experiments/r58_quality/test_r60_base_first_train_ab_scope_cpu.py"
+      - "docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md"
+      - "docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md"
+      - "docs/standards/GOLD_QUALITY_PIPELINE_CN.md"
+      - "skills/storyforge-roleplay-sft/**"
+      - "skills/storyforge-real-quality-review/SKILL.md"
+      - "skills/storyforge-hf-jobs/SKILL.md"
       - ".github/workflows/r60-real1000-quality-review.yml"
   pull_request:
     paths:
@@ -381,3 +387,6 @@ jobs:
             experiments/r58_quality/r60_forward_manifest_binding_v1.py \
             experiments/r58_quality/test_r60_forward_manifest_binding_v1.py \
             experiments/r58_quality/test_r60_base_constructed_hf_cpu_pipeline.py
+
+      - name: Verify RolePlay Skill manifest and reuse contract
+        run: python -m pytest -q skills/storyforge-roleplay-sft/tests/test_skill_token_reuse_contract.py

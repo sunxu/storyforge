@@ -1,3 +1,10 @@
+# 0.1.16 — 2026-11-17
+
+- 记录Base336唯一探索性GPU Job完成：293/43、37/37、A100、terminal checkpoint与Adapter Reload PASS；明确仅为工程PASS、NOT_PROMOTED。
+- 增加训练后质量评估计划：43条Validation已参与Eval/Checkpoint选择，不得冒充独立Held-out；R50和已暴露开发题继续排除。
+- 明确复用现有HF Runner、Pairer与Quality-v1六维Rubric；旧五维评估脚本不得直接承担六维裁决，生成评估不得写入Gold Quality Manifest。
+- 更新HF权限边界：既有授权只覆盖一个训练Job，Base/Adapter GPU配对推理须另行明确授权；不新增训练、不提升准入。
+
 # 0.1.14 — 2026-11-06
 
 - 将 Gold72 Reviewer A V3 / B2 Crosswalk 接入共享 Gold Quality Pipeline，新增通用 batch-level review reconciliation SAFE 导入事件。

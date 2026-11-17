@@ -1,5 +1,7 @@
 # R60 Base336：最短探索性GPU训练执行合同（2026-11-16）
 
+> **2026-11-17 最终执行状态（覆盖下方早期GPU Job=0 / 尚未Stage的历史状态）**：Run `r60-base336-gpu-20261117T055622Z-b609cb78661d` 的唯一HF Job `6afbfd5c98dda891b5df7fd2` 已由Owner确认 `COMPLETED`；Worker SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，37/37 steps、终端Checkpoint和Adapter Reload PASS。输出目录递归盘点33个对象、5,604,774,224 bytes，但尚无全量内容SHA Manifest。模型质量未独立验证，保持所有正式准入为0。训练后质量评估与工具复用边界见[独立计划](R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。
+
 > **2026-11-16 最新执行入口：** [R60 Base336 CPU336证明转移与GPU交接](R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md)。Owner真实293/43发布包独立字节验收PASS，随后Mac真实取得`BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`：旧HF CPU336回执已接受，293+43原始行SHA多重集合与旧336完全一致，`actual_final_collator_verified=true`、`collator_executed_in_this_run=false`。**P0已完成，不要重复运行转移命令、重跑HF CPU或重建JSONL。** 下一步是按本合同实现独立R60 GPU Stage/Worker/CLI，并维护Quality Pipeline与Skills边界。GPU Job 0，`train_admitted=0`，保持探索性合同。
 
 
@@ -299,3 +301,19 @@ python scripts/r60_base336_gpu_cli.py ready --stage "$STAGE" --run-key "$RUN_KEY
 - CI未下载Qwen权重、未访问HF Hub、未启动CUDA、未提交HF Job。
 - 尚未在Owner Mac执行真实私有Stage、HF Bucket同步、远端READY或CLI dry-run；不得把CI PASS表述成Mac/HF实测PASS。
 - GPU Job仍为0；\`quality_v1_admitted=0\`、\`train_admitted=0\`；正式质量准入仍HOLD。
+
+
+## 2026-11-17 Owner 实际首训完成回执
+
+- HF Job `6afbfd5c98dda891b5df7fd2` / Run Key `r60-base336-gpu-20261117T055622Z-b609cb78661d` 已实际提交一次并完成；Owner 的 `inspect` 回执为 `COMPLETED`，Flavor `a100-large`，镜像Digest与Stage固定值一致。
+- Worker SAFE `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`：293 Train / 43 Validation、37/37、one_epoch_complete、terminal_checkpoint_verified、adapter_reload_verified均为true；GPU为NVIDIA A100-SXM4-80GB。
+- Trainer 汇总 train_loss=2.146966、terminal eval_loss=1.932103、eval_token_acc=0.550921。Swift训练耗时1,699.8秒；Worker总耗时1,948.8秒。上述均为工程/训练指标，不是文学质量通过。
+- HF结果前缀递归盘点33个对象、5,604,774,224 bytes；最大两个二进制产物为Adapter约1.87GB、optimizer约3.74GB。仅确认远端对象存在和元数据大小；独立内容SHA审计仍待Owner Mac完成。
+- Worker的`hf_jobs_submitted=0`表示Worker没有再提交嵌套Job；外层提交SAFE已记录`job_submission_calls=1`和`hf_jobs_submitted=1`，两者不矛盾。
+- 不追加训练、不重提、不覆盖Stage或结果；正式准入仍为0。
+
+### 训练后质量评估
+
+训练结束不等于模型质量通过。43条Validation已进入训练期间Eval并参与best checkpoint记录，不能再作为独立Held-out；336条均已用于Train或Validation。单条128-token Adapter Reload只证明加载/生成路径，不是Base/Adapter配对评估。
+
+后续必须按`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`：先本地私有SHA审计，再获取未暴露、未训练、来源和World组件可核验的新Held-out；复用既有Runner/Pairer和Quality-v1六维Rubric，先补齐版本化薄适配器及合成测试；Base/Adapter GPU配对推理须另行取得Owner明确授权。禁止访问R50、复用R47/R48/R55已暴露题作独立测试、修改Gold Quality Manifest或提升任何准入状态。

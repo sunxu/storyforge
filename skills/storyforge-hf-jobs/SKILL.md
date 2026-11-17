@@ -1,6 +1,6 @@
 ---
 name: storyforge-hf-jobs
-version: 1.0.2
+version: 1.0.3
 language: zh-CN
 description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行和诊断 CPU Jobs；本地优先、合成测试优先、GPU 默认拒绝。
 ---
@@ -11,7 +11,7 @@ description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行�
 
 本 Skill 是后续 ChatGPT Agent、Codex 和本地开发者使用公共 Runtime 的操作入口。它不是 Job 提交器、模型加载器、训练器或数据审核器。完整 API 与稳定 Schema 以 `src/storyforge_dataset/hf_runtime/` 和 `docs/standards/HF_JOBS_ENGINEERING.md` 为准；本 Skill 不复制算法。
 
-> **R60 Base336 当前状态（2026-11-16）**：Owner Mac已取得293/43最终发布包的严格Collator证明转移SAFE PASS（旧CPU336回执接受 + 原始JSONL行SHA多重集合完全相同）。**不得重复提交CPU336 Job或重新构造数据**。当前GPU Stage尚未准备、GPU Job未提交、`train_admitted=0`。后续入口：`docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`。
+> **R60 Base336 当前状态（2026-11-17）**：唯一训练Job `6afbfd5c98dda891b5df7fd2` 已COMPLETED；Worker SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，37/37、A100、终端Checkpoint与Adapter Reload PASS。HF输出前缀递归盘点33个对象、5,604,774,224 bytes；尚未完成Owner Mac本地全量SHA审计。不得重跑、重提、覆盖Stage或结果。训练授权不包含Base/Adapter GPU推理；任何新GPU推理需单独明确授权。下一阶段见`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。
 
 ## 开始前必须做
 
