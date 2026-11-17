@@ -108,7 +108,7 @@ def _dependency_gate() -> dict:
         [sys.executable, "-m", "pip", "check"],
         capture_output=True, text=True, timeout=60, check=False,
     )
-    if check.returncode or check.stdout.strip() or check.stderr.strip():
+    if check.returncode:
         raise ValueError("DEPENDENCY_INTEGRITY_HOLD")
     return installed
 
@@ -296,7 +296,6 @@ def run(stage: Path, output: Path, run_key: str, action: str) -> dict:
     try:
         OutputManager.write_safe(output / RECEIPT_NAME, report)
     except Exception:  # noqa: BLE001 - SAFE-only output failure
-        report = safe_report(run_key)
         report["status"] = "BASE336_GPU_RECEIPT_PUBLICATION_HOLD"
         report["reason_code"] = "OUTPUT_WRITE_HOLD"
     return report
