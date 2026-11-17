@@ -7,6 +7,7 @@ import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 from pathlib import Path
@@ -75,13 +76,25 @@ def _source_bytes(path: Path, maximum: int) -> bytes:
 
 
 def _git_commit() -> str:
+    branch = subprocess.run(
+        ["git", "branch", "--show-current"], cwd=ROOT,
+        capture_output=True, text=True, timeout=10, check=False,
+    )
+    status = subprocess.run(
+        ["git", "status", "--porcelain"], cwd=ROOT,
+        capture_output=True, text=True, timeout=10, check=False,
+    )
     result = subprocess.run(
         ["git", "rev-parse", "HEAD"], cwd=ROOT,
         capture_output=True, text=True, timeout=10, check=False,
     )
     value = result.stdout.strip()
-    if result.returncode or re.fullmatch(r"[a-f0-9]{40}", value) is None:
-        raise ValueError("GIT_COMMIT_UNVERIFIED_HOLD")
+    if (
+        branch.returncode or branch.stdout.strip() != "r60/common2-cpu2-owner"
+        or status.returncode or status.stdout.strip()
+        or result.returncode or re.fullmatch(r"[a-f0-9]{40}", value) is None
+    ):
+        raise ValueError("GIT_BRANCH_OR_WORKTREE_HOLD")
     return value
 
 
@@ -94,7 +107,12 @@ def prepare(release_dir: Path, proof_receipt: Path, stage: Path, run_key: str) -
         raise ValueError("RUN_KEY_HOLD")
     if stage.exists() or stage.is_symlink():
         raise ValueError("STAGE_ALREADY_EXISTS_HOLD")
-    if stage.parent.is_symlink() or not stage.parent.is_dir():
+    private_base = Path.home() / ".local/share/storyforge/r60/private"
+    if (
+        stage.parent.is_symlink() or not stage.parent.is_dir()
+        or stage.parent.resolve() != private_base.resolve()
+        or stat.S_IMODE(stage.parent.stat().st_mode) != 0o700
+    ):
         raise ValueError("STAGE_PARENT_HOLD")
     contract.verify_release(release_dir)
     contract.verify_proof_receipt(proof_receipt)
