@@ -83,7 +83,7 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 - `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，38,010 bytes
 - JSONL SHA256：`ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`
 - `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的故事 ID、公开 revision、审核提交 SHA256、权限事件绑定、非语义 World JSON 指纹及各项 HOLD 状态
-- Manifest SHA256：`687ac156d57c0ce92ac9ce36295cfb3eeec2cdb84b2d4f36a9303166f3cc264a`
+- Manifest SHA256：`56c5c9c90e347860e1107dc7f10d2486f8153acc21c469676b80850f57239a4b`
 
 提示草案只供来源审查和后续 Owner 校验。它不是正式 Pairer 输入、不是 Quality-v1 SFT 候选 JSONL，也不是可用于模型推理的已冻结 Held-out。World MD5 仅用于精确 JSON 标识，不代表语义世界身份或隔离 PASS。
 
@@ -116,3 +116,19 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 若无法取得完整的世界组件交叉核验证据，对应来源保持 HOLD；不得通过改名、重算 MD5 或仅凭时间戳宣布语义隔离 PASS。
 
 P2 通过后，才按原计划进入 P3 的版本化薄适配器与合成测试。P4 Base/Adapter GPU 配对推理仍需单独、明确的 Owner 授权。
+
+
+## 7. P2 草案包结构校验工具
+
+新增本地只读校验器：
+
+- `experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`
+- `tests/test_r60_base336_p2_public_prompt_package_gate.py`
+
+校验范围包括：48 条与 JSONL SHA256、8 个来源绑定、公开 revision 与审核快照 SHA、权限事件仍绑定最新公开提交、来源创建时间晚于 Base336 冻结边界、3/5 时间分组、六维均衡、三消息角色顺序、无 System/答案字段，以及所有未完成门禁必须继续保持 HOLD。
+
+本地合成测试 **8/8 PASS**，`compileall` PASS；真实草案包 SAFE 为：
+
+`P2_PROMPT_PACKAGE_STRUCTURE_PASS__WORLD_CROSSWALK_HOLD`
+
+该工具只证明草案结构、哈希、来源版本/公开权限证据绑定；它明确拒绝把 Base336 语义隔离、R50 排除、R47/R48/R55 暴露排除或 Owner 冻结标为 PASS。没有触发或声称 GitHub Actions CI PASS。
