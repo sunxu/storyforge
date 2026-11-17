@@ -99,8 +99,13 @@ def test_valid_staged_release_does_not_depend_on_owner_private_root(monkeypatch,
     assert result["train_admitted"] == 0
 
 
-def test_staged_release_rejects_group_readable_files(monkeypatch, tmp_path):
+def test_staged_release_rejects_symlinked_files(monkeypatch, tmp_path):
     root, _ = release(monkeypatch, tmp_path)
-    (root / "train.jsonl").chmod(0o644)
-    with pytest.raises(target.Hold, match="STAGED_RELEASE_FILE_MODE_HOLD"):
+    target_path = root / "train.jsonl"
+    raw = target_path.read_bytes()
+    target_path.unlink()
+    backing = root / "train-real.jsonl"
+    backing.write_bytes(raw)
+    target_path.symlink_to(backing.name)
+    with pytest.raises(target.Hold, match="STAGED_RELEASE_FILE_TYPE_HOLD"):
         target.verify_staged(root)
