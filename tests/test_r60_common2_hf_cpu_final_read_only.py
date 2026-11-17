@@ -146,3 +146,31 @@ def test_link_redirect_to_foreign_host_fails_closed(monkeypatch):
     )
     with raises(ValueError, match="PAGINATION_URL_HOLD"):
         final_gate.walk_job_history(api, KEY)
+
+def test_walk_link_pagination_detects_base336_gpu_environment_key(monkeypatch):
+    class Response:
+        links = {}
+        def raise_for_status(self):
+            return None
+        def json(self):
+            return [{
+                "id": "base336-job",
+                "name": "fixed-name",
+                "labels": {},
+                "environment": {"STORYFORGE_R60_BASE336_GPU_RUN_KEY": KEY},
+            }]
+
+    class FakeSession:
+        def get(self, url, **kwargs):
+            assert kwargs.get("follow_redirects") is False
+            return Response()
+
+    monkeypatch.setitem(
+        sys.modules, "huggingface_hub",
+        SimpleNamespace(get_session=lambda: FakeSession()),
+    )
+    api = SimpleNamespace(
+        endpoint="https://huggingface.co",
+        _build_hf_headers=lambda: {"authorization": "Bearer private"},
+    )
+    assert final_gate.walk_job_history(api, KEY) == (1, 1)
