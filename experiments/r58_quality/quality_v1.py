@@ -21,6 +21,8 @@ from pathlib import Path
 import re
 import stat
 
+from storyforge_dataset.world_isolation import component_split_conflicts
+
 SCHEMA = "storyforge-quality-v1-private-candidate-v1"
 OUT_SCHEMA = "storyforge-quality-v1-safe-summary-v1"
 HEX64 = re.compile(r"^[a-f0-9]{64}$")
@@ -191,7 +193,6 @@ def summarize(rows: list[dict]) -> dict:
         raise Hold("R58 frozen pilot candidate cap exceeded")
     decisions = [decide(r) for r in rows]
     ids, inputs, targets = defaultdict(list), defaultdict(list), defaultdict(list)
-    worlds = defaultdict(set)
     for i, row in enumerate(rows):
         if not isinstance(row, dict):
             continue
@@ -202,15 +203,15 @@ def summarize(rows: list[dict]) -> dict:
             value = row.get(name)
             if isinstance(value, str) and value.strip():
                 mapping[value].append(i)
-        world, split = row.get("world_component_id"), row.get("split")
-        if isinstance(world, str) and world.strip() and split in ("train", "validation"):
-            worlds[world].add(split)
     conflicted = set()
     for mapping in (ids, inputs, targets):
         for indexes in mapping.values():
             if len(indexes) > 1:
                 conflicted.update(indexes)
-    world_conflict = {w for w, splits in worlds.items() if len(splits) > 1}
+    # Reuse the shared structural helper. It only compares reviewer/source-
+    # assigned component IDs; it never infers semantic identity from JSON,
+    # hashes, names, or story IDs.
+    world_conflict = set(component_split_conflicts(rows))
     for i, row in enumerate(rows):
         if i in conflicted:
             decisions[i] = ("HOLD", "DUPLICATE_SOURCE_OR_TARGET")
