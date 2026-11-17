@@ -77,7 +77,7 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 
 ## 6. 正式独立质量评估的必要条件
 
-1. **新的独立测试来源：** Owner 已批准采用 Supabase 公开故事/公开世界设定路线，仅用于内部独立评估提示构造，不读取用户私有会话正文。已构造 48 条 Draft prompts，覆盖 8 个公开故事、8 个不同 World JSON、5 位作者；来源版本、审核快照 SHA256 和最新公开权限事件绑定 8/8 通过。权威补充记录：`docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`。当前仍是 Draft，不是冻结 Held-out；必须完成 Base336 私有来源、R50 仅元数据、R47/R48/R55 暴露题的交叉排除及 Owner 冻结。若不能取得完整语义隔离证据，对应来源保持 HOLD。
+1. **新的独立测试来源：** Owner 已批准采用 Supabase 公开故事/公开世界设定路线，仅用于内部独立评估提示构造，不读取用户私有会话正文。来源筛选、revision、审核快照 SHA256 和最新公开权限事件绑定 8/8 通过；但截至本次复核，48 条提示包没有可核验的 JSONL/Manifest 文件与 SHA256，不能将其描述为已构造。提示包结构校验器和合成测试代码已存在，但它们不代表真实提示包存在。权威补充记录：`docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`。当前仍是 Draft，不是冻结 Held-out；必须完成 Base336 私有来源、R50 仅元数据、R47/R48/R55 暴露题的交叉排除及 Owner 冻结。若不能取得完整语义隔离证据，对应来源保持 HOLD。
 2. **固定生成合同：** Base 与 Adapter 使用相同的三个可见持久化消息、相同模型 Revision、相同上下文长度、解码参数、停止条件和输出 Token 上限；Adapter 路径固定到本次 checkpoint-37。生成参数必须先在合成测试和 CPU CLI 兼容检查中冻结，不能看过质量结果后反复调参。
 3. **独立配对生成：** 每个 prompt 对 Base/Adapter 各生成一次；逐项核对 prompt SHA、消息前缀、输出数量、非空、停止/截断元数据。每案随机化 A/B，映射密钥单独 0600 保存，评审者不可见模型身份。
 4. **六维盲审：** 严格复用 `quality_v1.py` 冻结六维门槛（4/4/3/4/4/4）与三个严重标记（`serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`）；评审只依据给定三消息，不推断隐藏世界设定。保留逐条证据引用、HOLD 不确定性和严重问题，不用旧五维 scorecard 替代。
@@ -91,14 +91,14 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 | P0 | 训练 Job / SAFE / Checkpoint / Adapter Reload 证据核验 | PASS |
 | P1 | 33 个远端对象下载与本地 SHA256 inventory（33/33，5,604,774,224 bytes） | PASS（Owner SAFE） |
 | P2-A | Supabase 公开来源筛选、revision、审核快照和权限事件绑定 | PASS（8/8） |
-| P2-B | 48 条全新提示草案、Manifest、SHA256 与结构门禁 | PASS（结构/哈希/绑定）；仍为 Draft |
+| P2-B | 48 条提示 JSONL/Manifest/SHA256 | NOT_GENERATED（仅校验器与合成测试代码存在） |
 | P2-C | Base336 / R50 元数据 / R47-R48-R55 语义隔离、提示独立复核、Owner 冻结 | **HOLD** |
 | P3 | 复用 `generation_eval.worker` / HF Runtime，设计 Base/Adapter 两臂 Profile、Pairing 与六维审核薄适配器及合成测试 | 复用审查完成；实现等 P2-C |
 | P4 | Base/Adapter 配对 GPU 推理 | 需单独授权 |
 | P5 | 独立盲审、严重标记核验和 Owner 裁决 | 等 P4 |
 | P6 | 模型质量结论与是否继续下一轮实验 | HOLD |
 
-**当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，且产物审计为`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。P2 已从“来源尚未提供”推进到“来源证据和 48 条提示 Draft 已准备”；但独立 Held-out 仍未冻结，World 语义隔离、R50 元数据排除、R47/R48/R55 暴露排除、独立复核和 Owner 冻结仍 HOLD。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。在 P2-C PASS 前不实现正式 Pairer、不启动推理、不追加训练、不访问 R50 正文、不写数据库。
+**当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，且产物审计为`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。P2-A 来源版本/公开权限证据 8/8 已核验；P2-B 的真实 48 条提示 JSONL/Manifest 尚未生成，只有校验器代码与合成测试。最新收到的 8 组世界来源证据仍是 `all_decisions=HOLD`，`semantic_review_completed=false`，`actual_sent_prompt_verified=false`；7 组标记为当前 Train/Validation 跨集合，全部 8 组仍未完成语义裁决。Base336 世界隔离、R50 元数据排除、R47/R48/R55 暴露排除、提示逐条复核和 Owner 冻结继续 HOLD。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。在 P2-C PASS 前不实现正式 Pairer、不启动推理、不追加训练、不访问 R50 正文、不写数据库。
 
 ### Owner Mac 只读产物审计命令（已执行，保留复现记录）
 
@@ -141,7 +141,7 @@ export PYTHONPATH=src:scripts:experiments/r58_quality
 
 ## 8. 2026-11-17 生成评估代码复用审查（只读盘点）
 
-P2 来源路线已获 Owner 批准，48 条提示 Draft 已构造；语义隔离和 Owner 冻结仍 HOLD。本节只记录既有代码的复用边界，不改动运行时、不提交 HF Job。
+P2 来源路线已获 Owner 批准；48 条提示包尚未生成。8 组世界来源证据已收到但全 HOLD，语义隔离和 Owner 冻结仍未通过。本节只记录既有代码的复用边界，不改动运行时、不提交 HF Job。
 
 ### 推荐复用顺序
 
