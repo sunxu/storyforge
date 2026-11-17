@@ -451,4 +451,5 @@ Implemented entrypoints:
 
 Reuse the shared Common2 dependency bundler, HF Runtime, \`hf_job_runner.py\` evidence/inference/GPU monitor helpers, Common2 remote Bucket listing and paginated Job-history helper. Do not fork tokenization, R18 mask, Gold Quality, CPU Guard or HF Runtime. R54 code is reference only; never copy its 31/9 data, 16-step config or whole-Bucket RW mount.
 
+The Stage root and every nested directory must be mode 0700; files must be 0600. Local verification checks all modes and rejects symlinks. Worker preflight must validate the HF-provided JOB_ID, Run Key/Scope, and writable output mount before dependency installation.
 The GPU CLI intentionally has no submit action. Its dry-run Scope is \`DRY_RUN_NOT_AUTHORIZED\`; the worker refuses that Scope. Keep GPU Job count 0 until separately authorized. Quality-v1 and train admission remain 0.
