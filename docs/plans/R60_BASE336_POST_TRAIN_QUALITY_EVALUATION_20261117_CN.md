@@ -89,7 +89,7 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 | P0 | 训练 Job / SAFE / Checkpoint / Adapter Reload 证据核验 | PASS |
 | P1 | 33 个远端对象下载与本地 SHA256 inventory（33/33，5,604,774,224 bytes） | PASS（Owner SAFE） |
 | P2 | 新的独立测试来源、权限、来源 SHA 与世界隔离确认 | HOLD |
-| P3 | 复用既有 Runner / Pairer，完成六维生成评估薄适配器及合成测试 | 等 P2 |
+| P3 | 复用 `generation_eval.worker` / HF Runtime，设计 Base/Adapter 两臂 Profile、Pairing 与六维审核薄适配器及合成测试 | 复用审查完成；实现等 P2 |
 | P4 | Base/Adapter 配对 GPU 推理 | 需单独授权 |
 | P5 | 独立盲审、严重标记核验和 Owner 裁决 | 等 P4 |
 | P6 | 模型质量结论与是否继续下一轮实验 | HOLD |
