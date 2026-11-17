@@ -11,6 +11,7 @@ on:
       - 'scripts/r60_common2_wrapped_hf_stage.py'
       - 'scripts/r60_common2_wrapped_hf_cli.py'
       - 'scripts/r60_common2_hf_cpu_final_read_only.py'
+      - 'scripts/r60_common2_hf_cpu_final_read_only.py'
       - 'src/storyforge_dataset/hf_runtime/**'
       - 'experiments/r58_quality/r60_base336_exploratory_release_verify.py'
       - 'experiments/r58_quality/r60_base336_exploratory_split.py'
@@ -18,6 +19,7 @@ on:
       - 'configs/r60_base336_exploratory_293_43.yaml'
       - 'requirements/r60-base336-gpu.in'
       - 'tests/test_r60_base336_gpu_pipeline.py'
+      - 'tests/test_r60_common2_hf_cpu_final_read_only.py'
       - 'experiments/r58_quality/test_r60_base336_exploratory_release_verify.py'
       - '.github/workflows/r60-base336-gpu-pipeline.yml'
   workflow_dispatch:
