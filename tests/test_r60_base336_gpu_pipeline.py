@@ -164,6 +164,12 @@ def _synthetic_stage(tmp_path: Path, monkeypatch) -> Path:
         folder / "SHA256_MANIFEST_PRIVATE.json",
         json.dumps(manifest, sort_keys=True, separators=(",", ":")).encode(),
     )
+    for directory in sorted(
+        (item for item in folder.rglob("*") if item.is_dir()),
+        key=lambda item: len(item.parts),
+    ):
+        directory.chmod(0o700)
+    folder.chmod(0o700)
     monkeypatch.setattr(contract, "verify_release", lambda _path, **_kwargs: {
         "status": "BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD",
         "train_rows": 293,
