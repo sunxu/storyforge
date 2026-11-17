@@ -107,6 +107,7 @@ python -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
 - Worker下载 pinned Qwen3.8 Revision 的Tokenizer/Config/Chat Template文件，绝不下载模型权重；CPU ResourceGuard PASS后才可跑，输出仅SAFE聚合，通过Owner本地独立验收后仍`train_admitted=0`。如果Source/Stage失败、输出存在、Job历史匹配或者未知状态，不重试、不开启GPU，先诊断。
 
 ## R60 Base336 GPU Stage / Worker / CLI（2026-11-17）
+READY必须用HfApi读取模型元数据，并确认返回commit SHA与Stage固定Revision完全一致；否则停止，不执行dry-run。
 
 权威合同与Owner Mac命令见 \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\` 的2026-11-17章节。
 
