@@ -38,7 +38,6 @@ EXPECTED_PACKAGES = {
     "qwen-vl-utils": "0.0.14",
     "huggingface_hub": "1.33.0",
 }
-ALLOW_PATTERNS = None
 
 
 def safe_report(run_key: str) -> dict:
@@ -71,6 +70,7 @@ def safe_report(run_key: str) -> dict:
 
 
 def _gpu_gate() -> dict:
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     import torch
 
     if not torch.cuda.is_available() or torch.cuda.device_count() != 1:
@@ -189,7 +189,6 @@ def run(stage: Path, output: Path, run_key: str, action: str) -> dict:
         phase = "GPU_DEVICE_GATE"
         gpu = _gpu_gate()
         report["gpu"] = gpu
-        report["gpu_started"] = True
         report["gpu_used"] = True
 
         phase = "DEPENDENCY_GATE"
@@ -232,19 +231,18 @@ def run(stage: Path, output: Path, run_key: str, action: str) -> dict:
             "--custom_register_path", str(guard),
         ]
         report["training_started"] = True
+        report["gpu_started"] = True
         with GpuMonitor() as monitor:
             _run_quiet(command, log_path, timeout=6900)
         report["gpu_peak_memory_mib"] = monitor.peak_mib
         report["training_finished"] = True
 
         phase = "TERMINAL_CHECKPOINT"
-        checkpoint = _terminal_checkpoint(train_output, contract.optimizer_steps())
+        checkpoint, checkpoint_path = _terminal_checkpoint(
+            train_output, contract.optimizer_steps()
+        )
         report["checkpoint"] = checkpoint
         report["terminal_checkpoint_verified"] = True
-        checkpoint_path = max(
-            train_output.rglob("trainer_state.json"),
-            key=lambda path: int(json.loads(path.read_text(encoding="utf-8")).get("global_step", 0)),
-        ).parent
 
         phase = "ADAPTER_RELOAD"
         inference_input = output / "reload_prompt_PRIVATE.jsonl"
