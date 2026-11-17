@@ -69,3 +69,12 @@ Runtime PASS 只表示基础设施检查通过。Token PASS 不等于语义审�
 - GPU Worker在真实输入/配置/依赖/设备门禁全部通过前不得下载模型权重或启动训练；日志/stdout只输出SAFE状态。训练后验证真实终端Optimizer Checkpoint、Adapter Reload及Owner端SAFE回执。GPU授权必须绑定具体Run Key、Flavor、时长、模型Revision、配置与预算。
 
 权威执行合同：`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`。本节不把CPU-only Guard改成GPU Guard，也不改变现有HF Runtime API。
+
+## R60 Base336 GPU链路实现状态（2026-11-17）
+
+- 实际代码与Mac命令以 \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\` 的2026-11-17章节为准。
+- Stage Builder复用Common2的AST依赖闭包并绑定干净Git HEAD；私有Stage仅本地创建，目录0700、文件0600、create-only。远端输入与输出是不同Bucket前缀。
+- Worker先验完整Stage Manifest、P0转移SAFE和293/43 release，再做A100 80GB、磁盘、Python/Torch/依赖版本检查；门禁全部通过后才下载固定Revision模型。训练后验证实际37步终端Checkpoint、末步Eval、LoRA Rank/Alpha和Adapter Reload。
+- HF CLI只支持local preflight、sync、ready、diagnose和cli-flags；没有submit子命令。ready仅执行HF CLI dry-run，且将GPU Scope设为 \`DRY_RUN_NOT_AUTHORIZED\`。Worker Shell拒绝该Scope。
+- sync上传Manifest最后；ready逐对象下载回Mac验证SHA、检查独立RW输出前缀为空、完整分页Job历史无匹配，并执行dry-run。不得将HF CLI dry-run解释为Job已创建。
+- 新增离线合成工作流覆盖R60 GPU合同、Stage、Worker、CLI、共享Runtime及R54历史GPU测试；不访问HF Hub、不下载权重、不使用GPU。
