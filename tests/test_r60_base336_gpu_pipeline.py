@@ -190,6 +190,26 @@ def test_stage_rejects_extra_files(tmp_path, monkeypatch):
         contract.verify_stage(folder, KEY)
 
 
+def test_stage_reuses_existing_dependency_closure_without_r54_or_token_preflight():
+    dependencies = stage.shared_stage.local_dependencies(
+        entries=stage.ENTRY, extras=stage.EXTRA
+    )
+    assert len(dependencies) <= stage.shared_stage.MAX_CODE_FILES
+    assert {
+        "scripts/r60_base336_gpu_worker.py",
+        "scripts/r60_base336_gpu_worker.sh",
+        "scripts/r60_base336_gpu_contract.py",
+        "scripts/hf_job_runner.py",
+        "scripts/hf_smoke_guard.py",
+        "experiments/r58_quality/r60_base336_exploratory_release_verify.py",
+        "experiments/r58_quality/r60_real_private_batch.py",
+        "src/storyforge_dataset/hf_runtime/inputs.py",
+        "src/storyforge_dataset/hf_runtime/outputs.py",
+    }.issubset(dependencies)
+    assert "scripts/v03_r54_gpu_runner.py" not in dependencies
+    assert "src/storyforge_dataset/token_preflight.py" not in dependencies
+
+
 def test_stage_create_only_write_uses_private_mode(tmp_path):
     root = tmp_path / KEY
     root.mkdir(mode=0o700)
