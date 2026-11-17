@@ -45,6 +45,8 @@ def safe(status: str, reason: str) -> dict:
 
 
 def _remote_set(api, prefix: str) -> set[str]:
+    if shared_cli.BUCKET != BUCKET:
+        raise ValueError("SHARED_BUCKET_CONTRACT_HOLD")
     return shared_cli.remote_set(api, prefix)
 
 
@@ -106,8 +108,10 @@ def _prefix_empty(api, prefix: str, reason: str) -> None:
 
 
 def _check_job_history(api, key: str) -> dict:
-    from r60_common2_hf_cpu_final_read_only import walk_job_history
+    from r60_common2_hf_cpu_final_read_only import NAMESPACE, walk_job_history
 
+    if NAMESPACE != contract.HF_NAMESPACE:
+        raise ValueError("SHARED_NAMESPACE_CONTRACT_HOLD")
     total, matching = walk_job_history(api, key)
     if matching:
         raise ValueError("EXISTING_JOB_HOLD")
