@@ -18,6 +18,7 @@ on:
       - 'configs/r60_base336_exploratory_293_43.yaml'
       - 'requirements/r60-base336-gpu.in'
       - 'tests/test_r60_base336_gpu_pipeline.py'
+      - 'experiments/r58_quality/test_r60_base336_exploratory_release_verify.py'
       - '.github/workflows/r60-base336-gpu-pipeline.yml'
   workflow_dispatch:
 
@@ -60,6 +61,7 @@ jobs:
         run: |
           python -m pytest -q \
             tests/test_r60_base336_gpu_pipeline.py \
+            experiments/r58_quality/test_r60_base336_exploratory_release_verify.py \
             tests/test_hf_runtime.py \
             tests/test_hf_runtime_volume_edges.py \
             tests/test_hf_job_guard.py \
