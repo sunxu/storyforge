@@ -178,7 +178,7 @@ def validate_checkpoint(output_dir: Path, run_dir: str) -> dict:
     with InputManager.open_verified(logging_path, max_bytes=2_000_000) as stream:
         records = [
             json.loads(line)
-            for line in stream.read().decode("utf-8").splitlines()
+            for line in stream.read_bytes().decode("utf-8").splitlines()
             if line.strip()
         ]
     terminal_eval = next(

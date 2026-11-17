@@ -10,8 +10,8 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(ROOT / "scripts"), str(ROOT / "src")]
 
-import r60_base336_gpu_result_audit as audit
 import r60_base336_gpu_contract as contract
+import r60_base336_gpu_result_audit as audit
 
 KEY = "r60-base336-gpu-20261117T055622Z-b609cb78661d"
 RUN_DIR = "v0-20261117-071048"
@@ -125,3 +125,55 @@ def test_audit_safe_never_emits_private_values():
     assert result["quality_v1_admitted"] == 0
     assert result["model_promoted"] is False
     assert "sha256" not in json.dumps(result).lower()
+
+
+def test_checkpoint_and_reload_evidence_are_validated(tmp_path):
+    out = tmp_path / "out"
+    run = out / "training" / RUN_DIR
+    checkpoint = run / "checkpoint-37"
+    checkpoint.mkdir(parents=True)
+    write(checkpoint / "adapter_config.json", {"r": 64, "lora_alpha": 128})
+    write(checkpoint / "trainer_state.json", {
+        "global_step": 37,
+        "epoch": 1.0,
+        "best_model_checkpoint": str(checkpoint),
+    })
+    (checkpoint / "adapter_model.safetensors").write_bytes(b"adapter")
+    (checkpoint / "optimizer.pt").write_bytes(b"optimizer")
+    (run / "logging.jsonl").write_text(
+        json.dumps({
+            "global_step/max_steps": "37/37",
+            "eval_loss": 1.932103,
+            "eval_token_acc": 0.550921,
+        }) + "\\n",
+        encoding="utf-8",
+    )
+    (out / "reload_response_PRIVATE.jsonl").write_text(
+        json.dumps({"response": "synthetic nonempty reload"}) + "\\n",
+        encoding="utf-8",
+    )
+    result = audit.validate_checkpoint(out, RUN_DIR)
+    assert result["global_step"] == 37
+    assert result["adapter_reload_result_present"] is True
+
+
+def test_checkpoint_validation_rejects_step_drift(tmp_path):
+    out = tmp_path / "out"
+    run = out / "training" / RUN_DIR
+    checkpoint = run / "checkpoint-37"
+    checkpoint.mkdir(parents=True)
+    write(checkpoint / "adapter_config.json", {"r": 64, "lora_alpha": 128})
+    write(checkpoint / "trainer_state.json", {
+        "global_step": 36,
+        "epoch": 1.0,
+        "best_model_checkpoint": str(checkpoint),
+    })
+    (checkpoint / "adapter_model.safetensors").write_bytes(b"adapter")
+    (checkpoint / "optimizer.pt").write_bytes(b"optimizer")
+    (run / "logging.jsonl").write_text("", encoding="utf-8")
+    (out / "reload_response_PRIVATE.jsonl").write_text(
+        json.dumps({"response": "synthetic"}) + "\\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="TERMINAL_CHECKPOINT_HOLD"):
+        audit.validate_checkpoint(out, RUN_DIR)
