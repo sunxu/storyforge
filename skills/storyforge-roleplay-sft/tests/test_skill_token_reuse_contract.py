@@ -14,7 +14,7 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 class ReuseContractTests(unittest.TestCase):
     def test_skill_owns_execution_order_and_links_authoritative_specs(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("version: 0.1.19", source)
+        self.assertRegex(source, r"(?m)^version: \\d+\\.\\d+\\.\\d+$")
         for phrase in (
             "查找已有工具和证据",
             "优先复用",
@@ -153,7 +153,13 @@ class ReuseContractTests(unittest.TestCase):
         manifest = json.loads(
             (SKILL_ROOT / "MANIFEST_SAFE.json").read_text(encoding="utf-8")
         )
-        self.assertEqual(manifest["version"], "0.1.18")
+        skill_source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
+        skill_version = next(
+            line.split(":", 1)[1].strip()
+            for line in skill_source.splitlines()
+            if line.startswith("version:")
+        )
+        self.assertEqual(manifest["version"], skill_version)
         declared = {item["path"]: item for item in manifest["files"]}
         self.assertFalse(any(name.startswith("v02/") for name in declared))
         expected = {
