@@ -10,7 +10,7 @@ import stat
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
-from typing import Callable
+from collections.abc import Callable
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
