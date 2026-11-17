@@ -191,6 +191,7 @@ P2-C 通过前，不生成正式 Held-out、不实现正式 Pairer/Profile/Backe
 - 训练后主计划：`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。
 - 新 Agent 启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
 - Gold/Quality 边界：`docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。
+- 共享 World 组件隔离核心：`src/storyforge_dataset/world_isolation.py`；Quality-v1 通过 `component_split_conflicts()` 复用结构检查；合成测试见 `tests/test_world_isolation.py` 与 `experiments/r58_quality/test_quality_v1.py`。它只校验已审查的组件分配，不从 JSON/hash 推断语义，也不证明历史 actual-sent、Reviewer 独立或 R50 完整排除。
 - 执行顺序与复用原则：`skills/storyforge-roleplay-sft/SKILL.md`。
 - 私有审计 SAFE 只保留在 Owner Mac；GitHub 不保存本地 SHA Manifest。
 
