@@ -111,6 +111,10 @@ def test_review_contract_rejects_unknown_fields_and_bool_lookalikes():
     bad["unreviewed_extra"] = True
     with pytest.raises(WorldIsolationError, match="WORLD_REVIEW_ROW_SCHEMA_HOLD"):
         validate_component_review_assignments([bad])
+    bad = row("story-a", "world-a", "train")
+    bad["decision"] = ["PASS"]
+    with pytest.raises(WorldIsolationError, match="WORLD_REVIEW_ROW_VALUE_HOLD"):
+        validate_component_review_assignments([bad])
 
 
 def test_safe_summary_does_not_emit_private_identifiers():
