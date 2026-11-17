@@ -218,7 +218,7 @@ chmod 600 "$RECEIPT"
 - 输入：\`preflight/r60/base336-gpu/runs/<RUN_KEY>/\`，挂载 \`/input/r60-base336:ro\`。
 - 输出：\`experiments/r60-base336-exploratory/<RUN_KEY>/\`，挂载 \`/output:rw\`；两个前缀不重叠。
 - Namespace：\`adradar\`；Flavor：\`a100-large\`；Timeout：120m；镜像固定为 \`pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee\`。
-- Stage同步先上传所有文件，最后上传SHA Manifest；READY阶段逐个下载远端对象回Mac并与本地SHA比较，同时要求远端文件集完全相同。
+- Stage同步先上传所有文件，最后上传SHA Manifest；READY阶段逐个下载远端对象回Mac并与本地SHA比较，同时要求远端文件集完全相同。POSIX 0700/0600是Owner Mac本地Stage约束，不假定HF远端挂载保留这些mode bits。
 - Job历史使用既有分页器完整走完，不以最近N条记录推断“没有Job”。
 - dry-run设置 \`STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED\`；Worker只接受真实Scope值 \`R60_BASE336_293_43_ONE_EPOCH_A10080GB\`。即使有人误删dry-run参数，Worker Shell也会因Scope不符而拒绝执行。
 - CLI动作列表**没有submit**。当前只能执行 \`preflight\`、\`sync\`、\`ready\`、\`diagnose\`、\`cli-flags\`；不具备付费Job提交路径。
