@@ -148,7 +148,7 @@ def job_command(key: str, help_text: str) -> list[str]:
     image_index = argv.index(IMAGE)
     argv[image_index:image_index] = [
         "--env", f"STORYFORGE_R60_BASE336_GPU_RUN_KEY={key}",
-        "--env", f"STORYFORGE_R60_BASE336_GPU_SCOPE={GPU_SCOPE}",
+        "--env", "STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED",
     ]
     image_index = argv.index(IMAGE)
     if argv[image_index + 1:image_index + 2] == ["--"]:
@@ -161,6 +161,7 @@ def sync(stage: Path, key: str, api) -> dict:
     expected = _check_remote_set(api, stage, key, ready=False)
     _prefix_empty(api, f"{RESULT_PREFIX}/{key}/", "REMOTE_RESULT_ALREADY_EXISTS_HOLD")
     _prefix_empty(api, f"{SUBMISSION_PREFIX}/{key}/", "REMOTE_SUBMISSION_MARKER_EXISTS_HOLD")
+    _check_job_history(api, key)
     base = _remote_prefix(key)
     for relative in sorted(set(expected) - {"SHA256_MANIFEST_PRIVATE.json"}):
         result = subprocess.run(
