@@ -134,9 +134,18 @@ def validate(prompt_path: Path, manifest_path: Path) -> dict:
                 or any(ch not in "0123456789abcdef" for ch in source.get("world_json_md5"))
                 or source.get("requested_visibility") != "public"
                 or source.get("permission_to_visibility") != "public"
-                or source.get("permission_submission_id") != source.get("moderation_submission_id")
+                or type(source.get("moderation_submission_id")) is not str
+                or not source.get("moderation_submission_id")
+                or type(source.get("permission_event_id")) is not str
+                or not source.get("permission_event_id")
+                or source.get("permission_submission_id")
+                != source.get("moderation_submission_id")
                 or source.get("permission_submission_bound") is not True
-                or source.get("permission_result") not in {"ai_approved", "approved"}
+                or source.get("permission_kind") not in {"ai", "update"}
+                or (source.get("permission_kind") == "ai"
+                    and source.get("permission_result") != "ai_approved")
+                or (source.get("permission_kind") == "update"
+                    and source.get("permission_result") != "approved")
                 or source.get("snapshot_matches_current_public_v2") is not True
                 or source.get("snapshot_hash_matches_submission_sha256") is not True):
             raise Hold("SOURCE_BINDING_HOLD")
