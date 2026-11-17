@@ -44,8 +44,8 @@ P2-A / P2-B 已有 Draft 结果：
 
 当前会话 Draft 工件（尚未 Owner Mac 私有冻结）：
 
-- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`，SHA256：`ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`。
-- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`，SHA256：`56c5c9c90e347860e1107dc7f10d2486f8153acc21c469676b80850f57239a4b`。
+- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`，SHA256：`a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`。
+- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`，SHA256：`12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`。
 - 校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
 - 测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`，本地合成测试 8/8 PASS、compileall PASS；不要声称 GitHub Actions CI PASS。
 
