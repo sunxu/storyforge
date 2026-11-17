@@ -179,3 +179,21 @@ def test_checkpoint_validation_rejects_step_drift(tmp_path):
     )
     with pytest.raises(ValueError, match="TERMINAL_CHECKPOINT_HOLD"):
         audit.validate_checkpoint(out, RUN_DIR)
+
+
+def test_required_free_bytes_uses_exact_remote_total_when_complete():
+    expected = {"a", "b", "c"}
+    required, complete = audit.required_free_bytes(
+        expected, {"a": 10, "b": 20, "c": 30}
+    )
+    assert complete is True
+    assert required == 60 + audit.MIN_FREE_MARGIN
+
+
+def test_required_free_bytes_uses_safe_fallback_for_partial_metadata():
+    expected = {"a", "b", "c"}
+    required, complete = audit.required_free_bytes(
+        expected, {"a": 10, "b": 20}
+    )
+    assert complete is False
+    assert required == audit.FALLBACK_REQUIRED_FREE

@@ -109,6 +109,14 @@ def expected_remote_files(found: set[str]) -> tuple[str, set[str]]:
     return run_dir, expected
 
 
+def required_free_bytes(expected: set[str], size_by_path: dict[str, int]) -> tuple[int, bool]:
+    """Use remote object sizes only when every expected object has a positive size."""
+    complete = all(size_by_path.get(path, 0) > 0 for path in expected)
+    if not complete:
+        return FALLBACK_REQUIRED_FREE, False
+    return sum(size_by_path[path] for path in expected) + MIN_FREE_MARGIN, True
+
+
 def validate_worker_receipt(output_dir: Path, run_key: str) -> dict:
     receipt = contract.read_json(
         output_dir / "R60_BASE336_GPU_SAFE_RECEIPT_PRIVATE.json"
@@ -258,10 +266,12 @@ def audit(
             and isinstance(getattr(entry, "path", None), str)
             and entry.path.startswith(prefix)
         }
-        remote_total = sum(size_by_path.get(item, 0) for item in expected)
-        required_free = (
-            remote_total + MIN_FREE_MARGIN if remote_total > 0
-            else FALLBACK_REQUIRED_FREE
+        required_free, size_metadata_complete = required_free_bytes(
+            expected, size_by_path
+        )
+        remote_total = (
+            sum(size_by_path[item] for item in expected)
+            if size_metadata_complete else 0
         )
         if shutil.disk_usage(private_root).free < required_free:
             return safe(
@@ -270,6 +280,7 @@ def audit(
                 files_downloaded=0, total_bytes=remote_total,
             )
         output_dir.mkdir(mode=0o700, exist_ok=False)
+        os.chmod(output_dir, 0o700)
         records = []
         total_bytes = 0
         for index, relative in enumerate(sorted(expected), start=1):
@@ -342,7 +353,7 @@ def audit(
             "BASE336_GPU_RESULT_AUDIT_HOLD", "LOCAL_OR_REMOTE_IO_HOLD",
             run_key_validated=True,
         )
-    except (TypeError, KeyError):
+    except (TypeError, KeyError, RuntimeError):
         return safe(
             "BASE336_GPU_RESULT_AUDIT_HOLD", "RESULT_AUDIT_VALIDATION_HOLD",
             run_key_validated=True,

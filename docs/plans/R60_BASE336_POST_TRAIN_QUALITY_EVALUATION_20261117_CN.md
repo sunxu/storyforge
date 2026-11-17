@@ -48,7 +48,7 @@ Owner 已对独立输出前缀完成递归文件盘点：
 - Worker SAFE、运行日志、reload 输入/输出、Trainer state、adapter config、训练日志、图表和 TensorBoard 事件均存在。
 - HF Job 状态为 COMPLETED；最终 checkpoint、terminal eval、one epoch 和 adapter reload 均由 Worker SAFE 确认。
 
-**尚未完成：** 远端目录列表和对象大小是元数据盘点，不是文件内容 SHA 证明。当前输出目录未发现由 Worker 生成的全量结果 SHA256 Manifest。因此不能声称 33 个输出对象已经完成独立内容哈希验收。只读下载与本地 SHA 清单工具已实现为 `scripts/r60_base336_gpu_result_audit.py`，复用 `r60_base336_gpu_cli._remote_set/_remote_uri` 和 `hf_job_runner.sha256`，不会写入 Bucket、提交 Job 或启动 GPU。Owner Mac 执行前先检查至少约 6.61 GB 可用空间；本地输出目录必须是私有根目录下的新目录。该 Manifest 是下载对象的本地 SHA256 inventory，不是与 Worker 原始逐文件 SHA 的比较，因为本轮 Worker 没有发布原始结果 SHA。
+**尚未完成：** 远端目录列表和对象大小是元数据盘点，不是文件内容 SHA 证明。当前输出目录未发现由 Worker 生成的全量结果 SHA256 Manifest。因此不能声称 33 个输出对象已经完成独立内容哈希验收。只读下载与本地 SHA 清单工具已实现为 `scripts/r60_base336_gpu_result_audit.py`，复用 `r60_base336_gpu_cli._remote_set/_remote_uri` 和 `hf_job_runner.sha256`，不会写入 Bucket、提交 Job 或启动 GPU。Owner Mac 执行前必须有足够空间：若33个对象的远端大小元数据完整，至少为总大小再加1GiB（当前约6.61GB）；若任一对象缺少有效大小，工具保守要求至少8GiB。它会在下载前检查，不足时零下载退出；本地输出目录必须是私有根目录下的新目录。该 Manifest 是下载对象的本地 SHA256 inventory，不是与 Worker 原始逐文件 SHA 的比较，因为本轮 Worker 没有发布原始结果 SHA。
 
 ## 4. 为什么 43 条 Validation 不能作为独立质量测试
 
@@ -108,4 +108,4 @@ export PYTHONPATH=src:scripts:experiments/r58_quality
 "$PY" scripts/r60_base336_gpu_result_audit.py --run-key "$RUN_KEY" --output-dir "$OUT"
 ```
 
-该命令只读HF Bucket并逐个下载33个结果对象到新建私有目录，计算本地SHA256并写0600 Manifest；预计下载约5.61GB。下载失败留下的目录不得删除后复用；应先只读检查失败原因并另用新目录。SAFE只报告文件数/字节数，不输出私有路径、文件名、内容或哈希。
+该命令先只读列举HF Bucket并核对固定33对象清单、磁盘空间和本地私有目录，再逐个下载结果对象到新建私有目录，计算本地SHA256并写0600 Manifest；预计下载约5.61GB。远端大小元数据不完整时会要求至少8GiB空闲空间。下载失败留下的目录不得删除后复用；应先只读检查失败原因并另用新目录。SAFE只报告文件数/字节数，不输出私有路径、文件名、内容或哈希。
