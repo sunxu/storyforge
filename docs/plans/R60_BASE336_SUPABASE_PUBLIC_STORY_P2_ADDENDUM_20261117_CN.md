@@ -132,7 +132,7 @@ Owner 本轮提供 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，结�
 
 此前的独立 Codex 汇总曾报告 7 组 `GENERIC_TEMPLATE`、1 组 `INSUFFICIENT_EVIDENCE`，但该汇总本身仍为 8 组隔离 HOLD，且不能替代本轮逐成员 source-bound 复核。必须与原始 roster、决策模板、8 组成员 `character/characters/opening` 私有证据及独立审阅记录逐项绑定后，才能形成可复核的语义组件分配。
 
-**下一步仅请求 Owner 提供现有私有证据的安全回执或在 Owner Mac 本地运行既有审计工具**；不重新查询数据库、不重建 roster、不访问 R50 正文、不启动模型/GPU。缺少成员级证据时全部 HOLD。
+**下一步先诊断既有 `r60_base336_group_cards_opening_cpu.py --execute` 的 `BASE336_CARD_OPENING_EVIDENCE_HOLD`**：此前 Owner SAFE 只有泛化 HOLD，未给出 failure phase/reason；权威最小门禁文档已明确暂停再次执行全量 `--execute`。当前只允许在 Owner Mac 对已有私有目录做只读文件清单/权限检查，并回传已有 SAFE 的完整聚合字段；不要重跑 DB 查询、不要删除或覆盖已有 roster/template/evidence/output。待失败阶段明确、Owner重新确认范围后再决定是否修复工具或继续提取。仍不重建 roster、不访问 R50 正文、不启动模型/GPU；缺少成员级证据时全部 HOLD。
 
 ## 8. P2 草案包结构校验工具
 
