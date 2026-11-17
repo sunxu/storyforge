@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.18",
-  "date": "2026-11-17",
-  "tests": "v0.1.18: Base336 generation evaluation reuse audit; existing generation_eval worker/HF Runtime reuse; P4 three-model profile and legacy five-dimension pairer incompatibility; independent held-out P2 remains HOLD; synthetic Skill contract test",
+  "version": "0.1.19",
+  "date": "2026-11-18",
+  "tests": "v0.1.19: shared semantic world isolation helpers; Quality-v1 integration; Base336 P2 all-HOLD evidence boundary; synthetic Skill contract regression",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "13db5a40defe18c4d44828971d34c3aeca14daefc1bd886c492e1d599f01c634",
-      "bytes": 13281
+      "sha256": "52b91dada2b5325a056a6d1a9af747acdc247a12708740e6a125002b1d43b9fb",
+      "bytes": 13986
     },
     {
       "path": "README.md",
-      "sha256": "076025ef467aacfec6e618c7b12cb770286c5d3c863de78814cb36822289ca36",
-      "bytes": 4612
+      "sha256": "6c3830cb718fb8865ce2e2c9d1ea8d044b28bff19a04a148d8f375c67f61554f",
+      "bytes": 4838
     },
     {
       "path": "SKILL.md",
-      "sha256": "aa2928bd4d446848d6cda91f96b44dc7e22b51f0775781ffe84b3262b8b3f9d5",
-      "bytes": 21029
+      "sha256": "bb9753d29e1a7841f1360a881a4b6cd0ab1f12d5130fcb2f756597c3b223c8ff",
+      "bytes": 24216
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "f05eeb6cdc129681c9d8762fbf696857d4a7188012fdc588c05163be8f2bf39c",
-      "bytes": 8733
+      "sha256": "143f4594ccc30dd524282ccc4bd90e79fbfadcf0f086a85b1a1da5b3e5ce665b",
+      "bytes": 8888
     }
   ]
 }
