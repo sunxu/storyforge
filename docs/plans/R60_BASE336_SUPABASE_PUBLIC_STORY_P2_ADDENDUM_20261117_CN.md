@@ -21,7 +21,7 @@ Owner 已明确批准：本轮以 Supabase 作为主要新来源，采用“仅�
 
 ## 2. Supabase 来源筛选
 
-只读取公开故事来源字段及审核/权限元数据。候选筛选条件：
+只读取公开故事来源字段及审核/权限元数据；不查询私有会话消息表。候选筛选条件：
 
 - `visibility = public`
 - `status = published`
@@ -31,8 +31,9 @@ Owner 已明确批准：本轮以 Supabase 作为主要新来源，采用“仅�
 - `public_v2_data.cardType = story`
 - `public_v2_data.opening.originality = original`
 - `public_v2_data.opening.visibility = 公开`
-- `created_at >= 2026-11-16T02:03:25Z`
-- 对发布冻结时间之前的公开原创故事执行 `public_v2_data.world` 精确 JSON 去重。
+- `created_at >= 2026-11-16T02:03:25Z`（晚于 Base336 数据集冻结/发布边界）
+- `length(public_v2_data.world.worldSentence) > 5`，排除世界描述信息不足的记录
+- 对冻结边界前的公开原创故事执行 `public_v2_data.world` 精确 JSON 去重
 
 筛选结果：
 
@@ -47,9 +48,9 @@ Owner 已明确批准：本轮以 Supabase 作为主要新来源，采用“仅�
 | 公开来源审核快照完整性通过 | 8/8 |
 | 最新权限事件绑定最新审核提交 | 8/8 |
 
-另有 1 条公开原创故事因可用世界/角色信息过少，不进入本轮平衡提示集。它不被判为质量失败，只是不满足本轮来源构造条件。
+另有 2 条公开原创候选因可用世界描述过少（`worldSentence` 长度分别为 5 和 2）未进入本轮提示构造。它们不被判为质量失败，只是不满足本轮来源信息最低要求。
 
-精确 JSON 去重未发现与冻结时间前公开原创故事的重复 World JSON。该结论只代表精确 JSON 不重复，不代表语义世界图不重叠。
+精确 JSON 去重未发现与 Base336 数据集冻结边界前公开原创故事的重复 World JSON。该结论只代表精确 JSON 不重复，不代表与 Base336 私有来源、R50 Protected/Reserved World 或其他历史开发材料语义隔离。
 
 ## 3. 来源版本与权限核验
 
@@ -64,27 +65,31 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 
 公开发布状态与 AI/审核批准记录用于确认本轮来源版本和公开状态；它们不被解释为作者授予通用模型训练权利。当前用户授权只覆盖本轮内部评估提示构造。
 
-## 4. 新构造提示集
+## 4. 新构造提示集（Draft，不是冻结 Held-out）
 
-已在 Owner 私有工作区生成 P2 草案包，不提交公开仓库，不写入 Supabase：
+已实际构造一份 48 条提示草案，按 8 个公开故事来源各 6 条，覆盖冻结 Quality-v1 六个维度各 1 条：
 
-- 48 条全新提示。
-- 8 个来源，每个来源 6 条。
-- 每个来源分别覆盖冻结 Quality-v1 六个维度各 1 条：
-  - `chinese_prose`
-  - `character_consistency`
-  - `npc_initiative`
-  - `player_agency`
-  - `rule_fidelity`
-  - `narrative_continuity`
-- 每条提示严格包含 3 条构造消息：`user / assistant / user`。
-- 三条消息均为新构造上下文，不伪装成历史持久化消息。
-- 不含 System 消息、目标答案或参考答案。
-- 上下文只改写公开世界/角色/开场信息；不把隐藏 director/system-like 指令作为模型输入。
+- `chinese_prose`
+- `character_consistency`
+- `npc_initiative`
+- `player_agency`
+- `rule_fidelity`
+- `narrative_continuity`
+
+每条提示严格包含 3 条构造消息：`user / assistant / user`。消息均为新写上下文，不伪装成历史持久化消息；不含 System 消息、目标答案或参考答案。只使用公开世界、角色和开场信息；不使用 `director`、隐藏 system-like 指令或私有会话正文。
+
+**草案工件（当前会话工作区生成，尚未转存 Owner Mac 私有目录，也未由 Owner 冻结）：**
+
+- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，38,010 bytes
+- JSONL SHA256：`ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`
+- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的故事 ID、公开 revision、审核提交 SHA256、权限事件绑定、非语义 World JSON 指纹及各项 HOLD 状态
+- Manifest SHA256：`687ac156d57c0ce92ac9ce36295cfb3eeec2cdb84b2d4f36a9303166f3cc264a`
+
+提示草案只供来源审查和后续 Owner 校验。它不是正式 Pairer 输入、不是 Quality-v1 SFT 候选 JSONL，也不是可用于模型推理的已冻结 Held-out。World MD5 仅用于精确 JSON 标识，不代表语义世界身份或隔离 PASS。
 
 六维门槛继续复用 `experiments/r58_quality/quality_v1.py` 中既有规则：4/4/3/4/4/4；严重标记仍为 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`。
 
-重要边界：该文件是**生成评估提示包**，不是 Quality-v1 SFT 候选 JSONL。不得把 Base/Adapter 生成回复送入 `quality_v1.py` 的源候选 `decide/summarize`，不得向 Gold Manifest 追加合成评估事件。
+不得把 Base/Adapter 生成回复送入 `quality_v1.py` 的源候选 `decide/summarize`，不得向 Gold Manifest 追加合成评估事件。
 
 ## 5. 未访问与未执行事项
 
@@ -94,9 +99,25 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 - 未修改 Supabase。
 - 未启动 GPU、未提交 HF Job、未运行 Base/Adapter 推理。
 - 未实现正式 Pairer、Backend 或 Profile。
-- `quality_v1_admitted = 0`，`train_admitted = 0`，`model_promoted = false)。
+- 48 条提示目前只是当前会话工作区中的草案，尚未转存 Owner Mac 私有目录、独立复核或冻结。
+- `quality_v1_admitted = 0`，`train_admitted = 0`，`model_promoted = false`。
 
 ## 6. P2 剩余门禁
+
+当前仍不得冻结为独立 Held-out。正式 P2 PASS 前还需：
+
+1. 将 8 个新来源的 World 组件与 Base336 293/43 私有来源清单、已知 Protected/Reserved World 元数据做交叉核验；仅有不同 MD5、不同故事 ID 或晚于时间边界均不足以证明语义隔离。
+2. Owner 提供或在 Owner Mac 本地执行受限交叉核验：使用 Base336 私有 source roster / 已审核的 World component evidence，以及 R50 仅元数据排除清单；不得读取 R50 正文。当前会话无法访问 Owner Mac 私有文件，因此此项保持 HOLD。
+3. 对 48 条提示执行逐条来源忠实性、无原文长段复用、无未来信息泄漏、无隐藏指令混入的复核；检查 NPC/角色新增细节是否属于明确标注的合成情境，而不是伪称来源事实。
+4. 完成 R47/R48/R55 已暴露开发题的来源/语义排除核验。
+5. 确认权利范围仅覆盖 Owner 已批准的内部评估提示构造；不得扩大为训练、公开发布或再分发。
+6. Owner 冻结最终来源 Manifest、提示 SHA256、World 组件隔离证据及独立 Reviewer 结论。
+
+若无法取得完整的世界组件交叉核验证据，对应来源保持 HOLD；不得通过改名、重算 MD5 或仅凭时间戳宣布语义隔离 PASS。
+
+P2 通过后，才按原计划进入 P3 的版本化薄适配器与合成测试。P4 Base/Adapter GPU 配对推理仍需单独、明确的 Owner 授权。
+
+
 
 当前仍不得冻结为独立 Held-out。正式 P2 PASS 前还需：
 
