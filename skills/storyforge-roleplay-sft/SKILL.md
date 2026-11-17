@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.18
+version: 0.1.19
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -10,6 +10,8 @@ description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据
 > **REAL1000 / Pilot5 结案状态（2026-11-17）**：Pilot5-v1/v2与REAL1000 V3状态不变；Pilot5不得重跑或覆盖，339双PASS仍只是候选。R50排除、Reviewer执行独立性、历史System和World语义隔离未通过；Quality/Gold准入仍0。只有用户明确恢复REAL1000审核任务时，才按`skills/storyforge-real-quality-review/SKILL.md`继续。
 >
 > **R60 Base336 首训与产物审计已完成（2026-11-17）**：Run `r60-base336-gpu-20261117T055622Z-b609cb78661d` 的HF Job `6afbfd5c98dda891b5df7fd2` 已COMPLETED；Worker SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，293/43、37/37、A100、terminal Checkpoint与Adapter Reload PASS。Owner Mac随后取得`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`：33/33对象已下载并逐个计算本地SHA256（5,604,774,224 bytes），Worker SAFE、Checkpoint与Adapter Reload复核PASS；审计无GPU、无HF Job、无模型晋升。该SHA是本地对象inventory，不是与Worker未发布的逐文件SHA比对。43条Validation已用于训练期Eval/Checkpoint选择，不能作为独立质量测试。当前P2仍HOLD：必须先取得新的、未暴露且未用于训练/调参的来源绑定Held-out，并核验权利与世界隔离；不得从未准入池或数据库自动抽样。详见`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。当前`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`；R50不访问，旧暴露题不冒充独立测试，GPU推理需单独明确授权。
+
+> **2026-11-18 Base336 P2 最新边界**：已收到 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，8/8 组全部 HOLD；7/8 组当前 World 值跨 Train/Validation，`semantic_review_completed=false`、`actual_sent_prompt_verified=false`。该文件每组只有一个代表性 World 对象，不等于38个成员的角色卡/Opening审查。48条提示 JSONL/Manifest 尚未生成；仓库中的 P2 校验器只有合成测试。不要沿用旧交接中的“48条Draft已构造”说法。下一步先取得现有私有 roster、decision template、8组成员 card/opening 证据和独立审阅报告；不重新查询 DB、不访问 R50 正文、不推理、不启动 GPU。
 
 ## 目标与适用范围
 
@@ -156,3 +158,15 @@ Owner的真实1000池（6+994）已经只读确认`EXPANSION_TARGET_REACHED__NOT
 - 六维分数门槛和三个严重标记只复用`experiments/r58_quality/quality_v1.py`；模型生成评估不是REAL1000源数据审核，不要把生成回复伪装为`DB_FINAL_PERSISTED_ASSISTANT`或调用原批次导入器。
 - Base336配对生成优先审查并复用 `src/storyforge_dataset/generation_eval/worker.py` 与 `hf_runtime.InputManager/OutputManager`；P4三模型Profile/CLI、三臂Pairing Gate及旧五维Scorecard均不可直接照搬。Quality-v1六维门槛只复用 `experiments/r58_quality/quality_v1.py` 的唯一规则定义，不把生成输出送入源候选准入器。具体兼容差异与适配边界见训练后评估计划；只有P2来源门禁通过后才实现版本化薄适配器和合成测试。
 - Base/Adapter GPU配对推理必须另行获得针对具体输入、模型、Flavor、时长、输出前缀和预算的Owner授权；此前授权只覆盖单个训练Job。
+
+
+## R60 Base336：语义 World 组件隔离复核（2026-11-18）
+
+- 先读取权威计划 `docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`、Supabase P2 补充 `docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md` 和本节；再核对当前分支 HEAD、私有 SAFE 与文件 SHA。
+- 复用 `r60_base336_world_cross_split_private_roster_cpu.py`、`r60_base336_world_review_decisions_template_cpu.py`、`r60_base336_world_group_source_evidence_cpu.py`、`r60_base336_group_cards_opening_cpu.py`。先本地默认 NO_DB 预检；只有既有 Owner 授权允许时才在 Owner Mac 使用 RLS ON / REPEATABLE READ / READ ONLY 执行既有一次性证据提取。不要重建或覆盖 roster、template、evidence、review 或输出目录。
+- 代表性 `world` JSON 不是成员级证据。语义复核必须逐个覆盖原 roster 中全部成员和匹配的当前/归档 revision，交叉阅读 `character`、`characters`、`opening`；保留原文引文和精确来源引用在 Owner 私有目录，不进入 GitHub、CI、聊天或 SAFE。
+- `GENERIC_TEMPLATE` 只说明相等字段可能来自通用默认模板，不等于组件隔离 PASS。必须给每个来源成员分配有证据支持的 `semantic_component_id`；同一组件横跨 Train/Validation 即 HOLD。`SPECIFIC_SHARED_WORLD` 不可拆分成不同组件来规避冲突；`INSUFFICIENT_EVIDENCE` 保持 HOLD。
+- 共用结构算法 `src/storyforge_dataset/world_isolation.py`：`component_split_conflicts()` 与 `validate_component_review_assignments()`。`quality_v1.py` 通过同一 helper 检查跨 split 组件。不要在实验脚本、Skill 或新的 P2 gate 里复制第二份 split-conflict 算法。
+- 共享 helper 的 PASS 只说明已提交的组件分配完整、已声明审核完成且无声明的 Train/Validation 组件冲突；不证明 Reviewer 独立、历史 actual-sent 版本、R50 完整排除、R47/R48/R55 暴露排除、权利或训练准入。
+- 不把 R60 技术/语义审核写成 Gold Manifest 事件；不调用 `append-review`、`import-review-reconciliation` 表达技术 PASS。继续保持 `quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。GPU 推理仍需独立明确授权。
+- 更新任何通用算法时，先更新共享 `src/` 核心和合成测试，再更新 `quality_v1.py` 的复用调用、`GOLD_QUALITY_PIPELINE_CN.md` 和本 Skill。技术规范维护算法/schema/失败码，Skill 只维护执行顺序和边界。
