@@ -101,3 +101,16 @@ P0 PASS后，交付R60独立GPU构建/校验/提交链路，附Ruff/pytest GitHu
 P0证明转移已经由Owner Mac真实PASS，**不要再运行第三节命令、不要重跑CPU Job或重建数据**。下一任务是先核对293/43发布Manifest与P0 SAFE的绑定关系，再完成R60 GPU Stage/Worker/CLI。必须复用`storyforge_dataset.hf_runtime`、`r60_common2_wrapped_hf_stage.local_dependencies`、现有HF Bucket同步/远端文件集/Job历史检查模式，以及R54已验证的GPU设备门禁、QLoRA参数、终端Checkpoint和Adapter Reload方法；不得复制Token算法、Label Mask、HF Runtime或Quality Pipeline。注意`hf_job_guard.py`是CPU-only，不能用于GPU提交；R54整桶RW挂载也不能照搬，R60必须分离输入RO与输出RW前缀。
 
 293/43仅为`THREE_PERSISTED_MESSAGES_NO_SYSTEM`探索性输入。保持Gold Quality Manifest不变，不导入虚构Review事件，不提升`quality_v1_admitted`或`train_admitted`；Reviewer独立性、R50语义隔离、完整语义World隔离仍HOLD。保持`NOT_PROMOTED`，不将R47/R48/R55已暴露题冒充独立测试。先完成合成回归、Ruff和GitHub CI；Mac只做私有Stage准备/同步/SAFE验收，HF使用`adradar`与固定模型Revision、独立RO/RW前缀、唯一Run Key、create-only和提交前marker。GPU Job必须等待针对该Run Key、flavor、时长和配置的Owner明确授权。
+
+## 七、2026-11-17：GPU Stage / Worker / CLI 实现完成，P0不重跑
+
+代码已在 \`r60/common2-cpu2-owner\` 落地，执行合同详见 \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\` 新增的2026-11-17章节。
+
+- 复用现有HF依赖闭包、HF Runtime、SAFE Receipt、远端Bucket文件集、完整Job历史分页器和HF通用argv构造。
+- 新增 \`r60_base336_gpu_stage.py\`、\`r60_base336_gpu_worker.py\`、\`r60_base336_gpu_worker.sh\`、\`r60_base336_gpu_cli.py\`及统一合同模块。
+- GPU CLI没有submit动作；dry-run Scope显式为 \`DRY_RUN_NOT_AUTHORIZED\`，Worker Shell只接受真实Scope，双重阻止意外启动付费训练。
+- 输入Bucket精确前缀RO，输出独立前缀RW；不挂载整个Bucket RW。
+- CI已验证Ruff、语法、合成Stage篡改/权限/训练步数/Checkpoint/CLI行为、共享Runtime回归及R54历史GPU实现回归。CI不连接HF、不下载模型、不启动GPU。
+- 原始293/43与P0 SAFE已通过Owner证明转移；不再执行CPU336、不重新拆分、不重跑Collator。
+
+**下一项实际工作是Owner Mac私有Stage准备及HF只读预检**，不是再写一套Stage或提交GPU Job。准确命令、已知release路径、保存P0 SAFE的0600方式和远端sync/ready顺序见Base336 GPU合同2026-11-17章节。当前仍未取得Mac Stage PASS、HF远端READY或CLI dry-run PASS；GPU Job=0，\`train_admitted=0\`。
