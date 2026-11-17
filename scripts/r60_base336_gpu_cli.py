@@ -51,6 +51,8 @@ def _remote_set(api, prefix: str) -> set[str]:
 def _local_files(stage: Path, key: str) -> dict[str, str]:
     stage_tool.verify(stage, key)
     manifest = contract.read_json(stage / "SHA256_MANIFEST_PRIVATE.json")
+    if manifest.get("git_commit") != stage_tool._git_commit():
+        raise ValueError("STAGE_GIT_HEAD_DRIFT_HOLD")
     files = dict(manifest["files"])
     files["SHA256_MANIFEST_PRIVATE.json"] = hashlib.sha256(
         (stage / "SHA256_MANIFEST_PRIVATE.json").read_bytes()
