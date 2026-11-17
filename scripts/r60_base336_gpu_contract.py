@@ -176,11 +176,21 @@ def verify_stage(stage: Path, run_key: str) -> dict:
         or manifest.get("validation_rows") != VALIDATION_ROWS
         or manifest.get("optimizer_steps") != 37
         or manifest.get("input_contract") != INPUT_CONTRACT
+        or manifest.get("collator_transfer_status") != PROOF_STATUS
+        or manifest.get("collator_executed_in_this_run") is not False
+        or manifest.get("source_cpu_receipt_accepted") is not True
+        or manifest.get("private_data_contains_r50") is not False
+        or manifest.get("r50_semantic_isolation_verified") is not False
+        or manifest.get("semantic_world_isolation_verified") is not False
+        or manifest.get("reviewer_execution_independence_verified") is not False
         or manifest.get("train_admitted") != 0
         or manifest.get("quality_v1_admitted") != 0
+        or manifest.get("model_weights_in_stage") is not False
         or manifest.get("gpu_started") is not False
         or manifest.get("hf_jobs_submitted") != 0
         or manifest.get("private_values_emitted") is not False
+        or type(manifest.get("git_commit")) is not str
+        or re.fullmatch(r"[a-f0-9]{40}", manifest.get("git_commit", "")) is None
         or type(manifest.get("files")) is not dict
     ):
         raise ValueError("STAGE_MANIFEST_CONTRACT_HOLD")
