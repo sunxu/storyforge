@@ -281,6 +281,7 @@ python scripts/r60_base336_gpu_cli.py preflight --stage "$STAGE" --run-key "$RUN
 
 \`\`\`bash
 PYTHONPATH=src:scripts:experiments/r58_quality \\
+hf auth whoami
 python scripts/r60_base336_gpu_cli.py sync --stage "$STAGE" --run-key "$RUN_KEY"
 PYTHONPATH=src:scripts:experiments/r58_quality \\
 python scripts/r60_base336_gpu_cli.py ready --stage "$STAGE" --run-key "$RUN_KEY"
