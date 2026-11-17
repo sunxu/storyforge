@@ -304,6 +304,7 @@ def audit(
             "files_verified": len(records), "total_bytes": total_bytes,
             "note": "Local SHA256 inventory of downloaded HF objects; no original worker-side per-file digest was published.",
         })
+        gpu_cli.stage_tool._verify_local_modes(output_dir)
         return safe(
             AUDIT_STATUS, "DOWNLOADED_OBJECTS_HASHED_AND_WORKER_EVIDENCE_VALID",
             run_key_validated=True, remote_file_set_verified=True,
@@ -333,6 +334,16 @@ def audit(
     except (OSError, subprocess.SubprocessError):
         return safe(
             "BASE336_GPU_RESULT_AUDIT_HOLD", "LOCAL_OR_REMOTE_IO_HOLD",
+            run_key_validated=True,
+        )
+    except (TypeError, KeyError):
+        return safe(
+            "BASE336_GPU_RESULT_AUDIT_HOLD", "RESULT_AUDIT_VALIDATION_HOLD",
+            run_key_validated=True,
+        )
+    except Exception:
+        return safe(
+            "BASE336_GPU_RESULT_AUDIT_HOLD", "REMOTE_OR_LOCAL_RUNTIME_HOLD",
             run_key_validated=True,
         )
 

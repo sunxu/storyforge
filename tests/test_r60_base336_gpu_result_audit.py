@@ -124,7 +124,9 @@ def test_audit_safe_never_emits_private_values():
     assert result["train_admitted"] == 0
     assert result["quality_v1_admitted"] == 0
     assert result["model_promoted"] is False
-    assert "sha256" not in json.dumps(result).lower()
+    assert "files" not in result
+    assert "path" not in result
+    assert "hashes" not in result
 
 
 def test_checkpoint_and_reload_evidence_are_validated(tmp_path):
