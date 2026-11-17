@@ -177,3 +177,19 @@ P2 来源路线已获 Owner 批准；48 条提示包尚未生成。8 组世界�
 - 可直接复制的启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
 - 接手时重新核验当前分支、HEAD、Actions、Issue/PR；本计划与交接文件内的 SHA/CI 都是快照，不得代替实时查询。
 - 当前唯一业务阻塞是 P2 新独立 Held-out 来源/权利/上下文/World 隔离证据；Owner 未提供/批准来源前不创建正式测试包、不实现正式 Pairer、不推理。
+
+## 9. 2026-11-18 共享 World 隔离核心与 Quality Pipeline 维护
+
+为避免 Base336 / REAL1000 / 后续 Quality-v1 批次各自实现一套 split-conflict 算法，新增共享纯函数模块：
+
+- `src/storyforge_dataset/world_isolation.py`：
+  - `component_split_conflicts()`：只检查上游已审核赋值的 `world_component_id` 在指定 split 间是否冲突；不从 Story ID、JSONB 相等、MD5/SHA、标题、角色名或时间戳推断语义身份。
+  - `validate_component_review_assignments()`：校验逐来源语义组件分配的字段、来源证据引用、版本核验声明、审核完成声明、唯一性、预期成员覆盖及 Train/Validation 冲突；只输出 SAFE 聚合，不输出私有 source/component key。
+- `experiments/r58_quality/quality_v1.py` 已改为复用 `component_split_conflicts()`，原有六维 FLOORS、严重标记、Review 规则、候选结构与 `quality_v1_admitted=0` 行为保持不变。
+- 新增 `tests/test_world_isolation.py`，覆盖跨 split 冲突、同 split 不冲突、缺失/非法赋值、审核字段/成员覆盖、非字符串决策、隐私输出及独立性边界。
+- `.github/workflows/r60-real1000-quality-review.yml` 已纳入共享模块、`quality_v1.py` 及两组测试的 Ruff / pytest 范围；不能仅靠 Skill manifest 测试代表算法回归。
+- 同步更新 `GOLD_QUALITY_PIPELINE_CN.md`、RolePlay Skill `0.1.19`、Real Quality Reviewer Skill、README、CHANGELOG 与 SAFE Manifest。
+
+此共享 helper 仅校验结构化的语义组件分配声明；它不会把 8 个代表性 World JSON 自动判为模板，也不会代替成员级角色卡/Opening 人工审阅。当前 Base336 8 组仍全 HOLD。helper 的结构 PASS 不自动关闭历史 actual-sent、Reviewer 独立性、R50/R47/R48/R55、来源权利或 Owner 冻结门禁。
+
+本节对应代码回归在当前 HEAD 的 GitHub Actions 尚待完成；未完成前不报告测试 PASS。
