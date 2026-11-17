@@ -80,8 +80,10 @@ SAFE 只证明固定远端文件集合核验、33/33 下载和本地 SHA256 inve
 |---|---|---|
 | P0 训练证据 | PASS | 已完成，不重跑训练 |
 | P1 产物完整性 inventory | PASS | 已完成，不重复下载或覆盖本地私有审计目录 |
-| P2 独立 Held-out 来源、权利、隔离 | **HOLD** | Owner 提供/批准新的来源绑定测试包，并完成来源权利、未暴露、上下文、World 隔离与排除证据核验 |
-| P3 Base/Adapter 两臂生成评估适配器 | 复用审查完成；实现等待 P2 | P2 通过后，先做 Schema/Profile 设计、合成测试和 CPU-only 兼容检查 |
+| P2-A Supabase 来源版本/公开权限 | PASS（8/8） | 8 条公开来源 revision、审核快照 SHA 和最新公开权限事件绑定已核验 |
+| P2-B 48 条提示 Draft / Manifest / SHA / 结构门禁 | PASS（结构门禁 8/8 测试） | 仅 Draft；尚未 Owner 冻结 |
+| P2-C Base336 World 语义隔离、R50 元数据排除、R47/R48/R55 暴露排除、提示独立复核 | **HOLD** | 必须有完整私有 crosswalk、保护集元数据证据、独立 Reviewer 与 Owner 冻结 |
+| P3 Base/Adapter 两臂生成评估适配器 | 复用审查完成；实现等待 P2-C | P2-C 通过后，先做 Schema/Profile 设计、合成测试和 CPU-only 兼容检查 |
 | P4 Base/Adapter GPU 配对推理 | **未授权** | 另行明确授权具体模型、Job、样本数、Token 上限、Flavor、时长、Bucket 前缀与费用 |
 | P5 独立盲审与 Owner 裁决 | 未开始 | P4 结果齐备、Reviewer 独立性与盲化可验证 |
 | P6 质量结论/模型晋升 | HOLD | P2-P5 全部有独立证据；Owner 决策 |
@@ -95,21 +97,40 @@ SAFE 只证明固定远端文件集合核验、33/33 下载和本地 SHA256 inve
 - 不新增训练、不启动推理、不提交 HF Job、不下载模型权重，除非后续获得对应的独立明确授权。
 - PRIVATE 原文、Owner crosswalk、blind key、逐案结果、原始生成文本、私有路径和密钥不得进入 GitHub、CI 日志或聊天。
 
-## 5. P2：新独立测试来源审查（当前唯一业务阻塞）
+## 5. P2：Supabase 公开故事来源与独立性审查（当前唯一业务阻塞）
 
-新 Agent 首先向 Owner 索取或等待其提供独立 Held-out 私有测试包及其授权说明。**没有测试包或 Owner 明确批准，不得自行生成、抽取或拼装正式测试集。**
+Owner 已批准新的来源路线：仅使用 Supabase 中已公开、已发布、非删除、原创并通过审核的故事，以及公开 World/Character/Opening 字段，构造内部评估提示；**不读取用户私有会话正文**。该授权仅覆盖内部评估提示构造，不扩展为训练、公开发布或再分发权利。
 
-建议初始规模为 40–60 个 prompts、至少覆盖 4 个未使用故事/世界；这只是建议，最终规模与范围由 Owner 确认，不是自动授权。
+### 5.1 已完成的来源和提示 Draft
 
-逐项核验并形成 SAFE-only 汇总：
-1. **来源身份与权利：** 每条提示的合法来源、授权主体、训练/评估用途、适用版本与时间范围；Owner 总体声明不能替代每条来源权利证据。
-2. **时间与上下文：** 提示对应的上下文在目标生成时确实可用；消息顺序、角色、末轮 User 和三个持久化可见消息合同准确，不补造历史 System/Memory。
-3. **未污染：** 不属于本次 336 Train/Validation，不曾用于训练、Eval、Checkpoint 选择、Prompt/解码调参；不属于 R47/R48/R55 已暴露开发题。
-4. **R50 排除：** 仅在 Owner 授权且元数据范围完整时做排除核验；绝不读取 R50 正文或测试答案。
-5. **故事/World 隔离：** 用可核验的 story/World component 关系证明样本互不泄漏；证据不足的组保持 HOLD 或排除，不能只凭旧 JSON 分组字段宣称语义隔离 PASS。
-6. **SHA 与冻结：** 私有输入包、规范化 prompt、来源清单、转换版本和世界分组在 Owner 私有环境绑定 SHA；GitHub 仅接收 SAFE 聚合，不接收明文或可逆 crosswalk。
+只读筛选得到：
 
-P2 输出：`P2_SOURCE_REVIEW_PASS` 或明确 HOLD reason code 的私有 SAFE 回执；公开文档只记录计数、状态和原因类别，不记录私有 SHA/ID/路径/正文。任何关键来源、权利、上下文或隔离证据缺失都必须 HOLD。
+- 8 个公开故事、8 个故事谱系、5 位作者、8 个不同 World JSON。
+- 3 条来源在 Base336 GPU Run 开始前创建，5 条在 Run 开始后创建；全部晚于 Base336 293/43 数据包冻结边界。
+- 8/8：当前公开 revision 与最新审核提交 revision 一致；审核快照中的 `source.v2Data` 与当前公开版本一致；审核快照 SHA256 与提交 SHA 一致；最新权限事件绑定最新提交且目标可见性为 public。
+- 另有 2 条候选因 World 描述过少未入选；不将其判为质量失败。
+
+已构造 48 条全新提示 Draft：8 个来源各 6 条，六个 Quality-v1 维度各 1 条；每条严格为三条构造消息 `user / assistant / user`，不含 System、目标答案或参考答案。没有读取 `v2_chat_messages` 私有消息正文，没有访问 R50 内容。
+
+当前会话工件（不是 Owner Mac 私有目录；Owner 必须转存、审查并冻结）：
+
+- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，SHA256 `ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`。
+- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的 story ID、revision、创建/批准时间、审核快照 SHA、权限事件绑定、非语义 World JSON 指纹；SHA256 `56c5c9c90e347860e1107dc7f10d2486f8153acc21c469676b80850f57239a4b`。
+- 结构校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
+- 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；本地 8/8 PASS，compileall PASS。没有声称 GitHub Actions CI PASS。
+
+### 5.2 仍需完成的 P2-C
+
+1. **Base336 来源隔离：** 将这 8 个来源的 World 组件与 Base336 293/43 私有来源清单、Story/World component graph 和已审核的历史版本做交叉核验。不同 Story ID、不同 World JSON MD5 或时间戳都不足以证明语义独立。
+2. **R50 保护集排除：** Owner 提供完整、已授权的 R50 Protected/Reserved World 元数据清单，仅做元数据匹配排除；绝不读取 R50 正文或答案。
+3. **开发题暴露排除：** 核验 8 个来源及 48 条提示未复用 R47/R48/R55 已暴露开发题或其语义变体。
+4. **提示逐条复核：** 检查来源忠实性、无原文长段复用、无未来信息泄漏、无隐藏指令混入；NPC/角色新增内容须明确属于合成情境，不得伪称来源事实。
+5. **权利范围：** 维持 Owner 已批准的内部评估提示构造用途；不得把公开可见状态推断为作者授予模型训练或再分发权利。
+6. **Owner 冻结：** Owner 在本机私有目录冻结来源 Manifest、prompt SHA256、语义 World crosswalk、R50 元数据排除回执和独立 Reviewer 结论。
+
+当前会话无法读取 Owner Mac 私有目录。下一 Agent 应向 Owner 索取/使用上述**私有交叉核验证据**，而不是重新抽取数据库或读取任何私有会话正文。任何关键证据缺失都保持 HOLD。
+
+P2-C 通过前，不生成正式 Held-out、不实现正式 Pairer/Profile/Backend、不执行模型推理。P2 PASS 后才进入 P3。
 
 ## 6. P3：P2 通过后才设计 Base/Adapter 两臂评估
 
@@ -173,4 +194,4 @@ P2 输出：`P2_SOURCE_REVIEW_PASS` 或明确 HOLD reason code 的私有 SAFE �
 - 执行顺序与复用原则：`skills/storyforge-roleplay-sft/SKILL.md`。
 - 私有审计 SAFE 只保留在 Owner Mac；GitHub 不保存本地 SHA Manifest。
 
-**下一 Agent 的唯一业务优先事项：取得 Owner 批准的新独立 Held-out 来源并完成 P2 证据核验。没有 P2 PASS，不进入正式评测数据生成，更不进行 Base/Adapter 推理。**
+**下一 Agent 的唯一业务优先事项：完成已批准 Supabase 公开故事 Draft 的 Base336/R50/R47-R48-R55 交叉隔离审计、提示逐条复核和 Owner 私有冻结。当前 48 条仍是 Draft；没有 P2-C PASS，不进入正式 Held-out、Pairer 或 Base/Adapter 推理。**
