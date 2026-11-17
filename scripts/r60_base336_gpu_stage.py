@@ -143,7 +143,8 @@ def prepare(release_dir: Path, proof_receipt: Path, stage: Path, run_key: str) -
 
         for name in RELEASE_FILES:
             source = release_dir / name
-            maximum = 4_000_000 if name.endswith(".jsonl") else contract.MAX_SAFE_BYTES
+            maximum = (4_000_000 if name.endswith(".jsonl")
+                       else contract.MAX_MANIFEST_BYTES)
             files["private/release/" + name] = _copy_new(
                 stage, "private/release/" + name, _source_bytes(source, maximum)
             )
