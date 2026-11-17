@@ -57,6 +57,9 @@ class ReuseContractTests(unittest.TestCase):
             (REPO_ROOT / "src/storyforge_dataset/token_preflight.py").is_file()
         )
         self.assertTrue(
+            (REPO_ROOT / "src/storyforge_dataset/world_isolation.py").is_file()
+        )
+        self.assertTrue(
             (REPO_ROOT / "docs/standards/R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md").is_file()
         )
         self.assertTrue(
