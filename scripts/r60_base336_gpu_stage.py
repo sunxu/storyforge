@@ -116,9 +116,16 @@ def prepare(release_dir: Path, proof_receipt: Path, stage: Path, run_key: str) -
     ):
         raise ValueError("STAGE_PARENT_HOLD")
     contract.verify_release(release_dir)
+    if (
+        proof_receipt.is_symlink() or not proof_receipt.is_file()
+        or proof_receipt.parent.is_symlink() or not proof_receipt.parent.is_dir()
+        or not proof_receipt.parent.resolve().is_relative_to(private_base.resolve())
+        or stat.S_IMODE(proof_receipt.parent.stat().st_mode) != 0o700
+    ):
+        raise ValueError("PROOF_RECEIPT_DIRECTORY_HOLD")
     contract.verify_proof_receipt(proof_receipt)
     proof_stat = proof_receipt.lstat()
-    if proof_stat.st_mode & 0o777 != 0o600:
+    if stat.S_IMODE(proof_stat.st_mode) != 0o600:
         raise ValueError("PROOF_RECEIPT_MODE_HOLD")
     commit = _git_commit()
     stage.mkdir(mode=0o700, parents=False, exist_ok=False)
