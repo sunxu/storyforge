@@ -3,9 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import os
 from pathlib import Path
-import subprocess
 from types import SimpleNamespace
 
 import pytest
@@ -220,8 +218,8 @@ def test_gpu_cli_command_is_a100_ro_rw_and_dry_run_only(monkeypatch):
     assert volumes[1].endswith(":/output:rw")
     assert cli.IMAGE in argv and "@sha256:" in cli.IMAGE
     assert argv[argv.index(cli.IMAGE) + 1] == "bash"
-    assert "hf jobs run" not in " ".join(argv)
-    assert cli.GPU_SCOPE in argv
+    assert argv[:3] == ["hf", "jobs", "run"]
+    assert any(value.endswith("=" + cli.GPU_SCOPE) for value in argv)
 
 
 def test_cli_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch):
