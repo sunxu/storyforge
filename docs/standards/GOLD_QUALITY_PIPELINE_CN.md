@@ -248,4 +248,4 @@ Base336 的293 Train / 43 Validation仅用于单独批准的探索性Base QLoRA�
 - 精确 World JSON 相同只能作为候选关联线索。若审核判为 `GENERIC_TEMPLATE`，仍须逐成员分配独立的语义组件 ID，并以角色卡、Opening、故事专属事实和版本证据支持；“通用模板”标签本身不能自动消除 Train/Validation 隔离风险。
 - Base336 的 8 组私有世界来源回执目前全部 HOLD（7 组当前版本跨 split，语义审核未完成，历史 actual-sent 未验证）。它不是 Gold Manifest 事件，不得导入 Source/Review/Exclusion/Reconciliation，也不改变 `quality_v1_admitted=0`、`train_admitted=0`。
 
-新审核流程必须先核对来源版本和成员覆盖，再填写语义组件分配，最后运行共享结构门禁。缺失成员、缺失证据、重复来源键、未完成审核或跨 split 组件均失败关闭；不得通过重算 hash、改名或手动修改 SAFE 绕过。当前 HEAD 的 R60 REAL1000 synthetic-only Actions 已通过：Ruff PASS、338 passed / 2 subtests、Skill contract 7 passed；对应 run `44127200498`。
+新审核流程必须先核对来源版本和成员覆盖，再填写语义组件分配，最后运行共享结构门禁。缺失成员、缺失证据、重复来源键、未完成审核或跨 split 组件均失败关闭；不得通过重算 hash、改名或手动修改 SAFE 绕过。共享核心代码提交的 R60 REAL1000 synthetic-only Actions 已通过：Ruff PASS、338 passed / 2 subtests、Skill contract 7 passed（run `44127200498`）；最新质量标准文档提交的 Actions 也通过（run `44127458330`）。
