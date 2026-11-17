@@ -1,3 +1,10 @@
+# 0.1.19 — 2026-11-18
+
+- 新增共享 `src/storyforge_dataset/world_isolation.py`：统一检查 source-bound semantic component 的 Train/Validation 冲突与审核覆盖；不从 JSON/hash/Story ID 推断语义身份。
+- `quality_v1.py` 改为复用共享冲突检测函数，保持原六维 floors、严重标记和非准入行为不变。
+- 更新 Gold Quality Pipeline、R60 P2 补充、Base336 评估计划与 Agent Skill：8组世界来源证据全部 HOLD，48条提示包尚未生成；明确成员级角色卡/Opening复核、R50/R47/R48/R55边界。
+- 增加共享核心的 synthetic-only 回归测试；不访问数据库、R50正文、模型、HF Job 或 GPU，不写入 Gold Manifest。
+
 # 0.1.18 — 2026-11-17
 
 - 增加Base336生成评估的代码复用审查：优先复用现有 `generation_eval.worker`、HF Runtime输入/输出管理、Backend抽象和六维Quality-v1规则定义。
