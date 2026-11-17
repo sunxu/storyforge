@@ -438,3 +438,17 @@ For baseline training, completion means:
 - validation completed
 - evidence summary is written
 - no held-out test data was used during training/selection
+
+## R60 Base336 GPU implementation handoff (2026-11-17)
+
+The P0 293/43 Collator proof transfer is complete. Do not rerun CPU336, recreate the split or rerun the Collator. The active next step is Owner Mac private Stage and HF read-only READY/dry-run using \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\`.
+
+Implemented entrypoints:
+- \`scripts/r60_base336_gpu_contract.py\`
+- \`scripts/r60_base336_gpu_stage.py\`
+- \`scripts/r60_base336_gpu_worker.py\` and \`scripts/r60_base336_gpu_worker.sh\`
+- \`scripts/r60_base336_gpu_cli.py\`
+
+Reuse the shared Common2 dependency bundler, HF Runtime, \`hf_job_runner.py\` evidence/inference/GPU monitor helpers, Common2 remote Bucket listing and paginated Job-history helper. Do not fork tokenization, R18 mask, Gold Quality, CPU Guard or HF Runtime. R54 code is reference only; never copy its 31/9 data, 16-step config or whole-Bucket RW mount.
+
+The GPU CLI intentionally has no submit action. Its dry-run Scope is \`DRY_RUN_NOT_AUTHORIZED\`; the worker refuses that Scope. Keep GPU Job count 0 until separately authorized. Quality-v1 and train admission remain 0.
