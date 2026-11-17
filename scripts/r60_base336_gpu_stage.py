@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import r60_base336_gpu_contract as contract
 import r60_common2_wrapped_hf_stage as shared_stage
+
 from storyforge_dataset.hf_runtime import InputManager
 
 SCHEMA = contract.STAGE_SCHEMA
