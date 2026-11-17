@@ -27,7 +27,7 @@ from hf_job_runner import (
 
 from storyforge_dataset.hf_runtime import InputManager, OutputManager
 
-GPU_SCOPE = "R60_BASE336_293_43_ONE_EPOCH_A10080GB"
+GPU_SCOPE = contract.GPU_SCOPE
 RECEIPT_NAME = "R60_BASE336_GPU_SAFE_RECEIPT_PRIVATE.json"
 STAGE_DEFAULT = Path("/input/r60-base336")
 OUTPUT_DEFAULT = Path("/output")
