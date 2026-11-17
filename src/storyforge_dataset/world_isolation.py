@@ -7,17 +7,20 @@ assignments; SAFE callers must not emit the private component IDs.
 """
 from __future__ import annotations
 
+import re
 from collections import Counter, defaultdict
 from collections.abc import Iterable, Mapping
 
 DEFAULT_SPLITS = ("train", "validation")
 REVIEW_SPLITS = frozenset(DEFAULT_SPLITS)
 REVIEW_DECISIONS = frozenset({"PASS", "HOLD", "REJECT"})
+HEX64 = re.compile(r"^[a-f0-9]{64}$")
 REVIEW_ROW_KEYS = frozenset({
     "source_key",
     "split",
     "semantic_component_id",
     "source_evidence_ref",
+    "source_snapshot_sha256",
     "source_version_verified",
     "semantic_review_completed",
     "decision",
@@ -68,17 +71,25 @@ def component_split_conflicts(
 def validate_component_review_assignments(
     rows: object,
     *,
-    expected_source_keys: Iterable[str] | None = None,
+    expected_source_keys: Iterable[str],
 ) -> dict:
     """Validate reviewer-authored semantic component assignments.
 
-    A PASS means only that the submitted assignment set is complete, source-
-    bound by declaration, and has no declared Train/Validation collision. It
-    does not prove reviewer independence, historical prompt replay, protected
-    set completeness, rights, or training authorization.
+    A PASS means only that the submitted assignment set exactly covers the
+    expected source roster, has valid source snapshot pins and declared review
+    completion, and has no declared Train/Validation component collision. It
+    does not independently prove semantic identity, reviewer independence,
+    historical prompt replay, protected-set completeness, rights, or training
+    authorization.
     """
     if type(rows) is not list or not rows:
         raise WorldIsolationError("WORLD_REVIEW_ROWS_HOLD")
+
+    expected = tuple(expected_source_keys)
+    if (not expected or any(type(key) is not str or not key.strip()
+                            for key in expected)
+            or len(set(expected)) != len(expected)):
+        raise WorldIsolationError("WORLD_REVIEW_SOURCE_COVERAGE_HOLD")
 
     seen_sources: set[str] = set()
     normalized: list[dict[str, str]] = []
@@ -91,11 +102,13 @@ def validate_component_review_assignments(
         component = row.get("semantic_component_id")
         split = row.get("split")
         evidence = row.get("source_evidence_ref")
+        snapshot = row.get("source_snapshot_sha256")
         decision = row.get("decision")
         if (type(source) is not str or not source.strip() or source in seen_sources
                 or type(component) is not str or not component.strip()
                 or type(split) is not str or split not in REVIEW_SPLITS
                 or type(evidence) is not str or not evidence.strip()
+                or type(snapshot) is not str or HEX64.fullmatch(snapshot) is None
                 or type(row.get("source_version_verified")) is not bool
                 or type(row.get("semantic_review_completed")) is not bool
                 or type(decision) is not str or decision not in REVIEW_DECISIONS):
@@ -111,23 +124,18 @@ def validate_component_review_assignments(
             "split": split,
         })
 
-    if expected_source_keys is not None:
-        expected = tuple(expected_source_keys)
-        if (not expected or any(type(key) is not str or not key.strip()
-                                for key in expected)
-                or len(set(expected)) != len(expected)
-                or set(expected) != seen_sources):
-            raise WorldIsolationError("WORLD_REVIEW_SOURCE_COVERAGE_HOLD")
+    if seen_sources != set(expected):
+        raise WorldIsolationError("WORLD_REVIEW_SOURCE_COVERAGE_HOLD")
 
     conflicts = component_split_conflicts(
         normalized, component_field="semantic_component_id"
     )
+    structure_pass = not unresolved and not conflicts
     return {
         "schema": "storyforge_world_component_review_safe_v1",
         "status": (
-            "WORLD_COMPONENT_REVIEW_PASS__NO_DECLARED_SPLIT_COLLISION"
-            if not unresolved and not conflicts
-            else "WORLD_COMPONENT_REVIEW_HOLD"
+            "WORLD_COMPONENT_ASSIGNMENT_STRUCTURE_PASS__NO_DECLARED_SPLIT_COLLISION"
+            if structure_pass else "WORLD_COMPONENT_REVIEW_HOLD"
         ),
         "source_records": len(normalized),
         "review_decision_counts": {
@@ -135,9 +143,8 @@ def validate_component_review_assignments(
         },
         "unresolved_source_records": unresolved,
         "cross_split_component_count": len(conflicts),
-        "world_component_isolation_verified": bool(
-            not unresolved and not conflicts
-        ),
+        "component_assignment_structure_pass": structure_pass,
+        "world_component_isolation_verified": False,
         "reviewer_independence_independently_proven": False,
         "historical_actual_sent_version_verified": False,
         "protected_metadata_exclusion_verified": False,
