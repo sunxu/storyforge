@@ -16,8 +16,28 @@ def package(tmp_path):
             "public_content_revision": i,
             "submission_snapshot_sha256": f"{i:064x}",
             "world_json_md5": f"{i:032x}",
-            "permission_submission_bound": True,
+            "created_at_utc": (
+                "2026-11-16T06:33:25.08Z" if i == 0 else
+                "2026-11-16T14:56:46.188Z" if i == 1 else
+                "2026-11-17T02:34:17.829Z" if i == 2 else
+                "2026-11-17T10:05:16.221Z"
+            ),
+            "first_public_approved_at_utc": (
+                "2026-11-16T07:43:27.101446Z" if i == 0 else
+                "2026-11-16T14:57:34.942758Z" if i == 1 else
+                "2026-11-17T02:34:51.477365Z" if i == 2 else
+                "2026-11-17T10:06:00.809790Z"
+            ),
+            "moderation_submission_id": f"submission-{i}",
+            "permission_event_id": f"event-{i}",
+            "permission_kind": "ai",
             "permission_result": "ai_approved",
+            "requested_visibility": "public",
+            "permission_to_visibility": "public",
+            "permission_submission_id": f"submission-{i}",
+            "permission_submission_bound": True,
+            "snapshot_matches_current_public_v2": True,
+            "snapshot_hash_matches_submission_sha256": True,
         })
     rows = []
     for i, source in enumerate(sources):
@@ -182,4 +202,20 @@ def test_r50_gate_cannot_be_promoted_by_prompt_structure(tmp_path):
     m["gates"]["protected_r50_metadata_exclusion"] = "PASS"
     manifest.write_text(json.dumps(m), encoding="utf-8")
     with pytest.raises(target.Hold, match="OPEN_GATE_STATUS_HOLD"):
+        target.validate(prompts, manifest)
+
+
+def test_nonpublic_permission_target_fails_closed(tmp_path):
+    prompts, manifest, _, m = package(tmp_path)
+    m["sources"][0]["permission_to_visibility"] = "private"
+    manifest.write_text(json.dumps(m), encoding="utf-8")
+    with pytest.raises(target.Hold, match="SOURCE_BINDING_HOLD"):
+        target.validate(prompts, manifest)
+
+
+def test_source_before_base336_cutoff_fails_closed(tmp_path):
+    prompts, manifest, _, m = package(tmp_path)
+    m["sources"][0]["created_at_utc"] = "2026-11-15T23:59:59Z"
+    manifest.write_text(json.dumps(m), encoding="utf-8")
+    with pytest.raises(target.Hold, match="SOURCE_BINDING_HOLD"):
         target.validate(prompts, manifest)
