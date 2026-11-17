@@ -100,7 +100,11 @@ def _git_commit() -> str:
 
 
 def verify(stage: Path, run_key: str) -> dict:
-    return contract.verify_stage(stage, run_key)
+    result = contract.verify_stage(stage, run_key)
+    manifest = contract.read_json(stage / "SHA256_MANIFEST_PRIVATE.json")
+    if manifest.get("git_commit") != _git_commit():
+        raise ValueError("STAGE_GIT_HEAD_DRIFT_HOLD")
+    return result
 
 
 def prepare(release_dir: Path, proof_receipt: Path, stage: Path, run_key: str) -> dict:
