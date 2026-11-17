@@ -127,7 +127,7 @@ P2 通过后，才按原计划进入 P3 的版本化薄适配器与合成测试�
 
 校验范围包括：48 条与 JSONL SHA256、8 个来源绑定、公开 revision 与审核快照 SHA、权限事件仍绑定最新公开提交、来源创建时间晚于 Base336 冻结边界、3/5 时间分组、六维均衡、三消息角色顺序、无 System/答案字段，以及所有未完成门禁必须继续保持 HOLD。
 
-本地合成测试 **8/8 PASS**，`compileall` PASS；真实草案包 SAFE 为：
+本地合成测试 **9/9 PASS**，`compileall` PASS；真实草案包 SAFE 为：
 
 `P2_PROMPT_PACKAGE_STRUCTURE_PASS__WORLD_CROSSWALK_HOLD`
 
