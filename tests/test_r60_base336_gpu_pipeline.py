@@ -290,6 +290,8 @@ def test_cli_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch)
     assert len(uploads) == 2
     assert all(argv[:3] == ["hf", "buckets", "cp"] for argv in uploads)
     assert report["job_submission_calls"] == 0
+    assert report["job_history_exhaustive"] is True
+    assert report["matching_jobs"] == 0
 
 
 def test_cli_ready_runs_only_dry_run_and_exhaustive_history(tmp_path, monkeypatch):
