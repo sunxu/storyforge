@@ -77,7 +77,7 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 
 ## 6. 正式独立质量评估的必要条件
 
-1. **新的独立测试来源：** Owner 提供或批准一个未进入本次 336 Train/Validation、未用于调参/Checkpoint 选择、未被 R47/R48/R55 暴露、且不触碰 R50 的来源绑定测试包。建议初始 40–60 个提示、覆盖至少 4 个未使用故事/世界；正式冻结前由 Owner 确认范围、来源权利和世界组件隔离证据。若没有合格来源，质量评估保持 HOLD，不从 661 个未准入候选或数据库中自动抽取。
+1. **新的独立测试来源：** Owner 已批准采用 Supabase 公开故事/公开世界设定路线，仅用于内部独立评估提示构造，不读取用户私有会话正文。已构造 48 条 Draft prompts，覆盖 8 个公开故事、8 个不同 World JSON、5 位作者；来源版本、审核快照 SHA256 和最新公开权限事件绑定 8/8 通过。权威补充记录：`docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`。当前仍是 Draft，不是冻结 Held-out；必须完成 Base336 私有来源、R50 仅元数据、R47/R48/R55 暴露题的交叉排除及 Owner 冻结。若不能取得完整语义隔离证据，对应来源保持 HOLD。
 2. **固定生成合同：** Base 与 Adapter 使用相同的三个可见持久化消息、相同模型 Revision、相同上下文长度、解码参数、停止条件和输出 Token 上限；Adapter 路径固定到本次 checkpoint-37。生成参数必须先在合成测试和 CPU CLI 兼容检查中冻结，不能看过质量结果后反复调参。
 3. **独立配对生成：** 每个 prompt 对 Base/Adapter 各生成一次；逐项核对 prompt SHA、消息前缀、输出数量、非空、停止/截断元数据。每案随机化 A/B，映射密钥单独 0600 保存，评审者不可见模型身份。
 4. **六维盲审：** 严格复用 `quality_v1.py` 冻结六维门槛（4/4/3/4/4/4）与三个严重标记（`serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`）；评审只依据给定三消息，不推断隐藏世界设定。保留逐条证据引用、HOLD 不确定性和严重问题，不用旧五维 scorecard 替代。
@@ -90,14 +90,15 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 |---|---|---|
 | P0 | 训练 Job / SAFE / Checkpoint / Adapter Reload 证据核验 | PASS |
 | P1 | 33 个远端对象下载与本地 SHA256 inventory（33/33，5,604,774,224 bytes） | PASS（Owner SAFE） |
-| P2 | 新的独立测试来源、权限、来源 SHA 与世界隔离确认 | HOLD |
-| P3 | 复用 `generation_eval.worker` / HF Runtime，设计 Base/Adapter 两臂 Profile、Pairing 与六维审核薄适配器及合成测试 | 复用审查完成；实现等 P2 |
+| P2-A | Supabase 公开来源筛选、revision、审核快照和权限事件绑定 | PASS（8/8） |
+| P2-B | 48 条全新提示草案、Manifest、SHA256 与结构门禁 | PASS（结构/哈希/绑定）；仍为 Draft |
+| P2-C | Base336 / R50 元数据 / R47-R48-R55 语义隔离、提示独立复核、Owner 冻结 | **HOLD** |
+| P3 | 复用 `generation_eval.worker` / HF Runtime，设计 Base/Adapter 两臂 Profile、Pairing 与六维审核薄适配器及合成测试 | 复用审查完成；实现等 P2-C |
 | P4 | Base/Adapter 配对 GPU 推理 | 需单独授权 |
 | P5 | 独立盲审、严重标记核验和 Owner 裁决 | 等 P4 |
 | P6 | 模型质量结论与是否继续下一轮实验 | HOLD |
 
-**当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，且产物审计为`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。训练工程闭环与33个输出对象的本地完整性盘点均PASS；模型文学质量仍未得到独立验证。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。下一步只推进P2独立Held-out来源审查；在来源/权利/隔离证据经Owner确认前，不生成正式测试包、不启动推理、不追加训练、不访问R50、不写数据库。
-
+**当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，且产物审计为`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。P2 已从“来源尚未提供”推进到“来源证据和 48 条提示 Draft 已准备”；但独立 Held-out 仍未冻结，World 语义隔离、R50 元数据排除、R47/R48/R55 暴露排除、独立复核和 Owner 冻结仍 HOLD。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。在 P2-C PASS 前不实现正式 Pairer、不启动推理、不追加训练、不访问 R50 正文、不写数据库。
 
 ### Owner Mac 只读产物审计命令（已执行，保留复现记录）
 
@@ -140,7 +141,7 @@ export PYTHONPATH=src:scripts:experiments/r58_quality
 
 ## 8. 2026-11-17 生成评估代码复用审查（只读盘点）
 
-P2 独立测试来源仍未提供/批准，因此本节只记录既有代码的复用边界，不创建正式评测输入、不改动运行时、不提交HF Job。
+P2 来源路线已获 Owner 批准，48 条提示 Draft 已构造；语义隔离和 Owner 冻结仍 HOLD。本节只记录既有代码的复用边界，不改动运行时、不提交 HF Job。
 
 ### 推荐复用顺序
 
@@ -163,13 +164,16 @@ P2 独立测试来源仍未提供/批准，因此本节只记录既有代码的�
 - 两臂严格为 Base 与本次 checkpoint-37 Adapter；模型 ID/revision、Adapter SHA、Tokenizer/Chat Template、依赖锁和 runtime digest 必须固定。Base 与 Adapter 使用完全相同的提示、三个持久化可见消息（无 System）、解码参数、seed、输入/输出 Token 上限、停止条件。
 - 每条输入必须由来源包绑定 prompt SHA、故事/World 组件与权限证据；私有身份 crosswalk 只留在 Owner 本机。正式测试源未确认前，不得从 661 个未准入候选、数据库或旧 P4 输入自动抽样。
 - 输出需保留 prompt SHA、模型/Adapter 身份、input/output token 计数、finish reason、截断状态及结果 SHA；逐案随机 A/B，blind key 独立 0600 保存，Reviewer 不得看到模型身份。
-- P2 需 Owner 明确提供/批准新的独立测试来源，并确认未进入本次 336 Train/Validation、checkpoint 选择或调参、未被 R47/R48/R55 暴露、R50 仅做元数据排除而不读取正文，以及来源权利、上下文时序、故事/World 隔离证据完整。未通过则质量评估保持 HOLD。
+- P2 已采用 Owner 批准的 Supabase 公开故事路线；48 条 Draft 由 8 个来源构造。仍需完成 Base336 私有 source roster / World component crosswalk、R50 仅元数据排除、R47/R48/R55 暴露排除、提示忠实性复核和 Owner 冻结。未通过则质量评估保持 HOLD。
 - 本轮训练授权不包含 Base/Adapter 推理；旧 P4 的授权也不适用于 Qwen3.8-27B Base/Adapter。真实推理前仍需单独明确授权具体输入、模型、Flavor、时长、样本数、Token 上限、Bucket 前缀与预算。
 
 
 ## 9. 新 Agent 接手入口（2026-11-17）
 
 - 权威交接任务书：`docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`。
+- P2 来源补充决策与当前状态：`docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`。
+- P2 Draft prompts 与 Manifest：`R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`、`R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`（当前会话工件，需由 Owner 转存私有目录并冻结）。
+- P2 结构门禁：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`；测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`。
 - 可直接复制的启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
 - 接手时重新核验当前分支、HEAD、Actions、Issue/PR；本计划与交接文件内的 SHA/CI 都是快照，不得代替实时查询。
 - 当前唯一业务阻塞是 P2 新独立 Held-out 来源/权利/上下文/World 隔离证据；Owner 未提供/批准来源前不创建正式测试包、不实现正式 Pairer、不推理。
