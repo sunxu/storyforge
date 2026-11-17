@@ -104,6 +104,7 @@ def _synthetic_stage(tmp_path: Path, monkeypatch) -> Path:
     add("scripts/r60_base336_gpu_contract.py", b"synthetic contract\n")
     add("scripts/hf_job_runner.py", b"synthetic shared helper\n")
     add("scripts/hf_smoke_guard.py", b"synthetic custom guard\n")
+    add("src/storyforge_dataset/__init__.py", b"")
     add("src/storyforge_dataset/hf_runtime/__init__.py", b"")
     add("src/storyforge_dataset/hf_runtime/inputs.py", b"")
     add("src/storyforge_dataset/hf_runtime/outputs.py", b"")
@@ -219,7 +220,7 @@ def test_gpu_cli_command_is_a100_ro_rw_and_dry_run_only(monkeypatch):
     assert cli.IMAGE in argv and "@sha256:" in cli.IMAGE
     assert argv[argv.index(cli.IMAGE) + 1] == "bash"
     assert argv[:3] == ["hf", "jobs", "run"]
-    assert any(value.endswith("=" + cli.GPU_SCOPE) for value in argv)
+    assert "STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED" in argv
 
 
 def test_cli_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch):
