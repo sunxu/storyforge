@@ -188,3 +188,110 @@ chmod 600 "$RECEIPT"
 6. 训练步数按真实293行、per-device batch、gradient accumulation、world size和epoch计算；eval/save计划必须确保真实终端Optimizer Step有Checkpoint。训练后验证末步状态、Adapter Reload、SAFE回执和私有产物SHA。
 7. 唯一Run Key提交前先写O_EXCL marker；GPU提交单次、不自动重试。未获针对该Run Key、Flavor、时长、模型Revision、配置和预算的Owner明确授权，只能到远端READY + dry-run，不能提交付费Job。
 
+## 2026-11-17 实现状态：Stage / Worker / CLI 已落地
+
+### 实际代码入口
+
+| 文件 | 实现 |
+|---|---|
+| \`scripts/r60_base336_gpu_contract.py\` | 统一293/43、P0证明、模型Revision、训练配置和Stage SHA合同 |
+| \`scripts/r60_base336_gpu_stage.py\` | Mac私有Stage创建/验签；0700目录、0600文件、O_EXCL、干净分支与工作树 |
+| \`scripts/r60_base336_gpu_worker.py\` | Stage复核、A100设备/磁盘/依赖门禁、固定模型下载、QLoRA、终端Checkpoint和Adapter Reload |
+| \`scripts/r60_base336_gpu_worker.sh\` | HF容器入口；先校验Stage，再装依赖，最后运行Worker；私有日志不输出到Job stdout |
+| \`scripts/r60_base336_gpu_cli.py\` | 本地预检、Bucket同步、远端完整文件集/SHA复核、分页Job历史和HF dry-run |
+| \`requirements/r60-base336-gpu.in\` | 固定ms-swift / Transformers / bitsandbytes / qwen-vl-utils / HF Hub版本 |
+| \`tests/test_r60_base336_gpu_pipeline.py\` | Stage篡改、SHA、权限、训练步数、Checkpoint、CLI无提交等合成测试 |
+| \`.github/workflows/r60-base336-gpu-pipeline.yml\` | 离线合成CI；不连接HF、不下载模型、不启动GPU |
+
+### 复用实现
+
+- Stage依赖闭包直接调用 \`r60_common2_wrapped_hf_stage.local_dependencies(entries, extras)\`；不再写第二套AST依赖收集器。
+- Worker直接复用 \`hf_job_runner.py\` 的 \`GpuMonitor\`、\`training_evidence\`、\`make_inference_input\`、\`check_inference_result\`。
+- 输入/输出校验和SAFE发布复用 \`storyforge_dataset.hf_runtime.InputManager\` / \`OutputManager\`。
+- 293/43原始发布继续调用既有 \`r60_base336_exploratory_release_verify.verify\`；新增 \`verify_staged\` 只解决HF只读Stage路径不在Owner Mac private.BASE下的问题，校验算法/数据合同保持相同。
+- HF CLI复用 \`r60_common2_wrapped_hf_cli.remote_set\`、\`r60_common2_hf_cpu_final_read_only.walk_job_history\` 和 \`hf_job_guard.build_hf_argv\`。**只复用通用argv构造，不调用CPU-only \`validate_spec\`，也不放宽CPU Guard。**
+- R54 Worker、31/9 SHA、16步Gate和整Bucket RW Stage均不进入R60 Stage依赖闭包；没有复制R18 Label Mask、Token Preflight或Gold Quality逻辑。
+
+### HF安全合同
+
+- Bucket：\`adradar/storyforge-training\`。
+- 输入：\`preflight/r60/base336-gpu/runs/<RUN_KEY>/\`，挂载 \`/input/r60-base336:ro\`。
+- 输出：\`experiments/r60-base336-exploratory/<RUN_KEY>/\`，挂载 \`/output:rw\`；两个前缀不重叠。
+- Namespace：\`adradar\`；Flavor：\`a100-large\`；Timeout：120m；镜像固定为 \`pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee\`。
+- Stage同步先上传所有文件，最后上传SHA Manifest；READY阶段逐个下载远端对象回Mac并与本地SHA比较，同时要求远端文件集完全相同。
+- Job历史使用既有分页器完整走完，不以最近N条记录推断“没有Job”。
+- dry-run设置 \`STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED\`；Worker只接受真实Scope值 \`R60_BASE336_293_43_ONE_EPOCH_A10080GB\`。即使有人误删dry-run参数，Worker Shell也会因Scope不符而拒绝执行。
+- CLI动作列表**没有submit**。当前只能执行 \`preflight\`、\`sync\`、\`ready\`、\`diagnose\`、\`cli-flags\`；不具备付费Job提交路径。
+
+### Owner Mac下一步（仅Stage / HF READY / dry-run）
+
+已知293/43发布目录：
+\`$HOME/.local/share/storyforge/r60/private/r60-base336-exploratory-20261116T020325Z-4314ad84d5cc\`。
+
+P0最终SAFE在聊天中已确认，但没有可确认的持久文件路径。Owner需将已确认SAFE JSON保存为0600私有文件（下面命令中的JSON即该SAFE，不是重新运行CPU或重新计算证明）：
+
+\`\`\`bash
+BASE="$HOME/.local/share/storyforge/r60/private"
+RELEASE_DIR="$BASE/r60-base336-exploratory-20261116T020325Z-4314ad84d5cc"
+PROOF_DIR="$(mktemp -d "$BASE/r60-base336-proof-XXXXXXXX")"
+chmod 700 "$PROOF_DIR"
+umask 077
+cat > "$PROOF_DIR/BASE336_COLLATOR_TRANSFER_SAFE_PRIVATE.json" <<'JSON'
+{
+  "actual_final_collator_verified": true,
+  "all_final_rows_byte_identical_to_audited_rows": true,
+  "collator_executed_in_this_run": false,
+  "formal_source_admission_verified": false,
+  "gpu_stage_prepared": false,
+  "gpu_started": false,
+  "input_contract": "THREE_PERSISTED_MESSAGES_NO_SYSTEM",
+  "private_values_emitted": false,
+  "schema": "storyforge_r60_base336_exploratory_collator_transfer_safe_v1",
+  "source_cpu_audited_rows": 336,
+  "source_cpu_receipt_accepted": true,
+  "status": "BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD",
+  "train_admitted": 0,
+  "train_rows": 293,
+  "validation_rows": 43
+}
+JSON
+chmod 600 "$PROOF_DIR/BASE336_COLLATOR_TRANSFER_SAFE_PRIVATE.json"
+\`\`\`
+
+从仓库根目录执行。Stage Builder会强制当前分支为 \`r60/common2-cpu2-owner\` 且Git工作树干净：
+
+\`\`\`bash
+test "$(git branch --show-current)" = "r60/common2-cpu2-owner"
+test -z "$(git status --porcelain)"
+BASE="$HOME/.local/share/storyforge/r60/private"
+RUN_KEY="r60-base336-gpu-$(date -u +%Y%m%dT%H%M%SZ)-$(openssl rand -hex 6)"
+STAGE="$BASE/$RUN_KEY"
+PYTHONPATH=src:scripts:experiments/r58_quality \\
+python scripts/r60_base336_gpu_stage.py prepare \\
+  --release-dir "$BASE/r60-base336-exploratory-20261116T020325Z-4314ad84d5cc" \\
+  --proof-receipt "$PROOF_DIR/BASE336_COLLATOR_TRANSFER_SAFE_PRIVATE.json" \\
+  --stage "$STAGE" --run-key "$RUN_KEY"
+PYTHONPATH=src:scripts:experiments/r58_quality \\
+python scripts/r60_base336_gpu_stage.py verify --stage "$STAGE" --run-key "$RUN_KEY"
+PYTHONPATH=src:scripts:experiments/r58_quality \\
+python scripts/r60_base336_gpu_cli.py preflight --stage "$STAGE" --run-key "$RUN_KEY"
+\`\`\`
+
+仅当前三步均PASS后才执行远端同步和预检：
+
+\`\`\`bash
+PYTHONPATH=src:scripts:experiments/r58_quality \\
+python scripts/r60_base336_gpu_cli.py sync --stage "$STAGE" --run-key "$RUN_KEY"
+PYTHONPATH=src:scripts:experiments/r58_quality \\
+python scripts/r60_base336_gpu_cli.py ready --stage "$STAGE" --run-key "$RUN_KEY"
+\`\`\`
+
+\`sync\`将293/43私有数据和必要Worker代码上传到独立RO输入前缀；\`ready\`将远端对象下载回Mac逐个SHA验收、完整分页Job历史，并执行HF CLI dry-run。**这两步都不会提交Job。** 如果sync部分失败，不能用同一Run Key重传/覆盖；先diagnose，随后使用新Run Key重新Stage。
+
+### 当前验证边界
+
+- GitHub Base336 GPU synthetic-only workflow：Ruff、语法、Stage/Worker/CLI测试及共享Runtime/R54回归均PASS。
+- REAL1000 Quality Reviewer synthetic-only workflow：对release verifier staged只读模式的回归PASS。
+- CI未下载Qwen权重、未访问HF Hub、未启动CUDA、未提交HF Job。
+- 尚未在Owner Mac执行真实私有Stage、HF Bucket同步、远端READY或CLI dry-run；不得把CI PASS表述成Mac/HF实测PASS。
+- GPU Job仍为0；\`quality_v1_admitted=0\`、\`train_admitted=0\`；正式质量准入仍HOLD。
