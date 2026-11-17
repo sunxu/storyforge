@@ -236,6 +236,9 @@ def test_cli_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch)
     }
     monkeypatch.setattr(cli, "_check_remote_set", lambda *args, **kwargs: expected)
     monkeypatch.setattr(cli, "_prefix_empty", lambda *args, **kwargs: None)
+    monkeypatch.setattr(cli, "_check_job_history", lambda *args, **kwargs: {
+        "visible_jobs": 0, "matching_jobs": 0, "exhaustive": True,
+    })
     monkeypatch.setattr(cli, "_verify_remote_sha", lambda *args, **kwargs: None)
     uploads = []
 
