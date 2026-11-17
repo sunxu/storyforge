@@ -2,7 +2,7 @@
 
 ## 状态
 
-**P2_SOURCE_SET_VERIFIED__PROMPT_PACKAGE_NOT_GENERATED__WORLD_COMPONENT_CROSSWALK_PENDING**
+**P2_SOURCE_SET_VERIFIED__WORLD_EVIDENCE_ALL_HOLD__PROMPT_PACKAGE_NOT_GENERATED__WORLD_COMPONENT_CROSSWALK_PENDING**
 
 本文件是对 `R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md` 第 6、7 节的来源路线补充，不覆盖原计划的独立性、六维质量、盲审或训练授权门禁。
 
@@ -97,7 +97,7 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 - 未修改 Supabase。
 - 未启动 GPU、未提交 HF Job、未运行 Base/Adapter 推理。
 - 未实现正式 Pairer、Backend 或 Profile。
-- 48 条提示目前只是当前会话工作区中的草案，尚未转存 Owner Mac 私有目录、独立复核或冻结。
+- 48 条提示 JSONL/Manifest 尚未生成；仓库中只有结构校验器与合成测试，不能把测试夹具或历史计划描述当作真实提示包。
 - `quality_v1_admitted = 0`，`train_admitted = 0`，`model_promoted = false`。
 
 ## 6. P2 剩余门禁
@@ -116,7 +116,25 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 P2 通过后，才按原计划进入 P3 的版本化薄适配器与合成测试。P4 Base/Adapter GPU 配对推理仍需单独、明确的 Owner 授权。
 
 
-## 7. P2 草案包结构校验工具
+## 7. 最新回传：Base336 八组世界来源证据（2026-11-18）
+
+Owner 本轮提供 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，结构为 `storyforge_r60_base336_world_evidence_private_v1`。仅记录安全聚合，不把私有 Story ID、世界正文、roster/template SHA 或引文复制进仓库。
+
+回执结论：
+
+- `all_decisions=HOLD`；8/8 组均保持 HOLD。
+- 7/8 组 `current_world_cross_split=true`；另 1 组当前版本未跨 split，但仍然 HOLD（当前+归档版本的分组关联不能据此豁免）。
+- `semantic_review_completed=false`。
+- `actual_sent_prompt_verified=false`。
+- `train_admitted=0`。
+
+这份文件每组仅绑定一个代表性当前 `v2_data.world` 对象；不是 38 个成员的完整角色卡/Opening 证据，也不是历史实际发送版本证明。它不能单独支持 `GENERIC_TEMPLATE`、`SPECIFIC_SHARED_WORLD` 或语义组件分配，更不能把任何组提升为 PASS。
+
+此前的独立 Codex 汇总曾报告 7 组 `GENERIC_TEMPLATE`、1 组 `INSUFFICIENT_EVIDENCE`，但该汇总本身仍为 8 组隔离 HOLD，且不能替代本轮逐成员 source-bound 复核。必须与原始 roster、决策模板、8 组成员 `character/characters/opening` 私有证据及独立审阅记录逐项绑定后，才能形成可复核的语义组件分配。
+
+**下一步仅请求 Owner 提供现有私有证据的安全回执或在 Owner Mac 本地运行既有审计工具**；不重新查询数据库、不重建 roster、不访问 R50 正文、不启动模型/GPU。缺少成员级证据时全部 HOLD。
+
+## 8. P2 草案包结构校验工具
 
 新增本地只读校验器：
 
@@ -125,8 +143,4 @@ P2 通过后，才按原计划进入 P3 的版本化薄适配器与合成测试�
 
 校验范围包括：48 条与 JSONL SHA256、8 个来源绑定、公开 revision 与审核快照 SHA、权限事件仍绑定最新公开提交、来源创建时间晚于 Base336 冻结边界、3/5 时间分组、六维均衡、三消息角色顺序、无 System/答案字段，以及所有未完成门禁必须继续保持 HOLD。
 
-本地合成测试 **9/9 PASS**，`compileall` PASS；真实草案包 SAFE 为：
-
-`P2_PROMPT_PACKAGE_STRUCTURE_PASS__WORLD_CROSSWALK_HOLD`
-
-该工具只证明草案结构、哈希、来源版本/公开权限证据绑定；它明确拒绝把 Base336 语义隔离、R50 排除、R47/R48/R55 暴露排除或 Owner 冻结标为 PASS。没有触发或声称 GitHub Actions CI PASS。
+本地合成测试 **9/9 PASS**，`compileall` PASS（代码测试结果，不代表真实提示包已生成）。当前没有可供该校验器验证的真实 48 条提示 JSONL/Manifest，因此不得报告真实包结构/哈希 PASS。该工具明确拒绝把 Base336 语义隔离、R50 排除、R47/R48/R55 暴露排除或 Owner 冻结标为 PASS。没有触发或声称 GitHub Actions CI PASS。
