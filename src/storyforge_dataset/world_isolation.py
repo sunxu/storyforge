@@ -98,7 +98,7 @@ def validate_component_review_assignments(
                 or type(evidence) is not str or not evidence.strip()
                 or type(row.get("source_version_verified")) is not bool
                 or type(row.get("semantic_review_completed")) is not bool
-                or decision not in REVIEW_DECISIONS):
+                or type(decision) is not str or decision not in REVIEW_DECISIONS):
             raise WorldIsolationError("WORLD_REVIEW_ROW_VALUE_HOLD")
         seen_sources.add(source)
         decisions[decision] += 1
