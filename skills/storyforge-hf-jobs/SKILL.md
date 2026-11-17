@@ -116,5 +116,6 @@ python -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
 - GPU CLI复用Common2的remote_set、分页Job历史检查和通用argv构造；不调用CPU-only \`hf_job_guard.validate_spec\`。不得修改CPU Guard以接受GPU Flavor。
 - CLI目前只允许 \`preflight\`、\`sync\`、\`ready\`、\`diagnose\`、\`cli-flags\`；**没有submit动作**。dry-run传入 \`STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED\`，Worker Shell只接受真实GPU Scope，防止误启动。
 - 输入Bucket前缀必须精确RO，输出为独立RW前缀；远端READY要求文件集完全一致、逐文件下载SHA一致、输出/提交marker前缀为空、Job历史完整分页无匹配。
+Stage根目录及所有嵌套目录均为0700、文件0600；本地verify检查每个mode和symlink。Worker preflight先验证HF内建JOB_ID、Run Key/Scope与输出Bucket挂载可写，再安装依赖。
 - Owner Mac Stage Builder要求当前分支 \`r60/common2-cpu2-owner\` 且Git工作树干净；Stage目录0700、文件0600、O_EXCL/create-only。不要把Stage或私有JSONL放入GitHub。
 - P0 Collator证明转移已通过，不重跑CPU336、不重新拆分、不重新执行Collator。GPU Job仍0，\`train_admitted=0\`、\`quality_v1_admitted=0\`。CI是离线合成验证，不是Mac/HF/GPU实测。
