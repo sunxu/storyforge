@@ -64,8 +64,13 @@ def walk_job_history(api, key: str, *, max_pages: int = 100) -> tuple[int, int]:
             # A job can be submitted without a name containing the key.
             if (key in str(name or "")
                     or key in str(labels)
-                    or (isinstance(environment, dict)
-                        and environment.get("STORYFORGE_R60_COMMON2_RUN_KEY") == key)
+                    or (isinstance(environment, dict) and any(
+                        environment.get(env_key) == key
+                        for env_key in (
+                            "STORYFORGE_R60_COMMON2_RUN_KEY",
+                            "STORYFORGE_R60_BASE336_GPU_RUN_KEY",
+                        )
+                    ))
                     or any(key in str(x) for x in (record.get("command") or []))):
                 matching += 1
         next_page = response.links.get("next")
