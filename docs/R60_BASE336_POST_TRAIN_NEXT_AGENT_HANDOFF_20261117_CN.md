@@ -81,7 +81,7 @@ SAFE 只证明固定远端文件集合核验、33/33 下载和本地 SHA256 inve
 | P0 训练证据 | PASS | 已完成，不重跑训练 |
 | P1 产物完整性 inventory | PASS | 已完成，不重复下载或覆盖本地私有审计目录 |
 | P2-A Supabase 来源版本/公开权限 | PASS（8/8） | 8 条公开来源 revision、审核快照 SHA 和最新公开权限事件绑定已核验 |
-| P2-B 48 条提示 Draft / Manifest / SHA / 结构门禁 | PASS（结构门禁 8/8 测试） | 仅 Draft；尚未 Owner 冻结 |
+| P2-B 48 条提示 JSONL / Manifest / SHA | NOT_GENERATED（仅校验器及合成测试代码存在） | 不得将测试夹具或旧文档描述当作真实提示包 |
 | P2-C Base336 World 语义隔离、R50 元数据排除、R47/R48/R55 暴露排除、提示独立复核 | **HOLD** | 必须有完整私有 crosswalk、保护集元数据证据、独立 Reviewer 与 Owner 冻结 |
 | P3 Base/Adapter 两臂生成评估适配器 | 复用审查完成；实现等待 P2-C | P2-C 通过后，先做 Schema/Profile 设计、合成测试和 CPU-only 兼容检查 |
 | P4 Base/Adapter GPU 配对推理 | **未授权** | 另行明确授权具体模型、Job、样本数、Token 上限、Flavor、时长、Bucket 前缀与费用 |
@@ -110,14 +110,14 @@ Owner 已批准新的来源路线：仅使用 Supabase 中已公开、已发布�
 - 8/8：当前公开 revision 与最新审核提交 revision 一致；审核快照中的 `source.v2Data` 与当前公开版本一致；审核快照 SHA256 与提交 SHA 一致；最新权限事件绑定最新提交且目标可见性为 public。
 - 另有 2 条候选因 World 描述过少未入选；不将其判为质量失败。
 
-已构造 48 条全新提示 Draft：8 个来源各 6 条，六个 Quality-v1 维度各 1 条；每条严格为三条构造消息 `user / assistant / user`，不含 System、目标答案或参考答案。没有读取 `v2_chat_messages` 私有消息正文，没有访问 R50 内容。
+48 条提示 JSONL/Manifest **尚未生成**，因此没有真实提示包 SHA256，也没有真实包结构 PASS。此前交接中列出的提示包文件名与 SHA256 缺乏可复核的当前工件，不再作为有效证据；P2 补充决策已更正该状态。
 
-当前会话工件（不是 Owner Mac 私有目录；Owner 必须转存、审查并冻结）：
+已存在的代码工件：
 
-- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，SHA256 `a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`。
-- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的 story ID、revision、创建/批准时间、审核快照 SHA、权限事件绑定、非语义 World JSON 指纹；SHA256 `12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`。
 - 结构校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
-- 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；本地 9/9 PASS，compileall PASS。没有声称 GitHub Actions CI PASS。
+- 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；合成测试 9/9 PASS 是代码测试，不证明真实提示包存在。
+
+没有读取 `v2_chat_messages` 私有消息正文，没有访问 R50 内容。
 
 ### 5.2 仍需完成的 P2-C
 
@@ -128,7 +128,7 @@ Owner 已批准新的来源路线：仅使用 Supabase 中已公开、已发布�
 5. **权利范围：** 维持 Owner 已批准的内部评估提示构造用途；不得把公开可见状态推断为作者授予模型训练或再分发权利。
 6. **Owner 冻结：** Owner 在本机私有目录冻结来源 Manifest、prompt SHA256、语义 World crosswalk、R50 元数据排除回执和独立 Reviewer 结论。
 
-当前会话无法读取 Owner Mac 私有目录。下一 Agent 应向 Owner 索取/使用上述**私有交叉核验证据**，而不是重新抽取数据库或读取任何私有会话正文。任何关键证据缺失都保持 HOLD。
+当前已收到 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，其安全状态为 8/8 组 HOLD、7/8 组当前 World 值跨 Train/Validation、`semantic_review_completed=false`、`actual_sent_prompt_verified=false`、`train_admitted=0`。该文件每组只有一个代表性 World 对象，不包含 38 个成员的完整角色卡/Opening 复核。下一 Agent 还需取得既有私有 roster、决策模板、8 组 card/opening 证据及独立 Codex 审阅报告；不重新抽取数据库、不读取私有会话正文、不访问 R50 正文。任何关键证据缺失都保持 HOLD。
 
 P2-C 通过前，不生成正式 Held-out、不实现正式 Pairer/Profile/Backend、不执行模型推理。P2 PASS 后才进入 P3。
 
@@ -194,4 +194,4 @@ P2-C 通过前，不生成正式 Held-out、不实现正式 Pairer/Profile/Backe
 - 执行顺序与复用原则：`skills/storyforge-roleplay-sft/SKILL.md`。
 - 私有审计 SAFE 只保留在 Owner Mac；GitHub 不保存本地 SHA Manifest。
 
-**下一 Agent 的唯一业务优先事项：完成已批准 Supabase 公开故事 Draft 的 Base336/R50/R47-R48-R55 交叉隔离审计、提示逐条复核和 Owner 私有冻结。当前 48 条仍是 Draft；没有 P2-C PASS，不进入正式 Held-out、Pairer 或 Base/Adapter 推理。**
+**下一 Agent 的唯一业务优先事项：先完成 Base336 8 组来源绑定语义组件审查，并取得 R50 仅元数据排除、R47/R48/R55 暴露排除证据；同时确认真实 48 条提示包是否按最新补充决策生成（当前记录为 NOT_GENERATED）。没有完整 P2-C PASS，不进入正式 Held-out、Pairer 或 Base/Adapter 推理。**
