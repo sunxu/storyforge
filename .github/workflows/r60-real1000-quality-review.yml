@@ -21,6 +21,10 @@ on:
       - "experiments/r58_quality/r60_pilot5_v2_crosswalk.py"
       - "experiments/r58_quality/test_r60_pilot5_v2_crosswalk.py"
       - "src/storyforge_gold_quality/real1000_screening_policy.py"
+      - "src/storyforge_dataset/world_isolation.py"
+      - "experiments/r58_quality/quality_v1.py"
+      - "experiments/r58_quality/test_quality_v1.py"
+      - "tests/test_world_isolation.py"
       - "tests/test_r60_real1000_screening_policy.py"
       - "experiments/r58_quality/r60_real1000_offline_prefilter.py"
       - "experiments/r58_quality/test_r60_real1000_offline_prefilter.py"
@@ -134,6 +138,10 @@ on:
       - "experiments/r58_quality/r60_pilot5_v2_crosswalk.py"
       - "experiments/r58_quality/test_r60_pilot5_v2_crosswalk.py"
       - "src/storyforge_gold_quality/real1000_screening_policy.py"
+      - "src/storyforge_dataset/world_isolation.py"
+      - "experiments/r58_quality/quality_v1.py"
+      - "experiments/r58_quality/test_quality_v1.py"
+      - "tests/test_world_isolation.py"
       - "tests/test_r60_real1000_screening_policy.py"
       - "experiments/r58_quality/r60_real1000_offline_prefilter.py"
       - "experiments/r58_quality/test_r60_real1000_offline_prefilter.py"
@@ -259,6 +267,10 @@ jobs:
             experiments/r58_quality/test_r60_pilot5_v2_crosswalk.py \
             src/storyforge_gold_quality/real1000_screening_policy.py \
             tests/test_r60_real1000_screening_policy.py \
+            src/storyforge_dataset/world_isolation.py \
+            experiments/r58_quality/quality_v1.py \
+            experiments/r58_quality/test_quality_v1.py \
+            tests/test_world_isolation.py \
             experiments/r58_quality/r60_real1000_offline_prefilter.py \
             experiments/r58_quality/test_r60_real1000_offline_prefilter.py \
             experiments/r58_quality/r60_real1000_prefilter_stage_crosswalk.py \
@@ -339,6 +351,8 @@ jobs:
             experiments/r58_quality/test_r60_pilot5_v2_replay_execute.py \
             experiments/r58_quality/test_r60_pilot5_v2_crosswalk.py \
             tests/test_r60_real1000_screening_policy.py \
+            experiments/r58_quality/test_quality_v1.py \
+            tests/test_world_isolation.py \
             experiments/r58_quality/r60_real1000_offline_prefilter.py \
             experiments/r58_quality/test_r60_real1000_offline_prefilter.py \
             experiments/r58_quality/r60_real1000_prefilter_stage_crosswalk.py \
