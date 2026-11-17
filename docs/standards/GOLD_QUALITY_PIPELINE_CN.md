@@ -226,3 +226,9 @@ Base336 的293 Train / 43 Validation仅用于单独批准的探索性Base QLoRA�
 - 当前 `quality_v1_admitted=0`、`train_admitted=0`；任何后续训练结果只能标记 `EXPLORATORY_*__NOT_PROMOTED`。正式Quality-v1训练与模型晋升仍须按既有六门禁独立处理。
 
 权威实验状态与交接见 `docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md`；本节不改变既有Gold批次、Rubric、事件Schema或冻结文件。
+
+## Base336 Stage复核不构成Gold Quality事件（2026-11-17）
+
+为让HF只读Stage能够在挂载路径下重复验证冻结293/43发布包，既有 \`r60_base336_exploratory_release_verify.py\` 增加了 \`verify_staged\` 入口。原有 \`verify\` 仍保留Owner Mac private-root和文件权限限制；两个入口共用同一份Manifest、SHA、行数、四消息结构和非准入断言，不创建第二套Release Verifier。
+
+\`verify_staged\` 仅用于确认Stage内原始Train/Validation/Manifest字节与已发布版本一致；它不是Review、Source、Exclusion、Reconciliation、Quality-v1 Admission或Gold Manifest事件。不得将其结果导入Gold Pipeline。现有Gold质量事件、Rubric、六门禁及 \`quality_v1_admitted=0\` 保持不变。
