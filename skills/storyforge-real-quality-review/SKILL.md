@@ -36,6 +36,7 @@ is **technical input evidence**, not a quality review of the 1000 candidates.
 - Frozen source, batch checkpoint, case SHA, safe aggregate, two reviewers:
   `experiments/r58_quality/r60_real_quality_batch.py`.
 - Synthetic-only service compatibility: `experiments/r58_quality/r60_reviewer_protocol_probe.py`.
+- Semantic world split collision checks are shared through `src/storyforge_dataset/world_isolation.py`; `quality_v1.py` consumes `component_split_conflicts()` rather than maintaining a second split algorithm. This helper checks only reviewer/source-assigned component IDs; it does not infer semantics from exact JSON, hashes, names, or timestamps. Keep generated-response evaluation separate from the source-candidate `decide/summarize` path.
 - Never introduce a new duplicate scoring rubric, token preflight, collator,
   JSONL writer, or generic HF job orchestrator in this Skill.
 - 6 dimensions floor: `4/4/3/4/4/4`. Severe booleans
