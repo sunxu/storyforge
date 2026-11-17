@@ -339,11 +339,17 @@ def test_cli_ready_runs_only_dry_run_and_exhaustive_history(tmp_path, monkeypatc
     assert report["job_submission_calls"] == 0
 
 
-def test_worker_preflight_does_not_start_gpu_or_training(monkeypatch):
+def test_worker_preflight_does_not_start_gpu_or_training(monkeypatch, tmp_path):
     monkeypatch.setattr(contract, "verify_stage", lambda *_args: {
         "status": "BASE336_GPU_STAGE_VERIFIED__NO_JOB",
     })
-    report = worker.run(Path("/input/r60-base336"), Path("/output"), KEY, "preflight")
+    output = tmp_path / "output"
+    output.mkdir(mode=0o700)
+    monkeypatch.setenv("STORYFORGE_R60_BASE336_GPU_RUN_KEY", KEY)
+    monkeypatch.setenv("STORYFORGE_R60_BASE336_GPU_SCOPE", contract.GPU_SCOPE)
+    monkeypatch.setenv("JOB_ID", "synthetic-job-id")
+    monkeypatch.setattr(worker.OutputManager, "probe", lambda _path: {"status": "pass"})
+    report = worker.run(Path("/input/r60-base336"), output, KEY, "preflight")
     assert report["status"] == "BASE336_GPU_STAGE_VERIFIED__NO_GPU"
     assert report["collator_transfer_verified"] is True
     assert report["gpu_started"] is False
