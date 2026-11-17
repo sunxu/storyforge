@@ -215,7 +215,11 @@ def summarize(rows: list[dict]) -> dict:
     for i, row in enumerate(rows):
         if i in conflicted:
             decisions[i] = ("HOLD", "DUPLICATE_SOURCE_OR_TARGET")
-        elif isinstance(row, dict) and row.get("world_component_id") in world_conflict:
+        elif (
+            isinstance(row, dict)
+            and isinstance(row.get("world_component_id"), str)
+            and row["world_component_id"] in world_conflict
+        ):
             decisions[i] = ("HOLD", "TRAIN_VALIDATION_WORLD_COLLISION")
     totals = Counter(v for v, _ in decisions)
     reasons = Counter(reason for decision, reason in decisions if decision != "PASS")
