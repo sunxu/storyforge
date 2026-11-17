@@ -48,7 +48,7 @@ Owner 已对独立输出前缀完成递归文件盘点：
 - Worker SAFE、运行日志、reload 输入/输出、Trainer state、adapter config、训练日志、图表和 TensorBoard 事件均存在。
 - HF Job 状态为 COMPLETED；最终 checkpoint、terminal eval、one epoch 和 adapter reload 均由 Worker SAFE 确认。
 
-**尚未完成：** 远端目录列表和对象大小是元数据盘点，不是文件内容 SHA 证明。当前输出目录未发现由 Worker 生成的全量结果 SHA256 Manifest。因此不能声称 33 个输出对象已经完成独立内容哈希验收。只读下载与本地 SHA 清单工具已实现为 `scripts/r60_base336_gpu_result_audit.py`，复用 `r60_base336_gpu_cli._remote_set/_remote_uri` 和 `hf_job_runner.sha256`，不会写入 Bucket、提交 Job 或启动 GPU。Owner Mac 执行前必须有足够空间：若33个对象的远端大小元数据完整，至少为总大小再加1GiB（当前约6.61GB）；若任一对象缺少有效大小，工具保守要求至少8GiB。它会在下载前检查，不足时零下载退出；本地输出目录必须是私有根目录下的新目录。该 Manifest 是下载对象的本地 SHA256 inventory，不是与 Worker 原始逐文件 SHA 的比较，因为本轮 Worker 没有发布原始结果 SHA。
+**已完成（Owner Mac SAFE，2026-11-17）：** `BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。固定远端文件集合核验PASS，33/33对象已下载并逐个计算本地SHA256，总计5,604,774,224 bytes；Worker SAFE、checkpoint-37、terminal eval和Adapter Reload证据均再次核验通过。审计期间没有启动GPU或提交HF Job，未输出私有路径、文件名、正文或哈希，未提升模型。私有SHA清单保存在Owner Mac的独立审计目录。重要边界：这是下载对象的本地SHA256 inventory；由于Worker没有发布原始逐文件SHA，不能声称完成了“本地哈希与Worker原始哈希逐文件比对”。工具复用 `r60_base336_gpu_cli._remote_set/_remote_uri` 和 `hf_job_runner.sha256`，不写Bucket、不提交Job、不启动GPU。
 
 ## 4. 为什么 43 条 Validation 不能作为独立质量测试
 
@@ -87,14 +87,14 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 | 顺序 | 工作 | 当前状态 |
 |---|---|---|
 | P0 | 训练 Job / SAFE / Checkpoint / Adapter Reload 证据核验 | PASS |
-| P1 | 33 个远端对象的 Owner 本地 SHA 审计（`scripts/r60_base336_gpu_result_audit.py`） | 待Owner执行 |
+| P1 | 33 个远端对象下载与本地 SHA256 inventory（33/33，5,604,774,224 bytes） | PASS（Owner SAFE） |
 | P2 | 新的独立测试来源、权限、来源 SHA 与世界隔离确认 | HOLD |
 | P3 | 复用既有 Runner / Pairer，完成六维生成评估薄适配器及合成测试 | 等 P2 |
 | P4 | Base/Adapter 配对 GPU 推理 | 需单独授权 |
 | P5 | 独立盲审、严重标记核验和 Owner 裁决 | 等 P4 |
 | P6 | 模型质量结论与是否继续下一轮实验 | HOLD |
 
-**当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。GPU 工程实验成功完成；模型质量尚未得到独立验证。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`，不追加训练、不启动推理、不访问 R50、不写数据库。
+**当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，且产物审计为`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。训练工程闭环与33个输出对象的本地完整性盘点均PASS；模型文学质量仍未得到独立验证。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。下一步只推进P2独立Held-out来源审查；在来源/权利/隔离证据经Owner确认前，不生成正式测试包、不启动推理、不追加训练、不访问R50、不写数据库。
 
 
 ### Owner Mac 只读产物审计命令
@@ -109,3 +109,28 @@ export PYTHONPATH=src:scripts:experiments/r58_quality
 ```
 
 该命令先只读列举HF Bucket并核对固定33对象清单、磁盘空间和本地私有目录，再逐个下载结果对象到新建私有目录，计算本地SHA256并写0600 Manifest；预计下载约5.61GB。远端大小元数据不完整时会要求至少8GiB空闲空间。下载失败留下的目录不得删除后复用；应先只读检查失败原因并另用新目录。SAFE只报告文件数/字节数，不输出私有路径、文件名、内容或哈希。
+
+
+### 2026-11-17 Owner Mac 产物审计 SAFE 回执
+
+```json
+{
+  "status": "BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION",
+  "run_key_validated": true,
+  "remote_file_set_verified": true,
+  "files_downloaded": 33,
+  "files_hashed": 33,
+  "total_bytes": 5604774224,
+  "worker_receipt_verified": true,
+  "checkpoint_verified": true,
+  "adapter_reload_verified": true,
+  "audit_gpu_started": false,
+  "hf_jobs_submitted": 0,
+  "model_promoted": false,
+  "train_admitted": 0,
+  "quality_v1_admitted": 0,
+  "private_values_emitted": false
+}
+```
+
+该SAFE不包含本地SHA值、逐案内容或私人路径；本仓库只记录聚合状态，不复制私有Manifest。

@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.16
+version: 0.1.17
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -9,7 +9,7 @@ description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据
 
 > **REAL1000 / Pilot5 结案状态（2026-11-17）**：Pilot5-v1/v2与REAL1000 V3状态不变；Pilot5不得重跑或覆盖，339双PASS仍只是候选。R50排除、Reviewer执行独立性、历史System和World语义隔离未通过；Quality/Gold准入仍0。只有用户明确恢复REAL1000审核任务时，才按`skills/storyforge-real-quality-review/SKILL.md`继续。
 >
-> **R60 Base336 首训已完成（2026-11-17）**：Run `r60-base336-gpu-20261117T055622Z-b609cb78661d` 的HF Job `6afbfd5c98dda891b5df7fd2` 已COMPLETED；Worker SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，293/43、37/37、A100、terminal Checkpoint与Adapter Reload PASS。该结果仅是工程训练闭环；43条Validation已用于训练期Eval/Checkpoint选择，不能作为独立质量测试。33个远端输出对象的全量SHA审计尚待Owner Mac完成。下一阶段必须先取得新的、未暴露且未用于训练的来源绑定Held-out，再按冻结Quality-v1六维标准做Base/Adapter盲测。详见`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。当前`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`；R50不访问，旧暴露题不冒充独立测试，GPU推理需单独明确授权。
+> **R60 Base336 首训与产物审计已完成（2026-11-17）**：Run `r60-base336-gpu-20261117T055622Z-b609cb78661d` 的HF Job `6afbfd5c98dda891b5df7fd2` 已COMPLETED；Worker SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，293/43、37/37、A100、terminal Checkpoint与Adapter Reload PASS。Owner Mac随后取得`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`：33/33对象已下载并计算本地SHA256（5,604,774,224 bytes），Worker SAFE、Checkpoint与Adapter Reload复核PASS；审计无GPU、无HF Job、无模型晋升。该SHA是本地对象inventory，不是与Worker未发布的逐文件SHA比对。43条Validation已参与训练期Eval/Checkpoint选择，不能作为独立质量测试。当前P2仍HOLD：必须先取得新的、未暴露且未用于训练/调参的来源绑定Held-out，并核验权利与世界隔离；不得从未准入池或数据库自动抽样。详见`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。当前`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`；R50不访问，旧暴露题不冒充独立测试，GPU推理需单独明确授权。
 
 ## 目标与适用范围
 
@@ -150,8 +150,9 @@ Owner的真实1000池（6+994）已经只读确认`EXPANSION_TARGET_REACHED__NOT
 
 ## R60 Base336 首训后的质量评估边界（2026-11-17）
 
-- 训练完成SAFE只证明Stage、A100、37步训练、terminal checkpoint和Adapter Reload的工程闭环；不得写入Gold Quality Manifest，不得提升`train_admitted`或`quality_v1_admitted`。
-- 先复核私有产物完整性，再寻找未用于训练/验证/调参、未暴露、来源绑定且故事/World隔离可核验的新Held-out。不得把43条Validation、293条Train、R47/R48/R55暴露题或R50密封题用作正式独立测试。
+- 训练完成SAFE只证明Stage、A100、37步训练、terminal checkpoint和Adapter Reload的工程闭环；Owner Mac已对33/33输出对象完成本地SHA256 inventory并复核Worker/Checkpoint/Adapter Reload证据。该产物审计不是文学质量结论，也不是与Worker原始逐文件SHA比对；不得写入Gold Quality Manifest，不得提升`train_admitted`或`quality_v1_admitted`。
+- 下一门禁是P2独立Held-out来源审查：测试样本须未用于本次336训练/验证、checkpoint选择或调参，未被R47/R48/R55暴露，且来源权利、上下文时序、故事/World隔离与R50元数据排除均可核验。不得从661个未准入候选或数据库自动抽样；Owner未提供/批准合格来源前保持HOLD，不创建正式测试包、不推理。
+- 不得把43条Validation、293条Train、R47/R48/R55暴露题或R50密封题用作正式独立测试。
 - 六维分数门槛和三个严重标记只复用`experiments/r58_quality/quality_v1.py`；模型生成评估不是REAL1000源数据审核，不要把生成回复伪装为`DB_FINAL_PERSISTED_ASSISTANT`或调用原批次导入器。
 - 配对生成、随机A/B、prompt SHA和blind key优先复用既有Runner/Pairer；旧五维Scorecard不可直接用于六维Quality-v1结论。确有Schema差异时新增版本化薄适配器和合成测试，不复制共享HF Runtime、Rubric或引用算法。
 - Base/Adapter GPU配对推理必须另行获得针对具体输入、模型、Flavor、时长、输出前缀和预算的Owner授权；此前授权只覆盖单个训练Job。

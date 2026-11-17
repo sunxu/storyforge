@@ -1,3 +1,10 @@
+# 0.1.17 — 2026-11-17
+
+- 根据Owner Mac SAFE确认Base336 33/33训练输出对象完成本地SHA256 inventory（5,604,774,224 bytes），并复核Worker SAFE、checkpoint与Adapter Reload；明确该inventory不是Worker原始逐文件SHA比对。
+- 更新训练后质量评估门禁：P1产物审计PASS，P2独立Held-out来源/权利/世界隔离仍HOLD；不从未准入候选或数据库自动抽样。
+- 继续冻结43条Validation不可作独立Held-out、R50不访问、Gold Manifest不接收技术/生成评估事件、quality/train admission为0；GPU配对推理仍需单独授权。
+- 同步更新Skill、README、Quality Pipeline标准、训练后计划、SAFE Manifest与合成契约测试；不复制Runner、Pairer、HF Runtime或六维Rubric实现。
+
 # 0.1.16 — 2026-11-17
 
 - 记录Base336唯一探索性GPU Job完成：293/43、37/37、A100、terminal checkpoint与Adapter Reload PASS；明确仅为工程PASS、NOT_PROMOTED。
