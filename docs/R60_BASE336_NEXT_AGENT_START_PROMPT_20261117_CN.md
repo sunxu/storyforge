@@ -47,7 +47,7 @@ P2-A / P2-B 已有 Draft 结果：
 - `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`，SHA256：`a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`。
 - `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`，SHA256：`12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`。
 - 校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
-- 测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`，本地合成测试 8/8 PASS、compileall PASS；不要声称 GitHub Actions CI PASS。
+- 测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`，本地合成测试 9/9 PASS、compileall PASS；不要声称 GitHub Actions CI PASS。
 
 **P2-C 仍为 HOLD。** 下一 Agent 不要重新抽取 Supabase 或重新构造提示；先完成：
 
