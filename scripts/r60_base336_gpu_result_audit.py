@@ -347,11 +347,6 @@ def audit(
             "BASE336_GPU_RESULT_AUDIT_HOLD", "RESULT_AUDIT_VALIDATION_HOLD",
             run_key_validated=True,
         )
-    except Exception:
-        return safe(
-            "BASE336_GPU_RESULT_AUDIT_HOLD", "REMOTE_OR_LOCAL_RUNTIME_HOLD",
-            run_key_validated=True,
-        )
 
 
 def main() -> int:
