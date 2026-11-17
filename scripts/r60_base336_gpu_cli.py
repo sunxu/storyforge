@@ -107,6 +107,13 @@ def _prefix_empty(api, prefix: str, reason: str) -> None:
         raise ValueError(reason)
 
 
+def _verify_model_revision(api) -> dict:
+    info = api.model_info(repo_id=contract.MODEL, revision=contract.REVISION)
+    if getattr(info, "sha", None) != contract.REVISION:
+        raise ValueError("PINNED_MODEL_REVISION_HOLD")
+    return {"model": contract.MODEL, "revision": contract.REVISION, "verified": True}
+
+
 def _check_job_history(api, key: str) -> dict:
     from r60_common2_hf_cpu_final_read_only import NAMESPACE, walk_job_history
 
@@ -200,6 +207,7 @@ def ready(stage: Path, key: str, api) -> dict:
     _prefix_empty(api, f"{RESULT_PREFIX}/{key}/", "REMOTE_RESULT_ALREADY_EXISTS_HOLD")
     _prefix_empty(api, f"{SUBMISSION_PREFIX}/{key}/", "REMOTE_SUBMISSION_MARKER_EXISTS_HOLD")
     history = _check_job_history(api, key)
+    model = _verify_model_revision(api)
     helper = subprocess.run(
         ["hf", "jobs", "run", "--help"],
         capture_output=True, text=True, timeout=20, check=False,
@@ -220,6 +228,9 @@ def ready(stage: Path, key: str, api) -> dict:
         "job_history_exhaustive": history["exhaustive"],
         "visible_jobs": history["visible_jobs"],
         "matching_jobs": history["matching_jobs"],
+        "model_revision_verified": model["verified"],
+        "model": model["model"],
+        "model_revision": model["revision"],
         "stage_files": len(expected),
         "gpu_flavor_preflighted": contract.HF_FLAVOR,
         "image_digest_pinned": True,
