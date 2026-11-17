@@ -175,12 +175,14 @@ def validate_checkpoint(output_dir: Path, run_dir: str) -> dict:
     logging_path = output_dir / "training" / run_dir / "logging.jsonl"
     from storyforge_dataset.hf_runtime import InputManager
 
-    with InputManager.open_verified(logging_path, max_bytes=2_000_000) as stream:
-        records = [
-            json.loads(line)
-            for line in stream.read_bytes().decode("utf-8").splitlines()
-            if line.strip()
-        ]
+    verified_logging = InputManager.open_verified(
+        logging_path, max_bytes=2_000_000
+    )
+    records = [
+        json.loads(line)
+        for line in verified_logging.read_bytes().decode("utf-8").splitlines()
+        if line.strip()
+    ]
     terminal_eval = next(
         (
             row for row in records
