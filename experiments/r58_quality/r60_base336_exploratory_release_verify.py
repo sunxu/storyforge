@@ -24,12 +24,32 @@ class Hold(ValueError):
     pass
 
 
-def verify(directory: Path) -> dict:
-    private.private_dir(directory, create=False)
+def _read_release_file(path: Path, maximum: int, *, staged: bool) -> bytes:
+    if staged:
+        from storyforge_dataset.hf_runtime import InputManager
+        return InputManager.open_verified(path, max_bytes=maximum).read_bytes()
+    return private.read_private(path, maximum)
+
+
+def _verify(directory: Path, *, staged: bool) -> dict:
+    if staged:
+        import stat
+
+        if (directory.is_symlink() or not directory.is_dir()
+                or stat.S_IMODE(directory.stat().st_mode) != 0o700):
+            raise Hold("STAGED_RELEASE_DIRECTORY_HOLD")
+        for item in directory.iterdir():
+            if (item.is_symlink() or not item.is_file()
+                    or stat.S_IMODE(item.stat().st_mode) != 0o600):
+                raise Hold("STAGED_RELEASE_FILE_MODE_HOLD")
+    else:
+        private.private_dir(directory, create=False)
     actual = {p.name for p in directory.iterdir()}
     if actual != {"train.jsonl", "validation.jsonl", MANIFEST}:
         raise Hold("RELEASE_FILESET_HOLD")
-    manifest_raw = private.read_private(directory / MANIFEST, private.MAX_CAPTURE_BYTES)
+    manifest_raw = _read_release_file(
+        directory / MANIFEST, private.MAX_CAPTURE_BYTES, staged=staged
+    )
     doc = json.loads(manifest_raw)
     if (type(doc) is not dict
             or doc.get("schema") != publisher.SCHEMA
@@ -56,8 +76,9 @@ def verify(directory: Path) -> dict:
                    for value in hashes.values())):
         raise Hold("DATA_DIGEST_CONTRACT_HOLD")
     for part, expected in ROWS.items():
-        raw = private.read_private(
-            directory / f"{part}.jsonl", publisher.MAX_DATA_FILE)
+        raw = _read_release_file(
+            directory / f"{part}.jsonl", publisher.MAX_DATA_FILE, staged=staged
+        )
         if hashlib.sha256(raw).hexdigest() != hashes[part]:
             raise Hold("DATA_DIGEST_MISMATCH_HOLD")
         lines = raw.splitlines()
@@ -89,6 +110,16 @@ def verify(directory: Path) -> dict:
         "gpu_started": False,
         "private_values_emitted": False,
     }
+
+
+def verify(directory: Path) -> dict:
+    """Verify the Owner Mac release under its existing private-root guard."""
+    return _verify(directory, staged=False)
+
+
+def verify_staged(directory: Path) -> dict:
+    """Verify an exact read-only Stage copy without weakening the Mac private-root guard."""
+    return _verify(directory, staged=True)
 
 
 def main() -> int:
