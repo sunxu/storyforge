@@ -1,6 +1,6 @@
 ---
 name: storyforge-hf-jobs
-version: 1.0.1
+version: 1.0.2
 language: zh-CN
 description: 使用 StoryForge 公共 HF Jobs Runtime 准备、验证、执行和诊断 CPU Jobs；本地优先、合成测试优先、GPU 默认拒绝。
 ---
@@ -105,3 +105,16 @@ python -m unittest discover -s tests -p 'test_token_preflight_core.py' -q
 - **共用** `r60_common2_sft_cpu_template_audit.inspect_rows`和R18 last-round真实掩码审计；本次按336条输出聚合统计，不能把逐条tokens/私有IDs带出Worker。冻结历史System不恢复、不新造；本阶段无System，仅测试四消息技术输入。没有可训练JSONL/世界卡语义验收。
 - 新增薄适配器：`experiments/r58_quality/r60_base_cpu336_hf_packet.py`、`scripts/r60_base_cpu336_hf_stage.py`、`scripts/r60_base_cpu336_hf_cli.py`、`scripts/r60_base_cpu336_hf_worker.py`、`scripts/r60_base_cpu336_hf_receipt_verify.py`。按`packet preflight → packet --write → stage prepare/verify → CLI cli-flags/preflight → sync → ready`执行；**submit --execute明确另行授权**。默认零HF Jobs，已有冻结旧Common2 Stage不能重用或改写。
 - Worker下载 pinned Qwen3.8 Revision 的Tokenizer/Config/Chat Template文件，绝不下载模型权重；CPU ResourceGuard PASS后才可跑，输出仅SAFE聚合，通过Owner本地独立验收后仍`train_admitted=0`。如果Source/Stage失败、输出存在、Job历史匹配或者未知状态，不重试、不开启GPU，先诊断。
+
+## R60 Base336 GPU Stage / Worker / CLI（2026-11-17）
+
+权威合同与Owner Mac命令见 \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\` 的2026-11-17章节。
+
+- 已有实现：\`scripts/r60_base336_gpu_contract.py\`、\`r60_base336_gpu_stage.py\`、\`r60_base336_gpu_worker.py\`、\`r60_base336_gpu_worker.sh\`、\`r60_base336_gpu_cli.py\`。
+- Stage复用 \`r60_common2_wrapped_hf_stage.local_dependencies\`；Worker复用 \`hf_job_runner.py\` 的 \`GpuMonitor\`、\`training_evidence\`、\`make_inference_input\`、\`check_inference_result\`；输入/输出/SAFE发布复用 \`storyforge_dataset.hf_runtime\`。
+- Base336 release verifier保留原有Mac private-root验证，并新增 \`verify_staged\` 只读验证入口。不得为Stage复制另一套release验证逻辑。
+- GPU CLI复用Common2的remote_set、分页Job历史检查和通用argv构造；不调用CPU-only \`hf_job_guard.validate_spec\`。不得修改CPU Guard以接受GPU Flavor。
+- CLI目前只允许 \`preflight\`、\`sync\`、\`ready\`、\`diagnose\`、\`cli-flags\`；**没有submit动作**。dry-run传入 \`STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED\`，Worker Shell只接受真实GPU Scope，防止误启动。
+- 输入Bucket前缀必须精确RO，输出为独立RW前缀；远端READY要求文件集完全一致、逐文件下载SHA一致、输出/提交marker前缀为空、Job历史完整分页无匹配。
+- Owner Mac Stage Builder要求当前分支 \`r60/common2-cpu2-owner\` 且Git工作树干净；Stage目录0700、文件0600、O_EXCL/create-only。不要把Stage或私有JSONL放入GitHub。
+- P0 Collator证明转移已通过，不重跑CPU336、不重新拆分、不重新执行Collator。GPU Job仍0，\`train_admitted=0\`、\`quality_v1_admitted=0\`。CI是离线合成验证，不是Mac/HF/GPU实测。
