@@ -311,6 +311,16 @@ def test_cli_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch)
     assert report["matching_jobs"] == 0
 
 
+def test_model_revision_preflight_requires_exact_hub_commit():
+    expected = contract.REVISION
+    api = SimpleNamespace(model_info=lambda **kwargs: SimpleNamespace(sha=expected))
+    assert cli._verify_model_revision(api)["verified"] is True
+    assert cli._verify_model_revision(api)["revision"] == expected
+    bad_api = SimpleNamespace(model_info=lambda **kwargs: SimpleNamespace(sha="b" * 40))
+    with pytest.raises(ValueError, match="PINNED_MODEL_REVISION_HOLD"):
+        cli._verify_model_revision(bad_api)
+
+
 def test_cli_ready_runs_only_dry_run_and_exhaustive_history(tmp_path, monkeypatch):
     stage_dir = tmp_path / KEY
     stage_dir.mkdir()
@@ -319,6 +329,9 @@ def test_cli_ready_runs_only_dry_run_and_exhaustive_history(tmp_path, monkeypatc
     monkeypatch.setattr(cli, "_prefix_empty", lambda *args, **kwargs: None)
     monkeypatch.setattr(cli, "_check_job_history", lambda *args, **kwargs: {
         "visible_jobs": 4, "matching_jobs": 0, "exhaustive": True,
+    })
+    monkeypatch.setattr(cli, "_verify_model_revision", lambda _api: {
+        "model": contract.MODEL, "revision": contract.REVISION, "verified": True,
     })
     monkeypatch.setattr(cli, "job_command", lambda *_args: ["hf", "jobs", "run", "--dry-run"])
     calls = []
@@ -334,6 +347,7 @@ def test_cli_ready_runs_only_dry_run_and_exhaustive_history(tmp_path, monkeypatc
     assert report["status"] == "BASE336_GPU_REMOTE_AND_CLI_READY__NO_JOB"
     assert report["job_history_exhaustive"] is True
     assert report["matching_jobs"] == 0
+    assert report["model_revision_verified"] is True
     assert calls[-1] == ["hf", "jobs", "run", "--dry-run"]
     assert len(calls) == 2
     assert report["job_submission_calls"] == 0
