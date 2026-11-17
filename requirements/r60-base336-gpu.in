@@ -1,0 +1,6 @@
+# R60 Base336 exploratory GPU worker. Keep the HF container's CUDA PyTorch.
+ms-swift==4.5.3
+transformers==5.16.1
+bitsandbytes==0.50.2
+qwen-vl-utils==0.0.14
+huggingface_hub==1.33.0
