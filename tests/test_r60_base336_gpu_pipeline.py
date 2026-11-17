@@ -219,6 +219,15 @@ def test_stage_reuses_existing_dependency_closure_without_r54_or_token_preflight
     assert "src/storyforge_dataset/token_preflight.py" not in dependencies
 
 
+def test_stage_create_only_write_makes_every_nested_directory_private(tmp_path):
+    root = tmp_path / KEY
+    root.mkdir(mode=0o700)
+    stage._copy_new(root, "private/release/train.jsonl", b"private")
+    assert (root / "private").stat().st_mode & 0o777 == 0o700
+    assert (root / "private/release").stat().st_mode & 0o777 == 0o700
+    assert (root / "private/release/train.jsonl").stat().st_mode & 0o777 == 0o600
+
+
 def test_stage_create_only_write_uses_private_mode(tmp_path):
     root = tmp_path / KEY
     root.mkdir(mode=0o700)
