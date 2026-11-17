@@ -250,6 +250,16 @@ def test_gpu_cli_command_is_a100_ro_rw_and_dry_run_only(monkeypatch):
     assert "STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED" in argv
 
 
+def test_cli_local_preflight_requires_exact_clean_stage_git_head(tmp_path, monkeypatch):
+    folder = _synthetic_stage(tmp_path, monkeypatch)
+    monkeypatch.setattr(stage, "_git_commit", lambda: "a" * 40)
+    files = cli._local_files(folder, KEY)
+    assert "SHA256_MANIFEST_PRIVATE.json" in files
+    monkeypatch.setattr(stage, "_git_commit", lambda: "b" * 40)
+    with pytest.raises(ValueError, match="STAGE_GIT_HEAD_DRIFT_HOLD"):
+        cli._local_files(folder, KEY)
+
+
 def test_cli_sync_uploads_manifest_last_and_never_submits(tmp_path, monkeypatch):
     stage_dir = tmp_path / KEY
     stage_dir.mkdir()
