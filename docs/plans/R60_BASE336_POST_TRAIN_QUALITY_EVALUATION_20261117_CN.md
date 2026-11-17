@@ -192,4 +192,4 @@ P2 来源路线已获 Owner 批准；48 条提示包尚未生成。8 组世界�
 
 此共享 helper 仅校验结构化的语义组件分配声明；它不会把 8 个代表性 World JSON 自动判为模板，也不会代替成员级角色卡/Opening 人工审阅。当前 Base336 8 组仍全 HOLD。helper 的结构 PASS 不自动关闭历史 actual-sent、Reviewer 独立性、R50/R47/R48/R55、来源权利或 Owner 冻结门禁。
 
-本节对应代码回归在当前 HEAD 的 GitHub Actions 尚待完成；未完成前不报告测试 PASS。
+当前分支 HEAD `471e2e4631405f53c74390a9eebd3732d9a6e95e` 的 GitHub Actions 已完成：`R60 REAL1000 Quality Reviewer (synthetic only)` run `44127200498` SUCCESS（Ruff 通过；离线合成回归 338 passed、2 subtests passed；RolePlay Skill manifest/reuse contract 7 passed）；`R60 Common2 Wrapped HF CPU (synthetic only)` run `44127200345` SUCCESS。中间版本曾因 Skill manifest 版本/哈希不同步和 Ruff 纳入不可执行历史脚本而失败，均已修正；最终 HEAD 全部通过。
