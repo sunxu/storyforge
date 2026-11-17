@@ -72,6 +72,8 @@ Runtime PASS 只表示基础设施检查通过。Token PASS 不等于语义审�
 
 ## R60 Base336 GPU链路实现状态（2026-11-17）
 
+- Base336 `ready`还必须通过HfApi确认模型仓库返回的commit SHA严格等于Stage固定Revision，之后才允许HF CLI dry-run；revision不匹配或模型不可访问即HOLD。
+
 - 实际代码与Mac命令以 \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\` 的2026-11-17章节为准。
 - Stage Builder复用Common2的AST依赖闭包并绑定干净Git HEAD；私有Stage仅本地创建，目录0700、文件0600、create-only。远端输入与输出是不同Bucket前缀。
 - Worker先验完整Stage Manifest、P0转移SAFE和293/43 release，再做A100 80GB、磁盘、Python/Torch/依赖版本检查；门禁全部通过后才下载固定Revision模型。训练后验证实际37步终端Checkpoint、末步Eval、LoRA Rank/Alpha和Adapter Reload。
