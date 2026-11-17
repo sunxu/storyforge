@@ -132,7 +132,7 @@ def job_command(key: str, help_text: str) -> list[str]:
     # validator or relax its CPU flavor allowlist.
     argv = hf_job_guard.build_hf_argv(
         namespace=contract.HF_NAMESPACE,
-        name=f"r60-base336-{key}",
+        name=key,
         flavor=contract.HF_FLAVOR,
         timeout_minutes=contract.HF_TIMEOUT_MINUTES,
         input_volumes=input_volumes,
