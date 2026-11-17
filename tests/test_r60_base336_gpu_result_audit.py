@@ -147,11 +147,11 @@ def test_checkpoint_and_reload_evidence_are_validated(tmp_path):
             "global_step/max_steps": "37/37",
             "eval_loss": 1.932103,
             "eval_token_acc": 0.550921,
-        }) + "\\n",
+        }) + "\n",
         encoding="utf-8",
     )
     (out / "reload_response_PRIVATE.jsonl").write_text(
-        json.dumps({"response": "synthetic nonempty reload"}) + "\\n",
+        json.dumps({"response": "synthetic nonempty reload"}) + "\n",
         encoding="utf-8",
     )
     result = audit.validate_checkpoint(out, RUN_DIR)
@@ -174,7 +174,7 @@ def test_checkpoint_validation_rejects_step_drift(tmp_path):
     (checkpoint / "optimizer.pt").write_bytes(b"optimizer")
     (run / "logging.jsonl").write_text("", encoding="utf-8")
     (out / "reload_response_PRIVATE.jsonl").write_text(
-        json.dumps({"response": "synthetic"}) + "\\n",
+        json.dumps({"response": "synthetic"}) + "\n",
         encoding="utf-8",
     )
     with pytest.raises(ValueError, match="TERMINAL_CHECKPOINT_HOLD"):
