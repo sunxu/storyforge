@@ -137,6 +137,8 @@ def _synthetic_stage(tmp_path: Path, monkeypatch) -> Path:
         "hf_bucket": contract.HF_BUCKET,
         "hf_stage_prefix": contract.HF_STAGE_PREFIX,
         "hf_result_prefix": contract.HF_RESULT_PREFIX,
+        "hf_submission_prefix": contract.HF_SUBMISSION_PREFIX,
+        "gpu_scope": contract.GPU_SCOPE,
         "hf_flavor": contract.HF_FLAVOR,
         "hf_timeout_minutes": contract.HF_TIMEOUT_MINUTES,
         "hf_image": contract.HF_IMAGE,
