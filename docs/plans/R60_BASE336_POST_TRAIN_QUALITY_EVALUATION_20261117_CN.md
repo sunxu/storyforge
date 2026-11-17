@@ -97,7 +97,7 @@ R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包�
 **当前最终状态：** `BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，且产物审计为`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`。训练工程闭环与33个输出对象的本地完整性盘点均PASS；模型文学质量仍未得到独立验证。保持 `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。下一步只推进P2独立Held-out来源审查；在来源/权利/隔离证据经Owner确认前，不生成正式测试包、不启动推理、不追加训练、不访问R50、不写数据库。
 
 
-### Owner Mac 只读产物审计命令
+### Owner Mac 只读产物审计命令（已执行，保留复现记录）
 
 ```bash
 cd ~/workspace/storyforge-r60-4router-review
@@ -134,3 +134,32 @@ export PYTHONPATH=src:scripts:experiments/r58_quality
 ```
 
 该SAFE不包含本地SHA值、逐案内容或私人路径；本仓库只记录聚合状态，不复制私有Manifest。
+
+
+## 8. 2026-11-17 生成评估代码复用审查（只读盘点）
+
+P2 独立测试来源仍未提供/批准，因此本节只记录既有代码的复用边界，不创建正式评测输入、不改动运行时、不提交HF Job。
+
+### 推荐复用顺序
+
+1. **生成执行核心优先复用**：`src/storyforge_dataset/generation_eval/worker.py::run_generation_batch` 是注入式 Backend 的批量生成引擎；它复用 `hf_runtime.InputManager` 校验输入 SHA/JSONL、校验 sample_id 与消息合同，并通过 `OutputManager` create-only 写私有输出，记录 finish_reason / truncation 计数。Base336 不应另写一套通用生成循环、JSONL 校验、私有输出写入或 SAFE Receipt。
+2. **HF 公共基础复用**：沿用 `src/storyforge_dataset/hf_runtime/inputs.py`、`outputs.py` 的输入验签和私有输出合同；复用既有 Backend 抽象、依赖锁与镜像摘要验证模式。Base336 专属差异只放在版本化 Profile/Backend Adapter。
+3. **配对与盲化复用原则**：复用 `formal_pairing_gate.py` 的 prompt 消息精确配对、哈希清单和 reference-label absence 检查思路；复用 `prepare_eval_pairs.py` 的逐案随机 A/B 和独立 answer-key 思路，但必须先补足本任务的两臂合同、prompt SHA 绑定和安全输出权限。
+4. **质量规则只复用唯一来源**：`experiments/r58_quality/quality_v1.py` 是冻结六维门槛/严重标记的唯一来源（floors 4/4/3/4/4/4；三个 severe flags）。生成评估只复用这些规则定义和审核语义；不能把模型生成回复送入该模块的源候选 `decide/summarize`，更不能把它伪装为数据库最终持久化 Assistant 目标或Gold Manifest事件。
+
+### 不能直接照搬的既有模块
+
+- `generation_eval/profiles.py` 与 `worker_cli.py` 当前绑定 P4 的三模型角色 A/B/challenger（Qwen3-32B、GLM-4-32B、GLM-Z1-32B）和其冻结 profile。CLI 还固定 torch 2.6.0+cu124 / transformers 4.57.1；Base336 是 Qwen/Qwen3.8-27B 的固定 revision 与本轮 Adapter，训练环境依赖为 ms-swift 4.5.3 / transformers 5.16.1。P4 profile、模型授权和运行时不能跨项目/模型直接复用，也不能修改旧冻结 profile 以迁就本轮。
+- `formal_pairing_gate.py` 目前强制三个角色及 S/W-pilot/W 固定样本数，不适用于 Base/Adapter 两臂；可以复用其严格消息集合哈希和无参考标签检查，但应做任务专属薄适配。
+- `r60_p4_evaluation_output_schema_candidate_v1.json` 是旧三维 severity 候选，不是 Quality-v1 六维；不能拿它作本轮评分合同。
+- `scripts/prepare_eval_pairs.py` 与 `scripts/analyze_blind_eval.py` 使用旧五维字段；Pairer 的输入校验偏向列表位置和消息前缀，不负责完整 prompt SHA/stop reason/token 计数绑定。不得直接产出本轮六维盲审包。
+- `scripts/export_context_blind_review.py` 固定 15/20 条并使用旧五维 scorecard；不可直接用于本轮 40–60 条候选集或六维审核。
+- `scripts/hf_job_runner.py` 的 `Runner`、`sha256`、`check_inference_result` 可作为通用命令/哈希/非空结果小工具；其 `make_inference_input` 只取 Validation 第一条做 smoke，不可用于独立 Held-out，也不能代替上面的批量生成 Worker。
+
+### Base336 适配器的冻结前检查项（P2 通过后才实现）
+
+- 两臂严格为 Base 与本次 checkpoint-37 Adapter；模型 ID/revision、Adapter SHA、Tokenizer/Chat Template、依赖锁和 runtime digest 必须固定。Base 与 Adapter 使用完全相同的提示、三个持久化可见消息（无 System）、解码参数、seed、输入/输出 Token 上限、停止条件。
+- 每条输入必须由来源包绑定 prompt SHA、故事/World 组件与权限证据；私有身份 crosswalk 只留在 Owner 本机。正式测试源未确认前，不得从 661 个未准入候选、数据库或旧 P4 输入自动抽样。
+- 输出需保留 prompt SHA、模型/Adapter 身份、input/output token 计数、finish reason、截断状态及结果 SHA；逐案随机 A/B，blind key 独立 0600 保存，Reviewer 不得看到模型身份。
+- P2 需 Owner 明确提供/批准新的独立测试来源，并确认未进入本次 336 Train/Validation、checkpoint 选择或调参、未被 R47/R48/R55 暴露、R50 仅做元数据排除而不读取正文，以及来源权利、上下文时序、故事/World 隔离证据完整。未通过则质量评估保持 HOLD。
+- 本轮训练授权不包含 Base/Adapter 推理；旧 P4 的授权也不适用于 Qwen3.8-27B Base/Adapter。真实推理前仍需单独明确授权具体输入、模型、Flavor、时长、样本数、Token 上限、Bucket 前缀与预算。

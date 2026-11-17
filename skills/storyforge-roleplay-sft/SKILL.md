@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.17
+version: 0.1.18
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -154,5 +154,5 @@ Owner的真实1000池（6+994）已经只读确认`EXPANSION_TARGET_REACHED__NOT
 - 下一门禁是P2独立Held-out来源审查：测试样本须未用于本次336训练/验证、checkpoint选择或调参，未被R47/R48/R55暴露，且来源权利、上下文时序、故事/World隔离与R50元数据排除均可核验。不得从661个未准入候选或数据库自动抽样；Owner未提供/批准合格来源前保持HOLD，不创建正式测试包、不推理。
 - 不得把43条Validation、293条Train、R47/R48/R55暴露题或R50密封题用作正式独立测试。
 - 六维分数门槛和三个严重标记只复用`experiments/r58_quality/quality_v1.py`；模型生成评估不是REAL1000源数据审核，不要把生成回复伪装为`DB_FINAL_PERSISTED_ASSISTANT`或调用原批次导入器。
-- 配对生成、随机A/B、prompt SHA和blind key优先复用既有Runner/Pairer；旧五维Scorecard不可直接用于六维Quality-v1结论。确有Schema差异时新增版本化薄适配器和合成测试，不复制共享HF Runtime、Rubric或引用算法。
+- Base336配对生成优先审查并复用 `src/storyforge_dataset/generation_eval/worker.py` 与 `hf_runtime.InputManager/OutputManager`；P4三模型Profile/CLI、三臂Pairing Gate及旧五维Scorecard均不可直接照搬。Quality-v1六维门槛只复用 `experiments/r58_quality/quality_v1.py` 的唯一规则定义，不把生成输出送入源候选准入器。具体兼容差异与适配边界见训练后评估计划；只有P2来源门禁通过后才实现版本化薄适配器和合成测试。
 - Base/Adapter GPU配对推理必须另行获得针对具体输入、模型、Flavor、时长、输出前缀和预算的Owner授权；此前授权只覆盖单个训练Job。

@@ -1,3 +1,9 @@
+# 0.1.18 — 2026-11-17
+
+- 增加Base336生成评估的代码复用审查：优先复用现有 `generation_eval.worker`、HF Runtime输入/输出管理、Backend抽象和六维Quality-v1规则定义。
+- 明确P4三模型Profile/CLI、三臂Pairing Gate、旧五维Pairer/Scorecard与Base336两臂评估的兼容边界；不复制通用HF生成循环或质量Rubric。
+- P2独立Held-out来源/权利/世界隔离仍HOLD；只有Owner提供并批准新来源后，才实现Base/Adapter版本化薄适配器。无新增HF Job、GPU、训练或准入。
+
 # 0.1.17 — 2026-11-17
 
 - 根据Owner Mac SAFE确认Base336 33/33训练输出对象完成本地SHA256 inventory（5,604,774,224 bytes），并复核Worker SAFE、checkpoint与Adapter Reload；明确该inventory不是Worker原始逐文件SHA比对。

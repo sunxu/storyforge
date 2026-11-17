@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.17",
+  "version": "0.1.18",
   "date": "2026-11-17",
-  "tests": "v0.1.17: Owner SAFE confirms 33/33 Base336 result objects locally SHA256 inventoried; P1 artifact audit PASS; P2 independent held-out source remains HOLD; no admission or promotion; synthetic Skill contract test",
+  "tests": "v0.1.18: Base336 generation evaluation reuse audit; existing generation_eval worker/HF Runtime reuse; P4 three-model profile and legacy five-dimension pairer incompatibility; independent held-out P2 remains HOLD; synthetic Skill contract test",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "e602c9c964fceb4144327190ad579db968cbf18a7e2637dffaeb3ecb7dac1ea9",
-      "bytes": 12728
+      "sha256": "13db5a40defe18c4d44828971d34c3aeca14daefc1bd886c492e1d599f01c634",
+      "bytes": 13281
     },
     {
       "path": "README.md",
-      "sha256": "afc23fb4525e79cb30e02429c003e12c532e1ab30d9a1921d13531a8f03d36a7",
-      "bytes": 4420
+      "sha256": "076025ef467aacfec6e618c7b12cb770286c5d3c863de78814cb36822289ca36",
+      "bytes": 4612
     },
     {
       "path": "SKILL.md",
-      "sha256": "56b2920090800e76832243d9d038f52835282e236bfcaaac5a81f9ccdefd49d1",
-      "bytes": 20787
+      "sha256": "aa2928bd4d446848d6cda91f96b44dc7e22b51f0775781ffe84b3262b8b3f9d5",
+      "bytes": 21029
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "ea6438404212c602a79b9ced04193c5b0adae9eaca3c153b42b48841200b47df",
-      "bytes": 8506
+      "sha256": "f05eeb6cdc129681c9d8762fbf696857d4a7188012fdc588c05163be8f2bf39c",
+      "bytes": 8733
     }
   ]
 }
