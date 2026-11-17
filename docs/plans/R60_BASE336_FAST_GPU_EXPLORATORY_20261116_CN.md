@@ -222,6 +222,7 @@ chmod 600 "$RECEIPT"
 - Job历史使用既有分页器完整走完，不以最近N条记录推断“没有Job”。
 - dry-run设置 \`STORYFORGE_R60_BASE336_GPU_SCOPE=DRY_RUN_NOT_AUTHORIZED\`；Worker只接受真实Scope值 \`R60_BASE336_293_43_ONE_EPOCH_A10080GB\`。即使有人误删dry-run参数，Worker Shell也会因Scope不符而拒绝执行。
 - Worker Shell现在会正确展开HF注入的Run Key/Scope。执行依赖安装前，Worker preflight还校验HF自动注入的 `JOB_ID`、Run Key/Scope和`/output`可写性；`JOB_ID`是HF Jobs平台提供的内建环境变量。
+- HF `ready`在dry-run前通过HfApi读取模型元数据，要求`Qwen/Qwen3.8-27B`返回的commit SHA与Stage固定Revision完全相等；否则HOLD，不允许进入CLI dry-run。
 - Stage根目录及全部嵌套目录均强制0700，文件0600；本地verify逐项复核mode与symlink，避免宽松umask留下可遍历目录。
 - CLI动作列表**没有submit**。当前只能执行 \`preflight\`、\`sync\`、\`ready\`、\`diagnose\`、\`cli-flags\`；不具备付费Job提交路径。
 
