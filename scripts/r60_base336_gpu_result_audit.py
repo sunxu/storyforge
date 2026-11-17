@@ -9,8 +9,8 @@ import shutil
 import stat
 import subprocess
 import sys
-from pathlib import Path, PurePosixPath
 from collections.abc import Callable
+from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
