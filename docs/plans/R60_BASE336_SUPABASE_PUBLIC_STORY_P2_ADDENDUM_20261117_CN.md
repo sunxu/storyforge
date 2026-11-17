@@ -80,10 +80,10 @@ SHA256 的作用域是包含 `source.v2Data` 的审核快照；不把它描述�
 
 **草案工件（当前会话工作区生成，尚未转存 Owner Mac 私有目录，也未由 Owner 冻结）：**
 
-- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，38,010 bytes
-- JSONL SHA256：`ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`
+- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，38,022 bytes
+- JSONL SHA256：`a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`
 - `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的故事 ID、公开 revision、审核提交 SHA256、权限事件绑定、非语义 World JSON 指纹及各项 HOLD 状态
-- Manifest SHA256：`56c5c9c90e347860e1107dc7f10d2486f8153acc21c469676b80850f57239a4b`
+- Manifest SHA256：`12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`
 
 提示草案只供来源审查和后续 Owner 校验。它不是正式 Pairer 输入、不是 Quality-v1 SFT 候选 JSONL，也不是可用于模型推理的已冻结 Held-out。World MD5 仅用于精确 JSON 标识，不代表语义世界身份或隔离 PASS。
 
