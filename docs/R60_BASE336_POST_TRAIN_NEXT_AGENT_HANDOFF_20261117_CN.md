@@ -114,8 +114,8 @@ Owner 已批准新的来源路线：仅使用 Supabase 中已公开、已发布�
 
 当前会话工件（不是 Owner Mac 私有目录；Owner 必须转存、审查并冻结）：
 
-- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，SHA256 `ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`。
-- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的 story ID、revision、创建/批准时间、审核快照 SHA、权限事件绑定、非语义 World JSON 指纹；SHA256 `56c5c9c90e347860e1107dc7f10d2486f8153acc21c469676b80850f57239a4b`。
+- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，SHA256 `a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`。
+- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的 story ID、revision、创建/批准时间、审核快照 SHA、权限事件绑定、非语义 World JSON 指纹；SHA256 `12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`。
 - 结构校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
 - 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；本地 8/8 PASS，compileall PASS。没有声称 GitHub Actions CI PASS。
 
