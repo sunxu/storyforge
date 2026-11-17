@@ -5,7 +5,6 @@ import hashlib
 import json
 import math
 import re
-import stat
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -211,8 +210,9 @@ def verify_stage(stage: Path, run_key: str) -> dict:
     release_dir = stage / "private/release"
     release = verify_release(release_dir)
     proof = verify_proof_receipt(stage / "private/proof" / PROOF_NAME)
+    template = read_verified(stage / "config/template.yaml", 64_000)
     config = read_verified(stage / CONFIG_NAME, 64_000)
-    if render_config((ROOT / "configs/r60_base336_exploratory_293_43.yaml").read_bytes()) != config:
+    if render_config(template) != config:
         raise ValueError("TRAINING_CONFIG_DRIFT_HOLD")
     if (
         proof.get("actual_final_collator_verified") is not True
