@@ -375,6 +375,16 @@ def test_terminal_checkpoint_rejects_adapter_rank_drift(tmp_path):
         worker._terminal_checkpoint(output, 37)
 
 
+def test_worker_shell_expands_job_environment_and_enforces_scope():
+    source = (ROOT / "scripts/r60_base336_gpu_worker.sh").read_text()
+    assert 'KEY="${STORYFORGE_R60_BASE336_GPU_RUN_KEY:-}"' in source
+    assert 'SCOPE="${STORYFORGE_R60_BASE336_GPU_SCOPE:-}"' in source
+    assert r"\${STORYFORGE_R60_BASE336_GPU_RUN_KEY" not in source
+    assert r"\${STORYFORGE_R60_BASE336_GPU_SCOPE" not in source
+    assert '[[ "$SCOPE" == R60_BASE336_293_43_ONE_EPOCH_A10080GB ]]' in source
+    assert "--action preflight" in source and "--action train" in source
+
+
 def test_cli_has_no_submit_action_or_billable_submission_call():
     source = (ROOT / "scripts/r60_base336_gpu_cli.py").read_text()
     assert 'choices=("preflight", "sync", "ready", "diagnose", "cli-flags")' in source
