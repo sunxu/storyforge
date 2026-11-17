@@ -7,8 +7,19 @@ import json
 import unittest
 
 from quality_v1 import (
-    CORPORA, EVIDENCE, FLOORS, MAX_R58_ROWS, OUT_SCHEMA, SCHEMA, SCORES,
-    SEVERE, Hold, canonical, decide, sha, summarize,
+    CORPORA,
+    EVIDENCE,
+    FLOORS,
+    MAX_R58_ROWS,
+    OUT_SCHEMA,
+    SCHEMA,
+    SCORES,
+    SEVERE,
+    Hold,
+    canonical,
+    decide,
+    sha,
+    summarize,
 )
 
 
