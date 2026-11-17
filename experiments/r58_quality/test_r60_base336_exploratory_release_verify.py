@@ -87,3 +87,20 @@ def test_permissions_fail(monkeypatch, tmp_path):
     (root / "train.jsonl").chmod(0o644)
     with pytest.raises(private.Hold):
         target.verify(root)
+
+def test_valid_staged_release_does_not_depend_on_owner_private_root(monkeypatch, tmp_path):
+    root, _ = release(monkeypatch, tmp_path)
+    other = tmp_path / "unrelated-private-root"
+    other.mkdir(mode=0o700)
+    monkeypatch.setattr(private, "BASE", other)
+    result = target.verify_staged(root)
+    assert result["status"] == "BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD"
+    assert result["sha256_verified"]
+    assert result["train_admitted"] == 0
+
+
+def test_staged_release_rejects_group_readable_files(monkeypatch, tmp_path):
+    root, _ = release(monkeypatch, tmp_path)
+    (root / "train.jsonl").chmod(0o644)
+    with pytest.raises(target.Hold, match="STAGED_RELEASE_FILE_MODE_HOLD"):
+        target.verify_staged(root)
