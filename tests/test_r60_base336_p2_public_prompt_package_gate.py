@@ -219,3 +219,11 @@ def test_source_before_base336_cutoff_fails_closed(tmp_path):
     manifest.write_text(json.dumps(m), encoding="utf-8")
     with pytest.raises(target.Hold, match="SOURCE_BINDING_HOLD"):
         target.validate(prompts, manifest)
+
+
+def test_permission_event_must_bind_latest_submission(tmp_path):
+    prompts, manifest, _, m = package(tmp_path)
+    m["sources"][0]["permission_submission_id"] = "older-submission"
+    manifest.write_text(json.dumps(m), encoding="utf-8")
+    with pytest.raises(target.Hold, match="SOURCE_BINDING_HOLD"):
+        target.validate(prompts, manifest)
