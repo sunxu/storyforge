@@ -186,6 +186,8 @@ def verify_stage(stage: Path, run_key: str) -> dict:
         or manifest.get("hf_bucket") != HF_BUCKET
         or manifest.get("hf_stage_prefix") != HF_STAGE_PREFIX
         or manifest.get("hf_result_prefix") != HF_RESULT_PREFIX
+        or manifest.get("hf_submission_prefix") != HF_SUBMISSION_PREFIX
+        or manifest.get("gpu_scope") != GPU_SCOPE
         or manifest.get("hf_flavor") != HF_FLAVOR
         or manifest.get("hf_timeout_minutes") != HF_TIMEOUT_MINUTES
         or manifest.get("hf_image") != HF_IMAGE
