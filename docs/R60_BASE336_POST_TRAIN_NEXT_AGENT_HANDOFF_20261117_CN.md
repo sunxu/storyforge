@@ -117,7 +117,7 @@ Owner 已批准新的来源路线：仅使用 Supabase 中已公开、已发布�
 - `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`：48 条，SHA256 `a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`。
 - `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`：8 个来源的 story ID、revision、创建/批准时间、审核快照 SHA、权限事件绑定、非语义 World JSON 指纹；SHA256 `12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`。
 - 结构校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
-- 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；本地 8/8 PASS，compileall PASS。没有声称 GitHub Actions CI PASS。
+- 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；本地 9/9 PASS，compileall PASS。没有声称 GitHub Actions CI PASS。
 
 ### 5.2 仍需完成的 P2-C
 
