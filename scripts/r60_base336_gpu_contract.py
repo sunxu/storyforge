@@ -22,6 +22,7 @@ RELEASE_MANIFEST = "R60_BASE336_EXPLORATORY_MANIFEST_PRIVATE.json"
 PROOF_NAME = "BASE336_COLLATOR_TRANSFER_SAFE_PRIVATE.json"
 MAX_DATA_BYTES = 4_000_000
 MAX_SAFE_BYTES = 32_768
+MAX_MANIFEST_BYTES = 200_000
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -67,7 +68,7 @@ def verify_proof_receipt(path: Path) -> dict:
     return value
 
 
-def verify_release(release_dir: Path) -> dict:
+def verify_release(release_dir: Path, *, staged: bool = False) -> dict:
     import sys
 
     experiments = ROOT / "experiments/r58_quality"
@@ -75,7 +76,8 @@ def verify_release(release_dir: Path) -> dict:
         sys.path.insert(0, str(experiments))
     import r60_base336_exploratory_release_verify as release_verify
 
-    result = release_verify.verify(release_dir)
+    result = (release_verify.verify_staged(release_dir) if staged
+              else release_verify.verify(release_dir))
     if (
         result.get("status") != "BASE336_EXPLORATORY_RELEASE_BYTES_VERIFIED__GPU_HOLD"
         or result.get("train_rows") != TRAIN_ROWS
@@ -85,7 +87,7 @@ def verify_release(release_dir: Path) -> dict:
         or result.get("gpu_started") is not False
     ):
         raise ValueError("RELEASE_VERIFY_HOLD")
-    manifest = read_json(release_dir / RELEASE_MANIFEST)
+    manifest = read_json(release_dir / RELEASE_MANIFEST, MAX_MANIFEST_BYTES)
     stats = manifest.get("statistics")
     if (
         type(stats) is not dict
@@ -217,6 +219,7 @@ def verify_stage(stage: Path, run_key: str) -> dict:
         "private/release/validation.jsonl",
         "private/release/" + RELEASE_MANIFEST,
         "private/proof/" + PROOF_NAME,
+        "src/storyforge_dataset/__init__.py",
         "src/storyforge_dataset/hf_runtime/__init__.py",
         "src/storyforge_dataset/hf_runtime/inputs.py",
         "src/storyforge_dataset/hf_runtime/outputs.py",
@@ -236,7 +239,7 @@ def verify_stage(stage: Path, run_key: str) -> dict:
             stage / name, max_bytes=8_000_000, expected_sha256=digest
         )
     release_dir = stage / "private/release"
-    release = verify_release(release_dir)
+    release = verify_release(release_dir, staged=True)
     proof = verify_proof_receipt(stage / "private/proof" / PROOF_NAME)
     template = read_verified(stage / "config/template.yaml", 64_000)
     config = read_verified(stage / CONFIG_NAME, 64_000)
