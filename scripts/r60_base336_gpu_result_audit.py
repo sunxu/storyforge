@@ -12,6 +12,12 @@ import sys
 from collections.abc import Callable
 from pathlib import Path, PurePosixPath
 
+try:
+    from huggingface_hub.errors import HfHubHTTPError
+except ImportError:
+    class HfHubHTTPError(Exception):
+        pass
+
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "src"))
@@ -331,7 +337,7 @@ def audit(
             reason if reason in allowed else "RESULT_AUDIT_VALIDATION_HOLD",
             run_key_validated=True,
         )
-    except (OSError, subprocess.SubprocessError):
+    except (OSError, subprocess.SubprocessError, HfHubHTTPError):
         return safe(
             "BASE336_GPU_RESULT_AUDIT_HOLD", "LOCAL_OR_REMOTE_IO_HOLD",
             run_key_validated=True,
