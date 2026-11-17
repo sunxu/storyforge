@@ -177,13 +177,7 @@ def run(stage: Path, output: Path, run_key: str, action: str) -> dict:
             raise ValueError("STAGE_PATH_HOLD")
         contract.verify_stage(stage, run_key)
         report["collator_transfer_verified"] = True
-        if action == "preflight":
-            report.update(
-                status="BASE336_GPU_STAGE_VERIFIED__NO_GPU",
-                reason_code="STAGE_AND_SOURCE_PROOFS_PASS",
-            )
-            return report
-        if action != "train":
+        if action not in {"preflight", "train"}:
             raise ValueError("ACTION_HOLD")
         if os.environ.get("STORYFORGE_R60_BASE336_GPU_RUN_KEY") != run_key:
             raise ValueError("JOB_RUN_KEY_HOLD")
@@ -201,6 +195,12 @@ def run(stage: Path, output: Path, run_key: str, action: str) -> dict:
         train_output = output / "training"
         if train_output.exists() or train_output.is_symlink():
             raise ValueError("TRAINING_OUTPUT_EXISTS_HOLD")
+        if action == "preflight":
+            report.update(
+                status="BASE336_GPU_STAGE_VERIFIED__NO_GPU",
+                reason_code="STAGE_JOB_ID_AND_OUTPUT_VOLUME_PASS",
+            )
+            return report
         train_output.mkdir(mode=0o700, exist_ok=False)
 
         phase = "GPU_DEVICE_GATE"
