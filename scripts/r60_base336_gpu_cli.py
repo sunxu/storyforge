@@ -161,7 +161,7 @@ def sync(stage: Path, key: str, api) -> dict:
     expected = _check_remote_set(api, stage, key, ready=False)
     _prefix_empty(api, f"{RESULT_PREFIX}/{key}/", "REMOTE_RESULT_ALREADY_EXISTS_HOLD")
     _prefix_empty(api, f"{SUBMISSION_PREFIX}/{key}/", "REMOTE_SUBMISSION_MARKER_EXISTS_HOLD")
-    _check_job_history(api, key)
+    history = _check_job_history(api, key)
     base = _remote_prefix(key)
     for relative in sorted(set(expected) - {"SHA256_MANIFEST_PRIVATE.json"}):
         result = subprocess.run(
@@ -183,6 +183,9 @@ def sync(stage: Path, key: str, api) -> dict:
         **safe("BASE336_GPU_REMOTE_STAGE_READY__NO_JOB", "REMOTE_FILESET_AND_SHA_PASS"),
         "run_key_validated": True,
         "remote_file_sha_verified": True,
+        "job_history_exhaustive": history["exhaustive"],
+        "visible_jobs": history["visible_jobs"],
+        "matching_jobs": history["matching_jobs"],
         "stage_files": len(expected),
     }
 
