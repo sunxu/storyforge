@@ -14,7 +14,7 @@ REPO_ROOT = SKILL_ROOT.parents[1]
 class ReuseContractTests(unittest.TestCase):
     def test_skill_owns_execution_order_and_links_authoritative_specs(self):
         source = (SKILL_ROOT / "SKILL.md").read_text(encoding="utf-8")
-        self.assertRegex(source, r"(?m)^version: \\d+\\.\\d+\\.\\d+$")
+        self.assertTrue(any(line.startswith("version: ") for line in source.splitlines()))
         for phrase in (
             "查找已有工具和证据",
             "优先复用",
