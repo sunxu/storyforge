@@ -33,15 +33,15 @@ def _read_release_file(path: Path, maximum: int, *, staged: bool) -> bytes:
 
 def _verify(directory: Path, *, staged: bool) -> dict:
     if staged:
-        import stat
-
-        if (directory.is_symlink() or not directory.is_dir()
-                or stat.S_IMODE(directory.stat().st_mode) != 0o700):
+        if directory.is_symlink() or not directory.is_dir():
             raise Hold("STAGED_RELEASE_DIRECTORY_HOLD")
+        # HF's read-only Bucket mount controls access at the volume level;
+        # it may not preserve the Owner Mac's 0700/0600 mode bits. The local
+        # Stage Builder enforces those modes before upload. Here, require
+        # regular, non-symlink files and independently verify every byte.
         for item in directory.iterdir():
-            if (item.is_symlink() or not item.is_file()
-                    or stat.S_IMODE(item.stat().st_mode) != 0o600):
-                raise Hold("STAGED_RELEASE_FILE_MODE_HOLD")
+            if item.is_symlink() or not item.is_file():
+                raise Hold("STAGED_RELEASE_FILE_TYPE_HOLD")
     else:
         private.private_dir(directory, create=False)
     actual = {p.name for p in directory.iterdir()}
