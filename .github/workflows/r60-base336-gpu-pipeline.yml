@@ -1,0 +1,77 @@
+name: R60 Base336 GPU pipeline (synthetic only)
+
+on:
+  push:
+    branches:
+      - r60/common2-cpu2-owner
+    paths:
+      - 'scripts/r60_base336_gpu_*'
+      - 'scripts/hf_job_runner.py'
+      - 'scripts/hf_job_guard.py'
+      - 'scripts/r60_common2_wrapped_hf_stage.py'
+      - 'scripts/r60_common2_wrapped_hf_cli.py'
+      - 'scripts/r60_common2_hf_cpu_final_read_only.py'
+      - 'src/storyforge_dataset/hf_runtime/**'
+      - 'experiments/r58_quality/r60_base336_exploratory_release_verify.py'
+      - 'experiments/r58_quality/r60_base336_exploratory_split.py'
+      - 'experiments/r58_quality/r60_real_private_batch.py'
+      - 'configs/r60_base336_exploratory_293_43.yaml'
+      - 'requirements/r60-base336-gpu.in'
+      - 'tests/test_r60_base336_gpu_pipeline.py'
+      - '.github/workflows/r60-base336-gpu-pipeline.yml'
+  workflow_dispatch:
+
+jobs:
+  synthetic:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: "src:scripts:experiments/r58_quality"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+      CUDA_VISIBLE_DEVICES: ""
+      STORYFORGE_RUNTIME_TEST: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test and lint tooling only
+        run: python -m pip install pytest ruff
+      - name: Syntax and shell safety
+        run: |
+          python -m compileall -q \
+            scripts/r60_base336_gpu_contract.py \
+            scripts/r60_base336_gpu_stage.py \
+            scripts/r60_base336_gpu_worker.py \
+            scripts/r60_base336_gpu_cli.py
+          bash -n scripts/r60_base336_gpu_worker.sh
+      - name: Ruff new pipeline code
+        run: |
+          ruff check \
+            scripts/r60_base336_gpu_contract.py \
+            scripts/r60_base336_gpu_stage.py \
+            scripts/r60_base336_gpu_worker.py \
+            scripts/r60_base336_gpu_cli.py \
+            tests/test_r60_base336_gpu_pipeline.py
+      - name: Synthetic GPU pipeline and reused runtime regressions
+        run: |
+          python -m pytest -q \
+            tests/test_r60_base336_gpu_pipeline.py \
+            tests/test_hf_runtime.py \
+            tests/test_hf_runtime_volume_edges.py \
+            tests/test_hf_job_guard.py \
+            tests/test_hf_job_runner.py \
+            tests/test_v03_r54_gpu_pipeline.py
+      - name: Prove CI never submits HF Jobs or downloads models
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          source = Path("scripts/r60_base336_gpu_cli.py").read_text()
+          assert 'choices=("preflight", "sync", "ready", "diagnose", "cli-flags")' in source
+          assert 'action == "submit"' not in source
+          assert "snapshot_download(" not in source
+          print("R60_BASE336_SYNTHETIC_ONLY__ZERO_HF_SUBMISSIONS__ZERO_MODEL_DOWNLOADS")
+          PY
