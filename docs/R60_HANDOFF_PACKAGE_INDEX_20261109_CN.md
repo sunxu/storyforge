@@ -1,3 +1,7 @@
+> **Base336 训练后阶段专用入口（2026-11-17）**：如果当前任务是 `r60/common2-cpu2-owner` 分支上的 Base336 训练后质量评估，请不要按本索引下方 2026-11-10 的 P4 三模型任务执行。当前权威文件为 [Base336 训练后交接任务书](R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md)、[Base336 训练后质量评估计划](plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md) 和 [Base336 新 Agent 启动提示词](R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md)。P2 独立 Held-out 来源仍 HOLD；旧 P4 Profile/推理授权不适用于 Base336 Base/Adapter。下方 P4 文档只对其独立任务线有效。
+
+---
+
 > **当前交接入口（2026-11-10，覆盖下方旧阶段索引）：** P0/P1/P2-A/P2-B/P3 已完成；当前主线是 P4 Worker CLI 工程验收。请使用 [P4 下一阶段接手任务书](R60_P4_NEXT_AGENT_HANDOFF_TASKBOOK_20261110_CN.md) 和 [P4 新 Agent 提示词](R60_P4_NEXT_AGENT_START_PROMPT_20261110_CN.md)。已核验基线 HEAD `a1db1ac70fd3777d78460eee58e7d2b891867c40` 的 Repository CI、Generation Eval CI、Runtime Image Candidate 均 PASS。当前仍未完成 CPU-only CLI/bootstrap 端到端验收、Owner Mac CLI 执行验证、32K 资源预算及最终 Profile Freeze 裁决。HF 403/OAuth/Bucket 排查暂停；HF 任务由 Owner 在 Mac CLI 执行。
 
 ---

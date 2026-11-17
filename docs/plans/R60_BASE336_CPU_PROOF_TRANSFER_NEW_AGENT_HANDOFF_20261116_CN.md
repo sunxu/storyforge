@@ -1,3 +1,7 @@
+> **状态更新（2026-11-17）：本文件已被后续阶段任务书取代，不再是当前执行入口。** P0 CPU 证明转移、Base336 GPU Stage/Worker/CLI 开发和唯一训练 Job 均已完成；33/33 训练输出对象本地 SHA256 inventory 已 PASS。当前请改读 [Base336 训练后交接任务书](../R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md)、[训练后质量评估计划](R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md) 与 [新 Agent 启动提示词](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md)。本文件下方的“立即实现 GPU Stage/Worker/CLI”“准备 GPU Job”等文字均为历史任务指令，不能继续执行；不构成任何新推理/GPU/训练授权。
+
+---
+
 # StoryForge R60 Base336：新Agent交接与立即执行指令（2026-11-16）
 
 > **2026-11-16 最新状态：P0 已由 Owner Mac 真实完成。** 原始336行与新293+43行字节多重集合完全一致，旧HF CPU336 SAFE回执被独立接受，真实结果为 `BASE336_EXPLORATORY_FINAL_COLLATOR_PROOF_TRANSFER_PASS__GPU_HOLD`。不得重复运行转移命令、重新跑HF CPU或重建数据。本文件后续重点转为：维护Quality Pipeline边界、更新Skill，并以共享Runtime和R54已验证方法为基础实现独立R60 GPU Stage/Worker/CLI。本文不构成GPU提交授权。

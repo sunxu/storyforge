@@ -60,18 +60,20 @@ Owner 已对独立输出前缀完成递归文件盘点：
 
 R50 密封内容仍禁止读取。R47/R48/R55 已暴露开发题不能重新包装成独立测试。REAL1000/Pilot5 的旧 Reviewer 回执也不能被当成 Base336 生成输出的评测结果。
 
-## 5. 现有工具盘点与复用边界
+## 5. 现有工具盘点与复用边界（复核后更新）
 
-| 现有能力 | 可复用内容 | 不可直接照搬的原因 |
+| 现有能力 | 本轮复用方式 | 不能直接照搬的部分 |
 |---|---|---|
-| `scripts/hf_job_runner.py` | `Runner`、`make_inference_input`、`check_inference_result`、`sha256` | 仍需绑定本轮新的输入 Manifest、模型/Adapter 路径和 Job 输出目录 |
-| `scripts/prepare_eval_pairs.py` | prompt 前缀对齐、逐案随机 A/B、私有 answer key、create-only | 当前 scorecard 字段是旧五维，不是冻结 Quality-v1 六维 |
-| `scripts/analyze_blind_eval.py` / `scripts/export_context_blind_review.py` | 盲化映射与上下文呈现的既有模式 | 使用旧五维评分，且导出器固定 15/20 条，不能直接作为本轮六维审核合同 |
-| `experiments/r58_quality/quality_v1.py` | 唯一冻结六维分数门槛与三个严重标记定义 | 这是准入规则，不应复制成另一套评分器 |
-| `experiments/r58_quality/r60_real_ai_dual_review.py` | 六维审核指令、决策一致性语义 | 其批次验证器绑定 REAL1000 原始捕获，不应直接伪装成生成结果批次 |
-| `src/storyforge_gold_quality/hf_literary_review.py` | 现有引用候选、严格引用校验和六维审核基础 | 当前输入语义明确为 `DB_FINAL_PERSISTED_ASSISTANT`；生成回复不能冒充数据库最终持久化回复 |
+| `src/storyforge_dataset/generation_eval/worker.py::run_generation_batch` | 优先复用注入式 Backend 批量生成核心、输入 Manifest / record count / token budget / seed / 输出 Receipt 合同 | profile authorization 与 model_role 仍需适配本轮 Base/Adapter 两臂 |
+| `src/storyforge_dataset/hf_runtime/inputs.py` / `outputs.py` | 复用输入 SHA/JSONL 校验、私有输出、create-only 与 SAFE 边界 | 不为 Base336 另建通用输入/输出运行时 |
+| `GenerationBackend` Protocol | 复用模型后端抽象，Base 与 Adapter 的加载差异放版本化薄适配器 | P4 已冻结模型角色、revision、依赖锁不能跨任务替换 |
+| `src/storyforge_dataset/generation_eval/formal_pairing_gate.py` | 复用 prompt/message 精确配对、哈希清单、reference-label absence 检查思路 | 现有 Gate 固定三模型角色与 Pilot 样本合同，不是 Base/Adapter 两臂 Gate |
+| `scripts/prepare_eval_pairs.py` | 复用逐案随机 A/B、私有 answer key 与 create-only 思路 | 旧五维字段/位置型校验不满足本轮 prompt SHA 与六维合同 |
+| `experiments/r58_quality/quality_v1.py` | 唯一六维 floors（4/4/3/4/4/4）与 severe flags 来源 | 只复用规则定义；不得将模型生成回复送入源候选 `decide/summarize` 或 Gold Manifest |
+| `scripts/analyze_blind_eval.py` / `scripts/export_context_blind_review.py` | 参考历史盲化映射和上下文呈现 | 旧五维 scorecard、固定 15/20 条 Exporter 不适用 |
+| `scripts/hf_job_runner.py` | 可复用通用 `Runner`、哈希和非空结果检查小工具 | `make_inference_input` 仅做 Validation 第一条 smoke，不是独立 Held-out 批量 Worker |
 
-下一版只允许做**薄适配器/版本化输入 Schema**：复用 Prompt SHA、结果对齐、随机盲化、私有 answer key、六维 floors 和 severe 语义；不得复制通用 HF Job Runtime、Token/Collator、质量门槛、引用校验或 Manifest。生成结果评估是模型对比证据，不是源数据审核事件，不得向 `storyforge-gold-quality` Manifest 追加伪造的 SOURCE / BLIND_REVIEW / RECONCILIATION 事件。
+**结论：** 生成执行核心与 HF Runtime 已存在，不再另写通用生成循环、JSONL 校验、私有输出写入或 SAFE Receipt。P2 通过前不实现正式 Pairer、Profile 或模型 Backend。P2 通过后只新增版本化 Base/Adapter 薄适配器和对应合成测试；不修改冻结 P4 Profile/CLI，不复制六维 Rubric。
 
 ## 6. 正式独立质量评估的必要条件
 
@@ -163,3 +165,11 @@ P2 独立测试来源仍未提供/批准，因此本节只记录既有代码的�
 - 输出需保留 prompt SHA、模型/Adapter 身份、input/output token 计数、finish reason、截断状态及结果 SHA；逐案随机 A/B，blind key 独立 0600 保存，Reviewer 不得看到模型身份。
 - P2 需 Owner 明确提供/批准新的独立测试来源，并确认未进入本次 336 Train/Validation、checkpoint 选择或调参、未被 R47/R48/R55 暴露、R50 仅做元数据排除而不读取正文，以及来源权利、上下文时序、故事/World 隔离证据完整。未通过则质量评估保持 HOLD。
 - 本轮训练授权不包含 Base/Adapter 推理；旧 P4 的授权也不适用于 Qwen3.8-27B Base/Adapter。真实推理前仍需单独明确授权具体输入、模型、Flavor、时长、样本数、Token 上限、Bucket 前缀与预算。
+
+
+## 9. 新 Agent 接手入口（2026-11-17）
+
+- 权威交接任务书：`docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`。
+- 可直接复制的启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
+- 接手时重新核验当前分支、HEAD、Actions、Issue/PR；本计划与交接文件内的 SHA/CI 都是快照，不得代替实时查询。
+- 当前唯一业务阻塞是 P2 新独立 Held-out 来源/权利/上下文/World 隔离证据；Owner 未提供/批准来源前不创建正式测试包、不实现正式 Pairer、不推理。
