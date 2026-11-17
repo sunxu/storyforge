@@ -49,4 +49,4 @@ Batch Quote Repair v2 / checkpoint v3 A/B GPU Pilot 已完成：A/Qwen 2/2 PASS�
 
 ## 当前 R60 Base336 状态（2026-11-17）
 
-Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 steps、终端Checkpoint和Adapter Reload PASS，状态为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。这不是模型质量通过。43条Validation参与了训练期Eval/Checkpoint选择，不能作为独立Held-out；R50仍禁止访问，旧暴露题不能冒充独立测试。当前P2独立Held-out来源仍HOLD；必须先核验来源权利、未暴露状态与世界隔离，禁止从未准入池/数据库自动抽样。下一阶段、工具复用与GPU推理授权边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。
+Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 steps、终端Checkpoint和Adapter Reload PASS，状态为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。这不是模型质量通过。 33/33个输出对象已完成Owner Mac本地SHA256 inventory（5,604,774,224 bytes），Worker SAFE、Checkpoint和Adapter Reload复核PASS；这是本地对象inventory，不是与Worker原始逐文件SHA比对，也不是文学质量PASS。43条Validation参与了训练期Eval/Checkpoint选择，不能作为独立Held-out；R50仍禁止访问，旧暴露题不能冒充独立测试。当前P2独立Held-out来源仍HOLD；必须先核验来源权利、未暴露状态与世界隔离，禁止从未准入池/数据库自动抽样。下一阶段、工具复用与GPU推理授权边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。

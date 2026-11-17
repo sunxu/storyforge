@@ -13,13 +13,13 @@
     },
     {
       "path": "README.md",
-      "sha256": "7d1834689e7a081f2eddefd30200dbe2e4708b0fab2d5e5b5ad6f1d019d2a56d",
-      "bytes": 4177
+      "sha256": "afc23fb4525e79cb30e02429c003e12c532e1ab30d9a1921d13531a8f03d36a7",
+      "bytes": 4420
     },
     {
       "path": "SKILL.md",
-      "sha256": "0b39ba55c5e3018820878f306e3bc37530a8b2ac59c37f1d70b68669b9a356d1",
-      "bytes": 20781
+      "sha256": "1eaa6a26ba4c080c8bac6bd7fa649618d3540ade07623d342df9718dfc247d60",
+      "bytes": 20787
     },
     {
       "path": "queries/01_story_inventory.sql",
