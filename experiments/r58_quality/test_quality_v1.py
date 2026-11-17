@@ -87,6 +87,12 @@ class QualityV1SyntheticTest(unittest.TestCase):
         b = make_case("synthetic_02", "world_1", "train")
         self.assertEqual(summarize([a, b])["decision_counts"]["PASS"], 2)
 
+    def test_unhashable_world_component_id_holds_without_crashing(self):
+        a = make_case()
+        a["world_component_id"] = ["malformed"]
+        result = summarize([a])
+        self.assertEqual(result["decision_counts"]["HOLD"], 1)
+
     def test_duplicate_input_target_and_id_holds(self):
         a = make_case()
         b = copy.deepcopy(a)
