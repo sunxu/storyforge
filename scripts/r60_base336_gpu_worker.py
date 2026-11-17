@@ -121,7 +121,7 @@ def _run_quiet(command: list[str], log_path: Path, *, timeout: int) -> None:
         raise ValueError("TRAINING_COMMAND_FAILED")
 
 
-def _terminal_checkpoint(output: Path, expected_steps: int) -> dict:
+def _terminal_checkpoint(output: Path, expected_steps: int) -> tuple[dict, Path]:
     evidence = training_evidence(output)
     if evidence.get("global_step") != expected_steps:
         raise ValueError("TERMINAL_OPTIMIZER_STEP_HOLD")
@@ -139,15 +139,30 @@ def _terminal_checkpoint(output: Path, expected_steps: int) -> dict:
         for item in history
     ):
         raise ValueError("TERMINAL_EVAL_NOT_RECORDED_HOLD")
+    if not isinstance(state.get("epoch"), (int, float)) or float(state["epoch"]) < 0.99:
+        raise ValueError("ONE_EPOCH_COMPLETION_HOLD")
     adapter = Path(str(evidence["adapter_weights"]))
     if not adapter.is_file() or adapter.is_symlink():
         raise ValueError("FINAL_ADAPTER_MISSING_HOLD")
+    adapter_config_path = adapter.parent / "adapter_config.json"
+    adapter_config = json.loads(InputManager.open_verified(
+        adapter_config_path, max_bytes=64_000
+    ).read_bytes())
+    if (
+        str(adapter_config.get("peft_type", "")).upper() != "LORA"
+        or adapter_config.get("r") != 64
+        or adapter_config.get("lora_alpha") != 128
+    ):
+        raise ValueError("FINAL_ADAPTER_CONFIG_HOLD")
     return {
         "global_step": expected_steps,
         "final_checkpoint_present": True,
         "final_adapter_present": True,
-    }
-
+        "terminal_eval_present": True,
+        "one_epoch_complete": True,
+        "adapter_rank": 64,
+        "adapter_alpha": 128,
+    }, state_path.parent
 
 def run(stage: Path, output: Path, run_key: str, action: str) -> dict:
     report = safe_report(run_key)
