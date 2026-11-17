@@ -9,6 +9,7 @@
 3. 按顺序完整阅读：
    - `docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`
    - `docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`
+   - `docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`
    - `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`
    - `skills/storyforge-roleplay-sft/SKILL.md`
    - `skills/storyforge-real-quality-review/SKILL.md`（只读理解审核边界）
@@ -29,20 +30,35 @@
 - 43 Validation 已用于 Eval/Checkpoint 选择；293 Train + 43 Validation 均不可作为独立 Held-out。
 - `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。
 
-## 三、当前任务：先完成 P2 来源审查
+## 三、当前任务：完成已批准 Supabase 来源 Draft 的 P2-C 隔离审查
 
-**P2 当前为 HOLD。** 等待 Owner 提供或明确批准新的独立 Held-out 私有测试包。不得从 661 个未准入候选、数据库、R47/R48/R55 暴露题、P4 旧测试包或 336 训练池自动抽样。R50 正文绝对禁止访问；若需排除，只允许在授权范围内使用完整元数据证据。
+Owner 已批准新的来源路线：仅使用 Supabase 已公开、已发布、非删除、原创且通过审核的故事，以及公开 World/Character/Opening 字段，构造内部评估提示；**不读取用户私有会话正文**。该授权只覆盖内部评估提示构造，不扩展为训练、公开发布或再分发。
 
-拿到来源包后，先只读审查并形成私有 SAFE：
-- 每条来源权利、授权主体、用途、版本和时间范围；
-- prompt 的来源 SHA、上下文可用时序、消息角色和顺序；
-- 未进入 336 Train/Validation、训练期 Eval、Checkpoint 选择或调参；
-- 未被 R47/R48/R55 暴露；
-- story/World component 隔离和跨故事依赖；
-- R50 仅元数据排除，绝不读正文；
-- 私有 crosswalk、原文、blind key、哈希明细和路径留在 Owner 私有环境。
+P2-A / P2-B 已有 Draft 结果：
 
-建议规模 40–60 prompts、至少 4 个未使用故事/世界，但规模由 Owner 确认，不是默认授权。任何权利、来源、上下文或隔离证据缺失都保持 HOLD，不生成正式测试包。
+- 8 个公开故事、8 个故事谱系、5 位作者、8 个不同 World JSON。
+- 3 条来源在 Base336 GPU Run 开始前创建，5 条在 Run 开始后创建；全部晚于 Base336 293/43 数据集冻结边界。
+- 8/8 来源的 revision、审核快照 SHA256、快照与当前公开版本一致性、最新权限事件绑定及 public 目标可见性均通过。
+- 已构造 48 条全新提示 Draft：8 个来源各 6 条，覆盖 Quality-v1 六维各 1 条；每条三条消息 `user / assistant / user`，不含 System、目标答案或参考答案。
+- 未读取私有会话正文，未访问 R50 正文。
+
+当前会话 Draft 工件（尚未 Owner Mac 私有冻结）：
+
+- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`，SHA256：`ab3e9848ca2be63f935bea66d22080ed45c4dd0e0782c08636449831d3152db7`。
+- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`，SHA256：`56c5c9c90e347860e1107dc7f10d2486f8153acc21c469676b80850f57239a4b`。
+- 校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
+- 测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`，本地合成测试 8/8 PASS、compileall PASS；不要声称 GitHub Actions CI PASS。
+
+**P2-C 仍为 HOLD。** 下一 Agent 不要重新抽取 Supabase 或重新构造提示；先完成：
+
+1. 将 8 个新来源的 World 组件与 Base336 293/43 私有来源清单、完整 Story/World component graph 和历史版本交叉核验；不同 ID、不同 MD5、时间晚于冻结点都不能单独证明语义隔离。
+2. 仅使用 Owner 授权的 R50 Protected/Reserved World 元数据做排除核验；绝不读取 R50 正文或答案。
+3. 核验未复用 R47/R48/R55 已暴露开发题及其语义变体。
+4. 逐条检查 48 条提示的来源忠实性、无原文长段复用、无未来信息泄漏、无隐藏指令混入；新增 NPC/角色细节必须明确是合成情境，不得伪称来源事实。
+5. 保持权利范围仅为内部评估提示构造；不能推断作者授予训练或再分发权利。
+6. Owner 在私有目录冻结最终来源 Manifest、提示 SHA256、World crosswalk、R50 元数据排除回执和独立 Reviewer 结论。
+
+当前会话无法访问 Owner Mac 私有目录。若缺少 Base336 私有 source roster、World component evidence 或 R50 元数据清单，明确输出对应 HOLD 并向 Owner 索取这些**私有交叉核验证据**；不得改为读私有会话正文或 R50 内容。
 
 ## 四、P2 通过后才推进 P3 工程适配
 
@@ -67,7 +83,7 @@ Base 与 Adapter 必须使用相同的三个持久化可见消息（无 System�
 
 ## 六、工作方法与交付
 
-先完成只读核验与 P2 输入准备；若 Owner 尚未提供来源包，输出明确的 `P2_SOURCE_PACKAGE_NOT_PROVIDED__HOLD` 和最小补件清单，不要用代码工作掩盖来源缺失。不要提前实现正式 Pairer 或生成输入。
+先完成只读核验与 P2-C 私有交叉核验；若 Owner 尚未提供 Base336/R50 私有元数据证据，输出明确的 World/R50 crosswalk HOLD 和最小补件清单。不要重新抽取来源、不要将 Draft 当作冻结 Held-out，也不要提前实现正式 Pairer 或生成模型输入。
 
 每次修改前检查工作树、分支和 HEAD；复用现有代码；新增功能先合成测试、Ruff 和精确 HEAD Actions。每次报告必须区分真实证据、CI 合成证据、Owner 声明和未知项。
 
