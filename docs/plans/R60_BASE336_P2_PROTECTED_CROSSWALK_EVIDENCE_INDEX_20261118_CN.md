@@ -169,3 +169,8 @@ Owner 已返回本机审计输出，详见 [R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDI
 仓库代码复核发现：R47 Manifest 的 Sample ID 可以通过 source_line、prompt_sha256 和完整 role/content prefix 与 canonical compiled Test 行绑定，再读取该行 metadata.story_id；不要使用通用 id 字段冒充 Story ID。R55 第一层 arbitration index 保存 source_sample_id_private，第二 / 第三层分别保存 original candidate token 链，可以回连第一层。
 
 这使 Owner-local exact crosswalk 具备明确实现路径，但**代码存在不是实际 SAFE PASS**。实际 P2 × R47/R48/R55 overlap、R55 三层 Index 的 receipt/version 绑定、20-case 覆盖和旧 R47 source preflight 证明仍需在 Owner Mac 只输出聚合结果后确认。详见 docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
+
+
+### 2026-11-18 R55 Prep SAFE 文件存在性补充
+
+Owner 本机 metadata inventory 确认三个准备回执存在且均为 0600：Arbitration Prep 1,292 bytes；Second Audit Prep 1,598 bytes；Third Audit Prep 1,498 bytes。此次未读取文件正文，故实际 schema/status、对应 Coordinator Index 文件 SHA256、token 链和 20-case 覆盖依然 UNKNOWN / HOLD。详见专项审计报告第 8 节。本轮不修改 P2-C 门禁。
