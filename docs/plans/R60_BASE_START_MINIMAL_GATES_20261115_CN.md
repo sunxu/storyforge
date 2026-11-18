@@ -656,3 +656,60 @@ ARGS=(
 "$PY" experiments/r58_quality/r60_base336_group_cards_opening_cpu.py "${ARGS[@]}" --execute
 ```
 预期`BASE336_EIGHT_GROUP_CARD_OPENING_PRIVATE_READY__SEMANTIC_HOLD`，只回传SAFE JSON。下一轮使用已经冻结的Codex盲审文件与新成员卡片/Opening证据做来源级复核，独立记录角色和剧情关联；不能凭1组证据不足提前推断具体共享世界，不按JSON精确相等自动重分276/60；336全HOLD、train_admitted=0、GPU/HF 0。
+
+## 2026-11-18：P2 Public Source Inventory 的 SOURCE_BINDING_HOLD 诊断化（Owner下一步）
+
+Owner最近一次真实SAFE为：
+
+```json
+{"database_modified":false,"gpu_started":false,"model_promoted":false,"private_values_emitted":false,"quality_v1_admitted":0,"reason_code":"SOURCE_BINDING_HOLD","schema":"storyforge_r60_base336_p2_public_source_inventory_safe_v1","status":"P2_PUBLIC_SOURCE_INVENTORY_HOLD","train_admitted":0}
+```
+
+该回执只说明来源绑定门禁未通过；它没有给出具体字段/谓词，不能据此推断是UUID类型、权限事件关联、版本号、快照或世界重复。**不要放宽任何门禁，也不要重新跑模型/GPU。**
+
+已在 `experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py` 增加只读聚合诊断：
+- 原 `reason_code=SOURCE_BINDING_HOLD` 保持不变，兼容既有SAFE消费者。
+- 新增 `binding_diagnostics`，仅输出失败检查代码和计数；不输出Story ID、Submission ID、作者ID、世界正文、快照或哈希。
+- 检查覆盖必需UUID/文本ID规范化、submission revision、requested/to visibility、permission event与moderation submission绑定、permission kind/result、当前公开V2快照绑定、GPU前精确World重复。
+- 诊断与原验证器使用同一组谓词；不改变通过条件、不自动修复源数据、不创建训练输入。
+- 新增合成回归，覆盖多项同时失败、SAFE仅含聚合代码、UUID规范化及私有值不泄露。
+
+验证：Owner分支CI [R60 Base336 P2 Source CI #44256492782](https://github.com/sunxu/storyforge/actions/runs/44256492782) 成功；Ruff PASS，P2 source inventory + readonly DB tests **21 passed**，其余关联测试32 + 9 passed，compileall PASS。当前Owner分支HEAD为 `0644d0432cf0e1a7c76b6f05e526370e36b03723`。
+
+### Owner Mac下一步：只重跑原P2来源清单诊断一次
+
+使用**上次P2执行所用的同一个0700私有目录**（若尚未设置，将下方 `P2_DIR` 替换成该目录；不要新建/删除目录，也不要上传该目录内容）：
+
+```bash
+set -euo pipefail
+set +x
+cd ~/workspace/storyforge-r60-4router-review
+git fetch origin r60/common2-cpu2-owner
+git merge --ff-only origin/r60/common2-cpu2-owner
+
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+P2_DIR="$HOME/.local/share/storyforge/r60/private/替换为上次P2来源清单输出目录"
+
+# 先无DB预检；预期 P2_PUBLIC_SOURCE_INVENTORY_PRECHECK__NO_DB
+"$PY" experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py \
+  --output-dir "$P2_DIR"
+
+# 再执行一次受限只读DB查询；上次HOLD未写出manifest时才执行
+"$PY" experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py \
+  --output-dir "$P2_DIR" --execute
+```
+
+只回传最后一条命令输出的SAFE JSON。重点检查：
+
+```json
+"binding_diagnostics": {
+  "schema": "storyforge_r60_p2_source_binding_diagnostic_v1",
+  "selected_rows": 8,
+  "failed_checks": {"具体检查代码": 计数},
+  "private_values_emitted": false
+}
+```
+
+请完整保留 `failed_checks` 的代码和计数。**不要**回传私有manifest、数据库URL、原始行、Story/Submission ID或任何正文。若输出目录里已经存在 `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json`，不要再次执行 `--execute`；先回传文件存在这一事实和SAFE结果。
+
+本次只增加诊断，不代表真实Owner DB查询已通过。拿到Owner Mac的聚合诊断后，下一步按失败代码逐项核对RLS实际可见行、字段类型和外键绑定，再做最小修复。无论诊断结果如何，`train_admitted=0`、`quality_v1_admitted=0`、GPU/HF Job/model request均保持0；R50保护来源、Base336私有来源交集、语义世界隔离、Reviewer独立性和Owner freeze仍未通过。
