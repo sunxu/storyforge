@@ -688,7 +688,7 @@ git fetch origin r60/common2-cpu2-owner
 git merge --ff-only origin/r60/common2-cpu2-owner
 
 PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
-P2_DIR="$HOME/.local/share/storyforge/r60/private/替换为上次P2来源清单输出目录"
+P2_DIR="$HOME/.local/share/storyforge/r60/private/r60-p2-public-source-inventory-20261118"
 
 # 先无DB预检；预期 P2_PUBLIC_SOURCE_INVENTORY_PRECHECK__NO_DB
 "$PY" experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py \
