@@ -13,7 +13,7 @@
 | P2-A Supabase 公开来源 Inventory | READY | 8 条来源、5 位作者、8 个不同 World JSON；revision / snapshot / permission 绑定通过；指定范围精确 World overlap=0 |
 | P2-C Base336 保护集语义隔离 | HOLD | 历史 8 组 roster/evidence 尚未完成语义裁决；成员级证据完整性待核验 |
 | P2-C R50 Protected/Reserved 排除 | UNKNOWN / HOLD | 只允许完整 metadata-only 清单，不允许读取 R50 正文 |
-| P2-C R47/R48/R55 暴露排除 | UNKNOWN / HOLD | 完整来源/暴露 Manifest 与覆盖范围尚未取得 |
+| P2-C R47/R48/R55 暴露排除 | PARTIAL METADATA / UNKNOWN / HOLD | R47/R48 20-case 结构已核验但无 Story ID 映射；R55 私有 Index 文件存在，内容 / Schema / 覆盖未核验 |
 | P2-C actual-sent 版本绑定 | UNKNOWN / HOLD | 代表性 World evidence 未证明实际发送版本 |
 | P2-C Reviewer 独立性与 Owner 冻结 | HOLD | 尚无完整可复核结论 |
 | P2-B 真实 48 条提示包 | NOT_GENERATED | 没有真实 JSONL / Manifest / SHA256；9/9 是合成校验器测试 |
@@ -169,3 +169,14 @@ protected_crosswalk_verified = false  # 直到完整 P2-C 证据和 Owner 冻结
 先报告：当前 GitHub HEAD / Actions；权威材料阅读确认；Owner-local metadata inventory 是否收到；逐类文件 PRESENT/MISSING/AMBIGUOUS/HOLD；下一项最小无副作用动作。
 
 若没有 inventory 输出，**停止在第 1 阶段**并向 Owner 索取；不得猜测路径、Schema 或执行数据库提取。
+
+
+## 2026-11-18 Owner R47 / R48 / R55 metadata audit delta
+
+Owner has now returned a metadata / shape-only inventory. Use the detailed Chinese audit at docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md.
+
+- R47 Manifest has 20 Sample entries with sample_id, prompt_sha256, source_line; compiled Test has 20 records with id/messages/metadata; prompts have 20 records with messages only. The existing chain does not prove a per-case Story ID mapping.
+- R48 is the same 20 exposed R47 prompts with four arms / 80 replies; it adds no independent cases and does not provide the missing Story ID crosswalk.
+- R55 private Coordinator Index files and SAFE files are present by filesystem metadata only. Their content, actual Schema, receipt/version binding and coverage have not been validated.
+- Therefore P2 × R47/R48/R55 exact Story ID crosswalk remains UNKNOWN / HOLD; semantic exposure exclusion remains HOLD. Do not infer identity from JSONL order, source_line, generic id, hashes or filenames.
+- Next action: Owner-local schema/count/coverage SAFE for the R55 private indexes and locate an authoritative Sample → Story ID provenance binding. No DB, R50 body, GPU, HF, model requests or prompt-package generation.
