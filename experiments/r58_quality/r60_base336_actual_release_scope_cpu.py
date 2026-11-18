@@ -6,17 +6,17 @@ immutable exploratory release. Never writes datasets or calls DB/models/GPU.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
 import hashlib
 import json
-from pathlib import Path
 import sys
+from collections import Counter, defaultdict
+from pathlib import Path
 
 import r60_base336_exploratory_release_verify as release_verify
 import r60_base336_exploratory_split as split
 import r60_base336_story_json_shape_cpu as frozen
-import r60_base_start_cpu336_template_audit as audit
 import r60_base336_world_cross_split_private_roster_cpu as roster
+import r60_base_start_cpu336_template_audit as audit
 import r60_real_private_batch as private
 
 SCHEMA = "r60_base336_actual_release_scope_safe_v1"
@@ -166,7 +166,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         result = run(args)
-    except Exception:
+    except Exception:  # noqa: BLE001 - fail closed without exposing private values
         result = {
             "schema": SCHEMA,
             "status": "FINAL_RELEASE_SCOPE_REPLAY_HOLD",
