@@ -202,3 +202,10 @@ docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
 5. 任何输入缺失、receipt 不匹配、覆盖不完整或 token 链断裂均保持 HOLD；即使 exact overlap=0，也不代表语义隔离 PASS。
 
 不要上传 R55 私有 Index / Key / Reviewer 文件，不读取 R50 正文，不访问数据库，不运行 GPU/HF / 模型请求，不生成正式 48 条提示包。
+
+
+## 2026-11-18 R55 三层索引 SAFE 已通过：后续不要重跑
+
+Owner 本机实际输出 `R55_THREE_INDEX_LINK_AND_RECEIPT_PASS__P2_C_HOLD`：三个 Index 的 Schema、Prep Index SHA、token 唯一性通过；76/68/46 records；第一层对冻结 R47 Manifest 20/20 source samples 覆盖，extra/missing 皆 0，20 个 case indices 合法；第二层 68/68 链接及第三层双回链均通过。该有限证据可以直接复用。
+
+**新的下一步**：只读检验 canonical compiled Test 的固定 SHA、R47 20 个 prompt prefix / SHA / source_line / Sample ID 公式、`metadata.story_id` 完整性、R48 Source Audit 的 canonical Test SHA 与 prompt / manifest SHA 绑定，并比较 P2 8 个 Story ID 与历史 20 个 Story ID 的精确交集。仅输出 SAFE 数字 / 布尔值。不要再运行 R55 三层 index link 检查，勿因本轮 PASS 宣布 P2-C 通过。
