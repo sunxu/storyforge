@@ -16,6 +16,7 @@ import argparse
 import json
 import os
 import stat
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -446,9 +447,33 @@ def main() -> int:
         }
         if not is_hold:
             payload["runtime_error_type"] = type(exc).__name__
+            payload["runtime_error_message"] = str(exc)
+            payload["runtime_error_repr"] = repr(exc)
             sqlstate = getattr(exc, "sqlstate", None)
             if isinstance(sqlstate, str) and len(sqlstate) == 5:
                 payload["runtime_error_sqlstate"] = sqlstate
+            diag = getattr(exc, "diag", None)
+            if diag is not None:
+                for key in (
+                    "severity",
+                    "severity_nonlocalized",
+                    "message_primary",
+                    "message_detail",
+                    "message_hint",
+                    "context",
+                    "schema_name",
+                    "table_name",
+                    "column_name",
+                    "datatype_name",
+                    "constraint_name",
+                ):
+                    value = getattr(diag, key, None)
+                    if value:
+                        payload[f"runtime_error_{key}"] = str(value)
+            import traceback
+            print("=== P2 runtime exception detail ===", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            print("=== P2 runtime exception detail end ===", file=sys.stderr)
         print(json.dumps(payload, sort_keys=True))
         return 42
 
