@@ -55,6 +55,52 @@ class BindingDiagnosticHold(Hold):
         super().__init__("SOURCE_BINDING_HOLD")
 
 
+class RlsPolicyHold(Hold):
+    """Required reader RLS policies are absent or unusable."""
+
+    def __init__(self, failed_tables: list[str]):
+        self.safe_diagnostics = {
+            "schema": "storyforge_r60_p2_reader_rls_preflight_v1",
+            "reader_role": db.DEFAULT_READER_ROLE,
+            "failed_tables": sorted(set(failed_tables)),
+            "private_values_emitted": False,
+        }
+        super().__init__("SOURCE_METADATA_RLS_POLICY_HOLD")
+
+
+RLS_PREFLIGHT_SQL = """
+WITH required(table_name, policy_name) AS (
+    VALUES
+        (
+            'story_moderation_submissions',
+            'r58_export_reader_p2_current_public_submissions_select'
+        ),
+        (
+            'story_permission_events',
+            'r58_export_reader_p2_current_public_permission_events_select'
+        )
+)
+SELECT
+    required.table_name,
+    c.relrowsecurity AS rls_enabled,
+    has_table_privilege(current_user, c.oid, 'SELECT') AS select_granted,
+    EXISTS (
+        SELECT 1
+        FROM pg_catalog.pg_policies p
+        WHERE p.schemaname = 'public'
+          AND p.tablename = required.table_name
+          AND p.policyname = required.policy_name
+          AND p.cmd IN ('SELECT', 'ALL')
+          AND p.permissive = 'PERMISSIVE'
+          AND 'r58_export_reader' = ANY(p.roles)
+    ) AS policy_present
+FROM required
+JOIN pg_catalog.pg_class c ON c.relname = required.table_name
+JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+WHERE n.nspname = 'public'
+ORDER BY required.table_name;
+"""
+
 SQL = """
 WITH candidates AS (
     SELECT
@@ -101,7 +147,7 @@ latest_submission AS (
         sm.snapshot,
         sm.requested_visibility
     FROM public.story_moderation_submissions sm
-    JOIN selected s ON s.story_id = sm.story_id::text
+    JOIN selected s ON sm.story_id::text = s.story_id
     ORDER BY sm.story_id, sm.submission_sequence DESC, sm.created_at DESC
 ),
 latest_permission AS (
@@ -152,7 +198,7 @@ SELECT
         WHERE ow.world_json_md5 = md5((s.public_v2_data->'world')::text)
     ) AS exact_world_overlap_pre_cutoff
 FROM selected s
-LEFT JOIN latest_submission ls ON ls.story_id = s.story_id::uuid
+LEFT JOIN latest_submission ls ON ls.story_id::text = s.story_id
 LEFT JOIN latest_permission lp ON lp.story_id = s.story_id
 ORDER BY s.created_at, s.story_id;
 """
@@ -200,12 +246,37 @@ def select_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return before[:EXPECTED_BEFORE_GPU] + after[:EXPECTED_AFTER_GPU]
 
 
-def source_binding_diagnostics(rows: list[dict[str, Any]]) -> dict[str, int]:
-    """Return aggregate-only counts for every SOURCE_BINDING_HOLD predicate.
+def validate_rls_preflight(rows: list[dict[str, Any]]) -> None:
+    """Require the two reviewed, table-scoped reader SELECT policies."""
+    expected = {
+        "story_moderation_submissions",
+        "story_permission_events",
+    }
+    observed: set[str] = set()
+    failed: list[str] = []
+    for row in rows:
+        table = row.get("table_name")
+        if table not in expected or table in observed:
+            failed.append("preflight_result_shape")
+            continue
+        observed.add(table)
+        if row.get("rls_enabled") is not True:
+            failed.append(f"{table}:rls_not_enabled")
+        if row.get("select_granted") is not True:
+            failed.append(f"{table}:select_not_granted")
+        if row.get("policy_present") is not True:
+            failed.append(f"{table}:required_policy_missing")
+    for table in sorted(expected - observed):
+        failed.append(f"{table}:preflight_row_missing")
+    if failed:
+        raise RlsPolicyHold(failed)
 
-    This mirrors the binding checks in validate_rows. It intentionally emits
-    neither source identifiers nor source content, and normalizes PostgreSQL
-    UUID values at the same boundary as the production validator.
+
+def source_binding_diagnostics(rows: list[dict[str, Any]]) -> dict[str, int]:
+    """Return aggregate-only counts, separating invisible joins from bad bindings.
+
+    Missing LEFT JOIN rows are reported once at the metadata boundary. Their
+    dependent NULL columns are not misreported as independent data defects.
     """
     checks: dict[str, int] = {}
 
@@ -213,36 +284,69 @@ def source_binding_diagnostics(rows: list[dict[str, Any]]) -> dict[str, int]:
         checks[code] = checks.get(code, 0) + 1
 
     for row in rows:
-        for field in IDENTIFIER_FIELDS:
+        for field in ("story_id", "author_id"):
             try:
                 row[field] = db.normalize_identifier(row.get(field), field=field)
             except db.ReadOnlyDBHold:
                 fail(f"identifier_{field}_invalid")
 
-        if row.get("submission_revision") != row.get("public_content_revision"):
-            fail("submission_revision_mismatch")
-        if row.get("requested_visibility") != "public":
-            fail("requested_visibility_not_public")
-        if row.get("permission_to_visibility", row.get("to_visibility")) != "public":
-            fail("permission_visibility_not_public")
-        if not _same_identifier(
-            row.get("permission_submission_id"),
-            row.get("moderation_submission_id"),
-        ):
-            fail("permission_submission_id_mismatch")
-        if row.get("permission_submission_bound") is False:
-            fail("permission_submission_bound_false")
+        submission_visible = row.get("moderation_submission_id") is not None
+        permission_visible = row.get("permission_event_id") is not None
 
-        kind = row.get("permission_kind")
-        if kind not in {"ai", "update"}:
-            fail("permission_kind_not_supported")
-        elif kind == "ai" and row.get("permission_result") != "ai_approved":
-            fail("ai_permission_result_not_approved")
-        elif kind == "update" and row.get("permission_result") != "approved":
-            fail("update_permission_result_not_approved")
+        if not submission_visible:
+            fail("moderation_submission_metadata_not_visible")
+        else:
+            try:
+                row["moderation_submission_id"] = db.normalize_identifier(
+                    row.get("moderation_submission_id"),
+                    field="moderation_submission_id",
+                )
+            except db.ReadOnlyDBHold:
+                fail("identifier_moderation_submission_id_invalid")
+            if row.get("submission_revision") != row.get("public_content_revision"):
+                fail("submission_revision_mismatch")
+            if row.get("requested_visibility") != "public":
+                fail("requested_visibility_not_public")
+            if row.get("snapshot_v2_match") is False:
+                fail("snapshot_v2_mismatch")
 
-        if row.get("snapshot_v2_match") is False:
-            fail("snapshot_v2_mismatch")
+        if not permission_visible:
+            fail("permission_event_metadata_not_visible")
+        else:
+            try:
+                row["permission_event_id"] = db.normalize_identifier(
+                    row.get("permission_event_id"),
+                    field="permission_event_id",
+                )
+            except db.ReadOnlyDBHold:
+                fail("identifier_permission_event_id_invalid")
+            try:
+                row["permission_submission_id"] = db.normalize_identifier(
+                    row.get("permission_submission_id"),
+                    field="permission_submission_id",
+                )
+            except db.ReadOnlyDBHold:
+                fail("identifier_permission_submission_id_invalid")
+
+            if row.get("permission_to_visibility", row.get("to_visibility")) != "public":
+                fail("permission_visibility_not_public")
+            if submission_visible:
+                if not _same_identifier(
+                    row.get("permission_submission_id"),
+                    row.get("moderation_submission_id"),
+                ):
+                    fail("permission_submission_id_mismatch")
+                if row.get("permission_submission_bound") is False:
+                    fail("permission_submission_bound_false")
+
+            kind = row.get("permission_kind")
+            if kind not in {"ai", "update"}:
+                fail("permission_kind_not_supported")
+            elif kind == "ai" and row.get("permission_result") != "ai_approved":
+                fail("ai_permission_result_not_approved")
+            elif kind == "update" and row.get("permission_result") != "approved":
+                fail("update_permission_result_not_approved")
+
         if row.get("exact_world_overlap_pre_cutoff") is True:
             fail("exact_world_overlap_pre_cutoff")
 
@@ -390,6 +494,14 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
 
 def _fetch(dsn: str) -> list[dict[str, Any]]:
     try:
+        db_options = {
+            "expected_role": db.DEFAULT_READER_ROLE,
+            "connect_timeout": 10,
+            "statement_timeout_ms": 30_000,
+            "lock_timeout_ms": 1_000,
+        }
+        rls_rows = db.fetch_dict_rows(dsn, RLS_PREFLIGHT_SQL, **db_options)
+        validate_rls_preflight(rls_rows)
         return db.fetch_dict_rows(
             dsn,
             SQL,
@@ -399,10 +511,7 @@ def _fetch(dsn: str) -> list[dict[str, Any]]:
                 GPU_RUN_START, EXPECTED_AFTER_GPU,
                 BASE336_CUTOFF,
             ),
-            expected_role=db.DEFAULT_READER_ROLE,
-            connect_timeout=10,
-            statement_timeout_ms=30_000,
-            lock_timeout_ms=1_000,
+            **db_options,
         )
     except db.ReadOnlyDBHold as exc:
         raise Hold(str(exc)) from exc
@@ -504,6 +613,8 @@ def main() -> int:
         }
         if isinstance(exc, BindingDiagnosticHold):
             payload["binding_diagnostics"] = exc.safe_diagnostics
+        if isinstance(exc, RlsPolicyHold):
+            payload["rls_diagnostics"] = exc.safe_diagnostics
         if not is_hold:
             payload["runtime_error_type"] = type(exc).__name__
             payload["runtime_error_message"] = str(exc)
