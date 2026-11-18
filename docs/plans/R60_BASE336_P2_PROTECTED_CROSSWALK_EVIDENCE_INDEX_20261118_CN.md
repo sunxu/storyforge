@@ -196,3 +196,15 @@ Owner 返回 `r60_p2_r47_r48_r55_exact_story_crosswalk_safe_v1`，R47 canonical 
 统计解释必须保守：20 prompts 只有 2 个 Story IDs；R48 不增加独立故事，R55 记录数也不增加独立故事数。未来质量评估需按 Story 聚类，不能把 20 prompts 作为 20 个独立故事来声称泛化。
 
 **仅关闭 R47/R48/R55 已验证 20-case 链的精确身份门禁，不等于完整历史 exposure universe 已穷尽。** 旧 R47 source preflight 附加约束、语义 World/alias 变体、actual-sent 版本、Base336 成员级语义证据、R50 metadata-only 完整性和 Reviewer 独立性仍 HOLD。P2-C 继续 HOLD，P2-B 仍 NOT_GENERATED。
+
+
+### 2026-11-18 Owner Card/Opening 精确本地文件定位 SAFE
+
+Owner 执行只读 `r60_base336_card_opening_local_locator_safe_v1`，状态 `CARD_OPENING_FILES_INCOMPLETE_OR_MISSING`：
+
+- 四份既有证据：`R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json`（15,003 B）、`R60_BASE336_WORLD_GROUP_DECISIONS_TEMPLATE_PRIVATE.json`（4,374 B）、`R60_BASE336_WORLD_GROUP_DECISIONS_CODEX_PRIVATE.json`（43,218 B）、`R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`（9,256 B）全部 PRESENT、mode 0600。
+- 目标目录 `r60-base336-group-cards-opening-20261115`：**MISSING**；预期组 01–08 的 `R60_BASE336_WORLD_GROUP_XX_CARD_OPENING_PRIVATE.json`：**0/8 PRESENT**。
+- Owner-private R60 树文件名检索：`alternate_match_count=0`。未找到候补 Card/Opening 输出。
+- 核验只读取文件系统元数据；`file_contents_read=false`、`database_accessed=false`、`gpu_started=false`、`private_values_emitted=false`。
+
+**证据裁决：** 现存四份 World/决策材料不可替代 38 个成员的 current/archived `character/characters/opening`。Card/Opening 数据产物明确缺失，语义组件裁决仍 HOLD。脚本 `r60_base336_group_cards_opening_cpu.py` 的 `except Exception` 抹平了失败阶段；现有终端 SAFE 和缺失输出目录不能反推出根因。下一最小动作是**无数据库**的 roster/template + 运行环境只读预检，随后在合成环境为脚本加入固定、去敏的 failure_phase/reason_code 和测试。未确定失败阶段与最小授权前，继续禁止重新执行全量 `--execute`。
