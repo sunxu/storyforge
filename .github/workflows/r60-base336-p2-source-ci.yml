@@ -1,0 +1,66 @@
+name: R60 Base336 P2 Source CI
+
+on:
+  push:
+    branches:
+      - "r60/common2-cpu2-owner"
+    paths:
+      - "src/storyforge_dataset/world_isolation.py"
+      - "tests/test_world_isolation.py"
+      - "experiments/r58_quality/quality_v1.py"
+      - "experiments/r58_quality/test_quality_v1.py"
+      - "experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py"
+      - "tests/test_r60_base336_p2_public_prompt_package_gate.py"
+      - "experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py"
+      - "tests/test_r60_base336_p2_public_source_inventory_cpu.py"
+      - ".github/workflows/r60-base336-p2-source-ci.yml"
+      - "skills/storyforge-roleplay-sft/**"
+      - "docs/standards/GOLD_QUALITY_PIPELINE_CN.md"
+  pull_request:
+    paths:
+      - "src/storyforge_dataset/world_isolation.py"
+      - "tests/test_world_isolation.py"
+      - "experiments/r58_quality/quality_v1.py"
+      - "experiments/r58_quality/test_quality_v1.py"
+      - "experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py"
+      - "tests/test_r60_base336_p2_public_prompt_package_gate.py"
+      - "experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py"
+      - "tests/test_r60_base336_p2_public_source_inventory_cpu.py"
+      - ".github/workflows/r60-base336-p2-source-ci.yml"
+      - "skills/storyforge-roleplay-sft/**"
+      - "docs/standards/GOLD_QUALITY_PIPELINE_CN.md"
+
+permissions:
+  contents: read
+
+jobs:
+  p2-source-synthetic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install project and test tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install pytest ruff
+      - name: Ruff P2 source and shared quality code
+        run: |
+          ruff check             src/storyforge_dataset/world_isolation.py             tests/test_world_isolation.py             experiments/r58_quality/quality_v1.py             experiments/r58_quality/test_quality_v1.py             experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py             tests/test_r60_base336_p2_public_prompt_package_gate.py             experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py             tests/test_r60_base336_p2_public_source_inventory_cpu.py
+      - name: Synthetic world-isolation and Quality-v1 tests
+        run: |
+          pytest -q             tests/test_world_isolation.py             experiments/r58_quality/test_quality_v1.py
+      - name: Synthetic P2 prompt package tests
+        run: |
+          pytest -q tests/test_r60_base336_p2_public_prompt_package_gate.py
+      - name: Synthetic P2 Supabase source inventory tests
+        run: |
+          pytest -q tests/test_r60_base336_p2_public_source_inventory_cpu.py
+      - name: Compile changed P2 Python
+        run: |
+          python -m compileall -q             src/storyforge_dataset/world_isolation.py             experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py             experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py
