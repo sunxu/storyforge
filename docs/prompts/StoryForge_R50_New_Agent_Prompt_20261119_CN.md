@@ -52,7 +52,7 @@
 ### ROLE12
 - 历史消息=364；46/46 原角色与顺序保留（Owner 报告）。
 - 12 条 trailing User；12/12 连续 User append；12/12 有真实 tokenizer encoded record（Owner 报告）。
-- 连续 User 解释合同等待 Owner 对下文精确措辞作出批准/拒绝决定；不得将待决状态视为已批准。
+- 连续 User 解释合同已于 2026-11-19 获 Owner 明确批准；不得再询问相同政策问题。实际四臂 runtime parity 仍未验证。
 - 四臂真实运行时 role parity 未验证。
 
 不要重新运行相同输入的 ROLE12 Owner-local 审计；不要合并、改写或删除连续 User 消息。
@@ -83,14 +83,13 @@
 - 不重审证据没有变化的三组旧 pair 或七组 gap。
 - 如果没有新 provenance，标记 `NOT_TRIGGERED`，保留原有 HOLD。
 
-**W4. 独立 ROLE12 门禁：先等 Owner 决策，再做只读 parity**
+**W4. 独立 ROLE12 门禁：政策已批准，继续只读 parity**
 - 不重跑已完成的结构/Tokenizer 审计。
-- 需要 Owner 对以下精确合同作出明确批准或拒绝：
+- Owner 已对以下精确合同明确回复“批准”，该合同现为有效政策：
 
 > 12 条历史末尾的 User 消息与新追加的 User 消息，是两条独立的连续 User turn。四个模型臂均原样保留两条消息，不合并、不改写、不删除，并将其作为统一输入合同的一部分。
 
-- 在 Owner 明确决定前，保持 `ROLE12_POLICY = PENDING_OWNER_DECISION`。不得把沉默或文档中的待决文字当作批准。
-- 若 Owner 批准，记录明确批准和合同版本；若拒绝/修改，先记录准确的新合同。
+- 记录 `ROLE12_POLICY = APPROVED`，合同版本为 `V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`。此批准不代表 runtime parity 通过。
 - 之后只读核实 Base/v0.1/v0.2/v0.3-A 的实际 role sequence、System/card/rule 顺序、tokenizer/template pin、truncation、generation reserve、EOS/sampling。
 - 不得修改冻结历史消息以消除差异。
 
@@ -131,7 +130,7 @@
 1. 当前 main HEAD、PR #32 状态、PR #32 CI 状态。
 2. 上述 8 项材料中实际成功读取的文件及 ref；缺失项如实列出。
 3. No-repeat matrix：每个工作项标记 `ALREADY_DONE`、`NEW_EVIDENCE_REQUIRED`、`OWNER_DECISION_REQUIRED` 或 `NOT_AUTHORIZED`。
-4. W1 crosswalk 的覆盖范围；W2 已搜索的现有快照位置和缺失项；W3 是否达到新证据触发条件；W4 精确 ROLE12 合同仍待 Owner 决定；
+4. W1 crosswalk 的覆盖范围；W2 已搜索的现有快照位置和缺失项；W3 是否达到新证据触发条件；W4 已批准的 ROLE12 合同及仍待验证的四臂 runtime parity；
 5. 任何下一步动作的权限影响和是否需要 Owner 批准。
 
 只有完成核验后，才提出最小的下一步。不得让用户重复提供本提示词已包含的信息。不要为了“有进展”重跑已完成审计。
@@ -143,7 +142,7 @@ TIMEPOINT_CARD_RULE_PROVENANCE = PENDING
 HIDDEN_ALIAS_WORLD_COMPONENT_CLOSURE = HOLD
 CPU46_TOKEN_LENGTHS = VERIFIED_DRAFT_ONLY
 ROLE12_STRUCTURE = PASS_AS_REPORTED
-ROLE12_POLICY = PENDING_OWNER_DECISION
+ROLE12_POLICY = APPROVED
 FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
 OFFICIAL_HELDOUT_ADMITTED = 0
 FINAL_SEAL = NOT_PERFORMED
@@ -151,3 +150,22 @@ GPU_USED = false
 MODEL_INFERENCE_RUN = false
 TRAINING_RUN = false
 ```
+
+
+## 六、2026-11-19 后续决策更新（优先于本提示词早期的待决描述）
+
+Owner 已明确批准连续 User 合同：
+
+- 12 条末尾历史 User 与新追加 User 是两条独立 User turn。
+- Base/v0.1/v0.2/v0.3-A 四臂均保留原始 role/order/content。
+- 不合并、不改写、不删除。
+- 当前 `ROLE12_POLICY = APPROVED`；`FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED`。
+
+Owner 要求原始回答必须参与质量对比。使用 `docs/plans/V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`：
+- 四个模型臂 + Original Gold 作为第五份历史参考回复；
+- 仅在同一 User 输入、完整历史、System/Card/Rules cutoff、真实原始 Assistant 来源及原始字节 SHA 均精确匹配时，才可计入五方比较；
+- R50 现有 schema 为 prompt-only，不能假定 46/46 有 Original Gold；
+- 五方只报告 exact-match 子集，另报告 `N_gold / 46`；未匹配案例保留在四模型分母；
+- 不得用 Gold195、相似故事、后续编辑或新写回复冒充 Original Gold。新写参考只能另称 `NEW_HUMAN_REFERENCE`，并需单独批准。
+
+继续执行只读的四臂 runtime/load/config 证据核验。无现有记录则标记 `SOURCE_UNAVAILABLE`。不得为补证启动模型、Tokenizer/HF Job、GPU、Inference 或 Training；不得执行 Final Seal、Held-out admission 或 Promotion。
