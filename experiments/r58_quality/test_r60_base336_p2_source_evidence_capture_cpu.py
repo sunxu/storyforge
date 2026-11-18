@@ -143,6 +143,7 @@ def test_base_records_reject_missing_current_story():
         ("current", story, None, None, None, None, None, None, None)
         for story in stories[:-1]
     ]
+    rows.append(("archived", stories[0], 1, None, None, None, None, None, None))
     try:
         audit._base_records(rows, stories)
     except audit.Hold as exc:
