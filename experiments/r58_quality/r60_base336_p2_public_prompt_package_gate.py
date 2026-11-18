@@ -105,8 +105,8 @@ def validate(prompt_path: Path, manifest_path: Path) -> dict:
     source_ids: set[str] = set()
     before_gpu = 0
     after_gpu = 0
-    cutoff = datetime.fromisoformat(BASE336_CUTOFF.replace("Z", "+00:00"))
-    gpu_start = datetime.fromisoformat(GPU_RUN_START.replace("Z", "+00:00"))
+    cutoff = datetime.fromisoformat(BASE336_CUTOFF)
+    gpu_start = datetime.fromisoformat(GPU_RUN_START)
     for source in sources:
         if type(source) is not dict:
             raise Hold("SOURCE_ROW_HOLD")
@@ -115,10 +115,10 @@ def validate(prompt_path: Path, manifest_path: Path) -> dict:
         revision = source.get("public_content_revision")
         try:
             created_at = datetime.fromisoformat(
-                source.get("created_at_utc", "").replace("Z", "+00:00")
+                source.get("created_at_utc", "")
             )
             approved_at = datetime.fromisoformat(
-                source.get("first_public_approved_at_utc", "").replace("Z", "+00:00")
+                source.get("first_public_approved_at_utc", "")
             )
         except (AttributeError, ValueError) as exc:
             raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
