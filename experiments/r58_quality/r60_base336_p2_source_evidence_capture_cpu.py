@@ -119,12 +119,7 @@ def _iso(value: object) -> str | None:
 
 
 def _json_value(value: object) -> object:
-    if isinstance(value, str):
-        try:
-            return json.loads(value)
-        except ValueError:
-            return value
-    if value is None or type(value) in (dict, list, int, float, bool):
+    if value is None or type(value) in (str, dict, list, int, float, bool):
         return value
     raise Hold("JSON_FIELD_TYPE_HOLD")
 
@@ -220,7 +215,7 @@ def load_base336(args: argparse.Namespace) -> tuple[list[dict], list[str], bytes
     stories = locator.scoped_stories(cases, saved)
     if len(cases) != 1000 or len(stories) != 172:
         raise Hold("BASE336_SCOPE_HOLD")
-    return cases, stories, raw_quarantine
+    return cases, stories, raw_quarantine, saved
 
 
 def validate_output_target(path: Path) -> None:
@@ -379,7 +374,7 @@ def exact_field_matches(p2_records: list[dict], base_records: list[dict]) -> tup
 
 
 def safe_summary(base_stats: dict, p2_coverage: dict, p2_records: list[dict],
-                 p2_manifest_sha: str, base_p2_overlap: int,
+                 base_p2_overlap: int,
                  exact_counts: dict, package_bytes: int) -> dict:
     return {
         "schema": SAFE_SCHEMA,
@@ -470,7 +465,7 @@ def _write_new(path: Path, data: bytes) -> None:
 
 def run(args: argparse.Namespace) -> dict:
     _, p2_raw, p2_sources = load_p2_manifest(args.p2_manifest)
-    cases, stories, quarantine_raw = load_base336(args)
+    cases, stories, quarantine_raw, saved = load_base336(args)
     validate_output_target(args.output_dir)
     overlap = len(set(stories) & {row["story_id"] for row in p2_sources})
     if not args.execute:
@@ -497,9 +492,20 @@ def run(args: argparse.Namespace) -> dict:
     p2_records, p2_coverage = _p2_records(p2_rows, p2_sources)
     exact_counts, exact_pairs = exact_field_matches(p2_records, base_records)
     case_bindings = []
-    for position, case in enumerate(cases, 1):
+    for entry in saved["remaining_full_r50_hold"]:
+        position = entry.get("position")
+        if type(position) is not int or not 1 <= position <= len(cases):
+            raise Hold("BASE_CASE_SOURCE_BINDING_HOLD")
+        case = cases[position - 1]
         source = case.get("source")
-        if type(source) is not dict or type(source.get("story_id")) is not str:
+        required_source = ("story_id", "session_id", "assistant_message_id",
+                           "prior_user_message_id", "previous_assistant_message_id",
+                           "previous_user_message_id", "assistant_turn_index")
+        if (type(source) is not dict or any(k not in source for k in required_source)
+                or any(type(source[k]) is not str or not source[k]
+                       for k in required_source[:-1])
+                or type(source["assistant_turn_index"]) is not int
+                or source["story_id"] not in set(stories)):
             raise Hold("BASE_CASE_SOURCE_BINDING_HOLD")
         case_bindings.append({
             "candidate_position_1based_PRIVATE": position,
@@ -547,7 +553,7 @@ def run(args: argparse.Namespace) -> dict:
         raise Hold("PRIVATE_PACKAGE_SIZE_HOLD")
     safe = safe_summary(
         base_stats, p2_coverage, p2_records,
-        hashlib.sha256(p2_raw).hexdigest(), overlap, exact_counts, len(package_raw),
+        overlap, exact_counts, len(package_raw),
     )
     private.private_dir(args.output_dir, create=True)
     _write_new(args.output_dir / PRIVATE_FILENAME, package_raw)
