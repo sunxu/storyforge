@@ -76,7 +76,7 @@ def diagnosed(phase: str, action):
         return action()
     except DiagnosticHold:
         raise
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - redact untrusted DB/errors
         reason = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
         raise DiagnosticHold(phase, reason) from None
 
@@ -265,7 +265,7 @@ def generate(args: argparse.Namespace) -> dict:
         return _generate(args, phase)
     except DiagnosticHold:
         raise
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - redact untrusted DB/errors
         reason = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
         raise DiagnosticHold(phase[0], reason) from None
 
