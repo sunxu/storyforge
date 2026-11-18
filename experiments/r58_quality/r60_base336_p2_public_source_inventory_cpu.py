@@ -200,15 +200,6 @@ def select_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return before[:EXPECTED_BEFORE_GPU] + after[:EXPECTED_AFTER_GPU]
 
 
-IDENTIFIER_FIELDS = (
-    "story_id",
-    "author_id",
-    "moderation_submission_id",
-    "permission_event_id",
-    "permission_submission_id",
-)
-
-
 def source_binding_diagnostics(rows: list[dict[str, Any]]) -> dict[str, int]:
     """Return aggregate-only counts for every SOURCE_BINDING_HOLD predicate.
 
