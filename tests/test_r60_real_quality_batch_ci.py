@@ -13,4 +13,5 @@ def test_r60_real_quality_batch_synthetic_suite():
         capture_output=True, text=True, timeout=100, check=False,
     )
     assert result.returncode == 0, result.stdout[-6000:] + result.stderr[-3000:]
-    match = re.search(r"\\b(\\d+) passed\\b", result.stdout)\n    assert match is not None and int(match.group(1)) >= 15
+    match = re.search(r"\b(\d+) passed\b", result.stdout)
+    assert match is not None and int(match.group(1)) >= 15
