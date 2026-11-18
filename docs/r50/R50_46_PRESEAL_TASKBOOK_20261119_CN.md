@@ -330,3 +330,10 @@ The Library artifact `R50_46_DEEP_TRIAGE_REPORT_20261016.md` records a shared st
 The available R50 Library directory inventory contains 106 entries, including frozen candidate/provenance, W17 review packets, CPU46 and ROLE12 artifacts. The searched R50 inventory did not reveal a dedicated Original Gold reply package. This is bounded to the searched R50 directory, not proof that no relevant historical reply exists in any other Owner-held source. Therefore `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED`; exact-match source lookup remains required before any five-way score.
 
 The R50-specific contract now records both limitations and the exact-match rule. No original reply text or private mappings were opened or copied into Git.
+
+
+### Original Gold source availability update — 2026-11-19
+
+See SAFE receipt `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md` (commit `0c0bec3e4dc495ce35e49c2e59b446c637a78c0c`). Owner-provided local output verifies both 14-chat archive copies are byte-identical and match the expected size/SHA256/ZIP CRC; the 06–15 archive also matches its expected size/SHA256/ZIP CRC. These are Owner-reported checks, not independent agent access to the Mac files. Do not repeat them on unchanged bytes.
+
+The pinned 2026-10-16 source replay compared all 50 new User inputs with User messages in the five pinned R50 source transcripts and reported `source_input_normalized_verbatim_reuses=0`. Therefore no protected 46 case has an exact current-User-input match in those five transcripts (`0/46` within that pinned source scope). This does not prove 0/46 across all Owner-held sources: the 14-chat and 06–15 archives have not been searched for exact full-history matches. Overall `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED`. Any further lookup must compare exact current User input and complete preceding history/cutoff context and emit aggregate counts only. Do not rerun the five-world replay, CRC, W17 lexical scan or prior AI reviews.
