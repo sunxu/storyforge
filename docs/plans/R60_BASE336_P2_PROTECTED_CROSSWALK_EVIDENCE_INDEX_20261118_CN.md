@@ -318,3 +318,19 @@ Card/Opening 8 份 create-only Owner-private 来源证据的**采集与离线结
 Owner 返回 `r60_base336_codex_semantic_structure_safe_v1`：`CODEX_EIGHT_GROUP_STRUCTURE_FOUND__SEMANTIC_REVIEW_HOLD`。Roster/template 绑定均 MATCH；8 组 World evidence 绑定通过；Codex JSON 合法且发现完整 8 组 collection；8 组决策全为 HOLD（PASS=0、REJECT=0、OTHER_OR_MISSING=0）。`historical_actual_sent_verified=false`、`independent_semantic_review_verified=false`、`train_admitted=0`。
 
 此结果证明现存 Codex 审查结构完整并绑定当前冻结 Roster/template，但**不证明审查语义正确或独立**。下一最小步骤不是重跑 Codex，也不是直接把 HOLD 改为 PASS，而是做 Owner-local schema-only shape 对照：对 8 个 Codex group rows 与 8 个 Card/Opening 包的成员级记录只输出字段名/类型/非空计数/来源类型计数，核对旧 HOLD reason 缺失的 member character/plot/version 证据是否被新包覆盖；禁止输出私有值、Story/Revision IDs、正文或 SHA。随后才制定独立 Reviewer 的逐组 source-quoted 语义复核输入与裁决，实际语义判断不由结构脚本代替。
+
+
+### 2026-11-18 Owner Base336 成员级 Card/Opening 与 Codex 交叉核验 SAFE
+
+Owner 返回 `r60_base336_member_evidence_codex_crosswalk_safe_v1`，状态 **`MEMBER_EVIDENCE_CROSSWALK_PASS__SEMANTIC_REVIEW_REQUIRED`**。
+
+- Codex 8 组完整，8/8 决策仍为 HOLD；Roster 与 Template 绑定均通过。
+- 8/8 Card/Opening 文件读取成功；每组实际记录数与冻结 Roster 预期记录数完全一致，8/8 `membership_exact=true`。
+- 成员级来源覆盖：38 条 current、21 条 archived，共 59 条；三个字段 `character`、`characters`、`opening` 在全部 59 条来源记录中均存在且非空。
+- Codex 原有四类证据字段在 8/8 组均非空：World 原文引用、World source field、source revision evidence、generic template vs shared world analysis。
+- 本轮未读取数据库、未修改数据库或私有文件、未输出私有值、未调用模型、未启动 GPU；`train_admitted=0`。
+- `structured_plot_field_counts` 对三个字段均为 0，表示本次检查器未识别到预设名称的结构化 Plot key；**不代表自然语言字段中不存在剧情信息，也不构成剧情独立证明**。
+
+**裁决边界：** 本轮关闭 Base336 8 组成员级 Card/Opening 与 Codex 的结构/来源成员 crosswalk 缺口。它没有判断内容的语义相同、隐藏别名、共享剧情或 World component；也没有证明历史 actual-sent 版本、R50 完整排除或 Reviewer 独立性。Codex 的 8 个 HOLD 不得自动改为 PASS。P2-C 仍 HOLD，P2-B 仍 NOT_GENERATED。
+
+**下一步：** 不重跑 Card/Opening 提取、完整性检查或本次 crosswalk。进入 Owner-authorized、source-quoted 的逐组语义复核：逐条阅读 59 条 current/archived 的 character/characters/opening 内容，并与 8 组既有 Codex HOLD 理由及代表性 World evidence 对照；对每组记录 World、Character/alias、Plot/event、Opening、version/timepoint、generic-template-only 等判断及来源引文。任何无法证实、来源版本不清或证据不足的项目继续 HOLD。独立 Reviewer 必须与原 Codex 审查有可核验的人员/流程独立性；模型或本 Agent 的建议不能冒充独立签署。语义分配最终再调用 `src/storyforge_dataset/world_isolation.py` 的共享校验器；其结构 PASS 仍不等于独立语义证明。
