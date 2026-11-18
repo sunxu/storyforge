@@ -299,3 +299,15 @@ GPU_USED = false
 MODEL_INFERENCE_RUN = false
 TRAINING_RUN = false
 ```
+
+
+### W4 source-code inventory — 2026-11-19
+
+The following existing repository implementations were inspected to avoid repeating prior work:
+
+- `scripts/v02_r47_eval_runner.py`: historical three-arm Base/v0.1/v0.2 inference on the exposed R47 20-case set; not an R50 four-arm runtime receipt.
+- `scripts/v03_r55_gold5_build.py`: offline packaging of already-existing R55 Base/v0.1/v0.2/v0.3-A/Original Gold responses; no R50 access and no model generation.
+- `scripts/v03_r54_gpu_runner.py`: R54 training and one-candidate Adapter reload engineering workflow; not four-arm parity.
+- `scripts/v03_r50_role12_owner_audit.py`: already-completed Draft structure/Tokenizer receipt; it explicitly does not verify actual four-arm runtime parity.
+
+No R50-specific four-arm inference runner or four-arm actual-load receipt was found in the inspected GitHub source. Historical R47 generation parameters are precedent only and cannot be asserted as effective R50 parameters. W4 therefore requires already-existing Owner-local per-arm load/config/runtime records. The Owner has authorized read-only inspection, but this chat has no direct Owner Mac filesystem connector. If those historical records do not exist, record `SOURCE_UNAVAILABLE`; do not launch a model or job to manufacture evidence.
