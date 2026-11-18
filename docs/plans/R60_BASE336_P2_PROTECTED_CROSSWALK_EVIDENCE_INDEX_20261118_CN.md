@@ -208,3 +208,20 @@ Owner 执行只读 `r60_base336_card_opening_local_locator_safe_v1`，状态 `CA
 - 核验只读取文件系统元数据；`file_contents_read=false`、`database_accessed=false`、`gpu_started=false`、`private_values_emitted=false`。
 
 **证据裁决：** 现存四份 World/决策材料不可替代 38 个成员的 current/archived `character/characters/opening`。Card/Opening 数据产物明确缺失，语义组件裁决仍 HOLD。脚本 `r60_base336_group_cards_opening_cpu.py` 的 `except Exception` 抹平了失败阶段；现有终端 SAFE 和缺失输出目录不能反推出根因。下一最小动作是**无数据库**的 roster/template + 运行环境只读预检，随后在合成环境为脚本加入固定、去敏的 failure_phase/reason_code 和测试。未确定失败阶段与最小授权前，继续禁止重新执行全量 `--execute`。
+
+
+### 2026-11-18 无 DB 预检 PASS 与诊断修复提交
+
+Owner 返回 `r60_base336_card_opening_no_db_preflight_v1`：`ROSTER_PRECHECK_PASS__NO_DB`。
+
+- `roster_template_bound=true`，`group_count=8`，`unique_member_count=38`，`member_scope_38=true`。
+- `output_dir_absent=true`，`output_parent_exists=true`；`psycopg_installed=true`，`readonly_dsn_configured=true`。
+- `database_accessed=false`，`database_modified=false`，`gpu_started=false`，`private_values_emitted=false`。
+- 仅证实当前本地解释器有数据库驱动及 DSN 环境变量；不证实已成功连接数据库，也不能追溯此前失败原因。8 个真实 Card/Opening 输出仍 MISSING，P2-C 继续 HOLD。
+
+对仓库脚本 `experiments/r58_quality/r60_base336_group_cards_opening_cpu.py` 的改动：
+- 保持旧 CLI、create-only、read-only DB 和私有输出协议不变。
+- 新增有限枚举 `failure_phase` / `reason_code`，覆盖冻结输入、输出保护、DB connect、DB guard、World/fields、package 和写入；未识别异常统一 `UNEXPECTED_HOLD`，不输出私有异常字符串或堆栈。
+- 失败时 `database_accessed=null`，避免用未知代替 false。
+- synthetic-only 测试覆盖已知拒绝原因、不可信异常脱敏、非 DB 阶段定位和 CLI SAFE 格式。
+- 新脚本**尚未对 Owner 的真实数据库运行**；原先的 `BASE336_CARD_OPENING_EVIDENCE_HOLD` 仍不可追溯到具体历史阶段。保持对全量 `--execute` 的禁止，直到执行环境、代码版本及最小重试范围被明确授权。
