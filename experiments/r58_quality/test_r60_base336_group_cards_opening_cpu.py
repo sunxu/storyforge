@@ -99,3 +99,72 @@ def test_synthetic_capture_writes_eight_private_files(monkeypatch, tmp_path):
     assert safe["train_admitted"] == 0
     assert all(stat.S_IMODE(f.stat().st_mode) == 0o600
                for f in args.output_dir.iterdir())
+
+
+def test_diagnostic_hold_code_and_phase_are_fixed():
+    assert audit.diagnosed("PACKAGE_BUILD", lambda: "ok") == "ok"
+
+    def known_error():
+        raise audit.Hold("FIELD_TOO_LARGE_HOLD")
+
+    with pytest.raises(audit.DiagnosticHold) as known:
+        audit.diagnosed("DB_WORLD_AND_FIELDS", known_error)
+    assert known.value.failure_phase == "DB_WORLD_AND_FIELDS"
+    assert known.value.reason_code == "FIELD_TOO_LARGE_HOLD"
+
+    def private_exception():
+        raise RuntimeError("private story-id=never-emit")
+
+    with pytest.raises(audit.DiagnosticHold) as unknown:
+        audit.diagnosed("DB_CONNECT", private_exception)
+    assert unknown.value.failure_phase == "DB_CONNECT"
+    assert unknown.value.reason_code == "UNEXPECTED_HOLD"
+    assert "private" not in str(unknown.value)
+
+
+def test_generate_reports_safe_phase_without_db(monkeypatch, tmp_path):
+    monkeypatch.setattr(audit.world, "load", lambda *_: (
+        _ for _ in ()).throw(RuntimeError("private sample must not print")))
+    args = SimpleNamespace(roster_dir=tmp_path, output_dir=tmp_path / "output",
+                           execute=False)
+    with pytest.raises(audit.DiagnosticHold) as failure:
+        audit.generate(args)
+    assert failure.value.failure_phase == "ROSTER_TEMPLATE"
+    assert failure.value.reason_code == "UNEXPECTED_HOLD"
+
+    monkeypatch.setattr(audit.world, "load", lambda *_: ({}, [], b""))
+    monkeypatch.setattr(audit.frozen, "_frozen", lambda *_: (
+        _ for _ in ()).throw(audit.Hold("FROZEN_SCOPE_HOLD")))
+    with pytest.raises(audit.DiagnosticHold) as failure:
+        audit.generate(args)
+    assert failure.value.failure_phase == "FROZEN_INPUT"
+    assert failure.value.reason_code == "FROZEN_SCOPE_HOLD"
+
+
+def test_main_emits_only_safe_failure_fields(monkeypatch, capsys, tmp_path):
+    import sys
+    from unittest.mock import patch
+
+    def fail(_args):
+        raise audit.DiagnosticHold("DB_WORLD_AND_FIELDS", "FIELD_TOO_LARGE_HOLD")
+
+    monkeypatch.setattr(audit, "generate", fail)
+    with patch.object(sys, "argv", [
+        "r60_base336_group_cards_opening_cpu.py",
+        *[
+            v for key in ("old", "plan", "v2", "v3", "audit", "quarantine")
+            for v in ("--" + key + "-dir", str(tmp_path))
+        ],
+        "--roster-dir", str(tmp_path),
+        "--output-dir", str(tmp_path / "out"),
+        "--execute",
+    ]):
+        assert audit.main() == 42
+    emitted = json.loads(capsys.readouterr().out)
+    assert emitted["failure_phase"] == "DB_WORLD_AND_FIELDS"
+    assert emitted["reason_code"] == "FIELD_TOO_LARGE_HOLD"
+    assert emitted["database_accessed"] is None
+    assert emitted["private_values_emitted"] is False
+    assert "private" not in json.dumps(emitted).lower().replace(
+        '"private_values_emitted": false', ""
+    )
