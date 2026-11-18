@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.21
+# R58 RolePlay → StoryForge SFT Skill v0.1.22
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -20,6 +20,8 @@
 - [Quality-v1 主线计划](../../docs/plans/R58_LORA_QUALITY_FIRST_MAINLINE_20261101.md)
 - [唯一共享 Token 核心](../../src/storyforge_dataset/token_preflight.py)
 - [统一 Gold Quality Pipeline Manifest / CLI](../../docs/standards/GOLD_QUALITY_PIPELINE_CN.md)
+- [R60 Base336 P2 Protected Crosswalk 证据索引](../../docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md)
+- [R60 Base336 P2 下一 Agent 专项提示词](../../docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md)
 - [Batch-level Review Reconciliation 导入规范](../../docs/standards/GOLD_QUALITY_PIPELINE_CN.md)
 
 完整算法、Schema、失败码、缓存身份、checkpoint 规则和复现步骤只维护在对应技术规范及共享源码中；不要在 Skill 或 README 复制实现。统一 Gold Quality Manifest 仅作为私有 append-only 事件账本和编排入口，不替代来源、世界隔离、质量或训练准入门禁。
@@ -54,3 +56,8 @@ Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 st
 本轮 Supabase P2-A 公开来源 Inventory 已 READY：8条来源、5位作者、3条创建于GPU Run前、5条创建于GPU Run后、8种不同World JSON；指定范围内精确World overlap=0，revision/snapshot/permission绑定验证通过。Owner确认的用途仅为内部独立评估提示构造，私有Source Manifest已创建。**P2-C仍HOLD**：`protected_crosswalk_verified=false`；8种World JSON不等于8个语义独立世界，GPU Run后创建也不单独证明底层素材未提前暴露。Base336私有来源、R50 Protected/Reserved仅元数据排除、R47/R48/R55暴露题/语义变体排除尚待交叉核验。R50正文仍禁止访问。真实48条提示JSONL/Manifest尚未生成，不得生成正式Held-out或推理。下一步先做Owner私有证据文件的只读元数据inventory，再根据真实Schema开发可复用的Owner-local crosswalk适配器。
 
 生成评估优先复用 `generation_eval.worker` 与共享 HF Runtime；旧 P4 三模型配置、三臂 Pairing Gate 和五维 Scorecard 不直接适用，具体适配边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。GPU推理仍需单独明确授权。
+
+
+## 当前 R60 P2 接手边界（2026-11-18）
+
+P2-A Inventory READY，P2-C Protected Crosswalk HOLD，真实 P2-B 48 条提示包 NOT_GENERATED。新 Agent 首先只核对 Owner Mac 私有文件元数据；此前 card/opening 全量 `--execute` 曾返回无具体失败阶段的泛化 HOLD，禁止盲目重跑或覆盖既有文件。Schema 和保护集覆盖未确认前不开发适配器。完整执行合同见专项提示词与证据索引。
