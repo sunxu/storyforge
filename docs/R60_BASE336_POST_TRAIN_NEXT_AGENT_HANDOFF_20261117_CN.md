@@ -271,3 +271,16 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 - Owner Mac 文件 inventory 尚未收到；不声称私有证据已经存在或已完成读取。
 - 首要动作是只读文件元数据盘点。此前 card/opening 全量提取返回泛化 HOLD，禁止盲目重跑全量 `--execute`。
 - 本次交接文档不执行 Supabase 查询、不访问私人文件、不读取 R50 正文、不运行模型/GPU/HF Job，不改变准入状态。
+
+
+## 2026-11-18 R47 / R48 / R55 Source Shape Audit 增量（最新）
+
+最新 Owner-local metadata / shape audit 已收到，完整结果见 [R60 P2 R47/R48/R55 Source Shape Audit](evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md)。
+
+- R47 Manifest 只有 20 个 sample_id / prompt_sha256 / source_line 元素；compiled Test 为 20 条 id/messages/metadata；Prompt 为 20 条 messages。现有 R47 / R48 构建和校验逻辑没有形成可验证的逐案 Story ID 映射。
+- R48 20 cases / 80 replies 与 R47 是同一批 20 个旧测试案例，不得重复计为独立 Held-out。
+- R55 三个私有 Coordinator Index（0600）及两个 SAFE 文件的元数据已确认存在；本轮没有读取 Index / SAFE 内容，Schema、版本绑定、覆盖完整性和 Story ID 映射均 UNKNOWN / HOLD。
+- 此前 P2 × Base336（336 cases / 172 stories，精确 Story ID overlap=0）及 P2 × R50（exact Source ID disjoint）结果只对其各自清单范围有效，不可外推到 R47/R48/R55。
+- **当前 P2 × R47/R48/R55 exact Story ID crosswalk = UNKNOWN / HOLD；semantic exposure exclusion = HOLD；P2-C 总门禁继续 HOLD。**
+
+下一步只做 Owner-local R55 Index 结构 / 覆盖 SAFE 检查，并寻找 Sample → Story ID 的权威来源映射。不得读取 R50 正文、历史答案或逐案 Reviewer 内容；不得重跑数据库查询、GPU、HF Job、模型请求或生成正式 48 条提示包。
