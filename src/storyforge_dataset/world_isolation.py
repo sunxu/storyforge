@@ -1,7 +1,8 @@
 """Reusable structural gates for semantic world-component split isolation.
 
 This module never infers semantic identity from story IDs, exact JSON equality,
-hashes, names, or timestamps. A reviewer must first assign a source-bound
+hashes, names, or timestamps. P2 source selection is an upstream evidence
+layer and is not performed here. A reviewer must first assign a source-bound
 semantic_component_id. These helpers only validate and compare those declared
 assignments; SAFE callers must not emit the private component IDs.
 """
