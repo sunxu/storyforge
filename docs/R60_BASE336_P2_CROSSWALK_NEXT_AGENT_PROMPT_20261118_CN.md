@@ -209,3 +209,19 @@ docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
 Owner 本机实际输出 `R55_THREE_INDEX_LINK_AND_RECEIPT_PASS__P2_C_HOLD`：三个 Index 的 Schema、Prep Index SHA、token 唯一性通过；76/68/46 records；第一层对冻结 R47 Manifest 20/20 source samples 覆盖，extra/missing 皆 0，20 个 case indices 合法；第二层 68/68 链接及第三层双回链均通过。该有限证据可以直接复用。
 
 **新的下一步**：只读检验 canonical compiled Test 的固定 SHA、R47 20 个 prompt prefix / SHA / source_line / Sample ID 公式、`metadata.story_id` 完整性、R48 Source Audit 的 canonical Test SHA 与 prompt / manifest SHA 绑定，并比较 P2 8 个 Story ID 与历史 20 个 Story ID 的精确交集。仅输出 SAFE 数字 / 布尔值。不要再运行 R55 三层 index link 检查，勿因本轮 PASS 宣布 P2-C 通过。
+
+
+## 2026-11-18 R47/R48/R55 精确 Story ID crosswalk SAFE 已通过（有限范围）
+
+Owner-local SAFE：`P2_R47_R48_EXACT_STORY_ID_DISJOINT__R55_BOUND_TO_R47_20__P2_C_HOLD`。
+
+- Canonical Test 固定 SHA、R47 Prompt / Manifest 绑定、Sample → `metadata.story_id` 复合绑定均通过。
+- R47 20 prompts 对应 **2 个唯一 Story IDs**。
+- R48 固定 canonical source SHA 绑定通过；R48 复用 R47 同一 20-case，不增加独立故事数。
+- P2 8 个唯一 Story IDs 与 R47/R48 20-case exact overlap=0。
+- R55 第一层 20/20 R47 Sample 覆盖及此前已通过的 76/68/46 三层 Index token 链，可将这批 R55 派生记录映射到同一 R47 20-case / 2-Story 集合；此有限链范围 exact overlap=0。
+- 不再重跑 R47/R48 exact crosswalk，也不重跑 R55 Index SHA / token 链。
+
+**重要统计限制**：20 prompts 仅来自 2 个 Story IDs；76/68/46 是 R55 派生记录数量，不是独立故事数。不得用 prompt 数或派生记录数宣称故事级样本量或跨故事泛化能力。
+
+仍然 HOLD：完整历史 exposure universe closure、旧 R47 source preflight 附加约束、语义 World / hidden alias 变体、actual-sent 版本、Base336 成员级 card/opening 和 8 组语义裁决、R50 metadata-only roster 完整性、Reviewer 独立性。P2-C=HOLD；P2-B=NOT_GENERATED；不访问 R50 正文、不启动 GPU/HF、不发起模型请求。
