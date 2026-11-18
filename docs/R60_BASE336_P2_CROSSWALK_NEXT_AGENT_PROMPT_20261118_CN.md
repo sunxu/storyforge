@@ -171,12 +171,13 @@ protected_crosswalk_verified = false  # 直到完整 P2-C 证据和 Owner 冻结
 本次已收到 R47/R48/R55 的部分 metadata / shape inventory，不要重复盘点这些已确认文件；下一步进入其私有 Index 的结构 / 覆盖 SAFE 检查。对 Base336、R50 或其他尚未提供 inventory 的保护集，仍只做文件元数据确认；缺失时保持对应 HOLD。任何情况下不得猜测 Schema 或执行数据库提取。
 
 
-## 2026-11-18 Owner R47 / R48 / R55 metadata audit delta
+## 2026-11-18 Owner R47 / R48 / R55 metadata 审计增量
 
-Owner has now returned a metadata / shape-only inventory. Use the detailed Chinese audit at docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md.
+Owner 已返回 metadata / shape-only inventory。详细结果见：
+docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
 
-- R47 Manifest has 20 Sample entries with sample_id, prompt_sha256, source_line; compiled Test has 20 records with id/messages/metadata; prompts have 20 records with messages only. The existing chain does not prove a per-case Story ID mapping.
-- R48 is the same 20 exposed R47 prompts with four arms / 80 replies; it adds no independent cases and does not provide the missing Story ID crosswalk.
-- R55 private Coordinator Index files and SAFE files are present by filesystem metadata only. Their content, actual Schema, receipt/version binding and coverage have not been validated.
-- Therefore P2 × R47/R48/R55 exact Story ID crosswalk remains UNKNOWN / HOLD; semantic exposure exclusion remains HOLD. Do not infer identity from JSONL order, source_line, generic id, hashes or filenames.
-- Next action: Owner-local schema/count/coverage SAFE for the R55 private indexes and locate an authoritative Sample → Story ID provenance binding. No DB, R50 body, GPU, HF, model requests or prompt-package generation.
+- R47 Manifest 有 20 个 Sample 条目，字段为 sample_id、prompt_sha256、source_line；compiled Test 有 20 条 id/messages/metadata；prompts 有 20 条 messages。现有证据链没有证明逐案 Story ID 映射。
+- R48 是同一批已暴露的 R47 20 个 Prompt，四臂共 80 条回复；不增加独立案例，也没有补出缺失的 Story ID crosswalk。
+- R55 私有 Coordinator Index 和 SAFE 文件仅通过文件系统元数据确认存在；内容、实际 Schema、receipt / version 绑定和覆盖范围均未验证。
+- 因此 P2 × R47/R48/R55 精确 Story ID crosswalk 仍为 UNKNOWN / HOLD；语义暴露排除仍为 HOLD。不得根据 JSONL 行序、source_line、通用 id、哈希或文件名推断身份。
+- 下一步：Owner-local 对 R55 私有 Index 做 Schema / 数量 / 覆盖 SAFE 检查，并寻找权威 Sample → Story ID 来源绑定。不访问 DB / R50 正文，不启动 GPU / HF，不发起模型请求，不生成提示包。
