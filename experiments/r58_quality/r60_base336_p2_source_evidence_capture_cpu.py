@@ -194,11 +194,11 @@ def load_p2_manifest(path: Path) -> tuple[dict, bytes, list[dict]]:
         if row["permission_result"] != expected:
             raise Hold("P2_PERMISSION_RESULT_HOLD")
         if (type(row["world_json_md5"]) is not str or len(row["world_json_md5"]) != 32
-                or any(c not in "0123456789abcdef" for c in row["world_json_md5"]):
+                or any(c not in "0123456789abcdef" for c in row["world_json_md5"])):
             raise Hold("P2_WORLD_DIGEST_SHAPE_HOLD")
         if (type(row["submission_snapshot_sha256"]) is not str
                 or len(row["submission_snapshot_sha256"]) != 64
-                or any(c not in "0123456789abcdef" for c in row["submission_snapshot_sha256"]):
+                or any(c not in "0123456789abcdef" for c in row["submission_snapshot_sha256"])):
             raise Hold("P2_SNAPSHOT_DIGEST_SHAPE_HOLD")
         ids.add(row["story_id"])
         keys.add(row["source_key"])
