@@ -39,7 +39,7 @@ Read the current taskbook first. It is the operational source of truth for work 
 | Hidden alias / event / transitive world closure | HOLD |
 | CPU46 token lengths | 46/46 within Draft budget |
 | ROLE12 structure | 46/46 roles/order; 12/12 trailing User encoding reported |
-| Consecutive User policy | PENDING OWNER DECISION on exact contract |
+| Consecutive User policy | APPROVED on 2026-11-19; runtime parity still unverified |
 | Four-arm runtime parity | NOT VERIFIED |
 | Official Held-out admission | 0 |
 | Final Seal | NOT PERFORMED |
@@ -75,7 +75,7 @@ Before making changes, report:
 - current `main` HEAD and current state of PR #32;
 - which cited artifacts were actually fetched and read;
 - a no-repeat matrix marking each completed task;
-- the W1 crosswalk plan, the existing-source locations searched for W2, the W3 trigger condition, and the pending exact ROLE12 Owner decision;
+- the W1 crosswalk result, the existing-source locations searched for W2, the W3 trigger condition, the approved ROLE12 policy, and the still-unverified four-arm runtime parity;
 - whether any proposed operation would access private R50 content, paid HF, GPU, inference, training or frozen inputs.
 
 Do not ask the Owner to repeat information already in this packet. Ask only for the specific missing evidence or authorization after repository and artifact checks are complete.
