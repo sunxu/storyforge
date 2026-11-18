@@ -355,3 +355,18 @@ SAFE 汇总 `r60_base336_semantic_prereview_safe_v1`：
 本轮排除了相同 Story ID 的 Current/Archived 重复副本，且核对组内成员来源与冻结 Roster 的严格绑定。准确结论是**已有来源中的跨 split 复用/高度疑似复用**，不是已证明 historical actual-sent 的模型训练泄漏。旧 Codex 8 组 HOLD 保持不变；任何 World JSON 通用模板认定都不能覆盖成员级相反证据。
 
 独立 Reviewer 尚未签署；`historical_actual_sent_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`，P2-C HOLD，P2-B NOT_GENERATED。下一步由独立 Reviewer 在 Owner-private 的逐案来源引文、版本链、角色同一性与 Plot/Opening 语境证据上复核高风险组，并确定共享语义组件的分组隔离或候选排除方案；不得用推断的 PASS 自动准入。
+
+
+### 2026-11-18 Base336 cross-split exact reuse independent recheck
+
+基于 Owner 提供的原始 12 文件 ZIP，在本次隔离审查会话内对每组所有跨 Train/Validation、不同 Story ID 的来源对独立重算，**不是原先 Codex Reviewer 的独立签署**。比较三个字段完整结构相等，以及嵌套字符串长度 >=120 Unicode 字符的逐字相等；排除 URL 字符串；排除同 Story ID 的 current/archive 重复，把不同版本的匹配证据折叠成唯一跨 split Story 配对。
+
+SAFE `r60_base336_source_reuse_independent_recheck_safe_v1`，`SOURCE_REUSE_RECHECK_COMPLETE__SEMANTIC_SIGNOFF_HOLD`：12 文件、8 组、59 来源记录；分组跨 split 来源组合数 `[20,1,6,2,54,9,2,6]`；有精确完整字段或长文本复用的**唯一不同 Story ID 配对**数 `[0,1,0,0,1,2,0,2]`，合计 6 个组内去重的故事配对；高风险组 02/05/06/08。组 04 仍需语义复核；组 01/03/07 无此阈值下的精确正例，不能作独立性证明。
+
+证据强度：
+- 02：两个不同故事 current/current 对有 2,368 / 1,396 / 1,159 字符的长文本相等；
+- 05：current/version 之间的长字符串逐字相等，最长 3,789 字符；
+- 06：两对不同 Story 的 source 组合存在 1,492、1,391 字符或多段其他文本的逐字相等；
+- 08：一对故事的 `character`、`characters`、`opening` **三个完整字段逐字结构相等**（字段的 JSON 表达约 2.2 KB、4.2 KB、0.4 KB），另一对的 `character`、`characters` 两字段结构相等。
+
+完整逐案来源引用、版本 ID、hash 和最小引文仅保存在会话生成的私有文件 `R60_BASE336_SOURCE_REUSE_RECHECK_PRIVATE.json` 中；GitHub 不存储这些值。方法仅验证精确复用，不涵盖变体、隐含别名、Plot 语义或实际训练时 actual-sent 版本。独立 Reviewer 未签署；`historical_actual_sent_verified=false`、`train_admitted=0`，P2-C 继续 HOLD。下一步优先获取可绑定 6 个跨 split 故事配对的 request-effective actual-sent/source revision 历史证据，再作独立语义组件裁决或保守排除，且不可仅因结构匹配就判定已发生模型训练泄漏。
