@@ -60,11 +60,11 @@ Do not:
 1. **W1 first:** complete the historical evidence coverage crosswalk between the 2026-11-19 inventory, W17 dossiers, source/archive manifests, frozen R45 scope and known transitive-link records. Decide `NEW_EVIDENCE_PRESENT` or `NO_NEW_EVIDENCE`. This is the prerequisite for any new semantic adjudication.
 2. **W2 may run in parallel with W1:** read-only search existing Owner-held historical card/version snapshots, prompt-assembly/runtime records and long-term rule versions. Record searched locations and artifact availability. If absent, record `SOURCE_UNAVAILABLE` / `HOLD`; do not reconstruct history or initiate new export work.
 3. **W3 only on a trigger:** if W1 or W2 identifies genuinely new provenance relevant to a specific unresolved edge, propose a narrowly scoped adjudication of only that edge. If no new provenance exists, mark W3 `NOT_TRIGGERED`; do not repeat the three W17 pair reviews or seven full-message reviews.
-4. **W4 separate gate:** obtain the Owner's explicit decision on this exact consecutive-User contract. Only after that decision, perform read-only Base/v0.1/v0.2/v0.3-A runtime role/template parity verification. Do not mutate frozen messages.
+4. **W4 separate gate:** the Owner explicitly approved the exact consecutive-User contract on 2026-11-19. Perform only read-only Base/v0.1/v0.2/v0.3-A runtime role/template parity verification using already-existing Owner-local receipts/configuration. Do not rerun the structural/tokenizer audit or mutate frozen messages.
 
    > 12 条历史末尾的 User 消息与新追加的 User 消息，是两条独立的连续 User turn。四个模型臂均原样保留两条消息，不合并、不改写、不删除，并将其作为统一输入合同的一部分。
 
-   Until the Owner explicitly approves or rejects it, policy remains `PENDING_OWNER_DECISION`; silence is not approval.
+   Policy is now `ROLE12_POLICY = APPROVED`; this does not mean four-arm runtime parity passed.
 5. Prepare preregistration only after the gates close. No final seal or inference without separate Owner authorization.
 
 No HF Job, paid tokenizer job, GPU, model inference or training is needed or authorized for this handoff. If W1 finds no new evidence, preserve HOLD instead of generating another review that cannot change the decision.
@@ -88,7 +88,7 @@ Do not ask the Owner to repeat information already in this packet. Ask only for 
 - No database writes, source mutation, prompt rewriting, role coalescing, truncation, GPU, paid HF Job, model inference, training, answer-key access, final seal or promotion.
 - Keep R50 separate from R56/R60 development, Base336 and other evaluation workstreams unless the Owner explicitly expands scope.
 
-**Handoff state:** `R50_W1_CROSSWALK_FIRST__W2_EXISTING_SNAPSHOT_SEARCH_PARALLEL__W3_CONDITIONAL__W4_OWNER_DECISION_PENDING__NO_FINAL_SEAL`.
+**Handoff state:** `R50_W1_CROSSWALK_DONE__W2_SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__W3_NOT_TRIGGERED__W4_POLICY_APPROVED_RUNTIME_PARITY_PENDING__NO_FINAL_SEAL`.
 
 
 ## 8. Execution update — 2026-11-19
@@ -100,3 +100,29 @@ W1 and W2 were executed as documented in `docs/evidence/V03_R50_W1_W2_COVERAGE_C
 - W2: `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES` for actual inference-time card/rule snapshots and prompt-assembly/runtime receipts. The search covered the GitHub source tree and available R50 Library artifact inventory, not every possible Owner-held storage location.
 - W4 remains pending the Owner's explicit decision on the exact consecutive-User contract. A generic “授权” is not recorded as approval of that policy.
 - No repeated source/CRC/lexical/AI/tokenizer/ROLE12 audit; no HF Job, GPU, inference, training, answer-key access, admission, or seal.
+
+
+## 9. Owner decision and Original Gold comparison update — 2026-11-19
+
+Owner explicitly approved the exact consecutive-User contract:
+
+```text
+ROLE12_POLICY = APPROVED
+CONSECUTIVE_USER_SEMANTICS = TWO_INDEPENDENT_USER_TURNS
+MERGE_USER_MESSAGES = false
+REWRITE_USER_MESSAGES = false
+DELETE_USER_MESSAGES = false
+APPLY_TO_ALL_FOUR_ARMS = true
+```
+
+The policy approval does not establish actual runtime parity. W4 now proceeds only as a read-only comparison of already-existing Base/v0.1/v0.2/v0.3-A runtime/load/config evidence. If such historical evidence is absent, record `SOURCE_UNAVAILABLE`; do not start a model or tokenizer job.
+
+The Owner also clarified that the original answer must be included in comparison. The R50-specific contract is:
+
+`docs/plans/V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`
+
+It defines **four model arms + Original Gold** as a five-way comparison only when the historical original Assistant reply is authenticated for the exact same current User input, full preceding history, System/Card/Rules cutoff and source bytes. R50 is prompt-only in the existing source schema, so Original Gold coverage is not established for all 46. Report five-way results only on the exact-match subset and report `N_gold / 46`; keep unmatched cases in the four-model denominator. Never substitute a similar story reply, Gold195, later edit, or new human answer as Original Gold. Any separately authored answer must be called `NEW_HUMAN_REFERENCE` and requires separate approval.
+
+The contract requires anonymous per-case randomization, three independent reviewers, six dimensions, a separate frozen v0.3-A vs v0.2 direct pairwise comparison, case-level serious-error adjudication and world-clustered uncertainty. It does not authorize R50 inference, scoring, Final Seal or promotion.
+
+**Current status:** `ROLE12_POLICY=APPROVED`; `FOUR_ARM_RUNTIME_ROLE_PARITY=NOT_VERIFIED`; `ORIGINAL_GOLD_R50_COVERAGE=NOT_ESTABLISHED`; all world/timepoint gates remain unchanged.
