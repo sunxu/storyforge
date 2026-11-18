@@ -284,3 +284,17 @@ Owner 已返回 R47/R48/R55 的部分 metadata inventory；这些文件不再重
 - **当前 P2 × R47/R48/R55 exact Story ID crosswalk = UNKNOWN / HOLD；semantic exposure exclusion = HOLD；P2-C 总门禁继续 HOLD。**
 
 下一步只做 Owner-local R55 Index 结构 / 覆盖 SAFE 检查，并寻找 Sample → Story ID 的权威来源映射。不得读取 R50 正文、历史答案或逐案 Reviewer 内容；不得重跑数据库查询、GPU、HF Job、模型请求或生成正式 48 条提示包。
+
+
+## 2026-11-18 R47 / R48 / R55 crosswalk code-path refinement（接手时优先采用）
+
+代码复核发现，R47 Sample → Story ID 并非没有实现路径：
+
+1. \`scripts/prepare_blind_eval.py\` 从每条 canonical source row 的 prompt prefix 生成确定性 \`sample_id\`、\`prompt_sha256\` 和 \`source_line\`。
+2. \`scripts/audit_v01_integrity.py\` 检查 canonical Test 行存在 \`metadata.story_id\`，并逐案验证 Test row / frozen prompt / Manifest 的完整 role/content prefix、prompt hash、source_line 和 Sample ID 公式。
+3. \`scripts/v02_r48_four_arm_build.py\` 固定 canonical Test SHA，并再次核对 20 条完整 prompt prefix。R48 与 R47 是同一 20-case 集，不新增独立 Story 集。
+4. R55 第一层 Coordinator Index 保存 \`source_sample_id_private\`；第二 / 第三层 Index 保存 original candidate token 回链字段，可以校验它们是否仍指向第一层来源。
+
+但本机文件实际 crosswalk 仍未执行。下一步不要再寻找一个不存在的 \`compiled_test.id = story_id\` 字段；应按上述复合绑定构造 Owner-local SAFE，并将 P2 Manifest 的 8 个 \`story_id\` 与 R47 20 个 \`metadata.story_id\` 比较。R55 还必须验证三个 Index 的 Schema / token links / 20-case coverage / receipt hash binding，并审查 \`R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json\` 是否证明 R55 原始 20-case 与 R47 Manifest 对应。
+
+只输出 overlap count、disjoint boolean、各层记录数 / 覆盖数、receipt binding booleans；绝不输出任何 ID、作者映射、哈希或正文。实际 SAFE 未通过前 P2 × R47/R48/R55 仍 UNKNOWN / HOLD，semantic exposure exclusion 仍 HOLD。
