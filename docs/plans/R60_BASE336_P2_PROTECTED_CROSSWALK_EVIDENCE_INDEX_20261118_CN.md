@@ -185,3 +185,14 @@ Owner 本机 metadata inventory 确认三个准备回执存在且均为 0600：A
 - 第二层 68/68 回连第一层；第三层到第二层 / 第一层的链接和三层一致性均通过。
 - 不重做三层索引校验。下一步执行 R47 Sample → canonical Test `metadata.story_id` 的 Owner-local 联合 SAFE，并与 P2 的 8 个 Story ID 交叉。
 - `P2_R47_R48_R55_EXACT_STORY_ID` 仍 UNKNOWN/HOLD；旧 R47 preflight 的其他限定、完整历史暴露范围、语义和 actual-sent 尚未通过；P2-C 继续 HOLD。
+
+
+### 2026-11-18 Owner-local P2 × R47/R48/R55 exact Story ID SAFE 结果
+
+Owner 返回 `r60_p2_r47_r48_r55_exact_story_crosswalk_safe_v1`，R47 canonical Test SHA、Prompt / Manifest 绑定、Sample → `metadata.story_id` 复合绑定和 R48 canonical source SHA 绑定均通过。R47 20 prompts 对应 **2 个唯一 Story IDs**；P2 8 个唯一 Story IDs 与该 20-case 历史集合精确 overlap=0。
+
+结合已通过的 R55 三层 Index SHA / token 链及第一层 20/20 R47 Sample 覆盖，可将 R55 这批 76/68/46 派生记录传递映射至同一 R47 20-case / 2-Story 集合；在这一**已验证的有限链范围**内，P2 × R47/R48/R55 exact Story ID overlap=0。R55 派生记录数不是独立故事数。
+
+统计解释必须保守：20 prompts 只有 2 个 Story IDs；R48 不增加独立故事，R55 记录数也不增加独立故事数。未来质量评估需按 Story 聚类，不能把 20 prompts 作为 20 个独立故事来声称泛化。
+
+**仅关闭 R47/R48/R55 已验证 20-case 链的精确身份门禁，不等于完整历史 exposure universe 已穷尽。** 旧 R47 source preflight 附加约束、语义 World/alias 变体、actual-sent 版本、Base336 成员级语义证据、R50 metadata-only 完整性和 Reviewer 独立性仍 HOLD。P2-C 继续 HOLD，P2-B 仍 NOT_GENERATED。
