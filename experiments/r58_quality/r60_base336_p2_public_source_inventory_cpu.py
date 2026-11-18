@@ -23,8 +23,10 @@ from typing import Any
 
 try:
     from . import r60_real_private_batch as private
+    from . import r60_readonly_db as db
 except ImportError:  # direct script execution from experiments/r58_quality
     import r60_real_private_batch as private
+    import r60_readonly_db as db
 
 SCHEMA = "storyforge_r60_base336_p2_public_source_inventory_private_v1"
 SAFE = "storyforge_r60_base336_p2_public_source_inventory_safe_v1"
@@ -144,21 +146,10 @@ ORDER BY s.created_at, s.story_id;
 
 
 def _iso(value: object) -> datetime:
-    # psycopg returns timestamptz columns as datetime objects; synthetic
-    # fixtures may use ISO-8601 strings. Accept both, but always require
-    # timezone information so timestamp gates cannot silently use local time.
-    if isinstance(value, datetime):
-        result = value
-    elif isinstance(value, str):
-        try:
-            result = datetime.fromisoformat(value)
-        except ValueError as exc:
-            raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
-    else:
-        raise Hold("SOURCE_TIMESTAMP_HOLD")
-    if result.tzinfo is None:
-        raise Hold("SOURCE_TIMESTAMP_HOLD")
-    return result
+    try:
+        return db.normalize_timestamp(value)
+    except db.ReadOnlyDBHold as exc:
+        raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
 
 
 def _sha256(value: object) -> bool:
@@ -196,9 +187,24 @@ def select_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return before[:EXPECTED_BEFORE_GPU] + after[:EXPECTED_AFTER_GPU]
 
 
+IDENTIFIER_FIELDS = (
+    "story_id",
+    "author_id",
+    "moderation_submission_id",
+    "permission_event_id",
+    "permission_submission_id",
+)
+
+
 def validate_rows(rows: list[dict[str, Any]]) -> dict:
     if len(rows) != EXPECTED_SELECTED:
         raise Hold("SOURCE_COUNT_HOLD")
+    for row in rows:
+        try:
+            db.normalize_identifier_fields(row, IDENTIFIER_FIELDS)
+        except db.ReadOnlyDBHold as exc:
+            raise Hold("SOURCE_BINDING_HOLD") from exc
+
     stories = {row.get("story_id") for row in rows}
     authors = {row.get("author_id") for row in rows}
     worlds = {row.get("world_json_md5") for row in rows}
@@ -332,38 +338,23 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
 
 
 def _fetch(dsn: str) -> list[dict[str, Any]]:
-    if not dsn:
-        raise Hold("DB_DSN_NOT_SET_HOLD")
-    import psycopg
-
-    with psycopg.connect(dsn, connect_timeout=10, autocommit=False) as conn:
-        try:
-            with conn.cursor() as cur:
-                cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-                cur.execute("SET LOCAL row_security=on")
-                cur.execute("SET LOCAL statement_timeout='30000ms'")
-                cur.execute("SET LOCAL lock_timeout='1000ms'")
-                cur.execute("""
-                    SELECT current_user,current_setting('transaction_read_only'),
-                           current_setting('row_security'),r.rolbypassrls,r.rolsuper
-                    FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
-                """)
-                guard = cur.fetchone()
-                private.assert_guard(guard)
-                cur.execute(
-                    SQL,
-                    (
-                        GPU_RUN_START, BASE336_CUTOFF,
-                        GPU_RUN_START, EXPECTED_BEFORE_GPU,
-                        GPU_RUN_START, EXPECTED_AFTER_GPU,
-                        BASE336_CUTOFF,
-                    ),
-                )
-                columns = [desc[0] for desc in cur.description]
-                raw_rows = [dict(zip(columns, row, strict=True)) for row in cur.fetchall()]
-                return raw_rows
-        finally:
-            conn.rollback()
+    try:
+        return db.fetch_dict_rows(
+            dsn,
+            SQL,
+            (
+                GPU_RUN_START, BASE336_CUTOFF,
+                GPU_RUN_START, EXPECTED_BEFORE_GPU,
+                GPU_RUN_START, EXPECTED_AFTER_GPU,
+                BASE336_CUTOFF,
+            ),
+            expected_role=db.DEFAULT_READER_ROLE,
+            connect_timeout=10,
+            statement_timeout_ms=30_000,
+            lock_timeout_ms=1_000,
+        )
+    except db.ReadOnlyDBHold as exc:
+        raise Hold(str(exc)) from exc
 
 
 def run(args: argparse.Namespace) -> dict:
