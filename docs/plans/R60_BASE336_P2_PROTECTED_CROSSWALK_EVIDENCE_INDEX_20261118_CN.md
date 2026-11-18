@@ -463,3 +463,76 @@ Owner 执行仓库原有 `scripts/r60_r50_preseal_crosswalk_cpu.py`，使用六�
 - 无 DB、GPU、HF Job，`train_admitted=0`，无私有内容输出。此前一次 `FILE_PERMISSION_HOLD` 因既有 Admission Status 文件权限为 0644；Owner 将该文件权限缩紧至 0600 后重验通过；内容未由本审查程序修改。
 
 **裁决**：可以关闭六份 R50 既有证据的 pre-seal 46 条成员顺序与来源结构一致性子门禁。**不允许**据此认定完整 Protected/Reserved roster 已交付或 50/50 封存，且 R45 Gate 预期字段存在不代表 R45 全来源隔离 PASS。下一最小动作是在 Owner 本地仅对已知 World Inventory、Selection、Admission、R45 Gate 做 **ALLOWLISTED 状态/计数字段** 的只读、聚合 SAFE 诊断：确认 original/selected/excluded/final seal 统计之间的条件关系，区分尚缺最终 4 条、缺签署或缺元数据全集证明；不得读取候选内容或 R50 密封题目，不要将现有结构 PASS 扩展为 P2-C PASS。P2-C HOLD，P2-B NOT_GENERATED。
+
+## 2026-11-19 Owner evidence reconciliation and next execution (supersedes earlier pending notes)
+
+### A. R50 status projection: field presence only, not 50+46+4 exact complement
+
+Owner-provided metadata-only projection reports:
+
+| Scope | Observed fields / values | What this proves |
+|---|---|---|
+| Selection | original=50, selected=46, excluded list count=4, final seal field present | Metadata fields and counts are present |
+| Admission | candidate=46, excluded=4, final seal and promotion fields present | Metadata fields and counts are present |
+| R45 Gate | frozen R45 hashes verified=true, heldout_cases_sealed=0, incomplete/hidden alias field present | Frozen hash check is reported; no heldout seal |
+
+This projection does **not** prove the original 50 source rows equal the exact union of derived 46 plus excluded 4. The code file scripts/r60_r50_original50_complement_cpu.py exists, but no Owner SAFE stdout for its exact 50/46/4 row-level complement audit has been provided in this evidence set. Therefore do not record R50_ORIGINAL50_46_PLUS4_EXACT_COHORT_PASS, frozen_protection_50_verified=true, or r50_complete_exclusion_verified=true.
+
+Current R50 ledger:
+- 46-case PRESEAL structure / provenance crosswalk: PASS, limited to the six inputs and fields checked by scripts/r60_r50_preseal_crosswalk_cpu.py.
+- Selection / Admission metadata field projection: PASS as field-presence/count inspection only.
+- Exact original-50 = selected-46 + excluded-4 row-level complement: **NOT VERIFIED / HOLD**.
+- R45 full-source lexical screen: Owner-reported exact screen only; semantic aliases and shared-world isolation remain HOLD.
+- Final heldout seal: **HOLD** (heldout_cases_sealed=0).
+- Official heldout admission: 0.
+
+### B. Base336 all-172 source evidence capture implementation
+
+The frozen candidate JSONL metadata coverage audit reported 336 cases / 172 unique stories but zero structured World / Character / Opening fields. The existing 38-story / 59-record card-opening evidence is valid for its scoped 38 stories only; it cannot be extrapolated to all 172.
+
+A new Owner-local read-only capture tool is now present:
+
+- experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py
+- Synthetic-only tests: experiments/r58_quality/test_r60_base336_p2_source_evidence_capture_cpu.py
+
+The tool:
+1. Revalidates the frozen 336-case / 172-story scope using the six bound Owner directories and quarantine manifest.
+2. Reads the existing 8-row P2 public source manifest; it does not rediscover or reselect P2 sources.
+3. Uses one REPEATABLE READ READ ONLY transaction under r58_export_reader, row_security=on, with the existing P2 RLS preflight.
+4. Captures current and all archived v2_data fields (world, character, characters, opening) for the 172 frozen Base336 story IDs.
+5. Captures the exact approved public snapshot fields for the 8 P2 sources, binding current public revision, moderation submission/content hash, snapshot-vs-current JSON equality, permission event, permission submission and public visibility.
+6. Records exact field equality counts only as an exact-match screen. It does not infer semantic equivalence, actual-sent prompt state, or World-component independence.
+
+Private output is create-only under ~/.local/share/storyforge/r60/private/, with directory mode 0700 and package mode 0600. The full source values, identifiers and pair mappings stay on the Owner Mac. Stdout contains only bounded aggregate counts. No R50 body, private session messages, prompt answers, GPU, HF Job, inference, training, admission or promotion is accessed or started.
+
+The tool's successful SAFE status is intentionally only:
+- P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED when exact Story-ID overlap is zero; or
+- P2_BASE336_SOURCE_EVIDENCE_CAPTURED__EXACT_STORY_ID_OVERLAP_HOLD otherwise.
+
+Neither status is a semantic-isolation PASS.
+
+### C. CI evidence for the new capture tool
+
+At commit 7486fb5980aa049039b0ec4f5600848cd0f1ce7e on branch docs/r60-p2-r47-r48-r55-source-shape-audit-20261118, the following workflows completed successfully:
+- CI
+- R58 scoped synthetic (no training)
+- R60 Base336 P2 Source CI
+- R60 REAL1000 Quality Reviewer (synthetic only)
+
+These are code/test results only. No Owner-private 172-story database capture has been run by CI.
+
+### D. Next Owner action — one scoped read-only capture
+
+Run the new tool first without --execute; this is a local precheck only. If it returns P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB, run the same command with --execute on the Owner Mac. The exact local six-directory and P2-manifest paths are in the Owner's 2026-11-18 inventory; do not copy private paths, identifiers, hashes or source values into GitHub or chat. Use a new, nonexistent output directory directly under ~/.local/share/storyforge/r60/private/.
+
+Return only the printed SAFE JSON. Never upload R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json.
+
+After a successful capture:
+1. Independently review the private source package for semantic World / Character / Plot / Opening aliases across all 172 Base336 stories and the 8 P2 sources. Keep exact-match screening separate from semantic judgments.
+2. Bind any reviewer component assignments to the captured source/version evidence and use the existing src/storyforge_dataset/world_isolation.py helper for split conflicts; do not duplicate its algorithm.
+3. Keep historical_actual_sent_verified=false until request-effective historical system/card evidence exists.
+4. Finish R50 exact 50/46/4 complement and complete R50 metadata-only P2 exclusion as separate gates; do not infer them from field presence or the 46-case preseal crosswalk.
+5. Finish R47/R48/R55 complete exposure-scope closure and semantic variants, independent Reviewer signoff, and Owner freeze.
+6. Only after every P2-C gate passes may P2-B produce the real 48-row prompt package. No inference or GPU is implied.
+
+**Current mainline priority:** complete source-bound P2 × Base336 172-story evidence first. P2-C remains HOLD; P2-B remains NOT_GENERATED; train_admitted=0.
