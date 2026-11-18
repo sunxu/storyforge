@@ -260,7 +260,7 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 
 ### 下一项最小动作
 
-在 Owner Mac 只做私有文件**元数据 inventory**，确认以下材料的实际存在性、路径、文件大小、权限和修改时间：本轮 P2 private source manifest；Base336 cross-review roster/template/evidence；R50 完整 Protected/Reserved metadata-only roster 与现有 SAFE；R47/R48/R55 exposure/source manifests 与 SAFE。不得 cat、grep 正文、上传文件或打印任何 ID/正文/哈希。根据真实 schema 再设计一个版本化、create-only、Owner-local 的保护集 crosswalk 适配器；在输入 schema 和保护集覆盖范围被确认前，不编造通用代码或宣称 crosswalk 完成。
+Owner 已返回 R47/R48/R55 的部分 metadata inventory；这些文件不再重复盘点。下一步对三个 R55 私有 Coordinator Index 做只输出 Schema / 字段名 / 数量 / 版本绑定的结构审计，并寻找 Sample → Story ID 的权威来源映射。P2 Source Manifest、Base336 roster / member evidence、R50 完整 metadata-only roster 等其他保护集仍需按证据索引确认存在性与覆盖。不得 cat / grep 私有正文、上传文件或打印 ID / 正文 / 哈希；真实 Schema 和保护集覆盖确认前，不编造通用适配器或宣称 crosswalk 完成。
 
 
 ## 2026-11-18 专项交接包更新
@@ -268,8 +268,8 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 - 交接整理前 GitHub HEAD：`0be17b3fd720560f86cf27bfd493cfc95a0eb544`；新 Agent 必须重新查询实时 HEAD、工作流和 PR。
 - 专项可复制提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。
 - 保护集证据索引：`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
-- Owner Mac 文件 inventory 尚未收到；不声称私有证据已经存在或已完成读取。
-- 首要动作是只读文件元数据盘点。此前 card/opening 全量提取返回泛化 HOLD，禁止盲目重跑全量 `--execute`。
+- **历史截点说明（已被后续增量更新）**：本节撰写时 Owner Mac 文件 inventory 尚未收到；2026-11-18 后续已收到 R47/R48/R55 部分 metadata / shape inventory，详见下一节。
+- 当前首要动作不再是重复盘点 R47/R48/R55 文件，而是只读核验 R55 私有 Index Schema / 覆盖及 Sample → Story ID 权威映射。此前 card/opening 全量提取返回泛化 HOLD，禁止盲目重跑全量 `--execute`。
 - 本次交接文档不执行 Supabase 查询、不访问私人文件、不读取 R50 正文、不运行模型/GPU/HF Job，不改变准入状态。
 
 
