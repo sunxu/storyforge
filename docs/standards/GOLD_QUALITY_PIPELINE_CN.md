@@ -236,6 +236,24 @@ Base336 的293 Train / 43 Validation仅用于单独批准的探索性Base QLoRA�
 \`verify_staged\` 仅用于确认Stage内原始Train/Validation/Manifest字节与已发布版本一致；它不是Review、Source、Exclusion、Reconciliation、Quality-v1 Admission或Gold Manifest事件。不得将其结果导入Gold Pipeline。现有Gold质量事件、Rubric、六门禁及 \`quality_v1_admitted=0\` 保持不变。
 
 
+## R60 Base336 P2 Supabase 来源 Inventory：共享来源证据合同（2026-11-18）
+
+R60 Base336 P2 的 Supabase 公开故事路线复用单一来源 inventory 实现：experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py。该适配器只读取公开故事字段以及 moderation / permission 元数据，不读取私有会话正文，不写数据库，不调用模型。
+
+固定选择合同：
+
+- Base336 冻结边界：2026-11-16T02:03:25Z。
+- GPU Run 开始：2026-11-17T05:56:22Z。
+- 冻结边界之后按创建时间确定性选择：GPU Run 前 3 条、GPU Run 后 5 条，共 8 条。
+- 来源筛选要求公开、original、story card、opening.originality=original、opening.visibility=公开、worldSentence 长度 > 5。
+- 选择结果必须有 8 个故事、5 个作者、8 个精确 World JSON；冻结边界前公开原创故事不得存在相同 World JSON。
+- 当前 public revision 必须与最新 moderation submission revision 一致；submission snapshot 的 source.v2Data 必须与当前 public_v2_data 一致；最新 permission event 必须绑定最新 submission 且目标 visibility=public。
+- public_content_hash 保持不透明；submission SHA 的作用域以现有 moderation snapshot 合同为准，不重新推断哈希算法。
+
+SAFE 仅输出聚合计数；Story ID、author ID、submission ID、World MD5、snapshot hash 和私有 crosswalk 只允许写 Owner 本地 0700/0600 Manifest。来源 inventory PASS 不等于语义 World isolation PASS、R50/R47/R48/R55 排除 PASS、Quality-v1 PASS 或 Owner freeze。
+
+当前 Owner 授权范围固定为内部独立评估提示构造，不扩大为训练或再分发。缺少 Base336 私有 source roster、R50 仅元数据排除、R47/R48/R55 暴露排除或语义组件 crosswalk 时必须继续 HOLD。
+
 ## Semantic World Component Isolation：共享核心与证据边界（2026-11-18）
 
 `src/storyforge_dataset/world_isolation.py` 是结构化世界组件隔离的共享实现：
