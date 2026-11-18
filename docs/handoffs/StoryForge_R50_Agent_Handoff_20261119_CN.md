@@ -137,3 +137,10 @@ The read-only GitHub source inspection found:
 - The R50 ROLE12 local auditor validates Draft structure/Tokenizer alignment and explicitly leaves actual four-arm runtime parity false.
 
 No R50-specific four-arm inference runner or actual four-arm load receipt was found in the inspected GitHub source tree. Owner has authorized read-only inspection, but the current chat has no direct Owner Mac filesystem connector. The next evidence request must therefore be limited to already-existing per-arm load/config/runtime records or a count-only SAFE receipt derived from them. If unavailable, mark `SOURCE_UNAVAILABLE`; do not start any model/job to create evidence.
+
+
+## 11. Existing static input receipt and Original Gold inventory
+
+The R50 Library contains the 2026-10-16 deep triage report with a shared static Draft message-sequence SHA256 `9ad0254f740a979e9b79b458a22e61e40db4ff98fb946e0332cf172e6888565c` for 46 cases / 364 historical messages / 12 trailing User→User sequences. The report explicitly does not claim tokenizer input-ID parity or actual four-arm runtime execution. Do not repeat its static construction check.
+
+The searched R50 Library directory inventory has 106 entries, including frozen candidate/provenance, W17 review packets, CPU46 and ROLE12 receipts; no dedicated R50 Original Gold reply package was found in that bounded inventory. This does not exhaust every Owner-held source. Keep `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED` until exact same-prompt/history/cutoff original Assistant replies are authenticated.
