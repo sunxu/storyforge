@@ -12,12 +12,9 @@ sets, or authorize training/model inference.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import stat
-import sys
-from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -141,7 +138,7 @@ def _iso(value: object) -> datetime:
     if not isinstance(value, str):
         raise Hold("SOURCE_TIMESTAMP_HOLD")
     try:
-        result = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        result = datetime.fromisoformat(value)
     except ValueError as exc:
         raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
     if result.tzinfo is None:
