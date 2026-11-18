@@ -53,6 +53,9 @@ WITH candidates AS (
         ) AS time_rank
     FROM public.user_stories us
     WHERE us.visibility = 'public'
+      AND us.status = 'published'
+      AND us.deleted_at IS NULL
+      AND us.moderation_state IN ('ai_approved', 'human_approved')
       AND us.source_type = 'original'
       AND us.created_at >= %s::timestamptz
       AND us.public_v2_data->>'cardType' = 'story'
