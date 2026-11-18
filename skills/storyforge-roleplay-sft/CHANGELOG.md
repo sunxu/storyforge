@@ -1,3 +1,10 @@
+# 0.1.20
+
+- 新增 R60 Base336 P2 Supabase 公开来源 inventory 的固定执行边界与复用入口。
+- 明确 3-before-GPU / 5-after-GPU 的确定性来源选择、revision/snapshot/permission 绑定和精确 World JSON 去重仅是来源证据，不构成语义隔离或 Quality-v1 准入。
+- 明确公开状态与 Owner 内部评估授权不等于训练/再分发权。
+- 保持 Base336/R50/R47/R48/R55 保护、Quality-v1 admission=0、GPU 未授权和 fail-closed 语义隔离。
+
 # 0.1.19 — 2026-11-18
 
 - 新增共享 `src/storyforge_dataset/world_isolation.py`：统一检查 source-bound semantic component 的 Train/Validation 冲突与审核覆盖；不从 JSON/hash/Story ID 推断语义身份。
