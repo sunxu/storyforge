@@ -144,3 +144,26 @@ Owner 回报以下文件均存在，且文件权限均为 0600（本次仅确认
 5. R47 Sample → canonical Test metadata.story_id 复合绑定仍需独立 SAFE；只有实际验证后才能计算 P2 × R47/R48/R55 的精确 overlap。
 
 当前 P2_R47_R48_R55_EXACT_STORY_ID = UNKNOWN_HOLD，P2_SEMANTIC_ISOLATION = HOLD，P2_C = HOLD。不得据这些回执的文件大小或权限宣布 PASS。
+
+
+## 9. Owner 本机 R55 三层索引与 Prep Receipt 实际 SAFE 核验（2026-11-18）
+
+Owner 返回 `r60_r55_three_index_link_safe_v1`，状态为 **`R55_THREE_INDEX_LINK_AND_RECEIPT_PASS__P2_C_HOLD`**。此处为实际文件验证结果，不再仅为文件元数据：
+
+| 阶段 | records | Schema 有效 | Prep 回执 Index SHA 匹配 | Candidate tokens 唯一 |
+|---|---:|---|---|---|
+| Arbitration | 76 | true | true | true |
+| Second Audit | 68 | true | true | true |
+| Third Audit | 46 | true | true | true |
+
+第一层源身份检查：有效 source IDs=true；20 个 unique source samples、20 个 unique case indices；R47 冻结 Manifest 样本覆盖 20/20；extra=0，missing=0；case indices valid=true。
+
+第二层：68 条全部回连第一层，`source_token_links_valid=true`。
+
+第三层：`second_token_links_valid=true`、`first_token_links_valid=true`、`chain_consistent=true`。该 SAFE 实际核验了索引结构、三个回执的对应 SHA 和三层候选 token 链，**不需再重复执行这三项既有检查**。
+
+非操作状态：database_accessed=false、database_modified=false、r50_opened=false、gpu_started=false、hf_jobs_submitted=0、model_requests=0、private_values_emitted=false。
+
+**严格证据边界：** 这证明 R55 三层索引及 Prep 回执完整性，以及第一层对 R47 Manifest 的 20 个 Sample ID 的覆盖；不单独证明 R47 这些 Sample ID 与 canonical `metadata.story_id` 的复合绑定已执行，也不证明 P2 × R47/R48/R55 exact Story ID overlap=0。不代替 R55 旧 R47 source preflight 的其他可能约束；语义世界、actual-sent 和 Reviewer 独立性仍独立 HOLD。
+
+下一最小动作：复用 `scripts/audit_v01_integrity.py::test_alignment_audit` 的样本绑定规则，只读验证冻结 canonical Test SHA / 20-row Prompt / Manifest / R48 Source Audit / P2 private Manifest，然后仅输出 P2 × R47/R48 exact Story ID overlap count。R55 第一层已有 20/20 的 Sample ID 覆盖，取得成功的 R47 Story ID 绑定后可据此继承这一批历史案例的精确身份集合，但不自动认定全部历史开发暴露范围已经覆盖。
