@@ -110,3 +110,8 @@ Base 与 Adapter 必须使用相同的三个持久化可见消息（无 System�
 ## 交接提示词权威入口
 
 新 Agent 应以专项提示词 `docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md` 为可执行任务合同；本文件保留训练后评估背景和总体流程。若本文件与专项提示词在当前执行顺序上存在差异，以专项提示词和最新 Owner SAFE 为准，并先核对 GitHub 当前 HEAD。
+
+
+## 2026-11-18 R47/R48/R55 exact crosswalk 下一步修正
+
+仓库代码已找到 R47 Sample → canonical Test \`metadata.story_id\` 的复合绑定路径（Manifest source_line / prompt_sha256 + 完整 prompt prefix），以及 R55 第一层 source_sample_id 与第二 / 第三层 candidate-token 回连链。实际 Owner-local SAFE 尚未执行，故 exact overlap 仍 UNKNOWN / HOLD。下一步按 \`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md\` 的新增步骤执行，不再重复寻找一个 \`compiled_test.id = story_id\` 字段，也不重复盘点已确认的 R47/R48/R55 文件。
