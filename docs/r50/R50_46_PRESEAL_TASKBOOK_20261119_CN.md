@@ -2,7 +2,7 @@
 
 **Current taskbook:** 2026-11-19  
 **Scope:** R50 original 50-source inventory, Owner-excluded 4, 46-case PRESEAL candidate, source/world isolation, temporal prompt provenance, ROLE12 policy and eventual protected Held-out release gates.  
-**Current disposition:** `WORLD_SEMANTIC_HOLD__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_PENDING_OWNER_DECISION__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
+**Current disposition:** `WORLD_SEMANTIC_HOLD__W1_NO_NEW_EVIDENCE__W2_SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__W3_NOT_TRIGGERED__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_PENDING_OWNER_DECISION__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
 
 **Publication state:** This taskbook is proposed in [Draft PR #33](https://github.com/sunxu/storyforge/pull/33), branch `docs/r50-agent-handoff-20261119`; until merged, read it from that branch rather than assuming it exists on `main`.
 
@@ -243,3 +243,22 @@ GPU_USED = false
 MODEL_INFERENCE_RUN = false
 TRAINING_RUN = false
 ```
+
+
+## 7. Execution update — 2026-11-19 (after W1/W2)
+
+The W1/W2 coverage crosswalk has been completed and committed on this taskbook branch:
+
+- `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md`
+- Crosswalk commit: `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`
+- Crosswalk blob: `b7618dbe8e5cc4529eeafd0f0bdc028291921b68`
+
+**W1 result:** `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`. The three lexical flags are the same old-rank 2/4/10 ↔ R50-rank-17 pairs already reviewed. The sanitized 2026-11-19 inventory reports two transitive old links but does not bind their rank-pair identities; the relation of those two links to the previously recorded 04→07 edge therefore remains unproven. This is a bounded crosswalk gap, not grounds to assume three distinct edges.
+
+**W2 result:** `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__TIMEPOINT_CARD_RULE_RUNTIME_PROOF`. The searched GitHub source tree and available R50 Library artifact inventory contain export-time card/source material and saved checkpoint context, but no authenticated per-case inference-time card/rule snapshot or prompt-assembly receipt. Existing source-message rule references are partial provenance, not proof of the exact runtime system prompt. This does not claim exhaustive access to every Owner-held storage location.
+
+**Downstream disposition:**
+- W3 = `NOT_TRIGGERED`; do not repeat the same three pair reviews or seven full-message reviews.
+- WORLD semantic isolation and timepoint card/rule provenance remain HOLD/PENDING.
+- W4 remains separate. The exact consecutive-User policy still requires an explicit Owner approve/reject decision; do not infer approval from the earlier generic word “授权”.
+- No new CRC, lexical scan, tokenizer job, ROLE12 audit, HF Job, GPU, inference, training, answer-key access, or Final Seal was performed.
