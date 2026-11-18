@@ -435,3 +435,12 @@ Owner 已执行 `r60_base336_actual_release_scope_cpu.py`，回执 `r60_base336_
 6. **P2-B**：全部 P2-C 门禁签署后，才构造并冻结实际 48 prompts JSONL/Manifest/SHA；P3-P6 仍等待相应授权及完整证据。
 
 本轮不重跑数据库提取、训练、GPU 或模型推理，不读 R50 正文，不提交任何 Owner-private 内容。**下一最小外部证据请求**：Owner 提供 8 条 P2 Source Manifest 的 SAFE Schema / 版本覆盖，以及 R50 完整 metadata-only roster 的现有 SAFE 完整性/范围回执（非正文）；先复用已存在的清单和 SAFE，不进行宽泛 inventory。总门禁 P2-C HOLD、P2-B NOT_GENERATED、`train_admitted=0`。
+
+
+### 2026-11-19 PR31 CI blocker triage and P2-C next-source contract
+
+本轮 GitHub 实际 Actions 排障（非 P2-C 数据门禁）：最初的 CI FAILURE 来自两个新 source-release auditor 文件的 Ruff import order / BLE001；修复后 full pytest 又发现 4 个旧合同/测试扩容不匹配（P2 source binding 聚合失败码替代旧单字段码、禁用的 legacy submit 被 HF SDK 预检提前拦截、两项嵌套 pytest 对通过数写死）。全部均已提交针对性修复：P2 source 的缺失 metadata 必须继续 fail closed；legacy submit 在所有 HF/SDK 检查前拒绝；nested suites 要求返回码 0 且通过数不低于既定测试数，不得以数量增长判失败。首次修复时错误地写入字面量反斜杠+n，已通过后续提交更正为真实 Python 换行。**必须看最新 HEAD GitHub Actions 后才能声称 CI PASS**，不将测试断言修复冒充 P2-C 证据。
+
+下一项 P2 主线实物证据固定为 Owner 原有 `~/.local/share/storyforge/r60/private/r60-p2-public-source-inventory-20261118/R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json`，其真实编制合同由 `experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py` 定义：`sources` 中 8 条，包含 story/revision、public content hash、snapshot/permission 绑定、World exact hash 和时间元数据；`gates.base336_private_source_crosswalk`、`gates.r50_metadata_exclusion`、`gates.r47_r48_r55_exposure_exclusion` 仍为 HOLD，源 Inventory READY 并不改变此事实。
+
+先不要重复原 22-case、293/43、R47/R48/R55 20-case 精确核验。下一步需要 **P2 8 来源相对于 Base336 全部 172 Stories 的语义交叉证据**，以及 Owner Mac 既有 **R50 全部 Protected/Reserved metadata-only roster 的完整性 SAFE**。P2 manifest 仅含可用于身份/版本/时间绑定的元数据，**不含充分的 World/Character/Plot/Opening 原文，单独提供它不能完成语义核验**。不得读取/上传 R50 密封正文；不能根据任一目录存在推断 R50 metadata roster 已完整。P2-C HOLD；真实 P2-B 48 Prompts NOT_GENERATED。
