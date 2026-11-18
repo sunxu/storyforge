@@ -121,3 +121,26 @@ R48 的 20 个 Gold target hash 能绑定逐案目标内容摘要，但不能替
     P2_SEMANTIC_ISOLATION = HOLD
     P2_B_48_PROMPTS = NOT_GENERATED
     P2_C = HOLD
+
+
+## 8. Owner Mac R55 三个 SAFE Prep 回执的文件元数据补充（2026-11-18）
+
+Owner 回报以下文件均存在，且文件权限均为 0600（本次仅确认文件大小和权限，**未打开文件内容**）：
+
+| SAFE 回执 | 大小 | 权限 | 本轮证据 |
+|---|---:|---|---|
+| R55_GOLD5_ARBITRATION_PREP_SAFE_COUNT_ONLY.json | 1,292 bytes | 0600 | PRESENT_METADATA_ONLY |
+| R55_GOLD5_SECOND_AUDIT_PREP_SAFE_COUNT_ONLY.json | 1,598 bytes | 0600 | PRESENT_METADATA_ONLY |
+| R55_GOLD5_THIRD_AUDIT_PREP_SAFE_COUNT_ONLY.json | 1,498 bytes | 0600 | PRESENT_METADATA_ONLY |
+
+该 inventory 关闭了三个准备回执的**存在性未知**，但不等于已验证 SHA 绑定或记录完整性。实际 Schema / status、与三个 Coordinator 私有 Index 的内容 SHA256 比较、各 Index 内部 candidate-token 链、第一层 20 个历史案例覆盖以及 R55 旧 R47 来源关联，均未核验。
+
+下一步应在 Owner Mac **只读**检查以下匹配关系（仅输出布尔值 / 聚合计数）：
+
+1. 第一层 Prep 的 coordinator_index_sha256 对应第一层 Index 文件 SHA256。
+2. 第二层 Prep 的 private_coordinator_index_sha256 对应第二层 Index 文件 SHA256。
+3. 第三层 Prep 的 private_mapping_sha256 对应第三层 Index 文件 SHA256。
+4. 三个 Index 的 schema、records 数量与本轮对应代码合同相符，第一层的 source_sample_id_private 可安全合并到 20-case historical source set；验证第二 / 第三层的 original candidate token 回连覆盖。
+5. R47 Sample → canonical Test metadata.story_id 复合绑定仍需独立 SAFE；只有实际验证后才能计算 P2 × R47/R48/R55 的精确 overlap。
+
+当前 P2_R47_R48_R55_EXACT_STORY_ID = UNKNOWN_HOLD，P2_SEMANTIC_ISOLATION = HOLD，P2_C = HOLD。不得据这些回执的文件大小或权限宣布 PASS。
