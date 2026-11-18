@@ -174,3 +174,14 @@ Owner 已返回本机审计输出，详见 [R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDI
 ### 2026-11-18 R55 Prep SAFE 文件存在性补充
 
 Owner 本机 metadata inventory 确认三个准备回执存在且均为 0600：Arbitration Prep 1,292 bytes；Second Audit Prep 1,598 bytes；Third Audit Prep 1,498 bytes。此次未读取文件正文，故实际 schema/status、对应 Coordinator Index 文件 SHA256、token 链和 20-case 覆盖依然 UNKNOWN / HOLD。详见专项审计报告第 8 节。本轮不修改 P2-C 门禁。
+
+
+### Owner R55 三层索引实际 SAFE（2026-11-18）
+
+已收到 `r60_r55_three_index_link_safe_v1`：`R55_THREE_INDEX_LINK_AND_RECEIPT_PASS__P2_C_HOLD`。
+
+- Arbitration / Second / Third：76 / 68 / 46 条，三组真实 Schema、Candidate Token 唯一性及 Prep Index SHA 绑定均通过。
+- 第一层 20/20 R47 Manifest source samples 覆盖；extra=0，missing=0，case indices valid。
+- 第二层 68/68 回连第一层；第三层到第二层 / 第一层的链接和三层一致性均通过。
+- 不重做三层索引校验。下一步执行 R47 Sample → canonical Test `metadata.story_id` 的 Owner-local 联合 SAFE，并与 P2 的 8 个 Story ID 交叉。
+- `P2_R47_R48_R55_EXACT_STORY_ID` 仍 UNKNOWN/HOLD；旧 R47 preflight 的其他限定、完整历史暴露范围、语义和 actual-sent 尚未通过；P2-C 继续 HOLD。
