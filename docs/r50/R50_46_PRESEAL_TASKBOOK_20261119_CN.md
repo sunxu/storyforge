@@ -2,7 +2,7 @@
 
 **Current taskbook:** 2026-11-19  
 **Scope:** R50 original 50-source inventory, Owner-excluded 4, 46-case PRESEAL candidate, source/world isolation, temporal prompt provenance, ROLE12 policy and eventual protected Held-out release gates.  
-**Current disposition:** `WORLD_SEMANTIC_HOLD__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_HOLD__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
+**Current disposition:** `WORLD_SEMANTIC_HOLD__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_PENDING_OWNER_DECISION__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
 
 **Publication state:** This taskbook is proposed in [Draft PR #33](https://github.com/sunxu/storyforge/pull/33), branch `docs/r50-agent-handoff-20261119`; until merged, read it from that branch rather than assuming it exists on `main`.
 
@@ -166,7 +166,7 @@ W4 is independent of the W1→W2→conditional-W3 evidence sequence. It must not
 
 **The only pending ROLE12 interpretation decision for the Owner is whether to approve this exact contract:**
 
-> The 12 historical trailing User messages and the newly appended User messages are two independent consecutive User turns. All four model arms preserve both messages exactly as they are, without merging, rewriting or deleting either message, and treat this structure as part of the common input contract.
+> 12 条历史末尾的 User 消息与新追加的 User 消息，是两条独立的连续 User turn。四个模型臂均原样保留两条消息，不合并、不改写、不删除，并将其作为统一输入合同的一部分。
 
 Until the Owner explicitly approves or rejects this wording, keep `ROLE12_POLICY = PENDING_OWNER_DECISION`. Do not infer approval from silence or from the existence of this taskbook. If approved, record the Owner's explicit decision and contract version; if rejected or amended, record the exact alternative before changing any runtime contract.
 
