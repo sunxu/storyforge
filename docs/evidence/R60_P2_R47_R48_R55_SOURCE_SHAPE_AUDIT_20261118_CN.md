@@ -9,7 +9,7 @@
 - R55：仅列举文件名、字节数和权限；没有打开三个私有 Coordinator Index、SAFE 回执或 intake 文件。
 - SAFE：database_accessed=false、database_modified=false、gpu_started=false、private_values_emitted=false；没有 HF Job 或模型请求提交。
 
-**结论：R47 / R48 的 20 个旧测试案例可在 Prompt / Sample 层面交叉追溯，但当前可见 Manifest / Audit Schema 不提供经验证的 Story ID 映射。R55 已发现私有来源索引文件，但本轮只核验文件存在、大小和权限，未验证其实际 Schema、内容完整性、版本绑定或 20 案例覆盖。因此，P2 × R47/R48/R55 的精确 Story 身份排除仍为 UNKNOWN / HOLD；语义变体排除仍为 HOLD。**
+**结论更新：R47 Manifest 本身不含 Story ID，但仓库代码中存在可审计的 Sample → canonical Test row → `metadata.story_id` 绑定路径；R55 第一层 Coordinator Index 也保存 `source_sample_id_private`，第二 / 第三层索引通过原始 candidate token 延续来源链。故此前“没有映射路径”的表述过强。当前尚未对 Owner 本机 R47 文件、P2 私有 Manifest、R55 三个私有 Index 和 SAFE 回执执行同一轮 Owner-local 只输出聚合值的 crosswalk；R55 旧 R47 source preflight SAFE 的内容也未读取。因此，**代码路径已找到，但实际精确交叉结果仍 UNKNOWN / HOLD**；语义变体排除仍为 HOLD。
 
 ## 2. R47：可验证的 Sample / Prompt 身份，不是 Story 身份
 
@@ -36,7 +36,7 @@ Owner 本机审计观察到：
 - Prompt JSONL 本身只有 messages 字段，没有独立身份字段。
 - R47 Report / Audit Summary 是批次级摘要；R48 Source Audit 虽记录 canonical Test 文件 SHA、20 个 Gold target SHA、20/80 数量、旧 Test 暴露标记及冻结 R47 run key，但不包含可见的逐案 Story ID 映射。
 
-因此，不能把 Sample ID、source line、JSONL 行序或 compiled Test 的通用 id 字段直接当作 Story ID，也不能仅凭 canonical Test SHA 反推出 P2 的 8 个来源是否曾出现在历史案例中。
+因此，不能把 Sample ID、`source_line`、JSONL 行序或 compiled Test 的通用 `id` 字段直接当作 Story ID。**但可按已存在的校验代码构造严格的复合绑定**：`sample_id` → Manifest 的 `source_line` / `prompt_sha256` → canonical Test 对应行的完整 role/content prompt prefix → 该行 `metadata.story_id`。`scripts/prepare_blind_eval.py` 生成确定性的 Sample ID；`scripts/audit_v01_integrity.py` 的 `test_alignment_audit()` 逐案验证 source row / prompt / manifest 的前缀、哈希和 source_line；其 `dataset_audit()` 验证 Test 记录具有 `metadata.story_id`；`scripts/v02_r48_four_arm_build.py` 再固定 canonical Test SHA 并逐案核对完整 prompt prefix。该路径不依赖把 `id` 字段猜成 Story ID。实际 R47 / P2 本机文件仍须由 Owner-local SAFE 复核后，才能计算 P2 × R47/R48 的精确 overlap。
 
 ## 3. R48：同一 20 案例的四臂历史比较，不增加独立案例数
 
@@ -64,7 +64,12 @@ R48 的 20 个 Gold target hash 能绑定逐案目标内容摘要，但不能替
 
 同一 inventory 还列出 preflight 脚本、测试及 Python cache；它们是代码 / 运行环境文件，不是逐案来源清单。
 
-仓库中的 scripts/v03_r55_gold5_event_arbitration.py 代码合同包含 Coordinator 私有索引字段，例如 source_sample_id_private、source_arm_private、response_sha256 和 case 索引。这只能说明代码设计预期存在 Sample 级回溯字段；本轮没有读取 Owner 本机索引文件，不能确认该文件实际符合当前代码 Schema、与 R47/R48 的版本绑定一致、覆盖全部 20 案例或覆盖全部 R55 暴露轮次。
+仓库代码进一步明确了 R55 三层索引的可验证连接：
+- `scripts/v03_r55_gold5_event_arbitration.py` 第一层 Index 的每条 record 保存 `source_sample_id_private`、`case_index_private`、`source_arm_private`、`response_sha256`；其来源 `sample_id` 来自经 `v03_r55_gold5_owner_unblind.py::validate_key()` 校验的 20-case Coordinator Key，且该函数要求 Key 的 sample_id 与冻结 reviewer case IDs 按序一致。
+- `scripts/v03_r55_gold5_second_evidence_audit.py` 第二层 Index 保存 `original_candidate_token_private`，可回连第一层 candidate token，并核对 case token、source arm 和 response hash。
+- `scripts/v03_r55_gold5_third_evidence_audit.py` 第三层 Index 同时保存 `original_second_candidate_token_private` 与 `original_first_candidate_token_private`，可回连第二层和第一层。
+
+因此，R55 的设计提供了 `R55 candidate → R47 sample_id` 的私有链路；再与上节 R47 `sample_id → metadata.story_id` 的绑定组合，可以计算 P2 × R55 的精确 Story ID overlap。**但必须先核验 Owner 本机三个 Index 的真实 Schema、token 链、第一层 20-case 覆盖、SAFE receipt 哈希绑定，以及 `R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json` 对 R55 原始 20-case 与 R47 来源的证明。**本轮只确认文件元数据，没有读取 Index / SAFE 内容，故尚不能宣称实际映射通过或覆盖完整。
 
 文件存在和 0600 权限是必要的私有证据管理信号，不是内容完整性、Schema 有效性、历史来源身份或保护集覆盖 PASS。R55 仍为 UNKNOWN / HOLD。
 
@@ -81,19 +86,19 @@ R48 的 20 个 Gold target hash 能绑定逐案目标内容摘要，但不能替
 |---|---|---|
 | R50 | 既有 SAFE：精确 Source ID 不相交 | R50 完整 Protected / Reserved 覆盖与语义排除仍按既有证据索引保持独立门禁；未读取正文 |
 | Base336 | 既有 SAFE：336 cases / 172 stories，Story ID overlap 0 | 8 组 World 语义裁决仍 HOLD；成员级 current / archived card/opening 与 actual-sent 仍未验证 |
-| R47 | 当前公开审计结构没有 Story ID 映射 | 精确 P2 Story ID crosswalk UNKNOWN / HOLD；语义变体 HOLD |
-| R48 | 绑定 R47 的同一 20 个旧 Prompt / Gold source bytes，但无可见 Story ID 映射 | 精确 P2 Story ID crosswalk UNKNOWN / HOLD；语义变体 HOLD |
-| R55 | 本地发现三个私有 Coordinator Index，但本轮未读内容或 Schema | 精确身份及覆盖完整性 UNKNOWN / HOLD；语义变体 HOLD |
+| R47 | 仓库代码存在 Sample → canonical Test `metadata.story_id` 绑定路径；Owner-local 联合 SAFE 尚未执行 | 精确 P2 overlap 仍 UNKNOWN / HOLD，等待对 R47 Manifest / prompts / canonical Test 与 P2 Manifest 的只读复核；语义变体 HOLD |
+| R48 | 固定同一 canonical Test SHA、20 prompts / 80 replies，复用 R47 同一 20-case 集 | 不增加独立案例；精确 overlap 继承 R47 映射结果，仍待 Owner-local SAFE；语义变体 HOLD |
+| R55 | 第一层 Index 保存 source_sample_id；第二 / 第三层有可回连的 candidate token 链；本轮仅核验文件元数据 | 代码路径存在；实际 Schema、20-case 覆盖、receipt 绑定、旧 R47 preflight 证明及 P2 overlap 仍 UNKNOWN / HOLD；语义变体 HOLD |
 
 **不得将 P2 × Base336 / R50 的精确 ID 不相交结果扩展到 R47/R48/R55。** 同样不得将 JSON / SHA 不同、不同 Sample ID、不同文件名或不同文件大小视为语义独立证明。
 
 ## 6. 下一步最小动作
 
-1. 在 Owner Mac 对三个 R55 私有 Coordinator Index 做只输出 schema、顶层字段、数组数量、元素字段名、版本 / receipt 绑定布尔值的只读结构审计；不输出任何 Sample ID、Story ID、作者映射、正文、逐案引文或哈希值。
-2. 验证 R55 Index 是否完整引用同一冻结 R47 Sample Manifest 的 20 个 Sample ID，以及各轮暴露来源是否覆盖完整；只报告匹配数量、缺失数量、重复数量和版本一致性。
-3. 单独寻找并验证 compiled_test.id、R47 sample_id 与 canonical 原始 Story ID 之间的真实来源绑定材料。不得用行序、source_line 或猜测字段语义拼接身份。
-4. 若没有可验证的 Sample → Story 映射，P2 × R47/R48/R55 精确身份门禁继续 HOLD；不得把 R55 Sample 级索引当作 Story 级映射。
-5. 在精确身份与覆盖完整性确认后，再由 source-bound 证据开展语义变体排除；缺少实际发送版本 / actual-sent 证据时仍为 UNKNOWN / HOLD。
+1. Owner-local 对 R47 Manifest、frozen prompts、canonical compiled Test、R48 Source Audit、P2 private source manifest 执行同一只读 SAFE：验证 canonical Test SHA、20 条逐案 prompt prefix / prompt hash / source_line 绑定、`metadata.story_id` 完整性，并只输出 P2 × R47/R48 的 exact Story ID overlap count。
+2. 对 R55 三个私有 Coordinator Index 执行只输出字段名 / 数量 / 布尔值的结构审计：第一层 76 records、20 个唯一 sample IDs / case indices 覆盖（以真实 SAFE 为准），第二层与第一层 token 回连，第三层与第二层 / 第一层双重回连；逐层核验对应 SAFE receipt 中的 index SHA 绑定。
+3. 读取并审查 `preflight-package/scripts/r55_dev_source_preflight.py`、其测试及 `R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json`，确认该 preflight 是否真实证明 R55 原始 20-case IDs 对应 R47 冻结 Manifest。只报告 SAFE 聚合计数，不输出 ID / SHA / 正文。
+4. 将 R55 第一层 `source_sample_id_private` 通过已验证的 R47 Sample → `metadata.story_id` 链映射到 P2 的 8 个 `story_id`，只输出 overlap / disjoint 计数。若任何 receipt、覆盖或绑定缺失，继续 UNKNOWN / HOLD。
+5. 在精确身份与覆盖完整性确认后，再由 source-bound 证据开展语义变体排除；缺少 actual-sent 版本时仍为 UNKNOWN / HOLD。
 
 本记录不授权读取 R50 正文、R47/R48/R55 私有答案或逐案评分，不授权数据库访问、数据修改、HF Job、模型请求、GPU、训练、正式提示包生成或模型晋升。
 
@@ -111,6 +116,7 @@ R48 的 20 个 Gold target hash 能绑定逐案目标内容摘要，但不能替
     P2_A = READY
     P2_BASE336_EXACT_ID = PASS
     P2_R50_EXACT_SOURCE_ID = PASS
+    P2_R47_R48_R55_CODE_DEFINED_CROSSWALK = FOUND_NOT_EXECUTED
     P2_R47_R48_R55_EXACT_STORY_ID = UNKNOWN_HOLD
     P2_SEMANTIC_ISOLATION = HOLD
     P2_B_48_PROMPTS = NOT_GENERATED
