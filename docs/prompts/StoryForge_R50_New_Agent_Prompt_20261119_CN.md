@@ -34,7 +34,7 @@
 - hidden alias/world-component closure=HOLD。
 - final Held-out seal=NOT_PERFORMED。
 
-三条 flagged pair 正是历史 W17 已审查的同一对照集合（old ranks 2/4/10 对 R50 rank 17）。2026-10-19 的既有 pair decisions 全部是 `INSUFFICIENT_EVIDENCE`。同一批证据不得重新交给 AI 再审一次，并把重复结果称作新证据。
+三条 flagged pair 正是历史 W17 已审查的同一对照集合（old ranks 2/4/10 对 R50 rank 17）。2026-10-19 的既有 pair decisions 全部是 `INSUFFICIENT_EVIDENCE`，且 receipt 标记 `reviewer_independence_or_correctness_verified_by_script=false`。同一批证据不得重新交给 AI 再审一次，并把重复结果称作新证据；也不得把既有 AI review 写成已验证的独立 Reviewer signoff。
 
 另有七个 W17 full-message gaps 已审查，七个全部 `INSUFFICIENT_CONTEXT`；344 个 dossier message entries、75 个 scoped citations；historical card timings 均未检查。W17 的 exact inference card snapshot 未验证，04→07 旧组件及其到 W17 的可能传递连接未闭合。
 
@@ -73,7 +73,7 @@
 
 **W3. Alias / event / transitive world-component closure**
 - 仅在有新来源证据时重新裁决三组旧 pair。
-- 纳入已记录的旧 04→07 confirmed edge 和两个 known transitive old links。
+- 核对已记录的旧 04→07 confirmed edge 与 2026-11-19 inventory 报告的两个 known transitive old links 的关系；不要假设它们是三个不同的边。
 - 核实旧组件与 R50 W17 的可能传递连接。
 - 区分平台模板复用与真实人物、组织、场景、事件、时间线、剧情连续性。
 - 无证据的边保持 `INSUFFICIENT_EVIDENCE`，整体继续 HOLD。
