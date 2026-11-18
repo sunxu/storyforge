@@ -38,6 +38,14 @@ def p2_doc() -> dict:
             "OWNER_APPROVED_INTERNAL_EVALUATION_PROMPT_CONSTRUCTION_ONLY__"
             "NO_TRAINING_OR_REDISTRIBUTION"
         ),
+        "selection": {
+            "selected_stories": 8,
+            "authors": 5,
+            "distinct_world_json": 8,
+            "created_before_gpu_run": 3,
+            "created_after_gpu_run": 5,
+            "private_session_bodies_read": False,
+        },
         "sources": [p2_source(i) for i in range(1, 9)],
     }
 
