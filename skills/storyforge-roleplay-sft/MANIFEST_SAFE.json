@@ -1,25 +1,25 @@
 {
   "schema": "storyforge-roleplay-sft-skill-manifest-safe-v1",
-  "version": "0.1.21",
+  "version": "0.1.22",
   "date": "2026-11-18",
-  "tests": "v0.1.21: P2-A Supabase public source inventory READY; P2-C protected crosswalk remains HOLD; Owner-private evidence metadata inventory boundary; synthetic Skill contract regression",
+  "tests": "v0.1.22: Owner-local P2 protected crosswalk inventory-first contract; no blind rerun of prior card/opening execute; P2-A READY, P2-C HOLD, P2-B NOT_GENERATED; synthetic Skill contract regression",
   "real_data_extracted": false,
   "dataset_v04_admitted_by_this_skill": 0,
   "files": [
     {
       "path": "CHANGELOG.md",
-      "sha256": "6241ab2cee28c16f27ebd0524607a119f253dd802dd35d06f37ecb523c29f05c",
-      "bytes": 15261
+      "sha256": "7006e269e95a6939aaba535d75c7427d71b73c6965607224f14f0e5ac064451f",
+      "bytes": 16065
     },
     {
       "path": "README.md",
-      "sha256": "dd5ba275c3c493f8b8127a751e2c1a5010b5b590d458ad8ba9a0bedfd8fda683",
-      "bytes": 5175
+      "sha256": "0a8103a3392a8bda7d12231e6a01df757bd06706c1694e7f2a1560f984b35aa6",
+      "bytes": 5877
     },
     {
       "path": "SKILL.md",
-      "sha256": "f32591eec25d46d326f3957b022b311c258b2228c223b061e8844746c47fd037",
-      "bytes": 24856
+      "sha256": "e1ed7b21eb6dea1de296e2450a55d635e0098eb7ba4024efccaa87af74e71e2d",
+      "bytes": 27109
     },
     {
       "path": "queries/01_story_inventory.sql",
@@ -63,8 +63,8 @@
     },
     {
       "path": "tests/test_skill_token_reuse_contract.py",
-      "sha256": "ba8ddc1a0986c2a829ce3acdfc16fdcb3a76d2dd2f8575c1fe0009f59681797a",
-      "bytes": 9580
+      "sha256": "9f85926ebfbe897061bfa93e5230124104538c9f10fdb9622cd94732f398aa69",
+      "bytes": 10138
     }
   ]
 }
