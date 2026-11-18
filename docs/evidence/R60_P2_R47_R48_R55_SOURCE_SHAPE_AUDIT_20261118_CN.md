@@ -167,3 +167,60 @@ Owner 返回 `r60_r55_three_index_link_safe_v1`，状态为 **`R55_THREE_INDEX_L
 **严格证据边界：** 这证明 R55 三层索引及 Prep 回执完整性，以及第一层对 R47 Manifest 的 20 个 Sample ID 的覆盖；不单独证明 R47 这些 Sample ID 与 canonical `metadata.story_id` 的复合绑定已执行，也不证明 P2 × R47/R48/R55 exact Story ID overlap=0。不代替 R55 旧 R47 source preflight 的其他可能约束；语义世界、actual-sent 和 Reviewer 独立性仍独立 HOLD。
 
 下一最小动作：复用 `scripts/audit_v01_integrity.py::test_alignment_audit` 的样本绑定规则，只读验证冻结 canonical Test SHA / 20-row Prompt / Manifest / R48 Source Audit / P2 private Manifest，然后仅输出 P2 × R47/R48 exact Story ID overlap count。R55 第一层已有 20/20 的 Sample ID 覆盖，取得成功的 R47 Story ID 绑定后可据此继承这一批历史案例的精确身份集合，但不自动认定全部历史开发暴露范围已经覆盖。
+
+
+## 10. Owner-local P2 × R47/R48/R55 精确 Story ID crosswalk SAFE（2026-11-18）
+
+Owner 返回 `r60_p2_r47_r48_r55_exact_story_crosswalk_safe_v1`，状态：**`P2_R47_R48_EXACT_STORY_ID_DISJOINT__R55_BOUND_TO_R47_20__P2_C_HOLD`**。
+
+实际 SAFE 结果：
+
+| 检查 | 结果 |
+|---|---:|
+| Canonical Test 固定 SHA | true |
+| R47 Prompt / Manifest 绑定 | true |
+| R47 Sample → canonical Test → `metadata.story_id` 绑定 | true |
+| R47 样本数 | 20 |
+| R47 唯一 Story ID 数 | **2** |
+| R48 canonical source SHA 绑定 | true |
+| P2 来源 / 唯一 Story ID | 8 / 8 |
+| P2 × R47/R48 exact Story ID overlap | **0** |
+| R55 第一层对 R47 Manifest 覆盖（此前 SAFE） | 20/20 |
+
+据已验证的 R55 三层 token 链（76 → 68 → 46）和第一层 20/20 Sample 覆盖，R55 三层索引所代表的这批派生记录可沿 `candidate token → source_sample_id_private → R47 sample_id → canonical Test metadata.story_id` 映射到同一 20-case 来源集合。因此，在**本次已验证的 R47/R48/R55 20-case 链**范围内，P2 与历史 Story ID 精确不相交；不得将此结论扩展为完整历史 exposure universe 的排除证明。
+
+### 10.1 重要统计限制：20 samples 只有 2 个 Story IDs
+
+R47 20 个 Prompt / Sample 仅对应 **2 个唯一 Story ID**。因此：
+- 20 是 prompt/case 数，不是 20 个独立故事；
+- R48 是同一批案例的四臂回顾性评估，不增加独立故事数；
+- R55 的 76/68/46 是三层派生审计记录数，不是独立故事数，也不能当作独立样本量；
+- 任何未来质量比较必须按 Story 聚类 / 分层解释，不得把同一 Story 下多个 Prompt 当成独立故事来夸大有效样本量或泛化能力。
+
+这不改变精确 ID overlap=0 的事实，但显著限制这批历史材料对跨故事泛化质量的证明力。
+
+### 10.2 门禁更新与保留项
+
+本轮关闭：P2 × R47/R48 的 20-case exact Story ID overlap；通过已验证 R55 三层索引与该 20-case 的传递性来源映射，关闭同一链范围内的 P2 × R55 exact Story ID overlap。
+
+仍然 HOLD：
+- R47/R48/R55 的完整历史暴露 universe 是否已穷尽；旧 R47 source preflight 的附加约束尚未复核。
+- 语义近似 / 隐藏 World alias / 同一 World 组件变体排除。
+- actual-sent / delivered prompt 版本、时间点和上下文绑定。
+- Base336 8 组 World 语义裁决及成员级 current/archived card/opening 证据。
+- R50 完整 Protected / Reserved metadata roster 的覆盖完整性（R50 正文继续禁止访问）。
+- Reviewer 独立性与 Owner freeze。
+
+本轮 SAFE 边界：database_accessed=false、database_modified=false、r50_opened=false、gpu_started=false、hf_jobs_submitted=0、model_requests=0、private_values_emitted=false。
+
+状态应精确记录为：
+```
+P2_R47_R48_R55_20_CASE_EXACT_STORY_ID = PASS_OVERLAP_0
+P2_R47_R48_R55_FULL_EXPOSURE_CLOSURE = UNKNOWN_HOLD
+R47_UNIQUE_STORY_COUNT = 2_OF_20_PROMPTS
+P2_SEMANTIC_ISOLATION = HOLD
+P2_C = HOLD
+P2_B_48_PROMPTS = NOT_GENERATED
+```
+
+下一步不再重复 R47/R48/R55 精确 ID crosswalk，也不重跑 R55 Index SHA / token 链。转向最小化的**语义与完整性缺口盘点**：先只读审查旧 R47 source preflight SAFE / 脚本 / 测试的合同；并分别确认 Base336 card/opening 已有文件的真实 Schema / 覆盖缺口、R50 metadata-only roster 是否完整、actual-sent 证据是否存在。任何缺失仍 HOLD，不启动 GPU/HF、不读取 R50 正文、不生成真实 P2-B 提示包。
