@@ -1,4 +1,4 @@
-# R58 RolePlay → StoryForge SFT Skill v0.1.20
+# R58 RolePlay → StoryForge SFT Skill v0.1.21
 
 本目录定义 StoryForge RolePlay / Quality-v1 工作流的 AI 执行顺序与安全边界。它不是数据库自动导出器、质量评审模型或训练器；不会自动连接生产数据库、写入 GitHub、运行推理或启动 GPU Job。
 
@@ -49,4 +49,8 @@ Batch Quote Repair v2 / checkpoint v3 A/B GPU Pilot 已完成：A/Qwen 2/2 PASS�
 
 ## 当前 R60 Base336 状态（2026-11-18）
 
-Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 steps、终端Checkpoint和Adapter Reload PASS，状态为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。这不是模型质量通过。 33/33个输出对象已完成Owner Mac本地SHA256 inventory（5,604,774,224 bytes），Worker SAFE、Checkpoint和Adapter Reload复核PASS；这是本地对象inventory，不是与Worker原始逐文件SHA比对，也不是文学质量PASS。43条Validation参与了训练期Eval/Checkpoint选择，不能作为独立Held-out；R50仍禁止访问，旧暴露题不能冒充独立测试。当前P2仍HOLD：已收到8组World来源证据，8/8 HOLD、7/8当前版本跨Train/Validation，语义审核和历史actual-sent均未验证；真实48条提示JSONL/Manifest尚未生成。必须先复核38个成员的当前/归档角色卡与Opening，完成语义组件分配及R50仅元数据、R47/R48/R55暴露排除，禁止从未准入池/数据库自动抽样。生成评估优先复用 `generation_eval.worker` 与共享 HF Runtime；旧 P4 三模型配置、三臂 Pairing Gate 和五维 Scorecard 不直接适用，具体适配边界见评估计划。下一阶段、工具复用与GPU推理授权边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。
+Base336探索性QLoRA训练已完成：Job `6afbfd5c98dda891b5df7fd2`、37/37 steps、终端Checkpoint和Adapter Reload PASS，状态为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`。这不是模型质量通过。33/33个输出对象已完成Owner Mac本地SHA256 inventory（5,604,774,224 bytes），这是本地对象inventory，不是与Worker原始逐文件SHA比对。43条Validation参与了训练期Eval/Checkpoint选择，不能作为独立Held-out。
+
+本轮 Supabase P2-A 公开来源 Inventory 已 READY：8条来源、5位作者、3条创建于GPU Run前、5条创建于GPU Run后、8种不同World JSON；指定范围内精确World overlap=0，revision/snapshot/permission绑定验证通过。Owner确认的用途仅为内部独立评估提示构造，私有Source Manifest已创建。**P2-C仍HOLD**：`protected_crosswalk_verified=false`；8种World JSON不等于8个语义独立世界，GPU Run后创建也不单独证明底层素材未提前暴露。Base336私有来源、R50 Protected/Reserved仅元数据排除、R47/R48/R55暴露题/语义变体排除尚待交叉核验。R50正文仍禁止访问。真实48条提示JSONL/Manifest尚未生成，不得生成正式Held-out或推理。下一步先做Owner私有证据文件的只读元数据inventory，再根据真实Schema开发可复用的Owner-local crosswalk适配器。
+
+生成评估优先复用 `generation_eval.worker` 与共享 HF Runtime；旧 P4 三模型配置、三臂 Pairing Gate 和五维 Scorecard 不直接适用，具体适配边界见[Base336训练后质量评估计划](../../docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)。GPU推理仍需单独明确授权。
