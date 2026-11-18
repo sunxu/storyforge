@@ -2,7 +2,10 @@
 
 **Current taskbook:** 2026-11-19  
 **Scope:** R50 original 50-source inventory, Owner-excluded 4, 46-case PRESEAL candidate, source/world isolation, temporal prompt provenance, ROLE12 policy and eventual protected Held-out release gates.  
-**Current disposition:** `WORLD_SEMANTIC_HOLD__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_HOLD__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
+**Current disposition:**
+
+**Publication state:** This taskbook is proposed in [Draft PR #33](https://github.com/sunxu/storyforge/pull/33), branch `docs/r50-agent-handoff-20261119`; until merged, read it from that branch rather than assuming it exists on `main`.
+ `WORLD_SEMANTIC_HOLD__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_HOLD__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
 
 > This is the current operational taskbook. It supersedes the action ordering in the 2026-10-22 snapshot `docs/r56/R56_R50_46_PROTECTED_GATE_NEXT_STEPS_20261022.md`, but does not erase that historical record. The dated 2026-11-19 audit evidence is proposed in Draft PR #32 and is not yet merged to main.
 
