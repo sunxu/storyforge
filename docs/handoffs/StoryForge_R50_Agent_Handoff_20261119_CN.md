@@ -60,7 +60,11 @@ Do not:
 1. **W1 first:** complete the historical evidence coverage crosswalk between the 2026-11-19 inventory, W17 dossiers, source/archive manifests, frozen R45 scope and known transitive-link records. Decide `NEW_EVIDENCE_PRESENT` or `NO_NEW_EVIDENCE`. This is the prerequisite for any new semantic adjudication.
 2. **W2 may run in parallel with W1:** read-only search existing Owner-held historical card/version snapshots, prompt-assembly/runtime records and long-term rule versions. Record searched locations and artifact availability. If absent, record `SOURCE_UNAVAILABLE` / `HOLD`; do not reconstruct history or initiate new export work.
 3. **W3 only on a trigger:** if W1 or W2 identifies genuinely new provenance relevant to a specific unresolved edge, propose a narrowly scoped adjudication of only that edge. If no new provenance exists, mark W3 `NOT_TRIGGERED`; do not repeat the three W17 pair reviews or seven full-message reviews.
-4. **W4 separate gate:** obtain the Owner's explicit decision on the exact consecutive-User contract in the taskbook. Only after that decision, perform read-only Base/v0.1/v0.2/v0.3-A runtime role/template parity verification. Do not mutate frozen messages.
+4. **W4 separate gate:** obtain the Owner's explicit decision on this exact consecutive-User contract. Only after that decision, perform read-only Base/v0.1/v0.2/v0.3-A runtime role/template parity verification. Do not mutate frozen messages.
+
+   > 12 条历史末尾的 User 消息与新追加的 User 消息，是两条独立的连续 User turn。四个模型臂均原样保留两条消息，不合并、不改写、不删除，并将其作为统一输入合同的一部分。
+
+   Until the Owner explicitly approves or rejects it, policy remains `PENDING_OWNER_DECISION`; silence is not approval.
 5. Prepare preregistration only after the gates close. No final seal or inference without separate Owner authorization.
 
 No HF Job, paid tokenizer job, GPU, model inference or training is needed or authorized for this handoff. If W1 finds no new evidence, preserve HOLD instead of generating another review that cannot change the decision.
