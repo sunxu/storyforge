@@ -169,3 +169,10 @@ MODEL_PROMOTED = false
 ```
 
 本文件仅记录政策批准和比较设计。它不授权打开 R50、生成四臂答案、开展正式盲评、Final Seal、Held-out admission 或模型 Promotion。
+
+
+## 8. Original Gold source availability update — 2026-11-19
+
+The SAFE receipt `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md` records the latest bounded source evidence. The pinned 2026-10-16 R50 source replay compared all 50 new User inputs with User messages in the five pinned source transcripts and found `source_input_normalized_verbatim_reuses=0`. This rules out an exact current-User-input match in those five transcripts, hence `0/46` Original Gold-eligible cases within that pinned source scope.
+
+Owner-provided local output separately verifies the 14-chat archive copies and 06–15 archive integrity. Those archives have not yet been searched for exact full-history matches. A text-only match from a different story cannot qualify; the complete history and cutoff context must also match. Therefore overall `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED`, not an unconditional 0/46 across all Owner-held sources.
