@@ -267,3 +267,6 @@ SAFE 仅输出聚合计数；Story ID、author ID、submission ID、World MD5、
 - Base336 的 8 组私有世界来源回执目前全部 HOLD（7 组当前版本跨 split，语义审核未完成，历史 actual-sent 未验证）。它不是 Gold Manifest 事件，不得导入 Source/Review/Exclusion/Reconciliation，也不改变 `quality_v1_admitted=0`、`train_admitted=0`。
 
 新审核流程必须先核对来源版本和成员覆盖，再填写语义组件分配，最后运行共享结构门禁。缺失成员、缺失证据、重复来源键、未完成审核或跨 split 组件均失败关闭；不得通过重算 hash、改名或手动修改 SAFE 绕过。共享核心代码提交的 R60 REAL1000 synthetic-only Actions 已通过：Ruff PASS、338 passed / 2 subtests、Skill contract 7 passed（run `44127200498`）；最新质量标准文档提交的 Actions 通过（run `44127458330`），当前 HEAD 文档同步后的 Actions 也通过（run `44127961963`）。
+
+
+> **2026-11-18 R47/R48/R55 精确来源映射补充**：代码复核已定位 R47 \`sample_id → Manifest source_line/prompt_sha256 → canonical Test 完整 prompt prefix → metadata.story_id\` 绑定路径；R48 继承同一 20-case 集；R55 第一层 Index 保存 \`source_sample_id_private\`，第二 / 第三层有 candidate-token 回连。实际 Owner-local SAFE / receipt / 覆盖仍未核验，P2 × R47/R48/R55 exact overlap 继续 UNKNOWN / HOLD，语义变体排除继续 HOLD。详细步骤见 docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
