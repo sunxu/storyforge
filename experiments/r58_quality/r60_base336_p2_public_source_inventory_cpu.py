@@ -216,6 +216,10 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
             or len(row["world_json_md5"]) != 32
             or any(ch not in "0123456789abcdef" for ch in row["world_json_md5"])
             or row.get("world_sentence_length", 0) <= 5
+            or type(row.get("moderation_submission_id")) is not str
+            or not row["moderation_submission_id"]
+            or type(row.get("permission_event_id")) is not str
+            or not row["permission_event_id"]
             or row.get("submission_revision") != row["public_content_revision"]
             or row.get("requested_visibility") != "public"
             or row.get("permission_to_visibility", row.get("to_visibility"))
@@ -361,10 +365,15 @@ def run(args: argparse.Namespace) -> dict:
     # The query already binds the snapshot to current public_v2_data; normalize
     # the private-only booleans here so synthetic tests and DB rows share one gate.
     for row in rows:
+        snapshot = row.get("snapshot")
+        if isinstance(snapshot, str):
+            try:
+                snapshot = json.loads(snapshot)
+            except (TypeError, ValueError):
+                snapshot = None
         row["snapshot_v2_match"] = (
-            row.get("snapshot") is not None
-            and row.get("snapshot", {}).get("source", {}).get("v2Data")
-            == row.get("public_v2_data")
+            isinstance(snapshot, dict)
+            and snapshot.get("source", {}).get("v2Data") == row.get("public_v2_data")
         )
         row["permission_submission_bound"] = (
             row.get("permission_submission_id")
