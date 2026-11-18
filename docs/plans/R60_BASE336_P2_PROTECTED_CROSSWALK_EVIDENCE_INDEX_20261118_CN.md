@@ -225,3 +225,16 @@ Owner 返回 `r60_base336_card_opening_no_db_preflight_v1`：`ROSTER_PRECHECK_PA
 - 失败时 `database_accessed=null`，避免用未知代替 false。
 - synthetic-only 测试覆盖已知拒绝原因、不可信异常脱敏、非 DB 阶段定位和 CLI SAFE 格式。
 - 新脚本**尚未对 Owner 的真实数据库运行**；原先的 `BASE336_CARD_OPENING_EVIDENCE_HOLD` 仍不可追溯到具体历史阶段。保持对全量 `--execute` 的禁止，直到执行环境、代码版本及最小重试范围被明确授权。
+
+
+### 2026-11-18 Owner PostgreSQL 只读连接守卫 SAFE
+
+Owner 返回 `r60_base336_db_readonly_preflight_safe_v1`，状态为 `DB_READONLY_PREFLIGHT_PASS__NO_STORY_DATA`。
+
+- `dsn_configured=true`、`connection_established=true`；
+- `expected_role_verified=true`（守卫中的预期角色 `r58_export_reader`）；
+- `transaction_read_only=true`、`row_security_enabled=true`；
+- `role_bypassrls=false`、`role_superuser=false`；
+- `story_tables_queried=false`、`private_story_content_read=false`、`database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`、`private_values_emitted=false`。
+
+本次仅对数据库连接、事务状态及角色元数据做验证，未访问应用故事表；因而可以排除**本次运行环境**的连接失败和只读守卫不符合要求，但不能推导旧提取失败原因，也不能证明冻结 World 组与当前数据库一致。下一门禁是经 Owner 明确授权的只读 World 快照比较；在此之前不得运行 Card/Opening 全量 `--execute`。
