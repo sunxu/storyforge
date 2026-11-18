@@ -62,7 +62,7 @@ Owner 2026-11-18 实际 SAFE 确认：
 - 最新可用汇总仍为 8/8 组 HOLD，semantic review 未完成，actual-sent version 未验证。
 - 复用工具和各证据边界见 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
 
-**P2-C 仍为 HOLD。** Owner Mac 元数据 inventory 输出尚未收到。不得重新抽取 Supabase，不得重建或覆盖已有 roster/template/evidence/review/output。此前 card/opening 全量 `--execute` 返回泛化 HOLD，禁止盲目重跑。第一步只做 Owner-local 文件元数据盘点；在真实输入文件、Schema 和保护集覆盖范围确认前，不创建新的 crosswalk 适配器。
+**P2-C 仍为 HOLD。** Owner Mac 已返回 R47/R48/R55 metadata/shape inventory：R47/R48 的 20-case Sample/Prompt 结构已核验，但没有经验证的逐案 Story ID 映射；R55 私有 Coordinator Index 文件已确认存在，但其内容、Schema、版本绑定与覆盖完整性尚未核验。P2 × R47/R48/R55 精确 Story ID crosswalk 仍 UNKNOWN / HOLD，语义变体排除仍 HOLD。详细结果见 `docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md`。不得重新抽取 Supabase，不得重建或覆盖已有 roster/template/evidence/review/output。此前 card/opening 全量 `--execute` 返回泛化 HOLD，禁止盲目重跑。第一步只做 Owner-local 文件元数据盘点；在真实输入文件、Schema 和保护集覆盖范围确认前，不创建新的 crosswalk 适配器。
 
 1. 将 P2 的 8 个新来源与 Base336 冻结 Train/Validation source roster、8 组 World evidence、全部 38 个受影响故事的 current/archived character、characters、opening 证据交叉核验。
 2. 仅使用 Owner 授权的 R50 Protected/Reserved 完整元数据清单做排除核验；绝不读取 R50 正文、提示或答案。
