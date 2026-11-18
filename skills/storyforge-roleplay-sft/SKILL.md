@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.21
+version: 0.1.22
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -170,3 +170,14 @@ Owner的真实1000池（6+994）已经只读确认`EXPANSION_TARGET_REACHED__NOT
 - 共享 helper 的 PASS 只说明已提交的组件分配完整、已声明审核完成且无声明的 Train/Validation 组件冲突；不证明 Reviewer 独立、历史 actual-sent 版本、R50 完整排除、R47/R48/R55 暴露排除、权利或训练准入。
 - 不把 R60 技术/语义审核写成 Gold Manifest 事件；不调用 `append-review`、`import-review-reconciliation` 表达技术 PASS。继续保持 `quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。GPU 推理仍需独立明确授权。
 - 更新任何通用算法时，先更新共享 `src/` 核心和合成测试，再更新 `quality_v1.py` 的复用调用、`GOLD_QUALITY_PIPELINE_CN.md` 和本 Skill。技术规范维护算法/schema/失败码，Skill 只维护执行顺序和边界。
+
+
+## R60 Base336 P2-C Protected Crosswalk：Owner-local 接手边界（2026-11-18）
+
+- 当前权威入口：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`；证据索引：`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`；总体计划：`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。
+- P2-A Supabase 公开来源 Inventory 为 READY；P2-C Protected Crosswalk 仍 HOLD；真实 P2-B 48 条提示包 NOT_GENERATED。不要把 P2 的 8 条新来源与 Base336 历史 8 组跨 split World 关联混为一谈。
+- 新 Agent 首先核验 GitHub 实时 HEAD / Actions，然后只做 Owner Mac 私有文件 metadata inventory（文件名、大小、权限、修改时间）。不得读取文件正文、输出 Story ID、作者映射、SHA256、本机绝对路径或上传 PRIVATE 文件。尚未收到 inventory 输出时，停止在此阶段并向 Owner 索取。
+- 此前 `r60_base336_group_cards_opening_cpu.py --execute` 返回泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，未包含 failure phase / reason。**禁止盲目再次执行全量 `--execute`**；不得重跑 DB 查询、重建或覆盖 roster/template/evidence/review/output。先核对既有 SAFE 和输出文件元数据，明确失败阶段并取得 Owner 对具体最小动作的重新确认。
+- 真实私有输入 Schema 和保护集覆盖范围未确认前，不开发猜测性 crosswalk。确认后才允许版本化、Owner-local、create-only 薄适配器；复用 `src/storyforge_dataset/world_isolation.py` 的唯一共享组件冲突算法，不复制实现。
+- Base336 成员级 current/archived World、character、characters、opening；R50 完整 Protected/Reserved metadata-only；R47/R48/R55 完整 source/exposure manifests；历史 actual-sent 版本；Reviewer 独立性和 Owner 冻结必须分别证明。任何缺失或覆盖不完整继续 HOLD。
+- P2-C 全部通过并经独立 Reviewer / Owner 冻结前，不生成真实 48 条提示包、不进入 P3 Pairer/Profile/Backend、不启动 P4 GPU/HF 推理。始终保持 `database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`、`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`。
