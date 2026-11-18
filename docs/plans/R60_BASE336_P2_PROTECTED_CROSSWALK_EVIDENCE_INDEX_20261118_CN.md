@@ -389,3 +389,16 @@ SAFE `r60_base336_source_reuse_independent_recheck_safe_v1`，`SOURCE_REUSE_RECH
 隔离会话中的私有新产物：`R60_BASE336_22_CASE_PROVISIONAL_HOLD_SCOPE_PRIVATE.json`、对应 SAFE、`R60_BASE336_ACTUAL_SENT_EVIDENCE_REQUEST_PRIVATE.md` 和打包 ZIP（不进 GitHub）。私有产物保存每个配对的来源 kind、revision、冻结候选位置及证据字段路径，便于 Owner 做严格的 request-effective / training-input 版本核验。
 
 **严格限定：** 22 条是有逐字来源复用证据支持的**优先暂缓解除隔离候选范围**，不是已经从 293/43 数据集中剔除的记录，也不能宣称已进入训练输入。其余 60 条虽没有本轮精确证据，仍不能视为语义独立。仍需逐对确认 actual-sent 时间点/源版本、prompt assembly、历史 train/eval manifest、独立 Reviewer 和 Owner 正式签署；R50 完整元数据排除及历史 exposure universe closure 等仍 HOLD。P2-C HOLD、P2-B NOT_GENERATED、`train_admitted=0`。
+
+
+### 2026-11-18 Final 293/43 release split vs provisional World roster: implementation-path audit
+
+**重要纠正：之前 22-case SAFE 中的 Train 11 / Validation 11 是基于原 World Roster 的初始 split，不是 GPU 训练时的最终 293/43 split，严禁称为最终训练/验证的 11/11 泄漏。** 仓库权威实现为：
+
+- `experiments/r58_quality/r60_base336_exploratory_split.py::split` 先以 `r60_base_start_world_split_preview.preview` 的 276/60 初始划分为基线，将八组精确 World JSON 关联组成 connected components；若任一连通分量出现 Train，则统一放入 Train，最终 293 Train/43 Validation，`crossing_known_world_groups_after_split=0`。
+- `r60_base336_exploratory_release_verify.py::verify` 对 Owner 私有 `train.jsonl`、`validation.jsonl` 和 `R60_BASE336_EXPLORATORY_MANIFEST_PRIVATE.json` 校验 293/43 行数、完整 SHA256 和 message 合同；发布 JSONL 每行只有 `messages`（User/Assistant/User/Assistant），不含 Story ID 字段。因此**必须**与冻结 336 候选重新构建结果按行内容相等绑定，不能从 JSONL 的位置推断 Story ID。
+- GPU Stage `scripts/r60_base336_gpu_stage.py` 在 `private/release/` 保存发布字节、Stage SHA256 Manifest；`scripts/r60_base336_gpu_worker.py` 将这两个 staged JSONL 作为 `swift sft --dataset/--val_dataset` 输入。这解释正确的实际输入链，但代码路径本身尚不是对应 Run 的 Owner-local Stage/Worker 字节证明。
+
+为此在当前隔离环境制作只读 Owner-local 工具 `r60_base336_actual_release_scope_cpu.py` 及 synthetic-only 测试，**5 passed**（最终划分映射、内容篡改、双 split 同行歧义、重复来源位置、源缺失）；随 `R60_BASE336_FINAL_RELEASE_22_CASE_AUDIT_TOOLS.zip` 提供 Owner。此工具尚未运行于 Owner 真实冻结 293/43 文件，**不宣称实际风险 6 对已被重新验证或实际训练输入链已完成**。工具执行顺序：复用冻结六目录，验证发布 Manifest 和 JSONL，重新构建的字节与保存的发布文件逐字节相等，按真实 row bytes 将 22 case 映射到最终 split，报告原 6 对有多少仍跨最终 split。只在 Owner 输出 SAFE 数量，不显示真实 ID/引文/哈希，不触 DB/模型/GPU，不写冻结文件。
+
+若 6 对最终 split 共置，仅可关闭**这 6 对在该冻结发布版本上的跨 293/43 精确文本相等风险**；并不能证明其它未发现的语义组件、历史 actual-sent 请求、R50 全量元数据排除、R47/R48/R55 全暴露排除或 Reviewer 独立性。P2-C HOLD、P2-B NOT_GENERATED、`train_admitted=0` 保持不变。下一步等待 Owner-local `r60_base336_actual_release_scope_safe_v1` SAFE 回执，并另核 Stage Manifest / GPU Worker 实际 Job 的输入链。
