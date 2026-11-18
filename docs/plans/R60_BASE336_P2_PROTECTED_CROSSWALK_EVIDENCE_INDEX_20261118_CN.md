@@ -311,3 +311,10 @@ Owner Worktree 上针对已调整上限的脚本定向合成测试 **10 passed**
 Owner 返回 `r60_base336_card_opening_integrity_safe_v1`，状态 **`CARD_OPENING_8_FILES_INTEGRITY_PASS__SEMANTIC_HOLD`**。实际验证 `files_verified=8`、`groups_verified=8`、`distinct_story_ids=38`、`source_records_current=38`、`source_records_archived=21`；`roster_sha256_matched=true`、`source_membership_matched=true`、`field_limits_verified=true`、`permissions_verified=true`。全过程 `database_accessed=false`、`database_modified=false`、`private_files_modified=false`、`private_values_emitted=false`、`gpu_started=false`、`model_requests=0`。
 
 Card/Opening 8 份 create-only Owner-private 来源证据的**采集与离线结构完整性子任务完成**。此项 PASS **不等于**历史实际发送版本、World/Character/Opening 语义隔离、R50 全量排除、独立 Reviewer 或 P2-C 准入通过；P2-C 继续 HOLD，`train_admitted=0`。
+
+
+### 2026-11-18 Owner 既有 Codex 八组语义裁决结构 SAFE（未裁决）
+
+Owner 返回 `r60_base336_codex_semantic_structure_safe_v1`：`CODEX_EIGHT_GROUP_STRUCTURE_FOUND__SEMANTIC_REVIEW_HOLD`。Roster/template 绑定均 MATCH；8 组 World evidence 绑定通过；Codex JSON 合法且发现完整 8 组 collection；8 组决策全为 HOLD（PASS=0、REJECT=0、OTHER_OR_MISSING=0）。`historical_actual_sent_verified=false`、`independent_semantic_review_verified=false`、`train_admitted=0`。
+
+此结果证明现存 Codex 审查结构完整并绑定当前冻结 Roster/template，但**不证明审查语义正确或独立**。下一最小步骤不是重跑 Codex，也不是直接把 HOLD 改为 PASS，而是做 Owner-local schema-only shape 对照：对 8 个 Codex group rows 与 8 个 Card/Opening 包的成员级记录只输出字段名/类型/非空计数/来源类型计数，核对旧 HOLD reason 缺失的 member character/plot/version 证据是否被新包覆盖；禁止输出私有值、Story/Revision IDs、正文或 SHA。随后才制定独立 Reviewer 的逐组 source-quoted 语义复核输入与裁决，实际语义判断不由结构脚本代替。
