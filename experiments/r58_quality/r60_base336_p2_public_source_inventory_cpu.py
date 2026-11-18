@@ -199,6 +199,8 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
     before = after = 0
     manifest_sources = []
     for row in rows:
+        if not isinstance(row.get("current_public_v2_data"), dict):
+            raise Hold("SOURCE_CURRENT_V2_DATA_HOLD")
         created = _iso(row.get("created_at"))
         approved = _iso(row.get("first_public_approved_at"))
         if created < cutoff or approved < created:
@@ -377,7 +379,7 @@ def run(args: argparse.Namespace) -> dict:
                 snapshot = None
         row["snapshot_v2_match"] = (
             isinstance(snapshot, dict)
-            and snapshot.get("source", {}).get("v2Data") == row.get("public_v2_data")
+            and snapshot.get("source", {}).get("v2Data") == row.get("current_public_v2_data")
         )
         row["permission_submission_bound"] = (
             row.get("permission_submission_id")
