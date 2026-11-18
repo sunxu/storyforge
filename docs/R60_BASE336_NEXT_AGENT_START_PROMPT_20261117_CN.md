@@ -1,6 +1,6 @@
-# R60 Base336 下一 Agent 启动提示词（2026-11-17，可直接复制）
+# R60 Base336 下一 Agent 启动提示词（2026-11-18，可直接复制）
 
-你现在接手 GitHub 仓库 `sunxu/storyforge` 的 **R60 Base336 训练后独立质量评估任务**。工作分支为 `r60/common2-cpu2-owner`。你的目标不是继续训练，而是先解决独立 Held-out 来源门禁，再在授权范围内准备 Base/Adapter 对照评估。
+你现在接手 GitHub 仓库 `sunxu/storyforge` 的 **R60 Base336 P2 Protected Crosswalk 任务**。工作分支为 `r60/common2-cpu2-owner`。首要目标是核验 Owner Mac 已有私有证据的元数据、诊断缺失项，并在真实 Schema 完整确认后完成保护集交叉核验。**先读并执行专项提示词**：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。本任务不是 Supabase 重抽取、训练或推理。
 
 ## 一、先核验，不要直接执行
 
@@ -10,6 +10,8 @@
    - `docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`
    - `docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`
    - `docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`
+   - `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`
+   - `docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`
    - `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`
    - `skills/storyforge-roleplay-sft/SKILL.md`
    - `skills/storyforge-real-quality-review/SKILL.md`（只读理解审核边界）
@@ -60,7 +62,7 @@ Owner 2026-11-18 实际 SAFE 确认：
 - 最新可用汇总仍为 8/8 组 HOLD，semantic review 未完成，actual-sent version 未验证。
 - 复用工具和各证据边界见 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
 
-**P2-C 仍为 HOLD。** 不重新抽取 Supabase，不重建或覆盖已有 roster/template/evidence/review/output。下一步先核对 Owner Mac 既有私有文件的只读元数据 inventory 和已有 SAFE；在真实输入文件及 Schema 得到确认前，不创建新的保护集 crosswalk 适配器。
+**P2-C 仍为 HOLD。** Owner Mac 元数据 inventory 输出尚未收到。不得重新抽取 Supabase，不得重建或覆盖已有 roster/template/evidence/review/output。此前 card/opening 全量 `--execute` 返回泛化 HOLD，禁止盲目重跑。第一步只做 Owner-local 文件元数据盘点；在真实输入文件、Schema 和保护集覆盖范围确认前，不创建新的 crosswalk 适配器。
 
 1. 将 P2 的 8 个新来源与 Base336 冻结 Train/Validation source roster、8 组 World evidence、全部 38 个受影响故事的 current/archived character、characters、opening 证据交叉核验。
 2. 仅使用 Owner 授权的 R50 Protected/Reserved 完整元数据清单做排除核验；绝不读取 R50 正文、提示或答案。
@@ -103,3 +105,8 @@ Base 与 Adapter 必须使用相同的三个持久化可见消息（无 System�
 最终交付：当前 HEAD、分支、文件改动、Commit、精确 HEAD CI、P2 SAFE 状态/原因、权限与资源消耗、是否提交 HF Job/是否启动 GPU、未解决 HOLD、下一项最小动作。不得把未执行工作写成 PASS。
 
 **现在开始：先核验 GitHub 当前状态并读取权威交接文件；在 P2 来源未获批准前，只做只读核验和文档/合成测试，不进行任何模型推理。**
+
+
+## 交接提示词权威入口
+
+新 Agent 应以专项提示词 `docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md` 为可执行任务合同；本文件保留训练后评估背景和总体流程。若本文件与专项提示词在当前执行顺序上存在差异，以专项提示词和最新 Owner SAFE 为准，并先核对 GitHub 当前 HEAD。
