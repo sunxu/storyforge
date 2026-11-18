@@ -2,7 +2,7 @@
 
 **Current taskbook:** 2026-11-19  
 **Scope:** R50 original 50-source inventory, Owner-excluded 4, 46-case PRESEAL candidate, source/world isolation, temporal prompt provenance, ROLE12 policy and eventual protected Held-out release gates.  
-**Current disposition:** `WORLD_SEMANTIC_HOLD__W1_NO_NEW_EVIDENCE__W2_SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__W3_NOT_TRIGGERED__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_PENDING_OWNER_DECISION__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
+**Current disposition:** `WORLD_SEMANTIC_HOLD__W1_NO_NEW_EVIDENCE__W2_SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__W3_NOT_TRIGGERED__CPU46_LENGTHS_DRAFT_PASS__ROLE12_POLICY_APPROVED__FOUR_ARM_RUNTIME_PARITY_NOT_VERIFIED__ORIGINAL_GOLD_COVERAGE_NOT_ESTABLISHED__OFFICIAL_ADMITTED_0__FINAL_SEAL_NOT_PERFORMED`.
 
 **Publication state:** This taskbook is proposed in [Draft PR #33](https://github.com/sunxu/storyforge/pull/33), branch `docs/r50-agent-handoff-20261119`; until merged, read it from that branch rather than assuming it exists on `main`.
 
@@ -164,11 +164,11 @@ The Owner's statement that intended story worlds are independent is recorded evi
 
 W4 is independent of the W1→W2→conditional-W3 evidence sequence. It must not cause W1/W2 to pause, and it must not trigger a new tokenizer job, HF Job, GPU, model inference or training.
 
-**The only pending ROLE12 interpretation decision for the Owner is whether to approve this exact contract:**
+**Owner decision recorded on 2026-11-19: APPROVED. The binding ROLE12 contract is:**
 
 > 12 条历史末尾的 User 消息与新追加的 User 消息，是两条独立的连续 User turn。四个模型臂均原样保留两条消息，不合并、不改写、不删除，并将其作为统一输入合同的一部分。
 
-Until the Owner explicitly approves or rejects this wording, keep `ROLE12_POLICY = PENDING_OWNER_DECISION`. Do not infer approval from silence or from the existence of this taskbook. If approved, record the Owner's explicit decision and contract version; if rejected or amended, record the exact alternative before changing any runtime contract.
+Record `ROLE12_POLICY = APPROVED` against contract `V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`. This approval does not verify actual runtime parity and does not authorize model execution.
 
 After the policy is decided, verify the actual Base/v0.1/v0.2/v0.3-A runtime construction against that one contract: role sequence, system/card/rule order, tokenizer/template pins, truncation, generation reserve, EOS/sampling and model-specific differences. This is a read-only configuration/code/receipt parity check; no model execution is needed or authorized. Preserve frozen source messages unchanged.
 
@@ -205,8 +205,7 @@ Before doing anything, mark each item as `ALREADY_DONE`, `NEW_EVIDENCE_REQUIRED`
 - source coverage crosswalk if the latest inventory does not explicitly bind all previously reviewed dossiers.
 
 **Owner decision required:**
-- explicit Owner decision on the exact consecutive-User interpretation contract (pending until stated);
-- approval of the four-arm runtime/role contract after policy wording is fixed;
+- four-arm runtime/role parity evidence and acceptance (the consecutive-User interpretation policy is already approved);
 - independent reviewer and preregistration acceptance;
 - any final protected release/seal or inference authorization.
 
@@ -262,3 +261,41 @@ The W1/W2 coverage crosswalk has been completed and committed on this taskbook b
 - WORLD semantic isolation and timepoint card/rule provenance remain HOLD/PENDING.
 - W4 remains separate. The exact consecutive-User policy still requires an explicit Owner approve/reject decision; do not infer approval from the earlier generic word “授权”.
 - No new CRC, lexical scan, tokenizer job, ROLE12 audit, HF Job, GPU, inference, training, answer-key access, or Final Seal was performed.
+
+
+## 8. Execution update — 2026-11-19 (Owner policy approval and Original Gold comparison)
+
+Owner explicitly replied **“批准”** to the exact consecutive-User contract. This supersedes earlier pending-decision language in this taskbook:
+
+- `ROLE12_POLICY = APPROVED`
+- 12 trailing historical User messages and the newly appended User remain two independent consecutive User turns.
+- All four arms must preserve exact role/order/content; no merge, rewrite, or deletion.
+- The policy approval does **not** establish four-arm runtime parity.
+
+A R50-specific comparison contract was added:
+
+- `docs/plans/V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`
+- Commit: `4188661a40e5f8c7f245646f8d2b0b0718e456fd`
+- Blob: `7a61fa7fbd53d4d390a052fb2c4e5cab4fdda08a`
+
+The design is **four model arms plus one historical Original Gold reference**, not five models. Original Gold is included only when the exact same current User input, full preceding history, System/Card/Rules as-of cutoff, authenticated original Assistant source reply, and source-byte hash all match. The existing R50 source schema is prompt-only and does not establish 46/46 Original Gold availability. Therefore:
+- exact-match cases use a five-way denominator;
+- unmatched cases remain eligible for four-model comparison;
+- Gold coverage is reported separately as `N_gold / 46`;
+- no similar story reply, Gold195, later-edited reply, or newly written answer may be relabeled Original Gold;
+- any new human reference requires separate authorization and must be labeled `NEW_HUMAN_REFERENCE`.
+
+The same contract specifies blind randomization, three independent reviewers, six dimensions, a separately frozen v0.3-A vs v0.2 direct pairwise comparison, case-level serious-error adjudication, and world-clustered uncertainty. It does not authorize R50 inference or scoring now.
+
+**Current W4 disposition:** policy is approved; actual Base/v0.1/v0.2/v0.3-A runtime parity remains `NOT_VERIFIED`. The next permitted action is a read-only inspection of already-existing Owner-local runtime/load/config receipts. If no such historical records exist, record `SOURCE_UNAVAILABLE`; do not launch a model or tokenizer job to manufacture proof.
+
+```text
+ROLE12_POLICY = APPROVED
+FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
+ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED
+OFFICIAL_HELDOUT_ADMITTED = 0
+FINAL_SEAL = NOT_PERFORMED
+GPU_USED = false
+MODEL_INFERENCE_RUN = false
+TRAINING_RUN = false
+```
