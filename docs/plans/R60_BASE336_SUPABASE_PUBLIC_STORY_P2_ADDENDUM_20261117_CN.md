@@ -272,3 +272,14 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 ### 下一项最小动作
 
 在 Owner Mac 只做私有文件**元数据 inventory**，确认以下材料的实际存在性、路径、文件大小、权限和修改时间：本轮 P2 private source manifest；Base336 cross-review roster/template/evidence；R50 完整 Protected/Reserved metadata-only roster 与现有 SAFE；R47/R48/R55 exposure/source manifests 与 SAFE。不得 cat、grep 正文、上传文件或打印任何 ID/正文/哈希。根据真实 schema 再设计一个版本化、create-only、Owner-local 的保护集 crosswalk 适配器；在输入 schema 和保护集覆盖范围被确认前，不编造通用代码或宣称 crosswalk 完成。
+
+
+## 2026-11-18 交接执行冻结与专项提示词
+
+P2-A Owner SAFE 已 READY；P2-C 仍 HOLD；真实 P2-B 48 条提示包 NOT_GENERATED。详细保护集范围、可复用脚本及证明边界见 `R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
+
+**当前未收到 Owner Mac 私有文件 metadata inventory 输出。** 新 Agent 不得推断私有文件存在或 Schema 已知。第一动作只核对文件名、大小、权限和修改时间，不读取文件正文，不输出 Story ID、作者映射、私有 SHA 或本机绝对路径。
+
+此前 `r60_base336_group_cards_opening_cpu.py --execute` 返回泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，未提供 failure phase / reason。暂停再次执行全量 `--execute`；不重跑数据库查询、不重建或覆盖 roster/template/evidence/output。先核对已有 SAFE 和文件元数据，再诊断失败阶段；需要任何进一步提取或修复时，须由 Owner 对具体最小动作重新确认。
+
+当前 Agent 的可复制执行提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。本轮任务书与总体交接入口：`docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`。不因本次文档整理改变任何数据库、训练、推理或准入状态。
