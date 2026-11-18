@@ -134,6 +134,25 @@ Owner 本轮提供 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，结�
 
 **下一步先诊断既有 `r60_base336_group_cards_opening_cpu.py --execute` 的 `BASE336_CARD_OPENING_EVIDENCE_HOLD`**：此前 Owner SAFE 只有泛化 HOLD，未给出 failure phase/reason；权威最小门禁文档已明确暂停再次执行全量 `--execute`。当前只允许在 Owner Mac 对已有私有目录做只读文件清单/权限检查，并回传已有 SAFE 的完整聚合字段；不要重跑 DB 查询、不要删除或覆盖已有 roster/template/evidence/output。待失败阶段明确、Owner重新确认范围后再决定是否修复工具或继续提取。仍不重建 roster、不访问 R50 正文、不启动模型/GPU；缺少成员级证据时全部 HOLD。
 
+## 8. 2026-11-18 Supabase 来源 Inventory 只读复核
+
+已对当前 Supabase 做一次限定范围的只读复核，使用与 P2 Draft 相同的确定性选择合同；没有读取私有会话正文，没有修改数据库。
+
+结果：
+
+- 选定来源：8 个公开原创故事。
+- 作者：5。
+- 精确 World JSON：8。
+- Base336 GPU Run 前创建：3；之后：5。
+- 8/8 最新 moderation submission revision 与当前 public revision 一致。
+- 8/8 moderation snapshot 的 source.v2Data 与当前 public_v2_data 一致。
+- 8/8 最新 permission event 绑定最新 submission，且目标 visibility 为 public。
+- 与 Base336 冻结边界前公开原创故事的精确 World JSON 重复：0。
+
+以上只证明 P2 Source Inventory evidence。它不证明与 Base336 私有 World component、R50 Protected/Reserved World 或 R47/R48/R55 暴露材料的语义隔离，也不证明作者授予通用训练权。
+
+Owner 本轮授权继续限定为内部独立评估提示构造；48 条提示仍未生成/冻结。下一门禁是使用 Owner 私有 source roster、R50 仅元数据、R47/R48/R55 暴露排除及语义 World component crosswalk 完成保护集交叉核验。任何一项缺失继续 HOLD。
+
 ## 8. P2 草案包结构校验工具
 
 新增本地只读校验器：
