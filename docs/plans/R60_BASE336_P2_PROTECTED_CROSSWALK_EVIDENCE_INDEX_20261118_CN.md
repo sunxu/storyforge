@@ -146,7 +146,7 @@ Owner 于 2026-11-18 已返回 R47/R48/R55 的本机 metadata / shape inventory�
 
 ## 10. 下一 Agent 的权威入口
 
-当前专项提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。该提示词包含 Owner-local metadata inventory 命令、禁止重跑的全量 `--execute` 说明、各阶段门禁和交付物格式。新 Agent 必须先完成实时 GitHub 核验，再等待 Owner 提供 inventory；不得绕过第一阶段直接设计适配器或执行数据库提取。
+当前专项提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。Owner 已返回 R47/R48/R55 部分 metadata inventory；新 Agent 必须先完成实时 GitHub 核验，再按第 11 节对 R55 私有 Index 做结构 / 覆盖 SAFE 检查，并寻找 Sample → Story ID 权威绑定。Base336 / R50 等其他保护集缺件仍按各自章节处理；不得重复盘点已确认文件或绕过真实 Schema 直接设计适配器、执行数据库提取。
 
 
 ## 11. 2026-11-18 Owner R47 / R48 / R55 metadata / shape audit 增量
