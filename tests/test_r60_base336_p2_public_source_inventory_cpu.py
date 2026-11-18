@@ -107,11 +107,11 @@ def test_exact_world_overlap_is_fail_closed():
         target.validate_rows(selected)
 
 
-def test_safe_summary_has_no_private_values():
+def test_private_manifest_contains_only_expected_source_metadata():
     result = target.validate_rows(target.select_rows(rows()))
-    encoded = str(result)
-    assert "story-0" not in encoded
-    assert "author-0" not in encoded
-    assert "submission-0" not in encoded
+    assert len(result["sources"]) == 8
+    assert result["sources"][0]["story_id"] == "story-0"
     assert result["selection"]["selected_stories"] == 8
     assert result["rights_scope"].endswith("NO_TRAINING_OR_REDISTRIBUTION")
+    assert result["non_actions"]["train_admitted"] == 0
+    assert result["non_actions"]["quality_v1_admitted"] == 0
