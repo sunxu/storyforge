@@ -250,3 +250,16 @@ Owner 回传 `r60_base336_world_snapshot_replay_safe_v1`，状态 **`WORLD_38_ME
 - `database_accessed=true`、`database_modified=false`、`character_opening_read=false`、`story_text_read=false`、`world_json_returned_to_client=false`、`private_values_emitted=false`、`gpu_started=false`、`model_requests=0`。
 
 **证据边界：** 该 PASS 是 38 个已冻结成员的当前/归档 World 关联快照匹配，不是重新对完整 172 Story 范围扫描并证明不存在新的关联组，也不是语义、actual-sent 或 Card/Opening 证据通过。当前环境连接/只读守卫及所检查的 40 条关联已通过，故下一最小动作是仅在内存中核对 roster 指定的 current/version `character`、`characters`、`opening` 字段及大小上限，失败只输出固定阶段/计数；禁止打印私有字段、ID、hash 或异常字符串。Card/Opening 产物仍 0/8，P2-C 仍 HOLD。
+
+
+### Owner Card/Opening 只读内存预检：字段大小超限（2026-11-18）
+
+Owner 返回 `r60_base336_card_opening_memory_preflight_safe_v1`：状态 `CARD_OPENING_MEMORY_PREFLIGHT_HOLD`；`failure_phase=READ_FIELDS`、`reason_code=FIELD_TOO_LARGE_HOLD`。此前预检已通过只读连接/RLS/角色守卫及冻结 38 Stories 的 40/40 World 关联匹配。
+
+- 本轮 `groups=8`、`unique_stories=38`、`db_guard_verified=true`、`database_accessed=true`、`private_fields_read_into_local_memory=true`；
+- `output_dir_absent=true`、`private_files_created=0`、`packages_within_size_limit=false`、`largest_package_bytes=null`；
+- `source_records_current/archived/total=0` 是脚本在全部正常结束时才赋值的默认零值，**不能解释为零记录已读**；`packages_within_size_limit=false` 与 `largest_package_bytes=null` 不能证明触发了 `MAX_GROUP_BYTES`；
+- 源码 `r60_base336_group_cards_opening_cpu.py` 中 `source_fields()` 对每个 `character/characters/opening` JSON 值按 `json.dumps(..., ensure_ascii=False, sort_keys=True, allow_nan=False).encode('utf-8')` 计算字节数，单字段超过 `MAX_FIELD_BYTES=24000` 则 `FIELD_TOO_LARGE_HOLD`。这足以解释本轮中断及没有创建文件；**尚不能反证此前历史全量提取是否为同一原因**。
+- 继续保持 `database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`、`private_values_emitted=false`。
+
+下一步：只读、Owner-local、单事务复核 40/40 World 关联后，对实际 roster 指定的 current/version 字段逐条统计三个字段的最大序列化字节数与超过 24KB 的记录数；同时独立检查 `MAX_GROUP_BYTES=185000` 限制。只输出按字段、source kind、group 的安全聚合；不得输出任何正文、Story/Revision ID、SHA 或 DB 异常。证据收集前不增加上限、不截断内容、不创建文件、不宣称语义隔离通过。P2-C 继续 HOLD。
