@@ -193,3 +193,67 @@ P2 来源路线已获 Owner 批准；48 条提示包尚未生成。8 组世界�
 此共享 helper 仅校验结构化的语义组件分配声明；它不会把 8 个代表性 World JSON 自动判为模板，也不会代替成员级角色卡/Opening 人工审阅。当前 Base336 8 组仍全 HOLD。helper 的结构 PASS 不自动关闭历史 actual-sent、Reviewer 独立性、R50/R47/R48/R55、来源权利或 Owner 冻结门禁。
 
 共享核心与 Quality-v1 集成代码提交 `471e2e4631405f53c74390a9eebd3732d9a6e95e` 的 GitHub Actions 已完成：`R60 REAL1000 Quality Reviewer (synthetic only)` run `44127200498` SUCCESS（Ruff 通过；离线合成回归 338 passed、2 subtests passed；RolePlay Skill manifest/reuse contract 7 passed）；`R60 Common2 Wrapped HF CPU (synthetic only)` run `44127200345` SUCCESS。随后质量标准文档提交 `5a773e14a5c63cd4808821d1dd6226ccd206ef14` 的 Actions run `44127458330` SUCCESS；当前最新 HEAD `f0e9349a8439393b2d5660ece965ac541611088a` 的 Actions run `44127961963` 也 SUCCESS。其间 `480b6fef76b07e1314eab048cf6b8d14a449cc86`、`fda3208b4298163ae6919d5c954161a8c2d9bf66`、`f0e9349a8439393b2d5660ece965ac541611088a` 均为文档状态同步，没有改变已测试的共享算法。中间版本曾因 Skill manifest 版本/哈希不同步和 Ruff 纳入不可执行历史脚本而失败，均已修正。
+
+## 2026-11-18 Owner SAFE 更新：P2-A 公开来源 Inventory READY；P2-C 仍 HOLD
+
+Owner 本轮真实 SAFE（由 Owner 提供）：
+
+```json
+{
+  "authors": 5,
+  "created_after_gpu_run": 5,
+  "created_before_gpu_run": 3,
+  "database_accessed": true,
+  "database_modified": false,
+  "distinct_world_json": 8,
+  "exact_world_overlap_pre_cutoff_public_original": 0,
+  "gpu_started": false,
+  "hf_jobs_submitted": 0,
+  "model_promoted": false,
+  "model_requests": 0,
+  "private_file_created": true,
+  "private_values_emitted": false,
+  "protected_crosswalk_verified": false,
+  "quality_v1_admitted": 0,
+  "revision_snapshot_permission_verified": true,
+  "rights_scope_owner_confirmed_only": true,
+  "schema": "storyforge_r60_base336_p2_public_source_inventory_safe_v1",
+  "selected_stories": 8,
+  "status": "P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING",
+  "train_admitted": 0
+}
+```
+
+### 证据解释
+
+- P2-A Supabase 公开来源 inventory：READY，8 条来源已选定，revision / snapshot / permission 绑定已验证。
+- 本次精确 World JSON 比较在指定的 GPU 前公开原创范围内为 0 overlap；这不是语义世界隔离证明，也不覆盖 Base336 私有来源、R50 Protected/Reserved、R47/R48/R55 暴露材料。
+- 8 个不同 World JSON 不等于 8 个语义独立世界。
+- 5 条创建于 GPU Run 后只代表数据库记录创建时间；不能单独证明其底层素材、版本或语义未提前暴露。
+- 权利状态为 `rights_scope_owner_confirmed_only=true`，只代表 Owner 已确认的内部独立评估提示构造用途；不扩展为训练、再分发或公开用途授权。
+- `private_file_created=true` 表示 Owner 私有来源 Manifest 已创建；私有 Manifest、source IDs、作者映射、正文和 SHA 不得上传 GitHub 或贴入聊天。
+
+### P2-C 尚未完成的保护集交叉核验
+
+必须将上述 8 个 P2 来源与以下保护范围进行精确及语义交叉核验：
+
+1. Base336 冻结 Train/Validation 私有 source roster 和已审查的 World component evidence。
+2. R50 完整 Protected/Reserved World **仅元数据**清单；不读取 R50 正文、提示、答案或密封材料。
+3. R47/R48/R55 已暴露开发题及其语义变体的来源/暴露元数据。
+4. 现有其他独立评测集及未解决保护集合；不得将部分保护清单称为完整覆盖。
+
+当前可复用 Base336 Owner-local 证据目录为 `~/.local/share/storyforge/r60/private/r60-base336-world-cross-review-20261115/`，包含既有 8 组 cross-split roster、decision template、Codex review 和代表性 World source evidence；这些历史回执仍不能证明本轮 P2 8 个新来源已与保护集完成 crosswalk。成员级 card/opening 证据此前未确认存在。R50 旧有 pre-seal 证据曾显示完整排除与最终封存仍 HOLD；R47/R48/R55 全量语义变体排除材料也未形成可验证的完整 crosswalk。
+
+### 当前禁止推断
+
+- 不因 8/8 revision / snapshot / permission PASS 推断 P2-C PASS。
+- 不因 exact overlap=0 推断语义隔离 PASS。
+- 不因 Owner 确认评估用途推断训练授权。
+- 不生成正式 48 条 Held-out prompt 包，不启动 Base/Adapter Pairing 或模型推理。
+- 不改写 Quality-v1 六维门槛，不新增评分标准，不向 Gold Manifest 追加生成评估事件。
+
+继续保持：`model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`、GPU/HF/model requests = 0。
+
+### 下一项最小动作
+
+在 Owner Mac 只做私有文件**元数据 inventory**，确认以下材料的实际存在性、路径、文件大小、权限和修改时间：本轮 P2 private source manifest；Base336 cross-review roster/template/evidence；R50 完整 Protected/Reserved metadata-only roster 与现有 SAFE；R47/R48/R55 exposure/source manifests 与 SAFE。不得 cat、grep 正文、上传文件或打印任何 ID/正文/哈希。根据真实 schema 再设计一个版本化、create-only、Owner-local 的保护集 crosswalk 适配器；在输入 schema 和保护集覆盖范围被确认前，不编造通用代码或宣称 crosswalk 完成。
