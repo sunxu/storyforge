@@ -28,6 +28,7 @@
 2. 本文件：`docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`。
 3. 当前主计划：`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。
 4. 独立启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
+5. P2 保护集交叉核验证据索引：`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
 5. `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`：六维质量与 Gold Manifest 的边界。
 6. `skills/storyforge-roleplay-sft/SKILL.md` 与 `skills/storyforge-roleplay-sft/MANIFEST_SAFE.json`。
 7. `skills/storyforge-real-quality-review/SKILL.md`：仅了解 Reviewer 证据、独立性和私有数据边界；不得自动恢复 REAL1000 批次。
@@ -190,6 +191,7 @@ P2-C 通过前，不生成正式 Held-out、不实现正式 Pairer/Profile/Backe
 
 - 训练后主计划：`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。
 - 新 Agent 启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
+- P2 保护集交叉核验证据索引：`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
 - Gold/Quality 边界：`docs/standards/GOLD_QUALITY_PIPELINE_CN.md`。
 - 共享 World 组件隔离核心：`src/storyforge_dataset/world_isolation.py`；Quality-v1 通过 `component_split_conflicts()` 复用结构检查；合成测试见 `tests/test_world_isolation.py` 与 `experiments/r58_quality/test_quality_v1.py`。它只校验已审查的组件分配，不从 JSON/hash 推断语义，也不证明历史 actual-sent、Reviewer 独立或 R50 完整排除。
 - 执行顺序与复用原则：`skills/storyforge-roleplay-sft/SKILL.md`。

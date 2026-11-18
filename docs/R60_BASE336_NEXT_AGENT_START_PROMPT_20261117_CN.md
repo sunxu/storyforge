@@ -30,35 +30,48 @@
 - 43 Validation 已用于 Eval/Checkpoint 选择；293 Train + 43 Validation 均不可作为独立 Held-out。
 - `model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`。
 
-## 三、当前任务：完成已批准 Supabase 来源 Draft 的 P2-C 隔离审查
+## 三、当前任务：完成已批准 Supabase 来源的 P2-C 保护集交叉核验
 
-Owner 已批准新的来源路线：仅使用 Supabase 已公开、已发布、非删除、原创且通过审核的故事，以及公开 World/Character/Opening 字段，构造内部评估提示；**不读取用户私有会话正文**。该授权只覆盖内部评估提示构造，不扩展为训练、公开发布或再分发。
+Owner 已批准新的来源路线：仅使用 Supabase 已公开、已发布、非删除、原创且通过审核的故事，以及公开 World/Character/Opening 字段，构造内部评估提示；**不读取用户私有会话正文**。该授权只覆盖内部独立评估提示构造，不扩展为训练、公开发布或再分发。
 
-P2-A / P2-B 已有 Draft 结果：
+### P2-A：公开来源 Inventory READY
 
-- 8 个公开故事、8 个故事谱系、5 位作者、8 个不同 World JSON。
-- 3 条来源在 Base336 GPU Run 开始前创建，5 条在 Run 开始后创建；全部晚于 Base336 293/43 数据集冻结边界。
-- 8/8 来源的 revision、审核快照 SHA256、快照与当前公开版本一致性、最新权限事件绑定及 public 目标可见性均通过。
-- 已构造 48 条全新提示 Draft：8 个来源各 6 条，覆盖 Quality-v1 六维各 1 条；每条三条消息 `user / assistant / user`，不含 System、目标答案或参考答案。
-- 未读取私有会话正文，未访问 R50 正文。
+Owner 2026-11-18 实际 SAFE 确认：
 
-当前会话 Draft 工件（尚未 Owner Mac 私有冻结）：
+- 8 个公开来源、5 位作者、8 个不同 World JSON。
+- 3 条记录创建于 Base336 GPU Run 前，5 条创建于 Run 后；全部晚于 Base336 293/43 数据集冻结边界。
+- revision / moderation snapshot / permission event 绑定验证通过。
+- 指定范围内 GPU 前公开原创 World JSON 精确重叠为 0。
+- Owner 确认用途仅限内部独立评估提示构造；私有 Source Manifest 已创建。
+- 以上不证明语义 World 隔离，不证明与 Base336 私有来源、R50 Protected/Reserved 或 R47/R48/R55 暴露题隔离。
 
-- `R60_P2_PUBLIC_STORY_PROMPTS_DRAFT_20261117.jsonl`，SHA256：`a7cc5991e838cfbb6679591fdfad59860805dd703f1bee045b4c397f1deeee18`。
-- `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_DRAFT_20261117.json`，SHA256：`12b356c3a856235af2bfae22542a227fbfbf99b5b7139ec04eb00f5ff75fa44d`。
+### P2-B：48 条正式提示包 NOT_GENERATED
+
+- 当前没有可验证的真实 48 条提示 JSONL、Manifest 或真实提示包 SHA256。
+- 旧版本启动材料中“已构造 48 条 Draft”及其文件名 / SHA256 记录已被最新 P2 补充决策和 Owner 状态更正；不得把这些旧记录当作现存工件、冻结输入或校验通过。
 - 校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
-- 测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`，本地合成测试 9/9 PASS、compileall PASS；不要声称 GitHub Actions CI PASS。
+- 测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`。9/9 合成测试只证明校验器代码合同，不证明真实提示包存在。
+- P2-C 通过前，不生成正式 Held-out 提示包，不启动模型推理。
 
-**P2-C 仍为 HOLD。** 下一 Agent 不要重新抽取 Supabase 或重新构造提示；先完成：
+### Base336 历史 World 证据（与 P2 的 8 条新来源不是同一集合）
 
-1. 将 8 个新来源的 World 组件与 Base336 293/43 私有来源清单、完整 Story/World component graph 和历史版本交叉核验；不同 ID、不同 MD5、时间晚于冻结点都不能单独证明语义隔离。
-2. 仅使用 Owner 授权的 R50 Protected/Reserved World 元数据做排除核验；绝不读取 R50 正文或答案。
-3. 核验未复用 R47/R48/R55 已暴露开发题及其语义变体。
-4. 逐条检查 48 条提示的来源忠实性、无原文长段复用、无未来信息泄漏、无隐藏指令混入；新增 NPC/角色细节必须明确是合成情境，不得伪称来源事实。
+- 既有 Base336 roster 对象是从冻结 336 cases / 172 stories 中识别出的 8 组跨 split World JSON 精确值关联；影响 38 个故事、82 个候选 case，其中 28 个 Train stories / 10 个 Validation stories，7/8 组当前 World 值跨 Train/Validation。
+- 已有代表性 World source evidence 仅每组一个代表对象；它不是 38 个成员完整的 current/archived character、characters、opening 证据，也不证明历史 actual-sent 版本。
+- 最新可用汇总仍为 8/8 组 HOLD，semantic review 未完成，actual-sent version 未验证。
+- 复用工具和各证据边界见 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
+
+**P2-C 仍为 HOLD。** 不重新抽取 Supabase，不重建或覆盖已有 roster/template/evidence/review/output。下一步先核对 Owner Mac 既有私有文件的只读元数据 inventory 和已有 SAFE；在真实输入文件及 Schema 得到确认前，不创建新的保护集 crosswalk 适配器。
+
+1. 将 P2 的 8 个新来源与 Base336 冻结 Train/Validation source roster、8 组 World evidence、全部 38 个受影响故事的 current/archived character、characters、opening 证据交叉核验。
+2. 仅使用 Owner 授权的 R50 Protected/Reserved 完整元数据清单做排除核验；绝不读取 R50 正文、提示或答案。
+3. 核验 R47/R48/R55 已暴露开发题及其语义变体；必须证明暴露材料覆盖完整，不能用局部历史工具或 SAFE 代替完整清单。
+4. 单独验证历史 actual-sent 版本与来源绑定；没有真实发送证据时保持 UNKNOWN/HOLD。
 5. 保持权利范围仅为内部评估提示构造；不能推断作者授予训练或再分发权利。
-6. Owner 在私有目录冻结最终来源 Manifest、提示 SHA256、World crosswalk、R50 元数据排除回执和独立 Reviewer 结论。
+6. 只有 P2-C 的保护集交叉核验完成后，才按最新 Owner 决策安排正式提示包构造、逐条审查和 Owner 冻结。
 
 当前会话无法访问 Owner Mac 私有目录。若缺少 Base336 私有 source roster、World component evidence 或 R50 元数据清单，明确输出对应 HOLD 并向 Owner 索取这些**私有交叉核验证据**；不得改为读私有会话正文或 R50 内容。
+
+P2 证据定位、可复用脚本边界和缺失材料清单见 [P2 Protected Crosswalk Evidence Index](plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md)。
 
 ## 四、P2 通过后才推进 P3 工程适配
 

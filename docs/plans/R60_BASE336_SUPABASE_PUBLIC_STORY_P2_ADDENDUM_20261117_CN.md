@@ -4,7 +4,7 @@
 
 **P2_SOURCE_SET_VERIFIED__WORLD_EVIDENCE_ALL_HOLD__PROMPT_PACKAGE_NOT_GENERATED__WORLD_COMPONENT_CROSSWALK_PENDING**
 
-本文件是对 `R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md` 第 6、7 节的来源路线补充，不覆盖原计划的独立性、六维质量、盲审或训练授权门禁。
+本文件是对 `R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md` 第 6、7 节的来源路线补充，不覆盖原计划的独立性、六维质量、盲审或训练授权门禁。证据文件定位、脚本复用边界和当前缺口统一见 [P2 Protected Crosswalk Evidence Index](R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md)。
 
 Owner 已明确批准：本轮以 Supabase 作为主要新来源，采用“仅公开故事与公开世界设定，构造全新评估提示，不读取用户私有会话正文”的路线。
 
