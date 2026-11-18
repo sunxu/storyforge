@@ -1,6 +1,6 @@
 ---
 name: storyforge-roleplay-sft
-version: 0.1.20
+version: 0.1.21
 language: zh-CN
 description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据工作：先查证据和工具、复用既有能力、必要时扩展共享核心、补回归测试，再更新 Skill 与技术规范。保护 R50；HF CPU 与 GPU 权限严格分离。
 ---
@@ -11,7 +11,7 @@ description: 按固定工程顺序执行 StoryForge RolePlay / Quality-v1 数据
 >
 > **R60 Base336 首训与产物审计已完成（2026-11-17）**：Run `r60-base336-gpu-20261117T055622Z-b609cb78661d` 的HF Job `6afbfd5c98dda891b5df7fd2` 已COMPLETED；Worker SAFE为`BASE336_GPU_EXPLORATORY_ENGINEERING_PASS__NOT_PROMOTED`，293/43、37/37、A100、terminal Checkpoint与Adapter Reload PASS。Owner Mac随后取得`BASE336_GPU_RESULT_ARTIFACT_INVENTORY_PASS__NO_PROMOTION`：33/33对象已下载并逐个计算本地SHA256（5,604,774,224 bytes），Worker SAFE、Checkpoint与Adapter Reload复核PASS；审计无GPU、无HF Job、无模型晋升。该SHA是本地对象inventory，不是与Worker未发布的逐文件SHA比对。43条Validation已用于训练期Eval/Checkpoint选择，不能作为独立质量测试。当前P2仍HOLD：必须先取得新的、未暴露且未用于训练/调参的来源绑定Held-out，并核验权利与世界隔离；不得从未准入池或数据库自动抽样。详见`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。当前`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`；R50不访问，旧暴露题不冒充独立测试，GPU推理需单独明确授权。
 
-> **2026-11-18 Base336 P2 最新边界**：已收到 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，8/8 组全部 HOLD；7/8 组当前 World 值跨 Train/Validation，`semantic_review_completed=false`、`actual_sent_prompt_verified=false`。该文件每组只有一个代表性 World 对象，不等于38个成员的角色卡/Opening审查。48条提示 JSONL/Manifest 尚未生成；仓库中的 P2 校验器只有合成测试。不要沿用旧交接中的“48条Draft已构造”说法。下一步先取得现有私有 roster、decision template、8组成员 card/opening 证据和独立审阅报告；不重新查询 DB、不访问 R50 正文、不推理、不启动 GPU。
+> **2026-11-18 Base336 P2 最新边界**：Owner Mac 的 Supabase 公开来源 Inventory 已返回 `P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING`：8条来源、5位作者；3条记录创建于 GPU Run 前、5条创建于 GPU Run 后；8种不同 World JSON；指定 GPU 前公开原创范围内精确 World 重叠为0；revision/snapshot/permission 绑定验证通过；Owner确认用途仅限内部独立评估提示构造；私有 Source Manifest 已创建。**P2-A READY，不等于 P2-C PASS**：`protected_crosswalk_verified=false`，Base336私有来源、R50 Protected/Reserved 仅元数据排除、R47/R48/R55暴露题/语义变体排除均未完成。8种JSON不等于8个语义独立世界；创建于GPU Run后的记录也不单独证明素材未提前暴露。不得读取R50正文。真实48条提示JSONL/Manifest尚未生成，不得生成正式Held-out或推理。下一步先对Owner私有P2 Source Manifest、Base336 roster/evidence、R50元数据清单及R47/R48/R55暴露来源清单做只读文件元数据inventory；确认输入Schema后再设计版本化Owner-local crosswalk适配器。
 
 ## 目标与适用范围
 
