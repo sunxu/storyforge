@@ -11,7 +11,7 @@ MODE="${1:-}"
   echo "OR: bash scripts/r60_common2_hf_cpu_submit.sh submit <RUN_KEY> <STAGE_DIR>" >&2
   exit 2
 }
-command -v hf >/dev/null || { echo R60_HF_CLI_MISSING >&2; exit 42; }
+# Legacy submit must fail closed before SDK/CLI checks or external operations.\nif [[ "$MODE" == submit ]]; then\n  echo R60_COMMON2_LEGACY_CLI_SUBMIT_DISABLED_MOUNT_POLICY_HOLD >&2\n  exit 42\nfi\ncommand -v hf >/dev/null || { echo R60_HF_CLI_MISSING >&2; exit 42; }
 command -v python3 >/dev/null || { echo R60_PYTHON_MISSING >&2; exit 42; }
 # Homebrew HF CLI and HF SDK Python may live in different environments.
 HF_SDK_PYTHON="${R60_HF_SDK_PYTHON:-python3}"
