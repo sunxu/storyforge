@@ -42,6 +42,8 @@ class ReuseContractTests(unittest.TestCase):
             "quality_v1.py",
             "src/storyforge_dataset/world_isolation.py",
             "component_split_conflicts()",
+            "r60_base336_p2_public_source_inventory_cpu.py",
+            "P2仍HOLD",
             "validate_component_review_assignments()",
             "43条Validation已用于训练期Eval/Checkpoint选择",
             "docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md",
@@ -136,7 +138,7 @@ class ReuseContractTests(unittest.TestCase):
     def test_readme_and_changelog_document_the_new_responsibilities(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("v0.1.19", readme)
+        self.assertIn("v0.1.20", readme)
         self.assertIn("33/33个输出对象已完成Owner Mac本地SHA256 inventory", readme)
         self.assertIn("generation_eval.worker", readme)
         self.assertIn("固定执行顺序", readme)
@@ -146,7 +148,7 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md", readme)
         self.assertIn("33/33个输出对象已完成Owner Mac本地SHA256 inventory", readme)
         self.assertIn("$HOME/.local/share/storyforge/r58/", readme)
-        self.assertTrue(changelog.startswith("# 0.1.19"))
+        self.assertTrue(changelog.startswith("# 0.1.20"))
         self.assertIn("AGENTS.md 只保留仓库通用规则", changelog)
 
     def test_manifest_hashes_and_file_inventory_match(self):
