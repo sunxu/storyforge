@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -71,144 +72,134 @@ def p2_rows(sources: list[dict]) -> list[tuple]:
     return rows
 
 
-def test_load_p2_manifest_accepts_exact_eight_source_contract(tmp_path):
-    path = tmp_path / "manifest.json"
-    path.write_text(json.dumps(p2_doc()), encoding="utf-8")
-    os.chmod(path, 0o600)
-    doc, raw, sources = audit.load_p2_manifest(path)
-    assert doc["status"] == audit.P2_MANIFEST_STATUS
-    assert len(raw) > 0
-    assert len(sources) == 8
+class SourceEvidenceCaptureTests(unittest.TestCase):
+    def test_load_p2_manifest_accepts_exact_eight_source_contract(self):
+        with self.subTest("private input"):
+            from tempfile import TemporaryDirectory
+            with TemporaryDirectory() as directory:
+                path = Path(directory) / "manifest.json"
+                path.write_text(json.dumps(p2_doc()), encoding="utf-8")
+                os.chmod(path, 0o600)
+                doc, raw, sources = audit.load_p2_manifest(path)
+                self.assertEqual(doc["status"], audit.P2_MANIFEST_STATUS)
+                self.assertGreater(len(raw), 0)
+                self.assertEqual(len(sources), 8)
+
+    def test_load_p2_manifest_rejects_duplicate_story_ids(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            doc = p2_doc()
+            doc["sources"][1]["story_id"] = doc["sources"][0]["story_id"]
+            path = Path(directory) / "manifest.json"
+            path.write_text(json.dumps(doc), encoding="utf-8")
+            os.chmod(path, 0o600)
+            with self.assertRaises(audit.Hold) as raised:
+                audit.load_p2_manifest(path)
+            self.assertEqual(str(raised.exception), "P2_SOURCE_DUPLICATE_HOLD")
+
+    def test_p2_rows_require_exact_revision_snapshot_and_permission_binding(self):
+        sources = [p2_source(i) for i in range(1, 9)]
+        records, coverage = audit._p2_records(p2_rows(sources), sources)
+        self.assertEqual(len(records), 8)
+        self.assertEqual(coverage, {field: 8 for field in audit.FIELDS})
+
+    def test_p2_rows_reject_snapshot_drift(self):
+        sources = [p2_source(i) for i in range(1, 9)]
+        rows = p2_rows(sources)
+        first = list(rows[0])
+        first[7] = {"world": {"worldSentence": "changed"}}
+        rows[0] = tuple(first)
+        with self.assertRaises(audit.Hold) as raised:
+            audit._p2_records(rows, sources)
+        self.assertEqual(str(raised.exception), "P2_SNAPSHOT_CURRENT_MISMATCH_HOLD")
+
+    def test_p2_rows_reject_permission_submission_mismatch(self):
+        sources = [p2_source(i) for i in range(1, 9)]
+        rows = p2_rows(sources)
+        first = list(rows[0])
+        first[10] = "wrong-submission"
+        rows[0] = tuple(first)
+        with self.assertRaises(audit.Hold) as raised:
+            audit._p2_records(rows, sources)
+        self.assertEqual(str(raised.exception), "P2_REVISION_PERMISSION_BINDING_HOLD")
+
+    def test_base_records_require_current_coverage_for_all_172_stories(self):
+        stories = [f"base-story-{i}" for i in range(172)]
+        rows = [
+            ("current", story, None, "2026-11-19T00:00:00Z",
+             {"world": "w"}, {"character": "c"}, [], {"opening": "o"}, "d" * 32)
+            for story in stories
+        ]
+        records, stats = audit._base_records(rows, stories)
+        self.assertEqual(len(records), 172)
+        self.assertEqual(stats["current_rows"], 172)
+        self.assertEqual(stats["archived_version_rows"], 0)
+        self.assertEqual(stats["field_nonnull_counts"], {field: 172 for field in audit.FIELDS})
+
+    def test_base_records_reject_missing_current_story(self):
+        stories = [f"base-story-{i}" for i in range(172)]
+        rows = [
+            ("current", story, None, None, None, None, None, None, None)
+            for story in stories[:-1]
+        ]
+        rows.append(("archived", stories[0], 1, None, None, None, None, None, None))
+        with self.assertRaises(audit.Hold) as raised:
+            audit._base_records(rows, stories)
+        self.assertEqual(str(raised.exception), "BASE_CURRENT_COVERAGE_HOLD")
+
+    def test_exact_field_matches_report_counts_without_emitting_values(self):
+        p2 = [{
+            "source_key_PRIVATE": "S01",
+            "story_id_PRIVATE": "secret-p2-id",
+            "source_fields_PRIVATE": {field: {"same": field} for field in audit.FIELDS},
+        }]
+        base = [{
+            "source_kind": "current",
+            "story_id_PRIVATE": "secret-base-id",
+            "revision_id_PRIVATE": None,
+            "source_fields_PRIVATE": {field: {"same": field} for field in audit.FIELDS},
+        }]
+        counts, pairs = audit.exact_field_matches(p2, base)
+        self.assertTrue(all(counts[field]["p2_sources"] == 1 for field in audit.FIELDS))
+        self.assertEqual(len(pairs), len(audit.FIELDS))
+        safe = audit.safe_summary(
+            {"current_rows": 172, "archived_version_rows": 0,
+             "field_nonnull_counts": {field: 172 for field in audit.FIELDS}},
+            {field: 8 for field in audit.FIELDS}, p2, 0, counts, 1234,
+        )
+        rendered = json.dumps(safe)
+        self.assertNotIn("secret-p2-id", rendered)
+        self.assertNotIn("secret-base-id", rendered)
+        self.assertFalse(safe["historical_actual_sent_verified"])
+        self.assertFalse(safe["reviewer_independence_verified"])
+        self.assertEqual(safe["train_admitted"], 0)
+
+    def test_output_target_is_create_only_and_private(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            base = Path(directory)
+            os.chmod(base, 0o700)
+            original = audit.private.BASE
+            audit.private.BASE = base
+            try:
+                target = base / "new-output"
+                audit.validate_output_target(target)
+                target.mkdir(mode=0o700)
+                with self.assertRaises(audit.Hold) as raised:
+                    audit.validate_output_target(target)
+                self.assertEqual(str(raised.exception), "OUTPUT_TARGET_HOLD")
+            finally:
+                audit.private.BASE = original
+
+    def test_private_writer_uses_0600_and_refuses_overwrite(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "private.json"
+            audit._write_new(path, b'{"private":true}')
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+            with self.assertRaises(FileExistsError):
+                audit._write_new(path, b'{"private":false}')
 
 
-def test_load_p2_manifest_rejects_duplicate_story_ids(tmp_path):
-    doc = p2_doc()
-    doc["sources"][1]["story_id"] = doc["sources"][0]["story_id"]
-    path = tmp_path / "manifest.json"
-    path.write_text(json.dumps(doc), encoding="utf-8")
-    os.chmod(path, 0o600)
-    try:
-        audit.load_p2_manifest(path)
-    except audit.Hold as exc:
-        assert str(exc) == "P2_SOURCE_DUPLICATE_HOLD"
-    else:
-        raise AssertionError("duplicate P2 story IDs must HOLD")
-
-
-def test_p2_rows_require_exact_revision_snapshot_and_permission_binding():
-    sources = [p2_source(i) for i in range(1, 9)]
-    rows = p2_rows(sources)
-    records, coverage = audit._p2_records(rows, sources)
-    assert len(records) == 8
-    assert coverage == {field: 8 for field in audit.FIELDS}
-
-
-def test_p2_rows_reject_snapshot_drift():
-    sources = [p2_source(i) for i in range(1, 9)]
-    rows = p2_rows(sources)
-    first = list(rows[0])
-    first[7] = {"world": {"worldSentence": "changed"}}
-    rows[0] = tuple(first)
-    try:
-        audit._p2_records(rows, sources)
-    except audit.Hold as exc:
-        assert str(exc) == "P2_SNAPSHOT_CURRENT_MISMATCH_HOLD"
-    else:
-        raise AssertionError("snapshot drift must HOLD")
-
-
-def test_p2_rows_reject_permission_submission_mismatch():
-    sources = [p2_source(i) for i in range(1, 9)]
-    rows = p2_rows(sources)
-    first = list(rows[0])
-    first[10] = "wrong-submission"
-    rows[0] = tuple(first)
-    try:
-        audit._p2_records(rows, sources)
-    except audit.Hold as exc:
-        assert str(exc) == "P2_REVISION_PERMISSION_BINDING_HOLD"
-    else:
-        raise AssertionError("permission binding drift must HOLD")
-
-
-def test_base_records_require_current_coverage_for_all_172_stories():
-    stories = [f"base-story-{i}" for i in range(172)]
-    rows = [
-        ("current", story, None, "2026-11-19T00:00:00Z",
-         {"world": "w"}, {"character": "c"}, [], {"opening": "o"}, "d" * 32)
-        for story in stories
-    ]
-    records, stats = audit._base_records(rows, stories)
-    assert len(records) == 172
-    assert stats["current_rows"] == 172
-    assert stats["archived_version_rows"] == 0
-    assert stats["field_nonnull_counts"] == {field: 172 for field in audit.FIELDS}
-
-
-def test_base_records_reject_missing_current_story():
-    stories = [f"base-story-{i}" for i in range(172)]
-    rows = [
-        ("current", story, None, None, None, None, None, None, None)
-        for story in stories[:-1]
-    ]
-    rows.append(("archived", stories[0], 1, None, None, None, None, None, None))
-    try:
-        audit._base_records(rows, stories)
-    except audit.Hold as exc:
-        assert str(exc) == "BASE_CURRENT_COVERAGE_HOLD"
-    else:
-        raise AssertionError("missing current story must HOLD")
-
-
-def test_exact_field_matches_report_counts_without_emitting_values():
-    p2 = [{
-        "source_key_PRIVATE": "S01",
-        "story_id_PRIVATE": "secret-p2-id",
-        "source_fields_PRIVATE": {field: {"same": field} for field in audit.FIELDS},
-    }]
-    base = [{
-        "source_kind": "current",
-        "story_id_PRIVATE": "secret-base-id",
-        "revision_id_PRIVATE": None,
-        "source_fields_PRIVATE": {field: {"same": field} for field in audit.FIELDS},
-    }]
-    counts, pairs = audit.exact_field_matches(p2, base)
-    assert all(counts[field]["p2_sources"] == 1 for field in audit.FIELDS)
-    assert len(pairs) == len(audit.FIELDS)
-    safe = audit.safe_summary(
-        {"current_rows": 172, "archived_version_rows": 0,
-         "field_nonnull_counts": {field: 172 for field in audit.FIELDS}},
-        {field: 8 for field in audit.FIELDS}, p2, 0, counts, 1234,
-    )
-    rendered = json.dumps(safe)
-    assert "secret-p2-id" not in rendered
-    assert "secret-base-id" not in rendered
-    assert safe["historical_actual_sent_verified"] is False
-    assert safe["reviewer_independence_verified"] is False
-    assert safe["train_admitted"] == 0
-
-
-def test_output_target_is_create_only_and_private(tmp_path, monkeypatch):
-    os.chmod(tmp_path, 0o700)
-    monkeypatch.setattr(audit.private, "BASE", tmp_path)
-    target = tmp_path / "new-output"
-    audit.validate_output_target(target)
-    target.mkdir(mode=0o700)
-    try:
-        audit.validate_output_target(target)
-    except audit.Hold as exc:
-        assert str(exc) == "OUTPUT_TARGET_HOLD"
-    else:
-        raise AssertionError("existing output target must HOLD")
-
-
-def test_private_writer_uses_0600_and_refuses_overwrite(tmp_path):
-    path = tmp_path / "private.json"
-    audit._write_new(path, b'{"private":true}')
-    assert path.stat().st_mode & 0o777 == 0o600
-    try:
-        audit._write_new(path, b'{"private":false}')
-    except FileExistsError:
-        pass
-    else:
-        raise AssertionError("private output must be create-only")
+if __name__ == "__main__":
+    unittest.main()
