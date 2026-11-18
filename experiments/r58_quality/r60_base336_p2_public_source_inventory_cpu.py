@@ -144,12 +144,18 @@ ORDER BY s.created_at, s.story_id;
 
 
 def _iso(value: object) -> datetime:
-    if not isinstance(value, str):
+    # psycopg returns timestamptz columns as datetime objects; synthetic
+    # fixtures may use ISO-8601 strings. Accept both, but always require
+    # timezone information so timestamp gates cannot silently use local time.
+    if isinstance(value, datetime):
+        result = value
+    elif isinstance(value, str):
+        try:
+            result = datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
+    else:
         raise Hold("SOURCE_TIMESTAMP_HOLD")
-    try:
-        result = datetime.fromisoformat(value)
-    except ValueError as exc:
-        raise Hold("SOURCE_TIMESTAMP_HOLD") from exc
     if result.tzinfo is None:
         raise Hold("SOURCE_TIMESTAMP_HOLD")
     return result
