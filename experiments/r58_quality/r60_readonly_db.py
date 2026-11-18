@@ -8,8 +8,9 @@ the transaction is REPEATABLE READ + READ ONLY with row security enabled.
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from datetime import datetime
-from typing import Any, Sequence
+from typing import Any
 from uuid import UUID
 
 DEFAULT_READER_ROLE = "r58_export_reader"
