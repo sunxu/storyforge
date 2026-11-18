@@ -238,3 +238,15 @@ Owner 返回 `r60_base336_db_readonly_preflight_safe_v1`，状态为 `DB_READONL
 - `story_tables_queried=false`、`private_story_content_read=false`、`database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`、`private_values_emitted=false`。
 
 本次仅对数据库连接、事务状态及角色元数据做验证，未访问应用故事表；因而可以排除**本次运行环境**的连接失败和只读守卫不符合要求，但不能推导旧提取失败原因，也不能证明冻结 World 组与当前数据库一致。下一门禁是经 Owner 明确授权的只读 World 快照比较；在此之前不得运行 Card/Opening 全量 `--execute`。
+
+
+### 2026-11-18 Owner 冻结 38 成员 World Snapshot Replay SAFE
+
+Owner 回传 `r60_base336_world_snapshot_replay_safe_v1`，状态 **`WORLD_38_MEMBER_SNAPSHOT_REPLAY_PASS__P2_C_HOLD`**：
+
+- 冻结 Roster/Template 绑定：true；8 组、38 个唯一 Story IDs，**40 条 group-member 关联**（部分故事跨组，因此 40 != 38）。
+- 只读、RLS 和数据库角色守卫：`db_readonly_guard_verified=true`。
+- 仅以已冻结 38 Story IDs 执行 World 组 Replay：`expected_membership_rows=40`、`observed_membership_rows=40`、`missing_membership_rows=0`、`extra_membership_rows=0`，`world_snapshot_matches_roster=true`。
+- `database_accessed=true`、`database_modified=false`、`character_opening_read=false`、`story_text_read=false`、`world_json_returned_to_client=false`、`private_values_emitted=false`、`gpu_started=false`、`model_requests=0`。
+
+**证据边界：** 该 PASS 是 38 个已冻结成员的当前/归档 World 关联快照匹配，不是重新对完整 172 Story 范围扫描并证明不存在新的关联组，也不是语义、actual-sent 或 Card/Opening 证据通过。当前环境连接/只读守卫及所检查的 40 条关联已通过，故下一最小动作是仅在内存中核对 roster 指定的 current/version `character`、`characters`、`opening` 字段及大小上限，失败只输出固定阶段/计数；禁止打印私有字段、ID、hash 或异常字符串。Card/Opening 产物仍 0/8，P2-C 仍 HOLD。
