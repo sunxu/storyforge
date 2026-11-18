@@ -89,3 +89,14 @@ Do not ask the Owner to repeat information already in this packet. Ask only for 
 - Keep R50 separate from R56/R60 development, Base336 and other evaluation workstreams unless the Owner explicitly expands scope.
 
 **Handoff state:** `R50_W1_CROSSWALK_FIRST__W2_EXISTING_SNAPSHOT_SEARCH_PARALLEL__W3_CONDITIONAL__W4_OWNER_DECISION_PENDING__NO_FINAL_SEAL`.
+
+
+## 8. Execution update — 2026-11-19
+
+W1 and W2 were executed as documented in `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md` (crosswalk commit `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`).
+
+- W1: `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`; W3 is `NOT_TRIGGERED`.
+- W1 bookkeeping gap: the latest SAFE inventory counts two transitive old links but does not publish their rank-pair identities, so their relationship to the existing 04→07 edge is unresolved.
+- W2: `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES` for actual inference-time card/rule snapshots and prompt-assembly/runtime receipts. The search covered the GitHub source tree and available R50 Library artifact inventory, not every possible Owner-held storage location.
+- W4 remains pending the Owner's explicit decision on the exact consecutive-User contract. A generic “授权” is not recorded as approval of that policy.
+- No repeated source/CRC/lexical/AI/tokenizer/ROLE12 audit; no HF Job, GPU, inference, training, answer-key access, admission, or seal.
