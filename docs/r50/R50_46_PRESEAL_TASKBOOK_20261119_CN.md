@@ -85,7 +85,7 @@ Keep both statements: the Token aggregate reports 46/46 lengths verified; the re
 | Real tokenizer encoding records for those 12 | 12/12 |
 | Within Draft budget | 46/46 |
 | Four-arm runtime role parity verified | false |
-| Trailing-User interpretation policy approved | false |
+| Trailing-User interpretation policy | PENDING OWNER DECISION |
 
 Status: `R50_ROLE12_SOURCE_TO_DRAFT_TEMPLATE_AND_TOKEN_REPORT_STRUCTURE_PASS__NOT_SEMANTIC_APPROVAL`.
 
