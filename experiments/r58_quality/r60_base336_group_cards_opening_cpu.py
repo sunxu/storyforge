@@ -25,8 +25,8 @@ import r60_real_private_batch as private
 SCHEMA = "storyforge_r60_base336_card_opening_evidence_private_v1"
 SAFE = "storyforge_r60_base336_card_opening_evidence_safe_v1"
 OUTPUT_PREFIX = "R60_BASE336_WORLD_GROUP_"
-MAX_FIELD_BYTES = 24000
-MAX_GROUP_BYTES = 185000
+MAX_FIELD_BYTES = 65536  # 64 KiB; Owner observed peak: opening 51,811 bytes
+MAX_GROUP_BYTES = 655360  # 640 KiB; Owner observed peak: group 575,785 bytes
 MAX_RECORDS = 256
 FIELDS = ("character", "characters", "opening")
 
@@ -57,6 +57,7 @@ KNOWN_HOLD_CODES = frozenset({
     "FROZEN_SCOPE_HOLD", "OUTPUT_DIR_GUARD_HOLD",
     "GROUPS_EXTRACTED_HOLD", "GROUP_ORDER_HOLD",
     "GROUP_TOO_LARGE_HOLD", "OUTPUT_PERMISSION_HOLD",
+    "OUTPUT_SIZE_HOLD",
 })
 
 
@@ -176,6 +177,18 @@ def capture(stories: list[str], groups: list[dict], dsn: str) -> list[dict]:
             conn.rollback()
 
 
+def write_group_new(path: Path, data: bytes) -> None:
+    """Write one bounded private group; never relax the shared 200 KB cap."""
+    if not 0 < len(data) <= MAX_GROUP_BYTES:
+        raise Hold("OUTPUT_SIZE_HOLD")
+    fd = os.open(
+        path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+        getattr(os, "O_NOFOLLOW", 0), 0o600,
+    )
+    with os.fdopen(fd, "wb") as dest:
+        dest.write(data)
+
+
 def _generate(args: argparse.Namespace, phase: list[str]) -> dict:
     phase[0] = "ROSTER_TEMPLATE"
     _, groups, _ = world.load(args.roster_dir)
@@ -229,7 +242,7 @@ def _generate(args: argparse.Namespace, phase: list[str]) -> dict:
     phase[0] = "OUTPUT_WRITE"
     private.private_dir(args.output_dir, create=True)
     for i, data in enumerate(packages, 1):
-        private.write_new(args.output_dir / f"{OUTPUT_PREFIX}{i:02d}_CARD_OPENING_PRIVATE.json", data)
+        write_group_new(args.output_dir / f"{OUTPUT_PREFIX}{i:02d}_CARD_OPENING_PRIVATE.json", data)
     if (any(stat.S_IMODE(path.stat().st_mode) != 0o600
             for path in args.output_dir.iterdir())
             or len(list(args.output_dir.iterdir())) != 8):
