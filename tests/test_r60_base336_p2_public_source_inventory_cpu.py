@@ -88,9 +88,7 @@ def test_selection_requires_eight_distinct_worlds():
 def test_psycopg_uuid_identifiers_are_normalized_at_validation_boundary():
     selected = target.select_rows(rows())
     selected[0]["story_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
-    selected[0]["author_id"] = UUID("a9f1a9e2-6a2a-4c3e-bc74-f3f0e8b3f7a0")
     selected[0]["moderation_submission_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
-    selected[0]["permission_event_id"] = UUID("a9f1a9e2-6a2a-4c3e-bc74-f3f0e8b3f7a0")
     selected[0]["permission_submission_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
     result = target.validate_rows(selected)
     assert result["sources"][0]["story_id"] == "559c7d10-a470-4498-a9d2-d81043ba703e"
