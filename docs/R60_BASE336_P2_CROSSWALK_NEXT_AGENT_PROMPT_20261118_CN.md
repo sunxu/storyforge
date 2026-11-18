@@ -232,3 +232,22 @@ Owner-local SAFE：`P2_R47_R48_EXACT_STORY_ID_DISJOINT__R55_BOUND_TO_R47_20__P2_
 Owner Mac 返回 `r60_base336_card_opening_local_locator_safe_v1`：四份既有 frozen roster/template/Codex/representative World JSON 都存在且 0600；8 个成员级 `R60_BASE336_WORLD_GROUP_XX_CARD_OPENING_PRIVATE.json` 全部 MISSING；预期输出目录 MISSING；候补同名文件数 0。此前泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD` 没有失败阶段，不能从输出目录缺失推断具体异常。
 
 不要再次做相同目录 inventory、不要重建四份已有材料，不要重跑数据库 `--execute`。下一步只做无数据库的既有 roster/template 结构绑定与运行环境诊断；然后提交合成测试过的固定 failure_phase/reason_code 故障定位改进。所有真实 Case/Story/Author ID、card/opening、SQL 数据与私有 SHA 留在 Owner Mac；不得把无输出冒充 DB 已访问或未访问的证明。P2-C 保持 HOLD。
+
+
+## 2026-11-18 Base336 member evidence crosswalk PASS; semantic review remains required
+
+Owner returned `r60_base336_member_evidence_codex_crosswalk_safe_v1`:
+`MEMBER_EVIDENCE_CROSSWALK_PASS__SEMANTIC_REVIEW_REQUIRED`.
+
+- Codex: 8/8 groups found; all 8 decisions remain HOLD; Roster and Template bindings match.
+- Card/Opening: 8/8 files; exact membership match in every group; 38 current + 21 archived source records = 59.
+- All three fields (`character`, `characters`, `opening`) are present and nonempty in all 59 source records.
+- All four existing Codex evidence fields are nonempty in all 8 group reviews.
+- The detector found zero predeclared structured Plot keys in those three fields. This is a detector result only; it does not establish absence of plot information in prose or prove plot independence.
+- No database access or modification in this crosswalk run; no private values emitted; no private files modified; no model requests/GPU; `train_admitted=0`.
+
+Do not rerun the Card/Opening extraction, integrity check, or this exact membership crosswalk. The structural/member-source crosswalk subtask is complete. **Do not convert any of the eight HOLD decisions to PASS based on structural coverage.**
+
+Next: conduct source-quoted semantic adjudication for all eight groups using the 59 current/archived member records, existing Codex HOLD rationales, and representative World evidence. Review World identity/aliases, character identity/variants, plot and event dependencies, Opening/context overlap, source revision and timepoint, and generic-template-only similarities. Keep unresolved or weakly supported cases HOLD. Record a source quote and source field/version for every material conclusion. An independent Reviewer must have verifiable independence from the original Codex review; an AI-assisted recommendation is not itself an independent signoff. After reviewer-authored component assignments exist, reuse `src/storyforge_dataset/world_isolation.py` for structural coverage and Train/Validation collision checks; that helper does not infer semantic identity.
+
+Still separate and HOLD: complete R50 metadata-only exclusion, full historical exposure-universe closure, actual-sent/delivered version binding, reviewer independence, and Owner freeze. P2-C remains HOLD; P2-B remains NOT_GENERATED; no GPU/HF/model requests or training admission.
