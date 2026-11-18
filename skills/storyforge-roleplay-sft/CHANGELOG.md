@@ -1,3 +1,11 @@
+# 0.1.22 — 2026-11-18
+
+- 新增 R60 Base336 P2 Protected Crosswalk 接手边界：Owner Mac metadata inventory 必须先行；没有 inventory 输出时不得假定私有文件存在或 Schema 已知。
+- 记录 card/opening 全量 execute 曾返回泛化 HOLD 且缺少 failure phase/reason；禁止盲目重跑、重建或覆盖既有 roster/template/evidence/output。
+- 明确 P2-A READY、P2-C HOLD、真实 P2-B 48 条提示包 NOT_GENERATED；区分 P2 新来源 8 条与 Base336 历史跨 split World 8 组。
+- 新增专项 Agent 提示词与 Protected Crosswalk 证据索引入口；复用共享 `world_isolation.py`，不复制组件冲突算法。
+- 只更新执行顺序、任务书和交接边界；不修改 Quality-v1 Rubric、训练数据、数据库、私有文件或模型状态。
+
 # 0.1.21 — 2026-11-18
 
 - 更新 Base336 P2-A 真实 Owner SAFE：Supabase 公开来源 Inventory 8/8 READY，记录作者/时间/World JSON 精确去重及 revision/snapshot/permission 验证的证据边界。
