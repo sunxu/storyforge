@@ -126,3 +126,14 @@ It defines **four model arms + Original Gold** as a five-way comparison only whe
 The contract requires anonymous per-case randomization, three independent reviewers, six dimensions, a separate frozen v0.3-A vs v0.2 direct pairwise comparison, case-level serious-error adjudication and world-clustered uncertainty. It does not authorize R50 inference, scoring, Final Seal or promotion.
 
 **Current status:** `ROLE12_POLICY=APPROVED`; `FOUR_ARM_RUNTIME_ROLE_PARITY=NOT_VERIFIED`; `ORIGINAL_GOLD_R50_COVERAGE=NOT_ESTABLISHED`; all world/timepoint gates remain unchanged.
+
+
+## 10. W4 implementation inventory — 2026-11-19
+
+The read-only GitHub source inspection found:
+- R47 has a historical three-arm runner (Base/v0.1/v0.2) for exposed old prompts; its parameters are not proof of R50 four-arm effective runtime settings.
+- R55 has an offline five-answer blind-pack builder that consumes already-existing outputs and does not run inference or access R50.
+- R54 has a one-candidate training/adapter-reload runner, not a four-arm parity run.
+- The R50 ROLE12 local auditor validates Draft structure/Tokenizer alignment and explicitly leaves actual four-arm runtime parity false.
+
+No R50-specific four-arm inference runner or actual four-arm load receipt was found in the inspected GitHub source tree. Owner has authorized read-only inspection, but the current chat has no direct Owner Mac filesystem connector. The next evidence request must therefore be limited to already-existing per-arm load/config/runtime records or a count-only SAFE receipt derived from them. If unavailable, mark `SOURCE_UNAVAILABLE`; do not start any model/job to create evidence.
