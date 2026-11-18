@@ -263,3 +263,22 @@ Owner 返回 `r60_base336_card_opening_memory_preflight_safe_v1`：状态 `CARD_
 - 继续保持 `database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`、`private_values_emitted=false`。
 
 下一步：只读、Owner-local、单事务复核 40/40 World 关联后，对实际 roster 指定的 current/version 字段逐条统计三个字段的最大序列化字节数与超过 24KB 的记录数；同时独立检查 `MAX_GROUP_BYTES=185000` 限制。只输出按字段、source kind、group 的安全聚合；不得输出任何正文、Story/Revision ID、SHA 或 DB 异常。证据收集前不增加上限、不截断内容、不创建文件、不宣称语义隔离通过。P2-C 继续 HOLD。
+
+
+### 2026-11-18 Card/Opening 字段与分组大小审计、安全边界调整
+
+Owner 返回 `r60_base336_card_opening_field_size_audit_safe_v1`，状态 `FIELD_OR_GROUP_LIMITS_EXCEEDED__HOLD`：
+
+- 冻结 8 组 / 38 唯一 Stories / 40 member 关联，World Snapshot 再核验通过；
+- 59 次来源记录读取（current 38、archived 21）。字段计数均为 59；
+- `character`：max 21,445 bytes，原 24,000 byte cap 超限 0；
+- `characters`：max 25,549 bytes，原 cap 超限 1；
+- `opening`：max 51,811 bytes，原 cap 超限 7；
+- 8 个组内 4 组超过原 `MAX_GROUP_BYTES=185,000`，最大 575,785 bytes；
+- 没有输出文件生成、没有数据修改，也没有模型调用或私有值输出。
+
+源码检查确认 **第三层阻塞**：`r60_real_private_batch.private.write_new()` 的全局 `MAX_CAPTURE_BYTES=200_000`，也会拒绝大于 200 KB 的组文件。只调大字段与组限制不足以完成创建。
+
+针对专属 Card/Opening 工具，采用与本次实测数据相匹配且仍受限的配置：单字段 **65,536 bytes（64 KiB）**，单组 **655,360 bytes（640 KiB）**；单独使用 `O_CREAT|O_EXCL|O_NOFOLLOW`（若支持）的 create-only 0600 写入，保留组上限；**不修改公共 `private.MAX_CAPTURE_BYTES`，不截断或删改任何角色卡、Opening 内容**。合成测试覆盖过去超过 24 KB 的 opening、严格 64 KiB 边界、575,785 byte 输出、已存在文件拒绝及超过 640 KiB 的拒绝。
+
+只有在新代码定向测试通过、Owner 工作区同步、真实最小源快照/冻结范围再次核对并明确执行门禁后，才可运行一次真实 `--execute`，且只允许新建缺失的私有 8 组证据；这不证明语义、actual-sent、R50 全覆盖或 P2-C 通过。
