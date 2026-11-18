@@ -169,6 +169,13 @@ def _sha256(value: object) -> bool:
     )
 
 
+def _same_identifier(left: object, right: object) -> bool:
+    """Compare DB identifiers across psycopg UUID and text representations."""
+    if left is None or right is None:
+        return False
+    return str(left) == str(right)
+
+
 def select_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Select the deterministic 3-before/5-after source set from safe rows."""
     if type(rows) is not list:
@@ -238,8 +245,10 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
             or row.get("requested_visibility") != "public"
             or row.get("permission_to_visibility", row.get("to_visibility"))
             != "public"
-            or row.get("permission_submission_id")
-            != row.get("moderation_submission_id")
+            or not _same_identifier(
+                row.get("permission_submission_id"),
+                row.get("moderation_submission_id"),
+            )
             or row.get("permission_submission_bound") is False
             or row.get("permission_kind") not in {"ai", "update"}
             or (
@@ -389,9 +398,9 @@ def run(args: argparse.Namespace) -> dict:
             isinstance(snapshot, dict)
             and snapshot.get("source", {}).get("v2Data") == row.get("current_public_v2_data")
         )
-        row["permission_submission_bound"] = (
-            row.get("permission_submission_id")
-            == row.get("moderation_submission_id")
+        row["permission_submission_bound"] = _same_identifier(
+            row.get("permission_submission_id"),
+            row.get("moderation_submission_id"),
         )
         row["permission_to_visibility"] = row.get("to_visibility")
     selected = select_rows(rows)
