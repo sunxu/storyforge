@@ -124,7 +124,7 @@
 
 ## 8. 下一步最小执行顺序
 
-1. Owner Mac 只读盘点已有私有文件的文件名、大小、权限和修改时间：本轮 P2 Source Manifest；Base336 roster / decisions template / representative World evidence / Codex review / card-opening SAFE 与输出；R50 metadata-only 三类输入及 SAFE；R47/R48/R55 source / exposure manifests 与 SAFE。
+1. Owner Mac 只读盘点已有私有文件的文件名、大小、权限和修改时间：本轮 P2 Source Manifest；Base336 roster / decisions template / representative World evidence / Codex review / card-opening SAFE 与输出；R50 metadata-only 三类输入及 SAFE；R47/R48/R55 source / exposure manifests 与 SAFE。**截至本次交接，尚未收到该 inventory 输出，不能将任何预期路径或历史文件名视为已确认存在。** 可复制命令见 `docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。
 2. 对此前 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，只核对已存在的 SAFE 聚合字段和输出文件状态。没有明确失败阶段前，不重跑数据库查询，不执行全量 `--execute`。
 3. 根据实际存在的文件和真实 Schema，确认各输入是否完整、是否来自同一冻结版本、是否覆盖全部保护范围。缺项继续 HOLD。
 4. 输入合同确认后，才实现版本化、Owner-local、create-only 的 P2 Protected Crosswalk 薄适配器；将精确身份匹配、语义组件复核、R50 metadata-only 排除、R47/R48/R55 暴露排除和覆盖完整性分别记录，不能用一个精确 hash PASS 替代所有门禁。
@@ -142,3 +142,8 @@
 - 私有 crosswalk、逐案语义结论、原文引文、身份映射和私有 SHA 不进入 GitHub、CI 日志或聊天。
 
 **当前唯一业务阻塞不是 Supabase 查询，而是 P2 8 条新来源与 Base336 / R50 / R47-R48-R55 完整保护集之间，尚无可复核的 source-bound 交叉核验证据。**
+
+
+## 10. 下一 Agent 的权威入口
+
+当前专项提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。该提示词包含 Owner-local metadata inventory 命令、禁止重跑的全量 `--execute` 说明、各阶段门禁和交付物格式。新 Agent 必须先完成实时 GitHub 核验，再等待 Owner 提供 inventory；不得绕过第一阶段直接设计适配器或执行数据库提取。
