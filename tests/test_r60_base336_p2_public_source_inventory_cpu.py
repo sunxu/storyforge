@@ -118,6 +118,52 @@ def test_exact_world_overlap_is_fail_closed():
         target.validate_rows(selected)
 
 
+def test_binding_diagnostics_report_aggregate_codes_without_source_values():
+    selected = target.select_rows(rows())
+    selected[0]["permission_event_id"] = None
+    selected[1]["snapshot_v2_match"] = False
+    selected[2]["exact_world_overlap_pre_cutoff"] = True
+    selected[3]["permission_kind"] = "initial"
+
+    diagnostics = target.source_binding_diagnostics(selected)
+
+    assert diagnostics == {
+        "identifier_permission_event_id_invalid": 1,
+        "permission_kind_not_supported": 1,
+        "snapshot_v2_mismatch": 1,
+        "exact_world_overlap_pre_cutoff": 1,
+    }
+    rendered = str(diagnostics)
+    assert "story-0" not in rendered
+    assert "submission-0" not in rendered
+    assert "synthetic world" not in rendered
+
+
+def test_binding_hold_carries_only_aggregate_diagnostics():
+    selected = target.select_rows(rows())
+    selected[0]["permission_submission_bound"] = False
+    with pytest.raises(target.BindingDiagnosticHold) as caught:
+        target.validate_rows(selected)
+
+    assert str(caught.value) == "SOURCE_BINDING_HOLD"
+    assert caught.value.safe_diagnostics == {
+        "schema": "storyforge_r60_p2_source_binding_diagnostic_v1",
+        "selected_rows": 8,
+        "failed_checks": {"permission_submission_bound_false": 1},
+        "private_values_emitted": False,
+    }
+    assert "story-0" not in str(caught.value.safe_diagnostics)
+
+
+def test_binding_diagnostics_normalize_psycopg_uuid_before_validation():
+    selected = target.select_rows(rows())
+    selected[0]["story_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
+    selected[0]["moderation_submission_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
+    selected[0]["permission_submission_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
+    assert target.source_binding_diagnostics(selected) == {}
+    assert selected[0]["story_id"] == "559c7d10-a470-4498-a9d2-d81043ba703e"
+
+
 def test_private_manifest_contains_only_expected_source_metadata():
     result = target.validate_rows(target.select_rows(rows()))
     assert len(result["sources"]) == 8
