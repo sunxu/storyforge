@@ -18,8 +18,8 @@
     },
     {
       "path": "SKILL.md",
-      "sha256": "7fa68d7452311ae1a772e3b54575664cf539d69170bbd35a5443af3ccc9bf505",
-      "bytes": 24657
+      "sha256": "f32591eec25d46d326f3957b022b311c258b2228c223b061e8844746c47fd037",
+      "bytes": 24856
     },
     {
       "path": "queries/01_story_inventory.sql",
