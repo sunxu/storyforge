@@ -334,3 +334,24 @@ Owner 返回 `r60_base336_member_evidence_codex_crosswalk_safe_v1`，状态 **`M
 **裁决边界：** 本轮关闭 Base336 8 组成员级 Card/Opening 与 Codex 的结构/来源成员 crosswalk 缺口。它没有判断内容的语义相同、隐藏别名、共享剧情或 World component；也没有证明历史 actual-sent 版本、R50 完整排除或 Reviewer 独立性。Codex 的 8 个 HOLD 不得自动改为 PASS。P2-C 仍 HOLD，P2-B 仍 NOT_GENERATED。
 
 **下一步：** 不重跑 Card/Opening 提取、完整性检查或本次 crosswalk。进入 Owner-authorized、source-quoted 的逐组语义复核：逐条阅读 59 条 current/archived 的 character/characters/opening 内容，并与 8 组既有 Codex HOLD 理由及代表性 World evidence 对照；对每组记录 World、Character/alias、Plot/event、Opening、version/timepoint、generic-template-only 等判断及来源引文。任何无法证实、来源版本不清或证据不足的项目继续 HOLD。独立 Reviewer 必须与原 Codex 审查有可核验的人员/流程独立性；模型或本 Agent 的建议不能冒充独立签署。语义分配最终再调用 `src/storyforge_dataset/world_isolation.py` 的共享校验器；其结构 PASS 仍不等于独立语义证明。
+
+
+### 2026-11-18 Owner 12-file Base336 semantic pre-review: substantive cross-split reuse
+
+Owner 向当前审查会话提供了 12 份私有证据的 ZIP（8 个 group Card/Opening、Roster、Template、Codex 及 8 World representative evidence）。本轮从上传包读取私有文件并在隔离会话内比对，不向 GitHub 提交任何原文、Story ID、作者、版本 ID、引用片段、SHA 或私有包本身。
+
+SAFE 汇总 `r60_base336_semantic_prereview_safe_v1`：
+`SUBSTANTIVE_CROSS_SPLIT_REUSE_EVIDENCE_FOUND__P2_C_HOLD`；
+`files_verified=12`、`groups_reviewed=8`、`source_records=59`；
+`high_risk_groups=4`、`medium_risk_groups=1`、`unresolved_groups=3`。
+
+- 组 02：**HIGH**。不同 Story ID、不同 split 之间 Opening 长文本完全一致（最长 2,368 字符），另有具体角色背景重复。
+- 组 05：**HIGH**。不同 Story ID、不同 split 之间长角色背景完全一致（最长 3,789 字符）；部分角色设定存在高度近似变体。
+- 组 06：**HIGH**。不同 Story ID、不同 split 之间成段角色背景及 Opening 实质重复，存在多个跨 split 匹配对。
+- 组 08：**HIGH**。不同 Story ID、不同 split 的完整 `character/characters/opening` 字段有逐字相同记录，并存在近似变体。
+- 组 04：**MEDIUM**。角色描述表现出写作模板或风格相似，但尚未据此确证同一人物/剧情/World。
+- 组 01、03、07：**UNRESOLVED**。在本轮指定字段中未观察到跨 split 的长文本完全重复；这不是语义独立的证明。
+
+本轮排除了相同 Story ID 的 Current/Archived 重复副本，且核对组内成员来源与冻结 Roster 的严格绑定。准确结论是**已有来源中的跨 split 复用/高度疑似复用**，不是已证明 historical actual-sent 的模型训练泄漏。旧 Codex 8 组 HOLD 保持不变；任何 World JSON 通用模板认定都不能覆盖成员级相反证据。
+
+独立 Reviewer 尚未签署；`historical_actual_sent_verified=false`、`r50_complete_exclusion_verified=false`、`train_admitted=0`，P2-C HOLD，P2-B NOT_GENERATED。下一步由独立 Reviewer 在 Owner-private 的逐案来源引文、版本链、角色同一性与 Plot/Opening 语境证据上复核高风险组，并确定共享语义组件的分组隔离或候选排除方案；不得用推断的 PASS 自动准入。
