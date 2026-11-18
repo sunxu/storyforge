@@ -208,3 +208,67 @@ P2脚本现新增只读RLS preflight，执行来源SQL前确认两张表RLS启�
 随后在Owner Mac更新分支。先只跑无DB预检；确认输出目录无已创建manifest后，才运行一次 `--execute`。新代码会先执行RLS preflight；如果仍缺策略，会明确报出缺失策略表名并停止，不执行来源查询。
 
 只回传SAFE JSON。不要上传私有manifest、原始故事、ID、DSN或快照。即使8/8来源绑定通过，也仅代表P2公开来源Inventory通过；Base336/R50/R47/R48/R55保护集交叉核验、语义World隔离、独立Reviewer和Owner freeze仍HOLD，训练/GPU/HF/模型请求保持0。
+
+## 2026-11-18 Owner SAFE 更新：P2-A 公开来源 Inventory READY；P2-C 仍 HOLD
+
+Owner 本轮真实 SAFE（由 Owner 提供）：
+
+```json
+{
+  "authors": 5,
+  "created_after_gpu_run": 5,
+  "created_before_gpu_run": 3,
+  "database_accessed": true,
+  "database_modified": false,
+  "distinct_world_json": 8,
+  "exact_world_overlap_pre_cutoff_public_original": 0,
+  "gpu_started": false,
+  "hf_jobs_submitted": 0,
+  "model_promoted": false,
+  "model_requests": 0,
+  "private_file_created": true,
+  "private_values_emitted": false,
+  "protected_crosswalk_verified": false,
+  "quality_v1_admitted": 0,
+  "revision_snapshot_permission_verified": true,
+  "rights_scope_owner_confirmed_only": true,
+  "schema": "storyforge_r60_base336_p2_public_source_inventory_safe_v1",
+  "selected_stories": 8,
+  "status": "P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING",
+  "train_admitted": 0
+}
+```
+
+### 证据解释
+
+- P2-A Supabase 公开来源 inventory：READY，8 条来源已选定，revision / snapshot / permission 绑定已验证。
+- 本次精确 World JSON 比较在指定的 GPU 前公开原创范围内为 0 overlap；这不是语义世界隔离证明，也不覆盖 Base336 私有来源、R50 Protected/Reserved、R47/R48/R55 暴露材料。
+- 8 个不同 World JSON 不等于 8 个语义独立世界。
+- 5 条创建于 GPU Run 后只代表数据库记录创建时间；不能单独证明其底层素材、版本或语义未提前暴露。
+- 权利状态为 `rights_scope_owner_confirmed_only=true`，只代表 Owner 已确认的内部独立评估提示构造用途；不扩展为训练、再分发或公开用途授权。
+- `private_file_created=true` 表示 Owner 私有来源 Manifest 已创建；私有 Manifest、source IDs、作者映射、正文和 SHA 不得上传 GitHub 或贴入聊天。
+
+### P2-C 尚未完成的保护集交叉核验
+
+必须将上述 8 个 P2 来源与以下保护范围进行精确及语义交叉核验：
+
+1. Base336 冻结 Train/Validation 私有 source roster 和已审查的 World component evidence。
+2. R50 完整 Protected/Reserved World **仅元数据**清单；不读取 R50 正文、提示、答案或密封材料。
+3. R47/R48/R55 已暴露开发题及其语义变体的来源/暴露元数据。
+4. 现有其他独立评测集及未解决保护集合；不得将部分保护清单称为完整覆盖。
+
+当前可复用 Base336 Owner-local 证据目录为 `~/.local/share/storyforge/r60/private/r60-base336-world-cross-review-20261115/`，包含既有 8 组 cross-split roster、decision template、Codex review 和代表性 World source evidence；这些历史回执仍不能证明本轮 P2 8 个新来源已与保护集完成 crosswalk。成员级 card/opening 证据此前未确认存在。R50 旧有 pre-seal 证据曾显示完整排除与最终封存仍 HOLD；R47/R48/R55 全量语义变体排除材料也未形成可验证的完整 crosswalk。
+
+### 当前禁止推断
+
+- 不因 8/8 revision / snapshot / permission PASS 推断 P2-C PASS。
+- 不因 exact overlap=0 推断语义隔离 PASS。
+- 不因 Owner 确认评估用途推断训练授权。
+- 不生成正式 48 条 Held-out prompt 包，不启动 Base/Adapter Pairing 或模型推理。
+- 不改写 Quality-v1 六维门槛，不新增评分标准，不向 Gold Manifest 追加生成评估事件。
+
+继续保持：`model_promoted=false`、`train_admitted=0`、`quality_v1_admitted=0`、GPU/HF/model requests = 0。
+
+### 下一项最小动作
+
+在 Owner Mac 只做私有文件**元数据 inventory**，确认以下材料的实际存在性、路径、文件大小、权限和修改时间：本轮 P2 private source manifest；Base336 cross-review roster/template/evidence；R50 完整 Protected/Reserved metadata-only roster 与现有 SAFE；R47/R48/R55 exposure/source manifests 与 SAFE。不得 cat、grep 正文、上传文件或打印任何 ID/正文/哈希。根据真实 schema 再设计一个版本化、create-only、Owner-local 的保护集 crosswalk 适配器；在输入 schema 和保护集覆盖范围被确认前，不编造通用代码或宣称 crosswalk 完成。
