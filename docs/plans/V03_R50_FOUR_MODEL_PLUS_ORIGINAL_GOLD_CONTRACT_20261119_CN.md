@@ -130,9 +130,9 @@ DELETE_USER_MESSAGES = false
 
 ### 5.1 已检查的历史实现及其证据边界
 
-- `scripts/v02_r47_eval_runner.py`：历史 R47 三模型（Base/v0.1/v0.2）推理 runner，针对已曝光旧 20 题；记录过 Transformers backend、BF16、BNB 4-bit、`max_new_tokens=1536`、seed/data_seed 42、temperature 0、shuffle false。它不是 R50 四臂运行记录。
+- `scripts/v02_r47_eval_runner.py`：历史 R47 三模型（Base/v0.1/v0.2）推理 runner，针对已曝光旧 20 题；三个臂复用同一 `infer()` 命令构造，使用 Transformers backend、BF16、BNB 4-bit、`max_new_tokens=1536`、seed/data_seed 42、temperature 0、shuffle false。它不是 R50 四臂运行记录。
 - `scripts/v03_r55_gold5_build.py`：使用已存在的 R47/R55 输出和原始 Gold 构造 R55 开发集盲评包；明确不访问 R50、不调用模型。它可作为五方来源校验和盲评打包参考，不能证明 R50 runtime parity。
-- `scripts/v03_r54_gpu_runner.py`：R54 checkpoint-16 的训练/单候选 Adapter reload 工程流程，不是 Base/v0.1/v0.2/v0.3-A 四臂共同运行记录。
+- `scripts/v03_r54_gpu_runner.py`：R54 checkpoint-16 的训练/单候选 Adapter reload 工程流程；其 reload smoke 使用 `max_new_tokens=128` 和 `val_dataset_sample=1`，并非 R47 三臂的 1536-token 同参数评估，更不是 Base/v0.1/v0.2/v0.3-A 四臂共同运行记录。
 - `scripts/v03_r50_role12_owner_audit.py`：只验证冻结 Draft 输入构造、历史角色顺序和既有 Tokenizer 报告；收据明确将 `actual_four_arm_runtime_role_parity_verified=false`。其历史 `trailing_user_interpretation_policy_approved=false` 是批准前收据字段，不得用它否定本次 2026-11-19 Owner 政策批准，也不得把它升级为 runtime PASS。
 
 在已检查的 GitHub 代码/证据中，没有找到 R50 专用的四臂推理执行器或四臂实际加载收据。故 W4 需要 Owner 私有目录中**已经存在**的四臂模型加载记录、有效配置、运行参数及其 hash。若这些记录不存在，结果就是 `SOURCE_UNAVAILABLE`；不得启动模型或新 Job 补造历史证据。
