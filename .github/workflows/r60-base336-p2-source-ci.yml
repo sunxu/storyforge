@@ -12,6 +12,8 @@ on:
       - "experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py"
       - "tests/test_r60_base336_p2_public_prompt_package_gate.py"
       - "experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py"
+      - "experiments/r58_quality/r60_readonly_db.py"
+      - "tests/test_r60_readonly_db.py"
       - "tests/test_r60_readonly_db.py"
       - "experiments/r58_quality/r60_readonly_db.py"
       - "tests/test_r60_base336_p2_public_source_inventory_cpu.py"
@@ -27,6 +29,8 @@ on:
       - "experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py"
       - "tests/test_r60_base336_p2_public_prompt_package_gate.py"
       - "experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py"
+      - "experiments/r58_quality/r60_readonly_db.py"
+      - "tests/test_r60_readonly_db.py"
       - "tests/test_r60_base336_p2_public_source_inventory_cpu.py"
       - ".github/workflows/r60-base336-p2-source-ci.yml"
       - "skills/storyforge-roleplay-sft/**"
@@ -53,7 +57,7 @@ jobs:
           python -m pip install pytest ruff
       - name: Ruff P2 source and shared quality code
         run: |
-          ruff check             src/storyforge_dataset/world_isolation.py             tests/test_world_isolation.py             experiments/r58_quality/quality_v1.py             experiments/r58_quality/test_quality_v1.py             experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py             tests/test_r60_base336_p2_public_prompt_package_gate.py             experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py             tests/test_r60_base336_p2_public_source_inventory_cpu.py
+          ruff check             src/storyforge_dataset/world_isolation.py             tests/test_world_isolation.py             experiments/r58_quality/quality_v1.py             experiments/r58_quality/test_quality_v1.py             experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py             tests/test_r60_base336_p2_public_prompt_package_gate.py             experiments/r58_quality/r60_readonly_db.py             tests/test_r60_readonly_db.py             experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py             tests/test_r60_base336_p2_public_source_inventory_cpu.py
       - name: Synthetic world-isolation and Quality-v1 tests
         run: |
           pytest -q             tests/test_world_isolation.py             experiments/r58_quality/test_quality_v1.py
