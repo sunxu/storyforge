@@ -168,7 +168,7 @@ protected_crosswalk_verified = false  # 直到完整 P2-C 证据和 Owner 冻结
 
 先报告：当前 GitHub HEAD / Actions；权威材料阅读确认；Owner-local metadata inventory 是否收到；逐类文件 PRESENT/MISSING/AMBIGUOUS/HOLD；下一项最小无副作用动作。
 
-若没有 inventory 输出，**停止在第 1 阶段**并向 Owner 索取；不得猜测路径、Schema 或执行数据库提取。
+本次已收到 R47/R48/R55 的部分 metadata / shape inventory，不要重复盘点这些已确认文件；下一步进入其私有 Index 的结构 / 覆盖 SAFE 检查。对 Base336、R50 或其他尚未提供 inventory 的保护集，仍只做文件元数据确认；缺失时保持对应 HOLD。任何情况下不得猜测 Schema 或执行数据库提取。
 
 
 ## 2026-11-18 Owner R47 / R48 / R55 metadata audit delta
