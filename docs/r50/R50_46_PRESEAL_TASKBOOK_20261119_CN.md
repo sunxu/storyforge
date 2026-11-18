@@ -49,7 +49,7 @@ When a PR is still Draft/open, describe its file as proposed branch evidence, no
 | Hidden alias / world-component closure | HOLD |
 | Final Held-out seal | NOT PERFORMED |
 
-The three flagged pair rows are the same scoped W17 pair set already reviewed on 2026-10-19: old ranks 2, 4 and 10 against R50 rank 17. Each row has one exact long-message match and five sampled matches in the latest output. The earlier W17 pair decisions were all `INSUFFICIENT_EVIDENCE`; do not repeat that same review against the same evidence and call it new adjudication.
+The three flagged pair rows are the same scoped W17 pair set already reviewed on 2026-10-19: old ranks 2, 4 and 10 against R50 rank 17. Each row has one exact long-message match and five sampled matches in the latest output. The earlier W17 pair decisions were all `INSUFFICIENT_EVIDENCE`; the prior receipt also states `reviewer_independence_or_correctness_verified_by_script=false`. Do not repeat that same review against the same evidence and call it new adjudication, and do not describe it as independently verified reviewer signoff.
 
 **Interpretation boundary:** zero same-Story-ID pairs and zero extra archive Source-ID conflicts are limited identity checks. They do not prove semantic independence. The three lexical matches do not by themselves prove a shared world either. Keep semantic closure HOLD until new, source-backed provenance resolves them.
 
@@ -139,7 +139,7 @@ If runtime snapshots or version history do not exist, record `SOURCE_UNAVAILABLE
 
 Use source-backed evidence, not another lexical-only pass:
 - adjudicate the three already-flagged pairs only if W1/W2 identifies new provenance not included in the earlier W17 review;
-- include the previously documented old 04→07 confirmed edge and the two known transitive old links in the component graph;
+- reconcile the previously documented old 04→07 confirmed edge with the two transitive known old links reported in the 2026-11-19 inventory; do not assume these are three distinct edges;
 - resolve or explicitly bound the possible transitive connection from the old component to R50 W17;
 - distinguish shared platform/template text from character, organization, setting, event, timeline or plot continuity;
 - keep every unsupported edge `INSUFFICIENT_EVIDENCE` and the overall graph `HOLD`.
