@@ -2,7 +2,11 @@
 
 你现在接手 GitHub 仓库 `sunxu/storyforge` 的 R50 46-case Protected Held-out 剩余审计与证据闭环工作。
 
-## 最高优先级：先读交接材料，禁止重复劳动
+## 最高优先级：先读交接材料，禁止重复劳动## 文档所在分支与证据 ref
+
+本提示词、当前任务书和交接包目前位于 Draft PR #33 分支 `docs/r50-agent-handoff-20261119`，尚未合并 main。2026-11-19 审计证据位于独立 Draft PR #32 分支 `docs/r50-world-cpu46-audit-20261119`。读取时必须显式指定正确 ref；不要因 main 暂时找不到这些新文件而认定它们不存在，也不要假定 PR 已合并。
+
+
 
 先完整阅读：
 
