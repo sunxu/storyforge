@@ -431,8 +431,9 @@ def main() -> int:
         print(json.dumps(run(args), sort_keys=True))
         return 0
     except Exception as exc:  # noqa: BLE001
-        reason = str(exc) if isinstance(exc, Hold) else "P2_PUBLIC_SOURCE_INVENTORY_RUNTIME_HOLD"
-        print(json.dumps({
+        is_hold = isinstance(exc, Hold)
+        reason = str(exc) if is_hold else "P2_PUBLIC_SOURCE_INVENTORY_RUNTIME_HOLD"
+        payload = {
             "schema": SAFE,
             "status": "P2_PUBLIC_SOURCE_INVENTORY_HOLD",
             "reason_code": reason if reason.endswith("_HOLD") else "P2_PUBLIC_SOURCE_INVENTORY_RUNTIME_HOLD",
@@ -442,7 +443,13 @@ def main() -> int:
             "quality_v1_admitted": 0,
             "model_promoted": False,
             "private_values_emitted": False,
-        }, sort_keys=True))
+        }
+        if not is_hold:
+            payload["runtime_error_type"] = type(exc).__name__
+            sqlstate = getattr(exc, "sqlstate", None)
+            if isinstance(sqlstate, str) and len(sqlstate) == 5:
+                payload["runtime_error_sqlstate"] = sqlstate
+        print(json.dumps(payload, sort_keys=True))
         return 42
 
 
