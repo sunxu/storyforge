@@ -134,6 +134,7 @@ DELETE_USER_MESSAGES = false
 - `scripts/v03_r55_gold5_build.py`：使用已存在的 R47/R55 输出和原始 Gold 构造 R55 开发集盲评包；明确不访问 R50、不调用模型。它可作为五方来源校验和盲评打包参考，不能证明 R50 runtime parity。
 - `scripts/v03_r54_gpu_runner.py`：R54 checkpoint-16 的训练/单候选 Adapter reload 工程流程；其 reload smoke 使用 `max_new_tokens=128` 和 `val_dataset_sample=1`，并非 R47 三臂的 1536-token 同参数评估，更不是 Base/v0.1/v0.2/v0.3-A 四臂共同运行记录。
 - `scripts/v03_r50_role12_owner_audit.py`：只验证冻结 Draft 输入构造、历史角色顺序和既有 Tokenizer 报告；收据明确将 `actual_four_arm_runtime_role_parity_verified=false`。其历史 `trailing_user_interpretation_policy_approved=false` 是批准前收据字段，不得用它否定本次 2026-11-19 Owner 政策批准，也不得把它升级为 runtime PASS。
+- `R50_46_DEEP_TRIAGE_REPORT_20261016.md` 记录过四臂共同静态消息序列 SHA256：`9ad0254f740a979e9b79b458a22e61e40db4ff98fb946e0332cf172e6888565c`，覆盖 46 题、364 条历史及 12 个连续 User→User 结尾。报告明确说明这是共同 Draft 消息缓冲区，不是 tokenizer input-ID SHA，也没有执行任何模型或四臂运行时对比。它可以作为静态输入构造的历史证据，不能替代 runtime/load receipt。
 
 在已检查的 GitHub 代码/证据中，没有找到 R50 专用的四臂推理执行器或四臂实际加载收据。故 W4 需要 Owner 私有目录中**已经存在**的四臂模型加载记录、有效配置、运行参数及其 hash。若这些记录不存在，结果就是 `SOURCE_UNAVAILABLE`；不得启动模型或新 Job 补造历史证据。
 
