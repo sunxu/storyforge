@@ -44,6 +44,43 @@ class Hold(ValueError):
     pass
 
 
+# Only fixed, non-sensitive values may be emitted on a failed Owner-local run.
+FAILURE_PHASES = frozenset({
+    "ROSTER_TEMPLATE", "FROZEN_INPUT", "FROZEN_SCOPE",
+    "OUTPUT_GUARD", "DB_CONNECT", "DB_GUARD", "DB_WORLD_AND_FIELDS",
+    "PACKAGE_BUILD", "OUTPUT_WRITE",
+})
+KNOWN_HOLD_CODES = frozenset({
+    "FIELD_TYPE_HOLD", "SOURCE_ROW_HOLD", "FIELD_TOO_LARGE_HOLD",
+    "WORLD_GROUP_SNAPSHOT_DRIFT_HOLD", "RECORD_LIMIT_HOLD",
+    "DSN_NOT_SET_HOLD", "DATABASE_GUARD_HOLD",
+    "FROZEN_SCOPE_HOLD", "OUTPUT_DIR_GUARD_HOLD",
+    "GROUPS_EXTRACTED_HOLD", "GROUP_ORDER_HOLD",
+    "GROUP_TOO_LARGE_HOLD", "OUTPUT_PERMISSION_HOLD",
+})
+
+
+class DiagnosticHold(Hold):
+    def __init__(self, phase: str, reason_code: str):
+        if phase not in FAILURE_PHASES:
+            phase = "PACKAGE_BUILD"
+        if reason_code not in KNOWN_HOLD_CODES:
+            reason_code = "UNEXPECTED_HOLD"
+        self.failure_phase = phase
+        self.reason_code = reason_code
+        super().__init__(reason_code)
+
+
+def diagnosed(phase: str, action):
+    try:
+        return action()
+    except DiagnosticHold:
+        raise
+    except Exception as exc:
+        reason = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
+        raise DiagnosticHold(phase, reason) from None
+
+
 def normalized(value: object) -> object:
     if isinstance(value, str):
         # psycopg may return JSONB as decoded Python, including a genuine string.
@@ -113,32 +150,44 @@ def capture(stories: list[str], groups: list[dict], dsn: str) -> list[dict]:
         raise Hold("DSN_NOT_SET_HOLD")
     import psycopg
 
-    with psycopg.connect(dsn, autocommit=False, connect_timeout=10) as conn:
+    conn = diagnosed("DB_CONNECT", lambda: psycopg.connect(
+        dsn, autocommit=False, connect_timeout=10,
+    ))
+    with conn:
         try:
             with conn.cursor() as cur:
-                cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-                cur.execute("SET LOCAL row_security=on")
-                cur.execute("SET LOCAL statement_timeout='30000ms'")
-                cur.execute("SET LOCAL lock_timeout='1000ms'")
-                cur.execute("""
-                    SELECT current_user,current_setting('transaction_read_only'),
-                           current_setting('row_security'),r.rolbypassrls,r.rolsuper
-                    FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
-                """)
-                private.assert_guard(cur.fetchone())
-                return build(cur, stories, groups)
+                def guard() -> None:
+                    cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                    cur.execute("SET LOCAL row_security=on")
+                    cur.execute("SET LOCAL statement_timeout='30000ms'")
+                    cur.execute("SET LOCAL lock_timeout='1000ms'")
+                    cur.execute("""
+                        SELECT current_user,current_setting('transaction_read_only'),
+                               current_setting('row_security'),r.rolbypassrls,r.rolsuper
+                        FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
+                    """)
+                    private.assert_guard(cur.fetchone())
+
+                diagnosed("DB_GUARD", guard)
+                return diagnosed(
+                    "DB_WORLD_AND_FIELDS", lambda: build(cur, stories, groups),
+                )
         finally:
             conn.rollback()
 
 
-def generate(args: argparse.Namespace) -> dict:
+def _generate(args: argparse.Namespace, phase: list[str]) -> dict:
+    phase[0] = "ROSTER_TEMPLATE"
     _, groups, _ = world.load(args.roster_dir)
+    phase[0] = "FROZEN_INPUT"
     cases, manifest = frozen._frozen(args)
+    phase[0] = "FROZEN_SCOPE"
     stories = locator.scoped_stories(cases, manifest)
     members = {m["story_id_PRIVATE"]
                for group in groups for m in group["members_PRIVATE"]}
     if len(members) != 38 or not members.issubset(set(stories)):
         raise Hold("FROZEN_SCOPE_HOLD")
+    phase[0] = "OUTPUT_GUARD"
     private.private_dir(args.roster_dir, create=False)
     if args.output_dir.parent != private.BASE or args.output_dir.exists() or (
         args.output_dir.is_symlink()
@@ -153,7 +202,9 @@ def generate(args: argparse.Namespace) -> dict:
             "train_admitted": 0, "gpu_started": False,
             "database_modified": False, "private_values_emitted": False,
         }
+    phase[0] = "DB_WORLD_AND_FIELDS"
     extracted = capture(stories, groups, os.getenv("R60_READONLY_DATABASE_URL", ""))
+    phase[0] = "PACKAGE_BUILD"
     raw_roster = private.read_private(args.roster_dir / roster.FILENAME,
                                       5242880)
     source_digest = hashlib.sha256(raw_roster).hexdigest()
@@ -175,6 +226,7 @@ def generate(args: argparse.Namespace) -> dict:
             raise Hold("GROUP_TOO_LARGE_HOLD")
         packages.append(data)
     # Validate all group lengths and source reads before creating the folder.
+    phase[0] = "OUTPUT_WRITE"
     private.private_dir(args.output_dir, create=True)
     for i, data in enumerate(packages, 1):
         private.write_new(args.output_dir / f"{OUTPUT_PREFIX}{i:02d}_CARD_OPENING_PRIVATE.json", data)
@@ -206,6 +258,18 @@ def generate(args: argparse.Namespace) -> dict:
     }
 
 
+def generate(args: argparse.Namespace) -> dict:
+    # Preserve the original call contract while keeping diagnostics finite.
+    phase = ["ROSTER_TEMPLATE"]
+    try:
+        return _generate(args, phase)
+    except DiagnosticHold:
+        raise
+    except Exception as exc:
+        reason = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
+        raise DiagnosticHold(phase[0], reason) from None
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     for name in ("old", "plan", "v2", "v3", "audit", "quarantine"):
@@ -217,12 +281,22 @@ def main() -> int:
     try:
         print(json.dumps(generate(args), sort_keys=True))
         return 0
-    except Exception:  # noqa: BLE001 - suppress private IDs, content, DB traces
-        print(json.dumps({
+    except Exception as exc:  # noqa: BLE001 - never print private exceptions
+        safe = {
             "schema": SAFE, "status": "BASE336_CARD_OPENING_EVIDENCE_HOLD",
+            "failure_phase": (
+                exc.failure_phase if isinstance(exc, DiagnosticHold)
+                else "UNEXPECTED_HOLD"
+            ),
+            "reason_code": (
+                exc.reason_code if isinstance(exc, DiagnosticHold)
+                else "UNEXPECTED_HOLD"
+            ),
+            "database_accessed": None,  # An exception cannot prove access.
             "train_admitted": 0, "gpu_started": False,
             "database_modified": False, "private_values_emitted": False,
-        }, sort_keys=True))
+        }
+        print(json.dumps(safe, sort_keys=True))
         return 42
 
 
