@@ -1,6 +1,4 @@
 """Synthetic tests for the deterministic R60 P2 Supabase source inventory."""
-from datetime import datetime, timezone
-
 import pytest
 
 from experiments.r58_quality import r60_base336_p2_public_source_inventory_cpu as target
