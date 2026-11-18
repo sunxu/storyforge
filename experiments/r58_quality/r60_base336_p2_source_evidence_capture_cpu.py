@@ -205,7 +205,7 @@ def load_p2_manifest(path: Path) -> tuple[dict, bytes, list[dict]]:
     return doc, raw, sources
 
 
-def load_base336(args: argparse.Namespace) -> tuple[list[dict], list[str], bytes]:
+def load_base336(args: argparse.Namespace) -> tuple[list[dict], list[str], bytes, dict]:
     cases, crosswalk = identity.verified_cases_report(
         args.old_dir, args.plan_dir, args.v2_dir, args.v3_dir, args.audit_dir
     )
