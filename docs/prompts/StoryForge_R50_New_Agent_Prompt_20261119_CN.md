@@ -52,7 +52,7 @@
 ### ROLE12
 - 历史消息=364；46/46 原角色与顺序保留（Owner 报告）。
 - 12 条 trailing User；12/12 连续 User append；12/12 有真实 tokenizer encoded record（Owner 报告）。
-- Owner 对连续 User 的解释政策未批准。
+- 连续 User 解释合同等待 Owner 对下文精确措辞作出批准/拒绝决定；不得将待决状态视为已批准。
 - 四臂真实运行时 role parity 未验证。
 
 不要重新运行相同输入的 ROLE12 Owner-local 审计；不要合并、改写或删除连续 User 消息。
