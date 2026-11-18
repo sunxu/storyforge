@@ -95,7 +95,7 @@
 
 `scripts/r57_g3_private_exposure_ledger.py` 是 R57 G3 特定训练 / 验证精确目标暴露账本，不得替代 R47/R48/R55 的完整暴露证据。其他历史批次的局部 SAFE、旧 reviewer 回执或代码测试同样不能自动证明全量覆盖。
 
-本轮尚未收到 R47、R48、R55 完整 source / exposure manifests 及同一批次的 Owner SAFE。状态：**UNKNOWN / HOLD**。必须确认保护范围完整、来源版本和暴露类型，再对 P2 来源做精确关联及 source-bound 语义变体复核。
+Owner 于 2026-11-18 已返回 R47/R48/R55 的本机 metadata / shape inventory。该输出确认 R47 Report、Audit、20-row Manifest、20-row compiled Test、20-row prompts、R48 Source Audit，以及 R55 若干私有 Coordinator Index / SAFE 文件存在；但 R47/R48 可见结构没有经验证的 Story ID 映射，R55 私有 Index 本轮只核验文件元数据、未读取 Schema / 内容 / 覆盖范围。故完整 source / exposure manifests 与同批次 SAFE 仍未完成内容及覆盖验证。状态仍为：**UNKNOWN / HOLD**。详见 [R47/R48/R55 Source Shape Audit](../evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md)。
 
 ## 6. P2-B 提示包
 
@@ -117,14 +117,14 @@
 | Base336 semantic component review | HOLD | 语义决策与来源引文未完成 |
 | 历史 actual-sent 版本绑定 | UNKNOWN / HOLD | 代表性 World 证据明确未验证 |
 | R50 完整 Protected / Reserved 元数据排除 | UNKNOWN / HOLD | 仅有局部 pre-seal / metadata 工具合同 |
-| R47/R48/R55 暴露及语义变体排除 | UNKNOWN / HOLD | 未收到完整暴露清单与 SAFE |
+| R47/R48/R55 暴露及语义变体排除 | PARTIAL METADATA / UNKNOWN / HOLD | 已收到文件形态 inventory；R47/R48 无已验证 Story ID 映射；R55 私有 Index 内容 / Schema / 覆盖未核验，完整暴露清单仍缺 |
 | Reviewer 独立性 / Owner freeze | HOLD | 尚无完整独立审阅和冻结回执 |
 | P2-B 真实 48 条提示包 | NOT_GENERATED | 只有校验器与合成测试 |
 | P2-C 总门禁 | **HOLD** | 保护集交叉覆盖不完整 |
 
 ## 8. 下一步最小执行顺序
 
-1. Owner Mac 只读盘点已有私有文件的文件名、大小、权限和修改时间：本轮 P2 Source Manifest；Base336 roster / decisions template / representative World evidence / Codex review / card-opening SAFE 与输出；R50 metadata-only 三类输入及 SAFE；R47/R48/R55 source / exposure manifests 与 SAFE。**截至本次交接，尚未收到该 inventory 输出，不能将任何预期路径或历史文件名视为已确认存在。** 可复制命令见 `docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。
+1. Owner Mac 的 metadata inventory 已收到，但只完成文件形态确认：R47/R48 的 20-case Prompt / Sample 文件与 Audit 存在；R55 三个私有 Coordinator Index 及两个 SAFE 文件存在。下一步不再重复目录盘点，而是对 R55 私有 Index 做只输出 Schema / 字段名 / 计数 / 版本绑定的结构检查，并寻找真实的 Sample → Story ID 来源映射；Base336 / R50 的其他缺件仍按本索引各节处理。**文件存在不等于内容、Schema、完整性或保护集覆盖通过。**
 2. 对此前 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，只核对已存在的 SAFE 聚合字段和输出文件状态。没有明确失败阶段前，不重跑数据库查询，不执行全量 `--execute`。
 3. 根据实际存在的文件和真实 Schema，确认各输入是否完整、是否来自同一冻结版本、是否覆盖全部保护范围。缺项继续 HOLD。
 4. 输入合同确认后，才实现版本化、Owner-local、create-only 的 P2 Protected Crosswalk 薄适配器；将精确身份匹配、语义组件复核、R50 metadata-only 排除、R47/R48/R55 暴露排除和覆盖完整性分别记录，不能用一个精确 hash PASS 替代所有门禁。
@@ -147,3 +147,18 @@
 ## 10. 下一 Agent 的权威入口
 
 当前专项提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。该提示词包含 Owner-local metadata inventory 命令、禁止重跑的全量 `--execute` 说明、各阶段门禁和交付物格式。新 Agent 必须先完成实时 GitHub 核验，再等待 Owner 提供 inventory；不得绕过第一阶段直接设计适配器或执行数据库提取。
+
+
+## 11. 2026-11-18 Owner R47 / R48 / R55 metadata / shape audit 增量
+
+Owner 已返回本机审计输出，详见 [R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md](../evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md)。
+
+关键更新：
+
+- **R47**：20 条 Manifest 元素仅含 sample_id、prompt_sha256、source_line；20 条 compiled Test 记录有 id/messages/metadata；20 条 Prompt 记录只有 messages。现有校验器保证 Sample / Prompt / 回复包内部一致，但未建立经验证的 sample_id ↔ compiled_test.id ↔ story_id 绑定。
+- **R48**：20-case / 80-response 四臂包复用同一 R47 历史 Prompt；固定 canonical Test SHA 和 Gold target hashes 证明文件 / 目标摘要绑定，不提供可见 Story ID crosswalk。R48 不增加独立案例数。
+- **R55**：三个 0600 私有 Coordinator Index、一个旧 R47 source preflight SAFE 和一个 R54/R55 intake SAFE 的文件元数据已确认；本轮未读取其内容，因此不能确认当前 Schema、版本一致性、完整 20-case 覆盖或 Story ID 映射。
+- **精确隔离**：此前 P2 × Base336 的 336 cases / 172 Story IDs overlap=0，以及 P2 × R50 的 exact Source ID disjoint PASS 保持各自范围；这些结果不能外推到 R47/R48/R55。
+- **门禁**：P2 × R47/R48/R55 exact Story ID crosswalk = UNKNOWN / HOLD；semantic variants = HOLD；P2-C 总门禁继续 HOLD。
+
+下一步：Owner-local 只读核验 R55 Index 的真实 Schema / 覆盖，并查找 Sample → Story ID 的权威来源绑定；没有真实绑定就继续 HOLD，不得按行序或字段名推断。
