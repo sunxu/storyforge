@@ -33,7 +33,7 @@ Read the current taskbook first. It is the operational source of truth for work 
 | Same Story ID pairs | 0 |
 | Extra archive Source-ID conflicts with R50 | 0 |
 | Exact long-message and sampled lexical flags | 3 pair rows |
-| Prior W17 AI pair adjudication | Same three pairs; all `INSUFFICIENT_EVIDENCE` |
+| Prior W17 AI pair adjudication | Same three pairs; all `INSUFFICIENT_EVIDENCE`; reviewer independence not script-verified |
 | Seven W17 full-message gaps | All `INSUFFICIENT_CONTEXT` |
 | Timepoint card/rule actual inference proof | PENDING / NOT CERTIFIED |
 | Hidden alias / event / transitive world closure | HOLD |
@@ -59,7 +59,7 @@ Do not:
 
 1. Crosswalk the 2026-11-19 inventory with the W17 evidence and source manifests. Determine whether it contains genuinely new provenance.
 2. Resolve the timepoint gap using authenticated historical inference-time card/rule snapshots and prompt-assembly/runtime records. Metadata timestamps or current card content are insufficient.
-3. Resolve alias/event/transitive world components using new, independently citable source evidence. Include the already known 04→07 edge and two known transitive old links. If proof is unavailable, keep HOLD and state exactly what is missing.
+3. Resolve alias/event/transitive world components using new, independently citable source evidence. Reconcile the already known 04→07 edge with the two transitive old links reported in the latest inventory; do not assume they are three distinct edges. If proof is unavailable, keep HOLD and state exactly what is missing.
 4. Separately obtain Owner approval for the consecutive-User interpretation and verify actual four-arm runtime role/template parity. Do not mutate the frozen source.
 5. Prepare preregistration only after evidence gates close. No final seal or inference without separate Owner authorization.
 
