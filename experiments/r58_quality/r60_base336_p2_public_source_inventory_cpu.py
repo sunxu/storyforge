@@ -22,11 +22,11 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from . import r60_real_private_batch as private
     from . import r60_readonly_db as db
+    from . import r60_real_private_batch as private
 except ImportError:  # direct script execution from experiments/r58_quality
-    import r60_real_private_batch as private
     import r60_readonly_db as db
+    import r60_real_private_batch as private
 
 SCHEMA = "storyforge_r60_base336_p2_public_source_inventory_private_v1"
 SAFE = "storyforge_r60_base336_p2_public_source_inventory_safe_v1"
