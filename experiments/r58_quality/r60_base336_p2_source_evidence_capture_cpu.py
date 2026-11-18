@@ -28,7 +28,6 @@ import r60_real_private_batch as private
 SCHEMA = "storyforge_r60_base336_p2_source_evidence_private_v1"
 SAFE_SCHEMA = "storyforge_r60_base336_p2_source_evidence_safe_v1"
 PRIVATE_FILENAME = "R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json"
-SAFE_FILENAME = "R60_BASE336_P2_SOURCE_EVIDENCE_SAFE.json"
 P2_MANIFEST_SCHEMA = "storyforge_r60_base336_p2_public_source_inventory_private_v1"
 P2_MANIFEST_STATUS = "P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING"
 FIELDS = ("world", "character", "characters", "opening")
@@ -316,6 +315,7 @@ def _p2_records(rows: list[tuple], sources: list[dict]) -> tuple[list[dict], dic
             or submission_id != manifest["moderation_submission_id"]
             or permission_id != manifest["permission_event_id"]
             or permission_submission_id != submission_id
+            or permission_submission_id != manifest["permission_submission_id"]
             or requested_visibility != "public"
             or permission_visibility != "public"
             or permission_kind != manifest["permission_kind"]
@@ -379,8 +379,8 @@ def exact_field_matches(p2_records: list[dict], base_records: list[dict]) -> tup
 
 
 def safe_summary(base_stats: dict, p2_coverage: dict, p2_records: list[dict],
-                 base_records: list[dict], p2_manifest_sha: str,
-                 base_p2_overlap: int, exact_counts: dict, package_bytes: int) -> dict:
+                 p2_manifest_sha: str, base_p2_overlap: int,
+                 exact_counts: dict, package_bytes: int) -> dict:
     return {
         "schema": SAFE_SCHEMA,
         "status": (
@@ -390,15 +390,18 @@ def safe_summary(base_stats: dict, p2_coverage: dict, p2_records: list[dict],
         ),
         "base336_cases": 336,
         "base336_story_ids": 172,
+        "base336_case_source_bindings": 336,
         "base336_current_rows": base_stats["current_rows"],
         "base336_archived_version_rows": base_stats["archived_version_rows"],
         "base336_field_nonnull_counts": base_stats["field_nonnull_counts"],
         "p2_sources": len(p2_records),
+        "p2_snapshot_bindings": len(p2_records),
+        "p2_permission_bindings": len(p2_records),
         "p2_field_nonnull_counts": p2_coverage,
         "p2_base336_exact_story_id_overlap": base_p2_overlap,
         "exact_field_match_counts": exact_counts,
         "private_package_bytes": package_bytes,
-        "p2_manifest_sha_verified_in_memory": bool(p2_manifest_sha),
+        "p2_manifest_binding_rows_verified": len(p2_records) == 8,
         "historical_actual_sent_verified": False,
         "semantic_world_alias_verified": False,
         "world_component_isolation_verified": False,
@@ -493,11 +496,29 @@ def run(args: argparse.Namespace) -> dict:
     base_records, base_stats = _base_records(base_rows, stories)
     p2_records, p2_coverage = _p2_records(p2_rows, p2_sources)
     exact_counts, exact_pairs = exact_field_matches(p2_records, base_records)
+    case_bindings = []
+    for position, case in enumerate(cases, 1):
+        source = case.get("source")
+        if type(source) is not dict or type(source.get("story_id")) is not str:
+            raise Hold("BASE_CASE_SOURCE_BINDING_HOLD")
+        case_bindings.append({
+            "candidate_position_1based_PRIVATE": position,
+            "story_id_PRIVATE": source["story_id"],
+            "session_id_PRIVATE": source.get("session_id"),
+            "assistant_message_id_PRIVATE": source.get("assistant_message_id"),
+            "prior_user_message_id_PRIVATE": source.get("prior_user_message_id"),
+            "previous_assistant_message_id_PRIVATE": source.get("previous_assistant_message_id"),
+            "previous_user_message_id_PRIVATE": source.get("previous_user_message_id"),
+            "assistant_turn_index_PRIVATE": source.get("assistant_turn_index"),
+        })
+    if len(case_bindings) != 336:
+        raise Hold("BASE_CASE_SOURCE_BINDING_HOLD")
     package = {
         "schema": SCHEMA,
         "base336_scope": {
             "cases": 336,
             "story_ids_PRIVATE": stories,
+            "candidate_source_bindings_PRIVATE": case_bindings,
             "quarantine_manifest_sha256_PRIVATE": hashlib.sha256(quarantine_raw).hexdigest(),
             "source_records_PRIVATE": base_records,
         },
@@ -525,13 +546,11 @@ def run(args: argparse.Namespace) -> dict:
     if len(package_raw) > MAX_PACKAGE_BYTES:
         raise Hold("PRIVATE_PACKAGE_SIZE_HOLD")
     safe = safe_summary(
-        base_stats, p2_coverage, p2_records, base_records,
+        base_stats, p2_coverage, p2_records,
         hashlib.sha256(p2_raw).hexdigest(), overlap, exact_counts, len(package_raw),
     )
-    safe_raw = (json.dumps(safe, sort_keys=True, separators=(",", ":")) + "\n").encode()
     private.private_dir(args.output_dir, create=True)
     _write_new(args.output_dir / PRIVATE_FILENAME, package_raw)
-    _write_new(args.output_dir / SAFE_FILENAME, safe_raw)
     safe["private_file_created"] = True
     return safe
 
@@ -555,7 +574,7 @@ def main() -> int:
             "P2_SOURCE_BINDING_FIELDS_HOLD", "P2_SOURCE_DUPLICATE_HOLD",
             "P2_PERMISSION_KIND_HOLD", "P2_PERMISSION_RESULT_HOLD",
             "P2_WORLD_DIGEST_SHAPE_HOLD", "P2_SNAPSHOT_DIGEST_SHAPE_HOLD",
-            "BASE336_SCOPE_HOLD", "OUTPUT_TARGET_HOLD", "DB_DSN_HOLD",
+            "BASE336_SCOPE_HOLD", "BASE_CASE_SOURCE_BINDING_HOLD", "OUTPUT_TARGET_HOLD", "DB_DSN_HOLD",
             "BASE_SOURCE_RECORD_COUNT_HOLD", "BASE_SOURCE_ROW_SHAPE_HOLD",
             "BASE_SOURCE_IDENTITY_HOLD", "BASE_CURRENT_DUPLICATE_HOLD",
             "BASE_VERSION_IDENTITY_HOLD", "BASE_FIELD_SIZE_HOLD",
