@@ -1,3 +1,10 @@
+# 0.1.21 — 2026-11-18
+
+- 更新 Base336 P2-A 真实 Owner SAFE：Supabase 公开来源 Inventory 8/8 READY，记录作者/时间/World JSON 精确去重及 revision/snapshot/permission 验证的证据边界。
+- 明确 P2-C 仍 HOLD：Base336 私有来源、R50 Protected/Reserved 仅元数据排除、R47/R48/R55 暴露题及语义变体排除尚未完成；不把精确 JSON 不重复或创建时间当作语义独立证明。
+- 固定下一步为 Owner 私有证据文件元数据 inventory；输入 Schema 确认前不开发猜测性 crosswalk，不生成正式 48 条提示包，不启动推理/GPU。
+- 更新 Skill、README 和契约测试；同步 Skill Manifest SHA256/文件长度。未修改 Gold Quality Pipeline 规则、六维 Rubric、私有数据或训练产物。
+
 # 0.1.20
 
 - 新增 R60 Base336 P2 Supabase 公开来源 inventory 的固定执行边界与复用入口。
