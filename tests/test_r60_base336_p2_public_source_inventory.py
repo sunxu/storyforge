@@ -1,4 +1,8 @@
-from experiments.r58_quality.r60_base336_p2_public_source_inventory_cpu import (\n    SQL,\n    BindingDiagnosticHold,\n    validate_rows,\n)
+from experiments.r58_quality.r60_base336_p2_public_source_inventory_cpu import (
+    SQL,
+    BindingDiagnosticHold,
+    validate_rows,
+)
 
 
 def test_p2_query_projects_current_public_v2_data():
