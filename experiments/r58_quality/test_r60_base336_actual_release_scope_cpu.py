@@ -5,8 +5,8 @@ import importlib.util
 import json
 import sys
 import types
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 import pytest
 
