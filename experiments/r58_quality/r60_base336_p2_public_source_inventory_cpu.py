@@ -5,7 +5,8 @@ release cutoff, with 3 selected before the Base336 GPU run and 5 after it,
 ordered by creation time. It reads only public story data plus moderation /
 permission metadata; it never reads private chat/session tables.
 
-This creates a private source manifest only. It does not construct prompts,
+This creates a private source manifest only. The query is bounded to the P2 public-source
+candidate window; it does not perform a full database export. It does not construct prompts,
 change Supabase, prove semantic isolation against private Base336/R50/R47/R48/R55
 sets, or authorize training/model inference.
 """
