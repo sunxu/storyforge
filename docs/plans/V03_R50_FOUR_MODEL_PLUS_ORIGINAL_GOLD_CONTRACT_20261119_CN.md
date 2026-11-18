@@ -32,7 +32,7 @@ DELETE_USER_MESSAGES = false
 | 评估对象 | 固定身份/来源 | 性质 |
 |---|---|---|
 | Base | `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | 原始基础模型 |
-| v0.1 | Adapter SHA256 `621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478`；Base revision 仍须核实 | 第一代微调模型 |
+| v0.1 | Base `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`（历史训练 Job 日志/Run Registry 报告）；Adapter SHA256 `621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478` | 第一代微调模型 |
 | v0.2 | R46 checkpoint-7 Adapter SHA256 `bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b` | 主要质量对照模型 |
 | v0.3-A | R54 checkpoint-16 Adapter SHA256 `121ec8f70e66089c7c891a7052c6085de93824776aaa9a25295f612b269b60c0` | 最新候选模型；已有开发集结果不支持当前进入正式 R50 |
 | Original Gold | 同题、同历史、同 cutoff 的真实历史 Assistant 原始回复；必须有来源证明及字节 SHA256 | 第五份参考回复，不是模型 |
@@ -126,7 +126,7 @@ DELETE_USER_MESSAGES = false
 - 相同 EOS/stop 与 sampling/generation policy；
 - 每个模型实际加载的 Base revision、Adapter SHA256、Runtime 版本及有效参数均有证据。
 
-现有 CPU46 Tokenizer 结果只证明 Draft 长度/结构范围，不证明四臂真实运行时一致。四臂 runtime parity 必须由已有 Owner-local runtime/load/config 记录支持；若无历史运行记录，标记 `SOURCE_UNAVAILABLE`，不能为了生成收据而启动模型。
+历史 HF Run Registry 已报告 v0.1 训练 Job 实际解析到的 Base revision 为 `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`；这是历史训练身份来源，不是 R50 当前加载收据。R47 历史三臂 runner 也记录过 `transformers` backend、BF16、BNB 4-bit、`max_new_tokens=1536`、seed/data_seed 42、temperature 0、shuffle false；这些是旧 R47 实际运行代码，不得直接升级为 R50 四臂的实际参数证明。现有 CPU46 Tokenizer 结果只证明 Draft 长度/结构范围，不证明四臂真实运行时一致。四臂 runtime parity 必须由已有 Owner-local runtime/load/config 记录支持；若无历史运行记录，标记 `SOURCE_UNAVAILABLE`，不能为了生成收据而启动模型。
 
 本次授权范围仅为已有证据的只读检查。不得启动模型加载来补证，不得执行 Tokenizer Job、HF Job、GPU、Inference 或 Training。
 
