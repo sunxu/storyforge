@@ -168,3 +168,28 @@ def test_main_emits_only_safe_failure_fields(monkeypatch, capsys, tmp_path):
     assert "private" not in json.dumps(emitted).lower().replace(
         '"private_values_emitted": false', ""
     )
+
+
+def test_owner_field_size_boundary_64_kib():
+    assert audit.MAX_FIELD_BYTES == 65536
+    assert audit.MAX_GROUP_BYTES == 655360
+    # Previously rejected: opening >24 KB; now preserved without truncation.
+    opening = "x" * 51809
+    fields = audit.source_fields([({}, [], opening)])
+    assert fields["opening_PRIVATE"] == opening
+    with pytest.raises(audit.Hold, match="FIELD_TOO_LARGE_HOLD"):
+        audit.source_fields([({}, [], "x" * audit.MAX_FIELD_BYTES)])
+
+
+def test_group_writer_beyond_shared_200kb_create_only(tmp_path):
+    # Prove this tool doesn't inherit the unrelated private capture cap.
+    path = tmp_path / "group.json"
+    contents = b"x" * 575785
+    audit.write_group_new(path, contents)
+    assert path.stat().st_size == len(contents)
+    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    with pytest.raises(FileExistsError):
+        audit.write_group_new(path, b"replacement")
+    with pytest.raises(audit.Hold, match="OUTPUT_SIZE_HOLD"):
+        audit.write_group_new(tmp_path / "oversized", b"x" * (audit.MAX_GROUP_BYTES + 1))
+    assert not (tmp_path / "oversized").exists()
