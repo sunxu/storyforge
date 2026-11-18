@@ -144,3 +144,12 @@ No R50-specific four-arm inference runner or actual four-arm load receipt was fo
 The R50 Library contains the 2026-10-16 deep triage report with a shared static Draft message-sequence SHA256 `9ad0254f740a979e9b79b458a22e61e40db4ff98fb946e0332cf172e6888565c` for 46 cases / 364 historical messages / 12 trailing User→User sequences. The report explicitly does not claim tokenizer input-ID parity or actual four-arm runtime execution. Do not repeat its static construction check.
 
 The searched R50 Library directory inventory has 106 entries, including frozen candidate/provenance, W17 review packets, CPU46 and ROLE12 receipts; no dedicated R50 Original Gold reply package was found in that bounded inventory. This does not exhaust every Owner-held source. Keep `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED` until exact same-prompt/history/cutoff original Assistant replies are authenticated.
+
+
+## 12. Original Gold source availability update
+
+See SAFE receipt: `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md` (commit `0c0bec3e4dc495ce35e49c2e59b446c637a78c0c`). Owner-provided output verifies both local 14-chat archive copies are byte-identical and match expected size/SHA256/ZIP CRC; the 06–15 archive also matches expected size/SHA256/ZIP CRC. The agent did not independently access the Owner Mac files, so these remain Owner-reported local verification.
+
+The pinned R50 source replay has already established zero normalized verbatim reuse between the 50 new User inputs and User messages in the five pinned R50 source transcripts. Therefore no protected 46 case can obtain an exact same-input Original Gold from those five transcripts (`0/46` within that pinned source scope). This does not prove zero across every possible Owner-held archive: the 14-chat and 06–15 archives have not been searched for exact full-history matches. Do not treat a text-only match in another story as Original Gold.
+
+The four historical W17/source-overlap scripts are absent from the current checkout but exist on `audit/r49-r50-source-intake-20261015`. They are historical audit code, not a missing Original Gold matcher; do not switch branches or rerun completed CRC/lexical/W17 work merely to recover them. Overall `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED`. Any next lookup must compare exact current User input plus complete preceding history and cutoff context, and emit aggregate counts only.
