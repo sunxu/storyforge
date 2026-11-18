@@ -2,7 +2,9 @@
 
 你现在接手 GitHub 仓库 `sunxu/storyforge` 的 R50 46-case Protected Held-out 剩余审计与证据闭环工作。
 
-## 最高优先级：先读交接材料，禁止重复劳动## 文档所在分支与证据 ref
+## 最高优先级：先读交接材料，禁止重复劳动
+
+## 文档所在分支与证据 ref
 
 本提示词、当前任务书和交接包目前位于 Draft PR #33 分支 `docs/r50-agent-handoff-20261119`，尚未合并 main。2026-11-19 审计证据位于独立 Draft PR #32 分支 `docs/r50-world-cpu46-audit-20261119`。读取时必须显式指定正确 ref；不要因 main 暂时找不到这些新文件而认定它们不存在，也不要假定 PR 已合并。
 
@@ -55,37 +57,47 @@
 
 不要重新运行相同输入的 ROLE12 Owner-local 审计；不要合并、改写或删除连续 User 消息。
 
-## 二、任务目标
+## 二、任务目标与严格执行顺序
 
-只推进真正未完成的证据门禁：
+**不要同时启动 W1–W4 四项工作。** 当前只允许按以下方式推进：
 
-**W1. 最新 inventory 与历史证据交叉核对**
-- 核实 2026-11-19 的 50-row inventory 是否完整覆盖旧 W17 dossier、来源归档、R45 来源范围和已知传递链接。
-- 识别真正新增的来源、卡片版本、规则、别名、事件或运行时 provenance。
-- 输出脱敏 coverage crosswalk，标记 `NEW_EVIDENCE_PRESENT` 或 `NO_NEW_EVIDENCE`。
-- 不重复 CRC、词法扫描或同一对 pair 的 AI review。
+**W1. 第一优先级：完成历史证据覆盖 crosswalk**
+- 将 2026-11-19 的 50-row inventory 与旧 W17 pair dossier、七个 full-message gap dossier、来源/归档 manifests、冻结 R45 范围和已知 transitive-link 记录逐项对应。
+- 对每类证据记录 artifact path、准确 ref、覆盖范围、source/hash/version pins、cutoff coverage、既有审查状态，以及是否存在真正新增的 message、alias、event、card version、rule version 或 runtime provenance。
+- 核实三条 flagged rows 是否仍是已审过的 old ranks 2/4/10 ↔ R50 rank 17 配对。
+- 对旧 04→07 confirmed edge 与 inventory 报告的两个 transitive old links 做交叉映射；不要假定它们是三个不同的边。
+- 只用已有 manifests/receipts，不重复 CRC、词法扫描或 AI review。
+- 输出脱敏 crosswalk，结论必须是 `NEW_EVIDENCE_PRESENT` 或 `NO_NEW_EVIDENCE`。
+- 若没有新证据，保持 HOLD，不得制造新一轮 AI review。
 
-**W2. 时间点卡片与规则证据**
-- 优先查找 Owner 已有的、带不可变版本/时间戳/hash 的历史 card/rule snapshots，以及实际 inference prompt assembly/runtime records。
-- 证明每个相关 cutoff 时刻模型真正可见的 card fields 和 long-term rules。
+**W2. 与 W1 并行的唯一工作：只搜索已存在的历史快照**
+- 只读搜索 Owner 已有的历史 card/version snapshots、prompt-assembly/runtime records、long-term rule versions 和 applicability windows。
+- 记录搜索过的现有位置、ref/范围、发现的文件类型及缺失类型。
+- 必须有不可变时间戳、source/version identifiers 和 hashes，才能将快照绑定到相关 cutoff 和冻结 case。
 - 当前卡片、导出时卡片、创建/修改时间等 metadata 不能代替 inference-time prompt proof。
-- 若历史快照不存在，明确记录 `SOURCE_UNAVAILABLE` 并维持 HOLD；不要用当前内容回填历史。
+- 如果现有位置不存在所需历史快照，记录 `SOURCE_UNAVAILABLE` / `HOLD`，写明具体缺失证明；不得从当前卡片重建历史，也不得擅自启动新导出或新采集。
 
-**W3. Alias / event / transitive world-component closure**
-- 仅在有新来源证据时重新裁决三组旧 pair。
-- 核对已记录的旧 04→07 confirmed edge 与 2026-11-19 inventory 报告的两个 known transitive old links 的关系；不要假设它们是三个不同的边。
-- 核实旧组件与 R50 W17 的可能传递连接。
-- 区分平台模板复用与真实人物、组织、场景、事件、时间线、剧情连续性。
-- 无证据的边保持 `INSUFFICIENT_EVIDENCE`，整体继续 HOLD。
+**W3. 条件任务：只在 W1/W2 找到新证据后定向裁决**
+- 只有 W1 或 W2 找到与某个未决 edge 直接相关的真正新增 provenance，才启动 W3。
+- 先指出是哪一份新 artifact/version/message 改变了哪个 pair/edge 的证据，再只审该 edge。
+- 不重审证据没有变化的三组旧 pair 或七组 gap。
+- 如果没有新 provenance，标记 `NOT_TRIGGERED`，保留原有 HOLD。
 
-**W4. ROLE12 单独门禁**
+**W4. 独立 ROLE12 门禁：先等 Owner 决策，再做只读 parity**
 - 不重跑已完成的结构/Tokenizer 审计。
-- 向 Owner 请求一个明确的连续 User 解释政策决定。
-- 在该决定后，核实 Base/v0.1/v0.2/v0.3-A 的实际 role sequence、System/card/rule 顺序、tokenizer/template pin、truncation、generation reserve、EOS/sampling 等运行时一致性。
-- 不允许改写冻结数据以消除角色差异。
+- 需要 Owner 对以下精确合同作出明确批准或拒绝：
+
+> 12 条历史末尾的 User 消息与新追加的 User 消息，是两条独立的连续 User turn。四个模型臂均原样保留两条消息，不合并、不改写、不删除，并将其作为统一输入合同的一部分。
+
+- 在 Owner 明确决定前，保持 `ROLE12_POLICY = PENDING_OWNER_DECISION`。不得把沉默或文档中的待决文字当作批准。
+- 若 Owner 批准，记录明确批准和合同版本；若拒绝/修改，先记录准确的新合同。
+- 之后只读核实 Base/v0.1/v0.2/v0.3-A 的实际 role sequence、System/card/rule 顺序、tokenizer/template pin、truncation、generation reserve、EOS/sampling。
+- 不得修改冻结历史消息以消除差异。
+
+**执行边界：** W1–W4 不需要 HF Job、付费 Tokenizer Job、GPU、模型推理或训练；这些操作均未授权。
 
 **W5. 仅准备，不执行最终评估**
-- W1–W4 通过且 Owner 批准后，才准备四臂 preregistration、评分合同、盲审独立性、世界聚类统计、GO/NO-GO 阈值和答案/随机化 custody。
+- 仅在 W1–W4 解决并获 Owner 授权后，准备四臂 preregistration、评分合同、盲审独立性、世界聚类统计、GO/NO-GO 阈值和答案/随机化 custody。
 - 当前不允许 final seal、inference、GPU、training 或 promotion。
 
 ## 三、明确禁止重复的工作
@@ -119,7 +131,7 @@
 1. 当前 main HEAD、PR #32 状态、PR #32 CI 状态。
 2. 上述 8 项材料中实际成功读取的文件及 ref；缺失项如实列出。
 3. No-repeat matrix：每个工作项标记 `ALREADY_DONE`、`NEW_EVIDENCE_REQUIRED`、`OWNER_DECISION_REQUIRED` 或 `NOT_AUTHORIZED`。
-4. W1–W4 每项具体缺少什么证据，且说明它是否已经存在于仓库/Owner receipt。
+4. W1 crosswalk 的覆盖范围；W2 已搜索的现有快照位置和缺失项；W3 是否达到新证据触发条件；W4 精确 ROLE12 合同仍待 Owner 决定；
 5. 任何下一步动作的权限影响和是否需要 Owner 批准。
 
 只有完成核验后，才提出最小的下一步。不得让用户重复提供本提示词已包含的信息。不要为了“有进展”重跑已完成审计。
@@ -131,7 +143,7 @@ TIMEPOINT_CARD_RULE_PROVENANCE = PENDING
 HIDDEN_ALIAS_WORLD_COMPONENT_CLOSURE = HOLD
 CPU46_TOKEN_LENGTHS = VERIFIED_DRAFT_ONLY
 ROLE12_STRUCTURE = PASS_AS_REPORTED
-ROLE12_POLICY = NOT_APPROVED
+ROLE12_POLICY = PENDING_OWNER_DECISION
 FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
 OFFICIAL_HELDOUT_ADMITTED = 0
 FINAL_SEAL = NOT_PERFORMED
