@@ -304,3 +304,10 @@ Owner Worktree 上针对已调整上限的脚本定向合成测试 **10 passed**
 - `historical_actual_sent_verified=false`，`semantic_world_alias_verified=false`，`world_component_isolation_verified=false`，`r50_complete_exclusion_verified=false`，`reviewer_independence_verified=false`。
 
 此证据只证明 Owner 本地按脚本成功创建了 8 个 create-only Card/Opening 私有包；**尚未独立读取并核对新文件的实际结构、权限、摘要/来源成员完整性**。P2-C 继续 HOLD。后续优先本地离线独立核验这 8 个 0600 文件与私有冻结 Roster 的严格一致性，绝不上传内容/ID/哈希；然后对世界设定/角色卡/Opening 的语义隔离、actual-sent、R50 排除继续定向补审，不能将文件生成成功等同于评估样本准入。
+
+
+### 2026-11-18 Owner 八份 Card/Opening 离线完整性 SAFE PASS
+
+Owner 返回 `r60_base336_card_opening_integrity_safe_v1`，状态 **`CARD_OPENING_8_FILES_INTEGRITY_PASS__SEMANTIC_HOLD`**。实际验证 `files_verified=8`、`groups_verified=8`、`distinct_story_ids=38`、`source_records_current=38`、`source_records_archived=21`；`roster_sha256_matched=true`、`source_membership_matched=true`、`field_limits_verified=true`、`permissions_verified=true`。全过程 `database_accessed=false`、`database_modified=false`、`private_files_modified=false`、`private_values_emitted=false`、`gpu_started=false`、`model_requests=0`。
+
+Card/Opening 8 份 create-only Owner-private 来源证据的**采集与离线结构完整性子任务完成**。此项 PASS **不等于**历史实际发送版本、World/Character/Opening 语义隔离、R50 全量排除、独立 Reviewer 或 P2-C 准入通过；P2-C 继续 HOLD，`train_admitted=0`。
