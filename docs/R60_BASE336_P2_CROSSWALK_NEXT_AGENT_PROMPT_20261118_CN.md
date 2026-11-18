@@ -225,3 +225,10 @@ Owner-local SAFE：`P2_R47_R48_EXACT_STORY_ID_DISJOINT__R55_BOUND_TO_R47_20__P2_
 **重要统计限制**：20 prompts 仅来自 2 个 Story IDs；76/68/46 是 R55 派生记录数量，不是独立故事数。不得用 prompt 数或派生记录数宣称故事级样本量或跨故事泛化能力。
 
 仍然 HOLD：完整历史 exposure universe closure、旧 R47 source preflight 附加约束、语义 World / hidden alias 变体、actual-sent 版本、Base336 成员级 card/opening 和 8 组语义裁决、R50 metadata-only roster 完整性、Reviewer 独立性。P2-C=HOLD；P2-B=NOT_GENERATED；不访问 R50 正文、不启动 GPU/HF、不发起模型请求。
+
+
+## 2026-11-18 Base336 Card/Opening 输出文件定位已完成
+
+Owner Mac 返回 `r60_base336_card_opening_local_locator_safe_v1`：四份既有 frozen roster/template/Codex/representative World JSON 都存在且 0600；8 个成员级 `R60_BASE336_WORLD_GROUP_XX_CARD_OPENING_PRIVATE.json` 全部 MISSING；预期输出目录 MISSING；候补同名文件数 0。此前泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD` 没有失败阶段，不能从输出目录缺失推断具体异常。
+
+不要再次做相同目录 inventory、不要重建四份已有材料，不要重跑数据库 `--execute`。下一步只做无数据库的既有 roster/template 结构绑定与运行环境诊断；然后提交合成测试过的固定 failure_phase/reason_code 故障定位改进。所有真实 Case/Story/Author ID、card/opening、SQL 数据与私有 SHA 留在 Owner Mac；不得把无输出冒充 DB 已访问或未访问的证明。P2-C 保持 HOLD。
