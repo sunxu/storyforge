@@ -451,3 +451,15 @@ Owner 已执行 `r60_base336_actual_release_scope_cpu.py`，回执 `r60_base336_
 GitHub Actions 对 `5b9ce93785230139cd1cadb44c552b276c38b738` 的四项 PR 工作流均 **completed/success**：`CI`、`R60 Base336 P2 Source CI`、`R58 scoped synthetic (no training)`、`R60 REAL1000 Quality Reviewer (synthetic only)`。此前 CI 失败链最终定位到测试导入/断言更新中的字面量换行，以及 legacy-disabled submit 守卫前存在 HF SDK 依赖检查；修复提交均在 PR #31，保持 submit 永久失败关闭，不进行 HF SDK/GPU 调用。该 CI PASS 只代表代码及合成测试，不代表 P2-C 数据/语义隔离 PASS。
 
 当前优先事项没有变化：使用 Owner 已存在的 P2 8-source private Manifest，取得 Base336 全 172 Stories 的来源绑定语义证据，以及 R50 完整 Protected/Reserved **metadata-only** 清单与现有 SAFE；继续历史已暴露全集补全，独立 Reviewer 签署。不要重开 6-pair/22-case 或旧 GPU Stage 审计。P2-C HOLD、P2-B NOT_GENERATED。
+
+
+### 2026-11-19 Owner R50 46/46 pre-seal structural replay PASS
+
+Owner 执行仓库原有 `scripts/r60_r50_preseal_crosswalk_cpu.py`，使用六个明确指定的既有 R50 Owner-local 输入（46 cases、46 provenance、selection、admission、full original World inventory、R45 gate），返回 `storyforge_r60_r50_preseal_crosswalk_safe_v1`，状态 **`R50_PRESEAL_46_CROSSWALK_PASS__FINAL_COVERAGE_HOLD`**：
+
+- `preseal_cases_checked=46`、`case_id_order_exact=true`、`provenance_story_fields_present=true`、`history_reference_fields_present=true`。
+- `selection_expected_fields_present=true`、`admission_expected_fields_present=true`、`worlds_expected_fields_present=true`、`r45_gate_expected_fields_present=true`。
+- `reason_code=PRESEAL_STRUCTURE_ONLY`；`frozen_protection_50_verified=false`、`r45_full_source_isolation_verified=false`、`r50_complete_exclusion_verified=false`。
+- 无 DB、GPU、HF Job，`train_admitted=0`，无私有内容输出。此前一次 `FILE_PERMISSION_HOLD` 因既有 Admission Status 文件权限为 0644；Owner 将该文件权限缩紧至 0600 后重验通过；内容未由本审查程序修改。
+
+**裁决**：可以关闭六份 R50 既有证据的 pre-seal 46 条成员顺序与来源结构一致性子门禁。**不允许**据此认定完整 Protected/Reserved roster 已交付或 50/50 封存，且 R45 Gate 预期字段存在不代表 R45 全来源隔离 PASS。下一最小动作是在 Owner 本地仅对已知 World Inventory、Selection、Admission、R45 Gate 做 **ALLOWLISTED 状态/计数字段** 的只读、聚合 SAFE 诊断：确认 original/selected/excluded/final seal 统计之间的条件关系，区分尚缺最终 4 条、缺签署或缺元数据全集证明；不得读取候选内容或 R50 密封题目，不要将现有结构 PASS 扩展为 P2-C PASS。P2-C HOLD，P2-B NOT_GENERATED。
