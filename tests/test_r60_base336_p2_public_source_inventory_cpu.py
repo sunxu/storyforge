@@ -14,6 +14,7 @@ def candidate(i, created, *, author=None, world=None):
         "public_content_revision": 0,
         "public_content_hash": f"{i:032x}",
         "world_json_md5": world or f"{i:032x}",
+        "current_public_v2_data": {"cardType": "story", "world": {"worldSentence": "synthetic world"}},
         "world_sentence_length": 20,
         "submission_revision": 0,
         "submission_content_hash": f"{i:064x}",
