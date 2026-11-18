@@ -42,6 +42,19 @@ class Hold(ValueError):
     """Fixed, non-sensitive inventory failure."""
 
 
+class BindingDiagnosticHold(Hold):
+    """Aggregate-only source binding failure; never stores source values."""
+
+    def __init__(self, failed_checks: dict[str, int], selected_rows: int):
+        self.safe_diagnostics = {
+            "schema": "storyforge_r60_p2_source_binding_diagnostic_v1",
+            "selected_rows": selected_rows,
+            "failed_checks": dict(sorted(failed_checks.items())),
+            "private_values_emitted": False,
+        }
+        super().__init__("SOURCE_BINDING_HOLD")
+
+
 SQL = """
 WITH candidates AS (
     SELECT
@@ -196,14 +209,61 @@ IDENTIFIER_FIELDS = (
 )
 
 
+def source_binding_diagnostics(rows: list[dict[str, Any]]) -> dict[str, int]:
+    """Return aggregate-only counts for every SOURCE_BINDING_HOLD predicate.
+
+    This mirrors the binding checks in validate_rows. It intentionally emits
+    neither source identifiers nor source content, and normalizes PostgreSQL
+    UUID values at the same boundary as the production validator.
+    """
+    checks: dict[str, int] = {}
+
+    def fail(code: str) -> None:
+        checks[code] = checks.get(code, 0) + 1
+
+    for row in rows:
+        for field in IDENTIFIER_FIELDS:
+            try:
+                row[field] = db.normalize_identifier(row.get(field), field=field)
+            except db.ReadOnlyDBHold:
+                fail(f"identifier_{field}_invalid")
+
+        if row.get("submission_revision") != row.get("public_content_revision"):
+            fail("submission_revision_mismatch")
+        if row.get("requested_visibility") != "public":
+            fail("requested_visibility_not_public")
+        if row.get("permission_to_visibility", row.get("to_visibility")) != "public":
+            fail("permission_visibility_not_public")
+        if not _same_identifier(
+            row.get("permission_submission_id"),
+            row.get("moderation_submission_id"),
+        ):
+            fail("permission_submission_id_mismatch")
+        if row.get("permission_submission_bound") is False:
+            fail("permission_submission_bound_false")
+
+        kind = row.get("permission_kind")
+        if kind not in {"ai", "update"}:
+            fail("permission_kind_not_supported")
+        elif kind == "ai" and row.get("permission_result") != "ai_approved":
+            fail("ai_permission_result_not_approved")
+        elif kind == "update" and row.get("permission_result") != "approved":
+            fail("update_permission_result_not_approved")
+
+        if row.get("snapshot_v2_match") is False:
+            fail("snapshot_v2_mismatch")
+        if row.get("exact_world_overlap_pre_cutoff") is True:
+            fail("exact_world_overlap_pre_cutoff")
+
+    return dict(sorted(checks.items()))
+
+
 def validate_rows(rows: list[dict[str, Any]]) -> dict:
     if len(rows) != EXPECTED_SELECTED:
         raise Hold("SOURCE_COUNT_HOLD")
-    for row in rows:
-        try:
-            db.normalize_identifier_fields(row, IDENTIFIER_FIELDS)
-        except db.ReadOnlyDBHold as exc:
-            raise Hold("SOURCE_BINDING_HOLD") from exc
+    failed_checks = source_binding_diagnostics(rows)
+    if failed_checks:
+        raise BindingDiagnosticHold(failed_checks, len(rows))
 
     stories = {row.get("story_id") for row in rows}
     authors = {row.get("author_id") for row in rows}
@@ -451,6 +511,8 @@ def main() -> int:
             "model_promoted": False,
             "private_values_emitted": False,
         }
+        if isinstance(exc, BindingDiagnosticHold):
+            payload["binding_diagnostics"] = exc.safe_diagnostics
         if not is_hold:
             payload["runtime_error_type"] = type(exc).__name__
             payload["runtime_error_message"] = str(exc)
