@@ -321,3 +321,12 @@ The inspected historical runners show why old settings cannot be assumed to prov
 - R55 Gold5 only packages existing responses and performs no model generation.
 
 These historical records are useful provenance, but they do not prove the effective R50 runtime configuration. The R50 four-arm generation contract must freeze effective values before any separately authorized inference. No such inference is authorized now.
+
+
+### Existing static four-arm input receipt and bounded Original Gold inventory search
+
+The Library artifact `R50_46_DEEP_TRIAGE_REPORT_20261016.md` records a shared static Draft message-sequence SHA256 `9ad0254f740a979e9b79b458a22e61e40db4ff98fb946e0332cf172e6888565c`, covering 46 cases, 364 historical messages and 12 consecutive User→User endings. The report explicitly says this is a shared Draft message buffer only, not tokenizer input-ID proof and not actual four-arm model/runtime execution. Reuse this as historical static-input evidence; do not rerun the same static builder.
+
+The available R50 Library directory inventory contains 106 entries, including frozen candidate/provenance, W17 review packets, CPU46 and ROLE12 artifacts. The searched R50 inventory did not reveal a dedicated Original Gold reply package. This is bounded to the searched R50 directory, not proof that no relevant historical reply exists in any other Owner-held source. Therefore `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED`; exact-match source lookup remains required before any five-way score.
+
+The R50-specific contract now records both limitations and the exact-match rule. No original reply text or private mappings were opened or copied into Git.
