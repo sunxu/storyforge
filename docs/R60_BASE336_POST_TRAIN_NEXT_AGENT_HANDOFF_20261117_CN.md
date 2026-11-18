@@ -124,7 +124,7 @@ Owner 2026-11-18 实际 SAFE 确认：8 条 Supabase 公开来源、5 位作者�
 
 **区分两组 8：** P2 的 8 条新 Supabase 来源与 Base336 历史 8 组跨 split World JSON 关联不是同一集合。Base336 历史 roster 覆盖 38 个故事、82 个候选 case；每组一个代表性 World 对象不等于 38 个成员的完整角色卡/Opening 证据。
 
-当前最小动作是 Owner Mac 私有文件 metadata inventory。尚未收到 inventory 输出；不能假设私有文件存在、完整或 Schema 已知。此前 `r60_base336_group_cards_opening_cpu.py --execute` 返回泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，没有 failure phase / reason。**禁止再次运行全量 `--execute`**，禁止重跑数据库查询、重建或覆盖 roster/template/evidence/output。先检查已有 SAFE 聚合字段和输出文件元数据；只有明确失败阶段并经 Owner 重新确认具体最小动作后，才考虑修复。
+R47/R48/R55 部分 metadata / shape inventory 已收到，不能再声称全部 inventory 尚未收到。当前最小动作是对三个 R55 私有 Coordinator Index 做只读 Schema / 字段 / 数量 / 版本绑定 / 覆盖 SAFE 检查，并寻找 Sample → Story ID 权威来源映射；P2 Source Manifest、Base336 member evidence、R50 完整 metadata-only roster 等其他保护集仍按证据索引核对。此前 `r60_base336_group_cards_opening_cpu.py --execute` 返回泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，没有 failure phase / reason。**禁止再次运行全量 `--execute`**，禁止重跑数据库查询、重建或覆盖 roster/template/evidence/output。只有明确失败阶段并经 Owner 重新确认具体最小动作后，才考虑修复。
 
 工具功能、输入 Schema、覆盖边界和缺口见：
 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
