@@ -289,3 +289,18 @@ Owner 返回 `r60_base336_card_opening_field_size_audit_safe_v1`，状态 `FIELD
 Owner 返回 `r60_base336_six_dirs_frozen_binding_safe_v1`，状态 `SIX_FROZEN_DIRS_EXACT_BINDING_PASS__NO_DB`：候选 A（`r60-quality-fast1000-api-v1`）完整 `frozen._frozen` 链验证为 true，冻结 336 cases / 172 stories，与 8 组、38 Stories 冻结 Roster 范围吻合；候选 B（`r60-quality-first-1000`）`FROZEN_BINDING_HOLD`。其余五个目录经 Owner 本地标志文件与 0700/0600 权限定位各唯一一个：`r60-real1000-v1-repair-plan-20261114`、`r60-real1000-v2-priority-replay-v1`、`r60-real1000-v3-consistent-replay-v1`、`r60-real1000-v123-crosswalk-v1`、`r60-real1000-r50-known5-quarantine-v1`（均相对于 Owner `~/.local/share/storyforge/r60/private/`）。本轮无 DB 查询、文件创建、模型或 GPU。此裁决消除了 OLD_DIR 双候选歧义，但不代表 Card/Opening 提取已执行或 P2-C 已通过。
 
 后续仅使用上述六目录、既有 `r60-base336-world-cross-review-20261115` Roster 和预期不存在的 `r60-base336-group-cards-opening-20261115` 目录，先跑原脚本无 DB 的预检，随后受限 `--execute` 只新建 8 份 Owner 私有 0600 文件；真实结果以 SAFE 回执为准。
+
+
+### 2026-11-18 Owner 8 Group Card/Opening 真实提取 SAFE READY，语义仍 HOLD
+
+Owner Worktree 上针对已调整上限的脚本定向合成测试 **10 passed**，未触库预检状态 `BASE336_CARD_OPENING_EVIDENCE_PRECHECK__NO_DB`，其后在冻结六目录/只读数据库与 8 组 Roster 下运行 `--execute`，返回：
+
+- `schema=storyforge_r60_base336_card_opening_evidence_safe_v1`
+- `status=BASE336_EIGHT_GROUP_CARD_OPENING_PRIVATE_READY__SEMANTIC_HOLD`
+- `groups=8`，`affected_story_ids=38`，`affected_candidate_cases=82`
+- `source_records_current=38`，`source_records_archived=21`
+- `private_files_created=8`，`source_roster_bound=true`
+- `database_accessed=true`，`database_modified=false`，`private_values_emitted=false`，`gpu_started=false`，`hf_jobs_submitted=0`，`model_requests=0`，`train_admitted=0`
+- `historical_actual_sent_verified=false`，`semantic_world_alias_verified=false`，`world_component_isolation_verified=false`，`r50_complete_exclusion_verified=false`，`reviewer_independence_verified=false`。
+
+此证据只证明 Owner 本地按脚本成功创建了 8 个 create-only Card/Opening 私有包；**尚未独立读取并核对新文件的实际结构、权限、摘要/来源成员完整性**。P2-C 继续 HOLD。后续优先本地离线独立核验这 8 个 0600 文件与私有冻结 Roster 的严格一致性，绝不上传内容/ID/哈希；然后对世界设定/角色卡/Opening 的语义隔离、actual-sent、R50 排除继续定向补审，不能将文件生成成功等同于评估样本准入。
