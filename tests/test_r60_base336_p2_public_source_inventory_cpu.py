@@ -1,4 +1,6 @@
 """Synthetic tests for the deterministic R60 P2 Supabase source inventory."""
+from uuid import UUID
+
 import pytest
 
 from experiments.r58_quality import r60_base336_p2_public_source_inventory_cpu as target
@@ -81,6 +83,17 @@ def test_selection_requires_eight_distinct_worlds():
     selected[-1]["world_json_md5"] = selected[-2]["world_json_md5"]
     with pytest.raises(target.Hold, match="SOURCE_WORLD_DEDUP_HOLD"):
         target.validate_rows(selected)
+
+
+def test_psycopg_uuid_identifiers_are_normalized_at_validation_boundary():
+    selected = target.select_rows(rows())
+    selected[0]["story_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
+    selected[0]["author_id"] = UUID("a9f1a9e2-6a2a-4c3e-bc74-f3f0e8b3f7a0")
+    selected[0]["moderation_submission_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
+    selected[0]["permission_event_id"] = UUID("a9f1a9e2-6a2a-4c3e-bc74-f3f0e8b3f7a0")
+    selected[0]["permission_submission_id"] = UUID("559c7d10-a470-4498-a9d2-d81043ba703e")
+    result = target.validate_rows(selected)
+    assert result["sources"][0]["story_id"] == "559c7d10-a470-4498-a9d2-d81043ba703e"
 
 
 def test_revision_snapshot_permission_bindings_are_required():
