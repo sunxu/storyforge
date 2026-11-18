@@ -370,3 +370,22 @@ SAFE `r60_base336_source_reuse_independent_recheck_safe_v1`，`SOURCE_REUSE_RECH
 - 08：一对故事的 `character`、`characters`、`opening` **三个完整字段逐字结构相等**（字段的 JSON 表达约 2.2 KB、4.2 KB、0.4 KB），另一对的 `character`、`characters` 两字段结构相等。
 
 完整逐案来源引用、版本 ID、hash 和最小引文仅保存在会话生成的私有文件 `R60_BASE336_SOURCE_REUSE_RECHECK_PRIVATE.json` 中；GitHub 不存储这些值。方法仅验证精确复用，不涵盖变体、隐含别名、Plot 语义或实际训练时 actual-sent 版本。独立 Reviewer 未签署；`historical_actual_sent_verified=false`、`train_admitted=0`，P2-C 继续 HOLD。下一步优先获取可绑定 6 个跨 split 故事配对的 request-effective actual-sent/source revision 历史证据，再作独立语义组件裁决或保守排除，且不可仅因结构匹配就判定已发生模型训练泄漏。
+
+
+### 2026-11-18 Six source reuse pairs: 22-case provisional hold scope
+
+本次在隔离会话重新读取 Owner 提供的 12 份原始私有 JSON（ZIP）和上一轮逐对复核记录，完成**原文证据回放验证**，不是直接信任此前预审文本。
+
+`r60_base336_source_reuse_provisional_hold_scope_safe_v1` 返回 `SIX_SOURCE_REUSE_PAIRS_REVERIFIED__22_CASES_PROVISIONAL_HOLD__P2_C_HOLD`：
+
+- 8 个 World Groups，59 条 current/archived 来源记录，12/12 文件输入；
+- 4 个组（02、05、06、08）存在已验证精确跨 split 内容复用；
+- 6 个跨 Train/Validation 的不同 Story ID 配对，去重后 **11 个 Stories**（Train 6、Validation 5）；
+- 通过冻结 Roster 的逐 Story 候选位置绑定，关联到 **22 条唯一冻结候选 Case**（Train 11、Validation 11）；
+- 原 Card/Opening JSON 实际回放验证 **5 个完整字段相等证据**及 **12 个 >=120 字符长文本逐字相等 SHA/路径证据**，所有报告中的配对来源引用与原始记录精确绑定；未复印私有原文；
+- 现有私有 Reviewer worksheet 仍是全部 HOLD，尚未独立签署；
+- `database_accessed=false`、`database_modified=false`、`source_data_modified=false`、`private_values_emitted=false`、`model_requests=0`、`gpu_started=false`、`train_admitted=0`。
+
+隔离会话中的私有新产物：`R60_BASE336_22_CASE_PROVISIONAL_HOLD_SCOPE_PRIVATE.json`、对应 SAFE、`R60_BASE336_ACTUAL_SENT_EVIDENCE_REQUEST_PRIVATE.md` 和打包 ZIP（不进 GitHub）。私有产物保存每个配对的来源 kind、revision、冻结候选位置及证据字段路径，便于 Owner 做严格的 request-effective / training-input 版本核验。
+
+**严格限定：** 22 条是有逐字来源复用证据支持的**优先暂缓解除隔离候选范围**，不是已经从 293/43 数据集中剔除的记录，也不能宣称已进入训练输入。其余 60 条虽没有本轮精确证据，仍不能视为语义独立。仍需逐对确认 actual-sent 时间点/源版本、prompt assembly、历史 train/eval manifest、独立 Reviewer 和 Owner 正式签署；R50 完整元数据排除及历史 exposure universe closure 等仍 HOLD。P2-C HOLD、P2-B NOT_GENERATED、`train_admitted=0`。
