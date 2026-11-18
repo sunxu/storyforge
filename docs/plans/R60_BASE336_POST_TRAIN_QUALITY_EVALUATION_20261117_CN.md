@@ -288,3 +288,38 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 交接编写前 HEAD：`3db42078dd6ac7fd8c5815f55f3ded07aa58db21`。这只是文档更新前的 GitHub 快照；新 Agent 必须实时查询，不能将其视为接手时 HEAD 或 CI 结论。
 
 永久保持：`database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`、`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+
+## 10. 2026-11-18 R47 / R48 / R55 历史暴露来源形态审计
+
+Owner 已完成本机只读 metadata / shape audit。详细审计记录：[R60 P2 R47/R48/R55 Source Shape Audit](../evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md)；保护集总索引：[P2 Protected Crosswalk Evidence Index](R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md)。
+
+### 审计结果
+
+- **R47**：20-row Manifest 的元素字段为 sample_id、prompt_sha256、source_line；compiled Test 有 id/messages/metadata；prompts 只有 messages。现有 R47 校验器验证 Sample / Prompt / 三臂回复盲包的一致性，但未证明 sample_id 与 canonical Test 的 id 以及原始 Story ID 之间的逐案映射。
+- **R48**：Source Audit 固定绑定 canonical compiled Test SHA、20 个 Gold target hashes、20 cases / 80 replies，并标记旧 Test exposed；R48 使用同一 R47 20-case Prompt 集，不增加独立案例数。它没有补出 Story ID crosswalk。
+- **R55**：Owner metadata inventory 确认三个私有 Coordinator Index（0600）及两个 SAFE 文件存在；本轮只列举文件名、大小和权限，未读取 Index / SAFE 内容，故 Schema、版本、20-case 覆盖及 Story ID 绑定仍未验证。
+- **不能推断**：JSONL 行序、source_line、通用 id 字段、不同 Prompt SHA 或不同文件大小均不能自动构成 Story ID 映射或语义独立证明。
+
+### 与 P2 精确交叉结果的关系
+
+此前 Owner SAFE 已确认 P2 × Base336 精确 Story ID overlap 为 0（336 cases / 172 unique stories），P2 × R50 exact Source ID disjoint；本轮结果不改变这两个已通过的限定范围。它们不覆盖 R47/R48/R55。
+
+| 门禁 | 当前状态 |
+|---|---|
+| P2-A 公开来源 / revision / snapshot / permission | READY |
+| P2 × Base336 精确 Story ID 隔离 | PASS（限定于冻结 Base336 身份清单） |
+| P2 × R50 精确 Source ID 隔离 | PASS（限定于已有 SAFE 的 Source ID 范围；R50 正文未读取） |
+| P2 × R47/R48/R55 精确 Story ID 隔离 | UNKNOWN / HOLD |
+| Base336 World 语义隔离、成员级证据及 actual-sent | HOLD / UNKNOWN |
+| R47/R48/R55 语义变体排除与完整暴露覆盖 | HOLD |
+| P2-B 真实 48 条提示 JSONL / Manifest | NOT_GENERATED |
+| P2-C 总门禁 | **HOLD** |
+
+### 下一项最小动作
+
+1. Owner-local 只读检查 R55 三个私有 Coordinator Index 的真实 Schema、元素字段、记录数、版本 / receipt 绑定和 R47 Sample Manifest 覆盖数量；只输出 SAFE 计数，不输出 ID、正文、引文或哈希。
+2. 查找 compiled_test.id、R47 sample_id 到 canonical Story ID 的权威映射文件或原始来源证明。若不存在，P2 × R47/R48/R55 精确身份门禁继续 HOLD。
+3. 完整暴露覆盖和 source-bound 语义变体审查必须独立完成；actual-sent 版本缺证时保持 UNKNOWN / HOLD。
+
+本次只做文档和证据边界整理；不访问数据库、不修改数据、不启动 GPU / HF Job、不发起模型请求、不读取 R50 正文，不生成正式提示包。维持 train_admitted=0、quality_v1_admitted=0、model_promoted=false。
