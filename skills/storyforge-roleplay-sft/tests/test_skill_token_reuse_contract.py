@@ -51,6 +51,12 @@ class ReuseContractTests(unittest.TestCase):
             "validate_component_review_assignments()",
             "43条Validation已用于训练期Eval/Checkpoint选择",
             "docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md",
+            "docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md",
+            "docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md",
+            "P2-C Protected Crosswalk",
+            "Owner Mac 私有文件 metadata inventory",
+            "禁止盲目再次执行全量",
+            "真实 P2-B 48 条提示包 NOT_GENERATED",
         ):
             self.assertIn(phrase, source)
         self.assertTrue(
@@ -142,7 +148,7 @@ class ReuseContractTests(unittest.TestCase):
     def test_readme_and_changelog_document_the_new_responsibilities(self):
         readme = (SKILL_ROOT / "README.md").read_text(encoding="utf-8")
         changelog = (SKILL_ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
-        self.assertIn("v0.1.21", readme)
+        self.assertIn("v0.1.22", readme)
         self.assertIn("33/33个输出对象已完成Owner Mac本地SHA256 inventory", readme)
         self.assertIn("generation_eval.worker", readme)
         self.assertIn("固定执行顺序", readme)
@@ -150,9 +156,11 @@ class ReuseContractTests(unittest.TestCase):
         self.assertIn("R58_GPU_REVIEW_QUOTE_VALIDATION_CN.md", readme)
         self.assertIn("R58_PRIVATE_REVIEW_EVIDENCE_REUSE_CN.md", readme)
         self.assertIn("R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md", readme)
+        self.assertIn("R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md", readme)
+        self.assertIn("R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md", readme)
         self.assertIn("33/33个输出对象已完成Owner Mac本地SHA256 inventory", readme)
         self.assertIn("$HOME/.local/share/storyforge/r58/", readme)
-        self.assertTrue(changelog.startswith("# 0.1.21"))
+        self.assertTrue(changelog.startswith("# 0.1.22"))
         self.assertIn("AGENTS.md 只保留仓库通用规则", changelog)
 
     def test_manifest_hashes_and_file_inventory_match(self):
