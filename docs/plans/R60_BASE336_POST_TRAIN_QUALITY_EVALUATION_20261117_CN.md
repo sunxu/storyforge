@@ -256,7 +256,7 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 
 ### 下一项最小动作
 
-在 Owner Mac 只做私有文件**元数据 inventory**，确认以下材料的实际存在性、路径、文件大小、权限和修改时间：本轮 P2 private source manifest；Base336 cross-review roster/template/evidence；R50 完整 Protected/Reserved metadata-only roster 与现有 SAFE；R47/R48/R55 exposure/source manifests 与 SAFE。不得 cat、grep 正文、上传文件或打印任何 ID/正文/哈希。根据真实 schema 再设计一个版本化、create-only、Owner-local 的保护集 crosswalk 适配器；在输入 schema 和保护集覆盖范围被确认前，不编造通用代码或宣称 crosswalk 完成。
+Owner 已返回 R47/R48/R55 的部分 metadata inventory；这些已确认文件不再重复盘点。下一步对三个 R55 私有 Coordinator Index 做只输出 Schema / 字段名 / 数量 / 版本绑定的结构审计，并寻找 Sample → Story ID 的权威来源映射。P2 Source Manifest、Base336 roster / member evidence、R50 完整 metadata-only roster 等其他保护集仍需按证据索引确认存在性与覆盖。不得 cat / grep 私有正文、上传文件或打印 ID / 正文 / 哈希；真实 Schema 和保护集覆盖确认前，不编造通用适配器或宣称 crosswalk 完成。
 
 
 ## 2026-11-18 下一 Agent 交接与 P2-C 执行冻结
@@ -266,7 +266,7 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 - P2-A：Supabase 公开来源 Inventory READY（8 条来源；revision / snapshot / permission 绑定通过；指定范围精确 World overlap=0）。
 - P2-C：**HOLD**。Base336 完整成员级语义证据、R50 完整 Protected/Reserved metadata-only 排除、R47/R48/R55 完整暴露与语义变体排除、历史 actual-sent 版本、Reviewer 独立性及 Owner 冻结尚未形成可复核闭环。
 - P2-B：真实 48 条提示 JSONL / Manifest **NOT_GENERATED**；现有 9/9 是校验器合成测试，不是实际提示包。
-- Owner Mac 私有文件 metadata inventory 输出尚未收到。不得假定文件存在、完整或 Schema 已知。
+- **历史截点说明（后续已更新）**：本节撰写时 Owner Mac 私有文件 metadata inventory 尚未收到；2026-11-18 后续已收到 R47/R48/R55 部分 metadata / shape inventory，详见本计划第 10 节。其他保护集文件仍需分别核验。
 
 ### 权威交接物料
 
@@ -279,7 +279,7 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 
 ### 第一动作：Owner-local metadata inventory
 
-新 Agent 先核对实时 GitHub HEAD / Actions，然后向 Owner 索取文件元数据 inventory。inventory 只包含文件名、大小、权限、修改时间；不读取正文、不输出 Story ID、作者映射、SHA256 或本机路径。若尚未执行，使用专项提示词内附的命令。
+新 Agent 先核对实时 GitHub HEAD / Actions。R47/R48/R55 的部分文件 metadata inventory 已收到；不要重复盘点这些已确认文件。下一步按本计划第 10 节对 R55 私有 Index 做只读 Schema / 覆盖 SAFE 检查，并寻找 Sample → Story ID 权威映射。对 P2 Source Manifest、Base336 与 R50 等其他未确认文件，仍只做文件名、大小、权限、修改时间盘点，不读取正文或输出 ID、作者映射、SHA256 和本机绝对路径。
 
 此前 `r60_base336_group_cards_opening_cpu.py --execute` 只返回泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，没有失败阶段/原因。不得重跑全量 `--execute`，不得重跑 DB 查询，不得重建或覆盖 roster/template/evidence/review/output。先确认现有输出与 SAFE，再定位失败阶段；任何最小修复动作须由 Owner 重新确认。
 
