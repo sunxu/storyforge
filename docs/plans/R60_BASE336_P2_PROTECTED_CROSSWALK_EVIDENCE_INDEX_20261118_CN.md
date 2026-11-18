@@ -444,3 +444,10 @@ Owner 已执行 `r60_base336_actual_release_scope_cpu.py`，回执 `r60_base336_
 下一项 P2 主线实物证据固定为 Owner 原有 `~/.local/share/storyforge/r60/private/r60-p2-public-source-inventory-20261118/R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json`，其真实编制合同由 `experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py` 定义：`sources` 中 8 条，包含 story/revision、public content hash、snapshot/permission 绑定、World exact hash 和时间元数据；`gates.base336_private_source_crosswalk`、`gates.r50_metadata_exclusion`、`gates.r47_r48_r55_exposure_exclusion` 仍为 HOLD，源 Inventory READY 并不改变此事实。
 
 先不要重复原 22-case、293/43、R47/R48/R55 20-case 精确核验。下一步需要 **P2 8 来源相对于 Base336 全部 172 Stories 的语义交叉证据**，以及 Owner Mac 既有 **R50 全部 Protected/Reserved metadata-only roster 的完整性 SAFE**。P2 manifest 仅含可用于身份/版本/时间绑定的元数据，**不含充分的 World/Character/Plot/Opening 原文，单独提供它不能完成语义核验**。不得读取/上传 R50 密封正文；不能根据任一目录存在推断 R50 metadata roster 已完整。P2-C HOLD；真实 P2-B 48 Prompts NOT_GENERATED。
+
+
+### 2026-11-19 PR31 CI repaired at code commit 5b9ce93
+
+GitHub Actions 对 `5b9ce93785230139cd1cadb44c552b276c38b738` 的四项 PR 工作流均 **completed/success**：`CI`、`R60 Base336 P2 Source CI`、`R58 scoped synthetic (no training)`、`R60 REAL1000 Quality Reviewer (synthetic only)`。此前 CI 失败链最终定位到测试导入/断言更新中的字面量换行，以及 legacy-disabled submit 守卫前存在 HF SDK 依赖检查；修复提交均在 PR #31，保持 submit 永久失败关闭，不进行 HF SDK/GPU 调用。该 CI PASS 只代表代码及合成测试，不代表 P2-C 数据/语义隔离 PASS。
+
+当前优先事项没有变化：使用 Owner 已存在的 P2 8-source private Manifest，取得 Base336 全 172 Stories 的来源绑定语义证据，以及 R50 完整 Protected/Reserved **metadata-only** 清单与现有 SAFE；继续历史已暴露全集补全，独立 Reviewer 签署。不要重开 6-pair/22-case 或旧 GPU Stage 审计。P2-C HOLD、P2-B NOT_GENERATED。
