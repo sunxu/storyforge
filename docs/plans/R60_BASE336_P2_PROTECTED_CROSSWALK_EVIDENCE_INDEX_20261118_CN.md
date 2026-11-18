@@ -402,3 +402,18 @@ SAFE `r60_base336_source_reuse_independent_recheck_safe_v1`，`SOURCE_REUSE_RECH
 为此在当前隔离环境制作只读 Owner-local 工具 `r60_base336_actual_release_scope_cpu.py` 及 synthetic-only 测试，**5 passed**（最终划分映射、内容篡改、双 split 同行歧义、重复来源位置、源缺失）；随 `R60_BASE336_FINAL_RELEASE_22_CASE_AUDIT_TOOLS.zip` 提供 Owner。此工具尚未运行于 Owner 真实冻结 293/43 文件，**不宣称实际风险 6 对已被重新验证或实际训练输入链已完成**。工具执行顺序：复用冻结六目录，验证发布 Manifest 和 JSONL，重新构建的字节与保存的发布文件逐字节相等，按真实 row bytes 将 22 case 映射到最终 split，报告原 6 对有多少仍跨最终 split。只在 Owner 输出 SAFE 数量，不显示真实 ID/引文/哈希，不触 DB/模型/GPU，不写冻结文件。
 
 若 6 对最终 split 共置，仅可关闭**这 6 对在该冻结发布版本上的跨 293/43 精确文本相等风险**；并不能证明其它未发现的语义组件、历史 actual-sent 请求、R50 全量元数据排除、R47/R48/R55 全暴露排除或 Reviewer 独立性。P2-C HOLD、P2-B NOT_GENERATED、`train_admitted=0` 保持不变。下一步等待 Owner-local `r60_base336_actual_release_scope_safe_v1` SAFE 回执，并另核 Stage Manifest / GPU Worker 实际 Job 的输入链。
+
+
+### 2026-11-18 Owner actual 293/43 release 22-case replay SAFE PASS
+
+Owner 已执行 `r60_base336_actual_release_scope_cpu.py`，回执 `r60_base336_actual_release_scope_safe_v1`，状态 **`FINAL_293_43_RELEASE_SCOPE_REPLAY_PASS__SEMANTIC_HOLD`**。审计脚本和合成测试从临时 ZIP 迁入 PR #31 GitHub 分支：`experiments/r58_quality/r60_base336_actual_release_scope_cpu.py`（commit `3d25e29`）及 `experiments/r58_quality/test_r60_base336_actual_release_scope_cpu.py`（commit `ce2ff9e`）；5/5 synthetic-only tests passed。此前只交付 ZIP 而未版本化是工作流遗漏，已纠正。
+
+本次 Owner SAFE：
+- 293 Train / 43 Validation，336/336 Release 记录验证，发布 SHA256 PASS；`reconstructed_release_bytes_equal=true`、`release_roster_and_stats_bound=true`。
+- 6/6 前述跨初始 split 的精确来源复用 Story pairs，经冻结 336 来源与实际 release rows 重建/逐字节对照，**最终跨 293/43 split 数为 0**、`source_reuse_pairs_colocated_final_split=6`。
+- 原 22 个优先复核 Case 在本次最终发布中 **22 Train / 0 Validation**。旧审查中的 `Train 11 / Validation 11` 是初始 Roster 标签，不是发布 split；禁止再用于实际 GPU 训练风险表述。
+- 另有独立 release-stage SHA 绑定 SAFE：两个发布目录（A、B）均与唯一的目标 GPU Stage Manifest 的 train/validation 文件 digest 匹配。故 B 可用于同字节发布内容复核，但其目录创建时间并不能证明 B 是唯一历史输入来源。
+- `actual_training_release_input_proven=false`、`historical_request_effective_source_proven=false`、`world_semantic_isolation_verified=false`、`r50_complete_exclusion_verified=false`、`reviewer_independence_verified=false`、`train_admitted=0`。
+- 本轮无 DB 访问/修改、模型调用、GPU、私有文件修改或私有值输出。
+
+**有限门禁结论**：可以关闭“已识别的六对精确重复来源在最终 Base336 293/43 发布数据中跨 split”这一特定风险，不能将此 PASS 扩展为所有隐藏语义组件、完整 R50 metadata-only 排除、历史已暴露评估源、request-effective actual-sent 或训练 Worker 最终实际读取字节证明。下一步优先复核 GPU Stage/Worker receipt 的具体输入链，以及最终 293/43 的其他语义组件和 P2 新来源与保护集交叉隔离；不得直接解 HOLD 或生成正式 P2-B 48 提示。P2-C HOLD、P2-B NOT_GENERATED、train_admitted=0。
