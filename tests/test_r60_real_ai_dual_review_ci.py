@@ -13,4 +13,5 @@ def test_r60_real_ai_review_synthetic_suite():
         capture_output=True, text=True, timeout=70, check=False,
     )
     assert result.returncode == 0, result.stdout[-4000:] + result.stderr[-2500:]
-    match = re.search(r"\\b(\\d+) passed\\b", result.stdout)\n    assert match is not None and int(match.group(1)) >= 13
+    match = re.search(r"\b(\d+) passed\b", result.stdout)
+    assert match is not None and int(match.group(1)) >= 13
