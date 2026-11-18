@@ -116,3 +116,10 @@ This crosswalk's original W1/W2 findings are unchanged. Later Owner decisions su
 - Actual Base/v0.1/v0.2/v0.3-A runtime parity remains `NOT_VERIFIED`; approval is not runtime evidence.
 - Original Gold is required as a comparison reference when exact source alignment exists. The R50-specific contract is `docs/plans/V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`. R50 remains prompt-only in the known schema, so exact Gold coverage is `NOT_ESTABLISHED`; report `N_gold / 46` and keep unmatched cases in the four-model denominator.
 - No prior W1/W2, CRC, lexical, AI, tokenizer, or ROLE12 structural audit was repeated.
+
+
+## 8. Original Gold source availability reconciliation
+
+A separate SAFE receipt records the Owner-provided archive integrity output and bounded Original Gold finding: `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md`.
+
+The pinned 2026-10-16 R50 replay has `source_input_normalized_verbatim_reuses=0` across all 50 new User inputs versus the five R50 source transcripts. Therefore no exact current-User-input Original Gold is available from those pinned five transcripts, including the protected 46 subset. The 14-chat and 06–15 archives are now Owner-verified for integrity but have not been checked for exact full-history matches. This does not trigger W3 and does not change WORLD or timepoint HOLDs. Overall Gold coverage remains `NOT_ESTABLISHED` pending any additional exact full-history source lookup.
