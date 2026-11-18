@@ -8,7 +8,7 @@
 |---|---|
 | 仓库 | `sunxu/storyforge` |
 | 工作分支 | `r60/common2-cpu2-owner` |
-| 本交接编写时基线 HEAD | `0b6d7f79911a0df9710cfde7743660c6aa1fe25c`；接手时必须重新查询 |
+| 本次交接整理前 HEAD | `0be17b3fd720560f86cf27bfd493cfc95a0eb544`；接手时必须重新查询 |
 | 训练 Run Key | `r60-base336-gpu-20261117T055622Z-b609cb78661d` |
 | HF 训练 Job | `6afbfd5c98dda891b5df7fd2`，Owner 已确认 COMPLETED |
 | 训练输入 | 293 Train / 43 Validation；37/37 optimizer steps；1 Epoch |
@@ -29,12 +29,13 @@
 3. 当前主计划：`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md`。
 4. 独立启动提示词：`docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md`。
 5. P2 保护集交叉核验证据索引：`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
-5. `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`：六维质量与 Gold Manifest 的边界。
-6. `skills/storyforge-roleplay-sft/SKILL.md` 与 `skills/storyforge-roleplay-sft/MANIFEST_SAFE.json`。
-7. `skills/storyforge-real-quality-review/SKILL.md`：仅了解 Reviewer 证据、独立性和私有数据边界；不得自动恢复 REAL1000 批次。
-8. `src/storyforge_dataset/generation_eval/worker.py`、`profiles.py`、`worker_cli.py`、`formal_pairing_gate.py`。
-9. `src/storyforge_dataset/hf_runtime/inputs.py`、`outputs.py`。
-10. `experiments/r58_quality/quality_v1.py`、`scripts/prepare_eval_pairs.py`、`scripts/analyze_blind_eval.py`、`scripts/export_context_blind_review.py`。
+6. `docs/standards/GOLD_QUALITY_PIPELINE_CN.md`：六维质量与 Gold Manifest 的边界。
+7. `skills/storyforge-roleplay-sft/SKILL.md` 与 `skills/storyforge-roleplay-sft/MANIFEST_SAFE.json`。
+8. `skills/storyforge-real-quality-review/SKILL.md`：仅了解 Reviewer 证据、独立性和私有数据边界；不得自动恢复 REAL1000 批次。
+9. `src/storyforge_dataset/generation_eval/worker.py`、`profiles.py`、`worker_cli.py`、`formal_pairing_gate.py`。
+10. `src/storyforge_dataset/hf_runtime/inputs.py`、`outputs.py`。
+11. `experiments/r58_quality/quality_v1.py`、`scripts/prepare_eval_pairs.py`、`scripts/analyze_blind_eval.py`、`scripts/export_context_blind_review.py`。
+12. 专项可复制启动提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。
 
 旧文档 `docs/plans/R60_BASE336_CPU_PROOF_TRANSFER_NEW_AGENT_HANDOFF_20261116_CN.md` 仅保留 P0/CPU 证据历史，已由本文件取代其“下一步立即开发 GPU Stage/Worker/CLI”的旧指令。P4 交接材料属于另一条三模型任务线，不是 Base336 授权。
 
@@ -102,36 +103,34 @@ SAFE 只证明固定远端文件集合核验、33/33 下载和本地 SHA256 inve
 
 Owner 已批准新的来源路线：仅使用 Supabase 中已公开、已发布、非删除、原创并通过审核的故事，以及公开 World/Character/Opening 字段，构造内部评估提示；**不读取用户私有会话正文**。该授权仅覆盖内部评估提示构造，不扩展为训练、公开发布或再分发权利。
 
-### 5.1 已完成的来源和提示 Draft
+### 5.1 P2-A：公开来源 Inventory READY；P2-B：NOT_GENERATED
 
-只读筛选得到：
+Owner 2026-11-18 实际 SAFE 确认：8 条 Supabase 公开来源、5 位作者、8 个不同 World JSON；3 条记录创建于 GPU Run 前、5 条创建于 GPU Run 后；revision / moderation snapshot / permission event 绑定验证通过；指定范围内 GPU 前公开原创 World JSON 精确重叠为 0。Owner 确认用途仅限内部独立评估提示构造；私有 Source Manifest 已创建。
 
-- 8 个公开故事、8 个故事谱系、5 位作者、8 个不同 World JSON。
-- 3 条来源在 Base336 GPU Run 开始前创建，5 条在 Run 开始后创建；全部晚于 Base336 293/43 数据包冻结边界。
-- 8/8：当前公开 revision 与最新审核提交 revision 一致；审核快照中的 `source.v2Data` 与当前公开版本一致；审核快照 SHA256 与提交 SHA 一致；最新权限事件绑定最新提交且目标可见性为 public。
-- 另有 2 条候选因 World 描述过少未入选；不将其判为质量失败。
+这只代表 P2-A READY，不证明 Base336 私有来源隔离、R50 Protected/Reserved 排除、R47/R48/R55 暴露排除、语义 World 隔离或历史 actual-sent 版本独立性。
 
-48 条提示 JSONL/Manifest **尚未生成**，因此没有真实提示包 SHA256，也没有真实包结构 PASS。此前交接中列出的提示包文件名与 SHA256 缺乏可复核的当前工件，不再作为有效证据；P2 补充决策已更正该状态。
+48 条真实提示 JSONL / Manifest **NOT_GENERATED**，没有真实提示包 SHA256。旧启动材料中的 Draft 文件名与 SHA 记录已由最新 P2 决策更正，禁止作为真实工件、冻结输入或验证证据。现有校验器及 9/9 合成测试只证明代码合同，不证明真实提示包存在。
 
-已存在的代码工件：
+### 5.2 P2-C：保护集交叉核验仍 HOLD
 
-- 结构校验器：`experiments/r58_quality/r60_base336_p2_public_prompt_package_gate.py`。
-- 合成测试：`tests/test_r60_base336_p2_public_prompt_package_gate.py`；合成测试 9/9 PASS 是代码测试，不证明真实提示包存在。
+必须分别证明并绑定以下保护范围的完整性：
 
-没有读取 `v2_chat_messages` 私有消息正文，没有访问 R50 内容。
+1. Base336 冻结 Train/Validation 私有 source roster，以及全部相关 current/archived World、character、characters、opening 证据。
+2. R50 完整 Protected/Reserved World **仅元数据**排除；绝不读取 R50 正文、提示、答案或密封材料。
+3. R47/R48/R55 已暴露开发题及其语义变体的完整 source/exposure Manifest。
+4. 其他已有独立评测集与未解决保护集合。
+5. 历史 actual-sent / delivered prompt 版本和来源 revision 绑定；缺少真实发送证据时保持 UNKNOWN/HOLD。
+6. 独立 Reviewer 复核和 Owner 最终冻结。
 
-### 5.2 仍需完成的 P2-C
+**区分两组 8：** P2 的 8 条新 Supabase 来源与 Base336 历史 8 组跨 split World JSON 关联不是同一集合。Base336 历史 roster 覆盖 38 个故事、82 个候选 case；每组一个代表性 World 对象不等于 38 个成员的完整角色卡/Opening 证据。
 
-1. **Base336 来源隔离：** 将这 8 个来源的 World 组件与 Base336 293/43 私有来源清单、Story/World component graph 和已审核的历史版本做交叉核验。不同 Story ID、不同 World JSON MD5 或时间戳都不足以证明语义独立。
-2. **R50 保护集排除：** Owner 提供完整、已授权的 R50 Protected/Reserved World 元数据清单，仅做元数据匹配排除；绝不读取 R50 正文或答案。
-3. **开发题暴露排除：** 核验 8 个来源及 48 条提示未复用 R47/R48/R55 已暴露开发题或其语义变体。
-4. **提示逐条复核：** 检查来源忠实性、无原文长段复用、无未来信息泄漏、无隐藏指令混入；NPC/角色新增内容须明确属于合成情境，不得伪称来源事实。
-5. **权利范围：** 维持 Owner 已批准的内部评估提示构造用途；不得把公开可见状态推断为作者授予模型训练或再分发权利。
-6. **Owner 冻结：** Owner 在本机私有目录冻结来源 Manifest、prompt SHA256、语义 World crosswalk、R50 元数据排除回执和独立 Reviewer 结论。
+当前最小动作是 Owner Mac 私有文件 metadata inventory。尚未收到 inventory 输出；不能假设私有文件存在、完整或 Schema 已知。此前 `r60_base336_group_cards_opening_cpu.py --execute` 返回泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD`，没有 failure phase / reason。**禁止再次运行全量 `--execute`**，禁止重跑数据库查询、重建或覆盖 roster/template/evidence/output。先检查已有 SAFE 聚合字段和输出文件元数据；只有明确失败阶段并经 Owner 重新确认具体最小动作后，才考虑修复。
 
-当前已收到 `R60_BASE336_EIGHT_WORLD_SOURCE_EVIDENCE_PRIVATE.json`，其安全状态为 8/8 组 HOLD、7/8 组当前 World 值跨 Train/Validation、`semantic_review_completed=false`、`actual_sent_prompt_verified=false`、`train_admitted=0`。该文件每组只有一个代表性 World 对象，不包含 38 个成员的完整角色卡/Opening 复核。下一 Agent 还需取得既有私有 roster、决策模板、8 组 card/opening 证据及独立 Codex 审阅报告；不重新抽取数据库、不读取私有会话正文、不访问 R50 正文。任何关键证据缺失都保持 HOLD。
+工具功能、输入 Schema、覆盖边界和缺口见：
+`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
 
-P2-C 通过前，不生成正式 Held-out、不实现正式 Pairer/Profile/Backend、不执行模型推理。P2 PASS 后才进入 P3。
+新 Agent 应直接使用专项提示词：
+`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。
 
 ## 6. P3：P2 通过后才设计 Base/Adapter 两臂评估
 
@@ -262,3 +261,13 @@ Owner 本轮真实 SAFE（由 Owner 提供）：
 ### 下一项最小动作
 
 在 Owner Mac 只做私有文件**元数据 inventory**，确认以下材料的实际存在性、路径、文件大小、权限和修改时间：本轮 P2 private source manifest；Base336 cross-review roster/template/evidence；R50 完整 Protected/Reserved metadata-only roster 与现有 SAFE；R47/R48/R55 exposure/source manifests 与 SAFE。不得 cat、grep 正文、上传文件或打印任何 ID/正文/哈希。根据真实 schema 再设计一个版本化、create-only、Owner-local 的保护集 crosswalk 适配器；在输入 schema 和保护集覆盖范围被确认前，不编造通用代码或宣称 crosswalk 完成。
+
+
+## 2026-11-18 专项交接包更新
+
+- 交接整理前 GitHub HEAD：`0be17b3fd720560f86cf27bfd493cfc95a0eb544`；新 Agent 必须重新查询实时 HEAD、工作流和 PR。
+- 专项可复制提示词：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。
+- 保护集证据索引：`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
+- Owner Mac 文件 inventory 尚未收到；不声称私有证据已经存在或已完成读取。
+- 首要动作是只读文件元数据盘点。此前 card/opening 全量提取返回泛化 HOLD，禁止盲目重跑全量 `--execute`。
+- 本次交接文档不执行 Supabase 查询、不访问私人文件、不读取 R50 正文、不运行模型/GPU/HF Job，不改变准入状态。
