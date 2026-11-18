@@ -80,8 +80,8 @@ This is a bounded search result, not proof that no such artifact exists in any O
 | Historical card/rule/request snapshot search | `NEW_EVIDENCE_REQUIRED`; current searched sources return bounded `SOURCE_UNAVAILABLE` |
 | Old-link rank-pair binding | `NEW_EVIDENCE_REQUIRED`; one small SAFE aggregate only if Owner can produce it from existing inventory |
 | W3 semantic adjudication | `NOT_TRIGGERED` |
-| W4 exact consecutive-User policy | `OWNER_DECISION_REQUIRED` |
-| Four-arm runtime parity | `OWNER_DECISION_REQUIRED` for the policy contract, then read-only verification; no inference |
+| W4 exact consecutive-User policy | `APPROVED_BY_OWNER_2026-11-19` |
+| Four-arm runtime parity | `NEW_EVIDENCE_REQUIRED`; policy is approved, actual runtime/load receipts remain unverified; read-only only, no inference |
 | Final seal / admission / promotion | `NOT_AUTHORIZED`; admission remains 0 |
 
 ## 6. Refreshed gate matrix
@@ -96,7 +96,7 @@ TIMEPOINT_CARD_RULE_PROVENANCE = PENDING
 HIDDEN_ALIAS_WORLD_COMPONENT_CLOSURE = HOLD
 CPU46_TOKEN_LENGTHS = VERIFIED_DRAFT_ONLY
 ROLE12_STRUCTURE = PASS_AS_REPORTED
-ROLE12_POLICY = PENDING_OWNER_DECISION
+ROLE12_POLICY = APPROVED
 FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
 OFFICIAL_HELDOUT_ADMITTED = 0
 FINAL_SEAL = NOT_PERFORMED
@@ -106,3 +106,13 @@ TRAINING_RUN = false
 ```
 
 No private source bytes were changed or copied to Git. No CRC, lexical scan, tokenizer job, AI review, model inference, GPU job, training, answer-key access, or final seal was run for this crosswalk.
+
+
+## 7. Subsequent W4/Original Gold decisions (2026-11-19)
+
+This crosswalk's original W1/W2 findings are unchanged. Later Owner decisions supersede only the ROLE12 policy status:
+
+- Owner explicitly approved the exact consecutive-User contract: `ROLE12_POLICY = APPROVED`.
+- Actual Base/v0.1/v0.2/v0.3-A runtime parity remains `NOT_VERIFIED`; approval is not runtime evidence.
+- Original Gold is required as a comparison reference when exact source alignment exists. The R50-specific contract is `docs/plans/V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`. R50 remains prompt-only in the known schema, so exact Gold coverage is `NOT_ESTABLISHED`; report `N_gold / 46` and keep unmatched cases in the four-model denominator.
+- No prior W1/W2, CRC, lexical, AI, tokenizer, or ROLE12 structural audit was repeated.
