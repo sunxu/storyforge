@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -19,7 +19,7 @@ def test_normalize_identifier_rejects_non_identifier(value):
 
 
 def test_normalize_timestamp_accepts_aware_datetime_and_z_string():
-    expected = datetime(2026, 11, 18, 6, 0, tzinfo=timezone.utc)
+    expected = datetime(2026, 11, 18, 6, 0, tzinfo=UTC)
     assert db.normalize_timestamp(expected) == expected
     assert db.normalize_timestamp("2026-11-18T06:00:00Z") == expected
 
