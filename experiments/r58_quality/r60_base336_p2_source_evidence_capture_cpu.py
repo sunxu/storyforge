@@ -148,6 +148,15 @@ def load_p2_manifest(path: Path) -> tuple[dict, bytes, list[dict]]:
                 "NO_TRAINING_OR_REDISTRIBUTION"
             )):
         raise Hold("P2_MANIFEST_CONTRACT_HOLD")
+    selection = doc.get("selection")
+    if (type(selection) is not dict
+            or selection.get("selected_stories") != 8
+            or selection.get("authors") != 5
+            or selection.get("distinct_world_json") != 8
+            or selection.get("created_before_gpu_run") != 3
+            or selection.get("created_after_gpu_run") != 5
+            or selection.get("private_session_bodies_read") is not False):
+        raise Hold("P2_SELECTION_SCOPE_HOLD")
     sources = doc.get("sources")
     if type(sources) is not list or len(sources) != 8:
         raise Hold("P2_SOURCE_COUNT_HOLD")
@@ -184,9 +193,12 @@ def load_p2_manifest(path: Path) -> tuple[dict, bytes, list[dict]]:
         expected = "ai_approved" if row["permission_kind"] == "ai" else "approved"
         if row["permission_result"] != expected:
             raise Hold("P2_PERMISSION_RESULT_HOLD")
-        if type(row["world_json_md5"]) is not str or len(row["world_json_md5"]) != 32:
+        if (type(row["world_json_md5"]) is not str or len(row["world_json_md5"]) != 32
+                or any(c not in "0123456789abcdef" for c in row["world_json_md5"]):
             raise Hold("P2_WORLD_DIGEST_SHAPE_HOLD")
-        if type(row["submission_snapshot_sha256"]) is not str or len(row["submission_snapshot_sha256"]) != 64:
+        if (type(row["submission_snapshot_sha256"]) is not str
+                or len(row["submission_snapshot_sha256"]) != 64
+                or any(c not in "0123456789abcdef" for c in row["submission_snapshot_sha256"]):
             raise Hold("P2_SNAPSHOT_DIGEST_SHAPE_HOLD")
         ids.add(row["story_id"])
         keys.add(row["source_key"])
@@ -576,7 +588,7 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001 - private values and DB errors are suppressed
         known = {
             "P2_MANIFEST_JSON_HOLD", "P2_MANIFEST_CONTRACT_HOLD",
-            "P2_SOURCE_COUNT_HOLD", "P2_SOURCE_FIELDS_HOLD",
+            "P2_SELECTION_SCOPE_HOLD", "P2_SOURCE_COUNT_HOLD", "P2_SOURCE_FIELDS_HOLD",
             "P2_SOURCE_BINDING_FIELDS_HOLD", "P2_SOURCE_DUPLICATE_HOLD",
             "P2_PERMISSION_KIND_HOLD", "P2_PERMISSION_RESULT_HOLD",
             "P2_WORLD_DIGEST_SHAPE_HOLD", "P2_SNAPSHOT_DIGEST_SHAPE_HOLD",
