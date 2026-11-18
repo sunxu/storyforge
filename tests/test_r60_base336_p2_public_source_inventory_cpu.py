@@ -128,7 +128,7 @@ def test_binding_diagnostics_report_aggregate_codes_without_source_values():
     diagnostics = target.source_binding_diagnostics(selected)
 
     assert diagnostics == {
-        "identifier_permission_event_id_invalid": 1,
+        "permission_event_metadata_not_visible": 1,
         "permission_kind_not_supported": 1,
         "snapshot_v2_mismatch": 1,
         "exact_world_overlap_pre_cutoff": 1,
