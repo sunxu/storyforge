@@ -311,3 +311,13 @@ The following existing repository implementations were inspected to avoid repeat
 - `scripts/v03_r50_role12_owner_audit.py`: already-completed Draft structure/Tokenizer receipt; it explicitly does not verify actual four-arm runtime parity.
 
 No R50-specific four-arm inference runner or four-arm actual-load receipt was found in the inspected GitHub source. Historical R47 generation parameters are precedent only and cannot be asserted as effective R50 parameters. W4 therefore requires already-existing Owner-local per-arm load/config/runtime records. The Owner has authorized read-only inspection, but this chat has no direct Owner Mac filesystem connector. If those historical records do not exist, record `SOURCE_UNAVAILABLE`; do not launch a model or job to manufacture evidence.
+
+
+### W4 historical parameter discrepancy noted
+
+The inspected historical runners show why old settings cannot be assumed to prove R50 parity:
+- R47's Base/v0.1/v0.2 runner constructs all three inference commands from one helper and specifies `max_new_tokens=1536`, seed/data_seed 42, temperature 0, no shuffle, Transformers/BF16/BNB4.
+- R54 checkpoint-16's one-sample Adapter reload smoke uses `max_new_tokens=128` and `val_dataset_sample=1`; it is an engineering reload check, not a comparable four-arm generation run.
+- R55 Gold5 only packages existing responses and performs no model generation.
+
+These historical records are useful provenance, but they do not prove the effective R50 runtime configuration. The R50 four-arm generation contract must freeze effective values before any separately authorized inference. No such inference is authorized now.
