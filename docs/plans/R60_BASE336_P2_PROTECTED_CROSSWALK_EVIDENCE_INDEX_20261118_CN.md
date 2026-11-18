@@ -417,3 +417,21 @@ Owner 已执行 `r60_base336_actual_release_scope_cpu.py`，回执 `r60_base336_
 - 本轮无 DB 访问/修改、模型调用、GPU、私有文件修改或私有值输出。
 
 **有限门禁结论**：可以关闭“已识别的六对精确重复来源在最终 Base336 293/43 发布数据中跨 split”这一特定风险，不能将此 PASS 扩展为所有隐藏语义组件、完整 R50 metadata-only 排除、历史已暴露评估源、request-effective actual-sent 或训练 Worker 最终实际读取字节证明。下一步优先复核 GPU Stage/Worker receipt 的具体输入链，以及最终 293/43 的其他语义组件和 P2 新来源与保护集交叉隔离；不得直接解 HOLD 或生成正式 P2-B 48 提示。P2-C HOLD、P2-B NOT_GENERATED、train_admitted=0。
+
+
+### 2026-11-19 Mainline reset: P2 protected crosswalk prioritized
+
+经再次对照 `docs/R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md`、`docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md` 和公开来源补充决策，确认**阶段性偏离主线**：最近针对原 8 个 World 关联、6 对精确来源复用、22 条候选和 GPU Stage 的审计占据了主要工作，而当前项目真正需要的是**8 个新的 P2 Supabase 公开来源作为独立 held-out**，相对于所有历史训练/验证、密封与已暴露测试集的交叉独立性证据。
+
+已关闭并停止重复：针对已识别 6 对精确来源复用，在最终冻结 293 Train / 43 Validation 发布字节中，6/6 全部 colocated、0 crossing；22/22 候选位于最终 Train。该事实不是所有语义组件全局隔离，更不是 P2 新 8 来源的独立性 PASS。两份同字节 release 的 Stage SHA 绑定和相关本机工具只作历史审计证据保留。不再继续 GPU Worker/Checkpoint 的延伸调查，除非出现直接影响 P2 的具体版本争议。注意此前新增 `r60_base336_actual_release_scope_cpu.py` 的 synthetic tests 只覆盖局部 mapping helper，不能替代实际 Owner SAFE，后者已经独立提供；不要声称 HEAD CI 通过，直到获得对应检查证据。
+
+回归 P2 主线门禁与顺序：
+
+1. **P2-A READY**：8 条已授权内部独立评估提示构造的 Supabase 公开来源，版本/公开权限/审核快照绑定已通过。此 8 条与历史 8 World 组不同；不能混同。
+2. **P2-C-P1（优先）**：将 P2 8 来源实际 source/version/World/角色语义组件，与 Base336 **全部 172 个故事/336 条冻结来源**作来源绑定的交叉核验。已知 exact Story ID overlap=0、受限 World JSON overlap=0 不代表全部 172 故事的语义隔离。既有 8 组/38 故事成员级 evidence 可供风险定向审阅，但不能冒充完整 172 故事的语义证明。
+3. **P2-C-P2**：R50 Protected/Reserved **完整 metadata-only roster**，先核清完整性，再核 exact IDs / source lineage / semantic World assignment；严禁读取密封正文、提示、答案。
+4. **P2-C-P3**：R47/R48/R55 已验证的 20-case/2-Story 链 exact overlap=0 已关闭；继续处理 **完整历史 exposure-universe coverage**、语义别名/改写及额外保护集，不重跑同一 20-case exact crosswalk。
+5. **P2-C-P4**：8 个新 P2 来源的 actual request-effective timepoint、创建时间与历史训练暴露窗口、World/Character/Plot 语义组件证据和 Reviewer 人员/流程独立签署；Owner 源/Prompt Manifest 最终冻结。来源创建于 GPU Run 后仅是辅助时间证据，不能单独认定未暴露。
+6. **P2-B**：全部 P2-C 门禁签署后，才构造并冻结实际 48 prompts JSONL/Manifest/SHA；P3-P6 仍等待相应授权及完整证据。
+
+本轮不重跑数据库提取、训练、GPU 或模型推理，不读 R50 正文，不提交任何 Owner-private 内容。**下一最小外部证据请求**：Owner 提供 8 条 P2 Source Manifest 的 SAFE Schema / 版本覆盖，以及 R50 完整 metadata-only roster 的现有 SAFE 完整性/范围回执（非正文）；先复用已存在的清单和 SAFE，不进行宽泛 inventory。总门禁 P2-C HOLD、P2-B NOT_GENERATED、`train_admitted=0`。
