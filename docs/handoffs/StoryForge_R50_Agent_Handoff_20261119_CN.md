@@ -6,6 +6,8 @@
 **Copy/paste prompt:** `docs/prompts/StoryForge_R50_New_Agent_Prompt_20261119_CN.md`  
 **Latest audit receipt:** Draft PR #32, not merged.
 
+**Handoff publication:** This packet and the current taskbook/prompt are proposed in [Draft PR #33](https://github.com/sunxu/storyforge/pull/33), branch `docs/r50-agent-handoff-20261119`. The latest audit receipt is separately proposed in [Draft PR #32](https://github.com/sunxu/storyforge/pull/32), branch `docs/r50-world-cpu46-audit-20261119`. Fetch the relevant branch files explicitly; do not assume either PR is already in `main`.
+
 ## 1. Mission
 
 Take over the remaining R50 46-case protected Held-out gate work. The immediate task is evidence reconciliation and closure of the outstanding temporal-provenance and semantic-world graph gates. Do not restart completed audits. Do not turn this into training, model tuning, broad R60 work, or a fresh dataset search.
