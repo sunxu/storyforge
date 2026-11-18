@@ -163,3 +163,48 @@ Owner 本轮授权继续限定为内部独立评估提示构造；48 条提示�
 校验范围包括：48 条与 JSONL SHA256、8 个来源绑定、公开 revision 与审核快照 SHA、权限事件仍绑定最新公开提交、来源创建时间晚于 Base336 冻结边界、3/5 时间分组、六维均衡、三消息角色顺序、无 System/答案字段，以及所有未完成门禁必须继续保持 HOLD。
 
 本地合成测试 **9/9 PASS**，`compileall` PASS（代码测试结果，不代表真实提示包已生成）。当前没有可供该校验器验证的真实 48 条提示 JSONL/Manifest，因此不得报告真实包结构/哈希 PASS。该工具明确拒绝把 Base336 语义隔离、R50 排除、R47/R48/R55 暴露排除或 Owner 冻结标为 PASS。没有触发或声称 GitHub Actions CI PASS。
+
+## 9. 2026-11-18：P2 Owner RLS 根因已定位；最小权限策略待Owner应用
+
+Owner Mac 实际回执显示 8/8 候选的审核提交与权限事件关联字段均为 NULL，导致旧诊断将下游字段全部报告为无效。进一步只读核对当前数据库的表结构、RLS策略和聚合关联后，根因已明确：
+
+### 9.1 数据库证据
+
+- `public.user_stories.id` 是 `text`。
+- `public.story_moderation_submissions.story_id` 是 `uuid`，`id` 是 `uuid`。
+- `public.story_permission_events.story_id` 是 `text`，`submission_id` 是 `uuid`。
+- 三张表均启用 RLS。
+- `r58_export_reader` 对三张表均已有 SELECT 权限。
+- 但 `pg_policies` 中只有 `user_stories` 有适用于 `r58_export_reader` 的 SELECT policy；`story_moderation_submissions` 和 `story_permission_events` 的适用策略数均为 0。RLS 对无适用 permissive policy 的表默认不返回行。
+- 使用当前 Supabase 管理连接（`supabase_read_only_user`，该连接的 `BYPASSRLS=true`，**不是Owner reader**）按相同8条候选做只读聚合：8/8 均存在当前revision且requested_visibility=public的审核提交；8/8 均存在绑定当前提交的权限事件；revision、snapshot V2、permission binding、目标public、kind/result各项均为8/8。当前revision提交共8行，绑定权限事件共9行。
+
+因此，这次 Owner SAFE 的10项失败并非10种数据缺陷，而是两个 metadata LEFT JOIN 被 RLS 全部过滤后的级联 NULL。不能据此说故事没有审核记录，也不应更改JOIN业务条件或放宽校验标准。
+
+### 9.2 最小权限修复
+
+新增人工审阅SQL：
+
+`experiments/r58_quality/sql/r60_base336_p2_public_source_reader_rls_policies_REVIEW_ONLY.sql`
+
+该文件只创建两条面向 `r58_export_reader` 的 SELECT policy：
+1. moderation submissions：只允许候选窗口内公开、已发布、未删除、审核批准、原创、符合P2公开V2筛选条件的故事之**当前public revision**提交记录。
+2. permission events：只允许绑定上述当前revision公开提交的权限事件。
+
+不授予额外GRANT，不修改角色属性，不读取私有会话，不开放历史非当前revision提交。事件策略通过submission策略限定，避免仅凭story_id读取无关事件。SQL文件是REVIEW_ONLY；没有在本轮连接器中执行，也没有修改Supabase。
+
+### 9.3 代码防回归
+
+P2脚本现新增只读RLS preflight，执行来源SQL前确认两张表RLS启用、SELECT已授权且两条指定policy存在。缺失时返回 `SOURCE_METADATA_RLS_POLICY_HOLD` 与聚合缺失表名，不再让8条NULL字段扩散成10种SOURCE_BINDING失败。
+
+同时：
+- JOIN统一为明确的 `sm.story_id::text = selected.story_id`，与实际字段类型一致。
+- LEFT JOIN缺失时只报告 `moderation_submission_metadata_not_visible` / `permission_event_metadata_not_visible`，不重复报告下游NULL派生错误。
+- 真实revision、snapshot、permission绑定和visibility门禁不放宽。
+
+### 9.4 Owner执行顺序
+
+**先由Owner在Supabase SQL Editor审阅并执行上述REVIEW_ONLY SQL**。执行前确认当前数据库、角色及两条策略范围；若策略已存在或SQL报错，不要DROP/覆盖，先回传错误。
+
+随后在Owner Mac更新分支。先只跑无DB预检；确认输出目录无已创建manifest后，才运行一次 `--execute`。新代码会先执行RLS preflight；如果仍缺策略，会明确报出缺失策略表名并停止，不执行来源查询。
+
+只回传SAFE JSON。不要上传私有manifest、原始故事、ID、DSN或快照。即使8/8来源绑定通过，也仅代表P2公开来源Inventory通过；Base336/R50/R47/R48/R55保护集交叉核验、语义World隔离、独立Reviewer和Owner freeze仍HOLD，训练/GPU/HF/模型请求保持0。
