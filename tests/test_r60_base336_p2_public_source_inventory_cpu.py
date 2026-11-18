@@ -118,6 +118,57 @@ def test_exact_world_overlap_is_fail_closed():
         target.validate_rows(selected)
 
 
+def test_rls_preflight_requires_exact_reader_policies_and_select_privileges():
+    good = [
+        {"table_name": "story_moderation_submissions", "rls_enabled": True,
+         "select_granted": True, "policy_present": True},
+        {"table_name": "story_permission_events", "rls_enabled": True,
+         "select_granted": True, "policy_present": True},
+    ]
+    target.validate_rls_preflight(good)
+
+    with pytest.raises(target.RlsPolicyHold) as caught:
+        target.validate_rls_preflight([
+            {"table_name": "story_moderation_submissions", "rls_enabled": True,
+             "select_granted": True, "policy_present": False},
+            {"table_name": "story_permission_events", "rls_enabled": True,
+             "select_granted": True, "policy_present": False},
+        ])
+    assert caught.value.safe_diagnostics == {
+        "schema": "storyforge_r60_p2_reader_rls_preflight_v1",
+        "reader_role": "r58_export_reader",
+        "failed_tables": [
+            "story_moderation_submissions:required_policy_missing",
+            "story_permission_events:required_policy_missing",
+        ],
+        "private_values_emitted": False,
+    }
+
+
+def test_missing_left_join_metadata_is_not_reported_as_cascading_field_failures():
+    selected = target.select_rows(rows())
+    for row in selected:
+        row.update({
+            "moderation_submission_id": None,
+            "submission_revision": None,
+            "requested_visibility": None,
+            "submission_content_hash": None,
+            "permission_event_id": None,
+            "permission_submission_id": None,
+            "permission_kind": None,
+            "permission_result": None,
+            "to_visibility": None,
+            "permission_to_visibility": None,
+            "permission_submission_bound": False,
+            "snapshot_v2_match": False,
+        })
+
+    assert target.source_binding_diagnostics(selected) == {
+        "moderation_submission_metadata_not_visible": 8,
+        "permission_event_metadata_not_visible": 8,
+    }
+
+
 def test_binding_diagnostics_report_aggregate_codes_without_source_values():
     selected = target.select_rows(rows())
     selected[0]["permission_event_id"] = None
