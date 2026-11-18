@@ -323,3 +323,15 @@ Owner 已完成本机只读 metadata / shape audit。详细审计记录：[R60 P
 3. 完整暴露覆盖和 source-bound 语义变体审查必须独立完成；actual-sent 版本缺证时保持 UNKNOWN / HOLD。
 
 本次只做文档和证据边界整理；不访问数据库、不修改数据、不启动 GPU / HF Job、不发起模型请求、不读取 R50 正文，不生成正式提示包。维持 train_admitted=0、quality_v1_admitted=0、model_promoted=false。
+
+
+## 2026-11-18 R47 / R48 / R55 crosswalk code-path refinement
+
+进一步核对仓库代码后，前述“没有 Sample → Story ID 映射路径”的判断需要修正：
+
+- R47 的 \`sample_id\` 可通过 Manifest 的 \`source_line\` / \`prompt_sha256\`，与 canonical compiled Test 对应行的完整 role/content prompt prefix 绑定；该行 \`metadata.story_id\` 才是 Story ID 来源，不能把通用 \`id\` 字段直接当作 Story ID。
+- \`scripts/prepare_blind_eval.py\` 生成确定性 Sample ID；\`scripts/audit_v01_integrity.py\` 检查 Test 记录的 \`metadata.story_id\`，并逐案验证 Test / Prompt / Manifest 的前缀、哈希和 source_line；\`scripts/v02_r48_four_arm_build.py\` 固定 canonical Test SHA 并核对完整 prompt prefix。
+- R48 复用同一 20 个 R47 prompts 和 canonical Test，不新增独立案例；其精确身份映射应继承 R47 crosswalk。
+- R55 第一层 arbitration Index 保存 \`source_sample_id_private\`；第二层通过 \`original_candidate_token_private\` 回连第一层；第三层通过 \`original_second_candidate_token_private\` 与 \`original_first_candidate_token_private\` 回连第二层和第一层。
+
+**代码路径 FOUND，但 Owner-local SAFE 尚未执行。** 下一步：对 R47 Manifest / prompts / canonical Test / R48 Source Audit / P2 private Manifest 做只输出计数的 exact Story ID crosswalk；再核验 R55 三层 Index 的真实 Schema、token 链、20-case 覆盖、各层 SAFE receipt 哈希绑定，以及 \`R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json\` 对 R55 原始案例与 R47 来源的证明。实际 overlap 结果未出前继续 UNKNOWN / HOLD；语义变体排除仍 HOLD。
