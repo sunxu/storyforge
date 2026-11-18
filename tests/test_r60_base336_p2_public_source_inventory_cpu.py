@@ -17,6 +17,7 @@ def candidate(i, created, *, author=None, world=None):
         "current_public_v2_data": {"cardType": "story", "world": {"worldSentence": "synthetic world"}},
         "world_sentence_length": 20,
         "submission_revision": 0,
+        "requested_visibility": "public",
         "submission_content_hash": f"{i:064x}",
         "moderation_submission_id": f"submission-{i}",
         "permission_event_id": f"event-{i}",
