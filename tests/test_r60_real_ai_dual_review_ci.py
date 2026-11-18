@@ -1,4 +1,5 @@
 """Run synthetic-only R60 AI reviewer tests in default CI pytest collection."""
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -12,4 +13,4 @@ def test_r60_real_ai_review_synthetic_suite():
         capture_output=True, text=True, timeout=70, check=False,
     )
     assert result.returncode == 0, result.stdout[-4000:] + result.stderr[-2500:]
-    assert "13 passed" in result.stdout
+    match = re.search(r"\\b(\\d+) passed\\b", result.stdout)\n    assert match is not None and int(match.group(1)) >= 13
