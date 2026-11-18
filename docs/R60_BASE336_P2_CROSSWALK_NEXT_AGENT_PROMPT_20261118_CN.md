@@ -181,3 +181,24 @@ docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
 - R55 私有 Coordinator Index 和 SAFE 文件仅通过文件系统元数据确认存在；内容、实际 Schema、receipt / version 绑定和覆盖范围均未验证。
 - 因此 P2 × R47/R48/R55 精确 Story ID crosswalk 仍为 UNKNOWN / HOLD；语义暴露排除仍为 HOLD。不得根据 JSONL 行序、source_line、通用 id、哈希或文件名推断身份。
 - 下一步：Owner-local 对 R55 私有 Index 做 Schema / 数量 / 覆盖 SAFE 检查，并寻找权威 Sample → Story ID 来源绑定。不访问 DB / R50 正文，不启动 GPU / HF，不发起模型请求，不生成提示包。
+
+
+## 2026-11-18 补充：R47/R48/R55 Sample → Story ID 代码链已定位
+
+不要再将任务描述为“仓库没有 Sample → Story ID 映射路径”。代码复核已找到以下绑定链：
+
+- R47：Manifest \`sample_id / prompt_sha256 / source_line\` → canonical Test 对应行（完整 role/content prefix 与 prompt hash 一致）→ 该行 \`metadata.story_id\`。依据：\`scripts/prepare_blind_eval.py\`、\`scripts/audit_v01_integrity.py\`、\`scripts/v02_r48_four_arm_build.py\`。
+- R48：固定相同 canonical Test SHA 和同一 20-case prompts，不增加独立案例；继承 R47 的 Story ID 映射。
+- R55：第一层 Index 的 \`source_sample_id_private\` 回连 R47 Sample；第二层的 \`original_candidate_token_private\` 回连第一层；第三层的 \`original_second_candidate_token_private\` / \`original_first_candidate_token_private\` 回连第二层 / 第一层。
+
+**当前仍 UNKNOWN / HOLD 的原因是实际 Owner-local 文件值和 SAFE receipt 尚未核验，不是代码路径不存在。**
+
+### 下一项执行
+
+1. 对 R47 Manifest、prompts、canonical compiled Test、R48 Source Audit、P2 private source Manifest 做 Owner-local SAFE：检查 Test SHA、20/20 prompt prefix / hash / source_line、20/20 metadata.story_id，再输出 P2 × R47/R48 exact overlap count。
+2. 对 R55 三个私有 Index 做 schema / record count / token link / first-layer 20-case coverage / receipt SHA binding SAFE。
+3. 审查 \`preflight-package/scripts/r55_dev_source_preflight.py\`、对应测试及 \`exposed20/sources/R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json\`，确认它是否将 R55 原始 20-case 与 R47 Manifest 绑定。
+4. 用第一层 \`source_sample_id_private\` 经 R47 crosswalk 得到 Story ID，与 P2 Manifest 的 8 个 Story ID 做精确比较。只输出计数与布尔值，不输出 ID、作者映射、正文或 SHA。
+5. 任何输入缺失、receipt 不匹配、覆盖不完整或 token 链断裂均保持 HOLD；即使 exact overlap=0，也不代表语义隔离 PASS。
+
+不要上传 R55 私有 Index / Key / Reviewer 文件，不读取 R50 正文，不访问数据库，不运行 GPU/HF / 模型请求，不生成正式 48 条提示包。
