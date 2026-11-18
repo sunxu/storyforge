@@ -1,3 +1,10 @@
+> **Historical snapshot — superseded for current task execution (2026-11-19).**  
+> This document records the gate state and proposed next action as of 2026-10-22. Do not execute its old R45 full-history scan or repeat its historical CPU/ROLE recommendations without first reconciling them against the current 2026-11-19 inventory and evidence.  
+> Current operational taskbook: [R50 46-case PRESEAL taskbook](../r50/R50_46_PRESEAL_TASKBOOK_20261119_CN.md).  
+> New-agent handoff: [handoff packet](../handoffs/StoryForge_R50_Agent_Handoff_20261119_CN.md).  
+> Copy/paste prompt: [new-agent prompt](../prompts/StoryForge_R50_New_Agent_Prompt_20261119_CN.md).  
+> Latest audit reconciliation is in [PR #32](https://github.com/sunxu/storyforge/pull/32) and remains Draft/unmerged until its state changes.
+
 # StoryForge R56 — R50 46-case protected gate: latest evidence and exact next CPU action
 
 **Date:** 2026-10-22. **Purpose:** preserve sealed R50 and move from already completed source replay / AI-only content triage to the *remaining* independent-test admission gates. This document contains no R50 candidate text, mapping, answers, private case identifiers or character names.
