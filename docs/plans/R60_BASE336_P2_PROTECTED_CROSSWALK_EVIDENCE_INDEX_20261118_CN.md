@@ -282,3 +282,10 @@ Owner 返回 `r60_base336_card_opening_field_size_audit_safe_v1`，状态 `FIELD
 针对专属 Card/Opening 工具，采用与本次实测数据相匹配且仍受限的配置：单字段 **65,536 bytes（64 KiB）**，单组 **655,360 bytes（640 KiB）**；单独使用 `O_CREAT|O_EXCL|O_NOFOLLOW`（若支持）的 create-only 0600 写入，保留组上限；**不修改公共 `private.MAX_CAPTURE_BYTES`，不截断或删改任何角色卡、Opening 内容**。合成测试覆盖过去超过 24 KB 的 opening、严格 64 KiB 边界、575,785 byte 输出、已存在文件拒绝及超过 640 KiB 的拒绝。
 
 只有在新代码定向测试通过、Owner 工作区同步、真实最小源快照/冻结范围再次核对并明确执行门禁后，才可运行一次真实 `--execute`，且只允许新建缺失的私有 8 组证据；这不证明语义、actual-sent、R50 全覆盖或 P2-C 通过。
+
+
+### 2026-11-18 Owner 六目录冻结链唯一绑定（本地只读）
+
+Owner 返回 `r60_base336_six_dirs_frozen_binding_safe_v1`，状态 `SIX_FROZEN_DIRS_EXACT_BINDING_PASS__NO_DB`：候选 A（`r60-quality-fast1000-api-v1`）完整 `frozen._frozen` 链验证为 true，冻结 336 cases / 172 stories，与 8 组、38 Stories 冻结 Roster 范围吻合；候选 B（`r60-quality-first-1000`）`FROZEN_BINDING_HOLD`。其余五个目录经 Owner 本地标志文件与 0700/0600 权限定位各唯一一个：`r60-real1000-v1-repair-plan-20261114`、`r60-real1000-v2-priority-replay-v1`、`r60-real1000-v3-consistent-replay-v1`、`r60-real1000-v123-crosswalk-v1`、`r60-real1000-r50-known5-quarantine-v1`（均相对于 Owner `~/.local/share/storyforge/r60/private/`）。本轮无 DB 查询、文件创建、模型或 GPU。此裁决消除了 OLD_DIR 双候选歧义，但不代表 Card/Opening 提取已执行或 P2-C 已通过。
+
+后续仅使用上述六目录、既有 `r60-base336-world-cross-review-20261115` Roster 和预期不存在的 `r60-base336-group-cards-opening-20261115` 目录，先跑原脚本无 DB 的预检，随后受限 `--execute` 只新建 8 份 Owner 私有 0600 文件；真实结果以 SAFE 回执为准。
