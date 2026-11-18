@@ -116,6 +116,7 @@ SELECT
     s.public_updated_at,
     s.public_content_revision,
     s.public_content_hash,
+    s.public_v2_data AS current_public_v2_data,
     md5((s.public_v2_data->'world')::text) AS world_json_md5,
     length(s.public_v2_data->'world'->>'worldSentence') AS world_sentence_length,
     s.time_rank,
