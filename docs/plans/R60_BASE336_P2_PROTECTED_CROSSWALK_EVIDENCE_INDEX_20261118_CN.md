@@ -678,3 +678,16 @@ Owner 提交 Reviewer B 的 SAFE 回执及交付说明。已将该回执按原�
 - 本预览之外的 22 个 Story 不能自动宣称语义隔离 PASS；不得自动修改 336 冻结 split，不能生成正式 P2-B 48 prompts 或启动训练。
 
 Owner B 资格核验、actual-sent、R50 全量 metadata 排除、旧曝光完整覆盖、其余 Base336 世界组件，仍是各自单独的 HOLD；\`P2_C=HOLD\`、\`train_admitted=0\` 不变。下一步优先将预览在 Owner Mac 真实私有目录执行并保存 SAFE 回执，同时并行推进不依赖 B 资格的其他 metadata-only 审计。
+
+
+## 19. 2026-11-19 Owner Mac 组件冲突预览运行回执已核对
+
+Owner 在本次对话实际回传 `schema=storyforge_r60_base336_component_conflict_preview_safe_v1`、`status=BASE336_COMPONENT_CONFLICT_PREVIEW_READY__P2_C_HOLD` 的 Mac SAFE JSON。其全部聚合字段与本 PR 已保存的 `docs/evidence/R60_BASE336_COMPONENT_CONFLICT_PREVIEW_SAFE_20261119.json` 一致，登记说明为 `docs/evidence/R60_BASE336_COMPONENT_CONFLICT_PREVIEW_OWNER_RECEIPT_20261119_CN.md`。这项核对基于用户提交的运行回执；未由本助手直接读取 Owner 私有输出。
+
+- 10 条跨拆分候选边构成 6 个候选冲突组件（Story 数 2/2/2/2/3/5）、16 个去重 Story、35 个去重候选案例；
+- 预览只验证保守候选图，不读取或回放 B 的逐边私有 Decision；`reviewer_b_aggregate_checked=false` 只表示未传入可选 B SAFE，不能用来逆转 B 的既有审核结果；
+- **尚未产生“35 案例已在消费入口隔离”的执行证据**，也没有自动修改冻结 roster、拆分、评估集或训练入口；
+- 其余 22 个 Story 仍未获得全量语义隔离证明；actual-sent、R50 完整 protected metadata、R47/R48/R55 已曝光集合闭合和 Reviewer B Owner 资格继续分别 HOLD；
+- `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0` 不变。
+
+下一项可独立推进的工作是只读验证 35 条风险候选在**预定数据消费/生成入口**不会被准入，并行继续 actual-sent 与其他 metadata-only 来源排除审计。不得在验证前把 “candidate conflict preview” 或 “建议隔离”表述成 “已实施正式隔离”。
