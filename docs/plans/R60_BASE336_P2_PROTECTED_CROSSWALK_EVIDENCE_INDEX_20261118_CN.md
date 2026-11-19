@@ -599,3 +599,28 @@ Owner 已提供 8 个完整的成员级 Card/Opening 私有 JSON、冻结 8 组 
 - 旧 Codex 所有组的决定仍为 HOLD。新增材料解决的是“角色卡/开场证据缺失”子项，不是历史实际发送版本、语义终审、Reviewer 独立性、R50 完整覆盖或 P2-C 的 PASS。
 
 下一步是 Owner-local 基于真实成员级证据生成**按具体人物/组织/事件**的组件边候选，由独立 Reviewer 按仓库既定 Gold Quality Pipeline 审查并由 Owner 冻结。任何边仍需真实 source/version 绑定；禁止用模板文字或缺失字段充当无关联证明。不要输出私有 ID 或上传原始 JSON 至 GitHub，亦不允许直接修改冻结案例、生成 48 prompts 或训练。
+
+
+## 13. 2026-11-19 组件图精确复用下界（本索引最新状态）
+
+在 8 组成员级原始 Card/Opening、冻结 roster 的 59 条 current/archived 记录中，以**不同 Story**为单位聚合、排除非实质性的共同模板，再比较完整 JSON 字段或至少 300 字符的相同非通用内嵌文本，得到：
+
+- 13 对不同 Story 存在可确认的精确内容复用，其中 **6 对跨 Train/Validation**、7 对仅发生于同一拆分。
+- 6 对跨拆分精确复用涉及 **11 个不同 Story / 22 个去重候选案例**，这是保守下界，并非完整语义关联上限。
+- 跨拆分边按 World group 分布：01↔06 一对、02 组内一对、05 组内一对、06 组内一对、08 组内两对；没有据此把 03/04/07 错误认定为安全。
+- 02↔03 的同人物阵容、05 的近似改写和同 Story 多组归属属于独立的候选层，不混进精确证据计数；roster 有 2 个 Story 跨两组（01/06、03/06），不能计为多个不同故事。
+- 精确复用属于**静态当前/历史版本内容证据**，仍不等于历史 actual-sent 已泄漏或独立 Reviewer 已完成。
+
+完整脱敏审计为 `docs/evidence/R60_BASE336_COMPONENT_GRAPH_EXACT_REUSE_SAFE_20261119_CN.md`。新的下一步是在 Owner 私有环境进行 6 条精确跨拆分边及其近似扩展的独立语义组件裁决，复用已有 `world_isolation.py`。不重跑数据库、不上传私有路径/原文/ID、不自动修改冻结 split、不得生成 48 条正式评估提示或训练。
+
+```text
+P2_BASE336_CARD_OPENING = VERIFIED_8_OF_8
+P2_BASE336_CROSS_SPLIT_EXACT_REUSE_PAIRS = 6
+P2_BASE336_CROSS_SPLIT_EXACT_REUSE_STORIES = 11
+P2_BASE336_CROSS_SPLIT_AFFECTED_CASES_LOWER_BOUND = 22
+P2_BASE336_INDEPENDENT_SEMANTIC_REVIEW = PENDING
+P2_BASE336_ACTUAL_SENT = HOLD
+P2_C = HOLD
+P2_B_48_PROMPTS = NOT_GENERATED
+TRAIN_ADMITTED = 0
+```
