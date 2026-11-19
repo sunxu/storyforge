@@ -251,8 +251,8 @@ TRAINING_RUN = false
 The W1/W2 coverage crosswalk has been completed and committed on this taskbook branch:
 
 - `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md`
-- Crosswalk commit: `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`
-- Crosswalk blob: `b7618dbe8e5cc4529eeafd0f0bdc028291921b68`
+- Crosswalk commit: `7040f67b79f98b78162c34c75c47983495774be0`
+- Crosswalk blob (before this update): `b963d9754d01dc97d07065c6398bddbaf51250cf`
 
 **W1 result:** `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`. The three lexical flags are the same old-rank 2/4/10 ↔ R50-rank-17 pairs already reviewed. Owner's follow-up binds `transitive_known_old_link=[4,7]` to two old-source rank endpoints, consistent with the previously recorded 04→07 pair; it is not a count of two edge objects. The possible transitive path from that old component to W17 remains `INSUFFICIENT_EVIDENCE`. This rank clarification adds no new semantic provenance.
 
@@ -261,7 +261,7 @@ The W1/W2 coverage crosswalk has been completed and committed on this taskbook b
 **Downstream disposition:**
 - W3 = `NOT_TRIGGERED`; do not repeat the same three pair reviews or seven full-message reviews.
 - WORLD semantic isolation and timepoint card/rule provenance remain HOLD/PENDING.
-- W4 remains separate. The exact consecutive-User policy still requires an explicit Owner approve/reject decision; do not infer approval from the earlier generic word “授权”.
+- W4 remains separate. The exact consecutive-User policy was explicitly approved by the Owner on 2026-11-19; actual four-arm runtime parity remains unverified.
 - No new CRC, lexical scan, tokenizer job, ROLE12 audit, HF Job, GPU, inference, training, answer-key access, or Final Seal was performed.
 
 
@@ -384,3 +384,10 @@ The Owner's final evidence safe receipts now show:
 This closes the **mechanical completion/format-and-quotation validation** of all 152 originally flagged category slots, but it does NOT establish independent reviewer blinding, semantic correctness, or an unbiased model-wide failure rate. Four final Owner decisions remain HOLD for insufficient evidence. R55 remains development-only; R50 was not accessed, no GPU/training started, and no model promoted. Do not spend the protected R50 holdout based solely on these receipts.
 
 W1 rank-pair follow-up: Owner supplied `transitive_known_old_link=[4,7]`; both values are old-source ranks, rank 4 is in frozen R45 and rank 7 is outside R45 but in the checked old-source/Old14 scope. This is consistent with the previously recorded 04→07 rank pair, not two edge objects. The separate old↔R50 rows show the already-reviewed old rank 4 ↔ R50 rank 17 flag (5 sampled matches, 1 long exact match) and zero reported matches for old rank 7 against R50 ranks 16–20. No new semantic evidence; the possible transitive path to W17 remains `INSUFFICIENT_EVIDENCE` and W3 `NOT_TRIGGERED`.
+
+
+## 2026-11-19 follow-up — supplementary Gold lookup and CI
+
+Owner's corrected read-only archive parser excluded the 14 AppleDouble metadata entries, parsed 14 actual 14-chat conversations (62,583 messages), and recursively parsed 1,010 conversations (71,884 messages) from the 06–15 archive. The exact-history scan reported no full 32-message history matches in either supplementary archive; the Message-ID-first diagnostic had no positive matches. These unchanged archives must not be scanned again absent a new provenance lead. Original Gold remains `NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES`; the five pinned R50 source worlds remain 0/46 eligible.
+
+PR #33 CI at head `e95da034bde9d064082dcfa32908ebd1290ec6b5` completed with repository-wide Ruff failure (202 findings); test and evidence-integrity steps were skipped. This is the known unrelated repository-wide lint debt. Do not expand this documentation task into whole-repository Ruff cleanup.
