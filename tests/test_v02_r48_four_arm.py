@@ -153,6 +153,61 @@ class R48Test(unittest.TestCase):
             with self.assertRaises(ValueError):
                 completed_reviews(submitted, out / "reviewers", m)
 
+    def test_new48_original_gold_requires_exact_prompt_prefix(self):
+        """Synthetic P2-shaped context only; no real source or private Gold."""
+        with tempfile.TemporaryDirectory() as tmp:
+            original = Path(tmp) / "synthetic_original.jsonl"
+            prompts = []
+            records = []
+            for i in range(48):
+                prefix = [
+                    {"role": "user", "content": f"world context {i // 6}"},
+                    {"role": "assistant", "content": f"narrative context {i}"},
+                    {"role": "user", "content": f"player choice {i}"},
+                ]
+                prompts.append({"messages": prefix})
+                records.append({
+                    "messages": [dict(m) for m in prefix]
+                    + [{"role": "assistant", "content": f"original reply {i}"}],
+                })
+
+            def write_original():
+                original.write_text(
+                    "".join(json.dumps(row, ensure_ascii=False) + "\n"
+                            for row in records),
+                    encoding="utf-8",
+                )
+
+            write_original()
+            # Historical R48 calls must remain fixed to their original 20.
+            with self.assertRaises(ValueError):
+                read_gold(original, prompts)
+            answers = read_gold(original, prompts, expected_count=48)
+            self.assertEqual(len(answers), 48)
+            self.assertEqual(answers[-1], "original reply 47")
+
+            with self.assertRaises(ValueError):
+                read_gold(original, prompts[:-1], expected_count=48)
+            with self.assertRaises(ValueError):
+                read_gold(original, prompts, expected_count=True)
+
+            records[0]["messages"][0]["content"] = "different world"
+            write_original()
+            with self.assertRaises(ValueError):
+                read_gold(original, prompts, expected_count=48)
+            records[0]["messages"][0]["content"] = "world context 0"
+
+            records[0]["messages"][-1]["content"] = "  "
+            write_original()
+            with self.assertRaises(ValueError):
+                read_gold(original, prompts, expected_count=48)
+            records[0]["messages"][-1]["content"] = "original reply 0"
+
+            records[0]["messages"][-1]["role"] = "user"
+            write_original()
+            with self.assertRaises(ValueError):
+                read_gold(original, prompts, expected_count=48)
+
     def test_source_mismatch_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:
             t, p, m, _, _ = self.fixture(Path(tmp))
