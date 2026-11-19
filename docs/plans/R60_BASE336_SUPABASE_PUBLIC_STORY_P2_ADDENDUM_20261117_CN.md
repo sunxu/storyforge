@@ -1,5 +1,16 @@
 # R60 Base336：Supabase 公开故事来源 P2 补充决策（2026-11-17）
 
+## 2026-11-19 最新 P2 决策与接手入口（覆盖旧第一动作）
+
+**现行 Agent 任务书：** [R60 P2 Quality-v1 接手](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本文件 P2-A 8 条来源的内部评估用途权利边界、8×六维共 48 提示及 `user/assistant/user` 三消息格式保持有效；但先前“Owner 尚未返回 inventory”“R55 三层未核验”“R47/R48/R55 无 Story ID 映射”“需重新申请只读 DB”已过期，**不得照做**。
+
+真实进展：P2-A 8 来源 READY；P2 × Base336 172 Story 精确 overlap=0；R50 原始 50 provenance 50=46+4 PASS、冻结五个受保护 Story 身份与原始 50 来源集合严格一致，P2 overlap=0；R47/R48/R55 旧 20 Prompt / 2 Story 精确 overlap=0、R55 三层回链已通过。**这不是 P2-C 的完整语义/历史曝光 PASS**：全 172 current+archived 语义证据仍缺（Owner read-only source SQL HOLD），其余 Protected/Reserved、历史额外 Dev/训练/教师曝露全集、actual-sent、独立 Reviewer 与 Owner Freeze 仍 HOLD。真实 48 prompt JSONL/Manifest 未生成。
+
+新 Agent 不重跑 P2-A、R50 50/46/4 或五世界、旧 20-case/R55 索引、R58 空白 CSV、旧 35 案例图；只推进新 8 来源的独立性、未覆盖的来源全集并在 P2-C 真正通过后完成 48 提示与 Base/Adapter 质量评估。只读 DB 访问已获范围许可，无需反复申请；GPU/HF 推理需单独批准。
+
+---
+
+
 ## 状态
 
 **P2_SOURCE_SET_VERIFIED__WORLD_EVIDENCE_ALL_HOLD__PROMPT_PACKAGE_NOT_GENERATED__WORLD_COMPONENT_CROSSWALK_PENDING**
