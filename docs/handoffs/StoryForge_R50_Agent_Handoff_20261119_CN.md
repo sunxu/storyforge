@@ -197,7 +197,7 @@ The Owner's final evidence safe receipts now show:
 
 This closes the **mechanical completion/format-and-quotation validation** of all 152 originally flagged category slots, but it does NOT establish independent reviewer blinding, semantic correctness, or an unbiased model-wide failure rate. Four final Owner decisions remain HOLD for insufficient evidence. R55 remains development-only; R50 was not accessed, no GPU/training started, and no model promoted. Do not spend the protected R50 holdout based solely on these receipts.
 
-W1: `transitive_known_old_link=[4,7]` is a two-integer reference. The current safe schema inventory also exposes `pair_aggregate` records with `old_rank` and `r50_rank`, plus `r45_source_ranks`, `old_source_ranks_checked`, and `new_source_ranks_checked`. This suggests a rank-pair interpretation but does not prove whether 4 and 7 are source ranks, indices, or endpoint IDs. Keep 04→07 unresolved until the Owner supplies the redacted archive evidence and pair rows for ranks 4 and 7. Do not turn the list into a confirmed graph edge based on its name alone.
+W1 rank-pair follow-up: Owner supplied `transitive_known_old_link=[4,7]` and rank arrays establishing both as old-source ranks. This is consistent with the existing 04→07 rank pair, not two edge objects. Old rank 4 ↔ R50-17 is the already-reviewed W17 flag; old rank 7 has zero reported sampled/exact matches against R50 ranks 16–20. The possible transitive path to W17 remains `INSUFFICIENT_EVIDENCE`; no new source-backed provenance has triggered W3.
 
 
 ## 10. Owner rank-pair clarification — 2026-11-19
