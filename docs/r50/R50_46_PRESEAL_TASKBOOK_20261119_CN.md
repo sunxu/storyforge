@@ -523,4 +523,48 @@ Owner supplied the output of a local allowlisted parser over the two recovered p
 
 **Scope:** R47 was a 20-prompt, 60-response retrospective GPU inference comparison (Base/v0.1/v0.2), not training and not a fresh independent Held-out evaluation. It did not include the original source assistant reply as a fourth arm. Its exposed prompts cannot satisfy R50's protected 46-case evaluation or establish independent generalization. Do not reuse R47 as R50 evidence or launch another R47 job.
 
-**R50 gate effect:** none. This R47 evidence does not establish R50 W2 timepoint card/rule provenance, W3 world/alias closure, W4 ROLE12 policy approval or four-arm runtime role parity. R50 remains HOLD; no final seal, inference, GPU, training or promotion.
+**R50 gate effect:** none. This R47 evidence does not establish R50 W2 timepoint card/rule provenance, W3 world/alias closure or four-arm runtime role parity. The ROLE12 policy is now `APPROVED`; actual four-arm runtime role parity remains unverified. R50 remains HOLD; no final seal, inference, GPU, training or promotion.
+## 9. Current progress after ROLE12 approval and R47 runtime-log recovery — 2026-11-19
+
+### Completed since the initial handoff
+
+- Owner explicitly approved `TWO_INDEPENDENT_USER_TURNS`: the 12 trailing historical User messages and the appended User message remain two separate consecutive User turns. Apply to Base/v0.1/v0.2/v0.3-A; preserve role sequence and original order; do not merge, rewrite, delete or insert Assistant messages. The policy contract is `docs/plans/V03_R50_FOUR_MODEL_PLUS_ORIGINAL_GOLD_CONTRACT_20261119_CN.md`.
+- W1/W2 crosswalk is already recorded at `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md`: W1 `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`; W2 `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__TIMEPOINT_CARD_RULE_RUNTIME_PROOF`; W3 `NOT_TRIGGERED`.
+- Both R47 historical execution logs were recovered from the exact existing HF Bucket paths and safely parsed locally. The new receipt is `docs/evidence/V03_R50_W4_HISTORICAL_RUNTIME_EVIDENCE_SAFE_20261119_CN.md` (commit `47e01a58448cb859f401a0ce16a7cd3bd698831d`).
+- R47 Base/v0.1/v0.2 logs show matching listed command/runtime fields on the old exposed 20-prompt comparison. R55's existing log provides partial v0.3-A-side historical runtime fields. These historical development runs do not prove R50's actual four-arm serialized input, load configuration or runtime parity.
+- Original Gold lookup is bounded: no exact 32-message history sequence or positive provenance Message-ID match in the examined 14-chat and 06–15 archives; pinned five R50 source transcripts provide 0/46 same-current-User exact candidates. Overall `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES`; retain four-model comparison for cases without exact Gold.
+
+### Current W4 blockers
+
+1. No R50-specific four-arm inference runner or actual four-arm load/runtime receipt was found in the inspected GitHub source. Owner-local existing receipts remain to be inventoried.
+2. Static Draft message-sequence SHA256 `9ad0254f740a979e9b79b458a22e61e40db4ff98fb946e0332cf172e6888565c` is not a runtime serialized-request or tokenizer input-ID receipt; it does not prove the two consecutive User roles reached each arm unchanged.
+3. W2 still lacks authenticated per-case cutoff-time System/Card/Long-term Rules snapshots and prompt-assembly receipts. This blocks proof of exact shared context/order across arms.
+4. Historical R47/R55 logs show `truncation_strategy=delete`, `enable_thinking=None`, and stop/stop_words presence; `enable_thinking=None` is not explicit false, stop values are redacted, and EOS was not recorded. R55 also has an unresolved `seed=42` invocation vs `seed=None` GenerationConfig-like record. These are historical settings, not R50 effective settings.
+5. R50-specific effective tokenizer/template pins, no-truncation behavior, generation reserve, EOS/stop and sampling parity across all four arms remain unverified.
+
+### Smallest next action
+
+Run a **read-only Owner-local inventory** of already-existing R50 runtime/load/config/prompt-assembly receipts only. Return sanitized filenames, byte counts, SHA256, per-arm record counts and allowlisted field presence/values. Search for historical artifacts only; do not create a model load, tokenizer job, HF job, GPU run, inference or training. If no R50-specific four-arm receipt exists, record `SOURCE_UNAVAILABLE` and keep W4 HOLD.
+
+### Refreshed current disposition
+
+```text
+W1_CROSSWALK = NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED
+W2_TIMEPOINT_CARD_RULE_RUNTIME = SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES
+W3 = NOT_TRIGGERED
+WORLD_SEMANTIC_ISOLATION = HOLD
+TIMEPOINT_CARD_RULE_PROVENANCE = PENDING
+HIDDEN_ALIAS_WORLD_COMPONENT_CLOSURE = HOLD
+CPU46_TOKEN_LENGTHS = VERIFIED_DRAFT_ONLY
+ROLE12_STRUCTURE = PASS_AS_REPORTED
+ROLE12_POLICY = APPROVED
+FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
+ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES
+OFFICIAL_HELDOUT_ADMITTED = 0
+FINAL_SEAL = NOT_PERFORMED
+GPU_USED_FOR_R50_AUDIT = false
+R50_MODEL_INFERENCE_RUN = false
+R50_TRAINING_RUN = false
+```
+
+R47/R55 historical GPU inference and R54 training were earlier development activities. They do not mean the current R50 audit used GPU or performed R50 inference/training.
