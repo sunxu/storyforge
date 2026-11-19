@@ -354,3 +354,8 @@ Read-only GitHub inspection located the historical R48/R55 comparison pipeline:
 - R55 is five answers total: Original Gold + Base/v0.1/v0.2/v0.3-A, with exact-source validators, frozen output/report hashes, anonymous five-way sheets, and a separately randomized v0.3-A vs v0.2 direct pairwise sheet. Its scope is the same 20 exposed prompts across two worlds; the 2026-10-23 preparation receipt says real Owner-local preflight was still pending.
 
 This closes the **design/implementation precedent** question for the five-answer review package. It does not close R50 W4 runtime parity: R47/R55 are old exposed prompts, not the protected 46, and no R50-specific four-arm load/runtime receipt was found. Reuse the R55 design/validators only as a reference; do not run its build/preflight against R50 or reuse exposed outputs as R50 answers. W4 remains NOT_VERIFIED pending existing R50 per-arm runtime/load evidence.
+
+
+### R55 Gold5 v2 historical outcome located — 2026-11-19
+
+The later Owner-unblind SAFE aggregate at docs/evidence/V03_R55_GOLD5_V2_OWNER_UNBLIND_DECISION_20261023.md supersedes the earlier 2026-10-23 *builder-preparation-only* receipt for the status of the subsequent v2 development review. It reports 20 exposed prompts / two worlds, three reviewers and 3,960 Pair/Four/Five ratings. Pair v0.3-A vs v0.2 was 10:10 and v0.3-A was lower on all six dimensions. Five-way means were Original Gold 3.500, v0.2 3.461, v0.3-A 3.197. The Owner decision retained v0.2 and kept R54 checkpoint-16 NO-GO for R50. These are Owner-pasted aggregate results; reviewer independence was not technically certified and hard-event adjudication remained pending. This is historical development evidence only, not R50 or fresh Held-out evidence.
