@@ -6,7 +6,7 @@
 
 **Publication state:** This taskbook is proposed in [Draft PR #33](https://github.com/sunxu/storyforge/pull/33), branch `docs/r50-agent-handoff-20261119`; until merged, read it from that branch rather than assuming it exists on `main`.
 
-**Execution order:** W1 is the first active task. W2 may run in parallel only as a read-only search for already-existing historical snapshots/records. W3 is conditional on new evidence from W1/W2. W4 is a separate Owner-policy/runtime-parity gate. Do not start W1–W4 as four concurrent audit workstreams. No HF Job, GPU, model inference or training is required or authorized.
+**Execution order (refreshed 2026-11-19):** W1 crosswalk and W2 bounded existing-source search are complete; W1 found no new evidence and W2 is `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES`. W3 is `NOT_TRIGGERED`. The ROLE12 policy portion of W4 is approved; the only active gate is read-only verification of already-existing four-arm R50 runtime/load/input-parity evidence. W5 preregistration remains deferred until W1–W4 are resolved and separately accepted. Do not repeat completed audits or start parallel duplicate workstreams. No HF Job, GPU, model inference or training is authorized.
 
 > This is the current operational taskbook. It supersedes the action ordering in the 2026-10-22 snapshot `docs/r56/R56_R50_46_PROTECTED_GATE_NEXT_STEPS_20261022.md`, but does not erase that historical record. The dated 2026-11-19 audit evidence is proposed in Draft PR #32 and is not yet merged to main.
 
@@ -116,9 +116,9 @@ Other historical context:
 
 ## 4. Remaining work — strictly sequenced
 
-### W1 — First: complete the historical-evidence coverage crosswalk
+### W1 — Completed: historical-evidence coverage crosswalk
 
-**This is the first active task and the prerequisite for deciding whether any new semantic adjudication is warranted. Do not start W3 before W1 is complete.**
+**Completed.** See `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md`. Result: `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`; do not repeat the crosswalk, CRC, lexical scan or prior pair reviews absent a genuinely new provenance item.
 
 **Goal:** prove which historical evidence sets, source scopes and provenance records are already covered by the 2026-11-19 50-row inventory and which, if any, are genuinely new.
 
@@ -132,7 +132,7 @@ Other historical context:
 
 **W1 stop condition:** if no genuinely new provenance is found, record `NO_NEW_EVIDENCE`, preserve the current HOLD, and do not manufacture another round of review.
 
-### W2 — In parallel with W1 only: search for already-existing historical card/rule snapshots
+### W2 — Completed bounded search: historical card/rule snapshots
 
 W2 may proceed alongside W1 because it is a search/inventory of existing records, not a new audit or reconstruction. Do not broaden it into fresh data collection or runtime execution.
 
@@ -148,7 +148,7 @@ Record what locations/ref ranges were searched and what artifact types were or w
 
 If the required historical snapshots/records are not present in the existing sources searched, record `SOURCE_UNAVAILABLE` / `HOLD` with the exact missing proof. Do not reconstruct or backfill historical facts from present-day cards. Do not ask for or initiate a new export until the existing-source search is reported and the Owner decides whether to authorize a targeted retrieval.
 
-### W3 — Conditional: targeted alias/event/transitive world-component adjudication
+### W3 — Not triggered: targeted alias/event/transitive world-component adjudication
 
 **Do not start W3 merely because three lexical flags exist. Start only if W1 or W2 identifies genuinely new, source-backed provenance relevant to an unresolved edge.**
 
@@ -164,7 +164,7 @@ If W1/W2 yields no new provenance, mark W3 `NOT_TRIGGERED`; retain the prior unr
 
 The Owner's statement that intended story worlds are independent is recorded evidence of intent, not a substitute for the source graph.
 
-### W4 — Separate ROLE12 gate: Owner policy decision, then four-arm runtime parity
+### W4 — Active read-only gate: approved ROLE12 policy, four-arm runtime parity outstanding
 
 W4 is independent of the W1→W2→conditional-W3 evidence sequence. It must not cause W1/W2 to pause, and it must not trigger a new tokenizer job, HF Job, GPU, model inference or training.
 
@@ -223,11 +223,11 @@ Before doing anything, mark each item as `ALREADY_DONE`, `NEW_EVIDENCE_REQUIRED`
 ## 6. Handoff acceptance / completion criteria
 
 The task is not complete merely because a report is written. The incoming agent must produce:
-1. W1 historical evidence coverage crosswalk, completed first;
-2. W2 existing-snapshot search result, run in parallel with W1, with evidence pins or explicit `SOURCE_UNAVAILABLE`;
-3. W3 targeted alias/event/transitive adjudication only if W1/W2 provides a new-evidence trigger; otherwise mark `NOT_TRIGGERED` and preserve HOLD;
-4. a separate explicit ROLE12 Owner decision and read-only four-arm parity status;
-5. a refreshed gate matrix and next-owner-action list.
+1. W1 crosswalk: **complete**, `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`;
+2. W2 bounded existing-source search: **complete**, `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES`;
+3. W3: **not triggered**, retain semantic HOLD and do not repeat reviews;
+4. ROLE12 policy: **Owner-approved**; read-only four-arm R50 runtime/load/serialized-role parity remains outstanding;
+5. W5 preregistration: **deferred** until W1–W4 gates are resolved and accepted.
 
 Every claim must identify its evidence tier: independently verified repository artifact, Owner-local SAFE receipt, Owner testimony, or agent inference. Never upgrade an Owner-local receipt to an independent source replay.
 
