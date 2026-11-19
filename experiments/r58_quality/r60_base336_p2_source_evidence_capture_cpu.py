@@ -426,38 +426,50 @@ def safe_summary(base_stats: dict, p2_coverage: dict, p2_records: list[dict],
 def fetch(dsn: str, stories: list[str], sources: list[dict]) -> tuple[list[tuple], list[tuple]]:
     if not dsn:
         raise Hold("DB_DSN_HOLD")
-    import psycopg
+    try:
+        import psycopg
+    except ImportError:
+        raise Hold("DB_DRIVER_IMPORT_HOLD") from None
 
-    with psycopg.connect(dsn, connect_timeout=10, autocommit=False) as conn:
-        try:
-            with conn.cursor() as cur:
-                cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-                cur.execute("SET LOCAL statement_timeout='60000ms'")
-                cur.execute("SET LOCAL lock_timeout='1000ms'")
-                cur.execute("SET LOCAL row_security=on")
-                cur.execute("""
-                    SELECT current_user,current_setting('transaction_read_only'),
-                           current_setting('row_security'),r.rolbypassrls,r.rolsuper
-                    FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
-                """)
-                private.assert_guard(cur.fetchone())
-                cur.execute(p2_inventory.RLS_PREFLIGHT_SQL)
-                p2_inventory.validate_rls_preflight(cur.fetchall())
-                cur.execute(SQL_BASE336, (stories,))
-                base_rows = cur.fetchall()
-                cur.execute(
-                    SQL_P2,
-                    (
-                        [s["story_id"] for s in sources],
-                        [s["public_content_revision"] for s in sources],
-                        [s["moderation_submission_id"] for s in sources],
-                        [s["permission_event_id"] for s in sources],
-                    ),
-                )
-                p2_rows = cur.fetchall()
-                return base_rows, p2_rows
-        finally:
-            conn.rollback()
+    phase = "DB_CONNECTION_HOLD"
+    try:
+        with psycopg.connect(dsn, connect_timeout=10, autocommit=False) as conn:
+            try:
+                with conn.cursor() as cur:
+                    phase = "DB_TRANSACTION_SETUP_HOLD"
+                    cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                    cur.execute("SET LOCAL statement_timeout='60000ms'")
+                    cur.execute("SET LOCAL lock_timeout='1000ms'")
+                    cur.execute("SET LOCAL row_security=on")
+                    cur.execute("""
+                        SELECT current_user,current_setting('transaction_read_only'),
+                               current_setting('row_security'),r.rolbypassrls,r.rolsuper
+                        FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
+                    """)
+                    private.assert_guard(cur.fetchone())
+                    cur.execute(p2_inventory.RLS_PREFLIGHT_SQL)
+                    p2_inventory.validate_rls_preflight(cur.fetchall())
+                    phase = "DB_BASE336_SOURCE_QUERY_HOLD"
+                    cur.execute(SQL_BASE336, (stories,))
+                    base_rows = cur.fetchall()
+                    phase = "DB_P2_PUBLIC_SOURCE_QUERY_HOLD"
+                    cur.execute(
+                        SQL_P2,
+                        (
+                            [s["story_id"] for s in sources],
+                            [s["public_content_revision"] for s in sources],
+                            [s["moderation_submission_id"] for s in sources],
+                            [s["permission_event_id"] for s in sources],
+                        ),
+                    )
+                    p2_rows = cur.fetchall()
+                    return base_rows, p2_rows
+            finally:
+                conn.rollback()
+    except ImportError:
+        raise Hold("DB_DRIVER_RUNTIME_HOLD") from None
+    except psycopg.Error:
+        raise Hold(phase) from None
 
 
 def _write_new(path: Path, data: bytes) -> None:
@@ -474,6 +486,7 @@ def _write_new(path: Path, data: bytes) -> None:
 
 
 def run(args: argparse.Namespace) -> dict:
+    args.failure_phase = "PRIVATE_INPUT_PREFLIGHT"
     _, p2_raw, p2_sources = load_p2_manifest(args.p2_manifest)
     cases, stories, quarantine_raw, saved = load_base336(args)
     validate_output_target(args.output_dir)
@@ -495,11 +508,15 @@ def run(args: argparse.Namespace) -> dict:
             "hf_jobs_submitted": 0,
             "model_requests": 0,
         }
+    args.failure_phase = "DB_SOURCE_FETCH"
     base_rows, p2_rows = fetch(
         os.getenv("R60_READONLY_DATABASE_URL", ""), stories, p2_sources
     )
+    args.failure_phase = "BASE_RECORD_VALIDATION"
     base_records, base_stats = _base_records(base_rows, stories)
+    args.failure_phase = "P2_RECORD_VALIDATION"
     p2_records, p2_coverage = _p2_records(p2_rows, p2_sources)
+    args.failure_phase = "EXACT_MATCH_SCREEN"
     exact_counts, exact_pairs = exact_field_matches(p2_records, base_records)
     case_bindings = []
     for entry in saved["remaining_full_r50_hold"]:
@@ -529,6 +546,7 @@ def run(args: argparse.Namespace) -> dict:
         })
     if len(case_bindings) != 336:
         raise Hold("BASE_CASE_SOURCE_BINDING_HOLD")
+    args.failure_phase = "PRIVATE_PACKAGE_ASSEMBLY"
     package = {
         "schema": SCHEMA,
         "base336_scope": {
@@ -565,6 +583,7 @@ def run(args: argparse.Namespace) -> dict:
         base_stats, p2_coverage, p2_records,
         overlap, exact_counts, len(package_raw),
     )
+    args.failure_phase = "PRIVATE_PACKAGE_WRITE"
     private.private_dir(args.output_dir, create=True)
     _write_new(args.output_dir / PRIVATE_FILENAME, package_raw)
     safe["private_file_created"] = True
@@ -600,12 +619,17 @@ def main() -> int:
             "P2_REVISION_PERMISSION_BINDING_HOLD", "P2_FIELD_SIZE_HOLD",
             "P2_DB_COVERAGE_HOLD", "PRIVATE_PACKAGE_SIZE_HOLD",
             "PRIVATE_OUTPUT_MODE_HOLD",
+            "DB_DRIVER_IMPORT_HOLD", "DB_DRIVER_RUNTIME_HOLD",
+            "DB_CONNECTION_HOLD", "DB_TRANSACTION_SETUP_HOLD",
+            "DB_ROLE_RLS_PREFLIGHT_HOLD", "DB_BASE336_SOURCE_QUERY_HOLD",
+            "DB_P2_PUBLIC_SOURCE_QUERY_HOLD",
         }
         code = str(exc) if type(exc) is Hold and str(exc) in known else "SOURCE_CAPTURE_OR_RUNTIME_HOLD"
         print(json.dumps({
             "schema": SAFE_SCHEMA,
             "status": "P2_BASE336_SOURCE_EVIDENCE_HOLD",
             "reason_code": code,
+            "failure_phase": getattr(args, "failure_phase", "PRE_RUN"),
             "database_accessed": None if args.execute else False,
             "database_modified": False,
             "private_file_created": False,
