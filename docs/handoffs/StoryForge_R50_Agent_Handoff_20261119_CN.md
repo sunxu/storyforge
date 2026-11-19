@@ -179,7 +179,7 @@ The subsequent Owner-unblind SAFE aggregate is documented at docs/evidence/V03_R
 
 ## 15. Owner-local inventory correction and R55 evidence-resolution chain — 2026-11-19
 
-The latest Owner-pasted output shows `transitive_known_old_link` is a list of two integers. The displayed `LINK_COUNT: 2` is not proof of two edges; the integers may encode a single endpoint pair or compact references. Their values and containing schema are still needed. The 04→07 relationship remains unresolved.
+Owner later supplied `transitive_known_old_link=[4,7]` and rank arrays: both are old-source ranks, with 4 in frozen R45 and 7 outside R45. The two values are consistent with the previously recorded 04→07 rank pair and represent endpoints, not two edge objects. The possible transitive path from this old component to W17 remains `INSUFFICIENT_EVIDENCE`.
 
 The Owner-local R55 inventory includes first arbitration, second and third evidence audits, and a final 152-category decision file. The public R55 protocol defines 76 flagged candidate replies × two categories (152), with P0=65/P1=87; third audit covers 46 selected replies / 92 slots and includes the 59 original disputed/first-HOLD categories. The third-audit report explicitly prohibits automatic majority resolution and says reviewer independence was not technically verified. The final-evidence protocol distinguishes format/quotation validation from semantic certification. Do not treat private-file existence as proof of a successful final gate; request only the five safe count-only receipts next.
 
