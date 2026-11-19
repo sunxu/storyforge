@@ -1,5 +1,16 @@
 # R60 Base336 — P2-C 主线收敛与 Owner 下一步
 
+## 接手特别提醒：当前命令已执行，不得重复（2026-11-19）
+
+此文件累计了历史运行命令，部分标题写“下一项直接核验”，**不代表仍需执行**。尤其下面的“冻结 R50 五世界 UUID ↔ 原始 50 来源 ↔ P2 八来源”已由 Owner SAFE `R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD` 通过；R58 五行 CSV 输出全缺来源引用也已收到；全部不再运行。
+
+**从现在起，唯一现行主线与新 Agent 提示词是 [R60 Base336 P2 Quality-v1 接手任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)**。优先实现新 8 来源相对 Base336 全历史当前/存档语义与受保护/额外已曝光来源的实际隔离核验；不能把 5 R50 世界、20 旧开发题反复核对当作进度。该历史文档保留仅供回溯，不要照抄旧 Owner 命令。
+
+P2-C=HOLD，48 正式提示 NOT_GENERATED，训练/质量准入=0，无新 GPU/HF 许可。
+
+---
+
+
 ## 已验收：R50 冻结五世界与原始 50 来源等价（Owner SAFE PASS）
 
 Owner 新回传 SAFE：`R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD`，原始回执 `docs/evidence/R60_P2_R50_PINNED5_TO_PROVENANCE_OWNER_SAFE_20261119.json`。具体真实核验范围：
