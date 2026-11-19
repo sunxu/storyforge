@@ -447,9 +447,31 @@ def fetch(dsn: str, stories: list[str], sources: list[dict]) -> tuple[list[tuple
                                current_setting('row_security'),r.rolbypassrls,r.rolsuper
                         FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
                     """)
-                    private.assert_guard(cur.fetchone())
+                    try:
+                        private.assert_guard(cur.fetchone())
+                    except private.Hold:
+                        raise Hold("DB_ROLE_GUARD_HOLD") from None
                     cur.execute(p2_inventory.RLS_PREFLIGHT_SQL)
-                    p2_inventory.validate_rls_preflight(cur.fetchall())
+                    # psycopg's default cursor returns tuples; the shared
+                    # RLS policy validator requires rows keyed by column name.
+                    expected_columns = (
+                        "table_name", "rls_enabled", "select_granted", "policy_present",
+                    )
+                    columns = tuple(col.name for col in (cur.description or ()))
+                    if columns != expected_columns:
+                        raise Hold("DB_ROLE_RLS_RESULT_SHAPE_HOLD")
+                    policy_rows = cur.fetchall()
+                    if any(type(row) is not tuple or len(row) != len(columns)
+                           for row in policy_rows):
+                        raise Hold("DB_ROLE_RLS_RESULT_SHAPE_HOLD")
+                    policy_dict_rows = [
+                        dict(zip(columns, row, strict=True))
+                        for row in policy_rows
+                    ]
+                    try:
+                        p2_inventory.validate_rls_preflight(policy_dict_rows)
+                    except p2_inventory.RlsPolicyHold:
+                        raise Hold("DB_ROLE_RLS_POLICY_HOLD") from None
                     phase = "DB_BASE336_SOURCE_QUERY_HOLD"
                     cur.execute(SQL_BASE336, (stories,))
                     base_rows = cur.fetchall()
@@ -622,8 +644,9 @@ def main() -> int:
             "PRIVATE_OUTPUT_MODE_HOLD",
             "DB_DRIVER_IMPORT_HOLD", "DB_DRIVER_RUNTIME_HOLD",
             "DB_CONNECTION_HOLD", "DB_TRANSACTION_SETUP_HOLD",
-            "DB_ROLE_RLS_PREFLIGHT_HOLD", "DB_BASE336_SOURCE_QUERY_HOLD",
-            "DB_P2_PUBLIC_SOURCE_QUERY_HOLD",
+            "DB_ROLE_RLS_PREFLIGHT_HOLD", "DB_ROLE_GUARD_HOLD",
+            "DB_ROLE_RLS_RESULT_SHAPE_HOLD", "DB_ROLE_RLS_POLICY_HOLD",
+            "DB_BASE336_SOURCE_QUERY_HOLD", "DB_P2_PUBLIC_SOURCE_QUERY_HOLD",
         }
         code = str(exc) if type(exc) is Hold and str(exc) in known else "SOURCE_CAPTURE_OR_RUNTIME_HOLD"
         print(json.dumps({
