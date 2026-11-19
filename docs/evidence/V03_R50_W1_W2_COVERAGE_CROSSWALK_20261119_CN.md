@@ -83,7 +83,7 @@ This is a bounded search result, not proof that no such artifact exists in any O
 | CPU46 Tokenizer 46-length job | `ALREADY_DONE`; no repeat job |
 | ROLE12 structure/tokenizer audit | `ALREADY_DONE`; no repeat audit |
 | Historical card/rule/request snapshot search | `NEW_EVIDENCE_REQUIRED`; current searched sources return bounded `SOURCE_UNAVAILABLE` |
-| Old-link rank-pair binding | `NEW_EVIDENCE_REQUIRED`; one small SAFE aggregate only if Owner can produce it from existing inventory |
+| Old-link rank-pair binding | `CLARIFIED_FROM_OWNER_SAFE_RANK_ARRAYS`; `[4,7]` is the old 04→07 endpoint pair, not two edge objects; transitive path to W17 remains unresolved |
 | W3 semantic adjudication | `NOT_TRIGGERED` |
 | W4 exact consecutive-User policy | `APPROVED_BY_OWNER_2026-11-19` |
 | Four-arm runtime parity | `NEW_EVIDENCE_REQUIRED`; policy is approved, actual runtime/load receipts remain unverified; read-only only, no inference |
@@ -93,7 +93,7 @@ This is a bounded search result, not proof that no such artifact exists in any O
 
 ```text
 W1_CROSSWALK = NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED
-W1_EDGE_IDENTITY_BINDING = INCOMPLETE__TWO_LINK_RANK_PAIRS_NOT_IN_SAFE_RECORD
+W1_EDGE_IDENTITY_BINDING = CLARIFIED__OLD_04_TO_07_RANK_PAIR__TRANSITIVE_TO_W17_UNRESOLVED
 W2_TIMEPOINT_CARD_RULE_RUNTIME = SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES
 W3 = NOT_TRIGGERED
 WORLD_SEMANTIC_ISOLATION = HOLD
@@ -127,7 +127,7 @@ This crosswalk's original W1/W2 findings are unchanged. Later Owner decisions su
 
 A separate SAFE receipt records the Owner-provided archive integrity output and bounded Original Gold finding: `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md`.
 
-The pinned 2026-10-16 R50 replay has `source_input_normalized_verbatim_reuses=0` across all 50 new User inputs versus the five R50 source transcripts. Therefore no exact current-User-input Original Gold is available from those pinned five transcripts, including the protected 46 subset. The 14-chat and 06–15 archives are now Owner-verified for integrity but have not been checked for exact full-history matches. This does not trigger W3 and does not change WORLD or timepoint HOLDs. Overall Gold coverage remains `NOT_ESTABLISHED` pending any additional exact full-history source lookup.
+The pinned 2026-10-16 R50 replay has `source_input_normalized_verbatim_reuses=0` across all 50 new User inputs versus the five R50 source transcripts. Therefore no exact current-User-input Original Gold is available from those pinned five transcripts, including the protected 46 subset. The Owner subsequently ran the bounded exact-history lookup against both integrity-verified supplementary archives: the 14-chat archive parsed 14 actual conversations / 62,583 messages, and the 06–15 archive parsed 1,010 conversations / 71,884 messages. No exact 32-message history sequence occurrence or positive provenance Message-ID match was reported. These are bounded supplementary-source nonmatches, not evidence that every Owner-held store was exhausted. No Original Gold candidate was found; no further scan is warranted without a new independent provenance lead. This does not trigger W3 and does not change WORLD or timepoint HOLDs. Overall Gold coverage remains `NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES`.
 
 
 ## 9. Owner rank-pair follow-up — 2026-11-19
@@ -135,3 +135,20 @@ The pinned 2026-10-16 R50 replay has `source_input_normalized_verbatim_reuses=0`
 The Owner supplied `transitive_known_old_link=[4,7]`, the old/R45/Old14 rank arrays, and the relevant `pair_aggregate` rows. Both 4 and 7 are old-source ranks; only 4 is in the frozen R45 set. The two-element field is consistent with the already documented old 04→07 pair and must not be described as two separate edge objects.
 
 The old-rank-4 ↔ R50-rank-17 lexical/exact-message counts (5 sampled matches; 1 long exact match) reproduce an already-reviewed W17 flagged pair. Old-rank-7 ↔ R50 ranks 16–20 has zero reported sampled/exact matches. Neither result changes the prior W17 `INSUFFICIENT_EVIDENCE` adjudication or establishes semantic independence. The possible transitive path from the old 04→07 component to W17 remains unresolved; W3 stays `NOT_TRIGGERED` absent genuinely new source-backed provenance.
+
+
+## 10. Owner supplementary Original Gold lookup and current W1 state — 2026-11-19
+
+The Owner's corrected parser safely excluded 14 AppleDouble metadata entries from the 14-chat archive and parsed all 14 actual conversations (62,583 messages). The recursive 06–15 archive scan parsed 1,010 conversations (71,884 messages). The Owner's exact-history lookup reported no exact full 32-message history sequence occurrences in either archive; the Message-ID-first diagnostic emitted no positive match counts. The separate Original Gold SAFE receipt records these as bounded supplementary-source nonmatches. Do not rerun the parser, exact-history scan, or Message-ID diagnostic against unchanged archives.
+
+The old-link binding is now clarified at the rank level: `[4,7]` is consistent with the existing old 04→07 pair. The possible transitive path to W17 remains unresolved. No new semantic provenance was added.
+
+```text
+W1_CROSSWALK = NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED
+W1_EDGE_IDENTITY_BINDING = CLARIFIED__OLD_04_TO_07_RANK_PAIR__TRANSITIVE_TO_W17_UNRESOLVED
+W2_TIMEPOINT_CARD_RULE_RUNTIME = SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES
+W3 = NOT_TRIGGERED
+ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES
+ROLE12_POLICY = APPROVED
+FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
+```
