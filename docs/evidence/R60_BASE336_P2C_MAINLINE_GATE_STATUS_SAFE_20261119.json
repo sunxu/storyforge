@@ -1,6 +1,6 @@
 {
   "schema": "storyforge_r60_base336_p2c_mainline_status_projection_safe_v1",
-  "status": "P2_C_HOLD__R50_PINNED5_PROVENANCE_EXACT_SOURCE_CLOSED__OTHER_PROTECTED_UNIVERSE_HOLD",
+  "status": "P2_C_HOLD__R50_PINNED5_CLOSED__MATCHED_ORIGINAL_GOLD_NEW48_HOLD",
   "evidence_basis": "GITHUB_OWNER_REPORTED_SAFE_RECEIPTS_AND_PINNED_PRIOR_SCOPE_DOCUMENTS__NOT_NEW_OWNER_EXECUTION",
   "no_new_private_source_read": true,
   "p2_public_sources": 8,
@@ -71,5 +71,19 @@
   "p2_r50_pinned_five_public_sources_checked": 8,
   "r50_five_protected_sources_complete_within_original50_provenance": true,
   "r50_all_other_protected_reserved_sources_verified": false,
-  "next_scope": "FULL_PROTECTED_RESERVED_SOURCE_UNIVERSE_AND_HISTORICAL_EXPOSURE_AUTHORITY__NO_REPEAT_R50_KNOWN5"
+  "next_scope": "FULL_PROTECTED_RESERVED_SOURCE_UNIVERSE_AND_HISTORICAL_EXPOSURE_AUTHORITY__NO_REPEAT_R50_KNOWN5",
+  "original_gold_requested_by_owner": true,
+  "original_gold_role": "FIFTH_ANONYMOUS_RESPONSE_SOURCE__NOT_GENERATION_MODEL",
+  "p2_new48_prompt_matched_original_gold_verified": false,
+  "p2_new48_prompt_matched_original_gold_status": "UNVERIFIED_HOLD",
+  "original_gold_source_linkage_required": "EXACT_PROMPT_PREFIX_MATCH__SAME_FROZEN_SOURCE_REVISION__PERMISSION__EXPOSURE_SCOPE",
+  "original_gold_as_model_generation_input_allowed": false,
+  "original_gold_historical_r48_20_reused_for_new_p2_allowed": false,
+  "original_gold_blind_review_only": true,
+  "target_model_generation_arms_recommended": 4,
+  "target_reference_answer_arms_required": 1,
+  "target_new_generation_count_if_48_prompts_and_4_models": 192,
+  "target_original_gold_count_if_all_48_exact_matched": 48,
+  "target_blinded_answers_if_all_48_exact_matched": 240,
+  "model_roster_and_gold_contract_owner_final_freeze_completed": false
 }
