@@ -704,3 +704,12 @@ Owner 新回传原始 SAFE 回执已登记于 `docs/evidence/R60_P2_R50_50_46_4_
 - **未关闭**：R50 完整 Protected/Reserved World metadata roster 的**穷尽性及源/版本绑定**、语义世界别名与同组件归属、R45 全来源隔离、最终 sealed heldout 与 Reviewer/Owner 冻结。现有 `R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json` 仅有历史文件元数据与字段类型存在证据，未提供完整 5 World protected/reserved semantic coverage 的正式 SAFE；此项继续 HOLD。
 
 主线进入下一项**仅 R50 World 元数据全集范围证明**，而非重复 46/46 或 50/46/4 元数据子集审计；可并行处理 R47/R48/R55 完整历史暴露全集闭合。Base336 全 172 来源 DB 报错期间禁止猜测性重复重抽。P2-C=HOLD、48 正式提示未生成、train_admitted=0、GPU/HF 未启动。
+
+
+## 21. 2026-11-19 R50 冻结五世界来源身份等价 Owner PASS（更新第 20 节）
+
+Owner 又回传 `R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD`；原样 SAFE 已归档为 `docs/evidence/R60_P2_R50_PINNED5_TO_PROVENANCE_OWNER_SAFE_20261119.json`。
+
+复用现有 `experiments/r58_round1/check_r50_protected_uuid.py::protected_ids` 及历史两份**固定 Git Source / Admission SAFE Blob**，与 50 条仅含来源身份的已固定原始 provenance 进行 Owner 本地集合比对，核验五个受保护 Story UUID **与完整原始 50 provenance Source Story 集合严格相等**；新 8 条 P2 来源与该五世界精确交集为 0。全程未打开 R50 sealed cases/答案，不访问数据库。该证据比仅有“五世界 / 50/46/4 计数”更强，正式关闭 **R50 已知 W16–W20 五世界源身份集合绑定** 子门禁。
+
+**不外推**：这不是其它历史 Protected/Reserved 世界名册的全集认证，也不证明隐藏世界别名/语义同源排除或实际推理时发送版本。完整 `P2_C` 仍 HOLD，不生成 48 条 P2-B 正式 prompt，不启动模型/GPU，不准入训练。后续只关注 R50 **之外** 其他 Protected/Reserved、历史其他 Dev/仲裁/训练来源权威全集、Base336 全 172 语义隔离、actual-sent 与独立 Reviewer/Owner Freeze；不再重跑五世界固定元数据检查或原 50 的 provenance 46+4 补集。
