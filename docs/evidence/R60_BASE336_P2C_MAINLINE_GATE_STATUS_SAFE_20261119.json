@@ -1,6 +1,6 @@
 {
   "schema": "storyforge_r60_base336_p2c_mainline_status_projection_safe_v1",
-  "status": "P2_C_HOLD__R58_PLACEHOLDER_EMPTY__EXISTING_PRIMARY_SOURCES_NOT_INVALIDATED",
+  "status": "P2_C_HOLD__PINNED_R50_FIVE_SOURCE_RECEIPTS_READY__OWNER_SOURCE_SET_BINDING_PENDING",
   "evidence_basis": "GITHUB_OWNER_REPORTED_SAFE_RECEIPTS_AND_PINNED_PRIOR_SCOPE_DOCUMENTS__NOT_NEW_OWNER_EXECUTION",
   "no_new_private_source_read": true,
   "p2_public_sources": 8,
@@ -58,5 +58,12 @@
     "note": "EMPTY_HISTORICAL_R58_FIVE_ROW_CSV_ONLY__DOES_NOT_PROVE_ORIGINAL_SOURCES_MISSING__NOT_A_R60_P2C_GATE_PASS",
     "rerun_recommended": false
   },
-  "r50_full_metadata_roster_authority_verified": false
+  "r50_full_metadata_roster_authority_verified": false,
+  "r50_pinned_five_git_metadata_structure_verified": true,
+  "r50_pinned_five_worlds": 5,
+  "r50_pinned_five_original_source_files": 35,
+  "r50_pinned5_to_original50_provenance_story_set_verified": false,
+  "r50_pinned5_to_original50_owner_runtime_receipt": "PENDING",
+  "r50_pinned_git_metadata_safe": "docs/evidence/R60_P2_R50_PINNED_FIVE_WORLD_METADATA_SOURCE_SAFE_20261119.json",
+  "r58_empty_scope_csv_no_longer_recommended_as_p2_gate": true
 }
