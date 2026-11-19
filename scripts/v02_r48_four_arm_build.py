@@ -46,11 +46,26 @@ def read_jsonl(path: Path) -> list[dict]:
     return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
 
-def read_gold(compiled_test: Path, prompts: list[dict]) -> list[str]:
-    """Reconcile each canonical author reply against the complete frozen prompt."""
+def read_gold(
+    compiled_test: Path, prompts: list[dict], *, expected_count: int = 20
+) -> list[str]:
+    """Match original replies to full prompts; legacy R48 defaults to 20.
+
+    For a separately authorized P2 source, callers must explicitly request
+    48 and verify provenance, source revision, rights and exposure outside
+    this role/content matcher. This function does not confer clearance.
+    """
+    if type(expected_count) is not int or expected_count <= 0:
+        raise ValueError("invalid expected Gold count")
+    if len(prompts) != expected_count:
+        raise ValueError(
+            f"expected {expected_count} frozen prompts, got {len(prompts)}"
+        )
     rows = read_jsonl(compiled_test)
-    if len(rows) != 20:
-        raise ValueError(f"expected 20 canonical compiled Test rows, got {len(rows)}")
+    if len(rows) != expected_count:
+        raise ValueError(
+            f"expected {expected_count} original records, got {len(rows)}"
+        )
     targets = []
     for index, (record, prompt) in enumerate(zip(rows, prompts, strict=True)):
         dialogue = record.get("messages")
