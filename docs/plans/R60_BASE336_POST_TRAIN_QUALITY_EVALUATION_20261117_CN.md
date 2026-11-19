@@ -1,5 +1,20 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-19 最新执行决策（覆盖本文件较早的“下一步”）
+
+**唯一现行新 Agent 任务书：** [R60 Base336 P2 Quality-v1 新 Agent 接手任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本文件记录总体质量评估合同与历史证据；较早要求“R47/R48/R55 Story ID 还未知”“R55 三层尚未核验”“R50 五世界还未绑定”“第一步重新做 Owner metadata inventory”等均已被新 SAFE 覆盖，**不要再执行**。
+
+主线不可改变：**P2-C 核验 8 条新公开来源的真正独立性 → P2-B 构造并冻结 48 条全新三消息/六维提示 → P3 仅作 Base/Adapter 两臂薄适配 → P4 单独授权配对生成 → P5 六维盲评和 Owner 裁决**。本次唯一训练仍为 Base336 293/43、checkpoint-37，工程 PASS 而质量未评估、模型未晋升。
+
+截至最新 Owner SAFE：P2-A 8 来源 READY；P2 × Base336 172 Story 精确 ID overlap=0，但完整 current/archived World/Character/Opening 语义来源包未生成，Owner 捕获到 `DB_BASE336_SOURCE_QUERY_HOLD`；R50 provenance 50=46+4 与冻结五世界=原始 50 来源 Story 集合均 PASS，P2 对 R50 五世界 overlap=0；R47/R48/R55 已核验同一旧 20 Prompt / 2 Story、三层 Index 来源链，P2 exact overlap=0；R58 旧五范围 CSV 五行空引用，**不代表历史来源不存在**。剩余是新 8 来源的全版本语义隔离、其它 Protected/Reserved 与历史 Dev/训练/教师暴露权威全集、actual-sent、独立 Reviewer 和 Owner Freeze。
+
+**不重复**上述所有 PASS/旧 35 候选图/旧 38 Story 提取；不猜测性重跑失败 SQL，不开发重复 UUID/IO/Blind/Quality-v1 核心。不访问 R50 密封题目和私有聊天，不写 DB，不新建正式 48 包、不启 GPU/HF。Owner 已授权本项目限定**只读**数据库核验无需逐次重复申请；**GPU 推理/训练仍必须逐次单独批准**。P2-C=HOLD、P2-B=NOT_GENERATED、train_admitted=0、quality_v1_admitted=0。
+
+关联 SAFE：`docs/evidence/R60_BASE336_P2C_MAINLINE_GATE_STATUS_SAFE_20261119.json`（状态投影）及其引用的原始 Owner SAFE；最新 PR #31 分支 HEAD/CI 需实时核对。
+
+---
+
+
 ## 1. 当前结论
 
 **工程训练完成；独立质量评估未开始。**
