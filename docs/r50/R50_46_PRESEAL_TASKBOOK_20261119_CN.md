@@ -498,7 +498,7 @@ Owner reports successful read-only download of both exact existing HF Bucket obj
 
 | Run | Local private filename | Bytes | SHA256 |
 |---|---|---:|---|
-| Original Base run `r47-20261014T082109Z-820409` | `R47_BASE_execution.log` | 84,617 | `34d3e33c1888dbc1c61cf65c0f2619ebf41bae626deea131564db8e6a927399` |
+| Original Base run `r47-20261014T082109Z-820409` | `R47_BASE_execution.log` | 84,617 | `34d3e33ca1888dbc1c61cf65c0f2619ebf41bae626deea131564db8e6a927399` |
 | Resumed three-arm run `r47-20261014T091647Z-637890` | `R47_RESUMED_execution.log` | 450,504 | `18b077671b38404ff4821c4d9fb0342b3cb9430fc5d5565c9efc1586a4c3ab7c` |
 
 Status: `SOURCE_RECOVERED` for both remote log objects; hashes/byte counts are Owner-reported local verification, not independently rehashed in this review. Runtime fields have not yet been parsed. The next step is a local allowlisted parser that emits only safe runtime field values and line numbers; raw logs remain private and must not be pasted or committed. For the resumed run, Base was reused, so the log should be used for v0.1/v0.2 and not treated as Base inference evidence. The earlier Base run log is the Base runtime source.
