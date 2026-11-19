@@ -691,3 +691,16 @@ Owner 在本次对话实际回传 `schema=storyforge_r60_base336_component_confl
 - `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0` 不变。
 
 下一项可独立推进的工作是只读验证 35 条风险候选在**预定数据消费/生成入口**不会被准入，并行继续 actual-sent 与其他 metadata-only 来源排除审计。不得在验证前把 “candidate conflict preview” 或 “建议隔离”表述成 “已实施正式隔离”。
+
+
+## 20. 2026-11-19 R50 50/46/4 provenance-only 补集 SAFE 已通过（覆盖本文较早 HOLD 记载）
+
+Owner 新回传原始 SAFE 回执已登记于 `docs/evidence/R60_P2_R50_50_46_4_PROVENANCE_COMPLEMENT_SAFE_20261119.json`，状态 `R50_PROVENANCE_50_46_4_METADATA_PASS__P2_C_HOLD`。
+
+- 50 条原始 **provenance-only** 的历史固定大小+SHA 核对通过；46 条 derived provenance ID/原始父行序和四项来源身份字段一致，Selection 4 条排除 = Admission 4 条排除 = 原始 50 减 derived 46 的确切补集。
+- P2 八条公开 Story IDs 与这 50 条 R50 provenance 来源 Story ID 的精确交集为 0；不等于语义独立。
+- **本轮未打开 R50 密封内容**；没有读取原始 50 条题目 JSONL 或访问数据库。其成功依赖原始来源 metadata 的已有锁定字节哈希，而不是对密封题目重新打开做完整 frozen seal。
+- **已关闭**：原 50 → 派生 46 + 排除 4 的 *provenance metadata subset* 子门禁、此 50-story-source scope 的精确 ID 不交集子门禁。本文此前在第 10 节记载的“50/46/4 complement NOT VERIFIED”现仅对**密封原始 cases 字节层面**和正式 heldout seal 仍成立；不要再误把 metadata-only 补集写为未执行。
+- **未关闭**：R50 完整 Protected/Reserved World metadata roster 的**穷尽性及源/版本绑定**、语义世界别名与同组件归属、R45 全来源隔离、最终 sealed heldout 与 Reviewer/Owner 冻结。现有 `R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json` 仅有历史文件元数据与字段类型存在证据，未提供完整 5 World protected/reserved semantic coverage 的正式 SAFE；此项继续 HOLD。
+
+主线进入下一项**仅 R50 World 元数据全集范围证明**，而非重复 46/46 或 50/46/4 元数据子集审计；可并行处理 R47/R48/R55 完整历史暴露全集闭合。Base336 全 172 来源 DB 报错期间禁止猜测性重复重抽。P2-C=HOLD、48 正式提示未生成、train_admitted=0、GPU/HF 未启动。
