@@ -183,7 +183,7 @@ Owner later supplied `transitive_known_old_link=[4,7]` and rank arrays: both are
 
 The Owner-local R55 inventory includes first arbitration, second and third evidence audits, and a final 152-category decision file. The public R55 protocol defines 76 flagged candidate replies × two categories (152), with P0=65/P1=87; third audit covers 46 selected replies / 92 slots and includes the 59 original disputed/first-HOLD categories. The third-audit report explicitly prohibits automatic majority resolution and says reviewer independence was not technically verified. The final-evidence protocol distinguishes format/quotation validation from semantic certification. Do not treat private-file existence as proof of a successful final gate; request only the five safe count-only receipts next.
 
-R50 W4 is still HOLD: its existing Role12 receipt records actual four-arm runtime role/interpretation parity=false and consecutive-User policy approval=false. Tokenizer draft-fit evidence is not deployed per-arm parity. No protected R50 admission, sealing, inference or GPU action is authorized by this historical evidence.
+R50 W4 policy was subsequently approved by the Owner on 2026-11-19. The 2026-10-23 Role12 receipt predates that approval and correctly records the policy as not yet approved at the time; its `actual_four_arm_runtime_role_parity_verified=false` remains current because no later per-arm runtime evidence was found. Tokenizer draft-fit evidence is not deployed per-arm parity. No protected R50 admission, sealing, inference or GPU action is authorized.
 
 
 ## R55 safe-receipt update — 2026-11-19
