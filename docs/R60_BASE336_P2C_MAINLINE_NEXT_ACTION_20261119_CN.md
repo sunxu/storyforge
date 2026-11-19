@@ -1,5 +1,27 @@
 # R60 Base336 — P2-C 主线收敛与 Owner 下一步
 
+## 最新 Owner 结果：R58 五范围索引为空，停止沿该路径重复盘点（2026-11-19）
+
+Owner 实际执行历史 `experiments/r58_round1/audit_g1_index_readiness.py` 并返回 `R58_G1_SOURCE_EXISTENCE_PREFLIGHT_ONLY__WORLD_AND_PROTECTION_HOLD`。原始回执存于 `docs/evidence/R60_P2C_R58_G1_EMPTY_SOURCE_REFERENCES_OWNER_SAFE_20261119.json`。
+
+- `scope_count=5`，五行全部 `MISSING_SOURCE_REFERENCE`；`source_files_present_unopened=0`、`owner_coverage_claims_present=0`、`independently_verified_complete_scopes=0`。
+- `source_index_bytes_read=false`、`protected_test_content_read=false`、`candidate_story_content_read=false`；该检查**没有打开任何被引用的权威来源文件**。
+- **精确解释**：这只证明 R58 旧五行 CSV **未绑定任何来源引用**，不是“R50 / SFT / R55 等原始材料不存在”。既有 R50 原 50 条 provenance、R50 World Inventory、R47/R48/R55 20-case 等其它来源文件仍按各自独立已核验证据处理。
+- **停止动作**：不重跑这份 CSV、不要填假 `OWNER_COVERAGE_ATTESTED`、不制造新的 R58 索引；本旧工具并不负责 R60 新 8 来源全集门禁。它的 `g1_clearance=HOLD` 也不是 R60 任务的新 FAIL。
+
+**主线接力：**
+1. R50 原始 50 条 provenance = 46+4 及 P2 exact Story ID overlap=0 **继续 PASS，不重复跑**。已知 5 个 R50 原始来源世界属有限来源范围；完整 Protected/Reserved **权威**名单的来源版本/穷尽性与隐藏别名均未提供，不得凭旧 R58 空表也不得凭 World Inventory 的存在性直接推断 PASS。
+2. R47/R48/R55 旧 20 Prompt（2 Story）的 SHA/复合身份/索引传递链 **继续 PASS，不重跑**。仅继续寻找**其它**历史开发、仲裁、训练和保留来源权威清单，不用相同 20 个 Prompt 反复充数。
+3. Base336 × P2 新 8 来源仍需全 172 Story current+archived 世界/卡/开场语义核验，Owner 捕获器上次停在 `DB_BASE336_SOURCE_QUERY_HOLD`，没有根因证据之前不重复 SQL。
+4. `historical_actual_sent_verified=false`、独立 Reviewer 和 Owner Freeze HOLD。保持所有私有原文、密封内容及数据库凭据不进入公共 GitHub。
+
+**下一步不再使用 R58 空白 CSV。** 只对已知存在的 `R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json` 及历史来源原始授权/封存来源文档做元数据范围证明：应有能够绑定原始 50 条 provenance 来源的受信标识、对应的冻结版本，以及“Protected/Reserved 不再存在未列来源”的权威边界文件；无法取得则如实单独 HOLD。不要为了消除 HOLD 而重新生成或改变历史文件。
+
+`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0`、`model_promoted=false` 不变。
+
+---
+
+
 ## 最新状态：R50 provenance 与历史曝光已知范围（2026-11-19）
 
 **当前动作优先级高于下文所有旧的捕获器/数据库重试步骤。** P2-C 仍围绕 **新 8 条公开评估来源的独立性**，不扩展旧 35 案例审计。
