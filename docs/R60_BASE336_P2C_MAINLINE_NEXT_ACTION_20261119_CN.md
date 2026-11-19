@@ -84,3 +84,49 @@ p2_c = HOLD
 若离线预检通过，而其他经核对的既有快照仍不具备 172 Story current + all archived 的完整 World/Character/Opening 字段，则需明确的 **Owner 最小范围只读数据库捕获授权**，不能沿用先前 38 Story 的数据库读取许可，不能把“运行预检”解读为授权执行捕获。授权范围应仅为：冻结 172 个 Story 的 `world/character/characters/opening` current+archived，以及已批准 8 条 P2 public snapshot 的 revision/moderation/permission 字段；RLS 只读角色，`REPEATABLE READ READ ONLY`，仅 Owner Mac 私有 create-only 0700/0600 输出，SAFE 聚合回执。不得查询 R50 密封正文、用户私有会话消息、训练/推理/API、扩大数据集或修改数据库。
 
 后续批准后执行仍属于**来源证据收集**，不是 P2-C PASS。之后必须开展 P2×Base336 语义比较、R50 完整 Protected/Reserved metadata-only 覆盖、旧曝光全集、历史 actual-sent 版本绑定、独立复核与 Owner Freeze。P2-C 与 48 提示继续 HOLD/NOT_GENERATED。
+
+
+## Owner Mac 无数据库预检：已知六个冻结目录的精确命令
+
+已从既有 R60 Owner 冻结审计流程恢复六个**已使用过的目录名称**，不是新构造的目录。此命令只执行仓库已经存在的捕获器的默认预检，**故意不传 \`--execute\`**，不打开数据库、不会生成任何私有来源正文包。
+
+~~~bash
+bash <<'BASH'
+set -euo pipefail
+umask 077
+REPO="$HOME/workspace/storyforge-r60-p2-card-opening"
+BASE="$HOME/.local/share/storyforge/r60/private"
+TOOLS="$BASE/reviewer-tools-git-v2"
+BRANCH="docs/r60-p2-r47-r48-r55-source-shape-audit-20261118"
+SCRIPT="$TOOLS/r60_base336_p2_source_evidence_capture_cpu.py"
+P2_MANIFEST="$BASE/r60-p2-public-source-inventory-20261118/R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json"
+OUTPUT="$BASE/r60-base336-p2-full-source-evidence-20261119-v1"
+
+test -d "$REPO" && test -d "$TOOLS"
+test -f "$P2_MANIFEST"
+test ! -e "$OUTPUT" && test ! -L "$OUTPUT"
+test ! -e "$SCRIPT" && test ! -L "$SCRIPT"
+
+git -C "$REPO" fetch --no-tags origin "$BRANCH"
+git -C "$REPO" show \
+  FETCH_HEAD:experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py \
+  > "$SCRIPT"
+chmod 600 "$SCRIPT"
+
+export PYTHONPATH="$REPO/src:$REPO/experiments/r58_quality:$TOOLS"
+
+python3 "$SCRIPT" \
+  --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1" \
+  --p2-manifest "$P2_MANIFEST" \
+  --output-dir "$OUTPUT"
+BASH
+~~~
+
+预期成功 SAFE：\`status=P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB\`、336 cases、172 unique stories、8 public P2 sources、P2 exact Story ID overlap=0、\`database_accessed=false\`、\`private_file_created=false\`。如返回 HOLD，仅发送 SAFE 的 status/reason_code/计数，不发送私有路径、哈希或数据内容。
+
+后续如需传 \`--execute\`，必须单独获得 Owner 对 172 Story current+全部归档 World/Character/Opening、8 P2 approved public snapshot 的**明确最小范围只读数据库授权**。该目录及源对象不得覆盖或自动重试。没有授权时止于预检。
