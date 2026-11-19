@@ -636,3 +636,8 @@ TRAIN_ADMITTED = 0
 - 这是静态输入证据的机械复用**候选**，与旧第 13 节 6 对 / 22 案例的初始计数不同。以本节作为新的 Reviewer 候选范围，不将旧数字继续当作穷尽数量。
 - Owner 私有 create-only Reviewer 包中保留证据的 source/version/path/哈希引用和空白 Reviewer 决策字段；公开 GitHub 不上传原始 JSON、私有包、个人身份、正文或逐案映射。
 - **未授权自动重分配 split、修改冻结数据或训练。** Reviewer independent execution / actual-sent / R50 Protected-Reserved full roster / Owner freeze 继续 HOLD，P2-C 仍 HOLD，P2-B 48 条未生成。
+
+
+## 15. 2026-11-19 独立 Reviewer 表单 v2 与严格证据引用校验
+
+新增独立 Reviewer v2 执行合同：`docs/evidence/R60_BASE336_INDEPENDENT_REVIEW_SCHEMA_V2_HANDOFF_20261119_CN.md`。Owner 可下载完整的 `R60_BASE336_INDEPENDENT_EDGE_REVIEW_SCHEMA.json`、`R60_BASE336_INDEPENDENT_REVIEWER_TASKBOOK_20261119_CN.md`、更新后的 `r60_independent_reviewer_offline.py`。v2 改为 A/B 结构化证据引用（记录索引、组别、当前/归档版本、RFC6901 字段路径），`verify --inputs --packet --reviews-dir --schema` 强制从 8 份原始输入重新核验证据页及记录绑定，杜绝只用自由文本写“见证据”的错误 PASS。Owner-local 合成测试覆盖空白 HOLD、合法单项和篡改索引/正文 HOLD。旧 v1 表单不隐式升级，保留原目录，新目录 create-only。仅完成执行工具准备；无真实 Reviewer 答卷或 Owner Freeze，P2-C 继续 HOLD。
