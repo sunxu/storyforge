@@ -252,3 +252,15 @@ Latest PR #33 CI after the R55 effective-runtime evidence update: head `cc9f68aa
 ## 18. R47 runtime-log filename search — 2026-11-19
 
 Owner's recursive filename search in `~/.local/share/storyforge/r47/r47-20261014T091647Z-637890/` for `*.log`, `*runtime*`, `*launch*`, and `*command*` returned `MATCHED_FILES: 0`. Treat this strictly as no matching filenames in the searched directory, not as evidence that R47 did not execute or that all runtime metadata is absent. Known R47 artifacts remain `R47_PRIVATE_RUN_REPORT.json`, `R47_LOCAL_INTEGRITY_PASS.json`, `coordinator/private/R47_AUDIT_SUMMARY.json`, and `base-results.jsonl` / `v01-results.jsonl` / `v02-results.jsonl`. Next action is a safe read-only field scan of the existing JSON reports for runtime/template/truncation/stop/sampling metadata. Never emit raw prompt/response text, case IDs or private mappings. If not recorded, state `NOT_RECORDED`; no R47 rerun, model load, tokenizer, GPU or HF job.
+
+## 19. R47 execution.log recovery lead — 2026-11-19
+
+GitHub source verification established that the R47 Runner explicitly creates out/execution.log and writes command lines plus merged process output there. Its output root is evaluation-runs/v02-r47/<RUN_KEY>/. The historical collection script omits this log: it fetches the report, three result JSONLs, blind package, reviewer CSVs, private answer key and audit summary, but never execution.log. This explains why the Owner's local filename search returned zero without proving that the remote log was never produced.
+
+Relevant exact runs:
+- resumed three-arm run: r47-20261014T091647Z-637890; Base was byte-exactly reused, so this log should cover v0.1/v0.2 inference but not original Base generation.
+- earlier Base run: r47-20261014T082109Z-820409; its log, if retained, is the source to inspect for actual Base inference.
+
+Runner source SHA: a2fa43f65b7b31631976cab1ac84b2b183b5f352. Collector source SHA: 20150d94fd460d8551838a7d7da4cae8137d2ff1.
+
+Next: Owner can perform a read-only hf buckets cp of only the two exact execution.log paths to a private temp directory; do not fetch any answer key, prompt, response or mapping artifacts. Parse locally and output only allowlisted runtime settings and line numbers. Missing remote object means SOURCE_UNAVAILABLE; no GPU/model/tokenizer execution is permitted.
