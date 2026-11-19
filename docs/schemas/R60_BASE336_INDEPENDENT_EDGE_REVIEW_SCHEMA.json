@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sunxu/storyforge/blob/r60/common2-cpu2-owner/docs/schemas/R60_BASE336_INDEPENDENT_EDGE_REVIEW_SCHEMA.json",
+  "title": "R60 Base336 independent per-edge reviewer decision (private v2)",
+  "description": "Machine-readable structure. Cross-file packet/evidence binding and reviewer independence require the offline verifier and Owner attestation; JSON Schema alone cannot establish them.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "edge_ordinal", "review_packet_sha256_PRIVATE", "decision", "reason_cn_PRIVATE", "source_evidence_refs_PRIVATE", "reviewer_key_PRIVATE", "independent_execution_attested", "source_version_reviewed", "historical_actual_sent_verified"],
+  "properties": {
+    "schema": {"const": "storyforge_r60_base336_independent_edge_review_private_v2"},
+    "edge_ordinal": {"type": "integer", "minimum": 1, "maximum": 26},
+    "review_packet_sha256_PRIVATE": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "decision": {"type": ["string", "null"], "enum": [null, "SAME_SEMANTIC_COMPONENT", "INDEPENDENT_TEMPLATE_ONLY", "INSUFFICIENT_EVIDENCE"]},
+    "reason_cn_PRIVATE": {"type": "string", "maxLength": 10000},
+    "source_evidence_refs_PRIVATE": {
+      "type": "array", "maxItems": 32,
+      "items": {"$ref": "#/$defs/source_ref"}
+    },
+    "reviewer_key_PRIVATE": {"type": "string", "maxLength": 128},
+    "independent_execution_attested": {"type": "boolean"},
+    "source_version_reviewed": {"type": "boolean"},
+    "historical_actual_sent_verified": {"const": false}
+  },
+  "$defs": {
+    "source_ref": {
+      "type": "object", "additionalProperties": false,
+      "required": ["side", "source_record_index_PRIVATE", "group_ordinal", "source_kind", "revision_id_PRIVATE", "field_path"],
+      "properties": {
+        "side": {"enum": ["A", "B"]},
+        "source_record_index_PRIVATE": {"type": "integer", "minimum": 0, "maximum": 58},
+        "group_ordinal": {"type": "integer", "minimum": 1, "maximum": 8},
+        "source_kind": {"enum": ["current", "version"]},
+        "revision_id_PRIVATE": {"type": ["integer", "null"], "minimum": 1},
+        "field_path": {"type": "string", "pattern": "^/(character_PRIVATE|characters_PRIVATE|opening_PRIVATE)(/[^/]+)*$", "maxLength": 512}
+      },
+      "allOf": [
+        {"if": {"properties": {"source_kind": {"const": "current"}}, "required": ["source_kind"]}, "then": {"properties": {"revision_id_PRIVATE": {"const": null}}}, "else": {"properties": {"revision_id_PRIVATE": {"type": "integer", "minimum": 1}}}}
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"decision": {"const": null}}, "required": ["decision"]},
+      "then": {
+        "properties": {
+          "reason_cn_PRIVATE": {"const": ""},
+          "source_evidence_refs_PRIVATE": {"maxItems": 0},
+          "reviewer_key_PRIVATE": {"const": ""},
+          "independent_execution_attested": {"const": false},
+          "source_version_reviewed": {"const": false}
+        }
+      },
+      "else": {
+        "properties": {
+          "reason_cn_PRIVATE": {"minLength": 20},
+          "source_evidence_refs_PRIVATE": {"minItems": 2},
+          "reviewer_key_PRIVATE": {"minLength": 1}
+        }
+      }
+    }
+  ]
+}
