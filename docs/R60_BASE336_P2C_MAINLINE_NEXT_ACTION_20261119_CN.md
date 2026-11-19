@@ -1,5 +1,109 @@
 # R60 Base336 — P2-C 主线收敛与 Owner 下一步
 
+## 下一项直接核验：冻结 R50 五世界 UUID ↔ 原始 50 来源 ↔ P2 八来源
+
+**新找到的权威 metadata-only 原件**（无需 R58 五范围空白 CSV）：
+
+- Git SHA \`2d8623c17ef230d8eff5797a5eb29850e97e6ccb\`：R50 已冻结源身份 SAFE，5 个唯一故事 UUID、5 个唯一 Session、W16–W20、35 个历史来源文件条目，源 Commit 固定为 \`a197923e1e15344e8c98bd96e593e84781b68c83\`。
+- Git SHA \`20341c6c55bd4564140b05e8319cf66e572137c0\`：R50 46 候选、5 来源世界、4 排除，W16–W20 五组。
+- 已用 GitHub 连接**直接读取两份固定 SAFE Blob 的结构与统计**，结果记于 \`docs/evidence/R60_P2_R50_PINNED_FIVE_WORLD_METADATA_SOURCE_SAFE_20261119.json\`。没有读取保护集的原始故事正文、提示、答案或密封题目；当前只是 Git 源身份 receipt 级证据，不是本地 50 条 provenance UUID 集合的实际同一性核验。
+
+已有函数 \`experiments/r58_round1/check_r50_protected_uuid.py::blob_json/protected_ids\` 严格验证以上两个历史 Git SAFE Blob 并返回五个 R50 story UUID；\`scripts/r60_r50_original50_complement_cpu.py::jsonl\` 验证原 50 条 **provenance-only** 固定 SHA；\`scripts/r60_r50_freeze_status_projection_cpu.py::read_private_json\` 安全读取已批准的八来源 P2 Manifest。**不开发新审计脚本**，只在 Owner Mac 对这三个现成集合做精确身份等价/交集检查。
+
+\`\`\`bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+umask 077
+REPO="$HOME/workspace/storyforge-r60-p2-card-opening"
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+R50="$HOME/.local/share/storyforge/r50/original-frozen-20261016/R50_CASE_PROVENANCE_50.jsonl"
+P2="$HOME/.local/share/storyforge/r60/private/r60-p2-public-source-inventory-20261118/R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json"
+test -x "$PY" && test -f "$R50" && test -f "$P2"
+test -d "$REPO/.git" || test -f "$REPO/.git"
+# 取既有审计分支的固定 SAFE Git Blob；不切换工作树或读取故事源档案
+git -C "$REPO" fetch --no-tags origin audit/r49-r50-source-intake-20261015
+export PYTHONPATH="$REPO"
+export REPO R50 P2
+"$PY" - <<'PY'
+import json
+import os
+from pathlib import Path
+
+from experiments.r58_round1.check_r50_protected_uuid import (
+    SOURCE_SHA, COVERAGE_SHA, UUID, blob_json, protected_ids,
+)
+from scripts.r60_r50_original50_complement_cpu import jsonl
+from scripts.r60_r50_freeze_status_projection_cpu import read_private_json
+
+report = {
+    "schema": "storyforge_r60_p2_r50_pinned5_to_provenance_binding_safe_v1",
+    "status": "R50_PINNED_FIVE_IDENTITY_BINDING_HOLD",
+    "failure_phase": "SOURCE_BLOB",
+    "pinned_five_worlds_verified": False,
+    "r50_original_50_provenance_verified": False,
+    "r50_pinned_five_equals_original50_source_set": False,
+    "p2_public_sources_checked": 0,
+    "p2_pinned_r50_story_id_overlap": None,
+    "all_other_protected_reserved_sources_verified": False,
+    "r50_sealed_content_read": False,
+    "database_accessed": False,
+    "private_values_emitted": False,
+    "p2_c": "HOLD",
+    "train_admitted": 0,
+}
+try:
+    repo = Path(os.environ["REPO"])
+    src = blob_json(repo, SOURCE_SHA)
+    admission = blob_json(repo, COVERAGE_SHA)
+    protected = protected_ids(src, admission)
+    report["pinned_five_worlds_verified"] = len(protected) == 5
+    report["failure_phase"] = "R50_PROVENANCE_SOURCE_SET"
+    original = jsonl(Path(os.environ["R50"]), 50, "provenance")
+    values = [row.get("source_story_id") for row in original]
+    if not all(isinstance(v, str) and UUID.fullmatch(v) for v in values):
+        raise ValueError("source_id_invalid")
+    original_ids = {v.lower() for v in values}
+    if len(original_ids) != 5 or original_ids != protected:
+        raise ValueError("source_set_mismatch")
+    report["r50_original_50_provenance_verified"] = True
+    report["r50_pinned_five_equals_original50_source_set"] = True
+
+    report["failure_phase"] = "P2_MANIFEST_EXACT_STORY"
+    manifest = read_private_json(Path(os.environ["P2"]))
+    if manifest.get("schema") != "storyforge_r60_base336_p2_public_source_inventory_private_v1":
+        raise ValueError("p2_schema_mismatch")
+    rows = manifest.get("sources")
+    if not isinstance(rows, list) or len(rows) != 8:
+        raise ValueError("p2_count_mismatch")
+    ids = [row.get("story_id") for row in rows]
+    if not all(isinstance(v, str) and bool(v) for v in ids):
+        raise ValueError("p2_source_invalid")
+    p2_ids = {v.lower() for v in ids}
+    if len(p2_ids) != 8:
+        raise ValueError("p2_duplicate_source")
+    overlap = len(p2_ids & protected)
+    report["p2_public_sources_checked"] = 8
+    report["p2_pinned_r50_story_id_overlap"] = overlap
+    if overlap != 0:
+        raise ValueError("p2_protected_overlap")
+    report["status"] = "R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD"
+    report["failure_phase"] = "COMPLETE"
+except Exception:
+    report["reason_code"] = report["failure_phase"] + "_HOLD"
+print(json.dumps(report, sort_keys=True))
+raise SystemExit(0 if report["failure_phase"] == "COMPLETE" else 42)
+PY
+BASH
+\`\`\`
+
+此命令**不会运行原 50 case JSONL 的 sealed content**，也不读取历史来源档案正文，仅在 Owner Mac 内比对元数据 UUID；stdout 不含 Story UUID、路径、哈希或任何来源原文。返回 SAFE 即可；失败只显示固定 phase，不打印异常或私有值。
+
+**能关闭的门禁：** 冻结的五个 R50 保护世界源身份集合是否等于原 50 条 provenance 的全部 Story ID，以及 P2 是否与这五个固定世界精确不重叠。**仍不能关闭：** R50 外其它 Protected/Reserved 全集、五世界之外的隐藏语义组件、Base336 172 Story 全版本隔离、历史实际送达和正式 Owner freeze。P2-C 继续 HOLD，48 真实提示不得生成。
+
+---
+
+
 ## 最新 Owner 结果：R58 五范围索引为空，停止沿该路径重复盘点（2026-11-19）
 
 Owner 实际执行历史 `experiments/r58_round1/audit_g1_index_readiness.py` 并返回 `R58_G1_SOURCE_EXISTENCE_PREFLIGHT_ONLY__WORLD_AND_PROTECTION_HOLD`。原始回执存于 `docs/evidence/R60_P2C_R58_G1_EMPTY_SOURCE_REFERENCES_OWNER_SAFE_20261119.json`。
