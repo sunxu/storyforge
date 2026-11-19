@@ -271,3 +271,16 @@ Owner reports both exact remote `execution.log` objects downloaded successfully 
 - Resumed three-arm run `r47-20261014T091647Z-637890`: 450,504 bytes; SHA256 `18b077671b38404ff4821c4d9fb0342b3cb9430fc5d5565c9efc1586a4c3ab7c`.
 
 These are Owner-reported local file hashes; runtime configuration is not yet established. Next use a local allowlisted parser to extract only runtime parameter values and line numbers. Do not paste raw logs or commit them. The resumed run reused Base, so only its v0.1/v0.2 portions are relevant to adapter runtime; the original run is the Base evidence.
+## 21. R47 three-arm runtime logs parsed — SAFE aggregate (2026-11-19)
+
+Owner provided local allowlisted-parser output only; raw logs and all prompt/response/private identifiers remain private.
+
+- Base log: 84,617 bytes, SHA256 `34d3e33ca1888dbc1c61cf65c0f2619ebf41bae626deea131564db8e6a927399`, 1,183 lines; Base inference command at line 395 has no adapter.
+- Resumed log: 450,504 bytes, SHA256 `18b077671b38404ff4821c4d9fb0342b3cb9430fc5d5565c9efc1586a4c3ab7c`, 8,676 lines; adapter inference commands at lines 395 and 4537.
+- Runner source SHA `a2fa43f65b7b31631976cab1ac84b2b183b5f352` confirms arm loop order Base, v0.1, v0.2 and reuses earlier Base on resumed run; therefore resumed line 395 = v0.1 and line 4537 = v0.2.
+- All three commands match: HF Transformers, BF16, BNB 4-bit, BNB compute BF16, max_new_tokens 1536, seed/data_seed 42, temperature 0, no dataset shuffle.
+- Runtime fields match: `qwen3_8` / `swift`, thinking `None`, truncation `delete`, max_length 262144, max_model_len/top_p/top_k/repetition_penalty/model_revision `None`; stop/stop_words are present but redacted.
+- `enable_thinking=None` is not explicit false. Runtime `model_revision=None` is not proof of an unpinned model: runner source pins `REV` via `snapshot_download`, and report records `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`. `eos_token_id` not extracted; stop values not compared. Adapter identities were not emitted; mapping relies on source arm order.
+- R47 is retrospective inference over 20 exposed prompts / 60 outputs, not training or fresh Held-out, and contains no original-source-assistant fourth arm. It does not close R50 W2/W3/W4 and does not authorize any R50 evaluation.
+
+R50 final state unchanged: WORLD HOLD; timepoint provenance PENDING; hidden alias closure HOLD; CPU46 verified draft-only; ROLE12 policy not approved; four-arm runtime parity not verified; admitted 0; final seal not performed; GPU/inference/training false for this R50 task.
