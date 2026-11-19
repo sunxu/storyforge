@@ -93,6 +93,8 @@ Status: `R50_ROLE12_SOURCE_TO_DRAFT_TEMPLATE_AND_TOKEN_REPORT_STRUCTURE_PASS__NO
 
 This is source-to-Draft structure evidence only. It does not approve the interpretation of User→User turns or prove Base/v0.1/v0.2/v0.3-A runtime role/template parity.
 
+**Historical-status clarification:** the table above reflects the original 2026-11-19 audit receipt before the later explicit Owner decision. The Owner subsequently approved the two-independent-consecutive-User-turn policy; see Sections 4 and 8. This supersedes only the policy-pending flag. The 46/46 structure receipt remains Owner-reported, and actual four-arm runtime parity remains `NOT_VERIFIED`.
+
 ## 3. Existing evidence — do not repeat
 
 The incoming agent must read these artifacts and treat them as completed historical work unless a concrete evidence-integrity defect is found:
