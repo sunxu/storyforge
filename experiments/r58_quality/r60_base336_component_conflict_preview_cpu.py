@@ -12,16 +12,12 @@ import stat
 from collections import defaultdict
 from pathlib import Path
 
-from r60_independent_reviewer_offline import load_evidence, packet_and_pin
+from r60_independent_reviewer_offline import Hold, load_evidence, packet_and_pin
 
 from storyforge_dataset.world_isolation import component_split_conflicts
 
 SAFE_SCHEMA = "storyforge_r60_base336_component_conflict_preview_safe_v1"
 PRIVATE_SCHEMA = "storyforge_r60_base336_component_conflict_preview_private_v1"
-
-
-class Hold(Exception):
-    pass
 
 
 def require(condition: bool, code: str) -> None:
@@ -183,6 +179,8 @@ def main() -> None:
     parser.add_argument("--reviewer-b-safe", type=Path)
     args = parser.parse_args()
     try:
+        # '--inputs' is the existing group-file DIRECTORY, never a record count.
+        require(args.inputs.is_dir() and not args.inputs.is_symlink(), "INPUTS_DIRECTORY_HOLD")
         packet, _ = packet_and_pin(args.packet)
         load_evidence(packet, args.inputs)
         stories, positions = load_roster(args.roster, packet)
