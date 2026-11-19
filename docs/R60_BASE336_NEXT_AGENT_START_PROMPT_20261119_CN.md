@@ -1,5 +1,12 @@
 # R60 Base336 P2 Quality-v1：2026-11-19 新 Agent 启动提示词（可直接复制）
 
+## 2026-11-19 模型阵容更新提示（优先于本文旧两臂文字）
+
+经回顾 R47/R48/R50/R54/R55，**建议预注册四个被测生成模型：同一 Qwen Base、R46 v0.2 checkpoint-7、R54 v0.3-A checkpoint-16、R60 Base336 checkpoint-37**。主检验是 Base336 对 Base 与历史强基准 v0.2；v0.3-A 是旧 R55 混合回退的诊断对照；预算有限则先冻结 Base/v0.2/Base336 三臂。历史 v0.1 非本次必要臂，原始 Gold 不是模型。**这只是模型阵容设计建议，Owner 尚未最终冻结，P2-C 尚未 PASS，P4 GPU/HF 仍须单独批准**。请读完整交接任务书第七节，不要直接按旧提示词的“两臂”硬编码运行时或启动生成。
+
+---
+
+
 你接手 GitHub 仓库 **sunxu/storyforge** 的 **R60 Base336 训练后独立质量评估**，当前 PR #31，开发分支 `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`，目标基线 `r60/common2-cpu2-owner`。立即核验实际 HEAD、Actions、工作树/PR 状态；不要假设历史 SHA 仍为最新。
 
 **唯一主线目标**：对已经完成但未晋升的 Base336 checkpoint-37 Adapter，采用 **8 条已批准公开新 Story**，在完成 P2-C 实质语义及来源隔离之后，构造 **8×6=48** 条真实的六维独立质量提示，进行相同 prompt 的 **Qwen Base vs Adapter** 两臂盲化评测，判断是否真实改善质量。不是继续开展 R50/R58 旧审计、旧 35 案例图或重复开发工具。
