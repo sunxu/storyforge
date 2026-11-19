@@ -369,7 +369,7 @@ The latest targeted inventory reports `transitive_known_old_link` as a list of t
 
 The local R55 inventory also contains the subsequent arbitration/second-audit/third-audit/final-evidence artifacts. The documented pipeline covers 76 flagged candidates × 2 categories (152 slots), with P0=65 and P1=87; third audit covers 46 candidates / 92 slots, including 59 original disputes/first-HOLD categories. The third-audit receipt says no automatic majority adjudication and reviewer independence not technically verified. Final-evidence format/quote validation is not semantic certification. Local file existence alone does not establish PASS: inspect the safe count-only outputs for arbitration, second audit, third audit, priority final validation, and all-152 final validation. Never upload private dockets, story text, candidate replies, mappings, or private decision JSON.
 
-W4 remains HOLD: the existing R50 Role12 count-only evidence says actual four-model runtime interpretation/role parity=false and consecutive-User policy approval=false. CPU tokenizer draft fit is not deployed four-arm parity. No R50 inference, seal, or admission follows from this inventory.
+W4 remains HOLD: the existing R50 Role12 count-only evidence says actual four-model runtime interpretation/role parity=false. Its `trailing_user_interpretation_policy_approved=false` field predates the Owner's explicit 2026-11-19 approval and is superseded for policy status only. CPU tokenizer draft fit is not deployed four-arm parity. No R50 inference, seal, or admission follows from this inventory.
 
 
 ## R55 safe-receipt update — 2026-11-19
@@ -407,3 +407,26 @@ A read-only cross-reference of the R47/R55 execution code and already-existing S
 **W4 current result:** `PARTIAL_HISTORICAL_RUNTIME_PRECEDENT__FOUR_ARM_R50_PARITY_NOT_VERIFIED`.
 
 **Smallest next read-only Owner action:** inspect only the existing local R55 runner, R55 contract/report/runtime log and R47 report at the paths recorded in the R50 handoff. Emit hashes plus allowlisted effective settings/flags (backend, model/adapter identity, tokenizer/template, thinking, truncation, max context/output reserve, EOS/stop, sampling, and whether two consecutive User roles survive). Do not print prompts, responses, case IDs, private mappings, answer keys or full logs. Do not rerun R47/R55, start a tokenizer/HF Job, load a model, or execute inference. If a setting is not captured by existing artifacts, report `NOT_RECORDED`; do not infer it from code defaults.
+
+
+## 2026-11-19 Owner-local R47/R55 Runner and report hashes — W4 update
+
+The Owner ran a read-only allowlisted inventory against the exact historical local files. All listed file hashes below are SHA256 of the local file bytes (not Git blob IDs):
+
+| Artifact | SHA256 | Finding |
+|---|---|---|
+| R47 Runner | `97270d6146a3a8ae8f1a2bf66b409bf26aba04735229e9b340f535435bbf6bae` | Core CLI flags extracted |
+| R47 report | `9b5066004234e4140b9a6025843f836e2be22e8a3af61f8ab1a9340b9f93e253` | Base/v0.1/v0.2 complete; 20 rows; model revision and adapter/result hashes present |
+| R55 Runner | `f318bd318d818e4ccd1f9e2ec5a81252291c5e13d5084afb241ae99d89cbceb6` | Core CLI flags extracted |
+| R55 contract | `1d500f48360f46e2d8ff2c9ab89ba4620a67af3e95761c8cda64817d7e440b64` | Pre-run state `ONE_PAID_GPU_INFERENCE_AUTHORIZED_NOT_STARTED`; later superseded by completion report/intake |
+| R55 report | `924404daa12ed5886a879e4445b7995350228f559995f646d480859f76c4fd64` | 20-row generation complete; R54 checkpoint-16 adapter SHA `121ec8...`; no promotion / no R50 |
+| R55 intake | `a8569b96dc8a655dbc79046b0b24128cb459d8c9c1323f9806aecaa6fcfdd158` | Owner intake PASS for exposed 20-row development generation |
+| R55 runtime log | `f83f877441c38fbb1ef705a8b2e6acd0a4603bd14fcdd280741fe9e905cdfee3` | 243,541 bytes; first extraction searched only literal `COMMAND:` markers and found 0; this is not proof that the log lacks runtime details |
+
+Both local Runner sources returned the same allowlisted values: `use_hf=true`, `infer_backend=transformers`, `torch_dtype=bfloat16`, `quant_method=bnb`, `quant_bits=4`, `bnb_4bit_compute_dtype=bfloat16`, `max_new_tokens=1536`, `seed=42`, `data_seed=42`, `temperature=0`, `val_dataset_shuffle=false`. Neither source mentions `enable_thinking`; neither source-flag extraction surfaced explicit template, truncation, EOS/stop, context-length, top_p/top_k or repetition-penalty flags.
+
+R47 report records completed arms Base/v0.1/v0.2 on the same pinned Qwen revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`, with v0.1/v0.2 adapter hashes and per-arm result hashes. R55 report records the same Qwen revision and its actual R54 adapter hash, 20 rows, dependency versions, and the same visible generation values. R55's contract is a pre-run authorization artifact; its `NOT_STARTED` status is superseded chronologically by the later generation report and Owner intake PASS, not a contradiction.
+
+**W4 revised result:** `PARTIAL_HISTORICAL_RUNNER_CONFIG_MATCH__R50_RUNTIME_PARITY_NOT_VERIFIED`. The Runner sources prove shared explicit CLI settings in their historical code, not all effective runtime defaults or R50 46-case execution. `enable_thinking_mentioned=false` means only that the inspected source contains no such explicit mention; it does not establish the effective default. The first runtime-log extraction found no literal `COMMAND:` marker and therefore did not extract command-line arguments. A second safe parser must scan the log by field names and report only allowlisted values/presence/line numbers, never raw log lines.
+
+**Next action:** inspect the existing R55 runtime log and both Runner source files for effective `template`, thinking, truncation, context, EOS/stop and sampling values using a field-oriented read-only parser. Also verify whether the logs contain a safe indication of the two-consecutive-User role sequence; if not recorded, state `NOT_RECORDED`. No model, tokenizer, GPU or HF job may be started to fill missing evidence.
