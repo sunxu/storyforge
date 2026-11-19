@@ -222,3 +222,14 @@ Read-only GitHub and Library inspection found these existing precedents:
 - **Cross-backend warning:** the separate R53 CPU40 report recorded Transformers vs ms-swift input-token differences on 31 Train + 9 Validation rows. This is not R50 evidence, but it prevents assuming that the R50 Transformers-only draft receipt proves ms-swift serving parity.
 
 W4 remains `NOT_VERIFIED`. The smallest next action is a read-only extraction from existing R47/R55 reports, R55 runner/contract/runtime log, emitting only hashes and allowlisted runtime flags. Do not emit prompt/response text, IDs, mappings, answer keys or full logs; do not rerun jobs or launch tokenizer/HF/GPU/inference.
+
+
+## 16. Owner-local Runner inventory results — 2026-11-19
+
+Owner supplied a read-only allowlisted extraction from existing local R47/R55 files. Local SHA256 values: R47 Runner `97270d6146a3a8ae8f1a2bf66b409bf26aba04735229e9b340f535435bbf6bae`; R47 report `9b5066004234e4140b9a6025843f836e2be22e8a3af61f8ab1a9340b9f93e253`; R55 Runner `f318bd318d818e4ccd1f9e2ec5a81252291c5e13d5084afb241ae99d89cbceb6`; R55 contract `1d500f48360f46e2d8ff2c9ab89ba4620a67af3e95761c8cda64817d7e440b64`; R55 report `924404daa12ed5886a879e4445b7995350228f559995f646d480859f76c4fd64`; R55 intake `a8569b96dc8a655dbc79046b0b24128cb459d8c9c1323f9806aecaa6fcfdd158`; R55 runtime log `f83f877441c38fbb1ef705a8b2e6acd0a4603bd14fcdd280741fe9e905cdfee3` (243,541 bytes).
+
+Both Runner sources have identical extracted explicit settings: HF=true, Transformers backend, BF16, BNB 4-bit, BNB compute BF16, max_new_tokens=1536, seed/data_seed=42, temperature=0, validation shuffle=false. Neither source explicitly mentions `enable_thinking`; no explicit template/truncation/EOS/stop/context/top_p/top_k/repetition flags surfaced in this extraction. This proves matching source-level explicit settings only, not effective defaults or per-case R50 runtime parity.
+
+R47 report says Base/v0.1/v0.2 generation completed for 20 old exposed prompts. R55 report says v0.3-A (R54 checkpoint-16) generation completed for 20 exposed prompts. R55's contract status `ONE_PAID_GPU_INFERENCE_AUTHORIZED_NOT_STARTED` is the pre-run contract; the later report and Owner intake show the run completed. The log extraction searched only a literal `COMMAND:` marker and found none; do not interpret that as an empty/uninformative log.
+
+Current W4: `PARTIAL_HISTORICAL_RUNNER_CONFIG_MATCH__R50_RUNTIME_PARITY_NOT_VERIFIED`. Next action is a field-oriented SAFE scan of the existing 243,541-byte R55 log and both Runner sources for template, thinking, truncation, context, EOS/stop, sampling and role-sequence evidence. Print only allowlisted values, booleans and line numbers; never raw lines, prompts, responses, case IDs or mappings. If absent, record `NOT_RECORDED`. No new model/tokenizer/GPU/HF execution.
