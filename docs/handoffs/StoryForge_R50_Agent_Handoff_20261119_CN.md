@@ -264,3 +264,10 @@ Relevant exact runs:
 Runner source SHA: a2fa43f65b7b31631976cab1ac84b2b183b5f352. Collector source SHA: 20150d94fd460d8551838a7d7da4cae8137d2ff1.
 
 Next: Owner can perform a read-only hf buckets cp of only the two exact execution.log paths to a private temp directory; do not fetch any answer key, prompt, response or mapping artifacts. Parse locally and output only allowlisted runtime settings and line numbers. Missing remote object means SOURCE_UNAVAILABLE; no GPU/model/tokenizer execution is permitted.
+## 20. R47 execution logs downloaded — 2026-11-19
+
+Owner reports both exact remote `execution.log` objects downloaded successfully to the private local recovery directory:
+- Base run `r47-20261014T082109Z-820409`: 84,617 bytes; SHA256 `34d3e33c1888dbc1c61cf65c0f2619ebf41bae626deea131564db8e6a927399`.
+- Resumed three-arm run `r47-20261014T091647Z-637890`: 450,504 bytes; SHA256 `18b077671b38404ff4821c4d9fb0342b3cb9430fc5d5565c9efc1586a4c3ab7c`.
+
+These are Owner-reported local file hashes; runtime configuration is not yet established. Next use a local allowlisted parser to extract only runtime parameter values and line numbers. Do not paste raw logs or commit them. The resumed run reused Base, so only its v0.1/v0.2 portions are relevant to adapter runtime; the original run is the Base evidence.
