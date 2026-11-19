@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 
 import pytest
-
 import r60_base336_component_conflict_preview_cpu as audit
 
 
