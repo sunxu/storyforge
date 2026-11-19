@@ -652,3 +652,14 @@ Owner 上传真实 SAFE 回执 `docs/evidence/R60_BASE336_REVIEWER_A_SAFE_V2_202
 - Owner 报告了 33 次侧记录和 89 条非空字段引用、私有目录 20 文件/0700/0600 及验收 exit 0；这些细节属于交付说明，并未在 SAFE JSON 内独立量化，须按交付方陈述标记，不自行推断为再次核实。
 - 不能将任何历史的 `independent_execution_attested=false` 事后改成 true。下一步应在 Owner 私有目录独立 `prepare` Reviewer B 的 10 份 Evidence 和 **全新空白** Decision，再由资格可核验的 B 盲审；不得带入 A 的决定、旧 Codex 或本次筛查 tier。真实双独立审查的数量仍为 0，不宣称 B 可自动纠正 A 的独立性缺陷。
 - P2-C 继续 HOLD，actual-sent、R50 完整 protected metadata、旧曝光闭合、语义组件图全量核验及 Owner freeze 仍分别未完成。不得生成 P2-B 48 prompts，不得提交原始私有数据、重分配冻结 split 或开始训练。
+
+
+## 17. 2026-11-19 Reviewer B 表单完成（最新）：Owner 独立资格认证仍 PENDING
+
+Owner 提交 Reviewer B 的 SAFE 回执及交付说明。已将该回执按原始 SAFE 字段登记为 `docs/evidence/R60_BASE336_REVIEWER_B_SAFE_V2_20261119.json`；审核和后续 Owner 资格核验流程见 `docs/evidence/R60_BASE336_REVIEWER_B_OWNER_QUALIFICATION_PENDING_20261119_CN.md`。
+
+- Reviewer B 的 10 条跨 Train/Validation 候选全部填为 `SAME_SEMANTIC_COMPONENT`，未填 0；`reference_binding_verified_for_filled=10`、`source_versions_reviewed_count=10`，`self_attested_independence_count=10`。正式 v2 校验返回 `REVIEW_FORMS_COMPLETE__OWNER_INDEPENDENCE_CHECK_PENDING`。
+- **不是**独立 Reviewer 合格证明：`reviewer_independence_independently_verified=false`。B 的 AI 会话隔离、先前任务参与经历、输入材料范围与审查过程均需 Owner 单独核对。B 提及的姓名/标题别名和“title/summary”等线索必须追溯到经批准的 Card/Opening 实际来源字段；提交说明不能替代源证据。
+- Reviewer A 的 10 条静态判断也是同组件，但 `self_attested_independence_count=0`，不能算作双独立一致。即使 B 通过 Owner 核验，仍最多有一位经认可的独立 Reviewer；如门禁需要双独立，需再安排真正隔离的 C。
+- 所有 10 条关联及其已涉及的候选故事继续原有 HOLD，不自动修改任何冻结案例或归入训练。Owner 审查私有理由、快照和独立资格后方可使用现有世界隔离函数进行源绑定组件图冲突核验，依旧不得自动宣告全量隔离 PASS。
+- `actual_sent=false`、`r50_complete_exclusion_verified=false`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0` 不变。
