@@ -1,6 +1,6 @@
 {
   "schema": "storyforge_r60_base336_p2c_mainline_status_projection_safe_v1",
-  "status": "P2_C_HOLD__PINNED_R50_FIVE_SOURCE_RECEIPTS_READY__OWNER_SOURCE_SET_BINDING_PENDING",
+  "status": "P2_C_HOLD__R50_PINNED5_PROVENANCE_EXACT_SOURCE_CLOSED__OTHER_PROTECTED_UNIVERSE_HOLD",
   "evidence_basis": "GITHUB_OWNER_REPORTED_SAFE_RECEIPTS_AND_PINNED_PRIOR_SCOPE_DOCUMENTS__NOT_NEW_OWNER_EXECUTION",
   "no_new_private_source_read": true,
   "p2_public_sources": 8,
@@ -62,8 +62,14 @@
   "r50_pinned_five_git_metadata_structure_verified": true,
   "r50_pinned_five_worlds": 5,
   "r50_pinned_five_original_source_files": 35,
-  "r50_pinned5_to_original50_provenance_story_set_verified": false,
-  "r50_pinned5_to_original50_owner_runtime_receipt": "PENDING",
+  "r50_pinned5_to_original50_provenance_story_set_verified": true,
+  "r50_pinned5_to_original50_owner_runtime_receipt": "R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD",
   "r50_pinned_git_metadata_safe": "docs/evidence/R60_P2_R50_PINNED_FIVE_WORLD_METADATA_SOURCE_SAFE_20261119.json",
-  "r58_empty_scope_csv_no_longer_recommended_as_p2_gate": true
+  "r58_empty_scope_csv_no_longer_recommended_as_p2_gate": true,
+  "r50_pinned5_to_provenance_owner_safe_file": "docs/evidence/R60_P2_R50_PINNED5_TO_PROVENANCE_OWNER_SAFE_20261119.json",
+  "p2_r50_pinned_five_exact_story_overlap": 0,
+  "p2_r50_pinned_five_public_sources_checked": 8,
+  "r50_five_protected_sources_complete_within_original50_provenance": true,
+  "r50_all_other_protected_reserved_sources_verified": false,
+  "next_scope": "FULL_PROTECTED_RESERVED_SOURCE_UNIVERSE_AND_HISTORICAL_EXPOSURE_AUTHORITY__NO_REPEAT_R50_KNOWN5"
 }
