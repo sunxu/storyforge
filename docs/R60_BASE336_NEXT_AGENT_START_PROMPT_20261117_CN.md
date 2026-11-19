@@ -1,5 +1,7 @@
 # R60 Base336 下一 Agent 启动提示词（2026-11-18，可直接复制）
 
+> **2026-11-19 新版唯一启动提示词：** [R60 Base336 P2 Quality-v1 接手任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本 2026-11-17/18 启动词中关于首要工作为文件 metadata inventory、R55 尚无 Story ID、旧 Reviewer 没有实质材料、只读 DB 未获授权的描述均为历史，**不再执行**。不要偏离新 P2 8 来源独立性→48 提示→Base/Adapter 六维盲评的目标。
+
 你现在接手 GitHub 仓库 `sunxu/storyforge` 的 **R60 Base336 P2 Protected Crosswalk 任务**。工作分支为 `r60/common2-cpu2-owner`。首要目标是核验 Owner Mac 已有私有证据的元数据、诊断缺失项，并在真实 Schema 完整确认后完成保护集交叉核验。**先读并执行专项提示词**：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。本任务不是 Supabase 重抽取、训练或推理。
 
 ## 一、先核验，不要直接执行
