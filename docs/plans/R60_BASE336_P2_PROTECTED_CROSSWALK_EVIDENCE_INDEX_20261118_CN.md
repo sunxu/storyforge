@@ -1,5 +1,18 @@
 # R60 Base336 P2 Protected Crosswalk 证据索引（2026-11-18）
 
+## 2026-11-19 当前交接状态（本索引旧章节均为历史快照）
+
+权威现行任务书：[R60 Base336 P2 Quality-v1 新 Agent 接手](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本索引有 2026-11-18 至 19 的大量累积历史，**最末第 20、21 节的 R50 PASS 与今日新 SAFE 优先于第 1–12 节旧 HOLD**；不得只读旧段后重新做已完成工作。
+
+当前已关闭：R50 50 原始 provenance = 46 派生 + 4 排除，R50 固定五世界与原始 50 provenance Story 集合严格等价，P2 × 该五世界 overlap=0；P2 × Base336 172 Story 的**精确 ID** overlap=0；R47/R48/R55 同 20 Prompt / 2 Story exact overlap=0、R55 三层 76/68/46 回链 PASS；旧 38 Story/59 版本 Card/Opening 绑定及旧 35-case 图均已有证据；R58 五范围空 CSV 仅说明未绑定来源引用。**这些均不再重跑**。
+
+继续 HOLD：新 8 P2 来源对 Base336 **全 172 Story/current+archived 的语义来源**隔离、R50 五世界以外 Protected/Reserved 权威完整名单、额外历史 Dev/Arbitration/Teacher/Training 来源全集、actual-sent 与 Reviewer/Owner Freeze。Base336 捕获脚本 Owner 已到 `DB_BASE336_SOURCE_QUERY_HOLD`，无真实故障依据不重复 SQL。P2-C=HOLD；48 正式提示未生成；train_admitted=0。
+
+下一步唯一方向是取得**仍缺的来源覆盖权威证据**并对 P2 新 8 来源做完整隔离裁决；**不是**继续 R50、R55 或 R58 的旧审计。
+
+---
+
+
 ## 状态与用途
 
 **P2-A：READY。P2-C：HOLD。P2-B：NOT_GENERATED。**
