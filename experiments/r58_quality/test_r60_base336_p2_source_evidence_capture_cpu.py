@@ -5,7 +5,11 @@ import json
 import os
 import sys
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import r60_base336_p2_source_evidence_capture_cpu as audit
@@ -73,6 +77,46 @@ def p2_rows(sources: list[dict]) -> list[tuple]:
 
 
 class SourceEvidenceCaptureTests(unittest.TestCase):
+    def test_missing_psycopg_driver_gives_fixed_safe_reason(self):
+        with patch.dict(sys.modules, {"psycopg": None}):
+            with self.assertRaises(audit.Hold) as raised:
+                audit.fetch("postgresql://never-used", ["synthetic-story"], [])
+        self.assertEqual(str(raised.exception), "DB_DRIVER_IMPORT_HOLD")
+
+    def test_db_connection_error_gives_fixed_safe_reason(self):
+        class FakePsycopgError(Exception):
+            pass
+
+        def connect(*_args, **_kwargs):
+            raise FakePsycopgError("private host or credential details")
+
+        fake = SimpleNamespace(Error=FakePsycopgError, connect=connect)
+        with patch.dict(sys.modules, {"psycopg": fake}):
+            with self.assertRaises(audit.Hold) as raised:
+                audit.fetch("postgresql://never-used", ["synthetic-story"], [])
+        self.assertEqual(str(raised.exception), "DB_CONNECTION_HOLD")
+        self.assertNotIn("private", str(raised.exception))
+
+    def test_unexpected_post_query_failure_reports_only_safe_phase(self):
+        def fail_after_source_fetch(args):
+            args.failure_phase = "P2_RECORD_VALIDATION"
+            raise RuntimeError("secret source text must not appear")
+
+        args = ["tool"]
+        for name in ("old", "plan", "v2", "v3", "audit", "quarantine"):
+            args.extend([f"--{name}-dir", "/unused"])
+        args.extend(["--p2-manifest", "/unused", "--output-dir", "/unused", "--execute"])
+        stream = StringIO()
+        with patch.object(sys, "argv", args), patch.object(audit, "run", fail_after_source_fetch):
+            with redirect_stdout(stream):
+                exit_code = audit.main()
+        self.assertEqual(exit_code, 42)
+        receipt = json.loads(stream.getvalue())
+        self.assertEqual(receipt["failure_phase"], "P2_RECORD_VALIDATION")
+        self.assertEqual(receipt["reason_code"], "SOURCE_CAPTURE_OR_RUNTIME_HOLD")
+        self.assertNotIn("secret", stream.getvalue())
+        self.assertIsNone(receipt["database_accessed"])
+
     def test_load_p2_manifest_accepts_exact_eight_source_contract(self):
         with self.subTest("private input"):
             from tempfile import TemporaryDirectory
