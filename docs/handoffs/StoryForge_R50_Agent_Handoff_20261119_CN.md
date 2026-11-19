@@ -170,3 +170,8 @@ Read-only GitHub inspection found the historical answer-review workflow needed a
 - R55 specifies five answers: Original Gold + Base/v0.1/v0.2/v0.3-A, with exact-source checks, anonymous five-way and separately randomized v0.3-A-vs-v0.2 pairwise tasks. This is a development-only reuse of 20 exposed prompts from two worlds; its real Owner-local preflight was pending in the 2026-10-23 receipt.
 
 This is useful prior implementation, so do not redesign or duplicate the reviewer pack. It does not establish R50 Original Gold coverage or actual R50 runtime parity. Keep W4 NOT_VERIFIED until pre-existing R50-specific runtime/load evidence is found. Do not execute R48/R55 build scripts on R50 data.
+
+
+### Later R55 Gold5 v2 outcome (Owner aggregate, development-only)
+
+The subsequent Owner-unblind SAFE aggregate is documented at docs/evidence/V03_R55_GOLD5_V2_OWNER_UNBLIND_DECISION_20261023.md. It reports 20 exposed prompts across two worlds, three reviewers and 3,960 Pair/Four/Five ratings. Pair v0.3-A vs v0.2 was 10:10 with v0.3-A lower on all six axes; five-way means were Original Gold 3.500, v0.2 3.461, v0.3-A 3.197. The Owner decision retained v0.2 and marked R54 checkpoint-16 NO-GO for R50. Treat this as Owner-pasted development aggregate only: reviewer independence was not technically certified, hard-event adjudication remained pending, and it says nothing about R50 unseen-world performance.
