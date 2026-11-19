@@ -1,0 +1,26 @@
+# R60 Base336 P2 Quality-v1：2026-11-19 新 Agent 启动提示词（可直接复制）
+
+你接手 GitHub 仓库 **sunxu/storyforge** 的 **R60 Base336 训练后独立质量评估**，当前 PR #31，开发分支 `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`，目标基线 `r60/common2-cpu2-owner`。立即核验实际 HEAD、Actions、工作树/PR 状态；不要假设历史 SHA 仍为最新。
+
+**唯一主线目标**：对已经完成但未晋升的 Base336 checkpoint-37 Adapter，采用 **8 条已批准公开新 Story**，在完成 P2-C 实质语义及来源隔离之后，构造 **8×6=48** 条真实的六维独立质量提示，进行相同 prompt 的 **Qwen Base vs Adapter** 两臂盲化评测，判断是否真实改善质量。不是继续开展 R50/R58 旧审计、旧 35 案例图或重复开发工具。
+
+**先读本次唯一权威任务书**：`docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md`，再按其中定位到 `AGENTS.md`、当前 Quality 计划 / P2 来源 Addendum、最新主线 SAFE 状态以及必要源码；历史旧启动提示词中的“第一步”已过期。
+
+**接收下列已通过证据，禁止重跑**：
+- P0/P1 工程训练：293/43，37 steps，checkpoint-37 Adapter，33/33 对象盘点；未晋升，43 Validation 已污染独立评估资格。
+- P2-A：8 个公开新 Story（5 作者、8 World JSON）revision/审核/权限 READY；仅限内部评估提示构造。
+- P2 × Base336 172 Story 精确 ID overlap=0，336 案例/172 Story 冻结身份预检完成；**完整 172 Story 当前+存档 World/Character/Opening 语义证据仍缺**，Owner 捕获 SQL 停于 `DB_BASE336_SOURCE_QUERY_HOLD`，不再无依据盲试。
+- R50 原始 provenance **50=46+4** PASS；冻结 W16–W20 五世界 **恰等于** 50 条来源 Story 集合，P2 × 其精确重叠 0；R50 题目从未打开。**其它 Protected/Reserved 来源全集未闭合**。
+- R47/R48/R55 同一旧 **20 Prompt / 2 Story** 精确交集 0；R55 三层 76/68/46 Index 和完整 20/20 回链已 PASS。**其它**历史 Dev/仲裁/训练/教师暴露全集未闭合。
+- 旧 Base336 八组 38 Story/59 当前+存档证据、10 边/35 案例图及 A/B 审核已核对；它们**不是 P2 8 个新来源**。Reviewer B 独立性仍未经 Owner 核实，但不要让旧图审计取代新 P2 主线。
+- R58 五范围 CSV 的五个引用均为空，不能将其当作源文件不存在或独立隔离 PASS；不要再运行该 CSV 工具。
+
+**下一项实质工作**：围绕**新 P2 8 来源**，基于已存在的 Owner 冻结来源、可信当前+归档版本和世界/角色/开场信息，明确 8×172 中未覆盖的数据范围及可复用证据，推进可验证的语义组件排除与独立审查；并只追踪**尚未关闭的**其它 Protected/Reserved、Dev/仲裁、历史训练/教师曝光权威全集和 actual-sent 证据。来源缺失就保留精确 HOLD，不自行制造“完整”证据；只有知道真实失败原因才考虑有界只读 DB 查询，禁止无限调试/重复建设。对每一步区分精确 ID、语义世界组件、实际发送、权利、Reviewer 独立性与 Owner 冻结。
+
+优先复用 `src/storyforge_dataset/world_isolation.py`、既有来源 preflight、冻结 R50 metadata 读取与 `generation_eval.worker` / HF Runtime / `quality_v1.py`，不复制 World 冲突、生成循环、IO、六维评分逻辑。
+
+**权限**：Owner 已授权本项目限定范围的**只读** DB 核验无需再次逐项请示；不允许写数据库、读 R50 密封正文/答案、读私有聊天、上传私有 UUID/故事/证据/映射、修改冻结训练/验证或旧证据。**GPU/HF 配对推理或训练需要针对具体运行单独授权**，不能继承训练 Job 的批准。
+
+现行硬状态：`P2_A=READY`；`P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`train_admitted=0`；`quality_v1_admitted=0`；`model_promoted=false`。
+
+**立即行动**：用真实 GitHub HEAD / SAFE 做一次目标导向的“已证实 → 真正缺什么 → 现成证据如何推进”的差距核对，随后尽可能直接完成一个**新的** P2 来源隔离子成果；不要先发起另一轮历史目录盘点或只增加审计任务书。交付准确的已核验/未核验清单、使用过的现有代码、结果 SAFE、变更 commit/对应 HEAD 的 CI、下一最短动作，并明确本轮有无 DB/GPU/HF/密封内容访问。
