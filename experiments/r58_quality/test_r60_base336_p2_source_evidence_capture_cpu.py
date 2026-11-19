@@ -191,49 +191,44 @@ class SourceEvidenceCaptureTests(unittest.TestCase):
 
     def test_missing_rls_policy_fails_closed(self):
         """Required RLS policies are not optional; failure is always a safe HOLD."""
-        with patch.object(audit.private, "assert_guard", return_value=None):
-            with patch.object(audit.p2_inventory, "validate_rls_preflight",
-                              side_effect=audit.p2_inventory.RlsPolicyHold(
-                                  ["story_permission_events:required_policy_missing"]
-                              )):
-                class FakePsycopgError(Exception):
-                    pass
+        class FakePsycopgError(Exception):
+            pass
 
-                class Cursor:
-                    description = None
-                    def __enter__(self):
-                        return self
-                    def __exit__(self, *_args):
-                        return None
-                    def execute(self, query, _params=None):
-                        if query == audit.p2_inventory.RLS_PREFLIGHT_SQL:
-                            self.description = [
-                                SimpleNamespace(name=name) for name in (
-                                    "table_name", "rls_enabled", "select_granted", "policy_present"
-                                )
-                            ]
-                    def fetchone(self):
-                        return ("r58_export_reader", "on", "on", False, False)
-                    def fetchall(self):
-                        return [
-                            ("story_moderation_submissions", True, True, True),
-                            ("story_permission_events", True, True, False),
-                        ]
+        class Cursor:
+            description = None
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return None
+            def execute(self, query, _params=None):
+                if query == audit.p2_inventory.RLS_PREFLIGHT_SQL:
+                    self.description = [
+                        SimpleNamespace(name=name) for name in (
+                            "table_name", "rls_enabled", "select_granted", "policy_present"
+                        )
+                    ]
+            def fetchone(self):
+                return ("r58_export_reader", "on", "on", False, False)
+            def fetchall(self):
+                return [
+                    ("story_moderation_submissions", True, True, True),
+                    ("story_permission_events", True, True, False),
+                ]
 
-                class Conn:
-                    def __enter__(self):
-                        return self
-                    def __exit__(self, *_args):
-                        return None
-                    def cursor(self):
-                        return Cursor()
-                    def rollback(self):
-                        pass
+        class Conn:
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return None
+            def cursor(self):
+                return Cursor()
+            def rollback(self):
+                pass
 
-                fake = SimpleNamespace(Error=FakePsycopgError,
-                                       connect=lambda *_a, **_kw: Conn())
-                with patch.dict(sys.modules, {"psycopg": fake}), self.assertRaises(audit.Hold) as raised:
-                    audit.fetch("postgresql://synthetic", ["synthetic-story"], [])
+        fake = SimpleNamespace(Error=FakePsycopgError,
+                               connect=lambda *_a, **_kw: Conn())
+        with patch.dict(sys.modules, {"psycopg": fake}), self.assertRaises(audit.Hold) as raised:
+            audit.fetch("postgresql://synthetic", ["synthetic-story"], [])
         self.assertEqual(str(raised.exception), "DB_ROLE_RLS_POLICY_HOLD")
 
     def test_unexpected_post_query_failure_reports_only_safe_phase(self):
