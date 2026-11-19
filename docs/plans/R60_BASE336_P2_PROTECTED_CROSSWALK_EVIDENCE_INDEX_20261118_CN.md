@@ -585,3 +585,17 @@ hf_jobs_submitted = 0
 model_requests = 0
 model_promoted = false
 ```
+
+
+## 12. 2026-11-19 Owner 上传的 Base336 八组成员级 Card/Opening 语义复核（本索引最新状态）
+
+Owner 已提供 8 个完整的成员级 Card/Opening 私有 JSON、冻结 8 组 roster、对应 World 证据及既有 Codex HOLD 决策。此前 Owner-local 的只读检查证明所有 8 个文件存在、权限 0700/0600、逐组与 roster 记录完全对齐、roster SHA 绑定通过。59 条 current/archived 来源记录（38 current、21 archived），覆盖 38 个不同故事、82 个相关案例。本次内容复核的 SAFE 报告为：`docs/evidence/R60_BASE336_EIGHT_GROUP_MEMBER_SEMANTIC_REVIEW_SAFE_20261119_CN.md`。
+
+**证据状态变化（覆盖本索引第 11 节中“成员级 Card/Opening 文件不存在”的历史描述）：**
+- `BASE336_CARD_OPENING_MEMBER_FILES = PRESENT_8_OF_8__STRUCTURE_VERIFIED`；不可重跑既有数据库提取或覆盖输出。
+- 第 02/05/06/08 组在 Train/Validation 两侧发现具名人物及剧情组件的高置信度复用，已标记 `CONCRETE_CROSS_SPLIT_COMPONENT_REUSE_FOUND`，但未完成独立 Reviewer 裁决。
+- 第 01/03/06 组及第 02/03 组存在跨组人物关联；第 03 组同时包含不同题材，不能将同一通用 World JSON 的所有成员粗暴合为同一个真实故事世界。
+- 第 04 组有明显写作/关系指令模板相似性，仍未证明相同专属世界；第 07 组未发现直接组内实体复用，两组继续 HOLD。
+- 旧 Codex 所有组的决定仍为 HOLD。新增材料解决的是“角色卡/开场证据缺失”子项，不是历史实际发送版本、语义终审、Reviewer 独立性、R50 完整覆盖或 P2-C 的 PASS。
+
+下一步是 Owner-local 基于真实成员级证据生成**按具体人物/组织/事件**的组件边候选，由独立 Reviewer 按仓库既定 Gold Quality Pipeline 审查并由 Owner 冻结。任何边仍需真实 source/version 绑定；禁止用模板文字或缺失字段充当无关联证明。不要输出私有 ID 或上传原始 JSON 至 GitHub，亦不允许直接修改冻结案例、生成 48 prompts 或训练。
