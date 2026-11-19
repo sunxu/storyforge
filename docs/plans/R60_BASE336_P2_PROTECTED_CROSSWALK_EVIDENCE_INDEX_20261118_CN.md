@@ -624,3 +624,15 @@ P2_C = HOLD
 P2_B_48_PROMPTS = NOT_GENERATED
 TRAIN_ADMITTED = 0
 ```
+
+
+## 14. 2026-11-19 Reviewer 候选图范围扩大（取代第 13 节数字）
+
+从当前对话上传的**同一批**八组 Card/Opening + roster 重新机械审计，新增可复现的 300 字符逐字匹配 + 完整 JSON 字段相同两种证据通道。详细 SAFE 收据：`docs/evidence/R60_BASE336_COMPONENT_GRAPH_REVIEW_PACKET_SAFE_20261119_CN.md`。
+
+- **强证据**（≥1000 连续相同字符，或完整非空且含有实质内容的 Card/Opening 字段 JSON 相同）：7 对跨 Train/Validation Story，覆盖 13 个去重 Story / 27 个去重候选案例。
+- **扩展候选**（纳入 300–999 字符逐字复用）：10 对跨 Train/Validation Story，覆盖 16 个去重 Story / 35 个去重候选案例。
+- 同拆分另外有 16 对精确复用候选；不等于跨拆分泄漏。
+- 这是静态输入证据的机械复用**候选**，与旧第 13 节 6 对 / 22 案例的初始计数不同。以本节作为新的 Reviewer 候选范围，不将旧数字继续当作穷尽数量。
+- Owner 私有 create-only Reviewer 包中保留证据的 source/version/path/哈希引用和空白 Reviewer 决策字段；公开 GitHub 不上传原始 JSON、私有包、个人身份、正文或逐案映射。
+- **未授权自动重分配 split、修改冻结数据或训练。** Reviewer independent execution / actual-sent / R50 Protected-Reserved full roster / Owner freeze 继续 HOLD，P2-C 仍 HOLD，P2-B 48 条未生成。
