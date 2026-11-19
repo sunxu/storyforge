@@ -1,5 +1,16 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-19 评估模型阵容重评（方案更新，尚未获 GPU 授权）
+
+现行统一说明：[R60 P2 Quality-v1 接手任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 第七节。**此前本计划所述仅 Base vs checkpoint-37 两臂，是最低限度比较而非完整、已获授权的最终评估阵容。**
+
+建议 P2 新 48 条来源冻结且 P2-C PASS 后，以 **Base、R46 v0.2 checkpoint-7、R54 v0.3-A checkpoint-16、R60 Base336 checkpoint-37** 四臂做同轮配对盲评。必须的主比较为 Base336 vs Base、Base336 vs 历史强基准 v0.2；v0.3-A 作为预注册诊断臂用于确认旧 R55 混合回退是否延续；如果预算有限可事先冻结为不含 v0.3-A 的三臂。v0.1 因旧 R47/R48 表现弱、边际价值低，暂不进入新测试；原始 Gold 是旧参考答案不是新生成模型。旧 R50 的 Base/v0.1/v0.2/v0.3 四臂方案属于历史拟议合同，不得误认已执行或照搬 R50 密封题。
+
+四臂共 48×4=192 回复（三臂 144），但**不是 192 个独立 Story**；需独立随机 A/B/C/D 盲化、六维指标/硬规则逐模型比较、世界层聚类，避免简单用单一“胜者”代替主对照。所有冻结 Base/旧 Adapter 与本轮 Adapter 的 SHA、推理模板和消耗预算需先审批；四臂只是设计建议，不等于推理许可。P2-C HOLD、48 Prompt NOT_GENERATED、HF/GPU 无新授权与 model_promoted=false 均不变。
+
+---
+
+
 ## 2026-11-19 最新执行决策（覆盖本文件较早的“下一步”）
 
 **唯一现行新 Agent 任务书：** [R60 Base336 P2 Quality-v1 新 Agent 接手任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本文件记录总体质量评估合同与历史证据；较早要求“R47/R48/R55 Story ID 还未知”“R55 三层尚未核验”“R50 五世界还未绑定”“第一步重新做 Owner metadata inventory”等均已被新 SAFE 覆盖，**不要再执行**。
