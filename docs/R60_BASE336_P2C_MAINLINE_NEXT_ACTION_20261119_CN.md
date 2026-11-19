@@ -130,3 +130,32 @@ BASH
 预期成功 SAFE：\`status=P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB\`、336 cases、172 unique stories、8 public P2 sources、P2 exact Story ID overlap=0、\`database_accessed=false\`、\`private_file_created=false\`。如返回 HOLD，仅发送 SAFE 的 status/reason_code/计数，不发送私有路径、哈希或数据内容。
 
 后续如需传 \`--execute\`，必须单独获得 Owner 对 172 Story current+全部归档 World/Character/Opening、8 P2 approved public snapshot 的**明确最小范围只读数据库授权**。该目录及源对象不得覆盖或自动重试。没有授权时止于预检。
+
+
+## 2026-11-19 Owner 无数据库预检通过（当前最新状态）
+
+Owner 已提供完整 SAFE JSON（已提交到 `docs/evidence/R60_BASE336_P2_FULL_SOURCE_PRECHECK_SAFE_20261119.json`），结果：
+
+```text
+status = P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB
+base336_cases = 336
+base336_story_ids = 172
+p2_sources = 8
+p2_base336_exact_story_id_overlap = 0
+private_file_created = false
+database_accessed = false
+database_modified = false
+train_admitted = 0
+```
+
+先前 `package_matches=0, manifest_matches=1` 与本次成功预检**不矛盾**：前者表示完整 8×172 原文来源包尚未在 Owner 私有目录中找到；后者表示使用已存在的冻结身份/授权 Manifest，离线运行捕获器能够验证本次限定范围与输出前置条件，**没有生成或读取全量 World/Character/Opening 来源正文**。
+
+**状态：OFFLINE_CAPTURE_PRECHECK_COMPLETE，FULL_SOURCE_PACKAGE_MISSING，DB_CAPTURE_NOT_AUTHORIZED；P2_C=HOLD。** 不要重跑同一预检或旧八组/35 案例审查。接下来若 Owner 明确批准，才能在 Owner Mac 使用既有 `r60_base336_p2_source_evidence_capture_cpu.py --execute` 执行一次范围严格受限的只读捕获（冻结 172 Story current+archived 四类字段、8 P2 已批准 public snapshot + 版本/权限绑定）。捕获器内部使用现成 RLS 预检与 `REPEATABLE READ READ ONLY`，无数据库写入；要求 private 0700/0600 create-only，输出只允许回传 SAFE JSON。不查询 R50 密封正文、不查询私有聊天消息、不扩大素材范围。
+
+执行前检查：
+- 明确 Owner 对这次 **172 Story + 8 P2** 只读数据库访问的授权（之前 38 Story 授权不自动覆盖）；
+- `R60_READONLY_DATABASE_URL` 在 Owner 本机已正确设置（只检查是否存在，不向日志输出）；
+- 已预检的六个冻结来源目录、P2 Manifest 和输出目标未变；目标目录必须不存在；
+- 公开脚本版本已固定，禁止为了绕过失败擅自修改 SQL、RLS 或权限控制。
+
+拿到捕获器 SAFE `P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED` 后，也仅关闭**来源证据采集**，不能升级为 P2-C PASS。仍需对 8 来源与 Base336 全 172 Story 的 current+historical 实质字段做来源绑定语义交叉核验、R50 完整 Protected/Reserved metadata-only 排除、R47/R48/R55 曝光全集闭合、actual-sent、独立 Reviewer 与 Owner Freeze。48 条正式提示仍 NOT_GENERATED。
