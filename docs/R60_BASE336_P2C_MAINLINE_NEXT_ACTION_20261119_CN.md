@@ -64,3 +64,23 @@ BASH
 5. P2-C 全通过之后，再构造、复核并冻结 8×6=48 条真实评估提示，进入 P3–P6；GPU 推理仍需单独授权。
 
 固定状态：P2_C=HOLD；P2_B_48_PROMPTS=NOT_GENERATED；train_admitted=0；quality_v1_admitted=0；model_promoted=false。
+
+## 2026-11-19 Owner 真实运行结果：完整来源包缺失
+
+Owner 实际执行新增的无数据库预检后返回：
+
+```text
+status = P2_8X172_EXISTING_PACKAGE_AVAILABILITY_HOLD
+package_matches = 0
+manifest_matches = 1
+database_accessed = false
+p2_c = HOLD
+```
+
+这是**真实文件可用性回执**：在 Owner 本次扫描的私有根目录里，唯一的 8 条 P2 Source Manifest 存在；但没有预期文件名的完整 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json`。不能声称其他名字的快照绝对不存在，不能把已有 38 Story / 59 条记录的旧证据包装为全 172 Story，也不要重复运行同一个搜索/预检。
+
+继续优先推进 P2 新来源隔离。仓库已存在 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py`：其默认（**不加** `--execute`）路径只验证既有六组冻结目录、完整 336/172 来源身份，以及 8 条 P2 Manifest；返回 `P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB` 时，仍没有读取数据库或创建来源正文包。
+
+若离线预检通过，而其他经核对的既有快照仍不具备 172 Story current + all archived 的完整 World/Character/Opening 字段，则需明确的 **Owner 最小范围只读数据库捕获授权**，不能沿用先前 38 Story 的数据库读取许可，不能把“运行预检”解读为授权执行捕获。授权范围应仅为：冻结 172 个 Story 的 `world/character/characters/opening` current+archived，以及已批准 8 条 P2 public snapshot 的 revision/moderation/permission 字段；RLS 只读角色，`REPEATABLE READ READ ONLY`，仅 Owner Mac 私有 create-only 0700/0600 输出，SAFE 聚合回执。不得查询 R50 密封正文、用户私有会话消息、训练/推理/API、扩大数据集或修改数据库。
+
+后续批准后执行仍属于**来源证据收集**，不是 P2-C PASS。之后必须开展 P2×Base336 语义比较、R50 完整 Protected/Reserved metadata-only 覆盖、旧曝光全集、历史 actual-sent 版本绑定、独立复核与 Owner Freeze。P2-C 与 48 提示继续 HOLD/NOT_GENERATED。
