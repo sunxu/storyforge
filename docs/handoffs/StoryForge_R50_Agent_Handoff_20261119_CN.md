@@ -210,3 +210,15 @@ The Owner supplied the rank arrays and pair rows. `transitive_known_old_link=[4,
 The Owner's corrected parser classified and skipped the 14 AppleDouble metadata entries in the 14-chat archive; all 14 actual conversations parsed (62,583 messages). The 06–15 archive parsed recursively as 1,010 conversations (71,884 messages). The exact-history lookup reported no exact 32-message history matches; the Message-ID-first diagnostic returned no positive match counts. This closes the bounded supplementary-archive lookup; do not rerun on unchanged bytes.
 
 PR #33 CI for head `e95da034bde9d064082dcfa32908ebd1290ec6b5` completed failed at repository-wide Ruff (202 findings); tests and evidence-integrity steps were skipped. No R50 code change was made. The taskbook records this as pre-existing repository-wide lint debt, outside the authorized scope.
+
+
+## 12. W4 partial runtime evidence — 2026-11-19
+
+Read-only GitHub and Library inspection found these existing precedents:
+
+- **R47 Base/v0.1/v0.2 runner:** `scripts/v02_r47_eval_runner.py` on `main` (blob `a2fa43f65b7b31631976cab1ac84b2b183b5f352`). It uses one shared `swift infer` path with the pinned Qwen revision, Transformers backend, BF16/BNB 4-bit, `max_new_tokens=1536`, `seed=42`, `data_seed=42`, `temperature=0`, and no validation shuffle. Adapter weights are SHA-guarded. This is old exposed-test runtime precedent, not an R50 46-case execution.
+- **R55 v0.3-A inference:** Owner-local run directory `~/.local/share/storyforge/r55/inference-results/r55-dev-20261022T023436Z-188604/`; SAFE report confirms 20 outputs, R54 checkpoint-16 adapter SHA `121ec8...`, Qwen revision `1d4bf0f...`, ms-swift 4.5.3 / Transformers 5.16.1 / bitsandbytes 0.50.2, and generation values `temperature=0`, `seed=42`, `data_seed=42`, `max_new_tokens=1536`, `validation_shuffle=false`. The local runner and 243,541-byte runtime log are inventoried at `~/.local/share/storyforge/r55/one-shot-inference-20261022/scripts/r55_gpu_infer_runner.py` and `.../R55_R54_INFERENCE_RUNTIME_PRIVATE.log`, but their effective backend/template/stop/truncation details have not yet been extracted in this pass.
+- **R50 draft receipt:** 46/46 role/order structures and 12/12 trailing-User tokenizer records are reported, but `actual_four_arm_runtime_role_parity_verified=false`. The old `trailing_user_interpretation_policy_approved=false` field predates the Owner's later explicit policy approval; current policy status is APPROVED.
+- **Cross-backend warning:** the separate R53 CPU40 report recorded Transformers vs ms-swift input-token differences on 31 Train + 9 Validation rows. This is not R50 evidence, but it prevents assuming that the R50 Transformers-only draft receipt proves ms-swift serving parity.
+
+W4 remains `NOT_VERIFIED`. The smallest next action is a read-only extraction from existing R47/R55 reports, R55 runner/contract/runtime log, emitting only hashes and allowlisted runtime flags. Do not emit prompt/response text, IDs, mappings, answer keys or full logs; do not rerun jobs or launch tokenizer/HF/GPU/inference.
