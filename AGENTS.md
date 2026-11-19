@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## R60 Base336 training-after P2 Quality-v1 — current agent handoff override (2026-11-19)
+
+The active **post-training independent evaluation** workflow is documented at [R60 Base336 P2 Quality-v1 next-agent handoff](docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md), with a [copy-ready prompt](docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261119_CN.md). This supersedes the older R60 handoff text below only for **current P2 next steps**, not immutable training facts or project-wide policy. The active PR is #31 (development branch `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`); always check HEAD and CI.
+
+**Do not deviate:** Finish P2-C independent semantic/source protection for the **8 new public P2 stories** (not the old eight Base336 World groups), then build 48 six-dimension prompts, then Base/Adapter paired blind quality review. Reuse already verified R50 50=46+4 provenance, pinned five R50 source worlds and P2 exact disjoint, R47/R48/R55 known dev20/two-story exact disjoint, old 38-Story evidence, and R58 five-scope empty CSV result. These have already been run and must not be repeated just to make progress. Base336 all-172 full source and historical actual-sent, other Protected/Reserved/Dev/training/teacher universes, reviewer independence and Owner freeze remain HOLD. R50 sealed contents and private chats remain off-limits. Owner authorizes scoped read-only StoryForge DB access without repeated approval; no DB writes or RLS relaxation. A new GPU/HF inference or training job still needs separate explicit authorization. P2-C HOLD, 48 actual prompts NOT_GENERATED, train/quality admission zero, model not promoted.
+
+
 ## Project
 ## Active R60 workstream override (2026-11-16)
 
