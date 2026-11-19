@@ -45,12 +45,14 @@ When a PR is still Draft/open, describe its file as proposed branch evidence, no
 | New source ranks checked | 5 |
 | Old source ranks checked | 10 |
 | R45 source ranks checked | 9 |
-| Transitive known old links | 2 |
+| `transitive_known_old_link` | `[4,7]` (two old-source rank endpoints; not two edge objects) |
 | Timepoint card-field review | PENDING |
 | Hidden alias / world-component closure | HOLD |
 | Final Held-out seal | NOT PERFORMED |
 
 The three flagged pair rows are the same scoped W17 pair set already reviewed on 2026-10-19: old ranks 2, 4 and 10 against R50 rank 17. Each row has one exact long-message match and five sampled matches in the latest output. The earlier W17 pair decisions were all `INSUFFICIENT_EVIDENCE`; the prior receipt also states `reviewer_independence_or_correctness_verified_by_script=false`. Do not repeat that same review against the same evidence and call it new adjudication, and do not describe it as independently verified reviewer signoff.
+
+**Owner rank-pair follow-up (2026-11-19):** `r45_source_ranks` contains 4 but not 7; `old_source_ranks_checked` and `old14_numbered_chat_ranks` contain both. Thus `[4,7]` is consistent with the previously recorded old 04→07 rank pair, not two link objects. The separate old→R50 `pair_aggregate` shows old rank 4 ↔ R50 rank 17 with 5 sampled 120-character matches and 1 long exact-message match (the already-reviewed W17 flag); old rank 7 ↔ R50 ranks 16–20 has zero such matches. These counts do not change the prior `INSUFFICIENT_EVIDENCE` semantic decision and do not prove world independence. The possible transitive path to W17 remains unresolved; W3 remains `NOT_TRIGGERED`.
 
 **Interpretation boundary:** zero same-Story-ID pairs and zero extra archive Source-ID conflicts are limited identity checks. They do not prove semantic independence. The three lexical matches do not by themselves prove a shared world either. Keep semantic closure HOLD until new, source-backed provenance resolves them.
 
@@ -121,7 +123,7 @@ Other historical context:
 - Confirm the three flagged rows are the same old-rank 2/4/10 ↔ R50-rank-17 pairs already recorded in the W17 safe summary.
 - Map the 2026-11-19 inventory against the W17 pair dossier, seven full-message gap dossier, source/archive manifests, frozen R45 scope and known transitive-link records.
 - For each source/evidence family, record: artifact path and exact ref, covered scope, source/hash or version pins where available, cutoff coverage, prior review status, and whether the 2026-11-19 result adds any new message, alias, event, card version, rule version or runtime provenance.
-- Reconcile the old 04→07 confirmed edge with the two transitive known old links reported in the latest inventory; do not assume these are three distinct edges.
+- Reconcile `transitive_known_old_link=[4,7]` with the previously recorded old 04→07 edge; do not interpret the array length as two separate edges.
 - Use existing manifests and receipts first. Do not repeat CRC checks, lexical scans or prior AI reviews against unchanged bytes/evidence.
 - If the inventory does not bind a necessary source scope, identify the exact gap and why it matters. Propose only the smallest read-only check needed; do not run it without Owner authorization.
 - Output: a sanitized coverage crosswalk with counts, source refs and one overall result: `NEW_EVIDENCE_PRESENT` or `NO_NEW_EVIDENCE`. No private identifiers or text.
