@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Offline, create-only Base336 independent reviewer preparation and SAFE validation.
 
 Never transmits content or prints private story names/IDs/evidence. Uses only
@@ -8,13 +7,11 @@ this program; its attestations never prove reviewer independence on their own.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import hashlib
 import json
 import os
+from collections import Counter
 from pathlib import Path
-import stat
-import sys
 
 PACKET_SCHEMA = "storyforge_r60_base336_component_review_packet_private_v1"
 GROUP_SCHEMA = "storyforge_r60_base336_card_opening_evidence_private_v1"
@@ -105,48 +102,44 @@ def prepare(args):
     require(args.output_dir.parent.is_dir() and not args.output_dir.parent.is_symlink(), "OUTPUT_PARENT_HOLD")
     os.mkdir(args.output_dir, 0o700)
     count = 0
-    try:
-        for edge in packet["edges_PRIVATE"]:
-            if edge["cross_split"] is not True:
-                continue
-            idx = edge["edge_ordinal"]
-            refs = {}
-            # Include all matching current/archived records for each story.
-            for side in ("a", "b"):
-                sid = edge[f"source_{side}_PRIVATE"]
-                refs[side.upper()] = [
-                    {"source_record_index_PRIVATE": n,
-                     "source_kind": rec["source_kind"],
-                     "revision_id_PRIVATE": rec.get("revision_id_PRIVATE"),
-                     "group_ordinal": packet["record_locators_PRIVATE"][n]["group_ordinal"],
-                     "fields_PRIVATE": rec["source_fields"]}
-                    for n, rec in enumerate(records) if rec["story_id_PRIVATE"] == sid
-                ]
-            require(refs["A"] and refs["B"], "EDGE_SOURCE_HOLD")
-            write_new(args.output_dir / f"EDGE_{idx:02d}_EVIDENCE_PRIVATE.json", {
-                "schema": "storyforge_r60_base336_independent_edge_evidence_private_v1",
-                "edge_ordinal": idx,
-                "review_packet_sha256_PRIVATE": packet_sha,
-                "side_A_PRIVATE": refs["A"],
-                "side_B_PRIVATE": refs["B"],
-                "instructions_cn": "独立阅读两侧完整角色卡、开场和所有列出的版本。先不要看任何旧 Codex 建议。判断是否同一专属人物/组织/事件/共享剧情组件，或仅通用模板。写出具体版本和字段证据；不要凭文字匹配长度直接下结论。"
-            })
-            write_new(args.output_dir / f"EDGE_{idx:02d}_DECISION_PRIVATE.json", {
-                "schema": REVIEW_SCHEMA,
-                "edge_ordinal": idx,
-                "review_packet_sha256_PRIVATE": packet_sha,
-                "decision": None,
-                "reason_cn_PRIVATE": "",
-                "source_evidence_refs_PRIVATE": [],
-                "reviewer_key_PRIVATE": "",
-                "independent_execution_attested": False,
-                "source_version_reviewed": False,
-                "historical_actual_sent_verified": False
-            })
-            count += 1
-    except Exception:
-        # Preserve partial create-only output for diagnosis; never delete/overwrite.
-        raise
+    for edge in packet["edges_PRIVATE"]:
+        if edge["cross_split"] is not True:
+            continue
+        idx = edge["edge_ordinal"]
+        refs = {}
+        # Include all matching current/archived records for each story.
+        for side in ("a", "b"):
+            sid = edge[f"source_{side}_PRIVATE"]
+            refs[side.upper()] = [
+                {"source_record_index_PRIVATE": n,
+                 "source_kind": rec["source_kind"],
+                 "revision_id_PRIVATE": rec.get("revision_id_PRIVATE"),
+                 "group_ordinal": packet["record_locators_PRIVATE"][n]["group_ordinal"],
+                 "fields_PRIVATE": rec["source_fields"]}
+                for n, rec in enumerate(records) if rec["story_id_PRIVATE"] == sid
+            ]
+        require(refs["A"] and refs["B"], "EDGE_SOURCE_HOLD")
+        write_new(args.output_dir / f"EDGE_{idx:02d}_EVIDENCE_PRIVATE.json", {
+            "schema": "storyforge_r60_base336_independent_edge_evidence_private_v1",
+            "edge_ordinal": idx,
+            "review_packet_sha256_PRIVATE": packet_sha,
+            "side_A_PRIVATE": refs["A"],
+            "side_B_PRIVATE": refs["B"],
+            "instructions_cn": "独立阅读两侧完整角色卡、开场和所有列出的版本。先不要看任何旧 Codex 建议。判断是否同一专属人物/组织/事件/共享剧情组件，或仅通用模板。写出具体版本和字段证据；不要凭文字匹配长度直接下结论。"
+        })
+        write_new(args.output_dir / f"EDGE_{idx:02d}_DECISION_PRIVATE.json", {
+            "schema": REVIEW_SCHEMA,
+            "edge_ordinal": idx,
+            "review_packet_sha256_PRIVATE": packet_sha,
+            "decision": None,
+            "reason_cn_PRIVATE": "",
+            "source_evidence_refs_PRIVATE": [],
+            "reviewer_key_PRIVATE": "",
+            "independent_execution_attested": False,
+            "source_version_reviewed": False,
+            "historical_actual_sent_verified": False
+        })
+        count += 1
     require(count == 10, "REVIEW_COUNT_HOLD")
     print(json.dumps({"status": "REVIEWER_DOSSIERS_CREATED__DECISIONS_PENDING", "review_edges": count,
                       "private_files_created": count * 2, "source_files_verified": 8,
@@ -296,7 +289,7 @@ def main():
             prepare(args)
         else:
             verify(args)
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 - redact untrusted private input errors
         code = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
         print(json.dumps({"status": "HOLD", "reason_code": code, "private_values_emitted": False}))
         raise SystemExit(42)
