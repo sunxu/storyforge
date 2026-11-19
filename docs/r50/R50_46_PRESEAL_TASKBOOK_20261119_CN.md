@@ -344,3 +344,13 @@ The pinned 2026-10-16 source replay compared all 50 new User inputs with User me
 See SAFE receipt `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md` (follow-up commit `fea7d2e1b15375b631d24ad650b545ec7174d889`). The Owner-run scan parsed 14 actual conversations in the 14-chat archive (14 AppleDouble metadata entries were identified and excluded) and 1,010 conversations in the nested 06–15 archive. Neither yielded an exact 32-message history sequence or positive provenance Message-ID match for the protected 46. These archives are outside the five pinned R50 source worlds 16–20; do not repeat these scans without a new independent provenance lead.
 
 The authoritative 2026-10-16 replay remains 392/392 history references, 50/50 contiguous history/cutoff checks, and zero normalized verbatim reuse of the 50 new User inputs in the five pinned source transcripts. Therefore pinned-source Original Gold eligibility is 0/46. Overall Owner-wide coverage remains `NOT_ESTABLISHED` outside examined sources. Cases without Gold use the four-model comparison; a historical continuation after cutoff is not an answer to the appended current User input.
+
+
+### W4 historical implementation search update — 2026-11-19
+
+Read-only GitHub inspection located the historical R48/R55 comparison pipeline:
+
+- R48 is four answers total: Original Gold + Base/v0.1/v0.2, built from already-completed R47 outputs on 20 exposed prompts.
+- R55 is five answers total: Original Gold + Base/v0.1/v0.2/v0.3-A, with exact-source validators, frozen output/report hashes, anonymous five-way sheets, and a separately randomized v0.3-A vs v0.2 direct pairwise sheet. Its scope is the same 20 exposed prompts across two worlds; the 2026-10-23 preparation receipt says real Owner-local preflight was still pending.
+
+This closes the **design/implementation precedent** question for the five-answer review package. It does not close R50 W4 runtime parity: R47/R55 are old exposed prompts, not the protected 46, and no R50-specific four-arm load/runtime receipt was found. Reuse the R55 design/validators only as a reference; do not run its build/preflight against R50 or reuse exposed outputs as R50 answers. W4 remains NOT_VERIFIED pending existing R50 per-arm runtime/load evidence.
