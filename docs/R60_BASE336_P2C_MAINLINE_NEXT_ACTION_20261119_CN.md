@@ -1,5 +1,22 @@
 # R60 Base336 — P2-C 主线收敛与 Owner 下一步
 
+## 已验收：R50 冻结五世界与原始 50 来源等价（Owner SAFE PASS）
+
+Owner 新回传 SAFE：`R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD`，原始回执 `docs/evidence/R60_P2_R50_PINNED5_TO_PROVENANCE_OWNER_SAFE_20261119.json`。具体真实核验范围：
+
+- `pinned_five_worlds_verified=true`；前一轮已固定历史 Git SAFE 的 W16–W20 共五个来源世界、35 个源文件。
+- `r50_original_50_provenance_verified=true` 且 `r50_pinned_five_equals_original50_source_set=true`：历史两份固定 Git source/admission SAFE 的五个世界故事身份，**恰等于** Owner 原始 50 条 provenance 中的完整来源 Story 集合。
+- `p2_public_sources_checked=8`、`p2_pinned_r50_story_id_overlap=0`：P2 8 新来源与这 **五个冻结 R50 世界** 的精确 Story ID 不相交。
+- `r50_sealed_content_read=false`、`database_accessed=false`、`private_values_emitted=false`。此次是 Owner 本机运行回执，不是助手直接读取私有证据原件。
+- **仍未证明**：`all_other_protected_reserved_sources_verified=false`，因此全体历史 Reserved/Held-out 世界全集、跨不同 UUID 隐藏语义别名、其它 DEV/仲裁曝光、历史实际发送版本仍 HOLD；`P2_C=HOLD`、`train_admitted=0`。
+
+**此子任务已关闭：不再执行上文“冻结 R50 五世界 UUID ↔ 原始 50 来源 ↔ P2 八来源”的命令；不再重复 R50 50/46/4 provenance、R47/R48/R55 旧 20-case 精确绑定或 R58 五行空白 CSV。**
+
+下一项真正未完成的主线：证明 **R50 之外的 Protected/Reserved 来源权威全集**和**额外的历史 DEV/仲裁/实际训练曝光全集**，优先获取已存在的冻结来源元数据/版本/完整性证据，不用“缺文件引用”代替“来源不存在”。`R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json` 仅用于 R50 原五世界的有限来源元数据，不把同一五世界已关闭工作重新包装为“全量排除”。同时独立保留 P2 × 172 Base336 current+archived 世界/角色/开场语义闭合 HOLD 和 actual-sent、独立 Reviewer、Owner Freeze 门禁。
+
+---
+
+
 ## 下一项直接核验：冻结 R50 五世界 UUID ↔ 原始 50 来源 ↔ P2 八来源
 
 **新找到的权威 metadata-only 原件**（无需 R58 五范围空白 CSV）：
