@@ -96,7 +96,7 @@ Do not ask the Owner to repeat information already in this packet. Ask only for 
 W1 and W2 were executed as documented in `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md` (crosswalk commit `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`).
 
 - W1: `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`; W3 is `NOT_TRIGGERED`.
-- W1 bookkeeping gap: the latest SAFE inventory counts two transitive old links but does not publish their rank-pair identities, so their relationship to the existing 04→07 edge is unresolved.
+- W1 rank-pair follow-up: Owner supplied `transitive_known_old_link=[4,7]`; both values are verified old-source ranks, with 4 in frozen R45 and 7 outside it. This is consistent with the previously recorded old 04→07 edge; the two array elements are endpoints, not two edge objects. Old rank 4 ↔ R50-17 reproduces the already-reviewed W17 lexical/exact flag (5 sampled matches, 1 long exact); old rank 7 ↔ R50-16..20 has zero reported matches. No new semantic evidence; the possible transitive path to W17 remains `INSUFFICIENT_EVIDENCE`, W3 `NOT_TRIGGERED`.
 - W2: `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES` for actual inference-time card/rule snapshots and prompt-assembly/runtime receipts. The search covered the GitHub source tree and available R50 Library artifact inventory, not every possible Owner-held storage location.
 - W4 remains pending the Owner's explicit decision on the exact consecutive-User contract. A generic “授权” is not recorded as approval of that policy.
 - No repeated source/CRC/lexical/AI/tokenizer/ROLE12 audit; no HF Job, GPU, inference, training, answer-key access, admission, or seal.
@@ -198,3 +198,8 @@ The Owner's final evidence safe receipts now show:
 This closes the **mechanical completion/format-and-quotation validation** of all 152 originally flagged category slots, but it does NOT establish independent reviewer blinding, semantic correctness, or an unbiased model-wide failure rate. Four final Owner decisions remain HOLD for insufficient evidence. R55 remains development-only; R50 was not accessed, no GPU/training started, and no model promoted. Do not spend the protected R50 holdout based solely on these receipts.
 
 W1: `transitive_known_old_link=[4,7]` is a two-integer reference. The current safe schema inventory also exposes `pair_aggregate` records with `old_rank` and `r50_rank`, plus `r45_source_ranks`, `old_source_ranks_checked`, and `new_source_ranks_checked`. This suggests a rank-pair interpretation but does not prove whether 4 and 7 are source ranks, indices, or endpoint IDs. Keep 04→07 unresolved until the Owner supplies the redacted archive evidence and pair rows for ranks 4 and 7. Do not turn the list into a confirmed graph edge based on its name alone.
+
+
+## 10. Owner rank-pair clarification — 2026-11-19
+
+The Owner supplied the rank arrays and pair rows. `transitive_known_old_link=[4,7]` contains two old-source rank endpoints; it is consistent with the existing 04→07 edge and is not a count of two edge objects. Rank 4 is in frozen R45; rank 7 is an additional checked old source outside R45. The old-rank-4 ↔ R50-rank-17 result is the already-reviewed W17 flagged pair, while old rank 7 has no reported sampled/exact matches against R50 ranks 16–20. These limited matches do not alter the prior semantic `INSUFFICIENT_EVIDENCE` result, do not prove world independence, and do not establish a transitive path to W17. No repeated scan or adjudication is authorized or needed absent genuinely new provenance.
