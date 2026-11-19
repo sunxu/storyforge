@@ -1,6 +1,6 @@
 {
   "schema": "storyforge_r60_base336_p2c_mainline_status_projection_safe_v1",
-  "status": "P2_C_HOLD__R50_PROVENANCE_SUBSET_CLOSED__SOURCE_UNIVERSE_NOT_CLOSED",
+  "status": "P2_C_HOLD__R58_PLACEHOLDER_EMPTY__EXISTING_PRIMARY_SOURCES_NOT_INVALIDATED",
   "evidence_basis": "GITHUB_OWNER_REPORTED_SAFE_RECEIPTS_AND_PINNED_PRIOR_SCOPE_DOCUMENTS__NOT_NEW_OWNER_EXECUTION",
   "no_new_private_source_read": true,
   "p2_public_sources": 8,
@@ -47,5 +47,16 @@
   "database_accessed": false,
   "database_modified": false,
   "private_values_emitted": false,
-  "model_promoted": false
+  "model_promoted": false,
+  "r58_g1_five_scope_index_check": {
+    "owner_receipt": "docs/evidence/R60_P2C_R58_G1_EMPTY_SOURCE_REFERENCES_OWNER_SAFE_20261119.json",
+    "status": "R58_G1_SOURCE_EXISTENCE_PREFLIGHT_ONLY__WORLD_AND_PROTECTION_HOLD",
+    "scope_count": 5,
+    "bound_source_references": 0,
+    "independently_verified_complete_scopes": 0,
+    "referenced_source_file_bytes_read": false,
+    "note": "EMPTY_HISTORICAL_R58_FIVE_ROW_CSV_ONLY__DOES_NOT_PROVE_ORIGINAL_SOURCES_MISSING__NOT_A_R60_P2C_GATE_PASS",
+    "rerun_recommended": false
+  },
+  "r50_full_metadata_roster_authority_verified": false
 }
