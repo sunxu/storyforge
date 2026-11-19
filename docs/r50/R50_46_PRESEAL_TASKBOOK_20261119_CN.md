@@ -475,3 +475,8 @@ The R55 Runner source and R47 Runner source still show matching explicit core CL
 
 
 Latest PR #33 CI after the R55 effective-runtime evidence update: head `cc9f68aaddc97442ff149cffa5f17f3729b78024` completed failed at repository-wide `ruff check .` with 202 findings; Tests and evidence-integrity stages were skipped. This is the known repository-wide lint blocker, not a new R50-specific failure. Keep this PR documentation-only.
+
+
+## 2026-11-19 R47 runtime-log filename search result
+
+Owner searched the known R47 run directory `~/.local/share/storyforge/r47/r47-20261014T091647Z-637890/` recursively for `*.log`, `*runtime*`, `*launch*`, and `*command*`; result: `MATCHED_FILES: 0`. This is a bounded filename-search result only. It does not invalidate the completed R47 three-arm inference or its existing report/results, and it does not prove no runtime metadata exists inside JSON reports or remote job records. Existing local evidence still includes `R47_PRIVATE_RUN_REPORT.json`, `R47_LOCAL_INTEGRITY_PASS.json`, `coordinator/private/R47_AUDIT_SUMMARY.json`, and Base/v0.1/v0.2 result JSONL files. Next smallest action: read-only allowlisted field scan of those existing JSON reports for runtime/template/truncation/stop/sampling fields, emitting only key paths and safe values; do not print prompts, responses, IDs or mappings. If absent, mark `NOT_RECORDED` / `SOURCE_UNAVAILABLE`; do not rerun R47 or launch any GPU/model/tokenizer job.
