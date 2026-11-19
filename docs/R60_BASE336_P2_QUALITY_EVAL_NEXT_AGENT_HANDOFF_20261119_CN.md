@@ -1,5 +1,35 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 七、2026-11-19 被评测模型阵容重新评估（取代本文件原先仅 Base/Adapter 两臂的默认设计）
+
+**状态：建议的 preregistration 设计，尚未经 Owner 最终冻结，也不授权新的 GPU/HF 推理。** 本文件第 1 / 5 节原写的“Base/Adapter 两臂”仍是**最低主比较**，不应视为已获批准的最终模型阵容。历史 R50/R56 曾提出 Base/v0.1/v0.2/v0.3 四模型；R47/R48/R55 的真实结果表明应将“新 Base336 对比历史强 Adapter 与最新旧版本的回退”列入同一次新的独立质量评估。
+
+### 推荐：4 个生成臂，分主比较和诊断比较
+
+| 臂 | 冻结模型 | 本轮地位 | 历史证据理由 |
+|---|---|---|---|
+| A | `Qwen/Qwen3.8-27B` 原始 Base，revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | **必须** | 校验本轮微调是否较 Base 获益 |
+| B | R46 **v0.2 checkpoint-7** Adapter（相同 Base revision；历史权重身份必须先验 SHA/加载可用性） | **必须** | R47 旧 20 Prompt 中 11/20 多数偏好；R48 仅略逊原始 Gold；历史强质量对照 |
+| C | R54 **v0.3-A checkpoint-16** Adapter（相同 Base revision；旧 frozen checkpoint） | **推荐同轮纳入，预注册为诊断臂** | R55 对 v0.2 旧题 12/20 多数偏好，但六维均分 3.2750 < 3.3972、自主权严重标记 9 > 7；历史 NO-GO 是不批准消耗 R50 密封测试，不是禁止在**新 P2 来源**上诊断 |
+| D | **R60 Base336 checkpoint-37** Adapter | **必须；新实验主角** | 已完成工程训练与 Adapter reload，尚无独立质量证明 |
+
+不将 **v0.1 checkpoint-9** 纳入核心新评估：旧 R47/R48 表现偏弱，对判断新模型是否超越历史最佳的边际贡献小，增加一次整套推理/盲审成本。**R48 原始 Gold 是旧题参考回复，不是生成模型；对 P2 48 个新 Prompt 没有匹配的 Gold 回复，不得引入。**旧 R47/R48/R55 20 Prompt 仅涉及 2 个已暴露 Story，不能当新测试数据或替代本次预测。
+
+- 推荐同一次锁定 **48 个新 Prompt × 4 个模型 = 192 份生成结果**。若资源限制且需要严格最短路径，明确降级为**3 个核心臂：Base、v0.2、Base336 = 144 份**；不应降到只有 Base/Base336 两臂。任何降级/是否纳入 v0.3-A **必须在首次查看 P2 生成及评分结果之前由 Owner 冻结**，不得看结果后再选择增加/移除臂。
+- **主预注册比较**：Base336 vs Base、Base336 vs v0.2；**诊断比较**：Base336 vs v0.3-A；各臂均同一批 48 Prompt、逐案生成一次，同一 Model revision / Tokenizer / Chat Template / 三消息上下文 / 解码 / seed / stop / token budget。对每对模型的逐案结果、六维得分、严重自主权/禁句/安全标记独立报告，避免只用“四选一冠军”隐藏硬规则回退。
+- 盲化时每条 Prompt 的四份回答随机匿名化，保留只在 Owner 的 create-only 0600 身份密钥；评审者不获模型名单对应关系。三名独立 Reviewer 的**独立性**需要实证，不能只凭不同 AI 模型 ID。48 prompts 分 8 世界、5 作者，按世界/作者聚类报告不确定性，不把 192 个输出或 Reviewer × Prompt 评分当作独立 Story。
+- 旧 v0.1 / v0.2 / v0.3 数据与训练输入的 System/World/Rules 差异、部署 Prompt 分布差异必须披露；相同推理 Prompt 保证**操作层面可比**，不意味着唯一因果变量是训练数据。任何臂无法验证固定 Base revision、旧 Adapter SHA/加载、历史训练数据泄漏风险或完整 P2-C 许可时，**先 HOLD / 调整正式预注册**，不可静默替换模型。
+- 本次变动只更新**方案**；P2-C=HOLD、48 真实 Prompt=NOT_GENERATED、P3 两/四臂 Backend 尚未实现、P4 GPU/HF 未授权、train/quality admission=0、model_promoted=false 均不变。复用 `generation_eval.worker` / HF Runtime，不为四臂重写底层执行器。
+
+**历史决策依据：**
+`docs/evidence/V02_R47_2_THREE_MODEL_UNBLIND_RESULTS_20261014.md`；
+`docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.md`；
+`docs/evidence/V03_R55_CHECKPOINT16_CANDIDATE_GO_NO_GO_20261023.md`；
+`docs/evidence/V03_R50_OWNER_STORY_INDEPENDENCE_ATTESTATION_AND_R56_NEXT_GATE_20261023.md`。
+
+---
+
+
 > **最高优先级 / 直接复制给新 Agent。** 本文取代 2026-11-17 的通用启动提示词和 2026-11-18 的 P2 Crosswalk 提示词中的“当前步骤”与过期状态；旧文件保留为历史过程。若与旧文档的待办、授权要求或文件存在性判断冲突，先核对本文件引用的最新真实 SAFE，再以本文件的工作顺序为准。
 >
 > 仓库：`sunxu/storyforge`。当前执行 PR：[PR #31](https://github.com/sunxu/storyforge/pull/31)，工作分支 `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`，目标合并基线 `r60/common2-cpu2-owner`；这些是**截至 2026-11-19 的快照**，新 Agent 必须实时确认 HEAD / PR / CI，不假设本文件记载的提交永远最新。
