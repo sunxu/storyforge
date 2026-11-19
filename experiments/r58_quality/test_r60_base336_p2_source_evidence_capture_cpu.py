@@ -95,6 +95,147 @@ class SourceEvidenceCaptureTests(unittest.TestCase):
         self.assertEqual(str(raised.exception), "DB_CONNECTION_HOLD")
         self.assertNotIn("private", str(raised.exception))
 
+    def test_default_psycopg_tuple_rls_rows_are_normalized(self):
+        """Tuple rows must be converted before invoking shared dict-only RLS validation."""
+        class FakePsycopgError(Exception):
+            pass
+
+        def fake_connect(*_args, **_kwargs):
+            class Conn:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *_args):
+                    return None
+
+                def rollback(self):
+                    pass
+
+                def cursor(self):
+                    class Cursor:
+                        description = None
+                        query = ""
+
+                        def __enter__(self):
+                            return self
+
+                        def __exit__(self, *_args):
+                            return None
+
+                        def execute(self, query, _params=None):
+                            self.query = query
+                            if query == audit.p2_inventory.RLS_PREFLIGHT_SQL:
+                                self.description = [
+                                    SimpleNamespace(name=name) for name in (
+                                        "table_name", "rls_enabled",
+                                        "select_granted", "policy_present",
+                                    )
+                                ]
+
+                        def fetchone(self):
+                            return ("r58_export_reader", "on", "on", False, False)
+
+                        def fetchall(self):
+                            if self.query == audit.p2_inventory.RLS_PREFLIGHT_SQL:
+                                return [
+                                    ("story_moderation_submissions", True, True, True),
+                                    ("story_permission_events", True, True, True),
+                                ]
+                            return []
+
+                    return Cursor()
+
+            return Conn()
+
+        fake = SimpleNamespace(Error=FakePsycopgError, connect=fake_connect)
+        with patch.dict(sys.modules, {"psycopg": fake}):
+            base, p2 = audit.fetch("postgresql://synthetic", ["synthetic-story"], [])
+        self.assertEqual(base, [])
+        self.assertEqual(p2, [])
+
+    def test_shared_role_guard_failure_is_safe_hold(self):
+        """A validator from another module must not turn a role rejection into a generic error."""
+        class FakePsycopgError(Exception):
+            pass
+
+        class Cursor:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def execute(self, *_args):
+                pass
+
+            def fetchone(self):
+                return ("wrong_role", "on", "on", False, False)
+
+        class Conn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return None
+
+            def cursor(self):
+                return Cursor()
+
+            def rollback(self):
+                pass
+
+        fake = SimpleNamespace(Error=FakePsycopgError, connect=lambda *_a, **_kw: Conn())
+        with patch.dict(sys.modules, {"psycopg": fake}), self.assertRaises(audit.Hold) as raised:
+            audit.fetch("postgresql://synthetic", ["synthetic-story"], [])
+        self.assertEqual(str(raised.exception), "DB_ROLE_GUARD_HOLD")
+
+    def test_missing_rls_policy_fails_closed(self):
+        """Required RLS policies are not optional; failure is always a safe HOLD."""
+        with patch.object(audit.private, "assert_guard", return_value=None):
+            with patch.object(audit.p2_inventory, "validate_rls_preflight",
+                              side_effect=audit.p2_inventory.RlsPolicyHold(
+                                  ["story_permission_events:required_policy_missing"]
+                              )):
+                class FakePsycopgError(Exception):
+                    pass
+
+                class Cursor:
+                    description = None
+                    def __enter__(self):
+                        return self
+                    def __exit__(self, *_args):
+                        return None
+                    def execute(self, query, _params=None):
+                        if query == audit.p2_inventory.RLS_PREFLIGHT_SQL:
+                            self.description = [
+                                SimpleNamespace(name=name) for name in (
+                                    "table_name", "rls_enabled", "select_granted", "policy_present"
+                                )
+                            ]
+                    def fetchone(self):
+                        return ("r58_export_reader", "on", "on", False, False)
+                    def fetchall(self):
+                        return [
+                            ("story_moderation_submissions", True, True, True),
+                            ("story_permission_events", True, True, False),
+                        ]
+
+                class Conn:
+                    def __enter__(self):
+                        return self
+                    def __exit__(self, *_args):
+                        return None
+                    def cursor(self):
+                        return Cursor()
+                    def rollback(self):
+                        pass
+
+                fake = SimpleNamespace(Error=FakePsycopgError,
+                                       connect=lambda *_a, **_kw: Conn())
+                with patch.dict(sys.modules, {"psycopg": fake}), self.assertRaises(audit.Hold) as raised:
+                    audit.fetch("postgresql://synthetic", ["synthetic-story"], [])
+        self.assertEqual(str(raised.exception), "DB_ROLE_RLS_POLICY_HOLD")
+
     def test_unexpected_post_query_failure_reports_only_safe_phase(self):
         def fail_after_source_fetch(args):
             args.failure_phase = "P2_RECORD_VALIDATION"
