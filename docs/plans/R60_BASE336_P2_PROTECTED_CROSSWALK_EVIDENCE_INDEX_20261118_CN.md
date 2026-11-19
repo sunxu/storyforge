@@ -663,3 +663,18 @@ Owner 提交 Reviewer B 的 SAFE 回执及交付说明。已将该回执按原�
 - Reviewer A 的 10 条静态判断也是同组件，但 `self_attested_independence_count=0`，不能算作双独立一致。即使 B 通过 Owner 核验，仍最多有一位经认可的独立 Reviewer；如门禁需要双独立，需再安排真正隔离的 C。
 - 所有 10 条关联及其已涉及的候选故事继续原有 HOLD，不自动修改任何冻结案例或归入训练。Owner 审查私有理由、快照和独立资格后方可使用现有世界隔离函数进行源绑定组件图冲突核验，依旧不得自动宣告全量隔离 PASS。
 - `actual_sent=false`、`r50_complete_exclusion_verified=false`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0` 不变。
+
+
+## 18. 2026-11-19 非阻塞组件冲突候选预览（本索引最新）
+
+为避免 Reviewer B 独立性资格核验阻塞其他工作，在 **不改变 B 仍待 Owner 验证** 的前提下，新增纯 Owner-local、只读、create-only 的组件冲突候选工具 \`experiments/r58_quality/r60_base336_component_conflict_preview_cpu.py\`，运行手册：\`docs/R60_BASE336_COMPONENT_CONFLICT_PREVIEW_RUNBOOK_20261119_CN.md\`。工具复用已存在的 \`storyforge_dataset.world_isolation.component_split_conflicts\`，绝不创建第二套正式隔离 PASS 实现。
+
+以当前已上传八组 member 文件、冻结 roster、V2 packet 进行 source SHA pin / roster pin / recorded source revision 对齐和十条候选边的 union-find：
+
+- 10 对跨 Train/Validation 候选连接成 6 个跨拆分**候选**连通分量，Story 大小为 2、2、2、2、3、5；
+- 共有去重 16 个 Story、35 条候选案例需要继续隔离观察；
+- Reviewer B 的 10/10 SAME 仅是 SAFE 聚合和待认证的静态语义判断；上述图是“十条边全部同组件”的**假设预览**，没有逐项回放 B 的私有 Decision，也未证明历史 actual-sent；
+- 私有组件→Story/冻结案例位置映射只允许保存 Owner 0700/0600 路径，不上传 GitHub。仓库只保存 \`docs/evidence/R60_BASE336_COMPONENT_CONFLICT_PREVIEW_SAFE_20261119.json\` 及工具、合成测试与执行文档。
+- 本预览之外的 22 个 Story 不能自动宣称语义隔离 PASS；不得自动修改 336 冻结 split，不能生成正式 P2-B 48 prompts 或启动训练。
+
+Owner B 资格核验、actual-sent、R50 全量 metadata 排除、旧曝光完整覆盖、其余 Base336 世界组件，仍是各自单独的 HOLD；\`P2_C=HOLD\`、\`train_admitted=0\` 不变。下一步优先将预览在 Owner Mac 真实私有目录执行并保存 SAFE 回执，同时并行推进不依赖 B 资格的其他 metadata-only 审计。
