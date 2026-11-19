@@ -159,3 +159,54 @@ train_admitted = 0
 - 公开脚本版本已固定，禁止为了绕过失败擅自修改 SQL、RLS 或权限控制。
 
 拿到捕获器 SAFE `P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED` 后，也仅关闭**来源证据采集**，不能升级为 P2-C PASS。仍需对 8 来源与 Base336 全 172 Story 的 current+historical 实质字段做来源绑定语义交叉核验、R50 完整 Protected/Reserved metadata-only 排除、R47/R48/R55 曝光全集闭合、actual-sent、独立 Reviewer 与 Owner Freeze。48 条正式提示仍 NOT_GENERATED。
+
+
+## 2026-11-19 Owner 已授权限定只读来源捕获
+
+Owner 在本对话明确授权本次来源捕获，并指示**后续同一 StoryForge 主线的数据库访问无需逐次另行申请**。这是对只读验证的执行许可，不会取消既有 RLS / read-only / 私有证据 / R50 密封 / 数据完整性 / GPU / 训练等门禁；未经任务授权不得写库、访问 R50 密封正文或读取私有聊天内容。必须保持精确的冻结 ID 过滤条件、最小字段范围与 SAFE 聚合输出。
+
+本次已有成功离线回执 `P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB`：336 案例、172 个来源 Story、8 条 P2 公开来源、exact Story ID overlap 0。完整 8×172 来源包仍缺失，现可在**Owner Mac** 原有 read-only DB 连接下，对已验证的相同六个冻结目录和 8 条 P2 Manifest 执行 **一次** `--execute`。由于这些冻结 ID 和私有凭据只在 Owner 本机，GitHub/CI 不运行数据库捕获，也不在此对话传输源码/私有原文。
+
+严格执行命令（脚本沿用通过预检的那一份；保护输出目录不被覆盖）：
+
+```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+umask 077
+REPO="$HOME/workspace/storyforge-r60-p2-card-opening"
+BASE="$HOME/.local/share/storyforge/r60/private"
+TOOLS="$BASE/reviewer-tools-git-v2"
+SCRIPT="$TOOLS/r60_base336_p2_source_evidence_capture_cpu.py"
+MANIFEST="$BASE/r60-p2-public-source-inventory-20261118/R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json"
+OUT="$BASE/r60-base336-p2-full-source-evidence-20261119-v1"
+
+test -f "$SCRIPT" && test -f "$MANIFEST"
+test -d "$BASE" && test ! -e "$OUT" && test ! -L "$OUT"
+if [ -z "${R60_READONLY_DATABASE_URL:-}" ]; then
+  echo "DB_DSN_HOLD: R60_READONLY_DATABASE_URL is not set in this shell"
+  exit 42
+fi
+
+git -C "$REPO" fetch --no-tags origin docs/r60-p2-r47-r48-r55-source-shape-audit-20261118
+cmp -s "$SCRIPT" <(git -C "$REPO" show FETCH_HEAD:experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py) || {
+  echo "SCRIPT_VERSION_HOLD: local script differs from the reviewed GitHub version"
+  exit 42
+}
+export PYTHONPATH="$REPO/src:$REPO/experiments/r58_quality:$TOOLS"
+python3 "$SCRIPT" \
+  --old-dir "$BASE/r60-quality-fast1000-api-v1" \
+  --plan-dir "$BASE/r60-real1000-v1-repair-plan-20261114" \
+  --v2-dir "$BASE/r60-real1000-v2-priority-replay-v1" \
+  --v3-dir "$BASE/r60-real1000-v3-consistent-replay-v1" \
+  --audit-dir "$BASE/r60-real1000-v123-crosswalk-v1" \
+  --quarantine-dir "$BASE/r60-real1000-r50-known5-quarantine-v1" \
+  --p2-manifest "$MANIFEST" \
+  --output-dir "$OUT" \
+  --execute
+BASH
+```
+
+只有 `P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED` 才表示完成本次字段来源捕获且仍需语义审查。若出现 `P2_BASE336_SOURCE_EVIDENCE_HOLD`，保持失败关闭，**不得删除或覆盖部分生成的私有目录，不得绕过 RLS 或改变冻结 ID 清单**。只回传完整的 SAFE JSON，不回传任何数据库 URL、Story ID、源值、逐项对照、路径或 SHA。
+
+后续严格沿主线先完成新 8 来源对 Base336 172 Story 的语义排除，再推进 R50 完整 metadata-only 保护集闭合、R47/R48/R55 全历史曝光闭合、actual-sent 版本绑定、独立 Reviewer/Owner Freeze；P2-C 继续 HOLD，P2-B 48 prompts 仍 NOT_GENERATED，train_admitted=0。
