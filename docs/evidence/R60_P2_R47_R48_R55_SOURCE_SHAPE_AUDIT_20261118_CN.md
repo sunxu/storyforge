@@ -224,3 +224,28 @@ P2_B_48_PROMPTS = NOT_GENERATED
 ```
 
 下一步不再重复 R47/R48/R55 精确 ID crosswalk，也不重跑 R55 Index SHA / token 链。转向最小化的**语义与完整性缺口盘点**：先只读审查旧 R47 source preflight SAFE / 脚本 / 测试的合同；并分别确认 Base336 card/opening 已有文件的真实 Schema / 覆盖缺口、R50 metadata-only roster 是否完整、actual-sent 证据是否存在。任何缺失仍 HOLD，不启动 GPU/HF、不读取 R50 正文、不生成真实 P2-B 提示包。
+
+
+## 11. 2026-11-19：R55 旧 R47 baseline preflight 证据边界补充
+
+复核仓库历史证据文档 `docs/evidence/V03_R55_R47_EXPOSED20_BASELINE_OWNER_PREFLIGHT_PASS_20261022.md`，并与 Owner 已提供的 SAFE 状态对照：
+
+- SAFE schema：`storyforge-r55-dev-old-source-preflight-v1`。
+- Owner 报告状态：`R55_R47_EXPOSED_20_BASELINE_SOURCE_VERIFIED__NO_GPU__R50_SEALED`。
+- 范围：`R47_R48_SAME_EXPOSED_20_DEV_ONLY_NOT_FRESH_TEST`。
+- 历史文档记录该 preflight 对冻结的 R47 已曝光 20 prompts，核对既有 R46 `v02-results.jsonl` 与 R47 private run report；没有启动新推理，R50 未打开。
+- 历史文档同时明确：底层 `R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json` 未提供本轮独立重新哈希，因此这是 **Owner-reported PASS，不是本轮 byte-level independent re-verification**。
+
+这项历史 preflight 与本报告第 10 节的较新 Owner-local SAFE 是不同证据：
+- 第 10 节已经验证 R47 Sample → canonical Test `metadata.story_id` 绑定、R48 canonical source SHA，以及 R55 三层索引到同一 20-case R47 Sample 集的传递链；该 20-case 范围内 P2 exact Story ID overlap=0。
+- 旧 baseline preflight 不替代上述 Story ID 绑定；上述 Story ID crosswalk 也不扩大为完整 R47/R48/R55 exposure universe 的穷尽证明。
+
+因此不再重复 R55 三层 Index SHA/token 链或同一 20-case exact crosswalk。当前状态继续为：
+```
+R55_OLD_R47_SOURCE_PREFLIGHT = OWNER_REPORTED_PASS__RECEIPT_NOT_REHASHED
+P2_R47_R48_R55_20_CASE_EXACT_STORY_ID = PASS_OVERLAP_0
+P2_R47_R48_R55_FULL_EXPOSURE_CLOSURE = UNKNOWN_HOLD
+P2_SEMANTIC_ISOLATION = HOLD
+P2_C = HOLD
+P2_B_48_PROMPTS = NOT_GENERATED
+```
