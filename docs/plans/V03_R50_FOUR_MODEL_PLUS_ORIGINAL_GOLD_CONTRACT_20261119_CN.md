@@ -185,3 +185,13 @@ The Owner-run supplementary archive scan is recorded in `docs/evidence/V03_R50_O
 The 2026-10-16 replay remains authoritative: 392/392 history message references exact-matched, 50/50 contiguous history/cutoff checks passed, and normalized verbatim reuse of the 50 new User inputs in the five pinned source transcripts was zero. Thus no protected 46 case has a same-current-User Original Gold in those five source transcripts (`0/46` within that scope). Overall Owner-wide coverage remains `NOT_ESTABLISHED` outside examined sources. Do not rerun the five-world replay, the two supplementary archive scans, or any ID-first diagnostic absent a new independent provenance lead.
 
 For cases without qualifying Gold, use the separately specified four-model comparison. A historical Assistant continuation after cutoff, if separately recovered, must be labelled as a different reference type and cannot be scored as an answer to the appended current User input.
+
+
+## 10. Historical four/five-answer workflow precedent located — 2026-11-19
+
+Read-only GitHub inspection located the completed R48 and prepared R55 workflows:
+
+- R48: docs/V02_R48_GOLD_FOUR_ARM_COMPARISON.md and scripts/v02_r48_four_arm_build.py. This is **Original Gold + Base + v0.1 + v0.2** (four answers total, only three model arms), using the already completed R47 outputs and canonical 20-case Gold. It is a retrospective exposed-test comparison, not R50 evidence.
+- R55: docs/R55_GOLD5_DEV20_OWNER_RUN_CN.md, docs/evidence/V03_R55_GOLD5_DEV20_OFFLINE_BUILD_PREPARED_20261023.md, and scripts/v03_r55_gold5_build.py. This defines the exact **Original Gold + Base + v0.1 + v0.2 + v0.3-A** five-answer comparison, reuses exact R47/R48 validators, pins the R55 v0.3-A response/report hashes, and creates separate blinded five-way and v0.3-A-vs-v0.2 pairwise tasks. Its scope is 20 already-exposed prompts across two worlds; the documented builder was prepared/tested synthetically but its real Owner-local preflight was still pending in the 2026-10-23 receipt.
+
+These are reusable *review-contract and source-alignment precedents*, not proof of R50 four-arm runtime parity, not evidence that R50 has Original Gold, and not a license to reuse exposed development prompts as Held-out. For R50, retain the five-answer contract, exact same-input/full-history/cutoff requirement, and separate four-model denominator. Do not run R48/R55 build scripts against R50 data or alter their historical artifacts.
