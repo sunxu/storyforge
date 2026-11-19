@@ -368,3 +368,17 @@ The latest targeted inventory reports `transitive_known_old_link` as a list of t
 The local R55 inventory also contains the subsequent arbitration/second-audit/third-audit/final-evidence artifacts. The documented pipeline covers 76 flagged candidates × 2 categories (152 slots), with P0=65 and P1=87; third audit covers 46 candidates / 92 slots, including 59 original disputes/first-HOLD categories. The third-audit receipt says no automatic majority adjudication and reviewer independence not technically verified. Final-evidence format/quote validation is not semantic certification. Local file existence alone does not establish PASS: inspect the safe count-only outputs for arbitration, second audit, third audit, priority final validation, and all-152 final validation. Never upload private dockets, story text, candidate replies, mappings, or private decision JSON.
 
 W4 remains HOLD: the existing R50 Role12 count-only evidence says actual four-model runtime interpretation/role parity=false and consecutive-User policy approval=false. CPU tokenizer draft fit is not deployed four-arm parity. No R50 inference, seal, or admission follows from this inventory.
+
+
+## R55 safe-receipt update — 2026-11-19
+
+Owner supplied all five safe count-only receipts. The first arbitration receipt validates 76 flagged candidates × 2 categories (syntax/exact quotations only; reviewer independence unverified; no R50). The second audit validates 68 candidates / 136 category decisions; 44 categories were mutually CONFIRMED by the first two arbiters and 59 were disagreement or first-HOLD categories requiring third review. The third audit validates 46 candidates / 92 category decisions, including the 59 original unresolved categories; it explicitly does not perform automatic final adjudication and does not technically verify reviewer independence.
+
+The Owner's final evidence safe receipts now show:
+- Priority P0: 65 category judgments; 38 CONFIRMED, 4 HOLD_INSUFFICIENT_EVIDENCE, 23 REJECTED; 87 were not yet included in that staged validation.
+- All 152: 79 CONFIRMED, 4 HOLD_INSUFFICIENT_EVIDENCE, 69 REJECTED; `not_reviewed_in_this_validation=0`; status `R55_GOLD5_FINAL_EVIDENCE_ALL_152_FORMAT_VERIFIED__NOT_SEMANTIC_CERTIFIED__NO_R50`.
+- P1 derived by subtracting the P0 receipt from the all-152 receipt: 41 CONFIRMED, 0 HOLD, 46 REJECTED across 87 slots. This is arithmetic over the two count-only receipts, not a separately emitted P1 report.
+
+This closes the **mechanical completion/format-and-quotation validation** of all 152 originally flagged category slots, but it does NOT establish independent reviewer blinding, semantic correctness, or an unbiased model-wide failure rate. Four final Owner decisions remain HOLD for insufficient evidence. R55 remains development-only; R50 was not accessed, no GPU/training started, and no model promoted. Do not spend the protected R50 holdout based solely on these receipts.
+
+W1: `transitive_known_old_link=[4,7]` is a two-integer reference. The current safe schema inventory also exposes `pair_aggregate` records with `old_rank` and `r50_rank`, plus `r45_source_ranks`, `old_source_ranks_checked`, and `new_source_ranks_checked`. This suggests a rank-pair interpretation but does not prove whether 4 and 7 are source ranks, indices, or endpoint IDs. Keep 04→07 unresolved until the Owner supplies the redacted archive evidence and pair rows for ranks 4 and 7. Do not turn the list into a confirmed graph edge based on its name alone.
