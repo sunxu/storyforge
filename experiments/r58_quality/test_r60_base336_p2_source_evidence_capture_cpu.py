@@ -78,9 +78,8 @@ def p2_rows(sources: list[dict]) -> list[tuple]:
 
 class SourceEvidenceCaptureTests(unittest.TestCase):
     def test_missing_psycopg_driver_gives_fixed_safe_reason(self):
-        with patch.dict(sys.modules, {"psycopg": None}):
-            with self.assertRaises(audit.Hold) as raised:
-                audit.fetch("postgresql://never-used", ["synthetic-story"], [])
+        with patch.dict(sys.modules, {"psycopg": None}), self.assertRaises(audit.Hold) as raised:
+            audit.fetch("postgresql://never-used", ["synthetic-story"], [])
         self.assertEqual(str(raised.exception), "DB_DRIVER_IMPORT_HOLD")
 
     def test_db_connection_error_gives_fixed_safe_reason(self):
@@ -91,9 +90,8 @@ class SourceEvidenceCaptureTests(unittest.TestCase):
             raise FakePsycopgError("private host or credential details")
 
         fake = SimpleNamespace(Error=FakePsycopgError, connect=connect)
-        with patch.dict(sys.modules, {"psycopg": fake}):
-            with self.assertRaises(audit.Hold) as raised:
-                audit.fetch("postgresql://never-used", ["synthetic-story"], [])
+        with patch.dict(sys.modules, {"psycopg": fake}), self.assertRaises(audit.Hold) as raised:
+            audit.fetch("postgresql://never-used", ["synthetic-story"], [])
         self.assertEqual(str(raised.exception), "DB_CONNECTION_HOLD")
         self.assertNotIn("private", str(raised.exception))
 
@@ -107,9 +105,12 @@ class SourceEvidenceCaptureTests(unittest.TestCase):
             args.extend([f"--{name}-dir", "/unused"])
         args.extend(["--p2-manifest", "/unused", "--output-dir", "/unused", "--execute"])
         stream = StringIO()
-        with patch.object(sys, "argv", args), patch.object(audit, "run", fail_after_source_fetch):
-            with redirect_stdout(stream):
-                exit_code = audit.main()
+        with (
+            patch.object(sys, "argv", args),
+            patch.object(audit, "run", fail_after_source_fetch),
+            redirect_stdout(stream),
+        ):
+            exit_code = audit.main()
         self.assertEqual(exit_code, 42)
         receipt = json.loads(stream.getvalue())
         self.assertEqual(receipt["failure_phase"], "P2_RECORD_VALIDATION")
