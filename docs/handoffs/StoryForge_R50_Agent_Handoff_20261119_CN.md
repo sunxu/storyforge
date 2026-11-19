@@ -175,3 +175,12 @@ This is useful prior implementation, so do not redesign or duplicate the reviewe
 ### Later R55 Gold5 v2 outcome (Owner aggregate, development-only)
 
 The subsequent Owner-unblind SAFE aggregate is documented at docs/evidence/V03_R55_GOLD5_V2_OWNER_UNBLIND_DECISION_20261023.md. It reports 20 exposed prompts across two worlds, three reviewers and 3,960 Pair/Four/Five ratings. Pair v0.3-A vs v0.2 was 10:10 with v0.3-A lower on all six axes; five-way means were Original Gold 3.500, v0.2 3.461, v0.3-A 3.197. The Owner decision retained v0.2 and marked R54 checkpoint-16 NO-GO for R50. Treat this as Owner-pasted development aggregate only: reviewer independence was not technically certified, hard-event adjudication remained pending, and it says nothing about R50 unseen-world performance.
+
+
+## 15. Owner-local inventory correction and R55 evidence-resolution chain — 2026-11-19
+
+The latest Owner-pasted output shows `transitive_known_old_link` is a list of two integers. The displayed `LINK_COUNT: 2` is not proof of two edges; the integers may encode a single endpoint pair or compact references. Their values and containing schema are still needed. The 04→07 relationship remains unresolved.
+
+The Owner-local R55 inventory includes first arbitration, second and third evidence audits, and a final 152-category decision file. The public R55 protocol defines 76 flagged candidate replies × two categories (152), with P0=65/P1=87; third audit covers 46 selected replies / 92 slots and includes the 59 original disputed/first-HOLD categories. The third-audit report explicitly prohibits automatic majority resolution and says reviewer independence was not technically verified. The final-evidence protocol distinguishes format/quotation validation from semantic certification. Do not treat private-file existence as proof of a successful final gate; request only the five safe count-only receipts next.
+
+R50 W4 is still HOLD: its existing Role12 receipt records actual four-arm runtime role/interpretation parity=false and consecutive-User policy approval=false. Tokenizer draft-fit evidence is not deployed per-arm parity. No protected R50 admission, sealing, inference or GPU action is authorized by this historical evidence.
