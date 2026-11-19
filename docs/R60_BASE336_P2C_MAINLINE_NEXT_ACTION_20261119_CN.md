@@ -210,3 +210,49 @@ BASH
 只有 `P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED` 才表示完成本次字段来源捕获且仍需语义审查。若出现 `P2_BASE336_SOURCE_EVIDENCE_HOLD`，保持失败关闭，**不得删除或覆盖部分生成的私有目录，不得绕过 RLS 或改变冻结 ID 清单**。只回传完整的 SAFE JSON，不回传任何数据库 URL、Story ID、源值、逐项对照、路径或 SHA。
 
 后续严格沿主线先完成新 8 来源对 Base336 172 Story 的语义排除，再推进 R50 完整 metadata-only 保护集闭合、R47/R48/R55 全历史曝光闭合、actual-sent 版本绑定、独立 Reviewer/Owner Freeze；P2-C 继续 HOLD，P2-B 48 prompts 仍 NOT_GENERATED，train_admitted=0。
+
+
+## 2026-11-19 捕获运行时 HOLD：先查 psycopg，再用分阶段 SAFE 诊断
+
+Owner 本轮使用 `--execute` 后返回：
+
+```text
+status = P2_BASE336_SOURCE_EVIDENCE_HOLD
+reason_code = SOURCE_CAPTURE_OR_RUNTIME_HOLD
+database_accessed = null
+private_file_created = false
+```
+
+**不等于已定位数据库驱动问题**：原版工具的泛化异常处理会将 `psycopg` 导入失败、数据库连接失败、SQL 错误、只读/RLS 保护拒绝，以及查询后本地数据处理异常归并为相同 code。`database_accessed=null` 仅表示失败路径未记录访问是否完成。
+
+已在同一公开捕获器中修复 SAFE 诊断，保持源捕获 SQL、RLS、冻结范围、输出防覆盖及 P2-C HOLD 不变；新增分阶段失败标记 `failure_phase` 和固定原因：
+- `DB_DRIVER_IMPORT_HOLD`：本次运行的 Python 无法导入 `psycopg`（项目使用 psycopg3，不是 psycopg2）。
+- `DB_DRIVER_RUNTIME_HOLD`：连接阶段 Python 驱动原生依赖不可用。
+- `DB_CONNECTION_HOLD`：连接/认证/TLS/网络失败（不披露原始错误）。
+- `DB_TRANSACTION_SETUP_HOLD` / `DB_ROLE_RLS_PREFLIGHT_HOLD`：只读事务、角色/RLS 预检。
+- `DB_BASE336_SOURCE_QUERY_HOLD` / `DB_P2_PUBLIC_SOURCE_QUERY_HOLD`：某个固定范围 SQL 的执行失败。
+- `failure_phase=BASE_RECORD_VALIDATION`、`P2_RECORD_VALIDATION`、`EXACT_MATCH_SCREEN`、`PRIVATE_PACKAGE_ASSEMBLY` 或 `PRIVATE_PACKAGE_WRITE`：数据库调用返回之后的本地核验/输出阶段。该字段不单独意味着语义隔离已通过。
+- 未分类异常仍以 `SOURCE_CAPTURE_OR_RUNTIME_HOLD` 隐去正文，不能用临时 traceback 或打印 DSN 代替 SAFE 诊断。
+
+首先在运行捕获器所用的**同一个** Python 环境做无网络驱动测试：
+
+```bash
+python3 - <<'PY'
+import sys
+print("PYTHON_EXECUTABLE =", sys.executable)
+try:
+    import psycopg
+    from psycopg import pq
+    print("PSYCOPG_IMPORT = PASS", psycopg.__version__)
+    try:
+        print("LIBPQ = PASS", pq.version())
+    except Exception as exc:
+        print("LIBPQ = HOLD", type(exc).__name__)
+except Exception as exc:
+    print("PSYCOPG_IMPORT = HOLD", type(exc).__name__)
+PY
+```
+
+若缺驱动，先确认当前 `python3` 的 venv；仅在已授权私有 Python 环境安装 `psycopg[binary]`（psycopg3），不要改动数据库/角色/SQL/RLS 来绕过错误。若驱动通过，更新 Owner Mac 的公开捕获器到本 PR 最新版本（**备份已有脚本并对 GitHub 版本做字节比对**），用先前冻结的相同六个目录、Manifest、缺失的输出目录执行一次，回传新的 SAFE `reason_code` 与 `failure_phase`。若输出目录已有内容，不删除重试，先保全并核验。
+
+任何这类定位都不改变 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED` 或 `train_admitted=0`。
