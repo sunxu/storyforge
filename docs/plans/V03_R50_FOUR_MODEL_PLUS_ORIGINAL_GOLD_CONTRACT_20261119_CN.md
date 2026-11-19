@@ -176,3 +176,12 @@ MODEL_PROMOTED = false
 The SAFE receipt `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md` records the latest bounded source evidence. The pinned 2026-10-16 R50 source replay compared all 50 new User inputs with User messages in the five pinned source transcripts and found `source_input_normalized_verbatim_reuses=0`. This rules out an exact current-User-input match in those five transcripts, hence `0/46` Original Gold-eligible cases within that pinned source scope.
 
 Owner-provided local output separately verifies the 14-chat archive copies and 06–15 archive integrity. Those archives have not yet been searched for exact full-history matches. A text-only match from a different story cannot qualify; the complete history and cutoff context must also match. Therefore overall `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED`, not an unconditional 0/46 across all Owner-held sources.
+
+
+## 9. Supplementary archive scope reconciliation — 2026-11-19
+
+The Owner-run supplementary archive scan is recorded in `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md`. The 14-chat archive parsed 14 actual conversations (14 additional AppleDouble metadata entries were correctly identified and excluded); the 06–15 archive recursively parsed 1,010 conversations across nested archives. Neither archive yielded a historical 32-message exact sequence or positive provenance Message-ID match for the protected 46. These are historical collections outside the five pinned R50 source worlds 16–20, so their zero matches are expected and do not invalidate the authoritative source replay.
+
+The 2026-10-16 replay remains authoritative: 392/392 history message references exact-matched, 50/50 contiguous history/cutoff checks passed, and normalized verbatim reuse of the 50 new User inputs in the five pinned source transcripts was zero. Thus no protected 46 case has a same-current-User Original Gold in those five source transcripts (`0/46` within that scope). Overall Owner-wide coverage remains `NOT_ESTABLISHED` outside examined sources. Do not rerun the five-world replay, the two supplementary archive scans, or any ID-first diagnostic absent a new independent provenance lead.
+
+For cases without qualifying Gold, use the separately specified four-model comparison. A historical Assistant continuation after cutoff, if separately recovered, must be labelled as a different reference type and cannot be scored as an answer to the appended current User input.
