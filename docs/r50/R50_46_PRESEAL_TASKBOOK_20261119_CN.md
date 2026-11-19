@@ -480,3 +480,15 @@ Latest PR #33 CI after the R55 effective-runtime evidence update: head `cc9f68aa
 ## 2026-11-19 R47 runtime-log filename search result
 
 Owner searched the known R47 run directory `~/.local/share/storyforge/r47/r47-20261014T091647Z-637890/` recursively for `*.log`, `*runtime*`, `*launch*`, and `*command*`; result: `MATCHED_FILES: 0`. This is a bounded filename-search result only. It does not invalidate the completed R47 three-arm inference or its existing report/results, and it does not prove no runtime metadata exists inside JSON reports or remote job records. Existing local evidence still includes `R47_PRIVATE_RUN_REPORT.json`, `R47_LOCAL_INTEGRITY_PASS.json`, `coordinator/private/R47_AUDIT_SUMMARY.json`, and Base/v0.1/v0.2 result JSONL files. Next smallest action: read-only allowlisted field scan of those existing JSON reports for runtime/template/truncation/stop/sampling fields, emitting only key paths and safe values; do not print prompts, responses, IDs or mappings. If absent, mark `NOT_RECORDED` / `SOURCE_UNAVAILABLE`; do not rerun R47 or launch any GPU/model/tokenizer job.
+
+## 2026-11-19 R47 execution.log recovery lead — source verified
+
+A follow-up GitHub source inspection resolves the meaning of the earlier local MATCHED_FILES: 0 more precisely:
+
+- scripts/v02_r47_eval_runner.py (main blob SHA a2fa43f65b7b31631976cab1ac84b2b183b5f352) creates log = out / execution.log and writes each executed command prefixed by COMMAND: plus merged stdout/stderr to that file (source lines 18–26, 65).
+- The same Runner stores the run under evaluation-runs/v02-r47/<RUN_KEY>/ (line 59).
+- scripts/v02_r47_collect_git.sh (main blob SHA 20150d94fd460d8551838a7d7da4cae8137d2ff1) copies the report, result JSONLs and blind-review/private package files, but does not copy execution.log (lines 18–32).
+- Therefore the local search result is explained by a collection-script omission; it does not establish that the remote log is absent. Remote existence still needs to be checked.
+- There are two relevant historical R47 run keys: resumed three-arm run r47-20261014T091647Z-637890 (Base was reused from the earlier run) and original Base run r47-20261014T082109Z-820409. The resumed run's execution log can evidence v0.1/v0.2 inference command/runtime details; the original run's log, if retained, is needed for Base inference details.
+
+Smallest next read-only check: using the already authenticated HF CLI, fetch only execution.log from those two exact existing run prefixes into a private temporary directory. Do not fetch the answer key, response JSONLs, prompt files, or any other private artifact. If one path is missing, record SOURCE_UNAVAILABLE for that run; do not rerun. Parse the logs locally with a field allowlist and emit only safe parameter values, booleans and line numbers. Never paste raw logs. This is evidence retrieval only; no GPU, model, tokenizer, database write, answer access or inference.
