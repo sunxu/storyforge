@@ -93,12 +93,12 @@ Do not ask the Owner to repeat information already in this packet. Ask only for 
 
 ## 8. Execution update — 2026-11-19
 
-W1 and W2 were executed as documented in `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md` (crosswalk commit `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`).
+W1 and W2 were executed as documented in `docs/evidence/V03_R50_W1_W2_COVERAGE_CROSSWALK_20261119_CN.md` (original crosswalk commit `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`; later Owner rank-pair and supplementary Gold lookup updates are recorded in the same file).
 
 - W1: `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`; W3 is `NOT_TRIGGERED`.
 - W1 rank-pair follow-up: Owner supplied `transitive_known_old_link=[4,7]`; both values are verified old-source ranks, with 4 in frozen R45 and 7 outside it. This is consistent with the previously recorded old 04→07 edge; the two array elements are endpoints, not two edge objects. Old rank 4 ↔ R50-17 reproduces the already-reviewed W17 lexical/exact flag (5 sampled matches, 1 long exact); old rank 7 ↔ R50-16..20 has zero reported matches. No new semantic evidence; the possible transitive path to W17 remains `INSUFFICIENT_EVIDENCE`, W3 `NOT_TRIGGERED`.
 - W2: `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES` for actual inference-time card/rule snapshots and prompt-assembly/runtime receipts. The search covered the GitHub source tree and available R50 Library artifact inventory, not every possible Owner-held storage location.
-- W4 remains pending the Owner's explicit decision on the exact consecutive-User contract. A generic “授权” is not recorded as approval of that policy.
+- W4 policy is explicitly approved; four-arm runtime parity remains unverified and is limited to read-only evidence inspection.
 - No repeated source/CRC/lexical/AI/tokenizer/ROLE12 audit; no HF Job, GPU, inference, training, answer-key access, admission, or seal.
 
 
@@ -143,7 +143,7 @@ No R50-specific four-arm inference runner or actual four-arm load receipt was fo
 
 The R50 Library contains the 2026-10-16 deep triage report with a shared static Draft message-sequence SHA256 `9ad0254f740a979e9b79b458a22e61e40db4ff98fb946e0332cf172e6888565c` for 46 cases / 364 historical messages / 12 trailing User→User sequences. The report explicitly does not claim tokenizer input-ID parity or actual four-arm runtime execution. Do not repeat its static construction check.
 
-The searched R50 Library directory inventory has 106 entries, including frozen candidate/provenance, W17 review packets, CPU46 and ROLE12 receipts; no dedicated R50 Original Gold reply package was found in that bounded inventory. This does not exhaust every Owner-held source. Keep `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED` until exact same-prompt/history/cutoff original Assistant replies are authenticated.
+The searched R50 Library directory inventory has 106 entries, including frozen candidate/provenance, W17 review packets, CPU46 and ROLE12 receipts; no dedicated R50 Original Gold reply package was found in that bounded inventory. This does not exhaust every Owner-held source. Keep `ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES` until exact same-prompt/history/cutoff original Assistant replies are authenticated.
 
 
 ## 12. Original Gold source availability update
@@ -203,3 +203,10 @@ W1 rank-pair follow-up: Owner supplied `transitive_known_old_link=[4,7]` and ran
 ## 10. Owner rank-pair clarification — 2026-11-19
 
 The Owner supplied the rank arrays and pair rows. `transitive_known_old_link=[4,7]` contains two old-source rank endpoints; it is consistent with the existing 04→07 edge and is not a count of two edge objects. Rank 4 is in frozen R45; rank 7 is an additional checked old source outside R45. The old-rank-4 ↔ R50-rank-17 result is the already-reviewed W17 flagged pair, while old rank 7 has no reported sampled/exact matches against R50 ranks 16–20. These limited matches do not alter the prior semantic `INSUFFICIENT_EVIDENCE` result, do not prove world independence, and do not establish a transitive path to W17. No repeated scan or adjudication is authorized or needed absent genuinely new provenance.
+
+
+## 11. Supplementary archive lookup and CI follow-up — 2026-11-19
+
+The Owner's corrected parser classified and skipped the 14 AppleDouble metadata entries in the 14-chat archive; all 14 actual conversations parsed (62,583 messages). The 06–15 archive parsed recursively as 1,010 conversations (71,884 messages). The exact-history lookup reported no exact 32-message history matches; the Message-ID-first diagnostic returned no positive match counts. This closes the bounded supplementary-archive lookup; do not rerun on unchanged bytes.
+
+PR #33 CI for head `e95da034bde9d064082dcfa32908ebd1290ec6b5` completed failed at repository-wide Ruff (202 findings); tests and evidence-integrity steps were skipped. No R50 code change was made. The taskbook records this as pre-existing repository-wide lint debt, outside the authorized scope.
