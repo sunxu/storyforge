@@ -472,3 +472,6 @@ The R55 Runner source and R47 Runner source still show matching explicit core CL
 **W4 result updated:** `PARTIAL_R55_EFFECTIVE_RUNTIME_FIELDS_FOUND__FOUR_ARM_R50_ROLE_PARITY_NOT_VERIFIED`.
 
 **Open W4 evidence gaps:** (1) identify the scope of the line-4502 GenerationConfig seed/stop/sampling record relative to the invocation seed 42; (2) establish the effective interpretation of `enable_thinking=None`; (3) obtain the corresponding existing R47 effective template/truncation/stop record if one exists; (4) determine whether any existing runtime receipt records preservation of the two consecutive User roles and per-case input IDs. Missing historical fields remain `NOT_RECORDED`; do not run a model, tokenizer, GPU or HF job to create evidence. No new R50 execution is authorized.
+
+
+Latest PR #33 CI after the R55 effective-runtime evidence update: head `cc9f68aaddc97442ff149cffa5f17f3729b78024` completed failed at repository-wide `ruff check .` with 202 findings; Tests and evidence-integrity stages were skipped. This is the known repository-wide lint blocker, not a new R50-specific failure. Keep this PR documentation-only.
