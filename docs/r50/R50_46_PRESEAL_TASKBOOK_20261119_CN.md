@@ -254,7 +254,7 @@ The W1/W2 coverage crosswalk has been completed and committed on this taskbook b
 - Crosswalk commit: `3e7ea1266b4101fec6470f5e4ee1171de6ca7988`
 - Crosswalk blob: `b7618dbe8e5cc4529eeafd0f0bdc028291921b68`
 
-**W1 result:** `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`. The three lexical flags are the same old-rank 2/4/10 ↔ R50-rank-17 pairs already reviewed. The sanitized 2026-11-19 inventory reports two transitive old links but does not bind their rank-pair identities; the relation of those two links to the previously recorded 04→07 edge therefore remains unproven. This is a bounded crosswalk gap, not grounds to assume three distinct edges.
+**W1 result:** `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`. The three lexical flags are the same old-rank 2/4/10 ↔ R50-rank-17 pairs already reviewed. Owner's follow-up binds `transitive_known_old_link=[4,7]` to two old-source rank endpoints, consistent with the previously recorded 04→07 pair; it is not a count of two edge objects. The possible transitive path from that old component to W17 remains `INSUFFICIENT_EVIDENCE`. This rank clarification adds no new semantic provenance.
 
 **W2 result:** `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__TIMEPOINT_CARD_RULE_RUNTIME_PROOF`. The searched GitHub source tree and available R50 Library artifact inventory contain export-time card/source material and saved checkpoint context, but no authenticated per-case inference-time card/rule snapshot or prompt-assembly receipt. Existing source-message rule references are partial provenance, not proof of the exact runtime system prompt. This does not claim exhaustive access to every Owner-held storage location.
 
