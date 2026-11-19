@@ -79,3 +79,27 @@ GPU_USED = false
 MODEL_INFERENCE_RUN = false
 TRAINING_RUN = false
 ```
+
+
+## 7. Supplementary archive scope reconciliation — 2026-11-19
+
+The Owner subsequently ran read-only scans against the two integrity-verified ZIPs.
+
+- The 14-chat ZIP contains 28 `.jsonl` entries: 14 actual conversation exports and 14 AppleDouble macOS metadata entries (206 bytes; magic `00051607`). All 14 actual conversations parsed, totaling 62,583 messages. The 14 metadata entries are not JSONL and must be skipped by magic-byte classification; the archive itself is not damaged.
+- The 06–15 archive contains 32 nested ZIPs; the recursive scan parsed 100 JSON/JSONL entries and 1,010 conversations (71,884 messages), with no parser errors.
+- The Owner-run exact-history scan reported zero content-sequence occurrences in either archive. The subsequent Message-ID-first diagnostic emitted no positive match counters for either archive; its output was empty after each archive's match heading. No source text or identifiers were emitted.
+
+These archives are supplementary historical collections (14-chat and source ranks 06–15), not the five pinned R50 source transcripts (worlds 16–20) used by the authoritative 2026-10-16 replay. Their lack of the R50 provenance Message IDs is therefore expected and does not invalidate the authoritative 392/392 replay. Do not rerun the ID-first scan or continue treating these archives as candidate same-history Gold sources without a new, independent provenance lead.
+
+The authoritative R50 replay already compared all 50 new User inputs against User messages in the five pinned source transcripts and recorded zero normalized verbatim reuses. Since the protected 46 are a subset, there is no same-current-User Original Gold in those five source transcripts. The supplementary archives did not surface a qualifying same-history source. Current bounded disposition is therefore: 
+
+```text
+PINNED_FIVE_WORLD_ORIGINAL_GOLD_ELIGIBLE = 0 / 46
+SUPPLEMENTARY_14_CHAT_EXACT_HISTORY_MATCHES = 0 OBSERVED
+SUPPLEMENTARY_06_15_EXACT_HISTORY_MATCHES = 0 OBSERVED
+ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES
+```
+
+The phrase `0 / 46` applies to the five authoritative pinned R50 source transcripts, not every conceivable Owner-held source. No new Original Gold candidate was found. The four-model comparison remains the valid default for cases without Gold; any historical continuation after the cutoff must be labelled as a different reference type and must not be scored as a response to the appended current User input.
+
+No archive was modified. No original text, IDs, mappings or answers were committed. No tokenizer/HF job, inference, GPU, training, admission, final seal or promotion occurred.
