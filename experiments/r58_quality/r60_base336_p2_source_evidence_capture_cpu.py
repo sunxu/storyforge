@@ -441,6 +441,7 @@ def fetch(dsn: str, stories: list[str], sources: list[dict]) -> tuple[list[tuple
                     cur.execute("SET LOCAL statement_timeout='60000ms'")
                     cur.execute("SET LOCAL lock_timeout='1000ms'")
                     cur.execute("SET LOCAL row_security=on")
+                    phase = "DB_ROLE_RLS_PREFLIGHT_HOLD"
                     cur.execute("""
                         SELECT current_user,current_setting('transaction_read_only'),
                                current_setting('row_security'),r.rolbypassrls,r.rolsuper
