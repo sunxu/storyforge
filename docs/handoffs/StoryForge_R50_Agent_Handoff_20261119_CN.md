@@ -160,3 +160,13 @@ The four historical W17/source-overlap scripts are absent from the current check
 See SAFE receipt `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md` (follow-up commit `fea7d2e1b15375b631d24ad650b545ec7174d889`). The 14-chat archive yielded 14 actual conversations plus 14 AppleDouble metadata entries; the 06–15 archive recursively yielded 1,010 conversations. The Owner-run content and ID-first scans found no exact history/provenance matches in either archive. They are supplementary historical collections outside R50's five pinned source worlds 16–20; zero matches there are expected and do not challenge the authoritative 392/392 replay.
 
 No same-current-User Original Gold is eligible from the five pinned R50 source transcripts (`0/46` within that scope), because the source replay found zero normalized verbatim reuse across all 50 new User inputs. Overall Owner-wide coverage remains `NOT_ESTABLISHED` outside examined sources. Do not rerun completed scans. Use four-model comparison for cases without Gold; never treat the next historical Assistant turn as an answer to the appended new User input.
+
+
+## 14. Historical R48/R55 comparison precedent found — 2026-11-19
+
+Read-only GitHub inspection found the historical answer-review workflow needed as a design reference:
+
+- R48 compares four answers: Original Gold + Base/v0.1/v0.2. It is not four models.
+- R55 specifies five answers: Original Gold + Base/v0.1/v0.2/v0.3-A, with exact-source checks, anonymous five-way and separately randomized v0.3-A-vs-v0.2 pairwise tasks. This is a development-only reuse of 20 exposed prompts from two worlds; its real Owner-local preflight was pending in the 2026-10-23 receipt.
+
+This is useful prior implementation, so do not redesign or duplicate the reviewer pack. It does not establish R50 Original Gold coverage or actual R50 runtime parity. Keep W4 NOT_VERIFIED until pre-existing R50-specific runtime/load evidence is found. Do not execute R48/R55 build scripts on R50 data.
