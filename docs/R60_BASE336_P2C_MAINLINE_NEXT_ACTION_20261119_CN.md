@@ -4,13 +4,13 @@
 
 **新找到的权威 metadata-only 原件**（无需 R58 五范围空白 CSV）：
 
-- Git SHA \`2d8623c17ef230d8eff5797a5eb29850e97e6ccb\`：R50 已冻结源身份 SAFE，5 个唯一故事 UUID、5 个唯一 Session、W16–W20、35 个历史来源文件条目，源 Commit 固定为 \`a197923e1e15344e8c98bd96e593e84781b68c83\`。
-- Git SHA \`20341c6c55bd4564140b05e8319cf66e572137c0\`：R50 46 候选、5 来源世界、4 排除，W16–W20 五组。
-- 已用 GitHub 连接**直接读取两份固定 SAFE Blob 的结构与统计**，结果记于 \`docs/evidence/R60_P2_R50_PINNED_FIVE_WORLD_METADATA_SOURCE_SAFE_20261119.json\`。没有读取保护集的原始故事正文、提示、答案或密封题目；当前只是 Git 源身份 receipt 级证据，不是本地 50 条 provenance UUID 集合的实际同一性核验。
+- Git SHA `2d8623c17ef230d8eff5797a5eb29850e97e6ccb`：R50 已冻结源身份 SAFE，5 个唯一故事 UUID、5 个唯一 Session、W16–W20、35 个历史来源文件条目，源 Commit 固定为 `a197923e1e15344e8c98bd96e593e84781b68c83`。
+- Git SHA `20341c6c55bd4564140b05e8319cf66e572137c0`：R50 46 候选、5 来源世界、4 排除，W16–W20 五组。
+- 已用 GitHub 连接**直接读取两份固定 SAFE Blob 的结构与统计**，结果记于 `docs/evidence/R60_P2_R50_PINNED_FIVE_WORLD_METADATA_SOURCE_SAFE_20261119.json`。没有读取保护集的原始故事正文、提示、答案或密封题目；当前只是 Git 源身份 receipt 级证据，不是本地 50 条 provenance UUID 集合的实际同一性核验。
 
-已有函数 \`experiments/r58_round1/check_r50_protected_uuid.py::blob_json/protected_ids\` 严格验证以上两个历史 Git SAFE Blob 并返回五个 R50 story UUID；\`scripts/r60_r50_original50_complement_cpu.py::jsonl\` 验证原 50 条 **provenance-only** 固定 SHA；\`scripts/r60_r50_freeze_status_projection_cpu.py::read_private_json\` 安全读取已批准的八来源 P2 Manifest。**不开发新审计脚本**，只在 Owner Mac 对这三个现成集合做精确身份等价/交集检查。
+已有函数 `experiments/r58_round1/check_r50_protected_uuid.py::blob_json/protected_ids` 严格验证以上两个历史 Git SAFE Blob 并返回五个 R50 story UUID；`scripts/r60_r50_original50_complement_cpu.py::jsonl` 验证原 50 条 **provenance-only** 固定 SHA；`scripts/r60_r50_freeze_status_projection_cpu.py::read_private_json` 安全读取已批准的八来源 P2 Manifest。**不开发新审计脚本**，只在 Owner Mac 对这三个现成集合做精确身份等价/交集检查。
 
-\`\`\`bash
+```bash
 bash <<'BASH'
 set -euo pipefail
 set +x
@@ -95,7 +95,7 @@ print(json.dumps(report, sort_keys=True))
 raise SystemExit(0 if report["failure_phase"] == "COMPLETE" else 42)
 PY
 BASH
-\`\`\`
+```
 
 此命令**不会运行原 50 case JSONL 的 sealed content**，也不读取历史来源档案正文，仅在 Owner Mac 内比对元数据 UUID；stdout 不含 Story UUID、路径、哈希或任何来源原文。返回 SAFE 即可；失败只显示固定 phase，不打印异常或私有值。
 
