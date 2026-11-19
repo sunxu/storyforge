@@ -1,5 +1,20 @@
 # R60 Base336：Supabase 公开故事来源 P2 补充决策（2026-11-17）
 
+## 2026-11-19 Gold/原始回答匹配：P2-B 来源设计新增硬约束
+
+Owner 明确要求**训练模型的作答要与原始回答进行同题比较**。此前只依据公开 World/Character/Opening “从零构造 8×6=48 个提示”的设计，无法**自动得到** 48 条与提示严格对齐的历史原始 Assistant 回答。**这不是旧 R48 Gold 可以复用的相同测试集**，也不能把公开 Opening 认作某个新 Prompt 的回答。
+
+新 Agent 必须先验证新 8 来源所允许的公开资料能否提供真实 `prompt prefix → original assistant reply` 来源/版权/时间/版本绑定；`scripts/v02_r48_four_arm_build.py::read_gold` 已定义严格的 `original.messages[:-1] == frozen_prompt.messages` 合同。**任何私有用户对话仍禁止访问**；当前授权只允许公开素材构造内部评估提示，不意味着可以查询私有回复或让模型生成所谓“原始回答”。
+
+若无 48 份同题原始回复，新增 `P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`；正式“五种匿名回答来源”评估不能宣称已可执行。Owner 应在保持独立世界/权利边界下决定：扩大合法公开来源的已完成问答筛选，或另行生成由作者/人工提供的**新参考回答（需明确非历史原始 Gold）**；这两种方案必须单独记录授权和真值性质，不允许悄悄替换。旧 R47/R48 20 Prompt 的 Gold 只做单独 EXPOSED_DEV 回归，不计入 P2 新来源的 Held-out 结论。
+
+**新增 Gold 只是 Reviewer 盲评时的匿名对照回答，不写入 P2 prompt JSONL 的模型生成字段**：原来的 `user/assistant/user` 输入、无 System、无 reference-label 泄漏等校验规则不放宽。所有生成答案与 Gold 对应同一个 Prompt SHA，只有审阅器拿到匿名回答；评分结果需报告 R60 Base336 vs Gold 以及 Base、v0.2 与 v0.3-A 对照。详细操作规则见 [现行交接任务书第八节](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
+
+P2-A READY、P2-C HOLD、真实 48 提示 NOT_GENERATED、GPU/HF 未授权、train/quality admission=0、模型未晋升均不变。
+
+---
+
+
 ## 2026-11-19 最新 P2 决策与接手入口（覆盖旧第一动作）
 
 **现行 Agent 任务书：** [R60 P2 Quality-v1 接手](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本文件 P2-A 8 条来源的内部评估用途权利边界、8×六维共 48 提示及 `user/assistant/user` 三消息格式保持有效；但先前“Owner 尚未返回 inventory”“R55 三层未核验”“R47/R48/R55 无 Story ID 映射”“需重新申请只读 DB”已过期，**不得照做**。
