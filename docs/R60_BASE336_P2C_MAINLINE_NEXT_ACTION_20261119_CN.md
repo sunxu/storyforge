@@ -277,3 +277,23 @@ private_file_created=false
 **下一动作**：复用 Owner Mac 已确认的 \`r60-owner\` Python venv，将捕获脚本与最新 GitHub 公开字节版本一致后，按上一个“Owner 已授权限定只读来源捕获”小节的相同 6 组冻结目录与 P2 Manifest 再执行一次 \`--execute\`。先检查原输出目录**不存在**；若已有目录或文件，不要删除或覆盖，改为保全现场并审查其来源，避免盲重试。此重试范围已经获得 Owner 只读访问授权，不需再次申请。
 
 结果仍只回传 SAFE JSON；若再次 HOLD，按新 \`reason_code\` 和 \`failure_phase\` 定位，禁止打印 traceback / DSN / 私有字段，不削弱角色 / RLS / 版本约束。P2-C、P2-B、train_admitted 继续 HOLD / NOT_GENERATED / 0。
+
+
+## 2026-11-19 R50 原始 50 条来源补集：已取得 Owner SAFE PASS
+
+Owner 本轮返回 `R50_PROVENANCE_50_46_4_METADATA_PASS__P2_C_HOLD`，已保存 **原样 SAFE 回执**于 `docs/evidence/R60_P2_R50_50_46_4_PROVENANCE_COMPLEMENT_SAFE_20261119.json`。
+
+此次 Owner 本地核验复用 `scripts/r60_r50_original50_complement_cpu.py` 内已有 provenance-only `jsonl/ids` 与 `r60_r50_exclusion_pair_cpu.py` 的 4 条排除集合函数，以及 `r60_r50_freeze_status_projection_cpu.py` 的受控 metadata reader；**没有调用会读取原始 R50 50 条密封题目正文的完整 complement audit**。检查对象与结论严格限定如下：
+
+- 原始 R50 50 条 *provenance* 的固定大小及 SHA 通过，`original_50_provenance_verified=true`；不表示本轮读取/验过原始密封 50 条 case 的 bytes。
+- 派生 46 条 *provenance* 对照原始 50 条的 `case_id`、原父行位置及 `source_story_id/source_session_id/cutoff_message_id/history_message_ids` 字段完整相符。
+- Selection 4 条排除 ID 与 Admission 4 条排除 ID 集合一致，构成 `original50 - derived46 = excluded4`；`exact_50_46_4_metadata_complement=true`。
+- P2 八条公开来源的 `story_id` 与原始 50 条 provenance `source_story_id` 集合的精确交集为 0；`p2_r50_exact_story_overlap=0`。
+- `r50_sealed_content_opened=false`、`database_accessed=false`、`private_values_emitted=false`。
+- `r50_complete_exclusion_verified=false`、`p2_c=HOLD`、`train_admitted=0` **不变**。
+
+**阶段结论：R50 50/46/4 provenance metadata 补集已 PASS，不再重复原 46/46 预封存结构审计、4 条排除集合核验或 50/46/4 provenance 字段/行序检查。** 本结论没有正式验证原 50 条 case 的冻结字节、R50 Final Seal、R45 语义排除、隐藏 World 别名/同组件传播或 Protected/Reserved 完整 World roster 的覆盖；更不能将一次与 P2 的精确 Story ID 零交集外推为所有语义组件独立。
+
+下一项只读最小动作：**复用** `~/.local/share/storyforge/r50/full-original-worlds/run.cGUPnjdx/R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json`（Owner 既有 inventory 记录：0600、10061 字节），审查其中是否存在可**权威绑定原 50 条 provenance 来源 Story/World**且可确认 Protected/Reserved 全范围的元数据 roster。没有明确 schema/来源版本/范围时，先做非正文、限定字段的结构检视，不猜字段路径、不打印 ID；若只能确认旧 `same_story_id_pair_count` 等聚合而无法证明完整 roster，单独维持 `R50_PROTECTED_RESERVED_FULL_METADATA_COVERAGE=HOLD`，不得再写“R50 50/46/4 未验证”。
+
+其他独立主线门禁仍包括 Base336 172 Story 与 8 P2 全部 current+archived 世界/角色/开场语义来源审查（最近 `DB_BASE336_SOURCE_QUERY_HOLD`，暂停猜测性重试）、R47/R48/R55 完整历史曝光范围、actual-sent 版本、独立 Reviewer、Owner Freeze。未授权真实 48 prompt 或 GPU/HF 推理。
