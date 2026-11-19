@@ -433,3 +433,42 @@ R47 report records completed arms Base/v0.1/v0.2 on the same pinned Qwen revisio
 
 
 Latest PR #33 CI after Owner-local Runner evidence update: head `1c5aba1b6601ad372df00c98169073ed82f2aed8` completed failed at `ruff check .` with 202 findings; tests and evidence-integrity stages were skipped. This is the same repository-wide lint blocker, not a newly isolated R50 failure. Keep the documentation-only scope; do not broaden to whole-repository Ruff cleanup.
+
+
+## 2026-11-19 R55 effective runtime-log extraction — W4 update 2
+
+Owner supplied a second SAFE field-oriented scan of the existing 243,541-byte R55 runtime log. Its SHA256 remains `f83f877441c38fbb1ef705a8b2e6acd0a4603bd14fcdd280741fe9e905cdfee3`. No raw log lines, prompts, responses, case IDs or mappings were emitted.
+
+**R55 runtime-log fields observed:**
+
+| Field | Observed value / status | Evidence scope |
+|---|---|---|
+| `infer_backend` | `transformers` | runtime log lines 399, 410 |
+| `use_hf` | true | lines 399, 410 |
+| `torch_dtype` | `bfloat16` / `torch.bfloat16` | lines 399, 410 |
+| `quant_method` | `bitsandbytes` / `bnb` | lines 399, 410, 440 |
+| `quant_bits` | 4 | lines 399, 410 |
+| `bnb_4bit_compute_dtype` | `bfloat16` / `torch.bfloat16` | lines 399, 410, 426 |
+| `template` | `qwen3_8` | line 410 |
+| `template_backend` | `swift` | line 410 |
+| `enable_thinking` | `None` | line 410; effective default/behavior not established |
+| `truncation_strategy` | `delete` | line 410 |
+| `max_length` | 262144 | lines 410, 498 |
+| `max_model_len` | `None` | line 410; not a proven effective context limit |
+| `max_new_tokens` | 1536 | lines 399, 410 |
+| `temperature` | 0 / 0.0 | lines 399, 410, 4502 |
+| `seed` | 42 in runtime invocation/config records; `None` in a separate record at line 4502 | scope not reconciled; do not flatten into one effective value |
+| `data_seed` | 42 | lines 399, 410 |
+| `val_dataset_shuffle` | false | lines 399, 410 |
+| `stop_words` | present; value withheld | line 410 |
+| `stop` | present; value withheld | line 4502 |
+| `top_p`, `top_k`, `repetition_penalty` | `None` in the separate record at line 4502 | scope/default behavior not further established |
+| EOS token ID | no record found by this scan | `NOT_RECORDED` in searched log fields |
+
+The log contains one `messages` marker at line 4512, but this is not evidence that the two-consecutive-User sequence survived serialization or reached the model. No R50 case-level role/input-ID evidence was found in this scan.
+
+The R55 Runner source and R47 Runner source still show matching explicit core CLI settings, but the R47 Runner scan only found a non-scalar `revision` expression at line 87; the R47 SAFE report separately records the pinned Qwen revision. No R47 effective runtime log was supplied in this pass. Therefore the R55 template/truncation settings must not be projected onto R47, and neither R47 nor R55 historical exposed prompts establish R50 46-case parity.
+
+**W4 result updated:** `PARTIAL_R55_EFFECTIVE_RUNTIME_FIELDS_FOUND__FOUR_ARM_R50_ROLE_PARITY_NOT_VERIFIED`.
+
+**Open W4 evidence gaps:** (1) identify the scope of the line-4502 GenerationConfig seed/stop/sampling record relative to the invocation seed 42; (2) establish the effective interpretation of `enable_thinking=None`; (3) obtain the corresponding existing R47 effective template/truncation/stop record if one exists; (4) determine whether any existing runtime receipt records preservation of the two consecutive User roles and per-case input IDs. Missing historical fields remain `NOT_RECORDED`; do not run a model, tokenizer, GPU or HF job to create evidence. No new R50 execution is authorized.
