@@ -232,7 +232,7 @@ Both Runner sources have identical extracted explicit settings: HF=true, Transfo
 
 R47 report says Base/v0.1/v0.2 generation completed for 20 old exposed prompts. R55 report says v0.3-A (R54 checkpoint-16) generation completed for 20 exposed prompts. R55's contract status `ONE_PAID_GPU_INFERENCE_AUTHORIZED_NOT_STARTED` is the pre-run contract; the later report and Owner intake show the run completed. The log extraction searched only a literal `COMMAND:` marker and found none; do not interpret that as an empty/uninformative log.
 
-Current W4: `PARTIAL_HISTORICAL_RUNNER_CONFIG_MATCH__R50_RUNTIME_PARITY_NOT_VERIFIED`. Next action is a field-oriented SAFE scan of the existing 243,541-byte R55 log and both Runner sources for template, thinking, truncation, context, EOS/stop, sampling and role-sequence evidence. Print only allowlisted values, booleans and line numbers; never raw lines, prompts, responses, case IDs or mappings. If absent, record `NOT_RECORDED`. No new model/tokenizer/GPU/HF execution.
+Current W4: `PARTIAL_HISTORICAL_RUNNER_CONFIG_MATCH__R50_RUNTIME_PARITY_NOT_VERIFIED`. The R55 log field scan and R47 Base/v0.1/v0.2 execution-log recovery/scan are now complete; see `docs/evidence/V03_R50_W4_HISTORICAL_RUNTIME_EVIDENCE_SAFE_20261119_CN.md`. These are historical exposed-development runs, not R50 runtime receipts. Next action is a read-only inventory of already-existing Owner-local R50 per-arm load/config/prompt-assembly artifacts. No model/tokenizer/GPU/HF execution.
 
 
 ## 17. R55 effective runtime-log field scan — 2026-11-19
@@ -241,9 +241,9 @@ The Owner supplied a second SAFE field-oriented scan of the existing R55 runtime
 
 Important ambiguity: `seed=42` appears in invocation/runtime configuration records (lines 399/410), while a separate GenerationConfig-like record at line 4502 reports `seed=None`, `top_p=None`, `top_k=None`, and `repetition_penalty=None`. Do not silently collapse these records; the scope and precedence need an existing-record-only explanation. `enable_thinking=None` does not prove thinking disabled. `max_length=262144` is a logged max_length setting; `max_model_len=None` does not establish the effective context limit. Stop values remain private. The single `messages` marker at line 4512 does not prove consecutive User role preservation or per-case input-ID parity.
 
-R47 and R55 Runner sources have matching explicit core CLI settings, but R47's source-only scan did not resolve its non-scalar revision expression and no R47 effective runtime log was supplied. Do not project R55's template/truncation settings onto R47.
+R47's two historical execution logs have now been recovered and safely scanned. R47 Base/v0.1/v0.2 effective summary fields include `qwen3_8` / `swift`, `enable_thinking=None`, `truncation_strategy=delete`, `max_length=262144`, and stop/stop_words presence with values withheld; EOS was not extracted. R47 Runner+report pin the base revision, but these are old exposed prompts and not R50 parity evidence. R55 fields must remain separately scoped; do not project either historical run's settings onto R50.
 
-**W4 status:** `PARTIAL_R55_EFFECTIVE_RUNTIME_FIELDS_FOUND__FOUR_ARM_R50_ROLE_PARITY_NOT_VERIFIED`. Remaining evidence: clarify seed/config record scope; effective behavior of thinking=None; corresponding R47 effective template/truncation/stop evidence if already recorded; and any existing evidence that two consecutive User roles survive the actual runtime serialization and per-case input assembly. Missing evidence is `NOT_RECORDED`; no model/tokenizer/GPU/HF execution is permitted to manufacture it.
+**W4 status:** `PARTIAL_R47_R55_HISTORICAL_RUNTIME_FIELDS_FOUND__FOUR_ARM_R50_ROLE_PARITY_NOT_VERIFIED`. Remaining evidence: clarify R55 seed/config record scope; establish the effective behavior of `enable_thinking=None`; obtain exact stop/EOS configuration if already recorded; and find R50-specific evidence that both consecutive User roles survive serialization and per-case input assembly for all four arms. Missing historical evidence is `NOT_RECORDED` / `SOURCE_UNAVAILABLE`; no model/tokenizer/GPU/HF execution is permitted to manufacture it.
 
 
 Latest PR #33 CI after the R55 effective-runtime evidence update: head `cc9f68aaddc97442ff149cffa5f17f3729b78024` completed failed at repository-wide `ruff check .` with 202 findings; Tests and evidence-integrity stages were skipped. This is the known repository-wide lint blocker, not a new R50-specific failure. Keep this PR documentation-only.
@@ -283,4 +283,33 @@ Owner provided local allowlisted-parser output only; raw logs and all prompt/res
 - `enable_thinking=None` is not explicit false. Runtime `model_revision=None` is not proof of an unpinned model: runner source pins `REV` via `snapshot_download`, and report records `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`. `eos_token_id` not extracted; stop values not compared. Adapter identities were not emitted; mapping relies on source arm order.
 - R47 is retrospective inference over 20 exposed prompts / 60 outputs, not training or fresh Held-out, and contains no original-source-assistant fourth arm. It does not close R50 W2/W3/W4 and does not authorize any R50 evaluation.
 
-R50 final state unchanged: WORLD HOLD; timepoint provenance PENDING; hidden alias closure HOLD; CPU46 verified draft-only; ROLE12 policy not approved; four-arm runtime parity not verified; admitted 0; final seal not performed; GPU/inference/training false for this R50 task.
+R50 final state unchanged: WORLD HOLD; timepoint provenance PENDING; hidden alias closure HOLD; CPU46 verified draft-only; ROLE12 policy approved; four-arm runtime parity not verified; Original Gold coverage not established outside examined sources; admitted 0; final seal not performed; GPU/inference/training false for this R50 task.
+## 22. Current status after Owner ROLE12 approval and R47 log recovery — 2026-11-19
+
+Owner approved the exact ROLE12 policy: the historical trailing User and appended User remain two independent consecutive User turns, preserved as-is in Base/v0.1/v0.2/v0.3-A. No merge, rewrite, deletion or synthetic Assistant turn. This is policy approval only; runtime parity remains unverified.
+
+R47 Base and resumed execution logs were recovered from the exact existing HF Bucket objects and safely parsed. The resulting aggregate is documented in `docs/evidence/V03_R50_W4_HISTORICAL_RUNTIME_EVIDENCE_SAFE_20261119_CN.md`. It supports matching listed historical settings across R47 Base/v0.1/v0.2. The previously scanned R55 log supplies partial v0.3-A-side historical settings. Neither is an R50 four-arm load/runtime receipt.
+
+**W1/W2/W3 remain:** W1 `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`; W2 `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES__TIMEPOINT_CARD_RULE_RUNTIME_PROOF`; W3 `NOT_TRIGGERED`. The `[4,7]` array remains the endpoint pair of the known old 04→07 link; the possible transitive path to W17 remains unresolved.
+
+**Original Gold:** exact 32-message history and positive provenance Message-ID lookups returned no matches in the examined 14-chat and 06–15 supplementary archives. The five pinned R50 source transcripts have 0/46 exact current-User matches. Overall Gold coverage remains `NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES`; do not substitute a continuation after cutoff or a similar story reply.
+
+**Remaining blockers:** (1) no R50-specific four-arm load/runtime receipt; (2) no per-arm proof that the two consecutive User roles survive actual serialization/input assembly; (3) no authenticated cutoff-time System/Card/Rules snapshot or prompt-assembly receipt; (4) no R50 effective tokenizer/template/truncation/generation/EOS/stop/sampling parity evidence. R47/R55 `enable_thinking=None` does not mean false; stop values are withheld and EOS was not found. R55 seed has invocation/config `42` vs a separate `None` record, with precedence unresolved.
+
+**Next action:** read-only inventory of existing Owner-local R50 per-arm load/config/prompt-assembly receipts only. If absent, mark `SOURCE_UNAVAILABLE`. Do not start model/tokenizer/HF/GPU/inference/training to create missing historical evidence.
+
+```text
+WORLD_SEMANTIC_ISOLATION = HOLD
+TIMEPOINT_CARD_RULE_PROVENANCE = PENDING
+HIDDEN_ALIAS_WORLD_COMPONENT_CLOSURE = HOLD
+CPU46_TOKEN_LENGTHS = VERIFIED_DRAFT_ONLY
+ROLE12_STRUCTURE = PASS_AS_REPORTED
+ROLE12_POLICY = APPROVED
+FOUR_ARM_RUNTIME_ROLE_PARITY = NOT_VERIFIED
+ORIGINAL_GOLD_R50_COVERAGE = NOT_ESTABLISHED_OUTSIDE_EXAMINED_SOURCES
+OFFICIAL_HELDOUT_ADMITTED = 0
+FINAL_SEAL = NOT_PERFORMED
+GPU_USED_FOR_R50_AUDIT = false
+R50_MODEL_INFERENCE_RUN = false
+R50_TRAINING_RUN = false
+```
