@@ -1,5 +1,7 @@
 # R60 Base336 P2 Protected Crosswalk：下一 Agent 接手提示词（2026-11-18）
 
+> **此提示词的“第一步只盘点 Owner 文件 / 尚未收到 R55 Index”已过期。** 2026-11-19 已由 [R60 Base336 P2 Quality-v1 新 Agent 唯一现行任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 取代。旧 R50 50/46/4、五世界固定来源核验、R47/R48/R55 20-case 和 R55 三层 Index、R58 五范围空白 CSV 均已执行，不得再按下文旧指令重跑。Owner 本任务限定只读 DB 访问无需逐次申请；GPU/训练仍需单独批准。下文保留历史取证过程，不是当前执行清单。
+
 > **任务类型：Owner-local 私有证据核验与交叉隔离审查。不是训练、推理、Supabase 重抽取或提示包生成任务。**
 >
 > 仓库：`sunxu/storyforge`；分支：`r60/common2-cpu2-owner`。交接时必须重新核验远端 HEAD、Actions 和工作区。
