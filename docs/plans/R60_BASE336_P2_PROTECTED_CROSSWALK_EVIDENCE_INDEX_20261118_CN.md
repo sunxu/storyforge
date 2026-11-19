@@ -536,3 +536,52 @@ After a successful capture:
 6. Only after every P2-C gate passes may P2-B produce the real 48-row prompt package. No inference or GPU is implied.
 
 **Current mainline priority:** complete source-bound P2 × Base336 172-story evidence first. P2-C remains HOLD; P2-B remains NOT_GENERATED; train_admitted=0.
+
+
+## 11. 2026-11-19 主线门禁状态校正（覆盖本索引中较早的待核验文字）
+
+本节仅合并已存在的 Owner SAFE / SAFE 状态和仓库历史证据，不新增私有数据读取或门禁通过声明。
+
+### 已关闭的精确身份子项
+
+- P2-A：8 条公开来源、8 个唯一 Story ID，revision / moderation snapshot / permission event 绑定已通过。
+- P2 × Base336：既有 Owner SAFE 在冻结 336 cases / 172 stories 范围内 exact Story ID overlap=0。
+- P2 × R50：既有 Owner SAFE 报告 exact Source ID disjoint；该结论只限其实际检查的 R50 source scope，不等于 R50 完整 Protected / Reserved roster coverage。
+- P2 × R47/R48/R55：Owner-local SAFE 已验证 R47 Prompt / Manifest / canonical Test / `metadata.story_id` 复合绑定，R48 使用同一 canonical Test，R55 三层索引 76/68/46 的 SHA、Schema、candidate-token links 和 20/20 R47 Sample 覆盖；同一 20-case 链范围内 exact Story ID overlap=0。20 prompts 仅对应 2 个 Story IDs，不能按 20 个独立故事计算。
+- R55 旧 R47 baseline preflight：仓库历史证据记录 Owner-reported PASS，scope 为 R47/R48 同一 20 个已曝光开发 prompts；底层 SAFE 未在本轮独立重新哈希。它不证明完整历史 exposure universe，也不替代 Story ID crosswalk。
+
+### 仍未关闭的 P2-C 门禁
+
+- Base336：8 组、38 个故事、82 个受影响 cases 的历史结构关联已建立；8 组 Codex 语义决策均 HOLD。7 组成员角色/剧情/版本绑定证据不足；另 1 组仍缺少 World marker 与成员上下文解释。
+- Base336 成员级 Card/Opening：Owner 已报告输出目录及 8 组输出文件不存在；current / archived / actual-sent 证据均未取得。既有 no-DB preflight PASS 不代表内容捕获完成。不得重跑旧的全量 `--execute`，除非 Owner 对新的、明确限定的只读数据库捕获动作另行批准。
+- R50：已有 50 条原始来源、46 条候选和 4 条排除的结构证据；R45 固定来源哈希检查已通过，heldout sealed=0，隐藏 alias / world-component closure 仍 HOLD。尚无完整 R50 Protected / Reserved metadata-only roster coverage SAFE；不得把 46 条 pre-seal 或局部 exact ID disjoint 扩展为完整 50 条保护集排除。
+- R47/R48/R55 完整历史 exposure universe：UNKNOWN / HOLD；已关闭的只是上述同一 20-case 链。
+- Actual-sent / delivered version binding、语义 World / hidden-alias exclusion、Reviewer execution independence 与 Owner freeze：仍 HOLD。
+
+### 执行顺序
+
+1. 不重复 P2 × Base336 / R50 / R47-R48-R55 已完成的精确 ID 子检查，也不重复 R55 三层索引链。
+2. 下一项需 Owner 决定是否授权一次限定范围的 Base336 current/archived Card/Opening **只读数据库捕获**（仅冻结 roster 中 38 个成员、8 组，私有 create-only 输出；不修改数据库、不读 R50 正文、不输出私有字段）。未获具体授权前不执行。
+3. 独立完成 R50 metadata-only 完整覆盖证明及 actual-sent / Reviewer 证据盘点；任何覆盖不完整继续 HOLD。
+4. P2-C 全部门禁与独立 Reviewer / Owner freeze 通过之前，P2-B 真实 48 条评估提示仍为 NOT_GENERATED；不启动模型请求、HF、GPU、训练或晋升。
+
+当前：
+```
+P2_A = READY
+P2_BASE336_EXACT_ID = PASS_OVERLAP_0
+P2_R50_EXACT_SOURCE_ID = PASS_WITHIN_EXISTING_SAFE_SCOPE
+P2_R47_R48_R55_20_CASE_EXACT_ID = PASS_OVERLAP_0
+P2_R47_R48_R55_FULL_EXPOSURE_CLOSURE = UNKNOWN_HOLD
+P2_BASE336_SEMANTIC_COMPONENTS = HOLD
+P2_R50_COMPLETE_METADATA_COVERAGE = UNKNOWN_HOLD
+P2_ACTUAL_SENT_VERSION = UNKNOWN_HOLD
+P2_REVIEWER_INDEPENDENCE_AND_OWNER_FREEZE = HOLD
+P2_B_48_PROMPTS = NOT_GENERATED
+P2_C = HOLD
+train_admitted = 0
+quality_v1_admitted = 0
+gpu_started = false
+hf_jobs_submitted = 0
+model_requests = 0
+model_promoted = false
+```
