@@ -1,5 +1,46 @@
 # R60 Base336 — P2-C 主线收敛与 Owner 下一步
 
+## 最新状态：R50 provenance 与历史曝光已知范围（2026-11-19）
+
+**当前动作优先级高于下文所有旧的捕获器/数据库重试步骤。** P2-C 仍围绕 **新 8 条公开评估来源的独立性**，不扩展旧 35 案例审计。
+
+| 子门禁 | 可复用的已验证 SAFE | 仍 HOLD 的唯一缺口 |
+|---|---|---|
+| R50 原始 50 来源 | Owner 实际回执 `R50_PROVENANCE_50_46_4_METADATA_PASS__P2_C_HOLD`：50 原始来源 provenance = 46 派生 + 4 排除；P2 对这 50 条来源 Story ID 精确 overlap=0，且 R50 密封题目未打开。回执 `docs/evidence/R60_P2_R50_50_46_4_PROVENANCE_COMPLEMENT_SAFE_20261119.json` | R50 Protected/Reserved **世界/语义组件权威完整元数据 roster** 与最终封存证据；原 50 cases 的冻结字节未在本轮重新开启或验证 |
+| Base336 | Owner P2×172 离线预检 PASS，旧 8 组 38 Story/59 来源版本已审，候选组件预览 6 个；P2 exact Story ID overlap=0 | P2 对全部 172 Story 当前与归档语义字段；此前 DB_BASE336_SOURCE_QUERY_HOLD，不能凭 EXPLAIN 假设 Owner 查询可执行 |
+| R47/R48/R55 已知旧开发链 | 20 Prompt 对应 **2 Story**，同一 R47/R48/R55 继承链；P2 exact overlap=0；R55 三层 76/68/46 索引及 20/20 来源绑定已 PASS | **完整历史已曝光全集**、其他开发/仲裁来源及语义别名，不能把已知 20 题当作全集 |
+| actual-sent、独立 Review、Owner Freeze | 现有局部静态索引可复用 | 均 HOLD |
+
+**发现可复用的更早来源全集缺口清单。** `docs/evidence/R58_G1_R55_R56_R57_PROTECTED_SOURCE_GAP_MATRIX_SAFE_20261101.json` 已从历史冻结 GitHub 证据列出五类已知部分来源（`known_historical_sft` / `r50_known_protected` / `gold195_source` / `legacy_dev20` / `r04_non_gold`），同时明确 **三类尚未取得权威完整名单**：`r55_r57_other_dev`、`other_reserved_heldout`、`other_historical_training`。R58 的候选集合与 R60 新 P2 不是同一个集合，因此旧结论只能继承**来源全集仍有缺口的证据**，不能继承为 R60 交集核验 PASS。
+
+**R50 Inventory 保留独立证据边界。** Owner 既有 `r50/full-original-worlds/run.cGUPnjdx/R50_FULL_ORIGINAL_WORLD_INVENTORY_PRIVATE.json` 文件（历史 metadata inventory 见 0600 / 10061 bytes）；现有字段类型投影和文件存在性不足以证明它是完整 Protected/Reserved 的来源权威 roster，也不能据此确认隐藏 World alias 语义隔离。不得为了凑覆盖数读取 R50 密封题目。
+
+**下一项只读、无重复开发的 Owner 本地动作**：仅检查旧 R58 五范围现存来源元数据 CSV 对权威索引的引用就绪情况，复用 `experiments/r58_round1/audit_g1_index_readiness.py`；它只读五行本地元数据 CSV、`lstat` 其引用文件，**不读取引用的保护集合正文/索引**。如 CSV 不存在，一次报告缺失并停止，不重新生成、不要填充假数据或虚构 OWNER_COMPLETE。
+
+```bash
+bash <<'BASH'
+set -euo pipefail
+set +x
+REPO="$HOME/workspace/storyforge-r60-p2-card-opening"
+ROOT="$HOME/.storyforge-r58-private/round1_pilot_20261030"
+INV="$ROOT/g1_evidence_inventory_private.csv"
+PY="$HOME/.local/share/storyforge/venvs/r60-owner/bin/python"
+test -x "$PY" && test -f "$REPO/experiments/r58_round1/audit_g1_index_readiness.py"
+if [ -f "$INV" ] && [ ! -L "$INV" ]; then
+  "$PY" "$REPO/experiments/r58_round1/audit_g1_index_readiness.py" --private-inventory "$INV"
+else
+  printf '%s\n' '{"schema":"r60_p2c_existing_scope_inventory_availability_safe_v1","status":"EXISTING_OWNER_PRIVATE_SCOPE_INVENTORY_NOT_FOUND__P2_C_HOLD","source_index_bytes_read":false,"protected_content_read":false,"database_accessed":false,"p2_c":"HOLD","train_admitted":0}'
+fi
+BASH
+```
+
+这项检查**只回答旧已知权威来源索引是否就绪**，不认证 R50 完整保护集、不新增 P2 语义裁决，也不将 R58 的五候选合同套用到 R60。返回非零/缺失均停止该检查，进入其他独立工作，不反复扫描。
+
+永久保持 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0`。避免重复运行 R50 50/46/4、R47/R48/R55 20-case、旧 35 案例候选图以及无新错误依据的 Base336 捕获 SQL。
+
+---
+
+
 ## 目标
 
 现在只围绕新的 **8 条 P2 公开来源**完成独立性证明，最终开展 Base 对 Adapter 的质量评估。此前 35 个旧候选案例的冲突预览已完成，不再作为主要工作目标。
