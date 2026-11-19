@@ -502,3 +502,25 @@ Owner reports successful read-only download of both exact existing HF Bucket obj
 | Resumed three-arm run `r47-20261014T091647Z-637890` | `R47_RESUMED_execution.log` | 450,504 | `18b077671b38404ff4821c4d9fb0342b3cb9430fc5d5565c9efc1586a4c3ab7c` |
 
 Status: `SOURCE_RECOVERED` for both remote log objects; hashes/byte counts are Owner-reported local verification, not independently rehashed in this review. Runtime fields have not yet been parsed. The next step is a local allowlisted parser that emits only safe runtime field values and line numbers; raw logs remain private and must not be pasted or committed. For the resumed run, Base was reused, so the log should be used for v0.1/v0.2 and not treated as Base inference evidence. The earlier Base run log is the Base runtime source.
+## 2026-11-19 R47 three-arm runtime evidence recovered and parsed (SAFE aggregate)
+
+Owner supplied the output of a local allowlisted parser over the two recovered private `execution.log` files. No raw log, prompt, response, case identifier or private mapping was uploaded.
+
+**File identity (Owner-reported and parser-verified locally):**
+- Original Base log: 84,617 bytes; SHA256 `34d3e33ca1888dbc1c61cf65c0f2619ebf41bae626deea131564db8e6a927399`; 1,183 lines.
+- Resumed log: 450,504 bytes; SHA256 `18b077671b38404ff4821c4d9fb0342b3cb9430fc5d5565c9efc1586a4c3ab7c`; 8,676 lines.
+
+**Arm mapping:**
+- Base: original run, inference command at line 395, no `--adapters`.
+- Resumed run: inference commands at lines 395 and 4537, both with `--adapters`.
+- Runner source `scripts/v02_r47_eval_runner.py` (main blob SHA `a2fa43f65b7b31631976cab1ac84b2b183b5f352`) iterates `(base,None)`, `(v01,V01)`, `(v02,V02)` in that order; `infer()` adds `--adapters` when adapter is non-null; the resumed run reuses the earlier Base output. Thus resumed line 395 maps to v0.1 and line 4537 maps to v0.2. This is a source+log mapping; adapter path/value was not emitted by the safe parser.
+
+**Command-level settings matching across Base/v0.1/v0.2:** `use_hf=true`; `infer_backend=transformers`; `torch_dtype=bfloat16`; `quant_method=bnb`; `quant_bits=4`; `bnb_4bit_compute_dtype=bfloat16`; `max_new_tokens=1536`; `seed=42`; `data_seed=42`; `temperature=0`; `val_dataset_shuffle=false`.
+
+**Runtime summary fields matching across all three commands:** `template=qwen3_8`; `template_backend=swift`; `enable_thinking=None`; `truncation_strategy=delete`; `max_length=262144`; `max_model_len=None`; `top_p=None`; `top_k=None`; `repetition_penalty=None`; `model_revision=None`; `stop` and `stop_words` present but values intentionally redacted.
+
+**Interpretation limits:** `enable_thinking=None` is not proof of explicit `false`; `model_revision=None` in the runtime summary does not mean the model was unpinned. The Runner source calls `snapshot_download(repo_id=MODEL, revision=REV)` and the R47 report records revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`; the exact revision is therefore supported by source+report, not by the runtime summary field. `eos_token_id` was not extracted, so its effective value is unverified. Stop token contents remain unreviewed. The safe output did not disclose adapter paths/identities; arm order is mapped from Runner source.
+
+**Scope:** R47 was a 20-prompt, 60-response retrospective GPU inference comparison (Base/v0.1/v0.2), not training and not a fresh independent Held-out evaluation. It did not include the original source assistant reply as a fourth arm. Its exposed prompts cannot satisfy R50's protected 46-case evaluation or establish independent generalization. Do not reuse R47 as R50 evidence or launch another R47 job.
+
+**R50 gate effect:** none. This R47 evidence does not establish R50 W2 timepoint card/rule provenance, W3 world/alias closure, W4 ROLE12 policy approval or four-arm runtime role parity. R50 remains HOLD; no final seal, inference, GPU, training or promotion.
