@@ -1,5 +1,7 @@
 # StoryForge R60 Base336 训练后阶段：新 Agent 权威交接任务书（2026-11-17）
 
+> **2026-11-19 最新交接替代入口：** [R60 Base336 P2 Quality-v1 新 Agent 任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本 2026-11-17 任务书仍保留训练工程、checkpoint-37、293/43 与后续两臂合同等权威历史事实；但此处较早“R55 索引未核验、R47 Story ID 未知、R50 五世界未绑定、必须先 inventory、需要重新申请只读数据库授权”等具体下一步已经过期。不要重复：R50 50=46+4 provenance / 冻结五世界 PASS、R47/R48/R55 旧 20 Prompt/2 Story PASS、R58 五行空 CSV、Base336 旧 38 Story/59 版本及 35 案例审计。主线仍是 **P2 新 8 来源语义及完整历史保护隔离 → 48 条真实六维提示 → Base/Adapter 配对盲评**，目前 P2-C HOLD、48 未生成、train_admitted=0。
+
 > **本文件是 `r60/common2-cpu2-owner` 分支 Base336 训练后阶段的当前交接入口。** 训练、产物审计和代码复用盘点已完成；独立质量评估尚未开始。先重新核验 GitHub 当前状态，再执行本文件。不要把其他 R60/P4/REAL1000 任务书中的旧授权套用到本任务。
 
 ## 1. 一分钟接手摘要
