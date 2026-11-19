@@ -641,3 +641,14 @@ TRAIN_ADMITTED = 0
 ## 15. 2026-11-19 独立 Reviewer 表单 v2 与严格证据引用校验
 
 新增独立 Reviewer v2 执行合同：`docs/evidence/R60_BASE336_INDEPENDENT_REVIEW_SCHEMA_V2_HANDOFF_20261119_CN.md`。Owner 可下载完整的 `R60_BASE336_INDEPENDENT_EDGE_REVIEW_SCHEMA.json`、`R60_BASE336_INDEPENDENT_REVIEWER_TASKBOOK_20261119_CN.md`、更新后的 `r60_independent_reviewer_offline.py`。v2 改为 A/B 结构化证据引用（记录索引、组别、当前/归档版本、RFC6901 字段路径），`verify --inputs --packet --reviews-dir --schema` 强制从 8 份原始输入重新核验证据页及记录绑定，杜绝只用自由文本写“见证据”的错误 PASS。Owner-local 合成测试覆盖空白 HOLD、合法单项和篡改索引/正文 HOLD。旧 v1 表单不隐式升级，保留原目录，新目录 create-only。仅完成执行工具准备；无真实 Reviewer 答卷或 Owner Freeze，P2-C 继续 HOLD。
+
+
+## 16. 2026-11-19 Reviewer A 内容完成，但独立资格未获认证（最新状态）
+
+Owner 上传真实 SAFE 回执 `docs/evidence/R60_BASE336_REVIEWER_A_SAFE_V2_20261119_RUN01.json`，另附正式交付说明；脱敏解释与 Reviewer B 独立重新审查命令见 `docs/evidence/R60_BASE336_REVIEWER_A_CONTENT_COMPLETE_INDEPENDENCE_HOLD_20261119_CN.md`。
+
+- Reviewer A 在 10 条跨拆分候选 01/02/11/14/19/21/22/24/25/26 中均填写 `SAME_SEMANTIC_COMPONENT`；`review_edges_filled=10`、`review_edges_pending=0`、`source_versions_reviewed_count=10`、`reference_binding_verified_for_filled=10`。
+- `self_attested_independence_count=0`、`reviewer_independence_independently_verified=false`，所以 `status=REVIEW_INCOMPLETE_HOLD` **仍然正确**；不得将已填写误记为“未审”，也不能将非独立内容分析记为正式的独立裁决。
+- Owner 报告了 33 次侧记录和 89 条非空字段引用、私有目录 20 文件/0700/0600 及验收 exit 0；这些细节属于交付说明，并未在 SAFE JSON 内独立量化，须按交付方陈述标记，不自行推断为再次核实。
+- 不能将任何历史的 `independent_execution_attested=false` 事后改成 true。下一步应在 Owner 私有目录独立 `prepare` Reviewer B 的 10 份 Evidence 和 **全新空白** Decision，再由资格可核验的 B 盲审；不得带入 A 的决定、旧 Codex 或本次筛查 tier。真实双独立审查的数量仍为 0，不宣称 B 可自动纠正 A 的独立性缺陷。
+- P2-C 继续 HOLD，actual-sent、R50 完整 protected metadata、旧曝光闭合、语义组件图全量核验及 Owner freeze 仍分别未完成。不得生成 P2-B 48 prompts，不得提交原始私有数据、重分配冻结 split 或开始训练。
