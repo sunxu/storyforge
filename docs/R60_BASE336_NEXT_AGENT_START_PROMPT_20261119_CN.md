@@ -1,5 +1,16 @@
 # R60 Base336 P2 Quality-v1：2026-11-19 新 Agent 启动提示词（可直接复制）
 
+## 2026-11-19 必须包含原始回答 Gold 的最新 Owner 要求（优先于以上内容）
+
+**必需增加第五种“回答来源”：同题、同历史上下文、可追溯来源与授权的原始 Assistant 回答 Gold**。它不是第五个生成模型；正式候选为 **原始 Gold + Qwen Base + R46 v0.2 + R54 v0.3-A + R60 Base336 checkpoint-37**。主比较**必须包括 Base336 vs Gold**；原始 Gold 也接受六维评分、严重违规判定和盲化，不视为天然正确。四模型 48 题产生 192 条模型输出，加 48 条真实原始回复才是 240 份盲评文本。
+
+**目前 P2 新 48 提示是拟从 8 个公开 Story 的 World/Opening 新构造的情境，尚无经验证的逐题原始回复。** 你必须在新 P2 来源隔离工作中确认合法的原始 Prompt/Reply 是否存在、能否与冻结 prompt 逐字逐消息匹配；没有就明确 `P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`，提出最小的 Owner 决策，**不得**用旧 R48 Gold、公开 Opening、模型代写或私有用户聊天补齐。可复用 `scripts/v02_r48_four_arm_build.py::read_gold` 的完整上下文前缀校验思想；Gold 仅匿名进入 Reviewer，绝不能流入模型生成输入。若不可得，不能冒充新五回答来源测试已经完整；旧 20 题只能独立做 EXPOSED_DEV 回归。
+
+其它 P2-C、来源权利、正式 48 Prompt、GPU/HF 单独授权和非重复执行约束不变。权威细则见 [本轮任务书第八节](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
+
+---
+
+
 ## 2026-11-19 模型阵容更新提示（优先于本文旧两臂文字）
 
 经回顾 R47/R48/R50/R54/R55，**建议预注册四个被测生成模型：同一 Qwen Base、R46 v0.2 checkpoint-7、R54 v0.3-A checkpoint-16、R60 Base336 checkpoint-37**。主检验是 Base336 对 Base 与历史强基准 v0.2；v0.3-A 是旧 R55 混合回退的诊断对照；预算有限则先冻结 Base/v0.2/Base336 三臂。历史 v0.1 非本次必要臂，原始 Gold 不是模型。**这只是模型阵容设计建议，Owner 尚未最终冻结，P2-C 尚未 PASS，P4 GPU/HF 仍须单独批准**。请读完整交接任务书第七节，不要直接按旧提示词的“两臂”硬编码运行时或启动生成。
