@@ -1,5 +1,10 @@
 # StoryForge Gold Quality Pipeline
 
+> **2026-11-19 Owner 新增原始回答 Gold 比较需求：** R60 Base336 新独立评估候选阵容为 **四个生成模型（Base、R46 v0.2、R54 v0.3-A、R60 Base336）+ 与每一题严格对齐的原始回答 Gold**，Gold 是匿名评审回答而非生成模型。正式主比较必须包括 **Base336 vs Gold**，Gold 也按 Quality-v1 六维评分与严重标记。R48 旧 20 题原始 Gold 不可配给 P2 新构造 48 题；现有 8 公开来源只有 World/角色/Opening 证据，无真实 48 条匹配原始回复的 SAFE 证明，须独立建立来源/完整 Prompt 匹配、权利与无历史泄漏门禁。不得用 Opening、模型答案或私有用户聊天冒充 Gold；Gold 不进入模型生成 prompt 输入，仅匿名进入盲审。现行合同见 [2026-11-19 接手任务书第八节](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。P2-C HOLD、48 Prompt NOT_GENERATED、无 GPU/HF 授权、Train/Quality admission=0。
+
+---
+
+
 > **2026-11-19 最新 R60 Base336 独立质量评估状态（覆盖下面旧 2026-11-18 状态）：** 当前唯一新 Agent [任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) / [复制启动词](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261119_CN.md)。主线仍为 P2-C 新 8 公开来源隔离 → 48 条六维三消息提示 → Base/Adapter 配对盲评；P2-A READY、P2-C HOLD、48 正式提示未生成、train/quality admission 0、模型未晋升。R50 50=46+4 provenance 与冻结五世界=原始 50 来源集合双双 PASS，P2 × 五世界精确 overlap=0；R47/R48/R55 已知旧 20 Prompt/2 Story 的完整回链与 P2 exact overlap=0；P2 × Base336 172 Story exact overlap=0，但全部 172 当前+归档语义来源捕获被 DB query HOLD。剩余其他 Protected/Reserved、历史 Dev/仲裁/训练/教师全集，actual-sent、独立 Review 与 Owner Freeze 继续 HOLD。下面 2026-11-18 “R55 Story ID 尚未知”的文字是历史快照，禁止据此重复旧审计。质量六维/严重标记单一来源与私有事件边界不变；无单独授权不运行 GPU/HF。
 
 
