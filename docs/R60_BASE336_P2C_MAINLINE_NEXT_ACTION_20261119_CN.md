@@ -256,3 +256,24 @@ PY
 若缺驱动，先确认当前 `python3` 的 venv；仅在已授权私有 Python 环境安装 `psycopg[binary]`（psycopg3），不要改动数据库/角色/SQL/RLS 来绕过错误。若驱动通过，更新 Owner Mac 的公开捕获器到本 PR 最新版本（**备份已有脚本并对 GitHub 版本做字节比对**），用先前冻结的相同六个目录、Manifest、缺失的输出目录执行一次，回传新的 SAFE `reason_code` 与 `failure_phase`。若输出目录已有内容，不删除重试，先保全并核验。
 
 任何这类定位都不改变 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED` 或 `train_admitted=0`。
+
+
+## 2026-11-19 运行时故障根因：默认 tuple RLS 结果与 dict 校验器不兼容
+
+Owner 已用 \`~/.local/share/storyforge/venvs/r60-owner/bin/python\` 确认 \`psycopg=3.3.9\`、\`LIBPQ=180006\`、\`DRIVER_CHECK_PASS\`。之后同一捕获器 \`--execute\` 仍返回：
+
+\`\`\`text
+status=P2_BASE336_SOURCE_EVIDENCE_HOLD
+failure_phase=DB_SOURCE_FETCH
+reason_code=SOURCE_CAPTURE_OR_RUNTIME_HOLD
+database_accessed=null
+private_file_created=false
+\`\`\`
+
+从公开源码定位到明确的**结构适配错误**：\`psycopg.connect(...).cursor()\` 的默认 \`fetchall()\` 返回 tuple 结果，而 \`r60_base336_p2_public_source_inventory_cpu.validate_rls_preflight()\` 要求每行 dict，调用 \`row.get("table_name")\`。该 mismatch 会触发 AttributeError，然后被捕获器的私有错误抑制层显示为泛化 HOLD。实际故障还可能包含别的问题，不能据此声称 SQL 已查询成功。
+
+已修复 \`experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py\`：按游标 \`description\` 核验 \`table_name / rls_enabled / select_granted / policy_present\` 的返回列，严格将 tuple 转换为 dict，再调用**同一个** RLS 校验器；其他 SQL、角色名称、只读事务、RLS 策略、冻结故事范围和输出边界均不变。错误角色转 \`DB_ROLE_GUARD_HOLD\`，策略缺失转 \`DB_ROLE_RLS_POLICY_HOLD\`，结果列/形状不符转 \`DB_ROLE_RLS_RESULT_SHAPE_HOLD\`，不输出原始 DB 错误。新增三项不访问数据库的合成回归测试。
+
+**下一动作**：复用 Owner Mac 已确认的 \`r60-owner\` Python venv，将捕获脚本与最新 GitHub 公开字节版本一致后，按上一个“Owner 已授权限定只读来源捕获”小节的相同 6 组冻结目录与 P2 Manifest 再执行一次 \`--execute\`。先检查原输出目录**不存在**；若已有目录或文件，不要删除或覆盖，改为保全现场并审查其来源，避免盲重试。此重试范围已经获得 Owner 只读访问授权，不需再次申请。
+
+结果仍只回传 SAFE JSON；若再次 HOLD，按新 \`reason_code\` 和 \`failure_phase\` 定位，禁止打印 traceback / DSN / 私有字段，不削弱角色 / RLS / 版本约束。P2-C、P2-B、train_admitted 继续 HOLD / NOT_GENERATED / 0。
