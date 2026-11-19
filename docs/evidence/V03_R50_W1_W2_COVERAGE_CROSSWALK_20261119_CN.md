@@ -8,7 +8,7 @@
 ## 1. Executive result
 
 - **W1:** `NO_NEW_EVIDENCE__EXISTING_W17_FLAGS_RECONFIRMED`. The 2026-11-19 inventory's three flagged pair rows are the same three old-rank/new-rank pairs already adjudicated on 2026-10-19. The new inventory adds broader source-volume and identity/lexical counts, but the sanitized record does not expose a new source-backed alias, event, card version, rule version, or inference-time prompt snapshot that would change an existing pair decision.
-- **W1 binding gap:** the 2026-11-19 aggregate reports two transitive old links but does not expose their rank-pair identities. The prior W17 safe summary separately records the old 04→07 edge and a possible transitive link to W17 as `INSUFFICIENT_EVIDENCE`. The current safe materials do not prove whether 04→07 is one of those two links or a separate edge. Do not count these as three distinct edges.
+- **W1 rank-pair clarification (Owner output received after the first draft):** `transitive_known_old_link=[4,7]` contains two integers, and the Owner's rank arrays establish that both 4 and 7 are old-source ranks (rank 4 is in frozen R45; rank 7 is outside R45 but in the checked old-source and Old14 rank sets). This is consistent with the previously recorded old 04→07 edge. The array length is two endpoints, **not evidence of two edge objects**. The underlying source-pointer evidence/direction is not independently re-audited here. The possible transitive link from that old component to W17 remains `INSUFFICIENT_EVIDENCE`.
 - **W3:** `NOT_TRIGGERED`. No new source-backed provenance was found to justify reopening the same three pair reviews or seven full-message gaps.
 - **W2:** `SOURCE_UNAVAILABLE_IN_SEARCHED_SOURCES` for actual inference-effective card/rule snapshots and prompt-assembly/runtime receipts. Existing export-time card material, source-message rule references, and saved runtime checkpoint metadata are not proof of the exact content assembled into a model request at each cutoff.
 - **W2 scope limitation:** searched the current GitHub repository/source tree and the available R50 Library artifact inventory. No direct Owner Mac filesystem or private cloud-storage mount was available; therefore this is not a claim that no such artifact exists anywhere.
@@ -23,7 +23,7 @@
 | W17 pair dossier | `docs/evidence/V03_R50_W17_AI_SEMANTIC_DECISION_SAFE_SUMMARY_20261019.json`, audit branch; blob `952307a2e84a38e08796a1e1888246f3f2420e2a` | Three pairs: old ranks 2, 4, and 10 against R50 rank 17; evidence-pointer counts 9, 9, and 8; all three `INSUFFICIENT_EVIDENCE`; reviewer independence/correctness not script-verified. Shared literal was classified as platform/template text. | Taskbook and latest inventory reconcile the three current flags to this same pair set. No new pair or new cited source version is recorded. | Already reviewed; do not repeat |
 | W17 seven full-message gaps | `docs/evidence/V03_R50_W17_FULL_MESSAGE_AI_REVIEW_OWNER_RECEIPT_20261019.json`, audit branch; blob `c67b53169606d21e81af1dac33b1b676e4e314a5` | Seven gaps; 344 dossier message entries; 75 scoped citations; all seven `INSUFFICIENT_CONTEXT`; historical card timings not checked; exact inference card snapshot false; old 04→07 component unresolved. | The 2026-11-19 aggregate supplies no new full-message citation, historical card version, or runtime request record that changes any of the seven decisions. | Already reviewed; do not repeat |
 | W17 timepoint metadata | `docs/evidence/V03_R50_W17_TIMEPOINT_METADATA_OWNER_RECEIPT_20261019.json`, audit branch; blob `91b61454106d8de479bdbb256ba0ba008f6a9470` | 70 W17 dossier entries; 26 W17 citations; 16 distinct cited original messages; historical content-version count 0; moderation-snapshot count 0; exact inference-effective card fields `NOT_CERTIFIED`. Export-card metadata predates the chat, but the export observation is after the chat. | The 2026-11-19 inventory does not add a historical content version or a request-time card snapshot. | Timepoint gate remains pending |
-| Old archive / source manifests | Frozen source commit `a197923...`; `evaluations/v0.2/source-archives/06-15/source_bundle_manifest.json` (blob `d83e609c0b529ad8892200a86a05dbd779e9e9c2`); `evaluations/v0.2/source-archives/16-20/` source tree | The 06-15 manifest pins ten raw source archives and their hashes. The 16-20 source tree contains the five R50 source exports and associated card/runtime-context files. | The 2026-11-19 result reports Old06_15 and Old14 CRC PASS, but the sanitized report does not provide rank-level links for the two transitive old edges or a new source-version delta. | Integrity reported; graph edge binding remains open |
+| Old archive / source manifests | Frozen source commit `a197923...`; `evaluations/v0.2/source-archives/06-15/source_bundle_manifest.json` (blob `d83e609c0b529ad8892200a86a05dbd779e9e9c2`); `evaluations/v0.2/source-archives/16-20/` source tree | The 06-15 manifest pins ten raw source archives and their hashes. The 16-20 source tree contains the five R50 source exports and associated card/runtime-context files. | Owner's SAFE rank arrays bind 4 and 7 as old-source ranks; `[4,7]` matches the previously recorded 04→07 rank pair. This does not add a new source-version delta or establish a transitive path to R50-17. | Integrity reported; old pair rank binding clarified; semantic closure remains HOLD |
 | Frozen R45 Train49/Val15 | Owner runbook pins Train SHA256 `e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742` and Validation SHA256 `5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963`; main safe receipt `V03_R50_OWNER_R45_FULL_SOURCE_GATE_COUNTS_ONLY_20261022.md` | Owner-reported exact source screen PASS for 49/15 and zero exact overlap counters; receipt itself says it is not semantic independence PASS and was not independently rehashed in GitHub. | Latest inventory reports 9 R45 source ranks checked. It does not publish the rank-level edge mapping or raw R45 bytes. | Exact overlap screen remains Owner-reported; semantic closure HOLD |
 
 ## 3. Transitive-edge reconciliation
@@ -32,14 +32,19 @@ The existing W17 pair safe summary records:
 - one previously confirmed old edge, 04→07;
 - a possible transitive link from that old component to W17, still `INSUFFICIENT_EVIDENCE`.
 
-The 2026-11-19 inventory reports `transitive_known_old_links=2`, but the public SAFE reconciliation does not include the two rank-pair identities. Therefore:
+The Owner supplied the exact field value `transitive_known_old_link=[4,7]` and its rank arrays:
+- `r45_source_ranks` contains 4 but not 7.
+- `old_source_ranks_checked` contains both 4 and 7.
+- `old14_numbered_chat_ranks` contains both 4 and 7.
+- `extra_archive_ranks_outside_frozen_r45` contains 1, 3, 5 and 13; rank 7 is therefore an old checked source rank but is not one of those four extra ranks.
 
-1. It is not possible to establish from the available safe record whether 04→07 is one of the two links or is additional to both.
-2. It is not valid to infer three separate edges.
-3. No transitive path to W17 is newly proven by the aggregate count.
-4. The overall hidden-alias/world-component graph remains `HOLD`.
+The two values are valid old-source rank identifiers and match the endpoints of the previously recorded old 04→07 edge. Treat this as a rank-pair binding consistent with that known edge, not as two edges. The `pair_aggregate` table is a separate old-source ↔ R50-source comparison:
+- old rank 4 ↔ R50 rank 17: `same_source_id=false`, 5 sampled 120-character matches, 1 long exact-message match. This is the already-known W17 flagged pair (old ranks 2/4/10 ↔ R50 rank 17), not a newly discovered pair; its prior semantic decision remains `INSUFFICIENT_EVIDENCE`.
+- old rank 7 ↔ R50 ranks 16–20: zero sampled matches and zero long exact-message matches in the reported fields. This is a bounded lexical/identity result only; it does not prove semantic independence or disprove the old 04→07 edge.
 
-**Smallest additional read-only check, only if the Owner wants this bookkeeping gap closed:** from the already-existing private inventory, emit a SAFE aggregate containing the two old-link rank pairs only (rank numbers, no IDs/text), a boolean indicating whether 04→07 is among them, and the source-manifest SHA256 pins used for those rows. Do not rerun the source scan, CRC, lexical screen, or AI review.
+Therefore the earlier claim that the array length represented two link objects is corrected. The rank-level identity of the old 04→07 pair is now consistent with the SAFE inventory; the possible transitive path from that old component to W17 remains `INSUFFICIENT_EVIDENCE`, and the overall hidden-alias/world-component graph remains `HOLD`. No new source-backed alias, event, card version, rule version, or runtime prompt snapshot was supplied. W3 remains `NOT_TRIGGERED`.
+
+No additional source scan, CRC, lexical screen, or AI review is warranted on unchanged evidence. If a future source-backed provenance item appears, review only that new item and the specific unresolved edge.
 
 ## 4. W2 existing-snapshot search
 
@@ -123,3 +128,10 @@ This crosswalk's original W1/W2 findings are unchanged. Later Owner decisions su
 A separate SAFE receipt records the Owner-provided archive integrity output and bounded Original Gold finding: `docs/evidence/V03_R50_ORIGINAL_GOLD_SOURCE_AVAILABILITY_20261119_CN.md`.
 
 The pinned 2026-10-16 R50 replay has `source_input_normalized_verbatim_reuses=0` across all 50 new User inputs versus the five R50 source transcripts. Therefore no exact current-User-input Original Gold is available from those pinned five transcripts, including the protected 46 subset. The 14-chat and 06–15 archives are now Owner-verified for integrity but have not been checked for exact full-history matches. This does not trigger W3 and does not change WORLD or timepoint HOLDs. Overall Gold coverage remains `NOT_ESTABLISHED` pending any additional exact full-history source lookup.
+
+
+## 9. Owner rank-pair follow-up — 2026-11-19
+
+The Owner supplied `transitive_known_old_link=[4,7]`, the old/R45/Old14 rank arrays, and the relevant `pair_aggregate` rows. Both 4 and 7 are old-source ranks; only 4 is in the frozen R45 set. The two-element field is consistent with the already documented old 04→07 pair and must not be described as two separate edge objects.
+
+The old-rank-4 ↔ R50-rank-17 lexical/exact-message counts (5 sampled matches; 1 long exact match) reproduce an already-reviewed W17 flagged pair. Old-rank-7 ↔ R50 ranks 16–20 has zero reported sampled/exact matches. Neither result changes the prior W17 `INSUFFICIENT_EVIDENCE` adjudication or establishes semantic independence. The possible transitive path from the old 04→07 component to W17 remains unresolved; W3 stays `NOT_TRIGGERED` absent genuinely new source-backed provenance.
