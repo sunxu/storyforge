@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -92,3 +93,48 @@ def test_create_only(tmp_path: Path):
     audit.write_new(p, {"status": "HOLD"})
     with pytest.raises(FileExistsError):
         audit.write_new(p, {"status": "PASS"})
+
+
+def test_inputs_numeric_argument_returns_explicit_hold(tmp_path: Path, monkeypatch, capsys):
+    """An accidental '--inputs 20' must not become opaque UNEXPECTED_HOLD."""
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(sys, "argv", [
+        "component-preview", "--packet", str(tmp_path / "unused-packet.json"),
+        "--roster", str(tmp_path / "unused-roster.json"),
+        "--inputs", "20", "--output-dir", str(tmp_path / "unused-output"),
+    ])
+    with pytest.raises(SystemExit) as exc:
+        audit.main()
+    assert exc.value.code == 42
+    value = json.loads(capsys.readouterr().out)
+    assert value == {
+        "status": "HOLD",
+        "reason_code": "INPUTS_DIRECTORY_HOLD",
+        "private_values_emitted": False,
+    }
+    assert not (tmp_path / "unused-output").exists()
+
+
+def test_shared_reviewer_hold_reason_not_masked(tmp_path: Path, monkeypatch, capsys):
+    """Shared-source errors must retain their safe reason instead of UNEXPECTED_HOLD."""
+    from r60_independent_reviewer_offline import Hold as SharedHold
+
+    assert audit.Hold is SharedHold
+    group_dir = tmp_path / "group-files"
+    group_dir.mkdir()
+    monkeypatch.setattr(sys, "argv", [
+        "component-preview", "--packet", str(tmp_path / "unused-packet.json"),
+        "--roster", str(tmp_path / "unused-roster.json"),
+        "--inputs", str(group_dir), "--output-dir", str(tmp_path / "unused-output"),
+    ])
+    monkeypatch.setattr(audit, "packet_and_pin", lambda _: ({}, "synthetic"))
+    def reject_input(_packet, _inputs):
+        raise SharedHold("INPUT_TYPE_HOLD")
+    monkeypatch.setattr(audit, "load_evidence", reject_input)
+    with pytest.raises(SystemExit) as exc:
+        audit.main()
+    assert exc.value.code == 42
+    value = json.loads(capsys.readouterr().out)
+    assert value["reason_code"] == "INPUT_TYPE_HOLD"
+    assert value["private_values_emitted"] is False
+    assert not (tmp_path / "unused-output").exists()
