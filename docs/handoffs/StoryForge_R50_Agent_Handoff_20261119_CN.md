@@ -244,3 +244,6 @@ Important ambiguity: `seed=42` appears in invocation/runtime configuration recor
 R47 and R55 Runner sources have matching explicit core CLI settings, but R47's source-only scan did not resolve its non-scalar revision expression and no R47 effective runtime log was supplied. Do not project R55's template/truncation settings onto R47.
 
 **W4 status:** `PARTIAL_R55_EFFECTIVE_RUNTIME_FIELDS_FOUND__FOUR_ARM_R50_ROLE_PARITY_NOT_VERIFIED`. Remaining evidence: clarify seed/config record scope; effective behavior of thinking=None; corresponding R47 effective template/truncation/stop evidence if already recorded; and any existing evidence that two consecutive User roles survive the actual runtime serialization and per-case input assembly. Missing evidence is `NOT_RECORDED`; no model/tokenizer/GPU/HF execution is permitted to manufacture it.
+
+
+Latest PR #33 CI after the R55 effective-runtime evidence update: head `cc9f68aaddc97442ff149cffa5f17f3729b78024` completed failed at repository-wide `ruff check .` with 202 findings; Tests and evidence-integrity stages were skipped. This is the known repository-wide lint blocker, not a new R50-specific failure. Keep this PR documentation-only.
