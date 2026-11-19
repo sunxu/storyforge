@@ -1,5 +1,7 @@
 # AGENTS.md
 
+**2026-11-19 Owner Gold/reference requirement:** The independent R60 Base336 P2 evaluation must compare model answers against the **same-prompt frozen original source Assistant reply (Gold)**, evaluated as an anonymously shuffled fifth response source, **not a fifth generation model**. The new P2 48 prompts are synthetic/unbuilt and currently have no verified matching original replies. Do not transplant old R48 Gold or call source Opening the answer; do not load private chats to make a Gold set. Strictly bind `frozen_prompt.messages == original_record.messages[:-1]`, source revision, rights and exposure; Gold is withheld from inference prompts and is not presumed correct. The current handoff details the mandatory Gold evidence HOLD: `docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md`. All no-GPU/no-HF/Owner freeze gates remain in force.
+
 ## R60 Base336 training-after P2 Quality-v1 — current agent handoff override (2026-11-19)
 
 The active **post-training independent evaluation** workflow is documented at [R60 Base336 P2 Quality-v1 next-agent handoff](docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md), with a [copy-ready prompt](docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261119_CN.md). This supersedes the older R60 handoff text below only for **current P2 next steps**, not immutable training facts or project-wide policy. The active PR is #31 (development branch `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`); always check HEAD and CI.
