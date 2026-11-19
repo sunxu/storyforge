@@ -359,3 +359,12 @@ This closes the **design/implementation precedent** question for the five-answer
 ### R55 Gold5 v2 historical outcome located — 2026-11-19
 
 The later Owner-unblind SAFE aggregate at docs/evidence/V03_R55_GOLD5_V2_OWNER_UNBLIND_DECISION_20261023.md supersedes the earlier 2026-10-23 *builder-preparation-only* receipt for the status of the subsequent v2 development review. It reports 20 exposed prompts / two worlds, three reviewers and 3,960 Pair/Four/Five ratings. Pair v0.3-A vs v0.2 was 10:10 and v0.3-A was lower on all six dimensions. Five-way means were Original Gold 3.500, v0.2 3.461, v0.3-A 3.197. The Owner decision retained v0.2 and kept R54 checkpoint-16 NO-GO for R50. These are Owner-pasted aggregate results; reviewer independence was not technically certified and hard-event adjudication remained pending. This is historical development evidence only, not R50 or fresh Held-out evidence.
+
+
+### Owner-local follow-up correction — W1 and R55 final evidence
+
+The latest targeted inventory reports `transitive_known_old_link` as a list of two integers. Do **not** call this two edges: the prior `LINK_COUNT` was only list length. It may encode one endpoint pair or compact references; inspect the values and parent schema before interpreting it. The 04→07 edge remains unresolved.
+
+The local R55 inventory also contains the subsequent arbitration/second-audit/third-audit/final-evidence artifacts. The documented pipeline covers 76 flagged candidates × 2 categories (152 slots), with P0=65 and P1=87; third audit covers 46 candidates / 92 slots, including 59 original disputes/first-HOLD categories. The third-audit receipt says no automatic majority adjudication and reviewer independence not technically verified. Final-evidence format/quote validation is not semantic certification. Local file existence alone does not establish PASS: inspect the safe count-only outputs for arbitration, second audit, third audit, priority final validation, and all-152 final validation. Never upload private dockets, story text, candidate replies, mappings, or private decision JSON.
+
+W4 remains HOLD: the existing R50 Role12 count-only evidence says actual four-model runtime interpretation/role parity=false and consecutive-User policy approval=false. CPU tokenizer draft fit is not deployed four-arm parity. No R50 inference, seal, or admission follows from this inventory.
