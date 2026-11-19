@@ -66,6 +66,38 @@ BASH
 
 已有输出目录 -> OUTPUT_EXISTS_HOLD。来源 SHA、roster、版本记录、split 不一致 -> 固定 HOLD，**不删除、不覆盖、不更换目录规避检查**。
 
+## 2026-11-19 实际运行故障修复：`--inputs 20`
+
+Owner 终端曾运行 `--inputs 20`，得到 `{"status":"HOLD","reason_code":"UNEXPECTED_HOLD",...}`。**根因有两层**：
+
+1. `--inputs` 是目录型参数，必须传 **8 份原始 `R60_BASE336_WORLD_GROUP_XX_CARD_OPENING_PRIVATE.json` 所在目录**；不能传数量 `20`。数字 20 是本轮 Reviewer 的证据/裁决文件数量，与此输入参数无关。
+2. 原版组件工具定义自己的 `Hold`，而证据检查器使用 `r60_independent_reviewer_offline.Hold`，导致被复用模块的安全原因码误报告为 `UNEXPECTED_HOLD`。现已统一共享 `Hold`，新增目录类型检查，错误用 `INPUTS_DIRECTORY_HOLD` 直接报告而不泄露私有数据；新加合成测试验证无输出目录创建及共享异常原因的保留。
+
+必须先从 GitHub 获取更新后的 `experiments/r58_quality/r60_base336_component_conflict_preview_cpu.py`，替换**已有本地旧脚本时需保留旧副本并先核对差异**。此次参数修正后的完整示例：
+
+```bash
+set -euo pipefail
+umask 077
+REPO="$HOME/workspace/storyforge-r60-p2-card-opening"
+BASE="$HOME/.local/share/storyforge/r60/private"
+TOOLS="$BASE/reviewer-tools-git-v2"
+INPUT="$BASE/r60-base336-group-cards-opening-20261115"
+ROSTER="$BASE/r60-base336-world-cross-review-20261115/R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json"
+PACKET="$BASE/R60_BASE336_COMPONENT_REVIEW_PACKET_PRIVATE_V2_20261119.json"
+OUT="$BASE/r60-base336-component-conflict-preview-20261119-v1"
+test -d "$INPUT"
+test -f "$ROSTER" && test -f "$PACKET"
+test ! -e "$OUT" && test ! -L "$OUT"
+export PYTHONPATH="$REPO/src:$TOOLS"
+python3 "$TOOLS/r60_base336_component_conflict_preview_cpu.py" \
+  --packet "$PACKET" \
+  --roster "$ROSTER" \
+  --inputs "$INPUT" \
+  --output-dir "$OUT"
+```
+
+此处 `INPUT` 路径以 Owner 原有目录存在为前提，切勿自动生成空源目录。若之前错误运行创建了输出目录，则先做证据保全与人工核验，不允许简单删除或覆盖。同样不应为了绕开 HOLD 而重建证据或更换文件来源。
+
 ## 后续使用
 
 1. 将这 6 个组件的 35 条候选案例在 Owner 私有工作流中标记为临时隔离观察对象（**不修改冻结 split、数据库或源文件**）。
