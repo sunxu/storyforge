@@ -5,7 +5,6 @@ import hashlib
 import json
 
 import pytest
-
 from r60_p2c_existing_source_package_preflight_cpu import Hold, evaluate, main
 
 
@@ -70,7 +69,7 @@ def test_truncated_base_current_holds():
 
 
 def test_p2_manifest_binding_holds():
-    package, manifest, digest = synthetic()
+    package, manifest, _digest = synthetic()
     with pytest.raises(Hold, match="P2_MANIFEST_BINDING_HOLD"):
         evaluate(package, manifest, "0" * 64)
 
