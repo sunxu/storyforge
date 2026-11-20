@@ -1,5 +1,40 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 批准限定范围独立评估：Gold48 冻结准备可以继续
+
+> **Owner 最新授权，优先于下方历史“必须取得全历史 Protected/Teacher 权威名册才能继续”要求。** 已明确批准采用 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`**（已核验范围内独立），并**在报告中披露未知历史来源暴露风险**。本次 Owner 决定已经落实为 [`R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json`](evidence/R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json)。这是**限定范围风险接受**，不是证据层面的全历史独立性证明。永远保留 `FULL_HISTORICAL_SOURCE_UNIVERSE=UNVERIFIED`；不可把没有总名册称为没有遗漏训练/测试来源，或将 `P2_C_FULL_UNIVERSE` 伪写成 PASS。
+
+### A. 当前门禁区分
+
+| 门禁 | 决议或实际进度 |
+| --- | --- |
+| P2 已审隔离子集 | Base336 172 Story/375 版本和增量 History32 32 Story/120 版本，合计已审 **204 Story/495 版本**；旧 R50/R55、Gold195、R45 source-data 限定核验继续复用，不重做 |
+| 未列入已审子集的历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher | **`UNKNOWN_HOLD`（事实未验证）**；Owner **接受这一残余风险继续开展限定范围质量评估**，不要求无限期补全总名册 |
+| 本轮评估独立性声明 | **`SCOPED_INDEPENDENCE_RISK_ACCEPTED`**；仅可称“对已审核来源范围内独立、存在未知历史来源暴露风险” |
+| Gold48 题源自身命名 caveat | **`OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`**；源原始 Revision 不改，48 主分析 +剔除该 Story 全六题的 42 题敏感性分析；八来源私有双射已由 Owner SAFE 回执报告 8/8，正式六个 Case ID 尚需在冻结时绑定 |
+| 重建输入与历史参考答案 | **`RECONSTRUCTED_EVALUATION_INPUT` 已获 Owner 批准**；四个新生成臂的冻结基准相同；48 份真实 Historical Original Reference 是第五匿名评分来源，仅作同剧情的**描述性**历史对照而非 byte-exact 同输入因果比较；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` |
+| 正式生成 Gold48 / Owner Freeze | **准备阶段已授权；48 题文件/Manifest 尚未生成或签收**，`P2_B_48_PROMPTS=NOT_GENERATED` |
+| 付费推理/新 GPU/HF Job | **未授权**，不因本决定自动启动 |
+
+**避免语义冲突**：`P2_C_SCOPED_POLICY=RISK_ACCEPTED` 可以进入**Gold48 冻结准备阶段**，但 `P2_C_FULL_UNIVERSE=UNVERIFIED` 不改变。旧统一 `P2_C=HOLD` 在总宇宙严格准入语义下保留为历史未闭合事实；不能再用它否定 Owner 本次对**限定范围评估路径**的明示批准。只有在 Owner 私有 48 题/权限/提示源绑定与 Freeze 实际签收后，才能把正式 Gold48 产物状态改成 `FROZEN`。
+
+### B. 现有证据直接复用；下一个确切交付物是 Owner 私有 Gold48 Freeze 候选
+
+**不重复开发或提取**：既有历史恢复核心 `src/storyforge_gold_quality/history_recovery.py`、`message_ledger.py`，来源版本/权限存档 `r60_base336_p2_source_evidence_capture_cpu.py` 的既有 Owner 私有包、旧 R48 参考回答的前缀绑定思想 `scripts/v02_r48_four_arm_build.py::read_gold`、六维质量与 blind/HF 通用核心继续复用；**旧 `r60_base336_p2_public_prompt_package_gate.py` 只验固定 `user/assistant/user` 草稿，不能宣称它已经支持 48 条完整历史 Prefix 或作为本轮正式冻结验收器**。禁止因旧 CLI 不合适就复制第二套历史恢复、IO、评测和模型运行器。
+
+**在私有目录 create-only、0600 准备的每题候选**必须一次性绑定：`source_story_id`、已审核 Story 的实际公开 Revision/审核/授权生效时间、Session 与真实目标历史 Assistant 事件、完整历史 Prefix（按消息顺序且未编辑）、对应**原始 Assistant Reply**、48/48 唯一请求元数据绑定、重建输入的 `System/World/Character/Rules/Memory/History/final User` 各来源版本与明确的 `HISTORICAL_ASOF_VERIFIED / EVALUATION_TIME_SNAPSHOT / RECONSTRUCTED_COMPONENT` 类型、规范化序列化 bytes/hash、原始回答与生成输入**分离**的路径及 hashes。冻结内全 48 条必须满足 **8 Story 每个恰六条、48 不同 Prefix/Reply、25 Session 来源一致性或有证据变化、来源权利持续有效**；所有私有标识与 hash 均不上 GitHub/chat。
+
+**风险来源 6 Case**：从 Owner 已保存的 Reviewer↔真实 P2 8 Story 双射建立唯一真实 Story 关联；在这 48 条**现有历史候选**中按真实 Story ID 恰好找到 6 条并在私有 Manifest 标记 `exclude_from_quality_caveat_sensitivity=true`，其余 42 条为 false；**不能按匿名 Pxx/Sxx 的序号猜**，不能在四模型结果出来后改变 48/42 分组。六题 ID 只能在正式 Case 创建时绑定，不能因为此前没有 Case ID 再要求补造旧题。
+
+**准入前只做一次最低必要检查**：来源/Reply/Prefix 一一匹配；Gold Reply 不混入生成输入；独立性声明仅覆盖已审集合；来源自身矛盾评分规则与 48/42 分组预注册；四模型共同冻结输入版本和截断策略；六维打分、严重标记和 Story/Session 聚类、同一对照的统计口径。若任何输入来源时间不可证，明确标注为重建而非 Provider actual-sent；如果某题无法复现或合法使用，**就该题 HOLD**，不可暗删、替换或修改历史正文。
+
+**产物与状态路径**：先 Owner 仅本机私有 Gold48 候选的 create-only 保存、最小 SAFE 结构校验和 SHA 锁定，再经 Owner 明确对这**一批 48 条及其重建输入**签收 `GOLD48_FROZEN_SCOPED`；签收前始终 `P2_B_48_PROMPTS=NOT_GENERATED` 或 `DRAFT_PRIVATE_ONLY`（按真实产物判定）。签收后仅可进入四模型推理的**单独预算/版本申请**，不得继承本次源风险批准直接提交 HF/GPU。
+
+**事后发现未知泄漏的确定处理**：原 Case 不修改；把受影响 Case 标为 `EXPOSED`，在无污染子集上重新计算并披露样本变化、世界/Session 聚类影响；不静默替换新题，不宣称原先的 Gold48 已证明对所有过去输入独立。
+
+---
+
+
 ## 2026-11-20 Owner 已批准单一 P2 来源输入质量风险：保留 48 主分析与 42 敏感性分析
 
 **正式 Owner 决定**：已明确批准对 Reviewer 指出的 **1/8 公开来源** 家族/角色名称或模板替换残留，以 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 保留原公开版本。不能因此对原卡片、Source Snapshot、48 份历史持久化 Prefix 或 Original Reference 做暗中纠错/重写，也不得把来源内在矛盾直接认定为模型硬规则或角色一致性失误。该批准解决**已知题源质量风险的处置策略**，不是对该缺陷不存在的证明，也不是对来源隔离的免责或 P2-C PASS。单独的 Owner SAFE 决策见 [`R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json`](evidence/R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json)。
