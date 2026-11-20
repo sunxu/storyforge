@@ -13,13 +13,13 @@ import os
 import re
 import stat
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
+from r60_p2_gold48_owner_freeze_packet_cpu import SAFE as READY_SCHEMA
+from r60_p2_gold48_owner_freeze_packet_cpu import SCHEMA as PACKET_SCHEMA
+from r60_p2_gold48_owner_freeze_packet_cpu import STATUS as READY_STATUS
 from r60_p2_gold48_owner_freeze_packet_cpu import (
-    SAFE as READY_SCHEMA,
-    SCHEMA as PACKET_SCHEMA,
-    STATUS as READY_STATUS,
     canonical,
     make_packet,
     require,
@@ -136,7 +136,7 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
         "owner_approval": {
             "kind": "EXPLICIT_OWNER_APPROVAL_IN_CURRENT_CONVERSATION",
             "scope_statement": APPROVAL,
-            "recorded_at_utc": datetime.now(timezone.utc).isoformat(),
+            "recorded_at_utc": datetime.now(UTC).isoformat(),
         },
         "input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
         "run_key": run_key,
