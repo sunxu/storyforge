@@ -19,6 +19,7 @@ from .gold48_owner_receipt import (
     make_owner_scope,
     verify_owner_authorization,
 )
+from .backend import TransformersGenerationBackend
 from .gold48_qwen35_loader import ADAPTER_SIZE, EOS_IDS, MODEL, PAD_ID, REVISION
 from .worker import (
     GenerationBackend,
@@ -463,6 +464,8 @@ def _gold48_sidecar(
     lock_sha256: str,
     runtime_image_digest: str,
     receipt: WorkerReceipt,
+    runtime_image_measured: bool = False,
+    provider_attestation_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Private identity only, never raw answers or historical original references."""
     return {
@@ -487,6 +490,12 @@ def _gold48_sidecar(
         "adapter_bindings_canonical_sha256": _digest(bindings),
         "dependency_lock_sha256": lock_sha256,
         "runtime_image_digest": runtime_image_digest,
+        "runtime_image_measured": runtime_image_measured,
+        "runtime_image_identity_source": (
+            "SIGNED_INDEPENDENT_PROVIDER_INSPECTION" if runtime_image_measured
+            else "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
+        ),
+        "provider_image_attestation_sha256": provider_attestation_sha256,
         "owner_authorization_receipt_sha256": auth.receipt_sha256,
         "output_sha256": receipt.output_sha256,
         "output_bytes": receipt.output_size_bytes,
@@ -506,8 +515,10 @@ def _gold48_launch_marker(
     lock_sha256: str,
     runtime_image_digest: str,
     output_path: Path,
+    runtime_image_measured: bool = False,
+    provider_attestation_sha256: str | None = None,
 ) -> dict[str, Any]:
-    """Create-only pre-generation evidence, not a provider image attestation."""
+    """Create-only pre-generation evidence, separate from provider attestation."""
     entry = bindings["arms"][role]
     return {
         "schema": "storyforge_r60_gold48_generation_launch_private_v1",
@@ -528,7 +539,8 @@ def _gold48_launch_marker(
         "owner_authorization_receipt_sha256": auth.receipt_sha256,
         "dependency_lock_sha256": lock_sha256,
         "runtime_image_digest_approved": runtime_image_digest,
-        "runtime_image_measured": False,
+        "runtime_image_measured": runtime_image_measured,
+        "provider_image_attestation_sha256": provider_attestation_sha256,
     }
 
 
@@ -612,6 +624,9 @@ def recover_gold48_identity_sidecar(
     runtime_lock_path: Path,
     runtime_image_digest: str,
     source_evidence_paths: dict[str, Path],
+    provider_attestation_path: Path | None = None,
+    trusted_provider_public_key_path: Path | None = None,
+    runtime_contract_path: Path | None = None,
 ) -> WorkerReceipt:
     """Create-only sidecar recovery from existing output; ZERO model/GPU calls.
 
@@ -638,10 +653,38 @@ def recover_gold48_identity_sidecar(
              "GOLD48_RECOVERY_SIDECAR_ALREADY_EXISTS_HOLD")
     marker_path = output_path.with_name(output_path.name + ".launch.private.json")
     marker = read_private_contract(marker_path, max_bytes=65536)
+    measured = marker.get("runtime_image_measured") is True
+    attested_sha = None
+    if measured:
+        # Recovery must re-verify independent provider evidence; no caller
+        # can promote an Owner configuration declaration to measured identity.
+        _require(all(isinstance(p, Path) for p in (
+            provider_attestation_path, trusted_provider_public_key_path,
+            runtime_contract_path,
+        )), "GOLD48_RECOVERY_PROVIDER_EVIDENCE_REQUIRED")
+        from .gold48_runtime_gate import (
+            verify_current_dependency_install,
+            verify_provider_image_measurement,
+        )
+
+        attested_sha = verify_provider_image_measurement(
+            attestation_path=provider_attestation_path,
+            trusted_provider_public_key_path=trusted_provider_public_key_path,
+            owner_scope=auth.payload,
+        )
+        current_lock_sha, _ = verify_current_dependency_install(
+            runtime_lock_path=runtime_lock_path,
+            runtime_contract_path=runtime_contract_path,
+            owner_scope=auth.payload,
+        )
+        _require(current_lock_sha == lock_sha256,
+                 "GOLD48_RECOVERY_RUNTIME_LOCK_MISMATCH_HOLD")
     expected_marker = _gold48_launch_marker(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
         role=model_role, auth=auth, lock_sha256=lock_sha256,
         runtime_image_digest=runtime_image_digest, output_path=output_path,
+        runtime_image_measured=measured,
+        provider_attestation_sha256=attested_sha,
     )
     _require(marker == expected_marker, "GOLD48_RECOVERY_LAUNCH_MARKER_MISMATCH_HOLD")
     receipt = _read_existing_gold48_output(
@@ -652,9 +695,10 @@ def recover_gold48_identity_sidecar(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
         role=model_role, auth=auth, lock_sha256=lock_sha256,
         runtime_image_digest=runtime_image_digest, receipt=receipt,
+        runtime_image_measured=measured,
+        provider_attestation_sha256=attested_sha,
     )
     sidecar["recovered_from_existing_output_no_model_calls"] = True
-    sidecar["pre_generation_launch_marker_canonical_sha256"] = _digest(marker)
     sidecar["pre_generation_launch_marker_canonical_sha256"] = _digest(marker)
     try:
         OutputManager.write_safe(sidecar_path, sidecar, mode=0o600)
@@ -715,6 +759,32 @@ def run_gold48_generation_batch(
                  else str(getattr(backend, "gold48_adapter_dir", "UNVERIFIED")) ==
                  str(Path(entry["local_dir"]))
              ), "GOLD48_LOADED_BACKEND_IDENTITY_HOLD")
+    # In real inference, require independently signed provider measurement
+    # and verified Loader grant. Synthetic Backend tests are NOT such proof.
+    runtime_measured = isinstance(backend, TransformersGenerationBackend)
+    provider_attested_sha = None
+    if runtime_measured:
+        _require(
+            getattr(backend, "gold48_production_runtime_attested", False) is True
+            and getattr(backend, "gold48_owner_authorization_receipt_path", None)
+                == owner_authorization_receipt_path
+            and getattr(backend, "gold48_runtime_lock_path", None)
+                == runtime_lock_path
+            and isinstance(
+                getattr(backend, "gold48_provider_attestation_path", None), Path
+            )
+            and isinstance(
+                getattr(backend, "gold48_provider_public_key_path", None), Path
+            ),
+            "GOLD48_PRODUCTION_BACKEND_MEASURED_IDENTITY_HOLD",
+        )
+        from .gold48_runtime_gate import verify_provider_image_measurement
+
+        provider_attested_sha = verify_provider_image_measurement(
+            attestation_path=backend.gold48_provider_attestation_path,
+            trusted_provider_public_key_path=backend.gold48_provider_public_key_path,
+            owner_scope=auth.payload,
+        )
     # Persist launch identity BEFORE the first model call. A failed/partial run
     # leaves this create-only marker; it can never silently consume the same
     # authorization again. It also enables zero-inference sidecar recovery.
@@ -722,6 +792,8 @@ def run_gold48_generation_batch(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
         role=model_role, auth=auth, lock_sha256=lock_sha256,
         runtime_image_digest=runtime_image_digest, output_path=output_path,
+        runtime_image_measured=runtime_measured,
+        provider_attestation_sha256=provider_attested_sha,
     )
     try:
         OutputManager.write_safe(marker_path, marker, mode=0o600)
@@ -735,7 +807,10 @@ def run_gold48_generation_batch(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
         role=model_role, auth=auth, lock_sha256=lock_sha256,
         runtime_image_digest=runtime_image_digest, receipt=receipt,
+        runtime_image_measured=runtime_measured,
+        provider_attestation_sha256=provider_attested_sha,
     )
+    sidecar["pre_generation_launch_marker_canonical_sha256"] = _digest(marker)
     try:
         OutputManager.write_safe(sidecar_path, sidecar, mode=0o600)
     except (ValueError, OSError) as exc:
