@@ -27,6 +27,9 @@ SCHEMA = "storyforge_r60_base336_p2_source_evidence_private_v1"
 SAFE_SCHEMA = "storyforge_r60_base336_p2_source_evidence_safe_v1"
 PRIVATE_FILENAME = "R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json"
 P2_MANIFEST_SCHEMA = "storyforge_r60_base336_p2_public_source_inventory_private_v1"
+P2_SOURCE_FIRST_SCHEMA = "storyforge_r60_base336_p2_public_source_inventory_private_v2"
+P2_SOURCE_FIRST_MODE = "gold48_historical_full_prefix_source_first_v1"
+P2_SOURCE_FIRST_CREATION_CUTOFF = "2026-11-19T15:30:00Z"
 P2_MANIFEST_STATUS = "P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING"
 FIELDS = ("world", "character", "characters", "opening")
 MAX_MANIFEST_BYTES = 2_000_000
@@ -139,22 +142,34 @@ def load_p2_manifest(path: Path) -> tuple[dict, bytes, list[dict]]:
     except (UnicodeError, ValueError):
         raise Hold("P2_MANIFEST_JSON_HOLD") from None
     if (type(doc) is not dict
-            or doc.get("schema") != P2_MANIFEST_SCHEMA
+            or doc.get("schema") not in (P2_MANIFEST_SCHEMA, P2_SOURCE_FIRST_SCHEMA)
             or doc.get("status") != P2_MANIFEST_STATUS
             or doc.get("rights_scope") != (
                 "OWNER_APPROVED_INTERNAL_EVALUATION_PROMPT_CONSTRUCTION_ONLY__"
                 "NO_TRAINING_OR_REDISTRIBUTION"
             )):
         raise Hold("P2_MANIFEST_CONTRACT_HOLD")
+    source_first = doc["schema"] == P2_SOURCE_FIRST_SCHEMA
     selection = doc.get("selection")
+    before, after, authors = (2, 6, 7) if source_first else (3, 5, 5)
     if (type(selection) is not dict
             or selection.get("selected_stories") != 8
-            or selection.get("authors") != 5
+            or selection.get("authors") != authors
             or selection.get("distinct_world_json") != 8
-            or selection.get("created_before_gpu_run") != 3
-            or selection.get("created_after_gpu_run") != 5
+            or selection.get("created_before_gpu_run") != before
+            or selection.get("created_after_gpu_run") != after
             or selection.get("private_session_bodies_read") is not False):
         raise Hold("P2_SELECTION_SCOPE_HOLD")
+    if source_first:
+        selection_hash = selection.get("private_selected_ids_file_sha256")
+        if (selection.get("source_selection_mode") != P2_SOURCE_FIRST_MODE
+                or selection.get("source_first_creation_cutoff_utc")
+                != P2_SOURCE_FIRST_CREATION_CUTOFF
+                or selection.get("owner_freeze") != "PENDING"
+                or type(selection_hash) is not str
+                or len(selection_hash) != 64
+                or any(ch not in "0123456789abcdef" for ch in selection_hash)):
+            raise Hold("P2_SOURCE_FIRST_SELECTION_BINDING_HOLD")
     sources = doc.get("sources")
     if type(sources) is not list or len(sources) != 8:
         raise Hold("P2_SOURCE_COUNT_HOLD")
@@ -628,7 +643,8 @@ def main() -> int:
     except Exception as exc:  # noqa: BLE001 - private values and DB errors are suppressed
         known = {
             "P2_MANIFEST_JSON_HOLD", "P2_MANIFEST_CONTRACT_HOLD",
-            "P2_SELECTION_SCOPE_HOLD", "P2_SOURCE_COUNT_HOLD", "P2_SOURCE_FIELDS_HOLD",
+            "P2_SELECTION_SCOPE_HOLD", "P2_SOURCE_FIRST_SELECTION_BINDING_HOLD",
+            "P2_SOURCE_COUNT_HOLD", "P2_SOURCE_FIELDS_HOLD",
             "P2_SOURCE_BINDING_FIELDS_HOLD", "P2_SOURCE_DUPLICATE_HOLD",
             "P2_PERMISSION_KIND_HOLD", "P2_PERMISSION_RESULT_HOLD",
             "P2_WORLD_DIGEST_SHAPE_HOLD", "P2_SNAPSHOT_DIGEST_SHAPE_HOLD",
