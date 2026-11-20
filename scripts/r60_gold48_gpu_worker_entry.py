@@ -4,19 +4,17 @@ No new model backend, sampling loop, HF API submitter, or retry manager.
 The trusted Owner Mac prepares/stages these fixed files. Historical original
 replies MUST NOT be staged. This entry only reads the signed generation inputs.
 The "check" action never imports torch, starts GPU, or creates private scratch.
-The signed Provider Job attestation is delivered only AFTER Job creation
-through its own RO Bucket prefix; it is not part of the frozen Stage.
+No dynamic Provider signature or extra RO handoff is required.
+The Owner Mac must independently inspect the launched HF Job before admission.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import os
 import re
 import stat
 import sys
-import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -36,10 +34,6 @@ from storyforge_dataset.hf_runtime.inputs import InputManager
 
 SCHEMA = "storyforge_r60_gold48_hf_gpu_worker_entry_safe_v1"
 RO_STAGE = Path("/input/gold48")
-PROVIDER_MOUNT = Path("/input/provider")
-PENDING_NAME = "handoff-pending.json"
-ATTESTATION_NAME = "provider_attestation.private.json"
-MAX_ATTESTATION_WAIT_SECONDS = 600
 SCRATCH = Path("/tmp/storyforge-gold48-private")
 FROZEN_GIT_BLOB_SHA = "45e068d8ee7745f026455e887ca914aa82ab7fe1"
 STAGED = {
@@ -53,7 +47,6 @@ STAGED = {
     "r60_evidence.private.json": 65536,
     "owner_authorization.private.json": 65536,
     "owner_public.pem": 8192,
-    "provider_public.pem": 8192,
     "runtime_lock.hashes": 8 * 1024 * 1024,
     "runtime_contract.json": 65536,
     "token_preflight.private.json": 65536,
@@ -172,75 +165,14 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
         raise WorkerError("GOLD48_ENTRY_RO_INPUT_READ_HOLD") from exc
 
 
-def receive_current_provider_attestation(
-    *, mount: Path, run_id: str, model_role: str, owner_scope: dict,
-    target: Path, trusted_provider_public_key_path: Path,
-    timeout_seconds: int = MAX_ATTESTATION_WAIT_SECONDS,
-    monotonic=time.monotonic, sleep=time.sleep,
-) -> str:
-    """Bounded delayed handoff; accepts ONLY current-Job Provider signature.
-
-    A distinct RO Bucket prefix is prepared by the Owner BEFORE submission.
-    The independent Provider uses the new JOB_ID and runtime Inspect AFTER
-    the HF Job is created, then uploads exactly one signed attestation.
-    Mount visibility is eventually consistent; missing proof means HOLD.
-    No GPU or weights are loaded before full independent verification.
-    """
-    _hold(mount == PROVIDER_MOUNT and isinstance(timeout_seconds, int)
-          and 0 < timeout_seconds <= MAX_ATTESTATION_WAIT_SECONDS
-          and isinstance(owner_scope, dict)
-          and owner_scope.get("run_id") == run_id
-          and owner_scope.get("model_role") == model_role,
-          "GOLD48_PROVIDER_HANDOFF_SCOPE_HOLD")
-    _hold(re.fullmatch(r"[0-9a-f]{24}", os.environ.get("JOB_ID", "")) is not None,
-          "GOLD48_PROVIDER_CURRENT_JOB_ID_REQUIRED_HOLD")
-    _require_direct_ro_fuse_mount(mount)
-    marker = _json(mount / PENDING_NAME, 8192)
-    _hold(marker == {
-        "schema": "storyforge_r60_gold48_provider_handoff_pending_v1",
-        "run_id": run_id,
-        "model_role": model_role,
-    }, "GOLD48_PROVIDER_HANDOFF_PENDING_SCOPE_HOLD")
-    proof = mount / ATTESTATION_NAME
-    _hold(not target.exists() and not target.is_symlink(),
-          "GOLD48_PROVIDER_HANDOFF_LOCAL_ALREADY_EXISTS_HOLD")
-    deadline = monotonic() + timeout_seconds
-    while True:
-        try:
-            names = {p.name for p in mount.iterdir()}
-        except OSError as exc:
-            raise WorkerError("GOLD48_PROVIDER_HANDOFF_MOUNT_READ_HOLD") from exc
-        _hold(names in ({PENDING_NAME}, {PENDING_NAME, ATTESTATION_NAME}),
-              "GOLD48_PROVIDER_HANDOFF_REMOTE_FILESET_HOLD")
-        if ATTESTATION_NAME in names:
-            # A copy is create-only and SHA-checked locally. A malformed or
-            # mismatched signed proof fails closed; NEVER retry GPU generation.
-            raw = InputManager.open_verified(
-                proof, max_bytes=65536,
-            )
-            gate.materialize_gold48_ro_input(
-                source=proof, target=target,
-                expected_sha256=raw.sha256, max_bytes=65536,
-            )
-            return gate.verify_provider_image_measurement(
-                attestation_path=target,
-                trusted_provider_public_key_path=trusted_provider_public_key_path,
-                owner_scope=owner_scope,
-            )
-        _hold(monotonic() < deadline, "GOLD48_PROVIDER_HANDOFF_TIMED_OUT_HOLD")
-        sleep(2)
-
-
 def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
     validated = validate_ro_bundle(stage, run_id, role)
     if not execute:
         return {"status": "GOLD48_FIXED_RO_STAGE_VERIFIED__NO_GPU",
                 "gpu_started": False, "model_calls": 0, "record_count": 0}
-    # The reviewed, separately owned, pinned trust anchors are mandatory.
-    # The submitter has no authority to invent Provider job attestation.
-    _hold(bool(SHA.fullmatch(OWNER_TRUSTED_PUBLIC_PEM_SHA256))
-          and bool(SHA.fullmatch(gate.PROVIDER_TRUSTED_PUBLIC_PEM_SHA256)),
-          "GOLD48_INDEPENDENT_TRUST_ANCHORS_NOT_PINNED_HOLD")
+    # Owner pinned signature alone gates GPU start in the trusted-Mac policy.
+    _hold(bool(SHA.fullmatch(OWNER_TRUSTED_PUBLIC_PEM_SHA256)),
+          "GOLD48_OWNER_TRUST_ANCHOR_NOT_PINNED_HOLD")
     _hold(not SCRATCH.exists() and not SCRATCH.is_symlink(),
           "GOLD48_ENTRY_SCRATCH_ALREADY_EXISTS_HOLD")
     SCRATCH.mkdir(mode=0o700)
@@ -265,16 +197,6 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         materialized["input.private.jsonl"], max_bytes=16 * 1024 * 1024,
         expected_sha256=validated["manifest_sha"]
     ).size_bytes > 0, "GOLD48_ENTRY_INPUT_LOCAL_SHA_HOLD")
-    # No Provider attestation is bundled in pre-submission frozen Stage.
-    # It is independently signed AFTER the Job ID exists and handed over
-    # via a distinct, exact, read-only Bucket prefix.
-    provider_proof_local = input_dir / ATTESTATION_NAME
-    receive_current_provider_attestation(
-        mount=PROVIDER_MOUNT, run_id=run_id, model_role=role,
-        owner_scope=validated["owner_scope"],
-        target=provider_proof_local,
-        trusted_provider_public_key_path=materialized["provider_public.pem"],
-    )
     frozen = read_private_contract(materialized["frozen_profile.json"])
     owner_freeze = read_private_contract(materialized["owner_freeze.private.json"])
     bindings = read_private_contract(materialized["adapter_bindings.private.json"])
@@ -294,8 +216,8 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         },
         runtime_lock_path=materialized["runtime_lock.hashes"],
         runtime_contract_path=materialized["runtime_contract.json"],
-        provider_attestation_path=provider_proof_local,
-        trusted_provider_public_key_path=materialized["provider_public.pem"],
+        provider_attestation_path=None,
+        trusted_provider_public_key_path=None,
         expected_template_sha256=validated["template_sha"],
     )
     return {

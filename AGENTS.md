@@ -1,3 +1,12 @@
+## 最新决策（2026-11-21）：取消 Provider 动态交接，复用历史 HF Jobs 调用链
+
+Owner 已明确选用单一 Mac 调度。正式 Gold48 运行不再等待每 Job 的独立 Provider Ed25519 动态证明：删除额外 `/input/provider:ro`、600 秒轮询等待、独立 Provider pin 前置要求；冻结输入 Stage 为 13 份，不附带 Provider 私钥/证书。**历史签名核验函数保留供旧证据审计，但新 GPU 生产路径不调用**。
+
+保留不可删的主线门禁：单 Owner Ed25519 签名（目前生产公钥 pin 仍未配置）、明确 GPU/推理授权、冻结 48 条输入及每臂 Profile、LoRA SHA 和 RO 挂载、依赖及镜像 digest 锁、本地一次性提交标记、OutputManager create-only、Owner 端下载 SHA 校验。**不得将 Owner 的镜像配置声明冒充 Provider 的独立测量**。新结果标记 `runtime_image_measured=false`、`provider_image_attestation_sha256=null`、`runtime_image_identity_source=OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED`。Owner Mac 需要用已有 HF Inspect 核对实际 Job 的 image digest 与 Owner 签名，再决定质量评测准入；未经核验为 `IMAGE_INSPECT_PENDING`。
+
+此次仅完成源代码简化和合成回归，不启动 GPU，不生成真实回答，不创建新授权服务。原文档中以 14/15 文件 Stage、动态 handoff 和 Provider 双签作为下一步的段落属于**历史已废弃路线**，请优先遵守本节。
+
+
 # AGENTS.md
 
 ## 2026-11-21 Gold48 单 Owner Mac 调度简化策略（最新授权范围；优先于旧共享卷规划）

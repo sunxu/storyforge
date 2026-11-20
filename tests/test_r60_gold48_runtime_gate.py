@@ -56,10 +56,6 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
         gate, "verify_current_dependency_install",
         lambda **_kwargs: (lock_sha, measured),
     )
-    monkeypatch.setattr(
-        gate, "verify_provider_image_measurement",
-        lambda **_kwargs: "9" * 64,
-    )
     kwargs = {
         "frozen": pack[0], "owner_freeze": pack[1],
         "adapter_bindings": pack[2], "input_manifest": pack[3],
@@ -104,7 +100,7 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
         owner_scope=permit.signed_scope, model_role=role, output_path=output,
         adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
         runtime_lock_sha256=lock_sha,
-        provider_attestation_sha256="9" * 64,
+        provider_attestation_sha256=None,
     )
     with pytest.raises(WorkerError, match="GOLD48_SPENT_LEDGER_SCOPE_MISMATCH_HOLD"):
         gate.verify_consumed_gold48_output_grant(
@@ -114,7 +110,7 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
             output_path=output.with_name("wrong.private.json"),
             adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
             runtime_lock_sha256=lock_sha,
-            provider_attestation_sha256="9" * 64,
+            provider_attestation_sha256=None,
         )
 
 
@@ -267,18 +263,18 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
     )
 
     def preflight(**_kwargs):
-        called.append("signed-provider-versions-and-spend")
+        called.append("signed-owner-versions-and-spend")
         return mock_permit
 
     def loader(**kwargs):
-        assert called == ["signed-provider-versions-and-spend"]
+        assert called == ["signed-owner-versions-and-spend"]
         assert kwargs["launch_permit"] is mock_permit
         called.append("gpu-loader-mocked-only")
         return object()
 
     def worker(**kwargs):
         assert called == [
-            "signed-provider-versions-and-spend", "gpu-loader-mocked-only",
+            "signed-owner-versions-and-spend", "gpu-loader-mocked-only",
         ]
         called.append("existing-generation-worker-mocked-only")
         return "synthetic-orchestration-pass"
@@ -309,7 +305,7 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
     )
     assert outcome == "synthetic-orchestration-pass"
     assert called == [
-        "signed-provider-versions-and-spend", "gpu-loader-mocked-only",
+        "signed-owner-versions-and-spend", "gpu-loader-mocked-only",
         "existing-generation-worker-mocked-only",
         "private-delivery-mocked-only",
     ]

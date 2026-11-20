@@ -43,22 +43,26 @@ def _files(input_sha):
     obj = _payload()
     raw_output = (json.dumps(obj, sort_keys=True) + "\n").encode()
     sha = hashlib.sha256(raw_output).hexdigest()
-    provider_sha = "a" * 64
     receipt_sha = "b" * 64
     launch = {
         "schema": "storyforge_r60_gold48_generation_launch_private_v1",
         "run_id": RUN, "model_role": "base",
         "input_sha256": input_sha,
-        "runtime_image_measured": True,
-        "provider_image_attestation_sha256": provider_sha,
+        "runtime_image_measured": False,
+        "provider_image_attestation_sha256": None,
+        "gpu_backend_executed": True,
+        "runtime_image_digest_approved": "sha256:" + "c" * 64,
         "owner_authorization_receipt_sha256": receipt_sha,
     }
     identity = {
         "schema": "storyforge_r60_gold48_generation_identity_private_v1",
         "run_id": RUN, "selected_model_role": "base",
         "output_sha256": sha, "input_sha256": input_sha,
-        "record_count": 48, "runtime_image_measured": True,
-        "provider_image_attestation_sha256": provider_sha,
+        "record_count": 48, "runtime_image_measured": False,
+        "runtime_image_identity_source": "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED",
+        "owner_mac_independent_job_image_inspect_required": True,
+        "provider_image_attestation_sha256": None,
+        "runtime_image_digest": "sha256:" + "c" * 64,
         "owner_authorization_receipt_sha256": receipt_sha,
     }
     name = "base.private.json"
@@ -115,7 +119,7 @@ def _setup(tmp_path, monkeypatch, corrupt=None, missing=False):
 def test_owner_mac_downloads_and_verifies_48_outputs(tmp_path, monkeypatch):
     root, manifest = _setup(tmp_path, monkeypatch)
     result = audit.audit(RUN, "base", root, manifest, api=object())
-    assert result["status"] == "OWNER_GOLD48_RESULT_BYTES_AUDITED__SIGNATURE_REVIEW_PENDING"
+    assert result["status"] == "OWNER_GOLD48_RESULT_BYTES_AUDITED__IMAGE_INSPECT_PENDING"
     assert result["record_count"] == 48 and result["file_count"] == 4
     assert result["quality_v1_admitted"] == 0
     assert result["owner_signature_independently_reverified"] is False

@@ -137,16 +137,20 @@ def audit(run_id: str, model_role: str, root: Path, input_manifest: Path, *, api
         and identity.get("output_sha256") == output_sha
         and identity.get("input_sha256") == expected_input["sha256"]
         and identity.get("record_count") == 48
-        and identity.get("runtime_image_measured") is True
-        and isinstance(identity.get("provider_image_attestation_sha256"), str)
-        and SHA.fullmatch(identity["provider_image_attestation_sha256"]) is not None
+        and identity.get("runtime_image_measured") is False
+        and identity.get("provider_image_attestation_sha256") is None
+        and identity.get("runtime_image_identity_source") ==
+            "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
+        and identity.get("owner_mac_independent_job_image_inspect_required") is True
         and launch.get("schema") == "storyforge_r60_gold48_generation_launch_private_v1"
         and launch.get("run_id") == run_id
         and launch.get("model_role") == model_role
         and launch.get("input_sha256") == expected_input["sha256"]
-        and launch.get("runtime_image_measured") is True
-        and launch.get("provider_image_attestation_sha256") ==
-            identity["provider_image_attestation_sha256"]
+        and launch.get("runtime_image_measured") is False
+        and launch.get("provider_image_attestation_sha256") is None
+        and launch.get("gpu_backend_executed") is True
+        and launch.get("runtime_image_digest_approved") ==
+            identity.get("runtime_image_digest")
         and launch.get("owner_authorization_receipt_sha256") ==
             identity.get("owner_authorization_receipt_sha256"),
         "OWNER_REMOTE_OUTPUT_SCOPE_MISMATCH_HOLD",
@@ -164,7 +168,7 @@ def audit(run_id: str, model_role: str, root: Path, input_manifest: Path, *, api
            "OWNER_REMOTE_GENERATED_OUTPUT_SHA_HOLD")
     return {
         "schema": SCHEMA,
-        "status": "OWNER_GOLD48_RESULT_BYTES_AUDITED__SIGNATURE_REVIEW_PENDING",
+        "status": "OWNER_GOLD48_RESULT_BYTES_AUDITED__IMAGE_INSPECT_PENDING",
         "run_id": run_id,
         "model_role": model_role,
         "file_count": 4,
@@ -172,6 +176,7 @@ def audit(run_id: str, model_role: str, root: Path, input_manifest: Path, *, api
         "generation_status": receipt.status,
         "finish_reason_counts": receipt.finish_reason_counts,
         "owner_signature_independently_reverified": False,
+        "owner_mac_job_image_inspect_verified": False,
         "provider_signature_independently_reverified": False,
         "quality_v1_admitted": 0,
         "gpu_started": False,
