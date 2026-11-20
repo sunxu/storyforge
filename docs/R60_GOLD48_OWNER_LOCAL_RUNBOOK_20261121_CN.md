@@ -281,3 +281,65 @@ PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_cli.py shape \
 若 CLI 支持且 Owner 准备继续只读核验，将 `shape` 替换为 `dry-run`；状态 `GOLD48_GPU_CLI_DRY_RUN_PASS__NO_JOB` **仅**说明原 HF CLI 接受参数，不是远端 Code/Adapter SHA、不代表 Bucket 中已存在这些对象、也不是 GPU 授权。**这一步尚未在 Owner Mac 上实际执行。** `hf_job_guard.validate_spec` 仍是 CPU-only，不改动其政策。
 
 **真正下一依赖**：优先用现有代码 Stage/依赖闭包方法给已批准的 Git HEAD 制作独立只读 Bundle（不可在未来 HF Job 中从 `main` 或浮动 URL 拉取代码）；Owner 独立确认 Adapter 私有 RO 来源；对 Provider 独立 RO 挂载的“Job 运行期间外部新增文件可见”做一次隔离 CPU 合成验收。没有这些实际证据，不能把参数检查提升为正式 GPU 任务 READY。
+
+
+### 动态 RO 挂载真实 CPU 验收：仅用既有 HF CLI 与独立纯合成 Bucket（待 Owner Mac 执行）
+
+**不要提交 Gold48 GPU Job。** 当前专用私有测试 Bucket `hf://buckets/adradar/storyforge-r60-volume-smoke-input-20261104` 已存在，原有 `synthetic.jsonl` 不修改；选定一个全新唯一子前缀只放两份纯合成 JSON。**这测试的是运行中已挂载 RO 目录能否观察到外部新增文件，不是旧 `0700` 共享账本，也不验证 Provider 正式签名/镜像/Adapter**。不使用带实际 Owner/Provider 签名或 Gold48 文本的生产 Bucket。
+
+Owner Mac 先在本机一个终端执行以下全部步骤直到 HF Job ID 输出（不要使用 `--attempts 1`，之前在 Mac 上被 CLI 错误解析为镜像）：
+
+```bash
+set -euo pipefail
+umask 077
+SLOT="gold48-ro-live-20261121-$(openssl rand -hex 5)"
+BASE="hf://buckets/adradar/storyforge-r60-volume-smoke-input-20261104/$SLOT"
+LOCAL="$(mktemp -d)"
+printf '%s\n' '{"schema":"storyforge_gold48_ro_live_pending_synthetic_v1"}' > "$LOCAL/handoff-pending.json"
+hf buckets cp "$LOCAL/handoff-pending.json" "$BASE/handoff-pending.json"
+
+hf jobs run --namespace adradar --name "$SLOT" \
+  --flavor cpu-basic --timeout 5m --detach \
+  -v "$BASE:/input/provider:ro" python:3.11 -- python -u -c '
+import json, os, pathlib, time
+root = pathlib.Path("/input/provider")
+jid = os.environ.get("JOB_ID", "")
+mounted = root.is_mount()
+before = {p.name for p in root.iterdir()} if mounted else set()
+rows = [line.split() for line in pathlib.Path("/proc/self/mountinfo").read_text().splitlines()]
+rows = [r for r in rows if "-" in r and len(r) > r.index("-") + 1 and r[4] == str(root)]
+fstype = rows[0][rows[0].index("-") + 1] if len(rows) == 1 else "UNKNOWN"
+read_only = len(rows) == 1 and "ro" in rows[0][5].split(",")
+if not (mounted and read_only and before == {"handoff-pending.json"} and len(jid) == 24):
+    print(json.dumps({"schema":"storyforge_gold48_ro_live_cpu_probe_safe_v1","status":"HOLD","reason":"BASELINE_RO_MOUNT_HOLD","fstype":fstype,"gpu_started":False,"model_calls":0}), flush=True)
+    raise SystemExit(2)
+end = time.monotonic() + 120
+while time.monotonic() < end:
+    names = {p.name for p in root.iterdir()}
+    if names == {"handoff-pending.json", "arrived.json"}:
+        try:
+            data = json.loads((root/"arrived.json").read_text())
+            ok = data == {"schema":"storyforge_gold48_ro_live_arrived_synthetic_v1"}
+        except (OSError, ValueError):
+            ok = False
+        print(json.dumps({"schema":"storyforge_gold48_ro_live_cpu_probe_safe_v1","status":"RO_NEW_FILE_VISIBLE_PASS" if ok else "HOLD","reason":"DYNAMIC_RO_READBACK" if ok else "ARRIVED_FILE_INVALID","fstype":fstype,"gpu_started":False,"model_calls":0}), flush=True)
+        raise SystemExit(0 if ok else 2)
+    if names != {"handoff-pending.json"}:
+        print(json.dumps({"schema":"storyforge_gold48_ro_live_cpu_probe_safe_v1","status":"HOLD","reason":"UNEXPECTED_REMOTE_FILESET","fstype":fstype,"gpu_started":False,"model_calls":0}), flush=True)
+        raise SystemExit(2)
+    time.sleep(2)
+print(json.dumps({"schema":"storyforge_gold48_ro_live_cpu_probe_safe_v1","status":"HOLD","reason":"REMOTE_CHANGE_NOT_VISIBLE","fstype":fstype,"gpu_started":False,"model_calls":0}), flush=True)
+raise SystemExit(2)
+'
+```
+
+**只在该 Job 已进入 RUNNING 且初始挂载存在后**，Owner Mac 使用保留的同一组 shell 变量立即上传第二份**纯合成**文件（不上传私有签名），不得覆盖原 pending：
+
+```bash
+printf '%s\n' '{"schema":"storyforge_gold48_ro_live_arrived_synthetic_v1"}' > "$LOCAL/arrived.json"
+hf buckets cp "$LOCAL/arrived.json" "$BASE/arrived.json"
+```
+
+用 `hf jobs inspect <JOB_ID>` / `hf jobs logs <JOB_ID>` 读取 SAFE 结果，记录 `JOB_ID`、`status` 和 `fstype`。**验收条件**：Job `COMPLETED` 且 SAFE `RO_NEW_FILE_VISIBLE_PASS`、直接 RO mount、实际文件集精确；任一不满足则仅记录 HOLD，不提交第二个重复探针、不延长 GPU 等待时间。若 mount fstype 非 `fuse*`，即使内容变更可见，当前 Gold48 Worker 仍会拒绝，必须先审查这个真实差异，不要悄悄放宽文件系统检查。该 CPU 实测只签收挂载语义，不意味着任何 GPU/生成/Quality-v1 授权。
+
+**Agent 不得自行发起这个跨 Actor CPU 测试**：聊天端没有 Owner Mac 的 `hf buckets cp` 上传通道；需要 Owner 在同一机器负责“Job 运行中外部上传”动作。完成前保持 `provider_handoff_live_mount_verified=false`。
