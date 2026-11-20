@@ -144,7 +144,23 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
         ),
         bfloat16="bf16",
     )
+    def fake_base_config(model_id, **kwargs):
+        assert (model_id, kwargs) == (
+            MODEL, {"revision": REVISION, "trust_remote_code": False}
+        )
+        calls.append("base_config")
+        return SimpleNamespace(
+            model_type="qwen3_5", architectures=["Qwen3_5ForConditionalGeneration"]
+        )
+
+    def fake_generation_config(model_id, **kwargs):
+        assert (model_id, kwargs) == (MODEL, {"revision": REVISION})
+        calls.append("generation_config")
+        return SimpleNamespace(eos_token_id=[248046, 248044], pad_token_id=248044)
+
     fake_transformers = SimpleNamespace(
+        AutoConfig=SimpleNamespace(from_pretrained=fake_base_config),
+        GenerationConfig=SimpleNamespace(from_pretrained=fake_generation_config),
         AutoTokenizer=FakeTokenizer,
         Qwen3_5ForConditionalGeneration=FakeQwen35,
     )
@@ -173,7 +189,10 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     assert backend.model_id == MODEL
     assert backend.revision == REVISION
     assert backend.gpu_started is True  # synthetic mock, not an actual GPU
-    assert calls == ["streaming_hash", "tokenizer", "model", "adapter", "eval"]
+    assert calls == [
+        "streaming_hash", "base_config", "generation_config",
+        "tokenizer", "model", "adapter", "eval",
+    ]
 
 
 def test_wrong_template_sha_rejects_before_any_model_load():
@@ -196,6 +215,50 @@ def test_wrong_template_sha_rejects_before_any_model_load():
             adapter_dir=None, expected_adapter_sha256=None,
             expected_template_sha256="a" * 64,
             runtime_authorized=True,
+            torch_module=fake_torch,
+            transformers_module=fake_transformers,
+        )
+
+
+@pytest.mark.parametrize(("bad_field", "bad_value"), [
+    ("model_type", "qwen3"),
+    ("architectures", ["Qwen3_5ForCausalLM"]),
+    ("eos_token_id", [248046]),
+    ("pad_token_id", 123),
+])
+def test_runtime_base_metadata_mismatch_holds_before_weight_load(bad_field, bad_value):
+    config = {
+        "model_type": "qwen3_5",
+        "architectures": ["Qwen3_5ForConditionalGeneration"],
+    }
+    generation = {"eos_token_id": [248046, 248044], "pad_token_id": 248044}
+    if bad_field in config:
+        config[bad_field] = bad_value
+    else:
+        generation[bad_field] = bad_value
+
+    def reject_weight_load(*_args, **_kwargs):
+        pytest.fail("model weights must not be loaded on metadata mismatch")
+
+    fake_transformers = SimpleNamespace(
+        AutoConfig=SimpleNamespace(
+            from_pretrained=lambda *_a, **_kw: SimpleNamespace(**config)
+        ),
+        GenerationConfig=SimpleNamespace(
+            from_pretrained=lambda *_a, **_kw: SimpleNamespace(**generation)
+        ),
+        AutoTokenizer=SimpleNamespace(from_pretrained=reject_weight_load),
+        Qwen3_5ForConditionalGeneration=SimpleNamespace(from_pretrained=reject_weight_load),
+    )
+    fake_torch = SimpleNamespace(
+        cuda=SimpleNamespace(is_available=lambda: True, is_bf16_supported=lambda: True)
+    )
+    with pytest.raises(WorkerError, match="GOLD48_BASE_QWEN35_CONFIG_HOLD"):
+        load_pinned_gold48_backend(
+            adapter_dir=None,
+            expected_adapter_sha256=None,
+            expected_template_sha256="a" * 64,
+            runtime_authorized=True,  # mocked modules only, no actual GPU
             torch_module=fake_torch,
             transformers_module=fake_transformers,
         )

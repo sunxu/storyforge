@@ -154,6 +154,23 @@ def load_pinned_gold48_backend(
     if model_class is None:
         raise WorkerError("GOLD48_QWEN35_CLASS_UNAVAILABLE_HOLD")
     try:
+        # Validate the frozen base metadata before loading any model weights.
+        base_config = transformers.AutoConfig.from_pretrained(
+            MODEL, revision=REVISION, trust_remote_code=False
+        )
+        generation_config = transformers.GenerationConfig.from_pretrained(
+            MODEL, revision=REVISION
+        )
+        verify_base_snapshot_metadata(
+            {
+                "model_type": getattr(base_config, "model_type", None),
+                "architectures": getattr(base_config, "architectures", None),
+            },
+            {
+                "eos_token_id": getattr(generation_config, "eos_token_id", None),
+                "pad_token_id": getattr(generation_config, "pad_token_id", None),
+            },
+        )
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             MODEL, revision=REVISION, trust_remote_code=False
         )

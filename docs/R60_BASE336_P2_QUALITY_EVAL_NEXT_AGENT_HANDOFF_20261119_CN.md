@@ -1,5 +1,19 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 独立复核修正：分级 SHA 签收与 Loader 最小元数据门禁
+
+本节修正下方“Adapter SHA 字节闭环”过宽表述，旧段留存为历史；本轮代码以此前 `a40df3fac5ab567ca81031b13134a9d07dc83169`（6/6 Actions SUCCESS）为基础，后续以实际新 HEAD/CI 为准。
+
+- **R46/R54**：历史训练与 Reload 的准确 SHA256 和 checkpoint 路径关系为 `HISTORICAL_SHA_PROVENANCE_PASS`，不是本轮 Bucket 权重 `BYTE_SHA_VERIFIED`；无需重新下载，未来真实授权加载时利用既有流式 SHA 检查。
+- **R60**：HF CPU-only Job `6b00a44aefaf5e14f4b3c6b5` 的原始客户端提交参数明确请求 Frozen Profile checkpoint-37 的精确 HF Bucket URI，以 `:/ro_adapter:ro` 挂载，故 `REQUEST_SPEC_PATH_BINDING_PASS`。`inspect` 不含服务端 `volumes` 字段，不能提升为 `PROVIDER_VOLUME_ATTESTATION_PASS`；该项 `UNVERIFIED`。该 Job 日志中 SHA 计算 `PASS`，但没有独立 create-only SAFE 文件、Stage Manifest 或 Owner 回收签收；`OWNER_RECEIPT=HOLD`。**不重跑该 Job**。
+- **HF 私有访问披露**：Job 实际在远端只读流式处理了 **1,867,797,544 字节 Adapter 权重**，未下载至 Mac、未打印权重内容或故事正文，但日志包含权重 SHA256。Job 回执 `private_values_emitted=false` 仅在不包含原始私有材料这一有限含义下成立，不能表示未输出派生哈希。
+- **现有 Worker 的完整差异**：`generation_eval.worker.run_generation_batch` 使用旧 `generation_eval.profiles.assess_profile` 三臂 schema、旧输入 Manifest、模型身份/Revision、Role EOS/PAD、预算和授权字段。不能通过角色重命名转换。Gold48 专用薄合同桥接 `HOLD`，须在冻结 Profile 外实现、保留既有循环和 create-only SAFE，不能绕过独立推理审批。
+- **Runtime 版本**：旧镜像仅经 CPU 证实 Python 3.11.11/Torch 2.6.0+cu124，不能直接定为 Gold48 推理镜像。需先核对 Qwen3.5 + PEFT + CUDA 版本与独立 hash-pinned 依赖锁。
+- **本轮最小代码修复**：`gold48_qwen35_loader.py` 已在真实模型权重加载前，读取同一冻结 Revision 的 `AutoConfig` / `GenerationConfig` 并调用原 `verify_base_snapshot_metadata()`。合成测试新增架构/EOS/PAD 失配 fail-closed；此举**不证明** Qwen3.5 Conditional + `CAUSAL_LM` PEFT 封装或实际 Template、Thinking/停止行为已通过 GPU Smoke。
+- **严格边界**：本轮没有新的 HF Job、模型推理、GPU、训练、数据库或 R50 sealed / Gold48 私有回答访问。Owner Freeze、原 HF CPU Tokenizer 与四模型 Frozen Profile 不变；`inference_authorized=false`，`quality_v1_admitted=0`。
+
+---
+
 ## 2026-11-21 Gold48 Adapter 字节 SHA 闭环与 Runtime 确切剩余 HOLD
 
 本节是 **2026-11-21 追加的新技术实证**，优先于下方较早的 Adapter SHA PENDING 描述；**不更改** Owner Gold48 冻结清单、四模型 Generation Profile，也不重签历史原始回答。
