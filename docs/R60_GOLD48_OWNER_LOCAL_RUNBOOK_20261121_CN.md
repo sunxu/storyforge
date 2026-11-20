@@ -126,6 +126,10 @@ SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_saf
 
 ## 13. Owner Mac CLI 两份独立 CPU Job：原子账本验收（待 Owner 执行）
 
+**2026-11-21 Owner 首次提交的 CLI 兼容性纠正（优先遵循）：** Job [`6b00c8544fdc5ab3c55c02dd`](https://huggingface.co/jobs/adradar/6b00c8544fdc5ab3c55c02dd) 已在 HF Provider Inspect 中确认为 `ERROR`，`docker_image=--attempts`、`command` 以 `1 python:3.11` 开头，错误为 `docker.io/--attempts` 不是合法镜像。原 CLI 配置中的 `--attempts 1` 被当前 Mac 版 `hf jobs run` 误解析为镜像和命令。**探针尚未运行**，只读核对远端目标 `.gold48-atomic-20261121-v1.private.json` 不存在；此失败不是 Bucket RW、不支持原子写、权限不足或 OutputManager 的证据。下面两条命令均已删除当前 CLI 不兼容的 `--attempts 1`，保持 `--detach`、镜像 `python:3.11`、输入 RO、输出 RW、原 Probe ID 不变。再提交前应先确认 `hf jobs run --help` 中实际支持哪些选项；**不得为了单次尝试属性擅加未受支持的 flag**。没有确认服务端重试语义时，不将 CPU 探针的成功外推为正式 GPU 单次授权保证；正式 GPU 的一次性授权仍由独立 Owner 签名和持久消耗账本控制。不需要重传原有 Stage 或更换 Probe ID/路径。
+
+
+
 **只验证前述未完成的原子发布及跨 Job 持久性，不再重复 HF Bucket 的普通 RW 通断测试。** 采用已经成功的 Owner Mac HF CLI `hf jobs run --namespace adradar` 路径，**不使用 ChatGPT Connector 提交 RW Job**。新增最薄入口 `scripts/r60_gold48_ledger_atomic_cpu_probe.py` 直接加载并验证仓库现有 `hf_runtime/outputs.py` Git Blob `69838b603b43663eaa12b1b1947ce14abad524bc`，调用原生 `OutputManager.write_safe`，不重新实现原子写算法。隔离 Probe 目录内只有公开合成标记；不读取或改动 Owner 私有签名账本、48 条文本、Adapter、模型或训练任务。
 
 下方命令**须在 Owner Mac** 执行；每条真实 CPU Job 均独立提交一次，失败只报 HOLD、不改 image/flavor 重试。运行前检查当前分支的 Git 提交已含上述脚本，以及 HF CLI 已登录 `adradar`。务必使用**新的独立探针路径**，不要覆盖原有 `preflight` 其他文件。先用已确认可用的 `hf buckets cp` 上传两份公开源码及一份纯合成初始化文件，令 RO/RW 子目录实际存在：
@@ -144,7 +148,7 @@ printf '%s\n' 'SYNTHETIC_NO_OWNER_DATA' | hf buckets cp - "$PROBE/output/PROBE_O
 ```sh
 ROOT="/mnt/storyforge-private/gold48-authorizations-spent"
 hf jobs run --namespace adradar --name gold48-atomic-ledger-write-cpu \
-  --flavor cpu-basic --timeout 10m --attempts 1 --detach \
+  --flavor cpu-basic --timeout 10m --detach \
   -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \
   python:3.11 -- python /input/probe.py --phase write \
   --root "$ROOT" --source /input/outputs.py \
@@ -155,7 +159,7 @@ hf jobs run --namespace adradar --name gold48-atomic-ledger-write-cpu \
 
 ```sh
 hf jobs run --namespace adradar --name gold48-atomic-ledger-verify-cpu \
-  --flavor cpu-basic --timeout 10m --attempts 1 --detach \
+  --flavor cpu-basic --timeout 10m --detach \
   -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \
   python:3.11 -- python /input/probe.py --phase verify \
   --root "$ROOT" --source /input/outputs.py \
