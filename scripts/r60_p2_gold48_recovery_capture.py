@@ -156,6 +156,14 @@ def try_case(cur, source, row):
     if not isinstance(answer, str) or not answer.strip() or edited(metadata):
         return None
     story = source["story_id"]
+    cur.execute(
+        "SELECT deleted_at FROM public.story_v2_sessions "
+        "WHERE story_id = %s AND session_id = %s",
+        (story, sid),
+    )
+    session_rows = cur.fetchall()
+    if len(session_rows) != 1 or session_rows[0][0] is not None:
+        return None
     case = {"case_id": mid, "story_id": story, "session_id": sid,
             "turn_index": turn, "target_sha256": hashlib.sha256(answer.encode()).hexdigest()}
     try:
@@ -202,7 +210,7 @@ def try_case(cur, source, row):
         "assistant_message_id_PRIVATE": mid, "request_id_PRIVATE": matches[0],
         "target_turn_index_PRIVATE": turn, "target_created_at_PRIVATE": created.isoformat(),
         "prefix_messages_PRIVATE": prompt, "original_reply_PRIVATE": answer,
-        "prefix_sha256_PRIVATE": digest(prompt), "original_reply_sha256_PRIVATE": digest(answer),
+        "prefix_sha256_PRIVATE": digest(prompt), "original_reply_sha256_PRIVATE": hashlib.sha256(answer.encode("utf-8")).hexdigest(),
         "source_public_revision_PRIVATE": source["public_content_revision"],
         "source_snapshot_sha256_PRIVATE": source["submission_snapshot_sha256"],
         "history_recovery_PRIVATE": recovered,
@@ -342,9 +350,15 @@ def main():
     args = parser.parse_args()
     try:
         print(json.dumps(run(args), ensure_ascii=False, sort_keys=True))
-    except (Hold, OSError, ValueError, TypeError, KeyError):
+    except Hold as exc:
         print(json.dumps({"schema": SAFE_SCHEMA, "status": "HOLD",
-                          "reason_code": "PRIVATE_RECOVERY_CONTRACT_OR_RUNTIME_HOLD",
+                          "reason_code": str(exc),
+                          "private_values_emitted": False,
+                          "database_modified": False, "gpu_started": False},
+                         sort_keys=True))
+    except (OSError, ValueError, TypeError, KeyError):
+        print(json.dumps({"schema": SAFE_SCHEMA, "status": "HOLD",
+                          "reason_code": "PRIVATE_RECOVERY_UNEXPECTED_RUNTIME_HOLD",
                           "private_values_emitted": False,
                           "database_modified": False, "gpu_started": False},
                          sort_keys=True))
