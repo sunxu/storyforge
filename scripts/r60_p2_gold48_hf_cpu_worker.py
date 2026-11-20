@@ -8,7 +8,6 @@ original replies, per-case hashes or exception texts leave the private volume.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import os
 import re
@@ -17,6 +16,7 @@ from importlib.metadata import version
 from pathlib import Path
 
 from r60_p2_gold48_token_preflight_cpu import MODEL, REVISION, assess
+
 from storyforge_dataset.hf_runtime import (
     InputManager,
     OutputManager,
