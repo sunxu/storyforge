@@ -226,6 +226,30 @@ def try_case(cur, source, row):
     }
 
 
+
+def partition_cases(selected):
+    locators, prompts, references = [], [], []
+    for item in selected:
+        case_id = item["candidate_case_id_PRIVATE"]
+        locators.append({
+            k: v for k, v in item.items()
+            if k not in ("prefix_messages_PRIVATE", "original_reply_PRIVATE",
+                         "history_recovery_PRIVATE")
+        })
+        prompts.append({
+            "candidate_case_id_PRIVATE": case_id,
+            "prefix_messages_PRIVATE": item["prefix_messages_PRIVATE"],
+            "history_recovery_PRIVATE": item["history_recovery_PRIVATE"],
+            "prefix_sha256_PRIVATE": item["prefix_sha256_PRIVATE"],
+        })
+        references.append({
+            "candidate_case_id_PRIVATE": case_id,
+            "original_reply_PRIVATE": item["original_reply_PRIVATE"],
+            "original_reply_sha256_PRIVATE": item["original_reply_sha256_PRIVATE"],
+        })
+    return locators, prompts, references
+
+
 def atomic_new(path, payload):
     raw = canonical(payload) + b"\n"
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL
@@ -328,25 +352,7 @@ def run(args):
     }
     # Deliberately separate model-visible prefix candidates and withheld
     # historical original references. Never create a combined inference file.
-    locators, prompts, references = [], [], []
-    for item in selected:
-        case_id = item["candidate_case_id_PRIVATE"]
-        locators.append({
-            k: v for k, v in item.items()
-            if k not in ("prefix_messages_PRIVATE", "original_reply_PRIVATE",
-                         "history_recovery_PRIVATE")
-        })
-        prompts.append({
-            "candidate_case_id_PRIVATE": case_id,
-            "prefix_messages_PRIVATE": item["prefix_messages_PRIVATE"],
-            "history_recovery_PRIVATE": item["history_recovery_PRIVATE"],
-            "prefix_sha256_PRIVATE": item["prefix_sha256_PRIVATE"],
-        })
-        references.append({
-            "candidate_case_id_PRIVATE": case_id,
-            "original_reply_PRIVATE": item["original_reply_PRIVATE"],
-            "original_reply_sha256_PRIVATE": item["original_reply_sha256_PRIVATE"],
-        })
+    locators, prompts, references = partition_cases(selected)
     atomic_new(out / "GOLD48_CANDIDATE_LOCATORS_PRIVATE.json", {
         "schema": "storyforge_r60_gold48_recovered_locators_private_v1",
         **shared, "cases_PRIVATE": locators,
