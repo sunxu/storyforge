@@ -226,6 +226,17 @@ def authorize_and_consume_before_gpu(
         adapter_bindings=adapter_bindings, input_manifest=input_manifest,
         input_path=input_path, model_role=model_role,
     )
+    # This attests only that Owner accepted the EXISTING limited provenance.
+    # The provider RO mount and current remote adapter bytes remain unverified
+    # until exact runtime adapter bytes are checked in the Loader.
+    _check(
+        adapter_bindings.get("status") ==
+            "OWNER_GOLD48_ADAPTER_BINDINGS_ACCEPTED__MOUNT_PENDING"
+        and adapter_bindings.get("owner_receipt_verified") is True
+        and adapter_bindings.get("provider_volume_attestation_verified") is False
+        and adapter_bindings.get("current_remote_weight_bytes_verified_all_three") is False,
+        "GOLD48_OWNER_BINDING_LIMITED_ACCEPTANCE_REQUIRED_HOLD",
+    )
     _check(not output_path.exists() and not output_path.is_symlink(),
            "GOLD48_OUTPUT_ALREADY_EXISTS_HOLD")
     signed_receipt = json.loads(_read_0600(owner_authorization_receipt_path))

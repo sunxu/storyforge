@@ -26,6 +26,12 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
     pack = fixture(tmp_path)
     evidence = source_receipt_files(tmp_path, pack)
     role = "r60_base336"
+    pack[2].update({
+        "status": "OWNER_GOLD48_ADAPTER_BINDINGS_ACCEPTED__MOUNT_PENDING",
+        "owner_receipt_verified": True,
+        "provider_volume_attestation_verified": False,
+        "current_remote_weight_bytes_verified_all_three": False,
+    })
     auth, output, _ = synthetic_signed_owner_receipt(
         tmp_path, monkeypatch, pack, role
     )
