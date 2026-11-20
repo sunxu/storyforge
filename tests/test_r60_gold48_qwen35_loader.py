@@ -189,6 +189,7 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
             runtime_lock_path=tmp_path / "test-only-lock",
             provider_attestation_path=tmp_path / "test-only-provider",
             provider_public_key_path=tmp_path / "test-only-provider-pub",
+            spent_receipt_path=tmp_path / "test-only-spent-grant",
         ),
         torch_module=fake_torch,
         transformers_module=fake_transformers,
