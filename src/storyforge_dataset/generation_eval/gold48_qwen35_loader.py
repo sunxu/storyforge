@@ -54,11 +54,11 @@ def verify_adapter_config(config: Mapping[str, Any]) -> None:
         and type(config.get("r")) is int and config["r"] == 64
         and type(config.get("lora_alpha")) is int and config["lora_alpha"] == 128
         and config.get("inference_mode") is True
-        and isinstance(target, str) and target.startswith(TARGET_PREFIX)
+        and isinstance(target, str) and target.startswith(TARGET_PREFIX + "(")
         and target.endswith("))$")
     ):
         raise WorkerError("GOLD48_ADAPTER_IDENTITY_OR_GEOMETRY_HOLD")
-    targets = target[len(TARGET_PREFIX):-3].split("|")
+    targets = target[len(TARGET_PREFIX) + 1:-3].split("|")
     if set(targets) != ALLOWED_TARGETS or len(targets) != len(ALLOWED_TARGETS):
         raise WorkerError("GOLD48_ADAPTER_TARGET_MODULES_HOLD")
 
