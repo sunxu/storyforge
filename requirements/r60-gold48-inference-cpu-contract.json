@@ -1,6 +1,6 @@
 {
   "schema": "storyforge_r60_gold48_inference_cpu_dependency_contract_v1",
-  "status": "CPU_META_PEFT_WRAP_PASS__HASHED_LOCK_UPDATED__INSTALL_HOLD_UV_TORCH_METADATA",
+  "status": "CPU_META_PEFT_WRAP_PASS__HASHED_RUNTIME_OVERLAY_INSTALL_PASS__GPU_UNVERIFIED",
   "lock_path": "requirements/r60-gold48-inference-py311-linux-x86_64.hashes.lock",
   "lock_sha256": "dc3425f4895e091c4f5981a4933a6ba2e8fdd8426d8e074069c8cfa2ff4f8d5e",
   "lock_bytes": 77715,
@@ -22,7 +22,7 @@
   "cpu_peft_interface_import_verified": true,
   "full_qwen_instance_verified": false,
   "peft_model_wrapping_verified": false,
-  "require_hashes_install_on_inference_image_verified": false,
+  "require_hashes_install_on_inference_image_verified": true,
   "gpu_compatibility_verified": false,
   "formal_inference_authorized": false,
   "cpu_meta_peft_job": "6b00ab67efaf5e14f4b3cf8b",
@@ -33,5 +33,14 @@
   "full_qwen_weights_loaded_verified": false,
   "gpu_generate_verified": false,
   "hash_install_attempt_job": "6b00afcaefaf5e14f4b3d657",
-  "hash_install_diagnostic_job": "6b00b014efaf5e14f4b3d6fe"
+  "hash_install_diagnostic_job": "6b00b014efaf5e14f4b3d6fe",
+  "hash_pinned_install_scope": "SELECTED_IMMUTABLE_CPU_BASE_IMAGE__PREINSTALLED_TORCH_PRESERVED",
+  "hash_pinned_install_verified_job": "6b00b0894fdc5ab3c55be7f0",
+  "hash_pinned_install_tool": "pip --require-hashes",
+  "hash_pinned_install_exit_code": 0,
+  "hash_pinned_pip_check_ok": true,
+  "hash_pinned_preinstalled_torch_version_unchanged": true,
+  "hash_pinned_install_gpu_started": false,
+  "hash_pinned_install_model_calls": 0,
+  "hash_pinned_install_weights_loaded": false
 }

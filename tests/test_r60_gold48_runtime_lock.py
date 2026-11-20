@@ -19,7 +19,13 @@ def test_gold48_hash_lock_candidate_matches_cpu_job_receipt():
     assert report["base_image"].startswith("pytorch/pytorch@sha256:")
     assert report["formal_inference_authorized"] is False
     assert report["gpu_compatibility_verified"] is False
-    assert report["require_hashes_install_on_inference_image_verified"] is False
+    assert report["require_hashes_install_on_inference_image_verified"] is True
+    assert report["hash_pinned_install_verified_job"] == "6b00b0894fdc5ab3c55be7f0"
+    assert report["hash_pinned_install_scope"] == (
+        "SELECTED_IMMUTABLE_CPU_BASE_IMAGE__PREINSTALLED_TORCH_PRESERVED"
+    )
+    assert report["hash_pinned_install_gpu_started"] is False
+    assert report["hash_pinned_install_model_calls"] == 0
     text = lock.decode("utf-8")
     required = (
         "torch==2.6.0", "transformers==5.16.1", "peft==0.21.2",
