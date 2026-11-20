@@ -14,6 +14,7 @@ import stat
 import sys
 from collections import Counter
 from datetime import UTC, datetime, timedelta
+from itertools import pairwise
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -221,7 +222,7 @@ def classify_request_zero_counts(counts):
         type(v) is not int or v < 0 for v in counts
     ):
         return "REQUEST_DIAGNOSTIC_SHAPE_HOLD"
-    if any(left < right for left, right in zip(counts, counts[1:])):
+    if any(left < right for left, right in pairwise(counts)):
         return "REQUEST_DIAGNOSTIC_INCONSISTENT_HOLD"
     for count, label in zip(counts, labels, strict=True):
         if count == 0:
