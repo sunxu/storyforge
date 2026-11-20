@@ -10,14 +10,15 @@ from types import SimpleNamespace
 
 import pytest
 
-import storyforge_dataset.generation_eval.gold48_runtime_gate as gate
-from storyforge_dataset.generation_eval.gold48_owner_receipt import canonical
-from storyforge_dataset.generation_eval.worker import WorkerError
 from test_r60_gold48_contract_bridge import (
     fixture,
     source_receipt_files,
     synthetic_signed_owner_receipt,
 )
+
+import storyforge_dataset.generation_eval.gold48_runtime_gate as gate
+from storyforge_dataset.generation_eval.gold48_owner_receipt import canonical
+from storyforge_dataset.generation_eval.worker import WorkerError
 
 
 def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monkeypatch):
@@ -45,11 +46,9 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
         lambda **_kwargs: "9" * 64,
     )
     kwargs = {
-        **{
-            "frozen": pack[0], "owner_freeze": pack[1],
-            "adapter_bindings": pack[2], "input_manifest": pack[3],
-            "input_path": pack[4], "output_path": output, "model_role": role,
-        },
+        "frozen": pack[0], "owner_freeze": pack[1],
+        "adapter_bindings": pack[2], "input_manifest": pack[3],
+        "input_path": pack[4], "output_path": output, "model_role": role,
         "source_evidence_paths": evidence,
         "owner_authorization_receipt_path": auth["owner_authorization_receipt_path"],
         "trusted_owner_public_key_pem_path": auth["trusted_owner_public_key_pem_path"],
