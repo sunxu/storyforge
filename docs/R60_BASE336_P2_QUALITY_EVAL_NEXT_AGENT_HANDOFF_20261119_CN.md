@@ -1,5 +1,16 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 Gold48 四模型 Profile 已按 Owner 建议独立冻结，Runtime/推理继续 HOLD
+
+**Owner 在本次会话明确回复“按建议推进”**，承接上一条“先批准候选四模型生成配置冻结，然后补必要的 Qwen3.8/LoRA 薄适配、验证运行时；配置冻结不启动 GPU/推理”的建议。现有 Gold48 Owner 数据冻结 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING` 的私有 Manifest **继续保留原字节不动**；新参数层独立生成 `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`，状态 `GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING`。Frozen Profile 记录候选文件的原始 Git Blob SHA `394013dc182fa095040808e02c4ea2e393636d30` 与来源提交 `4fd87b2574f80e6d376b82dd66c605e4c01e8186`；专门的静态测试逐字段比对原候选与冻结版，差异限于 Owner Approval、状态和移除 `OWNER_GENERATION_PROFILE_FREEZE_PENDING`。候选不回写，后续若变更采样/Thinking/EOS/Token/模型身份必须 create-only 新版本并重新签收。
+
+**正式冻结的只是生成参数，不是可运行证明**：四臂 Qwen/Qwen3.8-27B Base（同固定 Revision）+ R46 ckpt7 + R54 ckpt16 + R60 Base336 ckpt37；`enable_thinking=false`、32768 上下文、30720 输入上限、2048 输出上限、无截断、`temperature=0.7` / `top_p=0.8` / `top_k=20` / `min_p=0` / `seed=42+case_index`；四模型 48×4=192，新原始参考48份，五来源合计240对象。Frozen 文件 `owner_generation_profile_freeze=true`，但 `inference_authorized=false`、`gpu_authorized_by_this_document=false`、`training_authorized=false`。
+
+**HF 已有 LoRA 元数据新增只读交叉核验**：R46/R54/R60 三个 `adapter_config.json` 都指向上述同一 Base Revision 的 Snapshot，`peft_type=LORA,r=64,lora_alpha=128,task_type=CAUSAL_LM,inference_mode=true`，target_modules 均为 `model.language_model` 下同一12种模块（仅正则顺序不同），不表示本次新 GPU 镜像实际加载 PASS。旧 P4 Loader 不改写。新增最小薄入口 `src/storyforge_dataset/generation_eval/gold48_qwen35_loader.py` 选择完整 `Qwen3_5ForConditionalGeneration`，按现有私有 Release 摘要对权重执行不入内存的流式 SHA 并验证 Adapter Config；返回**现有** `TransformersGenerationBackend` 以复用消息模板、Token 预算、生成/Stop 检查。显式 `runtime_authorized=false` 默认阻断，GPU 的依赖导入和权重加载只在明确调用后发生；合成测试不下载/加载真实模型，无 HF Job。
+
+**下一必需门禁（不要误判已完成）**：Owner 私有端把三份既有 Release/Reload 证据中的 Adapter SHA 严格绑定到精确权重字节；固定一个兼容 `Qwen3_5ForConditionalGeneration` + PEFT 的真实推理镜像和依赖锁；核验 pinned 模板 SHA/真实 EOS、可选模型层处理与不截断的跨四臂真实加载；通过实际运行时 Smoke 后才考虑另行授权 192 次模型推理。新的 Loader 目前仍只由合成测试验证，`GPU_STARTED=false`、`model_calls=0`，P4 其它模型的旧 Frozen Profile 与本任务相互独立。
+
+
 ## 2026-11-21 最新 Owner 受限 Gold48 Freeze 正式完成 → 四模型 Profile 候选待签收
 
 **本节优先于下方所有早期历史快照**。Owner 本机返回正式 SAFE：
