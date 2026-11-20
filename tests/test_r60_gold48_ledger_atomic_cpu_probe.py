@@ -7,7 +7,9 @@ from pathlib import Path
 import pytest
 
 from scripts.r60_gold48_ledger_atomic_cpu_probe import (
-    ProbeHold, main, run,
+    ProbeHold,
+    main,
+    run,
 )
 
 
