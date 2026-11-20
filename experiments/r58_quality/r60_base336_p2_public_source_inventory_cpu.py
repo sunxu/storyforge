@@ -13,15 +13,15 @@ sets, or authorize training/model inference.
 from __future__ import annotations
 
 import argparse
-import json
 import hashlib
-from uuid import UUID
+import json
 import os
 import stat
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 try:
     from . import r60_readonly_db as db
@@ -613,9 +613,9 @@ def run(args: argparse.Namespace) -> dict:
         )
         row["permission_to_visibility"] = row.get("to_visibility")
     selected = rows if source_first_ids is not None else select_rows(rows)
-    if source_first_ids is not None:
-        if {row["story_id"] for row in selected} != set(source_first_ids):
-            raise Hold("SOURCE_FIRST_DB_COVERAGE_HOLD")
+    if (source_first_ids is not None
+            and {row["story_id"] for row in selected} != set(source_first_ids)):
+        raise Hold("SOURCE_FIRST_DB_COVERAGE_HOLD")
     doc = validate_rows(selected, source_first=source_first_ids is not None)
     if source_first_ids is not None:
         doc["selection"]["private_selected_ids_file_sha256"] = source_first_hash
