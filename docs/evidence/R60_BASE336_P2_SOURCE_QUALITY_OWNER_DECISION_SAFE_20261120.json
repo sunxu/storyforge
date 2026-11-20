@@ -2,7 +2,7 @@
   "schema": "storyforge_r60_base336_p2_source_quality_owner_decision_safe_v1",
   "decision_date": "2026-11-20",
   "decision_basis": "OWNER_EXPLICIT_CHAT_APPROVAL__ACCEPT_REVIEWER_IDENTIFIED_SINGLE_SOURCE_WITH_QUALITY_CAVEAT",
-  "status": "OWNER_ACCEPTED_WITH_QUALITY_CAVEAT__PRIVATE_CASE_BINDING_PENDING",
+  "status": "OWNER_ACCEPTED_WITH_QUALITY_CAVEAT__REVIEWER8_SOURCE8_OWNER_REPORTED_BOUND__GOLD48_CASE_IDS_PENDING",
   "p2_public_source_count": 8,
   "flagged_source_count": 1,
   "known_risk": "WORLD_CHARACTER_FAMILY_OR_NAME_REPLACEMENT_RESIDUE__SOURCE_INPUT_INCONSISTENCY",
@@ -21,8 +21,8 @@
     "effect": "REPORT_BOTH_ANALYSES_AND_ANY_DISAGREEMENT__DO_NOT_ATTRIBUTE_PREEXISTING_SOURCE_CONFLICT_TO_MODEL"
   },
   "private_mapping": {
-    "reviewer_flagged_source_to_owner_story_id": "PENDING_PRIVATE_EXACT_ID_BINDING",
-    "flagged_source_to_six_gold48_case_ids": "PENDING_PRIVATE_EXACT_SIX_CASE_BINDING",
+    "reviewer_flagged_source_to_owner_story_id": "OWNER_LOCAL_EXACT_FIELDS_BIJECTION_REPORTED__FLAGGED_REF_PRIOR_REVIEWER_REPORT",
+    "flagged_source_to_six_gold48_case_ids": "PENDING__FORMAL_GOLD48_CASES_NOT_YET_GENERATED",
     "mapping_must_remain_private": true,
     "no_public_case_identifiers": true
   },
@@ -45,5 +45,18 @@
   "private_values_emitted": false,
   "production_accessed": false,
   "database_accessed": false,
-  "sealed_r50_accessed": false
+  "sealed_r50_accessed": false,
+  "owner_binding_receipt": {
+    "schema": "storyforge_r60_p2_reviewer8_source8_identity_binding_owner_safe_receipt_v1",
+    "status": "REVIEWER8_SOURCE8_EXACT_BINDING_PASS",
+    "evidence_class": "OWNER_LOCAL_EXECUTION_OUTPUT__NOT_INDEPENDENT_RAW_FILE_VERIFICATION",
+    "reviewer_sources_bound": 8,
+    "p2_source_versions_bound": 8,
+    "flagged_source_bound_reported": true,
+    "private_receipt_created_reported": true,
+    "reviewer_flag_identity_basis": "PRIOR_REVIEWER_REPORT__NOT_RECHECKED_BY_EXACT_MATCH_SCRIPT",
+    "database_accessed": false,
+    "gpu_started": false,
+    "private_values_emitted": false
+  }
 }
