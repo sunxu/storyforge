@@ -1,0 +1,58 @@
+{
+  "schema": "storyforge_r60_gold48_provider_three_ro_mount_cpu_receipt_safe_v1",
+  "status": "THREE_ADAPTER_PROVIDER_RO_MOUNT_METADATA_PASS",
+  "provider": "Hugging Face Jobs",
+  "job_id": "6b00c1024fdc5ab3c55bfcf3",
+  "job_url": "https://huggingface.co/jobs/adradar/6b00c1024fdc5ab3c55bfcf3",
+  "job_status": "COMPLETED",
+  "flavor": "cpu-basic",
+  "image": "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee",
+  "mount_probe": "/proc/self/mountinfo checked exact mount points and ro option",
+  "arms": {
+    "r46_v02": {
+      "mount_point": "/ro_adapters/r46_v02",
+      "checkpoint": "checkpoint-7",
+      "weight_file_bytes": 1867797544,
+      "config_file_bytes": 1282,
+      "mount_present": true,
+      "mount_read_only": true,
+      "weight_size_match": true,
+      "adapter_config_geometry_match": true,
+      "weight_sha256_verified": false
+    },
+    "r54_v03a": {
+      "mount_point": "/ro_adapters/r54_v03a",
+      "checkpoint": "checkpoint-16",
+      "weight_file_bytes": 1867797544,
+      "config_file_bytes": 1282,
+      "mount_present": true,
+      "mount_read_only": true,
+      "weight_size_match": true,
+      "adapter_config_geometry_match": true,
+      "weight_sha256_verified": false
+    },
+    "r60_base336": {
+      "mount_point": "/ro_adapters/r60_base336",
+      "checkpoint": "checkpoint-37",
+      "weight_file_bytes": 1867797544,
+      "config_file_bytes": 1288,
+      "mount_present": true,
+      "mount_read_only": true,
+      "weight_size_match": true,
+      "adapter_config_geometry_match": true,
+      "weight_sha256_verified": false
+    }
+  },
+  "gpu_started": false,
+  "model_calls": 0,
+  "training_started": false,
+  "weights_read": false,
+  "weights_hashed": false,
+  "private_values_emitted": false,
+  "provider_cpu_mount_observed": true,
+  "production_gpu_mount_verified": false,
+  "production_adapter_sha256_verified": false,
+  "owner_binding_receipt_mutated": false,
+  "scope": "ONE_ISOLATED_CPU_JOB__NO_CROSS_JOB_MOUNT_OR_SHA_ATTESTATION",
+  "source_volume_uris_published": false
+}

@@ -102,3 +102,11 @@ Loader 不再接受 `runtime_authorized=True`。单纯给它一个布尔值或�
 ## 9. 已签收 Adapter 的准确边界
 
 Owner 回执为 `OWNER_GOLD48_ADAPTER_BINDING_ACCEPTED__MOUNT_UNVERIFIED`，它只签收 **R46/R54 历史报告 SHA、R60 原 CPU Job SHA 日志、三份来源证据、映射候选与48条冻结输入**。生产前置门禁要求明确保持 `provider_volume_attestation_verified=false`、`current_remote_weight_bytes_verified_all_three=false`；只有真正 Loader 加载精确文件时通过 Adapter 字节哈希，才能确认那次运行的实际本地 Adapter 文件。**`owner_receipt_verified=true` 不代表 Provider 已验明挂载或三份当前远端权重全部 PASS。**
+
+## 10. 首次真实 HF Provider 三路只读挂载验收（CPU，不读权重）
+
+已在 **HF CPU Job [`6b00c1024fdc5ab3c55bfcf3`](https://huggingface.co/jobs/adradar/6b00c1024fdc5ab3c55bfcf3)** 使用固定镜像 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，将现存三个冻结 checkpoint 子目录分别以 HF Jobs 原生 `:ro` 卷挂载到 `/ro_adapters/r46_v02`、`/ro_adapters/r54_v03a`、`/ro_adapters/r60_base336`。
+
+探针读取容器 `/proc/self/mountinfo` 确认**三处精确挂载点均存在且 ro**；三个 `adapter_model.safetensors` 的文件大小均为 `1,867,797,544` 字节；三份 `adapter_config.json` 依次为 `1,282 / 1,282 / 1,288` 字节，读取配置并验证 LoRA 类型、r=64、alpha=128、12 个目标模块集合、基础模型固定 Revision。Job `COMPLETED`，且 `gpu_started=false`、`model_calls=0`、`weights_read=false`、`weights_hashed=false`。
+
+SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_safe_receipt_20261121.json`。**仅本次 CPU Job 的挂载及元数据 PASS**，不等于后续 GPU Job 挂载 PASS、不等于当前三份权重 SHA PASS、也不等于 Owner 或 Provider 正式 GPU 授权。保留 Owner 原始 Adapter 签收及 `provider_volume_attestation_verified=false`、`current_remote_weight_bytes_verified_all_three=false`；**不修改任何冻结 Profile 和私有回执**。未来正式 HF Job 应复用已验证的相同三个 checkpoint 只读挂载配置，并由真实 Loader 在每一臂开始生成前核对相应 Adapter 精确字节 SHA，不重跑此前已完成的历史 CPU SHA 任务。
