@@ -42,7 +42,7 @@
 
 ## 2026-11-20 R45 冻结 49/15 原始来源到 R46 source-data Git Blob 身份核验
 
-**一次新的最小证据核对，不是 R45/R46 重新审计**：Agent 只读检查 `sunxu/storyforge-owner-evidence` 单一固定 Git 提交中的**目录条目元数据**（没有打开 train/validation 的历史训练文本或 R50 sealed QA）。源证据为现成 `r50/r45-full-source-gate` 与 `r46-primary-evidence` 的 `source-data`、编译输出三处文件条目。其真实技术结论为：
+**一次新的最小证据核对，不是 R45/R46 重新审计**：身份判断仅使用 `sunxu/storyforge-owner-evidence` 单一固定 Git 提交中的**目录条目 Git Blob 元数据**。初期定位时有一次文件 GET 意外返回 R45 源文件的内容片段；该返回未被用于正文审核、交叉分析或写入公开文档/PR，发现后停止直接文件 GET 并改用目录元数据。**故不得报告本轮从未收到任何原文**；未读取 R50 sealed QA。源证据为现成 `r50/r45-full-source-gate` 与 `r46-primary-evidence` 的 `source-data`、编译输出三处文件条目。其真实技术结论为：
 
 - R45 冻结 `train.jsonl` **49 条、414,463 bytes**，与 R46 `source-data/train.jsonl` 的 **Git Blob 完全相同**；R45 `validation.jsonl` **15 条、158,765 bytes**，与 R46 `source-data/validation.jsonl` **Git Blob 完全相同**。两组均为文件对象身份验证，不是仅比较行数或文件大小。私有源 Git Blob SHA / 引用路径中的随机运行标识不写入公开仓库。
 - R46 **编译后**的 `train.jsonl`（391,988 bytes）、`validation.jsonl`（151,854 bytes）与 R45 原始源文件 **不是相同 Git Blob**；必须使用 `source-data` 作原始来源身份锚，不能误以编译数据为原始文件。
@@ -50,7 +50,7 @@
 
 **严格裁决边界**：可将**这两份 R45 原始 split 文件本身**登记为 `R45_49_15_SOURCE_BYTES_IDENTICAL_TO_R46_SOURCE_DATA`：复用已有 R46 相同来源字节的核验，不对这些相同文件重新做独立语义审查。**不能**仅据此宣布 R45 保留集/受保护集全量闭合，不能推出 R45 所有来源 Story/Revision 已在 204 Story /495 版本的 Reviewer 集合中逐一绑定，更不能当作本次 P2 来源对新历史差集的语义 PASS。其余 R45 Protected/Reserved/Held-out Authority 若有未列出的成员、版本或其他 Dev/Teacher 输入，仍须 Owner 提供**冻结完整名单/截止时间和版本指针**，仅对不在已审集合中的真实差集做最低限度交叉和必要独立审查；无权威名册则 `UNKNOWN_HOLD`，不扫描私有全文求证不存在。
 
-**本轮操作**：GitHub 元数据只读；无数据库访问/更改，未打开 R50 sealed QA，未启动推理、GPU 或 HF Job，未创建 Gold48，不改变私有审阅文件；没有引入新审核工具。保留 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+**本轮操作**：仅 GitHub 只读访问；身份比较使用目录元数据，但存在上述一次不用于评审的 R45 源文件内容响应；无数据库访问/更改，未打开 R50 sealed QA，未启动推理、GPU 或 HF Job，未创建 Gold48，不改变私有审阅文件；没有引入新审核工具。保留 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
 
 ---
 
