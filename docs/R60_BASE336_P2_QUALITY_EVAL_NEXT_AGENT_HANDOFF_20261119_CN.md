@@ -1,5 +1,29 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 新 Agent 接手：Gold48 数据 + 四模型 Profile 均冻结，唯一新阻塞是推理 Runtime
+
+**最新唯一运行入口**：[2026-11-21 新 Agent 启动提示词](R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md)；本节优先于下面所有历史 NOT_FROZEN、P2_B NOT_GENERATED、先补全历史 Protected 全集、P4 旧三模型与“新建生成器”旧指令。接手先只读确认 [PR #31](https://github.com/sunxu/storyforge/pull/31) 最新 HEAD 和 CI；最后核验过的代码/文档基线 `4e03a6d1e8a7545a23394e213087b4b46aa551a8` 具有 **6/6 Actions SUCCESS**，其后的交接文档提交只作为 HEAD 变化，不应误称仍是该提交。
+
+| 门禁 | 当前已核实状态 | 新 Agent 不得重复 |
+| --- | --- | --- |
+| R60 Base336 探索训练 | 293 Train / 43 Validation、37/37 steps、checkpoint-37 Adapter Reload 工程 PASS；未晋升 | 不重跑训练，43 Validation 不做独立测试 |
+| Gold48 输入与历史原始参考 | Owner 私有 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING`，`owner_gold48_freeze=true`；48 主分析、42 敏感性（六条来源风险只从敏感性排除）、8 来源、25 Session、48 重建消息 SHA +48 独立历史回复 SHA | 不重构题、不重新恢复历史 Prefix、不重新 SHA/签收、不重新做公开卡快照及 P2 旧隔离审计 |
+| HF CPU 输入预算 | 私有最小 Stage 17 文件校验 PASS；唯一 HF CPU Job `6b00971aefaf5e14f4b3b24a`、Run `r60-gold48-cpu-20261120T182842Z-e5de137532a1`；两 Thinking 模式 16K/32K 超限 0/48，Owner 回收 SAFE PASS | 不重传 Stage、不再安装 Mac Tokenizer、不再运行同一 CPU Job |
+| 四模型生成 Profile | `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`，`GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING`，`owner_generation_profile_freeze=true`；候选 Git Blob `394013dc182fa095040808e02c4ea2e393636d30` 固定 | 不改 Frozen Profile、不从旧 P4 Qwen3-32B/GLM 复制配置 |
+| Qwen3.8 + LoRA 适配 | `src/storyforge_dataset/generation_eval/gold48_qwen35_loader.py` 已实现真实加载前薄适配与流式 SHA；合成测试 + PR `6/6 CI SUCCESS`；**没有新推理镜像下四臂真实加载 PASS** | 不重写 `generation_eval.backend/worker`、`hf_runtime`、Token 核心或 HF 提交器 |
+| 正式质量实验 | `inference_authorized=false`、`gpu_authorized_by_this_document=false`、`training_authorized=false`、`quality_v1_admitted=0`、`model_promoted=false` | 不启动 192 次新生成/240 对象盲评/训练/模型晋升 |
+
+**必要而且仅有的下一阶段**：先拿已有 R46/R54/R60 Release/Reload 元数据中的 Adapter 权重 SHA 与精确 checkpoint 字节身份做有界绑定（先复用现有 SHA，不因无状态就重新下载三个大权重），然后核对 `Qwen3_5ForConditionalGeneration` + PEFT 的实际可用推理镜像、Transformers/PEFT/Torch/CUDA 版本和 hash-pinned lock、Chat Template / EOS `[248046,248044]`、PAD `248044`、Thinking 关闭及不截断行为。复用已实现的 Loader + `generation_eval.worker.run_generation_batch`；只对已证实的兼容缺口做小补丁及合成回归。需要真实 GPU/model smoke 时**另行明确批准具体范围、资源、预算、Run Key**，因为两项冻结不是推理授权；用户已允许 HF CPU 技术检查（包括付费），但这不推翻 `inference_authorized=false` 和 GPU 门禁。
+
+**冻结合同不得改写**：固定 Qwen/Qwen3.8-27B Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` + R46 v0.2 ckpt7 + R54 v0.3-A ckpt16 + R60 Base336 ckpt37；32,768 context、30,720 最大输入、2,048 最大新 Token、Thinking=false、采样 temperature 0.7/top_p 0.8/top_k 20/min_p 0、seed 42+固定零基索引，禁止静默截断。目标 48×4=192 新模型回答+48 原始真实回答=240 份五匿名来源六维盲评对象，主分析 48 与敏感性 42 双报告，按 25 Session 聚类；历史 Gold 不是第五生成模型或绝对正确答案，不能流入生成端。
+
+**不可跨越的证据边界**：`RECONSTRUCTED_EVALUATION_INPUT` 不等于历史 Provider byte-exact actual-sent；`historical_actual_sent_prompt_verified=false`、`full_protected_universe_independence_verified=false`、目标前置 Memory 0/48 verified、48 条均未证 Memory 而省略；已知六条来源风险标注不能静默去除。Owner 接受的是限定已审历史来源范围的风险，**不是 P2-C 全历史宇宙独立性通过**。禁止读取 R50 sealed、访问生产私聊、向公开仓库/日志输出私有 Story、原始回复、Owner 映射或逐案哈希。已审 204 Story/495 版本、R50 50=46+4、R47/R48/R55 Dev20、R58 空 CSV 等历史审计不得无新差异重复。
+
+**本轮文档交接交付**：以唯一 2026-11-21 提示词为任务顺序，保留既有主任务书中旧时间段作审计历史；下方按时间追加的过时阶段结论不能推翻本节。下个 Agent 只须在实际 HEAD 核对后完成最短的新技术阻塞、提交最小差异并核对 CI，报告证据出处和 SAFE/HOLD，不得用大规模重构替代质量评估目标。
+
+---
+
+
 ## 2026-11-21 Gold48 四模型 Profile 已按 Owner 建议独立冻结，Runtime/推理继续 HOLD
 
 **Owner 在本次会话明确回复“按建议推进”**，承接上一条“先批准候选四模型生成配置冻结，然后补必要的 Qwen3.8/LoRA 薄适配、验证运行时；配置冻结不启动 GPU/推理”的建议。现有 Gold48 Owner 数据冻结 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING` 的私有 Manifest **继续保留原字节不动**；新参数层独立生成 `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`，状态 `GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING`。Frozen Profile 记录候选文件的原始 Git Blob SHA `394013dc182fa095040808e02c4ea2e393636d30` 与来源提交 `4fd87b2574f80e6d376b82dd66c605e4c01e8186`；专门的静态测试逐字段比对原候选与冻结版，差异限于 Owner Approval、状态和移除 `OWNER_GENERATION_PROFILE_FREEZE_PENDING`。候选不回写，后续若变更采样/Thinking/EOS/Token/模型身份必须 create-only 新版本并重新签收。
