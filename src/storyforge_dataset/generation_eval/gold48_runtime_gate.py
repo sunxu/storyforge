@@ -218,8 +218,6 @@ class SignedGold48LoadPermit:
     owner_public_key_path: Path
     signed_scope: dict[str, Any]
     spent_receipt_path: Path
-    provider_attestation_path: Path
-    provider_public_key_path: Path
     runtime_lock_path: Path
     runtime_contract_path: Path
     selected_adapter_dir: Path | None
@@ -371,8 +369,6 @@ def authorize_and_consume_before_gpu(
     source_evidence_paths: dict[str, Path],
     runtime_lock_path: Path,
     runtime_contract_path: Path,
-    provider_attestation_path: Path,
-    trusted_provider_public_key_path: Path,
 ) -> SignedGold48LoadPermit:
     """Only trusted production coordinator calls this BEFORE any GPU loader."""
     from .gold48_contract_bridge import (
@@ -474,8 +470,6 @@ def authorize_and_consume_before_gpu(
         owner_public_key_path=trusted_owner_public_key_pem_path,
         signed_scope=auth.payload,
         spent_receipt_path=spent,
-        provider_attestation_path=provider_attestation_path,
-        provider_public_key_path=trusted_provider_public_key_path,
         runtime_lock_path=runtime_lock_path,
         runtime_contract_path=runtime_contract_path,
         selected_adapter_dir=(
@@ -558,7 +552,6 @@ def verify_consumed_gold48_output_grant(
     output_path: Path,
     adapter_sha256: str | None,
     runtime_lock_sha256: str,
-    provider_attestation_sha256: str,
 ) -> None:
     """Read-only job-local binding for a real loaded backend before generation.
 
@@ -595,7 +588,6 @@ def verify_consumed_gold48_output_grant(
             )
         and record.get("runtime_lock_sha256") == runtime_lock_sha256
         and record.get("provider_image_measurement_receipt_sha256") is None
-        and provider_attestation_sha256 is None
         and record.get("runtime_image_digest_owner_signed") ==
             owner_scope["runtime_image_digest"]
         and record.get("max_model_calls") == 48
@@ -799,8 +791,6 @@ def run_authorized_gold48_production(
     source_evidence_paths: dict[str, Path],
     runtime_lock_path: Path,
     runtime_contract_path: Path,
-    provider_attestation_path: Path,
-    trusted_provider_public_key_path: Path,
     expected_template_sha256: str,
 ):
     """ONLY production dispatcher: verify+spend -> GPU loader -> existing Worker.
@@ -820,8 +810,6 @@ def run_authorized_gold48_production(
         source_evidence_paths=source_evidence_paths,
         runtime_lock_path=runtime_lock_path,
         runtime_contract_path=runtime_contract_path,
-        provider_attestation_path=provider_attestation_path,
-        trusted_provider_public_key_path=trusted_provider_public_key_path,
     )
     entry = adapter_bindings["arms"][model_role]
     backend = load_pinned_gold48_backend(

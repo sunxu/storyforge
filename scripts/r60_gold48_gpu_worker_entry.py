@@ -216,8 +216,6 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         },
         runtime_lock_path=materialized["runtime_lock.hashes"],
         runtime_contract_path=materialized["runtime_contract.json"],
-        provider_attestation_path=None,
-        trusted_provider_public_key_path=None,
         expected_template_sha256=validated["template_sha"],
     )
     return {

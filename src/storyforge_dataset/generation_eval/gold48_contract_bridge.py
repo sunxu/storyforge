@@ -815,7 +815,6 @@ def run_gold48_generation_batch(
             output_path=output_path,
             adapter_sha256=entry["expected_sha256"],
             runtime_lock_sha256=lock_sha256,
-            provider_attestation_sha256=None,
         )
     # Persist launch identity BEFORE the first model call. A failed/partial run
     # leaves this create-only marker; it can never silently consume the same

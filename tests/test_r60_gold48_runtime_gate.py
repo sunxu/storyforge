@@ -65,8 +65,6 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
         "trusted_owner_public_key_pem_path": auth["trusted_owner_public_key_pem_path"],
         "runtime_lock_path": auth["runtime_lock_path"],
         "runtime_contract_path": tmp_path / "synthetic-not-actually-loaded-contract.json",
-        "provider_attestation_path": tmp_path / "synthetic-provider-signature",
-        "trusted_provider_public_key_path": tmp_path / "synthetic-provider-public-key",
     }
     permit = gate.authorize_and_consume_before_gpu(**kwargs)
     assert permit.signed_scope["model_role"] == role
@@ -100,7 +98,6 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
         owner_scope=permit.signed_scope, model_role=role, output_path=output,
         adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
         runtime_lock_sha256=lock_sha,
-        provider_attestation_sha256=None,
     )
     with pytest.raises(WorkerError, match="GOLD48_SPENT_LEDGER_SCOPE_MISMATCH_HOLD"):
         gate.verify_consumed_gold48_output_grant(
@@ -110,8 +107,7 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
             output_path=output.with_name("wrong.private.json"),
             adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
             runtime_lock_sha256=lock_sha,
-            provider_attestation_sha256=None,
-        )
+            )
 
 
 def test_pre_gpu_invalid_permit_cannot_unlock_loader():
@@ -334,8 +330,6 @@ def test_failed_preflight_never_reaches_loader_or_gpu(tmp_path, monkeypatch):
             source_evidence_paths={},
             runtime_lock_path=tmp_path / "absent-lock",
             runtime_contract_path=tmp_path / "absent-contract",
-            provider_attestation_path=tmp_path / "absent-provider",
-            trusted_provider_public_key_path=tmp_path / "absent-provider-public",
             expected_template_sha256="a" * 64,
         )
 
@@ -371,8 +365,6 @@ def test_synthetic_owner_signature_cannot_enter_gpu_preflight(tmp_path, monkeypa
             trusted_owner_public_key_pem_path=auth["trusted_owner_public_key_pem_path"],
             runtime_lock_path=auth["runtime_lock_path"],
             runtime_contract_path=tmp_path / "never-used-contract",
-            provider_attestation_path=tmp_path / "never-used-provider",
-            trusted_provider_public_key_path=tmp_path / "never-used-provider-key",
         )
     assert not output.exists()
 
