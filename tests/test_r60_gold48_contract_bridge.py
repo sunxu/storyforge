@@ -601,3 +601,104 @@ def test_signed_receipt_wrong_backend_identity_holds(tmp_path, monkeypatch):
         )
     assert backend.calls == []
     assert not out.exists()
+
+def test_owner_local_accept_and_sign_cli_synthetic_no_gpu(tmp_path):
+    """Exercises actual Owner CLI with synthetic receipts only, not Owner Mac."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    repo = Path(__file__).resolve().parents[1]
+    root = tmp_path / "owner-private"
+    root.mkdir(mode=0o700)
+    pack[2].update({
+        "status": "CANDIDATE_PENDING_OWNER_SOURCE_ATTESTATION_AND_MOUNT",
+        "owner_receipt_verified": False,
+        "provider_volume_attestation_verified": False,
+        "current_remote_weight_bytes_verified_all_three": False,
+    })
+    files = [
+        (root / "owner.json", pack[1]),
+        (root / "candidate.json", pack[2]),
+        (root / "manifest.json", pack[3]),
+    ]
+    for path, payload in files:
+        path.write_bytes(_canonical(payload) + b"\n")
+        path.chmod(0o600)
+    pack[4].chmod(0o600)
+    script = repo / "scripts/r60_gold48_owner_generation_authority_cpu.py"
+    frozen = repo / "experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json"
+    base_args = [
+        sys.executable, str(script),
+        "--frozen-profile", str(frozen),
+        "--owner-freeze", str(files[0][0]),
+        "--adapter-bindings", str(files[1][0]),
+        "--input-manifest", str(files[2][0]),
+        "--input-jsonl", str(pack[4]),
+        "--r46-evidence", str(evidence["r46_v02"]),
+        "--r54-evidence", str(evidence["r54_v03a"]),
+        "--r60-evidence", str(evidence["r60_base336"]),
+    ]
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(repo / "src")
+    accepted_path = root / "accepted-bindings.private.json"
+    accept = [
+        *base_args, "--mode", "accept-bindings",
+        "--explicit-owner-accept", "--accepted-output", str(accepted_path),
+    ]
+    first = subprocess.run(accept, capture_output=True, text=True, env=env, check=False)
+    assert first.returncode == 0, first.stdout
+    accepted = json.loads(accepted_path.read_text())
+    assert accepted["owner_receipt_verified"] is True
+    assert accepted["provider_volume_attestation_verified"] is False
+    assert stat.S_IMODE(accepted_path.stat().st_mode) == 0o600
+    repeated = subprocess.run(accept, capture_output=True, text=True, env=env, check=False)
+    assert repeated.returncode == 2
+    assert json.loads(repeated.stdout)["status"] == "HOLD"
+
+    private = Ed25519PrivateKey.generate()
+    key_path = root / "synthetic-test-owner-key.pem"
+    key_path.write_bytes(private.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    key_path.chmod(0o600)
+    run_id = "synthetic-owner-run-r46"
+    receipt_path = root / "signed-one-arm.private.json"
+    contract_path = repo / "requirements/r60-gold48-inference-cpu-contract.json"
+    contract = json.loads(contract_path.read_text())
+    # Construct explicit argv to avoid positional dependencies on base_args.
+    sign = [
+        sys.executable, str(script),
+        "--mode", "sign-one-arm",
+        "--frozen-profile", str(frozen),
+        "--owner-freeze", str(files[0][0]),
+        "--adapter-bindings", str(accepted_path),
+        "--input-manifest", str(files[2][0]),
+        "--input-jsonl", str(pack[4]),
+        "--r46-evidence", str(evidence["r46_v02"]),
+        "--r54-evidence", str(evidence["r54_v03a"]),
+        "--r60-evidence", str(evidence["r60_base336"]),
+        "--explicit-owner-generation-authorization",
+        "--model-role", "r46_v02",
+        "--run-id", run_id,
+        "--output-directory", "/output/" + run_id,
+        "--output-filename", "r46_v02.private.json",
+        "--dependency-lock", str(repo / contract["lock_path"]),
+        "--dependency-contract", str(contract_path),
+        "--runtime-image", contract["base_image"],
+        "--owner-private-ed25519-key", str(key_path),
+        "--signed-receipt-output", str(receipt_path),
+    ]
+    created = subprocess.run(sign, capture_output=True, text=True, env=env, check=False)
+    assert created.returncode == 0, created.stdout
+    signed = json.loads(receipt_path.read_text())
+    assert signed["schema"] == "storyforge_r60_gold48_owner_generation_ed25519_private_v1"
+    assert signed["payload"]["model_role"] == "r46_v02"
+    assert signed["payload"]["run_id"] == run_id
+    assert signed["payload"]["input_sha256"] == pack[3]["sha256"]
+    assert signed["payload"]["adapter_bindings_canonical_sha256"] == _digest(accepted)
+    assert stat.S_IMODE(receipt_path.stat().st_mode) == 0o600
+    assert subprocess.run(sign, capture_output=True, env=env, check=False).returncode == 2
