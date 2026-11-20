@@ -103,7 +103,7 @@ def test_changed_stage_code_or_input_holds(tmp_path):
     payload = json.loads(path.read_text())
     payload["cases_PRIVATE"][0]["reconstructed_messages_PRIVATE"][0]["content"] += "edit"
     private_file(path, payload)
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError, match="STAGE_HASH_BINDING_HOLD"):
         gate.make_packet(*args)
 
 
