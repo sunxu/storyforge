@@ -15,10 +15,8 @@ import stat
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from types import SimpleNamespace
 
 from r60_p2_gold48_owner_freeze_packet_cpu import (
-    RECEIPT_NAME,
     SAFE as READY_SCHEMA,
     SCHEMA as PACKET_SCHEMA,
     STATUS as READY_STATUS,
@@ -111,6 +109,13 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
             and sorted(flagged.values()) == [0] * 7 + [6],
             "GOLD48_FREEZE_SENSITIVITY_SCOPE_HOLD")
 
+    capture = json.loads(require_file(
+        candidate_dir / "GOLD48_CAPTURE_SAFE.json", max_bytes=32768
+    ))
+    session_count = capture.get("session_count")
+    require(type(session_count) is int and 1 <= session_count <= 48,
+            "GOLD48_FREEZE_SESSION_SCOPE_HOLD")
+
     require(original.get("case_count") == 48
             and original.get("main_analysis_count") == 48
             and original.get("sensitivity_analysis_count") == 42
@@ -139,7 +144,7 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
         "sensitivity_analysis_count": 42,
         "excluded_sensitivity_count": 6,
         "source_count": 8,
-        "session_count": 25,
+        "session_count": session_count,
         "original_reference_count": 48,
         "readiness_packet_sha256_PRIVATE": sha(packet_raw),
         "readiness_safe_sha256_PRIVATE": sha(ready_raw),
@@ -180,7 +185,7 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
         "freeze_scope": "SCOPED_RECONSTRUCTED_EVALUATION",
         "case_count": 48,
         "source_count": 8,
-        "session_count": 25,
+        "session_count": session_count,
         "main_analysis_count": 48,
         "sensitivity_analysis_count": 42,
         "excluded_sensitivity_count": 6,
