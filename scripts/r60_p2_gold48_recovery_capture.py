@@ -156,35 +156,52 @@ LIMIT 3
 
 
 REQUEST_ZERO_DIAGNOSTIC_SQL = """
+WITH matched_time AS (
+    SELECT
+        (l.status = 200 AND l.finish_reason = 'stop') AS success_metric,
+        (l.system_tokens > 0 AND l.history_tokens > 0 AND l.input_tokens > 0)
+            AS nonzero_tokens,
+        (l.token_breakdown->>'historyMsgCount' = %s) AS same_history_count,
+        (e.request_id IS NOT NULL) AS event_exists,
+        (e.status = 200) AS event_is_200,
+        (e.story_id = l.story_id) AS event_story_matches,
+        (e.session_id = l.session_id) AS event_session_matches,
+        (e.occurred_at BETWEEN %s AND %s) AS event_time_matches
+    FROM public.chat_latency_metrics l
+    LEFT JOIN public.v2_chat_request_events e ON e.request_id = l.request_id
+    WHERE l.story_id = %s AND l.session_id = %s
+      AND l.created_at BETWEEN %s AND %s
+)
 SELECT
-  count(*) AS time_window_metrics,
-  count(*) FILTER (WHERE l.status = 200 AND l.finish_reason = 'stop') AS success_metrics,
-  count(*) FILTER (
-    WHERE l.status = 200 AND l.finish_reason = 'stop'
-      AND l.system_tokens > 0 AND l.history_tokens > 0 AND l.input_tokens > 0
-  ) AS nonzero_token_metrics,
-  count(*) FILTER (
-    WHERE l.status = 200 AND l.finish_reason = 'stop'
-      AND l.system_tokens > 0 AND l.history_tokens > 0 AND l.input_tokens > 0
-      AND l.token_breakdown->>'historyMsgCount' = %s
-  ) AS history_count_metrics,
-  count(*) FILTER (
-    WHERE l.status = 200 AND l.finish_reason = 'stop'
-      AND l.system_tokens > 0 AND l.history_tokens > 0 AND l.input_tokens > 0
-      AND l.token_breakdown->>'historyMsgCount' = %s
-      AND e.status = 200 AND e.story_id = %s AND e.session_id = %s
-  ) AS linked_success_events,
-  count(*) FILTER (
-    WHERE l.status = 200 AND l.finish_reason = 'stop'
-      AND l.system_tokens > 0 AND l.history_tokens > 0 AND l.input_tokens > 0
-      AND l.token_breakdown->>'historyMsgCount' = %s
-      AND e.status = 200 AND e.story_id = %s AND e.session_id = %s
-      AND e.occurred_at BETWEEN %s AND %s
-  ) AS full_match_events
-FROM public.chat_latency_metrics l
-LEFT JOIN public.v2_chat_request_events e ON e.request_id = l.request_id
-WHERE l.story_id = %s AND l.session_id = %s
-  AND l.created_at BETWEEN %s AND %s
+    count(*),
+    count(*) FILTER (WHERE success_metric),
+    count(*) FILTER (WHERE success_metric AND nonzero_tokens),
+    count(*) FILTER (
+        WHERE success_metric AND nonzero_tokens AND same_history_count
+    ),
+    count(*) FILTER (
+        WHERE success_metric AND nonzero_tokens AND same_history_count
+          AND event_exists
+    ),
+    count(*) FILTER (
+        WHERE success_metric AND nonzero_tokens AND same_history_count
+          AND event_exists AND event_is_200
+    ),
+    count(*) FILTER (
+        WHERE success_metric AND nonzero_tokens AND same_history_count
+          AND event_exists AND event_is_200 AND event_story_matches
+    ),
+    count(*) FILTER (
+        WHERE success_metric AND nonzero_tokens AND same_history_count
+          AND event_exists AND event_is_200 AND event_story_matches
+          AND event_session_matches
+    ),
+    count(*) FILTER (
+        WHERE success_metric AND nonzero_tokens AND same_history_count
+          AND event_exists AND event_is_200 AND event_story_matches
+          AND event_session_matches AND event_time_matches
+    )
+FROM matched_time
 """
 
 
@@ -194,11 +211,18 @@ def classify_request_zero_counts(counts):
         "REQUEST_METRIC_STATUS_OR_FINISH_MISMATCH",
         "REQUEST_NONZERO_TOKEN_CONTRACT_MISMATCH",
         "REQUEST_HISTORY_MSG_COUNT_MISMATCH",
-        "REQUEST_LINKED_SUCCESS_EVENT_MISMATCH",
+        "REQUEST_EVENT_ID_NOT_FOUND",
+        "REQUEST_EVENT_STATUS_MISMATCH",
+        "REQUEST_EVENT_STORY_MISMATCH",
+        "REQUEST_EVENT_SESSION_MISMATCH",
         "REQUEST_EVENT_TIME_WINDOW_MISMATCH",
     )
-    if len(counts) != 6 or any(type(v) is not int or v < 0 for v in counts):
+    if len(counts) != len(labels) or any(
+        type(v) is not int or v < 0 for v in counts
+    ):
         return "REQUEST_DIAGNOSTIC_SHAPE_HOLD"
+    if any(left < right for left, right in zip(counts, counts[1:])):
+        return "REQUEST_DIAGNOSTIC_INCONSISTENT_HOLD"
     for count, label in zip(counts, labels, strict=True):
         if count == 0:
             return label
@@ -206,11 +230,9 @@ def classify_request_zero_counts(counts):
 
 
 def diagnose_request_zero(cur, story, sid, lower, upper, history_count):
-    count = str(history_count)
     cur.execute(
         REQUEST_ZERO_DIAGNOSTIC_SQL,
-        (count, count, story, sid, count, story, sid, lower, upper,
-         story, sid, lower, upper),
+        (str(history_count), lower, upper, story, sid, lower, upper),
     )
     row = cur.fetchone()
     return classify_request_zero_counts(row if row is not None else ())
