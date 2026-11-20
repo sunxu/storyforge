@@ -84,7 +84,7 @@ def minimally_staged(draft_file):
                 doc["reconstructed_messages_sha256_PRIVATE"],
             "history_prefix_sha256_PRIVATE":
                 doc["history_prefix_sha256_PRIVATE"],
-            "reconstructed_messages_PRIVATE": original[i],
+            "reconstructed_messages_PRIVATE": row,
         })
     require(len(rows) == 48 and len(groups) == 8
             and set(counts.values()) == {6},
