@@ -134,6 +134,16 @@ SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_saf
 - **决策**：`HF_BUCKET_AS_PRODUCTION_ONE_SHOT_AUTHORIZATION_LEDGER=HOLD_UNPROVEN_CROSS_JOB_ATOMICITY`。即使未来某个 Bucket 单 Job 支持 `OutputManager.write_safe`，也不等于跨多个隔离 Job 的原子 compare-and-create、共享唯一性或崩溃恢复语义。**不要**尝试 `chmod 0700` 临时改变远端目录来绕过门禁，不修改 `DURABLE_CONSUMPTION_ROOT` 条件，不把 HF Bucket 的普通持久对象写入冒充一次性授权消耗。
 - **主线下一依赖**：Owner/Provider 需选定能独立证明**全局原子唯一约束**、私有访问控制和跨 Job 崩溃持久性的授权账本承载（例如已审查、隔离的新 PostgreSQL 原子唯一键事务，或真实跨节点支持该语义的持久 POSIX 卷）；先对已有平台可复用能力做只读核对，禁止改写故事业务数据库或新建竞争的通用账本框架。原 `OutputManager` 继续用于与其能力相符的私有输出，当前 Gold48 正式推理保持 HOLD；需 Owner 对选定存储、密钥与 GPU 范围分别审批。
 
+### PostgreSQL 现成能力只读复核（2026-11-21；不改生产库）
+
+对既有 StoryForge Supabase 只查询 `pg_catalog` 的**表名/字段/唯一索引/约束/函数签名和权限**，未读取任何业务行或私有故事，未执行 DDL/DML。独立结果：
+
+- 生产 PostgreSQL 已有基于 `UNIQUE` / 部分唯一索引的任务领取及防重复机制；部分 RPC 使用 `SECURITY DEFINER` 并向非授权角色禁用 `EXECUTE`，因此可以**复用数据库原子事务技术和已有权限审查模式**，不需开发新的通用分布式锁。
+- 现有 `v2_generation_evidence_grants` 的 `purpose` CHECK **仅允许** `training-evidence`；`v2_generation_evidence_grant_operations` 的 `action` CHECK **仅允许** `issue/revoke`。**不能直接把 Gold48 GPU 推理消耗塞到这两张生产业务表、改约束或借训练证据授权**。目前未发现现成 Gold48 专用的持久消费关系/RPC。
+- 当前只读 Connector **不可执行**所需的独立消费写入入口，也不能签发 Owner/Provider Ed25519；查到现有模式不等于实际 Gold48 执行能力已存在。连接账号曾被确认具有 BYPASSRLS，不得把它用于写入或读取受保护业务正文。
+- **唯一下一步技术门槛**：由 Owner/平台维护者在**独立隔离权限域**审查一个每份签名回执 SHA 只能原子消耗一次的 PostgreSQL 唯一键事务入口（或另一个具有同等强保证的现成持久系统）；必须证明两个并发 Job 最多一个成功、故障后不能无授权重试、远端 Job 只能调用最小权限签收接口而不能重置或删除。尚无 Owner 储存/密钥批准时**不提交新 DDL、RPC 或 Python 后端**。既有 `gold48_runtime_gate.py` 目前使用**文件型** `DURABLE_CONSUMPTION_ROOT` 和 `OutputManager`；不得仅改文件路径或把数据库 INSERT 的配置字符串当成已接线，未来经批准再做最小原子消费适配，保留 Owner 签名、Provider 实测身份及现有 Worker。
+- HF Bucket 原子账本探针已正式停止，不再重复前述 `0700`/RW 试错。**冻结输入/Adapter/Profile 不动；GPU、生成、训练及 Quality-v1 晋升仍 HOLD。**
+
 ### 历史双 Job 命令（当前暂停；不得直接继续执行）
 
 
