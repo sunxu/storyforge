@@ -622,3 +622,16 @@ SAFE 证据保留在现有 [PR #31](https://github.com/sunxu/storyforge/pull/31)
 5. 仅在实际动手前读直接相关代码及合成测试，**不必逐个复演历史脚本**。
 
 新 Agent 首次答复应有：当前 HEAD / PR CI；一句话重申最终 **48 prompt → 两臂生成 → 六维独立盲评** 目标；按来源范围拆分的 **PASS / HOLD 与最新 SAFE 引用**；**已证明的内容不再重复做**；下一项最短能实际闭合的 P2 新 8 来源证据动作；无需新代码时明确“不改代码”；是否访问 DB、提交 HF / GPU、读保护内容；新结果若无法产生，也必须准确说明缺少哪一种权威证据。**不要以新的空泛审计任务书代替推进工作。**
+
+
+## 2026-11-21 Gold48 HF CPU Tokenizer 实测闭环（以本节新状态覆盖历史 P2-B 未产出的旧快照）
+
+**唯一 Gold48 CPU Job**：`6b00971aefaf5e14f4b3b24a`，组织 `adradar`，`cpu-basic`，固定镜像 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`；`COMPLETED`，完成时间 `2026-11-20T18:54:52.736Z`（UTC）。Run Key 为 `r60-gold48-cpu-20261120T182842Z-e5de137532a1`。通过 Hugging Face Jobs inspect 直接核验终态，并读取对应精确私有结果前缀的 `GOLD48_HF_CPU_TOKEN_SAFE.json`；其业务状态为 `GOLD48_HF_CPU_TOKEN_PREFLIGHT_COMPLETE__NO_FREEZE`，`stage=COMPLETE`，`input_sha256_verified=true`、`case_count=48`、`tokenizer_version=5.16.1`，固定 `Qwen/Qwen3.8-27B` Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`。业务 SAFE 文件仍须由 Owner 本地下载并复核原始字节、SHA 与文件权限；此项不虚报已经完成。
+
+**此前已通过并禁止重做**：48 真实历史 Prefix / 48 对应原始回复 / 48 唯一成功请求，8 来源各 6 条、25 Session；离线候选 preflight PASS；48 公开卡评价时点快照来源组件绑定 PASS；48 条不可截断的重建输入草稿及各题 SHA 生成 PASS；48 条中可验证目标前置 Memory=0，未经验证 Memory=48（已省略）；本轮 HF 最小私有 Stage 16 项哈希绑定与 17 个实际文件只读传输回验 PASS。原始回复未进入 HF Tokenizer Stage。
+
+**真实 Token 长度与容量**：默认 Thinking 的 `prompt_tokens_min/median/p95/max=2751/7798/12029/13814`；关闭 Thinking 为 `2715/7762/11993/13778`。两个模板模式下，`context=16384,reserved_output=1536` 和 `context=32768,reserved_output=2048` 均 `over_budget_count=0/48`。最紧默认 16K 条件的 `max_total_tokens=15350`，余量 1034 Token。预算只是诊断项，没有默认授予四模型生成配置、推理或模型运行时兼容性。
+
+**P2 当前严格边界**：`GOLD48_RECONSTRUCTED_INPUT_DRAFT_48_READY__NOT_FROZEN` 与 `RECONSTRUCTED_EVALUATION_INPUT`，非历史 actual-sent；公开卡是评价时点快照，不能证明历史同刻卡；旧临时 48 身份一致性未证实；历史上游保护源全量独立性未证明（只在已验证范围内接受风险）；六个来源风险标记案例纳入 48 主分析、从预注册 42 敏感性分析排除；原始历史回答仅为匿名盲评第五臂，绝不能进入模型生成输入。Owner 尚未批准最终 `GOLD48_FROZEN_SCOPED`；`full_model_runtime_compatibility_verified=false`。以本节更新后的真实已完成数据阶段覆盖文档早期“48 条仍未产出”历史快照，但不把 CPU Token PASS 升格为正式 P2-C 全全集 PASS。
+
+**下一步最短路径**：Owner 在私有端验证已下载 SAFE 回执及 Stage 来源字节，确认 48 主分析 + 42 敏感性、已知六例风险、重建输入合同、8 来源权限和缺失 Memory/历史 actual-sent 的披露；以 create-only 私有签收锁定每题重建输入 SHA、来源快照、真实历史原始回答的独立参考哈希和五来源盲评预注册，同时冻结四模型阵容及统一 Thinking/上下文/解码参数。只有得到 Owner 签收与单独生成任务授权后，才进入 192 次四模型推理 + 48 条原始回复的 240 对象六维盲评；**不得再次运行本次 HF CPU Job、重新生成候选、重传旧 Stage、或在当前阶段启动 GPU**。
