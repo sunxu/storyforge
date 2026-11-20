@@ -14,7 +14,7 @@
 
 | 已证/已审集合 | 真实结果与边界 |
 | --- | --- |
-| Base336 冻结 336 案例 | **172 Story / 当前 172 + 归档 203 = 375 版本**；Owner 0600 原包完整 SHA/Reviewer B 版本锚核验 PASS；P2 × Base336 八来源精确 Story ID、四字段相等均 0；Reviewer 对八个 P2 均为 `INDEPENDENT_TEMPLATE_ONLY`。Owner 已确认审前独立新会话与资料交付；不是第三方身份/actual-sent 证明。 |
+| Base336 冻结 336 案例 | **172 Story / 当前 172 + 归档 203 = 375 版本**；Owner 0600 原包完整 SHA 与 Reviewer 的匿名 Bxxx 版本锚核验 PASS；P2 × Base336 八来源精确 Story ID、四字段相等均 0；Reviewer 对八个 P2 均为 `INDEPENDENT_TEMPLATE_ONLY`。Owner 已确认审前独立新会话与资料交付；不是第三方身份/actual-sent 证明。 |
 | 历史 v0.1 Train/Val/Test、Gold195、R04 非 Gold Dev 联合 | 冻结 Git Blob 去重 **33 Story / 当前 33 + 归档 91 = 124 版本**；P2 八源 Story ID overlap=0，四字段精确 Record Pair 各=0。含 R53 31/9 的七源（全部在 Gold195 内）与 R46/R54 既有 G2 104 案例限定来源链接；不要将子批次重复计作新 Story。 |
 | 历史 33 与 Base336 172 的真实差集 | **共享 1 Story / 4 历史版本，4/4 版本内容与已审 Base336 记录一致；未审 32 Story /120 版本（32 CURRENT +88 ARCHIVED）**。Owner 已在私有域 create-only 生成匿名增量审查包和分离 crosswalk；Reviewer 对八个 P2 均为 `INDEPENDENT_TEMPLATE_ONLY`，四条疑似共用线索正文核查排除；完整报告与 JSON 的 H 版本锚均经 Owner 本地结构检查通过。 |
 | 2026-11-20 History32 本地双 SAFE | 首次 `HISTORY32_OWNER_FINDINGS_BINDING_HOLD` **仅** `files_mode_0600=false`、其余结构与引用检查全 true；后续仅执行受控 `chmod 600`，`HISTORY32_PRIVATE_PERMISSIONS_PASS`。在文件未改写前提下仅记 `PASS_WITH_SEQUENTIAL_OWNER_SAFE`；**未再次执行全套绑定测试、也未独立验证 Reviewer 实际收到的字节 SHA/第三方身份**。 |
