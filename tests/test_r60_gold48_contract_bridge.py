@@ -7,6 +7,7 @@ import os
 import stat
 import subprocess
 import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -26,6 +27,10 @@ from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     read_private_contract,
     run_gold48_generation_batch,
     verify_gold48_binding_source_evidence,
+)
+from storyforge_dataset.generation_eval.gold48_owner_receipt import (
+    make_owner_scope,
+    owner_sign_create_only,
 )
 from storyforge_dataset.generation_eval.worker import (
     GenerationResult,
@@ -179,7 +184,7 @@ def test_real_bridge_fails_closed_without_new_owner_permission(tmp_path):
     with pytest.raises(WorkerError, match="GOLD48_SEPARATE_OWNER_INFERENCE_AUTHORIZATION_REQUIRED"):
         run_gold48_generation_batch(
             **call, output_path=out,
-            backend=RecordingBackend(), separate_owner_authorization=None,
+            backend=RecordingBackend(), owner_authorization_receipt_path=None,
         )
     assert not out.exists()
 
@@ -440,79 +445,158 @@ class SyntheticIdentityBackend(RecordingBackend):
         self.gold48_adapter_dir = None if value is None else Path(value)
 
 
+
+def synthetic_signed_owner_receipt(tmp_path: Path, monkeypatch, pack, role):
+    """Ephemeral test-only key. Never sets the production trust anchor."""
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    import storyforge_dataset.generation_eval.gold48_owner_receipt as auth_module
+
+    key = Ed25519PrivateKey.generate()
+    private_path = tmp_path / "test-only-owner-private.pem"
+    public_path = tmp_path / "test-only-owner-public.pem"
+    private_path.write_bytes(key.private_bytes(
+        serialization.Encoding.PEM,
+        serialization.PrivateFormat.PKCS8,
+        serialization.NoEncryption(),
+    ))
+    public_path.write_bytes(key.public_key().public_bytes(
+        serialization.Encoding.PEM,
+        serialization.PublicFormat.SubjectPublicKeyInfo,
+    ))
+    private_path.chmod(0o600)
+    public_path.chmod(0o600)
+    pub_sha = hashlib.sha256(public_path.read_bytes()).hexdigest()
+    monkeypatch.setattr(auth_module, "OWNER_TRUSTED_PUBLIC_PEM_SHA256", pub_sha)
+    run_id = "synthetic-g48-" + role
+    output_dir = tmp_path / run_id
+    output_dir.mkdir(mode=0o700)
+    output = output_dir / (role + ".private.json")
+    lock = tmp_path / "synthetic-runtime.hashes.lock"
+    lock.write_bytes(b"synthetic-only-dependency-lock\\n")
+    lock_sha = hashlib.sha256(lock.read_bytes()).hexdigest()
+    image = "sha256:" + "e" * 64
+    issued = datetime.now(UTC)
+    scope = make_owner_scope(
+        frozen=pack[0], owner_freeze=pack[1],
+        adapter_bindings=pack[2], input_manifest=pack[3],
+        model_role=role, run_id=run_id,
+        output_filename=output.name, output_directory=str(output_dir),
+        dependency_lock_sha256=lock_sha, runtime_image_digest=image,
+        issued_at_utc=issued.isoformat(),
+        expires_at_utc=(issued + timedelta(hours=1)).isoformat(),
+    )
+    receipt_file = tmp_path / ("owner-" + role + ".private.json")
+    receipt_sha = owner_sign_create_only(
+        scope=scope, private_key_path=private_path, receipt_path=receipt_file
+    )
+    return {
+        "owner_authorization_receipt_path": receipt_file,
+        "trusted_owner_public_key_pem_path": public_path,
+        "runtime_lock_path": lock,
+        "runtime_image_digest": image,
+    }, output, receipt_sha
+
+
 @pytest.mark.parametrize("role", ROLES)
-def test_complete_bridge_synthetic_48_outputs_all_arms_and_no_overwrite(tmp_path, role):
+def test_complete_bridge_signed_owner_synthetic_48_outputs_sidecar_no_overwrite(
+    tmp_path, monkeypatch, role,
+):
     pack = fixture(tmp_path)
     evidence = source_receipt_files(tmp_path, pack)
-    approval = {
-        "schema": "storyforge_r60_gold48_generation_owner_authorization_private_v1",
-        "status": "OWNER_APPROVED_GOLD48_GENERATION",
-        "scope": "GOLD48_FOUR_ARM_192_GENERATIONS",
-        "run_key": pack[0]["dataset"]["run_key"],
-        "model_role": role,
-        "frozen_profile_canonical_sha256": _digest(pack[0]),
-        "adapter_bindings_canonical_sha256": _digest(pack[2]),
-        "input_sha256": pack[3]["sha256"],
-        "inference_authorized": True,
-        "gpu_authorized": True,
-        "training_authorized": False,
-    }
+    auth, output, signed_sha = synthetic_signed_owner_receipt(
+        tmp_path, monkeypatch, pack, role
+    )
     backend = SyntheticIdentityBackend(pack, role)
-    output = tmp_path / f"{role}.private.json"
     receipt = run_gold48_generation_batch(
-        **build_call(pack, role=role),
+        **build_call(pack, role=role), **auth,
         backend=backend, output_path=output,
         source_evidence_paths=evidence,
-        separate_owner_authorization=approval,
     )
     assert receipt.status == "GENERATION_BATCH_PASS"
     assert receipt.record_count == 48
     assert len(backend.calls) == 48
-    actual = json.loads(output.read_text())
-    assert actual["record_count"] == 48
     assert stat.S_IMODE(output.stat().st_mode) == 0o600
-    assert [r["effective_seed"] for r in actual["outputs"]] == list(range(42, 90))
-    assert [r["sample_id"] for r in actual["outputs"]] == [
+    data = json.loads(output.read_text())
+    assert [r["effective_seed"] for r in data["outputs"]] == list(range(42, 90))
+    assert [r["sample_id"] for r in data["outputs"]] == [
         f"G48-C{i:02d}" for i in range(1, 49)
     ]
     assert all(x["eos_token_ids"] == [248046, 248044]
                and x["pad_token_id"] == 248044
                and x["enable_thinking"] is False
                and x["max_new_tokens"] == 2048 for x in backend.calls)
-    with pytest.raises(WorkerError, match="OUTPUT_PUBLICATION_FAILED"):
+
+    sidecar_path = output.with_name(output.name + ".identity.private.json")
+    assert stat.S_IMODE(sidecar_path.stat().st_mode) == 0o600
+    sidecar = json.loads(sidecar_path.read_text())
+    assert sidecar["schema"] == "storyforge_r60_gold48_generation_identity_private_v1"
+    assert sidecar["run_id"] == output.parent.name
+    assert sidecar["selected_model_role"] == role
+    assert set(sidecar["arms"]) == set(ROLES)
+    assert sidecar["arms"][role]["adapter_sha256"] == pack[2]["arms"][role]["expected_sha256"]
+    assert sidecar["owner_authorization_receipt_sha256"] == signed_sha
+    assert sidecar["input_sha256"] == pack[3]["sha256"]
+    assert sidecar["model_revision"] == pack[0]["base_model"]["revision"]
+    assert sidecar["runtime_image_digest"] == auth["runtime_image_digest"]
+    assert sidecar["dependency_lock_sha256"] == hashlib.sha256(
+        auth["runtime_lock_path"].read_bytes()
+    ).hexdigest()
+    assert sidecar["output_sha256"] == receipt.output_sha256
+    assert "synthetic-response" not in json.dumps(sidecar)
+    second_backend = SyntheticIdentityBackend(pack, role)
+    with pytest.raises(WorkerError, match="GOLD48_OUTPUT_ALREADY_EXISTS_HOLD"):
         run_gold48_generation_batch(
-            **build_call(pack, role=role),
-            backend=SyntheticIdentityBackend(pack, role),
-            output_path=output, source_evidence_paths=evidence,
-            separate_owner_authorization=approval,
+            **build_call(pack, role=role), **auth,
+            backend=second_backend, output_path=output,
+            source_evidence_paths=evidence,
         )
-    assert json.loads(output.read_text()) == actual
+    assert second_backend.calls == []
+    assert json.loads(output.read_text()) == data
+    assert json.loads(sidecar_path.read_text()) == sidecar
 
 
-def test_complete_bridge_rejects_backend_sha_before_generation(tmp_path):
+def test_signed_receipt_tampering_and_untrusted_key_rejected_before_generate(
+    tmp_path, monkeypatch,
+):
     pack = fixture(tmp_path)
     evidence = source_receipt_files(tmp_path, pack)
     role = "r60_base336"
+    auth, out, _ = synthetic_signed_owner_receipt(tmp_path, monkeypatch, pack, role)
     backend = SyntheticIdentityBackend(pack, role)
-    backend.gold48_adapter_sha256 = "0" * 64
-    approval = {
-        "schema": "storyforge_r60_gold48_generation_owner_authorization_private_v1",
-        "status": "OWNER_APPROVED_GOLD48_GENERATION",
-        "scope": "GOLD48_FOUR_ARM_192_GENERATIONS",
-        "run_key": pack[0]["dataset"]["run_key"],
-        "model_role": role,
-        "frozen_profile_canonical_sha256": _digest(pack[0]),
-        "adapter_bindings_canonical_sha256": _digest(pack[2]),
-        "input_sha256": pack[3]["sha256"],
-        "inference_authorized": True, "gpu_authorized": True,
-        "training_authorized": False,
-    }
-    dest = tmp_path / "forbidden.private.json"
-    with pytest.raises(WorkerError, match="GOLD48_LOADED_BACKEND_IDENTITY_HOLD"):
+    receipt_path = auth["owner_authorization_receipt_path"]
+    receipt = json.loads(receipt_path.read_text())
+    receipt["payload"]["input_sha256"] = "0" * 64
+    receipt_path.write_bytes(_canonical(receipt) + b"\\n")
+    with pytest.raises(WorkerError, match="GOLD48_OWNER_RECEIPT_SIGNATURE_INVALID_HOLD"):
         run_gold48_generation_batch(
-            **build_call(pack, role=role), backend=backend, output_path=dest,
-            source_evidence_paths=evidence,
-            separate_owner_authorization=approval,
+            **build_call(pack, role=role), **auth,
+            backend=backend, output_path=out, source_evidence_paths=evidence,
         )
     assert backend.calls == []
-    assert not dest.exists()
+    assert not out.exists()
+
+    # An attacker cannot nominate a different trust anchor via the receipt.
+    import storyforge_dataset.generation_eval.gold48_owner_receipt as auth_module
+    monkeypatch.setattr(auth_module, "OWNER_TRUSTED_PUBLIC_PEM_SHA256", "0" * 64)
+    with pytest.raises(WorkerError, match="GOLD48_OWNER_TRUST_ANCHOR_MISMATCH_HOLD"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), **auth,
+            backend=backend, output_path=out, source_evidence_paths=evidence,
+        )
+
+
+def test_signed_receipt_wrong_backend_identity_holds(tmp_path, monkeypatch):
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    role = "r60_base336"
+    auth, out, _ = synthetic_signed_owner_receipt(tmp_path, monkeypatch, pack, role)
+    backend = SyntheticIdentityBackend(pack, role)
+    backend.gold48_adapter_sha256 = "0" * 64
+    with pytest.raises(WorkerError, match="GOLD48_LOADED_BACKEND_IDENTITY_HOLD"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), **auth,
+            backend=backend, output_path=out, source_evidence_paths=evidence,
+        )
+    assert backend.calls == []
+    assert not out.exists()
