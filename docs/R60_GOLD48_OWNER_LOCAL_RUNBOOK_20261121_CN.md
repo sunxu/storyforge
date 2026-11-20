@@ -4,20 +4,29 @@
 
 ## 1. 核对本地文件（不重构）
 
-先在 Mac 确认以下既有文件实际位置；以下路径变量均由 Owner 填入，**不要**把私有文件复制进 Git 仓库或打印 JSON 内容：
+**2026-11-21 Owner 本地已验收（由 Owner 提供的 SAFE 回执）**：冻结输入已物化；目录 0700、输入/Manifest 0600、完整输入 SHA、48 条顺序与逐案 SHA 均 PASS；`OWNER_INPUT_SHA_ACCEPTANCE: PASS`。Adapter 绑定已签收为 `OWNER_GOLD48_ADAPTER_BINDING_ACCEPTED__MOUNT_UNVERIFIED`。**不得再次运行 create-only 物化和绑定签收，除非另立新的运行范围并获得 Owner 明确批准。** 此处仅记录 SAFE 状态，不存私有内容。Provider 挂载与真实远端权重仍 UNVERIFIED。
+
+以下为 Owner 实际确认的文件位置，**不要**把私有文件复制进 Git 仓库或打印 JSON 内容：
 
 ```sh
 umask 077
 cd ~/workspace/storyforge
+VIRTUAL_ENV="/Users/keedle/.local/share/storyforge/venvs/r60-owner"
+export VIRTUAL_ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 export PYTHONPATH="$PWD/src"
-FROZEN="$PWD/experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json"
-OWNER_ROOT="$HOME/.local/share/storyforge/r60/private"
+OWNER_ROOT="/Users/keedle/.local/share/storyforge/r60/private"
+BINDINGS="$OWNER_ROOT/GOLD48_ADAPTER_BINDINGS_CANDIDATE_PRIVATE.json"
+R60_EVIDENCE="$OWNER_ROOT/r60-cpu-job-json-log-line.private.json"
+FROZEN="$OWNER_ROOT/r60-gold48-generation-profile-20261121/gold48_four_arm_generation_profile_frozen_v1.json"
+R54_EVIDENCE="$OWNER_ROOT/R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json"
+R46_EVIDENCE="$OWNER_ROOT/r46_training_report.json"
+OUT="$OWNER_ROOT/gold48-frozen-worker-input-v1"
+INPUT_JSONL="$OUT/GOLD48_GENERATION_INPUTS_PRIVATE.jsonl"
+INPUT_MANIFEST="$OUT/GOLD48_GENERATION_INPUT_MANIFEST_PRIVATE.json"
+# Owner 未提供以下路径，不猜测：
 OWNER_FREEZE="<owner-local>/GOLD48_SCOPED_FROZEN_MANIFEST_PRIVATE.json"
 DRAFT="<owner-local>/GOLD48_RECONSTRUCTED_INPUTS_DRAFT_PRIVATE.json"
-BINDINGS="<owner-local>/GOLD48_ADAPTER_BINDINGS_CANDIDATE_PRIVATE.json"
-R46_EVIDENCE="<owner-local>/r46_training_report.json"
-R54_EVIDENCE="<owner-local>/R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json"
-R60_EVIDENCE="<owner-local>/r60-cpu-job-json-log-line.private.json"
+ACCEPTED="<owner-local>/GOLD48_ADAPTER_BINDINGS_OWNER_ACCEPTED_PRIVATE.json"
 ```
 
 R46/R54 原报告必须是**原始文件字节**，不能重新格式化。R60 evidence 必须是此前 Job `6b00a44aefaf5e14f4b3c6b5` 的 JSON 回执**原始日志单行字节（末尾不附加换行）**；三份文件必须在私有目录且 mode `0600`。此步骤不读取 Adapter 权重。
@@ -25,7 +34,7 @@ R46/R54 原报告必须是**原始文件字节**，不能重新格式化。R60 e
 ## 2. 物化冻结 JSONL 和 Manifest
 
 ```sh
-OUT="$OWNER_ROOT/gold48-frozen-worker-input-v1"
+# 历史命令，仅在新的 Owner 授权范围内使用；当前已完成，不应重跑。
 python3 scripts/r60_gold48_generation_input_materialize_cpu.py \
   --frozen-profile "$FROZEN" \
   --owner-freeze "$OWNER_FREEZE" \
@@ -42,7 +51,7 @@ shasum -a 256 "$INPUT_JSONL" "$INPUT_MANIFEST"
 ## 3. Owner 对现有 Adapter 候选签收
 
 ```sh
-ACCEPTED="$OWNER_ROOT/GOLD48_ADAPTER_BINDINGS_OWNER_ACCEPTED_PRIVATE.json"
+# 历史命令，2026-11-21 已签收；不要重复执行 create-only。
 python3 scripts/r60_gold48_owner_generation_authority_cpu.py \
   --mode accept-bindings \
   --frozen-profile "$FROZEN" \
