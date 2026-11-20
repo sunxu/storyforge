@@ -1,5 +1,7 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一现行启动提示词（2026-11-21）
 
+> **2026-11-21 Gold48 私有输入与输出传输最新进展**：已复用现有 \`InputManager\` + 本地 exclusive 0600 文件，提供 \`materialize_gold48_ro_input\`；已有 Gold48 生产 dispatcher 在原 Worker 后要求 \`deliver_gold48_private_result\` 上传三份私有结果与 manifest-last，并对每份 HF Bucket 输出下载验 SHA。无新生成器或通用 Runner。**仍需**受控 HF Job 包装调用输入物化、Owner Mac 独立下载核对、以及实际 Owner/Provider 身份和 GPU 明确批准；不得启动模型或认定远程 HF 交付成功。
+
 > **2026-11-21 执行门禁代码进展**：原 `gold48_runtime_gate.py` 已用单 Owner 的 Job-local 0700 POSIX 消费证据取代不适用的跨 Job HF Bucket 锁，实际拒绝 FUSE 输出，继续要求 Owner/Provider 验签、依赖/镜像/Adapter 实证与 Loader 许可。**跨 Job 不重复执行只由唯一 Owner Mac 本地持久提交标记及完整 HF Job 历史保证，不是远端技术锁**。GPU Job 的安全私有输入本地化和 HF Bucket 结果回传仍未交付；两项信任锚和真实 GPU 授权仍未就绪。继续复用现有 HF CLI 与模型 Worker，不新增提交器/数据库。
 
 > **2026-11-21 最新执行策略（覆盖旧共享账本规划）**：Owner 已选择**单 Owner Mac 串行提交**，不使用 Supabase/PostgreSQL 或 HF Bucket 作全局授权锁；复用已有 Mac HF Job 历史排重、本地原子提交标记与 CPU/GPU dry-run 方法。Mac 标记现通过共享 `OutputManager.write_safe` 完成原子不覆盖和目录 fsync。**原生产 `gold48_runtime_gate.py` 仍要求旧共享挂载，单 Owner GPU 生产通道未接通；不得绕过其门禁或声称运行就绪。** 下一步是核对并在获明确 GPU 授权后最小接入 Owner 可信提交、输出交付及运行身份，不要重做 HF Bucket RW/0700 探针、原数据 SHA、CPU Tokenizer、Adapters 或重复开发 Runner。保持 `inference_authorized=false`、`quality_v1_admitted=0`。

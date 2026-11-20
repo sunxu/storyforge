@@ -2,6 +2,14 @@
 
 ## 0. 2026-11-21 Owner 已选单机简化调度（最高优先级）
 
+### Gold48 RO 输入本地化与私有结果交付（代码已接，真实 Job 待验）
+
+- 已在**原** \`gold48_runtime_gate\` 中加 \`materialize_gold48_ro_input(source, target, expected_sha256)\`：复用 \`InputManager\` 的 O_NOFOLLOW/长度限制/精确 SHA，再在 Job-local 0700 根写 0600 的 create-only 文件并 fsync、读回；用于解决 HF FUSE 只读文件不保存 POSIX 模式的问题。这个函数**必须由未来经 Owner 批准的 Job 包装在生产 pre-GPU 预检前调用**；当前尚无专门 GPU 提交动作，不可将工具函数的 CI 成功当成真实 HF 输入挂载 PASS。
+- \`run_authorized_gold48_production\` 已在原 \`run_gold48_generation_batch\` 后直接调用 \`deliver_gold48_private_result\`。默认固定输出位置为私有 Bucket \`hf://buckets/adradar/storyforge-training/experiments/r60-gold48/outputs/<run_id>/\`，必须按 \`<role>.private.json\`、\`<role>.private.json.launch.private.json\`、\`<role>.private.json.identity.private.json\`、\`<role>.private.json.result-sha256-manifest.private.json\` 顺序上传；最后一个 SHA256 manifest 在本地由已有 \`OutputManager\` 原子发布，远端使用 \`hf buckets cp\` 而非要求 FUSE POSIX 原子性。每份传输后下载到本地 scratch 再校验 SHA 和字节数。**不能将已上传部分结果或单一 Job 回读当成 Owner 已签收**。
+- 若上传、回读、完整性或私有目录检查失败，状态为 HOLD，绝不自动重跑模型。正式评测需要 Owner Mac 再使用既有 \`hf buckets cp\` / 下载 SHA 审计流程确认四个 Run ID 的每份远端文件、48 条与原始 Frozen 输入绑定。所有真实 GPU/Provider/Owner 签名公钥授权仍独立 HOLD；**本轮只完成 CPU 合成代码与 CI，尚无真实 HF 交付验收。**
+
+
+
 **2026-11-21 最新已完成代码适配**：`gold48_runtime_gate.py` 的旧 HF Bucket / FUSE 共享消费根已换成当前 HF Job 的 **本地** `/tmp/storyforge-gold48-private/spent`（预先创建 0700）。`OutputManager` 仍负责 0600、原子不覆盖、文件及目录 fsync；运行进程按 `/proc/self/mountinfo` 拒绝 FUSE/远程文件系统作为消费根或生成私有输出。签名验收、Provider 身份、依赖锁、RO Adapter 挂载、Loader SHA 和 Worker 约束均未删除。此消费记录**只在当前 Job 生命周期内有效**；跨 Job 防重复依赖唯一可信 Owner Mac 的本地持久提交标记和完整 HF Job 历史，不能宣称全局分布式互斥。
 
 **尚缺正式交付**：现有 Mac 的 CPU-only submit 和 Base336 GPU dry-run 并非 Gold48 GPU 正式提交；远程 `:ro` 证据/签名文件可能报告非 0600，必须经 SHA 校验安全复制到本地 0600 后校验；Job-local 输出与 Sidecar 必须完整送达私有 HF Bucket，再由 Owner Mac 下载验 SHA。尚未完成输出上传回收闭环、Provider/Owner 独立可信指纹注册与 GPU 授权，**不可启动真实推理**。不使用 Supabase/PostgreSQL，不重跑 HF Bucket 0700 探针。
