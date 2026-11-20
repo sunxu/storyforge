@@ -50,6 +50,14 @@
 - **门禁仍严格**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`、`quality_v1_admitted=0`、`model_promoted=false`。无新增模型请求、GPU/HF Jobs、数据库修改、代码通用抽取器；上述连读文件均为只读 Bucket/DB 聚合核验。
 - **唯一新增信息的后续用途**：Owner-side 从 336 带 provenance 的构建六目录锁定缺失 134 Story + 新八来源 create-only 0600 Manifest → 才对剩余训练/保护/Dev/Teacher 组件做增量身份和独立 Reviewer 真正语义审查；同时真实历史请求原文若确实不存在，应按源输入限制明确实验合同，不允许拿 48 唯一 request 的 Token 元数据假装 actual-sent 字节；然后才可做 48 同题五来源 Quality-v1 六维盲评。
 
+### 2026-11-20 最新增量核验：Gold48 × Base336 实际发布集近似文本筛查和会话聚类
+
+- **仅针对已经 SHA-256 确认的实际 293/43 发布内容**：在先前完整字符串 exact 命中 0 基础上，对现有严格来源八 Story 的 **48 条独立最后 User 输入、48 条 Original Gold 回答**，分别与实际 Train293/Validation43 最后 User/Assistant 内容做 **NFKC、去标点空白、字符 5-gram Jaccard** 启发式预筛。每个 Gold 只报告对各 Split 的最大相似度，匹配用户原文与 Answer 均不公开。四组中相似度 >=0.20 / >=0.35 / >=0.50 / >=0.70 的 Gold 个数均为 **0**；最大值分别为：最后 User vs Train **0.012**、User vs Validation **0.002**、Gold Answer vs Train **0.023**、Gold Answer vs Validation **0.009**。因此 `P2_GOLD48_VS_ACTUAL_RELEASE_VERBATIM_AND_5GRAM_NEAR_DUPLICATE=ZERO_PRELIMINARY`，是**局部文本暴露排查**，不能替代改写/同源世界、隐性角色、历史 Protected/Dev/Teacher 或独立 Reviewer 语义核验。
+- **48 题的统计非独立性**：严格来源 8 Story / **25 Session**；只含单题 Session **8**，含多题 Session **17**，**40/48** 条题目来自这些多题 Session，最多一 Session 六题；同一 Session 内可成对的评估题目 **35 对**。最后一条 User 文本为 **48/48 不同**；完整历史长度最少 3、最多 13 条消息，**23/48** 条包含超过三条前文。题目确实不同，但不可用独立同分布的 `n=48` 直接计算夸大的显著性或区间；**正式模型比较除了 48 题的成对六维逐题结果，还必须按 Session 聚类重采样/敏感性报告**（Story 级分层作为辅助），对有很少独立 Session 的小子组不要声称显著。
+- HF 私有 `quality-review/r60` 下另有约 3.9MB 的旧评审 `source.private.jsonl`，抽查其行包含匿名 `blind_id`、`visible_history`、`target_text` 等，但**不含 Story ID / Session ID / Case 源身份**，不能冒充剩余 134 Base336 训练来源的真实交叉表。其他 Bucket 内已定位的实际 `train.jsonl` / `validation.jsonl` 也只有 `messages`。生产库泛化反向 join 需约 391 万 Assistant 消息 Seq Scan，已通过 `EXPLAIN` 拒绝执行；**不在生产上新增正文索引或全库扫查**。完整 172 来源仍只有 Owner-local 六目录/带身份构建产物能够给出权威版本。
+- **正式实验口径固定**：五来源为真实 Original Reference（历史线上 26/21/1 三种 effective_model 混合）+ Qwen Base + R46 v0.2 ckpt7 + R54 v0.3-A ckpt16 + R60 Base336 ckpt37；本轮没有真实模型新回答，也未评分。继续六维题目级盲评，Owner 解盲后报告 Gold 来源模型分层和按 Session 聚类的 R60–Gold 成对差异；历史原始 System/World/Rules actual-sent 字节还没有锁定，需在评估合同中明示系统提示差异。**P2_C、P2_B 正式冻结、Reviewer 独立门禁仍 HOLD；已完成的 Gold48/38 Story 及 actual release 完整性不得再重做。**
+- 下一轮执行优先级严格限定为 **新增四源 Owner-private create-only freeze** 与剩余 **134 个 Base336 Story 的 Owner-local authority crosswalk**，按身份和版本开展真正独立语义复核，然后才正式开展四生成模型 + Gold 五来源质量评估。既有 source capture CLI 需要六个历史冻结目录（`--old-dir --plan-dir --v2-dir --v3-dir --audit-dir --quarantine-dir`）、`--p2-manifest --output-dir --execute`；**旧 Manifest 接口仍固定 3/5、5 作者，当前严格 2/6、7 作者尚不兼容**，必须最小向后兼容适配，不能静默篡改旧冻结清单。
+
 ### 当前唯一最短下游动作
 
 - **P2-C 剩余实际阻塞：** 为临时 2/6 新来源组合绑定有权威来源的 Base336 172 Story + 全版本角色/剧情语义、所有受保护/历史 Dev/Teacher 保留集合，做真正独立的新来源 Reviewer 裁决；只差未覆盖集合，不重审 R50 已闭合五世界、旧 R47/R48 20 题、Base336 老 10 条 Review 边。
