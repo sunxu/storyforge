@@ -1,5 +1,19 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 History32 120 版本独立 Reviewer SAFE 报告：8/8 意见已提交（Owner 私有证据签收待）
+
+Owner 本轮转交第一份**真正已审完**的 History32 增量 Reviewer SAFE 报告，不是包生成回执，也不是 Base336 172/375 全量语义审阅的重复。此次 Reviewer 自述唯一审阅范围为 **P2 8 来源 × 32 新历史 Story / 120 source/version（32 current + 88 archived）**，与 Owner 前一回 `HISTORY32_INCREMENTAL_REVIEW_PACKET_CREATED` 的增量包范围逐项一致；旧共享 1 Story /4 版本已被上一位 Base336 Reviewer 覆盖，未再次审阅。
+
+- **程序化覆盖与内容可见性（Reviewer 自述）**：全部 **120/120** 个版本含 `world`、`character`、`characters`、`opening` 四个顶层字段且非空。部分可选/次级子字段稀疏：`world.worldSentence` **3** 份空、`character.name` **17** 份空（Review 称从 `characters[]` 确认仍有至少一个角色姓名）、`opening.summary` **39** 份空、`opening.openingText` **18** 份空；其它世界次级字段也有未填写。**报告不能因四字段顶层存在便声称 120 版本关键语义子项均完整**；该稀疏度只作输入证据质量限制，不自动推断泄漏或机器错误。
+- **8 个 P2 逐源 Reviewer 语义意见**：`INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`。Reviewer 自述已做全部 120 版本的专名、角色名/ID、近文程序化交叉检索，并对 **4** 条疑似行业/题材/汉字子串/气味描述线索进行正文级逐句复核后全部排除。此为**所观测材料中无识别性共享语义组件的独立审核意见**，不是历史所有暴露集已隔离、原始模型实际请求已还原或所有 960 对均由人全文通读的证明。Reviewer 报告称全部 P2×历史 normalized similarity <0.08，但此仅为**其算法自述**，没有 Owner 复演的计算定义/代码/阈值证明，不能当成通用跨模型语义分数。
+- **独立性陈述**：Reviewer 声明仅依增量匿名包审核，未看其他 Reviewer 裁决、R50 sealed 原文，也未启动模型训练/推理；报告已使用 Hxxx-CURRENT / Hxxx-V<revision_id> 作为匿名锚。**Owner 目前仅收到 SAFE 报告原文，未独立核对原件与私有包的文件 SHA、匿名 H 来源/Revision 锚、实际 Reviewer 交付隔离记录**。因此应登记为 `HISTORY32_SEMANTIC_REVIEWER_REPORT_SUBMITTED_8_INDEPENDENT_TEMPLATE_ONLY__OWNER_EVIDENCE_BINDING_PENDING`，而非 Owner-final PASS。
+- **完整私有明细存放条件**：Reviewer 自述已在与审阅包相同目录写出 `R60_P2_HISTORY32_SEMANTIC_REVIEW_FINDINGS_PRIVATE.md`，该文件含真实故事正文/逐条引用、需要由 Owner 核实实在路径与文件内容、以 SHA256 绑定审查包并保存在 0600/0700 私有环境；**不凭 Reviewer 所报路径猜测 Owner Mac 已有此文件**，不上传 GitHub。只给 Owner 本机报告和审核包做一次归属/版本核验，别让 Reviewer 再重跑 120 版全文审阅。
+- **仍未消除的真实历史门禁**：先前 P2 × Base336 172/375 Reviewer 8/8 已经签收，增量 P2×History32 120 的 Reviewer 8/8 意见现在已收到；这只覆盖所列历史来源和版本。R50 已封五世界以外的 Protected/Reserved/Teacher/其他 Dev 权威穷尽集合仍无总名册和语义独立证明；历史 actual-sent 完整 System/Rules/Memory/History Prompt 字节仍未验证；P2 某一来源自身世界/角色命名冲突待 Owner 在评估前做正式输入质量归因。此前差集 33=1已审+32新增、历史 124=4已审+120新增已确证，不重跑。
+- **后续动作为一个最小签收而不是重复开发**：Owner 核对增量包实际 JSON schema/8/120 数量、SHA-256，以及私有 findings MD 中 H 版本锚是否都属于 JSON；查验 Reviewer 私有报告原件由独立会话交付（同一 Reviewer 若已交付不需另找重审），保存本地哈希但仅对外发 SAFE boolean/count。不能静默以先前 Base336 Reviewer 的 Pxx→Sxx 别名映射代替本次按 P2 UUID 排序的 Pxx。签收之后继续只对**尚未覆盖的历史保护/Teacher 名册、actual-sent 证据**行动。
+- **正式冻结状态不变**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。不得启动 GPU/HF/四模型推理。
+
+---
+
 ## 2026-11-20 Owner 已生成 History32 独立 Reviewer 私有增量材料：120 版本 / 共享 4 版本全部已审
 
 Owner Mac 已实际执行先前单次私有整理脚本（Owner 环境，无仓库增量工具开发），回传 **`status=HISTORY32_INCREMENTAL_REVIEW_PACKET_CREATED`**。本次记录的是**真正已执行的结果**，替代下方历史 33 差集章节中“archived revision 还待核验”的旧状态：
