@@ -40,6 +40,20 @@
 
 ---
 
+## 2026-11-20 实际生产请求构造链定位与 11-10 关闭态发布证据（actual-sent 有界补证）
+
+**新增证据**：Agent 只读核对了 Owner 私有生产代码仓库的固定代码版本（具体私有 Git 身份由 Owner 内部保存），定位到 V2 主聊天入口、Runtime Prompt 部件与多层 Memory/History 组装、各模型 Provider 请求 payload 构造、HTTP 出站发送，以及已有按 scope 启用的生成证据捕获与加密归档/受控导出链。这是**真实生产代码路径已经定位**，替代上一轮仅在 StoryForge 评测代码内查找的定位 HOLD；**不是**对 48 个历史请求的实际运行重放。
+
+- 路由服务端构造并动态追加语言/角色约束、记忆与历史消息；发送侧还会因 Provider/重试/截断/缓存使用不同参数/正文。持久化历史 Prefix 与发送报文**并非天然相同字节**。不得以历史 48/48 请求事件匹配代替 System/World/Rules/Memory/History 的出站序列化证明。
+- 现有证据捕获仅在独立启用开关、有效授权控制 revision、明确匹配 Owner/Story/Session 的范围及归档服务就绪时生效，且出站正文受大小与预算上限约束。即使捕获到 `wireBody`，观测边界也仅为 `roleplay_http_egress`（第一跳）；代码会保留 `RELAY_EGRESS_UNKNOWN`，**不证明最终 Provider ingress**。
+- 生产发布原始记录明确：**2026-11-10** 获批发布时留证为**关闭态**，独立证据 Worker/导出网关未运行，当时索引/授权/导出记录为空。仅证明**该次验收的时间点**，不推断此后所有时间段一直关闭；本轮没有读取生产进程环境、私有归档、原始请求或数据库。旧 48/48 的已验空证据表**未重复查询**。
+
+**更新后的唯一最小缺证**：由 Owner 对**与 48 个已固定历史请求时间对应的实际生产部署版本及采集开关/受控范围有效期**给出只读、去标识 SAFE 回执；如果历史 capture 可能启用，只核对是否存在**按固定消息/修订版本/请求锚**可验证的加密归档与原始出站证据（仅数量/布尔/有效期，不在 GitHub/chat 输出正文、私有 ID、映射、对象键、加密摘要）。若已证 48 个索引为空，**不得重查同一空表**，先以发布/控制日志或现有受控归档状态确认是否有其它未登记原件。不存在可恢复的实际发送证据时请 Owner **书面判定不可得性**并单独决定是否批准标注 `RECONSTRUCTED_EVALUATION_INPUT` 的统一可复现评估输入，且明确其**不具历史 Provider 字节保真性**。任何变更均不得擅自导出原文、开启生产采集/网关、签发 grant 或触发新模型请求。
+
+**本轮结论**：`PRODUCTION_ASSEMBLY_AND_EGRESS_CODE_PATH_LOCATED`，`DEPLOY_2026_11_10_CAPTURE_DISABLED_AT_SIGNOFF`，`HISTORICAL_48_CAPTURE_AND_ARCHIVE_UNKNOWN`，`RELAY_PROVIDER_INGRESS_UNVERIFIED`。其它历史 Authority 全集与单一 P2 来源质量仲裁不变；正式 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。执行仅 GitHub 只读、聚合 SAFE 文档更新，不修改代码、数据库、训练/冻结素材，不开 GPU/HF/model，不产生推理费用。
+
+---
+
 ## 2026-11-20 R45 冻结 49/15 原始来源到 R46 source-data Git Blob 身份核验
 
 **一次新的最小证据核对，不是 R45/R46 重新审计**：身份判断仅使用 `sunxu/storyforge-owner-evidence` 单一固定 Git 提交中的**目录条目 Git Blob 元数据**。初期定位时有一次文件 GET 意外返回 R45 源文件的内容片段；该返回未被用于正文审核、交叉分析或写入公开文档/PR，发现后停止直接文件 GET 并改用目录元数据。**故不得报告本轮从未收到任何原文**；未读取 R50 sealed QA。源证据为现成 `r50/r45-full-source-gate` 与 `r46-primary-evidence` 的 `source-data`、编译输出三处文件条目。其真实技术结论为：
