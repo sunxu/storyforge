@@ -13,10 +13,10 @@ import argparse
 import hashlib
 import json
 import os
-import time
 import re
 import stat
 import sys
+import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
