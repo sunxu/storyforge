@@ -29,6 +29,14 @@
 - **下一唯一有意义动作**：找出已存在的 Base336 最终 293/43 发布输入对应**剩余 134 个 Story 的权威 metadata/version**（不得再次构造通用工具或用宽口径“全部旧表记录”冒充冻结名单），再仅对仍未覆盖集合进行来源 ID、作者、角色/剧情/世界组件与历史暴露边界核验；其后才可以安排独立 Reviewer 对临时 2/6 八来源的真正语义裁决。Gold48 候选及已完成的 48 唯一历史请求链路不得反复重测。
 - `P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`；`MODEL_PROMOTED=false`，不启 GPU/HF。
 
+### 2026-11-20 Owner 原始 P2 八来源与严格候选八来源：4 保留、4 替换（权威私有清单真实比对）
+
+- 在内部读取 Owner 先前上传的 `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json`（`storyforge_r60_base336_p2_public_source_inventory_private_v1`，原始 **8** 个来源）作为**唯一旧冻结名单**，并与 DB 固定 `2026-11-16T02:03:25Z..2026-11-19T15:30:00Z` 范围内通过**历史完整前缀、正常完成、无显式编辑、无已完成快照变化、无历史事后删除、公开版本/许可精确绑定且每来源至少六条合格 Gold 结构**的八来源做**私有 Story ID 交集**：旧冻结 **8**，新合格 **8**，**交集 4、原有但不合格 4、新合格但不在旧冻结 4**。新增四个创建于 Base336 GPU 开始之后。
+- **纠偏：之前“保留 5、替换 3”的暂定策略已被本项准确的 Owner 私有名单比对推翻。** 当前实际 P2 来源需要 **4 个替换来源**的 Owner 私有 create-only 冻结与独立语义审核；不得沿用旧 3/5 八来源 Manifest、旧 5/3 预测或动态实时选源结果来伪称新八来源已冻结。后续必须重新核对每条新来源的原始请求、角色/剧情语义和历史暴露。没有输出任何 Story ID、个人身份或对应关系。
+- 已检索目前可访问的用户文件库（2026-11-01 至 20 的完整目录元数据、相关已上传的 R60 私有来源文件、R60 历史证据 ZIP）以及已连接的 Hugging Face 只读模型/数据集仓库与既有 Jobs：未找到 **Base336 最终 293/43 训练输入或 336 case/172 Story 完整冻结名单**。已发现的 `R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json` 是权威但**只有 38 个 Story（21 个指定归档版本）**；22-case 私有 HOLD 范围是这 38 个的一部分，不是新的来源；R57/GOLD 历史暴露文件也不是 Base336 release roster。**没有证据可合法把其余 134 个 Story 作为完整冻结来源凭空推断。**
+- 仓库现有 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py` **正是需要复用的 Owner-local 172-source 读取入口**：基于既有冻结六目录、实际 336 cases、Owner P2 私有 Manifest 和只读 DB，create-only 在 Owner 私有 0600 路径保存来源-版本及八源组件证据，仅输出 SAFE 计数。目前 Owner 本机的真实发布数据与私有证据路径并未连接到本次会话运行环境，且先前执行因 `DB_BASE336_SOURCE_QUERY_HOLD` 未得到可用正式源包；**不重复开发，也不伪称运行成功**。这份脚本现有 `--p2-manifest` 是**旧八来源**，在四个新来源重冻并生成新的 Owner-only 八来源 Manifest 前，直接执行它也不能证明新八来源 P2-C PASS。
+- 剩余的实际主线：**Owner 私有环境内对最终 release 数据和新八来源 Manifest 做最小范围 source-bound 绑定** → 只审剩余 **134 个**训练来源及 Protected/Reserved/Dev/Teacher 缺口 → Reviewer 真正独立裁决 → 同题完整历史 Prompt + Gold 48 条正式 Owner freeze → 四生成模型/历史原始 Gold 五来源六维盲评。无需重做已有 38 Story/59 来源版本、历史 48 成功请求或 R50 五世界。
+
 ### 当前唯一最短下游动作
 
 - **P2-C 剩余实际阻塞：** 为临时 2/6 新来源组合绑定有权威来源的 Base336 172 Story + 全版本角色/剧情语义、所有受保护/历史 Dev/Teacher 保留集合，做真正独立的新来源 Reviewer 裁决；只差未覆盖集合，不重审 R50 已闭合五世界、旧 R47/R48 20 题、Base336 老 10 条 Review 边。
