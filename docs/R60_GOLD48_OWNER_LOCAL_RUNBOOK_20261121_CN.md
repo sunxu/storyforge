@@ -136,28 +136,29 @@ cd ~/workspace/storyforge
 PROBE="hf://buckets/adradar/storyforge-training/preflight/r60/gold48-ledger-atomic-cpu-20261121-v1"
 hf buckets cp scripts/r60_gold48_ledger_atomic_cpu_probe.py "$PROBE/input/probe.py"
 hf buckets cp src/storyforge_dataset/hf_runtime/outputs.py "$PROBE/input/outputs.py"
-printf '%s\\n' 'SYNTHETIC_NO_OWNER_DATA' | hf buckets cp - "$PROBE/output/PROBE_ONLY.txt"
+printf '%s\n' 'SYNTHETIC_NO_OWNER_DATA' | hf buckets cp - "$PROBE/output/PROBE_ONLY.txt"
 ```
 
 只把 `$PROBE/input` 以 `:ro` 挂到 `/input`；只把新建的 `$PROBE/output` 以 `:rw` 挂到**正式账本预计使用的容器路径**。第一份 Job：
 
 ```sh
 ROOT="/mnt/storyforge-private/gold48-authorizations-spent"
-hf jobs run --namespace adradar --name gold48-atomic-ledger-write-cpu   --flavor cpu-basic --timeout 10m --attempts 1 --detach \\
-  -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \\
-  python:3.11 -- python /input/probe.py --phase write \\
-  --root "$ROOT" --source /input/outputs.py \\
+hf jobs run --namespace adradar --name gold48-atomic-ledger-write-cpu \
+  --flavor cpu-basic --timeout 10m --attempts 1 --detach \
+  -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \
+  python:3.11 -- python /input/probe.py --phase write \
+  --root "$ROOT" --source /input/outputs.py \
   --probe-id gold48-atomic-20261121-v1
 ```
 
 第一份 Job 日志须报告 `ATOMIC_CREATE_ONLY_CPU_PASS__SECOND_JOB_PENDING`，并证明 `direct_rw_mount_present=true`、`root_mode_0700=true`、`marker_mode_0600=true`、`atomic_create_only_verified=true`；如 Bucket FUSE 不能保持 0700、硬链接/原子无替换发布或目录 fsync，请保留精确 HOLD，**不得使用简单普通写文件的 PASS 替代**。第一份成功后，再执行与其**不同 Job ID** 的第二份：
 
 ```sh
-hf jobs run --namespace adradar --name gold48-atomic-ledger-verify-cpu \\
-  --flavor cpu-basic --timeout 10m --attempts 1 --detach \\
-  -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \\
-  python:3.11 -- python /input/probe.py --phase verify \\
-  --root "$ROOT" --source /input/outputs.py \\
+hf jobs run --namespace adradar --name gold48-atomic-ledger-verify-cpu \
+  --flavor cpu-basic --timeout 10m --attempts 1 --detach \
+  -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \
+  python:3.11 -- python /input/probe.py --phase verify \
+  --root "$ROOT" --source /input/outputs.py \
   --probe-id gold48-atomic-20261121-v1
 ```
 

@@ -24,7 +24,7 @@ def isolated_mount(tmp_path, monkeypatch):
 
     def fake_read(self, *args, **kwargs):
         if str(self) == "/proc/self/mountinfo":
-            return "9 1 0:12 / " + str(root) + " rw,relatime - fuse.fake fake rw\\n"
+            return "9 1 0:12 / " + str(root) + " rw,relatime - fuse.fake fake rw\n"
         return original_read(self, *args, **kwargs)
 
     monkeypatch.setattr(Path, "read_text", fake_read)
@@ -60,7 +60,7 @@ def test_missing_marker_and_unpinned_source_fail_closed(isolated_mount, tmp_path
     with pytest.raises(ProbeHold, match="CROSS_JOB_MARKER_MISSING_HOLD"):
         run(phase="verify", root=root, source=source, probe_id=key)
     forged = tmp_path / "outputs.py"
-    forged.write_bytes(source.read_bytes() + b"\\n# unreviewed change")
+    forged.write_bytes(source.read_bytes() + b"\n# unreviewed change")
     with pytest.raises(ProbeHold, match="PINNED_OUTPUT_MODULE_SHA_HOLD"):
         run(phase="write", root=root, source=forged, probe_id=key)
     assert list(root.iterdir()) == []

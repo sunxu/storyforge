@@ -20,7 +20,7 @@ from pathlib import Path
 OUTPUTS_GIT_BLOB_SHA1 = "69838b603b43663eaa12b1b1947ce14abad524bc"
 SCHEMA = "storyforge_gold48_ledger_atomic_cpu_probe_safe_v1"
 MARKER_SCHEMA = "storyforge_gold48_ledger_atomic_synthetic_marker_v1"
-PROBE_ID = re.compile(r"gold48-[a-z0-9-]{8,48}\\Z")
+PROBE_ID = re.compile(r"gold48-[a-z0-9-]{8,48}\Z")
 MAX_SOURCE_BYTES = 20_000
 
 
@@ -42,7 +42,7 @@ def _existing_output_manager(source: Path):
         _check(len(raw) <= MAX_SOURCE_BYTES,
                "PINNED_OUTPUT_MODULE_SIZE_HOLD")
         git_sha = hashlib.sha1(
-            b"blob " + str(len(raw)).encode("ascii") + b"\\0" + raw,
+            b"blob " + str(len(raw)).encode("ascii") + b"\0" + raw,
         ).hexdigest()
         _check(git_sha == OUTPUTS_GIT_BLOB_SHA1,
                "PINNED_OUTPUT_MODULE_SHA_HOLD")
@@ -106,7 +106,7 @@ def _read_and_check_marker(path: Path) -> str:
         # Existing OutputManager's documented canonical JSON publication.
         expected = (
             json.dumps(_payload(), ensure_ascii=False, sort_keys=True,
-                       separators=(",", ":")) + "\\n"
+                       separators=(",", ":")) + "\n"
         ).encode("utf-8")
         _check(raw == expected, "PERSISTED_MARKER_BYTES_HOLD")
         return hashlib.sha256(raw).hexdigest()
