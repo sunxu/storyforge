@@ -434,8 +434,8 @@ def source_receipt_files(tmp_path: Path, pack):
 
 
 class SyntheticIdentityBackend(RecordingBackend):
-    # This field is an injected contract-test assertion, NOT real GPU status.
-    gpu_started = True
+    # No actual GPU is started by a synthetic contract-test backend.
+    gpu_started = False
     model_id = "Qwen/Qwen3.8-27B"
 
     def __init__(self, pack, role):
@@ -520,6 +520,8 @@ def test_complete_bridge_signed_owner_synthetic_48_outputs_sidecar_no_overwrite(
     )
     assert receipt.status == "GENERATION_BATCH_PASS"
     assert receipt.record_count == 48
+    assert receipt.gpu_started is False
+    assert receipt.inference_started is False
     assert len(backend.calls) == 48
     assert stat.S_IMODE(output.stat().st_mode) == 0o600
     data = json.loads(output.read_text())
@@ -750,6 +752,8 @@ def test_recover_sidecar_from_existing_48_output_without_rerun(tmp_path, monkeyp
         output_path=output, source_evidence_paths=evidence,
     )
     assert recovered.record_count == 48
+    assert recovered.gpu_started is False
+    assert recovered.inference_started is False
     assert recovered.output_sha256 == before
     assert hashlib.sha256(output.read_bytes()).hexdigest() == before
     assert len(backend.calls) == 48  # no second generate() call

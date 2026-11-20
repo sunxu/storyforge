@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -552,6 +553,7 @@ def _gold48_launch_marker(
 def _read_existing_gold48_output(
     *, output_path: Path, profile: dict[str, Any],
     worker_manifest: dict[str, Any], model_role: str,
+    gpu_started: bool,
 ) -> WorkerReceipt:
     """Read-only strict validation. Never invokes a backend or regenerates text."""
     import stat
@@ -611,7 +613,8 @@ def _read_existing_gold48_output(
         status=status, model_role=model_role,
         record_count=CASE_COUNT, output_size_bytes=len(raw),
         output_sha256=verified.sha256, output_mode=0o600,
-        finish_reason_counts=counts, gpu_started=True,
+        finish_reason_counts=counts, gpu_started=gpu_started,
+        inference_started=gpu_started,
     )
 
 
@@ -695,6 +698,7 @@ def recover_gold48_identity_sidecar(
     receipt = _read_existing_gold48_output(
         output_path=output_path, profile=profile,
         worker_manifest=worker_manifest, model_role=model_role,
+        gpu_started=measured,
     )
     sidecar = _gold48_sidecar(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
@@ -753,7 +757,10 @@ def run_gold48_generation_batch(
              and not marker_path.exists() and not marker_path.is_symlink(),
              "GOLD48_OUTPUT_ALREADY_EXISTS_HOLD")
     entry = adapter_bindings["arms"][model_role]
-    _require(backend.gpu_started is True
+    _require(
+             backend.gpu_started is (
+                 auth.payload["execution_environment"] == PRODUCTION_SCOPE
+             )
              and getattr(backend, "model_id", None) == MODEL
              and getattr(backend, "revision", None) == REVISION
              and getattr(backend, "gold48_adapter_sha256", "UNVERIFIED") ==
@@ -822,6 +829,8 @@ def run_gold48_generation_batch(
         profile=profile, model_role=model_role, manifest=worker_manifest,
         input_path=input_path, output_path=output_path, backend=backend,
     )
+    if auth.payload["execution_environment"] == SYNTHETIC_SCOPE:
+        receipt = replace(receipt, gpu_started=False, inference_started=False)
     sidecar = _gold48_sidecar(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
         role=model_role, auth=auth, lock_sha256=lock_sha256,
