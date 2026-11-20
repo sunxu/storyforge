@@ -38,3 +38,19 @@ def test_gold48_hash_lock_candidate_matches_cpu_job_receipt():
     assert "--hash=sha256:" in text
     assert "git+" not in text
     assert "http://" not in text
+
+
+def test_signed_gpu_runtime_hard_pins_match_existing_cpu_job_contract():
+    """Protect the reviewed launch gate against lock/image/version drift."""
+    from storyforge_dataset.generation_eval import gold48_runtime_gate as runtime
+
+    root = Path(__file__).resolve().parents[1]
+    report = json.loads(
+        (root / "requirements/r60-gold48-inference-cpu-contract.json").read_text()
+    )
+    assert runtime.FROZEN_RUNTIME_IMAGE == report["base_image"]
+    assert runtime.FROZEN_RUNTIME_LOCK_SHA256 == report["lock_sha256"]
+    assert runtime.FROZEN_RUNTIME_PACKAGES == report["pins"]
+    assert runtime.FROZEN_RUNTIME_TORCH_BUILD == report["observed_torch"]
+    assert runtime.FROZEN_PINNED_INSTALL_JOB == report["hash_pinned_install_verified_job"]
+    assert report["gpu_generate_verified"] is False
