@@ -400,3 +400,119 @@ def test_create_only_materializer_cli_emits_owner_only_files(tmp_path):
     assert second.returncode == 2
     assert json.loads(second.stdout)["status"] == "HOLD"
     assert output_jsonl.read_bytes() == pack[4].read_bytes()
+
+def source_receipt_files(tmp_path: Path, pack):
+    """Three synthetic receipts; real GPU/weights are never touched."""
+    files = {}
+    for role in PROVENANCE:
+        entry = pack[2]["arms"][role]
+        payload = (
+            {"training_evidence": {"adapter_sha256": entry["expected_sha256"]}}
+            if role == "r46_v02" else {"adapter_sha256": entry["expected_sha256"]}
+        )
+        if role == "r60_base336":
+            payload.update({
+                "schema": "storyforge_gold48_adapter_sha_cpu_only_safe_v1",
+                "status": "R60_ADAPTER_BYTE_SHA_PASS",
+                "file_size": 1867797544,
+                "gpu_started": False,
+                "model_calls": 0,
+            })
+        raw = _canonical(payload)
+        target = tmp_path / f"{role}.receipt.private.json"
+        target.write_bytes(raw)
+        target.chmod(0o600)
+        entry["source_evidence_sha256"] = hashlib.sha256(raw).hexdigest()
+        files[role] = target
+    return files
+
+
+class SyntheticIdentityBackend(RecordingBackend):
+    # This field is an injected contract-test assertion, NOT real GPU status.
+    gpu_started = True
+    model_id = "Qwen/Qwen3.8-27B"
+
+    def __init__(self, pack, role):
+        super().__init__()
+        self.revision = pack[0]["base_model"]["revision"]
+        self.gold48_adapter_sha256 = pack[2]["arms"][role]["expected_sha256"]
+        value = pack[2]["arms"][role]["local_dir"]
+        self.gold48_adapter_dir = None if value is None else Path(value)
+
+
+@pytest.mark.parametrize("role", ROLES)
+def test_complete_bridge_synthetic_48_outputs_all_arms_and_no_overwrite(tmp_path, role):
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    approval = {
+        "schema": "storyforge_r60_gold48_generation_owner_authorization_private_v1",
+        "status": "OWNER_APPROVED_GOLD48_GENERATION",
+        "scope": "GOLD48_FOUR_ARM_192_GENERATIONS",
+        "run_key": pack[0]["dataset"]["run_key"],
+        "model_role": role,
+        "frozen_profile_canonical_sha256": _digest(pack[0]),
+        "adapter_bindings_canonical_sha256": _digest(pack[2]),
+        "input_sha256": pack[3]["sha256"],
+        "inference_authorized": True,
+        "gpu_authorized": True,
+        "training_authorized": False,
+    }
+    backend = SyntheticIdentityBackend(pack, role)
+    output = tmp_path / f"{role}.private.json"
+    receipt = run_gold48_generation_batch(
+        **build_call(pack, role=role),
+        backend=backend, output_path=output,
+        source_evidence_paths=evidence,
+        separate_owner_authorization=approval,
+    )
+    assert receipt.status == "GENERATION_BATCH_PASS"
+    assert receipt.record_count == 48
+    assert len(backend.calls) == 48
+    actual = json.loads(output.read_text())
+    assert actual["record_count"] == 48
+    assert stat.S_IMODE(output.stat().st_mode) == 0o600
+    assert [r["effective_seed"] for r in actual["outputs"]] == list(range(42, 90))
+    assert [r["sample_id"] for r in actual["outputs"]] == [
+        f"G48-C{i:02d}" for i in range(1, 49)
+    ]
+    assert all(x["eos_token_ids"] == [248046, 248044]
+               and x["pad_token_id"] == 248044
+               and x["enable_thinking"] is False
+               and x["max_new_tokens"] == 2048 for x in backend.calls)
+    with pytest.raises(WorkerError, match="OUTPUT_PUBLICATION_FAILED"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role),
+            backend=SyntheticIdentityBackend(pack, role),
+            output_path=output, source_evidence_paths=evidence,
+            separate_owner_authorization=approval,
+        )
+    assert json.loads(output.read_text()) == actual
+
+
+def test_complete_bridge_rejects_backend_sha_before_generation(tmp_path):
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    role = "r60_base336"
+    backend = SyntheticIdentityBackend(pack, role)
+    backend.gold48_adapter_sha256 = "0" * 64
+    approval = {
+        "schema": "storyforge_r60_gold48_generation_owner_authorization_private_v1",
+        "status": "OWNER_APPROVED_GOLD48_GENERATION",
+        "scope": "GOLD48_FOUR_ARM_192_GENERATIONS",
+        "run_key": pack[0]["dataset"]["run_key"],
+        "model_role": role,
+        "frozen_profile_canonical_sha256": _digest(pack[0]),
+        "adapter_bindings_canonical_sha256": _digest(pack[2]),
+        "input_sha256": pack[3]["sha256"],
+        "inference_authorized": True, "gpu_authorized": True,
+        "training_authorized": False,
+    }
+    dest = tmp_path / "forbidden.private.json"
+    with pytest.raises(WorkerError, match="GOLD48_LOADED_BACKEND_IDENTITY_HOLD"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), backend=backend, output_path=dest,
+            source_evidence_paths=evidence,
+            separate_owner_authorization=approval,
+        )
+    assert backend.calls == []
+    assert not dest.exists()
