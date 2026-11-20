@@ -8,7 +8,6 @@ import pytest
 
 from scripts import r60_gold48_gpu_cli as cli
 
-
 RUN = "gold48-owner-20261121-static-dryrun-01"
 CODE = cli.BUCKET + cli.CODE_PREFIX + "/" + "a" * 40
 ADAPTERS = {
