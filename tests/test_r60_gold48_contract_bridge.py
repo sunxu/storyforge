@@ -867,6 +867,7 @@ def test_production_owner_signed_scope_cannot_run_forged_synthetic_backend(
         "payload"
     ]["execution_environment"] == "PRODUCTION_GPU_48_GENERATIONS"
     backend = SyntheticIdentityBackend(pack, role)
+    backend.gpu_started = True  # forged old-style claim, still not a real model backend
     with pytest.raises(
         WorkerError, match="GOLD48_SYNTHETIC_BACKEND_PRODUCTION_SCOPE_FORBIDDEN"
     ):
