@@ -9,7 +9,6 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
-
 from test_r60_gold48_contract_bridge import (
     fixture,
     source_receipt_files,

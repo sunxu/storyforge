@@ -15,11 +15,11 @@ from typing import Any
 from storyforge_dataset.hf_runtime.inputs import InputManager
 from storyforge_dataset.hf_runtime.outputs import OutputManager
 
+from .backend import TransformersGenerationBackend
 from .gold48_owner_receipt import (
     make_owner_scope,
     verify_owner_authorization,
 )
-from .backend import TransformersGenerationBackend
 from .gold48_qwen35_loader import ADAPTER_SIZE, EOS_IDS, MODEL, PAD_ID, REVISION
 from .worker import (
     GenerationBackend,
