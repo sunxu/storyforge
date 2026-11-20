@@ -848,3 +848,28 @@ def test_partial_backend_failure_consumes_output_namespace_without_retry(
             source_evidence_paths=evidence,
         )
     assert retry_backend.calls == []
+
+
+def test_production_owner_signed_scope_cannot_run_forged_synthetic_backend(
+    tmp_path, monkeypatch,
+):
+    role = "base"
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    auth, output, _ = synthetic_signed_owner_receipt(
+        tmp_path, monkeypatch, pack, role, synthetic_test_only=False
+    )
+    assert json.loads(auth["owner_authorization_receipt_path"].read_text())[
+        "payload"
+    ]["execution_environment"] == "PRODUCTION_GPU_48_GENERATIONS"
+    backend = SyntheticIdentityBackend(pack, role)
+    with pytest.raises(
+        WorkerError, match="GOLD48_SYNTHETIC_BACKEND_PRODUCTION_SCOPE_FORBIDDEN"
+    ):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), **auth,
+            output_path=output, backend=backend, source_evidence_paths=evidence,
+        )
+    assert backend.calls == []
+    assert not output.exists()
+    assert not output.with_name(output.name + ".launch.private.json").exists()

@@ -166,7 +166,14 @@ def test_pre_gpu_runtime_pip_version_measured_not_from_caller(tmp_path, monkeypa
         "require_hashes_install_on_inference_image_verified": True,
         "observed_torch": "2.6.0+cu124",
         "pins": {"torch": "2.6.0", "peft": "0.21.2"},
+        "hash_pinned_install_verified_job": "synthetic-job",
     }))
+    monkeypatch.setattr(gate, "FROZEN_RUNTIME_LOCK_SHA256", lock_sha)
+    monkeypatch.setattr(gate, "FROZEN_RUNTIME_IMAGE",
+                        "pytorch/pytorch@sha256:" + "e" * 64)
+    monkeypatch.setattr(gate, "FROZEN_RUNTIME_PACKAGES",
+                        {"torch": "2.6.0", "peft": "0.21.2"})
+    monkeypatch.setattr(gate, "FROZEN_PINNED_INSTALL_JOB", "synthetic-job")
     owner_scope = {
         "dependency_lock_sha256": lock_sha,
         "runtime_image_digest": "sha256:" + "e" * 64,
@@ -271,3 +278,79 @@ def test_failed_preflight_never_reaches_loader_or_gpu(tmp_path, monkeypatch):
             trusted_provider_public_key_path=tmp_path / "absent-provider-public",
             expected_template_sha256="a" * 64,
         )
+
+
+
+def test_synthetic_owner_signature_cannot_enter_gpu_preflight(tmp_path, monkeypatch):
+    """A valid *synthetic* Ed25519 signature is never a production GPU grant."""
+    role = "base"
+    pack = fixture(tmp_path)
+    pack[2].update({
+        "status": "OWNER_GOLD48_ADAPTER_BINDINGS_ACCEPTED__MOUNT_PENDING",
+        "owner_receipt_verified": True,
+        "provider_volume_attestation_verified": False,
+        "current_remote_weight_bytes_verified_all_three": False,
+    })
+    evidence = source_receipt_files(tmp_path, pack)
+    auth, output, _ = synthetic_signed_owner_receipt(
+        tmp_path, monkeypatch, pack, role,
+    )
+
+    def unexpected_package_probe(**_kwargs):
+        pytest.fail("synthetic authority must fail before runtime measurement")
+
+    monkeypatch.setattr(gate, "verify_current_dependency_install",
+                        unexpected_package_probe)
+    with pytest.raises(WorkerError, match="GOLD48_PRODUCTION_GPU_SCOPE_REQUIRED_HOLD"):
+        gate.authorize_and_consume_before_gpu(
+            frozen=pack[0], owner_freeze=pack[1],
+            adapter_bindings=pack[2], input_manifest=pack[3],
+            input_path=pack[4], output_path=output,
+            model_role=role, source_evidence_paths=evidence,
+            owner_authorization_receipt_path=auth["owner_authorization_receipt_path"],
+            trusted_owner_public_key_pem_path=auth["trusted_owner_public_key_pem_path"],
+            runtime_lock_path=auth["runtime_lock_path"],
+            runtime_contract_path=tmp_path / "never-used-contract",
+            provider_attestation_path=tmp_path / "never-used-provider",
+            trusted_provider_public_key_path=tmp_path / "never-used-provider-key",
+        )
+    assert not output.exists()
+
+
+def test_runtime_contract_pins_reject_modified_package_or_install_job(
+    tmp_path, monkeypatch,
+):
+    """Caller-supplied contract JSON cannot relax the reviewed package pins."""
+    lock = tmp_path / "synthetic-lock"
+    lock.write_bytes(b"synthetic-lock-bytes")
+    sha = hashlib.sha256(lock.read_bytes()).hexdigest()
+    pins = {"torch": "2.6.0", "peft": "0.21.2"}
+    fake_image = "pytorch/pytorch@sha256:" + "a" * 64
+    monkeypatch.setattr(gate, "FROZEN_RUNTIME_LOCK_SHA256", sha)
+    monkeypatch.setattr(gate, "FROZEN_RUNTIME_IMAGE", fake_image)
+    monkeypatch.setattr(gate, "FROZEN_RUNTIME_PACKAGES", pins)
+    monkeypatch.setattr(gate, "FROZEN_PINNED_INSTALL_JOB", "approved-cpu-job")
+    contract = {
+        "schema": "storyforge_r60_gold48_inference_cpu_dependency_contract_v1",
+        "base_image": fake_image, "lock_sha256": sha,
+        "pins": pins, "observed_torch": "2.6.0+cu124",
+        "require_hashes_install_on_inference_image_verified": True,
+        "hash_pinned_install_verified_job": "approved-cpu-job",
+    }
+    source = tmp_path / "runtime-contract.json"
+    scope = {"dependency_lock_sha256": sha,
+             "runtime_image_digest": "sha256:" + "a" * 64}
+    for field, tampered in [
+        ("pins", {"torch": "2.6.0", "peft": "0.21.1"}),
+        ("hash_pinned_install_verified_job", "unreviewed-cpu-job"),
+        ("base_image", "pytorch/pytorch@sha256:" + "b" * 64),
+        ("lock_sha256", "0" * 64),
+    ]:
+        payload = dict(contract)
+        payload[field] = tampered
+        source.write_text(json.dumps(payload))
+        with pytest.raises(WorkerError, match="GOLD48_RUNTIME_DEPENDENCY_PIN_HOLD"):
+            gate.verify_current_dependency_install(
+                runtime_lock_path=lock, runtime_contract_path=source,
+                owner_scope=scope,
+            )

@@ -39,6 +39,25 @@ DURABLE_CONSUMPTION_ROOT = Path("/mnt/storyforge-private/gold48-authorizations-s
 MEASUREMENT_SCHEMA = "storyforge_r60_gold48_provider_image_measurement_v1"
 SIGNED_MEASUREMENT_SCHEMA = "storyforge_r60_gold48_provider_ed25519_attestation_v1"
 CONSUMPTION_SCHEMA = "storyforge_r60_gold48_authorization_consumed_private_v1"
+# Reviewed immutable hashes and versions; the runtime contract is not trusted
+# merely because a caller supplied it. Changes require a reviewed code commit.
+FROZEN_RUNTIME_IMAGE = (
+    "pytorch/pytorch@sha256:"
+    "77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
+)
+FROZEN_RUNTIME_LOCK_SHA256 = (
+    "dc3425f4895e091c4f5981a4933a6ba2e8fdd8426d8e074069c8cfa2ff4f8d5e"
+)
+FROZEN_RUNTIME_TORCH_BUILD = "2.6.0+cu124"
+FROZEN_RUNTIME_PACKAGES = {
+    "torch": "2.6.0",
+    "transformers": "5.16.1",
+    "peft": "0.21.2",
+    "accelerate": "1.12.0",
+    "huggingface_hub": "1.33.0",
+    "cryptography": "46.0.4",
+}
+FROZEN_PINNED_INSTALL_JOB = "6b00b0894fdc5ab3c55be7f0"
 # Process-local issuance registry: a file or dataclass alone cannot re-mint a grant.
 _ISSUED_ONE_SHOT_PERMITS: dict[str, str] = {}
 HEX_SHA = re.compile(r"[0-9a-f]{64}\Z")
@@ -138,11 +157,17 @@ def verify_current_dependency_install(
         raise WorkerError("GOLD48_RUNTIME_DEPENDENCY_EVIDENCE_HOLD") from exc
     _check(contract.get("schema") ==
                "storyforge_r60_gold48_inference_cpu_dependency_contract_v1"
-           and contract.get("lock_sha256") == lock_sha
-           and owner_scope["dependency_lock_sha256"] == lock_sha
-           and contract.get("base_image", "").endswith(
+           and contract.get("lock_sha256") == FROZEN_RUNTIME_LOCK_SHA256
+           and lock_sha == FROZEN_RUNTIME_LOCK_SHA256
+           and owner_scope["dependency_lock_sha256"] == FROZEN_RUNTIME_LOCK_SHA256
+           and contract.get("base_image") == FROZEN_RUNTIME_IMAGE
+           and contract["base_image"].endswith(
                "@" + owner_scope["runtime_image_digest"]
            )
+           and contract.get("observed_torch") == FROZEN_RUNTIME_TORCH_BUILD
+           and contract.get("pins") == FROZEN_RUNTIME_PACKAGES
+           and contract.get("hash_pinned_install_verified_job") ==
+               FROZEN_PINNED_INSTALL_JOB
            and contract.get("require_hashes_install_on_inference_image_verified") is True
            and sys.version_info[:2] == (3, 11)
            and sys.platform.startswith("linux")
