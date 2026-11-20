@@ -273,7 +273,8 @@ def main():
             "private_values_emitted": False,
         }
     print(json.dumps(report, sort_keys=True))
+    return 0 if report["status"] == SAFE_STATUS else 42
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
