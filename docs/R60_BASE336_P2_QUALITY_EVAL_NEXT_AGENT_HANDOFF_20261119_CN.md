@@ -1,5 +1,18 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 已生成 History32 独立 Reviewer 私有增量材料：120 版本 / 共享 4 版本全部已审
+
+Owner Mac 已实际执行先前单次私有整理脚本（Owner 环境，无仓库增量工具开发），回传 **`status=HISTORY32_INCREMENTAL_REVIEW_PACKET_CREATED`**。本次记录的是**真正已执行的结果**，替代下方历史 33 差集章节中“archived revision 还待核验”的旧状态：
+
+- 历史 Story **33**，已审核的 Base336 Story **172**，身份交集 **1**，新增差集 **32**；历史 current+archived source/version **124**。
+- 该共享 Story 在历史 124 条中的来源版本合计 **4**，全部 **4/4** 可在先前 Reviewer 已实际使用、Owner SHA 验证通过的 Base336 375-record 私有包中找到相同 `(story_id,source_kind,revision_id)`，且对应四字段内容逐项**完全一致**；`shared_historical_versions_uncovered=0`，`archived_revision_coverage_verified=true`。因此**无共享 Story 的漏审归档修订版**，4 份均继承已有 P2×Base336 Reviewer1 8/8 结论；这 4 份不再交给下一 Reviewer 重审。
+- 真实增量私有 Reviewer 包包含 **32 新历史 Story** 的 **120 个 source/version（32 CURRENT + 88 ARCHIVED）**，外加现有 P2 8 个来源的四字段正文；`new_history_source_versions_for_reviewer=120`。它不包含 Base336 其他 171 Story、不包含原已覆盖的共享 4 版本，也不包含 R50 sealed 原问答。程序输出为两个 **Owner-local create-only 0600** 文件：`R60_P2_HISTORY32_SEMANTIC_REVIEW_PRIVATE.json`（向经授权、独立 Reviewer 定向交付，虽匿名但含敏感真实世界/角色/开场正文）和 `R60_P2_HISTORY32_OWNER_CROSSWALK_PRIVATE.json`（仅 Owner 保存，不得交付 Reviewer，不公开 GitHub）。输出目录为 Owner private `r60-p2-history32-incremental-review-20261120`。
+- **来源版本标识和交付合同**：Reviewer 包 schema=`storyforge_r60_p2_history32_incremental_semantic_reviewer_private_v1`，`p2[8]` 使用本次匿名 `P01...P08`；`historical_versions_to_review[120]` 使用 `H001...H032-CURRENT` 或 `-V<real_revision_id>`；每条以 `source_fields.world/character/characters/opening` 供 Reviewer 判断语义别名、世界规则、关键人物/关系、组织、事件/剧情，而不是只按 UUID、JSON exact 和题材模板。注意本次 Pxx 是**按 P2 Story UUID 排序的匿名别名**；之前 Gold48 `Sxx` 源清单序号不是相同映射，Owner 不得未验证而外推。
+- **独立 Reviewer 下一交付**：既有 Reviewer 可继续在权限隔离的审阅流程中只处理**新的 120 版本**，先记录在全 120 版本上的索引覆盖，再对 P2 8 个来源分别提交 `SAME_SEMANTIC_COMPONENT / INDEPENDENT_TEMPLATE_ONLY / INSUFFICIENT_EVIDENCE` 判断、有版本锚的具体文字证据和审阅范围限制。不得将“全部 120 版本被检索”说成“960 对全部人工全文逐一通读”，不得复制历史旧 Reviewer 结论作为本轮裁决。完成后 Owner 在私有侧对材料字节、版本锚、审前独立交付进行签收。**现在只有 `packet_created=true`，并没有 `semantic_review_pass=true`。**
+- **非主线/其他状态不动**：P2 八来源对历史 33/124 四字段 exact overlap=0 的先前 PASS 是精确字段隔离，不是上述 120 版本的语义 PASS；其余尚无完整权威全集的 Protected/Reserved/Dev/Teacher 和真实 actual-sent prompt 的证据仍缺；另一个 P2 原始卡内部名称残留待正式 Gold48 冻结前的质量归因处理。未创建 GitHub 工作代码、未写 DB、未启动 GPU/模型请求，`train_admitted=0`。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。
+
+---
+
 ## 2026-11-20 历史 33 ∩ Base336 172 差集 Owner SAFE PASS：仅 32 Story 进入增量语义审阅
 
 Owner Mac 已按本任务书的既有冻结 Git 来源清单，与 **Owner 已签收** `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 的 `base336_scope.story_ids_PRIVATE` 做只读差集并回传真实 SAFE（`HISTORICAL33_BASE336_SCOPE_DIFF_PASS`）。**结果：历史 33 个 Story、Base336 已审 Story 172、身份交集 1、真实差集 32；`previous_known_overlap_lower_bound_met=true`，数据库未访问，私有值未输出。** 这是最终全 172 Story 差集，不再以旧的 38 Story 交集下界作为现状，也不需要再复查 195/80/150/20 冻结 Blob 以重新汇报同一差集。
