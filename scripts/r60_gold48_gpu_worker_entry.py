@@ -10,7 +10,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import re
 import stat
 import sys
@@ -237,7 +236,8 @@ def main(argv: list[str] | None = None) -> int:
         result = run(args.stage, args.run_id, args.model_role,
                      execute=args.action == "execute")
         code = 0
-    except Exception:  # noqa: BLE001: never log private source or tracebacks
+    # The safe main must not surface private tracebacks.
+    except Exception:  # noqa: BLE001
         result = {
             "status": "HOLD",
             "reason_code": "GOLD48_OWNER_STAGE_AUTHORIZATION_OR_RUNTIME_HOLD",
