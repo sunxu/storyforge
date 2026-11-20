@@ -129,7 +129,8 @@ CHANGED_SQL = """
 SELECT EXISTS (
   SELECT 1 FROM public.v2_chat_message_ledger l
   JOIN public.v2_chat_messages m ON m.id = l.message_id
-  WHERE l.message_id = ANY(%s::uuid[]) AND l.operation = 'update_before'
+  WHERE l.session_id = %s AND l.story_id = %s
+    AND l.message_id = ANY(%s::uuid[]) AND l.operation = 'update_before'
     AND l.row_data->>'status' = 'completed'
     AND (l.row_data->>'content') IS DISTINCT FROM m.content
 )
@@ -209,7 +210,7 @@ def try_case(cur, source, row, phase=None):
     ) or mid not in current or current[mid][0] != answer or edited(current[mid][1]):
         return None
     phase[0] = "COMPLETED_HISTORY_EDIT_SCREEN"
-    cur.execute(CHANGED_SQL, (mids,))
+    cur.execute(CHANGED_SQL, (sid, story, mids))
     if cur.fetchone()[0]:
         return None
     lower, upper = created - timedelta(minutes=5), created + timedelta(minutes=5)
