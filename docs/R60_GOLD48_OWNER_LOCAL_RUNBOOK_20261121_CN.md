@@ -115,8 +115,10 @@ SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_saf
 
 在 `gold48_runtime_gate.authorize_and_consume_before_gpu` 中，三臂（非 base）必须于**消耗一次性 Owner 授权之前**，通过当前容器的 `/proc/self/mountinfo` 验证 `/ro_adapters/<role>` 是精确独立且 `ro` 的挂载点，同时检查非符号链接目录、权重文件大小 1,867,797,544 字节与三个 Adapter 原始配置文件固定大小。检查只用 `lstat` 和 mountinfo，不读取或 SHA 计算权重。正式 Loader 消费授权时及生成前继续复核该挂载观察，并由原 Loader 完成权重字节流 SHA。过去 CPU Job 的挂载 PASS 不会被当成新进程的挂载实证。若缺失、可写、路径错误、被替换为 symlink 或文件尺寸不同，必须在 GPU 及模型调用之前 HOLD；未签发的 Owner/Provider 许可仍不能被绕过。
 
-## 12. 当前正式执行阻塞：共享可写账本与原子发布能力
+## 12. 旧问题已定位：ChatGPT HF Connector 私有 Bucket RW 挂载 403（禁止重复排查）
 
-2026-11-21 一次独立 HF CPU-only 写入能力探针请求，尝试把既有 `adradar/storyforge-training/preflight` 以 `:rw` 挂载到隔离测试根目录、执行 Git 固定 SHA 的**原有** `OutputManager.write_safe`，HF Jobs API 在**创建 Job 之前**返回 `403 Forbidden`。再次只读列出 Job，未找到该新 Job。因此`WRITE_MOUNT_JOB_SUBMISSION=HOLD_403`，**没有真实写入结果、没有证实 Bucket 不兼容，也未改动训练文件**；不能擅自推断 403 是哪一种组织权限或策略原因。无需重复已通过的三路只读 Adapter CPU Job。
+**沿用 2026-11-03 与 2026-11-10 已核验结论，不再把 Connector 403 描述为未知的组织/Bucket 总体写入权限问题。** 同一组织 `adradar` 的 HF Jobs 在 ChatGPT Connector：无挂载 PASS、私有 Bucket `:ro` PASS、私有 Bucket `:rw` 在提交阶段 403（Job 不创建）。Mac 本地 HF CLI 使用相同组织与 Bucket 的默认 RW 挂载已经完成写入、读回、删除；实际成功 Job [`6af2ee90ab34849891ab2f6e`](https://huggingface.co/jobs/adradar/6af2ee90ab34849891ab2f6e) 于 2026-11-10 `COMPLETED`。这排除了 Bucket 整体不可写、组织总体缺乏 Jobs 资格及简单的卷语法错误。ChatGPT 侧失败点曾定位在 `/api/buckets/adradar/storyforge-training/xet-write-token`；OAuth scopes 未含 `write-repos` 是一个观察点，**尚不足以独立证明具体后端根因**。
 
-仓库中 `gold48_runtime_gate.verify_atomic_private_publication_before_spend` 现在直接复用现有 `OutputManager.write_safe`，在一次性 Owner 授权被消耗前，对**真实输出目录和真实共享账本目录**各写入/二次拒绝覆盖/删除一份纯合成 0600 临时探针，要求目录 0700、原子 create-only、同步写入及清理成功。支持未验收时必须在任何 GPU、模型调用和授权消耗之前 HOLD；该 CPU 文件系统检测也不代表 Provider 密钥签收、跨 Job 持久性或正式推理授权。若 Bucket `:rw` 仍返回 403，先由实际有权限的存储管理者核查 HF Namespace 与 Bucket 的写入授权或另选经过验证的持久输出卷，**不要修改 OutputManager 语义、把 FUSE 无保证写入冒充原子持久账本、或重发 GPU Job 试错**。
+2026-11-21 的 Gold48 可写账本探针在 ChatGPT Connector 上重复收到相同 403，未创建 Job、未写入任何 Bucket 文件；**这是已知连接器限制的再次出现，不是新的主线验收结果**。不得因它再提交一轮 ChatGPT RW 探针、重复更换 CPU flavor、切换个人 namespace、反复重新 OAuth 或重跑成功的 RO Adapter Job。后续需要 RW 时，优先复用**已经成功的 Owner Mac CLI 提交通道**，输入继续 `:ro`，输出/账本使用独立的私有 RW 卷；任何实际创建和 GPU Job 仍须按项目单独审批。
+
+正式推理前剩余的**不同**技术门禁是：在 Owner Mac CLI 可以写入的**隔离私有目标目录**上，用原有 `OutputManager.write_safe` 核验 0700/0600、原子 create-only、拒绝覆盖、目录 `fsync` 以及**跨 Job 持久性**。过去 CLI 的简单写入成功并不等于该原子账本合同通过。生产代码 `gold48_runtime_gate.verify_atomic_private_publication_before_spend` 已加入对真实输出目录和持久账本目录的检查，并在消耗 Owner 签名、GPU/模型初始化前失败关闭。该测试不会授予任何推理权限；不得用无法保证原子性的 FUSE 挂载冒充已验证共享账本。
