@@ -121,3 +121,11 @@ def test_postgres_error_message_is_not_exposed_by_safe_contract():
     body = inspect.getsource(capture.run)
     assert 'SQLSTATE_' in body
     assert 'str(exc)' not in body
+
+
+def test_ledger_edit_screen_is_scoped_to_indexed_session_story():
+    assert "l.session_id = %s AND l.story_id = %s" in capture.CHANGED_SQL
+    assert "l.message_id = ANY(%s::uuid[])" in capture.CHANGED_SQL
+    import inspect
+
+    assert "cur.execute(CHANGED_SQL, (sid, story, mids))" in inspect.getsource(capture.try_case)
