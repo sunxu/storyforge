@@ -1,5 +1,23 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Gold48 冻结准备实际缺件：已证候选容量 ≠ 48 条可复现落盘记录
+
+Owner 已执行一次 **`r60_gold48_existing_artifact_locator_safe_v1`** 有界只读定位：扫描 `~/.local/share/storyforge/r60/private` 内 **2,401 文件**，未截断；按 Gold48/P2 Prefix/Original/History/Reference 等文件名及已识别 JSON/JSONL 结构得到 **8 个候选文件**，没有符合该工具识别条件的 **48 条历史 Prefix/原始 Assistant 回复成对记录持久化文件**。已识别内容含 8 来源 Gold48 source-first ID、P2 source inventory、Base336 P2 source evidence、history32 Reviewer，以及两份分别 **30/90 行**的 JSONL；这些不能作为已冻结 48 题。该文件名/形状扫描**不能证明磁盘其它目录或不匹配的结构不存在**，也不读取私有文本、数据库或 R50 sealed。
+
+旧结果的准确含义是：在数据库只读核验中曾有 **8 Story ×6=48 条两两不同的完整历史 Prefix 和48 份真实原始回答、25 Session、48/48 请求元数据唯一绑定**；它证明**候选容量与匹配条件在当时成立**，没有因此落盘为当前可验证、可复现的 48 记录，也不是正式 Gold48 Freeze。现有 GitHub 代码树已查，无专门匹配这批严格历史 48 题的冻结/导出脚本；已有 `history_recovery.py` / `message_ledger.py`、来源包与 R48 Gold 前缀校验逻辑是可复用组件，不等于已经存在本批 48-case 原始逐行选择清单。此前对话/文档中目前也没有可追溯的**原始48行 SQL、参数、逐条请求/Assistant locator 或数据导出文件**，所以**不能将当前 8-source IDs 自动推断成原来的 48 个精确 Case IDs**。
+
+**下一步唯一有意义的数据动作（禁止假装无事可做或重复全流程审查）**：
+
+1. **优先恢复原先 48 条候选的 Owner 私有逐条定位信息**（原 SQL/脚本运行输入、request↔Assistant event↔Session 的不可变 row locators、当时选择顺序与来源/权限版本），只通过可信既存材料获取；若找到，立即在 Owner 私有 0700/0600 create-only 固化一份行级 locator manifest，附所用查询/版本/时点，以便复用历史恢复器只读生成 48 条完整 Prefix/原始回答的候选包。
+2. 如果确认当时只有聚合统计、**逐条 locator 并未留存**，应明确 `PRIOR_48_CASE_IDENTITY_NOT_RECOVERED`；不能称下一次取出的48条必然与原来相同。只有在**同一预注册 8-source eligibility、每源6个、合法公开版本/权限、真实完整历史/原始回答/请求事件唯一匹配**和固定可重复排序下，才允许**一次有界恢复性选择 + 当场持久化**为**新候选**。必须披露新候选的选择身份与之前旧统计无法逐条同一性认证；遇到歧义/不足就 HOLD，不擅自编造答案、缩为三消息草稿或借 R50 sealed 补题。
+3. 不重新做 Base336 172/375、History32 32/120、R50/旧 Dev/Gold195 的已证隔离，不再跑无权限的 RolePlay 生产/actual-sent，**不新建重复数据库抽取/历史恢复/Blind/HF 核心**。如果缺少现成的“从只读可信行 locator 到 create-only 候选包”的最薄编排，可以在准确锁定其输入/接口之后才做必要适配；不能把仓库旧 `r60_base336_p2_public_prompt_package_gate.py`（三消息草稿）冒充正式 Freeze。
+4. 后续在私有候选文件存在后才执行 48 个前缀/原回复/权利/版本/重建输入 SHA 绑定，风险来源按真实 Story ID 锁定其六题，预注册 48 主分析和 42 敏感性分析，最终 Owner 单独签收 `GOLD48_FROZEN_SCOPED`。**Owner 已批准的是已审范围独立性剩余风险和冻结准备，不是生成缺失的证据文件或授权推理。**
+
+当前 `SCOPED_INDEPENDENCE_RISK_ACCEPTED`、`RECONSTRUCTED_EVALUATION_INPUT` 和 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 均已批准；`PRIOR_48_CASE_IDENTITY=NOT_YET_RECOVERED`、`GOLD48_PRIVATE_CASE_PAIRS_PERSISTED=NOT_VERIFIED`、`P2_B_48_PROMPTS=NOT_GENERATED`、`GOLD48_FROZEN_SCOPED=false`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。此条仅对 Owner SAFE 文件定位结果进行事实限定，**不触发新的付费模型推理**。
+
+---
+
+
 ## 2026-11-20 Owner 批准限定范围独立评估：Gold48 冻结准备可以继续
 
 > **Owner 最新授权，优先于下方历史“必须取得全历史 Protected/Teacher 权威名册才能继续”要求。** 已明确批准采用 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`**（已核验范围内独立），并**在报告中披露未知历史来源暴露风险**。本次 Owner 决定已经落实为 [`R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json`](evidence/R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json)。这是**限定范围风险接受**，不是证据层面的全历史独立性证明。永远保留 `FULL_HISTORICAL_SOURCE_UNIVERSE=UNVERIFIED`；不可把没有总名册称为没有遗漏训练/测试来源，或将 `P2_C_FULL_UNIVERSE` 伪写成 PASS。
