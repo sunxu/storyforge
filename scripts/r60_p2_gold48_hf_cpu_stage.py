@@ -170,6 +170,18 @@ def verify(stage, run_key):
     }
 
 
+def mkdir_stage_parent(stage, destination):
+    """Create only ancestors inside this fresh Stage, each with 0700."""
+    current = stage
+    for part in destination.parent.relative_to(stage).parts:
+        current = current / part
+        if not current.exists():
+            current.mkdir(mode=0o700)
+        require(current.is_dir() and not current.is_symlink()
+                and stat.S_IMODE(current.stat().st_mode) == 0o700,
+                "STAGE_DIRECTORY_MODE_HOLD")
+
+
 def prepare(draft_file, stage, run_key):
     require(RUN_RE.fullmatch(run_key) is not None
             and stage.parent == draft_file.parent.parent
@@ -185,7 +197,7 @@ def prepare(draft_file, stage, run_key):
     for relative in stage_files():
         src = ROOT / relative
         dst = stage / relative
-        dst.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        mkdir_stage_parent(stage, dst)
         raw = read_private(src, maximum=8 * 1024 * 1024)
         fd = os.open(dst, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
         with os.fdopen(fd, "wb") as handle:
@@ -193,7 +205,7 @@ def prepare(draft_file, stage, run_key):
         files[relative] = sha(raw)
     raw = canonical(payload) + b"\n"
     target = stage / INPUT
-    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    mkdir_stage_parent(stage, target)
     fd = os.open(target, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     with os.fdopen(fd, "wb") as handle:
         handle.write(raw)
