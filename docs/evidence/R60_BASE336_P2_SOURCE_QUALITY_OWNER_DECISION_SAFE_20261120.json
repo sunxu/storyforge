@@ -1,0 +1,49 @@
+{
+  "schema": "storyforge_r60_base336_p2_source_quality_owner_decision_safe_v1",
+  "decision_date": "2026-11-20",
+  "decision_basis": "OWNER_EXPLICIT_CHAT_APPROVAL__ACCEPT_REVIEWER_IDENTIFIED_SINGLE_SOURCE_WITH_QUALITY_CAVEAT",
+  "status": "OWNER_ACCEPTED_WITH_QUALITY_CAVEAT__PRIVATE_CASE_BINDING_PENDING",
+  "p2_public_source_count": 8,
+  "flagged_source_count": 1,
+  "known_risk": "WORLD_CHARACTER_FAMILY_OR_NAME_REPLACEMENT_RESIDUE__SOURCE_INPUT_INCONSISTENCY",
+  "decision": "KEEP_ORIGINAL_SOURCE_REVISION_UNMODIFIED",
+  "original_reference_policy": "PRESERVE_HISTORICAL_ORIGINAL_REPLY_UNMODIFIED",
+  "analysis_plan": {
+    "primary": {
+      "case_count": 48,
+      "source_count": 8
+    },
+    "paired_sensitivity": {
+      "case_count": 42,
+      "excluded_flagged_source_case_count": 6,
+      "source_count": 7
+    },
+    "effect": "REPORT_BOTH_ANALYSES_AND_ANY_DISAGREEMENT__DO_NOT_ATTRIBUTE_PREEXISTING_SOURCE_CONFLICT_TO_MODEL"
+  },
+  "private_mapping": {
+    "reviewer_flagged_source_to_owner_story_id": "PENDING_PRIVATE_EXACT_ID_BINDING",
+    "flagged_source_to_six_gold48_case_ids": "PENDING_PRIVATE_EXACT_SIX_CASE_BINDING",
+    "mapping_must_remain_private": true,
+    "no_public_case_identifiers": true
+  },
+  "remaining_blockers": {
+    "historical_source_authority_roster": "UNKNOWN_HOLD",
+    "unseen_differential_source_semantic_review": "IF_AND_ONLY_IF_NEW_DIFFERENCE_DISCOVERED",
+    "gold48_owner_freeze": false
+  },
+  "eval_input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
+  "reconstructed_input_owner_approved": true,
+  "actual_sent_prompt_bytes": "UNVERIFIED",
+  "p2_c": "HOLD",
+  "p2_b_48_prompts": "NOT_GENERATED",
+  "quality_v1_admitted": 0,
+  "train_admitted": 0,
+  "model_promoted": false,
+  "gpu_started": false,
+  "hf_jobs_submitted": 0,
+  "new_model_inference_authorized": false,
+  "private_values_emitted": false,
+  "production_accessed": false,
+  "database_accessed": false,
+  "sealed_r50_accessed": false
+}
