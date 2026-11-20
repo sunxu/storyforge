@@ -24,6 +24,7 @@ def test_gold48_hash_lock_candidate_matches_cpu_job_receipt():
     required = (
         "torch==2.6.0", "transformers==5.16.1", "peft==0.21.2",
         "accelerate==1.12.0", "huggingface-hub==1.33.0",
+        "cryptography==46.0.4",
     )
     for pin in required:
         assert pin in text

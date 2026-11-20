@@ -1,9 +1,9 @@
 {
   "schema": "storyforge_r60_gold48_inference_cpu_dependency_contract_v1",
-  "status": "CPU_META_PEFT_WRAP_PASS__FULL_WEIGHTS_AND_GPU_UNVERIFIED",
+  "status": "CPU_META_PEFT_WRAP_PASS__HASHED_LOCK_UPDATED__INSTALL_HOLD_UV_TORCH_METADATA",
   "lock_path": "requirements/r60-gold48-inference-py311-linux-x86_64.hashes.lock",
-  "lock_sha256": "cec741f3e6b3f70336fdc548c368bd3741e15c05a77167595b7a2a1162b752ec",
-  "lock_bytes": 64831,
+  "lock_sha256": "dc3425f4895e091c4f5981a4933a6ba2e8fdd8426d8e074069c8cfa2ff4f8d5e",
+  "lock_bytes": 77715,
   "python_target": "3.11",
   "platform_target": "x86_64-unknown-linux-gnu",
   "base_image": "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee",
@@ -14,7 +14,8 @@
     "transformers": "5.16.1",
     "peft": "0.21.2",
     "accelerate": "1.12.0",
-    "huggingface_hub": "1.33.0"
+    "huggingface_hub": "1.33.0",
+    "cryptography": "46.0.4"
   },
   "cpu_import_job": "6b00aa0eefaf5e14f4b3cd9a",
   "hash_lock_job": "6b00ab03efaf5e14f4b3cf08",
@@ -30,5 +31,7 @@
   "peft_meta_device_wrapper_class": "PeftModelForCausalLM",
   "peft_meta_device_matched_lora_modules": 496,
   "full_qwen_weights_loaded_verified": false,
-  "gpu_generate_verified": false
+  "gpu_generate_verified": false,
+  "hash_install_attempt_job": "6b00afcaefaf5e14f4b3d657",
+  "hash_install_diagnostic_job": "6b00b014efaf5e14f4b3d6fe"
 }
