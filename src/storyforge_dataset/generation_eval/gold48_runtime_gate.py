@@ -14,6 +14,8 @@ from __future__ import annotations
 import hashlib
 import importlib.metadata
 import json
+import os
+import tempfile
 import platform
 import re
 import secrets
@@ -602,6 +604,158 @@ def verify_consumed_gold48_output_grant(
     )
 
 
+
+def materialize_gold48_ro_input(
+    *, source: Path, target: Path, expected_sha256: str,
+    max_bytes: int = 16 * 1024 * 1024,
+) -> None:
+    """Copy an authenticated RO Bucket object to private JOB-LOCAL scratch.
+
+    The RO FUSE layer need not preserve POSIX 0600. No synthetic approval is
+    created: these bytes are later rechecked by the existing signed preflight.
+    """
+    _check(
+        isinstance(expected_sha256, str)
+        and HEX_SHA.fullmatch(expected_sha256) is not None
+        and source.is_absolute() and target.is_absolute()
+        and ".." not in source.parts and ".." not in target.parts
+        and not source.is_symlink() and source.resolve(strict=True) == source,
+        "GOLD48_RO_LOCALIZE_PATH_OR_SHA_HOLD",
+    )
+    _validate_job_local_private_root(target.parent)
+    _check(not target.exists() and not target.is_symlink(),
+           "GOLD48_RO_LOCALIZE_ALREADY_EXISTS_HOLD")
+    try:
+        verified = InputManager.open_verified(
+            source, max_bytes=max_bytes, expected_sha256=expected_sha256,
+        )
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+        fd = os.open(target, flags, 0o600)
+        with os.fdopen(fd, "wb") as out:
+            os.fchmod(out.fileno(), 0o600)
+            out.write(verified.read_bytes())
+            out.flush()
+            os.fsync(out.fileno())
+        directory = os.open(target.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+        check = InputManager.open_verified(
+            target, max_bytes=max_bytes, expected_sha256=expected_sha256,
+        )
+        st = target.lstat()
+        _check(stat.S_ISREG(st.st_mode)
+               and stat.S_IMODE(st.st_mode) == 0o600
+               and check.size_bytes == verified.size_bytes,
+               "GOLD48_RO_LOCALIZE_READBACK_HOLD")
+    except (OSError, ValueError) as exc:
+        raise WorkerError("GOLD48_RO_LOCALIZE_IO_HOLD") from exc
+
+
+def deliver_gold48_private_result(
+    *, output_path: Path, run_id: str, model_role: str,
+    worker_receipt: Any,
+) -> None:
+    """One-shot transfer to the Owner's private HF Bucket; manifest LAST.
+
+    This is not an atomic Bucket lock. Every object is downloaded and SHA
+    checked after upload; the Owner Mac must independently audit it later.
+    Failed or partial remote delivery requires Owner adjudication, never a
+    silent regeneration or an automatic retry in this Job.
+    """
+    from .gold48_contract_bridge import ROLES
+
+    _check(model_role in ROLES
+           and isinstance(run_id, str)
+           and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{7,63}", run_id)
+           and output_path.name == model_role + ".private.json",
+           "GOLD48_DELIVERY_SCOPE_HOLD")
+    _validate_job_local_private_root(output_path.parent)
+    _check(
+        getattr(worker_receipt, "record_count", None) == 48
+        and isinstance(getattr(worker_receipt, "output_sha256", None), str)
+        and HEX_SHA.fullmatch(worker_receipt.output_sha256) is not None,
+        "GOLD48_DELIVERY_WORKER_RECEIPT_HOLD",
+    )
+    files = (
+        output_path,
+        output_path.with_name(output_path.name + ".launch.private.json"),
+        output_path.with_name(output_path.name + ".identity.private.json"),
+    )
+    entries = []
+    for path in files:
+        try:
+            st = path.lstat()
+            _check(stat.S_ISREG(st.st_mode)
+                   and stat.S_IMODE(st.st_mode) == 0o600
+                   and not path.is_symlink(),
+                   "GOLD48_DELIVERY_PRIVATE_MODE_HOLD")
+            item = InputManager.open_verified(path, max_bytes=16 * 1024 * 1024)
+        except (OSError, ValueError) as exc:
+            raise WorkerError("GOLD48_DELIVERY_SOURCE_READ_HOLD") from exc
+        entries.append({
+            "name": path.name, "sha256": item.sha256, "size_bytes": item.size_bytes,
+        })
+    _check(entries[0]["sha256"] == worker_receipt.output_sha256,
+           "GOLD48_DELIVERY_GENERATION_SHA_HOLD")
+
+    manifest_path = output_path.with_name(
+        output_path.name + ".result-sha256-manifest.private.json"
+    )
+    manifest = {
+        "schema": "storyforge_r60_gold48_private_result_delivery_v1",
+        "run_id": run_id,
+        "model_role": model_role,
+        "record_count": 48,
+        "files": entries,
+        "owner_mac_independent_download_and_sha_audit_required": True,
+    }
+    try:
+        OutputManager.write_safe(manifest_path, manifest, mode=0o600)
+        confirmed = InputManager.open_verified(
+            manifest_path, max_bytes=8192,
+        )
+    except (OSError, ValueError) as exc:
+        raise WorkerError("GOLD48_DELIVERY_MANIFEST_CREATE_HOLD") from exc
+    entries.append({
+        "name": manifest_path.name,
+        "sha256": confirmed.sha256, "size_bytes": confirmed.size_bytes,
+    })
+    prefix = (
+        "hf://buckets/adradar/storyforge-training/"
+        "experiments/r60-gold48/outputs/" + run_id + "/"
+    )
+    with tempfile.TemporaryDirectory(
+        prefix=".gold48-delivery-verify-", dir=output_path.parent,
+    ) as directory:
+        private_check = Path(directory)
+        private_check.chmod(0o700)
+        for path, item in zip((*files, manifest_path), entries):
+            remote = prefix + item["name"]
+            try:
+                upload = subprocess.run(
+                    ["hf", "buckets", "cp", str(path), remote],
+                    capture_output=True, text=True, timeout=300, check=False,
+                )
+                _check(upload.returncode == 0, "GOLD48_DELIVERY_UPLOAD_HOLD")
+                local_copy = private_check / item["name"]
+                download = subprocess.run(
+                    ["hf", "buckets", "cp", remote, str(local_copy)],
+                    capture_output=True, text=True, timeout=300, check=False,
+                )
+                _check(download.returncode == 0,
+                       "GOLD48_DELIVERY_READBACK_HOLD")
+                verified = InputManager.open_verified(
+                    local_copy, max_bytes=16 * 1024 * 1024,
+                    expected_sha256=item["sha256"],
+                )
+                _check(verified.size_bytes == item["size_bytes"],
+                       "GOLD48_DELIVERY_READBACK_HOLD")
+            except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+                raise WorkerError("GOLD48_DELIVERY_UNCONFIRMED_NO_RETRY_HOLD") from exc
+
+
 def run_authorized_gold48_production(
     *,
     frozen: dict[str, Any],
@@ -647,7 +801,7 @@ def run_authorized_gold48_production(
         expected_template_sha256=expected_template_sha256,
         launch_permit=permit,
     )
-    return run_gold48_generation_batch(
+    receipt = run_gold48_generation_batch(
         frozen=frozen, owner_freeze=owner_freeze,
         adapter_bindings=adapter_bindings, input_manifest=input_manifest,
         input_path=input_path, output_path=output_path, model_role=model_role,
@@ -658,3 +812,9 @@ def run_authorized_gold48_production(
         runtime_image_digest=permit.signed_scope["runtime_image_digest"],
         source_evidence_paths=source_evidence_paths,
     )
+    # No SUCCESS return while private output remains only in ephemeral scratch.
+    deliver_gold48_private_result(
+        output_path=output_path, run_id=permit.signed_scope["run_id"],
+        model_role=model_role, worker_receipt=receipt,
+    )
+    return receipt

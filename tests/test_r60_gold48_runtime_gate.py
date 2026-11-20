@@ -245,7 +245,10 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
     called = []
     mock_permit = SimpleNamespace(
         selected_adapter_dir=None,
-        signed_scope={"runtime_image_digest": "sha256:" + "a" * 64},
+        signed_scope={
+            "runtime_image_digest": "sha256:" + "a" * 64,
+            "run_id": "synthetic-g48-owner-001",
+        },
     )
 
     def preflight(**_kwargs):
@@ -268,6 +271,13 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
     monkeypatch.setattr(gate, "authorize_and_consume_before_gpu", preflight)
     monkeypatch.setattr(loader_module, "load_pinned_gold48_backend", loader)
     monkeypatch.setattr(bridge_module, "run_gold48_generation_batch", worker)
+
+    def delivery(**kwargs):
+        assert kwargs["run_id"] == "synthetic-g48-owner-001"
+        assert called[-1] == "existing-generation-worker-mocked-only"
+        called.append("private-delivery-mocked-only")
+
+    monkeypatch.setattr(gate, "deliver_gold48_private_result", delivery)
     outcome = gate.run_authorized_gold48_production(
         frozen=pack[0], owner_freeze=pack[1],
         adapter_bindings=pack[2], input_manifest=pack[3],
@@ -286,6 +296,7 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
     assert called == [
         "signed-provider-versions-and-spend", "gpu-loader-mocked-only",
         "existing-generation-worker-mocked-only",
+        "private-delivery-mocked-only",
     ]
 
 
@@ -506,3 +517,102 @@ def test_atomic_publication_probe_holds_before_grant_if_fuse_rejects_create(
     with pytest.raises(WorkerError, match="GOLD48_ATOMIC_PUBLICATION_UNSUPPORTED_HOLD"):
         gate.verify_atomic_private_publication_before_spend(root)
     assert list(root.iterdir()) == []
+
+
+def test_gold48_materialize_ro_file_reuses_verified_input_sha(tmp_path):
+    source = tmp_path / "source.jsonl"
+    source.write_bytes(b'{"private":"synthetic"}\n')
+    target_root = tmp_path / "local-private"
+    target_root.mkdir(mode=0o700)
+    target = target_root / "input.jsonl"
+    digest = hashlib.sha256(source.read_bytes()).hexdigest()
+    gate.materialize_gold48_ro_input(
+        source=source, target=target, expected_sha256=digest,
+    )
+    assert target.read_bytes() == source.read_bytes()
+    assert stat.S_IMODE(target.stat().st_mode) == 0o600
+    with pytest.raises(WorkerError, match="GOLD48_RO_LOCALIZE_ALREADY_EXISTS_HOLD"):
+        gate.materialize_gold48_ro_input(
+            source=source, target=target, expected_sha256=digest,
+        )
+    with pytest.raises(WorkerError):
+        gate.materialize_gold48_ro_input(
+            source=source, target=target_root / "wrong",
+            expected_sha256="0" * 64,
+        )
+    assert not (target_root / "wrong").exists()
+
+
+def test_gold48_private_delivery_uploads_manifest_last_and_verifies_each_sha(
+    tmp_path, monkeypatch,
+):
+    from storyforge_dataset.hf_runtime.outputs import OutputManager
+
+    root = tmp_path / "private-run"
+    root.mkdir(mode=0o700)
+    output = root / "base.private.json"
+    original = b'{"schema":"synthetic-output"}\n'
+    output.write_bytes(original)
+    output.chmod(0o600)
+    for suffix in (".launch.private.json", ".identity.private.json"):
+        OutputManager.write_safe(output.with_name(output.name + suffix),
+                                 {"schema": "synthetic"}, mode=0o600)
+    stored = {}
+    uploaded_names = []
+
+    def fake_cp(argv, **_kwargs):
+        assert argv[:3] == ["hf", "buckets", "cp"]
+        source, target = argv[3:]
+        if source.startswith("hf://"):
+            assert source in stored
+            Path(target).write_bytes(stored[source])
+        else:
+            assert target not in stored
+            stored[target] = Path(source).read_bytes()
+            uploaded_names.append(Path(source).name)
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(gate.subprocess, "run", fake_cp)
+    receipt = SimpleNamespace(
+        record_count=48, output_sha256=hashlib.sha256(original).hexdigest()
+    )
+    gate.deliver_gold48_private_result(
+        output_path=output, run_id="synthetic-g48-owner-001",
+        model_role="base", worker_receipt=receipt,
+    )
+    assert len(uploaded_names) == 4
+    assert uploaded_names[-1].endswith(".result-sha256-manifest.private.json")
+    manifest_file = root / uploaded_names[-1]
+    assert stat.S_IMODE(manifest_file.stat().st_mode) == 0o600
+    assert len(stored) == 4
+
+
+def test_gold48_private_delivery_holds_if_remote_sha_differs(tmp_path, monkeypatch):
+    root = tmp_path / "private-run"
+    root.mkdir(mode=0o700)
+    output = root / "base.private.json"
+    output.write_text('{"schema":"synthetic"}\n')
+    output.chmod(0o600)
+    for suffix in (".launch.private.json", ".identity.private.json"):
+        marker = output.with_name(output.name + suffix)
+        marker.write_text('{"schema":"synthetic"}\n')
+        marker.chmod(0o600)
+    calls = []
+
+    def corrupt_download(argv, **_kwargs):
+        calls.append(argv)
+        if argv[3].startswith("hf://"):
+            Path(argv[4]).write_bytes(b"corrupted")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(gate.subprocess, "run", corrupt_download)
+    with pytest.raises(WorkerError, match="GOLD48_DELIVERY_UNCONFIRMED_NO_RETRY_HOLD"):
+        gate.deliver_gold48_private_result(
+            output_path=output, run_id="synthetic-g48-owner-002",
+            model_role="base",
+            worker_receipt=SimpleNamespace(
+                record_count=48,
+                output_sha256=hashlib.sha256(output.read_bytes()).hexdigest(),
+            ),
+        )
+    assert len(calls) == 2  # one upload and one failed checksum readback
