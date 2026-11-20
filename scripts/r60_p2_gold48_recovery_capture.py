@@ -7,6 +7,7 @@ All raw text, identity and hashes remain in local 0600 files, never stdout.
 from __future__ import annotations
 
 import argparse
+from collections import Counter
 import hashlib
 import json
 import os
@@ -29,7 +30,9 @@ SAFE_SCHEMA = "storyforge_r60_p2_gold48_private_recovery_capture_safe_v1"
 
 
 class Hold(ValueError):
-    pass
+    def __init__(self, reason, safe_diagnostics=None):
+        super().__init__(reason)
+        self.safe_diagnostics = safe_diagnostics
 
 
 def require(ok, reason):
@@ -151,11 +154,17 @@ LIMIT 3
 """
 
 
-def try_case(cur, source, row, phase=None):
+def try_case(cur, source, row, phase=None, reject_counts=None):
     phase = phase if phase is not None else ["CASE_BEGIN"]
+
+    def reject(reason):
+        if reject_counts is not None:
+            reject_counts[reason] += 1
+        return None
+
     mid, sid, turn, answer, metadata, created = row
     if not isinstance(answer, str) or not answer.strip() or edited(metadata):
-        return None
+        return reject("TARGET_INVALID_OR_EDITED")
     story = source["story_id"]
     phase[0] = "SESSION_STATUS"
     cur.execute(
@@ -165,17 +174,17 @@ def try_case(cur, source, row, phase=None):
     )
     session_rows = cur.fetchall()
     if len(session_rows) != 1 or session_rows[0][0] is not None:
-        return None
+        return reject("SESSION_MISSING_OR_DELETED")
     case = {"case_id": mid, "story_id": story, "session_id": sid,
             "turn_index": turn, "target_sha256": hashlib.sha256(answer.encode()).hexdigest()}
     phase[0] = "HISTORY_LEDGER_RECOVERY"
     try:
         recovered = recover_case(cur, case, max_history=40, max_ledger_events=50000)
     except HistoryRecoveryError:
-        return None
+        return reject("HISTORY_LEDGER_RECOVERY_HOLD")
     history = recovered["history"]
     if not 3 <= len(history) <= 40 or history[-1]["role"] != "user":
-        return None
+        return reject("HISTORY_LENGTH_OR_SUFFIX_HOLD")
     # Fail closed on hidden non-completed / unsupported-role persisted turns:
     # the shared recoverer intentionally excludes these from effective history.
     phase[0] = "PREFIX_PERSISTENCE_COUNT"
@@ -186,19 +195,19 @@ def try_case(cur, source, row, phase=None):
         (story, sid, turn - 1, created),
     )
     if cur.fetchone()[0] != len(history):
-        return None
+        return reject("PREFIX_PERSISTENCE_COUNT_MISMATCH")
     if any(m["role"] not in ("user", "assistant") or
            not isinstance(m["content"], str) or not m["content"].strip()
            or m["status"] != "completed" for m in history):
-        return None
+        return reject("PREFIX_ROLE_STATUS_OR_CONTENT_HOLD")
     earliest = max(timestamp(source["first_public_approved_at_utc"]),
                    timestamp(source["public_updated_at_utc"])
                    if source.get("public_updated_at_utc") else
                    timestamp(source["first_public_approved_at_utc"]))
     if timestamp(history[0]["created_at"]) < earliest:
-        return None
+        return reject("PREFIX_PREDATES_PUBLIC_REVISION")
     if sum(len(m["content"]) for m in history) > 24000:
-        return None
+        return reject("PREFIX_LENGTH_EXCEEDS_24000")
     mids = [m["message_id"] for m in history] + [mid]
     phase[0] = "PREFIX_CURRENT_IDENTITY"
     cur.execute(CURRENT_SQL, (mids,))
@@ -208,18 +217,18 @@ def try_case(cur, source, row, phase=None):
         or current[m["message_id"]][0] != m["content"]
         or edited(current[m["message_id"]][1]) for m in history
     ) or mid not in current or current[mid][0] != answer or edited(current[mid][1]):
-        return None
+        return reject("PREFIX_CURRENT_MESSAGE_MISMATCH_OR_EDIT")
     phase[0] = "COMPLETED_HISTORY_EDIT_SCREEN"
     cur.execute(CHANGED_SQL, (sid, story, mids))
     if cur.fetchone()[0]:
-        return None
+        return reject("COMPLETED_HISTORY_EDIT_DETECTED")
     lower, upper = created - timedelta(minutes=5), created + timedelta(minutes=5)
     phase[0] = "UNIQUE_REQUEST_MATCH"
     cur.execute(REQUEST_SQL, (story, sid, story, sid, lower, upper,
                               lower, upper, str(len(history))))
     matches = [x[0] for x in cur.fetchall()]
     if len(matches) != 1:
-        return None
+        return reject("REQUEST_ZERO_MATCH" if not matches else "REQUEST_MULTIPLE_MATCHES")
     prompt = [{"role":m["role"], "content":m["content"]} for m in history]
     return {
         "source_key_PRIVATE": source["source_key"],
@@ -308,7 +317,7 @@ def run(args):
                 require(rdonly == "on" and not superuser and not bypass,
                         "READONLY_ROLE_GUARD_HOLD")
                 used_prompts, used_replies, used_targets, used_requests = set(), set(), set(), set()
-                for source in sources:
+                for source_ordinal, source in enumerate(sources, 1):
                     earliest = max(timestamp(source["first_public_approved_at_utc"]),
                                    timestamp(source["public_updated_at_utc"])
                                    if source.get("public_updated_at_utc") else
@@ -318,9 +327,10 @@ def run(args):
                                 (source["story_id"], earliest, CUTOFF, MAX_PER_STORY))
                     targets = cur.fetchall()
                     eligible = []
+                    reject_counts = Counter()
                     for target in targets:
                         examined += 1
-                        candidate = try_case(cur, source, target, phase)
+                        candidate = try_case(cur, source, target, phase, reject_counts)
                         if candidate is None:
                             rejected += 1
                             continue
@@ -332,10 +342,12 @@ def run(args):
                         x["assistant_message_id_PRIVATE"]
                     ))
                     n = 0
+                    duplicate_collisions = 0
                     for candidate in eligible:
                         ph, rh = candidate["prefix_sha256_PRIVATE"], candidate["original_reply_sha256_PRIVATE"]
                         mid, rid = candidate["assistant_message_id_PRIVATE"], candidate["request_id_PRIVATE"]
                         if ph in used_prompts or rh in used_replies or mid in used_targets or rid in used_requests:
+                            duplicate_collisions += 1
                             continue
                         used_prompts.add(ph); used_replies.add(rh)
                         used_targets.add(mid); used_requests.add(rid)
@@ -343,7 +355,18 @@ def run(args):
                         n += 1
                         if n == 6:
                             break
-                    require(n == 6, "INSUFFICIENT_SIX_PER_STORY_STRICT_CANDIDATES_HOLD")
+                    if n != 6:
+                        # The ordinal is an anonymous position, never a Story/Session ID.
+                        # Fail closed: no private output directory has been created.
+                        raise Hold("INSUFFICIENT_SIX_PER_STORY_STRICT_CANDIDATES_HOLD", {
+                            "source_ordinal_1based": source_ordinal,
+                            "targets_fetched": len(targets),
+                            "target_limit_hit": len(targets) == MAX_PER_STORY,
+                            "eligible_before_cross_source_dedup": len(eligible),
+                            "selected_after_cross_source_dedup": n,
+                            "cross_source_duplicates_skipped": duplicate_collisions,
+                            "rejection_counts": dict(sorted(reject_counts.items())),
+                        })
             conn.rollback()
     except psycopg.Error as exc:
         # SQLSTATE is a five-character public PostgreSQL error class code;
@@ -412,11 +435,13 @@ def main():
     try:
         print(json.dumps(run(args), ensure_ascii=False, sort_keys=True))
     except Hold as exc:
-        print(json.dumps({"schema": SAFE_SCHEMA, "status": "HOLD",
-                          "reason_code": str(exc),
-                          "private_values_emitted": False,
-                          "database_modified": False, "gpu_started": False},
-                         sort_keys=True))
+        safe = {"schema": SAFE_SCHEMA, "status": "HOLD",
+                "reason_code": str(exc),
+                "private_values_emitted": False,
+                "database_modified": False, "gpu_started": False}
+        if exc.safe_diagnostics is not None:
+            safe["safe_diagnostics"] = exc.safe_diagnostics
+        print(json.dumps(safe, sort_keys=True))
     except (OSError, ValueError, TypeError, KeyError):
         print(json.dumps({"schema": SAFE_SCHEMA, "status": "HOLD",
                           "reason_code": "PRIVATE_RECOVERY_UNEXPECTED_RUNTIME_HOLD",
