@@ -1,5 +1,22 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 四模型固定身份直接核验：复用现成 HF 私有 Checkpoint（无 GPU）
+
+本轮使用现有 HF 连接对 **`adradar/storyforge-training`** 私有 Bucket 的三个既存历史 Train Run 只读核验，**只读取目录/Adapter Config/已有训练 SAFE 和 Reload 回执**；未读取原始训练样本、评测正文或 R50 sealed，未下载大权重、未运行 HF Job。**下列是评测模型身份链，不是新的训练或新一轮质量证明**：
+
+| 四模型臂 | 训练 Run / 冻结位置 | 当前只读证据与精确边界 |
+| --- | --- | --- |
+| Qwen Base | `Qwen/Qwen3.8-27B`，固定 Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | 三份已冻结 Adapter Config 的 `base_model_name_or_path` 均引用这一相同 Revision；**不能复用 P4 的 Qwen3-32B Frozen Profile** |
+| R46 v0.2 ckpt-7 | `experiments/v02-r46/r46-20261014T070529Z-248172/output/v0-20261014-070817/checkpoint-7` | `adapter_model.safetensors` 存在且大小 **1,867,797,544 bytes**，Adapter Config 固定相同 Base；旧 `r46_training_report.json` 有 Adapter SHA 与 `adapter_reload=PASS`；未在本轮重复下载/重算远端 SHA |
+| R54 v0.3-A ckpt-16 | `experiments/v03-r54/r54-v2-20261021T161818Z-507469/output/v0-20261021-162418/checkpoint-16` | 相同 Base Revision；同大小 Adapter 存在，旧 `R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json` 记载 step16、Adapter SHA、Reload+Inference PASS；本轮未重算权重哈希 |
+| R60 Base336 ckpt-37 | `experiments/r60-base336-exploratory/r60-base336-gpu-20261117T055622Z-b609cb78661d/training/v0-20261117-071048/checkpoint-37` | 相同 Base Revision；同大小 Adapter 存在，Worker SAFE 验证 37/37 steps、Adapter Reload；**Owner 既有 SAFE 已对远端固定 33 对象全部下载并计算本地 SHA，5,604,774,224 bytes**，不需重复下载。无原 Worker 逐文件 SHA 对照，不可把该本地 Inventory 说成双端哈希复核 PASS |
+
+**四个臂身份/位置及相同 Base Revision 已具实际来源证据**；但 `FROZEN_FOUR_ARM_INFERENCE_READY=false`：本次尚未进行跨三个旧 Run 的全权重重算 SHA、此次新 GPU 环境加载、相同 `RECONSTRUCTED_EVALUATION_INPUT` 消息模板/Tokenizer/Seed/Stop/Decode/Token Budget/最长 Prefix 单题压测。这些应在 Gold48 **真实候选及 Owner Freeze** 后按所选运行环境与预算，复用现有 `generation_eval.worker` / `hf_runtime`，只补特定四臂 Backend 配置。**P4 Qwen3-32B/GLM-4/GLM-Z1 三模型合成运行属于其它质量审核阶段，不可冒充本次 27B Gold48 四臂的加载验收。**
+
+**Gold48 主线不变**：Mac 的 `r60_p2_gold48_recovery_capture.py` 仍由 Owner 单实例运行；实时结果以最终 SAFE 为准，不能依据进程存在宣告生成48条。新 `r60_p2_gold48_candidate_preflight_cpu.py` 可对其已落盘的三个 0600 私有文件做 48/42/完整历史/Original Reply SHA/去重/来源映射的 CPU 离线验收；在候选文件出现之前不启动它，也不将它当作 Freeze。**192 次新四模型生成与 48 原始回复（共240份六维盲评对象）须在单独付费推理授权后进行**；`GOLD48_FROZEN_SCOPED=false`、`model_promoted=false`。
+
+---
+
 ## 2026-11-20 Gold48 冻结准备实际缺件：已证候选容量 ≠ 48 条可复现落盘记录
 
 Owner 已执行一次 **`r60_gold48_existing_artifact_locator_safe_v1`** 有界只读定位：扫描 `~/.local/share/storyforge/r60/private` 内 **2,401 文件**，未截断；按 Gold48/P2 Prefix/Original/History/Reference 等文件名及已识别 JSON/JSONL 结构得到 **8 个候选文件**，没有符合该工具识别条件的 **48 条历史 Prefix/原始 Assistant 回复成对记录持久化文件**。已识别内容含 8 来源 Gold48 source-first ID、P2 source inventory、Base336 P2 source evidence、history32 Reviewer，以及两份分别 **30/90 行**的 JSONL；这些不能作为已冻结 48 题。该文件名/形状扫描**不能证明磁盘其它目录或不匹配的结构不存在**，也不读取私有文本、数据库或 R50 sealed。
