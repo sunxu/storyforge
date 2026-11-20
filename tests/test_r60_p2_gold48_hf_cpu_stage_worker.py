@@ -21,6 +21,7 @@ from test_r60_p2_gold48_candidate_preflight_cpu import private_file
 from test_r60_p2_gold48_reconstructed_input_draft_cpu import prepare
 from test_r60_p2_gold48_token_preflight_cpu import FakeTokenizer
 
+
 def load(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
     obj = importlib.util.module_from_spec(spec)
