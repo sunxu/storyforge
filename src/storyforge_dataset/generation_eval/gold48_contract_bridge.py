@@ -42,6 +42,26 @@ PROVENANCE = {
     "r60_base336": "CPU_BYTE_SHA_COMPUTED_PASS__PROVIDER_MOUNT_UNVERIFIED",
 }
 
+EVIDENCE_URIS = {
+    "r46_v02": (
+        "hf://buckets/adradar/storyforge-training/experiments/v02-r46/"
+        "r46-20261014T070529Z-248172/r46_training_report.json"
+    ),
+    "r54_v03a": (
+        "hf://buckets/adradar/storyforge-training/experiments/v03-r54/"
+        "r54-v2-20261021T161818Z-507469/R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json"
+    ),
+    "r60_base336": (
+        "https://huggingface.co/jobs/adradar/6b00a44aefaf5e14f4b3c6b5"
+    ),
+}
+
+SOURCE_FIELDS = {
+    "r46_v02": "training_evidence.adapter_sha256",
+    "r54_v03a": "adapter_sha256",
+    "r60_base336": "job_log_line.adapter_sha256",
+}
+
 
 def _require(condition: bool, code: str) -> None:
     if not condition:
@@ -180,6 +200,8 @@ def _validate_bindings(frozen: dict[str, Any], bindings: dict[str, Any]) -> None
             _require(_sha(entry.get("expected_sha256"))
                      and entry.get("provenance") == PROVENANCE[role]
                      and _sha(entry.get("source_evidence_sha256"))
+                     and entry.get("source_evidence_uri") == EVIDENCE_URIS[role]
+                     and entry.get("source_field") == SOURCE_FIELDS[role]
                      and isinstance(entry.get("local_dir"), str)
                      and Path(entry["local_dir"]).is_absolute()
                      and not any(p in (".", "..") for p in Path(entry["local_dir"]).parts)
@@ -262,6 +284,54 @@ def prepare_gold48_generation_contract(
     return normalized, worker_manifest
 
 
+def verify_gold48_binding_source_evidence(
+    bindings: dict[str, Any],
+    evidence_paths: dict[str, Path] | None,
+) -> None:
+    """CPU-only: bind each private source receipt's exact bytes to its SHA.
+
+    R46/R54 prove *historical report provenance*, not current remote weights.
+    R60 verifies only the existing CPU Job's JSON log line, not provider volumes.
+    """
+    _require(isinstance(evidence_paths, dict)
+             and set(evidence_paths) == set(PROVENANCE),
+             "GOLD48_SOURCE_EVIDENCE_FILES_REQUIRED")
+    import stat
+    for role in PROVENANCE:
+        entry = bindings["arms"][role]
+        path = evidence_paths[role]
+        _require(isinstance(path, Path), "GOLD48_SOURCE_EVIDENCE_PATH_HOLD")
+        try:
+            st = path.lstat()
+            _require(stat.S_ISREG(st.st_mode) and stat.S_IMODE(st.st_mode) == 0o600,
+                     "GOLD48_SOURCE_EVIDENCE_MODE_HOLD")
+            raw = InputManager.open_verified(
+                path, max_bytes=65536,
+                expected_sha256=entry["source_evidence_sha256"],
+            ).read_bytes()
+            receipt = json.loads(raw)
+        except (OSError, TypeError, ValueError) as exc:
+            if isinstance(exc, WorkerError):
+                raise
+            raise WorkerError("GOLD48_SOURCE_EVIDENCE_BYTE_SHA_HOLD") from exc
+        _require(isinstance(receipt, dict),
+                 "GOLD48_SOURCE_EVIDENCE_SCHEMA_HOLD")
+        if role == "r46_v02":
+            training = receipt.get("training_evidence")
+            value = training.get("adapter_sha256") if isinstance(training, dict) else None
+        else:
+            value = receipt.get("adapter_sha256")
+        _require(value == entry["expected_sha256"],
+                 "GOLD48_SOURCE_EVIDENCE_ADAPTER_SHA_HOLD")
+        if role == "r60_base336":
+            _require(receipt.get("schema") == "storyforge_gold48_adapter_sha_cpu_only_safe_v1"
+                     and receipt.get("status") == "R60_ADAPTER_BYTE_SHA_PASS"
+                     and receipt.get("file_size") == ADAPTER_SIZE
+                     and receipt.get("gpu_started") is False
+                     and receipt.get("model_calls") == 0,
+                     "GOLD48_R60_JOB_RECEIPT_HOLD")
+
+
 def _approve_generation(
     *,
     approval: dict[str, Any] | None,
@@ -296,6 +366,7 @@ def run_gold48_generation_batch(
     model_role: str,
     backend: GenerationBackend,
     separate_owner_authorization: dict[str, Any] | None = None,
+    source_evidence_paths: dict[str, Path] | None = None,
 ) -> WorkerReceipt:
     """No CLI/Job submitter: only a separately Owner-authorized runtime may call."""
     profile, worker_manifest = prepare_gold48_generation_contract(
@@ -306,6 +377,9 @@ def run_gold48_generation_batch(
     _approve_generation(
         approval=separate_owner_authorization, frozen=frozen,
         bindings=adapter_bindings, manifest=input_manifest, model_role=model_role,
+    )
+    verify_gold48_binding_source_evidence(
+        adapter_bindings, source_evidence_paths,
     )
     entry = adapter_bindings["arms"][model_role]
     _require(backend.gpu_started is True

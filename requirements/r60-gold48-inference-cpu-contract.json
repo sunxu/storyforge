@@ -1,6 +1,6 @@
 {
   "schema": "storyforge_r60_gold48_inference_cpu_dependency_contract_v1",
-  "status": "CPU_IMPORT_INTERFACE_PASS__FULL_MODEL_AND_GPU_UNVERIFIED",
+  "status": "CPU_META_PEFT_WRAP_PASS__FULL_WEIGHTS_AND_GPU_UNVERIFIED",
   "lock_path": "requirements/r60-gold48-inference-py311-linux-x86_64.hashes.lock",
   "lock_sha256": "cec741f3e6b3f70336fdc548c368bd3741e15c05a77167595b7a2a1162b752ec",
   "lock_bytes": 64831,
@@ -23,5 +23,12 @@
   "peft_model_wrapping_verified": false,
   "require_hashes_install_on_inference_image_verified": false,
   "gpu_compatibility_verified": false,
-  "formal_inference_authorized": false
+  "formal_inference_authorized": false,
+  "cpu_meta_peft_job": "6b00ab67efaf5e14f4b3cf8b",
+  "meta_device_model_instantiation_verified": true,
+  "peft_meta_device_lora_wrapping_verified": true,
+  "peft_meta_device_wrapper_class": "PeftModelForCausalLM",
+  "peft_meta_device_matched_lora_modules": 496,
+  "full_qwen_weights_loaded_verified": false,
+  "gpu_generate_verified": false
 }
