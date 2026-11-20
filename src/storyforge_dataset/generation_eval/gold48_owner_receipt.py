@@ -85,6 +85,7 @@ def make_owner_scope(
     input_manifest: dict[str, Any],
     model_role: str,
     output_filename: str,
+    output_directory: str,
     run_id: str,
     dependency_lock_sha256: str,
     runtime_image_digest: str,
@@ -100,6 +101,7 @@ def make_owner_scope(
         "run_id": run_id,
         "model_role": model_role,
         "output_filename": output_filename,
+        "output_directory": output_directory,
         "record_count": 48,
         "max_model_calls": 48,
         "model_revision": arm["base_revision"],
@@ -133,6 +135,9 @@ def _check_scope(
              and scope["output_filename"] not in {"", ".", ".."}
              and Path(scope["output_filename"]).name == scope["output_filename"]
              and scope["output_filename"].endswith(".private.json")
+             and isinstance(scope["output_directory"], str)
+             and Path(scope["output_directory"]).is_absolute()
+             and Path(scope["output_directory"]).name == scope["run_id"]
              and isinstance(scope["dependency_lock_sha256"], str)
              and SHA.fullmatch(scope["dependency_lock_sha256"]) is not None
              and isinstance(scope["runtime_image_digest"], str)
@@ -222,7 +227,7 @@ def verify_owner_authorization(
         _require(isinstance(public_key, Ed25519PublicKey),
                  "GOLD48_OWNER_PUBLIC_KEY_TYPE_HOLD")
         public_key.verify(bytes.fromhex(obj["signature_hex"]), canonical(obj["payload"]))
-    except (ValueError, TypeError, Exception) as exc:
+    except Exception as exc:
         if isinstance(exc, WorkerError):
             raise
         raise WorkerError("GOLD48_OWNER_RECEIPT_SIGNATURE_INVALID_HOLD") from exc

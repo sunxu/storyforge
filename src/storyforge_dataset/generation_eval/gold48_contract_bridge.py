@@ -13,7 +13,12 @@ from pathlib import Path
 from typing import Any
 
 from storyforge_dataset.hf_runtime.inputs import InputManager
+from storyforge_dataset.hf_runtime.outputs import OutputManager
 
+from .gold48_owner_receipt import (
+    make_owner_scope,
+    verify_owner_authorization,
+)
 from .gold48_qwen35_loader import ADAPTER_SIZE, EOS_IDS, MODEL, PAD_ID, REVISION
 from .worker import (
     GenerationBackend,
@@ -397,27 +402,101 @@ def verify_gold48_binding_source_evidence(
                      "GOLD48_R60_JOB_RECEIPT_HOLD")
 
 
-def _approve_generation(
+def _verify_authorized_run(
     *,
-    approval: dict[str, Any] | None,
+    owner_authorization_receipt_path: Path | None,
+    trusted_owner_public_key_pem_path: Path | None,
+    runtime_lock_path: Path | None,
+    runtime_image_digest: str | None,
     frozen: dict[str, Any],
+    owner_freeze: dict[str, Any],
     bindings: dict[str, Any],
     manifest: dict[str, Any],
-    model_role: str,
-) -> None:
-    _require(isinstance(approval, dict)
-             and approval.get("schema") == APPROVAL_SCHEMA
-             and approval.get("status") == "OWNER_APPROVED_GOLD48_GENERATION"
-             and approval.get("scope") == "GOLD48_FOUR_ARM_192_GENERATIONS"
-             and approval.get("run_key") == frozen["dataset"]["run_key"]
-             and approval.get("model_role") == model_role
-             and approval.get("frozen_profile_canonical_sha256") == _digest(frozen)
-             and approval.get("adapter_bindings_canonical_sha256") == _digest(bindings)
-             and approval.get("input_sha256") == manifest["sha256"]
-             and approval.get("inference_authorized") is True
-             and approval.get("gpu_authorized") is True
-             and approval.get("training_authorized") is False,
+    role: str,
+    output_path: Path,
+):
+    """No caller-supplied approval dictionary; independently verify Owner signature."""
+    _require(all(isinstance(p, Path) for p in (
+        owner_authorization_receipt_path,
+        trusted_owner_public_key_pem_path,
+        runtime_lock_path,
+    )) and isinstance(runtime_image_digest, str),
              "GOLD48_SEPARATE_OWNER_INFERENCE_AUTHORIZATION_REQUIRED")
+    try:
+        lock = InputManager.open_verified(
+            runtime_lock_path, max_bytes=8 * 1024 * 1024,
+        )
+    except (OSError, ValueError) as exc:
+        raise WorkerError("GOLD48_RUNTIME_LOCK_READ_HOLD") from exc
+
+    # Read-only, mode-0600; cannot infer authorization from a provided dict.
+    receipt = read_private_contract(owner_authorization_receipt_path, max_bytes=65536)
+    payload = receipt.get("payload")
+    _require(isinstance(payload, dict),
+             "GOLD48_OWNER_SIGNED_RECEIPT_REQUIRED")
+    expected = make_owner_scope(
+        frozen=frozen, owner_freeze=owner_freeze,
+        adapter_bindings=bindings, input_manifest=manifest,
+        model_role=role, output_filename=output_path.name,
+        output_directory=str(output_path.parent),
+        run_id=payload.get("run_id"),
+        dependency_lock_sha256=lock.sha256,
+        runtime_image_digest=runtime_image_digest,
+        issued_at_utc=payload.get("issued_at_utc"),
+        expires_at_utc=payload.get("expires_at_utc"),
+    )
+    try:
+        verified = verify_owner_authorization(
+            receipt_path=owner_authorization_receipt_path,
+            trusted_public_key_pem_path=trusted_owner_public_key_pem_path,
+            expected_scope=expected,
+        )
+    except WorkerError:
+        raise
+    return verified, lock.sha256
+
+
+def _gold48_sidecar(
+    *,
+    frozen: dict[str, Any],
+    bindings: dict[str, Any],
+    input_manifest: dict[str, Any],
+    role: str,
+    auth,
+    lock_sha256: str,
+    runtime_image_digest: str,
+    receipt: WorkerReceipt,
+) -> dict[str, Any]:
+    """Private identity only, never raw answers or historical original references."""
+    return {
+        "schema": "storyforge_r60_gold48_generation_identity_private_v1",
+        "status": "GENERATION_IDENTITY_RECORDED__OWNER_REVIEW_REQUIRED",
+        "run_key": frozen["dataset"]["run_key"],
+        "run_id": auth.payload["run_id"],
+        "selected_model_role": role,
+        "arms": {
+            key: {
+                "model": frozen["arms"][key]["model"],
+                "revision": frozen["arms"][key]["base_revision"],
+                "adapter_checkpoint": frozen["arms"][key]["adapter_checkpoint"],
+                "adapter_sha256": bindings["arms"][key]["expected_sha256"],
+            }
+            for key in ROLES
+        },
+        "model_revision": REVISION,
+        "input_sha256": input_manifest["sha256"],
+        "input_manifest_canonical_sha256": _digest(input_manifest),
+        "frozen_profile_canonical_sha256": _digest(frozen),
+        "adapter_bindings_canonical_sha256": _digest(bindings),
+        "dependency_lock_sha256": lock_sha256,
+        "runtime_image_digest": runtime_image_digest,
+        "owner_authorization_receipt_sha256": auth.receipt_sha256,
+        "output_sha256": receipt.output_sha256,
+        "output_bytes": receipt.output_size_bytes,
+        "record_count": receipt.record_count,
+        "finish_reason_counts": dict(receipt.finish_reason_counts),
+        "training_started": False,
+    }
 
 
 def run_gold48_generation_batch(
@@ -430,7 +509,10 @@ def run_gold48_generation_batch(
     output_path: Path,
     model_role: str,
     backend: GenerationBackend,
-    separate_owner_authorization: dict[str, Any] | None = None,
+    owner_authorization_receipt_path: Path | None = None,
+    trusted_owner_public_key_pem_path: Path | None = None,
+    runtime_lock_path: Path | None = None,
+    runtime_image_digest: str | None = None,
     source_evidence_paths: dict[str, Path] | None = None,
 ) -> WorkerReceipt:
     """No CLI/Job submitter: only a separately Owner-authorized runtime may call."""
@@ -439,13 +521,22 @@ def run_gold48_generation_batch(
         adapter_bindings=adapter_bindings, input_manifest=input_manifest,
         input_path=input_path, model_role=model_role,
     )
-    _approve_generation(
-        approval=separate_owner_authorization, frozen=frozen,
-        bindings=adapter_bindings, manifest=input_manifest, model_role=model_role,
+    auth, lock_sha256 = _verify_authorized_run(
+        owner_authorization_receipt_path=owner_authorization_receipt_path,
+        trusted_owner_public_key_pem_path=trusted_owner_public_key_pem_path,
+        runtime_lock_path=runtime_lock_path,
+        runtime_image_digest=runtime_image_digest,
+        frozen=frozen, owner_freeze=owner_freeze,
+        bindings=adapter_bindings, manifest=input_manifest, role=model_role,
+        output_path=output_path,
     )
     verify_gold48_binding_source_evidence(
         adapter_bindings, source_evidence_paths,
     )
+    sidecar_path = output_path.with_name(output_path.name + ".identity.private.json")
+    _require(not output_path.exists() and not output_path.is_symlink()
+             and not sidecar_path.exists() and not sidecar_path.is_symlink(),
+             "GOLD48_OUTPUT_ALREADY_EXISTS_HOLD")
     entry = adapter_bindings["arms"][model_role]
     _require(backend.gpu_started is True
              and getattr(backend, "model_id", None) == MODEL
@@ -458,7 +549,19 @@ def run_gold48_generation_batch(
                  else str(getattr(backend, "gold48_adapter_dir", "UNVERIFIED")) ==
                  str(Path(entry["local_dir"]))
              ), "GOLD48_LOADED_BACKEND_IDENTITY_HOLD")
-    return _run_validated_generation_batch(
+    receipt = _run_validated_generation_batch(
         profile=profile, model_role=model_role, manifest=worker_manifest,
         input_path=input_path, output_path=output_path, backend=backend,
     )
+    sidecar = _gold48_sidecar(
+        frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
+        role=model_role, auth=auth, lock_sha256=lock_sha256,
+        runtime_image_digest=runtime_image_digest, receipt=receipt,
+    )
+    try:
+        OutputManager.write_safe(sidecar_path, sidecar, mode=0o600)
+    except (ValueError, OSError) as exc:
+        # The private generation file remains create-only: never delete or
+        # overwrite it to hide a failed identity publication.
+        raise WorkerError("GOLD48_IDENTITY_SIDECAR_PUBLICATION_HOLD") from exc
+    return receipt
