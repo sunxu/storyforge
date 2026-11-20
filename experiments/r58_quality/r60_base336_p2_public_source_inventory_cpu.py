@@ -1,9 +1,11 @@
 """Owner-local, read-only inventory for the R60 Base336 P2 Supabase source set.
 
-The selector is deterministic: public original story sources after the Base336
-release cutoff, with 3 selected before the Base336 GPU run and 5 after it,
-ordered by creation time. It reads only public story data plus moderation /
-permission metadata; it never reads private chat/session tables.
+The legacy selector remains deterministic: 3 public original sources before
+the Base336 GPU run and 5 after, ordered by creation time. The optional
+--source-first-ids-file uses an explicit, 0600 Owner-private list of eight
+historically qualified Gold48 sources (2 before / 6 after, 7 authors), without
+changing the legacy frozen selection. Both read only public Story metadata,
+moderation and permission events; neither reads private chat/session tables.
 
 This creates a private source manifest only. The query is bounded to the P2 public-source
 candidate window; it does not perform a full database export. It does not construct prompts,
