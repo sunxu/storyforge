@@ -13,9 +13,9 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
+from r60_p2_gold48_reconstructed_input_draft_cpu import draft
 from test_r60_p2_gold48_candidate_preflight_cpu import private_file
 from test_r60_p2_gold48_reconstructed_input_draft_cpu import prepare
-from r60_p2_gold48_reconstructed_input_draft_cpu import draft
 
 spec = importlib.util.spec_from_file_location(
     "r60_p2_gold48_token_preflight_cpu",
