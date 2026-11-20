@@ -295,8 +295,6 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
         source_evidence_paths={},
         runtime_lock_path=tmp_path / "absent-lock",
         runtime_contract_path=tmp_path / "absent-contract",
-        provider_attestation_path=tmp_path / "absent-provider",
-        trusted_provider_public_key_path=tmp_path / "absent-provider-public",
         expected_template_sha256="a" * 64,
     )
     assert outcome == "synthetic-orchestration-pass"
