@@ -1,5 +1,22 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 本机八项逐版本核验 SAFE PASS：Reviewer 包与 B 版本锚完成签收
+
+**以 Owner 本轮回传的实际本地 SAFE 为准，覆盖下方 Reviewer 补充章节中“文件摘要与 B 版本锚仍待核验”的旧状态。** 已执行既有 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 的**只读**证据包核验，返回 `status=REVIEWER_SOURCE_VERSION_LOCAL_CHECK_PASS`，全部八项 `true`：
+
+- `file_mode_0600`、`file_size_match`、`file_sha256_match`、`schema_match`：Reviewer 补充提交的**整文件摘要**与 Owner 私有原文件字节一致；没有把私有摘要或源文件写入 GitHub。
+- `source_count_match`：私有文件内 P2 **8**、Base336 Story **172**、Base336 当前 + 归档版本 **375**，保留全部 Source Capture 绑定结果，不需要再运行 336/172/375 提取器。
+- `b_index_order_match`：Reviewer 采用的匿名 B 序号顺序与**原始包中** `base336_scope.story_ids_PRIVATE`（及来源记录首见顺序）相符，不等同于任何另外排序的匿名输出。
+- `b_current_refs_exist`、`b_archived_refs_exist`：Reviewer 补充提到的所有匿名当前记录和真实 `revision_id_PRIVATE` 归档锚，已在**相同原始包**内一一存在。精确字段到正文的逐案论证仍按 Reviewer 自述；本项核对的是匿名版本引用**存在性与包身份**，并不自动复演独立语义阅读。
+
+**正式可关闭**：`P2_TO_BASE336_REVIEWER1_SOURCE_PACKAGE_SHA_AND_B_VERSION_REFS=OWNER_LOCAL_PASS`，加上先前 `INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0` 的**首位 Reviewer 实际意见已签收**。不再要求这一 Reviewer 重审 375 来源，或再次补 SHA/版本锚。
+
+**尚未证明的不同门禁**：Reviewer 审前无其他 Reviewer 答案的声明是**自述**，Owner 未提供交付会话隔离、Reviewer 资格/身份及实际独立执行的外部证据；`reviewer_independence_independently_verified=false`。Owner 也未核实 `P01…P08` 的 Reviewer 局部编号与原 `S01…S08` manifest source_key 的实际 Story 关联（不得按数字直接映射）。**一个 P2 公开源的内部名称不一致仍需质量仲裁**。其他 Protected/Reserved/Dev/Teacher 历史全集穷尽与历史实际发送完整 System/World/Rules/Memory/History 提示字节仍各自 HOLD。故 **`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。
+
+**下一最短实际主线**：继续只读地定位上述其他历史暴露全集的冻结权威元数据来源（已有 R50 五世界/50 provenance、R47/R48/R55 20 Prompt 的局部闭合**不得重复**）；若某些类别确实没有来源版本索引，明确以 `UNKNOWN_HOLD` 做协议限制，不能构造虚假“全宇宙 PASS”。与此同时寻找历史请求实际发送文本的权威记录；如果未持久化，冻结可复现的完整历史持久化角色前缀，并明确它是**reconstructed prefix**，不冒称 actual-sent byte-identical。进入真实 48 Prompt+48 Original Reference 同题比较前必须由 Owner 确认这种不可恢复性和评估合同，禁止无授权推理/GPU/HF。
+
+---
+
 ## 2026-11-20 Reviewer 三项最小补充已回传：具体包摘要、B 版本锚、审前独立声明（仍待 Owner 本地交叉校验）
 
 **本项已收到，不需要要求同一 Reviewer 再做 375 份文本检索。** 此次 Reviewer 在前次 8/8 `INDEPENDENT_TEMPLATE_ONLY` 的报告基础上，补充了以下三类可核验证据，**暂时仍是报告自述，未获 Owner 的本机 SHA/版本映射独立回执**：
