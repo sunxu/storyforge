@@ -1,5 +1,19 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 Gold48 Adapter 字节 SHA 闭环与 Runtime 确切剩余 HOLD
+
+本节是 **2026-11-21 追加的新技术实证**，优先于下方较早的 Adapter SHA PENDING 描述；**不更改** Owner Gold48 冻结清单、四模型 Generation Profile，也不重签历史原始回答。
+
+- **GitHub 接手基线**：在代码 HEAD `56a3816460e6bedb57d8daf1ccd4d436216a5a5d` 核对 PR #31 OPEN，六项 Actions `success`（本段是随后新增的交接状态更新，不能把后续 HEAD 误记为旧 SHA）。
+- **三个 Adapter 准确 SHA 来源已找齐，不需要重下载三份权重**：R46 v0.2 `checkpoint-7` 的原历史 `r46_training_report.json.training_evidence.adapter_sha256` 与精确 checkpoint 路径绑定；R54 v0.3-A `checkpoint-16` 的 `R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json.adapter_sha256` 与 `R54_GPU_RUN_REPORT_PRIVATE.json.checkpoint_and_reload.final_adapter_sha256` 一致；R60 Base336 `checkpoint-37` 旧 SAFE 仅证明存在/Reload，无权重 SHA，因此通过**一次新的受限 CPU-only 字节验证**补足。
+- **新 CPU-only 字节校验 PASS**：[HF Job `6b00a44aefaf5e14f4b3c6b5`](https://huggingface.co/jobs/adradar/6b00a44aefaf5e14f4b3c6b5)；组织 `adradar`，单次 `cpu-upgrade`，RO 仅挂载 R60 原 checkpoint-37，流式 SHA256 完整读取 1,867,797,544 字节，SAFE `storyforge_gold48_adapter_sha_cpu_only_safe_v1` / `R60_ADAPTER_BYTE_SHA_PASS`。三个准确 Adapter SHA 都可在已有私有历史报告或此次 HF Job SAFE 中复核；**不把私有模型权重摘要、私有 Prompt / 回复或 Owner 映射复制到公开任务书**。这是新的权重 SHA 验收，**不是**已完成的 Gold48 HF CPU Tokenizer Job `6b00971aefaf5e14f4b3b24a` 的重跑。
+- **固定训练镜像只验证了基座，尚非推理镜像 PASS**：上述 CPU Job 使用已有 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，实测 Python `3.11.11`、Torch `2.6.0+cu124`；`transformers`、`peft`、`accelerate` 均 `NOT_INSTALLED`。旧 R60 GPU 训练报告中 `transformers=5.16.1` 证明历史训练依赖，不证明新 LoRA 四臂直接加载。**推理专用镜像 + hash-pinned 依赖锁 + 实际类/PEFT Import/模板/生成运行验证依旧 HOLD**；不得拿旧 P4 的 Transformers 4.57.1 lock 代替。
+- **现成 worker 的明确四臂接口缺口（代码只读确认）**：`generation_eval.worker.run_generation_batch` 已有输入 hash 校验、逐案 seed、预算、SAFE 与 create-only；但它调用 `generation_eval.profiles.assess_profile`，后者目前只接受 P4 的 `A/B/challenger` 固定三模型 schema，与 Gold48 冻结四臂 `base/r46_v02/r54_v03a/r60_base336` 不同。后续只能做**最小 Gold48 专用契约桥接**，禁止修改 Frozen Profile、借用 P4 角色身份伪装、绕过现有推理授权或复制生成循环。
+- **保持 HOLD**：实际 `Qwen3_5ForConditionalGeneration` + LoRA 四臂 GPU 加载、选定推理镜像依赖锁、真实禁 Thinking / EOS `[248046,248044]` / PAD `248044` / 无截断合同的 prefill/decode smoke 都未验证。冻结 Profile `inference_authorized=false`、`gpu_authorized_by_this_document=false`、`training_authorized=false`；`quality_v1_admitted=0`。本轮 `database_accessed=false`、无 Gold48 私有输入读取、无 R50 sealed、无历史回复读取、`hf_cpu_jobs_submitted=1`（仅新增 R60 SHA 校验）、`gpu_started=false`、`model_calls=0`、`training_started=false`。
+- **下一最短技术动作**：在冻结的旧镜像 Digest 基础上确定与 `Qwen3_5ForConditionalGeneration` 和 `PEFT` 真实兼容的 Transformers/PEFT/Accelerate 版本，生成且验证独立的 hash-pinned 推理依赖锁；然后只修复已确认的四臂 Profile/worker 桥接差异并做合成回归。真实 GPU smoke 与正式 192 回答分别办理授权，不自动运行。
+
+---
+
 ## 2026-11-21 新 Agent 接手：Gold48 数据 + 四模型 Profile 均冻结，唯一新阻塞是推理 Runtime
 
 **最新唯一运行入口**：[2026-11-21 新 Agent 启动提示词](R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md)；本节优先于下面所有历史 NOT_FROZEN、P2_B NOT_GENERATED、先补全历史 Protected 全集、P4 旧三模型与“新建生成器”旧指令。接手先只读确认 [PR #31](https://github.com/sunxu/storyforge/pull/31) 最新 HEAD 和 CI；最后核验过的代码/文档基线 `4e03a6d1e8a7545a23394e213087b4b46aa551a8` 具有 **6/6 Actions SUCCESS**，其后的交接文档提交只作为 HEAD 变化，不应误称仍是该提交。
