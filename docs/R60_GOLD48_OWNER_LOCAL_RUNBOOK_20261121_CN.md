@@ -124,7 +124,19 @@ SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_saf
 正式推理前剩余的**不同**技术门禁是：在 Owner Mac CLI 可以写入的**隔离私有目标目录**上，用原有 `OutputManager.write_safe` 核验 0700/0600、原子 create-only、拒绝覆盖、目录 `fsync` 以及**跨 Job 持久性**。过去 CLI 的简单写入成功并不等于该原子账本合同通过。生产代码 `gold48_runtime_gate.verify_atomic_private_publication_before_spend` 已加入对真实输出目录和持久账本目录的检查，并在消耗 Owner 签名、GPU/模型初始化前失败关闭。该测试不会授予任何推理权限；不得用无法保证原子性的 FUSE 挂载冒充已验证共享账本。
 
 
-## 13. Owner Mac CLI 两份独立 CPU Job：原子账本验收（待 Owner 执行）
+## 13. Gold48 授权账本的 HF Bucket 挂载实证与安全结论（2026-11-21）
+
+**最新真实状态：此节原有双 Job 实验因关键前置门禁 HOLD 而暂停，下面历史命令仅供追溯，禁止直接执行第二份 Job 或通过 chmod/放宽 0700/省略门禁反复探测来取得表面 PASS。**
+
+- **CLI 参数故障已单独关闭**：HF Job `6b00c8544fdc5ab3c55c02dd` 的 image 曾被错误解析为 `--attempts`，已于上一提交修正；它没有执行探针。
+- **真正执行的第一份 CPU Job**：[`6b00ca46efaf5e14f4b3f8ca`](https://huggingface.co/jobs/adradar/6b00ca46efaf5e14f4b3f8ca) 使用 `python:3.11`、`cpu-basic` 和 Mac CLI `:ro` 输入、`:rw` 隔离输出，HF Inspect 为 `ERROR`（exit 2），SAFE 日志 `MOUNT_DIRECTORY_MODE_0700_HOLD`，`gpu_started=false`、`model_calls=0`、`weights_read=false`、`training_started=false`。检查在目录模式校验阶段停止，**没有执行**原子发布、拒绝覆盖或跨 Job 持久性验证。SAFE 没有记录挂载根的实际八进制权限，不能声称观察到了特定 mode。
+- **官方挂载语义限制**：HF `hf-mount` 项目 [Best for / Not for](https://github.com/huggingface/hf-mount#best-for--not-for) 明确不支持跨节点文件锁和强一致性多写入用例；其 [mount options](https://github.com/huggingface/hf-mount#options) 说明远端对象不保存 POSIX 元数据，远端目录默认报告 `0755`、文件 `0644`，权限显示可能是挂载映射，不能当成安全持久账本的真实私有模式认证。**这解释了为什么 mode 需要核对，但不是对本 Job 实际 mode 的直接测量。** HF Jobs 的具体托管挂载实现仍未独立鉴定，故不据此推断更细的文件系统行为。
+- **决策**：`HF_BUCKET_AS_PRODUCTION_ONE_SHOT_AUTHORIZATION_LEDGER=HOLD_UNPROVEN_CROSS_JOB_ATOMICITY`。即使未来某个 Bucket 单 Job 支持 `OutputManager.write_safe`，也不等于跨多个隔离 Job 的原子 compare-and-create、共享唯一性或崩溃恢复语义。**不要**尝试 `chmod 0700` 临时改变远端目录来绕过门禁，不修改 `DURABLE_CONSUMPTION_ROOT` 条件，不把 HF Bucket 的普通持久对象写入冒充一次性授权消耗。
+- **主线下一依赖**：Owner/Provider 需选定能独立证明**全局原子唯一约束**、私有访问控制和跨 Job 崩溃持久性的授权账本承载（例如已审查、隔离的新 PostgreSQL 原子唯一键事务，或真实跨节点支持该语义的持久 POSIX 卷）；先对已有平台可复用能力做只读核对，禁止改写故事业务数据库或新建竞争的通用账本框架。原 `OutputManager` 继续用于与其能力相符的私有输出，当前 Gold48 正式推理保持 HOLD；需 Owner 对选定存储、密钥与 GPU 范围分别审批。
+
+### 历史双 Job 命令（当前暂停；不得直接继续执行）
+
+
 
 **2026-11-21 Owner 首次提交的 CLI 兼容性纠正（优先遵循）：** Job [`6b00c8544fdc5ab3c55c02dd`](https://huggingface.co/jobs/adradar/6b00c8544fdc5ab3c55c02dd) 已在 HF Provider Inspect 中确认为 `ERROR`，`docker_image=--attempts`、`command` 以 `1 python:3.11` 开头，错误为 `docker.io/--attempts` 不是合法镜像。原 CLI 配置中的 `--attempts 1` 被当前 Mac 版 `hf jobs run` 误解析为镜像和命令。**探针尚未运行**，只读核对远端目标 `.gold48-atomic-20261121-v1.private.json` 不存在；此失败不是 Bucket RW、不支持原子写、权限不足或 OutputManager 的证据。下面两条命令均已删除当前 CLI 不兼容的 `--attempts 1`，保持 `--detach`、镜像 `python:3.11`、输入 RO、输出 RW、原 Probe ID 不变。再提交前应先确认 `hf jobs run --help` 中实际支持哪些选项；**不得为了单次尝试属性擅加未受支持的 flag**。没有确认服务端重试语义时，不将 CPU 探针的成功外推为正式 GPU 单次授权保证；正式 GPU 的一次性授权仍由独立 Owner 签名和持久消耗账本控制。不需要重传原有 Stage 或更换 Probe ID/路径。
 
