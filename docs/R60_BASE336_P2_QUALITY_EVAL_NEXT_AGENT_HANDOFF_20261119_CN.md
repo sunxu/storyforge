@@ -1,5 +1,16 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 最新 Owner 受限 Gold48 Freeze 正式完成 → 四模型 Profile 候选待签收
+
+**本节优先于下方所有早期历史快照**。Owner 本机返回正式 SAFE：
+`schema=storyforge_r60_gold48_owner_scoped_freeze_safe_v1`，`status=GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING`，`owner_gold48_freeze=true`，`freeze_scope=SCOPED_RECONSTRUCTED_EVALUATION`，48 主分析 / 42 敏感性（六条已标记风险题仅从敏感性中排除）、8 Story 来源、25 Session、48/48 重建输入 SHA、48/48 历史原始回复 SHA 均由 Owner 私有冻结 Manifest 绑定；HF CPU 输入/回执此前已通过本地字节 SHA 验收。Owner 已明确接受**历史实际发送 Prompt 未验证**、保护集独立性未穷尽、48 条前置 Memory 未获验证而省略、公开卡只是评价时点快照的局限。**不可反复恢复或重冻这一批 48 题，旧 DRAFT/READY/NOT_FROZEN 记录仅为历史阶段，不得覆写**；这不是完整 P2-C 全宇宙 PASS，`quality_v1_admitted=false`。
+
+**下一主线唯一任务是四模型 Generation Profile 冻结及运行时准备**，不用再做 CPU Tokenizer 或旧保护集重复审计。新增独立于 P4 的静态候选 `experiments/r60_quality/gold48_four_arm_generation_profile_candidate_v1.json`：
+Qwen3.8-27B Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37；四臂共用 Base Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，候选 `enable_thinking=false`、`context=32768`、`max_input=30720`、`max_new=2048`、`temperature=0.7,top_p=0.8,top_k=20,min_p=0.0`、`seed=42+零基案例次序`、无静默截断。候选不是 Owner 已批准的四臂 Profile、不是运行时兼容 PASS，也不授权模型生成。原始线上 Gold 48 份独立于生成输入，未来与四模型各 48 份合计 240 份匿名六维盲评对象；按 25 Session 聚类，42 敏感性另报。
+
+**真实硬兼容阻塞**：本轮固定 `Qwen/Qwen3.8-27B` 的 `config.json` 为 `model_type=qwen3_5` / `Qwen3_5ForConditionalGeneration`，Pinned `generation_config.json` 的 EOS 为 `[248046,248044]`、PAD 为 `248044`（均核对固定 revision）。仓库先前 P4 Qwen3-32B/GLM Frozen Profile 与 `AutoModelForCausalLM`、`transformers==4.57.1` 的旧 Worker **不能直接默认为兼容**；新四模型还缺 Adapter 已有 Release SHA 在推理环境的绑定、指定镜像/依赖锁、模型+LoRA 实际加载及 EOS/模板停止行为的验证。复用 `generation_eval.worker.run_generation_batch`、`hf_runtime` 和既有 Backend 验证逻辑，日后**只补 Qwen3.8/LoRA 的必要薄 Backend 适配**，不重写生成循环、盲审、Token Core。正式生成前必须单独冻结 Profile；**本次没有 GPU Job 或模型调用**。
+
+
 ## 2026-11-21 Gold48 最新真实 Owner SAFE：48 题重建草稿完成，HF CPU Tokenizer 待执行（主线优先）
 
 **以下 Owner 已执行并在对话中返回 SAFE JSON，优先级高于本文下方保留的“尚未生成48条候选”旧快照**：
