@@ -16,7 +16,10 @@ from storyforge_dataset.hf_runtime.inputs import InputManager
 
 from .gold48_qwen35_loader import ADAPTER_SIZE, EOS_IDS, MODEL, PAD_ID, REVISION
 from .worker import (
-    GenerationBackend, WorkerError, WorkerReceipt, _run_validated_generation_batch,
+    GenerationBackend,
+    WorkerError,
+    WorkerReceipt,
+    _run_validated_generation_batch,
     _validate_records,
 )
 

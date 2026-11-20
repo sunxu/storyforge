@@ -1,7 +1,6 @@
 """Synthetic, no-weight Gold48 contract and existing generation-loop integration."""
 from __future__ import annotations
 
-import copy
 import hashlib
 import json
 import stat
@@ -10,12 +9,21 @@ from pathlib import Path
 import pytest
 
 from storyforge_dataset.generation_eval.gold48_contract_bridge import (
-    INPUT_SCHEMA, OWNER_SCHEMA, BINDINGS_SCHEMA, ROLES, PROVENANCE,
-    _canonical, _digest, prepare_gold48_generation_contract,
-    run_gold48_generation_batch, read_private_contract,
+    BINDINGS_SCHEMA,
+    INPUT_SCHEMA,
+    OWNER_SCHEMA,
+    PROVENANCE,
+    ROLES,
+    _canonical,
+    _digest,
+    prepare_gold48_generation_contract,
+    read_private_contract,
+    run_gold48_generation_batch,
 )
 from storyforge_dataset.generation_eval.worker import (
-    GenerationResult, WorkerError, _run_validated_generation_batch,
+    GenerationResult,
+    WorkerError,
+    _run_validated_generation_batch,
 )
 
 
@@ -85,11 +93,11 @@ def fixture(tmp_path: Path):
 
 def build_call(pack, *, role="r60_base336"):
     frozen, owner, bindings, manifest, path = pack
-    return dict(
-        frozen=frozen, owner_freeze=owner,
-        adapter_bindings=bindings, input_manifest=manifest,
-        input_path=path, model_role=role,
-    )
+    return {
+        "frozen": frozen, "owner_freeze": owner,
+        "adapter_bindings": bindings, "input_manifest": manifest,
+        "input_path": path, "model_role": role,
+    }
 
 
 class RecordingBackend:
