@@ -450,6 +450,7 @@ def synthetic_signed_owner_receipt(tmp_path: Path, monkeypatch, pack, role):
     """Ephemeral test-only key. Never sets the production trust anchor."""
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+
     import storyforge_dataset.generation_eval.gold48_owner_receipt as auth_module
 
     key = Ed25519PrivateKey.generate()

@@ -445,14 +445,11 @@ def _verify_authorized_run(
         issued_at_utc=payload.get("issued_at_utc"),
         expires_at_utc=payload.get("expires_at_utc"),
     )
-    try:
-        verified = verify_owner_authorization(
-            receipt_path=owner_authorization_receipt_path,
-            trusted_public_key_pem_path=trusted_owner_public_key_pem_path,
-            expected_scope=expected,
-        )
-    except WorkerError:
-        raise
+    verified = verify_owner_authorization(
+        receipt_path=owner_authorization_receipt_path,
+        trusted_public_key_pem_path=trusted_owner_public_key_pem_path,
+        expected_scope=expected,
+    )
     return verified, lock.sha256
 
 
