@@ -20,6 +20,7 @@ from r60_p2_gold48_owner_freeze_packet_cpu import SAFE as READY_SCHEMA
 from r60_p2_gold48_owner_freeze_packet_cpu import SCHEMA as PACKET_SCHEMA
 from r60_p2_gold48_owner_freeze_packet_cpu import STATUS as READY_STATUS
 from r60_p2_gold48_owner_freeze_packet_cpu import (
+    Hold,
     canonical,
     make_packet,
     require,
@@ -45,10 +46,6 @@ SAFE_NAME = "GOLD48_SCOPED_OWNER_FREEZE_SAFE.json"
 RUN_KEY_RE = re.compile(r"r60-gold48-cpu-\d{8}T\d{6}Z-[a-f0-9]{12}\Z")
 CASE_ID_RE = re.compile(r"G48-C\d{2}\Z")
 SHA_RE = re.compile(r"[0-9a-f]{64}\Z")
-
-
-class Hold(ValueError):
-    pass
 
 
 def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
