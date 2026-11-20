@@ -1,5 +1,17 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 历史 33 ∩ Base336 172 差集 Owner SAFE PASS：仅 32 Story 进入增量语义审阅
+
+Owner Mac 已按本任务书的既有冻结 Git 来源清单，与 **Owner 已签收** `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 的 `base336_scope.story_ids_PRIVATE` 做只读差集并回传真实 SAFE（`HISTORICAL33_BASE336_SCOPE_DIFF_PASS`）。**结果：历史 33 个 Story、Base336 已审 Story 172、身份交集 1、真实差集 32；`previous_known_overlap_lower_bound_met=true`，数据库未访问，私有值未输出。** 这是最终全 172 Story 差集，不再以旧的 38 Story 交集下界作为现状，也不需要再复查 195/80/150/20 冻结 Blob 以重新汇报同一差集。
+
+**注意 Reviewer 继承范围只到实际读取过的来源版本**：`archived_revision_coverage_verified=false` 是上一份 SAFE 中**尚未执行此项检查**，不能当作“已证有缺失版本”。需把那 **1 个共享 Story** 在历史 33/124 的 current+archived `(StoryID, source_kind, revision_id, all four fields)` 与已审 Base336 原始 375-record 包做字节等价字段核对；已审版本直接继承 P2×Base336 的独立语义意见，任何额外历史归档修订版必须并入本次增量 Reviewer 审阅，不能跳过。
+
+**下一步不做重复功能开发**：一次 Owner 本机 create-only、只读 DB 提取**已确认 33 Story 的 124 份 current+archived source/version（不是再次提取 Base336 172/375）**，对那 1 个共享 Story 作 version-level coverage 与字段一致性核对；只输出历史 **32 未审 Story 的全部 current+archived** 与**可能缺失的共享 Story 历史版本**，以及已签收的 P2 八来源四字段，制作仅供独立 Reviewer 的匿名私有 JSON。Reviewer 不需要 GitHub/本地文件访问，由 Owner 交付这个单次输出的资料包。Reviewer Hxxx 编号与 Pxx 仅用于新包、真实 UUID→匿名编号单独留 Owner 0600；若缺少 revision 或证据，保持 `INSUFFICIENT_EVIDENCE/HOLD`。当前提供了仅作为**本次聊天附件**的 Owner 一次性整理脚本（不加入仓库、不引入长期工具），复用仓库现有 `SQL_BASE336`、已审证据包和 DB role guard；需要 Owner 实际执行回传 SAFE 后才可记私有审阅包已生成，不能从本次文件更新推断运行成功。
+
+**尚不变**：与历史 33 Story 的四字段 exact overlap 全 0 不是语义独立。其余没有权威穷尽清单的历史 Protected/Reserved/Teacher/Dev、实际发送请求 Prompt 原字节以及一个 P2 来源自身设定残留仍 HOLD。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。不再要求 Reviewer 重做 Base336 172/375，也不向 CI/GitHub 输出任何私人 UUID/文本/哈希。
+
+---
+
 ## 2026-11-20 继续推进：历史 R04 非 Gold + v0.1 Test20 → 去重 33 Story / 当前归档 124 版本的完整字段精确隔离
 
 **这是一轮新来源与新版本的真实只读核验，不是重新运行先前 P2 × Base336 172/375、Gold195 195 或 R47/R48/R55 20-case 旧结论**。全部真实来源身份只在私有内存中处理；公开仅留聚合数，不提交任何源 UUID、剧情原文或身份→版本映射。
