@@ -1,0 +1,27 @@
+{
+  "schema": "storyforge_r60_gold48_inference_cpu_dependency_contract_v1",
+  "status": "CPU_IMPORT_INTERFACE_PASS__FULL_MODEL_AND_GPU_UNVERIFIED",
+  "lock_path": "requirements/r60-gold48-inference-py311-linux-x86_64.hashes.lock",
+  "lock_sha256": "cec741f3e6b3f70336fdc548c368bd3741e15c05a77167595b7a2a1162b752ec",
+  "lock_bytes": 64831,
+  "python_target": "3.11",
+  "platform_target": "x86_64-unknown-linux-gnu",
+  "base_image": "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee",
+  "observed_python": "3.11.11",
+  "observed_torch": "2.6.0+cu124",
+  "pins": {
+    "torch": "2.6.0",
+    "transformers": "5.16.1",
+    "peft": "0.21.2",
+    "accelerate": "1.12.0",
+    "huggingface_hub": "1.33.0"
+  },
+  "cpu_import_job": "6b00aa0eefaf5e14f4b3cd9a",
+  "hash_lock_job": "6b00ab03efaf5e14f4b3cf08",
+  "cpu_peft_interface_import_verified": true,
+  "full_qwen_instance_verified": false,
+  "peft_model_wrapping_verified": false,
+  "require_hashes_install_on_inference_image_verified": false,
+  "gpu_compatibility_verified": false,
+  "formal_inference_authorized": false
+}
