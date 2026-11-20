@@ -430,7 +430,6 @@ def authorize_and_consume_before_gpu(
     # single-Owner Mac dispatch policy. The Owner-signed image digest and
     # live package pins are checked here. Actual HF Inspect is checked by
     # Mac independently prior to quality-evaluation admission.
-    provider_sha = None
     mount_observation = verify_current_readonly_adapter_mount(
         role=model_role,
         adapter_dir=(
