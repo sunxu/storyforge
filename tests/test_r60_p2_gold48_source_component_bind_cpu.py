@@ -21,6 +21,7 @@ spec.loader.exec_module(binding)
 
 
 def setup_documents(tmp_path):
+    (tmp_path / "candidate").mkdir(mode=0o700)
     candidates = synthetic_bundle(tmp_path / "candidate")
     manifest_path = tmp_path / "manifest.json"
     evidence_path = tmp_path / "evidence.json"
