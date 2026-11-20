@@ -1,5 +1,18 @@
 # R60 Base336 P2 Quality-v1：2026-11-19 新 Agent 启动提示词（可直接复制）
 
+## 2026-11-20 必须优先执行的 Owner 最新裁决（覆盖本文 2026-11-19 旧提示）
+
+**唯一现行任务书**：先读 `docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md` 顶端 “Owner 正式批准” 新节与 “2026-11-20 现行唯一执行基线”，不要执行下列旧“5 作者/3+5、缺 172 Story、没有 48 条原始回复、两臂、须查历史 actual-sent”步骤。
+
+Owner 已批准 **`RECONSTRUCTED_EVALUATION_INPUT`** 作 Gold48 统一评估输入：不访问 RolePlay 生产环境，不再将历史 HTTP/Provider 真实发送字节作为本轮 Quality-v1 准入前置；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` 保持。已经核验候选为 **8 Story/7 作者/2 GPU 前+6 后、25 Session、48 个唯一完整历史 Prefix 与 48 个匹配的真实 Historical Original Reference，48/48 成功请求事件元数据唯一匹配**。未正式冻结。
+
+固定四生成模型：Qwen Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37；未来四臂用同一冻结重建消息作严格同题配对。第五匿名来源是历史原始回复：六维共同盲评，但当年 Provider 实际 System/Memory 等未验证，所以**只做同历史上下文描述性参考比较，不声称其与新四臂 byte-exact 同 Prompt 或严格因果对比**。主分析若 Owner 仲裁允许保留疑似有角色家族名残留来源，则预注册 48 题和排除此来源六题的 42 题敏感性分析。
+
+已经独立审核 Base336 172 Story/375 版本与历史增量 32 Story/120 版本（去重 204 Story/495 版本）各 8/8 的限定来源语义结果；R45 原始 49/15 与 R46 source-data 相同 Git Blob，已知 R50/R47/R48/R55 子集不重做。**只剩**未闭合的其它历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 完整 Authority 与真实新差集、一个 P2 源自身质量仲裁、有效权限及 Owner Gold48 Freeze。缺权威全集为 `UNKNOWN_HOLD`，不可假定通过。**当前 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`；没有 GPU/HF/模型调用批准。** 只读/SAFE、禁 R50 sealed、禁敏感原文上 GitHub/Chat。
+
+---
+
+
 ## 2026-11-19 必须包含原始回答 Gold 的最新 Owner 要求（优先于以上内容）
 
 **必需增加第五种“回答来源”：同题、同历史上下文、可追溯来源与授权的原始 Assistant 回答 Gold**。它不是第五个生成模型；正式候选为 **原始 Gold + Qwen Base + R46 v0.2 + R54 v0.3-A + R60 Base336 checkpoint-37**。主比较**必须包括 Base336 vs Gold**；原始 Gold 也接受六维评分、严重违规判定和盲化，不视为天然正确。四模型 48 题产生 192 条模型输出，加 48 条真实原始回复才是 240 份盲评文本。
