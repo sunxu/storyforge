@@ -3,7 +3,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import stat
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -18,6 +21,7 @@ from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     SOURCE_FIELDS,
     _canonical,
     _digest,
+    build_gold48_frozen_input_payload,
     prepare_gold48_generation_contract,
     read_private_contract,
     run_gold48_generation_batch,
@@ -310,3 +314,89 @@ def test_evidence_digest_field_must_match_binding_after_valid_byte_sha(tmp_path)
         evidence_paths[role] = path
     with pytest.raises(WorkerError, match="GOLD48_SOURCE_EVIDENCE_ADAPTER_SHA_HOLD"):
         verify_gold48_binding_source_evidence(pack[2], evidence_paths)
+
+
+def test_materializer_reuses_frozen_case_messages_without_reconstruction(tmp_path):
+    pack = fixture(tmp_path)
+    records = [json.loads(x) for x in pack[4].read_bytes().splitlines()]
+    draft = {
+        "schema": "storyforge_r60_gold48_reconstructed_inputs_draft_private_v1",
+        "status": "RECONSTRUCTED_48_INPUT_DRAFT__OWNER_FREEZE_PENDING",
+        "input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
+        "cases_PRIVATE": [
+            {
+                "candidate_case_id_PRIVATE": rec["sample_id"],
+                "reconstructed_messages_sha256_PRIVATE":
+                    pack[1]["cases_PRIVATE"][i]["reconstructed_messages_sha256_PRIVATE"],
+                "reconstructed_messages_PRIVATE": rec["messages"],
+            }
+            for i, rec in enumerate(records)
+        ],
+    }
+    raw, manifest = build_gold48_frozen_input_payload(
+        frozen=pack[0], owner_freeze=pack[1], reconstructed_draft=draft
+    )
+    assert raw == pack[4].read_bytes()
+    assert manifest == pack[3]
+    draft["cases_PRIVATE"][0]["reconstructed_messages_PRIVATE"][1]["content"] += " tamper"
+    with pytest.raises(WorkerError, match="GOLD48_RECONSTRUCTED_DRAFT_CASE_SHA_HOLD"):
+        build_gold48_frozen_input_payload(
+            frozen=pack[0], owner_freeze=pack[1], reconstructed_draft=draft
+        )
+
+
+def test_create_only_materializer_cli_emits_owner_only_files(tmp_path):
+    pack = fixture(tmp_path)
+    repo = Path(__file__).resolve().parents[1]
+    root = tmp_path / "owner-private"
+    root.mkdir(mode=0o700)
+    records = [json.loads(x) for x in pack[4].read_bytes().splitlines()]
+    draft = {
+        "schema": "storyforge_r60_gold48_reconstructed_inputs_draft_private_v1",
+        "status": "RECONSTRUCTED_48_INPUT_DRAFT__OWNER_FREEZE_PENDING",
+        "input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
+        "cases_PRIVATE": [
+            {
+                "candidate_case_id_PRIVATE": rec["sample_id"],
+                "reconstructed_messages_sha256_PRIVATE":
+                    pack[1]["cases_PRIVATE"][i]["reconstructed_messages_sha256_PRIVATE"],
+                "reconstructed_messages_PRIVATE": rec["messages"],
+            }
+            for i, rec in enumerate(records)
+        ],
+    }
+    draft_raw = _canonical(draft) + b"\n"
+    pack[1]["reconstructed_draft_sha256_PRIVATE"] = hashlib.sha256(draft_raw).hexdigest()
+    owner_path = root / "owner.json"
+    draft_path = root / "draft.json"
+    owner_path.write_bytes(_canonical(pack[1]) + b"\n")
+    draft_path.write_bytes(draft_raw)
+    owner_path.chmod(0o600)
+    draft_path.chmod(0o600)
+    output = root / "run-input"
+    command = [
+        sys.executable, str(repo / "scripts/r60_gold48_generation_input_materialize_cpu.py"),
+        "--frozen-profile",
+        str(repo / "experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json"),
+        "--owner-freeze", str(owner_path),
+        "--reconstructed-draft", str(draft_path),
+        "--private-root", str(root), "--output-dir", str(output),
+    ]
+    env = dict(os.environ)
+    env["PYTHONPATH"] = str(repo / "src")
+    first = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
+    assert first.returncode == 0, first.stdout
+    safe = json.loads(first.stdout)
+    assert safe["status"] == "GOLD48_PRIVATE_WORKER_INPUTS_MATERIALIZED"
+    assert safe["private_values_emitted"] is False
+    output_jsonl = output / "GOLD48_GENERATION_INPUTS_PRIVATE.jsonl"
+    output_manifest = output / "GOLD48_GENERATION_INPUT_MANIFEST_PRIVATE.json"
+    assert output_jsonl.read_bytes() == pack[4].read_bytes()
+    assert json.loads(output_manifest.read_text()) == pack[3]
+    assert stat.S_IMODE(output.stat().st_mode) == 0o700
+    assert stat.S_IMODE(output_jsonl.stat().st_mode) == 0o600
+    assert stat.S_IMODE(output_manifest.stat().st_mode) == 0o600
+    second = subprocess.run(command, capture_output=True, text=True, env=env, check=False)
+    assert second.returncode == 2
+    assert json.loads(second.stdout)["status"] == "HOLD"
+    assert output_jsonl.read_bytes() == pack[4].read_bytes()
