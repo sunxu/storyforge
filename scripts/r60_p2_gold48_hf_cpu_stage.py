@@ -54,7 +54,7 @@ def canonical(value):
 
 
 def stage_files():
-    return local_dependencies(entries=ENTRY, extras=EXTRA)
+    return local_dependencies(entries=list(ENTRY), extras=list(EXTRA))
 
 
 def minimally_staged(draft_file):
