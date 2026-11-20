@@ -129,3 +129,38 @@ def test_ledger_edit_screen_is_scoped_to_indexed_session_story():
     import inspect
 
     assert "cur.execute(CHANGED_SQL, (sid, story, mids))" in inspect.getsource(capture.try_case)
+
+
+def test_safe_rejection_counter_records_only_reason_codes():
+    from collections import Counter
+
+    class FakeCursor:
+        def execute(self, query, params):
+            assert "deleted_at" in query
+            assert params == ("story-private", "session-private")
+
+        def fetchall(self):
+            return []  # deleted / missing session
+
+    counts = Counter()
+    private_target = (
+        "message-private", "session-private", 4,
+        "assistant reply", {}, capture.CUTOFF
+    )
+    result = capture.try_case(
+        FakeCursor(), {"story_id": "story-private"}, private_target,
+        reject_counts=counts,
+    )
+    assert result is None
+    assert counts == {"SESSION_MISSING_OR_DELETED": 1}
+    assert "story-private" not in str(counts)
+    assert "message-private" not in str(counts)
+
+
+def test_hold_carries_only_explicit_safe_diagnostics():
+    error = capture.Hold(
+        "INSUFFICIENT_SIX_PER_STORY_STRICT_CANDIDATES_HOLD",
+        {"targets_fetched": 8, "rejection_counts": {"HISTORY_LEDGER_RECOVERY_HOLD": 3}},
+    )
+    assert error.safe_diagnostics["targets_fetched"] == 8
+    assert "HISTORY_LEDGER_RECOVERY_HOLD" in error.safe_diagnostics["rejection_counts"]
