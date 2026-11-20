@@ -4,9 +4,9 @@
 
 ### Gold48 RO 输入本地化与私有结果交付（代码已接，真实 Job 待验）
 
-- 已在**原** \`gold48_runtime_gate\` 中加 \`materialize_gold48_ro_input(source, target, expected_sha256)\`：复用 \`InputManager\` 的 O_NOFOLLOW/长度限制/精确 SHA，再在 Job-local 0700 根写 0600 的 create-only 文件并 fsync、读回；用于解决 HF FUSE 只读文件不保存 POSIX 模式的问题。这个函数**必须由未来经 Owner 批准的 Job 包装在生产 pre-GPU 预检前调用**；当前尚无专门 GPU 提交动作，不可将工具函数的 CI 成功当成真实 HF 输入挂载 PASS。
-- \`run_authorized_gold48_production\` 已在原 \`run_gold48_generation_batch\` 后直接调用 \`deliver_gold48_private_result\`。默认固定输出位置为私有 Bucket \`hf://buckets/adradar/storyforge-training/experiments/r60-gold48/outputs/<run_id>/\`，必须按 \`<role>.private.json\`、\`<role>.private.json.launch.private.json\`、\`<role>.private.json.identity.private.json\`、\`<role>.private.json.result-sha256-manifest.private.json\` 顺序上传；最后一个 SHA256 manifest 在本地由已有 \`OutputManager\` 原子发布，远端使用 \`hf buckets cp\` 而非要求 FUSE POSIX 原子性。每份传输后下载到本地 scratch 再校验 SHA 和字节数。**不能将已上传部分结果或单一 Job 回读当成 Owner 已签收**。
-- 若上传、回读、完整性或私有目录检查失败，状态为 HOLD，绝不自动重跑模型。正式评测需要 Owner Mac 再使用既有 \`hf buckets cp\` / 下载 SHA 审计流程确认四个 Run ID 的每份远端文件、48 条与原始 Frozen 输入绑定。所有真实 GPU/Provider/Owner 签名公钥授权仍独立 HOLD；**本轮只完成 CPU 合成代码与 CI，尚无真实 HF 交付验收。**
+- 已在**原** `gold48_runtime_gate` 中加 `materialize_gold48_ro_input(source, target, expected_sha256)`：复用 `InputManager` 的 O_NOFOLLOW/长度限制/精确 SHA，再在 Job-local 0700 根写 0600 的 create-only 文件并 fsync、读回；用于解决 HF FUSE 只读文件不保存 POSIX 模式的问题。这个函数**必须由未来经 Owner 批准的 Job 包装在生产 pre-GPU 预检前调用**；当前尚无专门 GPU 提交动作，不可将工具函数的 CI 成功当成真实 HF 输入挂载 PASS。
+- `run_authorized_gold48_production` 已在原 `run_gold48_generation_batch` 后直接调用 `deliver_gold48_private_result`。默认固定输出位置为私有 Bucket `hf://buckets/adradar/storyforge-training/experiments/r60-gold48/outputs/<run_id>/`，必须按 `<role>.private.json`、`<role>.private.json.launch.private.json`、`<role>.private.json.identity.private.json`、`<role>.private.json.result-sha256-manifest.private.json` 顺序上传；最后一个 SHA256 manifest 在本地由已有 `OutputManager` 原子发布，远端使用 `hf buckets cp` 而非要求 FUSE POSIX 原子性。每份传输后下载到本地 scratch 再校验 SHA 和字节数。**不能将已上传部分结果或单一 Job 回读当成 Owner 已签收**。
+- 若上传、回读、完整性或私有目录检查失败，状态为 HOLD，绝不自动重跑模型。正式评测需要 Owner Mac 再使用既有 `hf buckets cp` / 下载 SHA 审计流程确认四个 Run ID 的每份远端文件、48 条与原始 Frozen 输入绑定。所有真实 GPU/Provider/Owner 签名公钥授权仍独立 HOLD；**本轮只完成 CPU 合成代码与 CI，尚无真实 HF 交付验收。**
 
 
 

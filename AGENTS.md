@@ -2,7 +2,7 @@
 
 ## 2026-11-21 Gold48 单 Owner Mac 调度简化策略（最新授权范围；优先于旧共享卷规划）
 
-**当前新增的唯一运行连接（代码与合成 CI 已验，实际 HF Job 未验）**：在现有 \`gold48_runtime_gate.py\` 新增 \`materialize_gold48_ro_input\`，调用既有 \`InputManager.open_verified\` 按 SHA 读取 RO 挂载内容，再以本地 0600 exclusive/create-only 写入 0700 POSIX scratch（不会修改远端输入）；生产 \`run_authorized_gold48_production\` 已在原 Worker 返回后调用 \`deliver_gold48_private_result\`。后者要求 Output、launch、identity 三份本地 0600 文件及 48 条 WorkerReceipt，使用既有 \`OutputManager.write_safe\` 创建本地 SHA256 manifest，按三文件→manifest-last 顺序使用 \`hf buckets cp\` 上传到私有 \`experiments/r60-gold48/outputs/<run_id>/\`，逐件远端回读验 SHA。失败 HOLD 且不自动生成重试；**Owner Mac 的独立下载验证仍未执行，Job 内输入物化入口还需被实际受控包装调用**。这只是受控传输，不是新 GPU 授权、全局锁或训练。
+**当前新增的唯一运行连接（代码与合成 CI 已验，实际 HF Job 未验）**：在现有 `gold48_runtime_gate.py` 新增 `materialize_gold48_ro_input`，调用既有 `InputManager.open_verified` 按 SHA 读取 RO 挂载内容，再以本地 0600 exclusive/create-only 写入 0700 POSIX scratch（不会修改远端输入）；生产 `run_authorized_gold48_production` 已在原 Worker 返回后调用 `deliver_gold48_private_result`。后者要求 Output、launch、identity 三份本地 0600 文件及 48 条 WorkerReceipt，使用既有 `OutputManager.write_safe` 创建本地 SHA256 manifest，按三文件→manifest-last 顺序使用 `hf buckets cp` 上传到私有 `experiments/r60-gold48/outputs/<run_id>/`，逐件远端回读验 SHA。失败 HOLD 且不自动生成重试；**Owner Mac 的独立下载验证仍未执行，Job 内输入物化入口还需被实际受控包装调用**。这只是受控传输，不是新 GPU 授权、全局锁或训练。
 
 
 
@@ -487,15 +487,15 @@ For baseline training, completion means:
 
 ## R60 Base336 GPU implementation handoff (2026-11-17)
 
-The P0 293/43 Collator proof transfer is complete. Do not rerun CPU336, recreate the split or rerun the Collator. The active next step is Owner Mac private Stage and HF read-only READY/dry-run using \`docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md\`.
+The P0 293/43 Collator proof transfer is complete. Do not rerun CPU336, recreate the split or rerun the Collator. The active next step is Owner Mac private Stage and HF read-only READY/dry-run using `docs/plans/R60_BASE336_FAST_GPU_EXPLORATORY_20261116_CN.md`.
 
 Implemented entrypoints:
-- \`scripts/r60_base336_gpu_contract.py\`
-- \`scripts/r60_base336_gpu_stage.py\`
-- \`scripts/r60_base336_gpu_worker.py\` and \`scripts/r60_base336_gpu_worker.sh\`
-- \`scripts/r60_base336_gpu_cli.py\`
+- `scripts/r60_base336_gpu_contract.py`
+- `scripts/r60_base336_gpu_stage.py`
+- `scripts/r60_base336_gpu_worker.py` and `scripts/r60_base336_gpu_worker.sh`
+- `scripts/r60_base336_gpu_cli.py`
 
-Reuse the shared Common2 dependency bundler, HF Runtime, \`hf_job_runner.py\` evidence/inference/GPU monitor helpers, Common2 remote Bucket listing and paginated Job-history helper. Do not fork tokenization, R18 mask, Gold Quality, CPU Guard or HF Runtime. R54 code is reference only; never copy its 31/9 data, 16-step config or whole-Bucket RW mount.
+Reuse the shared Common2 dependency bundler, HF Runtime, `hf_job_runner.py` evidence/inference/GPU monitor helpers, Common2 remote Bucket listing and paginated Job-history helper. Do not fork tokenization, R18 mask, Gold Quality, CPU Guard or HF Runtime. R54 code is reference only; never copy its 31/9 data, 16-step config or whole-Bucket RW mount.
 
 The Stage root and every nested directory must be mode 0700; files must be 0600. Local verification checks all modes and rejects symlinks. Worker preflight must validate the HF-provided JOB_ID, Run Key/Scope, and writable output mount before dependency installation.
-The GPU CLI intentionally has no submit action. Its dry-run Scope is \`DRY_RUN_NOT_AUTHORIZED\`; the worker refuses that Scope. Keep GPU Job count 0 until separately authorized. Quality-v1 and train admission remain 0.
+The GPU CLI intentionally has no submit action. Its dry-run Scope is `DRY_RUN_NOT_AUTHORIZED`; the worker refuses that Scope. Keep GPU Job count 0 until separately authorized. Quality-v1 and train admission remain 0.
