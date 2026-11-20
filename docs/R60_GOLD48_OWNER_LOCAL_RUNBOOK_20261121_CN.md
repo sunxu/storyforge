@@ -114,3 +114,9 @@ SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_saf
 ## 11. 正式运行进程的只读挂载实时校验（不重复 HF 探针）
 
 在 `gold48_runtime_gate.authorize_and_consume_before_gpu` 中，三臂（非 base）必须于**消耗一次性 Owner 授权之前**，通过当前容器的 `/proc/self/mountinfo` 验证 `/ro_adapters/<role>` 是精确独立且 `ro` 的挂载点，同时检查非符号链接目录、权重文件大小 1,867,797,544 字节与三个 Adapter 原始配置文件固定大小。检查只用 `lstat` 和 mountinfo，不读取或 SHA 计算权重。正式 Loader 消费授权时及生成前继续复核该挂载观察，并由原 Loader 完成权重字节流 SHA。过去 CPU Job 的挂载 PASS 不会被当成新进程的挂载实证。若缺失、可写、路径错误、被替换为 symlink 或文件尺寸不同，必须在 GPU 及模型调用之前 HOLD；未签发的 Owner/Provider 许可仍不能被绕过。
+
+## 12. 当前正式执行阻塞：共享可写账本与原子发布能力
+
+2026-11-21 一次独立 HF CPU-only 写入能力探针请求，尝试把既有 `adradar/storyforge-training/preflight` 以 `:rw` 挂载到隔离测试根目录、执行 Git 固定 SHA 的**原有** `OutputManager.write_safe`，HF Jobs API 在**创建 Job 之前**返回 `403 Forbidden`。再次只读列出 Job，未找到该新 Job。因此`WRITE_MOUNT_JOB_SUBMISSION=HOLD_403`，**没有真实写入结果、没有证实 Bucket 不兼容，也未改动训练文件**；不能擅自推断 403 是哪一种组织权限或策略原因。无需重复已通过的三路只读 Adapter CPU Job。
+
+仓库中 `gold48_runtime_gate.verify_atomic_private_publication_before_spend` 现在直接复用现有 `OutputManager.write_safe`，在一次性 Owner 授权被消耗前，对**真实输出目录和真实共享账本目录**各写入/二次拒绝覆盖/删除一份纯合成 0600 临时探针，要求目录 0700、原子 create-only、同步写入及清理成功。支持未验收时必须在任何 GPU、模型调用和授权消耗之前 HOLD；该 CPU 文件系统检测也不代表 Provider 密钥签收、跨 Job 持久性或正式推理授权。若 Bucket `:rw` 仍返回 403，先由实际有权限的存储管理者核查 HF Namespace 与 Bucket 的写入授权或另选经过验证的持久输出卷，**不要修改 OutputManager 语义、把 FUSE 无保证写入冒充原子持久账本、或重发 GPU Job 试错**。

@@ -451,3 +451,39 @@ def test_no_mount_does_not_pass_preflight_by_previous_cpu_proof(tmp_path):
         gate.verify_current_readonly_adapter_mount(
             role="r60_base336", adapter_dir=tmp_path / "checkpoint-37"
         )
+
+
+
+def test_atomic_publication_probe_uses_existing_outputmanager_and_cleans(
+    tmp_path,
+):
+    """Real filesystem operations, no fake GPU or additional publisher."""
+    root = tmp_path / "private-output"
+    root.mkdir(mode=0o700)
+    gate.verify_atomic_private_publication_before_spend(root)
+    assert list(root.iterdir()) == []
+    root.chmod(0o755)
+    with pytest.raises(WorkerError, match="GOLD48_PRIVATE_PUBLICATION_DIRECTORY_HOLD"):
+        gate.verify_atomic_private_publication_before_spend(root)
+    assert list(root.iterdir()) == []
+
+
+def test_atomic_publication_probe_holds_before_grant_if_fuse_rejects_create(
+    tmp_path, monkeypatch,
+):
+    """Synthetic emulation of a remote bucket that rejects atomic publication."""
+    from storyforge_dataset.hf_runtime.outputs import OutputManager
+
+    root = tmp_path / "isolated-private-mount"
+    root.mkdir(mode=0o700)
+    original = OutputManager.write_safe.__func__
+
+    def unsupported(cls, path, payload, *, mode=0o600):
+        if path.name.startswith(".gold48-atomic-probe-"):
+            raise ValueError("OUTPUT_ATOMIC_PUBLISH_UNSUPPORTED")
+        return original(cls, path, payload, mode=mode)
+
+    monkeypatch.setattr(OutputManager, "write_safe", classmethod(unsupported))
+    with pytest.raises(WorkerError, match="GOLD48_ATOMIC_PUBLICATION_UNSUPPORTED_HOLD"):
+        gate.verify_atomic_private_publication_before_spend(root)
+    assert list(root.iterdir()) == []

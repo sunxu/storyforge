@@ -280,6 +280,56 @@ def verify_current_readonly_adapter_mount(
     }
 
 
+def verify_atomic_private_publication_before_spend(root: Path) -> None:
+    """Test the EXISTING OutputManager on the actual mounted filesystem.
+
+    It must support mode-0600 durable, create-only publication and refusal to
+    overwrite before a one-time Owner grant is spent. Test data is constant and
+    synthetic; no model, source text, private IDs, or Owner receipt is touched.
+    """
+    try:
+        st = root.lstat()
+        _check(stat.S_ISDIR(st.st_mode)
+               and stat.S_IMODE(st.st_mode) == 0o700,
+               "GOLD48_PRIVATE_PUBLICATION_DIRECTORY_HOLD")
+    except OSError as exc:
+        raise WorkerError("GOLD48_PRIVATE_PUBLICATION_DIRECTORY_HOLD") from exc
+    path = root / (".gold48-atomic-probe-" + secrets.token_hex(20))
+    written = False
+    try:
+        first = OutputManager.write_safe(
+            path,
+            {"schema": "storyforge_gold48_atomic_publication_probe_v1",
+             "not_a_generation_or_owner_receipt": True},
+            mode=0o600,
+        )
+        written = True
+        _check(first.mode == 0o600,
+               "GOLD48_ATOMIC_PUBLICATION_MODE_HOLD")
+        # A duplicate publication MUST be rejected without changing the file.
+        try:
+            OutputManager.write_safe(
+                path, {"schema": "duplicate_must_be_rejected"}, mode=0o600,
+            )
+        except ValueError as exc:
+            _check(str(exc) == "OUTPUT_ALREADY_EXISTS",
+                   "GOLD48_ATOMIC_PUBLICATION_NO_REPLACE_HOLD")
+        else:
+            raise WorkerError("GOLD48_ATOMIC_PUBLICATION_NO_REPLACE_HOLD")
+    except (ValueError, OSError) as exc:
+        if isinstance(exc, WorkerError):
+            raise
+        raise WorkerError("GOLD48_ATOMIC_PUBLICATION_UNSUPPORTED_HOLD") from exc
+    finally:
+        if written:
+            try:
+                path.unlink()
+                _check(not path.exists() and not path.is_symlink(),
+                       "GOLD48_ATOMIC_PUBLICATION_CLEANUP_HOLD")
+            except OSError as exc:
+                raise WorkerError("GOLD48_ATOMIC_PUBLICATION_CLEANUP_HOLD") from exc
+
+
 def authorize_and_consume_before_gpu(
     *,
     frozen: dict[str, Any],
@@ -362,6 +412,10 @@ def authorize_and_consume_before_gpu(
         ),
     )
     _validate_durable_ledger_root()
+    # Both publication destinations must prove the REAL atomic IO contract
+    # before consuming a single-use signed Owner authorization.
+    verify_atomic_private_publication_before_spend(DURABLE_CONSUMPTION_ROOT)
+    verify_atomic_private_publication_before_spend(output_path.parent)
     spent = DURABLE_CONSUMPTION_ROOT / (
         auth.receipt_sha256 + ".spent.private.json"
     )
