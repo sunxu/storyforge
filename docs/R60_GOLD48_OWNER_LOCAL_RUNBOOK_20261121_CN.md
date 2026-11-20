@@ -97,6 +97,8 @@ Loader 不再接受 `runtime_authorized=True`。单纯给它一个布尔值或�
 
 恢复函数**不要求 Backend、不载入任何模型、不调用 GPU 或 generate()**。对于真实 Provider 已测量的运行，还需传入 Provider 原始签名证明、公钥及依赖合同以复核身份；无法取得这些证据就 HOLD。已有 Sidecar、缺失 launch marker、缺失或不完整输出全部拒绝，不删除、更改或覆盖输出。授权有效期已经过期时不能绕过验签重写身份；应由 Owner 单独批准处理，而不是自动重复模型生成。
 
+**2026-11-21 后续代码门禁收口：**签名回执现在新增不可省略的 `execution_environment`。生产 Owner CLI 只签出 `PRODUCTION_GPU_48_GENERATIONS`（`inference_authorized=true`、`gpu_authorized=true`）；合成测试密钥使用 `SYNTHETIC_CPU_ONLY_CONTRACT_TEST`（两个授权位均为 false），并且必须显示 `gpu_started=false`、`inference_started=false`。生产签名绝不能用于合成 Backend 的直接四臂入口；合成签名绝不能用于 GPU 前置门禁。真实 Backend 必须能够在共享持久账本中核对已消耗回执、输出范围、Adapter SHA、镜像测量与依赖锁。依赖合同的锁 SHA、镜像 Digest、包版本和已验收 CPU Job 身份在代码内有独立硬钉，不能通过修改传入 JSON 放宽。上述均为 CPU 合成防回归验证，**不代表真实 Provider 挂载、GPU 或正式生成已验收**。
+
 ## 9. 已签收 Adapter 的准确边界
 
 Owner 回执为 `OWNER_GOLD48_ADAPTER_BINDING_ACCEPTED__MOUNT_UNVERIFIED`，它只签收 **R46/R54 历史报告 SHA、R60 原 CPU Job SHA 日志、三份来源证据、映射候选与48条冻结输入**。生产前置门禁要求明确保持 `provider_volume_attestation_verified=false`、`current_remote_weight_bytes_verified_all_three=false`；只有真正 Loader 加载精确文件时通过 Adapter 字节哈希，才能确认那次运行的实际本地 Adapter 文件。**`owner_receipt_verified=true` 不代表 Provider 已验明挂载或三份当前远端权重全部 PASS。**
