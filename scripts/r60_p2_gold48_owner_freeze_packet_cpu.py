@@ -17,12 +17,8 @@ from pathlib import Path
 
 from r60_p2_gold48_candidate_preflight_cpu import evaluate as candidates_preflight
 from r60_p2_gold48_candidate_preflight_cpu import read_0600
-from r60_p2_gold48_hf_cpu_stage import (
-    INPUT,
-    MANIFEST,
-    minimally_staged,
-    verify as verify_stage,
-)
+from r60_p2_gold48_hf_cpu_stage import INPUT, MANIFEST, minimally_staged
+from r60_p2_gold48_hf_cpu_stage import verify as verify_stage
 from r60_p2_gold48_token_preflight_cpu import (
     MODEL,
     REVISION,
