@@ -1,5 +1,14 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-20 Owner 输入合同裁决（优先于下方历史计划）
+
+Owner 已明确批准 `RECONSTRUCTED_EVALUATION_INPUT` 作为 Gold48 Quality-v1 统一输入，且**不访问 RolePlay 生产环境**；无需证明历史 Provider actual-sent 字节即可开展**满足其它门禁后的**受控质量评估。固定四个新生成模型输入的统一重建消息与 SHA 后做四模型同题配对主比较。第五个 Historical Original Reference 仍匿名参加六维评分，但其当年真正 Provider 完整输入未验证，只能做同历史剧情/Prefix 的**描述性参考比较**，不能宣称“原始 Gold 使用了与四模型 byte-exact 一致的重建 Prompt”或据此做严格因果比较。
+
+执行顺序：**只处理剩余 Authority 完整来源/未审差集与单一 P2 卡输入质量仲裁 → Owner 有效 Source/Prompt Freeze → Gold48 私有 create-only 构造 → 单独授权 GPU 推理 → 五来源盲评**。旧段落里等待 Owner 重新批准重建输入、必须核查生产 actual-sent、或仍称 48 Original Reference 不存在的描述均为历史快照。固定 `ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。详细唯一现行合同见[主任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶部。
+
+---
+
+
 ## 2026-11-20 当前质量评估合同（覆盖旧两臂/三消息及“未发现 Gold”设计）
 
 最新唯一执行任务书与新 Agent 启动提示词：[R60 Base336 P2-C → Gold48 → 五来源同题盲评](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶端。下文 2026-11-17/19 章节作为历史设计，不得把“固定三消息 / 只用公开 Opening 新编 48 题 / 两生成臂 / 不存在匹配 Gold / 全 172 Story 来源未提取”当作当前事实。
