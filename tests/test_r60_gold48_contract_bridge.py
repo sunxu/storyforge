@@ -568,7 +568,7 @@ def test_signed_receipt_tampering_and_untrusted_key_rejected_before_generate(
     receipt_path = auth["owner_authorization_receipt_path"]
     receipt = json.loads(receipt_path.read_text())
     receipt["payload"]["input_sha256"] = "0" * 64
-    receipt_path.write_bytes(_canonical(receipt) + b"\\n")
+    receipt_path.write_bytes(_canonical(receipt) + b"\n")
     with pytest.raises(WorkerError, match="GOLD48_OWNER_RECEIPT_SIGNATURE_INVALID_HOLD"):
         run_gold48_generation_batch(
             **build_call(pack, role=role), **auth,
