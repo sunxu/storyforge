@@ -321,14 +321,44 @@ def run(args):
     os.mkdir(out, 0o700)
     require(stat.S_IMODE(out.stat().st_mode) == 0o700,
             "PRIVATE_OUTPUT_DIR_MODE_HOLD")
-    doc = {
-        "schema": "storyforge_r60_gold48_restored_candidate_private_v1",
+    shared = {
         "status": "NEW_RECONSTRUCTED_48_CANDIDATES__NOT_OWNER_FROZEN",
         "origin_identity": "PRIOR_20261120_PROVISIONAL_TARGET_IDS_NOT_PRESERVED__NEW_SELECTION",
         "eval_input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
-        "cases_PRIVATE": selected,
     }
-    atomic_new(out / "GOLD48_RECOVERED_CANDIDATES_PRIVATE.json", doc)
+    # Deliberately separate model-visible prefix candidates and withheld
+    # historical original references. Never create a combined inference file.
+    locators, prompts, references = [], [], []
+    for item in selected:
+        case_id = item["candidate_case_id_PRIVATE"]
+        locators.append({
+            k: v for k, v in item.items()
+            if k not in ("prefix_messages_PRIVATE", "original_reply_PRIVATE",
+                         "history_recovery_PRIVATE")
+        })
+        prompts.append({
+            "candidate_case_id_PRIVATE": case_id,
+            "prefix_messages_PRIVATE": item["prefix_messages_PRIVATE"],
+            "history_recovery_PRIVATE": item["history_recovery_PRIVATE"],
+            "prefix_sha256_PRIVATE": item["prefix_sha256_PRIVATE"],
+        })
+        references.append({
+            "candidate_case_id_PRIVATE": case_id,
+            "original_reply_PRIVATE": item["original_reply_PRIVATE"],
+            "original_reply_sha256_PRIVATE": item["original_reply_sha256_PRIVATE"],
+        })
+    atomic_new(out / "GOLD48_CANDIDATE_LOCATORS_PRIVATE.json", {
+        "schema": "storyforge_r60_gold48_recovered_locators_private_v1",
+        **shared, "cases_PRIVATE": locators,
+    })
+    atomic_new(out / "GOLD48_CANDIDATE_PREFIXES_PRIVATE.json", {
+        "schema": "storyforge_r60_gold48_recovered_prefixes_private_v1",
+        **shared, "cases_PRIVATE": prompts,
+    })
+    atomic_new(out / "GOLD48_CANDIDATE_ORIGINAL_REFERENCES_PRIVATE.json", {
+        "schema": "storyforge_r60_gold48_recovered_references_private_v1",
+        **shared, "cases_PRIVATE": references,
+    })
     safe = {
         "schema": SAFE_SCHEMA,
         "status": "NEW_GOLD48_PRIVATE_CANDIDATES_CAPTURED__NOT_FROZEN",
