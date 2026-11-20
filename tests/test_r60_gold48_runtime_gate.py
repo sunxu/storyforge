@@ -188,3 +188,87 @@ def test_pre_gpu_runtime_pip_version_measured_not_from_caller(tmp_path, monkeypa
             runtime_lock_path=lock, runtime_contract_path=contract,
             owner_scope=owner_scope,
         )
+
+
+def test_production_dispatch_order_signature_first_then_loader_then_worker(
+    tmp_path, monkeypatch,
+):
+    """Synthetic orchestration check: not a real Owner signature or model call."""
+    import storyforge_dataset.generation_eval.gold48_contract_bridge as bridge_module
+    import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader_module
+
+    pack = fixture(tmp_path)
+    called = []
+    mock_permit = SimpleNamespace(
+        selected_adapter_dir=None,
+        signed_scope={"runtime_image_digest": "sha256:" + "a" * 64},
+    )
+
+    def preflight(**_kwargs):
+        called.append("signed-provider-versions-and-spend")
+        return mock_permit
+
+    def loader(**kwargs):
+        assert called == ["signed-provider-versions-and-spend"]
+        assert kwargs["launch_permit"] is mock_permit
+        called.append("gpu-loader-mocked-only")
+        return object()
+
+    def worker(**kwargs):
+        assert called == [
+            "signed-provider-versions-and-spend", "gpu-loader-mocked-only",
+        ]
+        called.append("existing-generation-worker-mocked-only")
+        return "synthetic-orchestration-pass"
+
+    monkeypatch.setattr(gate, "authorize_and_consume_before_gpu", preflight)
+    monkeypatch.setattr(loader_module, "load_pinned_gold48_backend", loader)
+    monkeypatch.setattr(bridge_module, "run_gold48_generation_batch", worker)
+    outcome = gate.run_authorized_gold48_production(
+        frozen=pack[0], owner_freeze=pack[1],
+        adapter_bindings=pack[2], input_manifest=pack[3],
+        input_path=pack[4], output_path=tmp_path / "synthetic.private.json",
+        model_role="base",
+        owner_authorization_receipt_path=tmp_path / "absent",
+        trusted_owner_public_key_pem_path=tmp_path / "absent-public",
+        source_evidence_paths={},
+        runtime_lock_path=tmp_path / "absent-lock",
+        runtime_contract_path=tmp_path / "absent-contract",
+        provider_attestation_path=tmp_path / "absent-provider",
+        trusted_provider_public_key_path=tmp_path / "absent-provider-public",
+        expected_template_sha256="a" * 64,
+    )
+    assert outcome == "synthetic-orchestration-pass"
+    assert called == [
+        "signed-provider-versions-and-spend", "gpu-loader-mocked-only",
+        "existing-generation-worker-mocked-only",
+    ]
+
+
+def test_failed_preflight_never_reaches_loader_or_gpu(tmp_path, monkeypatch):
+    import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader_module
+
+    pack = fixture(tmp_path)
+    def fail_preflight(**_kwargs):
+        raise WorkerError("GOLD48_UNAUTHORIZED_PRODUCTION_RUN_HOLD")
+
+    def reject_gpu_loader(**_kwargs):
+        pytest.fail("GPU loader must not run after preflight rejection")
+
+    monkeypatch.setattr(gate, "authorize_and_consume_before_gpu", fail_preflight)
+    monkeypatch.setattr(loader_module, "load_pinned_gold48_backend", reject_gpu_loader)
+    with pytest.raises(WorkerError, match="GOLD48_UNAUTHORIZED_PRODUCTION_RUN_HOLD"):
+        gate.run_authorized_gold48_production(
+            frozen=pack[0], owner_freeze=pack[1],
+            adapter_bindings=pack[2], input_manifest=pack[3],
+            input_path=pack[4], output_path=tmp_path / "synthetic.private.json",
+            model_role="base",
+            owner_authorization_receipt_path=tmp_path / "absent",
+            trusted_owner_public_key_pem_path=tmp_path / "absent-public",
+            source_evidence_paths={},
+            runtime_lock_path=tmp_path / "absent-lock",
+            runtime_contract_path=tmp_path / "absent-contract",
+            provider_attestation_path=tmp_path / "absent-provider",
+            trusted_provider_public_key_path=tmp_path / "absent-provider-public",
+            expected_template_sha256="a" * 64,
+        )

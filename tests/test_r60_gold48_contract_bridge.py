@@ -809,3 +809,38 @@ def test_recover_rejects_truncated_output_or_missing_marker(tmp_path, monkeypatc
             **build_call(pack, role=role), **auth,
             output_path=output, source_evidence_paths=evidence,
         )
+
+
+def test_partial_backend_failure_consumes_output_namespace_without_retry(
+    tmp_path, monkeypatch,
+):
+    role = "r54_v03a"
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    auth, output, _ = synthetic_signed_owner_receipt(
+        tmp_path, monkeypatch, pack, role
+    )
+    class FailingSyntheticBackend(SyntheticIdentityBackend):
+        def generate(self, **kwargs):
+            if len(self.calls) == 4:
+                raise RuntimeError("synthetic-failure-before-output-publication")
+            return super().generate(**kwargs)
+
+    backend = FailingSyntheticBackend(pack, role)
+    with pytest.raises(WorkerError, match="GENERATION_BACKEND_FAILED"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), **auth,
+            backend=backend, output_path=output,
+            source_evidence_paths=evidence,
+        )
+    assert len(backend.calls) == 4
+    assert not output.exists()
+    assert output.with_name(output.name + ".launch.private.json").is_file()
+    retry_backend = SyntheticIdentityBackend(pack, role)
+    with pytest.raises(WorkerError, match="GOLD48_OUTPUT_ALREADY_EXISTS_HOLD"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), **auth,
+            backend=retry_backend, output_path=output,
+            source_evidence_paths=evidence,
+        )
+    assert retry_backend.calls == []
