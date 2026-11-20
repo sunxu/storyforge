@@ -10,15 +10,16 @@ import argparse
 import hashlib
 import json
 import re
-import sys
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+
+from r60_gold48_generation_input_materialize_cpu import _read_frozen
 
 from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     ROLES,
     WorkerError,
-    _validate_frozen,
     _validate_bindings,
+    _validate_frozen,
     prepare_gold48_generation_contract,
     read_private_contract,
     verify_gold48_binding_source_evidence,
@@ -29,8 +30,6 @@ from storyforge_dataset.generation_eval.gold48_owner_receipt import (
 )
 from storyforge_dataset.hf_runtime.inputs import InputManager
 from storyforge_dataset.hf_runtime.outputs import OutputManager
-
-from r60_gold48_generation_input_materialize_cpu import _read_frozen
 
 ACCEPTED_STATUS = "OWNER_GOLD48_ADAPTER_BINDINGS_ACCEPTED__MOUNT_PENDING"
 RUN_ID = re.compile(r"[a-zA-Z0-9][a-zA-Z0-9._-]{7,63}\Z")
@@ -64,7 +63,7 @@ def _inputs(args):
 def _accept(args):
     if args.explicit_owner_accept is not True:
         raise WorkerError("GOLD48_EXPLICIT_OWNER_ACCEPT_REQUIRED")
-    frozen, owner, bindings, manifest = _inputs(args)
+    frozen, _, bindings, _ = _inputs(args)
     if (bindings.get("status") != "CANDIDATE_PENDING_OWNER_SOURCE_ATTESTATION_AND_MOUNT"
             or bindings.get("owner_receipt_verified") is not False
             or bindings.get("provider_volume_attestation_verified") is not False
