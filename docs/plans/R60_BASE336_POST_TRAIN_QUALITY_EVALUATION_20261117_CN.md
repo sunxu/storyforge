@@ -1,5 +1,18 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-20 Owner 批准限定来源独立性与 Gold48 冻结准备
+
+Owner 已批准 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`** 和未知历史来源暴露风险披露，明确**不再以补齐 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 所有历史总名册为本轮 Gold48 的无限期前置**。已有 204 Story/495 版本独立语义结果、R50/Gold195/旧 Dev20 等已知子集直接复用；总宇宙独立性依旧 `UNVERIFIED`，不可声称全部过去训练/测试/教师输入均无污染。新发现来源重叠时记录受影响 Case 为 `EXPOSED`、报告无污染子集的敏感性结果，不静默改 Gold。正式 Owner 决议：[SAFE](../evidence/R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json)。
+
+**实际执行合同**：现在允许 **Gold48 48 条完整历史 Prefix +48 条匹配原始回复的私有冻结准备**（不是提前认定已经冻结）；复用已存在的历史恢复/来源证据/Gold 匹配核心，不执行旧三消息 `r60_base336_p2_public_prompt_package_gate.py` 冒充完整历史 Prompt 验收。每题私有锁定原 Story Revision、许可生效时间、Session、完整 Prefix/真实回复、重建 `System/World/Character/Rules/Memory/History` 分量来源/版本/SHA；四新生成臂同一重建输入，Historical Original Reference 第五来源仅作**描述性历史参考**，不得做同字节因果声明。
+
+单一故事内容瑕疵已获 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`：48 题主分析 +按真实 Story 身份排除其**整组六题**的 42 题配对敏感性分析，不凭 `Pxx/Sxx` 编号猜六题，不修改旧 Revision 或原始回复。Owner 本地 Reviewer8↔P2 八来源唯一双射已报告 PASS；**正式六题 Case ID 只能在 48 题私有候选产生后进行匹配**。冻结 Manifest/重建分量哈希/完整权限绑定及 Owner 最终签收尚未发生；`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。本批准不授权新 GPU/HF/付费模型推理。
+
+**现行签收顺序唯一**：私有既有候选精准绑定→内部创建不可变 48 条冻结候选及 48/42 case 选择→Owner 审核与 Source/Prompt/Reference hashes → Gold48 正式签收 → **另行审批** 192 模型生成及 240 来源匿名盲评。详见[主任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶端新决议；本文以下旧“必须先补完整历史权威名册”属历史严格口径，不应阻止本次限定范围路径。
+
+---
+
+
 ## 2026-11-20 Owner 已完成单一 P2 来源风险仲裁
 
 **`OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 已获 Owner 明确批准**：不修订原 P2 公开卡，不改写真实历史 Prefix 或原始回答。正式预注册 **48 题/8 Story 主分析**与**剔除有家族/角色命名残留的 1 Story 整组六题后 42 题/7 Story 敏感性分析**。两套结果同时报告，来源原有冲突不应直接记为模型失误，不能等模型结果出来再选择是否排除。实际被标记 Reviewer 匿名键→真实 Story ID→Gold48 六题 ID 的绑定只在 Owner 私有域核验，未完成前状态 `P2_SOURCE_QUALITY_PRIVATE_MAPPING=PENDING`，不得按 P/S 匿名编号猜测。
