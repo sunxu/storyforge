@@ -1,5 +1,20 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 已批准单一 P2 来源输入质量风险：保留 48 主分析与 42 敏感性分析
+
+**正式 Owner 决定**：已明确批准对 Reviewer 指出的 **1/8 公开来源** 家族/角色名称或模板替换残留，以 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 保留原公开版本。不能因此对原卡片、Source Snapshot、48 份历史持久化 Prefix 或 Original Reference 做暗中纠错/重写，也不得把来源内在矛盾直接认定为模型硬规则或角色一致性失误。该批准解决**已知题源质量风险的处置策略**，不是对该缺陷不存在的证明，也不是对来源隔离的免责或 P2-C PASS。单独的 Owner SAFE 决策见 [`R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json`](evidence/R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json)。
+
+**预注册不可随结果改变的两套分析**：主分析 8 Story ×6=**48 条**；敏感性分析**按 Story 整组剔除**上述一个被标记的 Story 的全部 **6 条**，只比较余下 7 Story 的 **42 条配对题**。四生成臂对应的同题匹配不变，历史原始回答仍以第五匿名评分来源参加相同六维评分，但始终限于**描述性历史参考**，不得把真实历史 Provider Prompt 称为与重建 Prompt byte-exact 相同。最终报告必须展示完整 48 与 42 两个视角、效果差异及原因；不得以结果方向决定是否排除。
+
+**唯一未闭合的这一决议执行前提**：Reviewer 匿名标记、P2 Inventory 的真实 Story ID 与 Gold48 的六个 Case ID，必须在 Owner 私有域**按真实标识与版本逐项绑定**；**严禁把 `P01..P08` 与 `S01..S08` 按序号视为同一来源**。此处的 42 是**已批准的分析设计**，不是 42 题/六条映射已生成或验真的宣称。映射及源原文/哈希仅可留私有 0700/0600，GitHub 只保存通过状态及聚合计数。
+
+**此后仍需处理的唯一实质 P2-C Authority 门禁**：历史 Protected/Reserved/Held-out/其他 Dev/Arbitration/Teacher 使用来源的权威完整名册、截止版本/权限及在已审 204 Story/495 版本以外真实存在的增量差集。没有权威名册保持 `NO_AUTHORITATIVE_ROSTER / UNKNOWN_HOLD`；不能据此虚构“全集隔离 PASS”。`RECONSTRUCTED_EVALUATION_INPUT` 已另获 Owner 批准，不再查 RolePlay 生产；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` 不变。**尚无 Owner Gold48 Freeze、无新 GPU/HF/model 推理批准**。
+
+状态：`P2_SOURCE_QUALITY_OWNER_DECISION=OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`；`P2_SOURCE_QUALITY_PRIVATE_MAPPING=PENDING`；`P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`quality_v1_admitted=0`；`train_admitted=0`；`model_promoted=false`。以下旧段落中“等待 Owner 决定是否保留该来源”是已过期历史，**不再重复请示**。
+
+---
+
+
 ## 2026-11-20 Owner 正式批准：Gold48 采用重建评估输入（取代历史 actual-sent 准入门槛）
 
 **Owner 本对话明确批准**采用 `RECONSTRUCTED_EVALUATION_INPUT`，不访问、不再要求核查 RolePlay 生产环境、历史启停日志或 Provider 原始 HTTP payload 作为本次 **Quality-v1 盲评** 的准入前置。此决议**只替代评估输入真实性的门禁**，并未证明旧 Provider 请求可恢复/不可恢复。过去尚未核查的原始实际出站证据保持 `ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`PROVIDER_INGRESS=UNVERIFIED`，不能修改为 PASS 或断言永不可恢复。后面旧段落中“需先获取历史 actual-sent、需 Owner 再批准 reconstructed、需登录生产”等仅为**旧状态快照**，不再是执行要求。
