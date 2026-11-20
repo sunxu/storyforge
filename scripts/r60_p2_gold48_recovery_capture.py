@@ -172,6 +172,16 @@ def try_case(cur, source, row):
     history = recovered["history"]
     if not 3 <= len(history) <= 40 or history[-1]["role"] != "user":
         return None
+    # Fail closed on hidden non-completed / unsupported-role persisted turns:
+    # the shared recoverer intentionally excludes these from effective history.
+    cur.execute(
+        "SELECT count(*) FROM public.v2_chat_messages "
+        "WHERE story_id = %s AND session_id = %s "
+        "AND turn_index <= %s AND created_at < %s",
+        (story, sid, turn - 1, created),
+    )
+    if cur.fetchone()[0] != len(history):
+        return None
     if any(m["role"] not in ("user", "assistant") or
            not isinstance(m["content"], str) or not m["content"].strip()
            or m["status"] != "completed" for m in history):
