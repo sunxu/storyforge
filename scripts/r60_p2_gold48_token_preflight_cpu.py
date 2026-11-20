@@ -14,6 +14,7 @@ import json
 import os
 import stat
 from collections import Counter
+from itertools import pairwise
 from pathlib import Path
 
 from storyforge_dataset.token_preflight import describe_token_lengths, encode_chat
@@ -88,8 +89,7 @@ def load_draft(path):
                         and isinstance(m["content"], str) and bool(m["content"].strip())
                         for m in messages)
                 and all(m["role"] != "system" for m in messages[1:])
-                and all(x["role"] != y["role"] for x, y in zip(
-                    messages[1:], messages[2:], strict=False)),
+                and all(x["role"] != y["role"] for x, y in pairwise(messages[1:])),
                 "DRAFT_MESSAGES_STRUCTURE_HOLD")
         require(sha(canonical(messages)) == row.get(
             "reconstructed_messages_sha256_PRIVATE")
@@ -203,7 +203,8 @@ def run(args):
     # Fail on private input shape before importing HF packages or downloading.
     load_draft(path)
     try:
-        from transformers import AutoTokenizer, __version__ as transformers_version
+        from transformers import AutoTokenizer
+        from transformers import __version__ as transformers_version
     except (ImportError, OSError):
         raise Hold("TOKENIZER_DEPENDENCY_MISSING_HOLD") from None
     try:
@@ -231,9 +232,7 @@ def main():
     args = parser.parse_args()
     try:
         result = run(args)
-    except (Hold, ValueError, TypeError, KeyError, IndexError, OSError):
-        import sys
-        exc = sys.exc_info()[1]
+    except (Hold, ValueError, TypeError, KeyError, IndexError, OSError) as exc:
         result = {
             "schema": SCHEMA, "status": "HOLD",
             "reason_code": str(exc) if type(exc) is Hold else "TOKEN_PREFLIGHT_RUNTIME_HOLD",
