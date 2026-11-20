@@ -113,6 +113,8 @@ def assess(draft_path, tokenizer, tokenizer_version):
     require(isinstance(getattr(tokenizer, "chat_template", None), str)
             and bool(tokenizer.chat_template.strip()),
             "TOKENIZER_CHAT_TEMPLATE_ABSENT_HOLD")
+    require("enable_thinking" in tokenizer.chat_template,
+            "THINKING_TOGGLE_NOT_DEFINED_IN_TEMPLATE_HOLD")
     modes = {}
     for thinking_mode, disabled in (("default", False), ("disabled", True)):
         try:
