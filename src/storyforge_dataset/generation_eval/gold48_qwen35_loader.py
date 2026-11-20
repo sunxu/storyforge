@@ -205,6 +205,7 @@ def load_pinned_gold48_backend(
         backend.gold48_owner_authorization_receipt_path = launch_permit.owner_receipt_path
         backend.gold48_runtime_lock_path = launch_permit.runtime_lock_path
         backend.gold48_provider_attestation_path = launch_permit.provider_attestation_path
+        backend.gold48_provider_public_key_path = launch_permit.provider_public_key_path
         return backend
     except WorkerError:
         raise

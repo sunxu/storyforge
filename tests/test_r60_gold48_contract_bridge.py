@@ -538,6 +538,11 @@ def test_complete_bridge_signed_owner_synthetic_48_outputs_sidecar_no_overwrite(
     assert set(sidecar["arms"]) == set(ROLES)
     assert sidecar["arms"][role]["adapter_sha256"] == pack[2]["arms"][role]["expected_sha256"]
     assert sidecar["owner_authorization_receipt_sha256"] == signed_sha
+    assert sidecar["runtime_image_measured"] is False
+    assert sidecar["runtime_image_identity_source"] == (
+        "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
+    )
+    assert sidecar["provider_image_attestation_sha256"] is None
     assert sidecar["input_sha256"] == pack[3]["sha256"]
     assert sidecar["model_revision"] == pack[0]["base_model"]["revision"]
     assert sidecar["runtime_image_digest"] == auth["runtime_image_digest"]
