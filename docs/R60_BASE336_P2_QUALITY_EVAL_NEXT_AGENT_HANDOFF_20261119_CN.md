@@ -635,3 +635,14 @@ SAFE 证据保留在现有 [PR #31](https://github.com/sunxu/storyforge/pull/31)
 **P2 当前严格边界**：`GOLD48_RECONSTRUCTED_INPUT_DRAFT_48_READY__NOT_FROZEN` 与 `RECONSTRUCTED_EVALUATION_INPUT`，非历史 actual-sent；公开卡是评价时点快照，不能证明历史同刻卡；旧临时 48 身份一致性未证实；历史上游保护源全量独立性未证明（只在已验证范围内接受风险）；六个来源风险标记案例纳入 48 主分析、从预注册 42 敏感性分析排除；原始历史回答仅为匿名盲评第五臂，绝不能进入模型生成输入。Owner 尚未批准最终 `GOLD48_FROZEN_SCOPED`；`full_model_runtime_compatibility_verified=false`。以本节更新后的真实已完成数据阶段覆盖文档早期“48 条仍未产出”历史快照，但不把 CPU Token PASS 升格为正式 P2-C 全全集 PASS。
 
 **下一步最短路径**：Owner 在私有端验证已下载 SAFE 回执及 Stage 来源字节，确认 48 主分析 + 42 敏感性、已知六例风险、重建输入合同、8 来源权限和缺失 Memory/历史 actual-sent 的披露；以 create-only 私有签收锁定每题重建输入 SHA、来源快照、真实历史原始回答的独立参考哈希和五来源盲评预注册，同时冻结四模型阵容及统一 Thinking/上下文/解码参数。只有得到 Owner 签收与单独生成任务授权后，才进入 192 次四模型推理 + 48 条原始回复的 240 对象六维盲评；**不得再次运行本次 HF CPU Job、重新生成候选、重传旧 Stage、或在当前阶段启动 GPU**。
+
+
+## 2026-11-21 Owner 明确批准 Gold48 受限范围冻结（待本机不可变 Manifest 实际落地）
+
+Owner 已在本轮对 Gold48 冻结范围**明确批准**：48 条主分析、42 条敏感性分析（六条来源风险题仍属于主分析、仅从敏感性分析排除）；接受 `historical_actual_sent_prompt_verified=false`、`full_p2_c_universe_verified=false`、历史 Memory 无验证前置摘要、评价时点公开卡快照、历史临时48身份未证实和六条风险案例等已披露限制。该批准是**受限范围重建输入评估集**的 Owner 数据冻结批准，不是全宇宙 P2-C 语义独立 PASS，不是历史实际发送 Prompt 复原，不是生成/评审/训练授权。
+
+Owner 本机最新 SAFE 为 `GOLD48_OWNER_FREEZE_PACKET_READY__AWAITING_SIGNOFF`：48/48 重建输入 SHA、48/48 历史原始回答 SHA、8 个来源、42 敏感性及六例排除、HF CPU Stage/Tokenizer 真实回执绑定全部 PASS；完整 Tokenizer `GOLD48_HF_CPU_TOKEN_PREFLIGHT_COMPLETE__NO_FREEZE` 已回收验收。**不得重复执行**候选恢复、原始回答提取、HF Stage/CPU Job 或模板分词。
+
+新增薄适配器 `scripts/r60_p2_gold48_owner_scoped_freeze_cpu.py` 只在 Owner Mac 私有 0700 根目录中，要求显式 `--owner-approved-scoped-freeze` 并重新验证上述既有私有证据原字节（准备包必须 canonical 字节一致），以 create-only 写新的 0600 `GOLD48_SCOPED_FROZEN_MANIFEST_PRIVATE.json` 与 `GOLD48_SCOPED_OWNER_FREEZE_SAFE.json`，原文件全部不变；失败保持 HOLD，不得用新名字重试绕过来源漂移。正式完成状态 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING` **只有 Owner 实际执行并返回 SAFE 后才能宣称**，此时聊天批准本身不代替签收文件。
+
+下一个独立门禁是固定四模型 Base Qwen3.8-27B、R46 checkpoint-7、R54 checkpoint-16、R60 Base336 checkpoint-37 的来源身份、统一 Tokenizer/Chat Template/Thinking/采样/Seed/Stop/输入上下文及 2048 Token 输出候选容量，并据六维盲审合同确认四生成臂 + 48 份独立历史 AI 原始回复（五来源共 240 份评分对象）、按 Session 聚类、42 风险敏感性和原始回复线上 effective_model 分层。**数据 Freeze 不自动批准 GPU/模型推理、分数入库、SFT 或模型晋升**。
