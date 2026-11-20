@@ -190,8 +190,8 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     assert backend.revision == REVISION
     assert backend.gpu_started is True  # synthetic mock, not an actual GPU
     assert calls == [
-        "streaming_hash", "base_config", "generation_config",
-        "tokenizer", "model", "adapter", "eval",
+        "base_config", "generation_config", "tokenizer",
+        "streaming_hash", "model", "adapter", "eval",
     ]
 
 

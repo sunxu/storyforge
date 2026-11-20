@@ -137,15 +137,6 @@ def load_pinned_gold48_backend(
     if (adapter_dir is None) != (expected_adapter_sha256 is None):
         raise WorkerError("GOLD48_ADAPTER_PIN_PAIR_REQUIRED")
 
-    if adapter_dir is not None:
-        if adapter_dir.is_symlink() or not adapter_dir.is_dir():
-            raise WorkerError("GOLD48_ADAPTER_DIR_HOLD")
-        adapter = _read_json(adapter_dir / "adapter_config.json")
-        verify_adapter_config(adapter)
-        _hash_adapter_weights(
-            adapter_dir / "adapter_model.safetensors", expected_adapter_sha256
-        )
-
     torch = torch_module or importlib.import_module("torch")
     transformers = transformers_module or importlib.import_module("transformers")
     if not torch.cuda.is_available() or not torch.cuda.is_bf16_supported():
@@ -179,6 +170,14 @@ def load_pinned_gold48_backend(
                 hashlib.sha256(template.encode("utf-8")).hexdigest() !=
                 expected_template_sha256):
             raise WorkerError("GOLD48_CHAT_TEMPLATE_SHA_MISMATCH_HOLD")
+        if adapter_dir is not None:
+            if adapter_dir.is_symlink() or not adapter_dir.is_dir():
+                raise WorkerError("GOLD48_ADAPTER_DIR_HOLD")
+            adapter = _read_json(adapter_dir / "adapter_config.json")
+            verify_adapter_config(adapter)
+            _hash_adapter_weights(
+                adapter_dir / "adapter_model.safetensors", expected_adapter_sha256
+            )
         model = model_class.from_pretrained(
             MODEL, revision=REVISION, dtype=torch.bfloat16,
             device_map={"": 0}, trust_remote_code=False,
@@ -190,10 +189,13 @@ def load_pinned_gold48_backend(
                 model, str(adapter_dir), is_trainable=False
             )
         model.eval()
-        return TransformersGenerationBackend(
+        backend = TransformersGenerationBackend(
             tokenizer=tokenizer, model=model, torch_module=torch,
             model_id=MODEL, revision=REVISION
         )
+        backend.gold48_adapter_sha256 = expected_adapter_sha256
+        backend.gold48_adapter_dir = adapter_dir.resolve(strict=True) if adapter_dir else None
+        return backend
     except WorkerError:
         raise
     except Exception as exc:
