@@ -135,7 +135,7 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
         details = _json(stage / "token_preflight.private.json", 65536)
         template_sha = details.get("chat_template_sha256_PRIVATE")
         _hold(details.get("schema") ==
-              "storyforge_r60_gold48_token_preflight_private_v1"
+              "storyforge_r60_p2_gold48_token_preflight_private_v1"
               and details.get("tokenizer_revision") ==
                   "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
               and isinstance(template_sha, str)

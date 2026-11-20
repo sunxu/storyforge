@@ -48,7 +48,7 @@ def stage(tmp_path, monkeypatch):
         }).encode(),
         "input.private.jsonl": input_data,
         "token_preflight.private.json": json.dumps({
-            "schema": "storyforge_r60_gold48_token_preflight_private_v1",
+            "schema": "storyforge_r60_p2_gold48_token_preflight_private_v1",
             "tokenizer_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
             "chat_template_sha256_PRIVATE": "a" * 64,
         }).encode(),
