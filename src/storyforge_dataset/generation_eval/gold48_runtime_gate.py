@@ -27,6 +27,7 @@ from storyforge_dataset.hf_runtime.inputs import InputManager
 from storyforge_dataset.hf_runtime.outputs import OutputManager
 
 from .gold48_owner_receipt import (
+    PRODUCTION_SCOPE,
     canonical,
     verify_owner_authorization,
 )
@@ -252,6 +253,12 @@ def authorize_and_consume_before_gpu(
         frozen=frozen, owner_freeze=owner_freeze,
         bindings=adapter_bindings, manifest=input_manifest,
         role=model_role, output_path=output_path,
+    )
+    _check(
+        auth.payload["execution_environment"] == PRODUCTION_SCOPE
+        and auth.payload["gpu_authorized"] is True
+        and auth.payload["inference_authorized"] is True,
+        "GOLD48_PRODUCTION_GPU_SCOPE_REQUIRED_HOLD",
     )
     verify_gold48_binding_source_evidence(adapter_bindings, source_evidence_paths)
     measured_sha, versions = verify_current_dependency_install(

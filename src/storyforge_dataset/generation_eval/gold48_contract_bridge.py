@@ -17,6 +17,8 @@ from storyforge_dataset.hf_runtime.outputs import OutputManager
 
 from .backend import TransformersGenerationBackend
 from .gold48_owner_receipt import (
+    PRODUCTION_SCOPE,
+    SYNTHETIC_SCOPE,
     make_owner_scope,
     verify_owner_authorization,
 )
@@ -445,6 +447,7 @@ def _verify_authorized_run(
         runtime_image_digest=runtime_image_digest,
         issued_at_utc=payload.get("issued_at_utc"),
         expires_at_utc=payload.get("expires_at_utc"),
+        synthetic_test_only=payload.get("execution_environment") == SYNTHETIC_SCOPE,
     )
     verified = verify_owner_authorization(
         receipt_path=owner_authorization_receipt_path,
@@ -473,6 +476,7 @@ def _gold48_sidecar(
         "status": "GENERATION_IDENTITY_RECORDED__OWNER_REVIEW_REQUIRED",
         "run_key": frozen["dataset"]["run_key"],
         "run_id": auth.payload["run_id"],
+        "execution_environment": auth.payload["execution_environment"],
         "selected_model_role": role,
         "arms": {
             key: {
@@ -524,6 +528,7 @@ def _gold48_launch_marker(
         "schema": "storyforge_r60_gold48_generation_launch_private_v1",
         "status": "SIGNED_SCOPE_VERIFIED__BACKEND_IDENTITY_CLAIM_CHECKED",
         "run_id": auth.payload["run_id"],
+        "execution_environment": auth.payload["execution_environment"],
         "run_key": frozen["dataset"]["run_key"],
         "model_role": role,
         "output_path": str(output_path),
@@ -762,6 +767,20 @@ def run_gold48_generation_batch(
     # In real inference, require independently signed provider measurement
     # and verified Loader grant. Synthetic Backend tests are NOT such proof.
     runtime_measured = isinstance(backend, TransformersGenerationBackend)
+    if runtime_measured:
+        _require(
+            auth.payload["execution_environment"] == PRODUCTION_SCOPE
+            and auth.payload["inference_authorized"] is True
+            and auth.payload["gpu_authorized"] is True,
+            "GOLD48_PRODUCTION_GPU_OWNER_SCOPE_REQUIRED_HOLD",
+        )
+    else:
+        _require(
+            auth.payload["execution_environment"] == SYNTHETIC_SCOPE
+            and auth.payload["inference_authorized"] is False
+            and auth.payload["gpu_authorized"] is False,
+            "GOLD48_SYNTHETIC_BACKEND_PRODUCTION_SCOPE_FORBIDDEN",
+        )
     provider_attested_sha = None
     if runtime_measured:
         _require(

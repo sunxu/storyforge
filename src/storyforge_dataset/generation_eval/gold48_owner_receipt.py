@@ -24,6 +24,8 @@ OWNER_TRUSTED_PUBLIC_PEM_SHA256 = ""  # fail closed until Owner pins a public ke
 RECEIPT_SCHEMA = "storyforge_r60_gold48_owner_generation_ed25519_private_v1"
 PAYLOAD_SCHEMA = "storyforge_r60_gold48_owner_generation_scope_v1"
 SIGNATURE_TYPE = "ed25519"
+PRODUCTION_SCOPE = "PRODUCTION_GPU_48_GENERATIONS"
+SYNTHETIC_SCOPE = "SYNTHETIC_CPU_ONLY_CONTRACT_TEST"
 ROLES = ("base", "r46_v02", "r54_v03a", "r60_base336")
 SHA = re.compile(r"[0-9a-f]{64}\Z")
 HEX_SIGNATURE = re.compile(r"[0-9a-f]{128}\Z")
@@ -91,12 +93,18 @@ def make_owner_scope(
     runtime_image_digest: str,
     issued_at_utc: str,
     expires_at_utc: str,
+    synthetic_test_only: bool = False,
 ) -> dict[str, Any]:
-    """One role, one run namespace, exact 48-case input and runtime contract."""
+    """One role/run: production GPU and synthetic CPU are disjoint capabilities."""
+    if type(synthetic_test_only) is not bool:
+        raise WorkerError("GOLD48_OWNER_EXECUTION_MODE_HOLD")
     arm = frozen["arms"][model_role]
     return {
         "schema": PAYLOAD_SCHEMA,
         "scope": "GOLD48_FOUR_ARM_192_GENERATIONS",
+        "execution_environment": (
+            SYNTHETIC_SCOPE if synthetic_test_only else PRODUCTION_SCOPE
+        ),
         "run_key": frozen["dataset"]["run_key"],
         "run_id": run_id,
         "model_role": model_role,
@@ -116,8 +124,8 @@ def make_owner_scope(
         "runtime_image_digest": runtime_image_digest,
         "issued_at_utc": issued_at_utc,
         "expires_at_utc": expires_at_utc,
-        "inference_authorized": True,
-        "gpu_authorized": True,
+        "inference_authorized": not synthetic_test_only,
+        "gpu_authorized": not synthetic_test_only,
         "training_authorized": False,
     }
 
@@ -128,7 +136,12 @@ def _check_scope(
 ) -> None:
     _require(isinstance(scope, dict) and set(scope) == set(expected)
              and scope == expected, "GOLD48_OWNER_SIGNED_SCOPE_MISMATCH_HOLD")
+    synthetic = scope.get("execution_environment") == SYNTHETIC_SCOPE
     _require(scope["schema"] == PAYLOAD_SCHEMA
+             and scope.get("execution_environment") in (PRODUCTION_SCOPE, SYNTHETIC_SCOPE)
+             and scope["inference_authorized"] is (not synthetic)
+             and scope["gpu_authorized"] is (not synthetic)
+             and scope["training_authorized"] is False
              and scope["model_role"] in ROLES
              and RUN_ID.fullmatch(scope["run_id"]) is not None
              and isinstance(scope["output_filename"], str)

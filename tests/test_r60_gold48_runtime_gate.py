@@ -32,7 +32,7 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
         "current_remote_weight_bytes_verified_all_three": False,
     })
     auth, output, _ = synthetic_signed_owner_receipt(
-        tmp_path, monkeypatch, pack, role
+        tmp_path, monkeypatch, pack, role, synthetic_test_only=False
     )
     persistent_root = tmp_path / "synthetic-shared-authority-ledger"
     persistent_root.mkdir(mode=0o700)

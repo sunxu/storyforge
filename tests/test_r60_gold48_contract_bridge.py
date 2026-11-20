@@ -447,7 +447,9 @@ class SyntheticIdentityBackend(RecordingBackend):
 
 
 
-def synthetic_signed_owner_receipt(tmp_path: Path, monkeypatch, pack, role):
+def synthetic_signed_owner_receipt(
+    tmp_path: Path, monkeypatch, pack, role, *, synthetic_test_only=True,
+):
     """Ephemeral test-only key. Never sets the production trust anchor."""
     from cryptography.hazmat.primitives import serialization
     from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -487,6 +489,7 @@ def synthetic_signed_owner_receipt(tmp_path: Path, monkeypatch, pack, role):
         dependency_lock_sha256=lock_sha, runtime_image_digest=image,
         issued_at_utc=issued.isoformat(),
         expires_at_utc=(issued + timedelta(hours=1)).isoformat(),
+        synthetic_test_only=synthetic_test_only,
     )
     receipt_file = tmp_path / ("owner-" + role + ".private.json")
     receipt_sha = owner_sign_create_only(
@@ -535,6 +538,7 @@ def test_complete_bridge_signed_owner_synthetic_48_outputs_sidecar_no_overwrite(
     assert sidecar["schema"] == "storyforge_r60_gold48_generation_identity_private_v1"
     assert sidecar["run_id"] == output.parent.name
     assert sidecar["selected_model_role"] == role
+    assert sidecar["execution_environment"] == "SYNTHETIC_CPU_ONLY_CONTRACT_TEST"
     assert set(sidecar["arms"]) == set(ROLES)
     assert sidecar["arms"][role]["adapter_sha256"] == pack[2]["arms"][role]["expected_sha256"]
     assert sidecar["owner_authorization_receipt_sha256"] == signed_sha
