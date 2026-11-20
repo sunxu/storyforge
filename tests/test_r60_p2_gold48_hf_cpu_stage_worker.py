@@ -16,11 +16,10 @@ sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "tests"))
 
+from r60_p2_gold48_reconstructed_input_draft_cpu import draft
 from test_r60_p2_gold48_candidate_preflight_cpu import private_file
 from test_r60_p2_gold48_reconstructed_input_draft_cpu import prepare
 from test_r60_p2_gold48_token_preflight_cpu import FakeTokenizer
-
-from r60_p2_gold48_reconstructed_input_draft_cpu import draft
 
 def load(path, name):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -105,7 +104,7 @@ def test_original_reference_changes_do_not_affect_stage(tmp_path):
 
 
 def test_source_staging_refuses_unauthorized_owner_freeze(tmp_path):
-    stage, _ = make_stage(tmp_path)
+    make_stage(tmp_path)
     draft_file = tmp_path / "draft/GOLD48_RECONSTRUCTED_INPUTS_DRAFT_PRIVATE.json"
     doc = json.loads(draft_file.read_text())
     doc["prompt_owner_freeze"] = True
