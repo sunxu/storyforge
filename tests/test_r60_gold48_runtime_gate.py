@@ -40,6 +40,16 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
     # The actual production root must be a distinct durable mount. This
     # isolated fixture replaces ONLY that environmental requirement.
     monkeypatch.setattr(gate, "_validate_durable_ledger_root", lambda: None)
+    monkeypatch.setattr(
+        gate, "verify_current_readonly_adapter_mount",
+        lambda **_kwargs: {
+            "mount_point": "/synthetic-ro-only",
+            "read_only": True,
+            "weight_size_bytes": 1867797544,
+            "config_size_bytes": 1288,
+            "weight_sha256_verified_by_mount_probe": False,
+        },
+    )
     measured = {"torch": "2.6.0+cu124", "peft": "0.21.2"}
     lock_sha = hashlib.sha256(auth["runtime_lock_path"].read_bytes()).hexdigest()
     monkeypatch.setattr(
@@ -382,3 +392,62 @@ def test_runtime_contract_pins_reject_modified_package_or_install_job(
                 runtime_lock_path=lock, runtime_contract_path=source,
                 owner_scope=scope,
             )
+
+
+def test_current_launch_ro_mount_preflight_is_kernel_bound_and_zero_weight_reads(
+    tmp_path, monkeypatch,
+):
+    """A previous HF CPU PASS cannot authorize an absent or writable new mount."""
+    role = "r54_v03a"
+    root = tmp_path / "ro_adapters"
+    adapter = root / role
+    adapter.mkdir(parents=True, mode=0o700)
+    weight = adapter / "adapter_model.safetensors"
+    with weight.open("wb") as f:
+        f.truncate(gate.ADAPTER_WEIGHT_BYTES)  # sparse: NO weight read or SHA
+    config = adapter / "adapter_config.json"
+    config.write_bytes(b" " * gate.ADAPTER_CONFIG_BYTES[role])
+    info = tmp_path / "synthetic-mountinfo"
+    monkeypatch.setattr(gate, "ADAPTER_MOUNT_ROOT", root)
+    monkeypatch.setattr(gate, "ADAPTER_MOUNTINFO_PATH", info)
+
+    def set_mount(mode):
+        info.write_text(
+            "13 1 0:42 / " + str(adapter) + " " + mode
+            + ",relatime - fuse.source synthetic rw\n"
+        )
+
+    set_mount("rw")
+    with pytest.raises(WorkerError, match="GOLD48_RUNTIME_ADAPTER_RO_MOUNT_REQUIRED_HOLD"):
+        gate.verify_current_readonly_adapter_mount(
+            role=role, adapter_dir=adapter,
+        )
+    set_mount("ro")
+    observed = gate.verify_current_readonly_adapter_mount(
+        role=role, adapter_dir=adapter,
+    )
+    assert observed == {
+        "mount_point": str(adapter), "read_only": True,
+        "weight_size_bytes": 1867797544, "config_size_bytes": 1282,
+        "weight_sha256_verified_by_mount_probe": False,
+    }
+    with pytest.raises(WorkerError, match="GOLD48_RUNTIME_ADAPTER_MOUNT_TARGET_HOLD"):
+        gate.verify_current_readonly_adapter_mount(
+            role=role, adapter_dir=root / "r46_v02",
+        )
+    config.unlink()
+    config.symlink_to(weight)
+    with pytest.raises(WorkerError, match="GOLD48_RUNTIME_ADAPTER_MOUNT_METADATA_HOLD"):
+        gate.verify_current_readonly_adapter_mount(
+            role=role, adapter_dir=adapter,
+        )
+    assert gate.verify_current_readonly_adapter_mount(
+        role="base", adapter_dir=None,
+    ) is None
+
+
+def test_no_mount_does_not_pass_preflight_by_previous_cpu_proof(tmp_path):
+    with pytest.raises(WorkerError, match="GOLD48_RUNTIME_ADAPTER_MOUNT_TARGET_HOLD"):
+        gate.verify_current_readonly_adapter_mount(
+            role="r60_base336", adapter_dir=tmp_path / "checkpoint-37"
+        )

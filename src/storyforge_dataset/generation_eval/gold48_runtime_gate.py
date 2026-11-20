@@ -36,6 +36,11 @@ from .worker import WorkerError
 # Both of these must be separately approved before any production GPU startup.
 PROVIDER_TRUSTED_PUBLIC_PEM_SHA256 = ""
 DURABLE_CONSUMPTION_ROOT = Path("/mnt/storyforge-private/gold48-authorizations-spent")
+# A successful earlier CPU mount probe is not a production-process observation.
+ADAPTER_MOUNT_ROOT = Path("/ro_adapters")
+ADAPTER_MOUNTINFO_PATH = Path("/proc/self/mountinfo")
+ADAPTER_WEIGHT_BYTES = 1_867_797_544
+ADAPTER_CONFIG_BYTES = {"r46_v02": 1282, "r54_v03a": 1282, "r60_base336": 1288}
 MEASUREMENT_SCHEMA = "storyforge_r60_gold48_provider_image_measurement_v1"
 SIGNED_MEASUREMENT_SCHEMA = "storyforge_r60_gold48_provider_ed25519_attestation_v1"
 CONSUMPTION_SCHEMA = "storyforge_r60_gold48_authorization_consumed_private_v1"
@@ -223,6 +228,58 @@ def _validate_durable_ledger_root() -> None:
         raise WorkerError("GOLD48_DURABLE_SHARED_LEDGER_MOUNT_REQUIRED") from exc
 
 
+def verify_current_readonly_adapter_mount(
+    *, role: str, adapter_dir: Path | None,
+) -> dict[str, Any] | None:
+    """CPU-only kernel mountinfo + lstat proof, BEFORE spending a GPU grant.
+
+    This is per-launch evidence, not a claim that yesterday's CPU Job mount
+    remains present. File contents and the 1.87 GB SHA are checked later by
+    the existing Loader, without loading weights before authorization.
+    """
+    if role == "base":
+        _check(adapter_dir is None, "GOLD48_BASE_ADAPTER_MOUNT_UNEXPECTED_HOLD")
+        return None
+    _check(role in ADAPTER_CONFIG_BYTES
+           and adapter_dir == ADAPTER_MOUNT_ROOT / role,
+           "GOLD48_RUNTIME_ADAPTER_MOUNT_TARGET_HOLD")
+    try:
+        parent = ADAPTER_MOUNT_ROOT.lstat()
+        root = adapter_dir.lstat()
+        weight = (adapter_dir / "adapter_model.safetensors").lstat()
+        config = (adapter_dir / "adapter_config.json").lstat()
+        _check(
+            stat.S_ISDIR(parent.st_mode)
+            and stat.S_ISDIR(root.st_mode)
+            and stat.S_ISREG(weight.st_mode)
+            and stat.S_ISREG(config.st_mode)
+            and weight.st_size == ADAPTER_WEIGHT_BYTES
+            and config.st_size == ADAPTER_CONFIG_BYTES[role],
+            "GOLD48_RUNTIME_ADAPTER_MOUNT_METADATA_HOLD",
+        )
+        # Read only kernel mount metadata, never adapter weight bytes.
+        mountinfo = ADAPTER_MOUNTINFO_PATH.read_text(encoding="utf-8")
+        matching = []
+        for line in mountinfo.splitlines():
+            before, sep, _ = line.partition(" - ")
+            if not sep:
+                continue
+            fields = before.split()
+            if len(fields) >= 6 and fields[4] == str(adapter_dir):
+                matching.append(fields[5].split(","))
+        _check(len(matching) == 1 and "ro" in matching[0],
+               "GOLD48_RUNTIME_ADAPTER_RO_MOUNT_REQUIRED_HOLD")
+    except (OSError, UnicodeError) as exc:
+        raise WorkerError("GOLD48_RUNTIME_ADAPTER_MOUNT_INSPECT_HOLD") from exc
+    return {
+        "mount_point": str(adapter_dir),
+        "read_only": True,
+        "weight_size_bytes": weight.st_size,
+        "config_size_bytes": config.st_size,
+        "weight_sha256_verified_by_mount_probe": False,
+    }
+
+
 def authorize_and_consume_before_gpu(
     *,
     frozen: dict[str, Any],
@@ -297,6 +354,13 @@ def authorize_and_consume_before_gpu(
         trusted_provider_public_key_path=trusted_provider_public_key_path,
         owner_scope=auth.payload,
     )
+    mount_observation = verify_current_readonly_adapter_mount(
+        role=model_role,
+        adapter_dir=(
+            None if model_role == "base"
+            else Path(adapter_bindings["arms"][model_role]["local_dir"])
+        ),
+    )
     _validate_durable_ledger_root()
     spent = DURABLE_CONSUMPTION_ROOT / (
         auth.receipt_sha256 + ".spent.private.json"
@@ -310,6 +374,7 @@ def authorize_and_consume_before_gpu(
         "owner_authorization_receipt_sha256": auth.receipt_sha256,
         "output_path": str(output_path),
         "adapter_sha256": adapter_bindings["arms"][model_role]["expected_sha256"],
+        "current_job_adapter_ro_mount_observation": mount_observation,
         "runtime_lock_sha256": lock_sha,
         "runtime_packages_measured": versions,
         "provider_image_measurement_receipt_sha256": provider_sha,
@@ -376,6 +441,11 @@ def verify_and_consume_gold48_load_permit(
            and spent.get("run_id") == auth.payload["run_id"]
            and spent.get("model_role") == auth.payload["model_role"]
            and spent.get("adapter_sha256") == adapter_sha256
+           and spent.get("current_job_adapter_ro_mount_observation") ==
+               verify_current_readonly_adapter_mount(
+                   role=auth.payload["model_role"],
+                   adapter_dir=adapter_dir,
+               )
            and spent.get("output_path") == (
                str(Path(auth.payload["output_directory"]) /
                    auth.payload["output_filename"])
@@ -439,6 +509,14 @@ def verify_consumed_gold48_output_grant(
             owner_receipt_sha256
         and record.get("output_path") == str(output_path)
         and record.get("adapter_sha256") == adapter_sha256
+        and record.get("current_job_adapter_ro_mount_observation") ==
+            verify_current_readonly_adapter_mount(
+                role=model_role,
+                adapter_dir=(
+                    None if model_role == "base"
+                    else ADAPTER_MOUNT_ROOT / model_role
+                ),
+            )
         and record.get("runtime_lock_sha256") == runtime_lock_sha256
         and record.get("provider_image_measurement_receipt_sha256") ==
             provider_attestation_sha256
