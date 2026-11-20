@@ -203,6 +203,16 @@ def test_wrong_template_sha_rejects_before_any_model_load():
         ),
     )
     fake_transformers = SimpleNamespace(
+        AutoConfig=SimpleNamespace(
+            from_pretrained=lambda *_a, **_kw: SimpleNamespace(
+                model_type="qwen3_5", architectures=["Qwen3_5ForConditionalGeneration"]
+            )
+        ),
+        GenerationConfig=SimpleNamespace(
+            from_pretrained=lambda *_a, **_kw: SimpleNamespace(
+                eos_token_id=[248046, 248044], pad_token_id=248044
+            )
+        ),
         AutoTokenizer=SimpleNamespace(
             from_pretrained=lambda *_a, **_kw: SimpleNamespace(chat_template="chat")
         ),
