@@ -84,8 +84,9 @@ def make_packet(candidate_dir, binding_dir, draft_dir, stage_dir,
             sha(require_file(binding_dir / SOURCE_BINDING_NAME,
                              max_bytes=10 * 1024 * 1024)),
             "GOLD48_SOURCE_COMPONENT_BINDING_DRIFT_HOLD")
-    require(memories.get("NO_VERIFIED_PRETARGET_MEMORY") == 48
-            and memories.get("VERIFIED_PRETARGET_SESSION_SUMMARY", 0) == 0,
+    verified_memory = memories.get("VERIFIED_PRETARGET_SESSION_SUMMARY", 0)
+    omitted_memory = memories.get("NO_VERIFIED_PRETARGET_MEMORY", 0)
+    require(verified_memory + omitted_memory == 48,
             "GOLD48_MEMORY_SCOPE_CHANGE_HOLD")
     require(draft["evaluation_time_snapshot"] is True
             and draft["historical_actual_sent_verified"] is False
@@ -152,8 +153,8 @@ def make_packet(candidate_dir, binding_dir, draft_dir, stage_dir,
                             for metric in ("prompt_tokens_min", "prompt_tokens_median",
                                            "prompt_tokens_p95", "prompt_tokens_max")),
                     "GOLD48_TOKEN_BUDGET_NOT_PASS_HOLD")
-    require(receipt.get("memory_pretarget_verified_count") == 0
-            and receipt.get("memory_unverified_omitted_count") == 48,
+    require(receipt.get("memory_pretarget_verified_count") == verified_memory
+            and receipt.get("memory_unverified_omitted_count") == omitted_memory,
             "GOLD48_TOKEN_MEMORY_SCOPE_HOLD")
 
     locators = read_0600(
@@ -225,7 +226,8 @@ def make_packet(candidate_dir, binding_dir, draft_dir, stage_dir,
         "evaluation_time_story_card_snapshot": True,
         "p2_c_full_protected_universe_verified": False,
         "prior_provisional_48_exact_identity_verified": False,
-        "missing_pretarget_memory_omitted": 48,
+        "missing_pretarget_memory_omitted": omitted_memory,
+        "verified_pretarget_memory_count": verified_memory,
         "scoped_risk_acceptance_requires_owner_confirmation": True,
         "four_generation_arms_pre_registered": False,
         "generation_parameters_owner_frozen": False,
@@ -242,6 +244,8 @@ def make_packet(candidate_dir, binding_dir, draft_dir, stage_dir,
         "main_analysis_count": 48,
         "sensitivity_analysis_count": 42,
         "excluded_sensitivity_count": 6,
+        "memory_pretarget_verified_count": verified_memory,
+        "memory_unverified_omitted_count": omitted_memory,
         "verified_original_reference_hash_count": 48,
         "verified_reconstructed_input_sha_count": 48,
         "source_component_binding_verified": True,
