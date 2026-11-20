@@ -1,5 +1,17 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-20 当前质量评估合同（覆盖旧两臂/三消息及“未发现 Gold”设计）
+
+最新唯一执行任务书与新 Agent 启动提示词：[R60 Base336 P2-C → Gold48 → 五来源同题盲评](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶端。下文 2026-11-17/19 章节作为历史设计，不得把“固定三消息 / 只用公开 Opening 新编 48 题 / 两生成臂 / 不存在匹配 Gold / 全 172 Story 来源未提取”当作当前事实。
+
+**现行固定目标**是 **48 条真实完整持久化历史 Prefix +48 条严格同题 Historical Original Reference**，在完全相同的预注册评估输入上，比较 **Qwen Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37** 四生成臂，连同原始回答共 **五种匿名来源、240 个评分对象（192 新生成 +48 原始，不是 240 次推理）**；六维及严重标记，聚类单位按 8 Story/25 Session，历史原始回答不是人工标准答案。Owner 的真实候选筛选已经得到临时 **8 Story /7 作者、2 GPU 前+6 GPU 后、48/48 不同 Prefix/Reference**，48/48 唯一模型成功请求元数据对应；它不是正式 Gold48 Freeze，亦**没有 Provider actual-sent System/World/Rules/Memory/History 字节验证**。历史原始回答有效模型 26/21/1 只在解盲后分析。
+
+**已有隔离核验**：Base336 172 Story/375 版本 Reviewer 8/8 + History32 新 32 Story/120 版本 Reviewer 8/8；共享历史 1 Story 的4/4版本已审，因此限定范围总计 **204 Story/495 版本**，并已核验 StoryID/版本锚及 Owner findings 本地权限双 SAFE；不是所有 Protected/Teacher 的穷尽认证。R50 50→46+4、已知五世界身份、旧 Dev20 及 Gold195、R04 等已核查子集不再重复。
+
+**尚待决议**：其它历史 Protected/Reserved/Dev/Teacher 权威完整曝光范围；实际发送 Prompt 字节不可得时 Owner 是否批准**显式标 `RECONSTRUCTED_EVALUATION_INPUT` 的可复现同题替代输入**；一个 P2 原公开卡自身家族/角色改名残留的输入质量仲裁（预注册 48 及剔除六题的 42 题敏感性方案）。只有以上准入与用途权利、Owner Freeze 完成，才正式生成 Gold48 包并另行申请 GPU/HF/四模型推理预算。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`model_promoted=false`**。绝不让参考答案进入生成端。
+
+---
+
 ## 2026-11-19 Owner 明确新增：原始回答 Gold 是正式盲评的必要对照
 
 **当前正式设计：四个生成模型 + 一份同题原始回答 Gold（总计五种匿名回答来源，Gold 不是生成模型）。** 具体强制约束见 [现行 Agent 任务书第八节](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。主比较增列 **R60 Base336 checkpoint-37 vs 原始 Gold**，并保留对 Base 和 v0.2 的主要比较、v0.3-A 的诊断比较；Gold 本身也按六维及严重违规评分，不设为无误绝对真值。
