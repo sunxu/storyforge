@@ -164,3 +164,31 @@ def test_hold_carries_only_explicit_safe_diagnostics():
     )
     assert error.safe_diagnostics["targets_fetched"] == 8
     assert "HISTORY_LEDGER_RECOVERY_HOLD" in error.safe_diagnostics["rejection_counts"]
+
+
+def test_request_zero_count_classifier_is_fail_closed():
+    classify = capture.classify_request_zero_counts
+    assert classify((0, 0, 0, 0, 0, 0)) == "REQUEST_NO_METRIC_WITHIN_5M"
+    assert classify((3, 2, 2, 0, 0, 0)) == "REQUEST_HISTORY_MSG_COUNT_MISMATCH"
+    assert classify((3, 2, 2, 2, 2, 0)) == "REQUEST_EVENT_TIME_WINDOW_MISMATCH"
+    assert classify((3, 2, 2, 2, 0, 0)) == "REQUEST_LINKED_SUCCESS_EVENT_MISMATCH"
+    assert classify((3, 2, 2, 2, 2, 2)) == "REQUEST_UNCLASSIFIED_ZERO_MATCH"
+    assert classify(()) == "REQUEST_DIAGNOSTIC_SHAPE_HOLD"
+
+
+def test_request_zero_database_probe_only_returns_reason():
+    class FakeCursor:
+        def execute(self, query, params):
+            assert "chat_latency_metrics" in query
+            assert "v2_chat_request_events" in query
+            assert len(params) == 13
+
+        def fetchone(self):
+            return (1, 1, 1, 0, 0, 0)
+
+    reason = capture.diagnose_request_zero(
+        FakeCursor(), "private-story", "private-session",
+        capture.CUTOFF, capture.CUTOFF, 7,
+    )
+    assert reason == "REQUEST_HISTORY_MSG_COUNT_MISMATCH"
+    assert "private" not in reason
