@@ -40,6 +40,23 @@
 
 ---
 
+## 2026-11-20 首轮 actual-sent 有界代码路径核验（HEAD ffd4fadc）
+
+**证据类型与边界**：Agent 在 PR #31 原 HEAD `ffd4fadc94fa5ba3e7a6f6d0b60cbf379ce9be2c` 上，直接只读查看 GitHub 的根目录、`src/`、`pyproject.toml`、`README.md` 和下列**现存代码路径**。这是一份仓库代码能力边界核验，**不是** Owner 本机/生产线上请求日志实查，不访问私有请求、数据库或 R50 sealed，不虚构生产代码不存在于其它代码库。
+
+- `src/storyforge_gold_quality/history_recovery.py` 和 `message_ledger.py`：从持久化消息/事件重建历史上下文；所证是历史 Prefix 的恢复路径，不是 Provider 出站请求捕获。
+- `experiments/r58_quality/r60_model_input_coverage_catalog.py`：列出 `v2_chat_reply_jobs`、`chat_abnormal_snapshot`、`chat_latency_metrics` 的只读元数据/RLS 检查，不能证明 HTTP/Provider 序列化之后的实际发送字节。先前 Owner 已核对为空的 `request_envelope` / evidence / snapshot 表**未重查**。
+- `src/storyforge_dataset/generation_eval/worker.py`：`record["messages"]` 是待评测文件显式传入的输入；后续调用 `backend.generate(...messages=...)`。其 `backend.py` 使用本地 Transformers `tokenizer.apply_chat_template`，属于**未来评估生成**，不是历史线上 Provider 请求构造或快照。
+- 根目录项目结构和 `pyproject.toml` 定义的是 Dataset/Training/Quality 入口，本轮**检查过的路径未提供**历史 48 个请求的线上实际部署代码版本、完整 System/World/Rules/Memory/History 组装结果或按 request_id 校验的原始 HTTP/Provider payload。
+
+**本次新增的可证结论**：历史恢复、RLS 证据目录与新评测生成是三种不同管线，不能彼此充当历史 Provider actual-sent 字节证明。状态为 `PRODUCTION_SEND_PATH_NOT_LOCATED_IN_SCOPED_CODE_REVIEW__HOLD`，**不是** `ACTUAL_SENT_IRRECOVERABLE`、`RECONSTRUCTED_EVALUATION_INPUT_APPROVED` 或 P2-C PASS。已存在的 48/48 请求事件唯一匹配、25 Session、48 Original Reference 的 Owner 既有 SAFE 不变；本轮未重新读取原文，也未运行旧零行证据表查询。
+
+**最短一次性缺件请求**：Owner 提供生产发送服务代码仓库/确切路径和当时部署 commit，或可验证的原始出站请求快照位置与保留期限（仅 Owner 私有提供 request_id ↔ 原始序列化 bytes/SHA 绑定和生产 System/Rules/World/Memory/History/Template 的版本）；若证据确实不可恢复，再由 Owner 书面裁决是否允许 **`RECONSTRUCTED_EVALUATION_INPUT`** 作独立同题评估输入，必须保留历史真实发送**未验证**的来源限制。禁止把这一核验扩大成对所有生产日志均不存在的断言。
+
+**本轮执行**：仅 GitHub 只读代码核验及本段 SAFE 元数据更新；数据库未访问、私有内容未访问、没有模型请求/GPU/HF Job/费用、没有代码或冻结数据改动。其余 Authority 全集及单一 P2 来源质量仲裁仍 HOLD；`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+
+---
+
 ## 2026-11-20 可直接复制给下一位 Agent 的启动提示词（本节取代后方 2026-11-19 旧提示词）
 
 你现在接手 **sunxu/storyforge R60 Base336 → P2-C → Gold48 正式冻结 → 五来源同题六维独立盲评**。请先打开 PR #31 的实际 HEAD、CI 和本文最上方 2026-11-20 唯一基线；不要从后面的旧章节拿“下一步”。Owner 要求“**不偏离主线，不重复开发、提取、审核或旧证据核验**”。
