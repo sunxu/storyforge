@@ -1,5 +1,8 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一现行启动提示词（2026-11-21）
 
+> **2026-11-21 最新执行策略（覆盖旧共享账本规划）**：Owner 已选择**单 Owner Mac 串行提交**，不使用 Supabase/PostgreSQL 或 HF Bucket 作全局授权锁；复用已有 Mac HF Job 历史排重、本地原子提交标记与 CPU/GPU dry-run 方法。Mac 标记现通过共享 `OutputManager.write_safe` 完成原子不覆盖和目录 fsync。**原生产 `gold48_runtime_gate.py` 仍要求旧共享挂载，单 Owner GPU 生产通道未接通；不得绕过其门禁或声称运行就绪。** 下一步是核对并在获明确 GPU 授权后最小接入 Owner 可信提交、输出交付及运行身份，不要重做 HF Bucket RW/0700 探针、原数据 SHA、CPU Tokenizer、Adapters 或重复开发 Runner。保持 `inference_authorized=false`、`quality_v1_admitted=0`。
+
+
 > **可直接将本文件下面“新 Agent 提示词”整段交给新 Agent。** 2026-11-19/20 的旧启动提示、旧 P2-B/C HOLD 快照与旧两臂构想是历史记录，**不得作为当前任务执行**。以实时 GitHub PR #31 HEAD、当前源码和最新 Owner 私有 SAFE 为准，不以文件日期推断状态。
 
 ## 新 Agent 提示词

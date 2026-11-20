@@ -1,5 +1,12 @@
 # Gold48 Owner 本地：已冻结输入物化、Adapter 签收、单独签名授权
 
+## 0. 2026-11-21 Owner 已选单机简化调度（最高优先级）
+
+不引入 Supabase/PostgreSQL 或新分布式锁；唯一调度者是可信 Owner Mac。复用 `r60_common2_wrapped_hf_cli.py` 的完整组织 Job 历史排重、标记先于提交、失败留标记，以及 `r60_base336_gpu_cli.py` 的 GPU 命令 dry-run 和镜像/挂载检查。Mac 本地提交标记已经改由 **既有** `OutputManager.write_safe` 发布（0600、原子拒绝覆盖、文件及目录 fsync），不复制写入算法。每臂唯一 Run ID；提交结果不确定时查旧 Job，不自动重试；真正的重新执行需要 Owner 新授权及新 Run ID。
+
+本地 Mac 标记是**单一 Owner 可信边界**下的防重复提交，不能证明多个 HF Job 全局互斥；HF Bucket 仅作为输入/结果对象存储。历史第 7/13 节的远端共享目录 `0700` 与跨 Job 消耗账本方案不再是选用的执行架构，保留供审计追踪；**现有 `gold48_runtime_gate.py` 的旧强门禁尚未替换，绝不能在 HF Job 中直接绕过。** 下一步只有在 Owner 完成生产签名密钥注册、Provider 身份/实际输出交付边界核对以及单独 GPU/推理授权后，才能对旧强门禁做与单 Owner 流程相匹配的最小、有回归测试的安全适配。**本节不签发授权，不启用真实推理或新 CPU 探针**。
+
+
 **仅用于执行本次已存在的代码和文件。** 无历史重审、无新 Tokenizer/SHA HF Job、不访问 R50 sealed、不自动 GPU。所有输入留在 Owner Mac，按既有目录的权限执行；仓库和 CI 不存私有回执内容。
 
 ## 1. 核对本地文件（不重构）

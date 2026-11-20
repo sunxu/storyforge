@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -18,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import hf_job_guard
 import r60_common2_wrapped_hf_stage as stage_tool
+from storyforge_dataset.hf_runtime.outputs import OutputManager
 
 BUCKET = "adradar/storyforge-training"
 PREFIX = "preflight/r60/common2/wrapped-cpu"
@@ -241,12 +241,16 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
     if auth.returncode:
         raise ValueError("HF_AUTH_HOLD")
     argv.remove("--dry-run")
-    # O_EXCL marker BEFORE the single potentially billable submission.
-    fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    with os.fdopen(fd, "w") as stream:
-        stream.write(json.dumps({"run_key": key, "status": "ATTEMPTED_DO_NOT_RETRY"}) + "\n")
-        stream.flush()
-        os.fsync(stream.fileno())
+    # The existing OutputManager supplies O_EXCL/no-replace, mode 0600,
+    # file fsync AND parent-directory fsync before a billable CLI call.
+    # This marker is Mac-local only; it is not a cross-Job HF Bucket lock.
+    try:
+        OutputManager.write_safe(
+            marker, {"run_key": key, "status": "ATTEMPTED_DO_NOT_RETRY"},
+            mode=0o600,
+        )
+    except (OSError, ValueError) as exc:
+        raise ValueError("LOCAL_SUBMISSION_MARKER_ATOMIC_HOLD") from exc
     try:
         result = subprocess.run(argv, capture_output=True, text=True, timeout=120, check=False)
     except (subprocess.TimeoutExpired, OSError):
@@ -321,6 +325,7 @@ def classify_safe_failure(exc: Exception) -> str:
         "REMOTE_RESULT_ALREADY_EXISTS_HOLD", "REMOTE_UPLOAD_INCOMPLETE_HOLD",
         "REMOTE_MANIFEST_UPLOAD_HOLD", "JOB_ATTEMPT_ALREADY_RECORDED_HOLD",
         "EXISTING_JOB_HOLD", "HF_CLI_HELP_HOLD", "HF_CLI_FLAGS_HOLD",
+        "LOCAL_SUBMISSION_MARKER_ATOMIC_HOLD",
         "HF_CLI_DRY_RUN_HOLD", "HF_AUTH_HOLD", "EXPLICIT_EXECUTE_REQUIRED",
     }
     # Stage and shared InputManager failures must be distinguishable from

@@ -201,6 +201,10 @@ def test_submit_creates_marker_before_single_cli_call_and_replay_holds(
             return types.SimpleNamespace(returncode=0, stdout="Dry run OK", stderr="")
         seen_job_calls.append(argv)
         assert marker.exists(), "create-only marker must precede HF API call"
+        assert (marker.stat().st_mode & 0o777) == 0o600
+        assert json.loads(marker.read_text()) == {
+            "run_key": KEY, "status": "ATTEMPTED_DO_NOT_RETRY",
+        }
         return types.SimpleNamespace(
             returncode=0, stdout="Job started with ID: 6af570089737d9a9e093d501",
             stderr="",
