@@ -4,9 +4,10 @@ No model/GPU import. Public booleans cannot mint a load permit. A trusted
 provider must attest the *observed* image digest with its own pinned Ed25519
 public key; a caller-supplied image string is not evidence.
 
-The authorization consumption ledger MUST be a durable shared mount that
-survives worker restarts. A crash consumes the grant; only a new Owner-signed
-Run ID may retry. Synthetic tests may monkeypatch the two trust anchors.
+The trusted Owner Mac exclusively submits one Job per signed Run ID, backed
+by its durable local submit marker and exhaustive HF history. The Job keeps a
+PROCESS-LOCAL spend record for its own loader/worker, NOT a global cross-Job
+lock. Synthetic tests may monkeypatch the two trust anchors.
 """
 from __future__ import annotations
 
@@ -35,7 +36,8 @@ from .worker import WorkerError
 
 # Both of these must be separately approved before any production GPU startup.
 PROVIDER_TRUSTED_PUBLIC_PEM_SHA256 = ""
-DURABLE_CONSUMPTION_ROOT = Path("/mnt/storyforge-private/gold48-authorizations-spent")
+# Job-local ONLY, not a shared Bucket or distributed lock.
+JOB_LOCAL_CONSUMPTION_ROOT = Path("/tmp/storyforge-gold48-private/spent")
 # A successful earlier CPU mount probe is not a production-process observation.
 ADAPTER_MOUNT_ROOT = Path("/ro_adapters")
 ADAPTER_MOUNTINFO_PATH = Path("/proc/self/mountinfo")
@@ -216,16 +218,39 @@ class SignedGold48LoadPermit:
     one_shot_nonce: str
 
 
-def _validate_durable_ledger_root() -> None:
-    root = DURABLE_CONSUMPTION_ROOT
+def _validate_job_local_private_root(root: Path) -> None:
+    """Reject remote/FUSE-backed private output: only local POSIX scratch."""
     try:
         st = root.lstat()
         _check(stat.S_ISDIR(st.st_mode)
                and stat.S_IMODE(st.st_mode) == 0o700
-               and root.is_mount(),
-               "GOLD48_DURABLE_SHARED_LEDGER_MOUNT_REQUIRED")
-    except OSError as exc:
-        raise WorkerError("GOLD48_DURABLE_SHARED_LEDGER_MOUNT_REQUIRED") from exc
+               and root.is_absolute()
+               and root.resolve(strict=True) == root,
+               "GOLD48_JOB_LOCAL_PRIVATE_ROOT_0700_HOLD")
+        mount_types = []
+        for line in Path("/proc/self/mountinfo").read_text(
+            encoding="utf-8"
+        ).splitlines():
+            parts = line.split()
+            if "-" not in parts:
+                continue
+            sep = parts.index("-")
+            if len(parts) <= sep + 1 or len(parts) < 6:
+                continue
+            point = parts[4].replace(r"\040", " ")
+            value = str(root)
+            if value == point or value.startswith(point.rstrip("/") + "/"):
+                mount_types.append((len(point), parts[sep + 1]))
+        _check(bool(mount_types), "GOLD48_JOB_LOCAL_MOUNTINFO_HOLD")
+        _check(max(mount_types)[1] in {
+            "overlay", "ext4", "xfs", "btrfs", "tmpfs", "zfs",
+        }, "GOLD48_JOB_LOCAL_ONLY_NO_FUSE_HOLD")
+    except (OSError, UnicodeError) as exc:
+        raise WorkerError("GOLD48_JOB_LOCAL_MOUNTINFO_HOLD") from exc
+
+
+def _validate_job_local_ledger_root() -> None:
+    _validate_job_local_private_root(JOB_LOCAL_CONSUMPTION_ROOT)
 
 
 def verify_current_readonly_adapter_mount(
@@ -287,13 +312,7 @@ def verify_atomic_private_publication_before_spend(root: Path) -> None:
     overwrite before a one-time Owner grant is spent. Test data is constant and
     synthetic; no model, source text, private IDs, or Owner receipt is touched.
     """
-    try:
-        st = root.lstat()
-        _check(stat.S_ISDIR(st.st_mode)
-               and stat.S_IMODE(st.st_mode) == 0o700,
-               "GOLD48_PRIVATE_PUBLICATION_DIRECTORY_HOLD")
-    except OSError as exc:
-        raise WorkerError("GOLD48_PRIVATE_PUBLICATION_DIRECTORY_HOLD") from exc
+    _validate_job_local_private_root(root)
     path = root / (".gold48-atomic-probe-" + secrets.token_hex(20))
     written = False
     try:
@@ -411,12 +430,12 @@ def authorize_and_consume_before_gpu(
             else Path(adapter_bindings["arms"][model_role]["local_dir"])
         ),
     )
-    _validate_durable_ledger_root()
-    # Both publication destinations must prove the REAL atomic IO contract
+    _validate_job_local_ledger_root()
+    # Both LOCAL publication destinations must prove the real atomic IO contract
     # before consuming a single-use signed Owner authorization.
-    verify_atomic_private_publication_before_spend(DURABLE_CONSUMPTION_ROOT)
+    verify_atomic_private_publication_before_spend(JOB_LOCAL_CONSUMPTION_ROOT)
     verify_atomic_private_publication_before_spend(output_path.parent)
-    spent = DURABLE_CONSUMPTION_ROOT / (
+    spent = JOB_LOCAL_CONSUMPTION_ROOT / (
         auth.receipt_sha256 + ".spent.private.json"
     )
     payload = {
@@ -468,7 +487,8 @@ def verify_and_consume_gold48_load_permit(
 ) -> None:
     """Final loader gate: NO model import before independently checking evidence.
 
-    The durable spend was already create-only. A permit alone is not enough:
+    The job-local spend is create-only. The Owner Mac guarantees no retry
+    across Jobs. A permit alone is not enough:
     re-verify pinned Owner signature, measured provider image and local versions.
     """
     _check(isinstance(permit, SignedGold48LoadPermit),
@@ -482,8 +502,8 @@ def verify_and_consume_gold48_load_permit(
         trusted_public_key_pem_path=permit.owner_public_key_path,
         expected_scope=permit.signed_scope,
     )
-    _validate_durable_ledger_root()
-    expected_path = DURABLE_CONSUMPTION_ROOT / (
+    _validate_job_local_ledger_root()
+    expected_path = JOB_LOCAL_CONSUMPTION_ROOT / (
         auth.receipt_sha256 + ".spent.private.json"
     )
     _check(permit.spent_receipt_path == expected_path,
@@ -538,13 +558,13 @@ def verify_consumed_gold48_output_grant(
     runtime_lock_sha256: str,
     provider_attestation_sha256: str,
 ) -> None:
-    """Read-only ledger binding for a real loaded backend before generation.
+    """Read-only job-local binding for a real loaded backend before generation.
 
     The bridge cannot accept a caller-constructed Transformers Backend with a
-    signed Owner receipt while omitting the durable pre-GPU spend.
+    signed Owner receipt while omitting the job-local pre-GPU spend.
     """
-    _validate_durable_ledger_root()
-    expected = DURABLE_CONSUMPTION_ROOT / (
+    _validate_job_local_ledger_root()
+    expected = JOB_LOCAL_CONSUMPTION_ROOT / (
         owner_receipt_sha256 + ".spent.private.json"
     )
     _check(spent_receipt_path == expected, "GOLD48_SPENT_LEDGER_PATH_HOLD")

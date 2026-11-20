@@ -36,10 +36,10 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
     )
     persistent_root = tmp_path / "synthetic-shared-authority-ledger"
     persistent_root.mkdir(mode=0o700)
-    monkeypatch.setattr(gate, "DURABLE_CONSUMPTION_ROOT", persistent_root)
+    monkeypatch.setattr(gate, "JOB_LOCAL_CONSUMPTION_ROOT", persistent_root)
     # The actual production root must be a distinct durable mount. This
     # isolated fixture replaces ONLY that environmental requirement.
-    monkeypatch.setattr(gate, "_validate_durable_ledger_root", lambda: None)
+    gate._validate_job_local_ledger_root()
     monkeypatch.setattr(
         gate, "verify_current_readonly_adapter_mount",
         lambda **_kwargs: {
@@ -454,6 +454,25 @@ def test_no_mount_does_not_pass_preflight_by_previous_cpu_proof(tmp_path):
 
 
 
+def test_owner_mac_job_local_private_root_blocks_fuse(tmp_path, monkeypatch):
+    """Even a mode-0700 HF FUSE path must not be used for private writes."""
+    root = tmp_path / "fuse"
+    root.mkdir(mode=0o700)
+    original = Path.read_text
+
+    def override(path, *args, **kwargs):
+        if str(path) == "/proc/self/mountinfo":
+            return ("1 0 0:1 / / rw - overlay overlay rw\n"
+                    "2 1 0:2 / " + str(root) +
+                    " rw - fuse.hf-mount hf rw\n")
+        return original(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", override)
+    with pytest.raises(WorkerError, match="GOLD48_JOB_LOCAL_ONLY_NO_FUSE_HOLD"):
+        gate.verify_atomic_private_publication_before_spend(root)
+    assert list(root.iterdir()) == []
+
+
 def test_atomic_publication_probe_uses_existing_outputmanager_and_cleans(
     tmp_path,
 ):
@@ -463,7 +482,7 @@ def test_atomic_publication_probe_uses_existing_outputmanager_and_cleans(
     gate.verify_atomic_private_publication_before_spend(root)
     assert list(root.iterdir()) == []
     root.chmod(0o755)
-    with pytest.raises(WorkerError, match="GOLD48_PRIVATE_PUBLICATION_DIRECTORY_HOLD"):
+    with pytest.raises(WorkerError, match="GOLD48_JOB_LOCAL_PRIVATE_ROOT_0700_HOLD"):
         gate.verify_atomic_private_publication_before_spend(root)
     assert list(root.iterdir()) == []
 
