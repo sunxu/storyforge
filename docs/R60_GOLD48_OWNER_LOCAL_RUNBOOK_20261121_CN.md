@@ -234,3 +234,12 @@ PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_result_audit.py
 ```
 
 该入口先只读查验远端前缀**恰好**有 4 份既定文件，随后一次性创建本地 `0700` 下载子目录，逐个下载、转为 `0600`，核对 manifest 的全部文件 SHA、文件大小与次序，再比对 48 条生成内容、输入 SHA、Provider image SHA、Owner receipt 摘要等私有 Sidecar/launch 字段。SAFE 结果 `OWNER_GOLD48_RESULT_BYTES_AUDITED__SIGNATURE_REVIEW_PENDING` **不是**独立核验 Ed25519 签名，不表示 Quality-v1 已准入。下载目录已存在、远端不完整、回执不一致或下载失败均 HOLD；没有自动重试或任何远端写操作。此入口待正式 GPU 运行后由 Owner Mac 使用真实私有数据验收，不得预先操作未来 Run ID。
+
+
+### 2026-11-21 现有生产 Dispatcher 的极薄 HF Job 入口（CPU 合成检查完成前不得声称可执行）
+
+新增 `scripts/r60_gold48_gpu_worker_entry.py` **不是新 Runner**：它不重复生成循环、Sampler、签名校验、Adapter Loader、HF Job 提交和 Result Audit，只将 **15 份固定文件**从 `/input/gold48:ro` 安全核验并本地化为 `0600`，准备 `/tmp/storyforge-gold48-private/inputs`、`outputs/<run_id>` 和 `spent` 三处 mode `0700` POSIX 目录，然后传入现有 `run_authorized_gold48_production`。运行前检查准确的 RO 挂载、manifest 输入 SHA、冻结 Profile 原 Git Blob、Tokenizer CPU 私有模板 SHA 和锁 SHA；**任何历史原始回答不得上传到这个 Stage**。
+
+固定文件名清单在 `scripts/r60_gold48_gpu_worker_entry.py::STAGED`，Owner 必须在 Mac 本地完成完整 SHA 与源证据签收后，才可按照已存在的 HF Stage 清单上传策略建立隔离、唯一 Run ID 的 RO 输入。入口有两种模式：`check` 只读且不调用 GPU；`execute --explicit-owner-gpu-execution` 才可能进入正式运行，但仍会在本地化前验证 **Owner/Provider 独立 pin 都已登记**，之后再由现有 Runtime Gate 逐项验签和消费。**目前两项 pin 未登记，因此 execute 必然 HOLD；不启动或提交 GPU Job，也不以 CLI dry-run 代替 Provider Job ID 实测身份证明。**
+
+运行阶段的 Template SHA 从已审查 CPU Tokenizer 私有回执 `chat_template_sha256_PRIVATE` 取得，不打印私有值；非当前 Job 的 Provider Attestation 无法代替当前 Job 的真实测量签名。正式 Job 的 Code 版本/Stage 私有文件集、目标 `:rw` Bucket 结果目录与 Owner Mac 逐 SHA 回收仍须受控签收。请勿更换已冻结模型、Adapter、48 条问题或生成参数。
