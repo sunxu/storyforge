@@ -113,13 +113,19 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
     require(type(session_count) is int and 1 <= session_count <= 48,
             "GOLD48_FREEZE_SESSION_SCOPE_HOLD")
 
+    memory_omitted = original.get("missing_pretarget_memory_omitted")
+    memory_verified = original.get("verified_pretarget_memory_count")
+    require(type(memory_omitted) is int and type(memory_verified) is int
+            and memory_omitted + memory_verified == 48
+            and ready.get("memory_pretarget_verified_count") == memory_verified
+            and ready.get("memory_unverified_omitted_count") == memory_omitted,
+            "GOLD48_FREEZE_MEMORY_BINDING_HOLD")
+
     require(original.get("case_count") == 48
             and original.get("main_analysis_count") == 48
             and original.get("sensitivity_analysis_count") == 42
             and original.get("excluded_sensitivity_count") == 6
             and original.get("gold_reference_comparison_count") == 48
-            and original.get("missing_pretarget_memory_omitted") == 48
-            and original.get("verified_pretarget_memory_count") == 0
             and original.get("run_key") == run_key
             and ready.get("stage_manifest_and_cpu_receipt_bound") is True,
             "GOLD48_FREEZE_AGGREGATE_SCOPE_HOLD")
@@ -157,8 +163,8 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
         "historical_actual_sent_prompt_verified": False,
         "full_protected_universe_independence_verified": False,
         "prior_provisional_48_exact_identity_verified": False,
-        "historical_memory_pretarget_verified_count": 0,
-        "historical_memory_unverified_omitted_count": 48,
+        "historical_memory_pretarget_verified_count": memory_verified,
+        "historical_memory_unverified_omitted_count": memory_omitted,
         "flagged_six_retained_in_main_analysis": True,
         "flagged_six_excluded_from_sensitivity": True,
         "historical_original_reference_is_blind_fifth_answer_source": True,
@@ -191,8 +197,8 @@ def build_freeze(candidate_dir, binding_dir, draft_dir, stage_dir,
         "stage_and_hf_cpu_receipt_frozen_by_sha": True,
         "historical_actual_sent_prompt_verified": False,
         "full_protected_universe_independence_verified": False,
-        "memory_pretarget_verified_count": 0,
-        "memory_unverified_omitted_count": 48,
+        "memory_pretarget_verified_count": memory_verified,
+        "memory_unverified_omitted_count": memory_omitted,
         "model_generation_profile_frozen": False,
         "model_generation_authorized": False,
         "gpu_started": False,
