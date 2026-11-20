@@ -29,7 +29,7 @@ def setup_documents(tmp_path):
     for i in range(8):
         story = f"synthetic-story-{i}"
         key = f"S{i + 1:02d}"
-        snapshot = "b" * 64
+        snapshot = "a" * 64
         sources.append({
             "story_id": story,
             "source_key": key,
@@ -124,5 +124,8 @@ def test_source_permission_mismatch_holds(tmp_path):
     doc = json.loads(manifest.read_text())
     doc["sources"][0]["permission_submission_bound"] = False
     private_file(manifest, doc)
+    evidence_doc = json.loads(evidence.read_text())
+    evidence_doc["p2_scope"]["manifest_sha256_PRIVATE"] = binding.sha(manifest.read_bytes())
+    private_file(evidence, evidence_doc)
     with pytest.raises(binding.Hold, match="INVENTORY_SOURCE_IDENTITY_OR_RIGHTS_HOLD"):
         binding.join(candidate, evidence, manifest)
