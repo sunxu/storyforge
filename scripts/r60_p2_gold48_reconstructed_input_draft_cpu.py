@@ -57,8 +57,8 @@ def check_summaries(recovered, target_created_at):
             and set(summary["fields"]) <= set(MEMORY_KEYS),
             "PRETARGET_SUMMARY_PROVENANCE_HOLD")
     try:
-        reported = datetime.fromisoformat(summary["updated_at"].replace("Z", "+00:00"))
-        target_time = datetime.fromisoformat(target_created_at.replace("Z", "+00:00"))
+        reported = datetime.fromisoformat(summary["updated_at"])
+        target_time = datetime.fromisoformat(target_created_at)
         require(reported.tzinfo is not None and target_time.tzinfo is not None
                 and reported < target_time,
                 "PRETARGET_SUMMARY_TIMESTAMP_HOLD")
