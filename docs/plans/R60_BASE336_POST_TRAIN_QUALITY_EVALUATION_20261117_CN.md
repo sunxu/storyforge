@@ -1,5 +1,20 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-21 正式计划更新：Gold48 与四模型 Profile 已冻结，转入 Qwen3.8 运行时验证
+
+**本节覆盖以下所有 2026-11-17/19/20 的 P2_B NOT_GENERATED、Gold48 NOT_FROZEN、必须先补完整 Protected/Reserved 权威全集或“模型阵容仍建议中”的旧执行顺序。** 唯一新 Agent 提示词：[2026-11-21 当前启动提示](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md)；权威任务书：[Gold48 P2 Quality-v1 主线](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。继续 PR #31 实际 HEAD；历史段落保留审计用途，不得重新当作执行指令。
+
+**已经签收、不得重做：** Owner 私有 SAFE `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING`：48 主分析 /42 敏感性（剔除单一来源风险六题）/8 来源/25 Session，48 重建输入 SHA 与48 独立历史原始回答 SHA 已冻结。统一消息是 `RECONSTRUCTED_EVALUATION_INPUT`；历史实际发送 Prompt 及全历史保护集独立性未证实，Owner 接受限定来源风险，不能冒充全宇宙隔离 PASS。唯一 HF CPU Tokenizer Job `6b00971aefaf5e14f4b3b24a` 已完成且 Owner SAFE 字节验收，48/48 在两种 Thinking 模式和 16K/32K 诊断预算无溢出；**不重跑**候选、Stage、HF CPU Job、原始回答匹配、历史 204 Story/495 版本来源审阅、R50/R47/R48/R55/R58 已核审计。
+
+**另一个独立签收：** Frozen 四模型 Profile `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`，状态 `GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING`，`owner_generation_profile_freeze=true`；候选 Blob SHA 绑定，参数固定 Thinking=false、32K context、30720 input +2048 generation、sampling 0.7/0.8/top_k20/min_p0、seed 42+题目索引、无截断。四臂 Base Qwen3.8-27B /R46 ckpt7 /R54 ckpt16 /R60 Base336 ckpt37，原始 Gold 第五来源为描述性参考；将来 192 条新生成+48 条旧回答共240份六维盲评，按25 Session 聚类、48/42双报告。当前冻结不等于推理许可：`inference_authorized=false`、`gpu_authorized_by_this_document=false`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+**唯一下一阶段里程碑：** Qwen3.8/PEFT 真正可运行合同——复用现有三份 Adapter Release SHA/Reload 凭证、固定精确 Base Revision、`Qwen3_5ForConditionalGeneration`、EOS `[248046,248044]`、PAD `248044`、兼容推理镜像和 hash-pinned 依赖锁，检验 Chat Template、输入预算/停止行为与 Adapter Reload。薄加载器 `src/storyforge_dataset/generation_eval/gold48_qwen35_loader.py`、原 `generation_eval.backend` / `generation_eval.worker` / `hf_runtime` 已有，6/6 合成 CI 通过；**尚未有四臂真实 GPU 运行时 Smoke**。只对真实阻塞补最小适配，不创建新生成器或重复 Tokenizer 核心。HF CPU 技术预检用户已许可（含付费），但真实 GPU/模型 Smoke 与后续192次正式推理必须按冻结 Profile 的 `inference_authorized=false` 边界取得单独授权。无需再开发与主线无关的审计、质量工具或新训练。
+
+**后续通关顺序**：Adapter 权重身份/ SHA 绑定 → 推理镜像与 Qwen3.5/PEFT 版本锁 → 合成 CPU/静态导入核验及必要薄补丁 → 明确授权的真实 GPU 单模型/四臂加载 Smoke（独立 SAFE） → 另行授权 192 次正式配对生成 → 240 对象盲评/六维与严重标记 → 48/42 敏感性和聚类分析 → Owner Quality-v1 裁决；任何一步 HOLD 都不能通过修改已冻结输入、简化四模型或借用旧 P4 Qwen3-32B/GLM 来绕过。
+
+---
+
+
 ## 2026-11-20 Owner 批准限定来源独立性与 Gold48 冻结准备
 
 Owner 已批准 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`** 和未知历史来源暴露风险披露，明确**不再以补齐 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 所有历史总名册为本轮 Gold48 的无限期前置**。已有 204 Story/495 版本独立语义结果、R50/Gold195/旧 Dev20 等已知子集直接复用；总宇宙独立性依旧 `UNVERIFIED`，不可声称全部过去训练/测试/教师输入均无污染。新发现来源重叠时记录受影响 Case 为 `EXPOSED`、报告无污染子集的敏感性结果，不静默改 Gold。正式 Owner 决议：[SAFE](../evidence/R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json)。
