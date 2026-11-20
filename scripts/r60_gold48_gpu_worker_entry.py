@@ -88,9 +88,9 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
             if "-" not in fields:
                 continue
             dash = fields.index("-")
-            if len(fields) > dash + 1 and len(fields) >= 6:
-                if fields[4].replace(r"\040", " ") == str(stage):
-                    mounts.append((fields[5].split(","), fields[dash + 1]))
+            if (len(fields) > dash + 1 and len(fields) >= 6
+                    and fields[4].replace(r"\040", " ") == str(stage)):
+                mounts.append((fields[5].split(","), fields[dash + 1]))
         _hold(len(mounts) == 1 and "ro" in mounts[0][0]
               and mounts[0][1].startswith("fuse"),
               "GOLD48_ENTRY_RO_MOUNT_REQUIRED_HOLD")
