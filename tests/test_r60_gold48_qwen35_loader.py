@@ -82,7 +82,7 @@ def test_qwen35_generation_config_stop_metadata_exact():
 
 
 def test_no_runtime_authorization_no_gpu_or_model_import():
-    with pytest.raises(WorkerError, match="GOLD48_RUNTIME_NOT_AUTHORIZED"):
+    with pytest.raises(WorkerError, match="GOLD48_SIGNED_LAUNCH_PERMIT_REQUIRED"):
         load_pinned_gold48_backend(
             adapter_dir=None, expected_adapter_sha256=None,
             expected_template_sha256="a" * 64,
@@ -101,6 +101,10 @@ def test_frozen_expected_adapter_hash_is_mandatory_and_file_is_stream_checked(tm
 def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypatch, tmp_path):
     import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader
 
+    # Only the synthetic loader unit test substitutes the signed pre-GPU gate.
+    # The real gate is exercised in test_r60_gold48_contract_bridge.py.
+    monkeypatch.setattr(loader, "verify_and_consume_gold48_load_permit",
+                        lambda **_kwargs: None)
     calls = []
     template = "{% for message in messages %}{{ message.content }}{% endfor %}"
     template_hash = hashlib.sha256(template.encode("utf-8")).hexdigest()
@@ -180,7 +184,11 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
         adapter_dir=adapter_dir,
         expected_adapter_sha256="b" * 64,
         expected_template_sha256=template_hash,
-        runtime_authorized=True,
+        launch_permit=SimpleNamespace(
+            owner_receipt_path=tmp_path / "test-only-owner",
+            runtime_lock_path=tmp_path / "test-only-lock",
+            provider_attestation_path=tmp_path / "test-only-provider",
+        ),
         torch_module=fake_torch,
         transformers_module=fake_transformers,
         peft_module=fake_peft,
@@ -195,7 +203,11 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     ]
 
 
-def test_wrong_template_sha_rejects_before_any_model_load():
+def test_wrong_template_sha_rejects_before_any_model_load(monkeypatch):
+    import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader
+
+    monkeypatch.setattr(loader, "verify_and_consume_gold48_load_permit",
+                        lambda **_kwargs: None)
     fake_torch = SimpleNamespace(
         cuda=SimpleNamespace(
             is_available=lambda: True,
@@ -224,7 +236,7 @@ def test_wrong_template_sha_rejects_before_any_model_load():
         load_pinned_gold48_backend(
             adapter_dir=None, expected_adapter_sha256=None,
             expected_template_sha256="a" * 64,
-            runtime_authorized=True,
+            launch_permit=object(),
             torch_module=fake_torch,
             transformers_module=fake_transformers,
         )
@@ -236,7 +248,13 @@ def test_wrong_template_sha_rejects_before_any_model_load():
     ("eos_token_id", [248046]),
     ("pad_token_id", 123),
 ])
-def test_runtime_base_metadata_mismatch_holds_before_weight_load(bad_field, bad_value):
+def test_runtime_base_metadata_mismatch_holds_before_weight_load(
+    bad_field, bad_value, monkeypatch,
+):
+    import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader
+
+    monkeypatch.setattr(loader, "verify_and_consume_gold48_load_permit",
+                        lambda **_kwargs: None)
     config = {
         "model_type": "qwen3_5",
         "architectures": ["Qwen3_5ForConditionalGeneration"],
@@ -268,7 +286,32 @@ def test_runtime_base_metadata_mismatch_holds_before_weight_load(bad_field, bad_
             adapter_dir=None,
             expected_adapter_sha256=None,
             expected_template_sha256="a" * 64,
-            runtime_authorized=True,  # mocked modules only, no actual GPU
+            launch_permit=object(),  # synthetic-only gate stub, no actual GPU
             torch_module=fake_torch,
             transformers_module=fake_transformers,
+        )
+
+
+def test_legacy_boolean_cannot_unlock_loader_before_gpu():
+    with pytest.raises(TypeError, match="runtime_authorized"):
+        load_pinned_gold48_backend(
+            adapter_dir=None, expected_adapter_sha256=None,
+            expected_template_sha256="a" * 64,
+            runtime_authorized=True,
+        )
+
+
+def test_forged_launch_object_rejected_before_torch_import(monkeypatch):
+    import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader
+
+    def reject_gpu_import(_name):
+        pytest.fail("untrusted pre-GPU authorization must not import torch")
+
+    monkeypatch.setattr(loader.importlib, "import_module", reject_gpu_import)
+    with pytest.raises(WorkerError, match="GOLD48_SIGNED_LAUNCH_PERMIT_REQUIRED"):
+        load_pinned_gold48_backend(
+            adapter_dir=None,
+            expected_adapter_sha256=None,
+            expected_template_sha256="a" * 64,
+            launch_permit={"caller": "provided-dict"},
         )
