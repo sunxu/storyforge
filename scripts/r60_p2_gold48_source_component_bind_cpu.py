@@ -238,10 +238,14 @@ def main():
     args = parser.parse_args()
     try:
         print(json.dumps(run(args), sort_keys=True))
-    except (Hold, ValueError, TypeError, KeyError, IndexError, OSError):
+    except (Hold, ValueError, TypeError, KeyError, IndexError, OSError) as exc:
+        # Hold codes are internal fixed literals. Never reveal exception text
+        # from filesystem, JSON parsing, or other untrusted inputs.
+        reason = (str(exc) if isinstance(exc, Hold)
+                  else "GOLD48_SOURCE_COMPONENT_UNEXPECTED_RUNTIME_HOLD")
         print(json.dumps({
             "schema": SAFE_SCHEMA, "status": "HOLD",
-            "reason_code": "GOLD48_SOURCE_COMPONENT_BINDING_HOLD",
+            "reason_code": reason,
             "database_accessed": False, "gpu_started": False,
             "model_calls": 0, "private_values_emitted": False,
         }, sort_keys=True))
