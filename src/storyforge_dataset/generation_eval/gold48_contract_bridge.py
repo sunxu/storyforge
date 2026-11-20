@@ -496,6 +496,173 @@ def _gold48_sidecar(
     }
 
 
+def _gold48_launch_marker(
+    *,
+    frozen: dict[str, Any],
+    bindings: dict[str, Any],
+    input_manifest: dict[str, Any],
+    role: str,
+    auth,
+    lock_sha256: str,
+    runtime_image_digest: str,
+    output_path: Path,
+) -> dict[str, Any]:
+    """Create-only pre-generation evidence, not a provider image attestation."""
+    entry = bindings["arms"][role]
+    return {
+        "schema": "storyforge_r60_gold48_generation_launch_private_v1",
+        "status": "SIGNED_SCOPE_VERIFIED__BACKEND_IDENTITY_CLAIM_CHECKED",
+        "run_id": auth.payload["run_id"],
+        "run_key": frozen["dataset"]["run_key"],
+        "model_role": role,
+        "output_path": str(output_path),
+        "model_id": MODEL,
+        "model_revision": REVISION,
+        "adapter_checkpoint": entry["checkpoint_uri"],
+        "adapter_sha256": entry["expected_sha256"],
+        "adapter_local_dir": entry["local_dir"],
+        "frozen_profile_canonical_sha256": _digest(frozen),
+        "adapter_bindings_canonical_sha256": _digest(bindings),
+        "input_manifest_canonical_sha256": _digest(input_manifest),
+        "input_sha256": input_manifest["sha256"],
+        "owner_authorization_receipt_sha256": auth.receipt_sha256,
+        "dependency_lock_sha256": lock_sha256,
+        "runtime_image_digest_approved": runtime_image_digest,
+        "runtime_image_measured": False,
+    }
+
+
+def _read_existing_gold48_output(
+    *, output_path: Path, profile: dict[str, Any],
+    worker_manifest: dict[str, Any], model_role: str,
+) -> WorkerReceipt:
+    """Read-only strict validation. Never invokes a backend or regenerates text."""
+    import stat
+    try:
+        st = output_path.lstat()
+        _require(stat.S_ISREG(st.st_mode) and stat.S_IMODE(st.st_mode) == 0o600,
+                 "GOLD48_RECOVERY_OUTPUT_MODE_HOLD")
+        verified = InputManager.open_verified(output_path, max_bytes=16 * 1024 * 1024)
+        raw = verified.read_bytes()
+        data = json.loads(raw)
+    except (OSError, TypeError, ValueError) as exc:
+        if isinstance(exc, WorkerError):
+            raise
+        raise WorkerError("GOLD48_RECOVERY_OUTPUT_READ_HOLD") from exc
+    selected = profile["model_profiles"][model_role]
+    _require(isinstance(data, dict)
+             and set(data) == {
+                 "schema", "model_role", "model", "revision",
+                 "seed", "record_count", "outputs",
+             }
+             and data["schema"] == "storyforge_r60_generation_outputs_private_v1"
+             and data["model_role"] == model_role
+             and data["model"] == selected["model"]
+             and data["revision"] == selected["revision"]
+             and data["seed"] == 42
+             and data["record_count"] == CASE_COUNT
+             and isinstance(data["outputs"], list)
+             and len(data["outputs"]) == CASE_COUNT,
+             "GOLD48_RECOVERY_OUTPUT_SCHEMA_HOLD")
+    counts = {"eos": 0, "length": 0, "unrecognized_stop": 0}
+    for index, record in enumerate(data["outputs"]):
+        _require(isinstance(record, dict)
+                 and set(record) == {
+                     "sample_id", "effective_seed", "text",
+                     "input_tokens", "output_tokens", "finish_reason",
+                 }
+                 and record["sample_id"] == f"G48-C{index + 1:02d}"
+                 and type(record["effective_seed"]) is int
+                 and record["effective_seed"] == 42 + index
+                 and isinstance(record["text"], str)
+                 and len(record["text"]) <= worker_manifest["max_new_tokens"] * 64
+                 and type(record["input_tokens"]) is int
+                 and 1 <= record["input_tokens"] <= worker_manifest["max_input_tokens"]
+                 and type(record["output_tokens"]) is int
+                 and 0 <= record["output_tokens"] <= worker_manifest["max_new_tokens"]
+                 and record["finish_reason"] in counts,
+                 "GOLD48_RECOVERY_OUTPUT_RECORD_HOLD")
+        counts[record["finish_reason"]] += 1
+    status = (
+        "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP" if counts["unrecognized_stop"]
+        else "GENERATION_BATCH_PASS_WITH_LENGTH_STOPS" if counts["length"]
+        else "GENERATION_BATCH_PASS"
+    )
+    _require(hashlib.sha256(raw).hexdigest() == verified.sha256,
+             "GOLD48_RECOVERY_OUTPUT_SHA_HOLD")
+    return WorkerReceipt(
+        status=status, model_role=model_role,
+        record_count=CASE_COUNT, output_size_bytes=len(raw),
+        output_sha256=verified.sha256, output_mode=0o600,
+        finish_reason_counts=counts, gpu_started=True,
+    )
+
+
+def recover_gold48_identity_sidecar(
+    *,
+    frozen: dict[str, Any],
+    owner_freeze: dict[str, Any],
+    adapter_bindings: dict[str, Any],
+    input_manifest: dict[str, Any],
+    input_path: Path,
+    output_path: Path,
+    model_role: str,
+    owner_authorization_receipt_path: Path,
+    trusted_owner_public_key_pem_path: Path,
+    runtime_lock_path: Path,
+    runtime_image_digest: str,
+    source_evidence_paths: dict[str, Path],
+) -> WorkerReceipt:
+    """Create-only sidecar recovery from existing output; ZERO model/GPU calls.
+
+    Requires original signed scope and pre-generation launch marker. Refuses
+    absent, corrupt, truncated or altered output. Never deletes original output.
+    """
+    profile, worker_manifest = prepare_gold48_generation_contract(
+        frozen=frozen, owner_freeze=owner_freeze,
+        adapter_bindings=adapter_bindings, input_manifest=input_manifest,
+        input_path=input_path, model_role=model_role,
+    )
+    auth, lock_sha256 = _verify_authorized_run(
+        owner_authorization_receipt_path=owner_authorization_receipt_path,
+        trusted_owner_public_key_pem_path=trusted_owner_public_key_pem_path,
+        runtime_lock_path=runtime_lock_path,
+        runtime_image_digest=runtime_image_digest,
+        frozen=frozen, owner_freeze=owner_freeze,
+        bindings=adapter_bindings, manifest=input_manifest, role=model_role,
+        output_path=output_path,
+    )
+    verify_gold48_binding_source_evidence(adapter_bindings, source_evidence_paths)
+    sidecar_path = output_path.with_name(output_path.name + ".identity.private.json")
+    _require(not sidecar_path.exists() and not sidecar_path.is_symlink(),
+             "GOLD48_RECOVERY_SIDECAR_ALREADY_EXISTS_HOLD")
+    marker_path = output_path.with_name(output_path.name + ".launch.private.json")
+    marker = read_private_contract(marker_path, max_bytes=65536)
+    expected_marker = _gold48_launch_marker(
+        frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
+        role=model_role, auth=auth, lock_sha256=lock_sha256,
+        runtime_image_digest=runtime_image_digest, output_path=output_path,
+    )
+    _require(marker == expected_marker, "GOLD48_RECOVERY_LAUNCH_MARKER_MISMATCH_HOLD")
+    receipt = _read_existing_gold48_output(
+        output_path=output_path, profile=profile,
+        worker_manifest=worker_manifest, model_role=model_role,
+    )
+    sidecar = _gold48_sidecar(
+        frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
+        role=model_role, auth=auth, lock_sha256=lock_sha256,
+        runtime_image_digest=runtime_image_digest, receipt=receipt,
+    )
+    sidecar["recovered_from_existing_output_no_model_calls"] = True
+    sidecar["pre_generation_launch_marker_canonical_sha256"] = _digest(marker)
+    sidecar["pre_generation_launch_marker_canonical_sha256"] = _digest(marker)
+    try:
+        OutputManager.write_safe(sidecar_path, sidecar, mode=0o600)
+    except (ValueError, OSError) as exc:
+        raise WorkerError("GOLD48_RECOVERY_SIDECAR_CREATE_ONLY_HOLD") from exc
+    return receipt
+
+
 def run_gold48_generation_batch(
     *,
     frozen: dict[str, Any],
@@ -531,8 +698,10 @@ def run_gold48_generation_batch(
         adapter_bindings, source_evidence_paths,
     )
     sidecar_path = output_path.with_name(output_path.name + ".identity.private.json")
+    marker_path = output_path.with_name(output_path.name + ".launch.private.json")
     _require(not output_path.exists() and not output_path.is_symlink()
-             and not sidecar_path.exists() and not sidecar_path.is_symlink(),
+             and not sidecar_path.exists() and not sidecar_path.is_symlink()
+             and not marker_path.exists() and not marker_path.is_symlink(),
              "GOLD48_OUTPUT_ALREADY_EXISTS_HOLD")
     entry = adapter_bindings["arms"][model_role]
     _require(backend.gpu_started is True
@@ -546,6 +715,18 @@ def run_gold48_generation_batch(
                  else str(getattr(backend, "gold48_adapter_dir", "UNVERIFIED")) ==
                  str(Path(entry["local_dir"]))
              ), "GOLD48_LOADED_BACKEND_IDENTITY_HOLD")
+    # Persist launch identity BEFORE the first model call. A failed/partial run
+    # leaves this create-only marker; it can never silently consume the same
+    # authorization again. It also enables zero-inference sidecar recovery.
+    marker = _gold48_launch_marker(
+        frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
+        role=model_role, auth=auth, lock_sha256=lock_sha256,
+        runtime_image_digest=runtime_image_digest, output_path=output_path,
+    )
+    try:
+        OutputManager.write_safe(marker_path, marker, mode=0o600)
+    except (ValueError, OSError) as exc:
+        raise WorkerError("GOLD48_LAUNCH_MARKER_CREATE_ONLY_HOLD") from exc
     receipt = _run_validated_generation_batch(
         profile=profile, model_role=model_role, manifest=worker_manifest,
         input_path=input_path, output_path=output_path, backend=backend,
