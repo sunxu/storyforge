@@ -13,7 +13,6 @@ from __future__ import annotations
 import hashlib
 import importlib.metadata
 import json
-import os
 import platform
 import re
 import secrets
@@ -358,3 +357,61 @@ def verify_and_consume_gold48_load_permit(
            "GOLD48_RUNTIME_MEASUREMENT_CHANGED_HOLD")
     _check(_ISSUED_ONE_SHOT_PERMITS.pop(auth.receipt_sha256, None) ==
            permit.one_shot_nonce, "GOLD48_LOADER_ONE_SHOT_PERMIT_REUSED_HOLD")
+
+
+def run_authorized_gold48_production(
+    *,
+    frozen: dict[str, Any],
+    owner_freeze: dict[str, Any],
+    adapter_bindings: dict[str, Any],
+    input_manifest: dict[str, Any],
+    input_path: Path,
+    output_path: Path,
+    model_role: str,
+    owner_authorization_receipt_path: Path,
+    trusted_owner_public_key_pem_path: Path,
+    source_evidence_paths: dict[str, Path],
+    runtime_lock_path: Path,
+    runtime_contract_path: Path,
+    provider_attestation_path: Path,
+    trusted_provider_public_key_path: Path,
+    expected_template_sha256: str,
+):
+    """ONLY production dispatcher: verify+spend -> GPU loader -> existing Worker.
+
+    All P1 gates run synchronously BEFORE torch import/CUDA allocation.
+    There is no background job launch and no implicit GPU authorization.
+    """
+    from .gold48_contract_bridge import run_gold48_generation_batch
+    from .gold48_qwen35_loader import load_pinned_gold48_backend
+
+    permit = authorize_and_consume_before_gpu(
+        frozen=frozen, owner_freeze=owner_freeze,
+        adapter_bindings=adapter_bindings, input_manifest=input_manifest,
+        input_path=input_path, output_path=output_path, model_role=model_role,
+        owner_authorization_receipt_path=owner_authorization_receipt_path,
+        trusted_owner_public_key_pem_path=trusted_owner_public_key_pem_path,
+        source_evidence_paths=source_evidence_paths,
+        runtime_lock_path=runtime_lock_path,
+        runtime_contract_path=runtime_contract_path,
+        provider_attestation_path=provider_attestation_path,
+        trusted_provider_public_key_path=trusted_provider_public_key_path,
+    )
+    entry = adapter_bindings["arms"][model_role]
+    backend = load_pinned_gold48_backend(
+        adapter_dir=permit.selected_adapter_dir,
+        expected_adapter_sha256=entry["expected_sha256"],
+        expected_template_sha256=expected_template_sha256,
+        launch_permit=permit,
+    )
+    return run_gold48_generation_batch(
+        frozen=frozen, owner_freeze=owner_freeze,
+        adapter_bindings=adapter_bindings, input_manifest=input_manifest,
+        input_path=input_path, output_path=output_path, model_role=model_role,
+        backend=backend,
+        owner_authorization_receipt_path=owner_authorization_receipt_path,
+        trusted_owner_public_key_pem_path=trusted_owner_public_key_pem_path,
+        runtime_lock_path=runtime_lock_path,
+        runtime_image_digest=permit.signed_scope["runtime_image_digest"],
+        source_evidence_paths=source_evidence_paths,
+    )
