@@ -1,5 +1,16 @@
 # R60 Base336 P2 Quality-v1：2026-11-19 新 Agent 启动提示词（可直接复制）
 
+## 2026-11-20 最新 Owner 评估独立性风险接受：可进入 Gold48 冻结准备
+
+Owner 已明确批准 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`**（对已审历史来源范围独立，未知 Protected/Reserved/Dev/Teacher 曝光风险须报告披露），不再为完整历史总名册无限 HOLD；同时**没有证据证明整个历史来源宇宙无泄漏**。该决议和 `RECONSTRUCTED_EVALUATION_INPUT` 的 Owner 批准、单一故事家族名残留的 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 已同时生效。现有 8 Story、48 完整历史 Prefix 与 48 真实 Original Reference 仍是**可用候选**，并非正式 frozen Gold48。
+
+**真正下一步**：用已有历史恢复/版本/权限/回答匹配核心在 Owner 私有 0700/0600 create-only 形成 48 条候选、锁定重建输入分量版本/SHA、按真实 Story ID 绑定风险来源六题；预注册 48 主分析和剔除该 Story 六题后的 42 成对敏感性分析。四新生成模型严格共同冻结输入，Historical Original Reference 是第五匿名**描述性**历史参考来源（不可称 byte-exact 同 Prompt）。实际逐项 Source/Prefix/Reply/重建输入哈希与许可、Owner Freeze 签收尚未完成，故 `P2_B_48_PROMPTS=NOT_GENERATED`；严格全宇宙 `UNVERIFIED`，限定范围风险 `RISK_ACCEPTED`。任何日后发现污染必须公开剔除并重分析，不能改写冻结题或替换。
+
+**禁止**无期限再扫历史 Authority、重复 204 Story/495 版本独立审核或重复构造历史恢复/Blind/HF 引擎；旧 `r60_base336_p2_public_prompt_package_gate.py` 是仅适配三消息草稿的历史门禁，不能拿来验证完整历史 Gold48。禁止读取 R50 sealed / 生产 RolePlay、发布私有 Case、启动任何新 GPU/HF/LLM 推理；**模型预算另行 Owner 批准**。唯一完整任务规范见主任务书开头，旧段落只作历史快照。
+
+---
+
+
 ## 2026-11-20 必须优先执行的 Owner 最新裁决（覆盖本文 2026-11-19 旧提示）
 
 **唯一现行任务书**：先读 `docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md` 顶端 “Owner 正式批准” 新节与 “2026-11-20 现行唯一执行基线”，不要执行下列旧“5 作者/3+5、缺 172 Story、没有 48 条原始回复、两臂、须查历史 actual-sent”步骤。
