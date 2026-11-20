@@ -1,0 +1,83 @@
+{
+  "schema": "storyforge_r60_base336_p2_scoped_independence_owner_decision_safe_v1",
+  "decision_date": "2026-11-20",
+  "owner_decision": "APPROVED_IN_CURRENT_CONVERSATION",
+  "status": "SCOPED_INDEPENDENCE_RISK_ACCEPTED__GOLD48_FREEZE_PREPARATION_AUTHORIZED",
+  "decision": {
+    "evaluation_independence_standard": "INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE",
+    "unknown_historical_exposure_risk_accepted": true,
+    "full_historical_protected_reserved_heldout_dev_arbitration_teacher_roster_proven_complete": false,
+    "unreviewed_historical_source_universe": "UNKNOWN_HOLD__NOT_ASSUMED_EMPTY",
+    "source_isolation_beyond_verified_scope": "UNVERIFIED_NOT_PASS",
+    "disallow_label": "ALL_HISTORICAL_SOURCES_COMPLETELY_EXCLUDED",
+    "allowed_label": "SCOPED_INDEPENDENCE__UNKNOWN_HISTORICAL_EXPOSURE_RISK_DISCLOSED",
+    "accepted_use": "INDEPENDENT_QUALITY_EVALUATION_WITH_QUALIFIED_SCOPE_DISCLOSURE",
+    "freeze_preparation_authorized": true,
+    "owner_final_gold48_byte_freeze_completed": false,
+    "paid_inference_authorized": false
+  },
+  "existing_evidence": {
+    "previously_semantically_reviewed_story_count": 204,
+    "previously_semantically_reviewed_version_count": 495,
+    "p2_public_source_count": 8,
+    "historical_original_prefix_candidates": 48,
+    "historical_original_reply_candidates": 48,
+    "unique_request_metadata_matches": 48,
+    "historical_session_count": 25,
+    "p2_public_source_quality_decision": "OWNER_ACCEPTED_WITH_QUALITY_CAVEAT",
+    "reviewer8_to_p2source8_owner_reported_binding_pass": true,
+    "flagged_story_to_gold48_six_case_binding": "PENDING_OWNER_PRIVATE_FREEZE"
+  },
+  "preregistered_analysis": {
+    "primary_case_count": 48,
+    "primary_story_count": 8,
+    "paired_sensitivity_case_count": 42,
+    "excluded_flagged_story_case_count": 6,
+    "sensitivity_story_count": 7,
+    "generation_model_arms": 4,
+    "historical_original_response_arms": 1,
+    "planned_new_generations_if_authorized": 192,
+    "planned_blinded_response_count_if_all_valid": 240,
+    "four_generated_arms_comparable_reconstructed_input": true,
+    "original_historical_reply_is_descriptive_not_byte_identical_comparator": true,
+    "model_versus_historical_reply_causal_claims_prohibited": true,
+    "outcome_based_case_exclusion_prohibited": true,
+    "reference_answer_in_generation_input_prohibited": true
+  },
+  "future_contamination_policy": {
+    "newly_documented_overlap": "RECORD_CASE_AS_EXPOSED_AND_EXCLUDE_FROM_UNCONTAMINATED_SUBSET",
+    "frozen_case_mutation": "PROHIBITED",
+    "silent_replacement": "PROHIBITED",
+    "reanalysis_with_disclosed_case_delta": "REQUIRED_IF_DISCOVERED",
+    "do_not_claim_unconditional_unseen_test_set": true
+  },
+  "remaining_freeze_gates": [
+    "OWNER_PRIVATE_48_CASE_SELECTION_AND_EXACT_HISTORY_PREFIX_REPLY_BINDING",
+    "RECONSTRUCTED_MESSAGES_COMPONENT_PROVENANCE_VERSION_AND_HASH",
+    "PRIVATE_FLAGGED_SOURCE_TO_SIX_CASE_BINDING",
+    "PER_CASE_RIGHTS_AND_SOURCE_REVISION_BINDING",
+    "OWNER_EXPLICIT_CREATE_ONLY_GOLD48_FREEZE_SIGNOFF"
+  ],
+  "stable_status": {
+    "eval_input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
+    "actual_sent_prompt_bytes": "UNVERIFIED",
+    "p2_c_full_universe": "UNVERIFIED",
+    "p2_c_scoped_policy": "RISK_ACCEPTED",
+    "p2_b_48_prompts": "NOT_GENERATED",
+    "gold48_freeze": "NOT_COMPLETED",
+    "quality_v1_admitted": 0,
+    "train_admitted": 0,
+    "gpu_started": false,
+    "hf_jobs_submitted": 0,
+    "model_promoted": false,
+    "private_values_emitted": false
+  },
+  "no_actions": {
+    "roleplay_production_accessed": false,
+    "database_accessed": false,
+    "sealed_r50_accessed": false,
+    "model_inference_started": false,
+    "training_started": false,
+    "private_case_bytes_published": false
+  }
+}
