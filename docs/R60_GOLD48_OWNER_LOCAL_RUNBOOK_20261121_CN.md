@@ -1,0 +1,69 @@
+# Gold48 Owner 本地：已冻结输入物化、Adapter 签收、单独签名授权
+
+**仅用于执行本次已存在的代码和文件。** 无历史重审、无新 Tokenizer/SHA HF Job、不访问 R50 sealed、不自动 GPU。所有输入留在 Owner Mac，按既有目录的权限执行；仓库和 CI 不存私有回执内容。
+
+## 1. 核对本地文件（不重构）
+
+先在 Mac 确认以下既有文件实际位置；以下路径变量均由 Owner 填入，**不要**把私有文件复制进 Git 仓库或打印 JSON 内容：
+
+```sh
+umask 077
+cd ~/workspace/storyforge
+export PYTHONPATH="$PWD/src"
+FROZEN="$PWD/experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json"
+OWNER_ROOT="$HOME/.local/share/storyforge/r60/private"
+OWNER_FREEZE="<owner-local>/GOLD48_SCOPED_FROZEN_MANIFEST_PRIVATE.json"
+DRAFT="<owner-local>/GOLD48_RECONSTRUCTED_INPUTS_DRAFT_PRIVATE.json"
+BINDINGS="<owner-local>/GOLD48_ADAPTER_BINDINGS_CANDIDATE_PRIVATE.json"
+R46_EVIDENCE="<owner-local>/r46_training_report.json"
+R54_EVIDENCE="<owner-local>/R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json"
+R60_EVIDENCE="<owner-local>/r60-cpu-job-json-log-line.private.json"
+```
+
+R46/R54 原报告必须是**原始文件字节**，不能重新格式化。R60 evidence 必须是此前 Job `6b00a44aefaf5e14f4b3c6b5` 的 JSON 回执**原始日志单行字节（末尾不附加换行）**；三份文件必须在私有目录且 mode `0600`。此步骤不读取 Adapter 权重。
+
+## 2. 物化冻结 JSONL 和 Manifest
+
+```sh
+OUT="$OWNER_ROOT/gold48-frozen-worker-input-v1"
+python3 scripts/r60_gold48_generation_input_materialize_cpu.py \
+  --frozen-profile "$FROZEN" \
+  --owner-freeze "$OWNER_FREEZE" \
+  --reconstructed-draft "$DRAFT" \
+  --private-root "$OWNER_ROOT" \
+  --output-dir "$OUT"
+INPUT_JSONL="$OUT/GOLD48_GENERATION_INPUTS_PRIVATE.jsonl"
+INPUT_MANIFEST="$OUT/GOLD48_GENERATION_INPUT_MANIFEST_PRIVATE.json"
+shasum -a 256 "$INPUT_JSONL" "$INPUT_MANIFEST"
+```
+
+该入口使用 Git Blob 锁验证 Frozen Profile，读取 Owner 冻结里的 Draft SHA 和 48 条逐案 canonical SHA，逐条严格对应，不重新生成任何 Prompt。create-only，第二次执行会 HOLD。核对输出文件均为 mode `0600`、目录 `0700`；只在 Owner 本地保存打印的 SHA。
+
+## 3. Owner 对现有 Adapter 候选签收
+
+```sh
+ACCEPTED="$OWNER_ROOT/GOLD48_ADAPTER_BINDINGS_OWNER_ACCEPTED_PRIVATE.json"
+python3 scripts/r60_gold48_owner_generation_authority_cpu.py \
+  --mode accept-bindings \
+  --frozen-profile "$FROZEN" \
+  --owner-freeze "$OWNER_FREEZE" \
+  --adapter-bindings "$BINDINGS" \
+  --input-manifest "$INPUT_MANIFEST" --input-jsonl "$INPUT_JSONL" \
+  --r46-evidence "$R46_EVIDENCE" \
+  --r54-evidence "$R54_EVIDENCE" \
+  --r60-evidence "$R60_EVIDENCE" \
+  --explicit-owner-accept --accepted-output "$ACCEPTED"
+shasum -a 256 "$ACCEPTED"
+```
+
+只有在 Owner 看过三个来源文件且同意**历史 SHA 来源与 R60 CPU Job 日志的有限证据范围**后才执行。验收状态是 `OWNER_GOLD48_ADAPTER_BINDINGS_ACCEPTED__MOUNT_PENDING`；仍然 **不声称** Provider 挂载或三份当前远端权重字节已独立签收。不重跑 R60 1.87 GB SHA。
+
+## 4. 尚未授权：Owner 单独签发每臂的生产回执
+
+这一段是**未来独立批准正式推理后**的执行说明；目前冻结 Profile 的 `inference_authorized=false`、Owner Trust 公钥指纹未登记，**不要执行签发或 GPU**。Owner 私钥只留 Mac、chmod `0600`；运行端只得到签名回执和公钥。由 Owner 单独审批 Run ID、角色、输出目录、资源与有效期，再执行脚本的 `--mode sign-one-arm --explicit-owner-generation-authorization`，其余参数用 `--help` 查看。脚本检验已签收 Adapter、源文件、48 输入、SHA 锁与镜像 Digest，回执原子 create-only 0600，输出不覆盖。
+
+运行端的可信公钥 SHA256 需要由 Owner 独立核对后，经审查改为 `gold48_owner_receipt.py::OWNER_TRUSTED_PUBLIC_PEM_SHA256` 的固定值；现保持空值，强制 HOLD，不能把命令行传入的新公钥直接视为信任锚。
+
+## 5. 验收口径
+
+Owner 本地物化/签收 SAFE、GitHub 合成 CI、CPU 依赖 Hash Install、真实 GPU/PEFT 加载分别独立签收。GPU Smoke 必须另行授权；本 runbook 不发起任何 HF Job 或正式 192 条推理。
