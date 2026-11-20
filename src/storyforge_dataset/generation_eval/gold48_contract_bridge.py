@@ -801,15 +801,31 @@ def run_gold48_generation_batch(
             )
             and isinstance(
                 getattr(backend, "gold48_provider_public_key_path", None), Path
+            )
+            and isinstance(
+                getattr(backend, "gold48_spent_grant_path", None), Path
             ),
             "GOLD48_PRODUCTION_BACKEND_MEASURED_IDENTITY_HOLD",
         )
-        from .gold48_runtime_gate import verify_provider_image_measurement
+        from .gold48_runtime_gate import (
+            verify_consumed_gold48_output_grant,
+            verify_provider_image_measurement,
+        )
 
         provider_attested_sha = verify_provider_image_measurement(
             attestation_path=backend.gold48_provider_attestation_path,
             trusted_provider_public_key_path=backend.gold48_provider_public_key_path,
             owner_scope=auth.payload,
+        )
+        verify_consumed_gold48_output_grant(
+            spent_receipt_path=backend.gold48_spent_grant_path,
+            owner_receipt_sha256=auth.receipt_sha256,
+            owner_scope=auth.payload,
+            model_role=model_role,
+            output_path=output_path,
+            adapter_sha256=entry["expected_sha256"],
+            runtime_lock_sha256=lock_sha256,
+            provider_attestation_sha256=provider_attested_sha,
         )
     # Persist launch identity BEFORE the first model call. A failed/partial run
     # leaves this create-only marker; it can never silently consume the same

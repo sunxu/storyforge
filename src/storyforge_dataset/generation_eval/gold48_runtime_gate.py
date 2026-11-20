@@ -398,8 +398,56 @@ def verify_and_consume_gold48_load_permit(
            and spent["runtime_image_digest_measured"] ==
                auth.payload["runtime_image_digest"],
            "GOLD48_RUNTIME_MEASUREMENT_CHANGED_HOLD")
-    _check(_ISSUED_ONE_SHOT_PERMITS.pop(auth.receipt_sha256, None) ==
+    _check(_ISSUED_ONE_SHOT_PERMITS.get(auth.receipt_sha256) ==
            permit.one_shot_nonce, "GOLD48_LOADER_ONE_SHOT_PERMIT_REUSED_HOLD")
+    del _ISSUED_ONE_SHOT_PERMITS[auth.receipt_sha256]
+
+
+def verify_consumed_gold48_output_grant(
+    *,
+    spent_receipt_path: Path,
+    owner_receipt_sha256: str,
+    owner_scope: dict[str, Any],
+    model_role: str,
+    output_path: Path,
+    adapter_sha256: str | None,
+    runtime_lock_sha256: str,
+    provider_attestation_sha256: str,
+) -> None:
+    """Read-only ledger binding for a real loaded backend before generation.
+
+    The bridge cannot accept a caller-constructed Transformers Backend with a
+    signed Owner receipt while omitting the durable pre-GPU spend.
+    """
+    _validate_durable_ledger_root()
+    expected = DURABLE_CONSUMPTION_ROOT / (
+        owner_receipt_sha256 + ".spent.private.json"
+    )
+    _check(spent_receipt_path == expected, "GOLD48_SPENT_LEDGER_PATH_HOLD")
+    try:
+        record = json.loads(_read_0600(expected))
+    except (TypeError, ValueError) as exc:
+        raise WorkerError("GOLD48_SPENT_LEDGER_READ_HOLD") from exc
+    _check(
+        isinstance(record, dict)
+        and record.get("schema") == CONSUMPTION_SCHEMA
+        and record.get("policy") == "ONE_SHOT_CONSUME_BEFORE_GPU__NO_AUTOMATIC_RETRY"
+        and record.get("run_key") == owner_scope["run_key"]
+        and record.get("run_id") == owner_scope["run_id"]
+        and record.get("model_role") == model_role
+        and record.get("owner_authorization_receipt_sha256") ==
+            owner_receipt_sha256
+        and record.get("output_path") == str(output_path)
+        and record.get("adapter_sha256") == adapter_sha256
+        and record.get("runtime_lock_sha256") == runtime_lock_sha256
+        and record.get("provider_image_measurement_receipt_sha256") ==
+            provider_attestation_sha256
+        and record.get("runtime_image_digest_measured") ==
+            owner_scope["runtime_image_digest"]
+        and record.get("max_model_calls") == 48
+        and isinstance(record.get("runtime_packages_measured"), dict),
+        "GOLD48_SPENT_LEDGER_SCOPE_MISMATCH_HOLD",
+    )
 
 
 def run_authorized_gold48_production(

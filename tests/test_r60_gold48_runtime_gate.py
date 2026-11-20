@@ -78,6 +78,34 @@ def test_pre_gpu_runtime_gate_spends_owner_receipt_before_loader(tmp_path, monke
             adapter_dir=Path(pack[2]["arms"][role]["local_dir"]),
             adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
         )
+    # A forged nonce must not consume the legitimate permit.
+    gate.verify_and_consume_gold48_load_permit(
+        permit=permit, adapter_dir=Path(pack[2]["arms"][role]["local_dir"]),
+        adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
+    )
+    with pytest.raises(WorkerError, match="GOLD48_LOADER_ONE_SHOT_PERMIT_REUSED_HOLD"):
+        gate.verify_and_consume_gold48_load_permit(
+            permit=permit, adapter_dir=Path(pack[2]["arms"][role]["local_dir"]),
+            adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
+        )
+    gate.verify_consumed_gold48_output_grant(
+        spent_receipt_path=permit.spent_receipt_path,
+        owner_receipt_sha256=spent["owner_authorization_receipt_sha256"],
+        owner_scope=permit.signed_scope, model_role=role, output_path=output,
+        adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
+        runtime_lock_sha256=lock_sha,
+        provider_attestation_sha256="9" * 64,
+    )
+    with pytest.raises(WorkerError, match="GOLD48_SPENT_LEDGER_SCOPE_MISMATCH_HOLD"):
+        gate.verify_consumed_gold48_output_grant(
+            spent_receipt_path=permit.spent_receipt_path,
+            owner_receipt_sha256=spent["owner_authorization_receipt_sha256"],
+            owner_scope=permit.signed_scope, model_role=role,
+            output_path=output.with_name("wrong.private.json"),
+            adapter_sha256=pack[2]["arms"][role]["expected_sha256"],
+            runtime_lock_sha256=lock_sha,
+            provider_attestation_sha256="9" * 64,
+        )
 
 
 def test_pre_gpu_invalid_permit_cannot_unlock_loader():
