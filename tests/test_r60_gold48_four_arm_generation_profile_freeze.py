@@ -15,7 +15,7 @@ SHA = "394013dc182fa095040808e02c4ea2e393636d30"
 def test_exact_candidate_blob_and_narrow_owner_profile_freeze_delta():
     candidate_raw = CAND.read_bytes()
     actual_blob = hashlib.sha1(
-        b"blob " + str(len(candidate_raw)).encode() + b"\\0" + candidate_raw
+        b"blob " + str(len(candidate_raw)).encode() + b"\0" + candidate_raw
     ).hexdigest()
     assert actual_blob == SHA
     original = json.loads(candidate_raw)
