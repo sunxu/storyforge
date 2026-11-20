@@ -26,7 +26,7 @@ spec.loader.exec_module(module)
 
 
 class FakeTokenizer:
-    chat_template = "synthetic-chat-template-for-test-only"
+    chat_template = "synthetic-chat-template-for-test-only enable_thinking"
 
     def apply_chat_template(self, messages, **kwargs):
         assert kwargs["tokenize"] is True
@@ -99,3 +99,12 @@ def test_unauthorized_freeze_status_holds(tmp_path):
     private_file(path, doc)
     with pytest.raises(module.Hold, match="DRAFT_INPUT_CONTRACT_HOLD"):
         module.assess(path, FakeTokenizer(), "5.16.1")
+
+def test_thinking_toggle_is_explicitly_supported(tmp_path):
+    path = setup_draft(tmp_path)
+
+    class MissingThinkingToggle(FakeTokenizer):
+        chat_template = "synthetic-chat-template-no-toggle"
+
+    with pytest.raises(module.Hold, match="THINKING_TOGGLE_NOT_DEFINED_IN_TEMPLATE_HOLD"):
+        module.assess(path, MissingThinkingToggle(), "5.16.1")
