@@ -150,11 +150,13 @@ LIMIT 3
 """
 
 
-def try_case(cur, source, row):
+def try_case(cur, source, row, phase=None):
+    phase = phase if phase is not None else ["CASE_BEGIN"]
     mid, sid, turn, answer, metadata, created = row
     if not isinstance(answer, str) or not answer.strip() or edited(metadata):
         return None
     story = source["story_id"]
+    phase[0] = "SESSION_STATUS"
     cur.execute(
         "SELECT deleted_at FROM public.story_v2_sessions "
         "WHERE story_id = %s AND session_id = %s",
@@ -165,6 +167,7 @@ def try_case(cur, source, row):
         return None
     case = {"case_id": mid, "story_id": story, "session_id": sid,
             "turn_index": turn, "target_sha256": hashlib.sha256(answer.encode()).hexdigest()}
+    phase[0] = "HISTORY_LEDGER_RECOVERY"
     try:
         recovered = recover_case(cur, case, max_history=40, max_ledger_events=50000)
     except HistoryRecoveryError:
@@ -174,6 +177,7 @@ def try_case(cur, source, row):
         return None
     # Fail closed on hidden non-completed / unsupported-role persisted turns:
     # the shared recoverer intentionally excludes these from effective history.
+    phase[0] = "PREFIX_PERSISTENCE_COUNT"
     cur.execute(
         "SELECT count(*) FROM public.v2_chat_messages "
         "WHERE story_id = %s AND session_id = %s "
@@ -195,6 +199,7 @@ def try_case(cur, source, row):
     if sum(len(m["content"]) for m in history) > 24000:
         return None
     mids = [m["message_id"] for m in history] + [mid]
+    phase[0] = "PREFIX_CURRENT_IDENTITY"
     cur.execute(CURRENT_SQL, (mids,))
     current = {r[0]: (r[1], r[2]) for r in cur.fetchall()}
     if len(current) != len(mids) or any(
@@ -203,10 +208,12 @@ def try_case(cur, source, row):
         or edited(current[m["message_id"]][1]) for m in history
     ) or mid not in current or current[mid][0] != answer or edited(current[mid][1]):
         return None
+    phase[0] = "COMPLETED_HISTORY_EDIT_SCREEN"
     cur.execute(CHANGED_SQL, (mids,))
     if cur.fetchone()[0]:
         return None
     lower, upper = created - timedelta(minutes=5), created + timedelta(minutes=5)
+    phase[0] = "UNIQUE_REQUEST_MATCH"
     cur.execute(REQUEST_SQL, (story, sid, story, sid, lower, upper,
                               lower, upper, str(len(history))))
     matches = [x[0] for x in cur.fetchall()]
@@ -282,13 +289,16 @@ def run(args):
     selected = []
     examined = 0
     rejected = 0
+    phase = ["DB_CONNECT"]
     try:
         with psycopg.connect(dsn, connect_timeout=10, autocommit=False) as conn:
             with conn.cursor() as cur:
+                phase[0] = "READONLY_TRANSACTION_SETUP"
                 cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
                 cur.execute("SET LOCAL statement_timeout = '60000ms'")
                 cur.execute("SET LOCAL lock_timeout = '1000ms'")
                 cur.execute("SET LOCAL row_security = on")
+                phase[0] = "READONLY_ROLE_PREFLIGHT"
                 cur.execute("""
                     SELECT current_setting('transaction_read_only'), r.rolsuper, r.rolbypassrls
                     FROM pg_catalog.pg_roles r WHERE r.rolname = current_user
@@ -302,13 +312,14 @@ def run(args):
                                    timestamp(source["public_updated_at_utc"])
                                    if source.get("public_updated_at_utc") else
                                    timestamp(source["first_public_approved_at_utc"]))
+                    phase[0] = "BOUNDED_TARGET_DISCOVERY"
                     cur.execute(TARGET_SQL,
                                 (source["story_id"], earliest, CUTOFF, MAX_PER_STORY))
                     targets = cur.fetchall()
                     eligible = []
                     for target in targets:
                         examined += 1
-                        candidate = try_case(cur, source, target)
+                        candidate = try_case(cur, source, target, phase)
                         if candidate is None:
                             rejected += 1
                             continue
@@ -333,8 +344,12 @@ def run(args):
                             break
                     require(n == 6, "INSUFFICIENT_SIX_PER_STORY_STRICT_CANDIDATES_HOLD")
             conn.rollback()
-    except psycopg.Error:
-        raise Hold("BOUNDED_READONLY_DATABASE_QUERY_HOLD") from None
+    except psycopg.Error as exc:
+        # SQLSTATE is a five-character public PostgreSQL error class code;
+        # never print DB exception messages, SQL strings, parameter values or IDs.
+        state = exc.sqlstate
+        state = state if isinstance(state, str) and len(state) == 5 and state.isalnum() else "NONE"
+        raise Hold(f"READONLY_DB_{phase[0]}_SQLSTATE_{state}_HOLD") from None
     require(len(selected) == 48 and len({x["session_id_PRIVATE"] for x in selected}) >= 8,
             "CANDIDATE_SET_CARDINALITY_HOLD")
     flagged_rows = [x for x in selected if x["story_id_PRIVATE"] == flagged]
