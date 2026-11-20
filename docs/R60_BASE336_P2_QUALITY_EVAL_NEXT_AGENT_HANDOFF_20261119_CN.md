@@ -1,5 +1,15 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 独立交付确认：Reviewer 新会话隔离已确认（独立执行外部证明仍受限）
+
+Owner 在获明确提问后回复「确认」，确认此位 **P2↔Base336 独立语义 Reviewer** 是在**独立新会话**中完成审阅，**由 Owner 直接提供对应的私有审查证据包**，且**在未接触其他 Reviewer 的结论/答案**下做判断。这是 **Owner 的正式流程确认**，与先前 Reviewer 独立自述共同构成当前审阅流程的 Owner 声明；不得误写为密码学或第三方实证的「已独立验证外部身份」。Owner 对包的本地 SHA/版本链接八项 SAFE 已全部 PASS，Reviewer 在其审阅范围内给出 `INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`。
+
+**精确子门禁结论**：`P2_BASE336_REVIEWER_1_OWNER_INDEPENDENT_DELIVERY_ATTESTED=true`；`P2_BASE336_REVIEWER_SOURCE_VERSION_BINDING=PASS`；`P2_BASE336_SEMANTIC_OPINIONS_COMPLETE=8/8`。既有的 `reviewer_independence_independently_verified=false` 仍准确代表“未获得外部身份/实际传递内容的第三方独立验证”，**不代表 Owner 未确认其审前独立交付**。本项不要求第二次全面语义审阅、不重开已签收哈希与版本锚。Reviewer 使用的源包、意见及实质专名引文继续只留 Owner 私有域，不能在 GitHub 曝光。
+
+**未关闭（主线）**：Reviewer 私有报告 `Pxx` 与 Inventory `Sxx` 的实际来源/版本映射须按 Story ID 在 Owner 私有域验证，不能以相同编号位次猜测；一个 P2 来源自身角色/家族名称残留待质量仲裁；R50 已知 5 World/50 provenance 与 R47/R48/R55 20 案例本来已完成**限定集合**精确排除，不需要重复，但其余 Protected/Reserved、Dev/Teacher 历史曝光全集权威名单及别名语义覆盖仍 HOLD；历史实际发送完整 Prompt/System/Rules/Memory/History 字节仍无权威证据。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**；不启动模型请求/GPU/HF Job、不再做相同 172/375 数据提取。
+
+---
+
 ## 2026-11-20 Owner 本机八项逐版本核验 SAFE PASS：Reviewer 包与 B 版本锚完成签收
 
 **以 Owner 本轮回传的实际本地 SAFE 为准，覆盖下方 Reviewer 补充章节中“文件摘要与 B 版本锚仍待核验”的旧状态。** 已执行既有 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 的**只读**证据包核验，返回 `status=REVIEWER_SOURCE_VERSION_LOCAL_CHECK_PASS`，全部八项 `true`：
