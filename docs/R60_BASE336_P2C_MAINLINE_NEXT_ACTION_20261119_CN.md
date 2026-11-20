@@ -1,5 +1,17 @@
 # R60 Base336 — P2-C 主线收敛与 Owner 下一步
 
+## 2026-11-20 此文件全部 Owner 历史命令停用：以最新交接任务书为唯一行动入口
+
+**请勿执行下文仍保留的“R50 五世界 ID 对齐”“172 Base336 来源抓取/修复”“旧 20-case / R55 三层重新回链”“R58 五行索引”命令**。这些已全部限定范围签收，不再是本轮下一步。当前权威新 Agent 提示词位于 [R60 P2-C → Gold48 → 五来源独立盲评任务书最顶端](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
+
+**最新签收**：P2 × Base336 **172 Story /375 版本**独立 Reviewer 8/8 与原包 SHA/B 版本锚 Owner PASS；历史 33 Story /124 版本和 Base336 重合 1 Story/4 版均已覆盖；新增 **32 Story /120 版本**独立 Reviewer 8/8，findings/Owner Crosswalk 本地 11 个结构与版本字段均 true，之后单独 chmod 权限 `0600 PASS`，只在文件未改写前提下合并为 `PASS_WITH_SEQUENTIAL_OWNER_SAFE`，不能虚构完整校验二次执行；已审限定并集 **204 Story /495 版本**。R50 五世界、Gold195、R04、早期 Train/Val/Test、R53/R46/R54 限定案例、R47/R48/R55 旧 Dev20 均不再重跑。
+
+**仍有实际主线工作**：①历史剩余 R45/其它 Protected、Reserved、Dev、Arbitration、Teacher 的权威冻结来源全集，仅核未覆盖差集，不凭旧空 CSV 宣布无来源；②48 个完成历史请求的 actual-sent 全字节仍未找到，核生产组装与可用原始快照，确实不可恢复需 Owner 决定`RECONSTRUCTED_EVALUATION_INPUT`替代合同；③一条 P2 公开源的名称/设定残留需输入质量裁决；其后才正式 Freeze **48 个完整历史 Prefix +48 真实 Original Reference**，并在获得单独 GPU/HF 许可后进行**四模型+原始回答的五来源六维盲评**。历史已匹配 48/48 请求**只是候选与事件证据**，不是正式 Gold48 artifact 或实际发送字节。
+
+**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`model_promoted=false`。** Owner 私有原文、映射、SHA 不写 GitHub。本文件仅作为历史调查记录。
+
+---
+
 ## 接手特别提醒：当前命令已执行，不得重复（2026-11-19）
 
 此文件累计了历史运行命令，部分标题写“下一项直接核验”，**不代表仍需执行**。尤其下面的“冻结 R50 五世界 UUID ↔ 原始 50 来源 ↔ P2 八来源”已由 Owner SAFE `R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD` 通过；R58 五行 CSV 输出全缺来源引用也已收到；全部不再运行。
