@@ -1,5 +1,14 @@
 # R60 Base336 P2 Protected Crosswalk 证据索引（2026-11-18）
 
+## 2026-11-20 Owner 质量风险处置已批准（不得把它当作来源隔离 PASS）
+
+Owner 已明确批准保留存在角色/家族改名残留风险的 1/8 P2 公开来源，决议为 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`，不修改原始公开 Revision、持久化历史或 Original Reference。主分析固定 **48 题**，敏感性分析排除此 Story 的全部六题后固定 **42 题**；不可按模型结果选取分析集合。Reviewer 标记到实际 Story/Gold48 六个 Case 的私有身份与版本映射**尚未在本次决议核实**，须由 Owner 私有域逐项绑定，不可按 P/S 匿名序号对应。SAFE 回执见 [Owner 来源质量风险决议](../evidence/R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json)。
+
+源质量处理合同获批，只代表**允许带已知 caveat 进入未来的冻结候选**；未审历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 权威完整名册及确有差集的独立隔离依旧 `UNKNOWN_HOLD`，不得误写成已穷尽。已批准的 `RECONSTRUCTED_EVALUATION_INPUT` 不要求访问 RolePlay 生产；Gold48 尚未正式冻结、不开展模型推理。唯一实际下一步为获权威新名册或 Owner 明确约束范围裁决，以及 Owner 私有 1 Story/6 Case 绑定回执。
+
+---
+
+
 ## 2026-11-20 输入合同已批准（取代本文旧 actual-sent 作为冻结前置要求）
 
 Owner 已正式批准 `RECONSTRUCTED_EVALUATION_INPUT` 作为 P2 Gold48 的四模型统一比较输入；**不访问 RolePlay 生产环境，不再寻找历史 Provider 发送正文作为本轮质量盲评前置**。原始 48 份 Historical Original Reference 继续为第五匿名评分来源，但只可作同历史 Prefix 的描述性参考比较，不能推断历史与重建 Prompt byte-exact 相同。actual-sent 仍 `UNVERIFIED`；未断言原文永久不可恢复。
