@@ -87,3 +87,20 @@ def test_prompt_hash_depends_on_full_prefix_not_just_final_user():
     b = [{"role": "user", "content": "different"}, {"role": "assistant", "content": "B"},
          {"role": "user", "content": "same"}]
     assert capture.digest(a) != capture.digest(b)
+
+
+def test_generation_prefixes_never_contain_original_reference():
+    sample = {
+        "candidate_case_id_PRIVATE": "G48-C01",
+        "story_id_PRIVATE": "story-private",
+        "prefix_messages_PRIVATE": [{"role": "user", "content": "scene"}],
+        "original_reply_PRIVATE": "withheld-reference",
+        "history_recovery_PRIVATE": {"history": []},
+        "prefix_sha256_PRIVATE": "a" * 64,
+        "original_reply_sha256_PRIVATE": "b" * 64,
+    }
+    locators, prompts, references = capture.partition_cases([sample])
+    assert "original_reply_PRIVATE" not in locators[0]
+    assert "original_reply_PRIVATE" not in prompts[0]
+    assert "prefix_messages_PRIVATE" not in references[0]
+    assert prompts[0]["candidate_case_id_PRIVATE"] == references[0]["candidate_case_id_PRIVATE"]
