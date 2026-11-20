@@ -1,5 +1,17 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 P2-C 第一份外部独立语义审阅报告：8/8 模板独立意见（Owner 验证仍待）
+
+**证据类型：Owner 在本次会话转交的一份独立 Reviewer 文字报告，不是由仓库程序自动生成的签署 SAFE。** 报告称以此前 Owner 0600、10,276,892 字节的 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 为唯一输入，涵盖 P2 8 Story、Base336 172 Story、当前 172 + 历史 203 = **375 来源版本**；其方法为四字段全文建索引、P2 专名（人物/别名/地点/组织/事件/规则）逐项检索、按题材近邻提取部分原文复核，全部 172 故事的索引档案经过查看。
+
+- **逐 P2 来源自报判决**：`INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`；认为所见匹配仅是通用的职业/婚恋/校园/仙侠/贵族等题材原型，未发现具识别性的共用角色/世界/事件/剧情组件。**可将“P2↔Base336 首份独立语义意见已收到、8/8 给出方向性裁决”标为完成**，不再让 Reviewer 重新索引全部 375 份资料。
+- **证据签收与覆盖精度仍限定**：Reviewer 自述“未接触原训练来源/其他 Reviewer 的结论”应理解为**独立审前未接触**，因为他确实阅读了本次提供的 Base336 来源证据。报告目前通过对话传达，未收到 Owner-local 原始**不可改动报告文件的 SHA-256、Reviewer 会话/交付身份核验、Review 所用确切证据包字节 SHA**；报告引用大量“B + 角色名”，**没有全部使用 Bxxx-CURRENT/Vnnn 可自动绑定的匿名版本引用**。文本索引覆盖 375 份数据≠每份原文全部通读，也≠ 8×375=3000 对逐对全文比较。为保证可复核性，Owner 应**只向同一位 Reviewer 请求最小补充**：审阅包版本/摘要确认、Reviewer 独立审前访问声明的精确定义、每个 P 来源负例检索的字段/版本覆盖计数及题材近邻的 `Bxxx-CURRENT/Vnnn` 版本引文；不可凭现在的自由文本报告把 Owner 技术签署改为 PASS。
+- **单独数据质量风险**：Reviewer 发现 **1/8 P2 公开来源** 的 World/角色内容存在家族名或角色名改名残留，属于**候选题目自身规则/角色一致性瑕疵**，非 P2↔Base336 同源的直接证据。Owner 不得静默修正已绑定公开 revision 或直接丢掉六条问题；在正式 48 题冻结前应作私有源版本质量仲裁，并预设保留/剔除该来源的**成对模型评分敏感性分析**，避免把自相矛盾的原始提示当模型失误。
+- **不重复开发/不重复抽样**：正式状态 `P2_BASE336_SEMANTIC_REVIEWER_1=8_INDEPENDENT_TEMPLATE_ONLY__OWNER_SOURCE_AND_INDEPENDENCE_PENDING`。它只覆盖 P2 vs Base336，不覆盖 R50 五世界以外完整 Protected/Reserved/Dev/Teacher 来源及历史 R47/48/55 的全部暴露，也不证明任何 historical actual-sent prompt 字节。**`reviewer_independence_verified=false`、`world_component_isolation_verified=false`、`historical_actual_sent_verified=false`、`r50_complete_exclusion_verified=false`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。
+- **最短下游动作**：Owner 对独立 Reviewer 所用证据包和原始报告分别做本地只读 SHA + 0600 交付保全，获得对**版本锚及独立审前状态**的最小补充回执；这不是第二轮全量语义审阅。同时并行推进尚缺的 R50 以外 Protected/Reserved/Dev/Teacher 全集边界和历史请求 actual-sent 证明，不再重查 336/172/375 或 Gold48 的文本重复。
+
+---
+
 ## 2026-11-20 Owner 最新真实回执：全 172 Base336 Story / 375 来源版本直接核验完成（覆盖本文件此前“134 个来源仍缺失”的历史阻塞）
 
 **这是新的事实性门禁进展，不是自动 P2-C 语义隔离 PASS。** Owner 已使用现有脚本 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py`，配合刚生成的**新 2-before / 6-after、7 作者** P2 v2 私有 Manifest、冻结六目录和既有只读数据库连接，先运行无 DB 预检，再 `--execute` 成功：
