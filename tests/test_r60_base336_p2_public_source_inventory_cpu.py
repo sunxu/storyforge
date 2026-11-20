@@ -1,7 +1,7 @@
 """Synthetic tests for the deterministic R60 P2 Supabase source inventory."""
-from uuid import UUID
 import json
 import os
+from uuid import UUID
 
 import pytest
 
