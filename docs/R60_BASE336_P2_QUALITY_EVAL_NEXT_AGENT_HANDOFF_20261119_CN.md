@@ -13,6 +13,13 @@
 5. 对前项经过删除/编辑/正文差异排除且全前缀去重的 48 Gold，在 **同一 Story/Session、±5 分钟、HTTP 200、`historyMsgCount == 数据库完整前缀消息数`** 条件下，**48/48** 都找到**唯一一条成功请求记录**；匹配的 48 个 request_id **互不相同**，**48/48** `finishReason=stop`、System/History/Input Token 计数均非零；**47/48** 时间差不超过 2 分钟、48/48 不超过 5 分钟。仅按“时间最近”会错配（45/48 历史数量吻合），所以必须采用联合绑定；**这仍只证明请求存在、历史消息数及请求计量一致，未还原当时 System/World/Character/Rules 字节、具体历史消息字节是否全部发送及模板/截断。**
 6. 直接在只读数据库对上述固定 17 新来源与 Base336 截止 `2026-11-16T02:03:25Z` 前的 **5,436** 条当前/ **6,977** 条存档来源 World/Character/Opening 完整字段比较：**精确完整字段复用命中 0**。WorldSentence 长度至少 16 的新来源有 15 个，与旧 8,332 条长文本所做 `pg_trgm` 非独立预筛，最高相似度 **0.092**、0.45 以上命中 **0**；另 2 个新来源文字过短不能作有效相似性证明。**这只排除覆盖范围内的确切文本复用及明显近似世界句子，不能将其升级为完整角色/事件/世界语义、历史 Dev/Protected/Reserved/Teacher 全集独立性 PASS。**
 
+### 2026-11-20 实际新证据：Historical Original Reference 的模型来源（盲评后分层）
+
+- `ai_model_pool_attempt_metrics` 是 48 条 Gold 对应的实际模型调用尝试日志。以本阶段已验证的唯一成功请求映射（相同 Story/Session、±5 分钟、HTTP 200、`token_breakdown.historyMsgCount` 与持久化历史前缀数一致）为输入，再按 `logical_request_id` 关联实际模型尝试。**48/48** 个 Gold 目标都有模型尝试与成功结束（HTTP 200 / `finish_reason=stop`）记录，48 个 request ID 仍互异。实际生效模型分布为：`cl-gemini-3.8-flash-high` **26**、`cl-gemini-3-flash` **21**、`cn-deepseek-v4-flash` **1**。这些只是提供方平台的 effective_model **标识**，不证明底层模型确切二进制/revision，也不证明原始 Prompt 字节。
+- **不得把原始 Gold 称作人工金标或客观正确答案**：它是不同在线生成模型当时实际产生、已持久化的 **Historical Original Reference（历史原始回答基准）**。Quality-v1 六维分数必须对每种来源以同一打分规则独立评判。五来源同题盲评的 Reviewer 不得看到 Gold 来源身份或其有效模型；**Owner 解盲后**在总体 Base336 vs Historical Original Reference 对照之外，应按原回复实际有效模型分层汇报，注意 1 条 DeepSeek 子层不足以单独作统计结论；不要把历史模型混合带来的水平差异误判为训练效果。
+- 新查数据库中的 `v2_generation_evidence_request_links` / `v2_generation_evidence_grant_operations` 各有 2 行，但与本次固定来源会话关联的请求证据 link **0**。相关 `ai_model_pool_attempt_metrics` 的请求尝试能提供 provider/model/finish reason/token 信息，**没有发送 Prompt 原文**；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` 仍然严格 HOLD。
+- 针对固定 17 新来源中同作者历史复用风险，旧同作者有 143 个 Story / 1,016 份当前及归档版本关联；新旧主要角色姓名完整重复 **0**、长度足够的成长背景/人物介绍/开场完整字段重复 **0**，相关四类字段的 pg_trgm 相似度均未达到 0.30（最高 world 0.094）。**此项是有限的同作者文本隔离预筛，而非经独立 Reviewer 审定的剧情/角色组件语义 PASS**。别名、隐性情节复用、Protected/Dev/Teacher 全集交集仍需核查。
+
 ### 当前唯一最短下游动作
 
 - **P2-C 剩余实际阻塞：** 为临时 2/6 新来源组合绑定有权威来源的 Base336 172 Story + 全版本角色/剧情语义、所有受保护/历史 Dev/Teacher 保留集合，做真正独立的新来源 Reviewer 裁决；只差未覆盖集合，不重审 R50 已闭合五世界、旧 R47/R48 20 题、Base336 老 10 条 Review 边。
