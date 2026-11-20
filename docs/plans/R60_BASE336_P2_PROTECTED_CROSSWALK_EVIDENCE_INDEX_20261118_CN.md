@@ -1,5 +1,16 @@
 # R60 Base336 P2 Protected Crosswalk 证据索引（2026-11-18）
 
+## 2026-11-20 Owner 限定独立性风险接受：来源权威缺证不再阻塞 Gold48 冻结准备
+
+**新的 Owner 决议**见 [`R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json`](../evidence/R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json)。Owner 明确批准 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`**，允许在**披露未知历史来源暴露风险**下推进 Gold48 构建与冻结准备。已完成的 204 Story/495 版本 Reviewer 语义结论和旧 R45/R50/Dev 限定核验继续复用。**未获取全体 Protected/Reserved/Held-out/Dev/Teacher 的完整权威名册这一事实仍 `UNKNOWN_HOLD`**，既非全部排除 PASS，也不再为本次限定范围评估路径设置无限期搜索前置。前轮 Owner 私有目录文件名扫描 2,263 个、命中 3 个但无历史全集 authority，不再扩大扫描或重做审查。
+
+新的准入分类必须区分：`P2_C_SCOPED_POLICY=RISK_ACCEPTED`、`P2_C_FULL_UNIVERSE=UNVERIFIED`。未来真正生成的 48 题只可标“已核验范围内独立”，未知历史污染风险写入分析报告。若新证据证实重叠，保留 frozen case，标记 `EXPOSED` 并重分析/披露，不静默替换。P2 风险来源保留 caveat、48/42 预注册和 Reviewer8↔P2Source8 Owner 本地身份绑定已签收，但正式六题 case ID 须在 Gold48 候选产生时按私有 Story ID 核对。
+
+**未发生的事情不可提前写 PASS**：Gold48 原始回复/Prefix、重建输入分量版本/许可/Hash 的最终逐案私有 Manifest 和 Owner 冻结回执尚无；`P2_B_48_PROMPTS=NOT_GENERATED`；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`；`quality_v1_admitted=0`；没有 GPU/HF/付费模型推理授权。唯一下一步是基于已有 48 候选创建私有可验证的冻结候选，不再寻找“全宇宙 PASS”。
+
+---
+
+
 ## 2026-11-20 Owner 有界历史 Authority 候选扫描：结果非完整来源名册
 
 Owner 本地仅针对 `~/.local/share/storyforge/r60/private` 的**深度不超过三层、最多 3,000 个文件 /60 个命中**进行一次只读**文件名候选**排查；实际检查 **2,263 个文件**、候选 **3**、`truncated=false`、`skipped_entries=0`。此为 Owner 发来的 `storyforge_p2c_authority_candidate_inventory_safe_v1` 聚合回执，**未由本次 Agent 访问 Mac 原文件独立验真**。3 个候选中，2 个权限 0600 的 JSON 已识别为 `storyforge_r60_base336_p2_public_source_inventory_private_v1` 与 `_v2`（均是**P2 自身八来源的 Manifest**）；另外 1 个为 `kind=other`，内容和用途均未核验。两份 JSON 顶层所检查字段**没有** `cutoff` 或完整历史来源名册的权威声明。
