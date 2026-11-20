@@ -24,6 +24,7 @@ from r60_p2_gold48_token_preflight_cpu import (
     REVISION,
     load_draft,
 )
+
 from storyforge_dataset.hf_runtime import InputManager
 
 SCHEMA = "storyforge_r60_gold48_owner_freeze_packet_private_v1"
