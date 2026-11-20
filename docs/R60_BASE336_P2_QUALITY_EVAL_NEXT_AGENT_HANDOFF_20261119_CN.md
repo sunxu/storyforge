@@ -1,5 +1,25 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-21 Gold48 最新真实 Owner SAFE：48 题重建草稿完成，HF CPU Tokenizer 待执行（主线优先）
+
+**以下 Owner 已执行并在对话中返回 SAFE JSON，优先级高于本文下方保留的“尚未生成48条候选”旧快照**：
+
+1. `NEW_GOLD48_PRIVATE_CANDIDATES_CAPTURED__NOT_FROZEN`：8 个审核公开来源×每源 6 条、25 Session、48 完整历史 Prefix/48 对应真实历史原始 Assistant 回复、48 独立成功请求。新选 48 条**不主张与旧临时48条精确同身份**；Owner 最终冻结仍为 false。
+2. `GOLD48_PRIVATE_CANDIDATE_PREFLIGHT_PASS__NOT_FROZEN`：48/48 前缀与历史原始回答、SHA、每源六题、风险来源全六题排除标记与 48/42 分析分组通过，0600 私有文件只读；不重查数据库，不重选来源。
+3. `GOLD48_PUBLIC_SOURCE_COMPONENTS_BOUND__INPUT_NOT_FROZEN`：48 条与八份审核公开卡的 World/Character(s)/Opening 评估时快照、Revision、来源哈希连接。它**不是历史 as-of 或 actual-sent 卡片证明**。
+4. `GOLD48_RECONSTRUCTED_INPUT_DRAFT_48_READY__NOT_FROZEN`：48 条完整历史保留、逐题重建消息与 SHA 生成、历史 Original Reference 没有进入模型输入。**可确认目标回复前的 Memory 为 0/48，另外48条明确缺失不补造**；输入合同是 `RECONSTRUCTED_EVALUATION_INPUT`，不是字节一致历史发包。
+5. Mac `r60-owner`（Python 3.11.15）实际执行 Tokenizer 预检返回 `TOKENIZER_DEPENDENCY_MISSING_HOLD`（缺少 `transformers`），**仅环境缺包，不是上述 Gold48 四项 SAFE 失败**。项目 `AGENTS.md §2.1` 和 `docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md` 要求**真实模型特定 Tokenizer 测量必须在 HF CPU Job**，Mac 不再补装 Transformers 进行正式预算判定。
+
+**已实现、复用旧组件的最小 HF CPU 适配**：
+
+- `scripts/r60_p2_gold48_hf_cpu_stage.py`：Owner Mac create-only 私有 Stage，仅带 48 条重建消息、逐案消息 SHA、匿名八组（真实 Story ID 不出本机）、必要代码和固定依赖锁；禁止上传原始历史回答、Owner crosswalk、其它私有证据包；复用 `r60_common2_wrapped_hf_stage.local_dependencies` 与已有 `load_draft`。
+- `scripts/r60_p2_gold48_hf_cpu_worker.py` / `.sh`：HF CPU `storyforge_dataset.hf_runtime` 的 InputManager、ResourceGuard、OutputManager，固定 Qwen/Qwen3.8-27B Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，使用 `requirements/hf-cpu-tokenizer.lock` 和**现有** `r60_p2_gold48_token_preflight_cpu.assess` / `storyforge_dataset.token_preflight`；没有独立 Token 算法、训练、权重或 GPU。
+- 新 Stage/Worker 的合成样本完整输入绑定、原始回复未上传、防改写/重用/篡改、Token 统计及匿名化测试均在原 PR #31 的 GitHub CI 验收通过。**该 CI 不是 Owner 私有 Stage 或 HF 真实 Tokenizer PASS**。
+- **待 Owner Mac 执行**：固定 Git Commit staging → 本地 `STAGE_VERIFIED__NOT_SUBMITTED` SAFE → 精确私有文件集审阅 → 按 `docs/HF_JOBS.md` 将单独 Stage 前缀上传 `hf://buckets/adradar/storyforge-training/` → 使用已有 `scripts/hf_job_guard.py` 做 CPU-only 预检（需检查当前 HF CLI 与 `--attempts` 的已知兼容性，复用现有 Common2 documented-default-one 方法，不修改 Guard）→ 单次 HF CPU Job → 下载独立 RW SAFE 回执、独立校验输入/输出 SHA。Owner 未提供本次 Mac Stage 回执前，**不宣称已同步/已提交 Job**。
+- **停止边界**：CPU 实测 Token 预算（16K/32K，两种 Thinking 模式只是候选诊断）、统一模型实际协议/截断=无损、正式 Owner Gold48 Freeze 和单独四模型推理预算都未完成。已接受限定已审来源独立性风险 `P2_C_SCOPED_POLICY=RISK_ACCEPTED` 不等于全历史来源隔离 PASS，四模型生成 192 + 真实原始回答 48 的五来源六维盲评仍不得抢跑。
+
+---
+
 ## 2026-11-21 四模型固定身份直接核验：复用现成 HF 私有 Checkpoint（无 GPU）
 
 本轮使用现有 HF 连接对 **`adradar/storyforge-training`** 私有 Bucket 的三个既存历史 Train Run 只读核验，**只读取目录/Adapter Config/已有训练 SAFE 和 Reload 回执**；未读取原始训练样本、评测正文或 R50 sealed，未下载大权重、未运行 HF Job。**下列是评测模型身份链，不是新的训练或新一轮质量证明**：
