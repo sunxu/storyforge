@@ -20,6 +20,15 @@
 - 新查数据库中的 `v2_generation_evidence_request_links` / `v2_generation_evidence_grant_operations` 各有 2 行，但与本次固定来源会话关联的请求证据 link **0**。相关 `ai_model_pool_attempt_metrics` 的请求尝试能提供 provider/model/finish reason/token 信息，**没有发送 Prompt 原文**；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` 仍然严格 HOLD。
 - 针对固定 17 新来源中同作者历史复用风险，旧同作者有 143 个 Story / 1,016 份当前及归档版本关联；新旧主要角色姓名完整重复 **0**、长度足够的成长背景/人物介绍/开场完整字段重复 **0**，相关四类字段的 pg_trgm 相似度均未达到 0.30（最高 world 0.094）。**此项是有限的同作者文本隔离预筛，而非经独立 Reviewer 审定的剧情/角色组件语义 PASS**。别名、隐性情节复用、Protected/Dev/Teacher 全集交集仍需核查。
 
+### 2026-11-20 新增独立来源子集的真实私有冻结证据：冻结 38 Story/59 版本直接 P2 隔离核验
+
+- **已复用 Owner 先前提供的私有冻结清单** `R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json`，而非重新从 Story 创建时间推断训练集合。其 Schema 为 `storyforge_r60_base336_world_cross_split_review_private_v1`，约束是 Base336 冻结 336 case/172 Story 中 8 个跨 Train/Validation 精确 World 组，**38 个不同冻结 Story（28 Train/10 Validation）**，清单组成员出现次数 40 但跨组去重后 38。**这不是完整 172 Story roster。**
+- 不向日志/PR 输出清单中的任何 Story ID、Revision ID、人物名、正文或私有 SHA；只在只读 SQL 内用私有 ID 执行精准绑定。数据库 `user_stories` **38/38** 精确身份找回；清单点名的 `story_content_versions.id` **21/21** 归档修订精确定位、对应作者匹配、版本源时间早于 `2026-11-16T02:03:25Z`。取得的是 **38 当前 + 21 精确归档 = 59 份 source/version**，而不只是宽口径抽取的全部旧版本。
+- 本次固定创建截止的 17 个新公开 Story 对这 38 冻结 Story 的 **Story ID 交集=0、作者交集=0、World/Character/Opening 整体字段精确重用=0**；对上述 **59 份版本**做跨来源主要角色姓名（主角色及 characters[0]）、World JSON、Character、Characters、Opening 组件相等比较，命中 **0**。将世界句子、开场、人物介绍与成长背景文本分别做 `pg_trgm` 预筛，新 17 个来源中四字段任何一个最大相似度达到 0.30 的 Story 数 **0**（最高世界 0.053、开场 0.022、介绍 0.027、背景 0.035）。
+- **裁决范围必须严格限定**：`P2_C_BASE336_FROZEN_CROSSWORLD_38_STORY_59_VERSION_EXACT_AND_TRIGRAM_SCREEN=PASS_PRELIMINARY`，表明这个明确已知冻结来源**子集**的精确身份、作者及可见文本重复/明显相似风险排除成功；**不代表独立 Reviewer 的最终语义结论**，并且 **172-38=134** 个 Base336 冻结 Story 没有此项 source-bound 审核；R50 五世界以外、其他 Protected/Reserved、旧 Dev/Teacher/仲裁和完整模型请求组装仍 HOLD。私有 roster 自身声明 `semantic_review_completed=false`、`actual_sent_version_verified=false`，不能改写。
+- **下一唯一有意义动作**：找出已存在的 Base336 最终 293/43 发布输入对应**剩余 134 个 Story 的权威 metadata/version**（不得再次构造通用工具或用宽口径“全部旧表记录”冒充冻结名单），再仅对仍未覆盖集合进行来源 ID、作者、角色/剧情/世界组件与历史暴露边界核验；其后才可以安排独立 Reviewer 对临时 2/6 八来源的真正语义裁决。Gold48 候选及已完成的 48 唯一历史请求链路不得反复重测。
+- `P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`；`MODEL_PROMOTED=false`，不启 GPU/HF。
+
 ### 当前唯一最短下游动作
 
 - **P2-C 剩余实际阻塞：** 为临时 2/6 新来源组合绑定有权威来源的 Base336 172 Story + 全版本角色/剧情语义、所有受保护/历史 Dev/Teacher 保留集合，做真正独立的新来源 Reviewer 裁决；只差未覆盖集合，不重审 R50 已闭合五世界、旧 R47/R48 20 题、Base336 老 10 条 Review 边。
