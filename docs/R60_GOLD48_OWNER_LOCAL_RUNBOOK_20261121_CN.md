@@ -80,3 +80,23 @@ Owner 本地物化/签收 SAFE、GitHub 合成 CI、CPU 依赖 Hash Install、�
 ## 6. 选定 CPU 基础镜像中的 Hash-pinned 安装实证
 
 CPU Job `6b00b0894fdc5ab3c55be7f0` 在固定基础镜像 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee` 中读取 Git 固定 Commit `c4dd8c8ceecf60a26ec476ebf46f07294c9d8f65` 的锁文件，先校验 77,715 字节、SHA256 `dc3425f4895e091c4f5981a4933a6ba2e8fdd8426d8e074069c8cfa2ff4f8d5e`，再执行 `pip install --require-hashes -r <lock>`，返回 0；`pip check` 通过。预装 Torch `2.6.0+cu124` 未改动，签名依赖 cryptography `46.0.4` 安装成功。此前 uv strict hash 安装因 torch 上游无版本约束而 HOLD，换用 pip 后闭环。**仅 CPU 基础镜像 + 哈希覆盖安装 PASS，不等于实际 GPU/PEFT 权重加载 PASS**。
+
+## 7. 加载前授权与运行环境身份（后续真实 GPU 前必须满足）
+
+本仓库新增 `gold48_runtime_gate.py::run_authorized_gold48_production` 作为正式调度入口；执行顺序固定为：冻结输入 / 三份来源证据核对 → **Owner Ed25519 验签** → **Provider 独立签名的实际镜像 Digest 验证** → 当前容器依赖版本与 SHA 锁核对、`pip check` → **共享持久目录 create-only 消耗本次 Owner 授权** → `load_pinned_gold48_backend(launch_permit=...)` → 既有 Worker。
+
+Loader 不再接受 `runtime_authorized=True`。单纯给它一个布尔值或任意字典，必须在 GPU 初始化前 HOLD。Provider 公钥指纹 `PROVIDER_TRUSTED_PUBLIC_PEM_SHA256` 和 Owner 公钥指纹 `OWNER_TRUSTED_PUBLIC_PEM_SHA256` 需要分别由可信方审查并固定；当前均**未设置**。Provider 证明包含可追溯的 Job Inspect SHA、Job ID、运行范围及镜像 Digest，并必须由可信独立方使用预登记公钥签名；不能用用户输入的 `runtime_image_digest` 参数当实测值。
+
+生产消耗账本路径固定为 `/mnt/storyforge-private/gold48-authorizations-spent`，须由生产平台提供跨运行共享、持久、0700、独立挂载目录；每份授权回执 SHA 映射一份 create-only 0600 消耗记录。**失败或崩溃后不允许自动重跑 GPU/模型调用**，必须另发 Owner 签名的新 Run ID 和输出命名空间。未经确认跨运行持久挂载的本地临时目录不可以代替此账本。
+
+本轮的 CPU 模拟测试验证了这些门禁的拒绝路径和执行先后，并**没有**取得真实 Provider 镜像签名证明，也没有执行真实 GPU。当前 Loader 和正式生成应保持 HOLD。
+
+## 8. Sidecar 失败的只读恢复（不重新生成 48 条）
+
+生成开始前会写入 `<output>.launch.private.json` 作为 0600、create-only 运行意图证据。若 48 条输出已完整发布，但 `<output>.identity.private.json` 写入失败，可以调用 `gold48_contract_bridge.recover_gold48_identity_sidecar(...)`：重新检查冻结 Profile、Owner 签名、来源回执、运行意图和**已有**输出的 48 条顺序 / Seed / token 预算 / Schema / 文件 SHA，再 create-only 补写 Sidecar。
+
+恢复函数**不要求 Backend、不载入任何模型、不调用 GPU 或 generate()**。对于真实 Provider 已测量的运行，还需传入 Provider 原始签名证明、公钥及依赖合同以复核身份；无法取得这些证据就 HOLD。已有 Sidecar、缺失 launch marker、缺失或不完整输出全部拒绝，不删除、更改或覆盖输出。授权有效期已经过期时不能绕过验签重写身份；应由 Owner 单独批准处理，而不是自动重复模型生成。
+
+## 9. 已签收 Adapter 的准确边界
+
+Owner 回执为 `OWNER_GOLD48_ADAPTER_BINDING_ACCEPTED__MOUNT_UNVERIFIED`，它只签收 **R46/R54 历史报告 SHA、R60 原 CPU Job SHA 日志、三份来源证据、映射候选与48条冻结输入**。生产前置门禁要求明确保持 `provider_volume_attestation_verified=false`、`current_remote_weight_bytes_verified_all_three=false`；只有真正 Loader 加载精确文件时通过 Adapter 字节哈希，才能确认那次运行的实际本地 Adapter 文件。**`owner_receipt_verified=true` 不代表 Provider 已验明挂载或三份当前远端权重全部 PASS。**
