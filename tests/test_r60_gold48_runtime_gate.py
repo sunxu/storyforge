@@ -161,9 +161,10 @@ def test_provider_signed_measurement_scope_and_tamper(tmp_path, monkeypatch):
         "model_role": "r46_v02",
         "runtime_image_digest": "sha256:" + "a" * 64,
     }
+    monkeypatch.setenv("JOB_ID", "6b00ca46efaf5e14f4b3f8ca")
     measurement = {
         "schema": gate.MEASUREMENT_SCHEMA,
-        "provider_job_id": "synthetic-job-only",
+        "provider_job_id": "6b00ca46efaf5e14f4b3f8ca",
         "run_id": scope["run_id"],
         "model_role": scope["model_role"],
         "image_digest": scope["runtime_image_digest"],
@@ -182,6 +183,20 @@ def test_provider_signed_measurement_scope_and_tamper(tmp_path, monkeypatch):
         attestation_path=path, trusted_provider_public_key_path=pub,
         owner_scope=scope,
     ) == hashlib.sha256(path.read_bytes()).hexdigest()
+    # Signed attestation for a DIFFERENT live Job cannot unlock this one.
+    monkeypatch.setenv("JOB_ID", "6b00c8544fdc5ab3c55c02dd")
+    with pytest.raises(WorkerError, match="GOLD48_PROVIDER_MEASUREMENT_SCOPE_HOLD"):
+        gate.verify_provider_image_measurement(
+            attestation_path=path, trusted_provider_public_key_path=pub,
+            owner_scope=scope,
+        )
+    monkeypatch.delenv("JOB_ID", raising=False)
+    with pytest.raises(WorkerError, match="GOLD48_PROVIDER_CURRENT_JOB_ID_REQUIRED_HOLD"):
+        gate.verify_provider_image_measurement(
+            attestation_path=path, trusted_provider_public_key_path=pub,
+            owner_scope=scope,
+        )
+    monkeypatch.setenv("JOB_ID", "6b00ca46efaf5e14f4b3f8ca")
     tampered = json.loads(path.read_text())
     tampered["measurement"]["image_digest"] = "sha256:" + "c" * 64
     path.write_bytes(canonical(tampered) + b"\n")

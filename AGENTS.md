@@ -2,6 +2,9 @@
 
 ## 2026-11-21 Gold48 单 Owner Mac 调度简化策略（最新授权范围；优先于旧共享卷规划）
 
+**当前 HF Job Provider 身份绑定更新**：原 `verify_provider_image_measurement` 已加强为对签名 `provider_job_id` 和 HF 注入 `JOB_ID` 的精确匹配，其他 Job 的真实签名一律 HOLD。当前 RO Stage 中证明须在提交前上传，但 JOB_ID 在提交后分配，因此仍缺**当前 Job 启动后证明交接**；不绕过门禁、不重复开发新的服务，也不提交正式 GPU。
+
+
 **当前新增的唯一运行连接（代码与合成 CI 已验，实际 HF Job 未验）**：在现有 `gold48_runtime_gate.py` 新增 `materialize_gold48_ro_input`，调用既有 `InputManager.open_verified` 按 SHA 读取 RO 挂载内容，再以本地 0600 exclusive/create-only 写入 0700 POSIX scratch（不会修改远端输入）；生产 `run_authorized_gold48_production` 已在原 Worker 返回后调用 `deliver_gold48_private_result`。后者要求 Output、launch、identity 三份本地 0600 文件及 48 条 WorkerReceipt，使用既有 `OutputManager.write_safe` 创建本地 SHA256 manifest，按三文件→manifest-last 顺序使用 `hf buckets cp` 上传到私有 `experiments/r60-gold48/outputs/<run_id>/`，逐件远端回读验 SHA。失败 HOLD 且不自动生成重试；**Owner Mac 的独立下载验证仍未执行，Job 内输入物化入口还需被实际受控包装调用**。这只是受控传输，不是新 GPU 授权、全局锁或训练。
 
 

@@ -15,6 +15,7 @@ import hashlib
 import importlib.metadata
 import json
 import os
+import os
 import platform
 import re
 import secrets
@@ -110,6 +111,11 @@ def verify_provider_image_measurement(
     key_bytes = _read_0600(trusted_provider_public_key_path, max_bytes=8192)
     _check(_sha_bytes(key_bytes) == PROVIDER_TRUSTED_PUBLIC_PEM_SHA256,
            "GOLD48_PROVIDER_TRUST_ANCHOR_MISMATCH_HOLD")
+    # JOB_ID is injected by HF Jobs after submission. Never accept a
+    # signature for a different job, even if run/role/image match.
+    current_job_id = os.environ.get("JOB_ID", "")
+    _check(re.fullmatch(r"[0-9a-f]{24}", current_job_id) is not None,
+           "GOLD48_PROVIDER_CURRENT_JOB_ID_REQUIRED_HOLD")
     raw = _read_0600(attestation_path)
     try:
         attestation = json.loads(raw)
@@ -125,7 +131,7 @@ def verify_provider_image_measurement(
                }
                and measurement["schema"] == MEASUREMENT_SCHEMA
                and isinstance(measurement["provider_job_id"], str)
-               and bool(measurement["provider_job_id"])
+               and measurement["provider_job_id"] == current_job_id
                and measurement["run_id"] == owner_scope["run_id"]
                and measurement["model_role"] == owner_scope["model_role"]
                and measurement["image_digest"] == owner_scope["runtime_image_digest"]

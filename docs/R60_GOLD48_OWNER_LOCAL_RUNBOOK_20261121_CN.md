@@ -243,3 +243,10 @@ PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_result_audit.py
 固定文件名清单在 `scripts/r60_gold48_gpu_worker_entry.py::STAGED`，Owner 必须在 Mac 本地完成完整 SHA 与源证据签收后，才可按照已存在的 HF Stage 清单上传策略建立隔离、唯一 Run ID 的 RO 输入。入口有两种模式：`check` 只读且不调用 GPU；`execute --explicit-owner-gpu-execution` 才可能进入正式运行，但仍会在本地化前验证 **Owner/Provider 独立 pin 都已登记**，之后再由现有 Runtime Gate 逐项验签和消费。**目前两项 pin 未登记，因此 execute 必然 HOLD；不启动或提交 GPU Job，也不以 CLI dry-run 代替 Provider Job ID 实测身份证明。**
 
 运行阶段的 Template SHA 从已审查 CPU Tokenizer 私有回执 `chat_template_sha256_PRIVATE` 取得，不打印私有值；非当前 Job 的 Provider Attestation 无法代替当前 Job 的真实测量签名。正式 Job 的 Code 版本/Stage 私有文件集、目标 `:rw` Bucket 结果目录与 Owner Mac 逐 SHA 回收仍须受控签收。请勿更换已冻结模型、Adapter、48 条问题或生成参数。
+
+
+### 2026-11-21 当前 HF Job 身份签名门禁（修复已提交，时序仍待解决）
+
+`gold48_runtime_gate.verify_provider_image_measurement` 现在必须验证：独立签名的 Provider Inspect `measurement.provider_job_id` 与**执行中的** HF Jobs 官方 `JOB_ID` 环境变量精确一致（24 位小写十六进制）；当前 Job ID 缺失、格式不符、或签名属于别的 Job 均在 GPU 加载前 HOLD。保留签名与镜像摘要、Run ID/role 检验。参考 [HF Jobs 官方环境变量](https://huggingface.co/docs/hub/jobs-configuration)。
+
+**尚存真正的提交时序阻塞**：目前 15 文件 RO Stage 要求在提交前包含 Provider Attestation；然而新 Job ID 要在提交后才生成。不能使用上次 CPU Job 的证明，也不能忽略本次一致性校验。只有经 Owner 和独立 Provider 许可的**当前 Job 启动后真实证据交接**完成并验收，才有可能启动 GPU。此轮不新增数据库或签名服务，不启动 HF Job，不签发授权。
