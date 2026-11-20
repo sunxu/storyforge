@@ -266,6 +266,49 @@ class SourceEvidenceCaptureTests(unittest.TestCase):
                 self.assertGreater(len(raw), 0)
                 self.assertEqual(len(sources), 8)
 
+    def test_source_first_v2_manifest_accepts_only_explicit_gold48_contract(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            document = p2_doc()
+            document["schema"] = audit.P2_SOURCE_FIRST_SCHEMA
+            document["selection"].update({
+                "authors": 7,
+                "created_before_gpu_run": 2,
+                "created_after_gpu_run": 6,
+                "source_selection_mode": audit.P2_SOURCE_FIRST_MODE,
+                "source_first_creation_cutoff_utc": audit.P2_SOURCE_FIRST_CREATION_CUTOFF,
+                "owner_freeze": "PENDING",
+                "private_selected_ids_file_sha256": "a" * 64,
+            })
+            path = Path(directory) / "new-v2-manifest.json"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            os.chmod(path, 0o600)
+            doc, raw, sources = audit.load_p2_manifest(path)
+            self.assertEqual(doc["schema"], audit.P2_SOURCE_FIRST_SCHEMA)
+            self.assertEqual(len(sources), 8)
+            self.assertTrue(raw)
+            document["selection"]["owner_freeze"] = "VERIFIED"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            with self.assertRaises(audit.Hold) as raised:
+                audit.load_p2_manifest(path)
+            self.assertEqual(str(raised.exception), "P2_SOURCE_FIRST_SELECTION_BINDING_HOLD")
+
+    def test_legacy_v1_manifest_cannot_relabel_to_source_first_2_6(self):
+        from tempfile import TemporaryDirectory
+        with TemporaryDirectory() as directory:
+            document = p2_doc()
+            document["selection"].update({
+                "authors": 7,
+                "created_before_gpu_run": 2,
+                "created_after_gpu_run": 6,
+            })
+            path = Path(directory) / "legacy-v1-manifest.json"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            os.chmod(path, 0o600)
+            with self.assertRaises(audit.Hold) as raised:
+                audit.load_p2_manifest(path)
+            self.assertEqual(str(raised.exception), "P2_SELECTION_SCOPE_HOLD")
+
     def test_load_p2_manifest_rejects_duplicate_story_ids(self):
         from tempfile import TemporaryDirectory
         with TemporaryDirectory() as directory:
