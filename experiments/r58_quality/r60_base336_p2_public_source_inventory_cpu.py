@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import hashlib
+from uuid import UUID
 import os
 import stat
 import sys
@@ -36,6 +38,14 @@ GPU_RUN_START = "2026-11-17T05:56:22Z"
 EXPECTED_SELECTED = 8
 EXPECTED_BEFORE_GPU = 3
 EXPECTED_AFTER_GPU = 5
+SOURCE_FIRST_SCHEMA = "storyforge_r60_base336_p2_public_source_inventory_private_v2"
+SOURCE_FIRST_INPUT_SCHEMA = "storyforge_r60_p2_gold48_source_ids_private_v1"
+SOURCE_FIRST_INPUT_STATUS = "GOLD48_COMPLETE_HISTORY_SOURCE_IDS__OWNER_FREEZE_PENDING"
+SOURCE_FIRST_MODE = "gold48_historical_full_prefix_source_first_v1"
+SOURCE_FIRST_BEFORE_GPU = 2
+SOURCE_FIRST_AFTER_GPU = 6
+SOURCE_FIRST_AUTHORS = 7
+SOURCE_FIRST_CREATION_CUTOFF = "2026-11-19T15:30:00Z"
 
 
 class Hold(ValueError):
@@ -204,6 +214,15 @@ ORDER BY s.created_at, s.story_id;
 """
 
 
+# Explicit source-first selection changes only the selected CTE. All public
+# revision, moderation, permission and older-world joins are unchanged.
+SQL_SOURCE_FIRST = (
+    SQL[:SQL.index("selected AS (")]
+    + "selected AS (\n    SELECT * FROM candidates WHERE story_id = ANY(%s::text[])\n),\n"
+    + SQL[SQL.index("latest_submission AS ("):]
+)
+
+
 def _iso(value: object) -> datetime:
     try:
         return db.normalize_timestamp(value)
@@ -224,6 +243,34 @@ def _same_identifier(left: object, right: object) -> bool:
     if left is None or right is None:
         return False
     return str(left) == str(right)
+
+
+def load_source_first_ids(path: Path) -> tuple[list[str], str]:
+    """Read an explicit 0600 Owner-private eight-Story candidate list."""
+    raw = private.read_private(path, 8_192)
+    try:
+        doc = json.loads(raw)
+    except (ValueError, UnicodeError):
+        raise Hold("SOURCE_FIRST_INPUT_JSON_HOLD") from None
+    if (type(doc) is not dict
+            or doc.get("schema") != SOURCE_FIRST_INPUT_SCHEMA
+            or doc.get("status") != SOURCE_FIRST_INPUT_STATUS
+            or doc.get("source_selection_mode") != SOURCE_FIRST_MODE):
+        raise Hold("SOURCE_FIRST_INPUT_CONTRACT_HOLD")
+    ids = doc.get("story_ids")
+    if type(ids) is not list or len(ids) != EXPECTED_SELECTED:
+        raise Hold("SOURCE_FIRST_INPUT_COUNT_HOLD")
+    for value in ids:
+        if type(value) is not str:
+            raise Hold("SOURCE_FIRST_INPUT_IDENTIFIER_HOLD")
+        try:
+            if str(UUID(value)) != value:
+                raise ValueError("noncanonical")
+        except ValueError:
+            raise Hold("SOURCE_FIRST_INPUT_IDENTIFIER_HOLD") from None
+    if len(set(ids)) != EXPECTED_SELECTED:
+        raise Hold("SOURCE_FIRST_INPUT_DUPLICATE_HOLD")
+    return ids, hashlib.sha256(raw).hexdigest()
 
 
 def select_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -353,7 +400,7 @@ def source_binding_diagnostics(rows: list[dict[str, Any]]) -> dict[str, int]:
     return dict(sorted(checks.items()))
 
 
-def validate_rows(rows: list[dict[str, Any]]) -> dict:
+def validate_rows(rows: list[dict[str, Any]], *, source_first: bool = False) -> dict:
     if len(rows) != EXPECTED_SELECTED:
         raise Hold("SOURCE_COUNT_HOLD")
     failed_checks = source_binding_diagnostics(rows)
@@ -365,7 +412,8 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
     worlds = {row.get("world_json_md5") for row in rows}
     if len(stories) != 8:
         raise Hold("SOURCE_STORY_ID_UNIQUENESS_HOLD")
-    if len(authors) != 5:
+    expected_authors = SOURCE_FIRST_AUTHORS if source_first else 5
+    if len(authors) != expected_authors:
         raise Hold("SOURCE_AUTHOR_COUNT_HOLD")
     if len(worlds) != 8:
         raise Hold("SOURCE_WORLD_DEDUP_HOLD")
@@ -379,7 +427,8 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
             raise Hold("SOURCE_CURRENT_V2_DATA_HOLD")
         created = _iso(row.get("created_at"))
         approved = _iso(row.get("first_public_approved_at"))
-        if created < cutoff or approved < created:
+        if (created < cutoff or approved < created or
+                (source_first and created > _iso(SOURCE_FIRST_CREATION_CUTOFF))):
             raise Hold("SOURCE_TIME_BINDING_HOLD")
         if created < gpu:
             before += 1
@@ -450,11 +499,13 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
             "snapshot_hash_matches_submission_sha256": True,
         })
 
-    if (before, after) != (EXPECTED_BEFORE_GPU, EXPECTED_AFTER_GPU):
+    expected_times = ((SOURCE_FIRST_BEFORE_GPU, SOURCE_FIRST_AFTER_GPU)
+                      if source_first else (EXPECTED_BEFORE_GPU, EXPECTED_AFTER_GPU))
+    if (before, after) != expected_times:
         raise Hold("SOURCE_TIME_ACCOUNTING_HOLD")
 
     return {
-        "schema": SCHEMA,
+        "schema": SOURCE_FIRST_SCHEMA if source_first else SCHEMA,
         "status": "P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING",
         "selection": {
             "base336_release_cutoff_utc": BASE336_CUTOFF,
@@ -465,6 +516,9 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
             "created_before_gpu_run": before,
             "created_after_gpu_run": after,
             "private_session_bodies_read": False,
+            **({"source_selection_mode": SOURCE_FIRST_MODE,
+                "source_first_creation_cutoff_utc": SOURCE_FIRST_CREATION_CUTOFF,
+                "owner_freeze": "PENDING"} if source_first else {}),
         },
         "rights_scope": (
             "OWNER_APPROVED_INTERNAL_EVALUATION_PROMPT_CONSTRUCTION_ONLY__"
@@ -492,7 +546,7 @@ def validate_rows(rows: list[dict[str, Any]]) -> dict:
     }
 
 
-def _fetch(dsn: str) -> list[dict[str, Any]]:
+def _fetch(dsn: str, source_first_ids: list[str] | None = None) -> list[dict[str, Any]]:
     try:
         db_options = {
             "expected_role": db.DEFAULT_READER_ROLE,
@@ -504,13 +558,13 @@ def _fetch(dsn: str) -> list[dict[str, Any]]:
         validate_rls_preflight(rls_rows)
         return db.fetch_dict_rows(
             dsn,
-            SQL,
-            (
-                GPU_RUN_START, BASE336_CUTOFF,
-                GPU_RUN_START, EXPECTED_BEFORE_GPU,
-                GPU_RUN_START, EXPECTED_AFTER_GPU,
-                BASE336_CUTOFF,
-            ),
+            SQL_SOURCE_FIRST if source_first_ids is not None else SQL,
+            ((GPU_RUN_START, BASE336_CUTOFF, source_first_ids, BASE336_CUTOFF)
+             if source_first_ids is not None else
+             (GPU_RUN_START, BASE336_CUTOFF,
+              GPU_RUN_START, EXPECTED_BEFORE_GPU,
+              GPU_RUN_START, EXPECTED_AFTER_GPU,
+              BASE336_CUTOFF)),
             **db_options,
         )
     except db.ReadOnlyDBHold as exc:
@@ -535,7 +589,11 @@ def run(args: argparse.Namespace) -> dict:
             "private_values_emitted": False,
         }
 
-    rows = _fetch(os.getenv("R60_READONLY_DATABASE_URL", ""))
+    source_first_file = getattr(args, "source_first_ids_file", None)
+    source_first_ids, source_first_hash = (None, None)
+    if source_first_file is not None:
+        source_first_ids, source_first_hash = load_source_first_ids(source_first_file)
+    rows = _fetch(os.getenv("R60_READONLY_DATABASE_URL", ""), source_first_ids)
     # The query already binds the snapshot to current public_v2_data; normalize
     # the private-only booleans here so synthetic tests and DB rows share one gate.
     for row in rows:
@@ -554,8 +612,13 @@ def run(args: argparse.Namespace) -> dict:
             row.get("moderation_submission_id"),
         )
         row["permission_to_visibility"] = row.get("to_visibility")
-    selected = select_rows(rows)
-    doc = validate_rows(selected)
+    selected = rows if source_first_ids is not None else select_rows(rows)
+    if source_first_ids is not None:
+        if {row["story_id"] for row in selected} != set(source_first_ids):
+            raise Hold("SOURCE_FIRST_DB_COVERAGE_HOLD")
+    doc = validate_rows(selected, source_first=source_first_ids is not None)
+    if source_first_ids is not None:
+        doc["selection"]["private_selected_ids_file_sha256"] = source_first_hash
     private.write_new(
         output,
         (json.dumps(doc, ensure_ascii=False, sort_keys=True, indent=2) + "\n").encode(),
@@ -568,10 +631,10 @@ def run(args: argparse.Namespace) -> dict:
         "schema": SAFE,
         "status": "P2_PUBLIC_SOURCE_INVENTORY_READY__PROTECTED_CROSSWALK_PENDING",
         "selected_stories": 8,
-        "authors": 5,
-        "distinct_world_json": 8,
-        "created_before_gpu_run": 3,
-        "created_after_gpu_run": 5,
+        "authors": len({row["author_id"] for row in selected}),
+        "distinct_world_json": len({row["world_json_md5"] for row in selected}),
+        "created_before_gpu_run": doc["selection"]["created_before_gpu_run"],
+        "created_after_gpu_run": doc["selection"]["created_after_gpu_run"],
         "revision_snapshot_permission_verified": True,
         "exact_world_overlap_pre_cutoff_public_original": 0,
         "rights_scope_owner_confirmed_only": True,
@@ -592,6 +655,8 @@ def run(args: argparse.Namespace) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--source-first-ids-file", type=Path, default=None,
+                        help="Optional 0600 Owner-private Gold48 eight-Story ID list")
     parser.add_argument("--execute", action="store_true")
     args = parser.parse_args()
     try:
