@@ -15,11 +15,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tests"))
 
-from r60_p2_gold48_owner_freeze_packet_cpu import (
-    SAFE as READY_SCHEMA,
-    canonical,
-    make_packet,
-)
+from r60_p2_gold48_owner_freeze_packet_cpu import SAFE as READY_SCHEMA
+from r60_p2_gold48_owner_freeze_packet_cpu import make_packet
 from test_r60_p2_gold48_candidate_preflight_cpu import private_file
 from test_r60_p2_gold48_owner_freeze_packet_cpu import fixtures
 
