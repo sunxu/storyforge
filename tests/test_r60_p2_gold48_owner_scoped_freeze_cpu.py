@@ -33,8 +33,13 @@ def ready_fixture(private_root):
     packet, receipt = make_packet(*inputs)
     folder = private_root / "readiness"
     folder.mkdir(mode=0o700)
-    private_file(folder / freeze.PACKET_NAME, packet)
-    private_file(folder / freeze.READY_NAME, receipt)
+    for name, document in (
+        (freeze.PACKET_NAME, packet),
+        (freeze.READY_NAME, receipt),
+    ):
+        target = folder / name
+        target.write_bytes(freeze.canonical(document) + b"\n")
+        target.chmod(0o600)
     return (*inputs[:5], folder, inputs[5])
 
 
