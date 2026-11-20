@@ -10,15 +10,18 @@ import pytest
 
 from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     BINDINGS_SCHEMA,
+    EVIDENCE_URIS,
     INPUT_SCHEMA,
     OWNER_SCHEMA,
     PROVENANCE,
     ROLES,
+    SOURCE_FIELDS,
     _canonical,
     _digest,
     prepare_gold48_generation_contract,
     read_private_contract,
     run_gold48_generation_batch,
+    verify_gold48_binding_source_evidence,
 )
 from storyforge_dataset.generation_eval.worker import (
     GenerationResult,
@@ -72,6 +75,8 @@ def fixture(tmp_path: Path):
             "local_dir": None if role == "base" else f"/private/{role}",
             "provenance": "BASE_NO_ADAPTER" if role == "base" else PROVENANCE[role],
             "source_evidence_sha256": None if role == "base" else "c" * 64,
+            "source_evidence_uri": None if role == "base" else EVIDENCE_URIS[role],
+            "source_field": None if role == "base" else SOURCE_FIELDS[role],
             "expected_weight_size_bytes": None if role == "base" else 1867797544,
         }
     manifest = {
@@ -243,3 +248,65 @@ def test_private_contract_read_requires_0600(tmp_path):
         read_private_contract(path)
     path.chmod(0o600)
     assert read_private_contract(path) == {"secret": "synthetic-only"}
+
+
+def test_source_evidence_exact_sha_and_checkpoint_digest_binding(tmp_path):
+    pack = fixture(tmp_path)
+    evidence_paths = {}
+    for role in PROVENANCE:
+        entry = pack[2]["arms"][role]
+        content = (
+            {"training_evidence": {"adapter_sha256": entry["expected_sha256"]}}
+            if role == "r46_v02"
+            else {"adapter_sha256": entry["expected_sha256"]}
+        )
+        if role == "r60_base336":
+            content.update({
+                "schema": "storyforge_gold48_adapter_sha_cpu_only_safe_v1",
+                "status": "R60_ADAPTER_BYTE_SHA_PASS",
+                "file_size": 1867797544,
+                "gpu_started": False,
+                "model_calls": 0,
+            })
+        raw = _canonical(content)
+        path = tmp_path / f"{role}.evidence.private.json"
+        path.write_bytes(raw)
+        path.chmod(0o600)
+        entry["source_evidence_sha256"] = hashlib.sha256(raw).hexdigest()
+        evidence_paths[role] = path
+    verify_gold48_binding_source_evidence(pack[2], evidence_paths)
+
+    # Byte alteration is detected *before* trusting the adapter digest.
+    evidence_paths["r46_v02"].write_bytes(b"{}")
+    with pytest.raises(WorkerError, match="GOLD48_SOURCE_EVIDENCE_BYTE_SHA_HOLD"):
+        verify_gold48_binding_source_evidence(pack[2], evidence_paths)
+
+
+def test_evidence_digest_field_must_match_binding_after_valid_byte_sha(tmp_path):
+    pack = fixture(tmp_path)
+    evidence_paths = {}
+    for role in PROVENANCE:
+        entry = pack[2]["arms"][role]
+        payload = (
+            {"training_evidence": {"adapter_sha256": entry["expected_sha256"]}}
+            if role == "r46_v02"
+            else {"adapter_sha256": entry["expected_sha256"]}
+        )
+        if role == "r60_base336":
+            payload.update({
+                "schema": "storyforge_gold48_adapter_sha_cpu_only_safe_v1",
+                "status": "R60_ADAPTER_BYTE_SHA_PASS",
+                "file_size": 1867797544,
+                "gpu_started": False,
+                "model_calls": 0,
+            })
+        if role == "r54_v03a":
+            payload["adapter_sha256"] = "0" * 64
+        raw = _canonical(payload)
+        path = tmp_path / f"{role}.json"
+        path.write_bytes(raw)
+        path.chmod(0o600)
+        entry["source_evidence_sha256"] = hashlib.sha256(raw).hexdigest()
+        evidence_paths[role] = path
+    with pytest.raises(WorkerError, match="GOLD48_SOURCE_EVIDENCE_ADAPTER_SHA_HOLD"):
+        verify_gold48_binding_source_evidence(pack[2], evidence_paths)
