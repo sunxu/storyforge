@@ -1,5 +1,24 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 正式批准：Gold48 采用重建评估输入（取代历史 actual-sent 准入门槛）
+
+**Owner 本对话明确批准**采用 `RECONSTRUCTED_EVALUATION_INPUT`，不访问、不再要求核查 RolePlay 生产环境、历史启停日志或 Provider 原始 HTTP payload 作为本次 **Quality-v1 盲评** 的准入前置。此决议**只替代评估输入真实性的门禁**，并未证明旧 Provider 请求可恢复/不可恢复。过去尚未核查的原始实际出站证据保持 `ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`PROVIDER_INGRESS=UNVERIFIED`，不能修改为 PASS 或断言永不可恢复。后面旧段落中“需先获取历史 actual-sent、需 Owner 再批准 reconstructed、需登录生产”等仅为**旧状态快照**，不再是执行要求。
+
+**单一可执行合同**：
+
+1. **Owner 私有来源与冻结**：复用已有 8 Story、7 作者、25 Session、48 条两两不同且已证实存在的完整历史持久化 Prefix 及逐条对应的 48 份真实 Historical Original Reference；复用 48/48 成功请求事件的**元数据**绑定，不重新提取旧 Gold、R50 sealed 或扫描已核空表。正式 Gold48 Manifest 尚未生成；公开源码/角色卡/历史记忆的版本快照、权限和时间来源仍须按可验证证据固定，**若历史时点快照不可得，明确用 `EVALUATION_TIME_SNAPSHOT` 或 `RECONSTRUCTED_COMPONENT` 标注，绝不改称 `HISTORICAL_ASOF_VERIFIED`**。不修改已审核的公开卡 Revision 或历史 Prefix。
+2. **同题的精确定义**：在 Owner 私有域为每题一次性组装 `System / World / Character / Rules / Memory / History / final User` 的完整 `reconstructed_messages`，固定各分量来源、版本/截点、模板、排序、截断规则和统一的规范化序列化 SHA。通过模型协议适配时仍需记录最终生成输入变换；不得因某臂上下文预算不足静默删改消息。**四个新生成臂使用相同冻结题意/消息基准**，并按模型适配器差异透明记录；任何被动拆分或重构必须在盲评前预注册，无法保证可比时 HOLD 该题/该臂。
+3. **Gold 第五匿名来源仍强制保留**：历史原始回答确实绑定原始持久化 Prefix 与事件，但其当时完整 System/Rules/Memory/Provider 输入未验证，**不得宣称“Gold 也从这套重建 Prompt 生成”或“历史五臂完全 byte-exact 同题”**。五来源都依同一历史剧情上下文与六维评分规程盲评；在报告中分开：**四模型重建输入同题配对主比较**，以及**对历史原始回答的描述性/参考性第五来源比较**。后者不得作严格控制输入下的因果改善声明，也不是满分人工答案；生成端与评分者的身份标签必须隔离。
+4. **继续生效的独立 HOLD**：历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 权威暴露完整来源名册、只对未审差集所需的源版本隔离，以及 1 个 P2 来源存在家族/角色名称残留的 Owner 私有输入质量仲裁。允许保留时，预注册完整 48 题主分析 +剔除此来源 6 题的 42 题配对敏感性分析；如不可用须另行裁决补源/改设计。**本批准不是无上限穷尽历史世界的证明，不授予未知暴露来源 PASS**。
+5. **冻结和花费仍禁止抢跑**：只能在上述独立来源/质量与使用权门禁、Owner 的最终 Source/Prompt Freeze 确认后，于私有 0700/0600 create-only 生成 Gold48 素材与哈希。四模型 Qwen Base / R46 v0.2 ckpt-7 / R54 v0.3-A ckpt-16 / R60 Base336 ckpt-37 不变；48×4=192 次待授权新生成，另有 48 份历史原始回复，共 240 份匿名评审对象。新 GPU/HF/model 推理需**单独批准**；当前 `quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+
+**立即更新的状态，而不是一次 Gold Freeze**：`EVAL_INPUT_CONTRACT=RECONSTRUCTED_EVALUATION_INPUT`；`RECONSTRUCTED_INPUT_CONTRACT_OWNER_APPROVED=true`；`ROLEPLAY_PRODUCTION_ACCESS_REQUIRED_FOR_QUALITY_V1=false`；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`；`P2_C=HOLD`（**仅剩源权限/隔离与输入质量的有效门禁**）；`P2_B_48_PROMPTS=NOT_GENERATED`；`quality_v1_admitted=0`；`train_admitted=0`；`model_promoted=false`。
+
+本决议优先于本文以下旧“actual-sent 仍是必需前置 / awaiting reconstructed contract approval”条款，不改动历史签收报告、已冻结训练源、Reviewer 原意见或 R50 sealed 保护。
+
+---
+
+
 ## 2026-11-20 现行唯一执行基线：P2-C 最后缺口 → Gold48 冻结 → 五来源同题盲评
 
 > **新 Agent 必须从本节开始读。** 本文件后面的“2026-11-19 最新”“Base336 134 Story 未抓取”“旧 P2 3/5、5 作者”“仅三消息/两臂”“未找到历史 Gold”等文字均为**保留的历史快照**，现已被 2026-11-20 的真实 Owner SAFE、来源包、独立 Reviewer 和以下现行合同覆盖。不要执行旧章节的“下一步”命令，不要依旧的三消息/无私有会话权限假设推翻 Owner 新授权。此前验证的原始回执和完整审计链仍保留，不能用本节一个总结反向改变它们的已证实边界。
