@@ -15,7 +15,6 @@ import hashlib
 import importlib.metadata
 import json
 import os
-import os
 import platform
 import re
 import secrets
