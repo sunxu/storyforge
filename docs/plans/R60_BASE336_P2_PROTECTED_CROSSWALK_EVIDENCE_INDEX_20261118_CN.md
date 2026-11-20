@@ -1,5 +1,14 @@
 # R60 Base336 P2 Protected Crosswalk 证据索引（2026-11-18）
 
+## 2026-11-20 输入合同已批准（取代本文旧 actual-sent 作为冻结前置要求）
+
+Owner 已正式批准 `RECONSTRUCTED_EVALUATION_INPUT` 作为 P2 Gold48 的四模型统一比较输入；**不访问 RolePlay 生产环境，不再寻找历史 Provider 发送正文作为本轮质量盲评前置**。原始 48 份 Historical Original Reference 继续为第五匿名评分来源，但只可作同历史 Prefix 的描述性参考比较，不能推断历史与重建 Prompt byte-exact 相同。actual-sent 仍 `UNVERIFIED`；未断言原文永久不可恢复。
+
+本索引需要继续解决的仅为**未获权威闭合的 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 来源成员与版本/权限截止点**（只审已核 204 Story/495 版本外的真实增量）和**一个 P2 公开来源自身名字/家族不一致的 Owner 质量仲裁**，以及依照已批准合同进行私有 Source/Prompt Freeze。R45 Train49/Validation15 文件 Git Blob 身份已绑定 R46 source-data，但不能替代剩余 R45 来源全集的认证。此前其它各项限定范围 PASS 不重做；本批准不把 `P2_C=HOLD` 改成 PASS、不生成 Gold48、不授权新的 GPU/HF/model 运行。以[现行主任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶部 Owner 决议为准。
+
+---
+
+
 ## 2026-11-20 现行证据索引快照（覆盖本文件所有旧“最新 HOLD/下一步”）
 
 **唯一权威现行路线和可复制新 Agent 提示词**：[R60 Base336 P2-C → Gold48 → 五来源盲评任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) **最顶端 2026-11-20 两节**。下文（包括 2026-11-19 段落）的“172 尚未抓取、仅 38 Story、仅旧 20 Prompt、Reviewer 未完成、需要执行同一个 SQL 或 R50 ID 匹配”等是**过程快照，不是当前行动指令**。
