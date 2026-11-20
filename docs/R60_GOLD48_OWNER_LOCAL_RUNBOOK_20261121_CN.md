@@ -217,3 +217,20 @@ hf jobs run --namespace adradar --name gold48-atomic-ledger-verify-cpu \
 按 [HF Jobs volumes 官方说明](https://huggingface.co/docs/hub/jobs-configuration#volumes)，Job 已原生支持独立 `:rw` Bucket 输出挂载，因此 **正式 Job 内不再调用 `hf buckets cp`、不需要注入 `HF_TOKEN`**。原 `deliver_gold48_private_result` 现在直接向准确挂载的 `/output` 写入 3 份私有对象，最后写 SHA256 manifest，并在同一挂载内回读 SHA。它要求 `/output` 在内核 mountinfo 中是**直接可写 FUSE 挂载**，拒绝用容器本地目录假冒远端交付；`/output` 的 POSIX mode **不是**授权锁条件。真正需要 `0700/0600 + fsync` 的只是 Job 内本地生成原件。
 
 Mac 端在提交前必须核对结果前缀 `experiments/r60-gold48/outputs/<run_id>/` 为空，确认输入只读、唯一 Owner Mac、无自动重试；正式 Job 成功后，**由 Owner Mac 独立 `hf buckets cp` 下载四份结果并重算 SHA 与 48 条内容结构**，不能把 Job 内本地 FUSE 回读作为最终验收。此前手册关于“Job 内 `hf buckets cp` 上传并下载校验”的说法是历史方案，以本段为准。未签名/未批准 GPU 时仍保持 HOLD。
+
+
+### 2026-11-21 Owner Mac 独立下载核验入口（代码/合成测试；未执行真实下载）
+
+已有 `scripts/r60_gold48_gpu_result_audit.py` 复用原 `r60_common2_wrapped_hf_cli.remote_set` 的 HF Bucket 全量文件集检查、原 `InputManager` 的 O_NOFOLLOW/SHA 读取，以及 `gold48_contract_bridge._read_existing_gold48_output` 的 48 条逐条数据结构/Seed/token 上限检查；它**不新建生成器、不提交 HF Job、不调用模型**。
+
+Owner Mac 只有在真实 Job 完成且拿到四份输出后执行（`--owner-download-root` 是已存在的本地 mode 0700 私有目录，`--frozen-input-manifest` 是已有 Owner 私有 0600 输入清单）：
+
+```sh
+PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_result_audit.py \
+  --run-id "<Owner 本次单臂已批准的 Run ID>" \
+  --model-role base \
+  --owner-download-root "$HOME/.local/share/storyforge/r60/private/gold48-owner-results" \
+  --frozen-input-manifest "<已有 Owner 0600 输入 Manifest 路径>"
+```
+
+该入口先只读查验远端前缀**恰好**有 4 份既定文件，随后一次性创建本地 `0700` 下载子目录，逐个下载、转为 `0600`，核对 manifest 的全部文件 SHA、文件大小与次序，再比对 48 条生成内容、输入 SHA、Provider image SHA、Owner receipt 摘要等私有 Sidecar/launch 字段。SAFE 结果 `OWNER_GOLD48_RESULT_BYTES_AUDITED__SIGNATURE_REVIEW_PENDING` **不是**独立核验 Ed25519 签名，不表示 Quality-v1 已准入。下载目录已存在、远端不完整、回执不一致或下载失败均 HOLD；没有自动重试或任何远端写操作。此入口待正式 GPU 运行后由 Owner Mac 使用真实私有数据验收，不得预先操作未来 Run ID。
