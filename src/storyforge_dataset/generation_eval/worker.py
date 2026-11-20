@@ -133,6 +133,29 @@ def run_generation_batch(
     assessment: ProfileAssessment = assess_profile(profile)
     if not assessment.ready:
         raise WorkerError("GENERATION_PROFILE_NOT_READY")
+    return _run_validated_generation_batch(
+        profile=profile, model_role=model_role, manifest=manifest,
+        input_path=input_path, output_path=output_path, backend=backend,
+        max_input_file_bytes=max_input_file_bytes,
+    )
+
+
+def _run_validated_generation_batch(
+    *,
+    profile: dict[str, Any],
+    model_role: str,
+    manifest: dict[str, Any],
+    input_path: Path,
+    output_path: Path,
+    backend: GenerationBackend,
+    max_input_file_bytes: int = 16 * 1024 * 1024,
+) -> WorkerReceipt:
+    """Shared existing generation loop. Public callers MUST use a validated gate.
+
+    P4 enters through run_generation_batch() and Gold48 enters through the
+    separate strict Gold48 contract bridge; never call this helper directly
+    from a CLI or untrusted runtime input.
+    """
     if model_role not in profile["model_profiles"]:
         raise WorkerError("MODEL_ROLE_INVALID")
     if not isinstance(manifest, dict) or manifest.get("schema") != "storyforge_r60_generation_input_manifest_v1":
