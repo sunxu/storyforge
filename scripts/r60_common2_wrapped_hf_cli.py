@@ -23,6 +23,12 @@ BUCKET = "adradar/storyforge-training"
 PREFIX = "preflight/r60/common2/wrapped-cpu"
 IMAGE = "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
 WORKER = "/input/common2/scripts/r60_common2_wrapped_hf_worker.sh"
+INPUT_MOUNT = "/input/common2"
+CPU_FLAVOR = "cpu-upgrade"
+TIMEOUT_MINUTES = 120
+JOB_NAME_PREFIX = "r60-wrapcpu"
+RUN_KEY_ENV = "STORYFORGE_R60_WRAPCPU_KEY"
+MARKER_SUFFIX = ".wrapped-cpu-attempted"
 SCHEMA = "storyforge_r60_common2_wrapped_hf_cli_safe_v1"
 
 
@@ -131,22 +137,27 @@ def inspect_job_cli_flags() -> dict:
     return result
 
 
+def worker_command(key: str) -> list[str]:
+    """Override only the business worker argv, preserving Guard and CLI policy."""
+    return ["bash", WORKER]
+
+
 def job_command(key: str, help_text: str) -> list[str]:
     missing = missing_job_cli_flags(help_text)
     default_attempts = use_documented_default_attempts(help_text)
     if missing and not default_attempts:
         raise ValueError("HF_CLI_FLAGS_HOLD")
     base = "hf://buckets/" + BUCKET
-    inputs = [f"{base}/{PREFIX}/runs/{key}:/input/common2:ro"]
+    inputs = [f"{base}/{PREFIX}/runs/{key}:{INPUT_MOUNT}:ro"]
     output = f"{base}/{PREFIX}/results/{key}:/output:rw"
-    command = ["bash", WORKER]
+    command = worker_command(key)
     hf_job_guard.validate_spec(
-        namespace="adradar", flavor="cpu-upgrade", timeout_minutes=120,
+        namespace="adradar", flavor=CPU_FLAVOR, timeout_minutes=TIMEOUT_MINUTES,
         input_volumes=inputs, output_volume=output, command=command
     )
     argv = hf_job_guard.build_hf_argv(
-        namespace="adradar", name=f"r60-wrapcpu-{key}",
-        flavor="cpu-upgrade", timeout_minutes=120,
+        namespace="adradar", name=f"{JOB_NAME_PREFIX}-{key}",
+        flavor=CPU_FLAVOR, timeout_minutes=TIMEOUT_MINUTES,
         input_volumes=inputs, output_volume=output,
         image=IMAGE, command=command
     )
@@ -158,7 +169,7 @@ def job_command(key: str, help_text: str) -> list[str]:
             raise ValueError("HF_CLI_FLAGS_HOLD")
         del argv[index:index + 2]
     pos = argv.index(IMAGE)
-    argv[pos:pos] = ["--env", f"STORYFORGE_R60_WRAPCPU_KEY={key}"]
+    argv[pos:pos] = ["--env", f"{RUN_KEY_ENV}={key}"]
     pos = argv.index(IMAGE)
     if argv[pos + 1:pos + 2] == ["--"]:
         argv.pop(pos + 1)  # HF CLI 2.4.0 IMAGE COMMAND ... syntax
@@ -173,7 +184,7 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
         return safe("WRAPPED_CPU_LOCAL_STAGE_PASS__NO_JOB", "LOCAL_SHA_VERIFIED")
     from huggingface_hub import HfApi
     api = HfApi()
-    marker = stage.parent / (key + ".wrapped-cpu-attempted")
+    marker = stage.parent / (key + MARKER_SUFFIX)
     if action == "sync":
         remote_check(stage, key, ready=False, api=api)
         output_is_empty(api, key)
@@ -276,7 +287,7 @@ def diagnose(stage: Path, key: str) -> dict:
         outputs = remote_set(api, f"{PREFIX}/results/{key}/")
         out["remote_output"] = "EMPTY" if not outputs else "NONEMPTY"
         out["phase"] = "MARKER_CHECK"
-        marker = stage.parent / (key + ".wrapped-cpu-attempted")
+        marker = stage.parent / (key + MARKER_SUFFIX)
         out["submit_marker"] = "PRESENT" if marker.exists() or marker.is_symlink() else "ABSENT"
         out.update(status="WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB",
                    reason_code="READ_ONLY_INSPECTION", phase="COMPLETE")
