@@ -1,5 +1,21 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 本轮真实历史保护集扩展：R53-40、Gold195、v0.1-80 精确身份去重审计（范围限定）
+
+这是在**当前 Gold48 严格 2/6、7 作者的八个 P2 来源**上做的首次历史大范围增量身份核验，不得误当作旧 v1 P2 八来源的结果。直接复用现有 Git 冻结 Blob（本次分别对原 87+108 和原 65+15 字节读出并解析源 metadata）、Owner Library 现有历史 R52 FINAL46 仅来源身份模板、HF 私有 R53 CPU40 审计与正式 Release Receipt；不创建源提取器，不启动模型，不打开 R50 密封正文：
+
+1. **Gold195 精确来源**：原始 Gold87 **87/87**、Gold108 **108/108**，全部 **195** 条记录原有 metadata 能读取 Story UUID，去重 **13** 个 Story（Gold87 5 / Gold108 8），与当前新 P2 八来源 **精确 Story ID overlap=0**。两份固定 Git Blob 与旧 R57 冻结代码记录的 Blob 完全一致。Gold195 是历史已知来源，**不是新鲜测试集**。
+2. **v0.1 历史 Train/Validation**：来自冻结 Git Blob 的 Train **65/65**、Validation **15/15**，80 条 metadata 的 Story UUID 均存在，去重 **17** Story，与新 P2 八来源 **精确 ID overlap=0**。这 17 Story 与上面 Gold195 13 Story **交集 1**，故 `V01_TRAIN_VAL ∪ GOLD195` 的可证精确身份全集为 **29 个不同 Story**（17+13−1），不允许把训练行数当独立世界数。
+3. **R53/R54 正式 40 案例**：本次从 HF Bucket 的已有私有 `R53_HF_CPU40_AUDIT_REPORT_PRIVATE.json` 读取 40 个 case ID + target SHA（**31 Train +9 Validation**），与 Owner 已有的 **R52 FINAL46 来源身份证据模板**按 case ID **40/40**、对应目标 SHA **40/40** 完全对应，恰有 **7 个独立 Story**，P2 精确 ID overlap=**0**。对原 **22,607 字节** CPU40 审计原文件重新 SHA-256，哈希分别等于原 Owner CPU40 Intake 的 `report_sha256` 和正式 R53 Release Receipt 的 `runtime_report_sha256`，且实际 `compiled_input_sha256` Train/Validation 均匹配 Release Receipt 的两个发布数据 SHA；SHA-256 算法自测通过。所有私有 SHA、Story ID、问答原文均未输出或提交。**7/7 个 R53 Story 均属于 Gold195 13 Story 子集**，因此不使上述 29 个去重历史 Story 再增加 7 个。此链是冻结的 Case ID/目标/来源身份及 CPU→发布回执核验，不是 R53 World 语义 alias 或历史 actual-sent 来源的证明；R52 来源模板自身不是完整 Protected/Reserved 穷尽认证。
+4. **R46/R54 104 条历史训练/验证**：仓库旧 Owner `R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json` 已有 `r46_train_49_all_in_gold195=true`、`r46_validation_15_all_in_gold195=true`、`r54_train_31_all_in_gold108=true`、`r54_validation_9_all_in_gold108=true`，以及 R57 Owner G2 目标 SHA→原始 Gold195 Story 的 104/104 唯一绑定说明。**本轮只沿用先前已验证过的 Owner 限定目标回链，不重跑 R57 G2；**可在这个已经审核的来源覆盖合同下，以本轮 Gold195 13 Story 对新 P2 的精确 ID=0 推导 R46/R54 **已覆盖 104 条**对应来源精确 ID 排除。此为 bounded/transitive Owner-attested proof，不声称当前再次独立复验全部 R46/R54 私有原始 104 条字节或世界语义别名。
+5. **历史 P2 actual-sent 新存储路径检查**：发现并针对当前八个 Story、截至冻结截止时间做只读元数据统计：`v2_chat_reply_jobs.request_envelope` **0 条匹配行**；`chat_abnormal_snapshot` **29 行、memory_injection 非空 29/29、conversation_context 非空 0/29**；P2 有关的完成 Assistant 消息 metadata 仅见输出分段/finishReason/event runtime 等 18 种键，未见完整发送 Prompt 字段；Database schema 全局字段名盘点也没有明确的实际发送前原文字节持久化列。注意 **29 条异常快照的 memory_injection 不是实际完整 HTTP Prompt**。这只证明**当前检查过的持久化表与子集不能恢复 actual-sent**，并非所有上游/代理请求日志或对象存储的绝对不存在性证明。新发现的旧 HF `private-generation-snapshots` 是其他历史 GLM 评测快照、不是本次 P2 请求，可不作误导的 actual-sent 来源。
+
+**新增通过的 bounded 子门禁**：`P2_V01_80_EXACT_STORY_ID=PASS_OVERLAP_0`、`P2_GOLD195_195_EXACT_STORY_ID=PASS_OVERLAP_0`、`P2_R53_40_CASE_TARGET_AND_SOURCE_ID=PASS_OVERLAP_0`，以及借已认证旧 R57 G2 的 `P2_R46_R54_104_EXACT_SOURCE_ID=PASS_WITH_PRIOR_OWNER_REPLAY_SCOPE`。明确可证来源去重集是 **29**；这不是总历史全集，且新集合身份是精确 UUID，并没有自动 P2↔这 29 个 Story 的独立语义结论。
+
+**正式仍未关闭**：R45 及其他旧 Reserved/Protected、R58 等不属于本次 29 Story + R50 已知 5 World + R47/R48/R55 已知 20 case/2 Story 的权威完整曝光身份全集；历史其他 Teacher/Dev 输入、所有跨 UUID 的隐藏语义 World/角色/剧情/规则别名排除；请求实际发送 System/World/Rules/Memory/History 的原文字节；单个 P2 Source 的自身角色/家族名残留输入质量仲裁；Owner Gold48 真正题目版本冻结。前述 Owner Reviewer1 新会话隔离已确认、8/8 语义意见和 172/375 来源验收 **不再重新运行**。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`**。不能为了推迟主线而重复确认旧 195/80/104 原始材料，若全集确无权威名册，应作为有界数据不可得性风险交 Owner 裁决，而不是无限查找或新增重复代码。
+
+---
+
 ## 2026-11-20 Owner 独立交付确认：Reviewer 新会话隔离已确认（独立执行外部证明仍受限）
 
 Owner 在获明确提问后回复「确认」，确认此位 **P2↔Base336 独立语义 Reviewer** 是在**独立新会话**中完成审阅，**由 Owner 直接提供对应的私有审查证据包**，且**在未接触其他 Reviewer 的结论/答案**下做判断。这是 **Owner 的正式流程确认**，与先前 Reviewer 独立自述共同构成当前审阅流程的 Owner 声明；不得误写为密码学或第三方实证的「已独立验证外部身份」。Owner 对包的本地 SHA/版本链接八项 SAFE 已全部 PASS，Reviewer 在其审阅范围内给出 `INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`。
