@@ -1,5 +1,38 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 来源冻结接口阻塞已修：仅最小向后兼容适配，Owner Freeze 仍待执行
+
+**本项仅修复已知的 CLI/Manifest 接口不兼容，不重复选择 Gold、不新建通用提取器、不自动晋升 P2-C。** 当前 PR 已为既有 `r60_base336_p2_public_source_inventory_cpu.py` 增加可选 `--source-first-ids-file`，其旧默认 **3 before + 5 after / 5 authors** 源选择、v1 输出格式不变；新方式从严格 Gold48 source-first 审核已经确认的八个 Story UUID 读取**Owner 自有 0600 输入文件**，在数据库公开审核元数据中重新绑定 **2 before + 6 after / 7 authors**，限制创建时间不晚于 `2026-11-19T15:30:00Z`，输出新 v2 私有 Manifest，且 `owner_freeze=PENDING`。既有 `r60_base336_p2_source_evidence_capture_cpu.py` 已向后兼容 v1/v2、固定 count/schema/选择模式/输入源清单 SHA 形状，继续做来源修订与授权行精确比对，**不会因为版本升级而绕过旧门禁**。相关 P2 合成用例和全部 CI 必须通过。
+
+**仅限 Owner 私有环境的操作合同**：将既有严格 Gold48 source-first 八来源 ID 按私有顺序写入权限 **0600** 文件；不得把普通按创建时间前八名、先前 Owner 原八来源、R50 sealed 或任何推测 Story ID 混入。该文件形状为：
+
+```json
+{
+  "schema": "storyforge_r60_p2_gold48_source_ids_private_v1",
+  "status": "GOLD48_COMPLETE_HISTORY_SOURCE_IDS__OWNER_FREEZE_PENDING",
+  "source_selection_mode": "gold48_historical_full_prefix_source_first_v1",
+  "story_ids": ["8 个经严格 Gold48 资格审核的规范 UUID 字符串；此处仅为格式说明"]
+}
+```
+
+真实 `story_ids` 必须是**恰好 8 个独立数组元素**，上述说明文字不是有效输入。直接复用已有 `~/.local/share/storyforge/r60/private` 权限为 0700 的私有根目录，生成**不存在的** 0700 子输出目录；在本仓库执行：
+
+```bash
+BASE="$HOME/.local/share/storyforge/r60/private"
+IDS="$BASE/p2-gold48-strict-eight-owner-private.json"
+OUT="$BASE/p2-gold48-source-first-v2-20261120"
+# Owner-only 预先写入 IDS（0600，8 个真实规范 UUID）；不在 shell argv 或公开 PR 中传 ID
+test "$(stat -f '%Lp' "$IDS" 2>/dev/null || stat -c '%a' "$IDS")" = "600" || exit 1
+install -d -m 700 "$OUT"
+PYTHONPATH="$PWD/experiments/r58_quality:$PWD/src:$PWD/scripts:$PWD" \
+python3 experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py \
+  --source-first-ids-file "$IDS" --output-dir "$OUT" --execute
+```
+
+输出的 `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json` 仍是**候选元数据证据包**，不是 Owner 正式不可变冻结、Gold48 具体 48 对内容的冻结、P2-C 语义独立 PASS 或真实历史 actual-sent 原文证明。确认 4 保留/4 新增、已核验公开许可在首条合格历史 Gold 之前生效之后，再用已有 `r60_base336_p2_source_evidence_capture_cpu.py` 及 Owner 六个冻结历史目录建立剩余 134 Source 绑定；旧版本 v1 manifest 和旧任务不变。**禁止在公开 GitHub 提交新私有 manifest、原始 Story ID、Session/Request ID 或聊天正文。**
+
+---
+ 
 ## 2026-11-20 最新执行结论：Gold48 历史请求链路实测；新模型质量比较仍为唯一主线
 
 **本节优先于下方 2026-11-19 的“固定三消息/新造 48 题”“只允许读取公开卡而不能验证聊天”的过时操作步骤；不改变旧冻结训练集、不自动使 P2-C PASS。** Owner 已再次明确授权真实聊天用于本项目**内部独立模型质量评估**；无需再要求重复提交授权证明。现有 SQL 仅返回 SAFE 聚合；不得在公开 GitHub 发布私人会话正文、ID 对应表或请求 trace。没有另行授权训练、付费 GPU/HF 推理、对外分发或 R50 sealed 正文访问。
