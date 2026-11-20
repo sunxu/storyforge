@@ -15,13 +15,13 @@ import hashlib
 import importlib.metadata
 import json
 import os
-import tempfile
 import platform
 import re
 import secrets
 import stat
 import subprocess
 import sys
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
