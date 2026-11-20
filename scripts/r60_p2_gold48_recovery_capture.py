@@ -7,12 +7,12 @@ All raw text, identity and hashes remain in local 0600 files, never stdout.
 from __future__ import annotations
 
 import argparse
-from collections import Counter
 import hashlib
 import json
 import os
 import stat
 import sys
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
