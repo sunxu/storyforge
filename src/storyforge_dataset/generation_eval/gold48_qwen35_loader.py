@@ -77,9 +77,9 @@ def _read_json(path: Path, max_bytes: int = 1024 * 1024) -> dict[str, Any]:
     try:
         obj = json.loads(InputManager.open_verified(path, max_bytes=max_bytes).read_bytes())
         if not isinstance(obj, dict):
-            raise ValueError("NOT_JSON_OBJECT")
+            raise TypeError("NOT_JSON_OBJECT")
         return obj
-    except (ValueError, OSError) as exc:
+    except (ValueError, TypeError, OSError) as exc:
         raise WorkerError("GOLD48_RUNTIME_METADATA_READ_HOLD") from exc
 
 
