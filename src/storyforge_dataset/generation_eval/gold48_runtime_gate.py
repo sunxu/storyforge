@@ -1,7 +1,7 @@
 """Gold48 production pre-GPU gate: Owner signature, measured runtime, one-shot.
 
-No model/GPU import. Public booleans cannot mint a load permit. A trusted
-provider must attest the *observed* image digest with its own pinned Ed25519
+No model/GPU import. Public booleans cannot mint a load permit. The trusted
+Owner signs the image digest; Mac HF Job Inspect is required for admission.
 public key; a caller-supplied image string is not evidence.
 
 The trusted Owner Mac exclusively submits one Job per signed Run ID, backed
@@ -35,7 +35,7 @@ from .gold48_owner_receipt import (
 )
 from .worker import WorkerError
 
-# Both of these must be separately approved before any production GPU startup.
+# Historical Provider proof verifier only; NOT a Gold48 production gate.
 PROVIDER_TRUSTED_PUBLIC_PEM_SHA256 = ""
 # Job-local ONLY, not a shared Bucket or distributed lock.
 JOB_LOCAL_CONSUMPTION_ROOT = Path("/tmp/storyforge-gold48-private/spent")
@@ -426,11 +426,11 @@ def authorize_and_consume_before_gpu(
         owner_scope=auth.payload,
     )
     _check(measured_sha == lock_sha, "GOLD48_LOCK_SHA_DISAGREEMENT_HOLD")
-    provider_sha = verify_provider_image_measurement(
-        attestation_path=provider_attestation_path,
-        trusted_provider_public_key_path=trusted_provider_public_key_path,
-        owner_scope=auth.payload,
-    )
+    # Provider dynamic attestation is not required under the reviewed
+    # single-Owner Mac dispatch policy. The Owner-signed image digest and
+    # live package pins are checked here. Actual HF Inspect is checked by
+    # Mac independently prior to quality-evaluation admission.
+    provider_sha = None
     mount_observation = verify_current_readonly_adapter_mount(
         role=model_role,
         adapter_dir=(
@@ -458,8 +458,8 @@ def authorize_and_consume_before_gpu(
         "current_job_adapter_ro_mount_observation": mount_observation,
         "runtime_lock_sha256": lock_sha,
         "runtime_packages_measured": versions,
-        "provider_image_measurement_receipt_sha256": provider_sha,
-        "runtime_image_digest_measured": image_digest,
+        "provider_image_measurement_receipt_sha256": None,
+        "runtime_image_digest_owner_signed": image_digest,
         "max_model_calls": 48,
     }
     try:
@@ -497,7 +497,7 @@ def verify_and_consume_gold48_load_permit(
 
     The job-local spend is create-only. The Owner Mac guarantees no retry
     across Jobs. A permit alone is not enough:
-    re-verify pinned Owner signature, measured provider image and local versions.
+    re-verify pinned Owner signature and measured local package versions.
     """
     _check(isinstance(permit, SignedGold48LoadPermit),
            "GOLD48_SIGNED_LAUNCH_PERMIT_REQUIRED")
@@ -539,15 +539,10 @@ def verify_and_consume_gold48_load_permit(
         runtime_contract_path=permit.runtime_contract_path,
         owner_scope=auth.payload,
     )
-    image_sha = verify_provider_image_measurement(
-        attestation_path=permit.provider_attestation_path,
-        trusted_provider_public_key_path=permit.provider_public_key_path,
-        owner_scope=auth.payload,
-    )
     _check(spent["runtime_lock_sha256"] == lock_sha
            and spent["runtime_packages_measured"] == versions
-           and spent["provider_image_measurement_receipt_sha256"] == image_sha
-           and spent["runtime_image_digest_measured"] ==
+           and spent["provider_image_measurement_receipt_sha256"] is None
+           and spent["runtime_image_digest_owner_signed"] ==
                auth.payload["runtime_image_digest"],
            "GOLD48_RUNTIME_MEASUREMENT_CHANGED_HOLD")
     _check(_ISSUED_ONE_SHOT_PERMITS.get(auth.receipt_sha256) ==
@@ -600,9 +595,9 @@ def verify_consumed_gold48_output_grant(
                 ),
             )
         and record.get("runtime_lock_sha256") == runtime_lock_sha256
-        and record.get("provider_image_measurement_receipt_sha256") ==
-            provider_attestation_sha256
-        and record.get("runtime_image_digest_measured") ==
+        and record.get("provider_image_measurement_receipt_sha256") is None
+        and provider_attestation_sha256 is None
+        and record.get("runtime_image_digest_owner_signed") ==
             owner_scope["runtime_image_digest"]
         and record.get("max_model_calls") == 48
         and isinstance(record.get("runtime_packages_measured"), dict),

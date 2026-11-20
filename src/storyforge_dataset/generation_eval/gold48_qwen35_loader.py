@@ -129,7 +129,7 @@ def load_pinned_gold48_backend(
     transformers_module: Any | None = None,
     peft_module: Any | None = None,
 ) -> TransformersGenerationBackend:
-    """GPU-only loader. A signed, measured, consumed ONE-SHOT grant is required.
+    """GPU-only loader. A signed Owner, consumed ONE-SHOT grant is required.
 
     This gate executes BEFORE importing torch or touching the CUDA driver.
     A legacy runtime_authorized=True boolean is intentionally unsupported.
@@ -201,11 +201,10 @@ def load_pinned_gold48_backend(
         )
         backend.gold48_adapter_sha256 = expected_adapter_sha256
         backend.gold48_adapter_dir = adapter_dir.resolve(strict=True) if adapter_dir else None
-        backend.gold48_production_runtime_attested = True
+        # Verified Owner scope is NOT an independent measurement of the HF image.
+        backend.gold48_owner_scope_verified = True
         backend.gold48_owner_authorization_receipt_path = launch_permit.owner_receipt_path
         backend.gold48_runtime_lock_path = launch_permit.runtime_lock_path
-        backend.gold48_provider_attestation_path = launch_permit.provider_attestation_path
-        backend.gold48_provider_public_key_path = launch_permit.provider_public_key_path
         backend.gold48_spent_grant_path = launch_permit.spent_receipt_path
         return backend
     except WorkerError:

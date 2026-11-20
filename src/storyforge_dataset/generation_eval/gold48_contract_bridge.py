@@ -500,6 +500,7 @@ def _gold48_sidecar(
             "SIGNED_INDEPENDENT_PROVIDER_INSPECTION" if runtime_image_measured
             else "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
         ),
+        "owner_mac_independent_job_image_inspect_required": True,
         "provider_image_attestation_sha256": provider_attestation_sha256,
         "owner_authorization_receipt_sha256": auth.receipt_sha256,
         "output_sha256": receipt.output_sha256,
@@ -547,6 +548,7 @@ def _gold48_launch_marker(
         "runtime_image_digest_approved": runtime_image_digest,
         "runtime_image_measured": runtime_image_measured,
         "provider_image_attestation_sha256": provider_attestation_sha256,
+        "gpu_backend_executed": auth.payload["execution_environment"] == PRODUCTION_SCOPE,
     }
 
 
@@ -662,6 +664,7 @@ def recover_gold48_identity_sidecar(
     marker_path = output_path.with_name(output_path.name + ".launch.private.json")
     marker = read_private_contract(marker_path, max_bytes=65536)
     measured = marker.get("runtime_image_measured") is True
+    gpu_run = marker.get("gpu_backend_executed") is True
     attested_sha = None
     if measured:
         # Recovery must re-verify independent provider evidence; no caller
@@ -698,7 +701,7 @@ def recover_gold48_identity_sidecar(
     receipt = _read_existing_gold48_output(
         output_path=output_path, profile=profile,
         worker_manifest=worker_manifest, model_role=model_role,
-        gpu_started=measured,
+        gpu_started=gpu_run,
     )
     sidecar = _gold48_sidecar(
         frozen=frozen, bindings=adapter_bindings, input_manifest=input_manifest,
@@ -771,10 +774,11 @@ def run_gold48_generation_batch(
                  else str(getattr(backend, "gold48_adapter_dir", "UNVERIFIED")) ==
                  str(Path(entry["local_dir"]))
              ), "GOLD48_LOADED_BACKEND_IDENTITY_HOLD")
-    # In real inference, require independently signed provider measurement
-    # and verified Loader grant. Synthetic Backend tests are NOT such proof.
-    runtime_measured = isinstance(backend, TransformersGenerationBackend)
-    if runtime_measured:
+    # Real inference still requires Owner's signed GPU scope and consumed
+    # Loader grant. No independent Provider image measurement is claimed.
+    real_backend = isinstance(backend, TransformersGenerationBackend)
+    runtime_measured = False
+    if real_backend:
         _require(
             auth.payload["execution_environment"] == PRODUCTION_SCOPE
             and auth.payload["inference_authorized"] is True
@@ -789,34 +793,20 @@ def run_gold48_generation_batch(
             "GOLD48_SYNTHETIC_BACKEND_PRODUCTION_SCOPE_FORBIDDEN",
         )
     provider_attested_sha = None
-    if runtime_measured:
+    if real_backend:
         _require(
-            getattr(backend, "gold48_production_runtime_attested", False) is True
+            getattr(backend, "gold48_owner_scope_verified", False) is True
             and getattr(backend, "gold48_owner_authorization_receipt_path", None)
                 == owner_authorization_receipt_path
             and getattr(backend, "gold48_runtime_lock_path", None)
                 == runtime_lock_path
             and isinstance(
-                getattr(backend, "gold48_provider_attestation_path", None), Path
-            )
-            and isinstance(
-                getattr(backend, "gold48_provider_public_key_path", None), Path
-            )
-            and isinstance(
                 getattr(backend, "gold48_spent_grant_path", None), Path
             ),
-            "GOLD48_PRODUCTION_BACKEND_MEASURED_IDENTITY_HOLD",
+            "GOLD48_PRODUCTION_BACKEND_OWNER_SCOPE_HOLD",
         )
-        from .gold48_runtime_gate import (
-            verify_consumed_gold48_output_grant,
-            verify_provider_image_measurement,
-        )
+        from .gold48_runtime_gate import verify_consumed_gold48_output_grant
 
-        provider_attested_sha = verify_provider_image_measurement(
-            attestation_path=backend.gold48_provider_attestation_path,
-            trusted_provider_public_key_path=backend.gold48_provider_public_key_path,
-            owner_scope=auth.payload,
-        )
         verify_consumed_gold48_output_grant(
             spent_receipt_path=backend.gold48_spent_grant_path,
             owner_receipt_sha256=auth.receipt_sha256,
@@ -825,7 +815,7 @@ def run_gold48_generation_batch(
             output_path=output_path,
             adapter_sha256=entry["expected_sha256"],
             runtime_lock_sha256=lock_sha256,
-            provider_attestation_sha256=provider_attested_sha,
+            provider_attestation_sha256=None,
         )
     # Persist launch identity BEFORE the first model call. A failed/partial run
     # leaves this create-only marker; it can never silently consume the same
