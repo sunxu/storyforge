@@ -160,7 +160,6 @@ def try_case(cur, source, row, phase=None, reject_counts=None):
     def reject(reason):
         if reject_counts is not None:
             reject_counts[reason] += 1
-        return None
 
     mid, sid, turn, answer, metadata, created = row
     if not isinstance(answer, str) or not answer.strip() or edited(metadata):
