@@ -2,6 +2,9 @@
 
 ## 2026-11-21 Gold48 单 Owner Mac 调度简化策略（最新授权范围；优先于旧共享卷规划）
 
+**2026-11-21 提交后 Provider 证明交接路径（代码与合成测试，HF 实测未验）**：冻结 Gold48 输入 RO Stage 中**删除**须提交后才可能存在的 Provider Attestation，严格仅接受 14 份固定输入；单 Run 独立 `/input/provider:ro` 预先准备 `handoff-pending.json`，Provider 根据新 Job 的真实 Inspect/Job ID 独立签名，**提交后**只添加 `provider_attestation.private.json`，Job 在 GPU 加载前有界等待 600s、原签名/当前 JOB_ID 校验和本地 0600 安全物化。未到达/无效一律 HOLD；不是 Provider 私钥注入、HF Bucket 授权锁或 GPU 批准。**该 HF 原生 RO 挂载新增文件的实时可见性尚未实测，必须先用合成 CPU 工作负载证明，不得直接正式 GPU**。
+
+
 **当前 HF Job Provider 身份绑定更新**：原 `verify_provider_image_measurement` 已加强为对签名 `provider_job_id` 和 HF 注入 `JOB_ID` 的精确匹配，其他 Job 的真实签名一律 HOLD。当前 RO Stage 中证明须在提交前上传，但 JOB_ID 在提交后分配，因此仍缺**当前 Job 启动后证明交接**；不绕过门禁、不重复开发新的服务，也不提交正式 GPU。
 
 

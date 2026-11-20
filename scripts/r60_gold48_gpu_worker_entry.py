@@ -4,12 +4,16 @@ No new model backend, sampling loop, HF API submitter, or retry manager.
 The trusted Owner Mac prepares/stages these fixed files. Historical original
 replies MUST NOT be staged. This entry only reads the signed generation inputs.
 The "check" action never imports torch, starts GPU, or creates private scratch.
+The signed Provider Job attestation is delivered only AFTER Job creation
+through its own RO Bucket prefix; it is not part of the frozen Stage.
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
+import os
+import time
 import re
 import stat
 import sys
@@ -32,6 +36,10 @@ from storyforge_dataset.hf_runtime.inputs import InputManager
 
 SCHEMA = "storyforge_r60_gold48_hf_gpu_worker_entry_safe_v1"
 RO_STAGE = Path("/input/gold48")
+PROVIDER_MOUNT = Path("/input/provider")
+PENDING_NAME = "handoff-pending.json"
+ATTESTATION_NAME = "provider_attestation.private.json"
+MAX_ATTESTATION_WAIT_SECONDS = 600
 SCRATCH = Path("/tmp/storyforge-gold48-private")
 FROZEN_GIT_BLOB_SHA = "45e068d8ee7745f026455e887ca914aa82ab7fe1"
 STAGED = {
@@ -45,7 +53,6 @@ STAGED = {
     "r60_evidence.private.json": 65536,
     "owner_authorization.private.json": 65536,
     "owner_public.pem": 8192,
-    "provider_attestation.private.json": 65536,
     "provider_public.pem": 8192,
     "runtime_lock.hashes": 8 * 1024 * 1024,
     "runtime_contract.json": 65536,
@@ -72,28 +79,37 @@ def _json(path: Path, max_bytes: int) -> dict:
     return value
 
 
-def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
-    """Check the ONE fixed RO mount and manifest contract, before any GPU."""
-    _hold(bool(RUN_ID.fullmatch(run_id)) and role in ROLES,
-          "GOLD48_ENTRY_RUN_SCOPE_HOLD")
-    _hold(stage == RO_STAGE, "GOLD48_ENTRY_EXACT_STAGE_HOLD")
+def _require_direct_ro_fuse_mount(root: Path) -> None:
+    """Both frozen Stage and delayed Provider handoff are direct RO mounts."""
     try:
-        root = stage.lstat()
-        _hold(stat.S_ISDIR(root.st_mode) and not stage.is_symlink()
-              and stage.is_mount(), "GOLD48_ENTRY_RO_MOUNT_REQUIRED_HOLD")
-        lines = Path("/proc/self/mountinfo").read_text(encoding="utf-8")
-        mounts = []
-        for line in lines.splitlines():
+        info = root.lstat()
+        _hold(stat.S_ISDIR(info.st_mode) and not root.is_symlink()
+              and root.is_mount(), "GOLD48_ENTRY_RO_MOUNT_REQUIRED_HOLD")
+        matches = []
+        for line in Path("/proc/self/mountinfo").read_text(
+            encoding="utf-8"
+        ).splitlines():
             fields = line.split()
             if "-" not in fields:
                 continue
             dash = fields.index("-")
             if (len(fields) > dash + 1 and len(fields) >= 6
-                    and fields[4].replace(r"\040", " ") == str(stage)):
-                mounts.append((fields[5].split(","), fields[dash + 1]))
-        _hold(len(mounts) == 1 and "ro" in mounts[0][0]
-              and mounts[0][1].startswith("fuse"),
+                    and fields[4].replace(r"\040", " ") == str(root)):
+                matches.append((fields[5].split(","), fields[dash + 1]))
+        _hold(len(matches) == 1 and "ro" in matches[0][0]
+              and matches[0][1].startswith("fuse"),
               "GOLD48_ENTRY_RO_MOUNT_REQUIRED_HOLD")
+    except (OSError, UnicodeError) as exc:
+        raise WorkerError("GOLD48_ENTRY_RO_MOUNT_INSPECT_HOLD") from exc
+
+
+def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
+    """Check the ONE fixed RO mount and manifest contract, before any GPU."""
+    _hold(bool(RUN_ID.fullmatch(run_id)) and role in ROLES,
+          "GOLD48_ENTRY_RUN_SCOPE_HOLD")
+    _hold(stage == RO_STAGE, "GOLD48_ENTRY_EXACT_STAGE_HOLD")
+    _require_direct_ro_fuse_mount(stage)
+    try:
         observed = {p.name for p in stage.iterdir()}
         _hold(observed == set(STAGED),
               "GOLD48_ENTRY_EXACT_INPUT_FILESET_HOLD")
@@ -148,11 +164,71 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
         return {
             "manifest_sha": input_manifest["sha256"],
             "template_sha": template_sha,
+            "owner_scope": scope,
         }
     except (OSError, ValueError, TypeError, UnicodeError) as exc:
         if isinstance(exc, WorkerError):
             raise
         raise WorkerError("GOLD48_ENTRY_RO_INPUT_READ_HOLD") from exc
+
+
+def receive_current_provider_attestation(
+    *, mount: Path, run_id: str, model_role: str, owner_scope: dict,
+    target: Path, trusted_provider_public_key_path: Path,
+    timeout_seconds: int = MAX_ATTESTATION_WAIT_SECONDS,
+    monotonic=time.monotonic, sleep=time.sleep,
+) -> str:
+    """Bounded delayed handoff; accepts ONLY current-Job Provider signature.
+
+    A distinct RO Bucket prefix is prepared by the Owner BEFORE submission.
+    The independent Provider uses the new JOB_ID and runtime Inspect AFTER
+    the HF Job is created, then uploads exactly one signed attestation.
+    Mount visibility is eventually consistent; missing proof means HOLD.
+    No GPU or weights are loaded before full independent verification.
+    """
+    _hold(mount == PROVIDER_MOUNT and isinstance(timeout_seconds, int)
+          and 0 < timeout_seconds <= MAX_ATTESTATION_WAIT_SECONDS
+          and isinstance(owner_scope, dict)
+          and owner_scope.get("run_id") == run_id
+          and owner_scope.get("model_role") == model_role,
+          "GOLD48_PROVIDER_HANDOFF_SCOPE_HOLD")
+    _hold(re.fullmatch(r"[0-9a-f]{24}", os.environ.get("JOB_ID", "")) is not None,
+          "GOLD48_PROVIDER_CURRENT_JOB_ID_REQUIRED_HOLD")
+    _require_direct_ro_fuse_mount(mount)
+    marker = _json(mount / PENDING_NAME, 8192)
+    _hold(marker == {
+        "schema": "storyforge_r60_gold48_provider_handoff_pending_v1",
+        "run_id": run_id,
+        "model_role": model_role,
+    }, "GOLD48_PROVIDER_HANDOFF_PENDING_SCOPE_HOLD")
+    proof = mount / ATTESTATION_NAME
+    _hold(not target.exists() and not target.is_symlink(),
+          "GOLD48_PROVIDER_HANDOFF_LOCAL_ALREADY_EXISTS_HOLD")
+    deadline = monotonic() + timeout_seconds
+    while True:
+        try:
+            names = {p.name for p in mount.iterdir()}
+        except OSError as exc:
+            raise WorkerError("GOLD48_PROVIDER_HANDOFF_MOUNT_READ_HOLD") from exc
+        _hold(names in ({PENDING_NAME}, {PENDING_NAME, ATTESTATION_NAME}),
+              "GOLD48_PROVIDER_HANDOFF_REMOTE_FILESET_HOLD")
+        if ATTESTATION_NAME in names:
+            # A copy is create-only and SHA-checked locally. A malformed or
+            # mismatched signed proof fails closed; NEVER retry GPU generation.
+            raw = InputManager.open_verified(
+                proof, max_bytes=65536,
+            )
+            gate.materialize_gold48_ro_input(
+                source=proof, target=target,
+                expected_sha256=raw.sha256, max_bytes=65536,
+            )
+            return gate.verify_provider_image_measurement(
+                attestation_path=target,
+                trusted_provider_public_key_path=trusted_provider_public_key_path,
+                owner_scope=owner_scope,
+            )
+        _hold(monotonic() < deadline, "GOLD48_PROVIDER_HANDOFF_TIMED_OUT_HOLD")
+        sleep(2)
 
 
 def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
@@ -189,6 +265,16 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         materialized["input.private.jsonl"], max_bytes=16 * 1024 * 1024,
         expected_sha256=validated["manifest_sha"]
     ).size_bytes > 0, "GOLD48_ENTRY_INPUT_LOCAL_SHA_HOLD")
+    # No Provider attestation is bundled in pre-submission frozen Stage.
+    # It is independently signed AFTER the Job ID exists and handed over
+    # via a distinct, exact, read-only Bucket prefix.
+    provider_proof_local = input_dir / ATTESTATION_NAME
+    receive_current_provider_attestation(
+        mount=PROVIDER_MOUNT, run_id=run_id, model_role=role,
+        owner_scope=validated["owner_scope"],
+        target=provider_proof_local,
+        trusted_provider_public_key_path=materialized["provider_public.pem"],
+    )
     frozen = read_private_contract(materialized["frozen_profile.json"])
     owner_freeze = read_private_contract(materialized["owner_freeze.private.json"])
     bindings = read_private_contract(materialized["adapter_bindings.private.json"])
@@ -208,9 +294,7 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         },
         runtime_lock_path=materialized["runtime_lock.hashes"],
         runtime_contract_path=materialized["runtime_contract.json"],
-        provider_attestation_path=materialized[
-            "provider_attestation.private.json"
-        ],
+        provider_attestation_path=provider_proof_local,
         trusted_provider_public_key_path=materialized["provider_public.pem"],
         expected_template_sha256=validated["template_sha"],
     )

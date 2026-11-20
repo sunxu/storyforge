@@ -250,3 +250,15 @@ PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_result_audit.py
 `gold48_runtime_gate.verify_provider_image_measurement` 现在必须验证：独立签名的 Provider Inspect `measurement.provider_job_id` 与**执行中的** HF Jobs 官方 `JOB_ID` 环境变量精确一致（24 位小写十六进制）；当前 Job ID 缺失、格式不符、或签名属于别的 Job 均在 GPU 加载前 HOLD。保留签名与镜像摘要、Run ID/role 检验。参考 [HF Jobs 官方环境变量](https://huggingface.co/docs/hub/jobs-configuration)。
 
 **尚存真正的提交时序阻塞**：目前 15 文件 RO Stage 要求在提交前包含 Provider Attestation；然而新 Job ID 要在提交后才生成。不能使用上次 CPU Job 的证明，也不能忽略本次一致性校验。只有经 Owner 和独立 Provider 许可的**当前 Job 启动后真实证据交接**完成并验收，才有可能启动 GPU。此轮不新增数据库或签名服务，不启动 HF Job，不签发授权。
+
+
+### 当前 Job ID 证明的最小交接：独立只读挂载（2026-11-21）
+
+**已修正“提交前必须知道 JOB_ID”的循环依赖**。Gold48 固定输入 Stage 由 15 份减为 **14 份**：`provider_attestation.private.json` 不再允许预置其中，其余冻结输入、原 SHA、Adapter 只读挂载均不变化。**仅多增加一个运行时数据交接挂载**，不是新提交器或独立授权服务：
+
+- Owner 在**实际 GPU 提交授权之前**，为单臂唯一 `run_id` 在已存在的私有 Bucket 下准备独立前缀 `preflight/r60/gold48/provider-handoff/<run_id>/`，首先放置一份不含私有内容的 `handoff-pending.json`，结构为 `{"schema":"storyforge_r60_gold48_provider_handoff_pending_v1","run_id":"<run_id>","model_role":"<role>"}`。HF Job **精确 RO 挂载**该前缀到 `/input/provider`，冻结输入前缀仍精确 RO 挂载到 `/input/gold48`，最终结果独立 RW 挂载到 `/output`。不得把整个 Bucket 挂载为 RW。
+- HF Job 在启动后拿到真实 `JOB_ID`，运行现有预检并停在**GPU 加载之前**。可信 Provider **在单独的受控 Owner/Provider 流程中**查看这个真实 Job 的 image Inspect 证据，再用其事先登记的独立 Ed25519 密钥签发包含 `provider_job_id=JOB_ID` 的已有 schema 证明，上传为该前缀中的**唯一新增** `provider_attestation.private.json`。不向 GPU Job 注入 Provider 私钥或 HF 上传令牌。
+- 新增的 **一个** `receive_current_provider_attestation` 函数仅在 `execute` 中启用：复用严格 RO/FUSE mountinfo 检查，核对 pending 的 run/role，最多等待 **600 秒**（每两秒检查，远程最终一致性只作为可见性机制，不是原子锁）；一旦证明出现，将其 SHA 核验并物化为本地 0600，再直接调用现成 `verify_provider_image_measurement` **验证签名、公钥 Pin、当前 JOB_ID、运行范围和镜像摘要**。不存在、超时、异 Job、签名无效或目录存在非预期文件均 HOLD，绝不自动重提生成。这里每秒的 GPU 资源等待可能计费，必须先有明确成本/时长授权。
+- **尚未真实验收**：HF 托管的 RO 挂载在运行中对外部新增文件的可见性需要一次受控 CPU 合成验收，且须核对实际 HF Job 是否使用该更新机制；单独的 GPU Smoke/生成与 Owner/Provider 信任锚仍待签收。不能把代码 CI 当作动态挂载 PASS 或真实推理授权。
+
+下一步仅复用既有 `r60_common2_wrapped_hf_cli` 的单 Owner 提交防重复和 `r60_base336_gpu_cli` 的 GPU 参数/dry-run 生成，给定上述 **RO Stage + RO Provider Handoff + 3 个 Adapter RO + 单 Run RW 输出**，在 Mac 上完成受控**只读参数检查和远端空目录核验**，不开发通用 Runner。HF 官方 hf-mount 支持 Bucket 的 live-follow/eventual consistency，但不能保证每次容器托管挂载都立即看见新增文件，故先作 CPU 合成验收。
