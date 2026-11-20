@@ -20,6 +20,10 @@ from typing import Any
 from storyforge_dataset.hf_runtime.inputs import InputManager
 
 from .backend import TransformersGenerationBackend
+from .gold48_runtime_gate import (
+    SignedGold48LoadPermit,
+    verify_and_consume_gold48_load_permit,
+)
 from .worker import WorkerError
 
 MODEL = "Qwen/Qwen3.8-27B"
@@ -120,18 +124,20 @@ def load_pinned_gold48_backend(
     adapter_dir: Path | None,
     expected_adapter_sha256: str | None,
     expected_template_sha256: str,
-    runtime_authorized: bool = False,
+    launch_permit: SignedGold48LoadPermit | None = None,
     torch_module: Any | None = None,
     transformers_module: Any | None = None,
     peft_module: Any | None = None,
 ) -> TransformersGenerationBackend:
-    """GPU-only explicit loader. Caller must independently enforce signed run auth.
+    """GPU-only loader. A signed, measured, consumed ONE-SHOT grant is required.
 
-    Passing runtime_authorized=True is necessary, never sufficient for a public
-    Job or model generation authorization; no submitter calls this automatically.
+    This gate executes BEFORE importing torch or touching the CUDA driver.
+    A legacy runtime_authorized=True boolean is intentionally unsupported.
     """
-    if not runtime_authorized:
-        raise WorkerError("GOLD48_RUNTIME_NOT_AUTHORIZED")
+    verify_and_consume_gold48_load_permit(
+        permit=launch_permit, adapter_dir=adapter_dir,
+        adapter_sha256=expected_adapter_sha256,
+    )
     if not isinstance(expected_template_sha256, str) or not SHA256.fullmatch(expected_template_sha256):
         raise WorkerError("GOLD48_TEMPLATE_SHA_REQUIRED")
     if (adapter_dir is None) != (expected_adapter_sha256 is None):
@@ -195,6 +201,10 @@ def load_pinned_gold48_backend(
         )
         backend.gold48_adapter_sha256 = expected_adapter_sha256
         backend.gold48_adapter_dir = adapter_dir.resolve(strict=True) if adapter_dir else None
+        backend.gold48_production_runtime_attested = True
+        backend.gold48_owner_authorization_receipt_path = launch_permit.owner_receipt_path
+        backend.gold48_runtime_lock_path = launch_permit.runtime_lock_path
+        backend.gold48_provider_attestation_path = launch_permit.provider_attestation_path
         return backend
     except WorkerError:
         raise

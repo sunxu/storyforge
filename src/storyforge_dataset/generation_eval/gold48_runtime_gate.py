@@ -16,6 +16,7 @@ import json
 import os
 import platform
 import re
+import secrets
 import stat
 import subprocess
 import sys
@@ -38,6 +39,8 @@ DURABLE_CONSUMPTION_ROOT = Path("/mnt/storyforge-private/gold48-authorizations-s
 MEASUREMENT_SCHEMA = "storyforge_r60_gold48_provider_image_measurement_v1"
 SIGNED_MEASUREMENT_SCHEMA = "storyforge_r60_gold48_provider_ed25519_attestation_v1"
 CONSUMPTION_SCHEMA = "storyforge_r60_gold48_authorization_consumed_private_v1"
+# Process-local issuance registry: a file or dataclass alone cannot re-mint a grant.
+_ISSUED_ONE_SHOT_PERMITS: dict[str, str] = {}
 HEX_SHA = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -180,6 +183,7 @@ class SignedGold48LoadPermit:
     runtime_lock_path: Path
     runtime_contract_path: Path
     selected_adapter_dir: Path | None
+    one_shot_nonce: str
 
 
 def _validate_durable_ledger_root() -> None:
@@ -274,6 +278,10 @@ def authorize_and_consume_before_gpu(
         OutputManager.write_safe(spent, payload, mode=0o600)
     except (OSError, ValueError) as exc:
         raise WorkerError("GOLD48_AUTHORIZATION_ALREADY_SPENT_OR_LEDGER_HOLD") from exc
+    nonce = secrets.token_hex(32)
+    _check(auth.receipt_sha256 not in _ISSUED_ONE_SHOT_PERMITS,
+           "GOLD48_AUTHORIZATION_ALREADY_SPENT_OR_LEDGER_HOLD")
+    _ISSUED_ONE_SHOT_PERMITS[auth.receipt_sha256] = nonce
     return SignedGold48LoadPermit(
         owner_receipt_path=owner_authorization_receipt_path,
         owner_public_key_path=trusted_owner_public_key_pem_path,
@@ -287,6 +295,7 @@ def authorize_and_consume_before_gpu(
             None if model_role == "base"
             else Path(adapter_bindings["arms"][model_role]["local_dir"])
         ),
+        one_shot_nonce=nonce,
     )
 
 
@@ -347,3 +356,5 @@ def verify_and_consume_gold48_load_permit(
            and spent["runtime_image_digest_measured"] ==
                auth.payload["runtime_image_digest"],
            "GOLD48_RUNTIME_MEASUREMENT_CHANGED_HOLD")
+    _check(_ISSUED_ONE_SHOT_PERMITS.pop(auth.receipt_sha256, None) ==
+           permit.one_shot_nonce, "GOLD48_LOADER_ONE_SHOT_PERMIT_REUSED_HOLD")
