@@ -11,7 +11,8 @@ import argparse
 import hashlib
 import json
 import stat
-from collections import Counter, defaultdict
+from collections import Counter
+from itertools import pairwise
 from pathlib import Path
 
 SHARED_STATUS = "NEW_RECONSTRUCTED_48_CANDIDATES__NOT_OWNER_FROZEN"
@@ -118,7 +119,7 @@ def evaluate(root):
             for m in messages
         ), "PREFIX_MESSAGES_INVALID_HOLD")
         require(all(a["role"] != b["role"]
-                    for a, b in zip(messages, messages[1:], strict=False)),
+                    for a, b in pairwise(messages)),
                 "PREFIX_ROLE_SEQUENCE_HOLD")
         prefix_hash = sha_utf8(canonical(messages))
         reply_hash = sha_utf8(reply)
