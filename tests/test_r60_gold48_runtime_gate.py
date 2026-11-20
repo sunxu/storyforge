@@ -543,76 +543,113 @@ def test_gold48_materialize_ro_file_reuses_verified_input_sha(tmp_path):
     assert not (target_root / "wrong").exists()
 
 
-def test_gold48_private_delivery_uploads_manifest_last_and_verifies_each_sha(
-    tmp_path, monkeypatch,
-):
+def _mock_gold48_rw_mount(tmp_path, monkeypatch):
+    """Synthetic direct FUSE mount for output-transfer tests; no HF Job."""
+    root = tmp_path / "native-rw-bucket"
+    root.mkdir(mode=0o755)
+    monkeypatch.setattr(gate, "BUCKET_RESULT_MOUNT", root)
+    original_mount = Path.is_mount
+    original_read = Path.read_text
+    monkeypatch.setattr(
+        Path, "is_mount",
+        lambda self: self == root or original_mount(self),
+    )
+
+    def mountinfo(path, *args, **kwargs):
+        if str(path) == "/proc/self/mountinfo":
+            return (
+                "1 0 0:1 / / rw,relatime - overlay overlay rw\n"
+                f"2 1 0:2 / {root} rw,relatime - fuse.hf-bucket bucket rw\n"
+            )
+        return original_read(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "read_text", mountinfo)
+    return root
+
+
+def _synthetic_gold48_output(tmp_path):
     from storyforge_dataset.hf_runtime.outputs import OutputManager
 
     root = tmp_path / "private-run"
     root.mkdir(mode=0o700)
     output = root / "base.private.json"
-    original = b'{"schema":"synthetic-output"}\n'
-    output.write_bytes(original)
+    data = b'{"schema":"synthetic-output"}\n'
+    output.write_bytes(data)
     output.chmod(0o600)
     for suffix in (".launch.private.json", ".identity.private.json"):
         OutputManager.write_safe(output.with_name(output.name + suffix),
                                  {"schema": "synthetic"}, mode=0o600)
-    stored = {}
-    uploaded_names = []
-
-    def fake_cp(argv, **_kwargs):
-        assert argv[:3] == ["hf", "buckets", "cp"]
-        source, target = argv[3:]
-        if source.startswith("hf://"):
-            assert source in stored
-            Path(target).write_bytes(stored[source])
-        else:
-            assert target not in stored
-            stored[target] = Path(source).read_bytes()
-            uploaded_names.append(Path(source).name)
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
-
-    monkeypatch.setattr(gate.subprocess, "run", fake_cp)
     receipt = SimpleNamespace(
-        record_count=48, output_sha256=hashlib.sha256(original).hexdigest()
+        record_count=48, output_sha256=hashlib.sha256(data).hexdigest()
     )
+    return output, receipt
+
+
+def test_gold48_delivery_uses_native_rw_mount_manifest_last_no_cli(
+    tmp_path, monkeypatch,
+):
+    bucket = _mock_gold48_rw_mount(tmp_path, monkeypatch)
+    output, receipt = _synthetic_gold48_output(tmp_path)
+    def reject_cli(*_args, **_kwargs):
+        pytest.fail("A GPU Job must not need hf CLI or any token for delivery")
+    monkeypatch.setattr(gate.subprocess, "run", reject_cli)
     gate.deliver_gold48_private_result(
         output_path=output, run_id="synthetic-g48-owner-001",
         model_role="base", worker_receipt=receipt,
     )
-    assert len(uploaded_names) == 4
-    assert uploaded_names[-1].endswith(".result-sha256-manifest.private.json")
-    manifest_file = root / uploaded_names[-1]
-    assert stat.S_IMODE(manifest_file.stat().st_mode) == 0o600
-    assert len(stored) == 4
+    names = {p.name for p in bucket.iterdir()}
+    expected = {
+        "base.private.json",
+        "base.private.json.launch.private.json",
+        "base.private.json.identity.private.json",
+        "base.private.json.result-sha256-manifest.private.json",
+    }
+    assert names == expected
+    assert len(names) == 4
+    manifest = json.loads(
+        (bucket / "base.private.json.result-sha256-manifest.private.json").read_bytes()
+    )
+    assert manifest["record_count"] == 48
+    assert manifest["run_id"] == "synthetic-g48-owner-001"
+    assert len(manifest["files"]) == 3
+    assert all(
+        hashlib.sha256((bucket / row["name"]).read_bytes()).hexdigest()
+        == row["sha256"] for row in manifest["files"]
+    )
 
 
-def test_gold48_private_delivery_holds_if_remote_sha_differs(tmp_path, monkeypatch):
-    root = tmp_path / "private-run"
-    root.mkdir(mode=0o700)
-    output = root / "base.private.json"
-    output.write_text('{"schema":"synthetic"}\n')
-    output.chmod(0o600)
-    for suffix in (".launch.private.json", ".identity.private.json"):
-        marker = output.with_name(output.name + suffix)
-        marker.write_text('{"schema":"synthetic"}\n')
-        marker.chmod(0o600)
-    calls = []
+def test_gold48_delivery_holds_on_corrupted_fuse_readback(
+    tmp_path, monkeypatch,
+):
+    bucket = _mock_gold48_rw_mount(tmp_path, monkeypatch)
+    output, receipt = _synthetic_gold48_output(tmp_path)
+    from storyforge_dataset.hf_runtime.inputs import InputManager
+    real_reader = InputManager.open_verified
 
-    def corrupt_download(argv, **_kwargs):
-        calls.append(argv)
-        if argv[3].startswith("hf://"):
-            Path(argv[4]).write_bytes(b"corrupted")
-        return SimpleNamespace(returncode=0, stdout="", stderr="")
+    def corrupt(path, **kwargs):
+        if Path(path).parent == bucket:
+            raise ValueError("INPUT_SHA256_MISMATCH")
+        return real_reader(path, **kwargs)
 
-    monkeypatch.setattr(gate.subprocess, "run", corrupt_download)
+    monkeypatch.setattr(InputManager, "open_verified", corrupt)
     with pytest.raises(WorkerError, match="GOLD48_DELIVERY_UNCONFIRMED_NO_RETRY_HOLD"):
         gate.deliver_gold48_private_result(
             output_path=output, run_id="synthetic-g48-owner-002",
-            model_role="base",
-            worker_receipt=SimpleNamespace(
-                record_count=48,
-                output_sha256=hashlib.sha256(output.read_bytes()).hexdigest(),
-            ),
+            model_role="base", worker_receipt=receipt,
         )
-    assert len(calls) == 2  # one upload and one failed checksum readback
+    assert not (bucket / "base.private.json.result-sha256-manifest.private.json").exists()
+
+
+def test_gold48_delivery_rejects_container_local_fake_mount(
+    tmp_path, monkeypatch,
+):
+    output, receipt = _synthetic_gold48_output(tmp_path)
+    root = tmp_path / "not-a-real-mount"
+    root.mkdir()
+    monkeypatch.setattr(gate, "BUCKET_RESULT_MOUNT", root)
+    with pytest.raises(WorkerError, match="GOLD48_DELIVERY_RW_MOUNT_REQUIRED_HOLD"):
+        gate.deliver_gold48_private_result(
+            output_path=output, run_id="synthetic-g48-owner-003",
+            model_role="base", worker_receipt=receipt,
+        )
+    assert not list(root.iterdir())

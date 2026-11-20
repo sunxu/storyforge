@@ -210,3 +210,10 @@ hf jobs run --namespace adradar --name gold48-atomic-ledger-verify-cpu \
 ```
 
 第二份日志须为 `ATOMIC_CREATE_ONLY_AND_CROSS_JOB_PERSISTENCE_CPU_PASS`，且 `marker_sha256` 与第一份一致、`cross_job_persistence_verified=true`。这是**独立合成存储验收**，与真实 Owner 账本的运行部署、独立签名信任锚、GPU Smoke / 192 条生成批准完全分离。不自动发第二份 Job、不自动重试；仅在第一份明确 PASS 后手动提交第二份。任何输出都不得包含私有数据。实际完成后回收两个 Job ID 和仅 SAFE 状态写入本手册，不修改已冻结 Profile。
+
+
+### 2026-11-21 结果交付路径进一步简化（覆盖上方旧 CLI 说明）
+
+按 [HF Jobs volumes 官方说明](https://huggingface.co/docs/hub/jobs-configuration#volumes)，Job 已原生支持独立 `:rw` Bucket 输出挂载，因此 **正式 Job 内不再调用 `hf buckets cp`、不需要注入 `HF_TOKEN`**。原 `deliver_gold48_private_result` 现在直接向准确挂载的 `/output` 写入 3 份私有对象，最后写 SHA256 manifest，并在同一挂载内回读 SHA。它要求 `/output` 在内核 mountinfo 中是**直接可写 FUSE 挂载**，拒绝用容器本地目录假冒远端交付；`/output` 的 POSIX mode **不是**授权锁条件。真正需要 `0700/0600 + fsync` 的只是 Job 内本地生成原件。
+
+Mac 端在提交前必须核对结果前缀 `experiments/r60-gold48/outputs/<run_id>/` 为空，确认输入只读、唯一 Owner Mac、无自动重试；正式 Job 成功后，**由 Owner Mac 独立 `hf buckets cp` 下载四份结果并重算 SHA 与 48 条内容结构**，不能把 Job 内本地 FUSE 回读作为最终验收。此前手册关于“Job 内 `hf buckets cp` 上传并下载校验”的说法是历史方案，以本段为准。未签名/未批准 GPU 时仍保持 HOLD。

@@ -21,7 +21,6 @@ import secrets
 import stat
 import subprocess
 import sys
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -40,6 +39,8 @@ from .worker import WorkerError
 PROVIDER_TRUSTED_PUBLIC_PEM_SHA256 = ""
 # Job-local ONLY, not a shared Bucket or distributed lock.
 JOB_LOCAL_CONSUMPTION_ROOT = Path("/tmp/storyforge-gold48-private/spent")
+# HF Job native :rw Bucket mount. Used only for result object transfer.
+BUCKET_RESULT_MOUNT = Path("/output")
 # A successful earlier CPU mount probe is not a production-process observation.
 ADAPTER_MOUNT_ROOT = Path("/ro_adapters")
 ADAPTER_MOUNTINFO_PATH = Path("/proc/self/mountinfo")
@@ -653,16 +654,52 @@ def materialize_gold48_ro_input(
         raise WorkerError("GOLD48_RO_LOCALIZE_IO_HOLD") from exc
 
 
+def _validate_native_rw_result_mount(root: Path) -> None:
+    """Prove the result destination is a distinct, kernel-visible RW FUSE mount.
+
+    The Bucket is used only for transfer, NOT for POSIX atomic authorization.
+    Requiring a direct mount avoids false success on ephemeral container files.
+    """
+    try:
+        st = root.lstat()
+        _check(
+            root.is_absolute() and root != Path("/")
+            and stat.S_ISDIR(st.st_mode)
+            and not root.is_symlink()
+            and root.is_mount(),
+            "GOLD48_DELIVERY_RW_MOUNT_REQUIRED_HOLD",
+        )
+        records = []
+        for line in Path("/proc/self/mountinfo").read_text(
+            encoding="utf-8"
+        ).splitlines():
+            fields = line.split()
+            if "-" not in fields:
+                continue
+            dash = fields.index("-")
+            if len(fields) <= dash + 1 or len(fields) < 6:
+                continue
+            mountpoint = fields[4].replace(r"\040", " ")
+            if mountpoint == str(root):
+                records.append((fields[5].split(","), fields[dash + 1]))
+        _check(len(records) == 1, "GOLD48_DELIVERY_RW_MOUNT_REQUIRED_HOLD")
+        options, fstype = records[0]
+        _check("rw" in options and fstype.startswith("fuse"),
+               "GOLD48_DELIVERY_RW_BUCKET_FUSE_REQUIRED_HOLD")
+    except (OSError, UnicodeError) as exc:
+        raise WorkerError("GOLD48_DELIVERY_RW_MOUNT_INSPECT_HOLD") from exc
+
+
 def deliver_gold48_private_result(
     *, output_path: Path, run_id: str, model_role: str,
     worker_receipt: Any,
 ) -> None:
-    """One-shot transfer to the Owner's private HF Bucket; manifest LAST.
+    """Deliver four private objects through the native HF Job :rw volume.
 
-    This is not an atomic Bucket lock. Every object is downloaded and SHA
-    checked after upload; the Owner Mac must independently audit it later.
-    Failed or partial remote delivery requires Owner adjudication, never a
-    silent regeneration or an automatic retry in this Job.
+    No HF_TOKEN, Job-side CLI or global lock is needed. Manifest is transferred
+    last, after each object is read back from the mount and SHA-verified.
+    The independent Owner Mac audit is still mandatory before evaluation.
+    A partial remote output is never repaired by re-generating the same run.
     """
     from .gold48_contract_bridge import ROLES
 
@@ -713,47 +750,40 @@ def deliver_gold48_private_result(
     }
     try:
         OutputManager.write_safe(manifest_path, manifest, mode=0o600)
-        confirmed = InputManager.open_verified(
-            manifest_path, max_bytes=8192,
-        )
+        confirmed = InputManager.open_verified(manifest_path, max_bytes=8192)
     except (OSError, ValueError) as exc:
         raise WorkerError("GOLD48_DELIVERY_MANIFEST_CREATE_HOLD") from exc
     entries.append({
         "name": manifest_path.name,
         "sha256": confirmed.sha256, "size_bytes": confirmed.size_bytes,
     })
-    prefix = (
-        "hf://buckets/adradar/storyforge-training/"
-        "experiments/r60-gold48/outputs/" + run_id + "/"
-    )
-    with tempfile.TemporaryDirectory(
-        prefix=".gold48-delivery-verify-", dir=output_path.parent,
-    ) as directory:
-        private_check = Path(directory)
-        private_check.chmod(0o700)
-        for path, item in zip((*files, manifest_path), entries):
-            remote = prefix + item["name"]
-            try:
-                upload = subprocess.run(
-                    ["hf", "buckets", "cp", str(path), remote],
-                    capture_output=True, text=True, timeout=300, check=False,
-                )
-                _check(upload.returncode == 0, "GOLD48_DELIVERY_UPLOAD_HOLD")
-                local_copy = private_check / item["name"]
-                download = subprocess.run(
-                    ["hf", "buckets", "cp", remote, str(local_copy)],
-                    capture_output=True, text=True, timeout=300, check=False,
-                )
-                _check(download.returncode == 0,
-                       "GOLD48_DELIVERY_READBACK_HOLD")
-                verified = InputManager.open_verified(
-                    local_copy, max_bytes=16 * 1024 * 1024,
-                    expected_sha256=item["sha256"],
-                )
-                _check(verified.size_bytes == item["size_bytes"],
-                       "GOLD48_DELIVERY_READBACK_HOLD")
-            except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
-                raise WorkerError("GOLD48_DELIVERY_UNCONFIRMED_NO_RETRY_HOLD") from exc
+
+    mount = BUCKET_RESULT_MOUNT
+    _validate_native_rw_result_mount(mount)
+    for source, entry in zip((*files, manifest_path), entries):
+        remote = mount / entry["name"]
+        _check(not remote.exists() and not remote.is_symlink(),
+               "GOLD48_DELIVERY_REMOTE_ALREADY_EXISTS_HOLD")
+        try:
+            verified = InputManager.open_verified(
+                source, max_bytes=16 * 1024 * 1024,
+                expected_sha256=entry["sha256"],
+            )
+            # No POSIX mode or dir fsync requirement on the Bucket FUSE.
+            # The local source already passed those requirements.
+            fd = os.open(remote, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW,
+                         0o600)
+            with os.fdopen(fd, "wb") as output:
+                output.write(verified.read_bytes())
+                output.flush()
+            observed = InputManager.open_verified(
+                remote, max_bytes=16 * 1024 * 1024,
+                expected_sha256=entry["sha256"],
+            )
+            _check(observed.size_bytes == entry["size_bytes"],
+                   "GOLD48_DELIVERY_REMOTE_READBACK_HOLD")
+        except (OSError, ValueError) as exc:
+            raise WorkerError("GOLD48_DELIVERY_UNCONFIRMED_NO_RETRY_HOLD") from exc
 
 
 def run_authorized_gold48_production(
