@@ -1,5 +1,20 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Owner 最新真实回执：全 172 Base336 Story / 375 来源版本直接核验完成（覆盖本文件此前“134 个来源仍缺失”的历史阻塞）
+
+**这是新的事实性门禁进展，不是自动 P2-C 语义隔离 PASS。** Owner 已使用现有脚本 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py`，配合刚生成的**新 2-before / 6-after、7 作者** P2 v2 私有 Manifest、冻结六目录和既有只读数据库连接，先运行无 DB 预检，再 `--execute` 成功：
+
+- **无 DB 预检**：`P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB`；冻结原始候选 336、真实来源 Story **172**、P2 8，Story ID 精确交集 **0**；未创建私有文件。
+- **真实只读 DB 来源提取**：`P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED`；`base336_cases=336`、`base336_case_source_bindings=336`、`base336_story_ids=172`；冻结来源当前记录 **172**、历史归档版本 **203**，**375** 份来源记录的 `world/character/characters/opening` 各字段有值 **375/375**。
+- 新 P2 八来源：`p2_snapshot_bindings=8`、`p2_permission_bindings=8`、`p2_manifest_binding_rows_verified=true`，四类字段均 **8/8** 有值。新来源对完整 172 Story 身份交集 **0**，对 **375 份**已抓取来源版本的 `world`、`character`、`characters`、`opening` **每个完整 JSON 字段的 exact matching 均为 0 P2 Stories、0 Base336 Stories、0 Record Pairs**。
+- 以 `O_EXCL` create-only 已写出 Owner Mac 私有 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json`，大小 **10,276,892 bytes**；内容含冻结 336 case→Story/Session/Message 的原始来源关联、172 Story 的当前/历史组件、八个新的 P2 审核快照组件以及精确比较证据。**只保存 Owner Mac 权限 0600 的路径**，不上传 GitHub/CI、不公开正文、映射、SHA 或用户 ID；`database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`。
+- **纠正本文件更早的旧状态**：现有 P2 × Base336 **全部 172 Story 身份和 current+archived 375 records 的来源捕获与精确字段交叉已完成**。不得再声称“134 Source ID/版本权威名单缺失”或要求 Owner 重跑旧提取脚本；早先 38 Story/59 records 子集证据仍可留存，但现由完整 172/375 证据覆盖其精确隔离范围。
+- **仍明确 HOLD 的实质缺口**：`historical_actual_sent_verified=false`；`semantic_world_alias_verified=false`；`world_component_isolation_verified=false`；`r50_complete_exclusion_verified=false`；`reviewer_independence_verified=false`。整套来源字段精确不相等**不代表角色别名、人物关系、派系、事件、规则、世界观和情节语义独立**；实际发送到模型的 source revision/System/Rules 字节仍未得到证明，R50 五世界之外和其他 Protected/Reserved、Dev/Teacher 全历史集合的穷尽性也尚未封闭。现有 `src/storyforge_dataset/world_isolation.py` 只对**Reviewer 已声明**的 component IDs 验证分组冲突，不自行推断文本语义，不能误充独立判断。
+- **下一唯一主线交付**：从**已生成的这一个 10.3MB Owner 私有证据包**对 P2 8 vs Base336 172 current + 203 archived 做独立来源语义审阅；Reviewer 必须实际查看真实 `world/character/characters/opening`、角色别名/世界规则/组织关系/事件与共享剧情，不得仅按 JSON MD5、字数或创建时间判 PASS。按每个 P2 来源保存完整覆盖范围、来源引文、版本/对应记录、具体同源或异源推理及 `SAME_COMPONENT / INDEPENDENT_TEMPLATE / INSUFFICIENT_EVIDENCE` 意见，任何证据不足保留 HOLD；每位 Reviewer 的独立性和私人交付字节由 Owner 验证，不把未签署评论当成正式独立审核。继续独立完成 R50 外 Protected/Reserved + 历史 Dev/Teacher provenance-only 全集覆盖、历史 request-effective 实际输入核验；仅全通过并 Owner 明确冻结后才能生成正式 48 Prompt + 48 Original Reference 并做四模型+原始答案同题六维盲评。
+- **正式状态保持**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。不得重复数据抽取、自动运行 GPU/模型或通过 CI 代替人的语义裁决。
+
+---
+
 ## 2026-11-20 来源冻结接口阻塞已修：仅最小向后兼容适配，Owner Freeze 仍待执行
 
 **本项仅修复已知的 CLI/Manifest 接口不兼容，不重复选择 Gold、不新建通用提取器、不自动晋升 P2-C。** 当前 PR 已为既有 `r60_base336_p2_public_source_inventory_cpu.py` 增加可选 `--source-first-ids-file`，其旧默认 **3 before + 5 after / 5 authors** 源选择、v1 输出格式不变；新方式从严格 Gold48 source-first 审核已经确认的八个 Story UUID 读取**Owner 自有 0600 输入文件**，在数据库公开审核元数据中重新绑定 **2 before + 6 after / 7 authors**，限制创建时间不晚于 `2026-11-19T15:30:00Z`，输出新 v2 私有 Manifest，且 `owner_freeze=PENDING`。既有 `r60_base336_p2_source_evidence_capture_cpu.py` 已向后兼容 v1/v2、固定 count/schema/选择模式/输入源清单 SHA 形状，继续做来源修订与授权行精确比对，**不会因为版本升级而绕过旧门禁**。相关 P2 合成用例和全部 CI 必须通过。
