@@ -111,5 +111,5 @@ def test_source_staging_refuses_unauthorized_owner_freeze(tmp_path):
     doc["prompt_owner_freeze"] = True
     private_file(draft_file, doc)
     new_key = "r60-gold48-cpu-20261121T010101Z-fedcba654321"
-    with pytest.raises(stage_tool.Hold, match="DRAFT_INPUT_CONTRACT_HOLD"):
+    with pytest.raises(ValueError, match="DRAFT_INPUT_CONTRACT_HOLD"):
         stage_tool.prepare(draft_file, tmp_path / new_key, new_key)
