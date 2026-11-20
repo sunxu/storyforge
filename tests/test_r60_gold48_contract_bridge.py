@@ -25,6 +25,7 @@ from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     build_gold48_frozen_input_payload,
     prepare_gold48_generation_contract,
     read_private_contract,
+    recover_gold48_identity_sidecar,
     run_gold48_generation_batch,
     verify_gold48_binding_source_evidence,
 )
@@ -702,3 +703,104 @@ def test_owner_local_accept_and_sign_cli_synthetic_no_gpu(tmp_path):
     assert signed["payload"]["adapter_bindings_canonical_sha256"] == _digest(accepted)
     assert stat.S_IMODE(receipt_path.stat().st_mode) == 0o600
     assert subprocess.run(sign, capture_output=True, env=env, check=False).returncode == 2
+
+
+def test_recover_sidecar_from_existing_48_output_without_rerun(tmp_path, monkeypatch):
+    """Sidecar failure keeps 48 genuine synthetic outputs, repairs metadata only."""
+    from storyforge_dataset.hf_runtime.outputs import OutputManager
+
+    role = "r46_v02"
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    auth, output, _ = synthetic_signed_owner_receipt(tmp_path, monkeypatch, pack, role)
+    backend = SyntheticIdentityBackend(pack, role)
+    original = OutputManager.write_safe.__func__
+
+    def fail_only_sidecar(cls, path, payload, *, mode=0o600):
+        if path.name.endswith(".identity.private.json"):
+            raise ValueError("synthetic-sidecar-publication-failure")
+        return original(cls, path, payload, mode=mode)
+
+    monkeypatch.setattr(OutputManager, "write_safe", classmethod(fail_only_sidecar))
+    with pytest.raises(WorkerError, match="GOLD48_IDENTITY_SIDECAR_PUBLICATION_HOLD"):
+        run_gold48_generation_batch(
+            **build_call(pack, role=role), **auth,
+            backend=backend, output_path=output,
+            source_evidence_paths=evidence,
+        )
+    assert len(backend.calls) == 48
+    assert output.is_file()
+    before = hashlib.sha256(output.read_bytes()).hexdigest()
+    marker = output.with_name(output.name + ".launch.private.json")
+    assert stat.S_IMODE(marker.stat().st_mode) == 0o600
+    sidecar = output.with_name(output.name + ".identity.private.json")
+    assert not sidecar.exists()
+    monkeypatch.setattr(OutputManager, "write_safe", classmethod(original))
+    recovered = recover_gold48_identity_sidecar(
+        **build_call(pack, role=role), **auth,
+        output_path=output, source_evidence_paths=evidence,
+    )
+    assert recovered.record_count == 48
+    assert recovered.output_sha256 == before
+    assert hashlib.sha256(output.read_bytes()).hexdigest() == before
+    assert len(backend.calls) == 48  # no second generate() call
+    sidecar_doc = json.loads(sidecar.read_text())
+    assert sidecar_doc["recovered_from_existing_output_no_model_calls"] is True
+    assert sidecar_doc["output_sha256"] == before
+    assert sidecar_doc["pre_generation_launch_marker_canonical_sha256"] == _digest(
+        json.loads(marker.read_text())
+    )
+    assert stat.S_IMODE(sidecar.stat().st_mode) == 0o600
+    with pytest.raises(WorkerError, match="GOLD48_RECOVERY_SIDECAR_ALREADY_EXISTS_HOLD"):
+        recover_gold48_identity_sidecar(
+            **build_call(pack, role=role), **auth,
+            output_path=output, source_evidence_paths=evidence,
+        )
+
+
+def test_recover_rejects_truncated_output_or_missing_marker(tmp_path, monkeypatch):
+    role = "base"
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    auth, output, _ = synthetic_signed_owner_receipt(tmp_path, monkeypatch, pack, role)
+    preexisting = {
+        "schema": "storyforge_r60_generation_outputs_private_v1",
+        "model_role": role, "model": "Qwen/Qwen3.8-27B",
+        "revision": pack[0]["base_model"]["revision"],
+        "seed": 42, "record_count": 48,
+        "outputs": [],
+    }
+    output.write_bytes(_canonical(preexisting) + b"\n")
+    output.chmod(0o600)
+    with pytest.raises(WorkerError, match="GOLD48_PRIVATE_CONTRACT_READ_HOLD"):
+        recover_gold48_identity_sidecar(
+            **build_call(pack, role=role), **auth,
+            output_path=output, source_evidence_paths=evidence,
+        )
+    from storyforge_dataset.generation_eval.gold48_contract_bridge import (
+        _gold48_launch_marker,
+        _verify_authorized_run,
+    )
+    from storyforge_dataset.hf_runtime.outputs import OutputManager
+
+    authorized, lock_sha = _verify_authorized_run(
+        owner_authorization_receipt_path=auth["owner_authorization_receipt_path"],
+        trusted_owner_public_key_pem_path=auth["trusted_owner_public_key_pem_path"],
+        runtime_lock_path=auth["runtime_lock_path"],
+        runtime_image_digest=auth["runtime_image_digest"],
+        frozen=pack[0], owner_freeze=pack[1],
+        bindings=pack[2], manifest=pack[3], role=role, output_path=output,
+    )
+    marker = _gold48_launch_marker(
+        frozen=pack[0], bindings=pack[2], input_manifest=pack[3],
+        role=role, auth=authorized, lock_sha256=lock_sha,
+        runtime_image_digest=auth["runtime_image_digest"], output_path=output,
+    )
+    OutputManager.write_safe(
+        output.with_name(output.name + ".launch.private.json"), marker
+    )
+    with pytest.raises(WorkerError, match="GOLD48_RECOVERY_OUTPUT_SCHEMA_HOLD"):
+        recover_gold48_identity_sidecar(
+            **build_call(pack, role=role), **auth,
+            output_path=output, source_evidence_paths=evidence,
+        )
