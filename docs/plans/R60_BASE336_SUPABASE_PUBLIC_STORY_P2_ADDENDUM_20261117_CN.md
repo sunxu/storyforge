@@ -1,5 +1,17 @@
 # R60 Base336：Supabase 公开故事来源 P2 补充决策（2026-11-17）
 
+## 2026-11-20 已更新来源与用途边界（覆盖旧三消息、旧 3+5/5 作者、旧私有会话默认禁用说明）
+
+现行权威执行目标和新 Agent 启动提示词：[R60 Base336 P2-C → Gold48 → 五来源盲评](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶端；下文早期“公开八来源是 5 作者/3+5”“只能新造三消息”“Owner 不许读取任何私有历史聊天”的条件**不再描述 2026-11-20 严格候选及 Owner 最新限定授权**，不得作为重复筛选、否决既有 Gold48 证据的理由。
+
+- 当前严格来源候选由历史请求可用性+已批准公开快照与许可绑定筛选，**8 Story /7 作者 /GPU 前2后6**，与最早 P2 公共元数据八来源 **4 保留+4 更替**；新四源修订/审批/权限在首个合格 Gold 时点前生效的限定校验已做。**来源权利可用≠正式 Gold48 Owner Freeze**，不得私自新增训练/公开/再分发用途。
+- Owner 已明确**允许本任务所需、固定来源/时间/只读 RLS 范围内的真实历史聊天用于内部独立质量评估**，以取得**48 条完整持久化 role/content Prefix**及对应 48 条真实 Original Reference；用户原始会话正文与模型生成参考回答仍只能进 Owner 私有 0700/0600 受控目录，不进 GitHub/聊天/训练端，不能读 R50 sealed。此前“旧权限仅公开卡”的文字保留作历史快照，而不是当前绝对禁令。
+- 48/48 已找到一对一成功历史请求事件、historyMsgCount/Token 计量与 Prefix 个数吻合，但**没有可证明实际发给 Provider 的完整 Prompt 字节**；请求元数据不可当 `ACTUAL_SENT_BYTE_EXACT`。若 source 代码与允许访问的快照仍不可恢复，先让 Owner 决定是否采用`RECONSTRUCTED_EVALUATION_INPUT` 且写清输入差异的评估合同，再冻结 48 同题 Prompt。不能补造原始回答、不能假定它是绝对正确。
+- Base336 172 Story/375 版本 + History32 32 Story/120 版本的 P2 跨集合语义 Reviewer 8/8 已提交并按 Owner 双 SAFE 签收，已审限定范围 **204 Story/495 版本**；仍缺其余 Protected/Reserved/Dev/Teacher 权威全集与一个公开 P2 源自身设定不一致质量仲裁。这些边界不因来源授权存在而自动 PASS。
+- 五来源是**四生成模型 +一历史原始回答**；未获新 GPU/HF/推理许可。`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+---
+
 ## 2026-11-19 Gold/原始回答匹配：P2-B 来源设计新增硬约束
 
 Owner 明确要求**训练模型的作答要与原始回答进行同题比较**。此前只依据公开 World/Character/Opening “从零构造 8×6=48 个提示”的设计，无法**自动得到** 48 条与提示严格对齐的历史原始 Assistant 回答。**这不是旧 R48 Gold 可以复用的相同测试集**，也不能把公开 Opening 认作某个新 Prompt 的回答。
