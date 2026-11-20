@@ -104,3 +104,20 @@ def test_generation_prefixes_never_contain_original_reference():
     assert "original_reply_PRIVATE" not in prompts[0]
     assert "prefix_messages_PRIVATE" not in references[0]
     assert prompts[0]["candidate_case_id_PRIVATE"] == references[0]["candidate_case_id_PRIVATE"]
+
+
+def test_phase_is_updated_before_database_queries():
+    import inspect
+
+    body = inspect.getsource(capture.try_case)
+    assert 'phase[0] = "HISTORY_LEDGER_RECOVERY"' in body
+    assert 'phase[0] = "UNIQUE_REQUEST_MATCH"' in body
+    assert 'phase[0] = "COMPLETED_HISTORY_EDIT_SCREEN"' in body
+
+
+def test_postgres_error_message_is_not_exposed_by_safe_contract():
+    import inspect
+
+    body = inspect.getsource(capture.run)
+    assert 'SQLSTATE_' in body
+    assert 'str(exc)' not in body
