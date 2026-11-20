@@ -1,5 +1,24 @@
 # R60 Base336 P2 Protected Crosswalk 证据索引（2026-11-18）
 
+## 2026-11-20 现行证据索引快照（覆盖本文件所有旧“最新 HOLD/下一步”）
+
+**唯一权威现行路线和可复制新 Agent 提示词**：[R60 Base336 P2-C → Gold48 → 五来源盲评任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) **最顶端 2026-11-20 两节**。下文（包括 2026-11-19 段落）的“172 尚未抓取、仅 38 Story、仅旧 20 Prompt、Reviewer 未完成、需要执行同一个 SQL 或 R50 ID 匹配”等是**过程快照，不是当前行动指令**。
+
+| 证据集合 | 当前已证明 | 不得外推 |
+| --- | --- | --- |
+| P2 × Base336 | 172 Story/375 current+archived 全真实来源版本；Reviewer 8/8 模板独立意见、Owner 原文件 SHA+匿名 B 真实 Revision 引用 PASS、Owner 确认新会话隔离 | 不是 R50 以外全部历史保护源，且不等于 Provider actual-sent |
+| P2 × 已知冻结历史 | Gold195、v0.1 Train/Val/Test、R04 非 Gold、R53 31/9、R46/R54 限定 104 和旧 Dev20 去重成 33 Story/124 版本；P2 精确 Story ID+四字段完整值重用均 0 | 初步精确比对不等于语义无同源，其他历史来源仍可能存在 |
+| 历史与 Base336 去重后的语义审阅 | 共享 1 Story 的历史 4/4 版本已在 Base336；另 32 Story/120 版本完成增量独立 Reviewer 8/8 意见、Owner findings 文件和 H 版本锚结构绑定、随后权限 0600 修复通过（**两次 SAFE 合并**） | Reviewer 摘要非 Reviewer 身份的第三方证明；不夸称单次再次跑完全部 Owner 检查 |
+| **已审限定并集** | **204 Story / 495 版本**，均在两个已审集合内；P2 × 这些集合的 Reviewer 均为 8/8 `INDEPENDENT_TEMPLATE_ONLY` | **绝不是**全量历史 Protected/Reserved/Teacher/Dev 源宇宙完整认证 |
+| R50 与旧 R55 | R50 original50 provenance=46+4、固定五 Story 来源对应 50；R47/R48/R55 20 题/2 Story 及三层链接已通过 | 不读取 R50 sealed、其他 held-out/teacher 尚未排除 |
+| 生产 Gold48 | 临时 **8 Story/7 作者、2 前 6 后**，48 条去重完整历史 Prefix /48 条真正 Original Reference/25 Session，48 条唯一成功事件和 Token 计量一致 | **没有 actual-sent Prompt 全字节、没有正式 Gold48 frozen manifest**；旧 3+5/5 作者与造三消息方案不能恢复作为当前设计 |
+
+**仅余三条实质隔离/冻结工作**：①定位未列入已审/已保护有限集的 **R45、其它 Protected/Reserved/Dev/Arbitration/Teacher** 权威元数据源名单与当时版本，增量差集才审；无法有界认证时给 Owner `UNKNOWN_HOLD`；②定位生产 request-effective 组装与是否有真实可追溯发送快照；不存在就让 Owner 决定**标注为重建输入**的同题评估合同，不能推定 actual-sent；③在 Gold48 Freeze 前仲裁一个 P2 来源自身角色家族命名不一致，预先决定全48及去该来源六题的42题敏感性分析。**不要重新运行 172/375、32/120、Gold195、R50 五 Story、R55 20题、旧 35案例 World 图、旧 R58 五行空 CSV**。
+
+**正式门禁**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`；当前无 GPU/HF/新模型请求批准。私有原文/故事/人物/UUID/审阅依据与摘要不能写入本仓库。
+
+---
+
 ## 2026-11-19 当前交接状态（本索引旧章节均为历史快照）
 
 权威现行任务书：[R60 Base336 P2 Quality-v1 新 Agent 接手](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本索引有 2026-11-18 至 19 的大量累积历史，**最末第 20、21 节的 R50 PASS 与今日新 SAFE 优先于第 1–12 节旧 HOLD**；不得只读旧段后重新做已完成工作。
