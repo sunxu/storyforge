@@ -1,5 +1,20 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 History32 Owner 双 SAFE 联合签收：修复私有文件权限，12 项结构/引用核验已通过
+
+Owner 本轮实际回传的**两份按顺序执行的 SAFE**：
+
+1. `HISTORY32_OWNER_FINDINGS_BINDING_HOLD`：`schema_match`、`p2_count_8`、`history_stories_32`、`history_versions_120`、`current_32`、`archived_88`、`source_refs_unique`、`owner_aliases_32`、`report_p2_8_referenced`、`report_has_specific_version_refs`、`report_version_refs_exist` 等**其余全部结构/匿名版本引用检查 true**，唯一失败 `files_mode_0600=false`；这不是数据或语义判定 FAIL。
+2. 随后按上轮给出的**仅三个既有 Owner 本机私有文件** `chmod 600`、拒绝非本人文件及符号链接的修复指令执行，回传 `HISTORY32_PRIVATE_PERMISSIONS_PASS`、`files_mode_0600=true`、`private_values_emitted=false`。
+
+**链式签收判断**：如果两份回执之间仅执行该权限修复、没有替换/改写报告及 JSON 文件内容，则第一份 SAFE 的其余通过字段与第二份 SAFE 的权限检查合并，足以把 **`HISTORY32_OWNER_FINDINGS_BINDING=PASS_WITH_SEQUENTIAL_OWNER_SAFE`** 记为 Owner 本地**文件结构、文件权限、版本引用存在性**签收；不需要仅为 `chmod` 再读全量 120 份文稿或重新跑独立语义核验。原始完整检查命令在 chmod 后没有再次整体运行，**不得虚构第二次执行回传了完整 `HISTORY32_OWNER_FINDINGS_BINDING_PASS`**。
+
+**本项签收证据精度**：上述联合 SAFE 不涵盖**Reviewer 实际读取字节的独立传递证明、文件内容 SHA 或审阅者身份第三方鉴定**；Reviewer 独立声明仍按其报告原文存档。Owner 没有向 GitHub 提交私有包、原始 Story 身份、个人信息、明文观点或哈希。120 版本 8/8 `INDEPENDENT_TEMPLATE_ONLY` 是 Reviewer 的独立语义意见，尚不能推断所有历史来源全集已安全。
+
+**主线继续**：不用再重复 32/120、172/375、33/124、Gold195、旧 20 case 的语义/字段排除；下一阶段转向 R50 已知五世界之外的 Protected/Reserved/Teacher/Dev 权威全集定位和 request-effective / actual-sent prompt 缺口，并在 Gold48 冻结前就 P2 内部名称/角色不一致做独立输入质量仲裁。正式 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`；禁止无授权 GPU/HF/model 调用。
+
+---
+
 ## 2026-11-20 History32 120 版本独立 Reviewer SAFE 报告：8/8 意见已提交（Owner 私有证据签收待）
 
 Owner 本轮转交第一份**真正已审完**的 History32 增量 Reviewer SAFE 报告，不是包生成回执，也不是 Base336 172/375 全量语义审阅的重复。此次 Reviewer 自述唯一审阅范围为 **P2 8 来源 × 32 新历史 Story / 120 source/version（32 current + 88 archived）**，与 Owner 前一回 `HISTORY32_INCREMENTAL_REVIEW_PACKET_CREATED` 的增量包范围逐项一致；旧共享 1 Story /4 版本已被上一位 Base336 Reviewer 覆盖，未再次审阅。
