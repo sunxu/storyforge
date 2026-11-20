@@ -1,5 +1,14 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-20 Owner 已完成单一 P2 来源风险仲裁
+
+**`OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 已获 Owner 明确批准**：不修订原 P2 公开卡，不改写真实历史 Prefix 或原始回答。正式预注册 **48 题/8 Story 主分析**与**剔除有家族/角色命名残留的 1 Story 整组六题后 42 题/7 Story 敏感性分析**。两套结果同时报告，来源原有冲突不应直接记为模型失误，不能等模型结果出来再选择是否排除。实际被标记 Reviewer 匿名键→真实 Story ID→Gold48 六题 ID 的绑定只在 Owner 私有域核验，未完成前状态 `P2_SOURCE_QUALITY_PRIVATE_MAPPING=PENDING`，不得按 P/S 匿名编号猜测。
+
+准入决策 SAFE：[Owner 质量风险仲裁](../evidence/R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json)。仅已知风险策略关闭；其它历史来源 Authority 完整成员与版本仍 `UNKNOWN_HOLD`，不得宣称 P2-C 已 PASS。输入为已批准的 `RECONSTRUCTED_EVALUATION_INPUT`，历史 Original Reference 为第五匿名**描述性**对照，不能声称同历史实际发送字节。Gold48 未冻结、GPU 推理未批准。
+
+---
+
+
 ## 2026-11-20 Owner 输入合同裁决（优先于下方历史计划）
 
 Owner 已明确批准 `RECONSTRUCTED_EVALUATION_INPUT` 作为 Gold48 Quality-v1 统一输入，且**不访问 RolePlay 生产环境**；无需证明历史 Provider actual-sent 字节即可开展**满足其它门禁后的**受控质量评估。固定四个新生成模型输入的统一重建消息与 SHA 后做四模型同题配对主比较。第五个 Historical Original Reference 仍匿名参加六维评分，但其当年真正 Provider 完整输入未验证，只能做同历史剧情/Prefix 的**描述性参考比较**，不能宣称“原始 Gold 使用了与四模型 byte-exact 一致的重建 Prompt”或据此做严格因果比较。
