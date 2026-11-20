@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -107,7 +106,8 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     template_hash = hashlib.sha256(template.encode("utf-8")).hexdigest()
 
     class FakeModel:
-        hf_device_map = {"": 0}
+        def __init__(self):
+            self.hf_device_map = {"": 0}
 
         def eval(self):
             calls.append("eval")
