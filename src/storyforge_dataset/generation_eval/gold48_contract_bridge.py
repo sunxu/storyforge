@@ -209,6 +209,71 @@ def _validate_bindings(frozen: dict[str, Any], bindings: dict[str, Any]) -> None
                      "GOLD48_ADAPTER_BINDING_UNTRUSTED_HOLD")
 
 
+def build_gold48_frozen_input_payload(
+    *,
+    frozen: dict[str, Any],
+    owner_freeze: dict[str, Any],
+    reconstructed_draft: dict[str, Any],
+) -> tuple[bytes, dict[str, Any]]:
+    """CPU-only format conversion; never regenerate or alter frozen messages.
+
+    The draft's message bytes are rehashed using the exact historic canonical
+    rule, then checked against the Owner-frozen 48 per-case digests. Historical
+    assistant original references are neither imported nor put in outputs.
+    """
+    cases = _validate_frozen(frozen, owner_freeze)
+    _require(isinstance(reconstructed_draft, dict)
+             and reconstructed_draft.get("schema") ==
+                 "storyforge_r60_gold48_reconstructed_inputs_draft_private_v1"
+             and reconstructed_draft.get("status") ==
+                 "RECONSTRUCTED_48_INPUT_DRAFT__OWNER_FREEZE_PENDING"
+             and reconstructed_draft.get("input_contract") ==
+                 "RECONSTRUCTED_EVALUATION_INPUT",
+             "GOLD48_RECONSTRUCTED_DRAFT_SCHEMA_HOLD")
+    draft_cases = reconstructed_draft.get("cases_PRIVATE")
+    _require(isinstance(draft_cases, list) and len(draft_cases) == CASE_COUNT,
+             "GOLD48_RECONSTRUCTED_DRAFT_COUNT_HOLD")
+    records = []
+    for i, (frozen_case, draft_case) in enumerate(zip(cases, draft_cases), 1):
+        _require(isinstance(draft_case, dict)
+                 and draft_case.get("candidate_case_id_PRIVATE") == f"G48-C{i:02d}"
+                 and draft_case.get("candidate_case_id_PRIVATE") ==
+                     frozen_case["candidate_case_id_PRIVATE"],
+                 "GOLD48_RECONSTRUCTED_DRAFT_CASE_ORDER_HOLD")
+        messages = draft_case.get("reconstructed_messages_PRIVATE")
+        _require(isinstance(messages, list)
+                 and _digest(messages) ==
+                     frozen_case["reconstructed_messages_sha256_PRIVATE"]
+                 and draft_case.get("reconstructed_messages_sha256_PRIVATE") ==
+                     frozen_case["reconstructed_messages_sha256_PRIVATE"],
+                 "GOLD48_RECONSTRUCTED_DRAFT_CASE_SHA_HOLD")
+        records.append({
+            "sample_id": frozen_case["candidate_case_id_PRIVATE"],
+            "messages": messages,
+        })
+    _validate_records(records, CASE_COUNT)
+    payload = b"".join(_canonical(record) + b"\n" for record in records)
+    _require(len(payload) <= 16 * 1024 * 1024,
+             "GOLD48_INPUT_WORKER_FILE_SIZE_HOLD")
+    manifest = {
+        "schema": INPUT_SCHEMA,
+        "run_key": frozen["dataset"]["run_key"],
+        "record_count": CASE_COUNT,
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "max_input_tokens": 30720,
+        "max_new_tokens": 2048,
+        "seed": 42,
+        "cases": [
+            {
+                "sample_id": c["candidate_case_id_PRIVATE"],
+                "messages_sha256": c["reconstructed_messages_sha256_PRIVATE"],
+            }
+            for c in cases
+        ],
+    }
+    return payload, manifest
+
+
 def prepare_gold48_generation_contract(
     *,
     frozen: dict[str, Any],
