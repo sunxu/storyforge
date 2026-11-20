@@ -262,3 +262,22 @@ PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_result_audit.py
 - **尚未真实验收**：HF 托管的 RO 挂载在运行中对外部新增文件的可见性需要一次受控 CPU 合成验收，且须核对实际 HF Job 是否使用该更新机制；单独的 GPU Smoke/生成与 Owner/Provider 信任锚仍待签收。不能把代码 CI 当作动态挂载 PASS 或真实推理授权。
 
 下一步仅复用既有 `r60_common2_wrapped_hf_cli` 的单 Owner 提交防重复和 `r60_base336_gpu_cli` 的 GPU 参数/dry-run 生成，给定上述 **RO Stage + RO Provider Handoff + 3 个 Adapter RO + 单 Run RW 输出**，在 Mac 上完成受控**只读参数检查和远端空目录核验**，不开发通用 Runner。HF 官方 hf-mount 支持 Bucket 的 live-follow/eventual consistency，但不能保证每次容器托管挂载都立即看见新增文件，故先作 CPU 合成验收。
+
+### Owner Mac 受控 GPU CLI 参数验证（2026-11-21；完全不提交）
+
+新增最薄 `scripts/r60_gold48_gpu_cli.py`，它**只有 `shape` 和 `dry-run`，没有 submit / execute**；直接复用 `hf_job_guard.build_hf_argv`、`r60_base336_gpu_cli` 的固定镜像/Flavor/Timeout、`r60_common2_wrapped_hf_cli` 的 HF CLI 兼容判断。它确认一次 Gold48 单臂 Job 必须配置 **6 个精确 RO 挂载（14 份冻结输入、Provider 延后交接、不可变代码 Bundle、3 个 Adapter）和一个独立 RW 输出**；完全拒绝 Bundle/Adapter 缺失、根 Bucket、跨源重复及不合法 Code SHA。生成的实际 Worker 命令固定为 `python /input/code/scripts/r60_gold48_gpu_worker_entry.py check --run-id ... --model-role ...`，因此即便用户调用 `dry-run`，也不能启动真实模型推理。**代码 Bundle 尚未安全物化/上传，三个 Adapter 的私有原始 Bucket URI 在 SAFE 证据里没有公开：不猜路径，不自动建立 Stage，不执行 GPU。**
+
+Owner Mac 在已有 3 个 Adapter 的原始私有 `hf://buckets/...` 路径已由 Owner 核对，并且每个 Run ID 对应**不可变代码 Bundle 前缀的末尾 40 位等于已批准的 Git commit**后，可运行命令形状检查：
+
+```sh
+# 先把 run_id、code_uri、adapter_r46/adapter_r54/adapter_r60 绑定到真实已签收值
+PYTHONPATH="$PWD/src:$PWD/scripts" python scripts/r60_gold48_gpu_cli.py shape \
+  --run-id "$run_id" --role base --code-prefix "$code_uri" \
+  --adapter-r46-v02 "$adapter_r46" \
+  --adapter-r54-v03a "$adapter_r54" \
+  --adapter-r60-base336 "$adapter_r60"
+```
+
+若 CLI 支持且 Owner 准备继续只读核验，将 `shape` 替换为 `dry-run`；状态 `GOLD48_GPU_CLI_DRY_RUN_PASS__NO_JOB` **仅**说明原 HF CLI 接受参数，不是远端 Code/Adapter SHA、不代表 Bucket 中已存在这些对象、也不是 GPU 授权。**这一步尚未在 Owner Mac 上实际执行。** `hf_job_guard.validate_spec` 仍是 CPU-only，不改动其政策。
+
+**真正下一依赖**：优先用现有代码 Stage/依赖闭包方法给已批准的 Git HEAD 制作独立只读 Bundle（不可在未来 HF Job 中从 `main` 或浮动 URL 拉取代码）；Owner 独立确认 Adapter 私有 RO 来源；对 Provider 独立 RO 挂载的“Job 运行期间外部新增文件可见”做一次隔离 CPU 合成验收。没有这些实际证据，不能把参数检查提升为正式 GPU 任务 READY。
