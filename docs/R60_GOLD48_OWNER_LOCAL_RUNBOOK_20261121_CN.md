@@ -122,3 +122,43 @@ SAFE 结构化实证：`experiments/r60_quality/gold48_provider_ro_mount_cpu_saf
 2026-11-21 的 Gold48 可写账本探针在 ChatGPT Connector 上重复收到相同 403，未创建 Job、未写入任何 Bucket 文件；**这是已知连接器限制的再次出现，不是新的主线验收结果**。不得因它再提交一轮 ChatGPT RW 探针、重复更换 CPU flavor、切换个人 namespace、反复重新 OAuth 或重跑成功的 RO Adapter Job。后续需要 RW 时，优先复用**已经成功的 Owner Mac CLI 提交通道**，输入继续 `:ro`，输出/账本使用独立的私有 RW 卷；任何实际创建和 GPU Job 仍须按项目单独审批。
 
 正式推理前剩余的**不同**技术门禁是：在 Owner Mac CLI 可以写入的**隔离私有目标目录**上，用原有 `OutputManager.write_safe` 核验 0700/0600、原子 create-only、拒绝覆盖、目录 `fsync` 以及**跨 Job 持久性**。过去 CLI 的简单写入成功并不等于该原子账本合同通过。生产代码 `gold48_runtime_gate.verify_atomic_private_publication_before_spend` 已加入对真实输出目录和持久账本目录的检查，并在消耗 Owner 签名、GPU/模型初始化前失败关闭。该测试不会授予任何推理权限；不得用无法保证原子性的 FUSE 挂载冒充已验证共享账本。
+
+
+## 13. Owner Mac CLI 两份独立 CPU Job：原子账本验收（待 Owner 执行）
+
+**只验证前述未完成的原子发布及跨 Job 持久性，不再重复 HF Bucket 的普通 RW 通断测试。** 采用已经成功的 Owner Mac HF CLI `hf jobs run --namespace adradar` 路径，**不使用 ChatGPT Connector 提交 RW Job**。新增最薄入口 `scripts/r60_gold48_ledger_atomic_cpu_probe.py` 直接加载并验证仓库现有 `hf_runtime/outputs.py` Git Blob `69838b603b43663eaa12b1b1947ce14abad524bc`，调用原生 `OutputManager.write_safe`，不重新实现原子写算法。隔离 Probe 目录内只有公开合成标记；不读取或改动 Owner 私有签名账本、48 条文本、Adapter、模型或训练任务。
+
+下方命令**须在 Owner Mac** 执行；每条真实 CPU Job 均独立提交一次，失败只报 HOLD、不改 image/flavor 重试。运行前检查当前分支的 Git 提交已含上述脚本，以及 HF CLI 已登录 `adradar`。务必使用**新的独立探针路径**，不要覆盖原有 `preflight` 其他文件。先用已确认可用的 `hf buckets cp` 上传两份公开源码及一份纯合成初始化文件，令 RO/RW 子目录实际存在：
+
+```sh
+umask 077
+cd ~/workspace/storyforge
+PROBE="hf://buckets/adradar/storyforge-training/preflight/r60/gold48-ledger-atomic-cpu-20261121-v1"
+hf buckets cp scripts/r60_gold48_ledger_atomic_cpu_probe.py "$PROBE/input/probe.py"
+hf buckets cp src/storyforge_dataset/hf_runtime/outputs.py "$PROBE/input/outputs.py"
+printf '%s\\n' 'SYNTHETIC_NO_OWNER_DATA' | hf buckets cp - "$PROBE/output/PROBE_ONLY.txt"
+```
+
+只把 `$PROBE/input` 以 `:ro` 挂到 `/input`；只把新建的 `$PROBE/output` 以 `:rw` 挂到**正式账本预计使用的容器路径**。第一份 Job：
+
+```sh
+ROOT="/mnt/storyforge-private/gold48-authorizations-spent"
+hf jobs run --namespace adradar --name gold48-atomic-ledger-write-cpu   --flavor cpu-basic --timeout 10m --attempts 1 --detach \\
+  -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \\
+  python:3.11 -- python /input/probe.py --phase write \\
+  --root "$ROOT" --source /input/outputs.py \\
+  --probe-id gold48-atomic-20261121-v1
+```
+
+第一份 Job 日志须报告 `ATOMIC_CREATE_ONLY_CPU_PASS__SECOND_JOB_PENDING`，并证明 `direct_rw_mount_present=true`、`root_mode_0700=true`、`marker_mode_0600=true`、`atomic_create_only_verified=true`；如 Bucket FUSE 不能保持 0700、硬链接/原子无替换发布或目录 fsync，请保留精确 HOLD，**不得使用简单普通写文件的 PASS 替代**。第一份成功后，再执行与其**不同 Job ID** 的第二份：
+
+```sh
+hf jobs run --namespace adradar --name gold48-atomic-ledger-verify-cpu \\
+  --flavor cpu-basic --timeout 10m --attempts 1 --detach \\
+  -v "$PROBE/input:/input:ro" -v "$PROBE/output:$ROOT:rw" \\
+  python:3.11 -- python /input/probe.py --phase verify \\
+  --root "$ROOT" --source /input/outputs.py \\
+  --probe-id gold48-atomic-20261121-v1
+```
+
+第二份日志须为 `ATOMIC_CREATE_ONLY_AND_CROSS_JOB_PERSISTENCE_CPU_PASS`，且 `marker_sha256` 与第一份一致、`cross_job_persistence_verified=true`。这是**独立合成存储验收**，与真实 Owner 账本的运行部署、独立签名信任锚、GPU Smoke / 192 条生成批准完全分离。不自动发第二份 Job、不自动重试；仅在第一份明确 PASS 后手动提交第二份。任何输出都不得包含私有数据。实际完成后回收两个 Job ID 和仅 SAFE 状态写入本手册，不修改已冻结 Profile。
