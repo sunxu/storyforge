@@ -4,7 +4,7 @@
 
 用户已明确选择**单台可信 Owner Mac 串行提交**，不引入 Supabase/PostgreSQL、新的分布式授权锁或通用提交器。优先复用现存 `r60_common2_wrapped_hf_cli.py` 的完整 HF Job 历史排重、唯一 Run ID、本地提交标记和单次 HF CLI 投递策略，以及 `r60_base336_gpu_cli.py` 的 RO/RW 挂载与 dry-run 参数兼容方法；**两个现有入口分别是 CPU-only submit 与 GPU dry-run，不能直接当作已经实现的 Gold48 GPU 正式提交入口。** 本轮将本地标记写入改为调用现有 `OutputManager.write_safe`（原子无覆盖、0600、文件和目录 fsync），不新增账本系统。之前 HF Bucket Job `6b00ca46efaf5e14f4b3f8ca` 在根目录 `0700` 前置门禁 HOLD，原双 Job 实验已停，不重跑；HF Bucket **只作冻结输入/Adapter/产物存储，不作跨 Job 授权锁**。
 
-单 Owner 模式的唯一性来自**受控操作边界**：只有 Owner Mac 提交，提交前读取完整 HF 组织 Job 历史，使用本地持久 `O_EXCL` 标记阻止本机重投；提交结果不确定或 Job 失败后仍保留标记、不自动重试/换机器/换 namespace，必须独立批准新 Run ID。它**不提供针对其他独立 HF 提交者的全局互斥**；不能把 Mac 本地文件伪装为 GPU Job 的共享原子账本。原 `gold48_runtime_gate.py` 仍包含旧的 `DURABLE_CONSUMPTION_ROOT` 强门禁，**未接通单 Owner 生产运行通道**，不得直接禁用门禁或宣布已经可以执行。下一步仅在实际 Owner/Provider 运行身份、私有输出交付与单独 GPU 授权明确后，最小范围适配已有入口，复用固定四臂 Loader、Worker 和签名校验，不重新搭建通用 Runner。
+单 Owner 模式的唯一性来自**受控操作边界**：只有 Owner Mac 提交，提交前读取完整 HF 组织 Job 历史，使用本地持久 `O_EXCL` 标记阻止本机重投；提交结果不确定或 Job 失败后仍保留标记、不自动重试/换机器/换 namespace，必须独立批准新 Run ID。它**不提供针对其他独立 HF 提交者的全局互斥**；不能把 Mac 本地文件伪装为 GPU Job 的共享原子账本。现有 `gold48_runtime_gate.py` **已把原 HF Bucket 共享消费门禁收缩为当前 GPU Job 的 0700 本地 POSIX 私有消耗记录**，并显式拒绝 FUSE 作为本地输出；这仅在唯一可信 Owner Mac 提交前提下成立，不是跨 Job 分布式锁。**GPU Job 私有输入本地化、结果回传和正式可信签名仍未接通**，不能宣布可运行。下一步仅在实际 Owner/Provider 运行身份、私有输出交付与单独 GPU 授权明确后，最小范围适配已有入口，复用固定四臂 Loader、Worker 和签名校验，不重新搭建通用 Runner。
 
 **严格不变**：冻结的 48 重建输入/48 原始回复、四臂生成 Profile、192+48 评价合同、Owner Ed25519 信任锚未登记状态、GPU/推理未授权、Quality-v1 准入为零。未经单独批准不提交 HF GPU Job、不签发生产授权、不计算模型权重。
 

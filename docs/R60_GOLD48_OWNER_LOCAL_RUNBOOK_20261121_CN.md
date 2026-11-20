@@ -2,6 +2,12 @@
 
 ## 0. 2026-11-21 Owner 已选单机简化调度（最高优先级）
 
+**2026-11-21 最新已完成代码适配**：`gold48_runtime_gate.py` 的旧 HF Bucket / FUSE 共享消费根已换成当前 HF Job 的 **本地** `/tmp/storyforge-gold48-private/spent`（预先创建 0700）。`OutputManager` 仍负责 0600、原子不覆盖、文件及目录 fsync；运行进程按 `/proc/self/mountinfo` 拒绝 FUSE/远程文件系统作为消费根或生成私有输出。签名验收、Provider 身份、依赖锁、RO Adapter 挂载、Loader SHA 和 Worker 约束均未删除。此消费记录**只在当前 Job 生命周期内有效**；跨 Job 防重复依赖唯一可信 Owner Mac 的本地持久提交标记和完整 HF Job 历史，不能宣称全局分布式互斥。
+
+**尚缺正式交付**：现有 Mac 的 CPU-only submit 和 Base336 GPU dry-run 并非 Gold48 GPU 正式提交；远程 `:ro` 证据/签名文件可能报告非 0600，必须经 SHA 校验安全复制到本地 0600 后校验；Job-local 输出与 Sidecar 必须完整送达私有 HF Bucket，再由 Owner Mac 下载验 SHA。尚未完成输出上传回收闭环、Provider/Owner 独立可信指纹注册与 GPU 授权，**不可启动真实推理**。不使用 Supabase/PostgreSQL，不重跑 HF Bucket 0700 探针。
+
+
+
 不引入 Supabase/PostgreSQL 或新分布式锁；唯一调度者是可信 Owner Mac。复用 `r60_common2_wrapped_hf_cli.py` 的完整组织 Job 历史排重、标记先于提交、失败留标记，以及 `r60_base336_gpu_cli.py` 的 GPU 命令 dry-run 和镜像/挂载检查。Mac 本地提交标记已经改由 **既有** `OutputManager.write_safe` 发布（0600、原子拒绝覆盖、文件及目录 fsync），不复制写入算法。每臂唯一 Run ID；提交结果不确定时查旧 Job，不自动重试；真正的重新执行需要 Owner 新授权及新 Run ID。
 
 本地 Mac 标记是**单一 Owner 可信边界**下的防重复提交，不能证明多个 HF Job 全局互斥；HF Bucket 仅作为输入/结果对象存储。历史第 7/13 节的远端共享目录 `0700` 与跨 Job 消耗账本方案不再是选用的执行架构，保留供审计追踪；**现有 `gold48_runtime_gate.py` 的旧强门禁尚未替换，绝不能在 HF Job 中直接绕过。** 下一步只有在 Owner 完成生产签名密钥注册、Provider 身份/实际输出交付边界核对以及单独 GPU/推理授权后，才能对旧强门禁做与单 Owner 流程相匹配的最小、有回归测试的安全适配。**本节不签发授权，不启用真实推理或新 CPU 探针**。
