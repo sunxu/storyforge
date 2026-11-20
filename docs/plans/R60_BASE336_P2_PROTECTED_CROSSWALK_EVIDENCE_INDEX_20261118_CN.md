@@ -1,5 +1,18 @@
 # R60 Base336 P2 Protected Crosswalk 证据索引（2026-11-18）
 
+## 2026-11-20 Owner 有界历史 Authority 候选扫描：结果非完整来源名册
+
+Owner 本地仅针对 `~/.local/share/storyforge/r60/private` 的**深度不超过三层、最多 3,000 个文件 /60 个命中**进行一次只读**文件名候选**排查；实际检查 **2,263 个文件**、候选 **3**、`truncated=false`、`skipped_entries=0`。此为 Owner 发来的 `storyforge_p2c_authority_candidate_inventory_safe_v1` 聚合回执，**未由本次 Agent 访问 Mac 原文件独立验真**。3 个候选中，2 个权限 0600 的 JSON 已识别为 `storyforge_r60_base336_p2_public_source_inventory_private_v1` 与 `_v2`（均是**P2 自身八来源的 Manifest**）；另外 1 个为 `kind=other`，内容和用途均未核验。两份 JSON 顶层所检查字段**没有** `cutoff` 或完整历史来源名册的权威声明。
+
+**严禁推出**“Mac 上没有其它 Authority”“所有 Protected/Reserved/Dev/Teacher 已穷尽”“其它路径/不同文件名不存在”“P2-C PASS”。本次文件名规则、限定目录与深度只能支持 `NO_AUTHORITATIVE_HISTORICAL_ROSTER_IDENTIFIED_IN_BOUNDED_P2_PRIVATE_FILENAME_SCREEN`。已有 R55/R56/R57/R58/R50 证据各自的**限定范围**仍有效；R45 Train49/Val15 原始 Git Blob 复用不等于其余 R45 Held-out/Reserved 全量闭合；已审 204 Story/495 版本不再审。
+
+**可执行的停止准则**：不再扩大 Owner Mac 私有路径/改写扫描器；只有 Owner 找到能列明历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher **成员、真实版本截点/哈希、完整性及权限**的既有权威原件，才进入**新差集**的私有核验。不满足则保持 `HISTORICAL_SOURCE_AUTHORITY=UNKNOWN_HOLD`，不能以文件缺失假定独立性。允许把本轮完整的限定范围与缺证报告交 Owner 作正式“有限评估风险/研究结论边界”决议，但该决议**不能自动创造历史无泄漏证明**；在独立质量评估必要来源隔离未达准入前，不生成 Gold48、不授权 GPU。
+
+当前另一已知来源质量风险 **`OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`** 已签收，Reviewer 八来源→八 P2 版本本地双射回执 **8/8**，Gold48 六题正式 Case ID 未来在私有冻结时绑定。此前 Owner 已批准 `RECONSTRUCTED_EVALUATION_INPUT`，无需 RolePlay 生产核查。保持 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。本节只登记 Owner SAFE/公开文档，不读取新私有正文、不执行数据库/推理、不开发审核脚本。
+
+---
+
+
 ## 2026-11-20 Owner 质量风险处置已批准（不得把它当作来源隔离 PASS）
 
 Owner 已明确批准保留存在角色/家族改名残留风险的 1/8 P2 公开来源，决议为 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`，不修改原始公开 Revision、持久化历史或 Original Reference。主分析固定 **48 题**，敏感性分析排除此 Story 的全部六题后固定 **42 题**；不可按模型结果选取分析集合。Reviewer 标记到实际 Story/Gold48 六个 Case 的私有身份与版本映射**尚未在本次决议核实**，须由 Owner 私有域逐项绑定，不可按 P/S 匿名序号对应。SAFE 回执见 [Owner 来源质量风险决议](../evidence/R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json)。
