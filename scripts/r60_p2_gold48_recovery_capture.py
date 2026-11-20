@@ -10,10 +10,9 @@ import argparse
 import hashlib
 import json
 import os
-import re
 import stat
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,11 +39,11 @@ def require(ok, reason):
 
 def timestamp(s):
     try:
-        d = datetime.fromisoformat(s.replace("Z", "+00:00"))
+        d = datetime.fromisoformat(s)
     except (TypeError, ValueError, AttributeError):
         raise Hold("SOURCE_TIMESTAMP_HOLD") from None
     require(d.tzinfo is not None, "SOURCE_TIMESTAMP_ZONE_HOLD")
-    return d.astimezone(timezone.utc)
+    return d.astimezone(UTC)
 
 
 def canonical(x):
