@@ -1,5 +1,18 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-20 Reviewer 三项最小补充已回传：具体包摘要、B 版本锚、审前独立声明（仍待 Owner 本地交叉校验）
+
+**本项已收到，不需要要求同一 Reviewer 再做 375 份文本检索。** 此次 Reviewer 在前次 8/8 `INDEPENDENT_TEMPLATE_ONLY` 的报告基础上，补充了以下三类可核验证据，**暂时仍是报告自述，未获 Owner 的本机 SHA/版本映射独立回执**：
+
+- **证据包版本**：Reviewer 自述唯一输入为 Owner 生成的 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json`（10,276,892 字节、`storyforge_r60_base336_p2_source_evidence_private_v1`）；给出了实际计算的**整文件 SHA-256**，以及包内的 `p2_scope.manifest_sha256_PRIVATE` 和 `base336_scope.quarantine_manifest_sha256_PRIVATE`。完整私有哈希只保留在 Owner 会话，**不写入 GitHub**。下一步 Owner 仅对既存 0600 文件本机做不输出哈希值的相等性检查，再回报布尔 SAFE。
+- **可追索的匿名版本引用**：Reviewer 给出全部八个 P2 来源的疑似题材近邻引用表，使用 `B001…B172` 和 `CURRENT / Vnnn`；**其明确声明 B 编号 = 原证据包 `base336_scope.story_ids_PRIVATE` 数组的 1-based 下标，`Vnnn` = `source_records_PRIVATE.revision_id_PRIVATE` 的真实数值**，并称该数组顺序与来源记录 first-appearance 顺序 172/172 一致。**不得与之前建议的另一个匿名化导出示例混用**：示例曾按 Story ID 排序并把归档标成逐 Story V001/V002；这与本次 Reviewer 的 B / V 定义**不是同一编号系统**。Owner 应使用**这份原始 10.3MB 包**检验 B 编号映射、CURRENT / 真实 revision ID 存在性，并在私有域将 P01–P08 固定映射到 `p2_scope.source_records_PRIVATE` 对应 Story ID；不输出原始 IDs。
+- **审前独立条件**：Reviewer 补充声明，审核开始前未接触训练来源、R50 sealed 正文、历史 Dev/Teacher、其他 Reviewer 意见或模型答案；其唯一审查资料是本次提供的私有来源包（顶层 `schema/base336_scope/p2_scope/exact_field_match_pairs_PRIVATE/non_actions`）。这解决了此前“未接触训练来源”一语的时态歧义，但**独立身份、实际会话分离、Reviewer 是否确实读取该文件的字节仍仅由其自述**，须 Owner 检查交付记录/原始报告签署。若 Reviewer 原先被告知无法直接访问 Owner 本机，这里的“完整本地路径”只能是**报告所指源文件身份**，不能据此推断 Reviewer 曾访问 Owner Mac；必须区分“获转交附件后读取”与“访问本地路径”。
+- **维持而非抹除质量缺陷**：其中 **1/8 P2 来源**有自身家族/人物名称残留，Reviewer 未改原文、未改语义结论。这是题目质量与模型归因风险，不应把原题目内部矛盾判为任何模型的失误，Owner 应在正式 48 题冻结前明确预先规定剔除/保留及按 Story 做敏感性分析。
+- **准确的新状态**：`P2_TO_BASE336_REVIEWER1_COMPLETED=8/8`、`REVIEWER_SOURCE_PACKAGE_SHA_PROVIDED=true`、`REVIEWER_NEIGHBOR_VERSION_REFS_PROVIDED=true`、`REVIEWER_INDEPENDENCE_SELF_ATTESTED=true`；`OWNER_PACKAGE_SHA_MATCH_VERIFIED=false`、`OWNER_VERSION_REF_BINDING_VERIFIED=false`、`REVIEWER_INDEPENDENCE_INDEPENDENTLY_VERIFIED=false`。因此本项是**审阅报告补充提交完成、待 Owner 最小验收**，不是完整 P2-C PASS。独立于 Base336 的其他 Protected/Reserved/Dev/Teacher 历史全集以及历史请求 actual-sent System/Rules/World 字节仍 HOLD。
+- **下游只做缺口工作**：Owner 在 Mac 进行只读哈希与匿名 B / P / 真实 V 版本存在性验证（不得重做 172/375 来源抓取），保全 Reviewer 原始报告并核对实际私有附件交付，完成该独立审阅子项签收；再优先推进未封闭的其他历史保护集合、历史 Prompt 构造边界，最终四生成模型与真实 Original Reference 的五来源 Quality-v1 盲评。 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+---
+
 ## 2026-11-20 P2-C 第一份外部独立语义审阅报告：8/8 模板独立意见（Owner 验证仍待）
 
 **证据类型：Owner 在本次会话转交的一份独立 Reviewer 文字报告，不是由仓库程序自动生成的签署 SAFE。** 报告称以此前 Owner 0600、10,276,892 字节的 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 为唯一输入，涵盖 P2 8 Story、Base336 172 Story、当前 172 + 历史 203 = **375 来源版本**；其方法为四字段全文建索引、P2 专名（人物/别名/地点/组织/事件/规则）逐项检索、按题材近邻提取部分原文复核，全部 172 故事的索引档案经过查看。
