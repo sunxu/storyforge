@@ -1,5 +1,16 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 J2/006 引用 HOLD 的最短恢复路径
+
+Owner 报告最新 J2 评分：001–005 均有正式 PASS，J2/006 因 JUDGE_NONEXACT_QUOTE_HOLD 被阻止，已有 006.attempt.private.json，**没有有效 006.score.private.json**。无需清空 reviews、重新打包、重试 001–005，也不能将不符合逐字引用的模型 JSON 当作成绩。Gold48 新批次此时 6/480（J2 5、J1 001 固定规则 1）。此失败发生在本次原文留存修订之前，J2/006 **没有可恢复的原始模型回复文件**，只能保留原始失败记录，待 Owner 单项审计后再决定一次性人工恢复性重评。
+
+为避免后续新增付费重试，只在现有 gold48_judge_step.py 的 JudgeHold 分支补 create-only、0600 的 NNN.failed_response.private.json：最多 120 KB 的实际模型文本原样保存到 Mac 的 reviews/J2 目录；与 0600 的脱敏 NNN.diagnostic.private.json 分离，终端/Git/Chat 不输出小说、响应、Token。后续无效引用可用本地只读证据识别，并按既定字节精确规则审计离线修复，不能猜测或生成不存在的原文、不能改变分数或严重标记。冻结 judge_one 校验器未动，J1 官方 DeepSeek 接入及 J2 Provider 不变。
+
+先确认旧 J2 CLI 循环已停止（已由 set -e 对 HOLD 退出），再更新通过 CI 的新 Git 提交。继续只调用 J2 **未评分且尚无 attempt 的 007..240**，一项一次，遇到 HOLD 记录后继续下一个不同 position；绝不自动重新提交已有 attempt。待全部其余位置完成后处理 006/其余 HOLD，J1 仍仅在 J2 完成后切换官方 DeepSeek API。评分完整且冻结前 quality_v1_admitted=0，不解盲。
+
+---
+
+
 ## 2026-11-22 J1 官方 DeepSeek API 已准备；J2 运行期间不换本地代码
 
 Owner 当前决定：先完成 J2 GLM-5.2 / DeepInfra 的 240 条正式评分，同时准备 J1 DeepSeek 官方 API，禁止停止/重跑/污染进行中的 J2。已实际核查并复用 StoryForge 历史成功入口 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py，以及其原有协议模块 experiments/r58_quality/r60_reviewer_transport.py 的 deepseek-chat 构造器：固定官网 https://api.deepseek.com/chat/completions、deepseek-flash、非思考 thinking.type=disabled、JSON object 输出。六维评分及逐字引用校验仍由冻结 gold48_hf_judge.py 的 judge_one 执行；原单条入口 gold48_judge_step.py 的 attempt/score 锁、严格引用归位、脱敏诊断和全局串行锁继续沿用，J2 默认路径不变。
