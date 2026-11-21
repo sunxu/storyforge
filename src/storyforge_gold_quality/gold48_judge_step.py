@@ -7,9 +7,12 @@ confirmations. Crash/timeout after attempt marker => HOLD, never auto retry.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
-from collections.abc import Callable
+import stat
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +26,27 @@ from .hf_literary_review import canonical
 RECEIPT_SCHEMA = "storyforge_r60_gold48_judge_score_private_v1"
 ATTEMPT_SCHEMA = "storyforge_r60_gold48_judge_attempt_private_v1"
 SAFE_SCHEMA = "storyforge_r60_gold48_judge_step_safe_v1"
+
+
+@contextmanager
+def single_call_guard(root: Path) -> Iterator[None]:
+    """Advisory local one-call-at-a-time lock, released on process death."""
+    private_folder(root)
+    path = root / ".gold48_single_call.lock"
+    fd = os.open(path, os.O_CREAT | os.O_RDWR |
+                 getattr(os, "O_NOFOLLOW", 0), 0o600)
+    try:
+        mode = os.fstat(fd)
+        require(stat.S_ISREG(mode.st_mode)
+                and stat.S_IMODE(mode.st_mode) == 0o600
+                and mode.st_nlink == 1, "JUDGE_CALL_LOCK_FILE_HOLD")
+        try:
+            fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise LockHold("JUDGE_CONCURRENT_EXECUTION_HOLD") from None
+        yield
+    finally:
+        os.close(fd)
 
 
 def read_locked_packet(packet: Path, lock_path: Path) -> tuple[dict, list[dict]]:
@@ -120,62 +144,63 @@ def step(
     private_folder(packet.parent.parent)
     private_folder(output_dir.parent)
     private_folder(output_dir)
-    entry = f"{position:03d}"
-    marker_path = output_dir / f"{entry}.attempt.private.json"
-    score_path = output_dir / f"{entry}.score.private.json"
-    require(not marker_path.exists() and not marker_path.is_symlink()
-            and not score_path.exists() and not score_path.is_symlink(),
-            "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD")
-    no_reply = not item["target_text"].strip()
-    if not no_reply:
-        require(isinstance(hf_token, str) and bool(hf_token),
-                "HF_INFERENCE_TOKEN_MISSING_HOLD")
-    # Permanent consumption BEFORE any external request. Unknown outcome stays
-    # HOLD; never automatically resubmit or overwrite this item+reviewer.
-    marker = {
-        "schema": ATTEMPT_SCHEMA,
-        "reviewer_id": reviewer_id, "position": position,
-        "blind_id": item["blind_id"],
-        "item_sha256": digest(canonical(item)),
-        "lock_sha256": digest(private_input(lock_path, limit=65536)),
-        "model": selection["model"], "provider": selection["provider"],
-        "paid_call_planned": not no_reply,
-        "owner_transfer_confirmed_for_this_execution": True,
-        "owner_billing_confirmed_for_this_execution": True,
-        "hf_spend_cap_owner_confirmed": True,
-    }
-    write_once(marker_path, canonical(marker) + b"\n")
-    try:
-        client = (None if no_reply else client_factory(
-            hf_token=hf_token, fixed_provider=selection["provider"]))
-        score = judge_one(
-            item=item, client=client, model=selection["model"],
-            temperature=selection["temperature"],
-            max_tokens=selection["max_tokens"],
-            private_transfer_authorized=True,
-        )
-        receipt = {
-            "schema": RECEIPT_SCHEMA,
+    with single_call_guard(output_dir.parent):
+        entry = f"{position:03d}"
+        marker_path = output_dir / f"{entry}.attempt.private.json"
+        score_path = output_dir / f"{entry}.score.private.json"
+        require(not marker_path.exists() and not marker_path.is_symlink()
+                and not score_path.exists() and not score_path.is_symlink(),
+                "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD")
+        no_reply = not item["target_text"].strip()
+        if not no_reply:
+            require(isinstance(hf_token, str) and bool(hf_token),
+                    "HF_INFERENCE_TOKEN_MISSING_HOLD")
+        # Permanent consumption BEFORE any external request. Unknown outcome stays
+        # HOLD; never automatically resubmit or overwrite this item+reviewer.
+        marker = {
+            "schema": ATTEMPT_SCHEMA,
             "reviewer_id": reviewer_id, "position": position,
             "blind_id": item["blind_id"],
-            "item_sha256": marker["item_sha256"],
-            "lock_sha256": marker["lock_sha256"],
+            "item_sha256": digest(canonical(item)),
+            "lock_sha256": digest(private_input(lock_path, limit=65536)),
             "model": selection["model"], "provider": selection["provider"],
-            "score_origin": ("fixed_no_response_rule" if no_reply else "ai_judge"),
-            "paid_api_attempted": not no_reply,
-            "cost_usd": None if not no_reply else 0,
-            "billing_reconciled": False,
-            "response": score,
+            "paid_call_planned": not no_reply,
+            "owner_transfer_confirmed_for_this_execution": True,
+            "owner_billing_confirmed_for_this_execution": True,
+            "hf_spend_cap_owner_confirmed": True,
         }
-        write_once(score_path, canonical(receipt) + b"\n")
-    except JudgeHold:
-        raise
-    except Exception:  # noqa: BLE001 - never leak provider/token/private text
-        raise LockHold("JUDGE_EXECUTION_OR_WRITE_HOLD") from None
-    return safe_state(
-        status="GOLD48_JUDGE_ONE_SCORED__NO_UNBLIND",
-        scores=1, paid_attempts=int(not no_reply),
-    )
+        write_once(marker_path, canonical(marker) + b"\n")
+        try:
+            client = (None if no_reply else client_factory(
+                hf_token=hf_token, fixed_provider=selection["provider"]))
+            score = judge_one(
+                item=item, client=client, model=selection["model"],
+                temperature=selection["temperature"],
+                max_tokens=selection["max_tokens"],
+                private_transfer_authorized=True,
+            )
+            receipt = {
+                "schema": RECEIPT_SCHEMA,
+                "reviewer_id": reviewer_id, "position": position,
+                "blind_id": item["blind_id"],
+                "item_sha256": marker["item_sha256"],
+                "lock_sha256": marker["lock_sha256"],
+                "model": selection["model"], "provider": selection["provider"],
+                "score_origin": ("fixed_no_response_rule" if no_reply else "ai_judge"),
+                "paid_api_attempted": not no_reply,
+                "cost_usd": None if not no_reply else 0,
+                "billing_reconciled": False,
+                "response": score,
+            }
+            write_once(score_path, canonical(receipt) + b"\n")
+        except JudgeHold:
+            raise
+        except Exception:  # noqa: BLE001 - never leak provider/token/private text
+            raise LockHold("JUDGE_EXECUTION_OR_WRITE_HOLD") from None
+        return safe_state(
+            status="GOLD48_JUDGE_ONE_SCORED__NO_UNBLIND",
+            scores=1, paid_attempts=int(not no_reply),
+        )
 
 
 def main() -> None:
