@@ -11,7 +11,11 @@ from types import SimpleNamespace
 from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
 from storyforge_gold_quality.gold48_hf_judge import DIMENSIONS
 from storyforge_gold_quality.gold48_judge_lock import CONFIG_SCHEMA, prepare
-from storyforge_gold_quality.gold48_judge_step import LockHold, step
+from storyforge_gold_quality.gold48_judge_step import (
+    LockHold,
+    single_call_guard,
+    step,
+)
 from storyforge_gold_quality.hf_literary_review import SEVERE, canonical
 
 
@@ -170,6 +174,16 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(seen[0]["fixed_provider"], "deepinfra")
         self.assertEqual(other_client.calls[0]["model"], "zai-org/GLM-5.2")
         self.assertEqual(self.client.calls, [])
+
+    def test_single_call_guard_rejects_concurrent_attempt(self) -> None:
+        with single_call_guard(self.reviews):
+            with self.assertRaisesRegex(
+                LockHold, "JUDGE_CONCURRENT_EXECUTION_HOLD"
+            ):
+                self.run_one()
+        self.assertEqual(self.client.calls, [])
+        self.assertFalse((self.reviews / "J1" /
+                          "002.attempt.private.json").exists())
 
     def test_reject_output_dir_outside_owner_root(self) -> None:
         outside = Path(self.temp.name) / "outside"
