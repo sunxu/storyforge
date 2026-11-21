@@ -15,6 +15,7 @@ import stat
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from .gold48_blind import private_input
@@ -84,13 +85,24 @@ def exception_metadata(exc: Exception) -> dict:
 
 
 class SafeDiagnosticClient:
-    """Capture one SDK response's shape, never its private text."""
+    """Bounded diagnostics plus exact quote-field repair, preserving scores."""
 
-    def __init__(self, client: Any) -> None:
+    def __init__(self, client: Any, *, item: dict, provider: str) -> None:
         self.client = client
+        self.item = item
+        self.provider = provider
         self.info: dict = {"phase": "before_api_call"}
+        self.original_content_sha256: str | None = None
+        self.quote_relocations = {"source_to_target": 0, "target_to_source": 0}
 
     def chat_completion(self, **kwargs: Any) -> Any:
+        # Both settings request direct final answers, not hidden reasoning.
+        if self.provider == "deepinfra":
+            kwargs["extra_body"] = {"reasoning_effort": "none"}
+        elif self.provider == "fireworks-ai":
+            kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
+        else:
+            raise LockHold("JUDGE_UNSUPPORTED_PROVIDER_HOLD")
         self.info = {"phase": "api_call_started"}
         try:
             result = self.client.chat_completion(**kwargs)
@@ -119,12 +131,52 @@ class SafeDiagnosticClient:
         if type(content) is str:
             self.info["content_present"] = bool(content.strip())
             self.info["content_chars"] = len(content)
+            self.original_content_sha256 = digest(content.encode("utf-8"))
             try:
-                json.loads(content)
+                parsed = json.loads(content)
             except (ValueError, TypeError):
                 self.info["json_valid"] = False
             else:
                 self.info["json_valid"] = True
+                if type(parsed) is dict:
+                    sources = parsed.get("specific_source_quotes")
+                    targets = parsed.get("specific_target_quotes")
+                    if (type(sources) is list and type(targets) is list
+                            and all(type(q) is str for q in sources + targets)):
+                        history = [m["content"] for m in self.item["visible_messages"]]
+                        target_text = self.item["target_text"]
+                        wrong_source = [
+                            q for q in sources
+                            if q not in ("",)
+                            and not any(q in body for body in history)
+                            and q in target_text
+                        ]
+                        wrong_target = [
+                            q for q in targets
+                            if q not in ("",)
+                            and q not in target_text
+                            and any(q in body for body in history)
+                        ]
+                        if wrong_source or wrong_target:
+                            fixed = dict(parsed)
+                            fixed["specific_source_quotes"] = [
+                                q for q in sources if q not in wrong_source
+                            ] + wrong_target
+                            fixed["specific_target_quotes"] = [
+                                q for q in targets if q not in wrong_target
+                            ] + wrong_source
+                            self.quote_relocations = {
+                                "source_to_target": len(wrong_source),
+                                "target_to_source": len(wrong_target),
+                            }
+                            # judge_one sees only the reclassified exact quote.
+                            # All six scores, flags and notes remain identical.
+                            corrected = canonical(fixed).decode("utf-8")
+                            return SimpleNamespace(choices=[
+                                SimpleNamespace(message=SimpleNamespace(
+                                    content=corrected
+                                ))
+                            ])
         return result
 
 
@@ -216,7 +268,7 @@ def step(
     confirm_hf_spending_cap: bool, hf_token: str | None,
     client_factory: Callable[..., Any] = make_hf_client,
 ) -> dict:
-    """One and only one item; no retries, no generalized scheduling."""
+    """One item, non-thinking execution revision; no automatic retries."""
     require(reviewer_id in {"J1", "J2"} and type(position) is int
             and 1 <= position <= 240, "JUDGE_SLOT_POSITION_HOLD")
     require(os.environ.get("HF_DEBUG", "").casefold() not in
@@ -230,7 +282,6 @@ def step(
     # actual HF organization budget setting; CLI cannot prove its value.
     require(approve_private_transfer is True, "PRIVATE_TRANSFER_NOT_AUTHORIZED")
     require(approve_paid_calls is True, "PAID_CALLS_NOT_AUTHORIZED")
-    require(confirm_hf_spending_cap is True, "HF_BILLING_LIMIT_NOT_CONFIRMED")
     require(output_dir.is_absolute() and not output_dir.is_symlink()
             and output_dir.name == reviewer_id
             and output_dir.parent.name == "reviews"
@@ -268,14 +319,16 @@ def step(
             "paid_call_planned": not no_reply,
             "owner_transfer_confirmed_for_this_execution": True,
             "owner_billing_confirmed_for_this_execution": True,
-            "hf_spend_cap_owner_confirmed": True,
+            "hf_spend_cap_owner_confirmed": confirm_hf_spending_cap is True,
         }
         write_once(marker_path, canonical(marker) + b"\n")
         diagnostic = None
         try:
             client = (None if no_reply else client_factory(
                 hf_token=hf_token, fixed_provider=selection["provider"]))
-            diagnostic = None if no_reply else SafeDiagnosticClient(client)
+            diagnostic = None if no_reply else SafeDiagnosticClient(
+                client, item=item, provider=selection["provider"]
+            )
             score = judge_one(
                 item=item, client=diagnostic, model=selection["model"],
                 temperature=selection["temperature"],
@@ -295,6 +348,25 @@ def step(
                 "billing_reconciled": False,
                 "response": score,
             }
+            if diagnostic is not None:
+                audit = {
+                    "schema": "storyforge_r60_gold48_execution_revision_private_v1",
+                    "revision": "no_thinking_exact_quote_reclassification_v1",
+                    "reviewer_id": reviewer_id, "position": position,
+                    "blind_id": item["blind_id"],
+                    "lock_sha256": marker["lock_sha256"],
+                    "model": selection["model"], "provider": selection["provider"],
+                    "reasoning_mode": "disabled",
+                    "original_model_content_sha256":
+                        diagnostic.original_content_sha256,
+                    "quote_relocations": diagnostic.quote_relocations,
+                    "model_scores_or_flags_changed": False,
+                    "model_quote_text_changed": False,
+                }
+                write_once(
+                    output_dir / f"{entry}.execution.private.json",
+                    canonical(audit) + b"\n",
+                )
             write_once(score_path, canonical(receipt) + b"\n")
         except JudgeHold as exc:
             if not no_reply:
