@@ -10,6 +10,7 @@ import argparse
 import fcntl
 import json
 import os
+import re
 import stat
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
@@ -47,6 +48,101 @@ def single_call_guard(root: Path) -> Iterator[None]:
         yield
     finally:
         os.close(fd)
+
+
+
+# The HF SDK may redact an exception that includes private prompts/credentials.
+# Capture only bounded structural metadata; do not log request/response bodies.
+EXCEPTION_NAME = re.compile(r"[A-Za-z][A-Za-z0-9_]{0,79}\Z")
+TRACE_ID = re.compile(r"[A-Za-z0-9._:-]{1,128}\Z")
+FINISH_REASONS = {"stop", "length", "tool_calls", "content_filter"}
+
+
+def exception_metadata(exc: Exception) -> dict:
+    name = type(exc).__name__
+    status = getattr(exc, "status_code", None)
+    response = getattr(exc, "response", None)
+    if type(status) is not int and response is not None:
+        status = getattr(response, "status_code", None)
+    request_id = None
+    headers = getattr(response, "headers", None)
+    if headers is not None:
+        for key in ("x-request-id", "x-amzn-trace-id", "x-correlation-id"):
+            try:
+                candidate = headers.get(key)
+            except (AttributeError, TypeError, ValueError):
+                candidate = None
+            if type(candidate) is str and TRACE_ID.fullmatch(candidate):
+                request_id = candidate
+                break
+    return {
+        "exception_class": name if EXCEPTION_NAME.fullmatch(name) else "OtherException",
+        "http_status": (status if type(status) is int and 100 <= status <= 599
+                        else None),
+        "provider_request_id": request_id,
+    }
+
+
+class SafeDiagnosticClient:
+    """Capture one SDK response's shape, never its private text."""
+
+    def __init__(self, client: Any) -> None:
+        self.client = client
+        self.info: dict = {"phase": "before_api_call"}
+
+    def chat_completion(self, **kwargs: Any) -> Any:
+        self.info = {"phase": "api_call_started"}
+        try:
+            result = self.client.chat_completion(**kwargs)
+        except Exception as exc:
+            self.info = {"phase": "api_exception", **exception_metadata(exc)}
+            raise
+        self.info = {
+            "phase": "api_response_received",
+            "choices_present": False,
+            "content_present": False,
+            "content_chars": None,
+            "json_valid": None,
+            "finish_reason": None,
+        }
+        choices = getattr(result, "choices", None)
+        if not isinstance(choices, (list, tuple)) or not choices:
+            return result
+        self.info["choices_present"] = True
+        choice = choices[0]
+        finish = getattr(choice, "finish_reason", None)
+        self.info["finish_reason"] = (
+            finish if type(finish) is str and finish in FINISH_REASONS else None
+        )
+        message = getattr(choice, "message", None)
+        content = getattr(message, "content", None)
+        if type(content) is str:
+            self.info["content_present"] = bool(content.strip())
+            self.info["content_chars"] = len(content)
+            try:
+                json.loads(content)
+            except (ValueError, TypeError):
+                self.info["json_valid"] = False
+            else:
+                self.info["json_valid"] = True
+        return result
+
+
+def write_safe_failure(
+    *, path: Path, position: int, reviewer_id: str,
+    stage: dict, error_reason: str,
+) -> None:
+    reason = (error_reason if re.fullmatch(r"[A-Z0-9_]{1,80}", error_reason)
+              else "JUDGE_FAILURE_HOLD")
+    record = {
+        "schema": "storyforge_r60_gold48_judge_diagnostic_safe_v1",
+        "position": position, "reviewer_id": reviewer_id,
+        "reason": reason, "sdk": stage,
+        "private_values_emitted": False,
+        "http_body_logged": False, "token_logged": False,
+        "score_record_written": False,
+    }
+    write_once(path, canonical(record) + b"\n")
 
 
 def read_locked_packet(packet: Path, lock_path: Path) -> tuple[dict, list[dict]]:
@@ -148,6 +244,9 @@ def step(
         entry = f"{position:03d}"
         marker_path = output_dir / f"{entry}.attempt.private.json"
         score_path = output_dir / f"{entry}.score.private.json"
+        diagnostic_path = output_dir / f"{entry}.diagnostic.private.json"
+        require(not diagnostic_path.exists() and not diagnostic_path.is_symlink(),
+                "JUDGE_DIAGNOSTIC_ALREADY_EXISTS_HOLD")
         require(not marker_path.exists() and not marker_path.is_symlink()
                 and not score_path.exists() and not score_path.is_symlink(),
                 "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD")
@@ -170,11 +269,13 @@ def step(
             "hf_spend_cap_owner_confirmed": True,
         }
         write_once(marker_path, canonical(marker) + b"\n")
+        diagnostic = None
         try:
             client = (None if no_reply else client_factory(
                 hf_token=hf_token, fixed_provider=selection["provider"]))
+            diagnostic = None if no_reply else SafeDiagnosticClient(client)
             score = judge_one(
-                item=item, client=client, model=selection["model"],
+                item=item, client=diagnostic, model=selection["model"],
                 temperature=selection["temperature"],
                 max_tokens=selection["max_tokens"],
                 private_transfer_authorized=True,
@@ -193,9 +294,26 @@ def step(
                 "response": score,
             }
             write_once(score_path, canonical(receipt) + b"\n")
-        except JudgeHold:
+        except JudgeHold as exc:
+            if not no_reply:
+                write_safe_failure(
+                    path=diagnostic_path, position=position,
+                    reviewer_id=reviewer_id,
+                    stage=(diagnostic.info if diagnostic is not None
+                           else {"phase": "client_not_constructed"}),
+                    error_reason=str(exc),
+                )
             raise
-        except Exception:  # noqa: BLE001 - never leak provider/token/private text
+        except Exception as exc:  # noqa: BLE001 - safe metadata only
+            if not no_reply:
+                stage = (diagnostic.info if diagnostic is not None
+                         else {"phase": "client_factory_exception",
+                               **exception_metadata(exc)})
+                write_safe_failure(
+                    path=diagnostic_path, position=position,
+                    reviewer_id=reviewer_id, stage=stage,
+                    error_reason="JUDGE_EXECUTION_OR_WRITE_HOLD",
+                )
             raise LockHold("JUDGE_EXECUTION_OR_WRITE_HOLD") from None
         return safe_state(
             status="GOLD48_JUDGE_ONE_SCORED__NO_UNBLIND",
