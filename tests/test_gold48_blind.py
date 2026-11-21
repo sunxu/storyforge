@@ -162,6 +162,45 @@ class Gold48BlindSyntheticTest(unittest.TestCase):
         with self.assertRaises(Gold48BlindHold):
             self.build()
 
+    def test_audited_empty_reply_preserved_exactly(self) -> None:
+        # Entirely synthetic role/case; no real private response is in Git.
+        role = "r54_v03a"
+        path = self.generated[role]
+        doc = json.loads(path.read_text())
+        doc["outputs"][7]["text"] = ""
+        doc["outputs"][7]["output_tokens"] = 1
+        doc["outputs"][7]["finish_reason"] = "eos"
+        json_file(path, doc)
+        output_sha = digest(path.read_bytes())
+        manifest_path = self.root / f"{role}.private.json.result-sha256-manifest.private.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["files"][0]["sha256"] = output_sha
+        json_file(manifest_path, manifest)
+        identity_path = self.root / f"{role}.private.json.identity.private.json"
+        identity = json.loads(identity_path.read_text())
+        identity["output_sha256"] = output_sha
+        json_file(identity_path, identity)
+
+        preflight = prepare(
+            freeze_path=self.freeze, input_path=self.input,
+            input_manifest_path=self.input_manifest, original_path=self.original,
+            locator_path=self.locators, generated=self.generated,
+            output_dir=None,
+        )
+        self.assertEqual(preflight["status"],
+                         "GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE")
+        self.assertFalse((self.root / "out").exists())
+        self.build()
+        reviewer = self.root / "out" / "reviewers" / "GOLD48_BLIND_240_PRIVATE.jsonl"
+        rows = [json.loads(line) for line in reviewer.read_bytes().splitlines()]
+        self.assertEqual(len(rows), 240)
+        self.assertEqual(sum(row["target_text"] == "" for row in rows), 1)
+        key = json.loads(
+            (self.root / "out" / "owner" / "GOLD48_COORDINATOR_KEY_PRIVATE.json").read_text()
+        )
+        self.assertEqual(sum(x["target_sha256_PRIVATE"] == digest(b"")
+                             for x in key["bindings"]), 1)
+
     def test_read_only_preflight_does_not_create_output(self) -> None:
         safe = prepare(
             freeze_path=self.freeze, input_path=self.input,
