@@ -4,7 +4,41 @@
 
 **本节优先于下方 2026-11-21 的 `ready/submit`、Stage 上传、GPU 进度与“某臂尚待生成”记录。** 四臂 Base/R46/R54/R60 各 48/48 已真实生成；HF Jobs 均 `COMPLETED`，Owner Mac 各 4 份结果文件独立下载、SHA 与结构审计均 PASS。正式 Run ID、Job ID、停止原因及不可越过的盲评边界见 [现行任务书顶部](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
 
-**不要再次运行** `scripts/r60_gold48_gpu_cli.py submit/ready`、`r60_gold48_gpu_result_audit.py`、旧 Stage `sync` 或新 GPU Job；原始结果、私有 `0700/0600` 目录保持不变。现有结果目录为 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/`；原始历史回答不在 HF GPU Stage，须由 Owner Mac 已冻结私有原件读取，绝不从公开资料猜造。下一个唯一 Owner 动作是只读清点 4×48 新回复 +48 Original、冻结输入与实际 48/42 风险标记，先创建**私有五来源匿名评审包**再冻结评审器/预算并调用 `adradar` Inference Providers API。
+**不要再次运行** `scripts/r60_gold48_gpu_cli.py submit/ready`、`r60_gold48_gpu_result_audit.py`、旧 Stage `sync` 或新 GPU Job；原始结果、私有 `0700/0600` 目录保持不变。现有结果目录为 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/`；原始历史回答不在 HF GPU Stage，须由 Owner Mac 已冻结私有原件读取，绝不从公开资料猜造。**Owner Mac 真实只读 SAFE 预检已 PASS**，不必重跑。下一个唯一 Owner 动作是**一次性创建私有五来源匿名评审包**，随后冻结评审器配置/预算/外发许可；在此之前绝不调用真实 `adradar` Inference Providers API。
+
+**2026-11-22 新签收的真实 SAFE（只记录聚合，不写入私有原文）**：`GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`；`cases=48`、`answers=240`、`stories=8`、`sessions=25`、`main_cases=48`、`sensitivity_cases=42`、`length_answers_retained=7`、`no_visible_reply_answers_retained=1`。评分 `0/240`、HF API 调用 0、费用 $0；`owner_mapping_uploaded=false`、`quality_v1_admitted=0`。预检并未创建正式盲评包，不能把 PREP PASS 写成已生成包或已评分。
+
+**仅在 Owner Mac 上执行一次**（沿用上述成功预检命令中已经设置的九个实际私有绝对路径；不公开路径、文件或内容；如果目标目录已存在则 HOLD，不覆盖）：
+
+```bash
+set -euo pipefail
+umask 077
+cd ~/workspace/storyforge
+BRANCH=docs/r60-p2-r47-r48-r55-source-shape-audit-20261118
+test "$(git branch --show-current)" = "$BRANCH"
+test -z "$(git status --porcelain)"
+git fetch origin "$BRANCH"
+git merge --ff-only "origin/$BRANCH"
+for var in GOLD48_FREEZE GOLD48_INPUT GOLD48_INPUT_MANIFEST GOLD48_ORIGINAL GOLD48_LOCATORS GOLD48_BASE GOLD48_R46 GOLD48_R54 GOLD48_R60; do
+  test -n "${!var:-}" # Bash；若在 zsh 中请用 bash 启动此代码块
+done
+OUT="$HOME/.local/share/storyforge/r60/private/gold48-quality-v1-blind-20261122"
+test ! -e "$OUT" && test ! -L "$OUT"
+PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \\
+  -m storyforge_gold_quality.gold48_blind \\
+  --freeze "$GOLD48_FREEZE" \\
+  --input "$GOLD48_INPUT" \\
+  --input-manifest "$GOLD48_INPUT_MANIFEST" \\
+  --original "$GOLD48_ORIGINAL" \\
+  --locators "$GOLD48_LOCATORS" \\
+  --base "$GOLD48_BASE" \\
+  --r46-v02 "$GOLD48_R46" \\
+  --r54-v03a "$GOLD48_R54" \\
+  --r60-base336 "$GOLD48_R60" \\
+  --out "$OUT"
+```
+
+期待**仅打印** `GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS` 和相同的 SAFE 计数。Reviewer 匿名文本在 `$OUT/reviewers/GOLD48_BLIND_240_PRIVATE.jsonl`；Owner 来源映射与包 SHA 在 `$OUT/owner/GOLD48_COORDINATOR_KEY_PRIVATE.json`（均 0600，目录 0700）。**Owner key 不得发送给评审模型或上传共享 Bucket/Git；Reviewer 文本在明确外发许可前也不发送 HF。** 如果此次写入失败，不重新执行 create-only，也不清理覆盖已写私有文件；先查单一 HOLD 原因。完成后下一关才是冻结六维 rubric、缺失回复固定规则、AI Judge 模型/Provider/温度/max_tokens、独立评审数量/分歧方案、总费用上限和第三方数据处理授权，再允许真实 API 调用。
 
 **特殊凭据提示**：近期一次 R60 结果审计最初因本地推理用 `HF_TOKEN` 覆盖 Bucket 凭据而在 `HfApi.list_bucket_tree` 遇到 `BucketNotFoundError`；改用可读组织私有 Bucket 的既有登录凭据后 Owner 审计通过。日后对 Inference Providers 与私有 Bucket 使用分离的凭据作用域，禁止公开任何 Token。`owner_mac_job_image_inspect_verified=false` 和独立签名状态仍 false；Quality-v1 评分/晋升未开始。下文 GPU 命令只用于历史溯源，**当前不得按其重新生成**。
 
