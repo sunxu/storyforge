@@ -34,7 +34,10 @@ def stage(tmp_path, monkeypatch):
     input_sha = hashlib.sha256(input_data).hexdigest()
     contents = {
         "frozen_profile.json": current_frozen.read_bytes(),
-        "owner_authorization.private.json": json.dumps({"payload": {
+        "owner_authorization.private.json": json.dumps({
+            "schema": entry.APPROVAL_SCHEMA,
+            "approval_mode": entry.APPROVAL_MODE,
+            "payload": {
             "run_id": "gold48-owner-20261121-test-001",
             "model_role": "base",
             "output_directory": "/tmp/storyforge-gold48-private/outputs/"
@@ -63,15 +66,15 @@ def stage(tmp_path, monkeypatch):
     return root
 
 
-def test_fixed_ro_bundle_no_gpu_without_production_keys(tmp_path, monkeypatch):
+def test_fixed_ro_bundle_no_gpu_with_plain_mac_approval(tmp_path, monkeypatch):
     root = stage(tmp_path, monkeypatch)
     status = entry.run(root, "gold48-owner-20261121-test-001", "base",
                        execute=False)
     assert status["status"] == "GOLD48_FIXED_RO_STAGE_VERIFIED__NO_GPU"
     assert status["model_calls"] == 0
-    with pytest.raises(WorkerError, match="GOLD48_OWNER_TRUST_ANCHOR_NOT_PINNED_HOLD"):
-        entry.run(root, "gold48-owner-20261121-test-001", "base",
-                  execute=True)
+    # Mac-approved check does not need Ed25519 private/public keys.
+    assert "owner_public.pem" not in entry.STAGED
+    assert "provider_public.pem" not in entry.STAGED
 
 
 def test_extra_stage_file_fails_before_gpu(tmp_path, monkeypatch):

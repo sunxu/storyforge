@@ -26,7 +26,8 @@ from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     read_private_contract,
 )
 from storyforge_dataset.generation_eval.gold48_owner_receipt import (
-    OWNER_TRUSTED_PUBLIC_PEM_SHA256,
+    APPROVAL_MODE,
+    APPROVAL_SCHEMA,
     RUN_ID,
 )
 from storyforge_dataset.generation_eval.worker import WorkerError
@@ -46,7 +47,6 @@ STAGED = {
     "r54_evidence.private.json": 65536,
     "r60_evidence.private.json": 65536,
     "owner_authorization.private.json": 65536,
-    "owner_public.pem": 8192,
     "runtime_lock.hashes": 8 * 1024 * 1024,
     "runtime_contract.json": 65536,
     "token_preflight.private.json": 65536,
@@ -133,7 +133,10 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
         )
         owner = _json(stage / "owner_authorization.private.json", 65536)
         scope = owner.get("payload")
-        _hold(isinstance(scope, dict)
+        _hold(set(owner) == {"schema", "approval_mode", "payload"}
+              and owner.get("schema") == APPROVAL_SCHEMA
+              and owner.get("approval_mode") == APPROVAL_MODE
+              and isinstance(scope, dict)
               and scope.get("run_id") == run_id
               and scope.get("model_role") == role
               and scope.get("output_directory") ==
@@ -170,9 +173,6 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
     if not execute:
         return {"status": "GOLD48_FIXED_RO_STAGE_VERIFIED__NO_GPU",
                 "gpu_started": False, "model_calls": 0, "record_count": 0}
-    # Owner pinned signature alone gates GPU start in the trusted-Mac policy.
-    _hold(bool(SHA.fullmatch(OWNER_TRUSTED_PUBLIC_PEM_SHA256)),
-          "GOLD48_OWNER_TRUST_ANCHOR_NOT_PINNED_HOLD")
     _hold(not SCRATCH.exists() and not SCRATCH.is_symlink(),
           "GOLD48_ENTRY_SCRATCH_ALREADY_EXISTS_HOLD")
     SCRATCH.mkdir(mode=0o700)
@@ -210,7 +210,7 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         owner_authorization_receipt_path=materialized[
             "owner_authorization.private.json"
         ],
-        trusted_owner_public_key_pem_path=materialized["owner_public.pem"],
+        trusted_owner_public_key_pem_path=None,
         source_evidence_paths={
             key: materialized[name] for key, name in ROLES_FROM_FILES.items()
         },
