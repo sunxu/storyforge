@@ -247,11 +247,11 @@ def step(
         marker_path = output_dir / f"{entry}.attempt.private.json"
         score_path = output_dir / f"{entry}.score.private.json"
         diagnostic_path = output_dir / f"{entry}.diagnostic.private.json"
-        require(not diagnostic_path.exists() and not diagnostic_path.is_symlink(),
-                "JUDGE_DIAGNOSTIC_ALREADY_EXISTS_HOLD")
         require(not marker_path.exists() and not marker_path.is_symlink()
                 and not score_path.exists() and not score_path.is_symlink(),
                 "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD")
+        require(not diagnostic_path.exists() and not diagnostic_path.is_symlink(),
+                "JUDGE_DIAGNOSTIC_ALREADY_EXISTS_HOLD")
         no_reply = not item["target_text"].strip()
         if not no_reply:
             require(isinstance(hf_token, str) and bool(hf_token),
