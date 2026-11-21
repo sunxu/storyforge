@@ -1,3 +1,11 @@
+## 2026-11-22 Gold48 主线最新优先级（覆盖下文全部 GPU 待办）
+
+**[当前权威任务书](docs/R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) / [唯一可复制新 Agent 提示词](docs/R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md)**。PR #31 最后核验代码 HEAD `4caf2e3dd5a7d6b2575b2cac0e2c1e0a86a02f40`、7/7 CI；四模型 Base/R46/R54/R60 共 192/192 条 GPU 生成与 Owner Mac 独立字节审计全部通过（各 48/48），历史 Original 48 份已独立冻结，合计 **240 份尚未盲评的匿名评分对象**。七条 `length` 保留；Owner 独立镜像 Inspect 与独立签名仍未验证，`quality_v1_admitted=0`、未晋升。**不再运行 GPU、旧 Tokenizer、原始数据提取、旧来源审查、Owner SHA 审计或任何 `ready/submit`**。
+
+下一步唯一主线：Owner 私有域只读核对已有五来源资料及真实 48/42 绑定 → 复用旧 R48 六维评分、匿名/冻结与 R55 v2 防泄露原则，做最小 48×5 适配 → 使用 Owner 已测试通过的 **HF Inference Providers API，`bill_to="adradar"` 组织计费**，先锁模型/provider/rubric/预算和隐私边界 → 受控盲评、原件冻结、Owner 私有解盲 → 48/42 + Story/Session 聚类分析 → Owner Quality-v1 裁决。旧 R48 工具硬编码 20×4×3，不能直接当 48×5 执行。Original 只能作历史描述性参考；不得标成与四臂 byte-exact 同输入。`HF_TOKEN` 的推理细粒度权限可能覆盖私有 Bucket 登录，应分离凭据。**本次文档任务不授权额外 GPU 或模型训练。** 下文 2026-11-21 “GPU 未实测／Stage 需提交”均属旧状态，绝不执行。
+
+---
+
 ## 2026-11-21 R60 Gold48 当前权威执行规则（覆盖本文件以下过时流程段落）
 
 **现行唯一判断依据**：PR [#31](https://github.com/sunxu/storyforge/pull/31) 实时 HEAD + 实际源码 + 已签收的 SAFE/Owner 私有证据；`1dcbce63e80c5e1d6e1e700f1927bd95f54a08ba` 是最近一次核验基线，不应被硬编码为永远最新。该基线 7/7 GitHub Actions SUCCESS，主 CI `1,778 passed · 6 skipped · 42 subtests passed`，均为**合成/离线**验证，不是 HF GPU 实测。
