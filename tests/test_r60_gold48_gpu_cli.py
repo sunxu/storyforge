@@ -106,3 +106,129 @@ def test_gpu_command_does_not_mount_removed_provider_handoff():
     assert inputs[0].endswith(":/input/gold48:ro")
     assert inputs[1].endswith(":/input/code:ro")
     assert output.endswith(":/output:rw")
+
+
+def _mock_owner_mac_ready(tmp_path, monkeypatch, *, submit_returncode=0):
+    """All HF/remote operations fake. No real Job, GPU, or private source."""
+    from pathlib import Path
+
+    import huggingface_hub
+    import r60_common2_hf_cpu_final_read_only as history
+
+    parent = tmp_path / "mac-owner"
+    parent.mkdir(mode=0o700)
+    stage = parent / RUN
+    stage.mkdir(mode=0o700)
+    monkeypatch.setattr(huggingface_hub, "HfApi", lambda: object())
+    monkeypatch.setattr(history, "walk_job_history",
+                        lambda _api, _key: (0, 0))
+    monkeypatch.setattr(cli, "_local_stage_sha",
+                        lambda _stage, _run, _role: {"frozen_profile.json": "a" * 64})
+    monkeypatch.setattr(cli, "_remote_file_sha",
+                        lambda _api, _prefix, _names: None)
+    monkeypatch.setattr(cli.shared, "missing_job_cli_flags", lambda _s: [])
+    monkeypatch.setattr(cli.shared, "use_documented_default_attempts",
+                        lambda _s: False)
+
+    def remote_set(_api, prefix):
+        if prefix.startswith(cli.RESULT_PREFIX):
+            return set()
+        if prefix.startswith(cli.CODE_PREFIX):
+            return set(cli.CORE_CODE_FILES)
+        raise AssertionError("unexpected remote listing")
+    monkeypatch.setattr(cli.shared, "remote_set", remote_set)
+
+    calls = []
+    def fake_run(argv, **_kwargs):
+        calls.append(list(argv))
+        if argv[:3] == ["git", "-C", str(cli.ROOT)]:
+            return SimpleNamespace(returncode=0, stdout="a" * 40 + "\n", stderr="")
+        if argv[:3] == ["hf", "buckets", "cp"]:
+            name = argv[3].split("/" + cli.CODE_PREFIX + "/")[-1]
+            assert name.startswith("a" * 40 + "/")
+            rel = name[41:]
+            Path(argv[4]).write_bytes((cli.ROOT / rel).read_bytes())
+            return SimpleNamespace(returncode=0, stdout="", stderr="")
+        if argv == ["hf", "jobs", "run", "--help"]:
+            return SimpleNamespace(returncode=0, stdout=HELP, stderr="")
+        if argv == ["hf", "auth", "whoami"]:
+            return SimpleNamespace(returncode=0, stdout="safe", stderr="")
+        if argv[:3] == ["hf", "jobs", "run"]:
+            if "--dry-run" in argv:
+                assert "execute" in argv and "--dry-run" in argv
+                return SimpleNamespace(returncode=0, stdout="dry-run safe", stderr="")
+            return SimpleNamespace(
+                returncode=submit_returncode,
+                stdout="Job 6b00ca46efaf5e14f4b3f8ca" if submit_returncode == 0 else "",
+                stderr="",
+            )
+        raise AssertionError("unexpected subprocess call")
+    monkeypatch.setattr(cli.subprocess, "run", fake_run)
+    return stage, calls
+
+
+def test_ready_checks_existing_mac_history_and_hashes_no_submit(
+    tmp_path, monkeypatch,
+):
+    stage, calls = _mock_owner_mac_ready(tmp_path, monkeypatch)
+    status = cli._ready_or_submit(
+        action="ready", run_id=RUN, role="base", code=CODE,
+        adapters=ADAPTERS, stage=stage, allow_execute=False,
+    )
+    assert status["status"] == "GOLD48_GPU_MAC_STAGE_CODE_AND_CLI_READY__NO_JOB"
+    assert status["hf_jobs_submitted"] == 0
+    assert status["private_stage_bytes_verified"] is True
+    assert status["code_bundle_sha_verified"] is True
+    assert not list(stage.parent.glob("*.gold48-gpu-submit.private.json"))
+    assert all(
+        "--dry-run" in call
+        for call in calls if call[:3] == ["hf", "jobs", "run"]
+    )
+
+
+def test_submit_must_be_explicit_creates_marker_before_billing_and_no_retry(
+    tmp_path, monkeypatch,
+):
+    stage, calls = _mock_owner_mac_ready(tmp_path, monkeypatch)
+    with pytest.raises(ValueError, match="GOLD48_EXPLICIT_OWNER_GPU_EXECUTE_REQUIRED_HOLD"):
+        cli._ready_or_submit(
+            action="submit", run_id=RUN, role="base", code=CODE,
+            adapters=ADAPTERS, stage=stage, allow_execute=False,
+        )
+    assert calls == []
+    result = cli._ready_or_submit(
+        action="submit", run_id=RUN, role="base", code=CODE,
+        adapters=ADAPTERS, stage=stage, allow_execute=True,
+    )
+    assert result["status"] == "GOLD48_GPU_SUBMITTED__OWNER_DOWNLOAD_AUDIT_PENDING"
+    assert result["job_id"] == "6b00ca46efaf5e14f4b3f8ca"
+    assert result["hf_jobs_submitted"] == 1
+    marker = stage.parent / (RUN + ".gold48-gpu-submit.private.json")
+    assert marker.is_file() and marker.stat().st_mode & 0o777 == 0o600
+    import json
+    assert json.loads(marker.read_text())["status"] == "ATTEMPTED__NO_AUTO_RETRY"
+    billed = [call for call in calls
+              if call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]
+    assert len(billed) == 1
+    with pytest.raises(ValueError, match="GOLD48_GPU_ALREADY_ATTEMPTED_NO_RETRY_HOLD"):
+        cli._ready_or_submit(
+            action="submit", run_id=RUN, role="base", code=CODE,
+            adapters=ADAPTERS, stage=stage, allow_execute=True,
+        )
+    assert len([call for call in calls if
+                call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]) == 1
+
+
+def test_submit_unconfirmed_keeps_marker_and_never_retries(tmp_path, monkeypatch):
+    stage, calls = _mock_owner_mac_ready(
+        tmp_path, monkeypatch, submit_returncode=1,
+    )
+    report = cli._ready_or_submit(
+        action="submit", run_id=RUN, role="base", code=CODE,
+        adapters=ADAPTERS, stage=stage, allow_execute=True,
+    )
+    assert report["status"] == "GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY"
+    assert report["hf_jobs_submitted"] == 0
+    assert (stage.parent / (RUN + ".gold48-gpu-submit.private.json")).exists()
+    assert len([call for call in calls if
+                call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]) == 1
