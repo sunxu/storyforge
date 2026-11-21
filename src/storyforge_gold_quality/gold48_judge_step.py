@@ -99,7 +99,7 @@ class SafeDiagnosticClient:
         # Both settings request direct final answers, not hidden reasoning.
         if self.provider == "deepinfra":
             kwargs["extra_body"] = {"reasoning_effort": "none"}
-        elif self.provider == "fireworks-ai":
+        elif self.provider in {"fireworks-ai", "deepseek-official"}:
             kwargs["extra_body"] = {"thinking": {"type": "disabled"}}
         else:
             raise LockHold("JUDGE_UNSUPPORTED_PROVIDER_HOLD")
@@ -267,6 +267,7 @@ def step(
     approve_private_transfer: bool, approve_paid_calls: bool,
     confirm_hf_spending_cap: bool, hf_token: str | None,
     client_factory: Callable[..., Any] = make_hf_client,
+    official_revision: Path | None = None,
 ) -> dict:
     """One item, non-thinking execution revision; no automatic retries."""
     require(reviewer_id in {"J1", "J2"} and type(position) is int
@@ -278,6 +279,48 @@ def step(
     selection = lock["config"]["reviewers"][int(reviewer_id[1]) - 1]
     require(selection["reviewer_id"] == reviewer_id,
             "JUDGE_LOCK_REVIEWER_HOLD")
+    revision_sha256 = None
+    if official_revision is not None:
+        require(
+            reviewer_id == "J1"
+            and official_revision ==
+                packet.parent.parent / "owner" /
+                "GOLD48_J1_OFFICIAL_REVISION_PRIVATE.json"
+            and selection["model"] == "deepseek-ai/DeepSeek-V4.1-Flash"
+            and selection["provider"] == "fireworks-ai",
+            "J1_OFFICIAL_REVISION_BINDING_HOLD",
+        )
+        raw_revision = private_input(official_revision, limit=65536)
+        try:
+            revision = json.loads(raw_revision)
+        except (TypeError, ValueError):
+            raise LockHold("J1_OFFICIAL_REVISION_INVALID_HOLD") from None
+        require(
+            type(revision) is dict
+            and revision.get("schema") ==
+                "storyforge_r60_gold48_j1_official_revision_private_v1"
+            and revision.get("status") ==
+                "J1_OFFICIAL_REVISION_PREPARED__NO_EXTERNAL_CALLS"
+            and revision.get("lock_sha256") ==
+                digest(private_input(lock_path, limit=65536))
+            and revision.get("reviewer_id") == "J1"
+            and revision.get("frozen_model") == selection["model"]
+            and revision.get("frozen_provider") == selection["provider"]
+            and revision.get("actual_model") == "deepseek-flash"
+            and revision.get("model_version") == "DeepSeek-V4.1-Flash-1017"
+            and revision.get("actual_provider") == "deepseek-official"
+            and revision.get("api_origin") == "https://api.deepseek.com"
+            and revision.get("response_format") == "json_object"
+            and revision.get("thinking") == "disabled"
+            and revision.get("frozen_judge_sha256") ==
+                lock["judge_source_sha256"],
+            "J1_OFFICIAL_REVISION_INVALID_HOLD",
+        )
+        revision_sha256 = digest(raw_revision)
+        selection = {**selection, "model": "deepseek-flash",
+                     "provider": "deepseek-official"}
+        require(client_factory is not make_hf_client,
+                "J1_OFFICIAL_CLIENT_FACTORY_MISSING_HOLD")
     # Both approvals are separate from the offline lock. Owner must check the
     # actual HF organization budget setting; CLI cannot prove its value.
     require(approve_private_transfer is True, "PRIVATE_TRANSFER_NOT_AUTHORIZED")
@@ -321,6 +364,8 @@ def step(
             "owner_billing_confirmed_for_this_execution": True,
             "hf_spend_cap_owner_confirmed": confirm_hf_spending_cap is True,
         }
+        if revision_sha256 is not None:
+            marker["execution_revision_sha256"] = revision_sha256
         write_once(marker_path, canonical(marker) + b"\n")
         diagnostic = None
         try:
@@ -348,6 +393,8 @@ def step(
                 "billing_reconciled": False,
                 "response": score,
             }
+            if revision_sha256 is not None:
+                receipt["execution_revision_sha256"] = revision_sha256
             if diagnostic is not None:
                 audit = {
                     "schema": "storyforge_r60_gold48_execution_revision_private_v1",
@@ -363,6 +410,12 @@ def step(
                     "model_scores_or_flags_changed": False,
                     "model_quote_text_changed": False,
                 }
+                if revision_sha256 is not None:
+                    audit["revision"] = "j1_deepseek_official_json_object_v1"
+                    audit["execution_revision_sha256"] = revision_sha256
+                    audit["api_origin"] = "https://api.deepseek.com"
+                    audit["response_format"] = "json_object"
+                    audit["model_version"] = "DeepSeek-V4.1-Flash-1017"
                 write_once(
                     output_dir / f"{entry}.execution.private.json",
                     canonical(audit) + b"\n",
