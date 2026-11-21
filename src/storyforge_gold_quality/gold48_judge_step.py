@@ -15,8 +15,8 @@ from typing import Any
 
 from .gold48_blind import private_input
 from .gold48_hf_judge import JudgeHold, judge_one, make_hf_client, validate_item
-from .gold48_judge_lock import LockHold, digest, read_packet, require
 from .gold48_judge_lock import SCHEMA as LOCK_SCHEMA
+from .gold48_judge_lock import LockHold, digest, read_packet, require
 from .hf_blind_stage import private_folder, write_once
 from .hf_literary_review import canonical
 
