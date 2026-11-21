@@ -9,7 +9,10 @@ import unittest
 from pathlib import Path
 
 from storyforge_dataset.generation_eval.gold48_contract_bridge import (
-    INPUT_SCHEMA, MODEL, REVISION, ROLES,
+    INPUT_SCHEMA,
+    MODEL,
+    REVISION,
+    ROLES,
 )
 from storyforge_gold_quality.gold48_blind import Gold48BlindHold, prepare
 from storyforge_gold_quality.hf_literary_review import canonical
