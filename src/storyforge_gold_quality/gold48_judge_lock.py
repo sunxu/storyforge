@@ -12,7 +12,7 @@ import re
 from collections import Counter
 from pathlib import Path
 
-from .gold48_blind import PACK_SCHEMA, private_input, require as blind_require
+from .gold48_blind import PACK_SCHEMA, private_input
 from .gold48_hf_judge import validate_item
 from .hf_blind_stage import private_folder, write_once
 from .hf_literary_review import canonical
