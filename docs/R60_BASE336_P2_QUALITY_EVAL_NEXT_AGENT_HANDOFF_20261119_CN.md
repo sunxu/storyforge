@@ -1,5 +1,7 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+**2026-11-22 Owner 的最新直接推进决定（覆盖下方校准前置）**：Gold48 匿名包 240/240 PASS，Judge 配置只读预检 PASS；明确跳过无私有数据的额外 AI Judge 质量校准，不重复预检、打包、生成或 SHA。J1 DeepSeek-V4.1-Flash / Fireworks AI、J2 GLM-5.2 / DeepInfra 作为现行拟定评审组合；按 Owner runbook 核对现有配置后唯一下一步是离线 gold48_judge_lock --out 在 Owner Mac create-only 锁定。现有 gold48_judge_step.py 每次只执行一个匿名项、写前置 attempt marker、失败不自动重试，复用 gold48_hf_judge.py。**用户尚未明确批准将这批私有历史文本外发给两家实际 Provider 并产生费用，且 adradar 账单硬限制未确认，不能运行正式 HF API。** 配置文件的 max_cost_usd 本身不是可执行的消费上限。真实评分仍 0/240、API 0/$0、quality_v1_admitted=0；完成全部评分并私有冻结前不解盲。此决定不授权更换模型/来源/冻结输入，也不代表 AI Judge 等于独立人工评审。
+
 **2026-11-22 当前实际阶段（覆盖下方旧的“下一步匿名打包”）**：Owner Mac 已返回 `GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS`，48×5=240 私有匿名包与 Owner 隔离映射成功 create-only 写入，7 条 length / 1 条空回复保持不变。模型评分 0、HF API 0/$0、未上传映射、`quality_v1_admitted=0`。**绝不重跑打包、GPU/Tokenizer/SHA 或接触 Owner 私有答案。** 当前只做离线 Judge 合同配置，现有薄入口 `src/storyforge_gold_quality/gold48_judge_lock.py` 检查 240、48×5、唯一空回复及评审者配置，绑定匿名包/评分代码 SHA，保存 private-only/无 API 的 create-only Owner 合同；详细候选配置与命令见 [Owner runbook 顶部](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md)。两模型、不同 Provider、温度0、2048 输出 token、$25 上限**仅为待 Owner 审核示例，不是既成冻结/已获费用与外发授权**。真实 HF JSON Schema 兼容性及预算运行时硬门禁未实测，不得称正式评分 READY；评分完成且私有冻结后才能解盲，旧下文仍保留历史。
 
 ## 2026-11-22 当前唯一执行基线：Gold48 四臂已完成 → 五来源六维盲评
