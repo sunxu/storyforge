@@ -228,7 +228,8 @@ def test_submit_unconfirmed_keeps_marker_and_never_retries(tmp_path, monkeypatch
         adapters=ADAPTERS, stage=stage, allow_execute=True,
     )
     assert report["status"] == "GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY"
-    assert report["hf_jobs_submitted"] == 0
+    assert report["hf_jobs_submitted"] is None
+    assert report["gpu_started"] is None
     assert (stage.parent / (RUN + ".gold48-gpu-submit.private.json")).exists()
     assert len([call for call in calls if
                 call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]) == 1
