@@ -152,7 +152,8 @@ def validate_score(result: object, item: dict) -> dict:
                         for q in quotes),
                 "JUDGE_NONEXACT_QUOTE_HOLD")
     if not item["target_text"].strip():
-        require(not result["specific_target_quotes"]
+        require(not result["specific_source_quotes"]
+                and not result["specific_target_quotes"]
                 and all(n == 1 for n in scores.values())
                 and not any(flags.values()), "JUDGE_NO_RESPONSE_POLICY_HOLD")
     else:
