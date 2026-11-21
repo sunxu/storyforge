@@ -1,5 +1,33 @@
 # StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
 
+## 2026-11-22 当前唯一执行基线：Gold48 四臂已完成 → 五来源六维盲评
+
+**优先级与证据**：本节取代本任务书、Owner runbook、总体质量计划和 AGENTS.md 下方所有“GPU 未实测 / 等待 ready / Tokenizer 待补 / 192 生成待做”的历史快照；旧章节只作溯源。接手时仍须核查 [PR #31](https://github.com/sunxu/storyforge/pull/31) 的实时 HEAD 与 CI。最后核验的代码 HEAD 是 `4caf2e3dd5a7d6b2575b2cac0e2c1e0a86a02f40`（7/7 Actions SUCCESS）；以下真实 GPU/Owner SAFE 为随后完成的独立证据。**本次只更新文档，不开始盲评调用或计费。**
+
+| 臂 | Owner Run ID | HF Job（均 COMPLETED） | Owner 独立结果字节审计 | 停止原因 |
+| --- | --- | --- | --- | --- |
+| Base | `gold48-owner-20261121T070218Z-6d825fa497b5` | `6b0147124fdc5ab3c55c7e00` | 4 文件 / 48 记录 PASS | eos 47 / length 1 |
+| R46 v0.2 ckpt-7 | `gold48-owner-20261121T100447Z-1ea12fbfdf50` | `6b016f2befaf5e14f4b4db78` | 4 文件 / 48 记录 PASS | eos 46 / length 2 |
+| R54 v0.3-A ckpt-16 | `gold48-owner-20261121T120421Z-4c3dbaf822d8` | `6b018ad1efaf5e14f4b52508` | 4 文件 / 48 记录 PASS | eos 47 / length 1 |
+| R60 Base336 ckpt-37 | `gold48-owner-20261121T135310Z-bd614a15d46b` | `6b01a9c8efaf5e14f4b56b63` | 4 文件 / 48 记录 PASS | eos 45 / length 3 |
+
+**不可误读**：192/192 新回复均已生成、交付并由 Owner Mac 重新下载核对 SHA/结构；`length` 合计 7 条，**全部保留**于 48 题主分析，不后验删除或重跑。48 份冻结历史 Original 另存于 Owner 私有域（**从未放入 GPU 输入 Stage**）；五来源共 240 份**待评分**回复，不是 240 次新生成。`owner_mac_job_image_inspect_verified=false`、`owner_signature_independently_reverified=false`、`provider_signature_independently_reverified=false` 必须保持原始未验证状态，远端 Job image Digest 元数据并非 Owner/Provider 独立镜像证明；现行简化生成流程没有强制旧签名门禁，不能因此重跑。`quality_v1_admitted=0`、未解盲、未评分、`model_promoted=false`。
+
+**唯一主线目标不变**：对**同一批 48 条冻结 RECONSTRUCTED_EVALUATION_INPUT** 的四臂回复进行配对六维盲评；历史 Original 是第五匿名评分来源，**仅可作同剧情描述性参考**，不能称与四臂拥有历史 Provider byte-exact 同输入。六维固定：剧情连续性、角色一致性、指令遵循、文学表现力、互动推进、玩家自主权（1–5 整数），另报严重违反、玩家自主权严重侵犯及原文依据。8 Story / 25 Session，主分析 48 题，预注册单一质量风险 Story 的整组六题剔除后敏感性 42 题；不可看到得分后调整分组。Owner 私有来源→六题绑定必须核对既存私有映射，不能猜 `Pxx/Sxx` 编号。
+
+**最短剩余步骤（严格顺序）**：
+
+1. **只读证据清点**：在 Owner Mac 核对现成四个审计结果目录 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/` 的各 4 文件、已有冻结 48 输入/历史 Original 与 `48/42` 私有分组标记；仅使用已有原件，输出 SAFE 计数和状态。不要重做 Gold48 Freeze、源数据提取、Tokenizer、Adapter SHA、四臂 GPU、R50 sealed/旧 204 Story/495 版本来源审计。若 42 组私有绑定尚不能证明，仅标记该分析 HOLD，不臆造映射。
+2. **薄适配匿名盲评**：先检查 `scripts/v02_r48_four_arm_build.py`、`scripts/v02_r48_review_aggregate.py` 和 `docs/V02_R48_FOUR_ARM_BLIND_REVIEWER_GUIDE.md`，以及 **R55 五来源泄露修正** `docs/evidence/V03_R55_GOLD5_REAL_ALIGNMENT_OWNER_RECEIPT_AND_V2_BLIND_FIX_20261023.md`。旧 R48 硬编码 20 题 ×4 来源×3 评审者，**不能直接运行于 48×5**；只补当前实际缺失的输入/匿名身份映射/评分结构适配，沿用已验证的评分、完整性检查、评分冻结和解盲原则；先做不含私有内容的合成回归。匿名映射在 Owner `0700/0600` 域独立 create-only 保管，评审接口永远不暴露 Base/R46/R54/R60/Original 身份；禁止要求盲审者“挑出 Gold 再选四模型最优”（R55 v1 已证明泄露设计错误）。如需四模型独立最优，单独准备无 Original 的四方任务，不从五方评语倒推。
+3. **复用已验证的 HF 方案**：Owner 已测试通过 `adradar` **Team 组织计费 + HF Inference Providers API**。只需薄 API 调用适配，使用 `InferenceClient(bill_to="adradar", provider=<固定提供商>)` 或等价组织账单头。正式前锁定评审模型/提供商/版本（可取得的身份信息）、六维 rubric、温度、输出 JSON schema、独立评审策略、最大 tokens、预算/并发/重试/私有数据外发许可；成本和提供商数据处理条款必须满足 Owner 既有私有数据权限，先小规模不涉密格式测试，后冻结配置再正式 240 对象评分。**评审模型评分不是独立人工评分**，不能虚称人类 Reviewer；对分歧记录、复核方案在评分前定义。`HF_TOKEN` 的 Inference Providers 细粒度令牌可能覆盖 Owner 原有 Bucket 凭据并引发 `BucketNotFoundError`；分离凭据作用域，不显示/上传密钥，不把 HF Bucket 访问故障说成结果不存在。
+4. **先评分冻结后解盲**：私有评分原件、六维格/严重标记/依据、失败及调用计数/成本、输入 SHA/匿名包 SHA 先不可变签收并检查题数/来源数/字段完整性；绝不让评审模型看到来源 key、旧 Reviewer 评分或历史 Original 标注。仅在全部必要独立评分齐备并冻结后由 Owner 协调端解盲。
+5. **Quality-v1 分析与 Owner 决议**：8 Story/25 Session 相关性、48 主分析及 42 敏感性、R60 对 Base/R46 的预先定义主对照、R54 诊断臂、六维与严重标记并报告；历史 Original 只作描述性第五来源。公开仅 SAFE 聚合和方法/风险披露，Owner 私有明文、匿名 crosswalk、逐案 SHA 及评分理由不入公开 Git/日志。未有有效盲审与 Owner 决议，`quality_v1_admitted=0`，不得宣称改进或模型晋升。
+
+**权限边界**：继续 PR #31 现有分支；不能因“最短路径”变更冻结 Prompt/Profile/历史回复/模型集或跳过盲评、不能自动重投失败的 HF Job、不能对旧 R48/R55 暴露题组冒充新 Gold48。后续实现确有缺口时只改少量适配及合成测试，不引入 DB、通用 Runner、重复质量框架或新 GPU 推理。一次性交接提示词以 [新 Agent 启动提示词](R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md) 最新顶端为准。
+
+---
+
+
 ## 2026-11-21 唯一现行 Gold48 Quality-v1 任务状态（替代下方所有旧“HOLD/下一步”）
 
 **现行唯一判断依据**：PR [#31](https://github.com/sunxu/storyforge/pull/31) 实时 HEAD + 实际源码 + 已签收的 SAFE/Owner 私有证据；`1dcbce63e80c5e1d6e1e700f1927bd95f54a08ba` 是最近一次核验基线，不应被硬编码为永远最新。该基线 7/7 GitHub Actions SUCCESS，主 CI `1,778 passed · 6 skipped · 42 subtests passed`，均为**合成/离线**验证，不是 HF GPU 实测。
