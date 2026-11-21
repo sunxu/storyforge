@@ -1,0 +1,192 @@
+"""Offline synthetic tests of one-at-a-time HF judge execution safety."""
+from __future__ import annotations
+
+import json
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+
+from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
+from storyforge_gold_quality.gold48_judge import DIMENSIONS
+from storyforge_gold_quality.gold48_judge_lock import CONFIG_SCHEMA, prepare
+from storyforge_gold_quality.gold48_judge_step import (
+    LockHold,
+    step,
+)
+from storyforge_gold_quality.hf_literary_review import SEVERE, canonical
+
+
+class FakeClient:
+    def __init__(self, *, fail: bool = False) -> None:
+        self.calls = []
+        self.fail = fail
+
+    def chat_completion(self, **kwargs):
+        self.calls.append(kwargs)
+        if self.fail:
+            raise RuntimeError("PRIVATE PROMPT MUST NOT ECHO")
+        score = {
+            "scores": {dimension: 3 for dimension in DIMENSIONS},
+            "severe_flags": {name: False for name in SEVERE},
+            "specific_source_quotes": ["synthetic history"],
+            "specific_target_quotes": ["synthetic reply"],
+            "literary_quality_notes": "合成评审测试，回复继续推进情节，存在一些不足。",
+            "uncertainty": "仅合成数据。",
+        }
+        return SimpleNamespace(choices=[
+            SimpleNamespace(message=SimpleNamespace(
+                content=json.dumps(score, ensure_ascii=False))),
+        ])
+
+
+class JudgeStepSyntheticTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "owner"
+        self.root.mkdir(mode=0o700)
+        self.reviewer_folder = self.root / "reviewers"
+        self.owner_folder = self.root / "owner"
+        self.reviews = self.root / "reviews"
+        for path in (self.reviewer_folder, self.owner_folder, self.reviews,
+                     self.reviews / "J1", self.reviews / "J2"):
+            path.mkdir(mode=0o700)
+        self.packet = self.reviewer_folder / "GOLD48_BLIND_240_PRIVATE.jsonl"
+        self.config = self.owner_folder / "config.private.json"
+        self.lock = self.owner_folder / "GOLD48_JUDGE_LOCK_PRIVATE.json"
+        self.rows = [{
+            "schema": PACK_SCHEMA, "blind_id": f"{n:032x}",
+            "visible_messages": [{
+                "role": "user", "content": f"synthetic history for case {n // 5}"
+            }],
+            "target_text": "" if n == 0 else f"synthetic reply {n}",
+        } for n in range(240)]
+        self.save(self.packet, b"".join(canonical(x) + b"\n" for x in self.rows))
+        config = {
+            "schema": CONFIG_SCHEMA,
+            "reviewers": [
+                {"reviewer_id": "J1",
+                 "model": "deepseek-ai/DeepSeek-V4.1-Flash",
+                 "provider": "fireworks-ai",
+                 "temperature": 0, "max_tokens": 2048},
+                {"reviewer_id": "J2",
+                 "model": "zai-org/GLM-5.2",
+                 "provider": "deepinfra",
+                 "temperature": 0, "max_tokens": 2048},
+            ], "max_cost_usd": 25.0,
+        }
+        self.save(self.config, canonical(config) + b"\n")
+        prepare(packet=self.packet, config=self.config, output=self.lock)
+        self.client = FakeClient()
+        self.factory_calls = 0
+
+    @staticmethod
+    def save(path: Path, payload: bytes) -> None:
+        path.write_bytes(payload)
+        os.chmod(path, 0o600)
+
+    def factory(self, **kwargs):
+        self.factory_calls += 1
+        self.assertEqual(kwargs["fixed_provider"], "fireworks-ai")
+        self.assertEqual(kwargs["hf_token"], "synthetic-token")
+        return self.client
+
+    def run_one(self, *, position: int = 2, reviewer: str = "J1",
+                private: bool = True, billing: bool = True,
+                spending_cap: bool = True, factory=None):
+        return step(
+            packet=self.packet, lock_path=self.lock,
+            output_dir=self.reviews / reviewer, reviewer_id=reviewer,
+            position=position,
+            approve_private_transfer=private, approve_paid_calls=billing,
+            confirm_hf_spending_cap=spending_cap, hf_token="synthetic-token",
+            client_factory=factory or self.factory,
+        )
+
+    def test_one_paid_attempt_then_create_only_checkpoint(self) -> None:
+        safe = self.run_one()
+        self.assertEqual(safe["status"], "GOLD48_JUDGE_ONE_SCORED__NO_UNBLIND")
+        self.assertEqual(safe["paid_api_attempts"], 1)
+        self.assertIsNone(safe["cost_usd"])
+        self.assertEqual(self.factory_calls, 1)
+        self.assertEqual(len(self.client.calls), 1)
+        receipt = json.loads((self.reviews / "J1" /
+                              "002.score.private.json").read_text())
+        self.assertEqual(receipt["score_origin"], "ai_judge")
+        self.assertEqual(receipt["model"], "deepseek-ai/DeepSeek-V4.1-Flash")
+        self.assertEqual(receipt["response"]["scores"]["player_agency"], 3)
+        self.assertEqual((self.reviews / "J1" /
+                          "002.score.private.json").stat().st_mode & 0o777, 0o600)
+        with self.assertRaisesRegex(LockHold, "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD"):
+            self.run_one()
+        self.assertEqual(len(self.client.calls), 1)
+
+    def test_blank_is_fixed_and_does_not_construct_client(self) -> None:
+        safe = self.run_one(position=1)
+        self.assertEqual(safe["paid_api_attempts"], 0)
+        self.assertEqual(self.factory_calls, 0)
+        self.assertEqual(self.client.calls, [])
+        receipt = json.loads((self.reviews / "J1" /
+                              "001.score.private.json").read_text())
+        self.assertEqual(receipt["score_origin"], "fixed_no_response_rule")
+        self.assertEqual(set(receipt["response"]["scores"].values()), {1})
+        self.assertEqual(receipt["response"]["specific_target_quotes"], [])
+        self.assertEqual(receipt["response"]["specific_source_quotes"], [])
+
+    def test_approval_flags_refuse_even_zero_cost(self) -> None:
+        for name in ("private", "billing", "spending_cap"):
+            kwargs = {name: False}
+            with self.subTest(name=name), self.assertRaises(LockHold):
+                self.run_one(**kwargs)
+        self.assertEqual(self.factory_calls, 0)
+        self.assertFalse((self.reviews / "J1" / "002.attempt.private.json").exists())
+
+    def test_external_failure_keeps_consumption_marker(self) -> None:
+        self.client.fail = True
+        with self.assertRaisesRegex(Exception, "JUDGE_API_OR_FORMAT_HOLD"):
+            self.run_one()
+        self.assertTrue((self.reviews / "J1" /
+                         "002.attempt.private.json").exists())
+        self.assertFalse((self.reviews / "J1" /
+                          "002.score.private.json").exists())
+        with self.assertRaisesRegex(LockHold, "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD"):
+            self.run_one()
+        self.assertEqual(len(self.client.calls), 1)
+
+    def test_packet_changed_after_lock_fails_closed(self) -> None:
+        self.rows[1]["target_text"] = "changed synthetic reply"
+        self.save(self.packet, b"".join(canonical(x) + b"\n" for x in self.rows))
+        with self.assertRaisesRegex(LockHold, "JUDGE_LOCK_IDENTITY_HOLD"):
+            self.run_one()
+        self.assertEqual(self.factory_calls, 0)
+
+    def test_second_slot_has_its_own_identity(self) -> None:
+        other_client = FakeClient()
+        seen = []
+        safe = self.run_one(
+            reviewer="J2", factory=lambda **kwargs:
+            seen.append(kwargs) or other_client,
+        )
+        self.assertEqual(safe["paid_api_attempts"], 1)
+        self.assertEqual(seen[0]["fixed_provider"], "deepinfra")
+        self.assertEqual(other_client.calls[0]["model"], "zai-org/GLM-5.2")
+        self.assertEqual(self.client.calls, [])
+
+    def test_reject_output_dir_outside_owner_root(self) -> None:
+        outside = Path(self.temp.name) / "outside"
+        outside.mkdir(mode=0o700)
+        with self.assertRaisesRegex(LockHold, "JUDGE_OUTPUT_FOLDER_HOLD"):
+            step(
+                packet=self.packet, lock_path=self.lock, output_dir=outside,
+                reviewer_id="J1", position=2,
+                approve_private_transfer=True, approve_paid_calls=True,
+                confirm_hf_spending_cap=True, hf_token="synthetic-token",
+                client_factory=self.factory,
+            )
+        self.assertEqual(self.factory_calls, 0)
+
+
+if __name__ == "__main__":
+    unittest.main()
