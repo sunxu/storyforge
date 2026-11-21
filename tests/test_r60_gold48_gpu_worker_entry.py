@@ -90,6 +90,38 @@ def test_corrupted_input_sha_fails_before_gpu(tmp_path, monkeypatch):
                   execute=False)
 
 
+def test_safe_progress_jsonl_has_no_private_content_or_untrusted_keys(capsys):
+    start = entry.time.monotonic()
+    entry._safe_progress("r46_v02", start, "case_completed", {
+        "case_number": 3,
+        "completed": 3,
+        "total": 48,
+        "percent": 6.25,
+        "case_elapsed_seconds": 1.25,
+        "eta_seconds": 56.25,
+        "finish_reason": "eos",
+        "sample_id": "secret-case-id",
+        "prompt": "secret-input-text",
+        "answer": "secret-model-output",
+        "input_sha256": "a" * 64,
+    })
+    safe = json.loads(capsys.readouterr().out)
+    assert safe["schema"] == "storyforge_gold48_gpu_progress_safe_v1"
+    assert safe["event"] == "case_completed"
+    assert safe["case_number"] == 3
+    assert safe["completed"] == 3
+    assert safe["total"] == 48
+    assert safe["finish_reason"] == "eos"
+    assert safe["private_values_emitted"] is False
+    assert "timestamp_utc" in safe and "elapsed_seconds" in safe
+    assert not (set(safe) & {"sample_id", "prompt", "answer", "input_sha256"})
+    with pytest.raises(WorkerError, match="GOLD48_PROGRESS_EVENT_INVALID"):
+        entry._safe_progress("r46_v02", start, "private-debug", {
+            "answer": "secret-model-output",
+        })
+    assert capsys.readouterr().out == ""
+
+
 def test_cli_execute_requires_explicit_scope_and_safe_json(capsys):
     exit_code = entry.main([
         "execute", "--run-id", "gold48-owner-20261121-test-001",
