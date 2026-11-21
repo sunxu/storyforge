@@ -334,21 +334,31 @@ class JudgeStepSyntheticTest(unittest.TestCase):
             "api_origin": "https://api.deepseek.com",
             "response_format": "json_object",
             "thinking": "disabled",
+            "concurrency_policy": {
+                "scope": "j1_official_and_j2_separate_single_call_lanes",
+                "max_total_in_flight": 2,
+                "max_per_reviewer": 1,
+                "j1_lock": ".gold48_j1_official_call.lock",
+                "j2_lock": ".gold48_single_call.lock",
+                "frozen_global_limit_overridden_for_j1_only": True,
+            },
         }) + b"\n")
         direct = FakeClient()
         def official_factory(*, hf_token, fixed_provider):
             self.assertEqual(fixed_provider, "deepseek-official")
             self.assertEqual(hf_token, "synthetic-token")
             return direct
-        result = step(
-            packet=self.packet, lock_path=self.lock,
-            output_dir=self.reviews / "J1",
-            reviewer_id="J1", position=2,
-            approve_private_transfer=True, approve_paid_calls=True,
-            confirm_hf_spending_cap=False,
-            hf_token="synthetic-token", client_factory=official_factory,
-            official_revision=revision_path,
-        )
+        # A live J2 global lock must not block a J1 official paid request.
+        with single_call_guard(self.reviews):
+            result = step(
+                packet=self.packet, lock_path=self.lock,
+                output_dir=self.reviews / "J1",
+                reviewer_id="J1", position=2,
+                approve_private_transfer=True, approve_paid_calls=True,
+                confirm_hf_spending_cap=False,
+                hf_token="synthetic-token", client_factory=official_factory,
+                official_revision=revision_path,
+            )
         self.assertEqual(result["paid_api_attempts"], 1)
         self.assertEqual(direct.calls[0]["model"], "deepseek-flash")
         self.assertEqual(direct.calls[0]["extra_body"],
@@ -364,7 +374,24 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(audit["revision"],
                          "j1_deepseek_official_json_object_v1")
         self.assertEqual(audit["api_origin"], "https://api.deepseek.com")
+        self.assertEqual(audit["max_total_in_flight"], 2)
+        marker = json.loads((self.reviews / "J1" /
+                             "002.attempt.private.json").read_text())
+        self.assertEqual(marker["concurrency_lane_lock"],
+                         ".gold48_j1_official_call.lock")
         self.assertFalse(audit["model_scores_or_flags_changed"])
+
+    def test_j1_official_lane_serializes_itself(self) -> None:
+        with single_call_guard(
+            self.reviews, lock_name=".gold48_j1_official_call.lock"
+        ):
+            with self.assertRaisesRegex(
+                LockHold, "JUDGE_CONCURRENT_EXECUTION_HOLD"
+            ):
+                with single_call_guard(
+                    self.reviews, lock_name=".gold48_j1_official_call.lock"
+                ):
+                    self.fail("J1 official lock was unexpectedly available")
 
     def test_official_revision_rejected_for_j2_before_call(self) -> None:
         revision_path = (self.owner_folder /
