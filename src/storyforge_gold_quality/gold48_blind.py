@@ -21,13 +21,12 @@ from storyforge_dataset.generation_eval.gold48_contract_bridge import (
     REVISION,
     ROLES,
     _read_existing_gold48_output,
-    read_private_contract,
 )
 from storyforge_dataset.generation_eval.worker import _validate_records
 from storyforge_dataset.hf_runtime.inputs import InputManager
 
 from .hf_blind_stage import private_folder, write_once
-from .hf_literary_review import canonical, response_schema
+from .hf_literary_review import canonical
 
 PACK_SCHEMA = "storyforge_r60_gold48_blind_item_v1"
 OWNER_SCHEMA = "storyforge_r60_gold48_blind_owner_key_v1"
