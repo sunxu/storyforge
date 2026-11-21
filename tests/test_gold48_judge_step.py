@@ -382,16 +382,18 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertFalse(audit["model_scores_or_flags_changed"])
 
     def test_j1_official_lane_serializes_itself(self) -> None:
-        with single_call_guard(
-            self.reviews, lock_name=".gold48_j1_official_call.lock"
-        ):
-            with self.assertRaisesRegex(
+        with (
+            single_call_guard(
+                self.reviews, lock_name=".gold48_j1_official_call.lock"
+            ),
+            self.assertRaisesRegex(
                 LockHold, "JUDGE_CONCURRENT_EXECUTION_HOLD"
+            ),
+        ):
+            with single_call_guard(
+                self.reviews, lock_name=".gold48_j1_official_call.lock"
             ):
-                with single_call_guard(
-                    self.reviews, lock_name=".gold48_j1_official_call.lock"
-                ):
-                    self.fail("J1 official lock was unexpectedly available")
+                self.fail("J1 official lock was unexpectedly available")
 
     def test_official_revision_rejected_for_j2_before_call(self) -> None:
         revision_path = (self.owner_folder /
