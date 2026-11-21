@@ -27,12 +27,20 @@ export PYTHONUNBUFFERED=1
 export HF_HUB_DISABLE_TELEMETRY=1
 export TOKENIZERS_PARALLELISM=false
 
+# Only execute mode emits safe startup progress. check mode keeps its one JSON.
+BOOT_SECONDS=$SECONDS
+safe_phase() {
+  printf '{"schema":"storyforge_gold48_gpu_progress_safe_v1","event":"%s","model_role":"%s","startup_elapsed_seconds":%s,"private_values_emitted":false}\n' \
+    "$1" "$ROLE" "$((SECONDS - BOOT_SECONDS))"
+}
+
 if [[ "$ACTION" == check ]]; then
   exec python "$ENTRY" check --run-id "$RUN_ID" --model-role "$ROLE"
 fi
 
 # Production mode is reached only after the Owner Mac's explicit --execute submit.
 # Never allocate CUDA or load weights before the RO input preflight is accepted.
+safe_phase bootstrap_started
 BOOTSTRAP="$(mktemp -d /tmp/storyforge-g48-bootstrap.XXXXXXXX)"
 chmod 0700 "$BOOTSTRAP"
 trap 'rm -rf "$BOOTSTRAP"' EXIT
@@ -47,6 +55,7 @@ if ! grep -Fq '"status": "GOLD48_FIXED_RO_STAGE_VERIFIED__NO_GPU"' \
   echo GOLD48_INPUT_PREFLIGHT_HOLD >&2
   exit 42
 fi
+safe_phase stage_preflight_passed
 
 # Reuse the pinned, already CPU-verified --require-hashes installation.
 # Do not create a new dependency resolver or silently upgrade Torch.
@@ -59,6 +68,7 @@ if ! python -m pip check > "$BOOTSTRAP/pip-check.private" 2>&1; then
   echo GOLD48_PIP_CHECK_HOLD >&2
   exit 42
 fi
+safe_phase dependencies_installed
 
 python "$ENTRY" execute --run-id "$RUN_ID" --model-role "$ROLE" \
   --explicit-owner-gpu-execution
