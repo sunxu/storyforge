@@ -6,16 +6,16 @@ Owner Mac 已只读核实 9/9 输入文件存在；初次 Gold48 盲评预检因
 
 现有生成/字节审计容许空字符串，原新增 `gold48_blind.py` 却过度要求非空。仅修该数据约束以**原样保留** 240 个回答对象；新 SAFE `no_visible_reply_answers_retained` 汇总无回复数量。为避免在 HF Judge 强行制造候选原文引用，`gold48_hf_judge.py` 对无可见回复在已验证身份与固定调用参数/Owner 外发授权的前提下，按**明示的统一缺失回复规则**机械记六维 1 分、严重违规标记全 false、候选引文空，备注清楚“非 AI 模型评审”；**不向 API 发送此条私有上下文，也不计为实际 LLM Judge 调用**。其余非空回复保持原来的严格逐字引文和付费 API 评分合同。全部评分前须冻结并披露这项规则；不能把机械评分谎称独立模型评分。合成测试必须覆盖空输出保真、无伪造证据、无外发、无无授权绕过。
 
-**下一唯一行动**：Mac 更新至含该补丁且 CI 通过的 PR HEAD，复用已设置的 9 个环境变量，原命令**不带 `--out`**只读重跑预检，期待 `GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`、`no_visible_reply_answers_retained=1`，并保持 `api_calls=0`、`judge_scores_completed=0`、`quality_v1_admitted=0`。不要重建/覆盖冻结文件，不创建正式匿名包、不触发真实付费 API。
+**真实 Owner SAFE 已 PASS（2026-11-22）**：`GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`，48 题 × 5 来源 =240，8 Story /25 Session，48 主分析/42 敏感性，7 份 `length` 和 1 份空可见回复原样保留。未写盲评包，`api_calls=0`、`cost_usd=0`、`judge_scores_completed=0`、`quality_v1_admitted=0`；**不要再重跑预检**。现行唯一下一步：在 Owner Mac 按 [Owner runbook 顶部](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md) 用已验证九路径和现有 `gold48_blind --out` **一次性、create-only** 创建 240 份私有匿名包及单独 Owner key，签收 `GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS`。打包不等于允许外发或付费。下一关才是冻结六维/空回答规则、HF Judge 模型与 Provider/参数、独立评审/分歧规则、预算和 Owner 的实际第三方私有数据外发授权；此前保持 API 为零。
 
 ---
 
 ## 2026-11-22 Gold48 盲评薄适配已落地（优先于下方“适配待开发”描述）
 
 - PR #31 **同一分支**已新增 `src/storyforge_gold_quality/gold48_blind.py`（48×5 只读数据契约预检、私有匿名打包、Owner-only 映射、0600/0700 create-only）与 `src/storyforge_gold_quality/gold48_hf_judge.py`（六维 1–5、严重标记、可定位引用、HF Inference Providers **单对象调用薄接口**及 `bill_to="adradar"`，默认拒绝真实外发）；合成用例见 `tests/test_gold48_blind.py`、`tests/test_gold48_hf_judge.py`。固定已有 R48/R55、Quality-v1 原代码不变，没有新增数据库、Runner、GPU 或评分批处理系统。
-- **截至本段撰写**：代码 HEAD `65250672c0e8c565e64b66e6d505c4512805eb82`，该提交 **7/7 GitHub Actions SUCCESS**（含主 CI / Ruff / 合成测试）。该状态只证明合成能力，**不是** Owner Mac 真实 48×5 数据 PASS。
+- **实况优先于历史 HEAD**：2026-11-22 Owner Mac 真实 `48×5` 只读预检已 PASS；代码 HEAD 以当前 GitHub PR #31 为准，合成 CI 只能证明软件合同，不能替代本次真实 Owner SAFE，也不能当作完成 Judge。
 - 真正正式评分仍为 **0/240**，HF Providers API 调用 **0**、费用 **$0**、私有语料外发 **0**、评分冻结 **HOLD**、`quality_v1_admitted=0`、模型未晋升；既有 192/192 Owner 字节审计、48 Original 冻结与 7 个 length 继承不重做。Owner Mac 私有路径、原文、匿名映射均未被本次 GitHub 修改读取或上传。
-- **唯一下一步**：可信 Owner Mac 对已存在冻结 Owner manifest / Stage input+manifest / Original references / Locators / 四臂已审计输出运行一次只读 SAFE 预检。入口为 `PYTHONPATH=src python3 -m storyforge_gold_quality.gold48_blind`，传入 `--freeze --input --input-manifest --original --locators --base --r46-v02 --r54-v03a --r60-base336` 的**已有实际本地绝对路径**，**不传 `--out`**；期望 `GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`，失败仅修单个真实缺口。此前不要运行带 `--out` 的私有创建操作，也不要传真实文本给 Judge。
+- **唯一下一步**：不要重复已 PASS 的只读预检；按 Owner runbook 使用现有九路径与 `--out` 在 Owner 私有 `0700/0600` 域一次性产生匿名包和 coordinator key，保存 SAFE；在配置/权限/预算冻结前，不运行真实 Judge。
 - 真实数据 PASS 后才可在 Owner 私有域选择并冻结独立 AI Judge 模型/Provider/参数/评审数量/分歧规则/预算、私有外发许可和计费额度；这些尚**未**冻结，**不能**把单次 HF 测试等同于正式 240 评分授权。正式评分原件全部齐备、不可变冻结后才能私有解盲；AI Judge 不等于独立人工评审。
 
 ---
