@@ -189,6 +189,7 @@ class Gold48BlindSyntheticTest(unittest.TestCase):
         )
         self.assertEqual(preflight["status"],
                          "GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE")
+        self.assertEqual(preflight["no_visible_reply_answers_retained"], 1)
         self.assertFalse((self.root / "out").exists())
         self.build()
         reviewer = self.root / "out" / "reviewers" / "GOLD48_BLIND_240_PRIVATE.jsonl"
