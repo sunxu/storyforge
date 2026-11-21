@@ -1,5 +1,15 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
+## 2026-11-22 最新 Owner 指示：不做无私有数据校准，直接进入正式 Judge
+
+已有 Owner Mac 240/240 匿名包 create-only PASS，Gold48 Judge 配置只读 SAFE GOLD48_JUDGE_CONFIG_PREFLIGHT_PASS__NO_OUTPUT_NO_API 已 PASS。**不重复预检/匿名打包、不另跑无私有数据模型能力校准**。选用 J1 DeepSeek-V4.1-Flash / Fireworks AI 与 J2 GLM-5.2 / DeepInfra，使用现有配置、温度0、max_tokens 2048；先由 Owner 核对配置并运行 gold48_judge_lock --out **一次性冻结**，不可事后换评审者/权重或覆盖锁。该 Owner 真实锁状态仍等待 SAFE 回执。
+
+为最短路径，已有 src/storyforge_gold_quality/gold48_judge_step.py 薄入口单条处理一个 reviewer_id×position，复用原 gold48_hf_judge.judge_one；请求前的 0600 create-only marker 禁止崩溃后自动重试，成功产生私有 0600 评分，空回复统一固定规则且无 API。不是新 GPU/通用 Runner/批处理架构，不允许自动循环重试。Owner 的第三方语料外发许可、HF 组织真实费用上限和计费批准尚未确认，不能仅凭“继续推进”或离线锁 SAFE 把 private_transfer_authorized 从 false 提升至 true；正式 API 仍为 0/$0，评分 0/240，quality_v1_admitted=0。
+
+后续唯一执行入口与费用/隐私门禁见 Owner runbook 顶部。**未获准外发前仅完成本地合同冻结，不发送任何真实 Story/历史回答，不解盲。** 原下方“格式测试/模型校准/再做匿名包”属于旧建议，当前不得重复执行。
+
+---
+
 ## 2026-11-22 实际盲评包 PASS；当前只做离线 Judge 合同，不再重复打包
 
 Owner Mac 已实际返回 `GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS`：240/240 匿名回答已经**私有 create-only 创建**，48 主分析/42 敏感性，8 Story/25 Session，7 条 `length`、1 条无可见回复全部保留。无模型评分、无 HF API、$0、未外发、未解盲、`quality_v1_admitted=0`。之前的只读预检/打包命令**均已完成，不重做，不覆盖任何输出**。
