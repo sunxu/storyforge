@@ -1,5 +1,19 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 Owner 直接推进：跳过 AI Judge 无私有数据校准
+
+Owner 已明确决定跳过独立的无私有数据模型校准，不得把格式试验当作正式评分前置。已有匿名包 240/240 PASS，且 GOLD48_JUDGE_CONFIG_PREFLIGHT_PASS__NO_OUTPUT_NO_API 已通过；不重跑匿名包、SHA、生成或此前离线预检。
+
+下一步直接使用前文现有 GOLD48_JUDGE_CONFIG_PRIVATE.json 和离线 gold48_judge_lock 入口，加 --out 指向 ROOT/owner/GOLD48_JUDGE_LOCK_PRIVATE.json，仅一次 create-only 冻结；预计 GOLD48_JUDGE_CONFIG_LOCKED__NO_API_NO_TRANSFER。若锁已存在则停止，不重复覆盖。模型继续使用 J1 DeepSeek-V4.1-Flash / fireworks-ai，J2 GLM-5.2 / deepinfra，温度0、2048输出 tokens、预算示例25美元；锁定前 Owner 须核实实际 CFG，不能凭此前 SAFE 推断配置明细。
+
+新单项执行入口是 python3 -m storyforge_gold_quality.gold48_judge_step，参数为 --pack、--lock、--output-dir、--reviewer J1/J2、--position 1..240。该入口只复用现有 gold48_hf_judge.judge_one；每次请求前写 0600 create-only attempt marker，成功写私有评分，空回复固定评分不产生 API，失败/超时不自动重试、不跳过、也不提供批量自动重试。需由 Owner 在 ROOT/reviews/J1 与 ROOT/reviews/J2 建 0700 目录，评分原文不得写公开仓库。
+
+**外发/计费仍未授权。** 实际执行前须 Owner 明确批准 HF Inference Providers 向 fireworks-ai/deepinfra 转发当前私有语料，批准本次真实计费，并核实 adradar 组织或资源组已设置有效的 Inference Providers 费用硬限额。配置的 max_cost_usd 仅为记录，并不自动约束 HF 账单；CLI 的 --confirm-hf-spending-cap 是 Owner 声明而非远程校验。经上述批准后单项 CLI 还需显式传入 --approve-private-transfer --approve-paid-calls --confirm-hf-spending-cap，并在进程环境独立提供 GOLD48_HF_INFERENCE_TOKEN。**未完成这些步骤不得发真实 API。**
+
+固定最多 239 非空回答×2模型=478 次潜在付费、1 空回答×2固定评分；模型收费后 cost_usd 为 null，表示未经 HF 官方账单核账，不能算作0。所有评分与来源键保持隔离，全部评分私有冻结前不得解盲。参考 HF 官方组织账单/支出限制：https://huggingface.co/docs/inference-providers/pricing
+
+---
+
 ## 2026-11-22 真正当前下一关：匿名包 PASS → 离线 Judge 合同（不调用 API）
 
 **Owner Mac 实际最新 SAFE**：`GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS`，48 题 ×5 来源 240 项已在私有域成功生成，7 条 `length` 和 1 条空回复完整保留；评分 0/240、API 0、$0、未解盲、`quality_v1_admitted=0`。**不要重复打包，也不要覆盖已经存在的匿名包/Owner key。** 此节覆盖下方旧的「创建私有包」命令。
