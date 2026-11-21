@@ -46,12 +46,12 @@ python3 scripts/r60_gold48_gpu_cli.py --help
 把下列尖括号替换为 **Owner 实际已签收且已存在** 的值，不得把示例当真实路径；下面命令**不启动 GPU**：
 
 ```bash
-python3 scripts/r60_gold48_gpu_cli.py ready \\
-  --run-id "$RUN_ID" --role "$ROLE" \\
-  --stage "$STAGE" \\
-  --code-prefix "$CODE_URI" \\
-  --adapter-r46-v02 '<R46 ckpt-7 已签收 Bucket 目录>' \\
-  --adapter-r54-v03a '<R54 ckpt-16 已签收 Bucket 目录>' \\
+python3 scripts/r60_gold48_gpu_cli.py ready \
+  --run-id "$RUN_ID" --role "$ROLE" \
+  --stage "$STAGE" \
+  --code-prefix "$CODE_URI" \
+  --adapter-r46-v02 '<R46 ckpt-7 已签收 Bucket 目录>' \
+  --adapter-r54-v03a '<R54 ckpt-16 已签收 Bucket 目录>' \
   --adapter-r60-base336 '<R60 ckpt-37 已签收 Bucket 目录>'
 ```
 
