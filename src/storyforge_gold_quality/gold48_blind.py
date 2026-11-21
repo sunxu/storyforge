@@ -135,8 +135,10 @@ def load_outputs(paths: dict[str, Path], input_sha: str) -> dict[str, list[dict]
         outputs = obj["outputs"]
         require(sum(x["finish_reason"] == "length" for x in outputs) ==
                 LENGTH_COUNTS[role], "FROZEN_LENGTH_COUNT_HOLD")
-        require(all(isinstance(x["text"], str) and x["text"].strip()
-                    for x in outputs), "EMPTY_GENERATION_HOLD")
+        # EOS-only responses are valid frozen bytes, even if no text was emitted.
+        # Preserve the exact empty reply for blind no-response scoring.
+        require(all(isinstance(x["text"], str) for x in outputs),
+                "GENERATION_TEXT_TYPE_HOLD")
         all_outputs[role] = outputs
     return all_outputs
 
