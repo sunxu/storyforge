@@ -1,5 +1,18 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 实际故障：J1/002 已重评一次仍 HOLD；后续禁用原始 HF_DEBUG
+
+Owner 已明确授权 Gold48 私有文本外发与真实付费，且 `GOLD48_JUDGE_CONFIG_LOCKED__NO_API_NO_TRANSFER` 已在 Owner Mac 正式 create-only 冻结。先前 J1/001、J2/001 空回复固定评分各一份 PASS（0 API）；J1/002 首次正式请求和单次人工授权重评均 `JUDGE_API_OR_FORMAT_HOLD`，现有新 `002.attempt.private.json`、无 `002.score.private.json`。原始失败 attempt 已留在私有 `_recovery`，不能再删除或重试这项，也不得把异常误记为质量 1 分；费用未知，仍无任何有效 AI Judge 评分。
+
+Owner 上传的私有 HF_DEBUG 日志只显示 GET 模型 Provider 映射及一次 `POST .../fireworks-ai/.../chat/completions`，没有 HTTP 响应状态/SDK 异常类/JSON 内容诊断，**无法确定根因**。`HF_DEBUG=1` 会写出匿名小说原文，请勿继续使用、上传或分享这类原始日志。此前 HF 平台有额外请求，Owner 已说明其中包含另一次人工测试，不能据此称本次 SDK 自动重试。
+
+本次仅改动 `gold48_judge_step.py`，**不动被冻结 SHA 绑定的 `gold48_hf_judge.py`**：未来每次正式请求若失败，写 create-only `reviews/J1/NNN.diagnostic.private.json`（或 J2），只记录 `api_exception/http_status/exception_class/provider_request_id` 或 `api_response_received/choices_present/content_chars/json_valid/finish_reason`；从不记录 HF Token、小说、候选答案、HTTP body、异常 message。CLI 在 `HF_DEBUG=1` 时直接 HOLD，不发请求。diagnostic 与 attempt 都是 Mac 私有 0600，日志仅做错误分型，不代表评分有效；未完成的评分仍禁止自动重试。**新版本无法追溯已发生的 J1/002 两次旧请求的真实错误**。
+
+下一步可从尚未消费的匿名条目继续**真实 Gold48 评分**以收集安全故障分型，建议先 J2/002（不同 Provider）单条执行且保持组织实际费用限制生效；这不是额外校准。不要运行本页旧的 J1/002 或 J1/001 示例，也不要自动循环 478 项。发生新 HOLD 即停止，依据私有 `*.diagnostic.private.json` 的脱敏字段判定；如 J2 PASS，则继续依既定评分计划，保留 J1/002 缺口由独立审计处置，解盲仍禁止。当前 `quality_v1_admitted=0`。
+
+---
+
+
 ## 2026-11-22 Owner 直接推进：跳过 AI Judge 无私有数据校准
 
 Owner 已明确决定跳过独立的无私有数据模型校准，不得把格式试验当作正式评分前置。已有匿名包 240/240 PASS，且 GOLD48_JUDGE_CONFIG_PREFLIGHT_PASS__NO_OUTPUT_NO_API 已通过；不重跑匿名包、SHA、生成或此前离线预检。
