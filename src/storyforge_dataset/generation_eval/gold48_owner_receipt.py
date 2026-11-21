@@ -1,8 +1,8 @@
-"""Gold48 Owner-only Ed25519 create-only authorization and runtime verifier.
+"""Gold48 create-only explicit Mac approval and legacy Ed25519 verification.
 
-The runtime NEVER signs, takes an ordinary authorization dict, or trusts a
-caller-chosen key. The Owner public-key PEM SHA must first be registered by a
-reviewed code change; the default value is intentionally unprovisioned.
+The new Owner Mac approval is an UN-SIGNED private scope file. Trust relies
+on a single Mac submitter, HF token permissions and strict frozen-input binding.
+Legacy signed receipts remain verifiable but are no longer mandatory.
 """
 from __future__ import annotations
 
@@ -22,6 +22,8 @@ from .worker import WorkerError
 
 OWNER_TRUSTED_PUBLIC_PEM_SHA256 = ""  # fail closed until Owner pins a public key
 RECEIPT_SCHEMA = "storyforge_r60_gold48_owner_generation_ed25519_private_v1"
+APPROVAL_SCHEMA = "storyforge_r60_gold48_owner_mac_approval_private_v1"
+APPROVAL_MODE = "OWNER_MAC_EXPLICIT"
 PAYLOAD_SCHEMA = "storyforge_r60_gold48_owner_generation_scope_v1"
 SIGNATURE_TYPE = "ed25519"
 PRODUCTION_SCOPE = "PRODUCTION_GPU_48_GENERATIONS"
@@ -76,7 +78,8 @@ def _ed25519():
 class VerifiedOwnerAuthorization:
     payload: dict[str, Any]
     receipt_sha256: str
-    signer_public_pem_sha256: str
+    signer_public_pem_sha256: str | None
+    approval_mode: str = "LEGACY_ED25519"
 
 
 def make_owner_scope(
@@ -205,24 +208,56 @@ def owner_sign_create_only(
     return result.sha256
 
 
+
+def owner_approve_create_only(*, scope: dict[str, Any], receipt_path: Path) -> str:
+    """Owner Mac explicit action: no key files, create-only mode 0600."""
+    _require(isinstance(scope, dict) and scope.get("schema") == PAYLOAD_SCHEMA,
+             "GOLD48_OWNER_SCOPE_INVALID_HOLD")
+    _check_scope(scope, expected=scope)
+    approval = {
+        "schema": APPROVAL_SCHEMA,
+        "approval_mode": APPROVAL_MODE,
+        "payload": scope,
+    }
+    try:
+        result = OutputManager.write_safe(receipt_path, approval, mode=0o600)
+    except (OSError, ValueError) as exc:
+        raise WorkerError("GOLD48_OWNER_APPROVAL_CREATE_ONLY_HOLD") from exc
+    return result.sha256
+
+
 def verify_owner_authorization(
     *,
     receipt_path: Path,
-    trusted_public_key_pem_path: Path,
     expected_scope: dict[str, Any],
+    trusted_public_key_pem_path: Path | None = None,
 ) -> VerifiedOwnerAuthorization:
-    """Only a pre-pinned Owner public key can authorize generation."""
-    trusted_pin = OWNER_TRUSTED_PUBLIC_PEM_SHA256
-    _require(isinstance(trusted_pin, str) and SHA.fullmatch(trusted_pin) is not None,
-             "GOLD48_OWNER_TRUST_ANCHOR_NOT_PINNED_HOLD")
-    key_bytes = _private_bytes(trusted_public_key_pem_path, max_bytes=8192)
-    actual_key_pin = hashlib.sha256(key_bytes).hexdigest()
-    _require(actual_key_pin == trusted_pin, "GOLD48_OWNER_TRUST_ANCHOR_MISMATCH_HOLD")
+    """Exact scope validation for Mac approval; optional legacy signed receipt."""
     raw = _private_bytes(receipt_path, max_bytes=65536)
     try:
         obj = json.loads(raw)
     except (ValueError, TypeError) as exc:
         raise WorkerError("GOLD48_OWNER_RECEIPT_JSON_INVALID_HOLD") from exc
+    if isinstance(obj, dict) and obj.get("schema") == APPROVAL_SCHEMA:
+        _require(set(obj) == {"schema", "approval_mode", "payload"}
+                 and obj.get("approval_mode") == APPROVAL_MODE,
+                 "GOLD48_OWNER_APPROVAL_FORMAT_HOLD")
+        _check_scope(obj.get("payload"), expected=expected_scope)
+        return VerifiedOwnerAuthorization(
+            payload=obj["payload"],
+            receipt_sha256=hashlib.sha256(raw).hexdigest(),
+            signer_public_pem_sha256=None,
+            approval_mode=APPROVAL_MODE,
+        )
+    # Historical signed receipts retain strict pinned-key verification.
+    trusted_pin = OWNER_TRUSTED_PUBLIC_PEM_SHA256
+    _require(isinstance(trusted_pin, str) and SHA.fullmatch(trusted_pin) is not None,
+             "GOLD48_OWNER_TRUST_ANCHOR_NOT_PINNED_HOLD")
+    _require(isinstance(trusted_public_key_pem_path, Path),
+             "GOLD48_OWNER_LEGACY_PUBLIC_KEY_REQUIRED_HOLD")
+    key_bytes = _private_bytes(trusted_public_key_pem_path, max_bytes=8192)
+    _require(hashlib.sha256(key_bytes).hexdigest() == trusted_pin,
+             "GOLD48_OWNER_TRUST_ANCHOR_MISMATCH_HOLD")
     _require(isinstance(obj, dict)
              and set(obj) == {
                  "schema", "signature_algorithm", "signer_public_pem_sha256",

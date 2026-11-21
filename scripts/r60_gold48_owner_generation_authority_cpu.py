@@ -26,6 +26,7 @@ from storyforge_dataset.generation_eval.gold48_contract_bridge import (
 )
 from storyforge_dataset.generation_eval.gold48_owner_receipt import (
     make_owner_scope,
+    owner_approve_create_only,
     owner_sign_create_only,
 )
 from storyforge_dataset.hf_runtime.inputs import InputManager
@@ -125,6 +126,9 @@ def _sign(args):
     )
     if not 0 < args.expiry_hours <= 48:
         raise WorkerError("GOLD48_APPROVAL_EXPIRY_HOLD")
+    if args.mode == "approve-one-arm":
+        owner_approve_create_only(scope=scope, receipt_path=args.approval_output)
+        return "OWNER_GOLD48_ONE_ROLE_MAC_APPROVAL_CREATE_ONLY"
     owner_sign_create_only(
         scope=scope, private_key_path=args.owner_private_ed25519_key,
         receipt_path=args.signed_receipt_output,
@@ -134,7 +138,7 @@ def _sign(args):
 
 def _arguments(argv):
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--mode", required=True, choices=("accept-bindings", "sign-one-arm"))
+    p.add_argument("--mode", required=True, choices=("accept-bindings", "approve-one-arm", "sign-one-arm"))
     p.add_argument("--frozen-profile", required=True, type=Path)
     p.add_argument("--owner-freeze", required=True, type=Path)
     p.add_argument("--adapter-bindings", required=True, type=Path)
@@ -156,6 +160,7 @@ def _arguments(argv):
     p.add_argument("--expiry-hours", type=int, default=1)
     p.add_argument("--owner-private-ed25519-key", type=Path)
     p.add_argument("--signed-receipt-output", type=Path)
+    p.add_argument("--approval-output", type=Path)
     return p.parse_args(argv)
 
 
@@ -171,10 +176,13 @@ def main(argv=None) -> int:
                 args.model_role, args.run_id, args.output_directory,
                 args.output_filename, args.dependency_lock,
                 args.dependency_contract, args.runtime_image,
-                args.owner_private_ed25519_key, args.signed_receipt_output,
             )
+            if args.mode == "sign-one-arm":
+                required += (args.owner_private_ed25519_key, args.signed_receipt_output)
+            else:
+                required += (args.approval_output,)
             if any(value is None for value in required):
-                raise WorkerError("GOLD48_OWNER_SIGNATURE_SCOPE_FIELDS_REQUIRED")
+                raise WorkerError("GOLD48_OWNER_APPROVAL_SCOPE_FIELDS_REQUIRED")
             status = _sign(args)
         print(json.dumps({
             "schema": "storyforge_gold48_owner_generation_authority_cpu_safe_v1",
