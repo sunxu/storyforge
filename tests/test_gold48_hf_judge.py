@@ -7,6 +7,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
 from storyforge_gold_quality.gold48_hf_judge import (
     JudgeHold,
     judge_one,
@@ -15,7 +16,6 @@ from storyforge_gold_quality.gold48_hf_judge import (
     response_schema,
     validate_score,
 )
-from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
 from storyforge_gold_quality.hf_literary_review import FLOORS, SEVERE
 
 
