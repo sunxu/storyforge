@@ -1,5 +1,16 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 J1 官方 DeepSeek API 已准备；J2 运行期间不换本地代码
+
+Owner 当前决定：先完成 J2 GLM-5.2 / DeepInfra 的 240 条正式评分，同时准备 J1 DeepSeek 官方 API，禁止停止/重跑/污染进行中的 J2。已实际核查并复用 StoryForge 历史成功入口 experiments/r58_quality/r60_real1000_qwen_deepseek20_live.py，以及其原有协议模块 experiments/r58_quality/r60_reviewer_transport.py 的 deepseek-chat 构造器：固定官网 https://api.deepseek.com/chat/completions、deepseek-flash、非思考 thinking.type=disabled、JSON object 输出。六维评分及逐字引用校验仍由冻结 gold48_hf_judge.py 的 judge_one 执行；原单条入口 gold48_judge_step.py 的 attempt/score 锁、严格引用归位、脱敏诊断和全局串行锁继续沿用，J2 默认路径不变。
+
+仅新增薄适配 src/storyforge_gold_quality/gold48_j1_official.py：官方 HTTPS POST 一次、禁跟随重定向/环境代理、响应格式转换为旧 judge_one 所需、Owner create-only 修订文件 owner/GOLD48_J1_OFFICIAL_REVISION_PRIVATE.json。修订绑定冻结 lock 文件 SHA 与 Judge 源码 SHA，明确区分冻结的 J1 DeepSeek-V4.1-Flash / Fireworks 和新实际 deepseek-flash / deepseek-official / DeepSeek-V4.1-Flash-1017（官方升级版本不应当默认为冻结 HF 的完全同权重）。官方不接受原 HF strict json_schema，而通过 JSON-object 响应和包含原评分 Schema 的系统提示实现协议转换，原 validate_score 仍严格验收。每条正式评分的 marker、score、execution 审计明确记录实际 Provider / 模型 / 修订 SHA，不能伪称 HF。不会上传 Owner 映射。
+
+切换计划：J2 跑完之前不要在 Owner Mac 原工作目录 git pull，也不要运行新 J1。完成 J2 后拉取通过 CI 的最新提交，在 Owner Mac 仅执行 PYTHONPATH=src python3 -m storyforge_gold_quality.gold48_j1_official --root "$ROOT" --prepare 进行零 API 的 create-only 修订。现有 reviews/J1/002.attempt.private.json 是 403 历史 HOLD，不得覆盖；在无活跃评分进程时，仅将 reviews/J1 整目录 mv 至 reviews/J1-pre-official-20261122（若目标已存在则 HOLD），新建 0700 的 reviews/J1，保留全部原始证据而不触碰 reviews/J2。再使用历史 R60_DEEPSEEK_KEY，按 --execute --position N --approve-private-transfer --approve-paid-calls 逐项执行 J1，不允许自动重试同一失败项。完整 480 份评分未到齐前仍禁止解盲，quality_v1_admitted=0。费用不再作为 Owner 的审批阻塞，但密钥隐私、防重和流水证据不放宽。
+
+---
+
+
 ## 2026-11-22 最新 Owner 决定：重置 reviews，从零重新执行正式双 Judge（不以费用为阻塞）
 
 **只重置评分输出，不重建匿名输入。** 冻结 240 条匿名输入 `reviewers/GOLD48_BLIND_240_PRIVATE.jsonl`、`owner/GOLD48_JUDGE_LOCK_PRIVATE.json`、Owner crosswalk 和所有训练/生成证据不动。Owner 已批准数据外发及收费，明确要求不再以预算额度为审批阻塞；仍保持 J1/J2 唯一 240 项、一次串行调用、防重复标记、私人日志脱敏、不得解盲。锁中 `max_cost_usd` 是历史备案，非运行时实际计费硬限制，后续账单仍由 HF 管理。
