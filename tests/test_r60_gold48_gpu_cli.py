@@ -236,8 +236,8 @@ def test_submit_unconfirmed_keeps_marker_and_never_retries(tmp_path, monkeypatch
 
 
 def test_gpu_bootstrap_is_only_a_hash_locked_preflight_not_another_submitter():
-    from pathlib import Path
     import subprocess
+    from pathlib import Path
 
     root = Path(__file__).resolve().parents[1]
     shell = root / "scripts/r60_gold48_gpu_worker.sh"
