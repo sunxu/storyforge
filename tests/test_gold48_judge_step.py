@@ -7,6 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
 from storyforge_gold_quality.gold48_hf_judge import DIMENSIONS
@@ -137,6 +138,15 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(set(receipt["response"]["scores"].values()), {1})
         self.assertEqual(receipt["response"]["specific_target_quotes"], [])
         self.assertEqual(receipt["response"]["specific_source_quotes"], [])
+
+    def test_raw_hf_debug_blocked_before_attempt_marker(self) -> None:
+        with patch.dict(os.environ, {"HF_DEBUG": "1"}), self.assertRaisesRegex(
+            LockHold, "HF_DEBUG_PRIVATE_PAYLOAD_HOLD"
+        ):
+            self.run_one()
+        self.assertFalse((self.reviews / "J1" /
+                          "002.attempt.private.json").exists())
+        self.assertEqual(self.client.calls, [])
 
     def test_approval_flags_refuse_even_zero_cost(self) -> None:
         for name in ("private", "billing", "spending_cap"):
