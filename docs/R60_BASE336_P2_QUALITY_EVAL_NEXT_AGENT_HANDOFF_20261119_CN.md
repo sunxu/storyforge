@@ -2,6 +2,8 @@
 
 ## 2026-11-22 当前唯一执行基线：Gold48 四臂已完成 → 五来源六维盲评
 
+**2026-11-22 Owner SAFE 最新签收（优先于本节较早步骤 1）**：`GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`；48 个 case /240 个待评分回答 /8 Story /25 Session /48 主分析及 42 敏感性，7 条 `length` 和 1 条无可见回复完整保留；0 Judge 分数、0 HF API 调用、$0、无私有外发，`quality_v1_admitted=0`。只读预检**已经完成，不重做**；旧的“首先清点私有证据”在此被取代。唯一下一 Owner Mac 动作是使用现有 `src/storyforge_gold_quality/gold48_blind.py` 的 `--out`，按 [Owner runbook](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md) 一次性生成私有 240 对象匿名包与隔离的 Owner key（create-only、0600/0700），仅保存 SAFE，不调用 Judge。**正式评分前仍需冻结空回复机械六维 1 分（严重标记全 false、双向引用空、必须标明“非 AI Judge”）、Judge 具体模型/Provider/参数、独立评审数/分歧方案、预算及第三方外发许可；不因本文件自动授权任何计费调用。**
+
 **优先级与证据**：本节取代本任务书、Owner runbook、总体质量计划和 AGENTS.md 下方所有“GPU 未实测 / 等待 ready / Tokenizer 待补 / 192 生成待做”的历史快照；旧章节只作溯源。接手时仍须核查 [PR #31](https://github.com/sunxu/storyforge/pull/31) 的实时 HEAD 与 CI。最后核验的代码 HEAD 是 `4caf2e3dd5a7d6b2575b2cac0e2c1e0a86a02f40`（7/7 Actions SUCCESS）；以下真实 GPU/Owner SAFE 为随后完成的独立证据。**本次只更新文档，不开始盲评调用或计费。**
 
 | 臂 | Owner Run ID | HF Job（均 COMPLETED） | Owner 独立结果字节审计 | 停止原因 |
