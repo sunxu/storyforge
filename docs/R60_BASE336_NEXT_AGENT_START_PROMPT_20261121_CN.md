@@ -1,3 +1,11 @@
+## 2026-11-21 最新 Owner 决策：取消 Gold48 GPU 的 Ed25519 强制签名
+
+**正式生效**：单 Owner Mac 已明确取消为每臂 GPU 生成签发 Ed25519 私钥签名、登记公钥及其指纹的要求。新主线走 `scripts/r60_gold48_owner_generation_authority_cpu.py --mode approve-one-arm --explicit-owner-generation-authorization --approval-output <private-file>`，直接**复用原先的单臂 Scope/48 条/依赖镜像 SHA/有效期校验**，由 `OutputManager.write_safe` 创建不可覆盖的 0600 私有 JSON 批准文件。无私钥、无公钥：Gold48 Job 固定 RO Stage 只携带 `owner_authorization.private.json`，不需要 `owner_public.pem`。旧 `sign-one-arm` 和 Ed25519 验签可用于历史回执兼容，不再是生产前置条件；旧文档里要求注册公钥或阻塞在 Owner Pin 的描述以本节为准。
+
+**保留边界**：唯一可信 Mac、HF Token 权限、显式执行参数、完整组织 Job 历史排重、Mac 本地 create-only 提交标记、不自动重投、唯一 Run ID、冻结 48 输入 SHA/四臂 Profile、Adapter RO+完整权重哈希、锁文件/镜像 Digest 约束、Job 本地一次性许可、结果与 Sidecar SHA，以及 Mac 独立 HF Inspect（在评测准入前）。**没有密码学验签，不能把此 JSON 当作不可伪造的签名**；Mac/HF Token 被盗的风险已由 Owner 选择接受。新回执的 `owner_authorization_method=OWNER_MAC_EXPLICIT`、`owner_ed25519_signature_verified=false`、`runtime_image_identity_source=OWNER_MAC_APPROVED_CONFIGURATION_ONLY__NOT_MEASURED` 明确说明这一边界。此前 Provider 动态证明也已撤除，不恢复。
+
+**GPU 未获本条消息的执行授权**：更改签名门禁本身不代表允许提交 HF GPU Job、签发本次 Run ID 或进行真实模型调用。先完成代码/合成 CI，再沿用已跑通的 Mac HF CLI，针对具体镜像/角色/经 Owner 选定的 Run ID 另行显式授权 GPU Smoke；四臂共 192 新回答与 48 历史原始回答组成 240 对象质量评估，冻结输入不变。不新建数据库、通用 Runner、Provider 服务或其他签名系统。
+
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一现行启动提示词（2026-11-21）
 
 > **2026-11-21 Gold48 私有输入与输出传输最新进展**：已复用现有 `InputManager` + 本地 exclusive 0600 文件，提供 `materialize_gold48_ro_input`；已有 Gold48 生产 dispatcher 在原 Worker 后要求 `deliver_gold48_private_result` 上传三份私有结果与 manifest-last，并对每份 HF Bucket 输出下载验 SHA。无新生成器或通用 Runner。**仍需**受控 HF Job 包装调用输入物化、Owner Mac 独立下载核对、以及实际 Owner/Provider 身份和 GPU 明确批准；不得启动模型或认定远程 HF 交付成功。
