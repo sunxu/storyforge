@@ -1,4 +1,4 @@
-"""Owner-local Gold48 authority: check sources, accept binding, sign ONE arm.
+"""Owner-local Gold48 authority: accept binding, explicitly approve ONE arm.
 
 This script MUST run on the trusted Owner computer. It never submits inference,
 runs a GPU, fetches a checkpoint, or reads the separate historical reference.

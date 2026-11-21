@@ -715,6 +715,34 @@ def test_owner_local_accept_and_sign_cli_synthetic_no_gpu(tmp_path):
     assert stat.S_IMODE(receipt_path.stat().st_mode) == 0o600
     assert subprocess.run(sign, capture_output=True, env=env, check=False).returncode == 2
 
+    # The selected Owner Mac path requires NO Ed25519 private/public key.
+    approve = list(sign)
+    approve[approve.index("--mode") + 1] = "approve-one-arm"
+    for flag in ("--owner-private-ed25519-key", "--signed-receipt-output"):
+        i = approve.index(flag)
+        del approve[i:i + 2]
+    plain = root / "mac-approved-one-arm.private.json"
+    approve.extend(("--approval-output", str(plain)))
+    approved = subprocess.run(
+        approve, capture_output=True, text=True, env=env, check=False,
+    )
+    assert approved.returncode == 0, approved.stdout
+    assert json.loads(approved.stdout)["status"] == (
+        "OWNER_GOLD48_ONE_ROLE_MAC_APPROVAL_CREATE_ONLY"
+    )
+    plain_receipt = json.loads(plain.read_text())
+    assert plain_receipt["schema"] == (
+        "storyforge_r60_gold48_owner_mac_approval_private_v1"
+    )
+    assert plain_receipt["approval_mode"] == "OWNER_MAC_EXPLICIT"
+    assert set(plain_receipt) == {"schema", "approval_mode", "payload"}
+    assert plain_receipt["payload"]["record_count"] == 48
+    assert plain_receipt["payload"]["training_authorized"] is False
+    assert stat.S_IMODE(plain.stat().st_mode) == 0o600
+    assert subprocess.run(
+        approve, capture_output=True, env=env, check=False,
+    ).returncode == 2
+
 
 def test_recover_sidecar_from_existing_48_output_without_rerun(tmp_path, monkeypatch):
     """Sidecar failure keeps 48 genuine synthetic outputs, repairs metadata only."""
