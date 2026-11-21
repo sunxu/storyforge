@@ -272,6 +272,76 @@ class JudgeStepSyntheticTest(unittest.TestCase):
             self.run_one()
         self.assertEqual(self.factory_calls, 0)
 
+    def test_j1_official_revision_uses_actual_model_provider_and_audit(self) -> None:
+        from storyforge_gold_quality.gold48_j1_official import REVISION_SCHEMA
+        from storyforge_gold_quality.gold48_judge_lock import digest
+
+        lock_raw = self.lock.read_bytes()
+        lock = json.loads(lock_raw)
+        revision_path = (self.owner_folder /
+                         "GOLD48_J1_OFFICIAL_REVISION_PRIVATE.json")
+        self.save(revision_path, canonical({
+            "schema": REVISION_SCHEMA,
+            "status": "J1_OFFICIAL_REVISION_PREPARED__NO_EXTERNAL_CALLS",
+            "reviewer_id": "J1",
+            "lock_sha256": digest(lock_raw),
+            "frozen_judge_sha256": lock["judge_source_sha256"],
+            "frozen_model": "deepseek-ai/DeepSeek-V4.1-Flash",
+            "frozen_provider": "fireworks-ai",
+            "actual_model": "deepseek-flash",
+            "model_version": "DeepSeek-V4.1-Flash-1017",
+            "actual_provider": "deepseek-official",
+            "api_origin": "https://api.deepseek.com",
+            "response_format": "json_object",
+            "thinking": "disabled",
+        }) + b"\\n")
+        direct = FakeClient()
+        def official_factory(*, hf_token, fixed_provider):
+            self.assertEqual(fixed_provider, "deepseek-official")
+            self.assertEqual(hf_token, "synthetic-token")
+            return direct
+        result = step(
+            packet=self.packet, lock_path=self.lock,
+            output_dir=self.reviews / "J1",
+            reviewer_id="J1", position=2,
+            approve_private_transfer=True, approve_paid_calls=True,
+            confirm_hf_spending_cap=False,
+            hf_token="synthetic-token", client_factory=official_factory,
+            official_revision=revision_path,
+        )
+        self.assertEqual(result["paid_api_attempts"], 1)
+        self.assertEqual(direct.calls[0]["model"], "deepseek-flash")
+        self.assertEqual(direct.calls[0]["extra_body"],
+                         {"thinking": {"type": "disabled"}})
+        receipt = json.loads((self.reviews / "J1" /
+                              "002.score.private.json").read_text())
+        self.assertEqual(receipt["model"], "deepseek-flash")
+        self.assertEqual(receipt["provider"], "deepseek-official")
+        self.assertEqual(receipt["execution_revision_sha256"],
+                         digest(revision_path.read_bytes()))
+        audit = json.loads((self.reviews / "J1" /
+                            "002.execution.private.json").read_text())
+        self.assertEqual(audit["revision"],
+                         "j1_deepseek_official_json_object_v1")
+        self.assertEqual(audit["api_origin"], "https://api.deepseek.com")
+        self.assertFalse(audit["model_scores_or_flags_changed"])
+
+    def test_official_revision_rejected_for_j2_before_call(self) -> None:
+        revision_path = (self.owner_folder /
+                         "GOLD48_J1_OFFICIAL_REVISION_PRIVATE.json")
+        with self.assertRaisesRegex(LockHold,
+                                    "J1_OFFICIAL_REVISION_BINDING_HOLD"):
+            step(
+                packet=self.packet, lock_path=self.lock,
+                output_dir=self.reviews / "J2",
+                reviewer_id="J2", position=2,
+                approve_private_transfer=True, approve_paid_calls=True,
+                confirm_hf_spending_cap=False, hf_token="synthetic-token",
+                client_factory=self.factory, official_revision=revision_path,
+            )
+        self.assertFalse((self.reviews / "J2" /
+                          "002.attempt.private.json").exists())
+
     def test_second_slot_has_its_own_identity(self) -> None:
         other_client = FakeClient()
         seen = []
