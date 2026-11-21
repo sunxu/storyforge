@@ -1,5 +1,16 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 停止 GPU 执行流程：Owner Mac 当前只做盲评资料交接
+
+**本节优先于下方 2026-11-21 的 `ready/submit`、Stage 上传、GPU 进度与“某臂尚待生成”记录。** 四臂 Base/R46/R54/R60 各 48/48 已真实生成；HF Jobs 均 `COMPLETED`，Owner Mac 各 4 份结果文件独立下载、SHA 与结构审计均 PASS。正式 Run ID、Job ID、停止原因及不可越过的盲评边界见 [现行任务书顶部](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
+
+**不要再次运行** `scripts/r60_gold48_gpu_cli.py submit/ready`、`r60_gold48_gpu_result_audit.py`、旧 Stage `sync` 或新 GPU Job；原始结果、私有 `0700/0600` 目录保持不变。现有结果目录为 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/`；原始历史回答不在 HF GPU Stage，须由 Owner Mac 已冻结私有原件读取，绝不从公开资料猜造。下一个唯一 Owner 动作是只读清点 4×48 新回复 +48 Original、冻结输入与实际 48/42 风险标记，先创建**私有五来源匿名评审包**再冻结评审器/预算并调用 `adradar` Inference Providers API。
+
+**特殊凭据提示**：近期一次 R60 结果审计最初因本地推理用 `HF_TOKEN` 覆盖 Bucket 凭据而在 `HfApi.list_bucket_tree` 遇到 `BucketNotFoundError`；改用可读组织私有 Bucket 的既有登录凭据后 Owner 审计通过。日后对 Inference Providers 与私有 Bucket 使用分离的凭据作用域，禁止公开任何 Token。`owner_mac_job_image_inspect_verified=false` 和独立签名状态仍 false；Quality-v1 评分/晋升未开始。下文 GPU 命令只用于历史溯源，**当前不得按其重新生成**。
+
+---
+
+
 **本节为现行 Mac 执行说明；下面从“历史执行笔记”起均只用于追溯，不可照旧执行。** 使用 PR #31 的实时 HEAD / CI 与实际 Owner SAFE 回执，不再以旧 HEAD 或静态 README 的“尚未启动 GPU”状态为准。Base 48/48 已完成 GPU 生成和 Owner 四文件下载审计；R46 首次 GPU Job 在 Adapter `lora_alpha=128.0` 严格类型检查处 HOLD，旧 Run ID 禁止重投。已针对历史浮点配置做最小 Loader 修复和回归测试，后续新 Run ID 必须使用含该修复的当前代码 Bundle。
 
 **证据边界**：Owner Gold48 48 条输入与 48 条原始回复/冻结 SHA 已签收；历史 HF CPU Tokenizer 48/48 SAFE PASS（`6b00971aefaf5e14f4b3b24a`，Run Key `r60-gold48-cpu-20261120T182842Z-e5de137532a1`）。该 CPU Job **只有 SAFE**，没有 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。修复后 `scripts/r60_gold48_gpu_worker_entry.py::STAGED` **恰好 11 份**，已去掉 `token_preflight.private.json`，不得伪造或要求补生成。GPU Loader 在固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 使用 Tokenizer 并比对同一不可变 revision 的 `chat_template.jinja`，随后才加载模型权重。固定公开模板与该 revision 的 `tokenizer_config.json.chat_template` 已独立只读比对为完全一致（模板 8,952 字节），**Base 实际 GPU/Owner 下载审计已通过；R46/R54/R60 的真实适配器推理仍须分别完成 GPU 和 Owner 审计**。
