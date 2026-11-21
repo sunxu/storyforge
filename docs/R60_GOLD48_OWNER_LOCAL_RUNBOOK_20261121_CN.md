@@ -1,5 +1,16 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 Owner 授权 J1 官方 / J2 HF 两审并发（新执行修订覆盖旧的“等 J2 跑完再操作 J1”）
+
+只允许两个独立的**串行评分通道**并发：J2 DeepInfra/GLM-5.2 继续持有原有 reviews/.gold48_single_call.lock；J1 官方 DeepSeek 使用 reviews/.gold48_j1_official_call.lock。每个评审者同时最多 1 个请求，合计最多 2 个；同一 J1/J2 位置不能因断线自动重试。冻结合同里的 max_concurrent_calls=1 原值不改；在 J1 create-only 修订 concurrency_policy 明确登记这项执行级例外，并在每条 J1 attempt/execution 记录修订 SHA、锁通道和最大并行数。Legacy J1 CLI 一旦修订已准备，则会拒绝继续调用，避免同时混用原 Fireworks 路由和官方路由。
+
+**正在运行的 J2 Mac 工作区不得拉取新代码或改变 J2 评分目录。** 并行运行 J1 时，使用独立 Git worktree，固定在经 CI 核验的提交；另开终端使用该 worktree 的 src 和原来同一个只读私有 ROOT。先在独立 J1 worktree 调用 --prepare 创建 owner/GOLD48_J1_OFFICIAL_REVISION_PRIVATE.json（0 API），再仅归档 reviews/J1 旧目录为 private create-only 备份目录（保留 J1/001、J1/002 失败等记录，不动 reviews/J2）；重建 0700 reviews/J1。J1/001 原空回答固定评分可直接本地生成，J1/002 首次官方调用单独成功后再继续 J1/003..240，所有正式写入与账单走官方 DeepSeek；R60_DEEPSEEK_KEY 不打印不提交。J1 准备和重评可以与 J2 进行中并行，但确保 J2 没有主动访问 reviews/J1 且无其他 Legacy J1 进程。如果 J1/002 API 权限、余额、JSON 引用失败则保留 HOLD，不清空或重复尝试。
+
+需要注意两条评分流不同 Provider 路由，官方 DeepSeek 实际 model id deepseek-flash (DeepSeek-V4.1-Flash-1017)，冻结 HF 标签并不能保证完全一致的模型权重。禁止解盲，待 480/480 通过并保留模型版本差异审计后再汇总。
+
+---
+
+
 ## 2026-11-22 J2/006 引用 HOLD 的最短恢复路径
 
 Owner 报告最新 J2 评分：001–005 均有正式 PASS，J2/006 因 JUDGE_NONEXACT_QUOTE_HOLD 被阻止，已有 006.attempt.private.json，**没有有效 006.score.private.json**。无需清空 reviews、重新打包、重试 001–005，也不能将不符合逐字引用的模型 JSON 当作成绩。Gold48 新批次此时 6/480（J2 5、J1 001 固定规则 1）。此失败发生在本次原文留存修订之前，J2/006 **没有可恢复的原始模型回复文件**，只能保留原始失败记录，待 Owner 单项审计后再决定一次性人工恢复性重评。
