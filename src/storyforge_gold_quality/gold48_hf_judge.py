@@ -177,7 +177,7 @@ def judge_one(
         )
         content = response.choices[0].message.content
         parsed = json.loads(content)
-    except Exception:
+    except Exception:  # noqa: BLE001 - third-party errors may expose private content
         # Third-party exceptions may contain private prompts, tokens or responses.
         raise JudgeHold("JUDGE_API_OR_FORMAT_HOLD") from None
     return validate_score(parsed, item)
