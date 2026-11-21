@@ -233,3 +233,23 @@ def test_submit_unconfirmed_keeps_marker_and_never_retries(tmp_path, monkeypatch
     assert (stage.parent / (RUN + ".gold48-gpu-submit.private.json")).exists()
     assert len([call for call in calls if
                 call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]) == 1
+
+
+def test_gpu_bootstrap_is_only_a_hash_locked_preflight_not_another_submitter():
+    from pathlib import Path
+    import subprocess
+
+    root = Path(__file__).resolve().parents[1]
+    shell = root / "scripts/r60_gold48_gpu_worker.sh"
+    syntax = subprocess.run(
+        ["bash", "-n", str(shell)],
+        capture_output=True, text=True, check=False,
+    )
+    assert syntax.returncode == 0
+    text = shell.read_text()
+    assert text.index('"$ENTRY" check') < text.index("--require-hashes")
+    assert text.index("--require-hashes") < text.index('"$ENTRY" execute')
+    assert "pip check" in text
+    assert "/input/provider" not in text
+    assert "hf jobs run" not in text
+    assert "hf buckets cp" not in text
