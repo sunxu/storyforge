@@ -117,6 +117,8 @@ def step(
     for p in (output_dir, *output_dir.parents):
         require(not (p / ".git").exists() and not (p / ".git").is_symlink(),
                 "PRIVATE_OUTPUT_INSIDE_GIT_HOLD")
+    private_folder(packet.parent.parent)
+    private_folder(output_dir.parent)
     private_folder(output_dir)
     entry = f"{position:03d}"
     marker_path = output_dir / f"{entry}.attempt.private.json"
