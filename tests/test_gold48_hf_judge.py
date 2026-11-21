@@ -83,6 +83,37 @@ class HFJudgeSyntheticTest(unittest.TestCase):
         self.assertNotIn("G48-C", str(call))
         self.assertNotIn("source_role_PRIVATE", str(call))
 
+    def test_empty_reply_score_is_fixed_and_has_no_api_call(self) -> None:
+        blank = item()
+        blank["target_text"] = ""
+        fake = FakeClient(score())
+        result = judge_one(
+            item=blank, client=fake, model="synthetic-judge",
+            temperature=0, max_tokens=512, private_transfer_authorized=True,
+        )
+        self.assertEqual(fake.calls, [])
+        self.assertEqual(set(result["scores"].values()), {1})
+        self.assertEqual(set(result["severe_flags"].values()), {False})
+        self.assertEqual(result["specific_target_quotes"], [])
+        self.assertIn("非 AI", result["uncertainty"])
+        validate_score(result, blank)
+
+        fabricated = dict(result, specific_target_quotes=["不存在的候选引文"])
+        with self.assertRaisesRegex(JudgeHold, "JUDGE_NONEXACT_QUOTE_HOLD"):
+            validate_score(fabricated, blank)
+        changed = dict(result, scores={**result["scores"], "player_agency": 5})
+        with self.assertRaisesRegex(JudgeHold, "JUDGE_NO_RESPONSE_POLICY_HOLD"):
+            validate_score(changed, blank)
+
+    def test_empty_reply_still_requires_explicit_authorization(self) -> None:
+        blank = item()
+        blank["target_text"] = ""
+        fake = FakeClient(score())
+        with self.assertRaisesRegex(JudgeHold, "PRIVATE_TRANSFER_NOT_AUTHORIZED"):
+            judge_one(item=blank, client=fake, model="synthetic-judge",
+                      temperature=0, max_tokens=512)
+        self.assertEqual(fake.calls, [])
+
     def test_no_authorization_means_zero_calls(self) -> None:
         fake = FakeClient(score())
         with self.assertRaisesRegex(JudgeHold, "PRIVATE_TRANSFER_NOT_AUTHORIZED"):
