@@ -1,5 +1,7 @@
 # R60 Base336 P2 Protected Crosswalk：下一 Agent 接手提示词（2026-11-18）
 
+> **此提示词的“第一步只盘点 Owner 文件 / 尚未收到 R55 Index”已过期。** 2026-11-19 已由 [R60 Base336 P2 Quality-v1 新 Agent 唯一现行任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 取代。旧 R50 50/46/4、五世界固定来源核验、R47/R48/R55 20-case 和 R55 三层 Index、R58 五范围空白 CSV 均已执行，不得再按下文旧指令重跑。Owner 本任务限定只读 DB 访问无需逐次申请；GPU/训练仍需单独批准。下文保留历史取证过程，不是当前执行清单。
+
 > **任务类型：Owner-local 私有证据核验与交叉隔离审查。不是训练、推理、Supabase 重抽取或提示包生成任务。**
 >
 > 仓库：`sunxu/storyforge`；分支：`r60/common2-cpu2-owner`。交接时必须重新核验远端 HEAD、Actions 和工作区。
@@ -13,7 +15,7 @@
 | P2-A Supabase 公开来源 Inventory | READY | 8 条来源、5 位作者、8 个不同 World JSON；revision / snapshot / permission 绑定通过；指定范围精确 World overlap=0 |
 | P2-C Base336 保护集语义隔离 | HOLD | 历史 8 组 roster/evidence 尚未完成语义裁决；成员级证据完整性待核验 |
 | P2-C R50 Protected/Reserved 排除 | UNKNOWN / HOLD | 只允许完整 metadata-only 清单，不允许读取 R50 正文 |
-| P2-C R47/R48/R55 暴露排除 | UNKNOWN / HOLD | 完整来源/暴露 Manifest 与覆盖范围尚未取得 |
+| P2-C R47/R48/R55 暴露排除 | PARTIAL METADATA / UNKNOWN / HOLD | R47/R48 20-case 结构已核验但无 Story ID 映射；R55 私有 Index 文件存在，内容 / Schema / 覆盖未核验 |
 | P2-C actual-sent 版本绑定 | UNKNOWN / HOLD | 代表性 World evidence 未证明实际发送版本 |
 | P2-C Reviewer 独立性与 Owner 冻结 | HOLD | 尚无完整可复核结论 |
 | P2-B 真实 48 条提示包 | NOT_GENERATED | 没有真实 JSONL / Manifest / SHA256；9/9 是合成校验器测试 |
@@ -168,4 +170,89 @@ protected_crosswalk_verified = false  # 直到完整 P2-C 证据和 Owner 冻结
 
 先报告：当前 GitHub HEAD / Actions；权威材料阅读确认；Owner-local metadata inventory 是否收到；逐类文件 PRESENT/MISSING/AMBIGUOUS/HOLD；下一项最小无副作用动作。
 
-若没有 inventory 输出，**停止在第 1 阶段**并向 Owner 索取；不得猜测路径、Schema 或执行数据库提取。
+本次已收到 R47/R48/R55 的部分 metadata / shape inventory，不要重复盘点这些已确认文件；下一步进入其私有 Index 的结构 / 覆盖 SAFE 检查。对 Base336、R50 或其他尚未提供 inventory 的保护集，仍只做文件元数据确认；缺失时保持对应 HOLD。任何情况下不得猜测 Schema 或执行数据库提取。
+
+
+## 2026-11-18 Owner R47 / R48 / R55 metadata 审计增量
+
+Owner 已返回 metadata / shape-only inventory。详细结果见：
+docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。
+
+- R47 Manifest 有 20 个 Sample 条目，字段为 sample_id、prompt_sha256、source_line；compiled Test 有 20 条 id/messages/metadata；prompts 有 20 条 messages。现有证据链没有证明逐案 Story ID 映射。
+- R48 是同一批已暴露的 R47 20 个 Prompt，四臂共 80 条回复；不增加独立案例，也没有补出缺失的 Story ID crosswalk。
+- R55 私有 Coordinator Index 和 SAFE 文件仅通过文件系统元数据确认存在；内容、实际 Schema、receipt / version 绑定和覆盖范围均未验证。
+- 因此 P2 × R47/R48/R55 精确 Story ID crosswalk 仍为 UNKNOWN / HOLD；语义暴露排除仍为 HOLD。不得根据 JSONL 行序、source_line、通用 id、哈希或文件名推断身份。
+- 下一步：Owner-local 对 R55 私有 Index 做 Schema / 数量 / 覆盖 SAFE 检查，并寻找权威 Sample → Story ID 来源绑定。不访问 DB / R50 正文，不启动 GPU / HF，不发起模型请求，不生成提示包。
+
+
+## 2026-11-18 补充：R47/R48/R55 Sample → Story ID 代码链已定位
+
+不要再将任务描述为“仓库没有 Sample → Story ID 映射路径”。代码复核已找到以下绑定链：
+
+- R47：Manifest \`sample_id / prompt_sha256 / source_line\` → canonical Test 对应行（完整 role/content prefix 与 prompt hash 一致）→ 该行 \`metadata.story_id\`。依据：\`scripts/prepare_blind_eval.py\`、\`scripts/audit_v01_integrity.py\`、\`scripts/v02_r48_four_arm_build.py\`。
+- R48：固定相同 canonical Test SHA 和同一 20-case prompts，不增加独立案例；继承 R47 的 Story ID 映射。
+- R55：第一层 Index 的 \`source_sample_id_private\` 回连 R47 Sample；第二层的 \`original_candidate_token_private\` 回连第一层；第三层的 \`original_second_candidate_token_private\` / \`original_first_candidate_token_private\` 回连第二层 / 第一层。
+
+**当前仍 UNKNOWN / HOLD 的原因是实际 Owner-local 文件值和 SAFE receipt 尚未核验，不是代码路径不存在。**
+
+### 下一项执行
+
+1. 对 R47 Manifest、prompts、canonical compiled Test、R48 Source Audit、P2 private source Manifest 做 Owner-local SAFE：检查 Test SHA、20/20 prompt prefix / hash / source_line、20/20 metadata.story_id，再输出 P2 × R47/R48 exact overlap count。
+2. 对 R55 三个私有 Index 做 schema / record count / token link / first-layer 20-case coverage / receipt SHA binding SAFE。
+3. 审查 \`preflight-package/scripts/r55_dev_source_preflight.py\`、对应测试及 \`exposed20/sources/R55_OLD_R47_SOURCE_PREFLIGHT_SAFE.json\`，确认它是否将 R55 原始 20-case 与 R47 Manifest 绑定。
+4. 用第一层 \`source_sample_id_private\` 经 R47 crosswalk 得到 Story ID，与 P2 Manifest 的 8 个 Story ID 做精确比较。只输出计数与布尔值，不输出 ID、作者映射、正文或 SHA。
+5. 任何输入缺失、receipt 不匹配、覆盖不完整或 token 链断裂均保持 HOLD；即使 exact overlap=0，也不代表语义隔离 PASS。
+
+不要上传 R55 私有 Index / Key / Reviewer 文件，不读取 R50 正文，不访问数据库，不运行 GPU/HF / 模型请求，不生成正式 48 条提示包。
+
+
+## 2026-11-18 R55 三层索引 SAFE 已通过：后续不要重跑
+
+Owner 本机实际输出 `R55_THREE_INDEX_LINK_AND_RECEIPT_PASS__P2_C_HOLD`：三个 Index 的 Schema、Prep Index SHA、token 唯一性通过；76/68/46 records；第一层对冻结 R47 Manifest 20/20 source samples 覆盖，extra/missing 皆 0，20 个 case indices 合法；第二层 68/68 链接及第三层双回链均通过。该有限证据可以直接复用。
+
+**新的下一步**：只读检验 canonical compiled Test 的固定 SHA、R47 20 个 prompt prefix / SHA / source_line / Sample ID 公式、`metadata.story_id` 完整性、R48 Source Audit 的 canonical Test SHA 与 prompt / manifest SHA 绑定，并比较 P2 8 个 Story ID 与历史 20 个 Story ID 的精确交集。仅输出 SAFE 数字 / 布尔值。不要再运行 R55 三层 index link 检查，勿因本轮 PASS 宣布 P2-C 通过。
+
+
+## 2026-11-18 R47/R48/R55 精确 Story ID crosswalk SAFE 已通过（有限范围）
+
+Owner-local SAFE：`P2_R47_R48_EXACT_STORY_ID_DISJOINT__R55_BOUND_TO_R47_20__P2_C_HOLD`。
+
+- Canonical Test 固定 SHA、R47 Prompt / Manifest 绑定、Sample → `metadata.story_id` 复合绑定均通过。
+- R47 20 prompts 对应 **2 个唯一 Story IDs**。
+- R48 固定 canonical source SHA 绑定通过；R48 复用 R47 同一 20-case，不增加独立故事数。
+- P2 8 个唯一 Story IDs 与 R47/R48 20-case exact overlap=0。
+- R55 第一层 20/20 R47 Sample 覆盖及此前已通过的 76/68/46 三层 Index token 链，可将这批 R55 派生记录映射到同一 R47 20-case / 2-Story 集合；此有限链范围 exact overlap=0。
+- 不再重跑 R47/R48 exact crosswalk，也不重跑 R55 Index SHA / token 链。
+
+**重要统计限制**：20 prompts 仅来自 2 个 Story IDs；76/68/46 是 R55 派生记录数量，不是独立故事数。不得用 prompt 数或派生记录数宣称故事级样本量或跨故事泛化能力。
+
+仍然 HOLD：完整历史 exposure universe closure、旧 R47 source preflight 附加约束、语义 World / hidden alias 变体、actual-sent 版本、Base336 成员级 card/opening 和 8 组语义裁决、R50 metadata-only roster 完整性、Reviewer 独立性。P2-C=HOLD；P2-B=NOT_GENERATED；不访问 R50 正文、不启动 GPU/HF、不发起模型请求。
+
+
+## 2026-11-18 Base336 Card/Opening 输出文件定位已完成
+
+Owner Mac 返回 `r60_base336_card_opening_local_locator_safe_v1`：四份既有 frozen roster/template/Codex/representative World JSON 都存在且 0600；8 个成员级 `R60_BASE336_WORLD_GROUP_XX_CARD_OPENING_PRIVATE.json` 全部 MISSING；预期输出目录 MISSING；候补同名文件数 0。此前泛化 `BASE336_CARD_OPENING_EVIDENCE_HOLD` 没有失败阶段，不能从输出目录缺失推断具体异常。
+
+不要再次做相同目录 inventory、不要重建四份已有材料，不要重跑数据库 `--execute`。下一步只做无数据库的既有 roster/template 结构绑定与运行环境诊断；然后提交合成测试过的固定 failure_phase/reason_code 故障定位改进。所有真实 Case/Story/Author ID、card/opening、SQL 数据与私有 SHA 留在 Owner Mac；不得把无输出冒充 DB 已访问或未访问的证明。P2-C 保持 HOLD。
+
+
+## 2026-11-18 Base336 member evidence crosswalk PASS; semantic review remains required
+
+Owner returned `r60_base336_member_evidence_codex_crosswalk_safe_v1`:
+`MEMBER_EVIDENCE_CROSSWALK_PASS__SEMANTIC_REVIEW_REQUIRED`.
+
+- Codex: 8/8 groups found; all 8 decisions remain HOLD; Roster and Template bindings match.
+- Card/Opening: 8/8 files; exact membership match in every group; 38 current + 21 archived source records = 59.
+- All three fields (`character`, `characters`, `opening`) are present and nonempty in all 59 source records.
+- All four existing Codex evidence fields are nonempty in all 8 group reviews.
+- The detector found zero predeclared structured Plot keys in those three fields. This is a detector result only; it does not establish absence of plot information in prose or prove plot independence.
+- No database access or modification in this crosswalk run; no private values emitted; no private files modified; no model requests/GPU; `train_admitted=0`.
+
+Do not rerun the Card/Opening extraction, integrity check, or this exact membership crosswalk. The structural/member-source crosswalk subtask is complete. **Do not convert any of the eight HOLD decisions to PASS based on structural coverage.**
+
+Next: conduct source-quoted semantic adjudication for all eight groups using the 59 current/archived member records, existing Codex HOLD rationales, and representative World evidence. Review World identity/aliases, character identity/variants, plot and event dependencies, Opening/context overlap, source revision and timepoint, and generic-template-only similarities. Keep unresolved or weakly supported cases HOLD. Record a source quote and source field/version for every material conclusion. An independent Reviewer must have verifiable independence from the original Codex review; an AI-assisted recommendation is not itself an independent signoff. After reviewer-authored component assignments exist, reuse `src/storyforge_dataset/world_isolation.py` for structural coverage and Train/Validation collision checks; that helper does not infer semantic identity.
+
+Still separate and HOLD: complete R50 metadata-only exclusion, full historical exposure-universe closure, actual-sent/delivered version binding, reviewer independence, and Owner freeze. P2-C remains HOLD; P2-B remains NOT_GENERATED; no GPU/HF/model requests or training admission.
+
+> **2026-11-19 最新状态（优先于下方 2026-11-18 初始接手说明）：** 本任务已完成分阶段 Owner-local metadata inventory；R47/R48/R55 同一 20-case exact Story ID crosswalk 已 PASS（overlap=0），R55 三层 Index SHA/Schema/token 链与 20/20 Sample 覆盖已 PASS，不得重复。R55 旧 R47 baseline preflight 为 Owner-reported PASS，但底层 SAFE 未独立重新哈希。P2 × Base336 exact Story ID overlap=0；P2 × R50 exact Source ID disjoint 仅在既有 SAFE scope 内成立。仍有 Base336 8 组语义隔离 HOLD、成员级 Card/Opening 输出缺失、R50 完整 Protected/Reserved metadata-only coverage UNKNOWN/HOLD、完整 R47/R48/R55 exposure universe UNKNOWN/HOLD、actual-sent / Reviewer independence / Owner freeze HOLD。P2-B 真实 48 条评估提示必须继续 NOT_GENERATED，直至 P2-C 全部门禁通过。**下一项不是重复目录盘点或重复精确 crosswalk，而是先取得 Owner 对限定 38 个 Base336 成员 / 8 组 current+archived Card/Opening 的只读数据库捕获动作的明确授权；未获授权不得执行 --execute。**
+>

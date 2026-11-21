@@ -1,5 +1,7 @@
 # R60 Base336 下一 Agent 启动提示词（2026-11-18，可直接复制）
 
+> **2026-11-19 新版唯一启动提示词：** [R60 Base336 P2 Quality-v1 接手任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本 2026-11-17/18 启动词中关于首要工作为文件 metadata inventory、R55 尚无 Story ID、旧 Reviewer 没有实质材料、只读 DB 未获授权的描述均为历史，**不再执行**。不要偏离新 P2 8 来源独立性→48 提示→Base/Adapter 六维盲评的目标。
+
 你现在接手 GitHub 仓库 `sunxu/storyforge` 的 **R60 Base336 P2 Protected Crosswalk 任务**。工作分支为 `r60/common2-cpu2-owner`。首要目标是核验 Owner Mac 已有私有证据的元数据、诊断缺失项，并在真实 Schema 完整确认后完成保护集交叉核验。**先读并执行专项提示词**：`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md`。本任务不是 Supabase 重抽取、训练或推理。
 
 ## 一、先核验，不要直接执行
@@ -62,7 +64,7 @@ Owner 2026-11-18 实际 SAFE 确认：
 - 最新可用汇总仍为 8/8 组 HOLD，semantic review 未完成，actual-sent version 未验证。
 - 复用工具和各证据边界见 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。
 
-**P2-C 仍为 HOLD。** Owner Mac 元数据 inventory 输出尚未收到。不得重新抽取 Supabase，不得重建或覆盖已有 roster/template/evidence/review/output。此前 card/opening 全量 `--execute` 返回泛化 HOLD，禁止盲目重跑。第一步只做 Owner-local 文件元数据盘点；在真实输入文件、Schema 和保护集覆盖范围确认前，不创建新的 crosswalk 适配器。
+**P2-C 仍为 HOLD。** Owner Mac 已返回 R47/R48/R55 metadata/shape inventory：R47/R48 的 20-case Sample/Prompt 结构已核验，但没有经验证的逐案 Story ID 映射；R55 私有 Coordinator Index 文件已确认存在，但其内容、Schema、版本绑定与覆盖完整性尚未核验。P2 × R47/R48/R55 精确 Story ID crosswalk 仍 UNKNOWN / HOLD，语义变体排除仍 HOLD。详细结果见 `docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md`。不得重新抽取 Supabase，不得重建或覆盖已有 roster/template/evidence/review/output。此前 card/opening 全量 `--execute` 返回泛化 HOLD，禁止盲目重跑。不要重复盘点已确认的 R47/R48/R55 文件；下一步只读检查 R55 私有 Index 的真实 Schema / 记录数 / 版本绑定 / 20-case 覆盖，并寻找 Sample → Story ID 权威来源映射。Base336 / R50 等其他保护集若仍缺 inventory，只做文件元数据确认；在真实输入 Schema 和保护集覆盖范围确认前，不创建新的 crosswalk 适配器。
 
 1. 将 P2 的 8 个新来源与 Base336 冻结 Train/Validation source roster、8 组 World evidence、全部 38 个受影响故事的 current/archived character、characters、opening 证据交叉核验。
 2. 仅使用 Owner 授权的 R50 Protected/Reserved 完整元数据清单做排除核验；绝不读取 R50 正文、提示或答案。
@@ -110,3 +112,8 @@ Base 与 Adapter 必须使用相同的三个持久化可见消息（无 System�
 ## 交接提示词权威入口
 
 新 Agent 应以专项提示词 `docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md` 为可执行任务合同；本文件保留训练后评估背景和总体流程。若本文件与专项提示词在当前执行顺序上存在差异，以专项提示词和最新 Owner SAFE 为准，并先核对 GitHub 当前 HEAD。
+
+
+## 2026-11-18 R47/R48/R55 exact crosswalk 下一步修正
+
+仓库代码已找到 R47 Sample → canonical Test \`metadata.story_id\` 的复合绑定路径（Manifest source_line / prompt_sha256 + 完整 prompt prefix），以及 R55 第一层 source_sample_id 与第二 / 第三层 candidate-token 回连链。实际 Owner-local SAFE 尚未执行，故 exact overlap 仍 UNKNOWN / HOLD。下一步按 \`docs/R60_BASE336_P2_CROSSWALK_NEXT_AGENT_PROMPT_20261118_CN.md\` 的新增步骤执行，不再重复寻找一个 \`compiled_test.id = story_id\` 字段，也不重复盘点已确认的 R47/R48/R55 文件。

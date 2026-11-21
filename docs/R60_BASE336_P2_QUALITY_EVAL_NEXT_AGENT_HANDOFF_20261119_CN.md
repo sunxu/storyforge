@@ -1,0 +1,741 @@
+# StoryForge R60 Base336 → P2 Quality-v1：新 Agent 唯一现行接手任务书与启动提示词（2026-11-19）
+
+## 2026-11-21 唯一现行 Gold48 Quality-v1 任务状态（替代下方所有旧“HOLD/下一步”）
+
+**现行唯一判断依据**：PR [#31](https://github.com/sunxu/storyforge/pull/31) 实时 HEAD + 实际源码 + 已签收的 SAFE/Owner 私有证据；`1dcbce63e80c5e1d6e1e700f1927bd95f54a08ba` 是最近一次核验基线，不应被硬编码为永远最新。该基线 7/7 GitHub Actions SUCCESS，主 CI `1,778 passed · 6 skipped · 42 subtests passed`，均为**合成/离线**验证，不是 HF GPU 实测。
+
+**唯一业务目标（不可变更）**：48 条已冻结的 `RECONSTRUCTED_EVALUATION_INPUT` × 4 生成臂 = 192 条新回答：Qwen/Qwen3.8-27B Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37。再加入**独立的**48 条已冻结历史 Original Assistant 回复作第五种匿名回答来源，共 240 个六维盲评对象（不是 240 次模型推理）。8 Story、25 Session，主分析 48 条、剔除预先指定单一风险 Story 的整组六题后敏感性 42 条；25 Session 聚类，严重违规标记，盲审后解盲。历史 Original 只可作**描述性对照**，不得认定历史 actual-sent 输入与重建输入逐字节一致。冻结 Profile 为 `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`；输入/角色/参数/原始回答 SHA、模型 checkpoint 和敏感性分组均不可重新选取或修改。
+
+**证据边界**：Owner Gold48 48 条输入与 48 条原始回复/冻结 SHA 已签收；历史 HF CPU Tokenizer 48/48 SAFE PASS（`6b00971aefaf5e14f4b3b24a`，Run Key `r60-gold48-cpu-20261120T182842Z-e5de137532a1`）。该 CPU Job **只有 SAFE**，没有 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。修复后 `scripts/r60_gold48_gpu_worker_entry.py::STAGED` **恰好 11 份**，已去掉 `token_preflight.private.json`，不得伪造或要求补生成。GPU Loader 在固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 使用 Tokenizer 并比对同一不可变 revision 的 `chat_template.jinja`，随后才加载模型权重。固定公开模板与该 revision 的 `tokenizer_config.json.chat_template` 已独立只读比对为完全一致（模板 8,952 字节），**但真实 Qwen/PEFT/CUDA GPU 加载及生成尚未实测**。
+
+**Stage 现行精确 11 文件**：`frozen_profile.json`、`owner_freeze.private.json`、`adapter_bindings.private.json`、`input_manifest.private.json`、`input.private.jsonl`、`r46_evidence.private.json`、`r54_evidence.private.json`、`r60_evidence.private.json`、`owner_authorization.private.json`、`runtime_lock.hashes`、`runtime_contract.json`。以代码 `STAGED` 为准，文件名**不能多也不能少**。可信 Mac 私有目录及父目录权限 0700、源文件 0600；绝不包含历史 Original 回复。未授权新 Run ID 不自动创建，已有 create-only 产物不重建/不覆盖。
+
+**唯一下一动作**：在可信 Owner Mac 上，先只读检查**已经存在**的私有 Stage、11 份文件与本次 Owner 显式批准范围、当前 Git HEAD 对应隔离代码 Bundle、三个已签收 Adapter URI；缺失时只补对应真实缺件，不反复执行冻结/签收或创建新系统。必要的代码、私有 Stage 上传使用现有 `hf buckets sync --dry-run` 审核计划，再 `--ignore-existing` 上传至**准确隔离前缀**（跳过同名文件≠核 SHA）。最后用**现有** `scripts/r60_gold48_gpu_cli.py ready` 完成真实远端 11 份 Stage SHA、核心代码 SHA、结果前缀为空、HF Job 历史排重和 CLI dry-run 核验；取得 `GOLD48_GPU_MAC_STAGE_CODE_AND_CLI_READY__NO_JOB` 的真实 SAFE 回执。**截至本交接没有拿到该本轮真实 ready PASS**。
+
+**权限和最短路径**：Mac **不安装** `transformers`/`torch`/`peft`，不在 Mac 运行模型 Tokenizer/Chat Template/Token 预算；HF CPU 历史 PASS 不重跑。已取消 Provider 动态证明/0700 FUSE 原子账本/Owner Ed25519 强制签名，改由单 Owner Mac 的 `approve-one-arm` 0600 create-only 审批、既有 HF 权限、Job 历史与本地一次性提交标记，旧签名逻辑仅兼容历史审计。不使用 Supabase/PostgreSQL、不开新 Runner、不重复 CPU 探针、不修改冻结 Profile、不重复 48 输入与 204 Story/495 版本/R50 等历史审计。**这次文档/接手授权不是 GPU 费用批准**；`ready` 无 GPU，`submit --execute` 是**单臂完整 48 条正式生成**（不是 1 条廉价 Smoke），需 Owner 针对本次模型/Run ID/GPU 预算和范围另外明确批准。未知/失败不自动重试。真实 GPU PASS 后再按另行授权进入 192 生成、Owner 下载 SHA/Inspect、240 对象盲评和 Quality-v1 决议。当前 `quality_v1_admitted=0`、未晋升。
+
+**给新 Agent 的直接可复制提示词**：[2026-11-21 当前唯一启动提示](R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md)。**操作命令**：[Owner runbook 顶部](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md)。下列旧段落含先前的 12/13/14/15 Stage、缺 PRIVATE Tokenizer、签名/Provider 前置门禁和“没有 ready”等历史快照，仅留溯源，不得按旧命令执行。
+
+---
+
+
+## 2026-11-21 独立复核修正：分级 SHA 签收与 Loader 最小元数据门禁
+
+本节修正下方“Adapter SHA 字节闭环”过宽表述，旧段留存为历史；本轮代码以此前 `a40df3fac5ab567ca81031b13134a9d07dc83169`（6/6 Actions SUCCESS）为基础，后续以实际新 HEAD/CI 为准。
+
+- **R46/R54**：历史训练与 Reload 的准确 SHA256 和 checkpoint 路径关系为 `HISTORICAL_SHA_PROVENANCE_PASS`，不是本轮 Bucket 权重 `BYTE_SHA_VERIFIED`；无需重新下载，未来真实授权加载时利用既有流式 SHA 检查。
+- **R60**：HF CPU-only Job `6b00a44aefaf5e14f4b3c6b5` 的原始客户端提交参数明确请求 Frozen Profile checkpoint-37 的精确 HF Bucket URI，以 `:/ro_adapter:ro` 挂载，故 `REQUEST_SPEC_PATH_BINDING_PASS`。`inspect` 不含服务端 `volumes` 字段，不能提升为 `PROVIDER_VOLUME_ATTESTATION_PASS`；该项 `UNVERIFIED`。该 Job 日志中 SHA 计算 `PASS`，但没有独立 create-only SAFE 文件、Stage Manifest 或 Owner 回收签收；`OWNER_RECEIPT=HOLD`。**不重跑该 Job**。
+- **HF 私有访问披露**：Job 实际在远端只读流式处理了 **1,867,797,544 字节 Adapter 权重**，未下载至 Mac、未打印权重内容或故事正文，但日志包含权重 SHA256。Job 回执 `private_values_emitted=false` 仅在不包含原始私有材料这一有限含义下成立，不能表示未输出派生哈希。
+- **现有 Worker 的完整差异**：`generation_eval.worker.run_generation_batch` 使用旧 `generation_eval.profiles.assess_profile` 三臂 schema、旧输入 Manifest、模型身份/Revision、Role EOS/PAD、预算和授权字段。不能通过角色重命名转换。Gold48 专用薄合同桥接 `HOLD`，须在冻结 Profile 外实现、保留既有循环和 create-only SAFE，不能绕过独立推理审批。
+- **Runtime 版本**：旧镜像仅经 CPU 证实 Python 3.11.11/Torch 2.6.0+cu124，不能直接定为 Gold48 推理镜像。需先核对 Qwen3.5 + PEFT + CUDA 版本与独立 hash-pinned 依赖锁。
+- **本轮最小代码修复**：`gold48_qwen35_loader.py` 已在真实模型权重加载前，读取同一冻结 Revision 的 `AutoConfig` / `GenerationConfig` 并调用原 `verify_base_snapshot_metadata()`。合成测试新增架构/EOS/PAD 失配 fail-closed；此举**不证明** Qwen3.5 Conditional + `CAUSAL_LM` PEFT 封装或实际 Template、Thinking/停止行为已通过 GPU Smoke。
+- **严格边界**：本轮没有新的 HF Job、模型推理、GPU、训练、数据库或 R50 sealed / Gold48 私有回答访问。Owner Freeze、原 HF CPU Tokenizer 与四模型 Frozen Profile 不变；`inference_authorized=false`，`quality_v1_admitted=0`。
+
+---
+
+## 2026-11-21 Gold48 Adapter 字节 SHA 闭环与 Runtime 确切剩余 HOLD
+
+本节是 **2026-11-21 追加的新技术实证**，优先于下方较早的 Adapter SHA PENDING 描述；**不更改** Owner Gold48 冻结清单、四模型 Generation Profile，也不重签历史原始回答。
+
+- **GitHub 接手基线**：在代码 HEAD `56a3816460e6bedb57d8daf1ccd4d436216a5a5d` 核对 PR #31 OPEN，六项 Actions `success`（本段是随后新增的交接状态更新，不能把后续 HEAD 误记为旧 SHA）。
+- **三个 Adapter 准确 SHA 来源已找齐，不需要重下载三份权重**：R46 v0.2 `checkpoint-7` 的原历史 `r46_training_report.json.training_evidence.adapter_sha256` 与精确 checkpoint 路径绑定；R54 v0.3-A `checkpoint-16` 的 `R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json.adapter_sha256` 与 `R54_GPU_RUN_REPORT_PRIVATE.json.checkpoint_and_reload.final_adapter_sha256` 一致；R60 Base336 `checkpoint-37` 旧 SAFE 仅证明存在/Reload，无权重 SHA，因此通过**一次新的受限 CPU-only 字节验证**补足。
+- **新 CPU-only 字节校验 PASS**：[HF Job `6b00a44aefaf5e14f4b3c6b5`](https://huggingface.co/jobs/adradar/6b00a44aefaf5e14f4b3c6b5)；组织 `adradar`，单次 `cpu-upgrade`，RO 仅挂载 R60 原 checkpoint-37，流式 SHA256 完整读取 1,867,797,544 字节，SAFE `storyforge_gold48_adapter_sha_cpu_only_safe_v1` / `R60_ADAPTER_BYTE_SHA_PASS`。三个准确 Adapter SHA 都可在已有私有历史报告或此次 HF Job SAFE 中复核；**不把私有模型权重摘要、私有 Prompt / 回复或 Owner 映射复制到公开任务书**。这是新的权重 SHA 验收，**不是**已完成的 Gold48 HF CPU Tokenizer Job `6b00971aefaf5e14f4b3b24a` 的重跑。
+- **固定训练镜像只验证了基座，尚非推理镜像 PASS**：上述 CPU Job 使用已有 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`，实测 Python `3.11.11`、Torch `2.6.0+cu124`；`transformers`、`peft`、`accelerate` 均 `NOT_INSTALLED`。旧 R60 GPU 训练报告中 `transformers=5.16.1` 证明历史训练依赖，不证明新 LoRA 四臂直接加载。**推理专用镜像 + hash-pinned 依赖锁 + 实际类/PEFT Import/模板/生成运行验证依旧 HOLD**；不得拿旧 P4 的 Transformers 4.57.1 lock 代替。
+- **现成 worker 的明确四臂接口缺口（代码只读确认）**：`generation_eval.worker.run_generation_batch` 已有输入 hash 校验、逐案 seed、预算、SAFE 与 create-only；但它调用 `generation_eval.profiles.assess_profile`，后者目前只接受 P4 的 `A/B/challenger` 固定三模型 schema，与 Gold48 冻结四臂 `base/r46_v02/r54_v03a/r60_base336` 不同。后续只能做**最小 Gold48 专用契约桥接**，禁止修改 Frozen Profile、借用 P4 角色身份伪装、绕过现有推理授权或复制生成循环。
+- **保持 HOLD**：实际 `Qwen3_5ForConditionalGeneration` + LoRA 四臂 GPU 加载、选定推理镜像依赖锁、真实禁 Thinking / EOS `[248046,248044]` / PAD `248044` / 无截断合同的 prefill/decode smoke 都未验证。冻结 Profile `inference_authorized=false`、`gpu_authorized_by_this_document=false`、`training_authorized=false`；`quality_v1_admitted=0`。本轮 `database_accessed=false`、无 Gold48 私有输入读取、无 R50 sealed、无历史回复读取、`hf_cpu_jobs_submitted=1`（仅新增 R60 SHA 校验）、`gpu_started=false`、`model_calls=0`、`training_started=false`。
+- **下一最短技术动作**：在冻结的旧镜像 Digest 基础上确定与 `Qwen3_5ForConditionalGeneration` 和 `PEFT` 真实兼容的 Transformers/PEFT/Accelerate 版本，生成且验证独立的 hash-pinned 推理依赖锁；然后只修复已确认的四臂 Profile/worker 桥接差异并做合成回归。真实 GPU smoke 与正式 192 回答分别办理授权，不自动运行。
+
+---
+
+## 2026-11-21 新 Agent 接手：Gold48 数据 + 四模型 Profile 均冻结，唯一新阻塞是推理 Runtime
+
+**最新唯一运行入口**：[2026-11-21 新 Agent 启动提示词](R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md)；本节优先于下面所有历史 NOT_FROZEN、P2_B NOT_GENERATED、先补全历史 Protected 全集、P4 旧三模型与“新建生成器”旧指令。接手先只读确认 [PR #31](https://github.com/sunxu/storyforge/pull/31) 最新 HEAD 和 CI；最后核验过的代码/文档基线 `4e03a6d1e8a7545a23394e213087b4b46aa551a8` 具有 **6/6 Actions SUCCESS**，其后的交接文档提交只作为 HEAD 变化，不应误称仍是该提交。
+
+| 门禁 | 当前已核实状态 | 新 Agent 不得重复 |
+| --- | --- | --- |
+| R60 Base336 探索训练 | 293 Train / 43 Validation、37/37 steps、checkpoint-37 Adapter Reload 工程 PASS；未晋升 | 不重跑训练，43 Validation 不做独立测试 |
+| Gold48 输入与历史原始参考 | Owner 私有 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING`，`owner_gold48_freeze=true`；48 主分析、42 敏感性（六条来源风险只从敏感性排除）、8 来源、25 Session、48 重建消息 SHA +48 独立历史回复 SHA | 不重构题、不重新恢复历史 Prefix、不重新 SHA/签收、不重新做公开卡快照及 P2 旧隔离审计 |
+| HF CPU 输入预算 | 私有最小 Stage 17 文件校验 PASS；唯一 HF CPU Job `6b00971aefaf5e14f4b3b24a`、Run `r60-gold48-cpu-20261120T182842Z-e5de137532a1`；两 Thinking 模式 16K/32K 超限 0/48，Owner 回收 SAFE PASS | 不重传 Stage、不再安装 Mac Tokenizer、不再运行同一 CPU Job |
+| 四模型生成 Profile | `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`，`GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING`，`owner_generation_profile_freeze=true`；候选 Git Blob `394013dc182fa095040808e02c4ea2e393636d30` 固定 | 不改 Frozen Profile、不从旧 P4 Qwen3-32B/GLM 复制配置 |
+| Qwen3.8 + LoRA 适配 | `src/storyforge_dataset/generation_eval/gold48_qwen35_loader.py` 已实现真实加载前薄适配与流式 SHA；合成测试 + PR `6/6 CI SUCCESS`；**没有新推理镜像下四臂真实加载 PASS** | 不重写 `generation_eval.backend/worker`、`hf_runtime`、Token 核心或 HF 提交器 |
+| 正式质量实验 | `inference_authorized=false`、`gpu_authorized_by_this_document=false`、`training_authorized=false`、`quality_v1_admitted=0`、`model_promoted=false` | 不启动 192 次新生成/240 对象盲评/训练/模型晋升 |
+
+**必要而且仅有的下一阶段**：先拿已有 R46/R54/R60 Release/Reload 元数据中的 Adapter 权重 SHA 与精确 checkpoint 字节身份做有界绑定（先复用现有 SHA，不因无状态就重新下载三个大权重），然后核对 `Qwen3_5ForConditionalGeneration` + PEFT 的实际可用推理镜像、Transformers/PEFT/Torch/CUDA 版本和 hash-pinned lock、Chat Template / EOS `[248046,248044]`、PAD `248044`、Thinking 关闭及不截断行为。复用已实现的 Loader + `generation_eval.worker.run_generation_batch`；只对已证实的兼容缺口做小补丁及合成回归。需要真实 GPU/model smoke 时**另行明确批准具体范围、资源、预算、Run Key**，因为两项冻结不是推理授权；用户已允许 HF CPU 技术检查（包括付费），但这不推翻 `inference_authorized=false` 和 GPU 门禁。
+
+**冻结合同不得改写**：固定 Qwen/Qwen3.8-27B Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` + R46 v0.2 ckpt7 + R54 v0.3-A ckpt16 + R60 Base336 ckpt37；32,768 context、30,720 最大输入、2,048 最大新 Token、Thinking=false、采样 temperature 0.7/top_p 0.8/top_k 20/min_p 0、seed 42+固定零基索引，禁止静默截断。目标 48×4=192 新模型回答+48 原始真实回答=240 份五匿名来源六维盲评对象，主分析 48 与敏感性 42 双报告，按 25 Session 聚类；历史 Gold 不是第五生成模型或绝对正确答案，不能流入生成端。
+
+**不可跨越的证据边界**：`RECONSTRUCTED_EVALUATION_INPUT` 不等于历史 Provider byte-exact actual-sent；`historical_actual_sent_prompt_verified=false`、`full_protected_universe_independence_verified=false`、目标前置 Memory 0/48 verified、48 条均未证 Memory 而省略；已知六条来源风险标注不能静默去除。Owner 接受的是限定已审历史来源范围的风险，**不是 P2-C 全历史宇宙独立性通过**。禁止读取 R50 sealed、访问生产私聊、向公开仓库/日志输出私有 Story、原始回复、Owner 映射或逐案哈希。已审 204 Story/495 版本、R50 50=46+4、R47/R48/R55 Dev20、R58 空 CSV 等历史审计不得无新差异重复。
+
+**本轮文档交接交付**：以唯一 2026-11-21 提示词为任务顺序，保留既有主任务书中旧时间段作审计历史；下方按时间追加的过时阶段结论不能推翻本节。下个 Agent 只须在实际 HEAD 核对后完成最短的新技术阻塞、提交最小差异并核对 CI，报告证据出处和 SAFE/HOLD，不得用大规模重构替代质量评估目标。
+
+---
+
+
+## 2026-11-21 Gold48 四模型 Profile 已按 Owner 建议独立冻结，Runtime/推理继续 HOLD
+
+**Owner 在本次会话明确回复“按建议推进”**，承接上一条“先批准候选四模型生成配置冻结，然后补必要的 Qwen3.8/LoRA 薄适配、验证运行时；配置冻结不启动 GPU/推理”的建议。现有 Gold48 Owner 数据冻结 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING` 的私有 Manifest **继续保留原字节不动**；新参数层独立生成 `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`，状态 `GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING`。Frozen Profile 记录候选文件的原始 Git Blob SHA `394013dc182fa095040808e02c4ea2e393636d30` 与来源提交 `4fd87b2574f80e6d376b82dd66c605e4c01e8186`；专门的静态测试逐字段比对原候选与冻结版，差异限于 Owner Approval、状态和移除 `OWNER_GENERATION_PROFILE_FREEZE_PENDING`。候选不回写，后续若变更采样/Thinking/EOS/Token/模型身份必须 create-only 新版本并重新签收。
+
+**正式冻结的只是生成参数，不是可运行证明**：四臂 Qwen/Qwen3.8-27B Base（同固定 Revision）+ R46 ckpt7 + R54 ckpt16 + R60 Base336 ckpt37；`enable_thinking=false`、32768 上下文、30720 输入上限、2048 输出上限、无截断、`temperature=0.7` / `top_p=0.8` / `top_k=20` / `min_p=0` / `seed=42+case_index`；四模型 48×4=192，新原始参考48份，五来源合计240对象。Frozen 文件 `owner_generation_profile_freeze=true`，但 `inference_authorized=false`、`gpu_authorized_by_this_document=false`、`training_authorized=false`。
+
+**HF 已有 LoRA 元数据新增只读交叉核验**：R46/R54/R60 三个 `adapter_config.json` 都指向上述同一 Base Revision 的 Snapshot，`peft_type=LORA,r=64,lora_alpha=128,task_type=CAUSAL_LM,inference_mode=true`，target_modules 均为 `model.language_model` 下同一12种模块（仅正则顺序不同），不表示本次新 GPU 镜像实际加载 PASS。旧 P4 Loader 不改写。新增最小薄入口 `src/storyforge_dataset/generation_eval/gold48_qwen35_loader.py` 选择完整 `Qwen3_5ForConditionalGeneration`，按现有私有 Release 摘要对权重执行不入内存的流式 SHA 并验证 Adapter Config；返回**现有** `TransformersGenerationBackend` 以复用消息模板、Token 预算、生成/Stop 检查。显式 `runtime_authorized=false` 默认阻断，GPU 的依赖导入和权重加载只在明确调用后发生；合成测试不下载/加载真实模型，无 HF Job。
+
+**下一必需门禁（不要误判已完成）**：Owner 私有端把三份既有 Release/Reload 证据中的 Adapter SHA 严格绑定到精确权重字节；固定一个兼容 `Qwen3_5ForConditionalGeneration` + PEFT 的真实推理镜像和依赖锁；核验 pinned 模板 SHA/真实 EOS、可选模型层处理与不截断的跨四臂真实加载；通过实际运行时 Smoke 后才考虑另行授权 192 次模型推理。新的 Loader 目前仍只由合成测试验证，`GPU_STARTED=false`、`model_calls=0`，P4 其它模型的旧 Frozen Profile 与本任务相互独立。
+
+
+## 2026-11-21 最新 Owner 受限 Gold48 Freeze 正式完成 → 四模型 Profile 候选待签收
+
+**本节优先于下方所有早期历史快照**。Owner 本机返回正式 SAFE：
+`schema=storyforge_r60_gold48_owner_scoped_freeze_safe_v1`，`status=GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING`，`owner_gold48_freeze=true`，`freeze_scope=SCOPED_RECONSTRUCTED_EVALUATION`，48 主分析 / 42 敏感性（六条已标记风险题仅从敏感性中排除）、8 Story 来源、25 Session、48/48 重建输入 SHA、48/48 历史原始回复 SHA 均由 Owner 私有冻结 Manifest 绑定；HF CPU 输入/回执此前已通过本地字节 SHA 验收。Owner 已明确接受**历史实际发送 Prompt 未验证**、保护集独立性未穷尽、48 条前置 Memory 未获验证而省略、公开卡只是评价时点快照的局限。**不可反复恢复或重冻这一批 48 题，旧 DRAFT/READY/NOT_FROZEN 记录仅为历史阶段，不得覆写**；这不是完整 P2-C 全宇宙 PASS，`quality_v1_admitted=false`。
+
+**下一主线唯一任务是四模型 Generation Profile 冻结及运行时准备**，不用再做 CPU Tokenizer 或旧保护集重复审计。新增独立于 P4 的静态候选 `experiments/r60_quality/gold48_four_arm_generation_profile_candidate_v1.json`：
+Qwen3.8-27B Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37；四臂共用 Base Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，候选 `enable_thinking=false`、`context=32768`、`max_input=30720`、`max_new=2048`、`temperature=0.7,top_p=0.8,top_k=20,min_p=0.0`、`seed=42+零基案例次序`、无静默截断。候选不是 Owner 已批准的四臂 Profile、不是运行时兼容 PASS，也不授权模型生成。原始线上 Gold 48 份独立于生成输入，未来与四模型各 48 份合计 240 份匿名六维盲评对象；按 25 Session 聚类，42 敏感性另报。
+
+**真实硬兼容阻塞**：本轮固定 `Qwen/Qwen3.8-27B` 的 `config.json` 为 `model_type=qwen3_5` / `Qwen3_5ForConditionalGeneration`，Pinned `generation_config.json` 的 EOS 为 `[248046,248044]`、PAD 为 `248044`（均核对固定 revision）。仓库先前 P4 Qwen3-32B/GLM Frozen Profile 与 `AutoModelForCausalLM`、`transformers==4.57.1` 的旧 Worker **不能直接默认为兼容**；新四模型还缺 Adapter 已有 Release SHA 在推理环境的绑定、指定镜像/依赖锁、模型+LoRA 实际加载及 EOS/模板停止行为的验证。复用 `generation_eval.worker.run_generation_batch`、`hf_runtime` 和既有 Backend 验证逻辑，日后**只补 Qwen3.8/LoRA 的必要薄 Backend 适配**，不重写生成循环、盲审、Token Core。正式生成前必须单独冻结 Profile；**本次没有 GPU Job 或模型调用**。
+
+
+## 2026-11-21 Gold48 最新真实 Owner SAFE：48 题重建草稿完成，HF CPU Tokenizer 待执行（主线优先）
+
+**以下 Owner 已执行并在对话中返回 SAFE JSON，优先级高于本文下方保留的“尚未生成48条候选”旧快照**：
+
+1. `NEW_GOLD48_PRIVATE_CANDIDATES_CAPTURED__NOT_FROZEN`：8 个审核公开来源×每源 6 条、25 Session、48 完整历史 Prefix/48 对应真实历史原始 Assistant 回复、48 独立成功请求。新选 48 条**不主张与旧临时48条精确同身份**；Owner 最终冻结仍为 false。
+2. `GOLD48_PRIVATE_CANDIDATE_PREFLIGHT_PASS__NOT_FROZEN`：48/48 前缀与历史原始回答、SHA、每源六题、风险来源全六题排除标记与 48/42 分析分组通过，0600 私有文件只读；不重查数据库，不重选来源。
+3. `GOLD48_PUBLIC_SOURCE_COMPONENTS_BOUND__INPUT_NOT_FROZEN`：48 条与八份审核公开卡的 World/Character(s)/Opening 评估时快照、Revision、来源哈希连接。它**不是历史 as-of 或 actual-sent 卡片证明**。
+4. `GOLD48_RECONSTRUCTED_INPUT_DRAFT_48_READY__NOT_FROZEN`：48 条完整历史保留、逐题重建消息与 SHA 生成、历史 Original Reference 没有进入模型输入。**可确认目标回复前的 Memory 为 0/48，另外48条明确缺失不补造**；输入合同是 `RECONSTRUCTED_EVALUATION_INPUT`，不是字节一致历史发包。
+5. Mac `r60-owner`（Python 3.11.15）实际执行 Tokenizer 预检返回 `TOKENIZER_DEPENDENCY_MISSING_HOLD`（缺少 `transformers`），**仅环境缺包，不是上述 Gold48 四项 SAFE 失败**。项目 `AGENTS.md §2.1` 和 `docs/standards/HF_TOKEN_PREFLIGHT_REUSE_CN.md` 要求**真实模型特定 Tokenizer 测量必须在 HF CPU Job**，Mac 不再补装 Transformers 进行正式预算判定。
+
+**已实现、复用旧组件的最小 HF CPU 适配**：
+
+- `scripts/r60_p2_gold48_hf_cpu_stage.py`：Owner Mac create-only 私有 Stage，仅带 48 条重建消息、逐案消息 SHA、匿名八组（真实 Story ID 不出本机）、必要代码和固定依赖锁；禁止上传原始历史回答、Owner crosswalk、其它私有证据包；复用 `r60_common2_wrapped_hf_stage.local_dependencies` 与已有 `load_draft`。
+- `scripts/r60_p2_gold48_hf_cpu_worker.py` / `.sh`：HF CPU `storyforge_dataset.hf_runtime` 的 InputManager、ResourceGuard、OutputManager，固定 Qwen/Qwen3.8-27B Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`，使用 `requirements/hf-cpu-tokenizer.lock` 和**现有** `r60_p2_gold48_token_preflight_cpu.assess` / `storyforge_dataset.token_preflight`；没有独立 Token 算法、训练、权重或 GPU。
+- 新 Stage/Worker 的合成样本完整输入绑定、原始回复未上传、防改写/重用/篡改、Token 统计及匿名化测试均在原 PR #31 的 GitHub CI 验收通过。**该 CI 不是 Owner 私有 Stage 或 HF 真实 Tokenizer PASS**。
+- **待 Owner Mac 执行**：固定 Git Commit staging → 本地 `STAGE_VERIFIED__NOT_SUBMITTED` SAFE → 精确私有文件集审阅 → 按 `docs/HF_JOBS.md` 将单独 Stage 前缀上传 `hf://buckets/adradar/storyforge-training/` → 使用已有 `scripts/hf_job_guard.py` 做 CPU-only 预检（需检查当前 HF CLI 与 `--attempts` 的已知兼容性，复用现有 Common2 documented-default-one 方法，不修改 Guard）→ 单次 HF CPU Job → 下载独立 RW SAFE 回执、独立校验输入/输出 SHA。Owner 未提供本次 Mac Stage 回执前，**不宣称已同步/已提交 Job**。
+- **停止边界**：CPU 实测 Token 预算（16K/32K，两种 Thinking 模式只是候选诊断）、统一模型实际协议/截断=无损、正式 Owner Gold48 Freeze 和单独四模型推理预算都未完成。已接受限定已审来源独立性风险 `P2_C_SCOPED_POLICY=RISK_ACCEPTED` 不等于全历史来源隔离 PASS，四模型生成 192 + 真实原始回答 48 的五来源六维盲评仍不得抢跑。
+
+---
+
+## 2026-11-21 四模型固定身份直接核验：复用现成 HF 私有 Checkpoint（无 GPU）
+
+本轮使用现有 HF 连接对 **`adradar/storyforge-training`** 私有 Bucket 的三个既存历史 Train Run 只读核验，**只读取目录/Adapter Config/已有训练 SAFE 和 Reload 回执**；未读取原始训练样本、评测正文或 R50 sealed，未下载大权重、未运行 HF Job。**下列是评测模型身份链，不是新的训练或新一轮质量证明**：
+
+| 四模型臂 | 训练 Run / 冻结位置 | 当前只读证据与精确边界 |
+| --- | --- | --- |
+| Qwen Base | `Qwen/Qwen3.8-27B`，固定 Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | 三份已冻结 Adapter Config 的 `base_model_name_or_path` 均引用这一相同 Revision；**不能复用 P4 的 Qwen3-32B Frozen Profile** |
+| R46 v0.2 ckpt-7 | `experiments/v02-r46/r46-20261014T070529Z-248172/output/v0-20261014-070817/checkpoint-7` | `adapter_model.safetensors` 存在且大小 **1,867,797,544 bytes**，Adapter Config 固定相同 Base；旧 `r46_training_report.json` 有 Adapter SHA 与 `adapter_reload=PASS`；未在本轮重复下载/重算远端 SHA |
+| R54 v0.3-A ckpt-16 | `experiments/v03-r54/r54-v2-20261021T161818Z-507469/output/v0-20261021-162418/checkpoint-16` | 相同 Base Revision；同大小 Adapter 存在，旧 `R54_ADAPTER_RELOAD_VERIFIED_PRIVATE.json` 记载 step16、Adapter SHA、Reload+Inference PASS；本轮未重算权重哈希 |
+| R60 Base336 ckpt-37 | `experiments/r60-base336-exploratory/r60-base336-gpu-20261117T055622Z-b609cb78661d/training/v0-20261117-071048/checkpoint-37` | 相同 Base Revision；同大小 Adapter 存在，Worker SAFE 验证 37/37 steps、Adapter Reload；**Owner 既有 SAFE 已对远端固定 33 对象全部下载并计算本地 SHA，5,604,774,224 bytes**，不需重复下载。无原 Worker 逐文件 SHA 对照，不可把该本地 Inventory 说成双端哈希复核 PASS |
+
+**四个臂身份/位置及相同 Base Revision 已具实际来源证据**；但 `FROZEN_FOUR_ARM_INFERENCE_READY=false`：本次尚未进行跨三个旧 Run 的全权重重算 SHA、此次新 GPU 环境加载、相同 `RECONSTRUCTED_EVALUATION_INPUT` 消息模板/Tokenizer/Seed/Stop/Decode/Token Budget/最长 Prefix 单题压测。这些应在 Gold48 **真实候选及 Owner Freeze** 后按所选运行环境与预算，复用现有 `generation_eval.worker` / `hf_runtime`，只补特定四臂 Backend 配置。**P4 Qwen3-32B/GLM-4/GLM-Z1 三模型合成运行属于其它质量审核阶段，不可冒充本次 27B Gold48 四臂的加载验收。**
+
+**Gold48 主线不变**：Mac 的 `r60_p2_gold48_recovery_capture.py` 仍由 Owner 单实例运行；实时结果以最终 SAFE 为准，不能依据进程存在宣告生成48条。新 `r60_p2_gold48_candidate_preflight_cpu.py` 可对其已落盘的三个 0600 私有文件做 48/42/完整历史/Original Reply SHA/去重/来源映射的 CPU 离线验收；在候选文件出现之前不启动它，也不将它当作 Freeze。**192 次新四模型生成与 48 原始回复（共240份六维盲评对象）须在单独付费推理授权后进行**；`GOLD48_FROZEN_SCOPED=false`、`model_promoted=false`。
+
+---
+
+## 2026-11-20 Gold48 冻结准备实际缺件：已证候选容量 ≠ 48 条可复现落盘记录
+
+Owner 已执行一次 **`r60_gold48_existing_artifact_locator_safe_v1`** 有界只读定位：扫描 `~/.local/share/storyforge/r60/private` 内 **2,401 文件**，未截断；按 Gold48/P2 Prefix/Original/History/Reference 等文件名及已识别 JSON/JSONL 结构得到 **8 个候选文件**，没有符合该工具识别条件的 **48 条历史 Prefix/原始 Assistant 回复成对记录持久化文件**。已识别内容含 8 来源 Gold48 source-first ID、P2 source inventory、Base336 P2 source evidence、history32 Reviewer，以及两份分别 **30/90 行**的 JSONL；这些不能作为已冻结 48 题。该文件名/形状扫描**不能证明磁盘其它目录或不匹配的结构不存在**，也不读取私有文本、数据库或 R50 sealed。
+
+旧结果的准确含义是：在数据库只读核验中曾有 **8 Story ×6=48 条两两不同的完整历史 Prefix 和48 份真实原始回答、25 Session、48/48 请求元数据唯一绑定**；它证明**候选容量与匹配条件在当时成立**，没有因此落盘为当前可验证、可复现的 48 记录，也不是正式 Gold48 Freeze。现有 GitHub 代码树已查，无专门匹配这批严格历史 48 题的冻结/导出脚本；已有 `history_recovery.py` / `message_ledger.py`、来源包与 R48 Gold 前缀校验逻辑是可复用组件，不等于已经存在本批 48-case 原始逐行选择清单。此前对话/文档中目前也没有可追溯的**原始48行 SQL、参数、逐条请求/Assistant locator 或数据导出文件**，所以**不能将当前 8-source IDs 自动推断成原来的 48 个精确 Case IDs**。
+
+**下一步唯一有意义的数据动作（禁止假装无事可做或重复全流程审查）**：
+
+1. **优先恢复原先 48 条候选的 Owner 私有逐条定位信息**（原 SQL/脚本运行输入、request↔Assistant event↔Session 的不可变 row locators、当时选择顺序与来源/权限版本），只通过可信既存材料获取；若找到，立即在 Owner 私有 0700/0600 create-only 固化一份行级 locator manifest，附所用查询/版本/时点，以便复用历史恢复器只读生成 48 条完整 Prefix/原始回答的候选包。
+2. 如果确认当时只有聚合统计、**逐条 locator 并未留存**，应明确 `PRIOR_48_CASE_IDENTITY_NOT_RECOVERED`；不能称下一次取出的48条必然与原来相同。只有在**同一预注册 8-source eligibility、每源6个、合法公开版本/权限、真实完整历史/原始回答/请求事件唯一匹配**和固定可重复排序下，才允许**一次有界恢复性选择 + 当场持久化**为**新候选**。必须披露新候选的选择身份与之前旧统计无法逐条同一性认证；遇到歧义/不足就 HOLD，不擅自编造答案、缩为三消息草稿或借 R50 sealed 补题。
+3. 不重新做 Base336 172/375、History32 32/120、R50/旧 Dev/Gold195 的已证隔离，不再跑无权限的 RolePlay 生产/actual-sent，**不新建重复数据库抽取/历史恢复/Blind/HF 核心**。如果缺少现成的“从只读可信行 locator 到 create-only 候选包”的最薄编排，可以在准确锁定其输入/接口之后才做必要适配；不能把仓库旧 `r60_base336_p2_public_prompt_package_gate.py`（三消息草稿）冒充正式 Freeze。
+4. 后续在私有候选文件存在后才执行 48 个前缀/原回复/权利/版本/重建输入 SHA 绑定，风险来源按真实 Story ID 锁定其六题，预注册 48 主分析和 42 敏感性分析，最终 Owner 单独签收 `GOLD48_FROZEN_SCOPED`。**Owner 已批准的是已审范围独立性剩余风险和冻结准备，不是生成缺失的证据文件或授权推理。**
+
+当前 `SCOPED_INDEPENDENCE_RISK_ACCEPTED`、`RECONSTRUCTED_EVALUATION_INPUT` 和 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 均已批准；`PRIOR_48_CASE_IDENTITY=NOT_YET_RECOVERED`、`GOLD48_PRIVATE_CASE_PAIRS_PERSISTED=NOT_VERIFIED`、`P2_B_48_PROMPTS=NOT_GENERATED`、`GOLD48_FROZEN_SCOPED=false`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。此条仅对 Owner SAFE 文件定位结果进行事实限定，**不触发新的付费模型推理**。
+
+---
+
+
+## 2026-11-20 Owner 批准限定范围独立评估：Gold48 冻结准备可以继续
+
+> **Owner 最新授权，优先于下方历史“必须取得全历史 Protected/Teacher 权威名册才能继续”要求。** 已明确批准采用 **`INDEPENDENT_WITHIN_VERIFIED_HISTORICAL_SOURCE_SCOPE`**（已核验范围内独立），并**在报告中披露未知历史来源暴露风险**。本次 Owner 决定已经落实为 [`R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json`](evidence/R60_BASE336_P2_SCOPED_INDEPENDENCE_OWNER_DECISION_SAFE_20261120.json)。这是**限定范围风险接受**，不是证据层面的全历史独立性证明。永远保留 `FULL_HISTORICAL_SOURCE_UNIVERSE=UNVERIFIED`；不可把没有总名册称为没有遗漏训练/测试来源，或将 `P2_C_FULL_UNIVERSE` 伪写成 PASS。
+
+### A. 当前门禁区分
+
+| 门禁 | 决议或实际进度 |
+| --- | --- |
+| P2 已审隔离子集 | Base336 172 Story/375 版本和增量 History32 32 Story/120 版本，合计已审 **204 Story/495 版本**；旧 R50/R55、Gold195、R45 source-data 限定核验继续复用，不重做 |
+| 未列入已审子集的历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher | **`UNKNOWN_HOLD`（事实未验证）**；Owner **接受这一残余风险继续开展限定范围质量评估**，不要求无限期补全总名册 |
+| 本轮评估独立性声明 | **`SCOPED_INDEPENDENCE_RISK_ACCEPTED`**；仅可称“对已审核来源范围内独立、存在未知历史来源暴露风险” |
+| Gold48 题源自身命名 caveat | **`OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`**；源原始 Revision 不改，48 主分析 +剔除该 Story 全六题的 42 题敏感性分析；八来源私有双射已由 Owner SAFE 回执报告 8/8，正式六个 Case ID 尚需在冻结时绑定 |
+| 重建输入与历史参考答案 | **`RECONSTRUCTED_EVALUATION_INPUT` 已获 Owner 批准**；四个新生成臂的冻结基准相同；48 份真实 Historical Original Reference 是第五匿名评分来源，仅作同剧情的**描述性**历史对照而非 byte-exact 同输入因果比较；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` |
+| 正式生成 Gold48 / Owner Freeze | **准备阶段已授权；48 题文件/Manifest 尚未生成或签收**，`P2_B_48_PROMPTS=NOT_GENERATED` |
+| 付费推理/新 GPU/HF Job | **未授权**，不因本决定自动启动 |
+
+**避免语义冲突**：`P2_C_SCOPED_POLICY=RISK_ACCEPTED` 可以进入**Gold48 冻结准备阶段**，但 `P2_C_FULL_UNIVERSE=UNVERIFIED` 不改变。旧统一 `P2_C=HOLD` 在总宇宙严格准入语义下保留为历史未闭合事实；不能再用它否定 Owner 本次对**限定范围评估路径**的明示批准。只有在 Owner 私有 48 题/权限/提示源绑定与 Freeze 实际签收后，才能把正式 Gold48 产物状态改成 `FROZEN`。
+
+### B. 现有证据直接复用；下一个确切交付物是 Owner 私有 Gold48 Freeze 候选
+
+**不重复开发或提取**：既有历史恢复核心 `src/storyforge_gold_quality/history_recovery.py`、`message_ledger.py`，来源版本/权限存档 `r60_base336_p2_source_evidence_capture_cpu.py` 的既有 Owner 私有包、旧 R48 参考回答的前缀绑定思想 `scripts/v02_r48_four_arm_build.py::read_gold`、六维质量与 blind/HF 通用核心继续复用；**旧 `r60_base336_p2_public_prompt_package_gate.py` 只验固定 `user/assistant/user` 草稿，不能宣称它已经支持 48 条完整历史 Prefix 或作为本轮正式冻结验收器**。禁止因旧 CLI 不合适就复制第二套历史恢复、IO、评测和模型运行器。
+
+**在私有目录 create-only、0600 准备的每题候选**必须一次性绑定：`source_story_id`、已审核 Story 的实际公开 Revision/审核/授权生效时间、Session 与真实目标历史 Assistant 事件、完整历史 Prefix（按消息顺序且未编辑）、对应**原始 Assistant Reply**、48/48 唯一请求元数据绑定、重建输入的 `System/World/Character/Rules/Memory/History/final User` 各来源版本与明确的 `HISTORICAL_ASOF_VERIFIED / EVALUATION_TIME_SNAPSHOT / RECONSTRUCTED_COMPONENT` 类型、规范化序列化 bytes/hash、原始回答与生成输入**分离**的路径及 hashes。冻结内全 48 条必须满足 **8 Story 每个恰六条、48 不同 Prefix/Reply、25 Session 来源一致性或有证据变化、来源权利持续有效**；所有私有标识与 hash 均不上 GitHub/chat。
+
+**风险来源 6 Case**：从 Owner 已保存的 Reviewer↔真实 P2 8 Story 双射建立唯一真实 Story 关联；在这 48 条**现有历史候选**中按真实 Story ID 恰好找到 6 条并在私有 Manifest 标记 `exclude_from_quality_caveat_sensitivity=true`，其余 42 条为 false；**不能按匿名 Pxx/Sxx 的序号猜**，不能在四模型结果出来后改变 48/42 分组。六题 ID 只能在正式 Case 创建时绑定，不能因为此前没有 Case ID 再要求补造旧题。
+
+**准入前只做一次最低必要检查**：来源/Reply/Prefix 一一匹配；Gold Reply 不混入生成输入；独立性声明仅覆盖已审集合；来源自身矛盾评分规则与 48/42 分组预注册；四模型共同冻结输入版本和截断策略；六维打分、严重标记和 Story/Session 聚类、同一对照的统计口径。若任何输入来源时间不可证，明确标注为重建而非 Provider actual-sent；如果某题无法复现或合法使用，**就该题 HOLD**，不可暗删、替换或修改历史正文。
+
+**产物与状态路径**：先 Owner 仅本机私有 Gold48 候选的 create-only 保存、最小 SAFE 结构校验和 SHA 锁定，再经 Owner 明确对这**一批 48 条及其重建输入**签收 `GOLD48_FROZEN_SCOPED`；签收前始终 `P2_B_48_PROMPTS=NOT_GENERATED` 或 `DRAFT_PRIVATE_ONLY`（按真实产物判定）。签收后仅可进入四模型推理的**单独预算/版本申请**，不得继承本次源风险批准直接提交 HF/GPU。
+
+**事后发现未知泄漏的确定处理**：原 Case 不修改；把受影响 Case 标为 `EXPOSED`，在无污染子集上重新计算并披露样本变化、世界/Session 聚类影响；不静默替换新题，不宣称原先的 Gold48 已证明对所有过去输入独立。
+
+---
+
+
+## 2026-11-20 Owner 已批准单一 P2 来源输入质量风险：保留 48 主分析与 42 敏感性分析
+
+**正式 Owner 决定**：已明确批准对 Reviewer 指出的 **1/8 公开来源** 家族/角色名称或模板替换残留，以 `OWNER_ACCEPTED_WITH_QUALITY_CAVEAT` 保留原公开版本。不能因此对原卡片、Source Snapshot、48 份历史持久化 Prefix 或 Original Reference 做暗中纠错/重写，也不得把来源内在矛盾直接认定为模型硬规则或角色一致性失误。该批准解决**已知题源质量风险的处置策略**，不是对该缺陷不存在的证明，也不是对来源隔离的免责或 P2-C PASS。单独的 Owner SAFE 决策见 [`R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json`](evidence/R60_BASE336_P2_SOURCE_QUALITY_OWNER_DECISION_SAFE_20261120.json)。
+
+**预注册不可随结果改变的两套分析**：主分析 8 Story ×6=**48 条**；敏感性分析**按 Story 整组剔除**上述一个被标记的 Story 的全部 **6 条**，只比较余下 7 Story 的 **42 条配对题**。四生成臂对应的同题匹配不变，历史原始回答仍以第五匿名评分来源参加相同六维评分，但始终限于**描述性历史参考**，不得把真实历史 Provider Prompt 称为与重建 Prompt byte-exact 相同。最终报告必须展示完整 48 与 42 两个视角、效果差异及原因；不得以结果方向决定是否排除。
+
+**唯一未闭合的这一决议执行前提**：Reviewer 匿名标记、P2 Inventory 的真实 Story ID 与 Gold48 的六个 Case ID，必须在 Owner 私有域**按真实标识与版本逐项绑定**；**严禁把 `P01..P08` 与 `S01..S08` 按序号视为同一来源**。此处的 42 是**已批准的分析设计**，不是 42 题/六条映射已生成或验真的宣称。映射及源原文/哈希仅可留私有 0700/0600，GitHub 只保存通过状态及聚合计数。
+
+**此后仍需处理的唯一实质 P2-C Authority 门禁**：历史 Protected/Reserved/Held-out/其他 Dev/Arbitration/Teacher 使用来源的权威完整名册、截止版本/权限及在已审 204 Story/495 版本以外真实存在的增量差集。没有权威名册保持 `NO_AUTHORITATIVE_ROSTER / UNKNOWN_HOLD`；不能据此虚构“全集隔离 PASS”。`RECONSTRUCTED_EVALUATION_INPUT` 已另获 Owner 批准，不再查 RolePlay 生产；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` 不变。**尚无 Owner Gold48 Freeze、无新 GPU/HF/model 推理批准**。
+
+状态：`P2_SOURCE_QUALITY_OWNER_DECISION=OWNER_ACCEPTED_WITH_QUALITY_CAVEAT`；`P2_SOURCE_QUALITY_PRIVATE_MAPPING=PENDING`；`P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`quality_v1_admitted=0`；`train_admitted=0`；`model_promoted=false`。以下旧段落中“等待 Owner 决定是否保留该来源”是已过期历史，**不再重复请示**。
+
+---
+
+
+## 2026-11-20 Owner 正式批准：Gold48 采用重建评估输入（取代历史 actual-sent 准入门槛）
+
+**Owner 本对话明确批准**采用 `RECONSTRUCTED_EVALUATION_INPUT`，不访问、不再要求核查 RolePlay 生产环境、历史启停日志或 Provider 原始 HTTP payload 作为本次 **Quality-v1 盲评** 的准入前置。此决议**只替代评估输入真实性的门禁**，并未证明旧 Provider 请求可恢复/不可恢复。过去尚未核查的原始实际出站证据保持 `ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`PROVIDER_INGRESS=UNVERIFIED`，不能修改为 PASS 或断言永不可恢复。后面旧段落中“需先获取历史 actual-sent、需 Owner 再批准 reconstructed、需登录生产”等仅为**旧状态快照**，不再是执行要求。
+
+**单一可执行合同**：
+
+1. **Owner 私有来源与冻结**：复用已有 8 Story、7 作者、25 Session、48 条两两不同且已证实存在的完整历史持久化 Prefix 及逐条对应的 48 份真实 Historical Original Reference；复用 48/48 成功请求事件的**元数据**绑定，不重新提取旧 Gold、R50 sealed 或扫描已核空表。正式 Gold48 Manifest 尚未生成；公开源码/角色卡/历史记忆的版本快照、权限和时间来源仍须按可验证证据固定，**若历史时点快照不可得，明确用 `EVALUATION_TIME_SNAPSHOT` 或 `RECONSTRUCTED_COMPONENT` 标注，绝不改称 `HISTORICAL_ASOF_VERIFIED`**。不修改已审核的公开卡 Revision 或历史 Prefix。
+2. **同题的精确定义**：在 Owner 私有域为每题一次性组装 `System / World / Character / Rules / Memory / History / final User` 的完整 `reconstructed_messages`，固定各分量来源、版本/截点、模板、排序、截断规则和统一的规范化序列化 SHA。通过模型协议适配时仍需记录最终生成输入变换；不得因某臂上下文预算不足静默删改消息。**四个新生成臂使用相同冻结题意/消息基准**，并按模型适配器差异透明记录；任何被动拆分或重构必须在盲评前预注册，无法保证可比时 HOLD 该题/该臂。
+3. **Gold 第五匿名来源仍强制保留**：历史原始回答确实绑定原始持久化 Prefix 与事件，但其当时完整 System/Rules/Memory/Provider 输入未验证，**不得宣称“Gold 也从这套重建 Prompt 生成”或“历史五臂完全 byte-exact 同题”**。五来源都依同一历史剧情上下文与六维评分规程盲评；在报告中分开：**四模型重建输入同题配对主比较**，以及**对历史原始回答的描述性/参考性第五来源比较**。后者不得作严格控制输入下的因果改善声明，也不是满分人工答案；生成端与评分者的身份标签必须隔离。
+4. **继续生效的独立 HOLD**：历史 Protected/Reserved/Held-out/Dev/Arbitration/Teacher 权威暴露完整来源名册、只对未审差集所需的源版本隔离，以及 1 个 P2 来源存在家族/角色名称残留的 Owner 私有输入质量仲裁。允许保留时，预注册完整 48 题主分析 +剔除此来源 6 题的 42 题配对敏感性分析；如不可用须另行裁决补源/改设计。**本批准不是无上限穷尽历史世界的证明，不授予未知暴露来源 PASS**。
+5. **冻结和花费仍禁止抢跑**：只能在上述独立来源/质量与使用权门禁、Owner 的最终 Source/Prompt Freeze 确认后，于私有 0700/0600 create-only 生成 Gold48 素材与哈希。四模型 Qwen Base / R46 v0.2 ckpt-7 / R54 v0.3-A ckpt-16 / R60 Base336 ckpt-37 不变；48×4=192 次待授权新生成，另有 48 份历史原始回复，共 240 份匿名评审对象。新 GPU/HF/model 推理需**单独批准**；当前 `quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+
+**立即更新的状态，而不是一次 Gold Freeze**：`EVAL_INPUT_CONTRACT=RECONSTRUCTED_EVALUATION_INPUT`；`RECONSTRUCTED_INPUT_CONTRACT_OWNER_APPROVED=true`；`ROLEPLAY_PRODUCTION_ACCESS_REQUIRED_FOR_QUALITY_V1=false`；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`；`P2_C=HOLD`（**仅剩源权限/隔离与输入质量的有效门禁**）；`P2_B_48_PROMPTS=NOT_GENERATED`；`quality_v1_admitted=0`；`train_admitted=0`；`model_promoted=false`。
+
+本决议优先于本文以下旧“actual-sent 仍是必需前置 / awaiting reconstructed contract approval”条款，不改动历史签收报告、已冻结训练源、Reviewer 原意见或 R50 sealed 保护。
+
+---
+
+
+## 2026-11-20 现行唯一执行基线：P2-C 最后缺口 → Gold48 冻结 → 五来源同题盲评
+
+> **新 Agent 必须从本节开始读。** 本文件后面的“2026-11-19 最新”“Base336 134 Story 未抓取”“旧 P2 3/5、5 作者”“仅三消息/两臂”“未找到历史 Gold”等文字均为**保留的历史快照**，现已被 2026-11-20 的真实 Owner SAFE、来源包、独立 Reviewer 和以下现行合同覆盖。不要执行旧章节的“下一步”命令，不要依旧的三消息/无私有会话权限假设推翻 Owner 新授权。此前验证的原始回执和完整审计链仍保留，不能用本节一个总结反向改变它们的已证实边界。
+
+### A. 唯一最终业务目标与固定评估阵容
+
+先补齐**P2-C 最后未关闭的隔离/请求输入证据**，再把 **8 个严格公开来源 × 每来源 6 条 = 48 条**完整历史上下文及**逐条匹配的真实历史原始 Assistant 回答**（Historical Original Reference）由 Owner 正式冻结；随后对**同一批 48 条**输入运行四个生成臂，连同 48 份原始回答做**五种匿名回答来源、六维独立盲评**。四个生成臂：**Qwen Base**（冻结 Base revision）、**R46 v0.2 checkpoint-7**、**R54 v0.3-A checkpoint-16**、**R60 Base336 checkpoint-37**；五来源不是“五个生成模型”。参考答案是当时在线模型生成的原始回复，**不是无误人工金标或自动满分**。六维：中文文笔、角色一致性、NPC 主动性、玩家自主权、规则忠实度、叙事连续性；严格记录严重自主权/硬规则或禁句/安全排除，并按 Story/Session 聚类分析。GPU/HF 推理/花费必须单独取得 Owner 对具体执行的授权，当前**未授权**。
+
+8 个严格筛选来源为 **7 作者、GPU 前 2 + GPU 后 6**（不要再用旧的 5 作者/3+5）；基于实际完整历史而非新编固定三消息。已证明候选池能找出 **48 条两两不同的完整持久化 Prefix** 和 **48 份匹配的真实原始回答**，涉及 **25 Session**、最长选中前缀 **13 条消息**；48/48 通过 Story/Session、前缀消息数、请求时间/HTTP200/stop 的**唯一请求事件元数据匹配**；原回复实际 `effective_model` 分布 26/21/1，**只在盲评分冻结后解盲按提供方模型分层**。这是**候选可用性与请求事件一致性**，正式 `Gold48` 题目 Manifest/Prompt/Reference 文件及 Owner Freeze **尚未完成**，历史实际向 Provider 发送的完整 Prompt 字节仍 `UNVERIFIED`。
+
+### B. 已关闭的真实隔离子集（不得重做）
+
+| 已证/已审集合 | 真实结果与边界 |
+| --- | --- |
+| Base336 冻结 336 案例 | **172 Story / 当前 172 + 归档 203 = 375 版本**；Owner 0600 原包完整 SHA 与 Reviewer 的匿名 Bxxx 版本锚核验 PASS；P2 × Base336 八来源精确 Story ID、四字段相等均 0；Reviewer 对八个 P2 均为 `INDEPENDENT_TEMPLATE_ONLY`。Owner 已确认审前独立新会话与资料交付；不是第三方身份/actual-sent 证明。 |
+| 历史 v0.1 Train/Val/Test、Gold195、R04 非 Gold Dev 联合 | 冻结 Git Blob 去重 **33 Story / 当前 33 + 归档 91 = 124 版本**；P2 八源 Story ID overlap=0，四字段精确 Record Pair 各=0。含 R53 31/9 的七源（全部在 Gold195 内）与 R46/R54 既有 G2 104 案例限定来源链接；不要将子批次重复计作新 Story。 |
+| 历史 33 与 Base336 172 的真实差集 | **共享 1 Story / 4 历史版本，4/4 版本内容与已审 Base336 记录一致；未审 32 Story /120 版本（32 CURRENT +88 ARCHIVED）**。Owner 已在私有域 create-only 生成匿名增量审查包和分离 crosswalk；Reviewer 对八个 P2 均为 `INDEPENDENT_TEMPLATE_ONLY`，四条疑似共用线索正文核查排除；完整报告与 JSON 的 H 版本锚均经 Owner 本地结构检查通过。 |
+| 2026-11-20 History32 本地双 SAFE | 首次 `HISTORY32_OWNER_FINDINGS_BINDING_HOLD` **仅** `files_mode_0600=false`、其余结构与引用检查全 true；后续仅执行受控 `chmod 600`，`HISTORY32_PRIVATE_PERMISSIONS_PASS`。在文件未改写前提下仅记 `PASS_WITH_SEQUENTIAL_OWNER_SAFE`；**未再次执行全套绑定测试、也未独立验证 Reviewer 实际收到的字节 SHA/第三方身份**。 |
+| **两个 Reviewer 集合去重后** | 已有独立 Reviewer 意见的**限定来源并集为 204 个 Story、495 份 current+archived 版本**（172+32 Story、375+120 版本）；这不是所有历史暴露源的穷尽名单，也不是 actual-sent 世界语义全集认证。两个审查包的 `P01..P08` 与 Gold48 `S01..S08` 必须按私有 Story ID 核验，**不得按匿名下标默认等价**。 |
+| R50 / 历史开发链 | R50 原始 50 provenance =46派生+4排除；固定 W16–W20 五个 Story 与 R50 原始 50 来源 Story 集合完全等价，P2 exact overlap=0，R50 **sealed QA 正文未打开**。R47/R48/R55 同一旧 20 Prompt/2 Story、R55 三层绑定均已验。不能将它们重新包装成“新覆盖工作”。 |
+| 实际训练发布输入 | 293 Train +43 Validation，37/37 steps、adapter reload、HF artifact 完整性已验；部分 Gold48 对实际 293/43 原文及 5-gram 近似重复筛查 0，**仅文本精确/近似，不是语义全部独立**；R60 未晋升。 |
+
+### C. 剩余 HOLD 与有限可执行工作（按优先级）
+
+1. **历史权威暴露全集**：只针对**尚未被以上 204 Story 与固定 R50 子集覆盖**的 R45 训练/保留集、其他 Protected/Reserved/Held-out、R55/R57 以外 Dev/仲裁、R58 与 Teacher 实际输入做**一次有界 metadata-only 来源清单/截止版本/权限与哈希 authority**核对，形成集合的 `FOUND_AND_BOUND / NO_AUTHORITATIVE_ROSTER / UNKNOWN_HOLD`；只有新发现的 *差集* 进入最小独立语义审查。已有 R58 旧五行空 CSV 只代表“不带来源引用”，不能代表“不存在”；也不得为补出“全集 PASS”无上限扫描生产库、本机磁盘，或打开 R50 sealed QA。
+2. **历史 actual-sent 请求边界**：现存 48/48 请求事件、成功尝试、token/historyMsgCount 一一匹配；已检查相关生产表的 `request_envelope`（本批 0 job）、`generation_evidence / request_links`（本批 0）、异常 snapshot `conversation_context`（0/29 非空）和 Assistant metadata，无可核实完整 Provider Request 原文字节。**仅新增**：定位生产端真实请求组装代码与是否已有可读、可验证、匹配这 48 request_id 的安全日志/对象快照；停止漫无边际地搜同类空表。若确实不可恢复，提交**界限明确的不可得性报告**，由 Owner 决定是否允许以“冻结的完整持久化 Prefix + 明确重建的 System/Rules/World/Memory + 固定 Template”形成**操作层面同题评估**；这种输入须标 `RECONSTRUCTED_EVALUATION_INPUT`，绝不能说是 `ACTUAL_SENT_BYTE_EXACT`、也不能拿它证明历史请求当时加载了相同角色/规则。**未获得 Owner 对这个替代合同的明确决定前不得偷换输入或冻结 Gold48。**
+3. **P2 单一公开来源输入质量**：独立 Reviewer 找到其中 1 个来源 World/角色的家族与名字似有模板替换残留；它不是已证训练同源。Owner 在选题正式 Freeze 前只作一次**私有源版本核对与质量仲裁**，不能回写/暗改审核时的公开 Revision。若 Owner 批准保留，预注册主分析 48 题与排除此来源六题的 42 题配对敏感性分析；若判不可评，需先由 Owner 决定补源或正式更改设计及重新取得合格历史回答，不能单方面替换。
+4. **Gold48 Freeze 前置**：权威历史 Prefix、Original Reference、源 Snapshot/Permission 生效时间与 48 个 distinct request 绑定，每项 create-only 0600 保存 SHA/版本/时间/排除理由；先 Owner 书面冻结评估合同（4 臂、Gold 第五匿名来源、六维、盲化、世界/Session 聚类、严重标记及输入 provenance）。只能在 P2-C / 权利 / 请求输入合同的有效决议完成后正式生成 `8×6=48` Gold48 冻结包；当前 `P2_B_48_PROMPTS=NOT_GENERATED`。
+5. **推理及盲审**：冻结同题输入 SHA 后，复用 `generation_eval.worker` / HF Runtime / 旧 R48 盲审策略实现最小薄适配；全部四个模型版本/Adapter SHA/Template/Seed/Decode/Stop/Token Budget 实际锁定，48×4=192 次生成 +48 原始回答 =240 个匿名评分对象；参考答案不得进入生成端或模型身份盲审标签。**本阶段尚无新的推理/GPU/HF 授权，禁止启动**。
+
+**权利与隔离**：Owner 已明确允许本项目必要范围内的真实历史聊天用于内部独立质量评估；公开已授权 P2 卡片、原始回答、受保护 QA、训练来源存在**不同的使用与泄露边界**。只在固定 Story/Session、固定时间窗口、只读/RLS 条件下读取必要字段，Owner 私有原文、角色名/UUID、哈希、私有 Reviewer 依据/映射仅留 0700/0600；任何 GitHub/PR/聊天只记录聚合 SAFE。此授权**不包括训练、发布、泄露私有对话、读取 R50 sealed、写库或新推理**。状态：`P2_A_SOURCE_PERMISSION=READY_SCOPED`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+
+### D. 新 Agent 第一轮必须交付什么
+
+- **先读权威资料**：`AGENTS.md`、本节及下一节“可直接复制提示词”、`docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md` 首部 2026-11-20 最新索引、现有 `docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md` 的模型/Gold 权责合同；只在真正动手前读目标脚本和历史证据，不逐项复演旧工具。核对当前 PR #31 HEAD/分支/5 CI，别假定本次快照永远新。
+- **第一项实质产出**（不重复开发）：从现存 Authority/Registry/Manifest/Request 构造链各挑**唯一确实尚未闭合的边界**，实际读到新来源证明则生成最小 SAFE 交叉集合或 source-pointer；缺权威原件则直接给出可验证的 `HOLD + 缺少的最小 authority`，提 Owner 一个明确的范围/输入合同裁决。**先核实旧工作是否足够，禁止凭新命名重建审核器。**
+- 报告按 `已闭合（证据+范围） / 仍 HOLD（为什么） / 本轮新增核验（真有才写） / Owner 决定 / 下一动作 / 禁止执行事项` 汇报；无新动作不要制造 “CI 更新” 充当主线完成。
+
+---
+
+## 2026-11-20 实际生产请求构造链定位与 11-10 关闭态发布证据（actual-sent 有界补证）
+
+**新增证据**：Agent 只读核对了 Owner 私有生产代码仓库的固定代码版本（具体私有 Git 身份由 Owner 内部保存），定位到 V2 主聊天入口、Runtime Prompt 部件与多层 Memory/History 组装、各模型 Provider 请求 payload 构造、HTTP 出站发送，以及已有按 scope 启用的生成证据捕获与加密归档/受控导出链。这是**真实生产代码路径已经定位**，替代上一轮仅在 StoryForge 评测代码内查找的定位 HOLD；**不是**对 48 个历史请求的实际运行重放。
+
+- 路由服务端构造并动态追加语言/角色约束、记忆与历史消息；发送侧还会因 Provider/重试/截断/缓存使用不同参数/正文。持久化历史 Prefix 与发送报文**并非天然相同字节**。不得以历史 48/48 请求事件匹配代替 System/World/Rules/Memory/History 的出站序列化证明。
+- 现有证据捕获仅在独立启用开关、有效授权控制 revision、明确匹配 Owner/Story/Session 的范围及归档服务就绪时生效，且出站正文受大小与预算上限约束。即使捕获到 `wireBody`，观测边界也仅为 `roleplay_http_egress`（第一跳）；代码会保留 `RELAY_EGRESS_UNKNOWN`，**不证明最终 Provider ingress**。
+- 生产发布原始记录明确：**2026-11-10** 获批发布时留证为**关闭态**，独立证据 Worker/导出网关未运行，当时索引/授权/导出记录为空。仅证明**该次验收的时间点**，不推断此后所有时间段一直关闭；本轮没有读取生产进程环境、私有归档、原始请求或数据库。旧 48/48 的已验空证据表**未重复查询**。
+
+**更新后的唯一最小缺证**：由 Owner 对**与 48 个已固定历史请求时间对应的实际生产部署版本及采集开关/受控范围有效期**给出只读、去标识 SAFE 回执；如果历史 capture 可能启用，只核对是否存在**按固定消息/修订版本/请求锚**可验证的加密归档与原始出站证据（仅数量/布尔/有效期，不在 GitHub/chat 输出正文、私有 ID、映射、对象键、加密摘要）。若已证 48 个索引为空，**不得重查同一空表**，先以发布/控制日志或现有受控归档状态确认是否有其它未登记原件。不存在可恢复的实际发送证据时请 Owner **书面判定不可得性**并单独决定是否批准标注 `RECONSTRUCTED_EVALUATION_INPUT` 的统一可复现评估输入，且明确其**不具历史 Provider 字节保真性**。任何变更均不得擅自导出原文、开启生产采集/网关、签发 grant 或触发新模型请求。
+
+**本轮结论**：`PRODUCTION_ASSEMBLY_AND_EGRESS_CODE_PATH_LOCATED`，`DEPLOY_2026_11_10_CAPTURE_DISABLED_AT_SIGNOFF`，`HISTORICAL_48_CAPTURE_AND_ARCHIVE_UNKNOWN`，`RELAY_PROVIDER_INGRESS_UNVERIFIED`。其它历史 Authority 全集与单一 P2 来源质量仲裁不变；正式 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。执行仅 GitHub 只读、聚合 SAFE 文档更新，不修改代码、数据库、训练/冻结素材，不开 GPU/HF/model，不产生推理费用。
+
+---
+
+## 2026-11-20 R45 冻结 49/15 原始来源到 R46 source-data Git Blob 身份核验
+
+**一次新的最小证据核对，不是 R45/R46 重新审计**：身份判断仅使用 `sunxu/storyforge-owner-evidence` 单一固定 Git 提交中的**目录条目 Git Blob 元数据**。初期定位时有一次文件 GET 意外返回 R45 源文件的内容片段；该返回未被用于正文审核、交叉分析或写入公开文档/PR，发现后停止直接文件 GET 并改用目录元数据。**故不得报告本轮从未收到任何原文**；未读取 R50 sealed QA。源证据为现成 `r50/r45-full-source-gate` 与 `r46-primary-evidence` 的 `source-data`、编译输出三处文件条目。其真实技术结论为：
+
+- R45 冻结 `train.jsonl` **49 条、414,463 bytes**，与 R46 `source-data/train.jsonl` 的 **Git Blob 完全相同**；R45 `validation.jsonl` **15 条、158,765 bytes**，与 R46 `source-data/validation.jsonl` **Git Blob 完全相同**。两组均为文件对象身份验证，不是仅比较行数或文件大小。私有源 Git Blob SHA / 引用路径中的随机运行标识不写入公开仓库。
+- R46 **编译后**的 `train.jsonl`（391,988 bytes）、`validation.jsonl`（151,854 bytes）与 R45 原始源文件 **不是相同 Git Blob**；必须使用 `source-data` 作原始来源身份锚，不能误以编译数据为原始文件。
+- 既有 `R50_R45_FULL_SOURCE_GATE` SAFE：R45 冻结 Train 49 / Validation 15、限定 **9 Story**、冻结源哈希核验通过，状态 `R45_FROZEN_49_15_EXACT_SCREEN_PASS__SEMANTIC_REVIEW_PENDING`，`heldout_cases_sealed=0`，短语义重述/隐藏世界别名仍 `PENDING`；这份旧 SAFE 的内容不是本轮新审查意见。
+
+**严格裁决边界**：可将**这两份 R45 原始 split 文件本身**登记为 `R45_49_15_SOURCE_BYTES_IDENTICAL_TO_R46_SOURCE_DATA`：复用已有 R46 相同来源字节的核验，不对这些相同文件重新做独立语义审查。**不能**仅据此宣布 R45 保留集/受保护集全量闭合，不能推出 R45 所有来源 Story/Revision 已在 204 Story /495 版本的 Reviewer 集合中逐一绑定，更不能当作本次 P2 来源对新历史差集的语义 PASS。其余 R45 Protected/Reserved/Held-out Authority 若有未列出的成员、版本或其他 Dev/Teacher 输入，仍须 Owner 提供**冻结完整名单/截止时间和版本指针**，仅对不在已审集合中的真实差集做最低限度交叉和必要独立审查；无权威名册则 `UNKNOWN_HOLD`，不扫描私有全文求证不存在。
+
+**本轮操作**：仅 GitHub 只读访问；身份比较使用目录元数据，但存在上述一次不用于评审的 R45 源文件内容响应；无数据库访问/更改，未打开 R50 sealed QA，未启动推理、GPU 或 HF Job，未创建 Gold48，不改变私有审阅文件；没有引入新审核工具。保留 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+
+---
+
+## 2026-11-20 首轮 actual-sent 有界代码路径核验（HEAD ffd4fadc）
+
+**证据类型与边界**：Agent 在 PR #31 原 HEAD `ffd4fadc94fa5ba3e7a6f6d0b60cbf379ce9be2c` 上，直接只读查看 GitHub 的根目录、`src/`、`pyproject.toml`、`README.md` 和下列**现存代码路径**。这是一份仓库代码能力边界核验，**不是** Owner 本机/生产线上请求日志实查，不访问私有请求、数据库或 R50 sealed，不虚构生产代码不存在于其它代码库。
+
+- `src/storyforge_gold_quality/history_recovery.py` 和 `message_ledger.py`：从持久化消息/事件重建历史上下文；所证是历史 Prefix 的恢复路径，不是 Provider 出站请求捕获。
+- `experiments/r58_quality/r60_model_input_coverage_catalog.py`：列出 `v2_chat_reply_jobs`、`chat_abnormal_snapshot`、`chat_latency_metrics` 的只读元数据/RLS 检查，不能证明 HTTP/Provider 序列化之后的实际发送字节。先前 Owner 已核对为空的 `request_envelope` / evidence / snapshot 表**未重查**。
+- `src/storyforge_dataset/generation_eval/worker.py`：`record["messages"]` 是待评测文件显式传入的输入；后续调用 `backend.generate(...messages=...)`。其 `backend.py` 使用本地 Transformers `tokenizer.apply_chat_template`，属于**未来评估生成**，不是历史线上 Provider 请求构造或快照。
+- 根目录项目结构和 `pyproject.toml` 定义的是 Dataset/Training/Quality 入口，本轮**检查过的路径未提供**历史 48 个请求的线上实际部署代码版本、完整 System/World/Rules/Memory/History 组装结果或按 request_id 校验的原始 HTTP/Provider payload。
+
+**本次新增的可证结论**：历史恢复、RLS 证据目录与新评测生成是三种不同管线，不能彼此充当历史 Provider actual-sent 字节证明。状态为 `PRODUCTION_SEND_PATH_NOT_LOCATED_IN_SCOPED_CODE_REVIEW__HOLD`，**不是** `ACTUAL_SENT_IRRECOVERABLE`、`RECONSTRUCTED_EVALUATION_INPUT_APPROVED` 或 P2-C PASS。已存在的 48/48 请求事件唯一匹配、25 Session、48 Original Reference 的 Owner 既有 SAFE 不变；本轮未重新读取原文，也未运行旧零行证据表查询。
+
+**最短一次性缺件请求**：Owner 提供生产发送服务代码仓库/确切路径和当时部署 commit，或可验证的原始出站请求快照位置与保留期限（仅 Owner 私有提供 request_id ↔ 原始序列化 bytes/SHA 绑定和生产 System/Rules/World/Memory/History/Template 的版本）；若证据确实不可恢复，再由 Owner 书面裁决是否允许 **`RECONSTRUCTED_EVALUATION_INPUT`** 作独立同题评估输入，必须保留历史真实发送**未验证**的来源限制。禁止把这一核验扩大成对所有生产日志均不存在的断言。
+
+**本轮执行**：仅 GitHub 只读代码核验及本段 SAFE 元数据更新；数据库未访问、私有内容未访问、没有模型请求/GPU/HF Job/费用、没有代码或冻结数据改动。其余 Authority 全集及单一 P2 来源质量仲裁仍 HOLD；`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。
+
+---
+
+## 2026-11-20 可直接复制给下一位 Agent 的启动提示词（本节取代后方 2026-11-19 旧提示词）
+
+你现在接手 **sunxu/storyforge R60 Base336 → P2-C → Gold48 正式冻结 → 五来源同题六维独立盲评**。请先打开 PR #31 的实际 HEAD、CI 和本文最上方 2026-11-20 唯一基线；不要从后面的旧章节拿“下一步”。Owner 要求“**不偏离主线，不重复开发、提取、审核或旧证据核验**”。
+
+**目标**：在同一批 8 个严格来源/48 条真实完整历史 Prefix 与 48 条一一匹配 Historical Original Reference 上，比较 Qwen Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37 四个生成臂，Gold 为第五匿名回答来源；六维打分、严重违约标记、按 8 Story/25 Session 聚类；盲审冻结前绝不暴露各回答的模型和 Gold 身份。没有批准新 GPU/HF/模型推理。
+
+**继承并停止重做**：Base336 冻结 336/172 Story/375 来源版本的 Owner SHA 和独立 Reviewer P2 八源语义 8/8；历史 33/124 源字段 exact overlap=0、与 Base336 共享 1 Story 4/4 版本、增量 32 Story/120 版本独立 Reviewer 八源 8/8；Owner History32 文件权限只差一次 chmod，连续 SAFE 联合签收，**不能谎称重新跑过完整 PASS**。限于这两批来源的 Reviewer 意见集合共 204 Story/495 版本，不得叫它“所有历史训练/保护 Universe”。R50 50→46+4/固定五来源，v0.1 80、Gold195、R04 150、旧 Dev20、R53 40、R46/R54 已绑定 104、R55 三层旧 20、Gold48 已有 48 唯一完成请求记录和真实 Original Reply 都已核验过相应**限定**范围；不重做 172/375、32/120、Gold195、20 题、原始 293/43、旧 World 冲突图或 Reviewer 评分。
+
+**只处理剩余主线**：第一，冻结地确认是否存在 R45 / 其它 Protected / Reserved / Dev / Arbitration / Teacher 暴露的**权威来源完整名单及版本**，只对已覆盖 204 Story / 已知 R50 集合之外的新差集做独立语义工作；无法穷尽就 `UNKNOWN_HOLD`，不要自创一个穷尽 PASS。第二，核查**生产实际请求构造与可读取原始发送快照**是否真实存在；48/48 request events、token 数量、一对一成功映射≠ Provider actual-sent 字节。无法恢复要明确不可得性，带理由交 Owner **一次性选择**是否采用可复现但标记 `RECONSTRUCTED_EVALUATION_INPUT` 的替代同题输入合同，不得自行批准。第三，单一 P2 来源自身家族/角色改名残留作**输入质量仲裁**，不偷偷改公开 Revision；需 Owner 预注册 48 主分析与排除其 6 题的 42 题敏感性方案或正式变更设计。三项完成并获 Owner Source/Prompt 合同 Freeze 才能正式产生 Gold48 JSONL/SHA/Original Reference 匹配包、做四模型适配与五来源盲审。
+
+**执行安全**：PR #31 既有文档分支，不建第二项目/无用 worktree；已有程序可做的绝不另写。只读、最小字段、固定 ID/时间、RLS 与权限防护；私有包/故事/历史真实聊天/R50 sealed/原回答/Reviewer 依据不得进入公开 GitHub。严禁重训练、改库、修改已冻结源/训练 split、访问 R50 密封问答、未授权支付或启动 GPU/HF/model；不得把历史重建 Prompt 说成真实 actual-sent，也不能把 Historical Original Reference 当人工满分 Gold。记录真实 SAFE 与 CI，不猜不存在的文件，不以 CI 合成通过代替 Owner 现实验收。
+
+**首次回复应包含**：PR/HEAD/CI；已闭合 204 Story/495 source-version（只限审阅集合）及两个 Reviewer 8/8 与签收层次；P2-C HOLD 的具体剩余 authority/actual-sent/P2 输入质量证据；今日实际做了哪项**新**只读工作、有何 SAFE（无则承认无）；提出最短的下一执行和必需 Owner 裁决。不要给泛泛的新开发路线，也不要要求 Owner 重新运行任何已通过的审核/脚本。
+
+---
+
+
+
+## 2026-11-20 History32 Owner 双 SAFE 联合签收：修复私有文件权限，12 项结构/引用核验已通过
+
+Owner 本轮实际回传的**两份按顺序执行的 SAFE**：
+
+1. `HISTORY32_OWNER_FINDINGS_BINDING_HOLD`：`schema_match`、`p2_count_8`、`history_stories_32`、`history_versions_120`、`current_32`、`archived_88`、`source_refs_unique`、`owner_aliases_32`、`report_p2_8_referenced`、`report_has_specific_version_refs`、`report_version_refs_exist` 等**其余全部结构/匿名版本引用检查 true**，唯一失败 `files_mode_0600=false`；这不是数据或语义判定 FAIL。
+2. 随后按上轮给出的**仅三个既有 Owner 本机私有文件** `chmod 600`、拒绝非本人文件及符号链接的修复指令执行，回传 `HISTORY32_PRIVATE_PERMISSIONS_PASS`、`files_mode_0600=true`、`private_values_emitted=false`。
+
+**链式签收判断**：如果两份回执之间仅执行该权限修复、没有替换/改写报告及 JSON 文件内容，则第一份 SAFE 的其余通过字段与第二份 SAFE 的权限检查合并，足以把 **`HISTORY32_OWNER_FINDINGS_BINDING=PASS_WITH_SEQUENTIAL_OWNER_SAFE`** 记为 Owner 本地**文件结构、文件权限、版本引用存在性**签收；不需要仅为 `chmod` 再读全量 120 份文稿或重新跑独立语义核验。原始完整检查命令在 chmod 后没有再次整体运行，**不得虚构第二次执行回传了完整 `HISTORY32_OWNER_FINDINGS_BINDING_PASS`**。
+
+**本项签收证据精度**：上述联合 SAFE 不涵盖**Reviewer 实际读取字节的独立传递证明、文件内容 SHA 或审阅者身份第三方鉴定**；Reviewer 独立声明仍按其报告原文存档。Owner 没有向 GitHub 提交私有包、原始 Story 身份、个人信息、明文观点或哈希。120 版本 8/8 `INDEPENDENT_TEMPLATE_ONLY` 是 Reviewer 的独立语义意见，尚不能推断所有历史来源全集已安全。
+
+**主线继续**：不用再重复 32/120、172/375、33/124、Gold195、旧 20 case 的语义/字段排除；下一阶段转向 R50 已知五世界之外的 Protected/Reserved/Teacher/Dev 权威全集定位和 request-effective / actual-sent prompt 缺口，并在 Gold48 冻结前就 P2 内部名称/角色不一致做独立输入质量仲裁。正式 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`；禁止无授权 GPU/HF/model 调用。
+
+---
+
+## 2026-11-20 History32 120 版本独立 Reviewer SAFE 报告：8/8 意见已提交（Owner 私有证据签收待）
+
+Owner 本轮转交第一份**真正已审完**的 History32 增量 Reviewer SAFE 报告，不是包生成回执，也不是 Base336 172/375 全量语义审阅的重复。此次 Reviewer 自述唯一审阅范围为 **P2 8 来源 × 32 新历史 Story / 120 source/version（32 current + 88 archived）**，与 Owner 前一回 `HISTORY32_INCREMENTAL_REVIEW_PACKET_CREATED` 的增量包范围逐项一致；旧共享 1 Story /4 版本已被上一位 Base336 Reviewer 覆盖，未再次审阅。
+
+- **程序化覆盖与内容可见性（Reviewer 自述）**：全部 **120/120** 个版本含 `world`、`character`、`characters`、`opening` 四个顶层字段且非空。部分可选/次级子字段稀疏：`world.worldSentence` **3** 份空、`character.name` **17** 份空（Review 称从 `characters[]` 确认仍有至少一个角色姓名）、`opening.summary` **39** 份空、`opening.openingText` **18** 份空；其它世界次级字段也有未填写。**报告不能因四字段顶层存在便声称 120 版本关键语义子项均完整**；该稀疏度只作输入证据质量限制，不自动推断泄漏或机器错误。
+- **8 个 P2 逐源 Reviewer 语义意见**：`INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`。Reviewer 自述已做全部 120 版本的专名、角色名/ID、近文程序化交叉检索，并对 **4** 条疑似行业/题材/汉字子串/气味描述线索进行正文级逐句复核后全部排除。此为**所观测材料中无识别性共享语义组件的独立审核意见**，不是历史所有暴露集已隔离、原始模型实际请求已还原或所有 960 对均由人全文通读的证明。Reviewer 报告称全部 P2×历史 normalized similarity <0.08，但此仅为**其算法自述**，没有 Owner 复演的计算定义/代码/阈值证明，不能当成通用跨模型语义分数。
+- **独立性陈述**：Reviewer 声明仅依增量匿名包审核，未看其他 Reviewer 裁决、R50 sealed 原文，也未启动模型训练/推理；报告已使用 Hxxx-CURRENT / Hxxx-V<revision_id> 作为匿名锚。**Owner 目前仅收到 SAFE 报告原文，未独立核对原件与私有包的文件 SHA、匿名 H 来源/Revision 锚、实际 Reviewer 交付隔离记录**。因此应登记为 `HISTORY32_SEMANTIC_REVIEWER_REPORT_SUBMITTED_8_INDEPENDENT_TEMPLATE_ONLY__OWNER_EVIDENCE_BINDING_PENDING`，而非 Owner-final PASS。
+- **完整私有明细存放条件**：Reviewer 自述已在与审阅包相同目录写出 `R60_P2_HISTORY32_SEMANTIC_REVIEW_FINDINGS_PRIVATE.md`，该文件含真实故事正文/逐条引用、需要由 Owner 核实实在路径与文件内容、以 SHA256 绑定审查包并保存在 0600/0700 私有环境；**不凭 Reviewer 所报路径猜测 Owner Mac 已有此文件**，不上传 GitHub。只给 Owner 本机报告和审核包做一次归属/版本核验，别让 Reviewer 再重跑 120 版全文审阅。
+- **仍未消除的真实历史门禁**：先前 P2 × Base336 172/375 Reviewer 8/8 已经签收，增量 P2×History32 120 的 Reviewer 8/8 意见现在已收到；这只覆盖所列历史来源和版本。R50 已封五世界以外的 Protected/Reserved/Teacher/其他 Dev 权威穷尽集合仍无总名册和语义独立证明；历史 actual-sent 完整 System/Rules/Memory/History Prompt 字节仍未验证；P2 某一来源自身世界/角色命名冲突待 Owner 在评估前做正式输入质量归因。此前差集 33=1已审+32新增、历史 124=4已审+120新增已确证，不重跑。
+- **后续动作为一个最小签收而不是重复开发**：Owner 核对增量包实际 JSON schema/8/120 数量、SHA-256，以及私有 findings MD 中 H 版本锚是否都属于 JSON；查验 Reviewer 私有报告原件由独立会话交付（同一 Reviewer 若已交付不需另找重审），保存本地哈希但仅对外发 SAFE boolean/count。不能静默以先前 Base336 Reviewer 的 Pxx→Sxx 别名映射代替本次按 P2 UUID 排序的 Pxx。签收之后继续只对**尚未覆盖的历史保护/Teacher 名册、actual-sent 证据**行动。
+- **正式冻结状态不变**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。不得启动 GPU/HF/四模型推理。
+
+---
+
+## 2026-11-20 Owner 已生成 History32 独立 Reviewer 私有增量材料：120 版本 / 共享 4 版本全部已审
+
+Owner Mac 已实际执行先前单次私有整理脚本（Owner 环境，无仓库增量工具开发），回传 **`status=HISTORY32_INCREMENTAL_REVIEW_PACKET_CREATED`**。本次记录的是**真正已执行的结果**，替代下方历史 33 差集章节中“archived revision 还待核验”的旧状态：
+
+- 历史 Story **33**，已审核的 Base336 Story **172**，身份交集 **1**，新增差集 **32**；历史 current+archived source/version **124**。
+- 该共享 Story 在历史 124 条中的来源版本合计 **4**，全部 **4/4** 可在先前 Reviewer 已实际使用、Owner SHA 验证通过的 Base336 375-record 私有包中找到相同 `(story_id,source_kind,revision_id)`，且对应四字段内容逐项**完全一致**；`shared_historical_versions_uncovered=0`，`archived_revision_coverage_verified=true`。因此**无共享 Story 的漏审归档修订版**，4 份均继承已有 P2×Base336 Reviewer1 8/8 结论；这 4 份不再交给下一 Reviewer 重审。
+- 真实增量私有 Reviewer 包包含 **32 新历史 Story** 的 **120 个 source/version（32 CURRENT + 88 ARCHIVED）**，外加现有 P2 8 个来源的四字段正文；`new_history_source_versions_for_reviewer=120`。它不包含 Base336 其他 171 Story、不包含原已覆盖的共享 4 版本，也不包含 R50 sealed 原问答。程序输出为两个 **Owner-local create-only 0600** 文件：`R60_P2_HISTORY32_SEMANTIC_REVIEW_PRIVATE.json`（向经授权、独立 Reviewer 定向交付，虽匿名但含敏感真实世界/角色/开场正文）和 `R60_P2_HISTORY32_OWNER_CROSSWALK_PRIVATE.json`（仅 Owner 保存，不得交付 Reviewer，不公开 GitHub）。输出目录为 Owner private `r60-p2-history32-incremental-review-20261120`。
+- **来源版本标识和交付合同**：Reviewer 包 schema=`storyforge_r60_p2_history32_incremental_semantic_reviewer_private_v1`，`p2[8]` 使用本次匿名 `P01...P08`；`historical_versions_to_review[120]` 使用 `H001...H032-CURRENT` 或 `-V<real_revision_id>`；每条以 `source_fields.world/character/characters/opening` 供 Reviewer 判断语义别名、世界规则、关键人物/关系、组织、事件/剧情，而不是只按 UUID、JSON exact 和题材模板。注意本次 Pxx 是**按 P2 Story UUID 排序的匿名别名**；之前 Gold48 `Sxx` 源清单序号不是相同映射，Owner 不得未验证而外推。
+- **独立 Reviewer 下一交付**：既有 Reviewer 可继续在权限隔离的审阅流程中只处理**新的 120 版本**，先记录在全 120 版本上的索引覆盖，再对 P2 8 个来源分别提交 `SAME_SEMANTIC_COMPONENT / INDEPENDENT_TEMPLATE_ONLY / INSUFFICIENT_EVIDENCE` 判断、有版本锚的具体文字证据和审阅范围限制。不得将“全部 120 版本被检索”说成“960 对全部人工全文逐一通读”，不得复制历史旧 Reviewer 结论作为本轮裁决。完成后 Owner 在私有侧对材料字节、版本锚、审前独立交付进行签收。**现在只有 `packet_created=true`，并没有 `semantic_review_pass=true`。**
+- **非主线/其他状态不动**：P2 八来源对历史 33/124 四字段 exact overlap=0 的先前 PASS 是精确字段隔离，不是上述 120 版本的语义 PASS；其余尚无完整权威全集的 Protected/Reserved/Dev/Teacher 和真实 actual-sent prompt 的证据仍缺；另一个 P2 原始卡内部名称残留待正式 Gold48 冻结前的质量归因处理。未创建 GitHub 工作代码、未写 DB、未启动 GPU/模型请求，`train_admitted=0`。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。
+
+---
+
+## 2026-11-20 历史 33 ∩ Base336 172 差集 Owner SAFE PASS：仅 32 Story 进入增量语义审阅
+
+Owner Mac 已按本任务书的既有冻结 Git 来源清单，与 **Owner 已签收** `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 的 `base336_scope.story_ids_PRIVATE` 做只读差集并回传真实 SAFE（`HISTORICAL33_BASE336_SCOPE_DIFF_PASS`）。**结果：历史 33 个 Story、Base336 已审 Story 172、身份交集 1、真实差集 32；`previous_known_overlap_lower_bound_met=true`，数据库未访问，私有值未输出。** 这是最终全 172 Story 差集，不再以旧的 38 Story 交集下界作为现状，也不需要再复查 195/80/150/20 冻结 Blob 以重新汇报同一差集。
+
+**注意 Reviewer 继承范围只到实际读取过的来源版本**：`archived_revision_coverage_verified=false` 是上一份 SAFE 中**尚未执行此项检查**，不能当作“已证有缺失版本”。需把那 **1 个共享 Story** 在历史 33/124 的 current+archived `(StoryID, source_kind, revision_id, all four fields)` 与已审 Base336 原始 375-record 包做字节等价字段核对；已审版本直接继承 P2×Base336 的独立语义意见，任何额外历史归档修订版必须并入本次增量 Reviewer 审阅，不能跳过。
+
+**下一步不做重复功能开发**：一次 Owner 本机 create-only、只读 DB 提取**已确认 33 Story 的 124 份 current+archived source/version（不是再次提取 Base336 172/375）**，对那 1 个共享 Story 作 version-level coverage 与字段一致性核对；只输出历史 **32 未审 Story 的全部 current+archived** 与**可能缺失的共享 Story 历史版本**，以及已签收的 P2 八来源四字段，制作仅供独立 Reviewer 的匿名私有 JSON。Reviewer 不需要 GitHub/本地文件访问，由 Owner 交付这个单次输出的资料包。Reviewer Hxxx 编号与 Pxx 仅用于新包、真实 UUID→匿名编号单独留 Owner 0600；若缺少 revision 或证据，保持 `INSUFFICIENT_EVIDENCE/HOLD`。当前提供了仅作为**本次聊天附件**的 Owner 一次性整理脚本（不加入仓库、不引入长期工具），复用仓库现有 `SQL_BASE336`、已审证据包和 DB role guard；需要 Owner 实际执行回传 SAFE 后才可记私有审阅包已生成，不能从本次文件更新推断运行成功。
+
+**尚不变**：与历史 33 Story 的四字段 exact overlap 全 0 不是语义独立。其余没有权威穷尽清单的历史 Protected/Reserved/Teacher/Dev、实际发送请求 Prompt 原字节以及一个 P2 来源自身设定残留仍 HOLD。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。不再要求 Reviewer 重做 Base336 172/375，也不向 CI/GitHub 输出任何私人 UUID/文本/哈希。
+
+---
+
+## 2026-11-20 继续推进：历史 R04 非 Gold + v0.1 Test20 → 去重 33 Story / 当前归档 124 版本的完整字段精确隔离
+
+**这是一轮新来源与新版本的真实只读核验，不是重新运行先前 P2 × Base336 172/375、Gold195 195 或 R47/R48/R55 20-case 旧结论**。全部真实来源身份只在私有内存中处理；公开仅留聚合数，不提交任何源 UUID、剧情原文或身份→版本映射。
+
+- **新找到 R04 冻结策展池**：通过历史固定 Git Blob（内容 blob identity 与现存旧 R58 Git-side pinned blob 相同）读取 **150 条 / 10 个 Story**；Gold108 的 **108/108 条 JSON 记录**确为 R04 150 的完全相同子集，Gold108 原本 **8 个 Story**；`R04\Gold108` **恰好 2 个另行暴露的开发 Story**。本次直接把这两个独立 Story 与严格 P2 八来源比对，**Story ID overlap=0**，且这两个都不在此前 Gold195 + v0.1 Train/Val 的 **29 Story** 之内。新去重集合为 **31 Story**。旧的 R58 G1 5 候选四幸存者门禁结果不需重跑。
+- **v0.1 Test20 / 后续 R47/R48/R55 已曝光 Dev20**：直接读取冻结 v0.1 `data/compiled/v0.3/test.jsonl` 的 Git Blob，原生 metadata Story ID **20/20** 可见，**2 个 Story**；这两者都不属于上述 31 Story，所以按原有 DEV20 身份来源新并入去重集合后为 **33 个独立 Story**；其对当前严格 P2 八来源 exact overlap=**0**。该动作只做跨集合去重，不再重评旧 20 题或重跑旧 R55 三层 token 链。
+- **新补的 33 Story 当前/历史归档版本字段级对比**：以这**六份真实冻结 Git Blob 直接提取并去重**的 33 个 Story UUID 为固定只读 DB 精确查询条件，关联 `public.user_stories.v2_data` 和 `public.story_content_versions.v2_data`：**33/33 Story 能在数据库找到；当前 33，归档 91，合计 124 份记录；四个关键字段 `world/character/characters/opening` 非空 **124/124**。当前 P2 八个有效公开 Snapshot 取自 `public.user_stories.public_v2_data`，四字段 **8/8** 有值。将 P2 8 × 历史 124 份记录分别以 JSONB 全字段相等做精确比较，`world`、`character`、`characters`、`opening` **四字段的 matching record pairs 全部为 0**。这比仅做 33 UUID overlap=0 更强，但**不**声称跨 UUID 语义别名、剧情结构或实际历史渲染字节独立。
+- **新增真实闭合层级**：历史源身份子集为 `GOLD195: 13 Story`、`V01_TRAIN_VAL: 17 Story`、`R04_NON_GOLD: 2 Story`、`V01_TEST_DEV20: 2 Story`；前两批有 **1 个 Story 重叠**，其它新增集相互不重合，总数 **33**。R53 31/9 源 7 Story 均在 Gold195 中；R46 49/15、R54 31/9 按既有 R57 Owner 目标回链限定于 Gold195，不应重复加入独立 Story。全部 33 的 P2 精确 Story ID overlap=0，**124 历史版本 × P2 8 的四字段精确重用 0**。
+- **非 PASS 的剩余边界**：这个 33 Story 范围**没有新的跨来源独立语义人工签收**；前次 Reviewer 的 8/8 独立语义意见仅覆盖 P2×Base336 172 Story /375 版本，**不能直接替代 P2×33 历史来源**。本次新历史 33×8 / 124×8 只是精确字段比对，并非全量语义同源审查；还缺其他 R50 之外 Protected/Reserved、R58 其他 Dev/Teacher 的权威曝光完整名单以及 actual-sent HTTP/Provider Prompt 原文字节。另经只读 DB 检查当前 P2 八 Story 的 `v2_generation_evidence` 和 `v2_generation_evidence_request_links` **匹配行均为 0**；此前 `v2_chat_reply_jobs` **0**、`chat_abnormal_snapshot.conversation_context` **0/29**，因此 DB 这些已检查的生成路径没有本批可用完整 request payload，不能将重建的持久化消息前缀称作历史原始 actual-sent。
+- **下一条实质工作而非重复开发**：先在 **Owner Mac 私有域**把新冻结历史 33 Story ID 与已经被独立 Reviewer 审过的 Base336 172 Story ID 做精确差集，只返回 `history33_in_base336` 和 `history33_not_in_base336` 两个 SAFE 数量；**对交集 Story 还需确认 B 包有对应 current+archived revision 覆盖**，才能继承先前 172/375 Reviewer 的语义意见。随后仅对真正新增的 `history33 - reviewed_base336` Story/版本准备独立 Reviewer 的**增量语义材料**，绝不要求任何 Reviewer 重做已覆盖的 Base336 172/375；若其他历史 Protected/Dev/Teacher 名册缺失，限定性 HOLD 交给 Owner 裁定。单个 P2 来源自身名残留需要在 Gold48 真正冻结前单独质量仲裁，建议预设含该来源 48 题完整分析及排除其六题的 42 题成对敏感性分析，绝不暗改原始历史 Gold 或补造独立性。仍坚持 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+---
+
+## 2026-11-20 本轮真实历史保护集扩展：R53-40、Gold195、v0.1-80 精确身份去重审计（范围限定）
+
+这是在**当前 Gold48 严格 2/6、7 作者的八个 P2 来源**上做的首次历史大范围增量身份核验，不得误当作旧 v1 P2 八来源的结果。直接复用现有 Git 冻结 Blob（本次分别对原 87+108 和原 65+15 字节读出并解析源 metadata）、Owner Library 现有历史 R52 FINAL46 仅来源身份模板、HF 私有 R53 CPU40 审计与正式 Release Receipt；不创建源提取器，不启动模型，不打开 R50 密封正文：
+
+1. **Gold195 精确来源**：原始 Gold87 **87/87**、Gold108 **108/108**，全部 **195** 条记录原有 metadata 能读取 Story UUID，去重 **13** 个 Story（Gold87 5 / Gold108 8），与当前新 P2 八来源 **精确 Story ID overlap=0**。两份固定 Git Blob 与旧 R57 冻结代码记录的 Blob 完全一致。Gold195 是历史已知来源，**不是新鲜测试集**。
+2. **v0.1 历史 Train/Validation**：来自冻结 Git Blob 的 Train **65/65**、Validation **15/15**，80 条 metadata 的 Story UUID 均存在，去重 **17** Story，与新 P2 八来源 **精确 ID overlap=0**。这 17 Story 与上面 Gold195 13 Story **交集 1**，故 `V01_TRAIN_VAL ∪ GOLD195` 的可证精确身份全集为 **29 个不同 Story**（17+13−1），不允许把训练行数当独立世界数。
+3. **R53/R54 正式 40 案例**：本次从 HF Bucket 的已有私有 `R53_HF_CPU40_AUDIT_REPORT_PRIVATE.json` 读取 40 个 case ID + target SHA（**31 Train +9 Validation**），与 Owner 已有的 **R52 FINAL46 来源身份证据模板**按 case ID **40/40**、对应目标 SHA **40/40** 完全对应，恰有 **7 个独立 Story**，P2 精确 ID overlap=**0**。对原 **22,607 字节** CPU40 审计原文件重新 SHA-256，哈希分别等于原 Owner CPU40 Intake 的 `report_sha256` 和正式 R53 Release Receipt 的 `runtime_report_sha256`，且实际 `compiled_input_sha256` Train/Validation 均匹配 Release Receipt 的两个发布数据 SHA；SHA-256 算法自测通过。所有私有 SHA、Story ID、问答原文均未输出或提交。**7/7 个 R53 Story 均属于 Gold195 13 Story 子集**，因此不使上述 29 个去重历史 Story 再增加 7 个。此链是冻结的 Case ID/目标/来源身份及 CPU→发布回执核验，不是 R53 World 语义 alias 或历史 actual-sent 来源的证明；R52 来源模板自身不是完整 Protected/Reserved 穷尽认证。
+4. **R46/R54 104 条历史训练/验证**：仓库旧 Owner `R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json` 已有 `r46_train_49_all_in_gold195=true`、`r46_validation_15_all_in_gold195=true`、`r54_train_31_all_in_gold108=true`、`r54_validation_9_all_in_gold108=true`，以及 R57 Owner G2 目标 SHA→原始 Gold195 Story 的 104/104 唯一绑定说明。**本轮只沿用先前已验证过的 Owner 限定目标回链，不重跑 R57 G2；**可在这个已经审核的来源覆盖合同下，以本轮 Gold195 13 Story 对新 P2 的精确 ID=0 推导 R46/R54 **已覆盖 104 条**对应来源精确 ID 排除。此为 bounded/transitive Owner-attested proof，不声称当前再次独立复验全部 R46/R54 私有原始 104 条字节或世界语义别名。
+5. **历史 P2 actual-sent 新存储路径检查**：发现并针对当前八个 Story、截至冻结截止时间做只读元数据统计：`v2_chat_reply_jobs.request_envelope` **0 条匹配行**；`chat_abnormal_snapshot` **29 行、memory_injection 非空 29/29、conversation_context 非空 0/29**；P2 有关的完成 Assistant 消息 metadata 仅见输出分段/finishReason/event runtime 等 18 种键，未见完整发送 Prompt 字段；Database schema 全局字段名盘点也没有明确的实际发送前原文字节持久化列。注意 **29 条异常快照的 memory_injection 不是实际完整 HTTP Prompt**。这只证明**当前检查过的持久化表与子集不能恢复 actual-sent**，并非所有上游/代理请求日志或对象存储的绝对不存在性证明。新发现的旧 HF `private-generation-snapshots` 是其他历史 GLM 评测快照、不是本次 P2 请求，可不作误导的 actual-sent 来源。
+
+**新增通过的 bounded 子门禁**：`P2_V01_80_EXACT_STORY_ID=PASS_OVERLAP_0`、`P2_GOLD195_195_EXACT_STORY_ID=PASS_OVERLAP_0`、`P2_R53_40_CASE_TARGET_AND_SOURCE_ID=PASS_OVERLAP_0`，以及借已认证旧 R57 G2 的 `P2_R46_R54_104_EXACT_SOURCE_ID=PASS_WITH_PRIOR_OWNER_REPLAY_SCOPE`。明确可证来源去重集是 **29**；这不是总历史全集，且新集合身份是精确 UUID，并没有自动 P2↔这 29 个 Story 的独立语义结论。
+
+**正式仍未关闭**：R45 及其他旧 Reserved/Protected、R58 等不属于本次 29 Story + R50 已知 5 World + R47/R48/R55 已知 20 case/2 Story 的权威完整曝光身份全集；历史其他 Teacher/Dev 输入、所有跨 UUID 的隐藏语义 World/角色/剧情/规则别名排除；请求实际发送 System/World/Rules/Memory/History 的原文字节；单个 P2 Source 的自身角色/家族名残留输入质量仲裁；Owner Gold48 真正题目版本冻结。前述 Owner Reviewer1 新会话隔离已确认、8/8 语义意见和 172/375 来源验收 **不再重新运行**。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`**。不能为了推迟主线而重复确认旧 195/80/104 原始材料，若全集确无权威名册，应作为有界数据不可得性风险交 Owner 裁决，而不是无限查找或新增重复代码。
+
+---
+
+## 2026-11-20 Owner 独立交付确认：Reviewer 新会话隔离已确认（独立执行外部证明仍受限）
+
+Owner 在获明确提问后回复「确认」，确认此位 **P2↔Base336 独立语义 Reviewer** 是在**独立新会话**中完成审阅，**由 Owner 直接提供对应的私有审查证据包**，且**在未接触其他 Reviewer 的结论/答案**下做判断。这是 **Owner 的正式流程确认**，与先前 Reviewer 独立自述共同构成当前审阅流程的 Owner 声明；不得误写为密码学或第三方实证的「已独立验证外部身份」。Owner 对包的本地 SHA/版本链接八项 SAFE 已全部 PASS，Reviewer 在其审阅范围内给出 `INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`。
+
+**精确子门禁结论**：`P2_BASE336_REVIEWER_1_OWNER_INDEPENDENT_DELIVERY_ATTESTED=true`；`P2_BASE336_REVIEWER_SOURCE_VERSION_BINDING=PASS`；`P2_BASE336_SEMANTIC_OPINIONS_COMPLETE=8/8`。既有的 `reviewer_independence_independently_verified=false` 仍准确代表“未获得外部身份/实际传递内容的第三方独立验证”，**不代表 Owner 未确认其审前独立交付**。本项不要求第二次全面语义审阅、不重开已签收哈希与版本锚。Reviewer 使用的源包、意见及实质专名引文继续只留 Owner 私有域，不能在 GitHub 曝光。
+
+**未关闭（主线）**：Reviewer 私有报告 `Pxx` 与 Inventory `Sxx` 的实际来源/版本映射须按 Story ID 在 Owner 私有域验证，不能以相同编号位次猜测；一个 P2 来源自身角色/家族名称残留待质量仲裁；R50 已知 5 World/50 provenance 与 R47/R48/R55 20 案例本来已完成**限定集合**精确排除，不需要重复，但其余 Protected/Reserved、Dev/Teacher 历史曝光全集权威名单及别名语义覆盖仍 HOLD；历史实际发送完整 Prompt/System/Rules/Memory/History 字节仍无权威证据。**`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**；不启动模型请求/GPU/HF Job、不再做相同 172/375 数据提取。
+
+---
+
+## 2026-11-20 Owner 本机八项逐版本核验 SAFE PASS：Reviewer 包与 B 版本锚完成签收
+
+**以 Owner 本轮回传的实际本地 SAFE 为准，覆盖下方 Reviewer 补充章节中“文件摘要与 B 版本锚仍待核验”的旧状态。** 已执行既有 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 的**只读**证据包核验，返回 `status=REVIEWER_SOURCE_VERSION_LOCAL_CHECK_PASS`，全部八项 `true`：
+
+- `file_mode_0600`、`file_size_match`、`file_sha256_match`、`schema_match`：Reviewer 补充提交的**整文件摘要**与 Owner 私有原文件字节一致；没有把私有摘要或源文件写入 GitHub。
+- `source_count_match`：私有文件内 P2 **8**、Base336 Story **172**、Base336 当前 + 归档版本 **375**，保留全部 Source Capture 绑定结果，不需要再运行 336/172/375 提取器。
+- `b_index_order_match`：Reviewer 采用的匿名 B 序号顺序与**原始包中** `base336_scope.story_ids_PRIVATE`（及来源记录首见顺序）相符，不等同于任何另外排序的匿名输出。
+- `b_current_refs_exist`、`b_archived_refs_exist`：Reviewer 补充提到的所有匿名当前记录和真实 `revision_id_PRIVATE` 归档锚，已在**相同原始包**内一一存在。精确字段到正文的逐案论证仍按 Reviewer 自述；本项核对的是匿名版本引用**存在性与包身份**，并不自动复演独立语义阅读。
+
+**正式可关闭**：`P2_TO_BASE336_REVIEWER1_SOURCE_PACKAGE_SHA_AND_B_VERSION_REFS=OWNER_LOCAL_PASS`，加上先前 `INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0` 的**首位 Reviewer 实际意见已签收**。不再要求这一 Reviewer 重审 375 来源，或再次补 SHA/版本锚。
+
+**尚未证明的不同门禁**：Reviewer 审前无其他 Reviewer 答案的声明是**自述**，Owner 未提供交付会话隔离、Reviewer 资格/身份及实际独立执行的外部证据；`reviewer_independence_independently_verified=false`。Owner 也未核实 `P01…P08` 的 Reviewer 局部编号与原 `S01…S08` manifest source_key 的实际 Story 关联（不得按数字直接映射）。**一个 P2 公开源的内部名称不一致仍需质量仲裁**。其他 Protected/Reserved/Dev/Teacher 历史全集穷尽与历史实际发送完整 System/World/Rules/Memory/History 提示字节仍各自 HOLD。故 **`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。
+
+**下一最短实际主线**：继续只读地定位上述其他历史暴露全集的冻结权威元数据来源（已有 R50 五世界/50 provenance、R47/R48/R55 20 Prompt 的局部闭合**不得重复**）；若某些类别确实没有来源版本索引，明确以 `UNKNOWN_HOLD` 做协议限制，不能构造虚假“全宇宙 PASS”。与此同时寻找历史请求实际发送文本的权威记录；如果未持久化，冻结可复现的完整历史持久化角色前缀，并明确它是**reconstructed prefix**，不冒称 actual-sent byte-identical。进入真实 48 Prompt+48 Original Reference 同题比较前必须由 Owner 确认这种不可恢复性和评估合同，禁止无授权推理/GPU/HF。
+
+---
+
+## 2026-11-20 Reviewer 三项最小补充已回传：具体包摘要、B 版本锚、审前独立声明（仍待 Owner 本地交叉校验）
+
+**本项已收到，不需要要求同一 Reviewer 再做 375 份文本检索。** 此次 Reviewer 在前次 8/8 `INDEPENDENT_TEMPLATE_ONLY` 的报告基础上，补充了以下三类可核验证据，**暂时仍是报告自述，未获 Owner 的本机 SHA/版本映射独立回执**：
+
+- **证据包版本**：Reviewer 自述唯一输入为 Owner 生成的 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json`（10,276,892 字节、`storyforge_r60_base336_p2_source_evidence_private_v1`）；给出了实际计算的**整文件 SHA-256**，以及包内的 `p2_scope.manifest_sha256_PRIVATE` 和 `base336_scope.quarantine_manifest_sha256_PRIVATE`。完整私有哈希只保留在 Owner 会话，**不写入 GitHub**。下一步 Owner 仅对既存 0600 文件本机做不输出哈希值的相等性检查，再回报布尔 SAFE。
+- **可追索的匿名版本引用**：Reviewer 给出全部八个 P2 来源的疑似题材近邻引用表，使用 `B001…B172` 和 `CURRENT / Vnnn`；**其明确声明 B 编号 = 原证据包 `base336_scope.story_ids_PRIVATE` 数组的 1-based 下标，`Vnnn` = `source_records_PRIVATE.revision_id_PRIVATE` 的真实数值**，并称该数组顺序与来源记录 first-appearance 顺序 172/172 一致。**不得与之前建议的另一个匿名化导出示例混用**：示例曾按 Story ID 排序并把归档标成逐 Story V001/V002；这与本次 Reviewer 的 B / V 定义**不是同一编号系统**。Owner 应使用**这份原始 10.3MB 包**检验 B 编号映射、CURRENT / 真实 revision ID 存在性，并在私有域将 Reviewer 报告 P01–P08 固定映射到 `p2_scope.source_records_PRIVATE` 对应 Story ID；不输出原始 IDs。**尤其注意既有 Inventory 源清单的 `source_key` 是 `S01` 等，不等于 Reviewer 自行编号的 `P01`；不得仅凭相同末两位建立关联。**
+- **审前独立条件**：Reviewer 补充声明，审核开始前未接触训练来源、R50 sealed 正文、历史 Dev/Teacher、其他 Reviewer 意见或模型答案；其唯一审查资料是本次提供的私有来源包（顶层 `schema/base336_scope/p2_scope/exact_field_match_pairs_PRIVATE/non_actions`）。这解决了此前“未接触训练来源”一语的时态歧义，但**独立身份、实际会话分离、Reviewer 是否确实读取该文件的字节仍仅由其自述**，须 Owner 检查交付记录/原始报告签署。若 Reviewer 原先被告知无法直接访问 Owner 本机，这里的“完整本地路径”只能是**报告所指源文件身份**，不能据此推断 Reviewer 曾访问 Owner Mac；必须区分“获转交附件后读取”与“访问本地路径”。
+- **维持而非抹除质量缺陷**：其中 **1/8 P2 来源**有自身家族/人物名称残留，Reviewer 未改原文、未改语义结论。这是题目质量与模型归因风险，不应把原题目内部矛盾判为任何模型的失误，Owner 应在正式 48 题冻结前明确预先规定剔除/保留及按 Story 做敏感性分析。
+- **准确的新状态**：`P2_TO_BASE336_REVIEWER1_COMPLETED=8/8`、`REVIEWER_SOURCE_PACKAGE_SHA_PROVIDED=true`、`REVIEWER_NEIGHBOR_VERSION_REFS_PROVIDED=true`、`REVIEWER_INDEPENDENCE_SELF_ATTESTED=true`；`OWNER_PACKAGE_SHA_MATCH_VERIFIED=false`、`OWNER_VERSION_REF_BINDING_VERIFIED=false`、`REVIEWER_INDEPENDENCE_INDEPENDENTLY_VERIFIED=false`。因此本项是**审阅报告补充提交完成、待 Owner 最小验收**，不是完整 P2-C PASS。独立于 Base336 的其他 Protected/Reserved/Dev/Teacher 历史全集以及历史请求 actual-sent System/Rules/World 字节仍 HOLD。
+- **下游只做缺口工作**：Owner 在 Mac 进行只读哈希与匿名 B / P / 真实 V 版本存在性验证（不得重做 172/375 来源抓取），保全 Reviewer 原始报告并核对实际私有附件交付，完成该独立审阅子项签收；再优先推进未封闭的其他历史保护集合、历史 Prompt 构造边界，最终四生成模型与真实 Original Reference 的五来源 Quality-v1 盲评。 `P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+---
+
+## 2026-11-20 P2-C 第一份外部独立语义审阅报告：8/8 模板独立意见（Owner 验证仍待）
+
+**证据类型：Owner 在本次会话转交的一份独立 Reviewer 文字报告，不是由仓库程序自动生成的签署 SAFE。** 报告称以此前 Owner 0600、10,276,892 字节的 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json` 为唯一输入，涵盖 P2 8 Story、Base336 172 Story、当前 172 + 历史 203 = **375 来源版本**；其方法为四字段全文建索引、P2 专名（人物/别名/地点/组织/事件/规则）逐项检索、按题材近邻提取部分原文复核，全部 172 故事的索引档案经过查看。
+
+- **逐 P2 来源自报判决**：`INDEPENDENT_TEMPLATE_ONLY=8`、`SAME_SEMANTIC_COMPONENT=0`、`INSUFFICIENT_EVIDENCE=0`；认为所见匹配仅是通用的职业/婚恋/校园/仙侠/贵族等题材原型，未发现具识别性的共用角色/世界/事件/剧情组件。**可将“P2↔Base336 首份独立语义意见已收到、8/8 给出方向性裁决”标为完成**，不再让 Reviewer 重新索引全部 375 份资料。
+- **证据签收与覆盖精度仍限定**：Reviewer 自述“未接触原训练来源/其他 Reviewer 的结论”应理解为**独立审前未接触**，因为他确实阅读了本次提供的 Base336 来源证据。报告目前通过对话传达，未收到 Owner-local 原始**不可改动报告文件的 SHA-256、Reviewer 会话/交付身份核验、Review 所用确切证据包字节 SHA**；报告引用大量“B + 角色名”，**没有全部使用 Bxxx-CURRENT/Vnnn 可自动绑定的匿名版本引用**。文本索引覆盖 375 份数据≠每份原文全部通读，也≠ 8×375=3000 对逐对全文比较。为保证可复核性，Owner 应**只向同一位 Reviewer 请求最小补充**：审阅包版本/摘要确认、Reviewer 独立审前访问声明的精确定义、每个 P 来源负例检索的字段/版本覆盖计数及题材近邻的 `Bxxx-CURRENT/Vnnn` 版本引文；不可凭现在的自由文本报告把 Owner 技术签署改为 PASS。
+- **单独数据质量风险**：Reviewer 发现 **1/8 P2 公开来源** 的 World/角色内容存在家族名或角色名改名残留，属于**候选题目自身规则/角色一致性瑕疵**，非 P2↔Base336 同源的直接证据。Owner 不得静默修正已绑定公开 revision 或直接丢掉六条问题；在正式 48 题冻结前应作私有源版本质量仲裁，并预设保留/剔除该来源的**成对模型评分敏感性分析**，避免把自相矛盾的原始提示当模型失误。
+- **不重复开发/不重复抽样**：正式状态 `P2_BASE336_SEMANTIC_REVIEWER_1=8_INDEPENDENT_TEMPLATE_ONLY__OWNER_SOURCE_AND_INDEPENDENCE_PENDING`。它只覆盖 P2 vs Base336，不覆盖 R50 五世界以外完整 Protected/Reserved/Dev/Teacher 来源及历史 R47/48/55 的全部暴露，也不证明任何 historical actual-sent prompt 字节。**`reviewer_independence_verified=false`、`world_component_isolation_verified=false`、`historical_actual_sent_verified=false`、`r50_complete_exclusion_verified=false`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`**。
+- **最短下游动作**：Owner 对独立 Reviewer 所用证据包和原始报告分别做本地只读 SHA + 0600 交付保全，获得对**版本锚及独立审前状态**的最小补充回执；这不是第二轮全量语义审阅。同时并行推进尚缺的 R50 以外 Protected/Reserved/Dev/Teacher 全集边界和历史请求 actual-sent 证明，不再重查 336/172/375 或 Gold48 的文本重复。
+
+---
+
+## 2026-11-20 Owner 最新真实回执：全 172 Base336 Story / 375 来源版本直接核验完成（覆盖本文件此前“134 个来源仍缺失”的历史阻塞）
+
+**这是新的事实性门禁进展，不是自动 P2-C 语义隔离 PASS。** Owner 已使用现有脚本 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py`，配合刚生成的**新 2-before / 6-after、7 作者** P2 v2 私有 Manifest、冻结六目录和既有只读数据库连接，先运行无 DB 预检，再 `--execute` 成功：
+
+- **无 DB 预检**：`P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB`；冻结原始候选 336、真实来源 Story **172**、P2 8，Story ID 精确交集 **0**；未创建私有文件。
+- **真实只读 DB 来源提取**：`P2_BASE336_SOURCE_EVIDENCE_CAPTURED__SEMANTIC_REVIEW_REQUIRED`；`base336_cases=336`、`base336_case_source_bindings=336`、`base336_story_ids=172`；冻结来源当前记录 **172**、历史归档版本 **203**，**375** 份来源记录的 `world/character/characters/opening` 各字段有值 **375/375**。
+- 新 P2 八来源：`p2_snapshot_bindings=8`、`p2_permission_bindings=8`、`p2_manifest_binding_rows_verified=true`，四类字段均 **8/8** 有值。新来源对完整 172 Story 身份交集 **0**，对 **375 份**已抓取来源版本的 `world`、`character`、`characters`、`opening` **每个完整 JSON 字段的 exact matching 均为 0 P2 Stories、0 Base336 Stories、0 Record Pairs**。
+- 以 `O_EXCL` create-only 已写出 Owner Mac 私有 `R60_BASE336_P2_SOURCE_EVIDENCE_PRIVATE.json`，大小 **10,276,892 bytes**；内容含冻结 336 case→Story/Session/Message 的原始来源关联、172 Story 的当前/历史组件、八个新的 P2 审核快照组件以及精确比较证据。**只保存 Owner Mac 权限 0600 的路径**，不上传 GitHub/CI、不公开正文、映射、SHA 或用户 ID；`database_modified=false`、`gpu_started=false`、`hf_jobs_submitted=0`、`model_requests=0`。
+- **纠正本文件更早的旧状态**：现有 P2 × Base336 **全部 172 Story 身份和 current+archived 375 records 的来源捕获与精确字段交叉已完成**。不得再声称“134 Source ID/版本权威名单缺失”或要求 Owner 重跑旧提取脚本；早先 38 Story/59 records 子集证据仍可留存，但现由完整 172/375 证据覆盖其精确隔离范围。
+- **仍明确 HOLD 的实质缺口**：`historical_actual_sent_verified=false`；`semantic_world_alias_verified=false`；`world_component_isolation_verified=false`；`r50_complete_exclusion_verified=false`；`reviewer_independence_verified=false`。整套来源字段精确不相等**不代表角色别名、人物关系、派系、事件、规则、世界观和情节语义独立**；实际发送到模型的 source revision/System/Rules 字节仍未得到证明，R50 五世界之外和其他 Protected/Reserved、Dev/Teacher 全历史集合的穷尽性也尚未封闭。现有 `src/storyforge_dataset/world_isolation.py` 只对**Reviewer 已声明**的 component IDs 验证分组冲突，不自行推断文本语义，不能误充独立判断。
+- **下一唯一主线交付**：从**已生成的这一个 10.3MB Owner 私有证据包**对 P2 8 vs Base336 172 current + 203 archived 做独立来源语义审阅；Reviewer 必须实际查看真实 `world/character/characters/opening`、角色别名/世界规则/组织关系/事件与共享剧情，不得仅按 JSON MD5、字数或创建时间判 PASS。按每个 P2 来源保存完整覆盖范围、来源引文、版本/对应记录、具体同源或异源推理及 `SAME_COMPONENT / INDEPENDENT_TEMPLATE / INSUFFICIENT_EVIDENCE` 意见，任何证据不足保留 HOLD；每位 Reviewer 的独立性和私人交付字节由 Owner 验证，不把未签署评论当成正式独立审核。继续独立完成 R50 外 Protected/Reserved + 历史 Dev/Teacher provenance-only 全集覆盖、历史 request-effective 实际输入核验；仅全通过并 Owner 明确冻结后才能生成正式 48 Prompt + 48 Original Reference 并做四模型+原始答案同题六维盲评。
+- **正式状态保持**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`quality_v1_admitted=0`、`train_admitted=0`、`model_promoted=false`。不得重复数据抽取、自动运行 GPU/模型或通过 CI 代替人的语义裁决。
+
+---
+
+## 2026-11-20 来源冻结接口阻塞已修：仅最小向后兼容适配，Owner Freeze 仍待执行
+
+**本项仅修复已知的 CLI/Manifest 接口不兼容，不重复选择 Gold、不新建通用提取器、不自动晋升 P2-C。** 当前 PR 已为既有 `r60_base336_p2_public_source_inventory_cpu.py` 增加可选 `--source-first-ids-file`，其旧默认 **3 before + 5 after / 5 authors** 源选择、v1 输出格式不变；新方式从严格 Gold48 source-first 审核已经确认的八个 Story UUID 读取**Owner 自有 0600 输入文件**，在数据库公开审核元数据中重新绑定 **2 before + 6 after / 7 authors**，限制创建时间不晚于 `2026-11-19T15:30:00Z`，输出新 v2 私有 Manifest，且 `owner_freeze=PENDING`。既有 `r60_base336_p2_source_evidence_capture_cpu.py` 已向后兼容 v1/v2、固定 count/schema/选择模式/输入源清单 SHA 形状，继续做来源修订与授权行精确比对，**不会因为版本升级而绕过旧门禁**。相关 P2 合成用例和全部 CI 必须通过。
+
+**仅限 Owner 私有环境的操作合同**：将既有严格 Gold48 source-first 八来源 ID 按私有顺序写入权限 **0600** 文件；不得把普通按创建时间前八名、先前 Owner 原八来源、R50 sealed 或任何推测 Story ID 混入。该文件形状为：
+
+```json
+{
+  "schema": "storyforge_r60_p2_gold48_source_ids_private_v1",
+  "status": "GOLD48_COMPLETE_HISTORY_SOURCE_IDS__OWNER_FREEZE_PENDING",
+  "source_selection_mode": "gold48_historical_full_prefix_source_first_v1",
+  "story_ids": ["8 个经严格 Gold48 资格审核的规范 UUID 字符串；此处仅为格式说明"]
+}
+```
+
+真实 `story_ids` 必须是**恰好 8 个独立数组元素**，上述说明文字不是有效输入。直接复用已有 `~/.local/share/storyforge/r60/private` 权限为 0700 的私有根目录，生成**不存在的** 0700 子输出目录；在本仓库执行：
+
+```bash
+BASE="$HOME/.local/share/storyforge/r60/private"
+IDS="$BASE/p2-gold48-strict-eight-owner-private.json"
+OUT="$BASE/p2-gold48-source-first-v2-20261120"
+# Owner-only 预先写入 IDS（0600，8 个真实规范 UUID）；不在 shell argv 或公开 PR 中传 ID
+test "$(stat -f '%Lp' "$IDS" 2>/dev/null || stat -c '%a' "$IDS")" = "600" || exit 1
+install -d -m 700 "$OUT"
+PYTHONPATH="$PWD/experiments/r58_quality:$PWD/src:$PWD/scripts:$PWD" \
+python3 experiments/r58_quality/r60_base336_p2_public_source_inventory_cpu.py \
+  --source-first-ids-file "$IDS" --output-dir "$OUT" --execute
+```
+
+输出的 `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json` 仍是**候选元数据证据包**，不是 Owner 正式不可变冻结、Gold48 具体 48 对内容的冻结、P2-C 语义独立 PASS 或真实历史 actual-sent 原文证明。确认 4 保留/4 新增、已核验公开许可在首条合格历史 Gold 之前生效之后，再用已有 `r60_base336_p2_source_evidence_capture_cpu.py` 及 Owner 六个冻结历史目录建立剩余 134 Source 绑定；旧版本 v1 manifest 和旧任务不变。**禁止在公开 GitHub 提交新私有 manifest、原始 Story ID、Session/Request ID 或聊天正文。**
+
+---
+ 
+## 2026-11-20 最新执行结论：Gold48 历史请求链路实测；新模型质量比较仍为唯一主线
+
+**本节优先于下方 2026-11-19 的“固定三消息/新造 48 题”“只允许读取公开卡而不能验证聊天”的过时操作步骤；不改变旧冻结训练集、不自动使 P2-C PASS。** Owner 已再次明确授权真实聊天用于本项目**内部独立模型质量评估**；无需再要求重复提交授权证明。现有 SQL 仅返回 SAFE 聚合；不得在公开 GitHub 发布私人会话正文、ID 对应表或请求 trace。没有另行授权训练、付费 GPU/HF 推理、对外分发或 R50 sealed 正文访问。
+
+### 已完成的真实新证据（不可重复做成“新进度”）
+
+1. 固定新来源候选创建时间为 `2026-11-16T02:03:25Z` 至 `2026-11-19T15:30:00Z`：**17 个**公开原创 Story；实时池后增 1 个到 18，不能混入本次固定范围。采用已存在的公开审核快照/revision/许可事件合同，严格完整历史筛选后可用的**临时**来源是 **8 Story / 7 作者 / 8 个不同 World JSON / GPU 前 2 + 后 6**；与先前 Owner 批准的公开元数据原 8（3/5）**不相等**，替换来源还未正式 Owner Freeze。不得声称 2/6 新来源已在旧 Manifest 中冻结。
+2. 固定三消息 `user/assistant/user` 不是历史原始模型 Prompt：上一轮 48 候选中 21 条有更早消息。全部 17 来源中完整历史恰好三消息的候选仅 **32**，每 Story 最多 5。**不能继续以 8×6 固定三消息构造 Gold 对照**。
+3. 改为每条原始 Gold 之前的**完整持久化 role/content 前缀**，目标非空、`completed`、`finishReason=stop`；前缀中无缺失/非完成 Assistant，首条不早于当前公开卡版本生效时点，最高 40 消息/24,000 字符；只接受公开卡审批绑定通过的来源。额外排除发现的事后删除早轮次消息风险（**8** 个候选）、完成版正文历史差异风险（**4** 个候选）、编辑标记及晚创建前文。在所查范围 **320** 个基本候选中有 **308** 个通过这些历史一致性屏。跨会话精确去重 Prompt 和 Gold 后，在上述临时 8 Story 各取 6，得到 **48/48 不同完整历史 Prompt + 48/48 不同真实原始 Assistant 答案**，覆盖 **25 个历史 Session**，最长所选历史 **13** 条消息。这证明候选容量和可见历史完整性，**不是 48 个独立会话、六维审核或原始实际发送字节 PASS**。
+4. **真实请求证据链已找到，勿再盲查空表 `v2_chat_reply_jobs`：** 新范围会话的 `chat_latency_metrics` 有 **1,361** 条请求计量，全部在 `v2_chat_request_events` 以相同 request_id 且相同 Story/Session 一一找到事件。两表无已发送 Prompt 原文，但计量有 `token_breakdown.historyMsgCount`、System/History/Input Token 数与请求结束原因。
+5. 对前项经过删除/编辑/正文差异排除且全前缀去重的 48 Gold，在 **同一 Story/Session、±5 分钟、HTTP 200、`historyMsgCount == 数据库完整前缀消息数`** 条件下，**48/48** 都找到**唯一一条成功请求记录**；匹配的 48 个 request_id **互不相同**，**48/48** `finishReason=stop`、System/History/Input Token 计数均非零；**47/48** 时间差不超过 2 分钟、48/48 不超过 5 分钟。仅按“时间最近”会错配（45/48 历史数量吻合），所以必须采用联合绑定；**这仍只证明请求存在、历史消息数及请求计量一致，未还原当时 System/World/Character/Rules 字节、具体历史消息字节是否全部发送及模板/截断。**
+6. 直接在只读数据库对上述固定 17 新来源与 Base336 截止 `2026-11-16T02:03:25Z` 前的 **5,436** 条当前/ **6,977** 条存档来源 World/Character/Opening 完整字段比较：**精确完整字段复用命中 0**。WorldSentence 长度至少 16 的新来源有 15 个，与旧 8,332 条长文本所做 `pg_trgm` 非独立预筛，最高相似度 **0.092**、0.45 以上命中 **0**；另 2 个新来源文字过短不能作有效相似性证明。**这只排除覆盖范围内的确切文本复用及明显近似世界句子，不能将其升级为完整角色/事件/世界语义、历史 Dev/Protected/Reserved/Teacher 全集独立性 PASS。**
+
+### 2026-11-20 实际新证据：Historical Original Reference 的模型来源（盲评后分层）
+
+- `ai_model_pool_attempt_metrics` 是 48 条 Gold 对应的实际模型调用尝试日志。以本阶段已验证的唯一成功请求映射（相同 Story/Session、±5 分钟、HTTP 200、`token_breakdown.historyMsgCount` 与持久化历史前缀数一致）为输入，再按 `logical_request_id` 关联实际模型尝试。**48/48** 个 Gold 目标都有模型尝试与成功结束（HTTP 200 / `finish_reason=stop`）记录，48 个 request ID 仍互异。实际生效模型分布为：`cl-gemini-3.8-flash-high` **26**、`cl-gemini-3-flash` **21**、`cn-deepseek-v4-flash` **1**。这些只是提供方平台的 effective_model **标识**，不证明底层模型确切二进制/revision，也不证明原始 Prompt 字节。
+- **不得把原始 Gold 称作人工金标或客观正确答案**：它是不同在线生成模型当时实际产生、已持久化的 **Historical Original Reference（历史原始回答基准）**。Quality-v1 六维分数必须对每种来源以同一打分规则独立评判。五来源同题盲评的 Reviewer 不得看到 Gold 来源身份或其有效模型；**Owner 解盲后**在总体 Base336 vs Historical Original Reference 对照之外，应按原回复实际有效模型分层汇报，注意 1 条 DeepSeek 子层不足以单独作统计结论；不要把历史模型混合带来的水平差异误判为训练效果。
+- 新查数据库中的 `v2_generation_evidence_request_links` / `v2_generation_evidence_grant_operations` 各有 2 行，但与本次固定来源会话关联的请求证据 link **0**。相关 `ai_model_pool_attempt_metrics` 的请求尝试能提供 provider/model/finish reason/token 信息，**没有发送 Prompt 原文**；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED` 仍然严格 HOLD。
+- 针对固定 17 新来源中同作者历史复用风险，旧同作者有 143 个 Story / 1,016 份当前及归档版本关联；新旧主要角色姓名完整重复 **0**、长度足够的成长背景/人物介绍/开场完整字段重复 **0**，相关四类字段的 pg_trgm 相似度均未达到 0.30（最高 world 0.094）。**此项是有限的同作者文本隔离预筛，而非经独立 Reviewer 审定的剧情/角色组件语义 PASS**。别名、隐性情节复用、Protected/Dev/Teacher 全集交集仍需核查。
+
+### 2026-11-20 新增独立来源子集的真实私有冻结证据：冻结 38 Story/59 版本直接 P2 隔离核验
+
+- **已复用 Owner 先前提供的私有冻结清单** `R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json`，而非重新从 Story 创建时间推断训练集合。其 Schema 为 `storyforge_r60_base336_world_cross_split_review_private_v1`，约束是 Base336 冻结 336 case/172 Story 中 8 个跨 Train/Validation 精确 World 组，**38 个不同冻结 Story（28 Train/10 Validation）**，清单组成员出现次数 40 但跨组去重后 38。**这不是完整 172 Story roster。**
+- 不向日志/PR 输出清单中的任何 Story ID、Revision ID、人物名、正文或私有 SHA；只在只读 SQL 内用私有 ID 执行精准绑定。数据库 `user_stories` **38/38** 精确身份找回；清单点名的 `story_content_versions.id` **21/21** 归档修订精确定位、对应作者匹配、版本源时间早于 `2026-11-16T02:03:25Z`。取得的是 **38 当前 + 21 精确归档 = 59 份 source/version**，而不只是宽口径抽取的全部旧版本。
+- 本次固定创建截止的 17 个新公开 Story 对这 38 冻结 Story 的 **Story ID 交集=0、作者交集=0、World/Character/Opening 整体字段精确重用=0**；对上述 **59 份版本**做跨来源主要角色姓名（主角色及 characters[0]）、World JSON、Character、Characters、Opening 组件相等比较，命中 **0**。将世界句子、开场、人物介绍与成长背景文本分别做 `pg_trgm` 预筛，新 17 个来源中四字段任何一个最大相似度达到 0.30 的 Story 数 **0**（最高世界 0.053、开场 0.022、介绍 0.027、背景 0.035）。
+- **裁决范围必须严格限定**：`P2_C_BASE336_FROZEN_CROSSWORLD_38_STORY_59_VERSION_EXACT_AND_TRIGRAM_SCREEN=PASS_PRELIMINARY`，表明这个明确已知冻结来源**子集**的精确身份、作者及可见文本重复/明显相似风险排除成功；**不代表独立 Reviewer 的最终语义结论**，并且 **172-38=134** 个 Base336 冻结 Story 没有此项 source-bound 审核；R50 五世界以外、其他 Protected/Reserved、旧 Dev/Teacher/仲裁和完整模型请求组装仍 HOLD。私有 roster 自身声明 `semantic_review_completed=false`、`actual_sent_version_verified=false`，不能改写。
+- **下一唯一有意义动作**：找出已存在的 Base336 最终 293/43 发布输入对应**剩余 134 个 Story 的权威 metadata/version**（不得再次构造通用工具或用宽口径“全部旧表记录”冒充冻结名单），再仅对仍未覆盖集合进行来源 ID、作者、角色/剧情/世界组件与历史暴露边界核验；其后才可以安排独立 Reviewer 对临时 2/6 八来源的真正语义裁决。Gold48 候选及已完成的 48 唯一历史请求链路不得反复重测。
+- `P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`；`MODEL_PROMOTED=false`，不启 GPU/HF。
+
+### 2026-11-20 Owner 原始 P2 八来源与严格候选八来源：4 保留、4 替换（权威私有清单真实比对）
+
+- 在内部读取 Owner 先前上传的 `R60_P2_PUBLIC_STORY_SOURCE_MANIFEST_PRIVATE.json`（`storyforge_r60_base336_p2_public_source_inventory_private_v1`，原始 **8** 个来源）作为**唯一旧冻结名单**，并与 DB 固定 `2026-11-16T02:03:25Z..2026-11-19T15:30:00Z` 范围内通过**历史完整前缀、正常完成、无显式编辑、无已完成快照变化、无历史事后删除、公开版本/许可精确绑定且每来源至少六条合格 Gold 结构**的八来源做**私有 Story ID 交集**：旧冻结 **8**，新合格 **8**，**交集 4、原有但不合格 4、新合格但不在旧冻结 4**。新增四个创建于 Base336 GPU 开始之后。
+- **纠偏：之前“保留 5、替换 3”的暂定策略已被本项准确的 Owner 私有名单比对推翻。** 当前实际 P2 来源需要 **4 个替换来源**的 Owner 私有 create-only 冻结与独立语义审核；不得沿用旧 3/5 八来源 Manifest、旧 5/3 预测或动态实时选源结果来伪称新八来源已冻结。后续必须重新核对每条新来源的原始请求、角色/剧情语义和历史暴露。没有输出任何 Story ID、个人身份或对应关系。
+- 已检索目前可访问的用户文件库（2026-11-01 至 20 的完整目录元数据、相关已上传的 R60 私有来源文件、R60 历史证据 ZIP）以及已连接的 Hugging Face 只读模型/数据集仓库与既有 Jobs：未找到 **Base336 最终 293/43 训练输入或 336 case/172 Story 完整冻结名单**。已发现的 `R60_BASE336_WORLD_CROSS_SPLIT_REVIEW_PRIVATE.json` 是权威但**只有 38 个 Story（21 个指定归档版本）**；22-case 私有 HOLD 范围是这 38 个的一部分，不是新的来源；R57/GOLD 历史暴露文件也不是 Base336 release roster。**没有证据可合法把其余 134 个 Story 作为完整冻结来源凭空推断。**
+- 仓库现有 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py` **正是需要复用的 Owner-local 172-source 读取入口**：基于既有冻结六目录、实际 336 cases、Owner P2 私有 Manifest 和只读 DB，create-only 在 Owner 私有 0600 路径保存来源-版本及八源组件证据，仅输出 SAFE 计数。目前 Owner 本机的真实发布数据与私有证据路径并未连接到本次会话运行环境，且先前执行因 `DB_BASE336_SOURCE_QUERY_HOLD` 未得到可用正式源包；**不重复开发，也不伪称运行成功**。这份脚本现有 `--p2-manifest` 是**旧八来源**，在四个新来源重冻并生成新的 Owner-only 八来源 Manifest 前，直接执行它也不能证明新八来源 P2-C PASS。
+- 剩余的实际主线：**Owner 私有环境内对最终 release 数据和新八来源 Manifest 做最小范围 source-bound 绑定** → 只审剩余 **134 个**训练来源及 Protected/Reserved/Dev/Teacher 缺口 → Reviewer 真正独立裁决 → 同题完整历史 Prompt + Gold 48 条正式 Owner freeze → 四生成模型/历史原始 Gold 五来源六维盲评。无需重做已有 38 Story/59 来源版本、历史 48 成功请求或 R50 五世界。
+
+### 2026-11-20 新增关键实测：R60 Base336 293/43 实际发布字节与 Gold48 直接曝光核验
+
+- **新证据入口：已连接 Owner 有权访问的 Hugging Face 私有训练 Bucket**。原来只查模型、Dataset 仓库和目前账号可见 Jobs，未查到训练输入；本次经 Bucket 目录只读检索，确实在与 Base336 GPU Run `r60-base336-gpu-20261117T055622Z-b609cb78661d` 对应的预检 Stage 中定位 `train.jsonl`、`validation.jsonl` 和 `R60_BASE336_EXPLORATORY_MANIFEST_PRIVATE.json`，另有 GPU SAFE 回执（训练完成，`ckpt-37`，adapter reload/terminal PASS，not promoted）。
+- 对 Stage 文件的原始 UTF-8 字节做只读分段 SHA-256 校验，**Train = 1,117,378 bytes / 293 rows，Validation = 151,105 bytes / 43 rows**，各自与 Manifest 的私有原始字节摘要 **完全相符**；**336/336** 行为 `user/assistant/user/assistant` 四消息结构。Manifest `status=EXPLORATORY_TRAIN_VAL_ONLY__NOT_FORMALLY_ADMITTED`，`train_admitted=0`，GPU 回执 `model_promoted=false`。不向公开 GitHub 输出 Bucket 具体私有 URI、训练正文或摘要。
+- 发布 `train.jsonl` 和 `validation.jsonl` 的每行**只有 `messages` 字段，没有源 Story ID / Session ID / Revision ID**。这意味着它们并不能**单凭文件本身**恢复完整 172 来源的正式冻结 roster；但实际发布字节已经确切绑定，今后不能再称“完全找不到发布输入”。
+- 以先前权威 Owner 私有 38 Story 跨 Split roster 为**精确、受限的原始来源集合**，只用现成数据库历史消息对实际 Train **293/293 条**做 exact Assistant Text + 同一 Session 连续前 3 条历史角色/正文完整匹配：**82 条 Train 样本完全四消息一致，恰好覆盖该 roster 的 38/38 Story，跨不同 Story 的歧义匹配 0**。先前实际 Validation 43 条对这 38 Story 的 Assistant 全文 exact 检查命中 0。**注意：0 条回答命中不自动证明 Validation 在 source-ID 层绝无这些 Story；这个结论只对可验证的 Train 82 条及完整 38 Story train 代表性有效。**
+- 试图用完整 293/43 全文反推其余冻结 Story ID 的全球库匹配，在数据库 `EXPLAIN` 中须扫描估算约 **391 万**条 Assistant 消息（Postgres `v2_chat_messages` 全表估计约 780 万行），原文没有现成索引。**只做了 EXPLAIN，不执行高成本全库匹配或增加索引/数据库写入**。其余 **172 - 38 = 134 个冻结来源**仍需从 Owner 有来源标识的真实六目录/阶段 crosswalk 提取，复用现有 `r60_base336_p2_source_evidence_capture_cpu.py`，不可将发布脱敏 `messages` 本身视为身份 roster。
+- 利用已有严格 P2 资格筛选的临时 **8 Story × 6 = 48 条完整历史 Prompt / 真实 Original Gold**，在数据库内仅获取真实核验必要的内部文本，与上述 SHA-256 完全验证的 Train293 + Validation43 逐字比对（所有实际源文本仅在受控工具运行中存在，未输出公开）。**Train 和 Validation 双侧分别均为：48 条原始 Gold 答案全文出现在任何单条训练消息的次数 0；Gold 与训练 Answer 完全一致 0；Gold 最近 3 条历史 Prompt 完全一致 0；四消息问答完全一致 0；Gold 最后 User Message 长度至少 30 字符时完全一致 0。** 即：`P2_GOLD48_VS_ACTUAL_BASE336_293_43_EXACT_TEXT_EXPOSURE=ZERO__PRELIMINARY`。这比时间/World JSON 非重叠更强，但**仍不证明语义隔离、训练源角色/剧情组件无改写、R47/R48/R55/R50/Teacher/Dev/Protected 全集未曝光或 historical actual-sent 请求原文字节**。
+- 还直接以**Owner 原始 P2 八来源 Manifest**与临时严格八来源比对，确认**旧 4 保留 / 新 4 需替换**；按两组各 4 个做**历史首条合格 Gold 时间点前的授权生效核验**：**8/8** 审核 revision 与当前公开快照吻合、64 位 content hash 合同、Story/Submission/Permission 同作者、Submission 与 Permission 绑定、二者时间均不晚于其该故事首条合格 Gold、公开版本在当时已生效。新四来源该来源权利/版本子合同通过，**不是 Owner 已重新正式冻结**。
+- **现有代码合同的精确阻塞**：`r60_base336_p2_public_source_inventory_cpu.py` 的 deterministic selector 固定取前 **3+5**，且 `validate_rows` 强制 **5 作者**；`r60_base336_p2_source_evidence_capture_cpu.py::load_p2_manifest` 也固定接受 **3+5/5 作者**。严格历史 Gold 的临时新八来源实际为 **2+6/7 作者**，且是 source-first 筛选，并非简单创建时间前 2/后 6。因此直接重跑旧 inventory/capture 无法证明新的八来源。**不要添加第二套新工具，不要静默更改旧冻结版本；只有在 Owner 私有环境确认八来源 create-only freeze 输入后，才对这些现有脚本做最小向后兼容的明确选源/计数合同适配并跑其原有 CI。**
+- **门禁仍严格**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`ACTUAL_SENT_PROMPT_BYTES=UNVERIFIED`、`P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`、`quality_v1_admitted=0`、`model_promoted=false`。无新增模型请求、GPU/HF Jobs、数据库修改、代码通用抽取器；上述连读文件均为只读 Bucket/DB 聚合核验。
+- **唯一新增信息的后续用途**：Owner-side 从 336 带 provenance 的构建六目录锁定缺失 134 Story + 新八来源 create-only 0600 Manifest → 才对剩余训练/保护/Dev/Teacher 组件做增量身份和独立 Reviewer 真正语义审查；同时真实历史请求原文若确实不存在，应按源输入限制明确实验合同，不允许拿 48 唯一 request 的 Token 元数据假装 actual-sent 字节；然后才可做 48 同题五来源 Quality-v1 六维盲评。
+
+### 2026-11-20 最新增量核验：Gold48 × Base336 实际发布集近似文本筛查和会话聚类
+
+- **仅针对已经 SHA-256 确认的实际 293/43 发布内容**：在先前完整字符串 exact 命中 0 基础上，对现有严格来源八 Story 的 **48 条独立最后 User 输入、48 条 Original Gold 回答**，分别与实际 Train293/Validation43 最后 User/Assistant 内容做 **NFKC、去标点空白、字符 5-gram Jaccard** 启发式预筛。每个 Gold 只报告对各 Split 的最大相似度，匹配用户原文与 Answer 均不公开。四组中相似度 >=0.20 / >=0.35 / >=0.50 / >=0.70 的 Gold 个数均为 **0**；最大值分别为：最后 User vs Train **0.012**、User vs Validation **0.002**、Gold Answer vs Train **0.023**、Gold Answer vs Validation **0.009**。因此 `P2_GOLD48_VS_ACTUAL_RELEASE_VERBATIM_AND_5GRAM_NEAR_DUPLICATE=ZERO_PRELIMINARY`，是**局部文本暴露排查**，不能替代改写/同源世界、隐性角色、历史 Protected/Dev/Teacher 或独立 Reviewer 语义核验。
+- **48 题的统计非独立性**：严格来源 8 Story / **25 Session**；只含单题 Session **8**，含多题 Session **17**，**40/48** 条题目来自这些多题 Session，最多一 Session 六题；同一 Session 内可成对的评估题目 **35 对**。最后一条 User 文本为 **48/48 不同**；完整历史长度最少 3、最多 13 条消息，**23/48** 条包含超过三条前文。题目确实不同，但不可用独立同分布的 `n=48` 直接计算夸大的显著性或区间；**正式模型比较除了 48 题的成对六维逐题结果，还必须按 Session 聚类重采样/敏感性报告**（Story 级分层作为辅助），对有很少独立 Session 的小子组不要声称显著。
+- HF 私有 `quality-review/r60` 下另有约 3.9MB 的旧评审 `source.private.jsonl`，抽查其行包含匿名 `blind_id`、`visible_history`、`target_text` 等，但**不含 Story ID / Session ID / Case 源身份**，不能冒充剩余 134 Base336 训练来源的真实交叉表。其他 Bucket 内已定位的实际 `train.jsonl` / `validation.jsonl` 也只有 `messages`。生产库泛化反向 join 需约 391 万 Assistant 消息 Seq Scan，已通过 `EXPLAIN` 拒绝执行；**不在生产上新增正文索引或全库扫查**。完整 172 来源仍只有 Owner-local 六目录/带身份构建产物能够给出权威版本。
+- **正式实验口径固定**：五来源为真实 Original Reference（历史线上 26/21/1 三种 effective_model 混合）+ Qwen Base + R46 v0.2 ckpt7 + R54 v0.3-A ckpt16 + R60 Base336 ckpt37；本轮没有真实模型新回答，也未评分。继续六维题目级盲评，Owner 解盲后报告 Gold 来源模型分层和按 Session 聚类的 R60–Gold 成对差异；历史原始 System/World/Rules actual-sent 字节还没有锁定，需在评估合同中明示系统提示差异。**P2_C、P2_B 正式冻结、Reviewer 独立门禁仍 HOLD；已完成的 Gold48/38 Story 及 actual release 完整性不得再重做。**
+- 下一轮执行优先级严格限定为 **新增四源 Owner-private create-only freeze** 与剩余 **134 个 Base336 Story 的 Owner-local authority crosswalk**，按身份和版本开展真正独立语义复核，然后才正式开展四生成模型 + Gold 五来源质量评估。既有 source capture CLI 需要六个历史冻结目录（`--old-dir --plan-dir --v2-dir --v3-dir --audit-dir --quarantine-dir`）、`--p2-manifest --output-dir --execute`；**旧 Manifest 接口仍固定 3/5、5 作者，当前严格 2/6、7 作者尚不兼容**，必须最小向后兼容适配，不能静默篡改旧冻结清单。
+
+### 当前唯一最短下游动作
+
+- **P2-C 剩余实际阻塞：** 为临时 2/6 新来源组合绑定有权威来源的 Base336 172 Story + 全版本角色/剧情语义、所有受保护/历史 Dev/Teacher 保留集合，做真正独立的新来源 Reviewer 裁决；只差未覆盖集合，不重审 R50 已闭合五世界、旧 R47/R48 20 题、Base336 老 10 条 Review 边。
+- **Gold actual-sent 缺口：** 现有 request_id、System/History/Input Token 和前缀数已验证，但 **原始实际发送的完整模型请求内容未落在当前查过的表中**。下一步仅定位原始模型网关/请求组装记录的可信证据，或明确冻结一个**“历史持久化前缀下的原始 Gold 对比”**实验合同，并公开承认与原服务 System/Memory/Rules 并非已证明的完全同题输入；不能在未授权情形下凭当前公共卡伪造旧 request payload。
+- **P2-B：** 新候选来源固定后再以真实完整历史 Prompt + 原始 Gold 为一体逐题冻结；Quality-v1 六维场景归类必须另审。原 `read_gold(expected_count=48)` 精确前缀检查可复用，但仅作来源匹配，不代替真正 request 字节证明。不得重造通用 Gold 抽取器，除非正式合同要求的最小适配确有必要。
+- **P4/P5:** 仍以原始 Gold + Qwen Base + R46 v0.2 ckpt7 + R54 v0.3-A ckpt16 + R60 Base336 ckpt37 的**五来源同题匿名盲评**为目标；必须给出 `Base336 vs Gold`、`vs Base`、`vs v0.2` 和 `vs v0.3-A` 六维/严重缺陷结论，不能只比较生成速度、训练 loss 或 Token。
+- **门禁不变：** `P2_C=HOLD`；`P2_B_48_PROMPTS=NOT_GENERATED`；`P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`；`quality_v1_admitted=0`；`model_promoted=false`。此处 `48/48` 指数据库来源/请求**候选容量**，不是 Owner-only 0600 正式字节冻结或真正独立质量评估 PASS。
+
+SAFE 证据保留在现有 [PR #31](https://github.com/sunxu/storyforge/pull/31) 对话（2026-11-19T15:30Z 界限后的 Gold 完整历史核验、请求联合匹配与本节新事实）；真实来源/请求字节若取得只能留在 Owner 私有环境，不能在 GitHub 公开。
+
+---
+
+
+## 八、2026-11-19 Owner 新要求：原始回答 Gold 必须参加同题盲评
+
+**本节是 Owner 明确提出的评估要求，优先于本文件前面“原始 Gold 不纳入新评估”的旧说法。** “Gold/原始回答”是**第五种回答来源**（冻结原始记录的 Assistant 回复），**不是第五个推理模型**。评估必须回答：训练后的 Base336 输出相比同题原始回答，在六维质量及硬错误上是提升、持平还是回退。
+
+### 正式阵容与计数（待 P2-C / Gold 来源绑定及 Owner 冻结）
+
+| 回答来源 | 类型 | 48 题对应数量 |
+|---|---|---:|
+| 冻结来源的原始 Assistant 回答（**Gold/reference**） | 现成的来源回复，**不运行生成** | 最多 48；目前新 P2 **尚未证实存在 48 份同题匹配原始回复** |
+| Base Qwen 原版 | 模型生成 | 48 |
+| R46 v0.2 checkpoint-7 | 模型生成，历史强基准 | 48 |
+| R54 v0.3-A checkpoint-16 | 模型生成，诊断臂 | 48 |
+| R60 Base336 checkpoint-37 | 模型生成，新训练主角 | 48 |
+
+如果证据就绪，则为 **48 × 4 = 192 份新模型回答 + 48 份冻结原始回答 = 240 份待盲评文本**，不是 240 次模型生成。若预算限制，事先冻结三生成模型 Base + v0.2 + Base336，得到 **144 份模型回答 + 48 份 Gold = 192 份待盲评文本**。**Gold 不能随预算降级而删除**。
+
+### 最重要的数据来源矛盾：不能用不相同的题硬凑 Gold
+
+现行 P2 来源合同是 8 条公开 Story 的 **World/Character/Opening** 元数据，并在每条来源下**新构造六条** `user/assistant/user` 测试上下文。这些新提示**天然没有可证明的“历史原始回答”**。R48 的 Gold 属于旧 R47 20 题（2 Story、已曝光），不是新 48 题的答案；不能把 R48 Gold、公开 Opening、历史 Test 目标、模型代写或无来源的“标准回复”当作新 48 题的原始回答。
+
+**在 P2-C 完成前，应把“原始回答可比性”增加为独立来源门禁**：
+1. 先查已批准的 8 个 P2 来源是否**已有合法可用且未参与训练/旧曝光的原始回答与其完整前置 Prompt 上下文**，只核验存在性、权利和冻结 provenance，不访问用户私有会话正文，也不重新抽取已完成的 P2-A Inventory。
+2. 若确有合法的新原始回复，必须由 Owner 在**私有空间**确定每个原始回答的 `source revision + cutoff/actual-sent context + final assistant turn`，并验证 `frozen prompt.messages == original_record.messages[:-1]` 的**逐消息 role/content 精确匹配**，`original_record.messages[-1].role == assistant` 且回答非空；参考已存在的 `scripts/v02_r48_four_arm_build.py::read_gold`，**复用合同、不要复制开发一套通用 Gold 提取器**。验证任何原始回复的出处、权限或训练/开发曝光是否不确定时维持 HOLD。
+3. 如果 8 个来源只有公开 World/Opening、没有与新 48 提示相同的原始回复，必须明确给出 `P2_NEW48_MATCHED_ORIGINAL_GOLD=NOT_AVAILABLE`，而不是伪造参考答案。Owner 若坚持“正式盲评 48/48 都与原始回答比较”，需在**保留新世界独立性与用途权利**前提下，调整 P2-B 为**有独立原始回答的合法未曝光 Prompt/Gold 对**；可能需要另获授权、重新选择或创建参考回复，并明确这是新增作者/人工回答而**非历史原始回答**。在这项条件满足前，五回答来源正式报告不能声称完成。
+4. 已冻结旧 R47/R48 的原始 Gold 可以**仅在完全相同旧 Prompt**上与新模型结果做**单独、明确标记 EXPOSED_DEV** 的回归比较；Base336 293/43 训练与 Validation 原始 target 也只可以单独做**受污染的训练/验证诊断**，绝不能与 P2 的新 Held-out 六维结果混算、补齐 Gold 或当做模型泛化证明。不要为了该补充任务重新跑旧 R48 盲审或打开 R50 密封材料。
+
+### 盲审、审计与评分合同
+
+- 在 Reviewer 所见逐题同一个 Prompt / World 证据框架下，把 **Gold 与所有模型输出完全同权匿名随机排列**（例如五份随机字母，不固定 Gold 的位置），Coordinator-only 0600 私有映射在 Reviewer 评分冻结后再解盲。
+- **必须同时报告** `Base336 vs Gold`（Owner 本次核心要求）、`Base336 vs Base`、`Base336 vs v0.2`，有诊断臂时再报 `Base336 vs v0.3-A`；Gold 自身按六维与严重标记评分，**不是绝对正确、也不自动满分**。R48 旧 Gold 曾出现严重玩家自主权标记，不能把“接近 Gold 的文字相似度”冒充质量提高。
+- 每题私有证据要分别绑定：原始回答字节/来源 SHA、对应 Prompt SHA、来源时间/版本、权限、是否被旧模型训练/开发曝光、所有模型生成哈希与 stop/truncation 状态；**reference answer 不得进入任何模型生成输入、模型工具链或公开评审包的身份栏**，只能以匿名回答形式进入盲审。
+- 48 题属于 8 个来源 / 5 位作者，Reviewer 和模型回答只是重复观测；按来源世界聚类/分层报告并保留不确定性与三种 severe flags，不把 240 份回答当 240 个独立故事。
+- 这项 Owner 要求更改的是未来评估合同，**不是授权读取任何私有对话或 R50 sealed 内容，更不是 GPU 运行授权**；不得为补 Gold 悄悄改变 P2 已批准的来源/用途范围。
+
+**此刻状态**：`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`、`P4_MODEL_REQUESTS=0`、`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`。新 Agent 要把 Gold 逐题绑定作为未来正式 5 份回答盲评的真实输入要求，而不是在源缺失时继续称“48 × 5 现成可评”。
+
+---
+
+
+## 七、2026-11-19 被评测模型阵容重新评估（取代本文件原先仅 Base/Adapter 两臂的默认设计）
+
+**状态：建议的 preregistration 设计，尚未经 Owner 最终冻结，也不授权新的 GPU/HF 推理。** 本文件第 1 / 5 节原写的“Base/Adapter 两臂”仍是**最低主比较**，不应视为已获批准的最终模型阵容。历史 R50/R56 曾提出 Base/v0.1/v0.2/v0.3 四模型；R47/R48/R55 的真实结果表明应将“新 Base336 对比历史强 Adapter 与最新旧版本的回退”列入同一次新的独立质量评估。
+
+### 推荐：4 个生成臂，分主比较和诊断比较
+
+| 臂 | 冻结模型 | 本轮地位 | 历史证据理由 |
+|---|---|---|---|
+| A | `Qwen/Qwen3.8-27B` 原始 Base，revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` | **必须** | 校验本轮微调是否较 Base 获益 |
+| B | R46 **v0.2 checkpoint-7** Adapter（相同 Base revision；历史权重身份必须先验 SHA/加载可用性） | **必须** | R47 旧 20 Prompt 中 11/20 多数偏好；R48 仅略逊原始 Gold；历史强质量对照 |
+| C | R54 **v0.3-A checkpoint-16** Adapter（相同 Base revision；旧 frozen checkpoint） | **推荐同轮纳入，预注册为诊断臂** | R55 对 v0.2 旧题 12/20 多数偏好，但六维均分 3.2750 < 3.3972、自主权严重标记 9 > 7；历史 NO-GO 是不批准消耗 R50 密封测试，不是禁止在**新 P2 来源**上诊断 |
+| D | **R60 Base336 checkpoint-37** Adapter | **必须；新实验主角** | 已完成工程训练与 Adapter reload，尚无独立质量证明 |
+
+不将 **v0.1 checkpoint-9** 纳入核心新评估：旧 R47/R48 表现偏弱，对判断新模型是否超越历史最佳的边际贡献小，增加一次整套推理/盲审成本。**R48 原始 Gold 仅属于旧 20 Prompt，不能直接移植给 P2 新 48 题；但 Owner 已明确要求未来同题原始回答 Gold 作为匿名对照，必须按本文件第八节解决匹配与来源权限。**旧 R47/R48/R55 20 Prompt 仅涉及 2 个已暴露 Story，不能当新测试数据或替代本次预测。
+
+- 推荐同一次锁定 **48 个新 Prompt × 4 个模型 = 192 份生成结果**。若资源限制且需要严格最短路径，明确降级为**3 个核心臂：Base、v0.2、Base336 = 144 份**；不应降到只有 Base/Base336 两臂。任何降级/是否纳入 v0.3-A **必须在首次查看 P2 生成及评分结果之前由 Owner 冻结**，不得看结果后再选择增加/移除臂。
+- **主预注册比较**：Base336 vs Base、Base336 vs v0.2；**诊断比较**：Base336 vs v0.3-A；各臂均同一批 48 Prompt、逐案生成一次，同一 Model revision / Tokenizer / Chat Template / 三消息上下文 / 解码 / seed / stop / token budget。对每对模型的逐案结果、六维得分、严重自主权/禁句/安全标记独立报告，避免只用“四选一冠军”隐藏硬规则回退。
+- 盲化时每条 Prompt 的四份回答随机匿名化，保留只在 Owner 的 create-only 0600 身份密钥；评审者不获模型名单对应关系。三名独立 Reviewer 的**独立性**需要实证，不能只凭不同 AI 模型 ID。48 prompts 分 8 世界、5 作者，按世界/作者聚类报告不确定性，不把 192 个输出或 Reviewer × Prompt 评分当作独立 Story。
+- 旧 v0.1 / v0.2 / v0.3 数据与训练输入的 System/World/Rules 差异、部署 Prompt 分布差异必须披露；相同推理 Prompt 保证**操作层面可比**，不意味着唯一因果变量是训练数据。任何臂无法验证固定 Base revision、旧 Adapter SHA/加载、历史训练数据泄漏风险或完整 P2-C 许可时，**先 HOLD / 调整正式预注册**，不可静默替换模型。
+- 本次变动只更新**方案**；P2-C=HOLD、48 真实 Prompt=NOT_GENERATED、P3 两/四臂 Backend 尚未实现、P4 GPU/HF 未授权、train/quality admission=0、model_promoted=false 均不变。复用 `generation_eval.worker` / HF Runtime，不为四臂重写底层执行器。
+
+**历史决策依据：**
+`docs/evidence/V02_R47_2_THREE_MODEL_UNBLIND_RESULTS_20261014.md`；
+`docs/evidence/V02_R48_FOUR_ARM_UNBLIND_ANALYSIS_20261014.md`；
+`docs/evidence/V03_R55_CHECKPOINT16_CANDIDATE_GO_NO_GO_20261023.md`；
+`docs/evidence/V03_R50_OWNER_STORY_INDEPENDENCE_ATTESTATION_AND_R56_NEXT_GATE_20261023.md`。
+
+---
+
+
+> **最高优先级 / 直接复制给新 Agent。** 本文取代 2026-11-17 的通用启动提示词和 2026-11-18 的 P2 Crosswalk 提示词中的“当前步骤”与过期状态；旧文件保留为历史过程。若与旧文档的待办、授权要求或文件存在性判断冲突，先核对本文件引用的最新真实 SAFE，再以本文件的工作顺序为准。
+>
+> 仓库：`sunxu/storyforge`。当前执行 PR：[PR #31](https://github.com/sunxu/storyforge/pull/31)，工作分支 `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`，目标合并基线 `r60/common2-cpu2-owner`；这些是**截至 2026-11-19 的快照**，新 Agent 必须实时确认 HEAD / PR / CI，不假设本文件记载的提交永远最新。
+
+## 一、唯一业务目标（禁止偏航）
+
+完成已训练的 **R60 Base336 checkpoint-37 Adapter** 与对应 **Qwen Base** 的**新来源、真正独立、六维盲化质量比较**，进而给出有证据边界的质量结论，而不是继续审计旧 R50/R58、反复补写工具或证明模型已晋升。
+
+固定路线：
+
+1. **P0 / P1 已完成**：Base336 探索性 GPU 训练与工程产物核验；293 Train / 43 Validation；37/37 steps，Adapter reload，33/33 远端对象 inventory。模型**未晋升**。293/43 均不可做独立 Held-out，43 曾参与 Eval / checkpoint 选择。
+2. **P2-A 已完成**：Owner 已批准 Supabase **8 条公开已发布原创 Story**（来自 5 位作者、8 个不同 World JSON），逐条 revision、moderation snapshot、permission 绑定完成；授权仅限**内部独立评估提示构造**，并非训练、公开发布、再分发授权。不得查询私有会话正文。
+3. **P2-C 当前主要阻塞**：对这 **8 条新 P2 来源**证明与已训练/验证、受保护/保留、历史开发/训练/教师暴露来源之间的精确身份和**实质世界/角色/剧情/开场语义**隔离，证明真实历史版本/actual-sent 与受审范围、进行可核验的独立 Reviewer 审查及 Owner 冻结。**不得将只证明局部精确 ID 零交集的 SAFE 升级为 P2-C PASS。**
+4. **P2-B（在 P2-C 及用途权利门禁完成后）**：构造并冻结 **8 × 6 = 48** 条真实提示 JSONL / Manifest / SHA256，Quality-v1 六维各来源各 1 条：`chinese_prose`、`character_consistency`、`npc_initiative`、`player_agency`、`rule_fidelity`、`narrative_continuity`。每条是新编 `user / assistant / user` 三条可见持久化消息，**无 System、模型生成输入无参考答案、无私有历史对话**；逐条核验公开素材忠实性、权限、无未来信息、无原文长段复制、无隐藏指令/冒称源事实。当前**没有真实 48 条包**；既有 9/9 是合成测试。
+5. **P3（P2-C 后）**：只制作本任务必须的 Base/Adapter 两臂薄适配器与合成测试，优先复用 `generation_eval.worker.run_generation_batch`、`hf_runtime.inputs/outputs`、`GenerationBackend`、现有配对/盲化思路与 `experiments/r58_quality/quality_v1.py`。不写另一套生成循环/IO/六维 Rubric，不修改旧 P4 三臂冻结 Profile。
+6. **P4 / P5（另行授权）**：同一冻结 Base revision、checkpoint-37 Adapter、同 prompt SHA、Tokenizer/Template、三消息上下文、seed/解码/Token 上限/stop 条件配对生成；私有 A/B 密钥隔离，独立 Reviewer 六维盲审，重视严重 `serious_player_agency`、`hard_fact_or_ban`、`safety_exclusion`，Owner 裁决。**任何新 GPU/HF 推理、训练或付费任务必须就具体运行另行明确授权**；本任务目前没有此授权。
+
+## 二、最新真实证据状态（2026-11-19）
+
+| 子任务 | 已关闭的实际结果 | **尚未关闭、不能外推** |
+|---|---|---|
+| P2-A 8 个公开来源 | 8 sources / 5 authors；snapshot、permission、revision 与 World metadata 绑定 READY | P2-C 语义、历史曝光与 Owner 最终冻结 |
+| P2 × Base336 冻结身份 | 336 cases / 172 distinct Story，**8 × 172 精确 Story ID overlap=0**，离线捕获范围预检 PASS | 全 172 Story 当前+存档 `world/character/characters/opening` 来源包**尚未生成**；Owner 捕获 `DB_BASE336_SOURCE_QUERY_HOLD`，未有根因证据或全覆盖语义 PASS |
+| 旧 Base336 八组成员分析 | 历史 8 组 World，38 Story / 59 当前+存档来源记录已核验；旧 10 条跨拆分候选边图含 16 Story / 35 cases；A/B 表单已填写，B 资格尚未由 Owner 验证 | 这些是**旧 Base336 内部冲突**，**不是新 P2 8 来源**的隔离证明；旧 Reviewer A 无合格独立性证据，B 待 Owner 核验 |
+| R50 原始 50 → 46 + 4 | 原始 provenance 50、派生 46、排除 4 元数据补集严格 PASS；密封题目未打开 | R50 正式 sealed cases 字节/Final Seal 不是本轮复核；**其他 Protected/Reserved 世界权威全集**仍 HOLD |
+| R50 冻结五世界 | 固定 Git 两份 SAFE Blob 锁定 W16–W20、5 个 Story / 5 个 Session / 35 源文件；Owner 核对五个固定 Story UUID **恰等于原 50 provenance 所有来源 Story 集合**；P2 × 五世界精确交集 **0** | 五世界之外的 Protected/Reserved 源、隐藏语义别名及覆盖权威性均未证明 |
+| R47/R48/R55 旧开发链 | 同一 **20 Prompt = 2 个 Story**；R47 Sample→canonical Test Story ID、R48 source SHA、R55 三层 Index **76/68/46** / 20/20 回链已 PASS；P2 × 该链精确交集 **0** | **其他**历史 Dev/仲裁、Teacher、训练、独立保留来源完整暴露全集仍 HOLD |
+| R58 旧五范围 CSV | Owner 实际回执：5 行全部 `MISSING_SOURCE_REFERENCE`，`source_files_present_unopened=0` | 只表示这个旧 CSV **没有绑定来源引用**，不代表源文件不存在；**不要再使用/重跑**来冒充 R60 全集证据 |
+| 版本/审查 | P2 元数据快照已绑定；旧 38 Story 有静态版本证据 | Base336 历史 `actual-sent`、全部语义世界组件源引用、P2 8 新来源 Reviewer 独立执行与 Owner Freeze 仍 HOLD |
+
+原始已通过 SAFE 的关键路径（GitHub 可公开、没有私人 ID / 原文）：
+- `docs/evidence/R60_P2_R50_50_46_4_PROVENANCE_COMPLEMENT_SAFE_20261119.json`
+- `docs/evidence/R60_P2_R50_PINNED5_TO_PROVENANCE_OWNER_SAFE_20261119.json`
+- `docs/evidence/R60_BASE336_P2C_MAINLINE_GATE_STATUS_SAFE_20261119.json`（衍生状态投影，不是独立 Owner 执行）
+- `docs/evidence/R60_P2C_R58_G1_EMPTY_SOURCE_REFERENCES_OWNER_SAFE_20261119.json`
+- `docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md`
+- `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`（历史与最新附记并存，避免误读旧段）
+
+## 三、**禁止重复清单**（除非发生可验证的输入版本变更）
+
+不再执行：P2-A 8 来源再次筛选/数据库重抽；R50 50/46/4 补集；R50 已固定 5 世界与原 50 来源身份比对；R47/R48 20-case / R55 三层 SHA 与 Token 链；R58 五行空白 CSV；Base336 旧 38 Story/59 records 的 Card/Opening 提取、结构审核；旧 10 边/35 案例冲突预览；293/43 训练/33 产物审计；相同 Base336 全量 SQL 的猜测性重试；生成、重造或覆盖既有私有包。
+
+旧 Reviewer B 的独立资格**仍不等于已认证**，但此事不是当前推进新 P2 8 来源的第一阻塞；不要让旧 35 案例审查反客为主。所有旧结果仅继承其**已证实范围**。禁止为补出漂亮的 PASS 擅自修改冻结数据、换 Story、猜来源、填虚构空白索引、放宽 DB RLS 或将历史匿名评测重新包装成新 Held-out。
+
+## 四、下一 Agent 第一轮应做的**真正新增工作**
+
+1. **定位最后一个能推动 P2-C 的证据缺口**，不要先跑工具：核对 GitHub PR #31 当前 HEAD / Actions 与上面列出的最近 SAFE；给出简洁的“已覆盖集合 → 对 P2 8 来源还缺什么 → 现存可信来源路径 → 可获得性”对照表。已有证据不再计为新成果。
+2. **优先针对新 8 P2 来源**形成真实、可审核的语义隔离裁决准备：复用 Owner 本地的已批准 P2 Source Manifest、Base336 冻结 roster、现有成员级 World/Character/Opening 证据与 `src/storyforge_dataset/world_isolation.py`。严格区分精确 ID 零重叠、字段相等、专属角色/组织/地点/事件复用、独立模板，以及完整语义组件同源；每项冲突要有 Owner-only 来源字段、版本与证据引用。**不对旧 Base336 十条边再启动 Reviewer**。已存 38 Story 是部分样本，未核验其余 134 Story 及归档版本的不能静默 PASS。
+3. **处理全 172 Story 的数据可获得性，不重复盲调**：既有捕获脚本 `experiments/r58_quality/r60_base336_p2_source_evidence_capture_cpu.py` 在 Owner Mac 停于 `DB_BASE336_SOURCE_QUERY_HOLD`。先查是否存在同版本、可信赖且来源完整的 Owner 本地冻结快照/原版证据可直接复用；若没有，**只在能指认 SQL 执行失败的真实原因与最小修复时**使用已授权的只读 DB 权限推进一次有界恢复，勿不断新增捕获器或扩大权限。证据缺失如实 HOLD，绝不按当前 DB World 值冒充历史实际发送。
+4. **旧保护/暴露全集只做未关闭的差集**：R50 的 W16–W20 五世界已闭合；R47/R48/R55 同一 20 Prompt 已闭合。剩余明确是旧 R58 权威来源缺口标签 `r55_r57_other_dev`、`other_reserved_heldout`、`other_historical_training`，以及本 R60 阶段其他真实暴露索引。寻找**经授权、冻结且有来源版本/截止边界**的 metadata-only roster；按世界组件和来源绑定审核，不重做 ID 计数。没有权威全集时写明 UNKNOWN/HOLD 与缺少的确切 source authority，不要无期限扫描全机器或重复运行空索引。**R50 只读身份/保护 metadata，绝不打开密封正文。**
+5. **独立 Review / actual-sent / Owner 冻结**：明确新 8 来源当前的独立审核能否执行、历史真实发送内容/版本的证据是否存在。Review 必须独立并有版本化证据引用，不能把已知旧 Reviewer 的主观意见或签字当作 P2 新来源 PASS。Owner 冻结前只保留候选，不宣称正式 P2-C 通过。
+6. **收敛而非扩散**：完成一项真实闭合的证据后更新统一 SAFE/文档；若根本缺少权威来源证据，提交清晰的“现有证据不能证明什么 + 最小可信新证据”结论，并推进其它不依赖的既定主线事项。不以单纯加文档、补 CI、旧文件存在性检查或合成测试自称 P2-C 进度。
+
+## 五、权限、代码复用和验收规范
+
+- Owner 已于本轮明确授权 **StoryForge 本任务必需、限定只读范围**的数据库核验，**后续这类只读访问无需逐次重复请示**；继续执行 read-only/RLS、最小字段与固定 ID 过滤。**不授权**写库、读 R50 密封题目/答案/私有聊天、扩大版权用途、修改冻结 Train/Validation、模型推理、GPU/HF 或训练。
+- 既有核心优先：`world_isolation.py::validate_component_review_assignments`、`component_split_conflicts`；Owner R50 provenance / protected IDs 复用 `r60_r50_original50_complement_cpu.py` 与 `check_r50_protected_uuid.py`；来源包结构预检 `r60_p2c_existing_source_package_preflight_cpu.py`；P2 Prompt gate `r60_base336_p2_public_prompt_package_gate.py`；P3 则复用 `generation_eval.worker`、HF Runtime。
+- 必须区分 **P2 新 8 来源** 与 **Base336 旧 8 组 World**；区分 **20 Prompt** 与 **2 个 Story**；区分“文件存在”、“来源元数据闭合”、“完整语义隔离”、“真实历史发送”和“Owner 冻结”，任何一个都不能代替另一个。
+- Owner 私有文件、完整 Story ID/UUID、版本映射、逐条证据引文、SHA Manifest、Reviewer 身份与密钥全部留在 Owner 0700/0600 路径。GitHub/聊天仅放 SAFE 聚合、合成测试与必要的公开代码；不得输出私有正文、连接串、异常原文或逐案映射。
+- 每次需要提交代码前先确认现有函数不能完成任务；只作最小必要修复，不为追求“诊断完备”反复扩展工具。GitHub 使用 PR #31 当前分支；不 force push、不覆盖其他 Agent 私有成果；每次提交检查**该 HEAD** 的 CI，不把合成 CI 当作真实来源验收。
+- **硬状态不变**：`P2_A=READY`、`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`。无新权限不得提交 HF Job 或启动 GPU；在 P2 仍 HOLD 时不得产出正式 48 prompt 包或投入配对推理。
+
+## 六、完整任务书与交接时的输出格式
+
+先读：
+1. `AGENTS.md`；
+2. `docs/plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md` 与 `docs/plans/R60_BASE336_SUPABASE_PUBLIC_STORY_P2_ADDENDUM_20261117_CN.md`（总体目标、用途权利与六维合同）；
+3. `docs/R60_BASE336_P2C_MAINLINE_NEXT_ACTION_20261119_CN.md` **最顶部最新 Owner 结果**与 `docs/evidence/R60_BASE336_P2C_MAINLINE_GATE_STATUS_SAFE_20261119.json`；
+4. 上述已通过 SAFE 原件与 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md` 的最新段落；
+5. 仅在实际动手前读直接相关代码及合成测试，**不必逐个复演历史脚本**。
+
+新 Agent 首次答复应有：当前 HEAD / PR CI；一句话重申最终 **48 prompt → 两臂生成 → 六维独立盲评** 目标；按来源范围拆分的 **PASS / HOLD 与最新 SAFE 引用**；**已证明的内容不再重复做**；下一项最短能实际闭合的 P2 新 8 来源证据动作；无需新代码时明确“不改代码”；是否访问 DB、提交 HF / GPU、读保护内容；新结果若无法产生，也必须准确说明缺少哪一种权威证据。**不要以新的空泛审计任务书代替推进工作。**
+
+
+## 2026-11-21 Gold48 HF CPU Tokenizer 实测闭环（以本节新状态覆盖历史 P2-B 未产出的旧快照）
+
+**唯一 Gold48 CPU Job**：`6b00971aefaf5e14f4b3b24a`，组织 `adradar`，`cpu-basic`，固定镜像 `pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee`；`COMPLETED`，完成时间 `2026-11-20T18:54:52.736Z`（UTC）。Run Key 为 `r60-gold48-cpu-20261120T182842Z-e5de137532a1`。通过 Hugging Face Jobs inspect 直接核验终态，并读取对应精确私有结果前缀的 `GOLD48_HF_CPU_TOKEN_SAFE.json`；其业务状态为 `GOLD48_HF_CPU_TOKEN_PREFLIGHT_COMPLETE__NO_FREEZE`，`stage=COMPLETE`，`input_sha256_verified=true`、`case_count=48`、`tokenizer_version=5.16.1`，固定 `Qwen/Qwen3.8-27B` Revision `1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0`。业务 SAFE 文件仍须由 Owner 本地下载并复核原始字节、SHA 与文件权限；此项不虚报已经完成。
+
+**此前已通过并禁止重做**：48 真实历史 Prefix / 48 对应原始回复 / 48 唯一成功请求，8 来源各 6 条、25 Session；离线候选 preflight PASS；48 公开卡评价时点快照来源组件绑定 PASS；48 条不可截断的重建输入草稿及各题 SHA 生成 PASS；48 条中可验证目标前置 Memory=0，未经验证 Memory=48（已省略）；本轮 HF 最小私有 Stage 16 项哈希绑定与 17 个实际文件只读传输回验 PASS。原始回复未进入 HF Tokenizer Stage。
+
+**真实 Token 长度与容量**：默认 Thinking 的 `prompt_tokens_min/median/p95/max=2751/7798/12029/13814`；关闭 Thinking 为 `2715/7762/11993/13778`。两个模板模式下，`context=16384,reserved_output=1536` 和 `context=32768,reserved_output=2048` 均 `over_budget_count=0/48`。最紧默认 16K 条件的 `max_total_tokens=15350`，余量 1034 Token。预算只是诊断项，没有默认授予四模型生成配置、推理或模型运行时兼容性。
+
+**P2 当前严格边界**：`GOLD48_RECONSTRUCTED_INPUT_DRAFT_48_READY__NOT_FROZEN` 与 `RECONSTRUCTED_EVALUATION_INPUT`，非历史 actual-sent；公开卡是评价时点快照，不能证明历史同刻卡；旧临时 48 身份一致性未证实；历史上游保护源全量独立性未证明（只在已验证范围内接受风险）；六个来源风险标记案例纳入 48 主分析、从预注册 42 敏感性分析排除；原始历史回答仅为匿名盲评第五臂，绝不能进入模型生成输入。Owner 尚未批准最终 `GOLD48_FROZEN_SCOPED`；`full_model_runtime_compatibility_verified=false`。以本节更新后的真实已完成数据阶段覆盖文档早期“48 条仍未产出”历史快照，但不把 CPU Token PASS 升格为正式 P2-C 全全集 PASS。
+
+**下一步最短路径**：Owner 在私有端验证已下载 SAFE 回执及 Stage 来源字节，确认 48 主分析 + 42 敏感性、已知六例风险、重建输入合同、8 来源权限和缺失 Memory/历史 actual-sent 的披露；以 create-only 私有签收锁定每题重建输入 SHA、来源快照、真实历史原始回答的独立参考哈希和五来源盲评预注册，同时冻结四模型阵容及统一 Thinking/上下文/解码参数。只有得到 Owner 签收与单独生成任务授权后，才进入 192 次四模型推理 + 48 条原始回复的 240 对象六维盲评；**不得再次运行本次 HF CPU Job、重新生成候选、重传旧 Stage、或在当前阶段启动 GPU**。
+
+
+## 2026-11-21 Owner 明确批准 Gold48 受限范围冻结（待本机不可变 Manifest 实际落地）
+
+Owner 已在本轮对 Gold48 冻结范围**明确批准**：48 条主分析、42 条敏感性分析（六条来源风险题仍属于主分析、仅从敏感性分析排除）；接受 `historical_actual_sent_prompt_verified=false`、`full_p2_c_universe_verified=false`、历史 Memory 无验证前置摘要、评价时点公开卡快照、历史临时48身份未证实和六条风险案例等已披露限制。该批准是**受限范围重建输入评估集**的 Owner 数据冻结批准，不是全宇宙 P2-C 语义独立 PASS，不是历史实际发送 Prompt 复原，不是生成/评审/训练授权。
+
+Owner 本机最新 SAFE 为 `GOLD48_OWNER_FREEZE_PACKET_READY__AWAITING_SIGNOFF`：48/48 重建输入 SHA、48/48 历史原始回答 SHA、8 个来源、42 敏感性及六例排除、HF CPU Stage/Tokenizer 真实回执绑定全部 PASS；完整 Tokenizer `GOLD48_HF_CPU_TOKEN_PREFLIGHT_COMPLETE__NO_FREEZE` 已回收验收。**不得重复执行**候选恢复、原始回答提取、HF Stage/CPU Job 或模板分词。
+
+新增薄适配器 `scripts/r60_p2_gold48_owner_scoped_freeze_cpu.py` 只在 Owner Mac 私有 0700 根目录中，要求显式 `--owner-approved-scoped-freeze` 并重新验证上述既有私有证据原字节（准备包必须 canonical 字节一致），以 create-only 写新的 0600 `GOLD48_SCOPED_FROZEN_MANIFEST_PRIVATE.json` 与 `GOLD48_SCOPED_OWNER_FREEZE_SAFE.json`，原文件全部不变；失败保持 HOLD，不得用新名字重试绕过来源漂移。正式完成状态 `GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING` **只有 Owner 实际执行并返回 SAFE 后才能宣称**，此时聊天批准本身不代替签收文件。
+
+下一个独立门禁是固定四模型 Base Qwen3.8-27B、R46 checkpoint-7、R54 checkpoint-16、R60 Base336 checkpoint-37 的来源身份、统一 Tokenizer/Chat Template/Thinking/采样/Seed/Stop/输入上下文及 2048 Token 输出候选容量，并据六维盲审合同确认四生成臂 + 48 份独立历史 AI 原始回复（五来源共 240 份评分对象）、按 Session 聚类、42 风险敏感性和原始回复线上 effective_model 分层。**数据 Freeze 不自动批准 GPU/模型推理、分数入库、SFT 或模型晋升**。

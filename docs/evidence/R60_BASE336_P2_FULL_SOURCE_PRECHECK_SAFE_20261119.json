@@ -1,0 +1,16 @@
+{
+  "base336_cases": 336,
+  "base336_story_ids": 172,
+  "database_accessed": false,
+  "database_modified": false,
+  "gpu_started": false,
+  "hf_jobs_submitted": 0,
+  "model_requests": 0,
+  "p2_base336_exact_story_id_overlap": 0,
+  "p2_sources": 8,
+  "private_file_created": false,
+  "private_values_emitted": false,
+  "schema": "storyforge_r60_base336_p2_source_evidence_safe_v1",
+  "status": "P2_BASE336_SOURCE_EVIDENCE_PRECHECK__NO_DB",
+  "train_admitted": 0
+}

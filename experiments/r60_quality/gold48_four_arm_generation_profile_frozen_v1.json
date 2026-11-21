@@ -1,0 +1,216 @@
+{
+  "schema": "storyforge_r60_gold48_four_arm_generation_profile_frozen_v1",
+  "status": "GOLD48_FOUR_ARM_PROFILE_FROZEN__RUNTIME_VALIDATION_PENDING",
+  "dataset": {
+    "freeze_status_required": "GOLD48_FROZEN_SCOPED__GENERATION_PROFILE_PENDING",
+    "scoped_owner_freeze_safe_required": "GOLD48_SCOPED_OWNER_FREEZE_COMPLETE__GENERATION_PROFILE_PENDING",
+    "private_manifest_name": "GOLD48_SCOPED_FROZEN_MANIFEST_PRIVATE.json",
+    "run_key": "r60-gold48-cpu-20261120T182842Z-e5de137532a1",
+    "input_contract": "RECONSTRUCTED_EVALUATION_INPUT",
+    "reconstructed_message_count": 48,
+    "source_count": 8,
+    "session_count": 25,
+    "main_analysis_case_count": 48,
+    "sensitivity_case_count": 42,
+    "flagged_six_cases_included_in_main": true,
+    "flagged_six_cases_excluded_in_sensitivity": true,
+    "historical_actual_sent_verified": false,
+    "full_protected_universe_independence_verified": false,
+    "memory_pretarget_verified_count": 0,
+    "memory_unverified_omitted_count": 48,
+    "freeze_manifest_sha256_owner_private_only": true,
+    "model_visible_replies": "NONE__REFERENCE_ONLY_IN_SEPARATE_BLIND_REVIEW"
+  },
+  "base_model": {
+    "model": "Qwen/Qwen3.8-27B",
+    "revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "model_type": "qwen3_5",
+    "architecture": "Qwen3_5ForConditionalGeneration",
+    "generation_config_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "eos_token_ids": [
+      248046,
+      248044
+    ],
+    "pad_token_id": 248044,
+    "tokenizer_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "chat_template_source": "PINNED_MODEL_REVISION",
+    "tokenizer_core_cpu_receipt_verified": true,
+    "tokenizer_version_verified": "5.16.1",
+    "generation_model_architecture_runtime_verified": false
+  },
+  "generation": {
+    "thinking_mode": "disabled",
+    "enable_thinking": false,
+    "chat_template_args": {
+      "enable_thinking": false,
+      "add_generation_prompt": true
+    },
+    "context_ceiling_tokens": 32768,
+    "max_input_tokens": 30720,
+    "max_new_tokens": 2048,
+    "prompt_truncation": "FORBIDDEN",
+    "overflow_action": "HOLD_NO_OUTPUT",
+    "sampling": {
+      "do_sample": true,
+      "temperature": 0.7,
+      "top_p": 0.8,
+      "top_k": 20,
+      "min_p": 0
+    },
+    "seed_base": 42,
+    "per_case_seed": "seed_base + fixed_frozen_case_index_zero_based",
+    "stop_rule": "EOS_TOKEN_IDS_FROM_PINNED_BASE_GENERATION_CONFIG",
+    "custom_stop_sequences": [],
+    "finish_reason_length": "RECORD_AS_LENGTH__EXCLUDE_FROM_COMPLETED_ONLY_ANALYSIS_IF_PRE_REGISTERED",
+    "presence_penalty": {
+      "in_candidate": false,
+      "reason": "EXISTING_GENERATION_BACKEND_SAMPLING_KEYS_DO_NOT_INCLUDE_PRESENCE_PENALTY"
+    },
+    "same_generation_config_all_four_arms": true,
+    "max_length_includes_hidden_reasoning": true,
+    "prefill_and_decode_runtime_parity_verified": false
+  },
+  "arms": {
+    "base": {
+      "role": "base",
+      "display_name": "Qwen Base",
+      "model": "Qwen/Qwen3.8-27B",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_kind": "NONE",
+      "adapter_checkpoint": null,
+      "adapter_checkpoint_dir_immutable": true,
+      "adapter_sha256_from_existing_private_release_receipt_required": false,
+      "adapter_runtime_reload_in_selected_inference_image_verified": false,
+      "enable_thinking": false,
+      "sampling": {
+        "do_sample": true,
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "min_p": 0
+      }
+    },
+    "r46_v02": {
+      "role": "r46_v02",
+      "display_name": "R46 v0.2 checkpoint-7",
+      "model": "Qwen/Qwen3.8-27B",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_kind": "PEFT_LORA",
+      "adapter_checkpoint": "hf://buckets/adradar/storyforge-training/experiments/v02-r46/r46-20261014T070529Z-248172/output/v0-20261014-070817/checkpoint-7",
+      "adapter_checkpoint_dir_immutable": true,
+      "adapter_sha256_from_existing_private_release_receipt_required": true,
+      "adapter_runtime_reload_in_selected_inference_image_verified": false,
+      "enable_thinking": false,
+      "sampling": {
+        "do_sample": true,
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "min_p": 0
+      }
+    },
+    "r54_v03a": {
+      "role": "r54_v03a",
+      "display_name": "R54 v0.3-A checkpoint-16",
+      "model": "Qwen/Qwen3.8-27B",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_kind": "PEFT_LORA",
+      "adapter_checkpoint": "hf://buckets/adradar/storyforge-training/experiments/v03-r54/r54-v2-20261021T161818Z-507469/output/v0-20261021-162418/checkpoint-16",
+      "adapter_checkpoint_dir_immutable": true,
+      "adapter_sha256_from_existing_private_release_receipt_required": true,
+      "adapter_runtime_reload_in_selected_inference_image_verified": false,
+      "enable_thinking": false,
+      "sampling": {
+        "do_sample": true,
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "min_p": 0
+      }
+    },
+    "r60_base336": {
+      "role": "r60_base336",
+      "display_name": "R60 Base336 checkpoint-37",
+      "model": "Qwen/Qwen3.8-27B",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_kind": "PEFT_LORA",
+      "adapter_checkpoint": "hf://buckets/adradar/storyforge-training/experiments/r60-base336-exploratory/r60-base336-gpu-20261117T055622Z-b609cb78661d/training/v0-20261117-071048/checkpoint-37",
+      "adapter_checkpoint_dir_immutable": true,
+      "adapter_sha256_from_existing_private_release_receipt_required": true,
+      "adapter_runtime_reload_in_selected_inference_image_verified": false,
+      "enable_thinking": false,
+      "sampling": {
+        "do_sample": true,
+        "temperature": 0.7,
+        "top_p": 0.8,
+        "top_k": 20,
+        "min_p": 0
+      }
+    }
+  },
+  "blind_review": {
+    "generation_reply_count_expected": 192,
+    "historical_original_reference_count": 48,
+    "five_answer_sources_total": 240,
+    "dimensions": [
+      "chinese_prose",
+      "character_consistency",
+      "npc_initiative",
+      "player_agency",
+      "rule_fidelity",
+      "narrative_continuity"
+    ],
+    "severe_flags": [
+      "serious_player_agency",
+      "hard_fact_or_ban",
+      "safety_exclusion"
+    ],
+    "all_five_sources_anonymous_to_reviewers": true,
+    "historical_original_reference_not_ground_truth": true,
+    "primary_pairs": [
+      "r60_base336_vs_historical_reference",
+      "r60_base336_vs_base",
+      "r60_base336_vs_r46_v02"
+    ],
+    "diagnostic_pairs": [
+      "r60_base336_vs_r54_v03a"
+    ],
+    "statistics_unit": "PAIR_CASE_LEVEL_WITH_SESSION_CLUSTERED_UNCERTAINTY",
+    "stratified_sensitivity_case_count": 42
+  },
+  "existing_reuse": {
+    "token_core": "src/storyforge_dataset/token_preflight.py",
+    "hf_runtime": "src/storyforge_dataset/hf_runtime",
+    "generation_batch_core": "src/storyforge_dataset/generation_eval/worker.py::run_generation_batch",
+    "legacy_p4_profile_reused": false,
+    "legacy_p4_backend_without_adapter_extension_sufficient": false
+  },
+  "pre_generation_blockers": [
+    "PINNED_QWEN3_5_FULL_MODEL_AND_THREE_LORA_RUNTIME_LOAD_UNVERIFIED",
+    "ADAPTER_SHA_BINDING_FROM_EXISTING_PRIVATE_RELEASE_RECEIPTS_PENDING",
+    "QWEN3_5_INFERENCE_RUNTIME_IMAGE_AND_TRANSFORMERS_DEPENDENCY_LOCK_PENDING",
+    "QWEN3_5_EOS_AND_TEMPLATE_EFFECTIVE_GENERATION_PREFILL_VALIDATION_PENDING",
+    "FOUR_ARM_BACKEND_THIN_ADAPTER_AND_NO_TRUNCATION_INFERENCE_SMOKE_PENDING",
+    "SEPARATE_GENERATION_AUTHORIZATION_AND_GPU_CAPACITY_NOT_GRANTED_BY_DATA_FREEZE"
+  ],
+  "owner_generation_profile_freeze": true,
+  "inference_authorized": false,
+  "gpu_authorized_by_this_document": false,
+  "training_authorized": false,
+  "model_generation_started": false,
+  "model_promoted": false,
+  "owner_generation_profile_approval": {
+    "status": "OWNER_APPROVED",
+    "decision": "APPROVED_AS_RECOMMENDED",
+    "approved_on": "2026-11-21",
+    "scope": "GENERATION_PROFILE_FREEZE_ONLY",
+    "candidate_path": "experiments/r60_quality/gold48_four_arm_generation_profile_candidate_v1.json",
+    "candidate_git_blob_sha": "394013dc182fa095040808e02c4ea2e393636d30",
+    "candidate_source_commit": "4fd87b2574f80e6d376b82dd66c605e4c01e8186",
+    "dataset_freeze_scope": "SCOPED_RECONSTRUCTED_EVALUATION",
+    "separate_runtime_compatibility_gate_required": true,
+    "inference_authorized": false,
+    "gpu_authorized": false,
+    "training_authorized": false
+  }
+}

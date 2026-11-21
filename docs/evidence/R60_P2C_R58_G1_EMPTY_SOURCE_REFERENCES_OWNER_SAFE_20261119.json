@@ -1,0 +1,76 @@
+{
+  "candidate_story_content_read": false,
+  "candidate_world_components_certified": 0,
+  "expansion_allowed": false,
+  "g1_clearance": "HOLD",
+  "independently_verified_complete_scopes": 0,
+  "owner_coverage_claims_present": 0,
+  "owner_expansion_approval": "REQUIRED",
+  "private_paths_or_identifiers_returned": false,
+  "protected_test_content_read": false,
+  "schema": "r58_round1_g1_index_readiness_safe_v1",
+  "scope_count": 5,
+  "scope_readiness": {
+    "other_protected_or_holdout": {
+      "actual_index_coverage_verified": false,
+      "independent_review_claim_in_inventory": false,
+      "independent_review_proven_by_this_tool": false,
+      "owner_coverage_attestation_present": false,
+      "revision_recorded": false,
+      "source_file_exists_unopened": false,
+      "status": "MISSING_SOURCE_REFERENCE",
+      "world_isolation_pass": false,
+      "world_namespace_recorded": false
+    },
+    "prior_sft_exposure": {
+      "actual_index_coverage_verified": false,
+      "independent_review_claim_in_inventory": false,
+      "independent_review_proven_by_this_tool": false,
+      "owner_coverage_attestation_present": false,
+      "revision_recorded": false,
+      "source_file_exists_unopened": false,
+      "status": "MISSING_SOURCE_REFERENCE",
+      "world_isolation_pass": false,
+      "world_namespace_recorded": false
+    },
+    "r50_protected_worlds": {
+      "actual_index_coverage_verified": false,
+      "independent_review_claim_in_inventory": false,
+      "independent_review_proven_by_this_tool": false,
+      "owner_coverage_attestation_present": false,
+      "revision_recorded": false,
+      "source_file_exists_unopened": false,
+      "status": "MISSING_SOURCE_REFERENCE",
+      "world_isolation_pass": false,
+      "world_namespace_recorded": false
+    },
+    "r55_r57_dev_worlds": {
+      "actual_index_coverage_verified": false,
+      "independent_review_claim_in_inventory": false,
+      "independent_review_proven_by_this_tool": false,
+      "owner_coverage_attestation_present": false,
+      "revision_recorded": false,
+      "source_file_exists_unopened": false,
+      "status": "MISSING_SOURCE_REFERENCE",
+      "world_isolation_pass": false,
+      "world_namespace_recorded": false
+    },
+    "semantic_world_graph": {
+      "actual_index_coverage_verified": false,
+      "independent_review_claim_in_inventory": false,
+      "independent_review_proven_by_this_tool": false,
+      "owner_coverage_attestation_present": false,
+      "revision_recorded": false,
+      "source_file_exists_unopened": false,
+      "status": "MISSING_SOURCE_REFERENCE",
+      "world_isolation_pass": false,
+      "world_namespace_recorded": false
+    }
+  },
+  "source_files_present_unopened": 0,
+  "source_index_bytes_read": false,
+  "status": "R58_G1_SOURCE_EXISTENCE_PREFLIGHT_ONLY__WORLD_AND_PROTECTION_HOLD",
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "validation_admitted": 0
+}

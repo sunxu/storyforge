@@ -1,4 +1,6 @@
 """Synthetic tests for the deterministic R60 P2 Supabase source inventory."""
+import json
+import os
 from uuid import UUID
 
 import pytest
@@ -47,6 +49,69 @@ def rows():
         ("2026-11-17T15:20:00Z", 9),
     ]
     return [candidate(i, created) for created, i in values]
+
+
+def test_source_first_explicit_private_8_ids_contract(tmp_path):
+    values = [str(UUID(int=n + 1)) for n in range(8)]
+    path = tmp_path / "owner-source-first-ids.json"
+    path.write_text(json.dumps({
+        "schema": target.SOURCE_FIRST_INPUT_SCHEMA,
+        "status": target.SOURCE_FIRST_INPUT_STATUS,
+        "source_selection_mode": target.SOURCE_FIRST_MODE,
+        "story_ids": values,
+    }), encoding="utf-8")
+    os.chmod(path, 0o600)
+    selected, digest = target.load_source_first_ids(path)
+    assert selected == values
+    assert len(digest) == 64
+    assert "story_id = ANY(%s::text[])" in target.SQL_SOURCE_FIRST
+    assert "time_rank <= %s" not in target.SQL_SOURCE_FIRST
+    assert "latest_submission AS (" in target.SQL_SOURCE_FIRST
+
+
+def test_source_first_private_id_file_rejects_insecure_or_duplicate(tmp_path):
+    path = tmp_path / "ids.json"
+    ids = [str(UUID(int=n + 1)) for n in range(8)]
+    document = {
+        "schema": target.SOURCE_FIRST_INPUT_SCHEMA,
+        "status": target.SOURCE_FIRST_INPUT_STATUS,
+        "source_selection_mode": target.SOURCE_FIRST_MODE,
+        "story_ids": ids,
+    }
+    path.write_text(json.dumps(document), encoding="utf-8")
+    os.chmod(path, 0o644)
+    with pytest.raises(target.private.Hold, match="INPUT_FILE_GUARD_HOLD"):
+        target.load_source_first_ids(path)
+    os.chmod(path, 0o600)
+    document["story_ids"][1] = document["story_ids"][0]
+    path.write_text(json.dumps(document), encoding="utf-8")
+    with pytest.raises(target.Hold, match="SOURCE_FIRST_INPUT_DUPLICATE_HOLD"):
+        target.load_source_first_ids(path)
+
+
+def test_source_first_v2_manifest_is_bound_to_2_6_and_7_authors():
+    selected = rows()[:2] + rows()[3:9]
+    for n, record in enumerate(selected):
+        record["author_id"] = f"author-{n % 7}"
+    manifest = target.validate_rows(selected, source_first=True)
+    assert manifest["schema"] == target.SOURCE_FIRST_SCHEMA
+    assert manifest["selection"]["authors"] == 7
+    assert manifest["selection"]["created_before_gpu_run"] == 2
+    assert manifest["selection"]["created_after_gpu_run"] == 6
+    assert manifest["selection"]["owner_freeze"] == "PENDING"
+    assert manifest["gates"]["owner_freeze"] == "PENDING"
+    with pytest.raises(target.Hold, match="SOURCE_AUTHOR_COUNT_HOLD"):
+        target.validate_rows(selected)
+
+
+def test_source_first_v2_rejects_late_new_story():
+    selected = rows()[:2] + rows()[3:9]
+    for n, record in enumerate(selected):
+        record["author_id"] = f"author-{n % 7}"
+    selected[-1]["created_at"] = "2026-11-20T00:00:00Z"
+    selected[-1]["first_public_approved_at"] = "2026-11-20T00:00:00Z"
+    with pytest.raises(target.Hold, match="SOURCE_TIME_BINDING_HOLD"):
+        target.validate_rows(selected, source_first=True)
 
 
 def test_deterministic_3_before_5_after_selection():

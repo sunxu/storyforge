@@ -1,0 +1,24 @@
+{
+  "database_accessed": false,
+  "decision_counts": {
+    "INDEPENDENT_TEMPLATE_ONLY": 0,
+    "INSUFFICIENT_EVIDENCE": 0,
+    "PENDING": 0,
+    "SAME_SEMANTIC_COMPONENT": 10
+  },
+  "p2_b_48_prompts": "NOT_GENERATED",
+  "p2_c": "HOLD",
+  "private_values_emitted": false,
+  "r50_complete_exclusion_verified": false,
+  "reference_binding_verified_for_filled": 10,
+  "review_edges_expected": 10,
+  "review_edges_filled": 10,
+  "review_edges_pending": 0,
+  "reviewer_independence_independently_verified": false,
+  "schema": "storyforge_r60_base336_independent_review_safe_v1",
+  "self_attested_independence_count": 0,
+  "source_version_actual_sent_verified": false,
+  "source_versions_reviewed_count": 10,
+  "status": "REVIEW_INCOMPLETE_HOLD",
+  "train_admitted": 0
+}

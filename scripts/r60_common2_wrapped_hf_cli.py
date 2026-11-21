@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import re
 import subprocess
 import sys
@@ -16,13 +15,22 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "src"))
 import hf_job_guard
 import r60_common2_wrapped_hf_stage as stage_tool
+
+from storyforge_dataset.hf_runtime.outputs import OutputManager
 
 BUCKET = "adradar/storyforge-training"
 PREFIX = "preflight/r60/common2/wrapped-cpu"
 IMAGE = "pytorch/pytorch@sha256:77f17f843507062875ce8be2a6f76aa6aa3df7f9ef1e31d9d7432f4b0f563dee"
 WORKER = "/input/common2/scripts/r60_common2_wrapped_hf_worker.sh"
+INPUT_MOUNT = "/input/common2"
+CPU_FLAVOR = "cpu-upgrade"
+TIMEOUT_MINUTES = 120
+JOB_NAME_PREFIX = "r60-wrapcpu"
+RUN_KEY_ENV = "STORYFORGE_R60_WRAPCPU_KEY"
+MARKER_SUFFIX = ".wrapped-cpu-attempted"
 SCHEMA = "storyforge_r60_common2_wrapped_hf_cli_safe_v1"
 
 
@@ -131,22 +139,27 @@ def inspect_job_cli_flags() -> dict:
     return result
 
 
+def worker_command(key: str) -> list[str]:
+    """Override only the business worker argv, preserving Guard and CLI policy."""
+    return ["bash", WORKER]
+
+
 def job_command(key: str, help_text: str) -> list[str]:
     missing = missing_job_cli_flags(help_text)
     default_attempts = use_documented_default_attempts(help_text)
     if missing and not default_attempts:
         raise ValueError("HF_CLI_FLAGS_HOLD")
     base = "hf://buckets/" + BUCKET
-    inputs = [f"{base}/{PREFIX}/runs/{key}:/input/common2:ro"]
+    inputs = [f"{base}/{PREFIX}/runs/{key}:{INPUT_MOUNT}:ro"]
     output = f"{base}/{PREFIX}/results/{key}:/output:rw"
-    command = ["bash", WORKER]
+    command = worker_command(key)
     hf_job_guard.validate_spec(
-        namespace="adradar", flavor="cpu-upgrade", timeout_minutes=120,
+        namespace="adradar", flavor=CPU_FLAVOR, timeout_minutes=TIMEOUT_MINUTES,
         input_volumes=inputs, output_volume=output, command=command
     )
     argv = hf_job_guard.build_hf_argv(
-        namespace="adradar", name=f"r60-wrapcpu-{key}",
-        flavor="cpu-upgrade", timeout_minutes=120,
+        namespace="adradar", name=f"{JOB_NAME_PREFIX}-{key}",
+        flavor=CPU_FLAVOR, timeout_minutes=TIMEOUT_MINUTES,
         input_volumes=inputs, output_volume=output,
         image=IMAGE, command=command
     )
@@ -158,7 +171,7 @@ def job_command(key: str, help_text: str) -> list[str]:
             raise ValueError("HF_CLI_FLAGS_HOLD")
         del argv[index:index + 2]
     pos = argv.index(IMAGE)
-    argv[pos:pos] = ["--env", f"STORYFORGE_R60_WRAPCPU_KEY={key}"]
+    argv[pos:pos] = ["--env", f"{RUN_KEY_ENV}={key}"]
     pos = argv.index(IMAGE)
     if argv[pos + 1:pos + 2] == ["--"]:
         argv.pop(pos + 1)  # HF CLI 2.4.0 IMAGE COMMAND ... syntax
@@ -173,7 +186,7 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
         return safe("WRAPPED_CPU_LOCAL_STAGE_PASS__NO_JOB", "LOCAL_SHA_VERIFIED")
     from huggingface_hub import HfApi
     api = HfApi()
-    marker = stage.parent / (key + ".wrapped-cpu-attempted")
+    marker = stage.parent / (key + MARKER_SUFFIX)
     if action == "sync":
         remote_check(stage, key, ready=False, api=api)
         output_is_empty(api, key)
@@ -230,12 +243,16 @@ def execute(action: str, stage: Path, key: str, allow_submit: bool) -> dict:
     if auth.returncode:
         raise ValueError("HF_AUTH_HOLD")
     argv.remove("--dry-run")
-    # O_EXCL marker BEFORE the single potentially billable submission.
-    fd = os.open(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    with os.fdopen(fd, "w") as stream:
-        stream.write(json.dumps({"run_key": key, "status": "ATTEMPTED_DO_NOT_RETRY"}) + "\n")
-        stream.flush()
-        os.fsync(stream.fileno())
+    # The existing OutputManager supplies O_EXCL/no-replace, mode 0600,
+    # file fsync AND parent-directory fsync before a billable CLI call.
+    # This marker is Mac-local only; it is not a cross-Job HF Bucket lock.
+    try:
+        OutputManager.write_safe(
+            marker, {"run_key": key, "status": "ATTEMPTED_DO_NOT_RETRY"},
+            mode=0o600,
+        )
+    except (OSError, ValueError) as exc:
+        raise ValueError("LOCAL_SUBMISSION_MARKER_ATOMIC_HOLD") from exc
     try:
         result = subprocess.run(argv, capture_output=True, text=True, timeout=120, check=False)
     except (subprocess.TimeoutExpired, OSError):
@@ -276,7 +293,7 @@ def diagnose(stage: Path, key: str) -> dict:
         outputs = remote_set(api, f"{PREFIX}/results/{key}/")
         out["remote_output"] = "EMPTY" if not outputs else "NONEMPTY"
         out["phase"] = "MARKER_CHECK"
-        marker = stage.parent / (key + ".wrapped-cpu-attempted")
+        marker = stage.parent / (key + MARKER_SUFFIX)
         out["submit_marker"] = "PRESENT" if marker.exists() or marker.is_symlink() else "ABSENT"
         out.update(status="WRAPPED_CPU_REMOTE_DIAGNOSTIC_PASS__NO_JOB",
                    reason_code="READ_ONLY_INSPECTION", phase="COMPLETE")
@@ -310,6 +327,7 @@ def classify_safe_failure(exc: Exception) -> str:
         "REMOTE_RESULT_ALREADY_EXISTS_HOLD", "REMOTE_UPLOAD_INCOMPLETE_HOLD",
         "REMOTE_MANIFEST_UPLOAD_HOLD", "JOB_ATTEMPT_ALREADY_RECORDED_HOLD",
         "EXISTING_JOB_HOLD", "HF_CLI_HELP_HOLD", "HF_CLI_FLAGS_HOLD",
+        "LOCAL_SUBMISSION_MARKER_ATOMIC_HOLD",
         "HF_CLI_DRY_RUN_HOLD", "HF_AUTH_HOLD", "EXPLICIT_EXECUTE_REQUIRED",
     }
     # Stage and shared InputManager failures must be distinguishable from

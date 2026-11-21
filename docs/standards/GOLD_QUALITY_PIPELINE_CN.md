@@ -1,6 +1,14 @@
 # StoryForge Gold Quality Pipeline
 
-> **2026-11-18 Base336训练后状态（当前交接入口）**：Base336探索性QLoRA训练与33/33产物inventory已完成，但均为工程证据、`NOT_PROMOTED`。43条Validation已参与训练期Eval/Checkpoint选择，不可作独立Held-out。P2-A Supabase公开来源revision/审核快照/权限事件绑定8/8通过；最新8组World来源证据全部HOLD（7/8当前版本跨Train/Validation，语义复核和历史actual-sent未验证）；48条提示JSONL/Manifest尚未生成。P2未PASS前不创建正式评测包、不推理。R50正文不访问，Gold Manifest不导入技术或生成评估事件，`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`。当前权威入口：[训练后质量评估计划](../plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)、[新 Agent 交接任务书](../R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md)、[启动提示词](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md)。
+> **2026-11-19 Owner 新增原始回答 Gold 比较需求：** R60 Base336 新独立评估候选阵容为 **四个生成模型（Base、R46 v0.2、R54 v0.3-A、R60 Base336）+ 与每一题严格对齐的原始回答 Gold**，Gold 是匿名评审回答而非生成模型。正式主比较必须包括 **Base336 vs Gold**，Gold 也按 Quality-v1 六维评分与严重标记。R48 旧 20 题原始 Gold 不可配给 P2 新构造 48 题；现有 8 公开来源只有 World/角色/Opening 证据，无真实 48 条匹配原始回复的 SAFE 证明，须独立建立来源/完整 Prompt 匹配、权利与无历史泄漏门禁。不得用 Opening、模型答案或私有用户聊天冒充 Gold；Gold 不进入模型生成 prompt 输入，仅匿名进入盲审。现行合同见 [2026-11-19 接手任务书第八节](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。P2-C HOLD、48 Prompt NOT_GENERATED、无 GPU/HF 授权、Train/Quality admission=0。
+
+---
+
+
+> **2026-11-19 最新 R60 Base336 独立质量评估状态（覆盖下面旧 2026-11-18 状态）：** 当前唯一新 Agent [任务书](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) / [复制启动词](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261119_CN.md)。主线仍为 P2-C 新 8 公开来源隔离 → 48 条六维三消息提示 → Base/Adapter 配对盲评；P2-A READY、P2-C HOLD、48 正式提示未生成、train/quality admission 0、模型未晋升。R50 50=46+4 provenance 与冻结五世界=原始 50 来源集合双双 PASS，P2 × 五世界精确 overlap=0；R47/R48/R55 已知旧 20 Prompt/2 Story 的完整回链与 P2 exact overlap=0；P2 × Base336 172 Story exact overlap=0，但全部 172 当前+归档语义来源捕获被 DB query HOLD。剩余其他 Protected/Reserved、历史 Dev/仲裁/训练/教师全集，actual-sent、独立 Review 与 Owner Freeze 继续 HOLD。下面 2026-11-18 “R55 Story ID 尚未知”的文字是历史快照，禁止据此重复旧审计。质量六维/严重标记单一来源与私有事件边界不变；无单独授权不运行 GPU/HF。
+
+
+> **2026-11-18 Base336训练后状态（当前交接入口）**：Base336探索性QLoRA训练与33/33产物inventory已完成，但均为工程证据、`NOT_PROMOTED`。43条Validation已参与训练期Eval/Checkpoint选择，不可作独立Held-out。P2-A Supabase公开来源revision/审核快照/权限事件绑定8/8通过；最新8组World来源证据全部HOLD（7/8当前版本跨Train/Validation，语义复核和历史actual-sent未验证）；48条提示JSONL/Manifest尚未生成。P2 × Base336（336 cases / 172 stories）精确 Story ID overlap=0、P2 × R50 exact Source ID disjoint 已分别通过限定范围核验；R47/R48/R55 最新 metadata/shape audit 尚未建立 Story ID crosswalk（R55私有Index内容/Schema/覆盖未核验），因此该组精确排除仍 UNKNOWN/HOLD，语义变体排除继续 HOLD。P2未PASS前不创建正式评测包、不推理。R50正文不访问，Gold Manifest不导入技术或生成评估事件，`train_admitted=0`、`quality_v1_admitted=0`、`model_promoted=false`。本轮详细审计：[R47/R48/R55 Source Shape Audit](../evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md)。当前权威入口：[训练后质量评估计划](../plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)、[新 Agent 交接任务书](../R60_BASE336_POST_TRAIN_NEXT_AGENT_HANDOFF_20261117_CN.md)、[启动提示词](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261117_CN.md)。
 
 > **2026-11-13 通用1000筛选方向（优先于旧Pilot5专属步骤）**：当前主目标是对完整冻结1000池建立来源→结构→独立双审→技术HOLD→语义仲裁→Gold候选→训练隔离的通用流程，不能继续仅为旧5案优化Reviewer。权威新方案 `docs/R60_REAL1000_GENERAL_SCREENING_PIPELINE_20261113_CN.md`。纯函数分流器 `src/storyforge_gold_quality/real1000_screening_policy.py` 只接受已来源绑定的证据标记，不读取私有文本或请求模型；仅输出 `QUALITY_CANDIDATE_NOT_ADMITTED` 等状态及1000全局SAFE聚合，**不能替代**现有 `hf_literary_review` / `hf_blind_stage` / 统一Quality Manifest与冻结六维Rubric。HF已完成Stage优先只读audit，不重复prepare，下一批需独立Owner授权。Gold/训练准入仍为0。
 
@@ -267,3 +275,6 @@ SAFE 仅输出聚合计数；Story ID、author ID、submission ID、World MD5、
 - Base336 的 8 组私有世界来源回执目前全部 HOLD（7 组当前版本跨 split，语义审核未完成，历史 actual-sent 未验证）。它不是 Gold Manifest 事件，不得导入 Source/Review/Exclusion/Reconciliation，也不改变 `quality_v1_admitted=0`、`train_admitted=0`。
 
 新审核流程必须先核对来源版本和成员覆盖，再填写语义组件分配，最后运行共享结构门禁。缺失成员、缺失证据、重复来源键、未完成审核或跨 split 组件均失败关闭；不得通过重算 hash、改名或手动修改 SAFE 绕过。共享核心代码提交的 R60 REAL1000 synthetic-only Actions 已通过：Ruff PASS、338 passed / 2 subtests、Skill contract 7 passed（run `44127200498`）；最新质量标准文档提交的 Actions 通过（run `44127458330`），当前 HEAD 文档同步后的 Actions 也通过（run `44127961963`）。
+
+
+> **2026-11-18 R47/R48/R55 精确来源映射补充**：代码复核已定位 R47 \`sample_id → Manifest source_line/prompt_sha256 → canonical Test 完整 prompt prefix → metadata.story_id\` 绑定路径；R48 继承同一 20-case 集；R55 第一层 Index 保存 \`source_sample_id_private\`，第二 / 第三层有 candidate-token 回连。实际 Owner-local SAFE / receipt / 覆盖仍未核验，P2 × R47/R48/R55 exact overlap 继续 UNKNOWN / HOLD，语义变体排除继续 HOLD。详细步骤见 docs/evidence/R60_P2_R47_R48_R55_SOURCE_SHAPE_AUDIT_20261118_CN.md。

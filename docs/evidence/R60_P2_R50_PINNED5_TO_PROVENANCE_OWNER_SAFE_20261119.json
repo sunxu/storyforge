@@ -1,0 +1,16 @@
+{
+  "all_other_protected_reserved_sources_verified": false,
+  "database_accessed": false,
+  "failure_phase": "COMPLETE",
+  "p2_c": "HOLD",
+  "p2_pinned_r50_story_id_overlap": 0,
+  "p2_public_sources_checked": 8,
+  "pinned_five_worlds_verified": true,
+  "private_values_emitted": false,
+  "r50_original_50_provenance_verified": true,
+  "r50_pinned_five_equals_original50_source_set": true,
+  "r50_sealed_content_read": false,
+  "schema": "storyforge_r60_p2_r50_pinned5_to_provenance_binding_safe_v1",
+  "status": "R50_PINNED_FIVE_BOUND_TO_ORIGINAL50__P2_EXACT_DISJOINT__UNIVERSE_HOLD",
+  "train_admitted": 0
+}

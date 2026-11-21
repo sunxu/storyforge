@@ -1,5 +1,43 @@
 # R60 Base336：Supabase 公开故事来源 P2 补充决策（2026-11-17）
 
+## 2026-11-20 已更新来源与用途边界（覆盖旧三消息、旧 3+5/5 作者、旧私有会话默认禁用说明）
+
+现行权威执行目标和新 Agent 启动提示词：[R60 Base336 P2-C → Gold48 → 五来源盲评](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 顶端；下文早期“公开八来源是 5 作者/3+5”“只能新造三消息”“Owner 不许读取任何私有历史聊天”的条件**不再描述 2026-11-20 严格候选及 Owner 最新限定授权**，不得作为重复筛选、否决既有 Gold48 证据的理由。
+
+- 当前严格来源候选由历史请求可用性+已批准公开快照与许可绑定筛选，**8 Story /7 作者 /GPU 前2后6**，与最早 P2 公共元数据八来源 **4 保留+4 更替**；新四源修订/审批/权限在首个合格 Gold 时点前生效的限定校验已做。**来源权利可用≠正式 Gold48 Owner Freeze**，不得私自新增训练/公开/再分发用途。
+- Owner 已明确**允许本任务所需、固定来源/时间/只读 RLS 范围内的真实历史聊天用于内部独立质量评估**，以取得**48 条完整持久化 role/content Prefix**及对应 48 条真实 Original Reference；用户原始会话正文与模型生成参考回答仍只能进 Owner 私有 0700/0600 受控目录，不进 GitHub/聊天/训练端，不能读 R50 sealed。此前“旧权限仅公开卡”的文字保留作历史快照，而不是当前绝对禁令。
+- 48/48 已找到一对一成功历史请求事件、historyMsgCount/Token 计量与 Prefix 个数吻合，但**没有可证明实际发给 Provider 的完整 Prompt 字节**；请求元数据不可当 `ACTUAL_SENT_BYTE_EXACT`。若 source 代码与允许访问的快照仍不可恢复，先让 Owner 决定是否采用`RECONSTRUCTED_EVALUATION_INPUT` 且写清输入差异的评估合同，再冻结 48 同题 Prompt。不能补造原始回答、不能假定它是绝对正确。
+- Base336 172 Story/375 版本 + History32 32 Story/120 版本的 P2 跨集合语义 Reviewer 8/8 已提交并按 Owner 双 SAFE 签收，已审限定范围 **204 Story/495 版本**；仍缺其余 Protected/Reserved/Dev/Teacher 权威全集与一个公开 P2 源自身设定不一致质量仲裁。这些边界不因来源授权存在而自动 PASS。
+- 五来源是**四生成模型 +一历史原始回答**；未获新 GPU/HF/推理许可。`P2_C=HOLD`、`P2_B_48_PROMPTS=NOT_GENERATED`、`quality_v1_admitted=0`、`model_promoted=false`。
+
+---
+
+## 2026-11-19 Gold/原始回答匹配：P2-B 来源设计新增硬约束
+
+Owner 明确要求**训练模型的作答要与原始回答进行同题比较**。此前只依据公开 World/Character/Opening “从零构造 8×6=48 个提示”的设计，无法**自动得到** 48 条与提示严格对齐的历史原始 Assistant 回答。**这不是旧 R48 Gold 可以复用的相同测试集**，也不能把公开 Opening 认作某个新 Prompt 的回答。
+
+新 Agent 必须先验证新 8 来源所允许的公开资料能否提供真实 `prompt prefix → original assistant reply` 来源/版权/时间/版本绑定；`scripts/v02_r48_four_arm_build.py::read_gold` 已定义严格的 `original.messages[:-1] == frozen_prompt.messages` 合同。**任何私有用户对话仍禁止访问**；当前授权只允许公开素材构造内部评估提示，不意味着可以查询私有回复或让模型生成所谓“原始回答”。
+
+若无 48 份同题原始回复，新增 `P2_NEW48_MATCHED_ORIGINAL_GOLD=UNVERIFIED_HOLD`；正式“五种匿名回答来源”评估不能宣称已可执行。Owner 应在保持独立世界/权利边界下决定：扩大合法公开来源的已完成问答筛选，或另行生成由作者/人工提供的**新参考回答（需明确非历史原始 Gold）**；这两种方案必须单独记录授权和真值性质，不允许悄悄替换。旧 R47/R48 20 Prompt 的 Gold 只做单独 EXPOSED_DEV 回归，不计入 P2 新来源的 Held-out 结论。
+
+**新增 Gold 只是 Reviewer 盲评时的匿名对照回答，不写入 P2 prompt JSONL 的模型生成字段**：原来的 `user/assistant/user` 输入、无 System、无 reference-label 泄漏等校验规则不放宽。所有生成答案与 Gold 对应同一个 Prompt SHA，只有审阅器拿到匿名回答；评分结果需报告 R60 Base336 vs Gold 以及 Base、v0.2 与 v0.3-A 对照。详细操作规则见 [现行交接任务书第八节](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
+
+P2-A READY、P2-C HOLD、真实 48 提示 NOT_GENERATED、GPU/HF 未授权、train/quality admission=0、模型未晋升均不变。
+
+---
+
+
+## 2026-11-19 最新 P2 决策与接手入口（覆盖旧第一动作）
+
+**现行 Agent 任务书：** [R60 P2 Quality-v1 接手](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。本文件 P2-A 8 条来源的内部评估用途权利边界、8×六维共 48 提示及 `user/assistant/user` 三消息格式保持有效；但先前“Owner 尚未返回 inventory”“R55 三层未核验”“R47/R48/R55 无 Story ID 映射”“需重新申请只读 DB”已过期，**不得照做**。
+
+真实进展：P2-A 8 来源 READY；P2 × Base336 172 Story 精确 overlap=0；R50 原始 50 provenance 50=46+4 PASS、冻结五个受保护 Story 身份与原始 50 来源集合严格一致，P2 overlap=0；R47/R48/R55 旧 20 Prompt / 2 Story 精确 overlap=0、R55 三层回链已通过。**这不是 P2-C 的完整语义/历史曝光 PASS**：全 172 current+archived 语义证据仍缺（Owner read-only source SQL HOLD），其余 Protected/Reserved、历史额外 Dev/训练/教师曝露全集、actual-sent、独立 Reviewer 与 Owner Freeze 仍 HOLD。真实 48 prompt JSONL/Manifest 未生成。
+
+新 Agent 不重跑 P2-A、R50 50/46/4 或五世界、旧 20-case/R55 索引、R58 空白 CSV、旧 35 案例图；只推进新 8 来源的独立性、未覆盖的来源全集并在 P2-C 真正通过后完成 48 提示与 Base/Adapter 质量评估。只读 DB 访问已获范围许可，无需反复申请；GPU/HF 推理需单独批准。
+
+---
+
+
 ## 状态
 
 **P2_SOURCE_SET_VERIFIED__WORLD_EVIDENCE_ALL_HOLD__PROMPT_PACKAGE_NOT_GENERATED__WORLD_COMPONENT_CROSSWALK_PENDING**

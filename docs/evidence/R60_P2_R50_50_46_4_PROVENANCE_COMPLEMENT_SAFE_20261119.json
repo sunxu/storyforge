@@ -1,0 +1,13 @@
+{
+  "database_accessed": false,
+  "exact_50_46_4_metadata_complement": true,
+  "failure_phase": "COMPLETE",
+  "original_50_provenance_verified": true,
+  "p2_c": "HOLD",
+  "p2_r50_exact_story_overlap": 0,
+  "private_values_emitted": false,
+  "r50_complete_exclusion_verified": false,
+  "r50_sealed_content_opened": false,
+  "status": "R50_PROVENANCE_50_46_4_METADATA_PASS__P2_C_HOLD",
+  "train_admitted": 0
+}

@@ -25,8 +25,8 @@ import r60_real_private_batch as private
 SCHEMA = "storyforge_r60_base336_card_opening_evidence_private_v1"
 SAFE = "storyforge_r60_base336_card_opening_evidence_safe_v1"
 OUTPUT_PREFIX = "R60_BASE336_WORLD_GROUP_"
-MAX_FIELD_BYTES = 24000
-MAX_GROUP_BYTES = 185000
+MAX_FIELD_BYTES = 65536  # 64 KiB; Owner observed peak: opening 51,811 bytes
+MAX_GROUP_BYTES = 655360  # 640 KiB; Owner observed peak: group 575,785 bytes
 MAX_RECORDS = 256
 FIELDS = ("character", "characters", "opening")
 
@@ -42,6 +42,44 @@ FROM public.story_content_versions WHERE id=%s AND story_id=%s
 
 class Hold(ValueError):
     pass
+
+
+# Only fixed, non-sensitive values may be emitted on a failed Owner-local run.
+FAILURE_PHASES = frozenset({
+    "ROSTER_TEMPLATE", "FROZEN_INPUT", "FROZEN_SCOPE",
+    "OUTPUT_GUARD", "DB_CONNECT", "DB_GUARD", "DB_WORLD_AND_FIELDS",
+    "PACKAGE_BUILD", "OUTPUT_WRITE",
+})
+KNOWN_HOLD_CODES = frozenset({
+    "FIELD_TYPE_HOLD", "SOURCE_ROW_HOLD", "FIELD_TOO_LARGE_HOLD",
+    "WORLD_GROUP_SNAPSHOT_DRIFT_HOLD", "RECORD_LIMIT_HOLD",
+    "DSN_NOT_SET_HOLD", "DATABASE_GUARD_HOLD",
+    "FROZEN_SCOPE_HOLD", "OUTPUT_DIR_GUARD_HOLD",
+    "GROUPS_EXTRACTED_HOLD", "GROUP_ORDER_HOLD",
+    "GROUP_TOO_LARGE_HOLD", "OUTPUT_PERMISSION_HOLD",
+    "OUTPUT_SIZE_HOLD",
+})
+
+
+class DiagnosticHold(Hold):
+    def __init__(self, phase: str, reason_code: str):
+        if phase not in FAILURE_PHASES:
+            phase = "PACKAGE_BUILD"
+        if reason_code not in KNOWN_HOLD_CODES:
+            reason_code = "UNEXPECTED_HOLD"
+        self.failure_phase = phase
+        self.reason_code = reason_code
+        super().__init__(reason_code)
+
+
+def diagnosed(phase: str, action):
+    try:
+        return action()
+    except DiagnosticHold:
+        raise
+    except Exception as exc:  # noqa: BLE001 - redact untrusted DB/errors
+        reason = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
+        raise DiagnosticHold(phase, reason) from None
 
 
 def normalized(value: object) -> object:
@@ -113,32 +151,56 @@ def capture(stories: list[str], groups: list[dict], dsn: str) -> list[dict]:
         raise Hold("DSN_NOT_SET_HOLD")
     import psycopg
 
-    with psycopg.connect(dsn, autocommit=False, connect_timeout=10) as conn:
+    conn = diagnosed("DB_CONNECT", lambda: psycopg.connect(
+        dsn, autocommit=False, connect_timeout=10,
+    ))
+    with conn:
         try:
             with conn.cursor() as cur:
-                cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
-                cur.execute("SET LOCAL row_security=on")
-                cur.execute("SET LOCAL statement_timeout='30000ms'")
-                cur.execute("SET LOCAL lock_timeout='1000ms'")
-                cur.execute("""
-                    SELECT current_user,current_setting('transaction_read_only'),
-                           current_setting('row_security'),r.rolbypassrls,r.rolsuper
-                    FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
-                """)
-                private.assert_guard(cur.fetchone())
-                return build(cur, stories, groups)
+                def guard() -> None:
+                    cur.execute("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+                    cur.execute("SET LOCAL row_security=on")
+                    cur.execute("SET LOCAL statement_timeout='30000ms'")
+                    cur.execute("SET LOCAL lock_timeout='1000ms'")
+                    cur.execute("""
+                        SELECT current_user,current_setting('transaction_read_only'),
+                               current_setting('row_security'),r.rolbypassrls,r.rolsuper
+                        FROM pg_catalog.pg_roles r WHERE r.rolname=current_user
+                    """)
+                    private.assert_guard(cur.fetchone())
+
+                diagnosed("DB_GUARD", guard)
+                return diagnosed(
+                    "DB_WORLD_AND_FIELDS", lambda: build(cur, stories, groups),
+                )
         finally:
             conn.rollback()
 
 
-def generate(args: argparse.Namespace) -> dict:
+def write_group_new(path: Path, data: bytes) -> None:
+    """Write one bounded private group; never relax the shared 200 KB cap."""
+    if not 0 < len(data) <= MAX_GROUP_BYTES:
+        raise Hold("OUTPUT_SIZE_HOLD")
+    fd = os.open(
+        path, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
+        getattr(os, "O_NOFOLLOW", 0), 0o600,
+    )
+    with os.fdopen(fd, "wb") as dest:
+        dest.write(data)
+
+
+def _generate(args: argparse.Namespace, phase: list[str]) -> dict:
+    phase[0] = "ROSTER_TEMPLATE"
     _, groups, _ = world.load(args.roster_dir)
+    phase[0] = "FROZEN_INPUT"
     cases, manifest = frozen._frozen(args)
+    phase[0] = "FROZEN_SCOPE"
     stories = locator.scoped_stories(cases, manifest)
     members = {m["story_id_PRIVATE"]
                for group in groups for m in group["members_PRIVATE"]}
     if len(members) != 38 or not members.issubset(set(stories)):
         raise Hold("FROZEN_SCOPE_HOLD")
+    phase[0] = "OUTPUT_GUARD"
     private.private_dir(args.roster_dir, create=False)
     if args.output_dir.parent != private.BASE or args.output_dir.exists() or (
         args.output_dir.is_symlink()
@@ -153,7 +215,9 @@ def generate(args: argparse.Namespace) -> dict:
             "train_admitted": 0, "gpu_started": False,
             "database_modified": False, "private_values_emitted": False,
         }
+    phase[0] = "DB_WORLD_AND_FIELDS"
     extracted = capture(stories, groups, os.getenv("R60_READONLY_DATABASE_URL", ""))
+    phase[0] = "PACKAGE_BUILD"
     raw_roster = private.read_private(args.roster_dir / roster.FILENAME,
                                       5242880)
     source_digest = hashlib.sha256(raw_roster).hexdigest()
@@ -175,9 +239,10 @@ def generate(args: argparse.Namespace) -> dict:
             raise Hold("GROUP_TOO_LARGE_HOLD")
         packages.append(data)
     # Validate all group lengths and source reads before creating the folder.
+    phase[0] = "OUTPUT_WRITE"
     private.private_dir(args.output_dir, create=True)
     for i, data in enumerate(packages, 1):
-        private.write_new(args.output_dir / f"{OUTPUT_PREFIX}{i:02d}_CARD_OPENING_PRIVATE.json", data)
+        write_group_new(args.output_dir / f"{OUTPUT_PREFIX}{i:02d}_CARD_OPENING_PRIVATE.json", data)
     if (any(stat.S_IMODE(path.stat().st_mode) != 0o600
             for path in args.output_dir.iterdir())
             or len(list(args.output_dir.iterdir())) != 8):
@@ -206,6 +271,18 @@ def generate(args: argparse.Namespace) -> dict:
     }
 
 
+def generate(args: argparse.Namespace) -> dict:
+    # Preserve the original call contract while keeping diagnostics finite.
+    phase = ["ROSTER_TEMPLATE"]
+    try:
+        return _generate(args, phase)
+    except DiagnosticHold:
+        raise
+    except Exception as exc:  # noqa: BLE001 - redact untrusted DB/errors
+        reason = str(exc) if type(exc) is Hold else "UNEXPECTED_HOLD"
+        raise DiagnosticHold(phase[0], reason) from None
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     for name in ("old", "plan", "v2", "v3", "audit", "quarantine"):
@@ -217,12 +294,22 @@ def main() -> int:
     try:
         print(json.dumps(generate(args), sort_keys=True))
         return 0
-    except Exception:  # noqa: BLE001 - suppress private IDs, content, DB traces
-        print(json.dumps({
+    except Exception as exc:  # noqa: BLE001 - never print private exceptions
+        safe = {
             "schema": SAFE, "status": "BASE336_CARD_OPENING_EVIDENCE_HOLD",
+            "failure_phase": (
+                exc.failure_phase if isinstance(exc, DiagnosticHold)
+                else "UNEXPECTED_HOLD"
+            ),
+            "reason_code": (
+                exc.reason_code if isinstance(exc, DiagnosticHold)
+                else "UNEXPECTED_HOLD"
+            ),
+            "database_accessed": None,  # An exception cannot prove access.
             "train_admitted": 0, "gpu_started": False,
             "database_modified": False, "private_values_emitted": False,
-        }, sort_keys=True))
+        }
+        print(json.dumps(safe, sort_keys=True))
         return 42
 
 
