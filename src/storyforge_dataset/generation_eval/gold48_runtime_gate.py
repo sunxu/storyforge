@@ -21,6 +21,7 @@ import secrets
 import stat
 import subprocess
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -791,6 +792,7 @@ def run_authorized_gold48_production(
     source_evidence_paths: dict[str, Path],
     runtime_lock_path: Path,
     runtime_contract_path: Path,
+    progress_callback: Callable[[str, dict[str, object]], None] | None = None,
 ):
     """ONLY production dispatcher: verify+spend -> GPU loader -> existing Worker.
 
@@ -800,6 +802,8 @@ def run_authorized_gold48_production(
     from .gold48_contract_bridge import run_gold48_generation_batch
     from .gold48_qwen35_loader import load_pinned_gold48_backend
 
+    if progress_callback is not None:
+        progress_callback("preflight_started", {})
     permit = authorize_and_consume_before_gpu(
         frozen=frozen, owner_freeze=owner_freeze,
         adapter_bindings=adapter_bindings, input_manifest=input_manifest,
@@ -810,12 +814,17 @@ def run_authorized_gold48_production(
         runtime_lock_path=runtime_lock_path,
         runtime_contract_path=runtime_contract_path,
     )
+    if progress_callback is not None:
+        progress_callback("preflight_passed", {})
+        progress_callback("model_loading_started", {})
     entry = adapter_bindings["arms"][model_role]
     backend = load_pinned_gold48_backend(
         adapter_dir=permit.selected_adapter_dir,
         expected_adapter_sha256=entry["expected_sha256"],
         launch_permit=permit,
     )
+    if progress_callback is not None:
+        progress_callback("model_loaded", {})
     receipt = run_gold48_generation_batch(
         frozen=frozen, owner_freeze=owner_freeze,
         adapter_bindings=adapter_bindings, input_manifest=input_manifest,
@@ -826,10 +835,15 @@ def run_authorized_gold48_production(
         runtime_lock_path=runtime_lock_path,
         runtime_image_digest=permit.signed_scope["runtime_image_digest"],
         source_evidence_paths=source_evidence_paths,
+        progress_callback=progress_callback,
     )
+    if progress_callback is not None:
+        progress_callback("result_delivery_started", {})
     # No SUCCESS return while private output remains only in ephemeral scratch.
     deliver_gold48_private_result(
         output_path=output_path, run_id=permit.signed_scope["run_id"],
         model_role=model_role, worker_receipt=receipt,
     )
+    if progress_callback is not None:
+        progress_callback("result_delivered", {})
     return receipt
