@@ -15,6 +15,8 @@ import json
 import re
 import stat
 import sys
+import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -157,11 +159,64 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
         raise WorkerError("GOLD48_ENTRY_RO_INPUT_READ_HOLD") from exc
 
 
+_PROGRESS_EVENTS = frozenset({
+    "stage_verified", "inputs_materialized", "preflight_started",
+    "preflight_passed", "model_loading_started", "model_loaded",
+    "generation_started", "case_started", "case_completed",
+    "generation_finished_unpublished", "private_output_written",
+    "result_delivery_started", "result_delivered", "execution_halted",
+})
+
+
+def _safe_progress(role: str, started: float, event: str,
+                   fields: dict[str, object]) -> None:
+    """HF stdout JSONL: whitelisted metadata; no prompt, response or case ID."""
+    if event not in _PROGRESS_EVENTS:
+        raise WorkerError("GOLD48_PROGRESS_EVENT_INVALID")
+    safe = {
+        "schema": "storyforge_gold48_gpu_progress_safe_v1",
+        "event": event,
+        "model_role": role,
+        "timestamp_utc": datetime.now(UTC).isoformat(),
+        "elapsed_seconds": round(time.monotonic() - started, 2),
+        "private_values_emitted": False,
+    }
+    for key in ("case_number", "completed", "total", "percent",
+                "case_elapsed_seconds", "generation_elapsed_seconds",
+                "eta_seconds"):
+        value = fields.get(key)
+        if type(value) in (int, float):
+            safe[key] = value
+    if fields.get("finish_reason") in ("eos", "length", "unrecognized_stop"):
+        safe["finish_reason"] = fields["finish_reason"]
+    if fields.get("prior_event") in _PROGRESS_EVENTS:
+        safe["prior_event"] = fields["prior_event"]
+    print(json.dumps(safe, sort_keys=True), flush=True)
+
+
 def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
+    started = time.monotonic()
     validated = validate_ro_bundle(stage, run_id, role)
     if not execute:
         return {"status": "GOLD48_FIXED_RO_STAGE_VERIFIED__NO_GPU",
                 "gpu_started": False, "model_calls": 0, "record_count": 0}
+
+    completed = 0
+    last_event = "stage_verified"
+
+    def progress(event: str, fields: dict[str, object]) -> None:
+        nonlocal completed, last_event
+        if event == "case_completed" and type(fields.get("completed")) is int:
+            completed = fields["completed"]
+        payload = {
+            "completed": completed, "total": 48,
+            "percent": round(100 * completed / 48, 2),
+            **fields,
+        }
+        _safe_progress(role, started, event, payload)
+        last_event = event
+
+    progress("stage_verified", {})
     _hold(not SCRATCH.exists() and not SCRATCH.is_symlink(),
           "GOLD48_ENTRY_SCRATCH_ALREADY_EXISTS_HOLD")
     SCRATCH.mkdir(mode=0o700)
@@ -190,22 +245,28 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
     owner_freeze = read_private_contract(materialized["owner_freeze.private.json"])
     bindings = read_private_contract(materialized["adapter_bindings.private.json"])
     manifest = read_private_contract(materialized["input_manifest.private.json"])
-    receipt = gate.run_authorized_gold48_production(
-        frozen=frozen, owner_freeze=owner_freeze, adapter_bindings=bindings,
-        input_manifest=manifest,
-        input_path=materialized["input.private.jsonl"],
-        output_path=output_dir / (role + ".private.json"),
-        model_role=role,
-        owner_authorization_receipt_path=materialized[
-            "owner_authorization.private.json"
-        ],
-        trusted_owner_public_key_pem_path=None,
-        source_evidence_paths={
-            key: materialized[name] for key, name in ROLES_FROM_FILES.items()
-        },
-        runtime_lock_path=materialized["runtime_lock.hashes"],
-        runtime_contract_path=materialized["runtime_contract.json"],
-    )
+    progress("inputs_materialized", {})
+    try:
+        receipt = gate.run_authorized_gold48_production(
+            frozen=frozen, owner_freeze=owner_freeze, adapter_bindings=bindings,
+            input_manifest=manifest,
+            input_path=materialized["input.private.jsonl"],
+            output_path=output_dir / (role + ".private.json"),
+            model_role=role,
+            owner_authorization_receipt_path=materialized[
+                "owner_authorization.private.json"
+            ],
+            trusted_owner_public_key_pem_path=None,
+            source_evidence_paths={
+                key: materialized[name] for key, name in ROLES_FROM_FILES.items()
+            },
+            runtime_lock_path=materialized["runtime_lock.hashes"],
+            runtime_contract_path=materialized["runtime_contract.json"],
+            progress_callback=progress,
+        )
+    except Exception:
+        progress("execution_halted", {"prior_event": last_event})
+        raise
     return {
         "status": "GOLD48_ONE_ARM_GENERATED_AND_TRANSFERRED__OWNER_AUDIT_PENDING",
         "gpu_started": receipt.gpu_started,
