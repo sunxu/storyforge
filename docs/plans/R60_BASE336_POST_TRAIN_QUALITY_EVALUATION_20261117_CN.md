@@ -1,5 +1,16 @@
 # R60 Base336 训练后质量评估与 Skill 维护计划（2026-11-17）
 
+## 2026-11-22 现行执行覆盖：结束模型生成，转入 Gold48 Quality-v1 盲评
+
+**以 [主任务书顶部的 2026-11-22 基线](../R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md) 和 [唯一新 Agent 提示词](../R60_BASE336_NEXT_AGENT_START_PROMPT_20261121_CN.md) 为准。** 下方“等待 GPU/Tokenizer/Owner Freeze”的流程为历史，不再启动。PR #31 最后核验 HEAD `4caf2e3dd5a7d6b2575b2cac0e2c1e0a86a02f40`、7/7 CI；四臂 48×4=192 条真实 HF 推理/交付已完成，Owner Mac 四份结果文件逐臂重新下载 SHA 与结构审计全部 PASS。Base/R46/R54/R60 的 `length` 分别 1/2/1/3，全部保留。四个真实 Job 和 Run ID 见主任务书，不重启不复投。
+
+**唯一剩余质量主线**：现有冻结历史 Original 48 份作为**第五匿名、描述性**参考，共 240 份待评分回答；复用旧 R48 六维 rubric（剧情连续性、角色一致性、指令遵循、文学表现力、互动推进、玩家自主权，1–5），借用旧 R48/R55 v2 匿名/评分冻结/解盲原则而非直接调用硬编码 20×4×3 的旧脚本。Owner 已测试通过 `adradar` 组织计费 HF Inference Providers API；固定模型与提供商/评分 schema/独立评审策略/预算/数据外发边界后，以最薄调用层进行盲审，评分完成并冻结前绝不解盲。8 Story/25 Session，主分析 48；按 Owner 已批准的一整个风险 Story 六题排除做 42 题敏感性分析，须核对既有私有真实绑定。Original 不参与新四臂同输入因果判断。
+
+**证据边界**：`owner_mac_job_image_inspect_verified=false`、签名独立复核仍 false；不能虚构独立镜像证明。`quality_v1_admitted=0`、盲审未开始、模型未晋升。既有 204 Story/495 版本来源审查、Gold48 Frozen Input/原始回复、Tokenizer CPU、四臂 GPU 都不重做；旧章节保留审计历史。不公开私有案例、Story/Session 身份、回复、哈希、评分原文或交叉映射；勿把 Inference Providers 专用 `HF_TOKEN` 混入 Bucket 操作凭据。
+
+---
+
+
 ## 2026-11-21 Gold48 正式计划当前执行覆盖（旧 P2 / Runtime 过程章节仍供溯源）
 
 **现行唯一判断依据**：PR [#31](https://github.com/sunxu/storyforge/pull/31) 实时 HEAD + 实际源码 + 已签收的 SAFE/Owner 私有证据；`1dcbce63e80c5e1d6e1e700f1927bd95f54a08ba` 是最近一次核验基线，不应被硬编码为永远最新。该基线 7/7 GitHub Actions SUCCESS，主 CI `1,778 passed · 6 skipped · 42 subtests passed`，均为**合成/离线**验证，不是 HF GPU 实测。
