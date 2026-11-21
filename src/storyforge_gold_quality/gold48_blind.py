@@ -170,6 +170,9 @@ def prepare(
             "ORIGINAL_LOCATOR_SCOPE_HOLD")
     input_sha = sha(private_input(input_path))
     outputs = load_outputs(generated, input_sha)
+    no_visible_reply_count = sum(
+        not record["text"].strip() for rows in outputs.values() for record in rows
+    )
     reviewer_items, bindings = [], []
     groups, excluded, sessions = Counter(), Counter(), set()
     seen_source_stories: dict[str, str] = {}
@@ -253,7 +256,9 @@ def prepare(
             "status": "GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE",
             "cases": 48, "answers": 240, "sources": 5, "stories": 8,
             "sessions": 25, "main_cases": 48, "sensitivity_cases": 42,
-            "length_answers_retained": 7, "judge_scores_completed": 0,
+            "length_answers_retained": 7,
+            "no_visible_reply_answers_retained": no_visible_reply_count,
+            "judge_scores_completed": 0,
             "api_calls": 0, "cost_usd": 0, "private_values_emitted": False,
             "owner_mapping_uploaded": False, "model_promoted": False,
             "quality_v1_admitted": 0,
@@ -274,7 +279,9 @@ def prepare(
         "status": "GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS",
         "cases": 48, "answers": 240, "sources": 5, "stories": 8,
         "sessions": 25, "main_cases": 48, "sensitivity_cases": 42,
-        "length_answers_retained": 7, "judge_scores_completed": 0,
+        "length_answers_retained": 7,
+        "no_visible_reply_answers_retained": no_visible_reply_count,
+        "judge_scores_completed": 0,
         "api_calls": 0, "cost_usd": 0, "private_values_emitted": False,
         "owner_mapping_uploaded": False, "model_promoted": False,
         "quality_v1_admitted": 0,
