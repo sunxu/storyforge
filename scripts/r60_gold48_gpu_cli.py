@@ -243,7 +243,7 @@ def _ready_or_submit(
            "GOLD48_EXPLICIT_OWNER_GPU_EXECUTE_REQUIRED_HOLD")
     _check(bool(RUN_ID.fullmatch(run_id)) and stage.name == run_id,
            "GOLD48_RUN_STAGE_MISMATCH_HOLD")
-    inputs, _ = _volumes(run_id, role, code, adapters)
+    _volumes(run_id, role, code, adapters)
     local_sha = _local_stage_sha(stage, run_id, role)
     marker = stage.parent / (run_id + ".gold48-gpu-submit.private.json")
     _check(not marker.exists() and not marker.is_symlink(),
@@ -327,18 +327,27 @@ def _ready_or_submit(
             argv, capture_output=True, text=True, timeout=120, check=False,
         )
     except (subprocess.TimeoutExpired, OSError):
-        return safe("GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY",
-                    "CHECK_HF_ORG_JOB_HISTORY_BEFORE_ANY_ACTION")
+        return {
+            **safe("GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY",
+                   "CHECK_HF_ORG_JOB_HISTORY_BEFORE_ANY_ACTION"),
+            "hf_jobs_submitted": None, "gpu_started": None, "model_calls": None,
+        }
     if sent.returncode:
-        return safe("GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY",
-                    "CHECK_HF_ORG_JOB_HISTORY_BEFORE_ANY_ACTION")
+        return {
+            **safe("GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY",
+                   "CHECK_HF_ORG_JOB_HISTORY_BEFORE_ANY_ACTION"),
+            "hf_jobs_submitted": None, "gpu_started": None, "model_calls": None,
+        }
     ids = set(re.findall(
         r"(?<![0-9a-f])[0-9a-f]{24}(?![0-9a-f])",
         sent.stdout + sent.stderr,
     ))
     if len(ids) != 1:
-        return safe("GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY",
-                    "HF_JOB_ID_UNKNOWN_CHECK_HISTORY")
+        return {
+        **safe("GOLD48_GPU_SUBMISSION_UNCONFIRMED_NO_RETRY",
+               "HF_JOB_ID_UNKNOWN_CHECK_HISTORY"),
+        "hf_jobs_submitted": None, "gpu_started": None, "model_calls": None,
+    }
     report = safe("GOLD48_GPU_SUBMITTED__OWNER_DOWNLOAD_AUDIT_PENDING",
                   "ONE_JOB__NO_AUTO_RETRY")
     report.update(hf_jobs_submitted=1, owner_gpu_authorized=True,
@@ -411,7 +420,7 @@ def main(argv: list[str] | None = None) -> int:
             result = safe("GOLD48_GPU_CLI_DRY_RUN_PASS__NO_JOB",
                           "NO_SUBMISSION__STAGE_AND_AUTHORIZATION_STILL_HOLD")
         code = 0
-    except (OSError, ValueError, TypeError, subprocess.TimeoutExpired):
+    except Exception:  # noqa: BLE001 - fail closed; never print private errors
         result = safe("HOLD", "GOLD48_GPU_CLI_SHAPE_OR_DRY_RUN_HOLD")
         code = 42
     print(json.dumps(result, sort_keys=True))
