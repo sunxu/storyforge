@@ -878,3 +878,74 @@ def test_production_owner_signed_scope_cannot_run_forged_synthetic_backend(
     assert backend.calls == []
     assert not output.exists()
     assert not output.with_name(output.name + ".launch.private.json").exists()
+
+
+def test_mac_plain_owner_approval_without_key_generates_synthetic_gold48(
+    tmp_path, monkeypatch,
+):
+    """Same 48-case contract, no signing keys; NEVER a production GPU test."""
+    import storyforge_dataset.generation_eval.gold48_owner_receipt as owner
+    from storyforge_dataset.generation_eval.gold48_owner_receipt import (
+        owner_approve_create_only,
+        verify_owner_authorization,
+    )
+
+    role = "base"
+    pack = fixture(tmp_path)
+    evidence = source_receipt_files(tmp_path, pack)
+    signed_auth, output, _ = synthetic_signed_owner_receipt(
+        tmp_path, monkeypatch, pack, role,
+    )
+    scope = json.loads(
+        signed_auth["owner_authorization_receipt_path"].read_text()
+    )["payload"]
+    plain = tmp_path / "owner-mac-approved.private.json"
+    monkeypatch.setattr(owner, "OWNER_TRUSTED_PUBLIC_PEM_SHA256", "")
+    plain_sha = owner_approve_create_only(scope=scope, receipt_path=plain)
+    assert stat.S_IMODE(plain.stat().st_mode) == 0o600
+    with pytest.raises(WorkerError, match="GOLD48_OWNER_APPROVAL_CREATE_ONLY_HOLD"):
+        owner_approve_create_only(scope=scope, receipt_path=plain)
+    verified = verify_owner_authorization(
+        receipt_path=plain, expected_scope=scope,
+    )
+    assert verified.receipt_sha256 == plain_sha
+    assert verified.signer_public_pem_sha256 is None
+    assert verified.approval_mode == "OWNER_MAC_EXPLICIT"
+    # A valid plain approval may not silently change the role, input or run.
+    for key, replacement in [
+        ("run_id", "other-unique-run-id"),
+        ("input_sha256", "0" * 64),
+        ("model_role", "r46_v02"),
+        ("runtime_image_digest", "sha256:" + "f" * 64),
+    ]:
+        different = dict(scope, **{key: replacement})
+        with pytest.raises(WorkerError, match="GOLD48_OWNER_SIGNED_SCOPE_MISMATCH_HOLD"):
+            verify_owner_authorization(
+                receipt_path=plain, expected_scope=different,
+            )
+    auth = dict(signed_auth,
+                owner_authorization_receipt_path=plain,
+                trusted_owner_public_key_pem_path=None)
+    backend = SyntheticIdentityBackend(pack, role)
+    result = run_gold48_generation_batch(
+        **build_call(pack, role=role), **auth,
+        backend=backend, output_path=output, source_evidence_paths=evidence,
+    )
+    assert result.record_count == 48 and result.gpu_started is False
+    sidecar = json.loads(output.with_name(
+        output.name + ".identity.private.json"
+    ).read_text())
+    assert sidecar["owner_authorization_method"] == "OWNER_MAC_EXPLICIT"
+    assert sidecar["owner_ed25519_signature_verified"] is False
+    assert sidecar["runtime_image_identity_source"] == (
+        "OWNER_MAC_APPROVED_CONFIGURATION_ONLY__NOT_MEASURED"
+    )
+    assert sidecar["owner_authorization_receipt_sha256"] == plain_sha
+    launch = json.loads(output.with_name(
+        output.name + ".launch.private.json"
+    ).read_text())
+    assert launch["owner_authorization_method"] == "OWNER_MAC_EXPLICIT"
+    assert launch["owner_ed25519_signature_verified"] is False
+    assert launch["gpu_backend_executed"] is False
+
+

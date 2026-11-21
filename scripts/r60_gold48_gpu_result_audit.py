@@ -140,8 +140,10 @@ def audit(run_id: str, model_role: str, root: Path, input_manifest: Path, *, api
         and identity.get("runtime_image_measured") is False
         and identity.get("provider_image_attestation_sha256") is None
         and identity.get("runtime_image_identity_source") ==
-            "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
+            "OWNER_MAC_APPROVED_CONFIGURATION_ONLY__NOT_MEASURED"
         and identity.get("owner_mac_independent_job_image_inspect_required") is True
+        and identity.get("owner_authorization_method") == "OWNER_MAC_EXPLICIT"
+        and identity.get("owner_ed25519_signature_verified") is False
         and launch.get("schema") == "storyforge_r60_gold48_generation_launch_private_v1"
         and launch.get("run_id") == run_id
         and launch.get("model_role") == model_role
@@ -149,6 +151,8 @@ def audit(run_id: str, model_role: str, root: Path, input_manifest: Path, *, api
         and launch.get("runtime_image_measured") is False
         and launch.get("provider_image_attestation_sha256") is None
         and launch.get("gpu_backend_executed") is True
+        and launch.get("owner_authorization_method") == "OWNER_MAC_EXPLICIT"
+        and launch.get("owner_ed25519_signature_verified") is False
         and launch.get("runtime_image_digest_approved") ==
             identity.get("runtime_image_digest")
         and launch.get("owner_authorization_receipt_sha256") ==
