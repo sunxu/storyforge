@@ -893,12 +893,26 @@ def test_mac_plain_owner_approval_without_key_generates_synthetic_gold48(
     role = "base"
     pack = fixture(tmp_path)
     evidence = source_receipt_files(tmp_path, pack)
-    signed_auth, output, _ = synthetic_signed_owner_receipt(
-        tmp_path, monkeypatch, pack, role,
+    run_id = "synthetic-g48-" + role
+    output_dir = tmp_path / run_id
+    output_dir.mkdir(mode=0o700)
+    output = output_dir / (role + ".private.json")
+    lock = tmp_path / "mac-approval-runtime.hashes.lock"
+    lock.write_bytes(b"synthetic-lock-no-signing-key\n")
+    lock.chmod(0o600)
+    image = "sha256:" + "e" * 64
+    issued = datetime.now(UTC)
+    scope = make_owner_scope(
+        frozen=pack[0], owner_freeze=pack[1],
+        adapter_bindings=pack[2], input_manifest=pack[3],
+        model_role=role, run_id=run_id,
+        output_filename=output.name, output_directory=str(output_dir),
+        dependency_lock_sha256=hashlib.sha256(lock.read_bytes()).hexdigest(),
+        runtime_image_digest=image,
+        issued_at_utc=issued.isoformat(),
+        expires_at_utc=(issued + timedelta(hours=1)).isoformat(),
+        synthetic_test_only=True,
     )
-    scope = json.loads(
-        signed_auth["owner_authorization_receipt_path"].read_text()
-    )["payload"]
     plain = tmp_path / "owner-mac-approved.private.json"
     monkeypatch.setattr(owner, "OWNER_TRUSTED_PUBLIC_PEM_SHA256", "")
     plain_sha = owner_approve_create_only(scope=scope, receipt_path=plain)
@@ -923,9 +937,12 @@ def test_mac_plain_owner_approval_without_key_generates_synthetic_gold48(
             verify_owner_authorization(
                 receipt_path=plain, expected_scope=different,
             )
-    auth = dict(signed_auth,
-                owner_authorization_receipt_path=plain,
-                trusted_owner_public_key_pem_path=None)
+    auth = {
+        "owner_authorization_receipt_path": plain,
+        "trusted_owner_public_key_pem_path": None,
+        "runtime_lock_path": lock,
+        "runtime_image_digest": image,
+    }
     backend = SyntheticIdentityBackend(pack, role)
     result = run_gold48_generation_batch(
         **build_call(pack, role=role), **auth,
