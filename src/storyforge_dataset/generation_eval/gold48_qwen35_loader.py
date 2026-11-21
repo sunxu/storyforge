@@ -56,7 +56,8 @@ def verify_adapter_config(config: Mapping[str, Any]) -> None:
         and config.get("peft_type") == "LORA"
         and config.get("task_type") == "CAUSAL_LM"
         and type(config.get("r")) is int and config["r"] == 64
-        and type(config.get("lora_alpha")) is int and config["lora_alpha"] == 128
+        and type(config.get("lora_alpha")) in (int, float)
+        and config["lora_alpha"] == 128
         and config.get("inference_mode") is True
         and isinstance(target, str) and target.startswith(TARGET_PREFIX + "(")
         and target.endswith("))$")
