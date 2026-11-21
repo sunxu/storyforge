@@ -30,7 +30,7 @@ cat > "$CFG" <<'JSON'
 {"schema":"storyforge_r60_gold48_judge_config_private_v1","reviewers":[{"reviewer_id":"J1","model":"deepseek-ai/DeepSeek-V4.1-Flash","provider":"fireworks-ai","temperature":0,"max_tokens":2048},{"reviewer_id":"J2","model":"zai-org/GLM-5.2","provider":"deepinfra","temperature":0,"max_tokens":2048}],"max_cost_usd":25.0}
 JSON
 chmod 600 "$CFG"
-PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \\
+PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \
   -m storyforge_gold_quality.gold48_judge_lock --pack "$PACK" --config "$CFG"
 # 审核离线预检、安全边界及候选选择之后，才另行执行同一命令并添加 --out "$LOCK"
 ```
@@ -44,7 +44,7 @@ PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \\
 
 **本节优先于下方 2026-11-21 的 `ready/submit`、Stage 上传、GPU 进度与“某臂尚待生成”记录。** 四臂 Base/R46/R54/R60 各 48/48 已真实生成；HF Jobs 均 `COMPLETED`，Owner Mac 各 4 份结果文件独立下载、SHA 与结构审计均 PASS。正式 Run ID、Job ID、停止原因及不可越过的盲评边界见 [现行任务书顶部](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
 
-**不要再次运行** `scripts/r60_gold48_gpu_cli.py submit/ready`、`r60_gold48_gpu_result_audit.py`、旧 Stage `sync` 或新 GPU Job；原始结果、私有 `0700/0600` 目录保持不变。现有结果目录为 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/`；原始历史回答不在 HF GPU Stage，须由 Owner Mac 已冻结私有原件读取，绝不从公开资料猜造。**Owner Mac 真实只读 SAFE 预检已 PASS**，不必重跑。下一个唯一 Owner 动作是**一次性创建私有五来源匿名评审包**，随后冻结评审器配置/预算/外发许可；在此之前绝不调用真实 `adradar` Inference Providers API。
+**不要再次运行** `scripts/r60_gold48_gpu_cli.py submit/ready`、`r60_gold48_gpu_result_audit.py`、旧 Stage `sync` 或新 GPU Job；原始结果、私有 `0700/0600` 目录保持不变。现有结果目录为 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/`；原始历史回答不在 HF GPU Stage，须由 Owner Mac 已冻结私有原件读取，绝不从公开资料猜造。**Owner Mac 真实只读 SAFE 与后续 240 项匿名打包均已 PASS**；下方关于再次打包的旧说明及命令仅作历史审计，**不要执行**。当前动作已由本文最顶部的离线 Judge 合同步骤取代，正式评分及外发授权仍 HOLD。
 
 **2026-11-22 新签收的真实 SAFE（只记录聚合，不写入私有原文）**：`GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`；`cases=48`、`answers=240`、`stories=8`、`sessions=25`、`main_cases=48`、`sensitivity_cases=42`、`length_answers_retained=7`、`no_visible_reply_answers_retained=1`。评分 `0/240`、HF API 调用 0、费用 $0；`owner_mapping_uploaded=false`、`quality_v1_admitted=0`。预检并未创建正式盲评包，不能把 PREP PASS 写成已生成包或已评分。
 
@@ -64,7 +64,7 @@ git merge --ff-only "origin/$BRANCH"
 : "${GOLD48_R46:?}" "${GOLD48_R54:?}" "${GOLD48_R60:?}"
 OUT="$HOME/.local/share/storyforge/r60/private/gold48-quality-v1-blind-20261122"
 test ! -e "$OUT" && test ! -L "$OUT"
-PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \\
+PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \
   -m storyforge_gold_quality.gold48_blind \\
   --freeze "$GOLD48_FREEZE" \\
   --input "$GOLD48_INPUT" \\
