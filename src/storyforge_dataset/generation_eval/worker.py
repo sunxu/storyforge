@@ -7,7 +7,8 @@ content hashes are returned in the SAFE receipt.
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+import time
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -149,6 +150,7 @@ def _run_validated_generation_batch(
     output_path: Path,
     backend: GenerationBackend,
     max_input_file_bytes: int = 16 * 1024 * 1024,
+    progress_callback: Callable[[str, dict[str, object]], None] | None = None,
 ) -> WorkerReceipt:
     """Shared existing generation loop. Public callers MUST use a validated gate.
 
@@ -196,7 +198,19 @@ def _run_validated_generation_batch(
     selected = profile["model_profiles"][model_role]
     private_outputs: list[dict[str, object]] = []
     finish_reason_counts = {"eos": 0, "length": 0, "unrecognized_stop": 0}
+    generation_started = time.monotonic()
+    if progress_callback is not None:
+        progress_callback("generation_started", {
+            "completed": 0, "total": expected_count, "percent": 0.0,
+        })
     for index, record in enumerate(records):
+        case_started = time.monotonic()
+        if progress_callback is not None:
+            progress_callback("case_started", {
+                "case_number": index + 1, "completed": index,
+                "total": expected_count,
+                "percent": round(100 * index / expected_count, 2),
+            })
         effective_seed = seed + index
         try:
             result = backend.generate(
@@ -235,7 +249,26 @@ def _run_validated_generation_batch(
             "output_tokens": result.output_tokens,
             "finish_reason": result.finish_reason,
         })
+        if progress_callback is not None:
+            generation_elapsed = time.monotonic() - generation_started
+            completed = index + 1
+            progress_callback("case_completed", {
+                "case_number": completed, "completed": completed,
+                "total": expected_count,
+                "percent": round(100 * completed / expected_count, 2),
+                "case_elapsed_seconds": round(time.monotonic() - case_started, 2),
+                "generation_elapsed_seconds": round(generation_elapsed, 2),
+                "eta_seconds": round(
+                    generation_elapsed / completed * (expected_count - completed), 2,
+                ),
+                "finish_reason": result.finish_reason,
+            })
 
+    if progress_callback is not None:
+        progress_callback("generation_finished_unpublished", {
+            "completed": expected_count, "total": expected_count,
+            "percent": 100.0,
+        })
     payload = {
         "schema": "storyforge_r60_generation_outputs_private_v1",
         "model_role": model_role,
@@ -249,6 +282,11 @@ def _run_validated_generation_batch(
         write_receipt: WriteReceipt = OutputManager.write_safe(output_path, payload, mode=0o600)
     except (OSError, ValueError) as exc:
         raise WorkerError("OUTPUT_PUBLICATION_FAILED") from exc
+    if progress_callback is not None:
+        progress_callback("private_output_written", {
+            "completed": expected_count, "total": expected_count,
+            "percent": 100.0,
+        })
     if finish_reason_counts["unrecognized_stop"]:
         status = "GENERATION_BATCH_HOLD_UNRECOGNIZED_STOP"
     elif finish_reason_counts["length"]:
