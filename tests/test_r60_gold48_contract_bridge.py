@@ -179,6 +179,49 @@ def test_synthetic_core_reuse_has_exact_order_seed_budget_no_overwrite(tmp_path)
         )
 
 
+def test_generation_progress_48_cases_is_ordered_and_does_not_change_output(tmp_path):
+    """Progress is opt-in metadata, not a private case ID or a partial result."""
+    pack = fixture(tmp_path)
+    profile, manifest = prepare_gold48_generation_contract(
+        **build_call(pack, role="r46_v02")
+    )
+    events = []
+    monitored = tmp_path / "progress.private.json"
+    original = tmp_path / "original.private.json"
+    receipt = _run_validated_generation_batch(
+        profile=profile, model_role="r46_v02", manifest=manifest,
+        input_path=pack[4], output_path=monitored, backend=RecordingBackend(),
+        progress_callback=lambda event, fields: events.append((event, fields)),
+    )
+    unchanged = _run_validated_generation_batch(
+        profile=profile, model_role="r46_v02", manifest=manifest,
+        input_path=pack[4], output_path=original, backend=RecordingBackend(),
+    )
+    assert monitored.read_bytes() == original.read_bytes()
+    assert receipt.output_sha256 == unchanged.output_sha256
+    assert events[0] == ("generation_started", {
+        "completed": 0, "total": 48, "percent": 0.0,
+    })
+    started = [fields for event, fields in events if event == "case_started"]
+    completed = [fields for event, fields in events if event == "case_completed"]
+    assert len(started) == len(completed) == 48
+    assert [item["case_number"] for item in started] == list(range(1, 49))
+    assert [item["completed"] for item in completed] == list(range(1, 49))
+    assert [item["percent"] for item in completed] == [
+        round(i * 100 / 48, 2) for i in range(1, 49)
+    ]
+    assert all(item["case_elapsed_seconds"] >= 0
+               and item["eta_seconds"] >= 0 for item in completed)
+    assert [event for event, _ in events[-2:]] == [
+        "generation_finished_unpublished", "private_output_written",
+    ]
+    public_logs = json.dumps(events)
+    assert "synthetic-response" not in public_logs
+    assert "Synthetic request" not in public_logs
+    assert "G48-C01" not in public_logs
+    assert "sample_id" not in public_logs
+
+
 def test_real_bridge_fails_closed_without_new_owner_permission(tmp_path):
     call = build_call(fixture(tmp_path))
     out = tmp_path / "should_not_exist.json"
