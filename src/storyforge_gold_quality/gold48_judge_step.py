@@ -289,6 +289,12 @@ def step(
     require(selection["reviewer_id"] == reviewer_id,
             "JUDGE_LOCK_REVIEWER_HOLD")
     revision_sha256 = None
+    if reviewer_id == "J1" and official_revision is None:
+        require(
+            not (packet.parent.parent / "owner" /
+                 "GOLD48_J1_OFFICIAL_REVISION_PRIVATE.json").exists(),
+            "J1_OFFICIAL_REVISION_REQUIRED_HOLD",
+        )
     if official_revision is not None:
         require(
             reviewer_id == "J1"
