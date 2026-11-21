@@ -162,6 +162,26 @@ class Gold48BlindSyntheticTest(unittest.TestCase):
         with self.assertRaises(Gold48BlindHold):
             self.build()
 
+    def test_read_only_preflight_does_not_create_output(self) -> None:
+        safe = prepare(
+            freeze_path=self.freeze, input_path=self.input,
+            input_manifest_path=self.input_manifest, original_path=self.original,
+            locator_path=self.locators, generated=self.generated,
+            output_dir=None,
+        )
+        self.assertEqual(safe["status"],
+                         "GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE")
+        self.assertEqual(safe["answers"], 240)
+        self.assertEqual(safe["judge_scores_completed"], 0)
+        self.assertFalse((self.root / "out").exists())
+
+    def test_rejects_git_directory_output(self) -> None:
+        git = self.root / ".git"
+        git.mkdir(mode=0o700)
+        with self.assertRaisesRegex(Gold48BlindHold, "PRIVATE_OUTPUT_INSIDE_GIT_HOLD"):
+            self.build()
+        self.assertFalse((self.root / "out").exists())
+
     def test_rejects_drifted_original_sha(self) -> None:
         data = json.loads(self.original.read_text())
         data["cases_PRIVATE"][0]["original_reply_PRIVATE"] = "changed original"
