@@ -9,12 +9,9 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
-from storyforge_gold_quality.gold48_judge import DIMENSIONS
+from storyforge_gold_quality.gold48_hf_judge import DIMENSIONS
 from storyforge_gold_quality.gold48_judge_lock import CONFIG_SCHEMA, prepare
-from storyforge_gold_quality.gold48_judge_step import (
-    LockHold,
-    step,
-)
+from storyforge_gold_quality.gold48_judge_step import LockHold, step
 from storyforge_gold_quality.hf_literary_review import SEVERE, canonical
 
 
