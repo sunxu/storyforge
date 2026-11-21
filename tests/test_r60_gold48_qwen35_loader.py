@@ -43,10 +43,20 @@ def test_pinned_adapter_training_metadata_accepts_reordered_modules():
     verify_adapter_config(v)
 
 
+def test_training_checkpoint_float_lora_alpha_is_accepted():
+    adapter = fixture_adapter()
+    adapter["lora_alpha"] = 128.0
+    verify_adapter_config(adapter)
+
+
 @pytest.mark.parametrize("attribute,change", [
     ("base_model_name_or_path", "/cache/models--Qwen--Qwen3.8-27B/snapshots/bad"),
     ("r", 8),
     ("lora_alpha", 64),
+    ("lora_alpha", 127.5),
+    ("lora_alpha", "128"),
+    ("lora_alpha", float("nan")),
+    ("lora_alpha", True),
     ("peft_type", "PREFIX_TUNING"),
     ("task_type", "SEQ_2_SEQ_LM"),
     ("inference_mode", False),
