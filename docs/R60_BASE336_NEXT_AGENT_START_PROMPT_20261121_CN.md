@@ -1,5 +1,15 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
+## 2026-11-22 真实 Owner 预检发现的唯一空回答：现行评分规则
+
+Owner Mac 已只读核实 9/9 输入文件存在；初次 Gold48 盲评预检因 `EMPTY_GENERATION_HOLD` 停止。安全计数诊断定位 **192 个冻结生成记录中恰好 1 条无可见回复**（原始记录为 `text=""`、`finish_reason=eos`、`output_tokens=1`）；另外三个生成臂空回复 0。**Owner 原始回答/故事内容与来源映射不得写入公开 Git**。四臂各 48/48 及 SHA 已通过独立 Owner 字节审计，该真实空回答不能重新生成、替换、删除，48 主分析必须保留。
+
+现有生成/字节审计容许空字符串，原新增 `gold48_blind.py` 却过度要求非空。仅修该数据约束以**原样保留** 240 个回答对象；新 SAFE `no_visible_reply_answers_retained` 汇总无回复数量。为避免在 HF Judge 强行制造候选原文引用，`gold48_hf_judge.py` 对无可见回复在已验证身份与固定调用参数/Owner 外发授权的前提下，按**明示的统一缺失回复规则**机械记六维 1 分、严重违规标记全 false、候选引文空，备注清楚“非 AI 模型评审”；**不向 API 发送此条私有上下文，也不计为实际 LLM Judge 调用**。其余非空回复保持原来的严格逐字引文和付费 API 评分合同。全部评分前须冻结并披露这项规则；不能把机械评分谎称独立模型评分。合成测试必须覆盖空输出保真、无伪造证据、无外发、无无授权绕过。
+
+**下一唯一行动**：Mac 更新至含该补丁且 CI 通过的 PR HEAD，复用已设置的 9 个环境变量，原命令**不带 `--out`**只读重跑预检，期待 `GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`、`no_visible_reply_answers_retained=1`，并保持 `api_calls=0`、`judge_scores_completed=0`、`quality_v1_admitted=0`。不要重建/覆盖冻结文件，不创建正式匿名包、不触发真实付费 API。
+
+---
+
 ## 2026-11-22 Gold48 盲评薄适配已落地（优先于下方“适配待开发”描述）
 
 - PR #31 **同一分支**已新增 `src/storyforge_gold_quality/gold48_blind.py`（48×5 只读数据契约预检、私有匿名打包、Owner-only 映射、0600/0700 create-only）与 `src/storyforge_gold_quality/gold48_hf_judge.py`（六维 1–5、严重标记、可定位引用、HF Inference Providers **单对象调用薄接口**及 `bill_to="adradar"`，默认拒绝真实外发）；合成用例见 `tests/test_gold48_blind.py`、`tests/test_gold48_hf_judge.py`。固定已有 R48/R55、Quality-v1 原代码不变，没有新增数据库、Runner、GPU 或评分批处理系统。
