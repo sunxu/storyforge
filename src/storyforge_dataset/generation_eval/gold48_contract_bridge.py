@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -743,6 +744,7 @@ def run_gold48_generation_batch(
     runtime_lock_path: Path | None = None,
     runtime_image_digest: str | None = None,
     source_evidence_paths: dict[str, Path] | None = None,
+    progress_callback: Callable[[str, dict[str, object]], None] | None = None,
 ) -> WorkerReceipt:
     """No CLI/Job submitter: only a separately Owner-authorized runtime may call."""
     profile, worker_manifest = prepare_gold48_generation_contract(
@@ -842,6 +844,7 @@ def run_gold48_generation_batch(
     receipt = _run_validated_generation_batch(
         profile=profile, model_role=model_role, manifest=worker_manifest,
         input_path=input_path, output_path=output_path, backend=backend,
+        progress_callback=progress_callback,
     )
     if auth.payload["execution_environment"] == SYNTHETIC_SCOPE:
         receipt = replace(receipt, gpu_started=False, inference_started=False)
