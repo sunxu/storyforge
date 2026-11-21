@@ -215,7 +215,7 @@ def verify_current_dependency_install(
 class SignedGold48LoadPermit:
     """Pure-Python launch handle; loader rechecks signed and spent evidence."""
     owner_receipt_path: Path
-    owner_public_key_path: Path
+    owner_public_key_path: Path | None
     signed_scope: dict[str, Any]
     spent_receipt_path: Path
     runtime_lock_path: Path
@@ -365,7 +365,7 @@ def authorize_and_consume_before_gpu(
     output_path: Path,
     model_role: str,
     owner_authorization_receipt_path: Path,
-    trusted_owner_public_key_pem_path: Path,
+    trusted_owner_public_key_pem_path: Path | None,
     source_evidence_paths: dict[str, Path],
     runtime_lock_path: Path,
     runtime_contract_path: Path,
@@ -423,7 +423,7 @@ def authorize_and_consume_before_gpu(
     )
     _check(measured_sha == lock_sha, "GOLD48_LOCK_SHA_DISAGREEMENT_HOLD")
     # Provider dynamic attestation is not required under the reviewed
-    # single-Owner Mac dispatch policy. The Owner-signed image digest and
+    # single-Owner Mac dispatch policy. The Owner-approved image digest and
     # live package pins are checked here. Actual HF Inspect is checked by
     # Mac independently prior to quality-evaluation admission.
     mount_observation = verify_current_readonly_adapter_mount(
@@ -435,7 +435,7 @@ def authorize_and_consume_before_gpu(
     )
     _validate_job_local_ledger_root()
     # Both LOCAL publication destinations must prove the real atomic IO contract
-    # before consuming a single-use signed Owner authorization.
+    # before consuming a single-use Owner approval.
     verify_atomic_private_publication_before_spend(JOB_LOCAL_CONSUMPTION_ROOT)
     verify_atomic_private_publication_before_spend(output_path.parent)
     spent = JOB_LOCAL_CONSUMPTION_ROOT / (
@@ -454,7 +454,7 @@ def authorize_and_consume_before_gpu(
         "runtime_lock_sha256": lock_sha,
         "runtime_packages_measured": versions,
         "provider_image_measurement_receipt_sha256": None,
-        "runtime_image_digest_owner_signed": image_digest,
+        "runtime_image_digest_owner_approved": image_digest,
         "max_model_calls": 48,
     }
     try:
@@ -490,7 +490,7 @@ def verify_and_consume_gold48_load_permit(
 
     The job-local spend is create-only. The Owner Mac guarantees no retry
     across Jobs. A permit alone is not enough:
-    re-verify pinned Owner signature and measured local package versions.
+    re-verify Owner approval and measured local package versions.
     """
     _check(isinstance(permit, SignedGold48LoadPermit),
            "GOLD48_SIGNED_LAUNCH_PERMIT_REQUIRED")
@@ -535,7 +535,7 @@ def verify_and_consume_gold48_load_permit(
     _check(spent["runtime_lock_sha256"] == lock_sha
            and spent["runtime_packages_measured"] == versions
            and spent["provider_image_measurement_receipt_sha256"] is None
-           and spent["runtime_image_digest_owner_signed"] ==
+           and spent["runtime_image_digest_owner_approved"] ==
                auth.payload["runtime_image_digest"],
            "GOLD48_RUNTIME_MEASUREMENT_CHANGED_HOLD")
     _check(_ISSUED_ONE_SHOT_PERMITS.get(auth.receipt_sha256) ==
@@ -588,7 +588,7 @@ def verify_consumed_gold48_output_grant(
             )
         and record.get("runtime_lock_sha256") == runtime_lock_sha256
         and record.get("provider_image_measurement_receipt_sha256") is None
-        and record.get("runtime_image_digest_owner_signed") ==
+        and record.get("runtime_image_digest_owner_approved") ==
             owner_scope["runtime_image_digest"]
         and record.get("max_model_calls") == 48
         and isinstance(record.get("runtime_packages_measured"), dict),
@@ -787,7 +787,7 @@ def run_authorized_gold48_production(
     output_path: Path,
     model_role: str,
     owner_authorization_receipt_path: Path,
-    trusted_owner_public_key_pem_path: Path,
+    trusted_owner_public_key_pem_path: Path | None,
     source_evidence_paths: dict[str, Path],
     runtime_lock_path: Path,
     runtime_contract_path: Path,

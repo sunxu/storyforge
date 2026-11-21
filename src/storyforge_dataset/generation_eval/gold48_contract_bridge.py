@@ -419,12 +419,13 @@ def _verify_authorized_run(
     role: str,
     output_path: Path,
 ):
-    """No caller-supplied approval dictionary; independently verify Owner signature."""
+    """Verify create-only Mac approval against exact frozen generation scope."""
     _require(all(isinstance(p, Path) for p in (
         owner_authorization_receipt_path,
-        trusted_owner_public_key_pem_path,
         runtime_lock_path,
-    )) and isinstance(runtime_image_digest, str),
+    )) and isinstance(runtime_image_digest, str)
+        and (trusted_owner_public_key_pem_path is None
+             or isinstance(trusted_owner_public_key_pem_path, Path)),
              "GOLD48_SEPARATE_OWNER_INFERENCE_AUTHORIZATION_REQUIRED")
     try:
         lock = InputManager.open_verified(
@@ -433,11 +434,11 @@ def _verify_authorized_run(
     except (OSError, ValueError) as exc:
         raise WorkerError("GOLD48_RUNTIME_LOCK_READ_HOLD") from exc
 
-    # Read-only, mode-0600; cannot infer authorization from a provided dict.
+    # Exact frozen scope validated from a private 0600 Owner Mac approval.
     receipt = read_private_contract(owner_authorization_receipt_path, max_bytes=65536)
     payload = receipt.get("payload")
     _require(isinstance(payload, dict),
-             "GOLD48_OWNER_SIGNED_RECEIPT_REQUIRED")
+             "GOLD48_OWNER_APPROVAL_RECEIPT_REQUIRED")
     expected = make_owner_scope(
         frozen=frozen, owner_freeze=owner_freeze,
         adapter_bindings=bindings, input_manifest=manifest,
@@ -498,9 +499,15 @@ def _gold48_sidecar(
         "runtime_image_measured": runtime_image_measured,
         "runtime_image_identity_source": (
             "SIGNED_INDEPENDENT_PROVIDER_INSPECTION" if runtime_image_measured
-            else "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
+            else (
+                 "OWNER_MAC_APPROVED_CONFIGURATION_ONLY__NOT_MEASURED"
+                 if auth.approval_mode == "OWNER_MAC_EXPLICIT"
+                 else "OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED"
+             )
         ),
         "owner_mac_independent_job_image_inspect_required": True,
+        "owner_authorization_method": auth.approval_mode,
+        "owner_ed25519_signature_verified": auth.approval_mode == "LEGACY_ED25519",
         "provider_image_attestation_sha256": provider_attestation_sha256,
         "owner_authorization_receipt_sha256": auth.receipt_sha256,
         "output_sha256": receipt.output_sha256,
@@ -528,7 +535,9 @@ def _gold48_launch_marker(
     entry = bindings["arms"][role]
     return {
         "schema": "storyforge_r60_gold48_generation_launch_private_v1",
-        "status": "SIGNED_SCOPE_VERIFIED__BACKEND_IDENTITY_CLAIM_CHECKED",
+        "status": "OWNER_SCOPE_VERIFIED__BACKEND_IDENTITY_CLAIM_CHECKED",
+        "owner_authorization_method": auth.approval_mode,
+        "owner_ed25519_signature_verified": auth.approval_mode == "LEGACY_ED25519",
         "run_id": auth.payload["run_id"],
         "execution_environment": auth.payload["execution_environment"],
         "run_key": frozen["dataset"]["run_key"],
