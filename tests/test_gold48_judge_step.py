@@ -114,6 +114,9 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertIsNone(safe["cost_usd"])
         self.assertEqual(self.factory_calls, 1)
         self.assertEqual(len(self.client.calls), 1)
+        self.assertEqual(
+            self.client.calls[0]["extra_body"], {"thinking": {"type": "disabled"}}
+        )
         receipt = json.loads((self.reviews / "J1" /
                               "002.score.private.json").read_text())
         self.assertEqual(receipt["score_origin"], "ai_judge")
@@ -136,8 +139,52 @@ class JudgeStepSyntheticTest(unittest.TestCase):
                               "001.score.private.json").read_text())
         self.assertEqual(receipt["score_origin"], "fixed_no_response_rule")
         self.assertEqual(set(receipt["response"]["scores"].values()), {1})
+        self.assertFalse((self.reviews / "J1" /
+                          "001.execution.private.json").exists())
         self.assertEqual(receipt["response"]["specific_target_quotes"], [])
         self.assertEqual(receipt["response"]["specific_source_quotes"], [])
+
+    def test_no_spending_cap_confirmation_does_not_block_owner_approved_calls(self) -> None:
+        result = self.run_one(spending_cap=False)
+        self.assertEqual(result["paid_api_attempts"], 1)
+        marker = json.loads((self.reviews / "J1" /
+                             "002.attempt.private.json").read_text())
+        self.assertFalse(marker["hf_spend_cap_owner_confirmed"])
+
+    def test_exact_quote_field_reclassification_without_score_change(self) -> None:
+        class MisfiledClient:
+            def chat_completion(self, **kwargs):
+                score = {
+                    "scores": {dimension: 4 for dimension in DIMENSIONS},
+                    "severe_flags": {name: False for name in SEVERE},
+                    "specific_source_quotes": ["synthetic reply 1"],
+                    "specific_target_quotes": [],
+                    "literary_quality_notes": "这是合成的离线引用归位单元测试案例。",
+                    "uncertainty": "模型判断存在一定不确定性。",
+                }
+                return SimpleNamespace(choices=[
+                    SimpleNamespace(
+                        finish_reason="stop",
+                        message=SimpleNamespace(
+                            content=json.dumps(score, ensure_ascii=False),
+                        ),
+                    ),
+                ])
+
+        self.run_one(factory=lambda **kwargs: MisfiledClient())
+        receipt = json.loads((self.reviews / "J1" /
+                              "002.score.private.json").read_text())
+        self.assertEqual(receipt["response"]["specific_source_quotes"], [])
+        self.assertEqual(receipt["response"]["specific_target_quotes"],
+                         ["synthetic reply 1"])
+        self.assertEqual(set(receipt["response"]["scores"].values()), {4})
+        audit = json.loads((self.reviews / "J1" /
+                            "002.execution.private.json").read_text())
+        self.assertEqual(audit["quote_relocations"]["source_to_target"], 1)
+        self.assertEqual(audit["quote_relocations"]["target_to_source"], 0)
+        self.assertFalse(audit["model_scores_or_flags_changed"])
+        self.assertFalse(audit["model_quote_text_changed"])
+        self.assertIsNotNone(audit["original_model_content_sha256"])
 
     def test_raw_hf_debug_blocked_before_attempt_marker(self) -> None:
         with patch.dict(os.environ, {"HF_DEBUG": "1"}), self.assertRaisesRegex(
@@ -149,7 +196,7 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(self.client.calls, [])
 
     def test_approval_flags_refuse_even_zero_cost(self) -> None:
-        for name in ("private", "billing", "spending_cap"):
+        for name in ("private", "billing"):
             kwargs = {name: False}
             with self.subTest(name=name), self.assertRaises(LockHold):
                 self.run_one(**kwargs)
@@ -235,6 +282,8 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(safe["paid_api_attempts"], 1)
         self.assertEqual(seen[0]["fixed_provider"], "deepinfra")
         self.assertEqual(other_client.calls[0]["model"], "zai-org/GLM-5.2")
+        self.assertEqual(other_client.calls[0]["extra_body"],
+                         {"reasoning_effort": "none"})
         self.assertEqual(self.client.calls, [])
 
     def test_single_call_guard_rejects_concurrent_attempt(self) -> None:
