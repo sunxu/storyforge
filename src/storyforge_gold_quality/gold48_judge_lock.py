@@ -20,8 +20,8 @@ from .hf_literary_review import canonical
 SCHEMA = "storyforge_r60_gold48_judge_lock_private_v1"
 CONFIG_SCHEMA = "storyforge_r60_gold48_judge_config_private_v1"
 SAFE_SCHEMA = "storyforge_r60_gold48_judge_lock_safe_v1"
-MODEL_ID = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\\Z")
-PROVIDER_ID = re.compile(r"[a-z0-9-]+\\Z")
+MODEL_ID = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
+PROVIDER_ID = re.compile(r"[a-z0-9-]+\Z")
 
 
 class LockHold(ValueError):
@@ -40,7 +40,7 @@ def digest(raw: bytes) -> str:
 def read_packet(path: Path) -> tuple[bytes, int]:
     private_folder(path.parent)
     raw = private_input(path, limit=64 * 1024 * 1024)
-    require(raw.endswith(b"\\n"), "BLIND_PACKET_FRAMING_HOLD")
+    require(raw.endswith(b"\n"), "BLIND_PACKET_FRAMING_HOLD")
     lines = raw.splitlines()
     require(len(lines) == 240 and all(lines), "BLIND_PACKET_COUNT_HOLD")
     ids: set[str] = set()
@@ -134,7 +134,7 @@ def prepare(*, packet: Path, config: Path, output: Path | None) -> dict:
         "unblinding_authorized": False,
         "quality_v1_admitted": 0,
     }
-    payload = canonical(record) + b"\\n"
+    payload = canonical(record) + b"\n"
     safe = {
         "schema": SAFE_SCHEMA,
         "status": ("GOLD48_JUDGE_CONFIG_LOCKED__NO_API_NO_TRANSFER"
