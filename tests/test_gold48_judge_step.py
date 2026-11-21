@@ -294,7 +294,7 @@ class JudgeStepSyntheticTest(unittest.TestCase):
             "api_origin": "https://api.deepseek.com",
             "response_format": "json_object",
             "thinking": "disabled",
-        }) + b"\\n")
+        }) + b"\n")
         direct = FakeClient()
         def official_factory(*, hf_token, fixed_provider):
             self.assertEqual(fixed_provider, "deepseek-official")
