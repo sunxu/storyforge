@@ -71,7 +71,8 @@ class DeepSeekOfficialProtocolTest(unittest.TestCase):
         self.assertEqual(timeout, 180)
         self.assertTrue(any(type(h) is urllib.request.ProxyHandler
                             for h in handlers))
-        self.assertTrue(any(type(h) is NoRedirect for h in handlers))
+        self.assertTrue(any(h is NoRedirect or isinstance(h, NoRedirect)
+                            for h in handlers))
         sent = json.loads(request.data)
         self.assertEqual(sent["model"], "deepseek-flash")
         self.assertEqual(sent["response_format"], {"type": "json_object"})
