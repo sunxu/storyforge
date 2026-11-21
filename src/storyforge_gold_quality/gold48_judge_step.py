@@ -93,6 +93,7 @@ class SafeDiagnosticClient:
         self.provider = provider
         self.info: dict = {"phase": "before_api_call"}
         self.original_content_sha256: str | None = None
+        self.raw_model_content: str | None = None
         self.quote_relocations = {"source_to_target": 0, "target_to_source": 0}
 
     def chat_completion(self, **kwargs: Any) -> Any:
@@ -132,6 +133,8 @@ class SafeDiagnosticClient:
             self.info["content_present"] = bool(content.strip())
             self.info["content_chars"] = len(content)
             self.original_content_sha256 = digest(content.encode("utf-8"))
+            if len(content.encode("utf-8")) <= 120_000:
+                self.raw_model_content = content
             try:
                 parsed = json.loads(content)
             except (ValueError, TypeError):
@@ -423,12 +426,33 @@ def step(
             write_once(score_path, canonical(receipt) + b"\n")
         except JudgeHold as exc:
             if not no_reply:
+                stage = (dict(diagnostic.info) if diagnostic is not None
+                         else {"phase": "client_not_constructed"})
+                if diagnostic is not None and diagnostic.raw_model_content is not None:
+                    # Only the Owner-private filesystem receives model text.
+                    # Preserve verbatim evidence for offline quote diagnosis.
+                    write_once(
+                        output_dir / f"{entry}.failed_response.private.json",
+                        canonical({
+                            "schema": "storyforge_gold48_failed_response_private_v1",
+                            "reviewer_id": reviewer_id, "position": position,
+                            "blind_id": item["blind_id"],
+                            "item_sha256": marker["item_sha256"],
+                            "lock_sha256": marker["lock_sha256"],
+                            "original_model_content_sha256":
+                                diagnostic.original_content_sha256,
+                            "model_output_text": diagnostic.raw_model_content,
+                            "quote_relocations": diagnostic.quote_relocations,
+                            "not_official_score": True,
+                        }) + b"\n",
+                    )
+                    stage["failed_response_saved_private"] = True
+                else:
+                    stage["failed_response_saved_private"] = False
                 write_safe_failure(
                     path=diagnostic_path, position=position,
                     reviewer_id=reviewer_id,
-                    stage=(diagnostic.info if diagnostic is not None
-                           else {"phase": "client_not_constructed"}),
-                    error_reason=str(exc),
+                    stage=stage, error_reason=str(exc),
                 )
             raise
         except Exception as exc:  # noqa: BLE001 - safe metadata only
