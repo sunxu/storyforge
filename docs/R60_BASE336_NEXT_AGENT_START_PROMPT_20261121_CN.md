@@ -1,5 +1,16 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
+## 2026-11-22 Gold48 盲评薄适配已落地（优先于下方“适配待开发”描述）
+
+- PR #31 **同一分支**已新增 `src/storyforge_gold_quality/gold48_blind.py`（48×5 只读数据契约预检、私有匿名打包、Owner-only 映射、0600/0700 create-only）与 `src/storyforge_gold_quality/gold48_hf_judge.py`（六维 1–5、严重标记、可定位引用、HF Inference Providers **单对象调用薄接口**及 `bill_to="adradar"`，默认拒绝真实外发）；合成用例见 `tests/test_gold48_blind.py`、`tests/test_gold48_hf_judge.py`。固定已有 R48/R55、Quality-v1 原代码不变，没有新增数据库、Runner、GPU 或评分批处理系统。
+- **截至本段撰写**：代码 HEAD `65250672c0e8c565e64b66e6d505c4512805eb82`，该提交 **7/7 GitHub Actions SUCCESS**（含主 CI / Ruff / 合成测试）。该状态只证明合成能力，**不是** Owner Mac 真实 48×5 数据 PASS。
+- 真正正式评分仍为 **0/240**，HF Providers API 调用 **0**、费用 **$0**、私有语料外发 **0**、评分冻结 **HOLD**、`quality_v1_admitted=0`、模型未晋升；既有 192/192 Owner 字节审计、48 Original 冻结与 7 个 length 继承不重做。Owner Mac 私有路径、原文、匿名映射均未被本次 GitHub 修改读取或上传。
+- **唯一下一步**：可信 Owner Mac 对已存在冻结 Owner manifest / Stage input+manifest / Original references / Locators / 四臂已审计输出运行一次只读 SAFE 预检。入口为 `PYTHONPATH=src python3 -m storyforge_gold_quality.gold48_blind`，传入 `--freeze --input --input-manifest --original --locators --base --r46-v02 --r54-v03a --r60-base336` 的**已有实际本地绝对路径**，**不传 `--out`**；期望 `GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE`，失败仅修单个真实缺口。此前不要运行带 `--out` 的私有创建操作，也不要传真实文本给 Judge。
+- 真实数据 PASS 后才可在 Owner 私有域选择并冻结独立 AI Judge 模型/Provider/参数/评审数量/分歧规则/预算、私有外发许可和计费额度；这些尚**未**冻结，**不能**把单次 HF 测试等同于正式 240 评分授权。正式评分原件全部齐备、不可变冻结后才能私有解盲；AI Judge 不等于独立人工评审。
+
+---
+
+
 > **直接复制本文件全文给新 Agent。** 这是当前阶段的任务与执行边界；2026-11-21 及更旧“等待 GPU / ready / 192 条生成”的内容只作历史。任务是**完成五来源六维盲评**，不是再做生成、训练或来源清点。
 
 ## 你是谁，目标是什么
