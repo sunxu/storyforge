@@ -73,7 +73,7 @@ def _json(path: Path, max_bytes: int) -> dict:
 
 
 def _require_direct_ro_fuse_mount(root: Path) -> None:
-    """Both frozen Stage and delayed Provider handoff are direct RO mounts."""
+    """Verify the frozen Gold48 Stage is a direct, kernel-visible RO mount."""
     try:
         info = root.lstat()
         _hold(stat.S_ISDIR(info.st_mode) and not root.is_symlink()

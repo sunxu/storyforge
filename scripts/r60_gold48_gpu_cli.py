@@ -28,7 +28,6 @@ BUCKET = "hf://buckets/adradar/storyforge-training/"
 IMAGE = FROZEN_RUNTIME_IMAGE
 ROLE_ADAPTERS = ("r46_v02", "r54_v03a", "r60_base336")
 INPUT_PREFIX = "preflight/r60/gold48/gpu/runs"
-PROVIDER_PREFIX = "preflight/r60/gold48/provider-handoff"
 RESULT_PREFIX = "experiments/r60-gold48/outputs"
 CODE_PREFIX = "preflight/r60/gold48/runtime-code"
 
@@ -64,7 +63,6 @@ def _volumes(run_id: str, role: str, code: str, adapters: dict) -> tuple[list[st
     )
     sources = [
         BUCKET + INPUT_PREFIX + "/" + run_id,
-        BUCKET + PROVIDER_PREFIX + "/" + run_id,
         _source(code),
         *(_source(adapters[r]) for r in ROLE_ADAPTERS),
     ]
@@ -81,7 +79,7 @@ def _volumes(run_id: str, role: str, code: str, adapters: dict) -> tuple[list[st
             for other in sources
         ), "GOLD48_INPUT_VOLUME_OVERLAP_HOLD")
     names = (
-        "/input/gold48", "/input/provider", "/input/code",
+        "/input/gold48", "/input/code",
         *(f"/ro_adapters/{r}" for r in ROLE_ADAPTERS),
     )
     inputs = [f"{source}:{dest}:ro" for source, dest in zip(sources, names)]
@@ -94,14 +92,14 @@ def _volumes(run_id: str, role: str, code: str, adapters: dict) -> tuple[list[st
 def job_dry_run_argv(
     *, run_id: str, role: str, code: str, adapters: dict, help_text: str,
 ) -> list[str]:
-    """Six exact RO volumes plus distinct RW; existing argv builder only."""
+    """Five exact RO volumes plus distinct RW; existing argv builder only."""
     inputs, output = _volumes(run_id, role, code, adapters)
     missing = shared.missing_job_cli_flags(help_text)
     default_one = shared.use_documented_default_attempts(help_text)
     _check(not missing or default_one, "GOLD48_HF_CLI_FLAGS_HOLD")
     command = [
-        "python", "/input/code/scripts/r60_gold48_gpu_worker_entry.py",
-        "check", "--run-id", run_id, "--model-role", role,
+        "bash", "/input/code/scripts/r60_gold48_gpu_worker.sh",
+        "check", run_id, role,
     ]
     argv = hf_job_guard.build_hf_argv(
         namespace="adradar", name=run_id, flavor=gpu.contract.HF_FLAVOR,
@@ -149,7 +147,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.action == "shape":
             inputs, output = _volumes(args.run_id, args.role,
                                       args.code_prefix, adapters)
-            _check(len(inputs) == 6 and output.endswith(":/output:rw"),
+            _check(len(inputs) == 5 and output.endswith(":/output:rw"),
                    "GOLD48_VOLUMES_HOLD")
             result = safe("GOLD48_GPU_COMMAND_SHAPE_PASS__NO_JOB",
                           "EXACT_SIX_RO_ONE_RW_SCOPE__REMOTE_NOT_VERIFIED")
