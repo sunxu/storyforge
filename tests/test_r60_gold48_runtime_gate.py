@@ -295,7 +295,6 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
         source_evidence_paths={},
         runtime_lock_path=tmp_path / "absent-lock",
         runtime_contract_path=tmp_path / "absent-contract",
-        expected_template_sha256="a" * 64,
     )
     assert outcome == "synthetic-orchestration-pass"
     assert called == [
@@ -328,8 +327,7 @@ def test_failed_preflight_never_reaches_loader_or_gpu(tmp_path, monkeypatch):
             source_evidence_paths={},
             runtime_lock_path=tmp_path / "absent-lock",
             runtime_contract_path=tmp_path / "absent-contract",
-            expected_template_sha256="a" * 64,
-        )
+            )
 
 
 
