@@ -31,10 +31,16 @@ SAFE_SCHEMA = "storyforge_r60_gold48_judge_step_safe_v1"
 
 
 @contextmanager
-def single_call_guard(root: Path) -> Iterator[None]:
-    """Advisory local one-call-at-a-time lock, released on process death."""
+def single_call_guard(
+    root: Path, *, lock_name: str = ".gold48_single_call.lock",
+) -> Iterator[None]:
+    """One in-flight request per lane; default retains the frozen global lock."""
+    require(lock_name in {
+        ".gold48_single_call.lock",
+        ".gold48_j1_official_call.lock",
+    }, "JUDGE_CALL_LOCK_NAME_HOLD")
     private_folder(root)
-    path = root / ".gold48_single_call.lock"
+    path = root / lock_name
     fd = os.open(path, os.O_CREAT | os.O_RDWR |
                  getattr(os, "O_NOFOLLOW", 0), 0o600)
     try:
@@ -315,6 +321,14 @@ def step(
             and revision.get("api_origin") == "https://api.deepseek.com"
             and revision.get("response_format") == "json_object"
             and revision.get("thinking") == "disabled"
+            and revision.get("concurrency_policy") == {
+                "scope": "j1_official_and_j2_separate_single_call_lanes",
+                "max_total_in_flight": 2,
+                "max_per_reviewer": 1,
+                "j1_lock": ".gold48_j1_official_call.lock",
+                "j2_lock": ".gold48_single_call.lock",
+                "frozen_global_limit_overridden_for_j1_only": True,
+            }
             and revision.get("frozen_judge_sha256") ==
                 lock["judge_source_sha256"],
             "J1_OFFICIAL_REVISION_INVALID_HOLD",
@@ -339,7 +353,11 @@ def step(
     private_folder(packet.parent.parent)
     private_folder(output_dir.parent)
     private_folder(output_dir)
-    with single_call_guard(output_dir.parent):
+    lane_lock = (
+        ".gold48_j1_official_call.lock"
+        if revision_sha256 is not None else ".gold48_single_call.lock"
+    )
+    with single_call_guard(output_dir.parent, lock_name=lane_lock):
         entry = f"{position:03d}"
         marker_path = output_dir / f"{entry}.attempt.private.json"
         score_path = output_dir / f"{entry}.score.private.json"
@@ -369,6 +387,7 @@ def step(
         }
         if revision_sha256 is not None:
             marker["execution_revision_sha256"] = revision_sha256
+            marker["concurrency_lane_lock"] = lane_lock
         write_once(marker_path, canonical(marker) + b"\n")
         diagnostic = None
         try:
@@ -419,6 +438,10 @@ def step(
                     audit["api_origin"] = "https://api.deepseek.com"
                     audit["response_format"] = "json_object"
                     audit["model_version"] = "DeepSeek-V4.1-Flash-1017"
+                    audit["concurrency_policy"] = (
+                        "j1_official_and_j2_separate_single_call_lanes"
+                    )
+                    audit["max_total_in_flight"] = 2
                 write_once(
                     output_dir / f"{entry}.execution.private.json",
                     canonical(audit) + b"\n",
