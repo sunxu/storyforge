@@ -1,5 +1,45 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 真正当前下一关：匿名包 PASS → 离线 Judge 合同（不调用 API）
+
+**Owner Mac 实际最新 SAFE**：`GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS`，48 题 ×5 来源 240 项已在私有域成功生成，7 条 `length` 和 1 条空回复完整保留；评分 0/240、API 0、$0、未解盲、`quality_v1_admitted=0`。**不要重复打包，也不要覆盖已经存在的匿名包/Owner key。** 此节覆盖下方旧的「创建私有包」命令。
+
+已新增 `src/storyforge_gold_quality/gold48_judge_lock.py`：**只在本地读取**现成 reviewer 匿名包和单独的两评审模型配置，核对 240 个随机 ID、48 个同题历史各五份、1 个空回复及私有文件权限；将匿名包 SHA 和六维 Judge 代码 SHA、两个不同的模型与 Provider、预算上限、零重试/单并发、无回复机械评分绑定到 create-only `0600` Owner 合同。**此工具没有 HF 网络/付费调用，不打开 Owner 来源映射，生成合同也不代表允许外发或自动计费**。未来真实调用前还需确认各 Provider 的严格 JSON Schema 能力、实际费用/硬预算门禁和 Owner 对 HF/OpenRouter/后端 Provider 的私有语料外发授权；该合同本身不能代替这几个签收。
+
+**以下模型/费用仅为供 Owner 审批的候选配置，不是已锁定的实际评审者，也不是当前价格保证**。若 Owner 选择不同模型，先改配置，不改代码。冻结前不得借此触发任何 API。
+
+```bash
+set -euo pipefail
+umask 077
+cd ~/workspace/storyforge
+BRANCH=docs/r60-p2-r47-r48-r55-source-shape-audit-20261118
+test "$(git branch --show-current)" = "$BRANCH"
+test -z "$(git status --porcelain)"
+git fetch origin "$BRANCH"
+git merge --ff-only "origin/$BRANCH"
+
+ROOT="$HOME/.local/share/storyforge/r60/private/gold48-quality-v1-blind-20261122"
+PACK="$ROOT/reviewers/GOLD48_BLIND_240_PRIVATE.jsonl"
+CFG="$ROOT/owner/GOLD48_JUDGE_CONFIG_PRIVATE.json"
+LOCK="$ROOT/owner/GOLD48_JUDGE_LOCK_PRIVATE.json"
+test -f "$PACK"
+test ! -e "$CFG" && test ! -L "$CFG"
+test ! -e "$LOCK" && test ! -L "$LOCK"
+# Owner 确认具体模型/Provider/预算后才保留此配置；以下是候选值
+cat > "$CFG" <<'JSON'
+{"schema":"storyforge_r60_gold48_judge_config_private_v1","reviewers":[{"reviewer_id":"J1","model":"deepseek-ai/DeepSeek-V4.1-Flash","provider":"fireworks-ai","temperature":0,"max_tokens":2048},{"reviewer_id":"J2","model":"zai-org/GLM-5.2","provider":"deepinfra","temperature":0,"max_tokens":2048}],"max_cost_usd":25.0}
+JSON
+chmod 600 "$CFG"
+PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \\
+  -m storyforge_gold_quality.gold48_judge_lock --pack "$PACK" --config "$CFG"
+# 审核离线预检、安全边界及候选选择之后，才另行执行同一命令并添加 --out "$LOCK"
+```
+
+期望只读 `GOLD48_JUDGE_CONFIG_PREFLIGHT_PASS__NO_OUTPUT_NO_API`，计数 `planned_paid_judge_scores=478`、`fixed_no_response_scores=2`、`api_calls=0`。这里的 478 是**两名不同 AI 评审各评 239 个非空答案**的潜在次数；1 个空答案由两名评审的固定规则分别登记，共 480 个最终评分格（每个评分格又含六维），**尚未评分、尚未付费、也不能宣称 AI Reviewer 已独立完成审查**。Reviewer 独立性和未来争议处理仍需 Owner 显式确认。
+
+---
+
+
 ## 2026-11-22 停止 GPU 执行流程：Owner Mac 当前只做盲评资料交接
 
 **本节优先于下方 2026-11-21 的 `ready/submit`、Stage 上传、GPU 进度与“某臂尚待生成”记录。** 四臂 Base/R46/R54/R60 各 48/48 已真实生成；HF Jobs 均 `COMPLETED`，Owner Mac 各 4 份结果文件独立下载、SHA 与结构审计均 PASS。正式 Run ID、Job ID、停止原因及不可越过的盲评边界见 [现行任务书顶部](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)。
