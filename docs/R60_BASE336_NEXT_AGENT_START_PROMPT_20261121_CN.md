@@ -1,5 +1,13 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
+## 2026-11-22 实际盲评包 PASS；当前只做离线 Judge 合同，不再重复打包
+
+Owner Mac 已实际返回 `GOLD48_240_BLIND_OBJECTS_PREPARED__NO_JUDGE_CALLS`：240/240 匿名回答已经**私有 create-only 创建**，48 主分析/42 敏感性，8 Story/25 Session，7 条 `length`、1 条无可见回复全部保留。无模型评分、无 HF API、$0、未外发、未解盲、`quality_v1_admitted=0`。之前的只读预检/打包命令**均已完成，不重做，不覆盖任何输出**。
+
+现有分支新增 `src/storyforge_gold_quality/gold48_judge_lock.py` 和 `tests/test_gold48_judge_lock.py`：只读检查匿名包 240/48×5/1空回复、不同模型+Provider 的两评审配置，绑定整包 SHA 与 `gold48_hf_judge.py` 实际代码 SHA，create-only 写入 Owner 私有 0600 离线合同；锁内明确 `private_transfer_authorized=false`、`paid_calls_authorized=false`，不能开 HF、解盲或暗示获得人工独立性证据。代码只有锁，不是批量收费运行器或费用硬限制器。待 Owner 审定模型/Provider/结构化 JSON 能力/预算/独立复审流程及明确第三方外发授权后，才能进入受控的真实评分执行（预计两 Reviewer ×239 非空项 =478 次上限；空回复两项机械评分，非 AI Judge）。**下一唯一行动**：按 [Owner runbook 顶部](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md) 审核候选配置，并仅执行新模块 `--pack ... --config ...` 的只读、零 API 预检；Owner 接受并确认冻结配置后才追加 `--out`，无须修改生成器/输入/匿名包/Owner key。若模型与参数未批准，配置冻结仍 HOLD，禁止实际付费请求。
+
+---
+
 ## 2026-11-22 真实 Owner 预检发现的唯一空回答：现行评分规则
 
 Owner Mac 已只读核实 9/9 输入文件存在；初次 Gold48 盲评预检因 `EMPTY_GENERATION_HOLD` 停止。安全计数诊断定位 **192 个冻结生成记录中恰好 1 条无可见回复**（原始记录为 `text=""`、`finish_reason=eos`、`output_tokens=1`）；另外三个生成臂空回复 0。**Owner 原始回答/故事内容与来源映射不得写入公开 Git**。四臂各 48/48 及 SHA 已通过独立 Owner 字节审计，该真实空回答不能重新生成、替换、删除，48 主分析必须保留。
