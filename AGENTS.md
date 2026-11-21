@@ -1,3 +1,7 @@
+## 2026-11-21 Gold48 最新最小主线（覆盖过时 Provider / 签名 / 探针说明）
+
+现有 `scripts/r60_gold48_gpu_cli.py` 已接通 Mac `ready`（只读远端文件 SHA、代码 SHA、完整 HF Job 历史排重、输出前缀为空、dry-run）与 `submit --execute`（必须另行明确批准真实 GPU 费用）。提交前使用现有 `OutputManager.write_safe` 生成 0600 Mac 私有一次性标记，超时/未知绝不重投。5 RO+1 RW，已取消动态 Provider 挂载和 Owner Ed25519；新 `r60_gold48_gpu_worker.sh` 直接复用历史成功的 hash-locked pip 安装和现有 Worker，不造 Runner/数据库。仍需 Owner 用 `approve-one-arm` 准备对应唯一 Run ID 的 12 份输入 Stage、上传当前 Git HEAD 的精确代码文件，之后再执行 `ready`。**当前正式 Worker 一次生成单臂 48 条，不是 1 条 Smoke；没有真实 GPU 费用授权时不调用 submit。** 完整命令及先决条件见 `docs/R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md` 顶部。历史 HF CPU 验收不重做，冻结数据不变，真实 GPU Job/192 条输出未执行。
+
 ## 2026-11-21 最新 Owner 决策：取消 Gold48 GPU 的 Ed25519 强制签名
 
 **正式生效**：单 Owner Mac 已明确取消为每臂 GPU 生成签发 Ed25519 私钥签名、登记公钥及其指纹的要求。新主线走 `scripts/r60_gold48_owner_generation_authority_cpu.py --mode approve-one-arm --explicit-owner-generation-authorization --approval-output <private-file>`，直接**复用原先的单臂 Scope/48 条/依赖镜像 SHA/有效期校验**，由 `OutputManager.write_safe` 创建不可覆盖的 0600 私有 JSON 批准文件。无私钥、无公钥：Gold48 Job 固定 RO Stage 只携带 `owner_authorization.private.json`，不需要 `owner_public.pem`。旧 `sign-one-arm` 和 Ed25519 验签可用于历史回执兼容，不再是生产前置条件；旧文档里要求注册公钥或阻塞在 Owner Pin 的描述以本节为准。

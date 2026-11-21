@@ -1,3 +1,27 @@
+## 2026-11-21 最新：Gold48 最短执行路径（Mac CLI 已接线，GPU 未执行）
+
+本节优先于旧 Provider / Owner Ed25519 / HF Bucket 账本 / GPU CLI 只有 dry-run 的历史说明。继续采用单 Owner Mac，已有 HF CLI、历史 Job 排重、OutputManager create-only，**不重新实现 HF 提交框架**。
+
+已修改 `scripts/r60_gold48_gpu_cli.py`：`shape` 只校验命令，`dry-run` 只运行 HF CLI 模拟；`ready` 严格校验本地 Owner Stage 12 份 0600 文件与远端相同前缀 12 个 SHA、10 个关键运行代码 SHA、代码 Git HEAD、远端结果前缀为空、HF 历史无相同 Run ID、HF 提交命令 dry-run。`submit` 必须另带 `--execute`，重复上述全部检查、核对 HF 登录，在首次实际 `hf jobs run` 前创建持久的 Mac 本地 0600 submit marker；任何失败、超时或 Job ID 不明都禁止自动重投。真实 Job 未提交。
+
+当前固定 5 RO（Gold48 私有 Stage、代码、R46/R54/R60 三个 Adapter）+ 独立 1 RW 结果挂载；已**移除过时的 `/input/provider`**。新薄脚本 `scripts/r60_gold48_gpu_worker.sh` 不重复模型逻辑：先只读 `check`，再用此前已验收的 `python -m pip install --require-hashes -r /input/gold48/runtime_lock.hashes` 和 `pip check`，最后调用现有 Worker 的显式 `execute`。代码与冻结依赖须先上传到准确独立的私有 Bucket 前缀。不对已经完成的 HF CPU Job 再做探针。
+
+Mac Stage 必须是本次 Owner 新批准的唯一 Run ID 目录，目录和父目录均 0700，12 个源文件均 0600、名字严格等于 `scripts/r60_gold48_gpu_worker_entry.py::STAGED`。Owner 显式 `approve-one-arm` 的回执只允许本次角色、单臂 48 条、固定模型镜像/依赖与有效期；不需要 Ed25519 私钥。Stage 不得携带历史原始回答。远端代码路径必须精确等于本地当前 `git rev-parse HEAD`，要包含运行时 `src/storyforge_dataset` 和两个 Gold48 Worker 入口文件。已有 Hugging Face CLI 支持 `hf buckets sync <本地干净目录> <远端独立私有前缀>` 上传整个目录，可先使用 `--dry-run` 看计划（不要用 `--delete`）。
+
+Mac 只读验收命令模板（以下尖括号必须替换为真实已签收值）：
+
+```bash
+python3 scripts/r60_gold48_gpu_cli.py ready \
+  --run-id "<Run ID>" --role base \
+  --stage "<Owner Mac 已存在的私有Stage绝对路径，末级为Run ID>" \
+  --code-prefix "hf://buckets/adradar/storyforge-training/preflight/r60/gold48/runtime-code/<本地Git HEAD的40位SHA>" \
+  --adapter-r46-v02 "<已签收R46目录的Bucket URI>" \
+  --adapter-r54-v03a "<已签收R54目录的Bucket URI>" \
+  --adapter-r60-base336 "<已签收R60目录的Bucket URI>"
+```
+
+**`ready` 并不等于 GPU 运行许可。** 本次 Owner 的取消签名和“按最短路径推进”都不是对 GPU 费用的实际批准。在明确批准模型角色、GPU 成本与 Run ID 后，才能将 `ready` 换成 `submit` 并加 `--execute`。现有 `execute` 仍会执行**一个模型臂完整 48 条**，不是廉价的 1 条 Smoke；不要未经确认直接触发。未来成功后由 `r60_gold48_gpu_result_audit.py` 独立回收 SHA，并通过 HF Inspect 核对本 Job 的真实镜像，再做 Quality-v1 准入。
+
 ## 2026-11-21 最新 Owner 决策：取消 Gold48 GPU 的 Ed25519 强制签名
 
 **正式生效**：单 Owner Mac 已明确取消为每臂 GPU 生成签发 Ed25519 私钥签名、登记公钥及其指纹的要求。新主线走 `scripts/r60_gold48_owner_generation_authority_cpu.py --mode approve-one-arm --explicit-owner-generation-authorization --approval-output <private-file>`，直接**复用原先的单臂 Scope/48 条/依赖镜像 SHA/有效期校验**，由 `OutputManager.write_safe` 创建不可覆盖的 0600 私有 JSON 批准文件。无私钥、无公钥：Gold48 Job 固定 RO Stage 只携带 `owner_authorization.private.json`，不需要 `owner_public.pem`。旧 `sign-one-arm` 和 Ed25519 验签可用于历史回执兼容，不再是生产前置条件；旧文档里要求注册公钥或阻塞在 Owner Pin 的描述以本节为准。
