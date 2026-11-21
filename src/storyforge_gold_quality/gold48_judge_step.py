@@ -219,6 +219,8 @@ def step(
     """One and only one item; no retries, no generalized scheduling."""
     require(reviewer_id in {"J1", "J2"} and type(position) is int
             and 1 <= position <= 240, "JUDGE_SLOT_POSITION_HOLD")
+    require(os.environ.get("HF_DEBUG", "").casefold() not in
+            {"1", "true", "yes", "on"}, "HF_DEBUG_PRIVATE_PAYLOAD_HOLD")
     lock, rows = read_locked_packet(packet, lock_path)
     item = validate_item(rows[position - 1])
     selection = lock["config"]["reviewers"][int(reviewer_id[1]) - 1]
