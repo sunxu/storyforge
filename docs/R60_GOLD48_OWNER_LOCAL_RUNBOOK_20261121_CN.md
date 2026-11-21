@@ -1,12 +1,22 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
-**本节是唯一现行 Mac 执行说明；下面从“历史执行笔记”起均只用于追溯，不可照旧执行。** 先核对实际 PR #31 HEAD，本轮已核验 `1dcbce63`，7/7 CI SUCCESS（1,778 passed、6 skipped、42 subtests），但**尚未签收真实 Mac ready**。
+**本节为现行 Mac 执行说明；下面从“历史执行笔记”起均只用于追溯，不可照旧执行。** 使用 PR #31 的实时 HEAD / CI 与实际 Owner SAFE 回执，不再以旧 HEAD 或静态 README 的“尚未启动 GPU”状态为准。Base 48/48 已完成 GPU 生成和 Owner 四文件下载审计；R46 首次 GPU Job 在 Adapter `lora_alpha=128.0` 严格类型检查处 HOLD，旧 Run ID 禁止重投。已针对历史浮点配置做最小 Loader 修复和回归测试，后续新 Run ID 必须使用含该修复的当前代码 Bundle。
 
-**证据边界**：Owner Gold48 48 条输入与 48 条原始回复/冻结 SHA 已签收；历史 HF CPU Tokenizer 48/48 SAFE PASS（`6b00971aefaf5e14f4b3b24a`，Run Key `r60-gold48-cpu-20261120T182842Z-e5de137532a1`）。该 CPU Job **只有 SAFE**，没有 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。修复后 `scripts/r60_gold48_gpu_worker_entry.py::STAGED` **恰好 11 份**，已去掉 `token_preflight.private.json`，不得伪造或要求补生成。GPU Loader 在固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 使用 Tokenizer 并比对同一不可变 revision 的 `chat_template.jinja`，随后才加载模型权重。固定公开模板与该 revision 的 `tokenizer_config.json.chat_template` 已独立只读比对为完全一致（模板 8,952 字节），**但真实 Qwen/PEFT/CUDA GPU 加载及生成尚未实测**。
+**证据边界**：Owner Gold48 48 条输入与 48 条原始回复/冻结 SHA 已签收；历史 HF CPU Tokenizer 48/48 SAFE PASS（`6b00971aefaf5e14f4b3b24a`，Run Key `r60-gold48-cpu-20261120T182842Z-e5de137532a1`）。该 CPU Job **只有 SAFE**，没有 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。修复后 `scripts/r60_gold48_gpu_worker_entry.py::STAGED` **恰好 11 份**，已去掉 `token_preflight.private.json`，不得伪造或要求补生成。GPU Loader 在固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 使用 Tokenizer 并比对同一不可变 revision 的 `chat_template.jinja`，随后才加载模型权重。固定公开模板与该 revision 的 `tokenizer_config.json.chat_template` 已独立只读比对为完全一致（模板 8,952 字节），**Base 实际 GPU/Owner 下载审计已通过；R46/R54/R60 的真实适配器推理仍须分别完成 GPU 和 Owner 审计**。
 
 **Stage 现行精确 11 文件**：`frozen_profile.json`、`owner_freeze.private.json`、`adapter_bindings.private.json`、`input_manifest.private.json`、`input.private.jsonl`、`r46_evidence.private.json`、`r54_evidence.private.json`、`r60_evidence.private.json`、`owner_authorization.private.json`、`runtime_lock.hashes`、`runtime_contract.json`。以代码 `STAGED` 为准，文件名**不能多也不能少**。可信 Mac 私有目录及父目录权限 0700、源文件 0600；绝不包含历史 Original 回复。未授权新 Run ID 不自动创建，已有 create-only 产物不重建/不覆盖。
 
 **权限和最短路径**：Mac **不安装** `transformers`/`torch`/`peft`，不在 Mac 运行模型 Tokenizer/Chat Template/Token 预算；HF CPU 历史 PASS 不重跑。已取消 Provider 动态证明/0700 FUSE 原子账本/Owner Ed25519 强制签名，改由单 Owner Mac 的 `approve-one-arm` 0600 create-only 审批、既有 HF 权限、Job 历史与本地一次性提交标记，旧签名逻辑仅兼容历史审计。不使用 Supabase/PostgreSQL、不开新 Runner、不重复 CPU 探针、不修改冻结 Profile、不重复 48 输入与 204 Story/495 版本/R50 等历史审计。**这次文档/接手授权不是 GPU 费用批准**；`ready` 无 GPU，`submit --execute` 是**单臂完整 48 条正式生成**（不是 1 条廉价 Smoke），需 Owner 针对本次模型/Run ID/GPU 预算和范围另外明确批准。未知/失败不自动重试。真实 GPU PASS 后再按另行授权进入 192 生成、Owner 下载 SHA/Inspect、240 对象盲评和 Quality-v1 决议。当前 `quality_v1_admitted=0`、未晋升。
+
+## 运行时进度日志（新 GPU Job 生效，已有旧 Job 不追溯补写）
+
+当前 HEAD 的 `scripts/r60_gold48_gpu_worker.sh` 与 `scripts/r60_gold48_gpu_worker_entry.py` 在 **execute** 路径向 HF Job stdout 输出安全 JSONL（`schema=storyforge_gold48_gpu_progress_safe_v1`）。`check`/本地 `ready` 不生成逐条推理日志。必须使用新的代码 Bundle 提交新 Run ID；只更新 Git 不会改写已经启动或结束的 HF Job。
+
+- **启动/加载/交付阶段**：`bootstrap_started`、`stage_preflight_passed`、`dependencies_installed`、`stage_verified`、`inputs_materialized`、`preflight_started`、`preflight_passed`、`model_loading_started`、`model_loaded`、`result_delivery_started`、`result_delivered`；如果 Dispatcher 抛异常则发送 `execution_halted` 和上一个安全阶段名。启动阶段的 `startup_elapsed_seconds` 与 Python 入口的 `elapsed_seconds` 从不同起点计时，不能直接相加。
+- **逐条生成**：生成前 `generation_started`（0/48）；每条开始 `case_started`，完成并通过本地结构检查后 `case_completed`；日志只含从 1 开始的顺序索引、`completed`、`total=48`、`percent`、本条耗时、生成累计耗时、基于已完成样本的粗略 `eta_seconds`、安全的 `finish_reason`。不输出 Story/Session/样本私有 ID、输入/回答、逐条 SHA、密钥或敏感路径。
+- **完成与验收的边界**：`generation_finished_unpublished` 是“48/48 已在内存中生成”的进度，不代表私有结果已存盘；`private_output_written` 是 Worker 的本地 create-only 输出；`result_delivered` 是远端 RW Bucket 交付阶段完成。正式成功仍以 `GOLD48_ONE_ARM_GENERATED_AND_TRANSFERRED__OWNER_AUDIT_PENDING` SAFE、HF Job `COMPLETED` 和 Owner 独立下载 SHA 审计为准。任何 `HOLD` 均不得自动重投原 Run ID。
+
+查看 Hugging Face Job 页面的 Logs，按 `event=case_completed` 即可追踪 1/48 至 48/48；每条只在生成结束后出具完成事件，**不是模型内部逐 token 流式事件**。进度/ETA 是非持久辅助观测值，不能替代原始冻结输出及 Quality-v1 准入审计。
 
 ## 1. 只读核对已有本地资料，不重复 create-only 工作
 
