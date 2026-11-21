@@ -250,6 +250,7 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
 
     pack = fixture(tmp_path)
     called = []
+    progress_events = []
     mock_permit = SimpleNamespace(
         selected_adapter_dir=None,
         signed_scope={
@@ -295,8 +296,13 @@ def test_production_dispatch_order_signature_first_then_loader_then_worker(
         source_evidence_paths={},
         runtime_lock_path=tmp_path / "absent-lock",
         runtime_contract_path=tmp_path / "absent-contract",
+        progress_callback=lambda event, _fields: progress_events.append(event),
     )
     assert outcome == "synthetic-orchestration-pass"
+    assert progress_events == [
+        "preflight_started", "preflight_passed", "model_loading_started",
+        "model_loaded", "result_delivery_started", "result_delivered",
+    ]
     assert called == [
         "signed-owner-versions-and-spend", "gpu-loader-mocked-only",
         "existing-generation-worker-mocked-only",
