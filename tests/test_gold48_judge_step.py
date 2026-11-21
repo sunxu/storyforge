@@ -176,11 +176,10 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(self.client.calls, [])
 
     def test_single_call_guard_rejects_concurrent_attempt(self) -> None:
-        with single_call_guard(self.reviews):
-            with self.assertRaisesRegex(
-                LockHold, "JUDGE_CONCURRENT_EXECUTION_HOLD"
-            ):
-                self.run_one()
+        with single_call_guard(self.reviews), self.assertRaisesRegex(
+            LockHold, "JUDGE_CONCURRENT_EXECUTION_HOLD"
+        ):
+            self.run_one()
         self.assertEqual(self.client.calls, [])
         self.assertFalse((self.reviews / "J1" /
                           "002.attempt.private.json").exists())
