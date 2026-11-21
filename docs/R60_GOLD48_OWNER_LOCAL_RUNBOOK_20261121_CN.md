@@ -1,5 +1,17 @@
 # Gold48 Owner Mac：最新 11 份 Stage → HF `ready` 最短操作（2026-11-21）
 
+## 2026-11-22 最新 Owner 决定：重置 reviews，从零重新执行正式双 Judge（不以费用为阻塞）
+
+**只重置评分输出，不重建匿名输入。** 冻结 240 条匿名输入 `reviewers/GOLD48_BLIND_240_PRIVATE.jsonl`、`owner/GOLD48_JUDGE_LOCK_PRIVATE.json`、Owner crosswalk 和所有训练/生成证据不动。Owner 已批准数据外发及收费，明确要求不再以预算额度为审批阻塞；仍保持 J1/J2 唯一 240 项、一次串行调用、防重复标记、私人日志脱敏、不得解盲。锁中 `max_cost_usd` 是历史备案，非运行时实际计费硬限制，后续账单仍由 HF 管理。
+
+现有 `gold48_judge_step.py` 最小修订，不动被冻结 SHA 绑定的 `gold48_hf_judge.py`：J1/fireworks-ai 请求仅增加 `extra_body={thinking:{type:disabled}}`，J2/deepinfra 请求仅增加 `extra_body={reasoning_effort:none}`，保留 2048 输出 token 和六维结构。严格逐字引用若只错放于 source/target 字段，则在返回 `judge_one` 前确定性归位、不创造引用、不改任何分数/严重标记/文字；每条非空正式评分生成 `NNN.execution.private.json` 保存执行修订、原始模型响应 SHA 和归位计数，再写正式 `NNN.score.private.json`。不匹配原文的虚构引用继续 HOLD，禁止偷偷修正。禁用原始 HF_DEBUG，不允许自动重试不确定的付费调用。Fireworks 是否接受禁思考参数需以首次真实 J1 请求验证，不能预设。**本次完整重评为新的执行批次**；历史 J1/J2 的失败请求及 J2/002 的诊断修复不能当作本批次正式得分。
+
+重启前确保所有评分进程已停止。Owner Mac 使用 create-only 唯一归档路径，在原私有 ROOT 下将 `reviews` 整个 `mv` 为 `reviews-archive-pre-restart-20261122`（若已存在则 HOLD，不覆盖），随后 `mkdir -m 700 reviews reviews/J1 reviews/J2`。**禁止直接 `rm -rf`**：旧版 `_recovery` 内有人工重试授权、原始含隐私 HF_DEBUG 日志、两名评审的 attempt/diagnostic、J2/002 诊断原始输出及离线修复证据；它们应保留私有只读供溯源。不得把原始 debug 日志外传。
+
+重置后只调用现有单项 CLI，按位置 1..240 对 J1、J2 分别评分，发生任何 HOLD 则停止并保留 attempt/diagnostic；不要继续无监督并发，亦不需要新增通用 Runner 或额外无私有校准。CLI 仍要求 `--approve-private-transfer --approve-paid-calls`，但 `--confirm-hf-spending-cap` 可省略；用户已经明确授权正式外发和付费。必须逐批核对最终 480 份有效评分、478 个潜在 AI Judge 得分与 2 个无回复固定规则分数，所有记录冻结后才可解盲。
+
+---
+
 ## 2026-11-22 实际故障：J1/002 已重评一次仍 HOLD；后续禁用原始 HF_DEBUG
 
 Owner 已明确授权 Gold48 私有文本外发与真实付费，且 `GOLD48_JUDGE_CONFIG_LOCKED__NO_API_NO_TRANSFER` 已在 Owner Mac 正式 create-only 冻结。先前 J1/001、J2/001 空回复固定评分各一份 PASS（0 API）；J1/002 首次正式请求和单次人工授权重评均 `JUDGE_API_OR_FORMAT_HOLD`，现有新 `002.attempt.private.json`、无 `002.score.private.json`。原始失败 attempt 已留在私有 `_recovery`，不能再删除或重试这项，也不得把异常误记为质量 1 分；费用未知，仍无任何有效 AI Judge 评分。
