@@ -110,16 +110,21 @@ def test_gpu_command_does_not_mount_removed_provider_handoff():
 
 def _mock_owner_mac_ready(tmp_path, monkeypatch, *, submit_returncode=0):
     """All HF/remote operations fake. No real Job, GPU, or private source."""
+    import sys
     from pathlib import Path
+    from types import ModuleType
 
-    import huggingface_hub
     import r60_common2_hf_cpu_final_read_only as history
+
+    # Core CI intentionally has no huggingface_hub SDK. Use a pure fake.
+    hf_stub = ModuleType("huggingface_hub")
+    hf_stub.HfApi = lambda: object()
+    monkeypatch.setitem(sys.modules, "huggingface_hub", hf_stub)
 
     parent = tmp_path / "mac-owner"
     parent.mkdir(mode=0o700)
     stage = parent / RUN
     stage.mkdir(mode=0o700)
-    monkeypatch.setattr(huggingface_hub, "HfApi", lambda: object())
     monkeypatch.setattr(history, "walk_job_history",
                         lambda _api, _key: (0, 0))
     monkeypatch.setattr(cli, "_local_stage_sha",
