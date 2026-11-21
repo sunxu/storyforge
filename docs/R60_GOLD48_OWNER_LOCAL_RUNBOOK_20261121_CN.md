@@ -19,9 +19,9 @@ test "$(git branch --show-current)" = "$BRANCH"
 test -z "$(git status --porcelain)"
 git fetch origin "$BRANCH"
 git merge --ff-only "origin/$BRANCH"
-for var in GOLD48_FREEZE GOLD48_INPUT GOLD48_INPUT_MANIFEST GOLD48_ORIGINAL GOLD48_LOCATORS GOLD48_BASE GOLD48_R46 GOLD48_R54 GOLD48_R60; do
-  test -n "${!var:-}" # Bash；若在 zsh 中请用 bash 启动此代码块
-done
+: "${GOLD48_FREEZE:?}" "${GOLD48_INPUT:?}" "${GOLD48_INPUT_MANIFEST:?}"
+: "${GOLD48_ORIGINAL:?}" "${GOLD48_LOCATORS:?}" "${GOLD48_BASE:?}"
+: "${GOLD48_R46:?}" "${GOLD48_R54:?}" "${GOLD48_R60:?}"
 OUT="$HOME/.local/share/storyforge/r60/private/gold48-quality-v1-blind-20261122"
 test ! -e "$OUT" && test ! -L "$OUT"
 PYTHONPATH=src "$HOME/.local/share/storyforge/venvs/r60-owner/bin/python3" \\
