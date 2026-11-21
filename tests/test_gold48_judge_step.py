@@ -123,6 +123,8 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         with self.assertRaisesRegex(LockHold, "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD"):
             self.run_one()
         self.assertEqual(len(self.client.calls), 1)
+        self.assertFalse((self.reviews / "J1" /
+                          "002.diagnostic.private.json").exists())
 
     def test_blank_is_fixed_and_does_not_construct_client(self) -> None:
         safe = self.run_one(position=1)
@@ -155,6 +157,56 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         with self.assertRaisesRegex(LockHold, "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD"):
             self.run_one()
         self.assertEqual(len(self.client.calls), 1)
+        diag_path = self.reviews / "J1" / "002.diagnostic.private.json"
+        self.assertEqual(diag_path.stat().st_mode & 0o777, 0o600)
+        raw = diag_path.read_text()
+        self.assertNotIn("PRIVATE PROMPT", raw)
+        diag = json.loads(raw)
+        self.assertEqual(diag["sdk"]["phase"], "api_exception")
+        self.assertEqual(diag["sdk"]["exception_class"], "RuntimeError")
+        self.assertIsNone(diag["sdk"]["http_status"])
+        self.assertEqual(diag["reason"], "JUDGE_API_OR_FORMAT_HOLD")
+
+    def test_http_status_diagnostic_never_echoes_private_exception(self) -> None:
+        class PrivateHttpError(RuntimeError):
+            status_code = 422
+
+        class FailClient:
+            def chat_completion(self, **kwargs):
+                raise PrivateHttpError("private prompt and API key in message")
+
+        with self.assertRaisesRegex(Exception, "JUDGE_API_OR_FORMAT_HOLD"):
+            self.run_one(factory=lambda **kwargs: FailClient())
+        diag_path = self.reviews / "J1" / "002.diagnostic.private.json"
+        raw = diag_path.read_text()
+        self.assertNotIn("private prompt", raw)
+        self.assertNotIn("API key", raw)
+        diag = json.loads(raw)
+        self.assertEqual(diag["sdk"]["phase"], "api_exception")
+        self.assertEqual(diag["sdk"]["http_status"], 422)
+        self.assertEqual(diag["sdk"]["exception_class"], "PrivateHttpError")
+        self.assertFalse(diag["private_values_emitted"])
+
+    def test_malformed_json_records_only_structure(self) -> None:
+        class BadJsonClient:
+            def chat_completion(self, **kwargs):
+                return SimpleNamespace(choices=[
+                    SimpleNamespace(finish_reason="length",
+                                    message=SimpleNamespace(
+                                        content="secret model output <invalid"))
+                ])
+
+        with self.assertRaisesRegex(Exception, "JUDGE_API_OR_FORMAT_HOLD"):
+            self.run_one(factory=lambda **kwargs: BadJsonClient())
+        raw = (self.reviews / "J1" /
+               "002.diagnostic.private.json").read_text()
+        self.assertNotIn("secret model output", raw)
+        diag = json.loads(raw)
+        self.assertEqual(diag["sdk"]["phase"], "api_response_received")
+        self.assertEqual(diag["sdk"]["finish_reason"], "length")
+        self.assertEqual(diag["sdk"]["content_chars"],
+                         len("secret model output <invalid"))
+        self.assertFalse(diag["sdk"]["json_valid"])
 
     def test_packet_changed_after_lock_fails_closed(self) -> None:
         self.rows[1]["target_text"] = "changed synthetic reply"
