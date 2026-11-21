@@ -187,7 +187,7 @@ def test_ready_checks_existing_mac_history_and_hashes_no_submit(
     assert not list(stage.parent.glob("*.gold48-gpu-submit.private.json"))
     assert all(
         "--dry-run" in call
-        for call in calls if call[:3] == ["hf", "jobs", "run"]
+        for call in calls if call[:3] == ["hf", "jobs", "run"] and "--help" not in call
     )
 
 
@@ -213,7 +213,7 @@ def test_submit_must_be_explicit_creates_marker_before_billing_and_no_retry(
     import json
     assert json.loads(marker.read_text())["status"] == "ATTEMPTED__NO_AUTO_RETRY"
     billed = [call for call in calls
-              if call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]
+              if call[:3] == ["hf", "jobs", "run"] and "--help" not in call and "--dry-run" not in call]
     assert len(billed) == 1
     with pytest.raises(ValueError, match="GOLD48_GPU_ALREADY_ATTEMPTED_NO_RETRY_HOLD"):
         cli._ready_or_submit(
@@ -221,7 +221,7 @@ def test_submit_must_be_explicit_creates_marker_before_billing_and_no_retry(
             adapters=ADAPTERS, stage=stage, allow_execute=True,
         )
     assert len([call for call in calls if
-                call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]) == 1
+                call[:3] == ["hf", "jobs", "run"] and "--help" not in call and "--dry-run" not in call]) == 1
 
 
 def test_submit_unconfirmed_keeps_marker_and_never_retries(tmp_path, monkeypatch):
@@ -237,7 +237,7 @@ def test_submit_unconfirmed_keeps_marker_and_never_retries(tmp_path, monkeypatch
     assert report["gpu_started"] is None
     assert (stage.parent / (RUN + ".gold48-gpu-submit.private.json")).exists()
     assert len([call for call in calls if
-                call[:3] == ["hf", "jobs", "run"] and "--dry-run" not in call]) == 1
+                call[:3] == ["hf", "jobs", "run"] and "--help" not in call and "--dry-run" not in call]) == 1
 
 
 def test_gpu_bootstrap_is_only_a_hash_locked_preflight_not_another_submitter():
