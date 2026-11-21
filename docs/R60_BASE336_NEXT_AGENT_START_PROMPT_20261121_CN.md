@@ -1,40 +1,42 @@
-# StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 启动提示词（2026-11-21，当前权威）
+# StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
-> 整段可直接复制给下一位 Agent。你不是来重做历史审计、增加安全框架或重训模型；**只做未完成的真实 Gold48 下一关口**。每次开始先获取 PR #31 实时 HEAD、CI 和实际源码，不依据这份提示词的日期猜进度。
+> **直接复制本文件全文给新 Agent。** 这是当前阶段的任务与执行边界；2026-11-21 及更旧“等待 GPU / ready / 192 条生成”的内容只作历史。任务是**完成五来源六维盲评**，不是再做生成、训练或来源清点。
 
-## 使命与已冻结合同
+## 你是谁，目标是什么
 
-**唯一业务目标（不可变更）**：48 条已冻结的 `RECONSTRUCTED_EVALUATION_INPUT` × 4 生成臂 = 192 条新回答：Qwen/Qwen3.8-27B Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37。再加入**独立的**48 条已冻结历史 Original Assistant 回复作第五种匿名回答来源，共 240 个六维盲评对象（不是 240 次模型推理）。8 Story、25 Session，主分析 48 条、剔除预先指定单一风险 Story 的整组六题后敏感性 42 条；25 Session 聚类，严重违规标记，盲审后解盲。历史 Original 只可作**描述性对照**，不得认定历史 actual-sent 输入与重建输入逐字节一致。冻结 Profile 为 `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`；输入/角色/参数/原始回答 SHA、模型 checkpoint 和敏感性分组均不可重新选取或修改。
+你是 `sunxu/storyforge` 的 Gold48 Quality-v1 接手 Agent，继续 [PR #31](https://github.com/sunxu/storyforge/pull/31) 的现有分支 `docs/r60-p2-r47-r48-r55-source-shape-audit-20261118`，目标是用**最少代码与最短安全路径**完成已冻结 **48 题 × 五种匿名回答来源 = 240 份待评分回答**的独立六维评审、48/42 配对分析与 Owner 裁决。不要重新选样本、模型、输入、随机种子、原始回复或训练来源。阅读本文件与 [主任务书最新顶部](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)、[质量总计划最新顶部](plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)、[Owner runbook 最新顶部](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md)、[AGENTS.md](../AGENTS.md)；以实时 HEAD 和真实 Owner SAFE 判断事实，不把文档写死的旧 HEAD 当最新。
 
-**现行唯一判断依据**：PR [#31](https://github.com/sunxu/storyforge/pull/31) 实时 HEAD + 实际源码 + 已签收的 SAFE/Owner 私有证据；`1dcbce63e80c5e1d6e1e700f1927bd95f54a08ba` 是最近一次核验基线，不应被硬编码为永远最新。该基线 7/7 GitHub Actions SUCCESS，主 CI `1,778 passed · 6 skipped · 42 subtests passed`，均为**合成/离线**验证，不是 HF GPU 实测。
+## 已真实完成：继承，不得重复
 
-**证据边界**：Owner Gold48 48 条输入与 48 条原始回复/冻结 SHA 已签收；历史 HF CPU Tokenizer 48/48 SAFE PASS（`6b00971aefaf5e14f4b3b24a`，Run Key `r60-gold48-cpu-20261120T182842Z-e5de137532a1`）。该 CPU Job **只有 SAFE**，没有 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。修复后 `scripts/r60_gold48_gpu_worker_entry.py::STAGED` **恰好 11 份**，已去掉 `token_preflight.private.json`，不得伪造或要求补生成。GPU Loader 在固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 使用 Tokenizer 并比对同一不可变 revision 的 `chat_template.jinja`，随后才加载模型权重。固定公开模板与该 revision 的 `tokenizer_config.json.chat_template` 已独立只读比对为完全一致（模板 8,952 字节），**但真实 Qwen/PEFT/CUDA GPU 加载及生成尚未实测**。
+| 生成臂 | Run ID | HF Job（COMPLETED） | Owner 字节审计 PASS | 停止原因 |
+| --- | --- | --- | --- | --- |
+| Base Qwen/Qwen3.8-27B | `gold48-owner-20261121T070218Z-6d825fa497b5` | `6b0147124fdc5ab3c55c7e00` | 4 文件、48 记录 | 47 eos / 1 length |
+| R46 v0.2 checkpoint-7 | `gold48-owner-20261121T100447Z-1ea12fbfdf50` | `6b016f2befaf5e14f4b4db78` | 4 文件、48 记录 | 46 eos / 2 length |
+| R54 v0.3-A checkpoint-16 | `gold48-owner-20261121T120421Z-4c3dbaf822d8` | `6b018ad1efaf5e14f4b52508` | 4 文件、48 记录 | 47 eos / 1 length |
+| R60 Base336 checkpoint-37 | `gold48-owner-20261121T135310Z-bd614a15d46b` | `6b01a9c8efaf5e14f4b56b63` | 4 文件、48 记录 | 45 eos / 3 length |
 
-## 当前唯一行动（按最短路径）
+**192/192 新模型回复已生成、交付与 Owner Mac 重新下载 SHA/结构审计通过；7 条 length 全部保留**。历史 Original Assistant Reply 48 份另经 Owner 冻结 SHA，**未传给 GPU 生成 Stage**；作为第五匿名来源只做同剧情**描述性**参考，不能声称与四新模型的重建输入 byte-exact 同题。8 Story/25 Session，主分析 48 题、已预注册剔除风险 Story 的整组六题后 42 题敏感性；实际六题映射需复用并核对 Owner 私有证据，不能凭 `Pxx`/`Sxx` 猜。最后核验 PR HEAD `4caf2e3dd5a7d6b2575b2cac0e2c1e0a86a02f40`、7/7 GitHub Actions SUCCESS（**接手先重新核对实时 HEAD/CI**）。
 
-1. **只读核查** PR #31 实时 HEAD / 7 个 Actions / Frozen Profile 不变；核对当前 `scripts/r60_gold48_gpu_cli.py` 的 `ready` 与 `scripts/r60_gold48_gpu_worker_entry.py::STAGED`。不改代码，除非出现可复现的具体缺口；如已有合成 CI PASS，不重新跑所有历史项目。
-2. **Owner Mac 侧只处理缺口**：确认已有 0700 Stage 的 11 份 0600 文件及准确 Run ID、`approve-one-arm` 创建的 Owner 范围、当前提交代码 Bundle、已签收 R46/R54/R60 checkpoint 目录。不要从本地 Draft 或 SAFE 擅自重建、签署、推定不存在的文件，也不使用猜测路径。**Stage 现行精确 11 文件**：`frozen_profile.json`、`owner_freeze.private.json`、`adapter_bindings.private.json`、`input_manifest.private.json`、`input.private.jsonl`、`r46_evidence.private.json`、`r54_evidence.private.json`、`r60_evidence.private.json`、`owner_authorization.private.json`、`runtime_lock.hashes`、`runtime_contract.json`。以代码 `STAGED` 为准，文件名**不能多也不能少**。可信 Mac 私有目录及父目录权限 0700、源文件 0600；绝不包含历史 Original 回复。未授权新 Run ID 不自动创建，已有 create-only 产物不重建/不覆盖。
-3. **复用已跑通的 HF CLI 上传/只读核验**：必要时 `hf buckets sync --dry-run` → `hf buckets sync --ignore-existing`；只上传干净的提交代码和 Owner 许可的私有 Stage，绝不把私有源文件发往 GitHub。运行 `scripts/r60_gold48_gpu_cli.py ready`，要求远端 Stage 精确文件集、逐文件 SHA，当前提交十个核心代码 SHA、无同 Run ID 历史 Job、远端结果为空、HF CLI dry-run 真正通过。回报真实 SAFE 原文的**非私密字段**，不自称 PASS。
-4. **若 ready PASS**：停止 CPU/HF 环境重复开发，向 Owner 汇报唯一下一关口是**单独授权的真实 Qwen3.5/PEFT GPU 兼容性验证**；现有 `submit --execute` 是一个模型臂 **48 条**的完整正式生成，不等于单条 Smoke。除非 Owner 明确批准该 Run ID、资源与费用、执行范围，不提交任何 GPU。若 ready HOLD，只定位确切原因，用最小修复（必要时带回归测试）而不是新的 Probe/Runner/数据库。
-5. **获各次独立正式授权后**：复用现有 Qwen3.5 Loader、Backend、Worker、hf_runtime 和 Mac 结果 SHA 审计，生产四臂各 48 条，另加原始 48 条形成 240 对象六维匿名盲评；48/42、Session 聚类与风险披露，最终 Owner 决议，绝不预先晋升模型。
+**严格事实边界**：Owner SAFE 的 `owner_mac_job_image_inspect_verified=false`、`owner_signature_independently_reverified=false`、`provider_signature_independently_reverified=false` 仍然为 false。HF Inspect 中配置的镜像 Digest 不是独立镜像证明，不需要重跑生成补签名；`quality_v1_admitted=0`、盲评未开始、`model_promoted=false`。本轮已批准的 `RECONSTRUCTED_EVALUATION_INPUT` 不是历史 Provider actual-sent 字节；全历史来源独立性不是已证全宇宙 PASS。
 
-## 禁令与真实性边界
+## 只做以下最短剩余工作
 
-**权限和最短路径**：Mac **不安装** `transformers`/`torch`/`peft`，不在 Mac 运行模型 Tokenizer/Chat Template/Token 预算；HF CPU 历史 PASS 不重跑。已取消 Provider 动态证明/0700 FUSE 原子账本/Owner Ed25519 强制签名，改由单 Owner Mac 的 `approve-one-arm` 0600 create-only 审批、既有 HF 权限、Job 历史与本地一次性提交标记，旧签名逻辑仅兼容历史审计。不使用 Supabase/PostgreSQL、不开新 Runner、不重复 CPU 探针、不修改冻结 Profile、不重复 48 输入与 204 Story/495 版本/R50 等历史审计。**这次文档/接手授权不是 GPU 费用批准**；`ready` 无 GPU，`submit --execute` 是**单臂完整 48 条正式生成**（不是 1 条廉价 Smoke），需 Owner 针对本次模型/Run ID/GPU 预算和范围另外明确批准。未知/失败不自动重试。真实 GPU PASS 后再按另行授权进入 192 生成、Owner 下载 SHA/Inspect、240 对象盲评和 Quality-v1 决议。当前 `quality_v1_admitted=0`、未晋升。
+1. **核对现有私有原件，不重新提取**：Owner Mac 已有 `~/.local/share/storyforge/r60/private/gold48-owner-results/<run_id>/` 四臂私有结果（每臂四文件）、既存 48 冻结重建输入、48 历史 Original 与真实 Story/Session/风险来源私有 crosswalk。先只读核对 48×4 +48=240 个必要数据对象、同题输入和已签收 SHA、48/42 标记；只输出 SAFE 汇总。文件具体位置从现有 Owner manifest/回执读取，不猜造。若一个必要私有绑定缺失，明确 HOLD 单项并保持已签收产物不变。
+2. **先复用再补薄适配**：阅读 `scripts/v02_r48_four_arm_build.py`、`scripts/v02_r48_review_aggregate.py`、`docs/V02_R48_FOUR_ARM_BLIND_REVIEWER_GUIDE.md` 及 `docs/evidence/V03_R55_GOLD5_REAL_ALIGNMENT_OWNER_RECEIPT_AND_V2_BLIND_FIX_20261023.md`。原 R48 固定 20 题 ×4 来源×3 独立评审者，**不可直接把其 CLI 用在 48×5**，仅复用六维指标、匿名随机化、评分输入不变性、严重标记、原件冻结和解盲前 SHA 校验原则。先查现有 `src/storyforge_gold_quality/` 与相关质量代码确切能力，只有明确缺口才新建最小数据/API 适配；用 stdlib/现有测试做无私有数据的合成测试。保持私有 `0700/0600`、create-only，分离匿名回答包与 coordinator-only 来源映射。
+3. **固定 AI 盲审合同，再做任何正式计费调用**：Owner 已实际成功测试 **HF Inference Providers API + `adradar` 组织计费**，此选型已定，不要再讨论替代平台或自建 GPU Judge。通过现有 `huggingface_hub.InferenceClient` 的 `bill_to="adradar"`（或等价组织头），固定实际可用的评审模型/提供商/温度/输出 token 限额/六维 rubric/1–5 整数 +依据/严重标记结构、独立评审数与分歧解决方案、并发重试及预算上限；遵守 Owner 私有聊天向实际第三方 Provider 发送的授权/隐私限制。**LLM-as-judge ≠ 人类独立 Reviewer**，不得虚称人工或自动推断“已独立”。仅先做不含私有语料的格式试验；正式评估前冻结匿名包 SHA 与 Judge 配置，以免看答案后换 Judge/权重。HF 推理细粒度 `HF_TOKEN` 曾覆盖 Mac Bucket 凭据引发 `BucketNotFoundError`；API/私有 Bucket 分隔环境与权限，Token 不写入 Git、Bucket、日志和聊天。
+4. **盲化且严禁泄露来源**：同一题五回答随机化，以中性标签送评分器，隐藏 Base/R46/R54/R60/历史 Original 与交叉映射，尤其不能让评分器先识别 Original 再给“四模型最优”（R55 v1 缺陷）。若预注册需要四模型专属最佳，**独立**生成无 Original 的四方匿名任务；不能从五来源评分中反推模型身份。逐回答六维固定为剧情连续性、角色一致性、指令遵循、文学表现力、互动推进、玩家自主权（1–5 整数），并保留原文依据、严重违约/玩家自主权侵犯标记和独立评审差异。七条 `length` 仍参与主分析，同时可按预注册规则提供 completed-only 补充敏感性分析，不篡改主集合。
+5. **评分冻结 → Owner 私有解盲 → 分析**：确保评审所有预设对象/格、题序、原文、证据、成本/失败记录和评审模型身份一致，create-only 保存实际评分及 SHA。**必须在所有必要独立评分真实完成并冻结后才由 coordinator 打开私有 answer key**。主分析 48 题，风险 Story 整组六题剔除的 42 题敏感性；按 8 Story/25 Session 统计相关性。重点比较 R60 vs Base、R60 vs R46；R54 用作诊断；Original 保持描述性第五参考。报告六维、严重标记、效果大小/不确定性、`length` 与来源风险、未测 actual-sent/保护全集范围，最终由 Owner 裁决，不能自动晋升模型。
 
-**不能谎报**：旧 Tokenizer SAFE `PASS` 不证明新 GPU Loader PASS；合成 CI `PASS` 不等于 Owner Mac 真实 `ready PASS`；本地指纹/Owner 配置不是 HF Provider 独立测量；HF Bucket 文件存在不等于当前权重 SHA 或输出经 Owner 签收。保持 `inference_authorized=false`（冻结文档的历史状态不可改）、`real_gpu_smoke=UNVERIFIED`、`quality_v1_admitted=0`，直到有对应新的可追溯 Owner/Job SAFE。
+## 禁止事项与边界
 
-禁止重复：恢复 48 输入或历史 Original、重签 Gold48 Freeze/四臂 Profile、204 Story/495 版本来源审查、R50/R47/R48/R55/R58 历史排除、重复 HF CPU Tokenizer、Adapter 1.87 GB 哈希 CPU Job、0700 FUSE probe、Supabase/PostgreSQL/独立 Provider 或 Ed25519 动态授权系统。禁止 Mac 安装模型依赖，不输出 Owner 私有 Story/Prompt/原始回答/逐案 SHA，不访问未授权 RolePlay 生产数据库或 R50 sealed。不要更换四臂模型、Seed、EOS/PAD、Thinking、采样等冻结合同；不要复用旧 P4 Qwen3-32B/GLM 三臂。
+- **禁止重跑 Base/R46/R54/R60、Tokenizer CPU、Adapter 1.87GB 哈希、旧 R50/R47/R48/R55/R58 审计、204 Story/495 版本复审、48 输入/历史 Original 恢复、Git 冻结 Profile 改动**。
+- 禁止在 Mac 安装 `torch`/`transformers`/`peft`、重新训练/提交新 GPU、增设 Supabase/PostgreSQL/通用 Runner、重写已存在的 Quality-v1 功能或复制旧 R48 系统。
+- 不读取 R50 sealed、未授权生产聊天；不公开私有 Story/角色/Session、Prompt、原始回复、逐案哈希、Reviewer 评分原文、crosswalk、HF Token；不将私有输入/答卷发布公开 Dataset。
+- 失败只定位且修复唯一缺口，不偷偷跳过校验或重试造成重复费用；一次性任务和敏感文件不能覆盖。没有 Owner 允许的外发范围或无法确定 Provider 数据处理条件时，只能先完成本地匿名包/合成测试，不发送真实私有材料。
+- **只在确有阻塞缺口时做最小代码与合成测试变更，继续 PR #31 同一分支**；变更后检查 HEAD/CI。不要请求用户重复已提供的 Owner SAFE 和四臂审计。
 
-## 汇报格式与文件入口
+## 立即执行顺序与交付
 
-每次只报：PR/HEAD、最新 CI、**已验收事实**、**真正 HOLD/UNVERIFIED**、一项最短下一步、是否访问私有文件/数据库、是否提交 HF Job、是否 GPU/模型调用/训练、任何外部成本。仅当实际变更了必要代码或文档才提交 PR；提交后核对新 HEAD/CI。未拿到真实 Owner Mac 回执时，不编造 ready PASS。
+**第一轮直接做（不要停留在空泛方案）**：查看 PR #31 实时 HEAD/CI、现有 R48/R55/Quality-v1 代码和 Owner 私有资产是否已暴露可读的现有 SAFE/清单；列出**已复用能力、真实缺口**。在不接触真实私有内容的情况下，准备最小 48×5 匿名数据契约 + HF API Judge 输出契约的合成验证。仅在必要时提出针对 Owner Mac **一条**只读 SAFE 盘点命令；不要要求上传历史明文或重复 SHA 审计。确定后沿最短路径实施缺口（若需要写代码，先核验 CI，禁止无关重构）。
 
-- [主任务书](R60_BASE336_P2_QUALITY_EVAL_NEXT_AGENT_HANDOFF_20261119_CN.md)
-- [Owner 操作手册（按顶部现行 11 文件流程）](R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md)
-- [训练后总体质量计划](plans/R60_BASE336_POST_TRAIN_QUALITY_EVALUATION_20261117_CN.md)
-- [冻结四臂 Profile](../experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json)
-- [HF 作业工程规范](standards/HF_JOBS_ENGINEERING.md)
-- [仓库执行边界](../AGENTS.md)
-
-**停止点**：截至已核验的 `1dcbce63`，Tokenizer 回执阻塞已解决、合成 CI 已 PASS，**本轮真实 Mac `ready` 尚未签收，GPU 推理尚未验证，192 新回答/240 盲评尚未进行**。新 Agent 接手后直接从真实 `ready` 开始。
+每次汇报：PR/HEAD/CI、真实通过/真实 HOLD、Owner 私有数据/外发是否发生、HF Job/API 调用与费用、模型评分数量、`quality_v1_admitted`/模型晋升状态、**唯一下一步**。未执行的动作绝不报 PASS。
