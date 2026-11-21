@@ -264,6 +264,46 @@ class JudgeStepSyntheticTest(unittest.TestCase):
         self.assertEqual(diag["sdk"]["content_chars"],
                          len("secret model output <invalid"))
         self.assertFalse(diag["sdk"]["json_valid"])
+        self.assertTrue(diag["sdk"]["failed_response_saved_private"])
+        saved_path = self.reviews / "J1" / "002.failed_response.private.json"
+        self.assertEqual(saved_path.stat().st_mode & 0o777, 0o600)
+        self.assertEqual(json.loads(saved_path.read_text())["model_output_text"],
+                         "secret model output <invalid")
+
+    def test_nonexact_quote_holds_and_retains_private_model_output(self) -> None:
+        class NonexactQuoteClient:
+            def chat_completion(self, **kwargs):
+                value = {
+                    "scores": {dimension: 3 for dimension in DIMENSIONS},
+                    "severe_flags": {name: False for name in SEVERE},
+                    "specific_source_quotes": ["invented synthetic quotation"],
+                    "specific_target_quotes": ["synthetic reply 1"],
+                    "literary_quality_notes": "合成数据的引用不能逐字匹配历史内容。",
+                    "uncertainty": "不确定性只用于合成测试。",
+                }
+                return SimpleNamespace(choices=[
+                    SimpleNamespace(finish_reason="stop", message=SimpleNamespace(
+                        content=json.dumps(value, ensure_ascii=False),
+                    )),
+                ])
+
+        with self.assertRaisesRegex(Exception, "JUDGE_NONEXACT_QUOTE_HOLD"):
+            self.run_one(factory=lambda **kwargs: NonexactQuoteClient())
+        saved_path = self.reviews / "J1" / "002.failed_response.private.json"
+        self.assertEqual(saved_path.stat().st_mode & 0o777, 0o600)
+        saved = json.loads(saved_path.read_text())
+        self.assertEqual(saved["schema"],
+                         "storyforge_gold48_failed_response_private_v1")
+        self.assertIn("invented synthetic quotation", saved["model_output_text"])
+        diag_raw = (self.reviews / "J1" /
+                    "002.diagnostic.private.json").read_text()
+        self.assertNotIn("invented synthetic quotation", diag_raw)
+        diag = json.loads(diag_raw)
+        self.assertTrue(diag["sdk"]["failed_response_saved_private"])
+        self.assertFalse((self.reviews / "J1" /
+                          "002.score.private.json").exists())
+        with self.assertRaisesRegex(LockHold, "JUDGE_ITEM_ALREADY_ATTEMPTED_HOLD"):
+            self.run_one()
 
     def test_packet_changed_after_lock_fails_closed(self) -> None:
         self.rows[1]["target_text"] = "changed synthetic reply"
