@@ -116,6 +116,7 @@ def load_outputs(paths: dict[str, Path], input_sha: str) -> dict[str, list[dict]
                 and len(result_manifest["files"]) == 3,
                 "GENERATION_DELIVERY_MANIFEST_HOLD")
         first = result_manifest["files"][0]
+        require(isinstance(first, dict), "GENERATION_DELIVERY_MANIFEST_HOLD")
         receipt = _read_existing_gold48_output(
             output_path=path,
             profile={"model_profiles": {role: {"model": MODEL, "revision": REVISION}}},
@@ -143,7 +144,7 @@ def load_outputs(paths: dict[str, Path], input_sha: str) -> dict[str, list[dict]
 def prepare(
     *, freeze_path: Path, input_path: Path, input_manifest_path: Path,
     original_path: Path, locator_path: Path, generated: dict[str, Path],
-    output_dir: Path,
+    output_dir: Path | None,
 ) -> dict:
     """Produce one new Owner-private pack; never contact a provider."""
     require(set(generated) == set(ROLES), "FOUR_GENERATION_PATHS_HOLD")
@@ -244,8 +245,22 @@ def prepare(
     }) + b"\n"
     require(len(pack) <= 64 * 1024 * 1024 and len(key) <= 64 * 1024 * 1024,
             "BLIND_PACKET_SIZE_HOLD")
+    if output_dir is None:
+        return {
+            "schema": SUMMARY_SCHEMA,
+            "status": "GOLD48_48X5_SOURCE_PREFLIGHT_PASS__NO_OUTPUT_NO_JUDGE",
+            "cases": 48, "answers": 240, "sources": 5, "stories": 8,
+            "sessions": 25, "main_cases": 48, "sensitivity_cases": 42,
+            "length_answers_retained": 7, "judge_scores_completed": 0,
+            "api_calls": 0, "cost_usd": 0, "private_values_emitted": False,
+            "owner_mapping_uploaded": False, "model_promoted": False,
+            "quality_v1_admitted": 0,
+        }
     require(output_dir.is_absolute() and not output_dir.exists()
             and not output_dir.is_symlink(), "PRIVATE_OUTPUT_EXISTS_HOLD")
+    for ancestor in (output_dir, *output_dir.parents):
+        require(not (ancestor / ".git").exists(),
+                "PRIVATE_OUTPUT_INSIDE_GIT_HOLD")
     private_folder(output_dir.parent)
     output_dir.mkdir(mode=0o700, exist_ok=False)
     (output_dir / "reviewers").mkdir(mode=0o700)
@@ -269,8 +284,11 @@ def prepare(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     for opt in ("freeze", "input", "input-manifest", "original", "locators",
-                "base", "r46-v02", "r54-v03a", "r60-base336", "out"):
+                "base", "r46-v02", "r54-v03a", "r60-base336"):
         parser.add_argument("--" + opt, required=True, type=Path)
+    parser.add_argument("--out", type=Path,
+                        help="Omit for read-only source preflight")
+
     args = parser.parse_args()
     try:
         safe = prepare(
