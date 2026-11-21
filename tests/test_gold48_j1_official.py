@@ -8,7 +8,9 @@ from unittest.mock import patch
 
 from storyforge_gold_quality.gold48_hf_judge import response_schema
 from storyforge_gold_quality.gold48_j1_official import (
-    API_ENDPOINT, NoRedirect, OfficialDeepSeekClient,
+    API_ENDPOINT,
+    NoRedirect,
+    OfficialDeepSeekClient,
 )
 
 
@@ -82,16 +84,19 @@ class DeepSeekOfficialProtocolTest(unittest.TestCase):
 
     def test_unexpected_model_or_mode_rejected_without_network(self) -> None:
         client = OfficialDeepSeekClient("synthetic-token")
-        common = dict(
-            messages=[
+        common = {
+            "messages": [
                 {"role": "system", "content": "synthetic rubric"},
                 {"role": "user", "content": "synthetic prompt"},
             ],
-            temperature=0, max_tokens=2048,
-            response_format={"type": "json_schema",
-                             "json_schema": {"schema": response_schema()}},
-            extra_body={"thinking": {"type": "disabled"}},
-        )
+            "temperature": 0,
+            "max_tokens": 2048,
+            "response_format": {
+                "type": "json_schema",
+                "json_schema": {"schema": response_schema()},
+            },
+            "extra_body": {"thinking": {"type": "disabled"}},
+        }
         with patch("urllib.request.build_opener") as opener:
             with self.assertRaisesRegex(
                 ValueError, "J1_OFFICIAL_REQUEST_PARAMETERS_HOLD"
