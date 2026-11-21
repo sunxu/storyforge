@@ -52,7 +52,7 @@ class OfficialDeepSeekClient:
 
     def chat_completion(
         self, *, model: str, messages: list[dict],
-        temperature: int | float, max_tokens: int, response_format: dict,
+        temperature: float, max_tokens: int, response_format: dict,
         extra_body: dict,
     ) -> Any:
         require(
