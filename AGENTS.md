@@ -1,3 +1,11 @@
+## 2026-11-21 Gold48 Tokenizer 证据交接修复：Mac 不安装 Transformers（最新权威）
+
+仓库 `AGENTS.md` 规定模型 Tokenizer/Chat Template/Token 预算只能在 HF CPU 运行，Mac Owner 负责文件、SHA 和 HF CLI，不安装 `transformers`、`torch`、`peft` 或其他模型库。此前建议 Owner Mac 在 `r60-owner` venv 安装 Transformers 5.16.1、运行 `r60_p2_gold48_token_preflight_cpu.py` 已正式撤回。
+
+真实 HF CPU Gold48 Job `r60-gold48-cpu-20261120T182842Z-e5de137532a1` 的既有 `GOLD48_HF_CPU_TOKEN_SAFE.json` 为 48/48 Tokenizer PASS、双 thinking 模式、固定模型 Revision、Transformers 5.16.1；但当时的 HF Worker **只输出 SAFE**，没有生成 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。由于新 GPU Worker 错误强制要求后者，导致非必要阻塞。已修正：Gold48 `STAGED` 精确文件集由 12 减为 **11 个**，移除 `token_preflight.private.json`，不伪造、不重新运行 CPU Job，也不将 SAFE 文件改名。冻结 Profile 仍保留已通过的 CPU Tokenizer 历史声明，未改冻结 Profile SHA。
+
+正式 HF GPU Loader 继续在 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 读取真实 Tokenizer，且额外只下载同一不可变 Revision 的公开 `chat_template.jinja` 小文件，验证 `tokenizer.chat_template` 与固定源文件完全一致、存在 `enable_thinking` 配置，然后才加载模型权重；拒绝缺失/不一致，保持固定 EOS/PAD、禁静默截断与其它硬门禁。无 Mac 模型依赖、无额外 HF CPU Job/签名框架。新 `ready` 现在要求远端 Stage **11 个文件**及当前 Git HEAD 代码 SHA；先从本地 Stage 移除未上传的过时 PRIVATE Tokenizer 占位项（若存在，停止确认来源后处理），避免重复 create-only 构建。真实 GPU 兼容性仍未验证；`ready` 只读，未授权不得提交 `submit --execute`。
+
 ## 2026-11-21 Gold48 最新最小主线（覆盖过时 Provider / 签名 / 探针说明）
 
 现有 `scripts/r60_gold48_gpu_cli.py` 已接通 Mac `ready`（只读远端文件 SHA、代码 SHA、完整 HF Job 历史排重、输出前缀为空、dry-run）与 `submit --execute`（必须另行明确批准真实 GPU 费用）。提交前使用现有 `OutputManager.write_safe` 生成 0600 Mac 私有一次性标记，超时/未知绝不重投。5 RO+1 RW，已取消动态 Provider 挂载和 Owner Ed25519；新 `r60_gold48_gpu_worker.sh` 直接复用历史成功的 hash-locked pip 安装和现有 Worker，不造 Runner/数据库。仍需 Owner 用 `approve-one-arm` 准备对应唯一 Run ID 的 12 份输入 Stage、上传当前 Git HEAD 的精确代码文件，之后再执行 `ready`。**当前正式 Worker 一次生成单臂 48 条，不是 1 条 Smoke；没有真实 GPU 费用授权时不调用 submit。** 完整命令及先决条件见 `docs/R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md` 顶部。历史 HF CPU 验收不重做，冻结数据不变，真实 GPU Job/192 条输出未执行。

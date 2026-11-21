@@ -1,7 +1,6 @@
 """No-model, synthetic Gold48 Qwen3.8 conditional+LoRA loader tests."""
 from __future__ import annotations
 
-import hashlib
 import json
 from types import SimpleNamespace
 
@@ -313,3 +312,37 @@ def test_forged_launch_object_rejected_before_torch_import(monkeypatch):
             expected_adapter_sha256=None,
             launch_permit={"caller": "provided-dict"},
         )
+
+def test_pinned_public_template_is_fetched_at_exact_model_revision(
+    tmp_path, monkeypatch,
+):
+    import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader
+
+    template = "{% set enable_thinking = false %}exact-pinned-template"
+    path = tmp_path / "chat_template.jinja"
+    path.write_text(template, encoding="utf-8")
+    observed = []
+
+    def fake_download(**kwargs):
+        observed.append(kwargs)
+        return str(path)
+
+    fake_module = SimpleNamespace(hf_hub_download=fake_download)
+    monkeypatch.setattr(
+        loader, "importlib",
+        SimpleNamespace(import_module=lambda name: (
+            fake_module if name == "huggingface_hub" else
+            pytest.fail("unexpected module import")
+        )),
+    )
+    assert loader._load_pinned_chat_template() == template
+    assert observed == [{
+        "repo_id": MODEL,
+        "filename": "chat_template.jinja",
+        "revision": REVISION,
+    }]
+    path.write_bytes(b"x" * 65537)
+    with pytest.raises(WorkerError, match="GOLD48_PINNED_TEMPLATE_FILE_HOLD"):
+        loader._load_pinned_chat_template()
+
+
