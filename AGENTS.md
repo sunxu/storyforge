@@ -1,31 +1,20 @@
-## 2026-11-21 Gold48 Tokenizer 证据交接修复：Mac 不安装 Transformers（最新权威）
+## 2026-11-21 R60 Gold48 当前权威执行规则（覆盖本文件以下过时流程段落）
 
-仓库 `AGENTS.md` 规定模型 Tokenizer/Chat Template/Token 预算只能在 HF CPU 运行，Mac Owner 负责文件、SHA 和 HF CLI，不安装 `transformers`、`torch`、`peft` 或其他模型库。此前建议 Owner Mac 在 `r60-owner` venv 安装 Transformers 5.16.1、运行 `r60_p2_gold48_token_preflight_cpu.py` 已正式撤回。
+**现行唯一判断依据**：PR [#31](https://github.com/sunxu/storyforge/pull/31) 实时 HEAD + 实际源码 + 已签收的 SAFE/Owner 私有证据；`1dcbce63e80c5e1d6e1e700f1927bd95f54a08ba` 是最近一次核验基线，不应被硬编码为永远最新。该基线 7/7 GitHub Actions SUCCESS，主 CI `1,778 passed · 6 skipped · 42 subtests passed`，均为**合成/离线**验证，不是 HF GPU 实测。
 
-真实 HF CPU Gold48 Job `r60-gold48-cpu-20261120T182842Z-e5de137532a1` 的既有 `GOLD48_HF_CPU_TOKEN_SAFE.json` 为 48/48 Tokenizer PASS、双 thinking 模式、固定模型 Revision、Transformers 5.16.1；但当时的 HF Worker **只输出 SAFE**，没有生成 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。由于新 GPU Worker 错误强制要求后者，导致非必要阻塞。已修正：Gold48 `STAGED` 精确文件集由 12 减为 **11 个**，移除 `token_preflight.private.json`，不伪造、不重新运行 CPU Job，也不将 SAFE 文件改名。冻结 Profile 仍保留已通过的 CPU Tokenizer 历史声明，未改冻结 Profile SHA。
+**唯一业务目标（不可变更）**：48 条已冻结的 `RECONSTRUCTED_EVALUATION_INPUT` × 4 生成臂 = 192 条新回答：Qwen/Qwen3.8-27B Base、R46 v0.2 ckpt-7、R54 v0.3-A ckpt-16、R60 Base336 ckpt-37。再加入**独立的**48 条已冻结历史 Original Assistant 回复作第五种匿名回答来源，共 240 个六维盲评对象（不是 240 次模型推理）。8 Story、25 Session，主分析 48 条、剔除预先指定单一风险 Story 的整组六题后敏感性 42 条；25 Session 聚类，严重违规标记，盲审后解盲。历史 Original 只可作**描述性对照**，不得认定历史 actual-sent 输入与重建输入逐字节一致。冻结 Profile 为 `experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json`；输入/角色/参数/原始回答 SHA、模型 checkpoint 和敏感性分组均不可重新选取或修改。
 
-正式 HF GPU Loader 继续在 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 读取真实 Tokenizer，且额外只下载同一不可变 Revision 的公开 `chat_template.jinja` 小文件，验证 `tokenizer.chat_template` 与固定源文件完全一致、存在 `enable_thinking` 配置，然后才加载模型权重；拒绝缺失/不一致，保持固定 EOS/PAD、禁静默截断与其它硬门禁。无 Mac 模型依赖、无额外 HF CPU Job/签名框架。新 `ready` 现在要求远端 Stage **11 个文件**及当前 Git HEAD 代码 SHA；先从本地 Stage 移除未上传的过时 PRIVATE Tokenizer 占位项（若存在，停止确认来源后处理），避免重复 create-only 构建。真实 GPU 兼容性仍未验证；`ready` 只读，未授权不得提交 `submit --execute`。
+**证据边界**：Owner Gold48 48 条输入与 48 条原始回复/冻结 SHA 已签收；历史 HF CPU Tokenizer 48/48 SAFE PASS（`6b00971aefaf5e14f4b3b24a`，Run Key `r60-gold48-cpu-20261120T182842Z-e5de137532a1`）。该 CPU Job **只有 SAFE**，没有 `GOLD48_TOKEN_PREFLIGHT_PRIVATE.json`。修复后 `scripts/r60_gold48_gpu_worker_entry.py::STAGED` **恰好 11 份**，已去掉 `token_preflight.private.json`，不得伪造或要求补生成。GPU Loader 在固定 `Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0` 使用 Tokenizer 并比对同一不可变 revision 的 `chat_template.jinja`，随后才加载模型权重。固定公开模板与该 revision 的 `tokenizer_config.json.chat_template` 已独立只读比对为完全一致（模板 8,952 字节），**但真实 Qwen/PEFT/CUDA GPU 加载及生成尚未实测**。
 
-## 2026-11-21 Gold48 最新最小主线（覆盖过时 Provider / 签名 / 探针说明）
+**Stage 现行精确 11 文件**：`frozen_profile.json`、`owner_freeze.private.json`、`adapter_bindings.private.json`、`input_manifest.private.json`、`input.private.jsonl`、`r46_evidence.private.json`、`r54_evidence.private.json`、`r60_evidence.private.json`、`owner_authorization.private.json`、`runtime_lock.hashes`、`runtime_contract.json`。以代码 `STAGED` 为准，文件名**不能多也不能少**。可信 Mac 私有目录及父目录权限 0700、源文件 0600；绝不包含历史 Original 回复。未授权新 Run ID 不自动创建，已有 create-only 产物不重建/不覆盖。
 
-现有 `scripts/r60_gold48_gpu_cli.py` 已接通 Mac `ready`（只读远端文件 SHA、代码 SHA、完整 HF Job 历史排重、输出前缀为空、dry-run）与 `submit --execute`（必须另行明确批准真实 GPU 费用）。提交前使用现有 `OutputManager.write_safe` 生成 0600 Mac 私有一次性标记，超时/未知绝不重投。5 RO+1 RW，已取消动态 Provider 挂载和 Owner Ed25519；新 `r60_gold48_gpu_worker.sh` 直接复用历史成功的 hash-locked pip 安装和现有 Worker，不造 Runner/数据库。仍需 Owner 用 `approve-one-arm` 准备对应唯一 Run ID 的 12 份输入 Stage、上传当前 Git HEAD 的精确代码文件，之后再执行 `ready`。**当前正式 Worker 一次生成单臂 48 条，不是 1 条 Smoke；没有真实 GPU 费用授权时不调用 submit。** 完整命令及先决条件见 `docs/R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md` 顶部。历史 HF CPU 验收不重做，冻结数据不变，真实 GPU Job/192 条输出未执行。
+**唯一下一动作**：在可信 Owner Mac 上，先只读检查**已经存在**的私有 Stage、11 份文件与本次 Owner 显式批准范围、当前 Git HEAD 对应隔离代码 Bundle、三个已签收 Adapter URI；缺失时只补对应真实缺件，不反复执行冻结/签收或创建新系统。必要的代码、私有 Stage 上传使用现有 `hf buckets sync --dry-run` 审核计划，再 `--ignore-existing` 上传至**准确隔离前缀**（跳过同名文件≠核 SHA）。最后用**现有** `scripts/r60_gold48_gpu_cli.py ready` 完成真实远端 11 份 Stage SHA、核心代码 SHA、结果前缀为空、HF Job 历史排重和 CLI dry-run 核验；取得 `GOLD48_GPU_MAC_STAGE_CODE_AND_CLI_READY__NO_JOB` 的真实 SAFE 回执。**截至本交接没有拿到该本轮真实 ready PASS**。
 
-## 2026-11-21 最新 Owner 决策：取消 Gold48 GPU 的 Ed25519 强制签名
+**权限和最短路径**：Mac **不安装** `transformers`/`torch`/`peft`，不在 Mac 运行模型 Tokenizer/Chat Template/Token 预算；HF CPU 历史 PASS 不重跑。已取消 Provider 动态证明/0700 FUSE 原子账本/Owner Ed25519 强制签名，改由单 Owner Mac 的 `approve-one-arm` 0600 create-only 审批、既有 HF 权限、Job 历史与本地一次性提交标记，旧签名逻辑仅兼容历史审计。不使用 Supabase/PostgreSQL、不开新 Runner、不重复 CPU 探针、不修改冻结 Profile、不重复 48 输入与 204 Story/495 版本/R50 等历史审计。**这次文档/接手授权不是 GPU 费用批准**；`ready` 无 GPU，`submit --execute` 是**单臂完整 48 条正式生成**（不是 1 条廉价 Smoke），需 Owner 针对本次模型/Run ID/GPU 预算和范围另外明确批准。未知/失败不自动重试。真实 GPU PASS 后再按另行授权进入 192 生成、Owner 下载 SHA/Inspect、240 对象盲评和 Quality-v1 决议。当前 `quality_v1_admitted=0`、未晋升。
 
-**正式生效**：单 Owner Mac 已明确取消为每臂 GPU 生成签发 Ed25519 私钥签名、登记公钥及其指纹的要求。新主线走 `scripts/r60_gold48_owner_generation_authority_cpu.py --mode approve-one-arm --explicit-owner-generation-authorization --approval-output <private-file>`，直接**复用原先的单臂 Scope/48 条/依赖镜像 SHA/有效期校验**，由 `OutputManager.write_safe` 创建不可覆盖的 0600 私有 JSON 批准文件。无私钥、无公钥：Gold48 Job 固定 RO Stage 只携带 `owner_authorization.private.json`，不需要 `owner_public.pem`。旧 `sign-one-arm` 和 Ed25519 验签可用于历史回执兼容，不再是生产前置条件；旧文档里要求注册公钥或阻塞在 Owner Pin 的描述以本节为准。
+**其后历史章节**即使标为“最新”“下一步”“必需签名”、12/13/14/15 份 Stage、仍需 Tokenizer PRIVATE、没有 ready/submit，均只作历史审计，不再作为可执行指令；每次以实时源码核对。
 
-**保留边界**：唯一可信 Mac、HF Token 权限、显式执行参数、完整组织 Job 历史排重、Mac 本地 create-only 提交标记、不自动重投、唯一 Run ID、冻结 48 输入 SHA/四臂 Profile、Adapter RO+完整权重哈希、锁文件/镜像 Digest 约束、Job 本地一次性许可、结果与 Sidecar SHA，以及 Mac 独立 HF Inspect（在评测准入前）。**没有密码学验签，不能把此 JSON 当作不可伪造的签名**；Mac/HF Token 被盗的风险已由 Owner 选择接受。新回执的 `owner_authorization_method=OWNER_MAC_EXPLICIT`、`owner_ed25519_signature_verified=false`、`runtime_image_identity_source=OWNER_MAC_APPROVED_CONFIGURATION_ONLY__NOT_MEASURED` 明确说明这一边界。此前 Provider 动态证明也已撤除，不恢复。
-
-**GPU 未获本条消息的执行授权**：更改签名门禁本身不代表允许提交 HF GPU Job、签发本次 Run ID 或进行真实模型调用。先完成代码/合成 CI，再沿用已跑通的 Mac HF CLI，针对具体镜像/角色/经 Owner 选定的 Run ID 另行显式授权 GPU Smoke；四臂共 192 新回答与 48 历史原始回答组成 240 对象质量评估，冻结输入不变。不新建数据库、通用 Runner、Provider 服务或其他签名系统。
-
-## 最新决策（2026-11-21）：取消 Provider 动态交接，复用历史 HF Jobs 调用链
-
-Owner 已明确选用单一 Mac 调度。正式 Gold48 运行不再等待每 Job 的独立 Provider Ed25519 动态证明：删除额外 `/input/provider:ro`、600 秒轮询等待、独立 Provider pin 前置要求；冻结输入 Stage 为 13 份，不附带 Provider 私钥/证书。**历史签名核验函数保留供旧证据审计，但新 GPU 生产路径不调用**。
-
-保留不可删的主线门禁：单 Owner Ed25519 签名（目前生产公钥 pin 仍未配置）、明确 GPU/推理授权、冻结 48 条输入及每臂 Profile、LoRA SHA 和 RO 挂载、依赖及镜像 digest 锁、本地一次性提交标记、OutputManager create-only、Owner 端下载 SHA 校验。**不得将 Owner 的镜像配置声明冒充 Provider 的独立测量**。新结果标记 `runtime_image_measured=false`、`provider_image_attestation_sha256=null`、`runtime_image_identity_source=OWNER_SIGNED_CONFIGURATION_ONLY__NOT_MEASURED`。Owner Mac 需要用已有 HF Inspect 核对实际 Job 的 image digest 与 Owner 签名，再决定质量评测准入；未经核验为 `IMAGE_INSPECT_PENDING`。
-
-此次仅完成源代码简化和合成回归，不启动 GPU，不生成真实回答，不创建新授权服务。原文档中以 14/15 文件 Stage、动态 handoff 和 Provider 双签作为下一步的段落属于**历史已废弃路线**，请优先遵守本节。
-
+---
 
 # AGENTS.md
 
