@@ -49,11 +49,6 @@ def stage(tmp_path, monkeypatch):
             "record_count": 48, "sha256": input_sha,
         }).encode(),
         "input.private.jsonl": input_data,
-        "token_preflight.private.json": json.dumps({
-            "schema": "storyforge_r60_p2_gold48_token_preflight_private_v1",
-            "tokenizer_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
-            "chat_template_sha256_PRIVATE": "a" * 64,
-        }).encode(),
     }
     for name in entry.STAGED:
         if name not in contents:
@@ -75,6 +70,8 @@ def test_fixed_ro_bundle_no_gpu_with_plain_mac_approval(tmp_path, monkeypatch):
     # Mac-approved check does not need Ed25519 private/public keys.
     assert "owner_public.pem" not in entry.STAGED
     assert "provider_public.pem" not in entry.STAGED
+    assert "token_preflight.private.json" not in entry.STAGED
+    assert len(entry.STAGED) == 11
 
 
 def test_extra_stage_file_fails_before_gpu(tmp_path, monkeypatch):

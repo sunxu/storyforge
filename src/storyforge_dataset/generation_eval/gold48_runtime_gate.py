@@ -791,7 +791,6 @@ def run_authorized_gold48_production(
     source_evidence_paths: dict[str, Path],
     runtime_lock_path: Path,
     runtime_contract_path: Path,
-    expected_template_sha256: str,
 ):
     """ONLY production dispatcher: verify+spend -> GPU loader -> existing Worker.
 
@@ -815,7 +814,6 @@ def run_authorized_gold48_production(
     backend = load_pinned_gold48_backend(
         adapter_dir=permit.selected_adapter_dir,
         expected_adapter_sha256=entry["expected_sha256"],
-        expected_template_sha256=expected_template_sha256,
         launch_permit=permit,
     )
     receipt = run_gold48_generation_batch(

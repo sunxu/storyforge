@@ -49,7 +49,6 @@ STAGED = {
     "owner_authorization.private.json": 65536,
     "runtime_lock.hashes": 8 * 1024 * 1024,
     "runtime_contract.json": 65536,
-    "token_preflight.private.json": 65536,
 }
 ROLES_FROM_FILES = {
     "r46_v02": "r46_evidence.private.json",
@@ -143,15 +142,6 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
                   str(SCRATCH / "outputs" / run_id)
               and scope.get("output_filename") == role + ".private.json",
               "GOLD48_ENTRY_OWNER_SCOPE_PRECHECK_HOLD")
-        details = _json(stage / "token_preflight.private.json", 65536)
-        template_sha = details.get("chat_template_sha256_PRIVATE")
-        _hold(details.get("schema") ==
-              "storyforge_r60_p2_gold48_token_preflight_private_v1"
-              and details.get("tokenizer_revision") ==
-                  "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
-              and isinstance(template_sha, str)
-              and SHA.fullmatch(template_sha) is not None,
-              "GOLD48_ENTRY_TEMPLATE_RECEIPT_HOLD")
         lock = InputManager.open_verified(
             stage / "runtime_lock.hashes", max_bytes=8 * 1024 * 1024,
             expected_sha256=gate.FROZEN_RUNTIME_LOCK_SHA256,
@@ -159,7 +149,6 @@ def validate_ro_bundle(stage: Path, run_id: str, role: str) -> dict:
         _hold(lock.size_bytes > 0, "GOLD48_ENTRY_RUNTIME_LOCK_HOLD")
         return {
             "manifest_sha": input_manifest["sha256"],
-            "template_sha": template_sha,
             "owner_scope": scope,
         }
     except (OSError, ValueError, TypeError, UnicodeError) as exc:
@@ -216,7 +205,6 @@ def run(stage: Path, run_id: str, role: str, *, execute: bool) -> dict:
         },
         runtime_lock_path=materialized["runtime_lock.hashes"],
         runtime_contract_path=materialized["runtime_contract.json"],
-        expected_template_sha256=validated["template_sha"],
     )
     return {
         "status": "GOLD48_ONE_ARM_GENERATED_AND_TRANSFERRED__OWNER_AUDIT_PENDING",

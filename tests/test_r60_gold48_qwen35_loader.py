@@ -85,7 +85,6 @@ def test_no_runtime_authorization_no_gpu_or_model_import():
     with pytest.raises(WorkerError, match="GOLD48_SIGNED_LAUNCH_PERMIT_REQUIRED"):
         load_pinned_gold48_backend(
             adapter_dir=None, expected_adapter_sha256=None,
-            expected_template_sha256="a" * 64,
         )
 
 
@@ -106,8 +105,8 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     monkeypatch.setattr(loader, "verify_and_consume_gold48_load_permit",
                         lambda **_kwargs: None)
     calls = []
-    template = "{% for message in messages %}{{ message.content }}{% endfor %}"
-    template_hash = hashlib.sha256(template.encode("utf-8")).hexdigest()
+    template = "{% set enable_thinking = false %}{% for message in messages %}{{ message.content }}{% endfor %}"
+    monkeypatch.setattr(loader, "_load_pinned_chat_template", lambda: template)
 
     class FakeModel:
         def __init__(self):
@@ -183,7 +182,6 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     backend = load_pinned_gold48_backend(
         adapter_dir=adapter_dir,
         expected_adapter_sha256="b" * 64,
-        expected_template_sha256=template_hash,
         launch_permit=SimpleNamespace(
             owner_receipt_path=tmp_path / "test-only-owner",
             runtime_lock_path=tmp_path / "test-only-lock",
@@ -205,7 +203,7 @@ def test_synthetic_class_loader_only_reuses_existing_generation_engine(monkeypat
     ]
 
 
-def test_wrong_template_sha_rejects_before_any_model_load(monkeypatch):
+def test_mismatched_pinned_template_rejects_before_any_model_load(monkeypatch):
     import storyforge_dataset.generation_eval.gold48_qwen35_loader as loader
 
     monkeypatch.setattr(loader, "verify_and_consume_gold48_load_permit",
@@ -234,10 +232,11 @@ def test_wrong_template_sha_rejects_before_any_model_load(monkeypatch):
             from_pretrained=lambda *_a, **_kw: pytest.fail("model should not load")
         ),
     )
-    with pytest.raises(WorkerError, match="GOLD48_CHAT_TEMPLATE_SHA_MISMATCH_HOLD"):
+    monkeypatch.setattr(loader, "_load_pinned_chat_template",
+                        lambda: "{% set enable_thinking = false %}pinned")
+    with pytest.raises(WorkerError, match="GOLD48_PINNED_CHAT_TEMPLATE_MISMATCH_HOLD"):
         load_pinned_gold48_backend(
             adapter_dir=None, expected_adapter_sha256=None,
-            expected_template_sha256="a" * 64,
             launch_permit=object(),
             torch_module=fake_torch,
             transformers_module=fake_transformers,
@@ -287,7 +286,6 @@ def test_runtime_base_metadata_mismatch_holds_before_weight_load(
         load_pinned_gold48_backend(
             adapter_dir=None,
             expected_adapter_sha256=None,
-            expected_template_sha256="a" * 64,
             launch_permit=object(),  # synthetic-only gate stub, no actual GPU
             torch_module=fake_torch,
             transformers_module=fake_transformers,
@@ -298,7 +296,6 @@ def test_legacy_boolean_cannot_unlock_loader_before_gpu():
     with pytest.raises(TypeError, match="runtime_authorized"):
         load_pinned_gold48_backend(
             adapter_dir=None, expected_adapter_sha256=None,
-            expected_template_sha256="a" * 64,
             runtime_authorized=True,
         )
 
@@ -314,6 +311,5 @@ def test_forged_launch_object_rejected_before_torch_import(monkeypatch):
         load_pinned_gold48_backend(
             adapter_dir=None,
             expected_adapter_sha256=None,
-            expected_template_sha256="a" * 64,
             launch_permit={"caller": "provided-dict"},
         )

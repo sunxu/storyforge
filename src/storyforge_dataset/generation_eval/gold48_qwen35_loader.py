@@ -119,17 +119,28 @@ def _hash_adapter_weights(path: Path, expected_sha: str) -> None:
         raise WorkerError("GOLD48_ADAPTER_READ_HOLD") from exc
 
 
+def _load_pinned_chat_template() -> str:
+    """Fetch only the public template at the immutable Qwen revision, no weights."""
+    hub = importlib.import_module("huggingface_hub")
+    path = Path(hub.hf_hub_download(
+        repo_id=MODEL, filename="chat_template.jinja", revision=REVISION,
+    ))
+    payload = path.read_bytes()
+    if not 0 < len(payload) <= 65536:
+        raise WorkerError("GOLD48_PINNED_TEMPLATE_FILE_HOLD")
+    return payload.decode("utf-8")
+
+
 def load_pinned_gold48_backend(
     *,
     adapter_dir: Path | None,
     expected_adapter_sha256: str | None,
-    expected_template_sha256: str,
     launch_permit: SignedGold48LoadPermit | None = None,
     torch_module: Any | None = None,
     transformers_module: Any | None = None,
     peft_module: Any | None = None,
 ) -> TransformersGenerationBackend:
-    """GPU-only loader. A signed Owner, consumed ONE-SHOT grant is required.
+    """GPU-only loader. An Owner-approved, consumed ONE-SHOT grant is required.
 
     This gate executes BEFORE importing torch or touching the CUDA driver.
     A legacy runtime_authorized=True boolean is intentionally unsupported.
@@ -138,8 +149,6 @@ def load_pinned_gold48_backend(
         permit=launch_permit, adapter_dir=adapter_dir,
         adapter_sha256=expected_adapter_sha256,
     )
-    if not isinstance(expected_template_sha256, str) or not SHA256.fullmatch(expected_template_sha256):
-        raise WorkerError("GOLD48_TEMPLATE_SHA_REQUIRED")
     if (adapter_dir is None) != (expected_adapter_sha256 is None):
         raise WorkerError("GOLD48_ADAPTER_PIN_PAIR_REQUIRED")
 
@@ -171,11 +180,13 @@ def load_pinned_gold48_backend(
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             MODEL, revision=REVISION, trust_remote_code=False
         )
+        # The frozen profile defines the template source as the pinned model
+        # revision, NOT an unavailable historical PRIVATE CPU receipt.
         template = tokenizer.chat_template
-        if (not isinstance(template, str) or
-                hashlib.sha256(template.encode("utf-8")).hexdigest() !=
-                expected_template_sha256):
-            raise WorkerError("GOLD48_CHAT_TEMPLATE_SHA_MISMATCH_HOLD")
+        pinned_template = _load_pinned_chat_template()
+        if (not isinstance(template, str) or "enable_thinking" not in template
+                or template != pinned_template):
+            raise WorkerError("GOLD48_PINNED_CHAT_TEMPLATE_MISMATCH_HOLD")
         if adapter_dir is not None:
             if adapter_dir.is_symlink() or not adapter_dir.is_dir():
                 raise WorkerError("GOLD48_ADAPTER_DIR_HOLD")

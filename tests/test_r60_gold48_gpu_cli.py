@@ -258,3 +258,21 @@ def test_gpu_bootstrap_is_only_a_hash_locked_preflight_not_another_submitter():
     assert "/input/provider" not in text
     assert "hf jobs run" not in text
     assert "hf buckets cp" not in text
+
+
+def test_ready_stage_contract_does_not_need_mac_transformers_or_private_cpu_receipt():
+    from scripts import r60_gold48_gpu_worker_entry as entry
+
+    assert "token_preflight.private.json" not in entry.STAGED
+    assert len(entry.STAGED) == 11
+    # Existing HF CPU SAFE proof is already referenced in the frozen profile.
+    import json
+    from pathlib import Path
+
+    profile = json.loads((
+        Path(__file__).resolve().parents[1]
+        / "experiments/r60_quality/gold48_four_arm_generation_profile_frozen_v1.json"
+    ).read_text())
+    assert profile["base_model"]["chat_template_source"] == "PINNED_MODEL_REVISION"
+    assert profile["base_model"]["tokenizer_core_cpu_receipt_verified"] is True
+    assert profile["base_model"]["tokenizer_version_verified"] == "5.16.1"
