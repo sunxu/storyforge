@@ -101,6 +101,9 @@ class HFJudgeSyntheticTest(unittest.TestCase):
         fabricated = dict(result, specific_target_quotes=["不存在的候选引文"])
         with self.assertRaisesRegex(JudgeHold, "JUDGE_NONEXACT_QUOTE_HOLD"):
             validate_score(fabricated, blank)
+        fabricated_source = dict(result, specific_source_quotes=["必须留给玩家选择"])
+        with self.assertRaisesRegex(JudgeHold, "JUDGE_NO_RESPONSE_POLICY_HOLD"):
+            validate_score(fabricated_source, blank)
         changed = dict(result, scores={**result["scores"], "player_agency": 5})
         with self.assertRaisesRegex(JudgeHold, "JUDGE_NO_RESPONSE_POLICY_HOLD"):
             validate_score(changed, blank)
