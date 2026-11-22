@@ -1,5 +1,8 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
+> **2026-11-22 R61 J1 候选登记（仅未来评审方案，非 Gold48 变更）**：用户已明确要求登记 `deepseek-ai/DeepSeek-V4.1-Flash-1017` + HF `deepinfra`、`bill_to="adradar"`。Owner 的两次合成请求已分别通过基本 JSON 返回与 `json_schema`/逐字引用 substring 校验；**R61 完整六维、三个严重标记和独立评审质量尚未测试，也未正式冻结 J1**。详见 [R61 J1 候选路由登记](R61_J1_HF_DEEPINFRA_DEEPSEEK_V41_FLASH_1017_CANDIDATE_20261122_CN.md)。本条不得触发新 API、评分、模型训练，也不得改变 R60 Gold48 的历史 J1 路由或已冻结数据。
+
+
 > **2026-11-22 Gold48 Quality-v1 最终状态（本页最高优先级，覆盖下方旧阶段操作）**：Owner Mac 的 478/480 修订评分已正式冻结并验证、48/42 私有解盲分析已创建并验证；J1 240、J2 238、缺失 J2/055 和 231、离线审计修订评分 33。六维结果未证明 R60 对 Base/R46 的全面稳定优势，相对 R54 的互动推进在 48/42 与修订排除子集持续偏弱。**Owner 已同意暂不晋升 R60（NO_PROMOTE）；`quality_v1_admitted=0`、`model_promoted=false`。** 下一步仅在 Owner 私有域只读审查既有失败案例，形成针对性最小改进需求；**不要再运行下方过时的打包、Judge API、GPU、训练、解盲或冻结命令**。正式 SAFE 聚合报告和决议见 [Gold48 最终质量评估与 Owner 决议](R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md)。
 
 ---
