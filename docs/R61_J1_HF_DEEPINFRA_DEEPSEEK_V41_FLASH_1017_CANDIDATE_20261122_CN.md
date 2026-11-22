@@ -64,4 +64,4 @@ client = InferenceClient(
 - 不改变 R60 决议：`quality_v1_admitted=0`、`model_promoted=false`、`NO_PROMOTE`。
 - **接手唯一建议动作**：若后续 Owner 选择继续 R61 Judge 评估，再依据本候选卡对已有校验器做一次**合成的完整六维兼容性测试**，随后独立冻结实际模型、Provider、费用与授权。
 
-**登记结论：`R61_J1_HF_DEEPINFRA_DEEPSEEK_V41_FLASH_1017_CANDIDATE_REGISTERED`，`synthetic_basic_pass=true`，`synthetic_schema_quote_pass=true`，`full_judge_contract_pass=false`（未测试，不能作失败解释），`formally_selected=false`。**
+**登记结论：`R61_J1_HF_DEEPINFRA_DEEPSEEK_V41_FLASH_1017_CANDIDATE_REGISTERED`，`synthetic_basic_pass=true`，`synthetic_schema_quote_pass=true`，`full_judge_contract_status=NOT_TESTED`，`formally_selected=false`。**
