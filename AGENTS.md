@@ -265,6 +265,15 @@ Do not commit large logs, model weights, datasets, or checkpoints unless specifi
 
 ### 5. Source control
 
+#### Mandatory historical-implementation reuse check
+
+Before designing, implementing, refactoring, or adding a new tool, **read [docs/REUSABLE_ASSET_INDEX.md](docs/REUSABLE_ASSET_INDEX.md)** and search `main`, existing shared modules/tests, pinned archives and relevant historical branches. Do not assume closed PRs or archived implementations are already present on `main`.
+
+- Record the inspected `ref@commit:path`, whether an equivalent exists on `main`, the actual gap, and the reuse-vs-new-code decision in the PR or next-Agent handoff. If the search is incomplete, establish provenance before building an alternative.
+- **Prefer reuse and the minimum compatible change.** Use existing APIs/shared cores; selectively transplant only necessary files or reviewed commits. Do not merge an entire historical experimental branch, duplicate a Runtime/evaluation/reconciliation framework, or revive an abandoned workflow just to satisfy a new task.
+- Recheck dependency compatibility, regression tests, private-data boundaries, historical source provenance, and Owner approval. A past CI PASS, GPU profile freeze, test receipt, closed PR, or SAFE report is **not** new authorization for model inference, training, deployment, admission, promotion, or R61 work.
+- `archive/*` refs are immutable historical sources, not automatic production baselines. Local-only `backup/*` refs may be unavailable to new Agents. Update the asset index when an important reusable implementation is added, superseded, or moved.
+
 Before modifying source:
 
 ```bash
