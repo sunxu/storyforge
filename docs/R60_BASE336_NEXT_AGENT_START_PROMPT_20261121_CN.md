@@ -1,5 +1,10 @@
 # StoryForge R60 Base336 → Gold48 Quality-v1：新 Agent 唯一启动提示词（2026-11-22）
 
+> **2026-11-22 Gold48 Quality-v1 最终状态（本页最高优先级，覆盖下方旧阶段操作）**：Owner Mac 的 478/480 修订评分已正式冻结并验证、48/42 私有解盲分析已创建并验证；J1 240、J2 238、缺失 J2/055 和 231、离线审计修订评分 33。六维结果未证明 R60 对 Base/R46 的全面稳定优势，相对 R54 的互动推进在 48/42 与修订排除子集持续偏弱。**Owner 已同意暂不晋升 R60（NO_PROMOTE）；`quality_v1_admitted=0`、`model_promoted=false`。** 下一步仅在 Owner 私有域只读审查既有失败案例，形成针对性最小改进需求；**不要再运行下方过时的打包、Judge API、GPU、训练、解盲或冻结命令**。正式 SAFE 聚合报告和决议见 [Gold48 最终质量评估与 Owner 决议](R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md)。
+
+---
+
+
 ## 2026-11-22 最新 Owner 指示：不做无私有数据校准，直接进入正式 Judge
 
 已有 Owner Mac 240/240 匿名包 create-only PASS，Gold48 Judge 配置只读 SAFE GOLD48_JUDGE_CONFIG_PREFLIGHT_PASS__NO_OUTPUT_NO_API 已 PASS。**不重复预检/匿名打包、不另跑无私有数据模型能力校准**。选用 J1 DeepSeek-V4.1-Flash / Fireworks AI 与 J2 GLM-5.2 / DeepInfra，使用现有配置、温度0、max_tokens 2048；先由 Owner 核对配置并运行 gold48_judge_lock --out **一次性冻结**，不可事后换评审者/权重或覆盖锁。该 Owner 真实锁状态仍等待 SAFE 回执。
