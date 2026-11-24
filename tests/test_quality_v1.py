@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
 """Synthetic-only checks for Quality-v1. No private files, network or HF."""
+
 from __future__ import annotations
 
 import copy
@@ -7,8 +7,19 @@ import json
 import unittest
 
 from storyforge_gold_quality.quality_v1 import (
-    CORPORA, EVIDENCE, FLOORS, MAX_R58_ROWS, OUT_SCHEMA, SCHEMA, SCORES,
-    SEVERE, Hold, canonical, decide, sha, summarize,
+    CORPORA,
+    EVIDENCE,
+    FLOORS,
+    MAX_R58_ROWS,
+    OUT_SCHEMA,
+    SCHEMA,
+    SCORES,
+    SEVERE,
+    Hold,
+    canonical,
+    decide,
+    sha,
+    summarize,
 )
 
 

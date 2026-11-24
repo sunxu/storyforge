@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """StoryForge Quality-v1: offline SFT candidate quality + world split preflight.
 
 Only for Owner-reviewed private Gold195 / frozen R58 pilot candidates. Does not
@@ -13,13 +12,13 @@ that the provided protected-world inventory is exhaustive.
 from __future__ import annotations
 
 import argparse
-from collections import Counter, defaultdict
 import hashlib
 import json
 import os
-from pathlib import Path
 import re
 import stat
+from collections import Counter, defaultdict
+from pathlib import Path
 
 SCHEMA = "storyforge-quality-v1-private-candidate-v1"
 OUT_SCHEMA = "storyforge-quality-v1-safe-summary-v1"
@@ -273,7 +272,7 @@ def main() -> int:
         print(json.dumps(summarize(read_private(args.private_reviewed_jsonl)),
                          sort_keys=True, ensure_ascii=False, indent=2))
         return 0
-    except Exception:
+    except Exception:  # noqa: BLE001 - suppress private input details
         # Never echo private paths, raw values, parser exception text or stacktraces.
         print(json.dumps({
             "schema": OUT_SCHEMA,
