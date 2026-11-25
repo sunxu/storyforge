@@ -212,7 +212,6 @@ def run(args: argparse.Namespace) -> dict:
             return client.chat_completion(**kwargs)
 
     diagnostic = SafeDiagnosticClient(ProvenRequest(), item=item, provider=args.provider)
-    stage = "attempt_not_written"
     try:
         write_new(attempt, {
             "schema": "storyforge_gold3_ai_attempt_private_v1",
@@ -229,7 +228,13 @@ def run(args: argparse.Namespace) -> dict:
             "max_api_calls": 1, "automatic_retries": 0,
             "gold_quality_admitted": False,
         })
-        stage = "judge_invoked"
+    except OSError as exc:
+        client.__exit__(None, None, None)
+        code = ("JUDGE_CASE_ALREADY_ATTEMPTED_HOLD" if isinstance(exc, FileExistsError)
+                else "JUDGE_ATTEMPT_WRITE_HOLD")
+        raise Hold(code) from None
+    stage = "judge_invoked"
+    try:
         result = judge_one(item=item, client=diagnostic, model=args.model,
                            temperature=args.temperature,
                            max_tokens=args.max_tokens,

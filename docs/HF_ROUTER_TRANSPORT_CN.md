@@ -47,3 +47,24 @@ reasoning_effort=none 参数经 Router 路线尚未实测，故本模块不默�
 不变。不得因此启动 R61 或重评 R60。
 
 离线测试：`pytest -q tests/test_hf_router.py`。Mock HTTP 不产生费用。
+
+## Gold3 接入离线验收
+
+使用独立 worktree；从固定 R60 归档提取原评审包（不运行旧批处理入口）。
+在仓库根目录执行：
+
+```bash
+git fetch origin archive/r60-final-20261122
+ARCHIVE=$(mktemp -d)
+git archive 15462b8779401833a5014846bc57318dd6bc1b1c \
+  src/storyforge_gold_quality src/storyforge_dataset | tar -xf - -C "$ARCHIVE"
+STORYFORGE_GOLD3_ARCHIVE_TEST=1 PYTHONPATH="$ARCHIVE/src:$PWD/src:$PWD" \
+  python -m pytest -q tests/test_hf_router.py tests/test_gold3_router_integration.py
+```
+
+测试只用合成材料及 MockTransport，复播已观察的六维响应并检验
+原评分不变、引文归位、虚构引文 HOLD、重复执行及 attempt 创建竞争。
+不发真实 API。普通 main 测试环境没有冻结归档时跳过这四项集成测试；
+专门验收必须显式启用，缺少归档则失败而非跳过。
+Gold3 实际执行沿用原私有材料与输出目录，默认离线。
+旧 attempt 不删除。R61、训练及正式准入均保持禁止。
