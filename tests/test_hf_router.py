@@ -125,3 +125,26 @@ def test_transport_error_is_safe():
         with pytest.raises(RouterHold, match="TRANSPORT_HOLD"):
             call(client)
         assert client.info["exception_class"] == "ReadTimeout"
+
+
+def test_length_response_records_only_numeric_usage():
+    def handler(request):
+        if request.method == "GET":
+            return httpx.Response(200, json=catalog())
+        return httpx.Response(200, json={
+            "model": "example/model", "provider": "DeepInfra",
+            "choices": [{"message": {"content": None}, "finish_reason": "length"}],
+            "usage": {"prompt_tokens": 500, "completion_tokens": 2048,
+                      "total_tokens": 2548, "private": "never log",
+                      "completion_tokens_details": {"reasoning_tokens": 2048}},
+        })
+
+    with make_client(handler) as client:
+        client.preflight()
+        with pytest.raises(RouterHold, match="INCOMPLETE_RESPONSE") as exc:
+            call(client)
+        assert exc.value.status_code == 200
+        assert client.info["usage"] == {
+            "prompt_tokens": 500, "completion_tokens": 2048, "total_tokens": 2548,
+            "reasoning_tokens": 2048,
+        }

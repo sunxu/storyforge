@@ -68,3 +68,16 @@ STORYFORGE_GOLD3_ARCHIVE_TEST=1 PYTHONPATH="$ARCHIVE/src:$PWD/src:$PWD" \
 专门验收必须显式启用，缺少归档则失败而非跳过。
 Gold3 实际执行沿用原私有材料与输出目录，默认离线。
 旧 attempt 不删除。R61、训练及正式准入均保持禁止。
+
+## C3 输出预算补偿
+
+C3 首次真实请求 HTTP 200、finish_reason=length、content=null，未取得评分。
+Gold3 默认 4096 输出 tokens（冻结 judge 的上限）；不改评分器及 R60 归档。
+保留 2048 作为显式历史预算选项。Router 诊断仅增加白名单数值 usage，
+不记录推理正文。4096 不保证完成，且可能增加费用。
+
+仅 C3 可通过 --compensate-length-hold --max-tokens 4096 单次补偿。
+必须同时提供原三项 Owner 授权，核对原 attempt、diagnostic 与材料/路由，
+且原请求为已消耗的 HTTP 200 length HOLD、无原始评分或回复。
+原文件不动；新文件使用 .compensation1 后缀，create-only，绑定旧记录哈希。
+失败后不再自动重试，不扩展 C1/C2，不启动 R61。

@@ -21,3 +21,28 @@ jobs:
         run: pytest -q
       - name: Evidence integrity (v0.1)
         run: python3 scripts/audit_v01_integrity.py
+
+  hf-router-gold3:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install
+        run: pip install -e ".[dev]"
+      - name: Extract pinned R60 evaluator
+        run: |
+          git fetch --no-tags origin archive/r60-final-20261122
+          mkdir -p "$RUNNER_TEMP/r60"
+          git archive 15462b8779401833a5014846bc57318dd6bc1b1c src/storyforge_gold_quality src/storyforge_dataset | tar -xf - -C "$RUNNER_TEMP/r60"
+      - name: Targeted Ruff
+        run: ruff check src/storyforge_inference scripts/gold3_ai_judge_owner_local.py tests/test_hf_router.py tests/test_gold3_router_integration.py
+      - name: Offline regression
+        env:
+          STORYFORGE_GOLD3_ARCHIVE_TEST: "1"
+        run: |
+          export PYTHONPATH="$RUNNER_TEMP/r60/src:$GITHUB_WORKSPACE/src:$GITHUB_WORKSPACE"
+          python -m pytest -q tests/test_hf_router.py tests/test_gold3_router_integration.py
