@@ -121,6 +121,19 @@ class HFRouterClient:
                 or str(data.get("provider", "")).casefold() != self.response_provider.casefold()):
             self.info["phase"] = "response_identity_mismatch"
             raise RouterHold("HF_ROUTER_RESPONSE_IDENTITY_HOLD")
+        # Whitelist numerical usage only; never retain hidden reasoning or raw payloads.
+        usage = data.get("usage")
+        if isinstance(usage, dict):
+            safe_usage = {
+                key: usage[key] for key in ("prompt_tokens", "completion_tokens", "total_tokens")
+                if type(usage.get(key)) is int and usage[key] >= 0
+            }
+            details = usage.get("completion_tokens_details")
+            if isinstance(details, dict):
+                reasoning = details.get("reasoning_tokens")
+                if type(reasoning) is int and reasoning >= 0:
+                    safe_usage["reasoning_tokens"] = reasoning
+            self.info["usage"] = safe_usage
         try:
             choice = data["choices"][0]
             content = choice["message"]["content"]
@@ -133,7 +146,7 @@ class HFRouterClient:
             content_chars=len(content) if isinstance(content, str) else None,
         )
         if finish != "stop" or not isinstance(content, str) or not content.strip():
-            raise RouterHold("HF_ROUTER_INCOMPLETE_RESPONSE_HOLD")
+            raise RouterHold("HF_ROUTER_INCOMPLETE_RESPONSE_HOLD", 200)
         return SimpleNamespace(choices=[SimpleNamespace(
             message=SimpleNamespace(content=content), finish_reason=finish,
         )])

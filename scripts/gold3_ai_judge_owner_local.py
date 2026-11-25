@@ -172,12 +172,48 @@ def run(args: argparse.Namespace) -> dict:
             and args.approve_paid_call, "OWNER_AUTHORIZATIONS_REQUIRED_HOLD")
     require(args.provider == "deepinfra" and args.model == "deepseek-ai/DeepSeek-V4.1-Flash-1017"
             and args.bill_to == "adradar", "GOLD3_ROUTER_ROUTE_REQUIRED_HOLD")
-    require(args.max_tokens == 2048 and args.temperature == 0,
+    require(args.max_tokens in (2048, 4096) and args.temperature == 0,
             "JUDGE_CONFIG_HOLD")
     require(isinstance(os.environ.get("HF_TOKEN"), str)
             and bool(os.environ["HF_TOKEN"].strip()), "HF_TOKEN_MISSING_HOLD")
     private_directory(args.out_dir)
     stem = f"GOLD3_AI_{args.case}"
+    compensation = getattr(args, "compensate_length_hold", False)
+    prior = {}
+    if compensation:
+        require(args.case == "C3-S1-Q1" and args.max_tokens == 4096,
+                "COMPENSATION_SCOPE_HOLD")
+        old_attempt, old_attempt_sha = private_file(
+            args.out_dir / (stem + ".attempt.private.json"), 65536)
+        old_diag, old_diag_sha = private_file(
+            args.out_dir / (stem + ".diagnostic.safe.json"), 65536)
+        router = old_diag.get("router_diagnostic", {})
+        require(old_attempt.get("schema") == "storyforge_gold3_ai_attempt_private_v1"
+                and old_attempt.get("case") == old_diag.get("case") == args.case
+                and old_attempt.get("source_material_sha256") == material_sha
+                and old_attempt.get("manifest_sha256") == manifest_sha
+                and old_attempt.get("model") == args.model
+                and old_attempt.get("provider") == args.provider
+                and old_attempt.get("bill_to") == args.bill_to
+                and old_attempt.get("transport") == "hf-router"
+                and old_attempt.get("max_tokens") == 2048
+                and old_attempt.get("temperature") == args.temperature
+                and old_diag.get("schema") == "storyforge_gold3_ai_judge_diagnostic_safe_v2"
+                and old_diag.get("status") == "HOLD"
+                and old_diag.get("attempt_consumed") is True
+                and old_diag.get("automatic_retry_allowed") is False
+                and router.get("http_status") == 200
+                and router.get("finish_reason") == "length"
+                and router.get("content_chars") is None,
+                "COMPENSATION_PRIOR_EVIDENCE_HOLD")
+        require(not any((args.out_dir / (stem + suffix)).exists()
+                        or (args.out_dir / (stem + suffix)).is_symlink()
+                        for suffix in (".score.private.json", ".safe.json",
+                                       ".response.private.json")),
+                "COMPENSATION_EXISTING_RESULT_HOLD")
+        prior = {"prior_attempt_sha256": old_attempt_sha,
+                 "prior_diagnostic_sha256": old_diag_sha}
+        stem += ".compensation1"
     attempt = args.out_dir / (stem + ".attempt.private.json")
     score_path = args.out_dir / (stem + ".score.private.json")
     safe_path = args.out_dir / (stem + ".safe.json")
@@ -218,6 +254,7 @@ def run(args: argparse.Namespace) -> dict:
             "case": args.case, "provider": args.provider, "model": args.model,
             "bill_to": args.bill_to, "temperature": args.temperature,
             "transport": "hf-router", "reasoning_override": None,
+            **prior,
             "max_tokens": args.max_tokens,
             "source_material_sha256": material_sha,
             "manifest_sha256": manifest_sha,
@@ -247,6 +284,7 @@ def run(args: argparse.Namespace) -> dict:
         write_new(score_path, {
             "schema": "storyforge_gold3_ai_score_private_v1",
             "case": args.case, "blind_id": item["blind_id"],
+            **prior,
             "model": args.model, "provider": args.provider,
             "ai_judge_not_human": True, "score": result,
             "quote_relocations": diagnostic.quote_relocations,
@@ -291,6 +329,7 @@ def run(args: argparse.Namespace) -> dict:
             "status": "GOLD3_AI_SINGLE_REVIEW_SCORED__NO_ADMISSION",
             "case": args.case, "model": args.model, "provider": args.provider,
             "scores": result["scores"], "severe_flags": result["severe_flags"],
+            "compensation": compensation, "router_usage": client.info.get("usage", {}),
             "below_quality_floors": below,
             "quote_relocations": diagnostic.quote_relocations,
             "source_quotes_exact_validated": True,
@@ -319,7 +358,9 @@ def main() -> int:
     parser.add_argument("--model")
     parser.add_argument("--bill-to")
     parser.add_argument("--temperature", type=float, default=0.0)
-    parser.add_argument("--max-tokens", type=int, default=2048)
+    parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument("--compensate-length-hold", action="store_true",
+                        help="Authorize one C3 compensation linked to prior length HOLD")
     parser.add_argument("--approve-private-transfer", action="store_true")
     parser.add_argument("--attest-privacy-reviewed", action="store_true")
     parser.add_argument("--approve-paid-call", action="store_true")
