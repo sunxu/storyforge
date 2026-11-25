@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Gold3 Owner-local, one-at-a-time AI quality pilot using frozen R60 judge.
 
 Router revision reuses the frozen R60 SafeDiagnosticClient for quote placement.
@@ -118,8 +117,8 @@ def verify_inputs(material: dict, manifest: dict, receipt: dict) -> list[dict]:
 
 def blind_item(case: dict, *, blind_id: str) -> dict:
     # Reuse the unmodified Gold48 six-axis judge and its exact-quote policy.
-    from storyforge_gold_quality.gold48_hf_judge import validate_item
     from storyforge_gold_quality.gold48_blind import PACK_SCHEMA
+    from storyforge_gold_quality.gold48_hf_judge import validate_item
 
     story_card = json.dumps(case["story_card_at_target"],
                             ensure_ascii=False, sort_keys=True,
@@ -189,6 +188,7 @@ def run(args: argparse.Namespace) -> dict:
     item = items[args.case]
     from storyforge_gold_quality.gold48_hf_judge import judge_one
     from storyforge_gold_quality.gold48_judge_step import SafeDiagnosticClient
+
     from storyforge_inference.hf_router import HFRouterClient, RouterHold
 
     raw_path = args.out_dir / (stem + ".response.private.json")
@@ -254,7 +254,7 @@ def run(args: argparse.Namespace) -> dict:
             "source_material_sha256": material_sha,
             "quality_v1_admitted": 0, "training_authorized": False,
         })
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- redact all private execution failures
         # The existing R60 judge raises safe JudgeHold reason codes; do NOT
         # serialize arbitrary provider exceptions (they may include story text).
         from storyforge_gold_quality.gold48_hf_judge import JudgeHold
@@ -280,8 +280,9 @@ def run(args: argparse.Namespace) -> dict:
                 "private_text_emitted": False, "quality_v1_admitted": 0,
                 "training_authorized": False,
             })
-        except Exception:
-            pass  # Attempt marker is still final; never retry automatically.
+        except (OSError, ValueError, TypeError):
+            # Do not log exception text: it could include private evidence.
+            print("GOLD3_DIAGNOSTIC_WRITE_HOLD", file=sys.stderr)
         raise Hold("AI_JUDGE_ATTEMPT_UNKNOWN_OR_FAILED_HOLD") from None
     finally:
         client.__exit__(None, None, None)
@@ -329,7 +330,7 @@ def main() -> int:
         output = run(args)
         print(json.dumps(output, ensure_ascii=False, sort_keys=True))
         return 0
-    except Exception as exc:
+    except Exception as exc:  # noqa: BLE001 -- CLI must never emit private tracebacks
         reason = str(exc) if isinstance(exc, Hold) else "GOLD3_AI_PRIVATE_INPUT_OR_EXECUTION_HOLD"
         print(json.dumps({"schema": PRE_SCHEMA,
                           "status": "HOLD", "reason_code": reason,
