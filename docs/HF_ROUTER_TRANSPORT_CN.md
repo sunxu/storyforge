@@ -92,3 +92,7 @@ Token 用量：默认省略实际 HTTP 请求的 max_tokens 字段，由 Provide
 C3 默认预算补偿必须验证原始及 compensation1 的 length HOLD、哈希链、
 无可恢复响应/评分；新记录仅 compensation2，create-only，禁止自动重试。
 使用 --compensate-length-hold 且不传 --max-tokens，原三项授权仍必须提供。
+
+## C1/C2 历史 SDK HOLD 补偿
+
+Owner 单独授权 C1、C2 各一次补偿，历史调用和计费结果仍未知。仅允许这两个 case 使用 `--compensate-legacy-hold`，不传 `--max-tokens`，保留三项 Owner 授权。核对旧 attempt 与输入哈希，保留可选旧诊断；有旧响应或评分则拒绝。新记录使用 `.compensation1`，独占创建，关联旧记录哈希，不自动重试。不改变 C3、冻结评分器及准入状态。

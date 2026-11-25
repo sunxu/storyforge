@@ -104,6 +104,8 @@ def install_mock(monkeypatch, pilot, *, live=True, invalid=False, race=False):
         if getattr(pilot, "compensate_length_hold", False):
             suffix = "compensation2" if pilot.max_tokens is None else "compensation1"
             assert path(pilot, suffix + ".attempt.private.json").exists()
+        if getattr(pilot, "compensate_legacy_hold", False):
+            assert path(pilot, "compensation1.attempt.private.json").exists()
         assert body["model"] == MODEL + ":deepinfra"
         assert "reasoning_effort" not in body
         assert body["response_format"]["type"] == "json_schema"
@@ -259,5 +261,62 @@ def test_default_budget_compensation_requires_second_failure(pilot, monkeypatch)
     pilot.max_tokens = None
     calls = install_mock(monkeypatch, pilot)
     with pytest.raises(gold3.Hold):
+        gold3.run(pilot)
+    assert calls == []
+
+
+@pytest.mark.parametrize("case,with_diag", [("C1-S1-Q1", False), ("C2-S2-Q1", True)])
+def test_legacy_compensation_once(pilot, monkeypatch, case, with_diag):
+    pilot.case = case
+    pilot.max_tokens = None
+    pilot.compensate_legacy_hold = True
+    attempt = path(pilot, "attempt.private.json")
+    gold3.write_new(attempt, {
+        "schema": "storyforge_gold3_ai_attempt_private_v1", "case": case,
+        "source_material_sha256": gold3.sha_bytes(pilot.material.read_bytes()),
+        "manifest_sha256": gold3.sha_bytes(pilot.manifest.read_bytes()),
+        "max_api_calls": 1, "automatic_retries": 0, "gold_quality_admitted": False,
+    })
+    if with_diag:
+        gold3.write_new(path(pilot, "diagnostic.safe.json"), {
+            "schema": "storyforge_gold3_ai_judge_diagnostic_safe_v2",
+            "case": case, "status": "HOLD", "reason_code": "JUDGE_API_OR_FORMAT_HOLD",
+            "attempt_consumed": True, "automatic_retry_allowed": False,
+        })
+    prior = {p: p.read_bytes() for p in pilot.out_dir.iterdir()}
+    calls = install_mock(monkeypatch, pilot)
+    assert gold3.run(pilot)["compensation"] is True
+    marker = json.loads(path(pilot, "compensation1.attempt.private.json").read_text())
+    assert marker["prior_attempt_sha256"] == gold3.sha_bytes(prior[attempt])
+    assert marker["prior_api_outcome_or_billing_unknown"] is True
+    assert (marker["prior_diagnostic_sha256"] is not None) == with_diag
+    assert all(p.read_bytes() == blob for p, blob in prior.items())
+    with pytest.raises(gold3.Hold, match="ALREADY_ATTEMPTED"):
+        gold3.run(pilot)
+    assert calls == ["GET", "POST"]
+
+
+def test_legacy_compensation_rejects_c3(pilot, monkeypatch):
+    pilot.max_tokens = None
+    pilot.compensate_legacy_hold = True
+    calls = install_mock(monkeypatch, pilot)
+    with pytest.raises(gold3.Hold, match="COMPENSATION_SCOPE"):
+        gold3.run(pilot)
+    assert calls == []
+
+
+def test_legacy_compensation_blocks_existing_reply(pilot, monkeypatch):
+    pilot.case = "C1-S1-Q1"
+    pilot.max_tokens = None
+    pilot.compensate_legacy_hold = True
+    gold3.write_new(path(pilot, "attempt.private.json"), {
+        "schema": "storyforge_gold3_ai_attempt_private_v1", "case": pilot.case,
+        "source_material_sha256": gold3.sha_bytes(pilot.material.read_bytes()),
+        "manifest_sha256": gold3.sha_bytes(pilot.manifest.read_bytes()),
+        "max_api_calls": 1, "automatic_retries": 0, "gold_quality_admitted": False,
+    })
+    gold3.write_new(path(pilot, "response.private.json"), {"synthetic": True})
+    calls = install_mock(monkeypatch, pilot)
+    with pytest.raises(gold3.Hold, match="COMPENSATION_EXISTING_RESULT"):
         gold3.run(pilot)
     assert calls == []

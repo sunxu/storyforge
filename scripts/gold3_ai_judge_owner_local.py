@@ -180,9 +180,46 @@ def run(args: argparse.Namespace) -> dict:
             and bool(os.environ["HF_TOKEN"].strip()), "HF_TOKEN_MISSING_HOLD")
     private_directory(args.out_dir)
     stem = f"GOLD3_AI_{args.case}"
-    compensation = getattr(args, "compensate_length_hold", False)
+    length_compensation = getattr(args, "compensate_length_hold", False)
+    legacy_compensation = getattr(args, "compensate_legacy_hold", False)
+    require(not (length_compensation and legacy_compensation), "COMPENSATION_SCOPE_HOLD")
+    compensation = length_compensation or legacy_compensation
     prior = {}
-    if compensation:
+    if legacy_compensation:
+        require(args.case in ("C1-S1-Q1", "C2-S2-Q1") and args.max_tokens is None,
+                "COMPENSATION_SCOPE_HOLD")
+        old_attempt, old_attempt_sha = private_file(
+            args.out_dir / (stem + ".attempt.private.json"), 65536)
+        require(old_attempt.get("schema") == "storyforge_gold3_ai_attempt_private_v1"
+                and old_attempt.get("case") == args.case
+                and old_attempt.get("source_material_sha256") == material_sha
+                and old_attempt.get("manifest_sha256") == manifest_sha
+                and old_attempt.get("max_api_calls") == 1
+                and old_attempt.get("automatic_retries") == 0
+                and old_attempt.get("gold_quality_admitted") is False
+                and old_attempt.get("transport") != "hf-router",
+                "COMPENSATION_LEGACY_ATTEMPT_HOLD")
+        require(not any((args.out_dir / (stem + suffix)).exists()
+                        or (args.out_dir / (stem + suffix)).is_symlink()
+                        for suffix in (".score.private.json", ".safe.json",
+                                       ".response.private.json")),
+                "COMPENSATION_EXISTING_RESULT_HOLD")
+        old_diag_path = args.out_dir / (stem + ".diagnostic.safe.json")
+        prior = {"prior_attempt_sha256": old_attempt_sha,
+                 "prior_diagnostic_sha256": None,
+                 "prior_api_outcome_or_billing_unknown": True}
+        if old_diag_path.exists() or old_diag_path.is_symlink():
+            old_diag, old_diag_sha = private_file(old_diag_path, 65536)
+            require(old_diag.get("schema") == "storyforge_gold3_ai_judge_diagnostic_safe_v2"
+                    and old_diag.get("case") == args.case
+                    and old_diag.get("status") == "HOLD"
+                    and old_diag.get("reason_code") == "JUDGE_API_OR_FORMAT_HOLD"
+                    and old_diag.get("attempt_consumed") is True
+                    and old_diag.get("automatic_retry_allowed") is False,
+                    "COMPENSATION_LEGACY_DIAGNOSTIC_HOLD")
+            prior["prior_diagnostic_sha256"] = old_diag_sha
+        stem += ".compensation1"
+    if length_compensation:
         require(args.case == "C3-S1-Q1" and args.max_tokens in (4096, None),
                 "COMPENSATION_SCOPE_HOLD")
         old_attempt, old_attempt_sha = private_file(
@@ -402,6 +439,8 @@ def main() -> int:
                         help="Optional output cap; omitted uses Provider default")
     parser.add_argument("--compensate-length-hold", action="store_true",
                         help="Authorize one C3 compensation linked to prior length HOLD")
+    parser.add_argument("--compensate-legacy-hold", action="store_true",
+                        help="One Owner-approved C1/C2 compensation of unknown legacy outcome")
     parser.add_argument("--approve-private-transfer", action="store_true")
     parser.add_argument("--attest-privacy-reviewed", action="store_true")
     parser.add_argument("--approve-paid-call", action="store_true")
