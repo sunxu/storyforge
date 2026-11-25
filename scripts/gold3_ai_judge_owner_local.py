@@ -172,7 +172,9 @@ def run(args: argparse.Namespace) -> dict:
             and args.approve_paid_call, "OWNER_AUTHORIZATIONS_REQUIRED_HOLD")
     require(args.provider == "deepinfra" and args.model == "deepseek-ai/DeepSeek-V4.1-Flash-1017"
             and args.bill_to == "adradar", "GOLD3_ROUTER_ROUTE_REQUIRED_HOLD")
-    require(args.max_tokens in (2048, 4096) and args.temperature == 0,
+    require((args.max_tokens is None or
+             (type(args.max_tokens) is int and args.max_tokens > 0))
+            and args.temperature == 0,
             "JUDGE_CONFIG_HOLD")
     require(isinstance(os.environ.get("HF_TOKEN"), str)
             and bool(os.environ["HF_TOKEN"].strip()), "HF_TOKEN_MISSING_HOLD")
@@ -181,7 +183,7 @@ def run(args: argparse.Namespace) -> dict:
     compensation = getattr(args, "compensate_length_hold", False)
     prior = {}
     if compensation:
-        require(args.case == "C3-S1-Q1" and args.max_tokens == 4096,
+        require(args.case == "C3-S1-Q1" and args.max_tokens in (4096, None),
                 "COMPENSATION_SCOPE_HOLD")
         old_attempt, old_attempt_sha = private_file(
             args.out_dir / (stem + ".attempt.private.json"), 65536)
@@ -214,6 +216,41 @@ def run(args: argparse.Namespace) -> dict:
         prior = {"prior_attempt_sha256": old_attempt_sha,
                  "prior_diagnostic_sha256": old_diag_sha}
         stem += ".compensation1"
+        if args.max_tokens is None:
+            second_attempt, second_attempt_sha = private_file(
+                args.out_dir / (stem + ".attempt.private.json"), 65536)
+            second_diag, second_diag_sha = private_file(
+                args.out_dir / (stem + ".diagnostic.safe.json"), 65536)
+            second_router = second_diag.get("router_diagnostic", {})
+            usage = second_router.get("usage", {})
+            require(
+                second_attempt.get("schema") == old_attempt["schema"]
+                and all(second_attempt.get(k) == old_attempt.get(k) for k in (
+                    "case", "source_material_sha256", "manifest_sha256",
+                    "model", "provider", "bill_to", "transport", "temperature"))
+                and second_attempt.get("max_tokens") == 4096
+                and second_attempt.get("prior_attempt_sha256") == old_attempt_sha
+                and second_attempt.get("prior_diagnostic_sha256") == old_diag_sha
+                and second_diag.get("schema") == old_diag["schema"]
+                and second_diag.get("case") == args.case
+                and second_diag.get("status") == "HOLD"
+                and second_diag.get("attempt_consumed") is True
+                and second_diag.get("automatic_retry_allowed") is False
+                and second_router.get("http_status") == 200
+                and second_router.get("finish_reason") == "length"
+                and second_router.get("content_chars") is None
+                and usage.get("completion_tokens") == 4096
+                and type(usage.get("reasoning_tokens")) is int
+                and 0 <= usage["reasoning_tokens"] <= 4096,
+                "COMPENSATION_SECOND_LENGTH_EVIDENCE_HOLD")
+            require(not any((args.out_dir / (stem + suffix)).exists()
+                            or (args.out_dir / (stem + suffix)).is_symlink()
+                            for suffix in (".score.private.json", ".safe.json",
+                                           ".response.private.json")),
+                    "COMPENSATION_EXISTING_RESULT_HOLD")
+            prior.update(second_attempt_sha256=second_attempt_sha,
+                         second_diagnostic_sha256=second_diag_sha)
+            stem = f"GOLD3_AI_{args.case}.compensation2"
     attempt = args.out_dir / (stem + ".attempt.private.json")
     score_path = args.out_dir / (stem + ".score.private.json")
     safe_path = args.out_dir / (stem + ".safe.json")
@@ -233,7 +270,7 @@ def run(args: argparse.Namespace) -> dict:
     client = HFRouterClient(
         token=os.environ["HF_TOKEN"], model=args.model, provider=args.provider,
         bill_to=args.bill_to, response_model="deepseek/deepseek-v4.1-flash-1017",
-        response_provider="DeepInfra",
+        response_provider="DeepInfra", timeout=900,
     )
     try:
         client.preflight()
@@ -245,6 +282,9 @@ def run(args: argparse.Namespace) -> dict:
     class ProvenRequest:
         def chat_completion(self, **kwargs):
             kwargs.pop("extra_body", None)
+            # The frozen judge validates an internal placeholder only.
+            # The actual wire budget is controlled here, not by that placeholder.
+            kwargs["max_tokens"] = args.max_tokens
             return client.chat_completion(**kwargs)
 
     diagnostic = SafeDiagnosticClient(ProvenRequest(), item=item, provider=args.provider)
@@ -274,7 +314,7 @@ def run(args: argparse.Namespace) -> dict:
     try:
         result = judge_one(item=item, client=diagnostic, model=args.model,
                            temperature=args.temperature,
-                           max_tokens=args.max_tokens,
+                           max_tokens=4096,
                            private_transfer_authorized=True)
         stage = "validated_score_not_yet_written"
         if diagnostic.raw_model_content is not None:
@@ -358,7 +398,8 @@ def main() -> int:
     parser.add_argument("--model")
     parser.add_argument("--bill-to")
     parser.add_argument("--temperature", type=float, default=0.0)
-    parser.add_argument("--max-tokens", type=int, default=4096)
+    parser.add_argument("--max-tokens", type=int, default=None,
+                        help="Optional output cap; omitted uses Provider default")
     parser.add_argument("--compensate-length-hold", action="store_true",
                         help="Authorize one C3 compensation linked to prior length HOLD")
     parser.add_argument("--approve-private-transfer", action="store_true")

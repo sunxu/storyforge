@@ -96,8 +96,14 @@ def install_mock(monkeypatch, pilot, *, live=True, invalid=False, race=False):
                 }],
             }]})
         assert path(pilot, "attempt.private.json").exists()
-        assert json.loads(request.content)["max_tokens"] == pilot.max_tokens
         body = json.loads(request.content)
+        if pilot.max_tokens is None:
+            assert "max_tokens" not in body
+        else:
+            assert body["max_tokens"] == pilot.max_tokens
+        if getattr(pilot, "compensate_length_hold", False):
+            suffix = "compensation2" if pilot.max_tokens is None else "compensation1"
+            assert path(pilot, suffix + ".attempt.private.json").exists()
         assert body["model"] == MODEL + ":deepinfra"
         assert "reasoning_effort" not in body
         assert body["response_format"]["type"] == "json_schema"
@@ -205,6 +211,52 @@ def test_compensation_once_preserves_prior(pilot, monkeypatch):
 def test_compensation_requires_exact_prior(pilot, monkeypatch):
     pilot.compensate_length_hold = True
     pilot.max_tokens = 4096
+    calls = install_mock(monkeypatch, pilot)
+    with pytest.raises(gold3.Hold):
+        gold3.run(pilot)
+    assert calls == []
+
+
+def test_default_budget_omits_wire_limit(pilot, monkeypatch):
+    pilot.max_tokens = None
+    calls = install_mock(monkeypatch, pilot)
+    assert gold3.run(pilot)["scores"] == response()["scores"]
+    assert json.loads(path(pilot, "attempt.private.json").read_text())["max_tokens"] is None
+    assert calls == ["GET", "POST"]
+
+
+def test_second_compensation_preserves_chain(pilot, monkeypatch):
+    prior_length(pilot)
+    attempt = path(pilot, "attempt.private.json")
+    diagnostic = path(pilot, "diagnostic.safe.json")
+    first = json.loads(attempt.read_text())
+    first.update(max_tokens=4096, prior_attempt_sha256=gold3.sha_bytes(attempt.read_bytes()),
+                 prior_diagnostic_sha256=gold3.sha_bytes(diagnostic.read_bytes()))
+    gold3.write_new(path(pilot, "compensation1.attempt.private.json"), first)
+    diag = json.loads(diagnostic.read_text())
+    diag["router_diagnostic"]["usage"] = {
+        "completion_tokens": 4096, "reasoning_tokens": 4092,
+    }
+    gold3.write_new(path(pilot, "compensation1.diagnostic.safe.json"), diag)
+    prior = {p: p.read_bytes() for p in pilot.out_dir.iterdir()}
+    pilot.compensate_length_hold = True
+    pilot.max_tokens = None
+    calls = install_mock(monkeypatch, pilot)
+    assert gold3.run(pilot)["compensation"] is True
+    marker = json.loads(path(pilot, "compensation2.attempt.private.json").read_text())
+    assert marker["max_tokens"] is None
+    assert marker["second_attempt_sha256"] == gold3.sha_bytes(
+        prior[path(pilot, "compensation1.attempt.private.json")])
+    assert all(p.read_bytes() == content for p, content in prior.items())
+    with pytest.raises(gold3.Hold, match="ALREADY_ATTEMPTED"):
+        gold3.run(pilot)
+    assert calls == ["GET", "POST"]
+
+
+def test_default_budget_compensation_requires_second_failure(pilot, monkeypatch):
+    prior_length(pilot)
+    pilot.compensate_length_hold = True
+    pilot.max_tokens = None
     calls = install_mock(monkeypatch, pilot)
     with pytest.raises(gold3.Hold):
         gold3.run(pilot)

@@ -99,7 +99,7 @@ class HFRouterClient:
 
     def chat_completion(
         self, *, model: str, messages: list[dict], temperature: float,
-        max_tokens: int, response_format: dict, extra_body: dict | None = None,
+        max_tokens: int | None, response_format: dict, extra_body: dict | None = None,
     ) -> Any:
         if not self._ready:
             raise RouterHold("HF_ROUTER_PREFLIGHT_REQUIRED_HOLD")
@@ -113,9 +113,13 @@ class HFRouterClient:
             raise RouterHold("HF_ROUTER_EXTRA_BODY_HOLD")
         body = {
             **(extra_body or {}), "model": self.model + ":" + self.provider,
-            "messages": messages, "temperature": temperature, "max_tokens": max_tokens,
+            "messages": messages, "temperature": temperature,
             "response_format": response_format, "stream": False,
         }
+        if max_tokens is not None:
+            if type(max_tokens) is not int or max_tokens <= 0:
+                raise RouterHold("HF_ROUTER_MAX_TOKENS_HOLD")
+            body["max_tokens"] = max_tokens
         data = self._request("POST", "/chat/completions", json=body)
         if (data.get("model") != self.response_model
                 or str(data.get("provider", "")).casefold() != self.response_provider.casefold()):

@@ -81,3 +81,14 @@ Gold3 默认 4096 输出 tokens（冻结 judge 的上限）；不改评分器及
 且原请求为已消耗的 HTTP 200 length HOLD、无原始评分或回复。
 原文件不动；新文件使用 .compensation1 后缀，create-only，绑定旧记录哈希。
 失败后不再自动重试，不扩展 C1/C2，不启动 R61。
+
+## C3 第二次截断后的最终补偿
+
+4096 输出预算耗尽，4092 reasoning tokens、content=null。Owner 要求不限定
+Token 用量：默认省略实际 HTTP 请求的 max_tokens 字段，由 Provider 决定，
+不承诺 Provider 无上限。显式正整数仍可用于其他单次评审。
+冻结 judge 内部 4096 仅用于其原有参数校验，适配器替换实际传输预算，
+不修改归档、评分规则、Prompt 或引文校验。Gold3 HTTP 超时为 900 秒。
+C3 默认预算补偿必须验证原始及 compensation1 的 length HOLD、哈希链、
+无可恢复响应/评分；新记录仅 compensation2，create-only，禁止自动重试。
+使用 --compensate-length-hold 且不传 --max-tokens，原三项授权仍必须提供。
