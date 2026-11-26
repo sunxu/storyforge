@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.19（2026-11-27）  
+**版本：** v1.20（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
@@ -131,6 +131,12 @@ Owner 明确要求先复用已有数据，并授权 Agent 通过 Supabase 只读
 同一有限选择条件加非空消息检查后62个简单候选，历史卡要求首消息前的归档同revision/卡JSON或审核同revision/卡JSON/hash精确匹配，Ledger要求所有目标及前缀当前revision计数与update_after相同且有目标业务标记；两项单独及交集均0。这是保守SQL筛选而非正式恢复模块对每条执行或全库不可恢复证明；无精确匹配也可能反映投影/稀疏Ledger结构，不能凭此定性全部历史源不真实。已修正一次uuid/text比较错误。未产生或输出私有身份/对话正文到Git，不写库、不调用生成模型或付费Judge、不开发、不提交HF Job。
 
 状态 `EXISTING_DATA_BOUNDED_SCREEN_HOLD__REUSE_VERIFIED_ARTIFACTS_FIRST`。停止对这62/89条逐一补证、停止 D8 新生成准备；下一步仅检查既有合法、未被保护用途冻结、具有真实生成输入/输出及来源证据的 Teacher/候选私有资产清单，先看已有索引/manifest、不读受保护正文；无合格对象即报告缺口，不新增全库历史审计、付费生成或工程。历史恢复复用PR10固定提交（实际已重读源码与旧R02合同），但不重写恢复器、不将零原始请求证据视为所有派生输入永久禁止。若需改变来源合同或开展新生成，明确另行决策，不偷偷降门禁；实际正式准入仍0、训练未授权、R60 NO_PROMOTE、R61未启动、RolePlay PARTIAL/HOLD不变。统一STORYFORGE_SUPABASE_DSN仅在确需Owner本机时使用，当前优先连接器。
+
+## 0O. 既有 Teacher 资产索引核查收口与来源政策决策（2026-11-27）
+
+本轮仅核对 PR44 资产索引、冻结 R60 完整目录树、main 基线完整树、Teacher 分支名称搜索、R58 Teacher policy、R57 SAFE inventory、R60 Real1000/Common2/Gold48 权威历史文档及可获得的既有历史回执索引。未读保护集正文、未进入 Owner 私有磁盘/HF Bucket、未重查 Supabase 会话。冻结树有 Teacher 政策而未发现合格独立 Teacher 数据清单；main 基线无 Teacher/distill 命名文件、分支搜索无 Teacher 名称命中（命名/索引缺失并非全存储不存在证明）。历史记录中审核输入、裁决、CPU预览、旧模型评估输出、P2/Base336训练资产不等于 teacher_generated/teacher_rewrite。Gold195/历史训练/Gold48/E1/E4保持原用途，Real1000、Common2（独立质量PASS2、CPU验证2）、World04（质量批准1）均不得因本次索引核查而解除各自历史HOLD。未找到可直接准入、非保护用途且有真实输入输出和来源证据的现成Teacher产物；不宣称全量私有存储查无数据。R58 policy要求 teacher_model、teacher_recipe_sha256、parent_target_sha256、输入/输出摘要和Reviewer证据；main Quality-v1当前仅original_gold且仍要求真实source_version_verified、context_is_coherent、context_no_future_leakage_reviewed及质量/隔离等，Teacher政策文件不代表当前编译器已经支持Teacher准入。
+
+状态 `EXISTING_ASSET_INDEX_REVIEW_CLOSED__NO_VERIFIED_REUSABLE_TEACHER__SOURCE_POLICY_DECISION_PENDING`。不再反复盘点、补证或开发。建议下一步由Owner明确是否允许对一个未纳入保护/旧HOLD的已有真实回复，基于可信原始历史与固定来源卡构造明确标注的离线衍生任务，审核适用规则、时间与无未来泄漏、原始目标绑定及世界隔离；不是历史actual-sent复刻，不以当前卡回填过去，不降低六维质量、严重标记、独立双审、隐私或隔离，不伪造source_version_verified。此建议是待决的来源验收口径，不表示已经批准变更0D-0M的独立真实时点证据要求；如不能证明所构造任务的可信上下文，保持HOLD。若坚持原严格来源时点合同且无已有合格产物，唯一合理替代为另批一次最小新生成（仍未授权），不得默认启动。0N的零交集仅保守SQL初筛；不能把当前卡精确相等/所有Ledger计数当成一切离线来源的普遍必要条件。此次仅文档登记，不新造数据、不更改程序或准入、无模型/API推理或HF Job、无数据库写入；R60 NO_PROMOTE、R61未启动、training_authorized=false、quality_v1_admitted=0不变。 
 
 ## 1. 唯一产品目标
 
