@@ -1,0 +1,277 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/sunxu/storyforge/blob/r57/v03b-data-design/evaluations/v0.3/r57/R57_DATASET_V04_ADMISSION_SCHEMA.json",
+  "title": "StoryForge R57-B Dataset v0.4 private admission metadata manifest",
+  "description": "Private intake manifest format only; do not commit populated records. Standard JSON Schema checks syntax; run local gate validator for cross-row split, semantic and source constraints. NO R50 access. Initial empty records represent draft only, not admission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "no_r50_content_accessed",
+    "training_authorized",
+    "records"
+  ],
+  "properties": {
+    "schema": {
+      "const": "storyforge-r57-v04-private-intake-v1"
+    },
+    "no_r50_content_accessed": {
+      "const": true
+    },
+    "training_authorized": {
+      "const": false
+    },
+    "records": {
+      "type": "array",
+      "maxItems": 10000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "record_id",
+          "source_pool",
+          "source_target_sha256",
+          "source_file_sha256",
+          "history_sha256",
+          "target_time_rules_sha256",
+          "target_time_canon",
+          "world_component_token",
+          "rights_basis",
+          "content_boundary",
+          "source_provenance_verified",
+          "world_isolation_verified",
+          "historical_train_exposure",
+          "historical_validation_exposure",
+          "historical_dev_exposure",
+          "protected_test_isolation",
+          "corpus_kind",
+          "parent_target_sha256",
+          "derivation_delta_sha256",
+          "source_quality_labels",
+          "reviews",
+          "owner_signoff",
+          "decision",
+          "split",
+          "rationale"
+        ],
+        "properties": {
+          "record_id": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 128,
+            "description": "PRIVATE opaque ID; never copy private manifest to ordinary Git"
+          },
+          "source_pool": {
+            "enum": [
+              "GOLD87",
+              "GOLD108",
+              "R45_FROZEN",
+              "NEW_OWNER_ORIGINAL",
+              "OTHER_REVIEWED"
+            ]
+          },
+          "source_target_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "source_file_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "history_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "target_time_rules_sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "target_time_canon": {
+            "enum": [
+              "VERIFIED",
+              "HOLD",
+              "NOT_CHECKED"
+            ]
+          },
+          "world_component_token": {
+            "type": "string",
+            "minLength": 3,
+            "maxLength": 128
+          },
+          "rights_basis": {
+            "enum": [
+              "OWNER_ATTESTED_SCOPED",
+              "INDEPENDENTLY_VERIFIED",
+              "HOLD",
+              "NOT_CHECKED"
+            ]
+          },
+          "content_boundary": {
+            "enum": [
+              "CASE_VERIFIED_PASS",
+              "HOLD",
+              "REJECT",
+              "NOT_CHECKED"
+            ]
+          },
+          "source_provenance_verified": {
+            "type": "boolean"
+          },
+          "world_isolation_verified": {
+            "type": "boolean"
+          },
+          "historical_train_exposure": {
+            "enum": [
+              "MATCHED_DISCLOSED",
+              "NO_OBSERVED_MATCH",
+              "UNKNOWN"
+            ]
+          },
+          "historical_validation_exposure": {
+            "enum": [
+              "MATCHED_DISCLOSED",
+              "NO_OBSERVED_MATCH",
+              "UNKNOWN"
+            ]
+          },
+          "historical_dev_exposure": {
+            "enum": [
+              "MATCHED_DISCLOSED",
+              "NO_OBSERVED_MATCH",
+              "UNKNOWN"
+            ]
+          },
+          "protected_test_isolation": {
+            "enum": [
+              "CUSTODIAN_METADATA_ATTESTED_CLEAR",
+              "HOLD_NOT_CHECKED"
+            ]
+          },
+          "corpus_kind": {
+            "enum": [
+              "CANONICAL_GOLD",
+              "DERIVED_FROM_ORIGINAL",
+              "SYNTHETIC",
+              "DIAGNOSTIC_NEGATIVE"
+            ]
+          },
+          "parent_target_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "derivation_delta_sha256": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_quality_labels": {
+            "type": "array",
+            "uniqueItems": true,
+            "minItems": 1,
+            "items": {
+              "enum": [
+                "NATURAL_NARRATIVE",
+                "PLAYER_AGENCY",
+                "NO_PLAYER_GHOSTWRITING",
+                "USER_EVENT_CONTINUITY",
+                "FORBIDDEN_PHRASE",
+                "USER_ECHO_BAN",
+                "BILINGUAL_DIALOGUE",
+                "HARD_FACT_TIMELINE",
+                "NPC_INITIATIVE",
+                "OTHER"
+              ]
+            }
+          },
+          "reviews": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "reviewer_key",
+                "kind",
+                "outcome",
+                "evidence_sha256"
+              ],
+              "properties": {
+                "reviewer_key": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 128
+                },
+                "kind": {
+                  "enum": [
+                    "HUMAN",
+                    "AI_ASSISTED",
+                    "OWNER_DELEGATED"
+                  ]
+                },
+                "outcome": {
+                  "enum": [
+                    "ACCEPT",
+                    "REJECT",
+                    "HOLD"
+                  ]
+                },
+                "evidence_sha256": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                }
+              }
+            }
+          },
+          "owner_signoff": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REJECTED"
+            ]
+          },
+          "decision": {
+            "enum": [
+              "PENDING",
+              "HOLD",
+              "REJECT",
+              "ACCEPT"
+            ]
+          },
+          "split": {
+            "enum": [
+              "NONE",
+              "TRAIN",
+              "VALIDATION",
+              "DEV_DIAGNOSTIC"
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 2000,
+            "description": "PRIVATE factual rationale; may contain case-specific sensitive data, never Git"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  }
+}

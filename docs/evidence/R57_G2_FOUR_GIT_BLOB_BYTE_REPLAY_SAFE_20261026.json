@@ -1,0 +1,67 @@
+{
+  "schema": "storyforge-r57-g2-four-git-blob-byte-replay-safe-v1",
+  "date": "2026-10-26",
+  "source_evidence": "actual GitHub Actions checkout of user-owned repo on R57 work branch",
+  "verified_run": "https://github.com/sunxu/storyforge/actions/runs/40280462029",
+  "verified_commit": "94131fb2da52bfcd5e391417b4f21aca474d47fd",
+  "test_results": {
+    "synthetic_unittest": 98,
+    "synthetic_unittest_status": "PASS",
+    "actual_four_git_blob_pin_check": "PASS",
+    "actual_four_git_blob_exact_target_history_check": "PASS",
+    "no_private_history_sources_read": true
+  },
+  "sources": [
+    {
+      "id": "GOLD87",
+      "rows": 87,
+      "git_blob_sha1": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+      "target_sha256_verified_from_metadata": 87
+    },
+    {
+      "id": "GOLD108",
+      "rows": 108,
+      "git_blob_sha1": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+      "target_sha256_verified_from_metadata": 108,
+      "gold108_declared_target_field_counts": {
+        "target_sha256": 90,
+        "target_sha256_utf8": 15,
+        "target_content_sha256": 3
+      }
+    },
+    {
+      "id": "V01_TRAIN",
+      "rows": 65,
+      "git_blob_sha1": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+      "metadata_target_sha256_available": 0
+    },
+    {
+      "id": "V01_VALIDATION",
+      "rows": 15,
+      "git_blob_sha1": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+      "metadata_target_sha256_available": 0
+    }
+  ],
+  "computed_four_source_results": {
+    "gold_exact_distinct_target_hashes": 195,
+    "exact_target_intersections_across_all_six_pairs": 0,
+    "exact_role_content_input_intersections_across_all_six_pairs": 0,
+    "exact_role_content_history_intersections_across_all_six_pairs": 0,
+    "prior_known_gold87_v01_train_same_story_uuid_count": 1
+  },
+  "gate_status": {
+    "four_git_source_byte_pin": "PASS",
+    "four_source_exact_target_and_message_duplicate": "PASS",
+    "r46_r54_four_private_trainer_byte_replay": "PENDING",
+    "historical_r46_r54_14_9_8_fresh_replay": "PENDING",
+    "signed_world_alias_components": "PENDING",
+    "independent_gold_admission_review": "PENDING",
+    "dataset_v04_accepted_samples": 0,
+    "r55_4_hold_untouched": true,
+    "r50_content_read": false,
+    "training_authorized": false,
+    "gpu_job_started": false,
+    "model_promoted": false
+  },
+  "final_status": "R57_G2_FOUR_GIT_BYTE_PINS_AND_EXACT_REPLAY_PASS__FULL_EIGHT_SOURCE_HOLD__NO_ADMISSION"
+}

@@ -1,0 +1,107 @@
+{
+  "schema": "storyforge-r57-dataset-v04-source-inventory-safe-v1",
+  "as_of": "2026-10-26",
+  "status": "R57B_SAFE_INVENTORY_PREPARED__METADATA_ONLY__ZERO_ADMISSION__NO_R50",
+  "repository": "sunxu/storyforge",
+  "snapshot_base_main_commit": "701ab9c83dd7861108b962a97e8473c22d0389d5",
+  "evidence_scope": "previously archived GitHub source trees and count-only reports; no source narrative loaded in this workflow",
+  "frozen_source_pools": [
+    {
+      "id": "GOLD87",
+      "rows": 87,
+      "source_path": "evaluations/v0.2/gold-quality-87/gold_quality_accepted_87.jsonl",
+      "git_blob_sha1": "a2038e18bee8ddef96b93bb6746270a462f9a6e4",
+      "training_admitted_v04": 0,
+      "eligibility": "CANDIDATE_ONLY_UNREVIEWED_V04"
+    },
+    {
+      "id": "GOLD108",
+      "rows": 108,
+      "source_path": "evaluations/v0.2/gold-quality-108/gold_quality_accepted_108.jsonl",
+      "git_blob_sha1": "eedb8ff83e6e0629dc2dbc57ee4681fdfde3df90",
+      "training_admitted_v04": 0,
+      "eligibility": "CANDIDATE_ONLY_UNREVIEWED_V04"
+    }
+  ],
+  "gold195": {
+    "rows": 195,
+    "distinct_target_sha256_reported": 195,
+    "distinct_world_uuids_reported": 13,
+    "r56_world_uuid_overlap_count_reported": 11,
+    "r56_rows_with_known_historical_world_uuid_overlap_reported": 163,
+    "r56_nonoverlapping_world_uuids_reported": 2,
+    "r56_nonoverlapping_gold_rows_reported": 32,
+    "note": "R56 UUID-only preliminary old-training/validation/test world-exposure screen; these 32 are NOT certified fresh heldout and NOT automatically accepted as v04 training. Gold-quality-accepted is historical label, not V04 admission.",
+    "r56_formal_heldout_admitted": 0
+  },
+  "actual_training_splits": [
+    {
+      "run": "v0.1",
+      "train": 65,
+      "validation": 15,
+      "source_path_train": "data/compiled/v0.3/train.jsonl",
+      "source_path_validation": "data/compiled/v0.3/validation.jsonl",
+      "train_git_blob_sha1": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+      "validation_git_blob_sha1": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+      "pin_status": "ORIGINAL_GIT_BLOB_REFERENCES"
+    },
+    {
+      "run": "R46_v0.2",
+      "train": 49,
+      "validation": 15,
+      "pin_status": "OWNER_PRIVATE_TRAINER_EXPORT_PREVIOUSLY_RECONCILED; DIRECT_FULL_TRIPLE_INPUT_REPLAY_PENDING"
+    },
+    {
+      "run": "R54_v0.3-A",
+      "train": 31,
+      "validation": 9,
+      "pin_status": "OWNER_FORMAL_RELEASE_REPORTED_WITH_RECONSTRUCTED_BYTE_HASHES"
+    }
+  ],
+  "r54_train_target_overlap_with_r46": {
+    "r46_train_exact_target_matches": 14,
+    "r46_validation_exact_target_matches": 9,
+    "neither_r46_split_exact_matches": 8,
+    "not_full_input_or_world_independence_certification": true,
+    "source": "docs/evidence/V03_THREE_GPU_TRAININGS_EXACT_DATA_LINEAGE_PRELIMINARY_20261022.md"
+  },
+  "r55_dev20": {
+    "exposed_prompts": 20,
+    "world_count": 2,
+    "candidate_replies_flagged": 76,
+    "category_slots_completed": 152,
+    "AI_assisted_confirmed": 79,
+    "AI_assisted_rejected": 69,
+    "hold_unresolved": 4,
+    "semantic_owner_certified": false,
+    "fresh_heldout": false,
+    "source": "docs/evidence/V03_R55_GOLD5_ALL152_OWNER_VALIDATED_SAFE_RECEIPT_20261026.md"
+  },
+  "dataset_v04": {
+    "candidate_batch_target_min": 40,
+    "candidate_batch_target_max": 60,
+    "candidate_batch_actual_selected": 0,
+    "reviewed": 0,
+    "admitted_train": 0,
+    "admitted_validation": 0,
+    "held": 0,
+    "rejected": 0,
+    "full_source_world_component_graph": "NOT_CHECKED",
+    "actual_full_three_run_input_lineage": "PENDING",
+    "protected_test_body_accessed": false,
+    "training_job_started": false
+  },
+  "provenance": [
+    "docs/evidence/V03_R56_GOLD195_UUID_PRESCREEN_HANDOFF_20261022.md",
+    "docs/evidence/V03_THREE_GPU_TRAININGS_EXACT_DATA_LINEAGE_PRELIMINARY_20261022.md",
+    "docs/evidence/V03_R55_GOLD5_ALL152_OWNER_VALIDATED_SAFE_RECEIPT_20261026.md",
+    "docs/evidence/V03_R53_FORMAL_PRIVATE_31_9_RELEASE_OWNER_RECEIPT_ACCEPTED_20261021.md"
+  ],
+  "privacy": {
+    "contains_original_narrative": false,
+    "contains_story_identifiers": false,
+    "contains_private_candidate_ids": false,
+    "contains_private_review_votes": false,
+    "contains_protected_test_content": false
+  }
+}

@@ -1,0 +1,85 @@
+{
+  "schema": "storyforge-r57-g3-gold195-real-git-primary-prescreen-safe-v1",
+  "evidence_date": "2026-10-26",
+  "verified_source_commit": "44bc77b03c3624824ad975b490e82f629ad3a374",
+  "verified_github_actions_url": "https://github.com/sunxu/storyforge/actions/runs/40282306566",
+  "verification": {
+    "synthetic_tests_passed": 110,
+    "synthetic_tests_failed": 0,
+    "source_type": "four pinned Git checkout JSONL blobs",
+    "git_blob_full_byte_identity": "PASS",
+    "gold_target_utf8_sha256_metadata_match": "PASS_195_OF_195",
+    "pairwise_exact_target_overlap": "PASS_ZERO_ALL_FOUR_SOURCES",
+    "g3_real_source_metadata_prescreen": "PASS",
+    "not_training_or_independent_admission": true
+  },
+  "source_rows": {
+    "GOLD87": 87,
+    "GOLD108": 108,
+    "V01_TRAIN": 65,
+    "V01_VALIDATION": 15
+  },
+  "gold195": {
+    "candidate_count": 195,
+    "distinct_exact_target_hashes": 195,
+    "distinct_observed_story_uuids": 13,
+    "training_admission_pending_not_approved": 195,
+    "source_sha256_metadata_field_present": 188,
+    "source_sha256_metadata_field_absent": 7,
+    "source_metadata_field_digest_independently_rehashed_against_original_source_file": false,
+    "gold108_field_variant_counts": {
+      "story_id_target_sha256": 90,
+      "story_id_target_sha256_utf8": 15,
+      "source_story_id_target_content_sha256": 3
+    },
+    "review_evidence": {
+      "independent_review": {
+        "explicitly_not_run": 171,
+        "field_absent": 24,
+        "other_unverified": 0,
+        "independently_approved_for_v04": 0
+      },
+      "qwen_length": {
+        "explicitly_not_run": 171,
+        "field_absent": 24,
+        "other_unverified": 0
+      },
+      "final_assistant_mask": {
+        "explicitly_not_run": 171,
+        "field_absent": 24,
+        "other_unverified": 0
+      },
+      "target_time_card": {
+        "explicitly_unverified_or_unavailable": 171,
+        "field_absent": 24,
+        "other_unverified": 0
+      }
+    }
+  },
+  "exposure": {
+    "gold87_rows_same_story_uuid_as_v01_train": 21,
+    "gold87_rows_same_story_uuid_as_v01_validation": 0,
+    "gold108_rows_same_story_uuid_as_v01_train": 0,
+    "gold108_rows_same_story_uuid_as_v01_validation": 0,
+    "gold_exact_target_hash_matches_v01_train": 0,
+    "gold_exact_target_hash_matches_v01_validation": 0,
+    "cross_story_alias_graph_signed": false,
+    "r46_r54_actual_trainer_exposure_verified": false,
+    "heldout_independence_certified": false
+  },
+  "gates": {
+    "G2_GOLD195_V01_FOUR_GIT_BLOB_BYTE_AND_EXACT_SOURCE_CHECK": "PASS",
+    "G2_EIGHT_SOURCE_TRAINER_LINEAGE": "HOLD_ACTUAL_R46_R54_PRIVATE_FILES_MISSING",
+    "G2_STORY_WORLD_ALIAS_GRAPH": "HOLD_NOT_SIGNED",
+    "G3_GOLD195_METADATA_PRESCREEN": "PASS_ONLY_NOT_CANDIDATE_ADMISSION",
+    "G3_CASE_LEVEL_QUALITY_RIGHTS_AGE_CONSENT": "PENDING",
+    "G0_OWNER_EXPERIMENT_CONTRACT_SIGNOFF": "PENDING",
+    "G1_V04_SCHEMA_SYNTHETIC_CPU_CHECKS": "PASS_TECHNICAL_ONLY",
+    "DATASET_V04_ADMITTED_ROWS": 0,
+    "R55_FROZEN_HOLD_CASES": 4,
+    "R50_CONTENT_ACCESSED": false,
+    "GPU_JOB_STARTED": false,
+    "MODEL_PROMOTED": false
+  },
+  "final_status": "R57_G3_ACTUAL_FROZEN_SOURCE_PRESCREEN_COUNTS_PASS__195_GOLD_CANDIDATES_STILL_NOT_ADMITTED__G2_FULL_HOLD"
+}

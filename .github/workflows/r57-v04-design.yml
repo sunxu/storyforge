@@ -1,0 +1,262 @@
+name: R57 V04 admission design (CPU only)
+
+on:
+  push:
+    branches: ['r57/v03b-data-design']
+    paths:
+      - '.github/workflows/r57-v04-design.yml'
+      - 'docs/plans/R57_V03B_EXPERIMENT_CONTRACT.md'
+      - 'docs/evidence/R57_DATA_SOURCE_INVENTORY_SAFE.json'
+      - 'docs/R57_V04_DATA_ADMISSION_OWNER_CN.md'
+      - 'evaluations/v0.3/r57/R57_DATASET_V04_ADMISSION_SCHEMA.json'
+      - 'scripts/r57_v04_admission_gate.py'
+      - 'tests/test_r57_v04_admission_gate.py'
+      - 'tests/test_r57_v04_output_guard.py'
+      - 'scripts/r57_training_lineage_audit.py'
+      - 'tests/test_r57_training_lineage_audit.py'
+      - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
+      - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_SOURCE_INDEX_TOOLING_SAFE_RECEIPT_20261026.md'
+      - 'docs/evidence/R57_G2_FOUR_GIT_BLOBS_SOURCE_CROSSCHECK_SAFE_20261026.md'
+      - 'docs/evidence/R57_G2_G3_GOLD195_METADATA_PRESCREEN_SAFE_20261026.json'
+      - 'tests/test_r57_gold195_safe_prescreen.py'
+      - 'scripts/r57_source_index_export.py'
+      - 'tests/test_r57_source_index_export.py'
+      - 'scripts/r57_trainer_exact_replay.py'
+      - 'tests/test_r57_trainer_exact_replay.py'
+      - 'scripts/r57_gold195_g3_prescreen.py'
+      - 'tests/test_r57_gold195_g3_prescreen.py'
+      - 'docs/R57_G3_GOLD195_PRESCREEN_OWNER_CN.md'
+      - 'scripts/r57_g2_mac_preflight.py'
+      - 'tests/test_r57_g2_mac_preflight.py'
+      - 'docs/R57_G2_MAC_OWNER_EXECUTION_20261026_CN.md'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json'
+      - 'tests/test_r57_g2_owner_eight_source_receipt.py'
+      - 'scripts/r57_g3_private_exposure_ledger.py'
+      - 'tests/test_r57_g3_private_exposure_ledger.py'
+      - 'docs/R57_G3_EXACT_EXPOSURE_LEDGER_OWNER_CN.md'
+      - 'scripts/r57_g2_target_anchored_world_audit.py'
+      - 'tests/test_r57_g2_target_anchored_world_audit.py'
+      - 'docs/R57_G2_TARGET_ANCHORED_WORLD_UUID_OWNER_CN.md'
+      - 'docs/evidence/R57_G3_OWNER_EXPOSURE_LEDGER_COUNTS_SAFE_20261026.json'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json'
+      - 'scripts/r57_g2_owner_world_review_roster.py'
+      - 'tests/test_r57_g2_owner_world_review_roster.py'
+      - 'docs/R57_G2_WORLD_ALIAS_REVIEW_ROSTER_OWNER_CN.md'
+      - 'scripts/r57_g2_alias_pair_review.py'
+      - 'tests/test_r57_g2_alias_pair_review.py'
+      - 'docs/R57_G2_OWNER_ALIAS_55_PAIR_REVIEW_CN.md'
+      - 'scripts/r57_g2_private_candidate_source_locator.py'
+      - 'tests/test_r57_g2_private_candidate_source_locator.py'
+      - 'docs/R57_G2_OWNER_GOLD32_SOURCE_LOCATOR_CN.md'
+      - 'scripts/r57_g2_alias_name_hints.py'
+      - 'tests/test_r57_g2_alias_name_hints.py'
+      - 'docs/R57_G2_OWNER_WORLD_NAME_HINTS_CN.md'
+      - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
+      - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
+      - 'docs/evidence/R57_G3_GOLD195_REAL_PRESCREEN_COUNTS_SAFE_20261026.json'
+  pull_request:
+    paths:
+      - '.github/workflows/r57-v04-design.yml'
+      - 'docs/plans/R57_V03B_EXPERIMENT_CONTRACT.md'
+      - 'docs/evidence/R57_DATA_SOURCE_INVENTORY_SAFE.json'
+      - 'docs/R57_V04_DATA_ADMISSION_OWNER_CN.md'
+      - 'evaluations/v0.3/r57/R57_DATASET_V04_ADMISSION_SCHEMA.json'
+      - 'scripts/r57_v04_admission_gate.py'
+      - 'tests/test_r57_v04_admission_gate.py'
+      - 'tests/test_r57_v04_output_guard.py'
+      - 'scripts/r57_training_lineage_audit.py'
+      - 'tests/test_r57_training_lineage_audit.py'
+      - 'docs/R57_G2_LINEAGE_CPU_OWNER_CN.md'
+      - 'docs/R57_G2_SOURCE_INDEX_EXPORT_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_SOURCE_INDEX_TOOLING_SAFE_RECEIPT_20261026.md'
+      - 'docs/evidence/R57_G2_FOUR_GIT_BLOBS_SOURCE_CROSSCHECK_SAFE_20261026.md'
+      - 'docs/evidence/R57_G2_G3_GOLD195_METADATA_PRESCREEN_SAFE_20261026.json'
+      - 'tests/test_r57_gold195_safe_prescreen.py'
+      - 'scripts/r57_source_index_export.py'
+      - 'tests/test_r57_source_index_export.py'
+      - 'scripts/r57_trainer_exact_replay.py'
+      - 'tests/test_r57_trainer_exact_replay.py'
+      - 'scripts/r57_gold195_g3_prescreen.py'
+      - 'tests/test_r57_gold195_g3_prescreen.py'
+      - 'docs/R57_G3_GOLD195_PRESCREEN_OWNER_CN.md'
+      - 'scripts/r57_g2_mac_preflight.py'
+      - 'tests/test_r57_g2_mac_preflight.py'
+      - 'docs/R57_G2_MAC_OWNER_EXECUTION_20261026_CN.md'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json'
+      - 'tests/test_r57_g2_owner_eight_source_receipt.py'
+      - 'scripts/r57_g3_private_exposure_ledger.py'
+      - 'tests/test_r57_g3_private_exposure_ledger.py'
+      - 'docs/R57_G3_EXACT_EXPOSURE_LEDGER_OWNER_CN.md'
+      - 'scripts/r57_g2_target_anchored_world_audit.py'
+      - 'tests/test_r57_g2_target_anchored_world_audit.py'
+      - 'docs/R57_G2_TARGET_ANCHORED_WORLD_UUID_OWNER_CN.md'
+      - 'docs/evidence/R57_G3_OWNER_EXPOSURE_LEDGER_COUNTS_SAFE_20261026.json'
+      - 'docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json'
+      - 'scripts/r57_g2_owner_world_review_roster.py'
+      - 'tests/test_r57_g2_owner_world_review_roster.py'
+      - 'docs/R57_G2_WORLD_ALIAS_REVIEW_ROSTER_OWNER_CN.md'
+      - 'scripts/r57_g2_alias_pair_review.py'
+      - 'tests/test_r57_g2_alias_pair_review.py'
+      - 'docs/R57_G2_OWNER_ALIAS_55_PAIR_REVIEW_CN.md'
+      - 'scripts/r57_g2_private_candidate_source_locator.py'
+      - 'tests/test_r57_g2_private_candidate_source_locator.py'
+      - 'docs/R57_G2_OWNER_GOLD32_SOURCE_LOCATOR_CN.md'
+      - 'scripts/r57_g2_alias_name_hints.py'
+      - 'tests/test_r57_g2_alias_name_hints.py'
+      - 'docs/R57_G2_OWNER_WORLD_NAME_HINTS_CN.md'
+      - 'docs/evidence/R57_G3_GOLD195_PRIMARY_PRESCREEN_SAFE_20261026.json'
+      - 'docs/R57_G2_EXACT_REPLAY_OWNER_CN.md'
+      - 'docs/evidence/R57_G2_FOUR_GIT_BLOB_BYTE_REPLAY_SAFE_20261026.json'
+      - 'docs/evidence/R57_G3_GOLD195_REAL_PRESCREEN_COUNTS_SAFE_20261026.json'
+
+permissions:
+  contents: read
+
+jobs:
+  admission-synthetic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: R57 G1-G2 private-admission and source-lineage synthetic regression
+        run: python3 -m unittest discover -s tests -p 'test_r57_*.py' -v
+      - name: Owner Mac preflight zero-write four real Git Blob byte pins
+        run: |
+          python3 scripts/r57_g2_mac_preflight.py --repo-root . --only-public > "${RUNNER_TEMP}/r57_mac_source_preflight_safe.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          r = json.loads((Path(os.environ['RUNNER_TEMP']) / 'r57_mac_source_preflight_safe.json').read_text())
+          assert r['all_pins_verified'] is True and r['byte_pin_pass_count'] == 4
+          assert r['checked_collection_count'] == 4
+          assert all(v == 'BYTE_PIN_PASS' for v in r['source_status'].values())
+          assert not r['training_authorized'] and not r['protected_evaluation_accessed']
+          assert r['v04_admitted'] == 0
+          print('R57_G2_MAC_PREFLIGHT_FOUR_REAL_GIT_BLOBS_PASS__EIGHT_HOLD')
+          PY
+      - name: Verify four real Git blobs byte pins and exact SHA target overlaps (no private input)
+        run: |
+          python3 scripts/r57_trainer_exact_replay.py --repo-root . --mode draft > "${RUNNER_TEMP}/r57_four_source_safe.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          data = json.loads((Path(os.environ['RUNNER_TEMP']) / 'r57_four_source_safe.json').read_text())
+          expected = {"GOLD87": 87, "GOLD108": 108, "V01_TRAIN": 65, "V01_VALIDATION": 15}
+          assert data['source_row_counts'] == expected
+          assert data['original_file_byte_pins_checked_by_cli'] is True
+          assert data['gold_distinct_target_count'] == 195
+          assert all(p['target_exact'] == 0 for p in data['exact_pairwise'])
+          assert all(p['role_content_full_exact'] == 0 for p in data['exact_pairwise'])
+          assert all(p['role_content_history_exact'] == 0 for p in data['exact_pairwise'])
+          assert data['source_metadata_coverage']['GOLD108']['declared_target_hashes_verified'] == 108
+          assert data['source_metadata_coverage']['GOLD87']['declared_target_hashes_verified'] == 87
+          assert data['v04_admitted'] == 0 and data['protected_evaluation_accessed'] is False
+          assert data['true_world_component_isolation_verified'] is False
+          print('R57_G2_FOUR_GIT_BLOBS_BYTE_PIN_AND_EXACT_TARGET_PASS__FULL_EIGHT_SOURCE_HOLD')
+          PY
+      - name: G3 prescreen true Gold195 metadata and UUID exposure, no admission
+        run: |
+          python3 scripts/r57_gold195_g3_prescreen.py --repo-root . > "${RUNNER_TEMP}/r57_g3_prescreen_safe.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          r = json.loads((Path(os.environ['RUNNER_TEMP']) / 'r57_g3_prescreen_safe.json').read_text())
+          assert r['source_file_byte_pins_checked_by_cli'] is True
+          assert r['gold195_distinct_exact_targets'] == 195
+          assert r['gold195_distinct_world_uuids'] == 13
+          assert r['source_rows'] == {
+              'GOLD87': 87, 'GOLD108': 108, 'V01_TRAIN': 65, 'V01_VALIDATION': 15
+          }
+          assert r['gold195_source_sha_field_present'] == 188
+          assert r['gold195_source_sha_field_absent'] == 7
+          assert r['per_pool']['GOLD87']['same_uuid_as_v01_train_rows'] == 21
+          assert r['per_pool']['GOLD108']['same_uuid_as_v01_train_rows'] == 0
+          assert r['gold_exact_target_seen_in_v01'] == {'train': 0, 'validation': 0}
+          for gate in ('independent_review', 'qwen_length', 'final_mask', 'target_time_card'):
+              assert r['gold195_review_signals'][gate] == {
+                  'explicit_pending': 171, 'absent': 24, 'other_unverified': 0
+              }
+          assert r['v04_admitted_samples'] == 0
+          assert r['independent_quality_review_admission_done'] is False
+          assert r['cross_uuid_world_alias_graph_certified'] is False
+          assert r['protected_evaluation_content_accessed'] is False
+          archived = json.loads(Path(
+              'docs/evidence/R57_G3_GOLD195_REAL_PRESCREEN_COUNTS_SAFE_20261026.json'
+          ).read_text())
+          assert archived['source_rows'] == r['source_rows']
+          assert archived['gold195']['source_sha256_metadata_field_present'] == (
+              r['gold195_source_sha_field_present']
+          )
+          assert archived['gold195']['source_sha256_metadata_field_absent'] == (
+              r['gold195_source_sha_field_absent']
+          )
+          assert archived['exposure']['gold87_rows_same_story_uuid_as_v01_train'] == (
+              r['per_pool']['GOLD87']['same_uuid_as_v01_train_rows']
+          )
+          assert archived['gates']['DATASET_V04_ADMITTED_ROWS'] == 0
+          assert archived['gates']['R50_CONTENT_ACCESSED'] is False
+          print('R57_G3_ACTUAL_GOLD195_PRESCREEN_COUNTS_PASS__NO_ADMISSION')
+          PY
+      - name: Verify Owner UUID count-only evidence and 82/32 follow-up boundaries
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json')
+          d = json.loads(p.read_text())
+          x = d['golds_with_no_exact_target']
+          assert x['total'] == 114
+          assert x['shares_any_historical_sft_uuid'] == 82
+          assert x['no_shared_historical_sft_uuid'] == 32
+          assert x['GOLD87']['no_shared_historical_sft_uuid'] == 32
+          assert x['GOLD108']['no_shared_historical_sft_uuid'] == 0
+          assert x['historical_train_uuid_rows'] + x['historical_validation_uuid_rows'] - x['train_and_validation_uuid_rows'] == 82
+          assert d['limits']['world_isolation_certified'] is False
+          assert d['limits']['v04_admitted'] == 0
+          assert d['limits']['r50_content_accessed'] is False
+          print('R57_G2_OWNER_UUID_114_UNMATCHED_TARGETS_82_PRIOR_WORLDS_32_UUID_UNMATCHED__ALIAS_HOLD')
+          PY
+      - name: Verify Owner-returned eight-source aggregate math and trust boundaries
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json')
+          d = json.loads(p.read_text())
+          totals = d['gold_totals']
+          assert (totals['ever_train_exact_targets'],
+                  totals['ever_validation_exact_targets'],
+                  totals['both_train_and_validation_exact'],
+                  totals['any_historical_exact_target_exposure'],
+                  totals['no_historical_exact_target_match']) == (66, 24, 9, 81, 114)
+          assert d['evidence_tier'].startswith('OWNER_RETURNED')
+          assert d['authenticated_source_bytes_read_by_assistant'] is False
+          assert d['limits']['v04_admitted_samples'] == 0
+          assert d['limits']['r50_content_accessed'] is False
+          print('R57_G2_OWNER_EIGHT_SOURCE_81_EXPOSED_114_NO_EXACT_MATCH__WORLD_ALIAS_HOLD')
+          PY
+      - name: Verify count-only source inventory is marked zero-admission
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('docs/evidence/R57_DATA_SOURCE_INVENTORY_SAFE.json')
+          r = json.loads(p.read_text(encoding='utf-8'))
+          assert r['gold195']['rows'] == 195
+          assert sum(p['rows'] for p in r['frozen_source_pools']) == 195
+          v = r['dataset_v04']
+          assert v['admitted_train'] == v['admitted_validation'] == 0
+          assert v['protected_test_body_accessed'] is False
+          assert v['training_job_started'] is False
+          print('R57_V04_INVENTORY_COUNT_ONLY_PREP_PASS__NO_R50__NO_TRAINING')
+          PY
