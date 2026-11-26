@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.13（2026-11-27）  
+**版本：** v1.14（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
@@ -81,6 +81,12 @@ Owner 转交 RolePlay 最终核查结论：PRE/POST 所需数据库字段确认�
 Owner 转交 RolePlay 实际 SAFE：`INDEPENDENT_SOURCE_PREFLIGHT_PASS`。production_revision=20412c0e，production_web_roles_verified=3，web_capture_os_env_enabled=0，capture_control_enabled=false，worker/gateway/canary/acceptance_running=false，archive/export_enabled=false；readonly_source_fields_verified/readonly_permissions_verified=true，binding_synthetic_passed/total=24/24，additional_development_required=false，first_controlled_session_ready=true。原 PARTIAL/HOLD 保持；真实候选、模型调用、生产变更均0，collection_authorized/training_authorized=false。本 Agent 接受运行责任方实际回执，未重新登录生产或查 DB，不将 first_controlled_session_ready 解释为已有真实故事或已完成来源绑定。**本节取代0G及此前关闭态回执待取得的下一步。技术预检正式收口，不重复核查或开发。**
 
 当前状态 `INDEPENDENT_SOURCE_PREFLIGHT_PASS__FIRST_ORIGINAL_SESSION_APPROVAL_PENDING`。下一步只准备首个 T 后全新原创私密世界，确认 Owner 自有会话与原创权利、221已知保护范围语义隔离及用途归属（不重开历史全集），冻结完整适用卡/规则及版本、短有效历史、当前 User、必要 persona/runtime context。初次专项审批严格限定一个世界、一个 Owner 自有会话、一次真实互动、一条未改写的原始 Assistant 目标；具体模型/路由、调用及数据用途需独立授权，不预填假身份或预算。生成前由独立只读路径保存 PRE 原件及 pin，生成后回读 POST 原件与唯一追加目标 revision，复用已有本地绑定器及 Source Stage。若真实字段或来源不符、规则/历史遗漏、出现并发修改/重生/额外目标等即 HOLD，不自动重试、不通过新生成补证。仅在真实绑定/合法性通过后安排质量双审和 Owner 审阅，进一步外发评审及训练另行授权。保留 RolePlay PARTIAL/HOLD、221/T、World04 原结论、R60 NO_PROMOTE、准入0、R61未启动；不启动 Worker/Archive/Export/Grant、不增加开发任务。当前尚未提供实际新故事及其隔离审核，不擅自生成或采集真实样本。
+
+## 0I. 首个受控原创试点专项批准（2026-11-27）
+
+Owner 明确批准第0H节的一世界、一Owner自有会话、一次真实互动、一原始 Assistant 目标限定试点。状态 `FIRST_ORIGINAL_SESSION_PILOT_APPROVED__WORLD_SOURCE_FREEZE_PENDING`。本节取代0H的审批待定表述：该范围的专项批准已取得，不重复征求同一批准；实际执行仍须先满足新世界来源、已知范围语义隔离和 PRE 冻结，并核对实际生成路由、费用及使用权边界。未取得具体世界/会话定位、真实创作证据、人工隔离审查及 PRE 原件前不得生成。授权不包括额外物理调用或重试、外发评审、批量扩展、HF Job、训练、部署或模型晋升。
+
+当前执行：Owner 通过正常业务界面准备 T 后新创作的自有私密故事，记录实际创作方式（包括 AI 辅助如适用）、权利、版本及创建时间；不借用或改写旧来源。用途先定为训练候选世界（非正式准入），同组件不得跨 Validation/独立评估。复用已冻结221来源的限定语义隔离审核，保留未知全集风险；不读 R50 密封正文、不扩大历史审计。确定具体世界和会话后，通过已确认的只读路径冻结 PRE，核验完整规则、玩家设定、有效历史、当前 User 和生成所需状态；通过才执行一次获批互动，独立读取 POST 并复用本地绑定器及 Source Stage。无真实原件或异常即 HOLD，不自动重试。后续质量评审/外发授权单独处理。首个原创世界实际创建、隔离审查及真实 PRE/POST 均未完成；模型调用、真实候选和正式准入仍0。RolePlay 原 PARTIAL/HOLD、生产关闭态、221/T、World04、R60 NO_PROMOTE、R61 未启动不变，不新增工程。
 
 ## 1. 唯一产品目标
 
