@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.10（2026-11-27）  
+**版本：** v1.11（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
@@ -62,9 +62,13 @@ Owner 转交 RolePlay SAFE `INDEPENDENT_SOURCE_BINDING_PREFLIGHT_HOLD`：既有 
 
 Owner 已专项批准第0D节最小本地绑定任务，不包含真实采集、生产变更、模型/HF Job/训练。Mac 固定旧 pilot 已找到（254行、测试272行/20函数），Owner 上传两份源码；本 Agent 实际审查并在隔离环境执行原20函数参数化共27项，27/27 PASS。旧 `review_bundle` 验证请求/尝试/Provider 输出/转换/最终正文及 Shadow 内部一致性，版本摘要仅格式、缺独立 PRE/POST 原件和完整适用输入证明，全部资格 HOLD；保持旧文件原样，不复用该实际生成请求专用 schema 冒称独立来源认证。
 
-确有缺件后，仅在本地隔离工作目录制作 188 行纯 Python 薄层 `independent_source_binding.py` 及合成测试、README（交付 ZIP，未提交仓库程序代码）。复用现有 Source Stage 接口，不复制采集服务或编译器。独立来源观察者分别保留 PRE/POST 原件和可信 pin；预先冻结适用 System、完整卡/版本、scope、有效历史及 planned User，目标持久化后回读同一 scope、相同原始前缀及唯一追加 User/Assistant（时间、revision、原文），状态漂移 fail-closed；候选 claim 即使重算正确摘要仍与独立原件比较。输出仅 Stage row + system + SAFE，不填证据/准入 flags。合成18/18 PASS（七类拒绝含重算摘要、首轮空历史、额外版本/历史/目标漂移等）；另与从冻结 R60 摘取的原始 stage_source/_history/canonical/sha 纯函数衔接1/1 PASS，**不是完整模块或真实数据验收**。Mac 使用冻结归档原模块再跑18+1+原5，预期24项非实际结果，不切换分支/不改归档。
+确有缺件后，仅在本地隔离工作目录制作 188 行纯 Python 薄层 `independent_source_binding.py` 及合成测试、README（交付 ZIP，未提交仓库程序代码）。复用现有 Source Stage 接口，不复制采集服务或编译器。独立来源观察者分别保留 PRE/POST 原件和可信 pin；预先冻结适用 System、完整卡/版本、scope、有效历史及 planned User，目标持久化后回读同一 scope、相同原始前缀及唯一追加 User/Assistant（时间、revision、原文），状态漂移 fail-closed；候选 claim 即使重算正确摘要仍与独立原件比较。输出仅 Stage row + system + SAFE，不填证据/准入 flags。合成18/18 PASS（七类拒绝含重算摘要、首轮空历史、额外版本/历史/目标漂移等）；另与从冻结 R60 摘取的原始 stage_source/_history/canonical/sha 纯函数衔接1/1 PASS，**不是完整模块或真实数据验收**。Owner Mac 已实际完成冻结归档完整模块回归：首次收集因归档提取遗漏 `src/storyforge_dataset/__init__.py` 导致导入失败，非测试执行失败；补齐固定归档原件并检查三个模块加载位置后，返回 `FROZEN_MODULE_IMPORT_PASS`、`24 passed in 0.12s`（18+1+原5，无 skipped），临时目录清理完成输出。合成/完整模块回归阶段收口，不重跑旧 pilot 或重复新增功能；未改变原归档。
 
-**仍 HOLD：** 真实独立来源取得及规范化字段的实际合同、真实时点与完整性、人工适用规则、生产实时关闭回执、原创世界/隔离/权利/质量均未证；本工具不能认证快照出处、发现原件本身遗漏或中间变化后复原。首个试点只允许可控简单路径；真实字段/动态状态如不符不得伪造或清空。RolePlay 原 PARTIAL/HOLD 保留。下一步唯一技术操作是 Owner Mac 完整冻结模块回归并由运行责任方补关闭态只读回执；后续评估真实来源采集合同及单一原创试点的独立批准，不提前开发其它模块。221/T、World04、准入0与训练未授权均不变。
+**仍 HOLD：** 真实独立来源取得及规范化字段的实际合同、真实时点与完整性、人工适用规则、生产实时关闭回执、原创世界/隔离/权利/质量均未证；本工具不能认证快照出处、发现原件本身遗漏或中间变化后复原。首个试点只允许可控简单路径；真实字段/动态状态如不符不得伪造或清空。RolePlay 原 PARTIAL/HOLD 保留。Owner Mac 完整冻结模块回归已完成。当前只需由 RolePlay 运行责任方提供关闭态实际只读回执及现有来源读取合同：确认能在指定 owner/story/session 范围内独立取得完整 PRE、POST 的真实字段（故事 revision 与完整卡、persona/runtime context、消息 ID/turn/revision/时间/状态/原文及 metadata），完整枚举而非截断分页，保留原件、独立 pin 与规范化记录；预生成固定 planned User 与人工审过的适用 System，成功后回读唯一追加 User/Assistant。若真实形态不符先报告真实最小缺件，不继续合成工程或伪造字段。无真实候选访问授权，不执行采集；运行回执及字段合同可用后才准备 T 后单一原创世界，实际生成另行批准。221/T、World04、准入0与训练未授权均不变。
+
+## 0F. 完整模块回归完成（2026-11-27）
+
+Owner 实际回执：`FROZEN_MODULE_IMPORT_PASS`，`24 passed in 0.12s`。状态 `INDEPENDENT_SOURCE_BINDING_LOCAL_REGRESSION_PASS__REAL_SOURCE_PREFLIGHT_PENDING`。此为合成数据和冻结模块加载验证，不是生产运行或真实来源认证。独立来源绑定技术试点不再增加功能；下一步只补第0E节真实来源读取合同与实际关闭态回执。原有221/T、PARTIAL/HOLD、真实采集禁止、质量/训练准入0、R60 NO_PROMOTE、R61未启动均不变。验证器仍为 Owner-local 交付，不提交代码或私有材料。
 
 ## 1. 唯一产品目标
 
