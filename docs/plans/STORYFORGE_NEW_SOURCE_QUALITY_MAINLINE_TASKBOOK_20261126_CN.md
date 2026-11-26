@@ -1,17 +1,18 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.2（2026-11-26）  
+**版本：** v1.3（2026-11-26）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
-**状态：** `WORLD04_FORMAL_REVIEW3_VALID__DOUBLE_PASS1__ADMISSION_HOLD`。
+**状态：** `WORLD04_DOUBLE_PASS1__OWNER_QUALITY_APPROVED1__ADMISSION_HOLD`。
 
 ## 0. 2026-11-26 实际进展与现行下一步（覆盖下文旧采集状态）
 
 - 已按 Owner 逐次批准完成四个世界的有限筛选，共 16 条原始回复，World04 冻结 2 条优先候选（另 1 条条件候选不扩入本轮）；未准入。Owner 已确认来源使用权，授权离线重建与本地复用。已有 Source Stage 在 Mac 实测 2/2，消息数 2、10，原始目标和在先正文保持；后续正文任务 System 定稿、排除无关技术字段（29 个技术 ID，另封面资源），盲审包 2/2，URL/邮箱/手机号/UUID 模式零命中。Owner 已明确人工检查盲审包并确认可外发信息范围。原始组件留证不改；正文监督与历史抽取/Compiler 一致，但不是完整生产组件输出合同，也不是实际发送 Prompt 重放；时间点完整性和 Provider 原始请求未证实。
 - 本轮 World04 对 Base336、History32、R50 已知五世界、P2 八来源精确 ID 无重叠；Base336 375 版本及 P2 8 版本的四字段与姓名初筛均零命中，History32 版本级筛查本轮未完成。语义独立、完整保护集覆盖仍 HOLD；不读取 R50 密封正文，不重跑旧候选隔离或无限搜索历史全集。
 - Owner 批准两条冻结候选 HF 双审与数据外发、不设费用上限，随后批准已验证新路由（DeepSeek-V4.1-Flash-1017 / Cloudflare，Kimi-K3.1-Pro / DeepInfra）。旧 4 次 HTTP 400 保留；新路由合成 2/2 PASS，正式 4/4 HTTP 200、有效 3/4（均 PASS、低于六维门槛及严重标记均零），完整双审 1、双 PASS 1、有效成对判定分歧 0。38005 tokens，报告费用 $0.105284028，无自动重试。剩余一份原始 PASS 声明因两处引文无精确来源（rule_fidelity、hard_fact_or_ban）保持 HOLD；9 项中 7 项匹配。未改原始回执，诊断新增模型调用 0。路由经验见 [资产索引](../REUSABLE_ASSET_INDEX.md)。
-- **唯一下一步**：只推进已有双 PASS 的一条候选；另一条保留 HOLD，本轮不补评、不重发三份有效评审、不扩大采集。由 Owner 本地对照冻结原始材料、重建 System/历史/目标及两份独立评审，完成独立质量批准与上下文适用、无未来信息、来源版本证据核查；分别记录事实和未证实项。完整保护集及语义隔离仍未验证，不以零精确命中或双 PASS 替代；缺口必须明确 HOLD，不重新无限搜索历史或访问 R50 密封正文。只有必要证据闭合后，才核实现有 Quality-v1 新 corpus 登记阻塞及最小兼容方案、适用 CPU 授权。正式质量准入及训练准入仍为0；不授权 HF Job、GPU、训练、生产部署、晋升或 R61。
+- Owner 随后明确确认唯一双 PASS 候选四项人工核查全部通过：原始回复质量、上下文适用性、无未来信息泄漏、双审证据可信度；记为 Owner 声明 `owner_quality_approved=true`、`context_is_coherent=true`、`context_no_future_leakage_reviewed=true`、`review_evidence_accepted=true`（仅该候选，私有绑定在 Owner 域落盘）。内容质量审核收口，不重新调用 Reviewer；另一候选保持 HOLD。本次声明不证明来源历史版本时间点、世界图或完整保护集覆盖，也不豁免隔离门禁。
+- **唯一下一步**：将 Owner 四项声明绑定到现有冻结双 PASS 候选的本地私有回执；只检查现存冻结来源/版本与隔离证据是否足够，不重采集、不无限搜索历史、不访问 R50 密封正文。当前 main Quality-v1 `decide()` 仍拒绝非既有 corpus/非 original_gold，并要求来源版本、世界图摘要、全部证据声明和无保护集重叠；这些结构门禁不能由双 PASS 或 Owner 内容质量批准替代。先明确尚缺证据及可否闭合，无法闭合则保持 HOLD，不提前开发 corpus 扩展或提交 HF CPU Job。正式质量/训练准入仍为0；GPU、训练、部署、晋升、R61 未授权。
 - 本轮一次性 Mac 操作不提交仓库；已有 Source Stage/Quality-v1/Compiler 等优先复用，只有真实合格样本明确阻塞才做最小兼容实现。保持 `quality_v1_admitted=0`、`train_admitted=0`、`training_authorized=false`、`model_promoted=false`、`r61_started=false`，R60 NO_PROMOTE。
 
 ## 1. 唯一产品目标
