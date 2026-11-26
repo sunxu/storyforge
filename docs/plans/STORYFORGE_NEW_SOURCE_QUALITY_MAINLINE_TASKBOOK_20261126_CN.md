@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.16（2026-11-27）  
+**版本：** v1.17（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
@@ -103,6 +103,14 @@ Owner 明确纠正：此前已授权平台所有内容的使用权限，不再�
 本 Agent 实际新增3次 Supabase 只读查询：T 后满足指定公开投影条件故事0；最近50个公开 V2 有版本故事中原始来源分类 original 42、ai_assisted 4、dice_cocreate 4，基本卡组件均存在。选择最新3个 original 且有基本卡组件的公开故事作为有限元数据 shortlist（均 T 前，既有第0J节例外已获批准，play_count=0 仅计数器，不证明无历史暴露）。公开故事便于 Owner 使用自己的会话；不读取私人聊天或尝试操控作者会话。原始公开定位字段仅放 Owner-local 交付 JSON，不入 Git；未读故事完整正文、未核实221重叠/衍生、未选定具体目标。三候选不是正式准入。
 
 状态 `OWNER_ATTESTED__PUBLIC_ORIGINAL_SHORTLIST3__ISOLATION_PENDING`。下一步本地用已有冻结221清单核对 shortlist 精确ID重叠（不重建清单），随后从不重叠者择一个进行限定语义隔离和实际完整卡版本/适用规则核对；不得把精确ID不重叠、数据库 original 标记或 play_count=0 当语义隔离证明。确认后按已批一次受控新互动冻结PRE、生成、POST绑定；无需再次请求平台内容权限、创建时间例外或同一试点批准。不新增程序/工程或重复技术预检。正式准入0、模型调用0、写库0、训练未授权，RolePlay PARTIAL/HOLD 保持。
+
+## 0L. C1 语义审核材料就绪，统一本机 DSN（2026-11-27）
+
+Owner 本机实际 SAFE `EXACT_ID_SCREEN_COMPLETED`：冻结221个保护 Story ID，C1/C2/C3三个公开候选均无精确ID重叠。Agent 随后实际执行3次限定公开卡结构/组件查询，C1故事卡最精简、单结构化角色、无自定义标签页、记忆关闭，优先 C1，C2/C3暂留备选；三者均有手机、状态等组件，不宣称无动态依赖或额外物理调用。C1不可省略实际适用组件及规则。
+
+Owner Mac 实际 SAFE `C1_SEMANTIC_REVIEW_READY`：保护元数据恢复221/221、缺失0、特征名称命中0、候选公开 revision验证true、私有文件创建true、完成2次只读查询，模型调用0、准入0、语义独立验证false。私有材料 `~/.local/share/storyforge/r60/private/C1_SEMANTIC_REVIEW_PRIVATE.json` 留在Owner本机，不上传Git或聊天。元数据是当前标题/公开人物检索文本/版本等，不代表221个历史版本全文或语义覆盖；零名称命中不能替代人工限定语义审核。Agent未实际读取此私有文件，不声称语义审查已完成。下一步直接由Owner对照现有冻结来源元数据和C1卡审查核心设定、人物关系、情节/开场及衍生线索，记录实审范围、依据和限制；不能判断则HOLD，不自动通过、不重复相同查询或重建清单。通过才准备Owner可控新会话与PRE，核实实际组件依赖及物理调用范围再执行已批准单互动。仍不读R50密封正文、不新增工程、不再次征求已获授权的内容使用权或试点批准。
+
+**统一数据库连接规范（Owner明确要求）：** 后续Mac命令默认且直接读取 `STORYFORGE_SUPABASE_DSN`，不重新要求输入凭据；复用固定归档 `r60_readonly_db.fetch_dict_rows` 的精确reader角色、REPEATABLE READ READ ONLY、row_security与超时检查；旧代码硬编码其他环境变量时只在命令内作兼容映射，不修改原模块，不输出DSN。不将本轮初次KeyError归为数据库权限失败：改用现有DSN后实际成功。当前状态 `C1_SEMANTIC_REVIEW_READY__HUMAN_DECISION_PENDING`，真实目标0，准入0，训练未授权，PARTIAL/HOLD及221/T不变。
 
 ## 1. 唯一产品目标
 
