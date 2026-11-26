@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.9（2026-11-27）  
+**版本：** v1.10（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
@@ -56,7 +56,15 @@ Owner 转交 RolePlay SAFE `INDEPENDENT_SOURCE_BINDING_PREFLIGHT_HOLD`：既有 
 
 新增查重：冻结 R60 `scripts/r60_p2_gold48_source_component_bind_cpu.py` 及同名测试已有卡 revision、快照、组件、候选 prefix 的绑定参考，但用途明确仅内部评估/NO_TRAINING，不支持本次生成前后独立时间和原始目标证明；不能用其历史材料入训。旧 R02 `evaluations/v0.2/admission-audit-20261013/r02-point-in-time-cards/point_in_time_card_evidence_contract.md` 已指出时间顺序/摘要不足以证明来源。已查 GitHub PR44、R60 归档树，未找到完整前后快照验证器；**不能宣称全仓历史无现成实现**：Mac 本地 `backup/r60-new-generation-evidence-pilot-20261122@ca5ad674262158e9ad6ec747a3cbb8beae54f4bd` 的 `experiments/r58_quality/r60_new_generation_evidence_pilot.py` 与测试无法从 GitHub 获取（固定提交树请求422）；须先在 Owner Mac 只读核查这项已登记资产，不运行其生成入口、不披露内容/私有参数。无可复用实现才最小扩展。
 
-**待专项批准的工作**：仅 StoryForge 本地、现有 Source Stage/历史 binder 基础上的前后绑定合同与必要薄验证器、合成测试。采用独立于候选自报摘要的可信预生成原件及生成后持久化回执：完整适用卡/规则/玩家/状态、历史消息 ID/revision/正文与顺序、当前 User、世界/会话/轮次、版本和水位，生成后读回同一 scope、前缀与卡未漂移、唯一新成功 Assistant 原始正文及 revision；留原始证据和派生转换绑定。初次仅固定简单新世界、无并发/编辑/分支/重生/动态依赖（若实际存在必须如实保留或 HOLD），不宣称 Provider actual-sent。完整性须对独立原件清单比对，规则适用性另需人工证据，不把 hash、时间排序或自报布尔值当独立证明。七项负例（版本错配、规则遗漏、整轮历史遗漏、未来信息、跨会话、目标替换、摘要错配）应覆盖攻击者重算摘要仍被独立原件拒绝的情形；合法正例通过仅代表技术验证，不代表真实来源、质量、隔离或训练通过。复用 canonical/hash/Source Stage；优先使用一次性私有 CLI 或最小独立纯函数及测试，不建新服务、不提前扩 corpus/Compiler，不改 RolePlay。Owner 尚未批准本次新增实现；待批准后先查本地旧 pilot，再决定是否需要代码。真实采集、外发、模型/HF Job、训练仍各自未授权。
+**本节原待专项批准的工作（已获批，实际结果见0E）**：仅 StoryForge 本地、现有 Source Stage/历史 binder 基础上的前后绑定合同与必要薄验证器、合成测试。采用独立于候选自报摘要的可信预生成原件及生成后持久化回执：完整适用卡/规则/玩家/状态、历史消息 ID/revision/正文与顺序、当前 User、世界/会话/轮次、版本和水位，生成后读回同一 scope、前缀与卡未漂移、唯一新成功 Assistant 原始正文及 revision；留原始证据和派生转换绑定。初次仅固定简单新世界、无并发/编辑/分支/重生/动态依赖（若实际存在必须如实保留或 HOLD），不宣称 Provider actual-sent。完整性须对独立原件清单比对，规则适用性另需人工证据，不把 hash、时间排序或自报布尔值当独立证明。七项负例（版本错配、规则遗漏、整轮历史遗漏、未来信息、跨会话、目标替换、摘要错配）应覆盖攻击者重算摘要仍被独立原件拒绝的情形；合法正例通过仅代表技术验证，不代表真实来源、质量、隔离或训练通过。复用 canonical/hash/Source Stage；优先使用一次性私有 CLI 或最小独立纯函数及测试，不建新服务、不提前扩 corpus/Compiler，不改 RolePlay。Owner 后续已批准，实际查重及合成实现见0E。真实采集、外发、模型/HF Job、训练仍各自未授权。
+
+## 0E. 旧 pilot 查重完成与本地薄绑定合成测试（2026-11-27）
+
+Owner 已专项批准第0D节最小本地绑定任务，不包含真实采集、生产变更、模型/HF Job/训练。Mac 固定旧 pilot 已找到（254行、测试272行/20函数），Owner 上传两份源码；本 Agent 实际审查并在隔离环境执行原20函数参数化共27项，27/27 PASS。旧 `review_bundle` 验证请求/尝试/Provider 输出/转换/最终正文及 Shadow 内部一致性，版本摘要仅格式、缺独立 PRE/POST 原件和完整适用输入证明，全部资格 HOLD；保持旧文件原样，不复用该实际生成请求专用 schema 冒称独立来源认证。
+
+确有缺件后，仅在本地隔离工作目录制作 188 行纯 Python 薄层 `independent_source_binding.py` 及合成测试、README（交付 ZIP，未提交仓库程序代码）。复用现有 Source Stage 接口，不复制采集服务或编译器。独立来源观察者分别保留 PRE/POST 原件和可信 pin；预先冻结适用 System、完整卡/版本、scope、有效历史及 planned User，目标持久化后回读同一 scope、相同原始前缀及唯一追加 User/Assistant（时间、revision、原文），状态漂移 fail-closed；候选 claim 即使重算正确摘要仍与独立原件比较。输出仅 Stage row + system + SAFE，不填证据/准入 flags。合成18/18 PASS（七类拒绝含重算摘要、首轮空历史、额外版本/历史/目标漂移等）；另与从冻结 R60 摘取的原始 stage_source/_history/canonical/sha 纯函数衔接1/1 PASS，**不是完整模块或真实数据验收**。Mac 使用冻结归档原模块再跑18+1+原5，预期24项非实际结果，不切换分支/不改归档。
+
+**仍 HOLD：** 真实独立来源取得及规范化字段的实际合同、真实时点与完整性、人工适用规则、生产实时关闭回执、原创世界/隔离/权利/质量均未证；本工具不能认证快照出处、发现原件本身遗漏或中间变化后复原。首个试点只允许可控简单路径；真实字段/动态状态如不符不得伪造或清空。RolePlay 原 PARTIAL/HOLD 保留。下一步唯一技术操作是 Owner Mac 完整冻结模块回归并由运行责任方补关闭态只读回执；后续评估真实来源采集合同及单一原创试点的独立批准，不提前开发其它模块。221/T、World04、准入0与训练未授权均不变。
 
 ## 1. 唯一产品目标
 
