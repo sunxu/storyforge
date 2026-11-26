@@ -19,6 +19,13 @@
 - 2026-11-26 World04 正式实测：新路由获 Owner 批准后 4/4 HTTP 200，3/4 有效评审且均 PASS，1 个双 PASS 候选；另一份原始 PASS 声明的 9 项证据中 7 项逐字匹配、2 项无精确来源（rule_fidelity、hard_fact_or_ban），保持 HOLD。38005 tokens、报告费用 $0.105284028、自动重试 0。模型路由技术可用不等于引文证据有效；诊断归一化仅用于定位，不用于放宽门禁。原始回执不改，私有映射/正文不入 Git。
 - 复用现有 Quality-v1 审核合同与冻结证据，临时 stdlib HTTP 操作仅作执行入口，不提交一次性脚本，不新增 API 管理模块。OpenRouter 直连不是本轮已验证入口，不自动切换认证、账单或数据处理路径。
 
+## RolePlay 前瞻留证及 StoryForge 接入（跨仓库既有资产）
+
+- 实查 `sunxu/RolePlay@6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424`（相对 `a2c40eb7b01ba72a92c8d64b7d861f49ddaf3fac` ahead 59）：完整 Git Tree 比对 99 个留证相关 Blob 未变。V2 route 仍有 createV2EvidenceRun、原文、续写、后处理及绑定接线；主链路 Prompt、Provider、取消和拒答等已有更新，当前运行及部署未经本轮核验。
+- [实际生成输入留证方案](https://github.com/sunxu/RolePlay/blob/6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424/.claude/plans/2026-11-07-v2-generation-evidence.md)、[单会话验收](https://github.com/sunxu/RolePlay/blob/6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424/.claude/docs/v2-evidence-acceptance-20261113.md)、[StoryForge 接入](https://github.com/sunxu/RolePlay/blob/6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424/ops/evidence/storyforge-handoff.md)、[运行前清单](https://github.com/sunxu/RolePlay/blob/6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424/ops/evidence/preproduction-checklist.md)。
+- 入口：`src/lib/generation-evidence/capture.ts`、`capture-control.ts`、`export-service.ts`、`ops/evidence/worker.ts`、`ops/evidence/verify-bundle.mjs`。历史单会话导出/独立字节比较成功，但 RELAY_EGRESS_UNKNOWN / PARTIAL / HOLD，接收人签收未完成；校验器实际固定 HOLD/certifiedLineage=false。不复写、不绕过、不冒称训练放行。比较器输出含私有文件摘要，留 Owner 本地，不粘贴完整输出到聊天/Git。现成能力不等于当前运行已开启，不继承历史生产批准。
+- 历史隔离权威缺口见冻结 R60 `docs/evidence/R58_G1_PROTECTED_SOURCE_INVENTORY_REUSE_NEXT_STEP_SAFE_20261101.md` 与 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。11月20日风险接受仅限 Gold48 评估；不再重复 2263 文件扫描。新来源限定范围政策待专项裁决（主线任务书 v1.5 §0A），不能替代当前 gate。
+
 ## 使用规则
 
 1. **默认从最新 `origin/main` 开始。** 新开发之前先搜索现有代码、测试、规范和本索引；以**固定 SHA + 文件路径**定位，不能仅凭会变动的分支名决定复用。
