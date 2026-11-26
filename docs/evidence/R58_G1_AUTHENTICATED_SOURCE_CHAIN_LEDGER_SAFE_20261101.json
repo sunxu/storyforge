@@ -1,0 +1,177 @@
+{
+  "schema": "r58_g1_authenticated_source_chain_ledger_safe_v1",
+  "date": "2026-11-01",
+  "status": "KNOWN_SCOPED_ORIGINAL_PROVENANCE_REUSED__THREE_AUTHORITATIVE_UNIVERSES_STILL_OPEN__G1_HOLD",
+  "repo": "sunxu/storyforge",
+  "branch": "r58/roleplay-sft-skill-v01",
+  "method": "GITHUB_STATIC_IMPLEMENTATION_AND_SAFE_REPORT_CROSSCHECK__NO_OWNER_PRIVATE_BYTES_REEXECUTED",
+  "identity_policy": "OWNER_ROLEPLAY_ONE_STORY_UUID_ONE_WORLD__SCOPED_IDENTICAL_UUID_MEMBERSHIP_ONLY",
+  "existing_provenance_chains": [
+    {
+      "id": "R57_SOURCE_WORLD_ROSTER",
+      "evidence_tier": "OWNER_REPORTED_LOCAL_STRICT_METADATA_SCHEMA_AND_COUNT__ORIGINAL_GENERATOR_PIN_CHECK_CONTRACT_IDENTIFIED",
+      "source_origin_code": "scripts/r57_g2_owner_world_review_roster.py",
+      "source_origin_branch": "r57/v03b-data-design",
+      "source_origin_code_blob": "f63093383760488f7bf86123c349b436021f6944",
+      "underlying_source_exporter": "scripts/r57_source_index_export.py",
+      "underlying_exporter_blob": "6049f97a003abd3834c58793f9147a25d8ee700f",
+      "downstream_r58_checker": "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
+      "downstream_checker_blob": "f371b0ebd36367f86282ef26da6ff020d55ef7fa",
+      "covered_entities": {
+        "roster_distinct_source_uuids": 29,
+        "prior_sft_exposed_uuids": 27,
+        "owner_reported_exact_overlap_in_fixed_five": 1,
+        "remaining_four_held": 4
+      },
+      "exact_coverage_claim": "R57_GOLD87_GOLD108_V01_R46_R54_EIGHT_FROZEN_SOURCE_GROUPS_ONLY",
+      "private_roster_source_byte_pin_replay_independently_verified_here": false,
+      "r58_downstream_checker_revalidates_underlying_eight_bytes": false,
+      "private_file_identity_bound_to_git_by_filename_alone": false,
+      "all_historical_job_input_universe_complete": false,
+      "status": "SCOPED_UUID_METADATA_CHECK_ALREADY_USED__NO_RESCAN_NEEDED"
+    },
+    {
+      "id": "HISTORICAL_KNOWN_TRAINING_SPLITS",
+      "evidence_tier": "PINNED_GIT_OBJECT_VERIFIER_PLUS_OWNER_MAC_SAFE_RECEIPT",
+      "checker": "experiments/r58_round1/verify_github_historical_training_sources.py",
+      "checker_blob": "5a894f2f43f1f7f809c71b40a0e2ce339248cad4",
+      "owner_receipt": "docs/evidence/R58_G1_GITHUB_KNOWN_SOURCES_OWNER_MAC_SAFE_RECEIPT_20261031.json",
+      "known_train_validation_splits": 6,
+      "train_placements": 145,
+      "validation_placements": 39,
+      "total_placements": 184,
+      "known_documented_parameter_update_jobs": 5,
+      "unknown_other_hf_jobs": 60,
+      "git_source_objects_pinned": 11,
+      "remote_job_history_and_actual_inputs_complete": false,
+      "status": "KNOWN_SIX_SPLITS_VERIFIED_SCOPED_ONLY"
+    },
+    {
+      "id": "R50_KNOWN_PROTECTED_WORLDS",
+      "evidence_tier": "PINNED_GIT_SAFE_METADATA_RECEIPTS_PLUS_OWNER_PRIOR_PRIVATE_UUID_CHECK",
+      "checker": "experiments/r58_round1/check_r50_protected_uuid.py",
+      "checker_blob": "fc38f611ed44ed85b83045255986d6ffef5ba617",
+      "source_branch": "audit/r49-r50-source-intake-20261015",
+      "protected_world_count": 5,
+      "remaining_four_exact_uuid_hits_reported": 0,
+      "r50_test_items_and_narrative_read_for_this_audit": false,
+      "all_other_heldout_protected_worlds_complete": false,
+      "status": "FROZEN_FIVE_R50_WORLDS_SCOPED_ONLY"
+    },
+    {
+      "id": "R57_GOLD195_SOURCE_WORLDS",
+      "evidence_tier": "R57_FIXED_EIGHT_SOURCE_WORLD_METADATA_REUSE",
+      "checker": "experiments/r58_round1/check_r57_gold195_uuid.py",
+      "checker_blob": "64f4157cb478ddc0ae41d8f996e2e82e22867c81",
+      "gold87_rows": 87,
+      "gold108_rows": 108,
+      "distinct_gold_source_worlds": 13,
+      "covers_all_r55_r57_development_and_arbitration_worlds": false,
+      "status": "GOLD195_SOURCE_UUID_SET_SCOPED_ONLY"
+    },
+    {
+      "id": "LEGACY_DEV20_WORLDS",
+      "evidence_tier": "PINNED_GIT_TEST_BLOB_SHA256_STRUCTURAL_PROJECTION_AND_OWNER_PRIOR_SAFE_CHECK",
+      "checker": "experiments/r58_round1/check_legacy_dev20_uuid.py",
+      "checker_blob": "d40f7f782fbe1ac28bc7dd0dd89d7867b65e2964",
+      "old_test_source_blob": "c17f225967b6b2f8cbaf3d82fadac1b4031d0654",
+      "old_test_rows": 20,
+      "distinct_development_worlds": 2,
+      "model_development_reuse": "R47_R48_R55_R57_OLD_DEV20",
+      "tests_read_original_narrative_bytes_when_run": true,
+      "original_bytes_read_by_assistant_this_turn": false,
+      "cover_additional_dev_worlds": false,
+      "status": "OLD_DEV20_FIXED_SOURCE_VERIFIED_SCOPED_ONLY"
+    },
+    {
+      "id": "R04_NON_GOLD_TWO_DEVELOPMENT_WORLDS",
+      "evidence_tier": "PINNED_GIT_R04_GOLD108_STRUCTURAL_DIFF_WITH_SEPARATE_RANK_SOURCE_BINDING_CHECKER",
+      "checker": "experiments/r58_round1/check_r04_non_gold_uuid.py",
+      "checker_blob": "667a32917b30b2057e51257377050b18bdd19fda",
+      "rank_provenance_checker": "experiments/r58_round1/check_r04_non_gold_rank_provenance.py",
+      "rank_provenance_checker_blob": "5660b0042b2b57fefd2a7fac8bb6d9e42ef3e459",
+      "r04_rows": 150,
+      "gold108_rows": 108,
+      "r04_worlds": 10,
+      "gold108_worlds": 8,
+      "source_uuid_difference_worlds": 2,
+      "old_rank07_11_mapping_checker_exists": true,
+      "old_rank07_11_real_owner_execution_verified_this_turn": false,
+      "all_non_gold_dev_or_reserved_worlds_complete": false,
+      "status": "R04_GOLD108_DIFFERENCE_SCOPED_ONLY"
+    },
+    {
+      "id": "R52_R53_SEVEN_WORLD_REVIEW",
+      "evidence_tier": "OWNER_ACCEPTED_SCOPED_SEMANTIC_AND_SOURCE_BOUNDED_EVIDENCE",
+      "evidence": "docs/evidence/V03_R52_OWNER_ACCEPTED_BOUNDED_WORLD_POLICY_20261021.md",
+      "evidence_blob": "2284c5e5b93d2bfa43d0cfcffa9c450a4a553645",
+      "source_worlds": 7,
+      "provisional_staged_train": 31,
+      "provisional_staged_validation": 9,
+      "transfer_to_r58_authority": false,
+      "status": "HISTORICAL_SCOPED_CONTEXT_ONLY"
+    },
+    {
+      "id": "R56_GOLD_AND_WORLD11_NONFRESH_DEVELOPMENT",
+      "evidence_tier": "SCOPED_SOURCE_SAFE_REPORTS_AND_OWNER_DECLARATION",
+      "evidence": "docs/r56/R56_STAGE7_GOLD_ONLY_SCOPE_DIAGNOSIS_20261022.md",
+      "evidence_blob": "6f1c2a77d820005e2b87d14327ed9189001f6058",
+      "stage7_seen_originals": 5,
+      "stage7_gold_uuids_overlap": 5,
+      "stage7_new_uuids": 0,
+      "world11_historical_development_curation": true,
+      "all_historical_reserved_sources_complete": false,
+      "status": "LOCAL_NONFRESH_SCOPE_KNOWN__GLOBAL_UNIVERSE_NOT_PROVEN"
+    }
+  ],
+  "source_qualification_distinction": {
+    "prior_22_filename_candidates_automatically_qualified": 0,
+    "prior_29_scope_references_auto_approved": 0,
+    "existing_scoped_authoritative_or_schema_checked_source_chains_identified": 8,
+    "zero_filename_approvals_does_not_erase_existing_frozen_source_verifiers": true,
+    "original_private_input_bytes_independently_replayed_in_this_turn": false,
+    "report_only_roster_sha_or_filename_does_not_attest_historical_usage": true
+  },
+  "unresolved_authoritative_universes": [
+    {
+      "scope": "r55_r57_other_dev",
+      "needs": "EXHAUSTIVE_NON_LEGACY_DEV_AND_ARBITRATION_WORLD_UUID_ROSTER_WITH_USAGE_CUTOFF",
+      "proven_complete": false
+    },
+    {
+      "scope": "other_reserved_heldout",
+      "needs": "COMPLETE_EXPLICIT_PROTECTED_RESERVED_HOLDOUT_SOURCE_REGISTRY_WITH_R50_METADATA_ONLY_BOUNDARY",
+      "proven_complete": false
+    },
+    {
+      "scope": "other_historical_training",
+      "needs": "ALL_ACTUAL_HF_AND_OTHER_PLATFORMS_PARAMETER_UPDATE_JOBS_AND_CONSUMED_PRIMARY_INPUT_WORLD_REGISTRY",
+      "proven_complete": false
+    }
+  ],
+  "work_stopping_rule": {
+    "repeat_existing_github_sources": false,
+    "repeat_private_filename_discovery": false,
+    "auto_unseal_r50": false,
+    "scan_more_hf_job_paths_without_new_authoritative_link": false,
+    "use_existing_scoped_uuid_contract_after_authoritative_inputs_available": true,
+    "recommend_next_approval_scope": "OWNER_ONLY_EXISTING_METADATA_SOURCE_AUTHORITY_ATTESTATION; NO_RAW_STORY_OR_PROTECTED_TEST_CONTENT",
+    "full_independent_world_or_protected_universe_pass": false
+  },
+  "gates": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "original_fixed_worlds": 5,
+    "known_historical_sft_uuid_excluded": 1,
+    "other_worlds_pending": 4,
+    "unknown_hf_jobs_pending": 60,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "hf_job_started": false,
+    "private_story_or_protected_test_content_accessed": false,
+    "source_registry_complete": false
+  }
+}

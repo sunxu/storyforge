@@ -1,0 +1,42 @@
+{
+  "schema": "r58_owner_skill_v02_24_pass_ruff_zero_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NO_ASSISTANT_LOCAL_RERUN",
+  "source_receipt": "docs/evidence/R58_OWNER_SKILL_V02_24_PASS_POST_RUFF_FIX_SAFE_20261031.json",
+  "source_code_head": "1f77d3b5e10f5e445ac5efa6abf6d53c11f34f4e",
+  "results": {
+    "v02_unittest": {
+      "cases": 24,
+      "failures": 0,
+      "errors": 0,
+      "status": "PASS_OWNER_REPORTED",
+      "source": "previous_owner_test_output"
+    },
+    "v02_ruff": {
+      "command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics",
+      "owner_terminal_output": "All checks passed!",
+      "status": "PASS_OWNER_REPORTED",
+      "errors": 0,
+      "exact_ruff_version": "NOT_REPORTED",
+      "exit_status_independent": "NOT_VERIFIED"
+    },
+    "scope": "SKILL_V02_ONLY__NOT_FULL_REPO_LINT_OR_E2E"
+  },
+  "admission": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train": 0,
+    "validation": 0,
+    "teacher": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true,
+    "real_data_e2e_status": "NOT_ACCEPTED"
+  },
+  "other_checks": {
+    "github_actions_ci": "FAIL_LATEST_KNOWN",
+    "full_repo_ruff": "NOT_RETESTED",
+    "full_repo_pytest": "NOT_RETESTED"
+  },
+  "new_paid_hf_job_started": false,
+  "r50_protected_content_read": false
+}

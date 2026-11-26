@@ -1,0 +1,24 @@
+{
+  "schema": "r58_gold192_owner_private_scope_safe_v1",
+  "date": "2026-11-02",
+  "source": "owner_reported_mac_private_scope_writer",
+  "status": "GOLD192_PRIVATE_SCOPE_WRITTEN__QUALITY_HOLD",
+  "frozen_original_gold_count": 195,
+  "scoped_candidate_count": 192,
+  "excluded_world_identity_unresolved": 3,
+  "gold108_basic_evidence_bound": 105,
+  "gold87_evidence_pending": 87,
+  "private_candidate_scope_written": true,
+  "private_artifact_uploaded_to_github": false,
+  "source_frozen_gold_modified": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "gpu_started": false,
+  "private_values_emitted": false,
+  "receipt_note": "The original writer reported private_candidate_artifact_written=false and scope_receipt_only=true inherited from validation; the status/private_candidate_scope_written=true indicate write success. A follow-up commit corrects future receipts; the historical owner output is not silently rewritten.",
+  "next_steps": [
+    "Gold87 original A/B evidence binding",
+    "Gold192 world-card and context incremental review",
+    "world-level Train/Validation split and historical exposure exclusion for evaluation"
+  ]
+}

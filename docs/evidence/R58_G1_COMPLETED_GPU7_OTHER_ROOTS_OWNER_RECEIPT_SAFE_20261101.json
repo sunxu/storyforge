@@ -1,0 +1,73 @@
+{
+  "all_historical_job_roots_exhausted": false,
+  "all_original_gpu18_remain_pending": true,
+  "completed_gpu7_with_any_additional_path_name_reference": 4,
+  "completed_gpu7_without_name_reference_in_five_roots": 3,
+  "expansion_allowed": false,
+  "frozen_completed_gpu_without_prior_root_directory": 7,
+  "frozen_original_unknown_gpu": 18,
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "hf_job_started": false,
+  "historical_input_consumption_proven": false,
+  "job_commands_logs_environment_or_dataset_bytes_read": false,
+  "job_ids_or_paths_exported": false,
+  "namespace": "adradar",
+  "optimizer_update_independently_proven": false,
+  "other_roots_scanned": [
+    "experiments",
+    "baseline-runs/baseline",
+    "evaluation",
+    "evaluation-runs",
+    "preflight"
+  ],
+  "path_reference_proves_training": false,
+  "per_root_metadata_counts": {
+    "baseline-runs/baseline": {
+      "completed_gpu7_path_ref_matches": 0,
+      "metadata_entries": 65,
+      "metadata_list_calls": 8
+    },
+    "evaluation": {
+      "completed_gpu7_path_ref_matches": 0,
+      "metadata_entries": 5,
+      "metadata_list_calls": 2
+    },
+    "evaluation-runs": {
+      "completed_gpu7_path_ref_matches": 4,
+      "metadata_entries": 99,
+      "metadata_list_calls": 20
+    },
+    "experiments": {
+      "completed_gpu7_path_ref_matches": 0,
+      "metadata_entries": 112,
+      "metadata_list_calls": 18
+    },
+    "preflight": {
+      "completed_gpu7_path_ref_matches": 0,
+      "metadata_entries": 256,
+      "metadata_list_calls": 104
+    }
+  },
+  "private_receipt_written_exclusive_0600": true,
+  "schema": "r58_g1_gpu7_completed_other_bucket_roots_metadata_safe_v1",
+  "source_registry_complete": false,
+  "status": "GPU7_COMPLETED_OTHER_BUCKET_ROOT_METADATA_NAMES_CHECKED__ALL_PENDING",
+  "teacher_admitted": 0,
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "zero_path_references_proves_nontraining": false,
+  "receipt_provenance_SAFE": "OWNER_MAC_USER_SUPPLIED_SAFE_JSON__NOT_AGENT_REEXECUTED_PRIVATE_LEDGER",
+  "ledger_and_script_provenance_SAFE": {
+    "script": "experiments/r58_round1/r58_g1_gpu7_completed_other_bucket_roots_metadata_safe_20261101.py",
+    "prior_owner_receipt": "docs/evidence/R58_G1_GPU18_BUCKET_PREFIX_COVERAGE_OWNER_RECEIPT_SAFE_20261101.json"
+  },
+  "aggregate_metadata_list_calls_SAFE": 152,
+  "aggregate_metadata_entries_SAFE": 537,
+  "source_semantics_SAFE": {
+    "evaluation_runstored_path_names_prove_only_name_reference": true,
+    "other_roots_or_historical_deleted_job_excluded": false,
+    "remaining_unclassified_60_reduced": false,
+    "g3_status": "NOT_STARTED"
+  }
+}

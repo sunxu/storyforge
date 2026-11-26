@@ -1,0 +1,87 @@
+{
+  "schema": "r58_g1_canceled_gpu_owner_current_input_sha256_match_safe_v1",
+  "date": "2026-11-01",
+  "status": "OWNER_MAC_CURRENT_TARGET_INPUT_SHA256_MATCH_V01_DERIVED_COMPILED__HISTORICAL_CONSUMPTION_AND_UPDATE_HOLD",
+  "source_kind": "OWNER_SUPPLIED_SAFE_JSON_RESULT_FROM_LOCAL_BYTE_STREAM_SHA256_RECHECK",
+  "evidence_level": "OWNER_MAC_REPORTED_CRYPTOGRAPHIC_HASH_MATCH__NOT_INDEPENDENT_AGENT_REHASH",
+  "source_prior_git_evidence": {
+    "current_bucket_metadata": "docs/evidence/R58_G1_TARGET_CANCELED_GPU_HF_BUCKET_DIRECT_METADATA_SAFE_20261101.json",
+    "known_v01_compiled_hash_pins": "docs/evidence/R58_G1_KNOWN_FIVE_JOB_CURRENT_PRIMARY_INPUTS_CROSSCHECK_SAFE_20261031.json",
+    "git_frozen_historical_training_source_index": "docs/evidence/R58_G1_GITHUB_HISTORICAL_TRAINING_SOURCES_SAFE_20261031.json",
+    "owner_mac_script": "r58_g1_priority_bucket_input_sha256_readonly.py (conversation attachment; not repository-pinned code)"
+  },
+  "target_identity": {
+    "single_job_count": 1,
+    "provider_namespace": "adradar",
+    "source_private_priority_ledger_identity_checked": true,
+    "provider_stage": "CANCELED",
+    "raw_job_id_exported": false,
+    "job_is_among_known_five_parameter_update_jobs": false,
+    "actual_update_status": "NOT_VERIFIED"
+  },
+  "input_byte_fingerprints": {
+    "observed_on": "CURRENT_HF_BUCKET_OBJECTS",
+    "train": {
+      "file_size_bytes": 2013373,
+      "sha256_computed_in_owner_mac_receipt": true,
+      "matches_public_frozen_hash_labels": [
+        "V01_DERIVED_COMPILED"
+      ]
+    },
+    "validation": {
+      "file_size_bytes": 381363,
+      "sha256_computed_in_owner_mac_receipt": true,
+      "matches_public_frozen_hash_labels": [
+        "V01_DERIVED_COMPILED"
+      ]
+    },
+    "raw_sha256_digests_exported": false,
+    "original_jsonl_rows_decoded_or_parsed": false,
+    "current_remote_bytes_match_known_v01_derived_compiled_pins": true,
+    "historical_job_consumed_bytes_equal_current_objects_proven": false,
+    "train_used_for_gradient_updates_proven": false,
+    "validation_used_for_evaluation_proven": false,
+    "historical_object_immutability_proven": false,
+    "complete_training_exposure_source_registry_proven": false
+  },
+  "trainer_evidence": {
+    "trainer_state_json_present_in_exact_target_bucket_scope": false,
+    "optimizer_pt_present_in_exact_target_bucket_scope": false,
+    "checkpoint_named_artifact_present_in_exact_target_bucket_scope": false,
+    "named_artifacts_checked_via_prior_hf_fs_metadata_only": true,
+    "other_historical_artifact_locations_exhaustively_checked": false,
+    "original_logging_jsonl_read": false,
+    "tensorboard_events_read": false,
+    "actual_optimizer_update_proven": false,
+    "confirmed_no_optimizer_update": false,
+    "training_command_inspected": false
+  },
+  "safety": {
+    "only_one_pinned_job_in_scope": true,
+    "user_provided_safe_result_only": true,
+    "original_train_or_validation_body_read_by_assistant": false,
+    "raw_job_command_logs_environment_secrets_read": false,
+    "protected_test_content_read": false,
+    "hf_job_started": false,
+    "skill_code_changed": false,
+    "candidate_selection_changed": false,
+    "source_hashes_or_private_job_ids_exported": false
+  },
+  "limitations": [
+    "Exact current Bucket byte identity to known v0.1 derived compiled inputs is evidence of current file provenance, not a historical Runner read receipt.",
+    "A canceled job with training telemetry may or may not have executed optimizer steps; neither positive nor negative is proven.",
+    "No trainer_state.json, optimizer.pt or checkpoint named artifacts in currently enumerated target prefix; absence does not exclude transient, deleted or external artifacts.",
+    "Historical HF Job/platform universe and Protected/DEV/heldout UUID-only source coverage remain incomplete.",
+    "Any reading of logging.jsonl, TensorBoard scalar records or command text requires separate scoped approval."
+  ],
+  "next_step": "SEEK_AUTHENTICATED_PREEXISTING_JOB_TRAINER_STEP_OR_SCALAR_EVENT_PROOF_WITH_SEPARATE_SCOPED_OWNER_OPT_IN__NO_UNAUTHORIZED_LOG_ACCESS",
+  "gates": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "schema": "r58_owner_mac_skill_ruff_20261031_pass_and_round1_mode_fix_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_PASTED_IN_CHAT__NOT_INDEPENDENT_CI",
+  "skill_directory_ruff": {
+    "status": "PASS",
+    "message": "All checks passed!"
+  },
+  "skill_v01_unittest": {
+    "tests_run": 10,
+    "result": "OK"
+  },
+  "skill_v02_unittest": {
+    "tests_run": 12,
+    "result": "OK"
+  },
+  "repo_ruff": {
+    "status": "FAIL",
+    "remaining_errors_reported": 403,
+    "fixable_with_safe_fix": 206,
+    "additional_unsafe_fixable": 57,
+    "unsorted_imports": 122,
+    "shebang_not_executable": 75,
+    "unused_imports": 55
+  },
+  "action": {
+    "scope": "experiments/r58_round1",
+    "changed_file_modes_only": true,
+    "source_bytes_modified": false,
+    "source_python_tests_rerun_here": false,
+    "ruff_EXE001_reported_paths_mode_changed": 27,
+    "from_mode": "100644",
+    "to_mode": "100755",
+    "file_paths": [
+      "experiments/r58_round1/audit_g1_index_readiness.py",
+      "experiments/r58_round1/audit_g1_structural_overlap.py",
+      "experiments/r58_round1/autodiscover_g1_index_candidates.py",
+      "experiments/r58_round1/check_hf_job_documentation_coverage.py",
+      "experiments/r58_round1/check_hf_primary_input_bytes.py",
+      "experiments/r58_round1/check_hf_training_job_inventory.py",
+      "experiments/r58_round1/check_legacy_dev20_uuid.py",
+      "experiments/r58_round1/check_prior_sft_exact_world_ids.py",
+      "experiments/r58_round1/check_r04_non_gold_rank_provenance.py",
+      "experiments/r58_round1/check_r04_non_gold_uuid.py",
+      "experiments/r58_round1/check_r50_protected_uuid.py",
+      "experiments/r58_round1/check_r57_gold195_uuid.py",
+      "experiments/r58_round1/check_sft_six_source_coverage.py",
+      "experiments/r58_round1/check_v01_hf_primary_inputs.py",
+      "experiments/r58_round1/inspect_hf_priority_job_metadata.py",
+      "experiments/r58_round1/pilot_round1_shortlist.py",
+      "experiments/r58_round1/prepare_round1_g1_review_queue.py",
+      "experiments/r58_round1/probe_hf_gpu_job_logs.py",
+      "experiments/r58_round1/review_hf_gpu_signal_receipt.py",
+      "experiments/r58_round1/test_check_hf_job_documentation_coverage.py",
+      "experiments/r58_round1/test_check_hf_training_job_inventory.py",
+      "experiments/r58_round1/test_check_legacy_dev20_uuid.py",
+      "experiments/r58_round1/test_check_r04_non_gold_rank_provenance.py",
+      "experiments/r58_round1/test_check_r04_non_gold_uuid.py",
+      "experiments/r58_round1/test_check_sft_six_source_coverage.py",
+      "experiments/r58_round1/triage_hf_job_exposure.py",
+      "experiments/r58_round1/verify_github_historical_training_sources.py"
+    ]
+  },
+  "post_commit_remaining_errors_expected_if_no_other_changes": 376,
+  "post_commit_remaining_errors_verified": false,
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "teacher_admitted": 0,
+  "expansion_allowed": false,
+  "no_paid_hf_job_started": true,
+  "no_private_content_exported": true
+}

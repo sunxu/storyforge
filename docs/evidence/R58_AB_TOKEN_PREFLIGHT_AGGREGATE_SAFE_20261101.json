@@ -1,0 +1,160 @@
+{
+  "schema": "r58_ab_token_preflight_aggregate_safe_v1",
+  "date": "2026-11-01",
+  "status": "R58_AB_HF_CPU_TOKEN_PREFLIGHT_13_EACH_PASS__NO_GPU",
+  "runtime": {
+    "python": "3.12",
+    "transformers": "4.57.1",
+    "sentencepiece": "0.2.1",
+    "jinja2": "3.1.6",
+    "max_model_len": 32768,
+    "reserved_output_tokens": 2400
+  },
+  "slots": {
+    "A": {
+      "model": "Qwen/Qwen3-32B",
+      "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+      "revision_source": "Previously recorded immutable pin; used unchanged",
+      "tokenizer_class": "Qwen2TokenizerFast",
+      "cases_checked": 13,
+      "pilot_cases_checked": 2,
+      "remaining_cases_checked": 11,
+      "prompt_tokens_min": 5732,
+      "prompt_tokens_median": 11883,
+      "prompt_tokens_p95": 27615,
+      "prompt_tokens_max": 27615,
+      "max_total_tokens_including_output_reserve": 30015,
+      "over_budget_count": 0,
+      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU",
+      "hf_sandbox_job_id": "6ae7522b0e0338d1bb7d7e8e",
+      "hf_sandbox_job_url": "https://huggingface.co/jobs/adradar/6ae7522b0e0338d1bb7d7e8e"
+    },
+    "B": {
+      "model": "zai-org/GLM-4-32B-0414",
+      "revision": "077b5c2f5c43bd3239fd605a0600229e8facbd4a",
+      "revision_source": "HF Hub model_info SHA; matches previously recorded abbreviated pin 077b5c2f...cbd4a",
+      "tokenizer_class": "PreTrainedTokenizerFast",
+      "cases_checked": 13,
+      "pilot_cases_checked": 2,
+      "remaining_cases_checked": 11,
+      "prompt_tokens_min": 5479,
+      "prompt_tokens_median": 11496,
+      "prompt_tokens_p95": 26677,
+      "prompt_tokens_max": 26677,
+      "max_total_tokens_including_output_reserve": 29077,
+      "over_budget_count": 0,
+      "status": "R58_HF_CPU_GOLD195_TOKEN_PREFLIGHT_ALL13_PASS__NO_GPU",
+      "hf_sandbox_job_id": "6ae7578b0e0338d1bb7d7fd8",
+      "hf_sandbox_job_url": "https://huggingface.co/jobs/adradar/6ae7578b0e0338d1bb7d7fd8"
+    }
+  },
+  "execution_boundary": {
+    "tokenizer_loaded": true,
+    "model_weights_loaded": false,
+    "inference_performed": false,
+    "paid_gpu_submitted": false,
+    "training_authorized": false,
+    "quality_v1_admitted": 0,
+    "private_text_emitted": false,
+    "private_receipt_hashes_committed": false
+  },
+  "receipt_persistence": {
+    "safe_private_receipts_generated": true,
+    "original_hf_bucket_sync": "PENDING_OWNER_MAC_SYNC",
+    "reason": "ChatGPT HF sandbox RW bucket mount returned HTTP 403; read-only input mount and CPU execution succeeded"
+  },
+  "notes": [
+    "Both slots were encoded using their actual model tokenizers and reviewer prompt serializer.",
+    "Jinja2 3.1.6 was explicitly installed; without it, apply_chat_template failed with ImportError.",
+    "Token budget PASS is not literary quality approval, data admission, inference validation, or training authorization."
+  ],
+  "execution_environment": "Hugging Face CPU Sandbox; both sandboxes terminated after receipt extraction",
+  "receipt_sync_verification": {
+    "status": "R58_AB_SAFE_RECEIPTS_SYNCED_AND_REMOTE_VERIFIED",
+    "remote_bucket_paths": {
+      "A": "hf://buckets/adradar/jobs-artifacts/output_A-6c62913b",
+      "B": "hf://buckets/adradar/jobs-artifacts/output_B-4abd76e2"
+    },
+    "remote_receipts_present": true,
+    "remote_receipt_byte_sizes_match_local": true,
+    "remote_receipt_exact_byte_match_local": true,
+    "private_input_sha256_matches_each_slot_source_file": true,
+    "private_input_hashes_committed": false,
+    "remote_output_directory_inventory": {
+      "A": [
+        ".keep",
+        "r58_cpu_preflight_all13_safe.json",
+        "r58_rw_probe.txt"
+      ],
+      "B": [
+        ".keep",
+        "r58_cpu_preflight_all13_safe.json",
+        "r58_rw_probe.txt"
+      ]
+    },
+    "B_sync_uploaded_extra_safe_artifacts": {
+      ".keep": "0 bytes",
+      "r58_rw_probe.txt": "24 bytes; content is HF PRIVATE RW SMOKE PASS"
+    },
+    "no_private_source_or_model_output_uploaded_to_output_directories": true
+  },
+  "staged_runner_tokenization_equivalence": {
+    "status": "R58_AB_STAGED_RUNNER_TOKENIZATION_EQUIVALENCE_PASS",
+    "prompt_template_sha256_equal_to_preflight_receipts": true,
+    "A": {
+      "staged_runner_sha256": "0bf2a67482e361162e598cce1c154393057c5cf6547fb8baaa6248e12e9b9095",
+      "matches_preflight_reviewer_code": true,
+      "staged_legacy_token_core_differs_from_current_shared_core": true,
+      "exact_token_id_sequences_equal_across_all_13_cases": true,
+      "tokenizer_class": "Qwen2TokenizerFast",
+      "trust_remote_code": false
+    },
+    "B": {
+      "staged_runner_sha256": "2da26de21ea0365000c2dec60b7558f2d2f9b7a84fcced2ef67b2391b7aed073",
+      "matches_preflight_reviewer_code": false,
+      "prompt_constants_and_review_functions_match_except_tokenization_helpers": true,
+      "tokenization_helpers": "flatten_token_ids and encode_one differ from current shared-core implementation",
+      "exact_token_id_sequences_equal_across_all_13_cases": true,
+      "tokenizer_class": "PreTrainedTokenizerFast",
+      "trust_remote_code": false
+    },
+    "tokenizer_weights_loaded": false,
+    "model_weights_loaded": false,
+    "inference_performed": false,
+    "interpretation": "Both actual staged runner/token-core paths reproduce the exact 13 token-ID sequences used for the recorded budgets. This verifies tokenization equivalence only; it is not GPU runtime equivalence or quality approval.",
+    "trust_remote_code": false
+  },
+  "vllm_image_api_cpu_check": {
+    "status": "R58_VLLM_IMAGE_API_IMPORT_PASS__CPU_ONLY",
+    "image": "vllm/vllm-openai@sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+    "tag": "v0.32.0",
+    "vllm_version": "0.32.0",
+    "LLM_import": true,
+    "SamplingParams_import": true,
+    "StructuredOutputsParams_import": true,
+    "TokensPrompt_import": true,
+    "cuda_available": false,
+    "model_weights_loaded": false,
+    "inference_performed": false,
+    "sandbox_terminated_after_check": true
+  },
+  "gpu_pilot_plan": {
+    "status": "PREPARED_NOT_SUBMITTED__GPU_APPROVAL_REQUIRED",
+    "hardware_flavor": "h200",
+    "gpu_memory_gb": 141,
+    "hourly_price_usd": 5,
+    "jobs_in_pilot": 2,
+    "timeout_each_hours": 2,
+    "pilot_max_usd": 20,
+    "usd_cny_reference_rate": 6.6568,
+    "pilot_max_cny": 133.14,
+    "remaining_11_cases_require_separate_approval": true,
+    "full_13_case_ab_max_usd": 40,
+    "full_13_case_ab_max_cny": 266.27,
+    "image_digest": "sha256:6ee133356d49ed24cee03dd0cda3d3980279a11c107ce3e752c89e76540f41c9",
+    "platform_timeout": "2h",
+    "container_process_timeout_seconds": 6600,
+    "paid_gpu_submitted": false,
+    "training_authorized": false
+  }
+}

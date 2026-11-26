@@ -1,0 +1,59 @@
+{
+  "schema": "r58_g2_offline_deployment_interval_implementation_safe_v1",
+  "date": "2026-10-31",
+  "status": "OFFLINE_STRUCTURAL_CONTRACT_IMPLEMENTED__SYNTHETIC_PASS__HISTORICAL_DEPLOYMENT_PROOF_HOLD",
+  "branch": "r58/roleplay-sft-skill-v01",
+  "pr_number": 7,
+  "new_files": {
+    "script": "skills/storyforge-roleplay-sft/v02/r58_deployment_interval_audit.py",
+    "script_git_blob": "c5b30632fce9c9131f06d1f8df1ccef6c57e7a9f",
+    "tests": "skills/storyforge-roleplay-sft/v02/test_r58_deployment_interval_audit.py",
+    "tests_git_blob": "5bd9454bf5bedb3cdb3143070547c0c8e6531fd0",
+    "runbook": "docs/evidence/R58_G2_EXISTING_DEPLOY_INTERVAL_OFFLINE_AUDIT_RUNBOOK_SAFE_20261031.md",
+    "readme": "skills/storyforge-roleplay-sft/v02/README.md"
+  },
+  "local_isolated_synthetic": {
+    "new_cases": 19,
+    "passed": 19,
+    "real_private_fixtures_used": false,
+    "github_git_blob_exact_match": true,
+    "owner_latest_full_v02_suite": "NOT_REPORTED",
+    "owner_latest_v02_ruff": "NOT_REPORTED",
+    "expected_full_v02_cases": 80
+  },
+  "prior_owner_baseline": {
+    "tests": 61,
+    "tests_status": "PASS_OWNER_REPORTED",
+    "ruff_status": "PASS_OWNER_REPORTED",
+    "receipt": "docs/evidence/R58_OWNER_V02_61_PASS_EXISTING_PRIORITY_CROSSLINK_SAFE_20261031.json"
+  },
+  "contract": {
+    "input": "Owner existing private metadata only; three frozen target times, claimed serving backends and bounded intervals",
+    "privacy": "root ~/.storyforge-r58-private, 0600 file, 0700 directories, no stdout timestamps/SHA/path/private IDs",
+    "classifiers": "Source metadata is Owner-reported; none of its proofs are independently verified in this script",
+    "no_source_intervals_may_be_fabricated": true,
+    "no_target_query_performed": true,
+    "historical_deployment_proven": false,
+    "request_link_proven": false,
+    "provider_exact_bytes_proven": false,
+    "offline_exit_zero_means_source_authenticated": false
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true,
+    "g2_byte_exact_blockers_last_frozen": 17
+  },
+  "safety": {
+    "production_server_accessed": false,
+    "HF_job_started": false,
+    "R50_content_read": false,
+    "existing_private_artifacts_read": false,
+    "training_data_modified": false,
+    "Skill_v01_modified": false
+  }
+}

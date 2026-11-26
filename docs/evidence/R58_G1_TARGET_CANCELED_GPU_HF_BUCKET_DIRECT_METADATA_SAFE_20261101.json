@@ -1,0 +1,69 @@
+{
+  "schema": "r58_g1_target_canceled_gpu_bucket_direct_metadata_safe_v1",
+  "date": "2026-11-01",
+  "provenance": "DIRECT_READ_ONLY_HF_JOBS_INSPECT_AND_HF_BUCKET_LS_FIND_STAT_NOT_HISTORICAL_TRAINER_ATTESTATION",
+  "status": "ONE_PRIVATE_PINNED_CANCELED_GPU_JOB_BUCKET_INPUTS_PRESENT__TRAINER_AND_HISTORICAL_EXPOSURE_HOLD",
+  "target_identity": {
+    "owner_supplied_private_priority_ledger_used": true,
+    "job_count": 1,
+    "hf_provider_private_job_id_exact_match": true,
+    "owner_namespace_match": true,
+    "provider_stage": "CANCELED",
+    "gpu_class_confirmed": true,
+    "raw_job_id_exported": false
+  },
+  "checked_bucket_scope": {
+    "bucket": "hf://buckets/adradar/storyforge-training",
+    "target_job_specific_directory_present": true,
+    "train_file_present": true,
+    "train_file_size_bytes": 2013373,
+    "validation_file_present": true,
+    "validation_file_size_bytes": 381363,
+    "output_directory_present": true,
+    "trainer_state_json_found_within_exact_job_scope": false,
+    "optimizer_pt_found_within_exact_job_scope": false,
+    "checkpoint_named_artifacts_found_within_exact_job_scope": false,
+    "sha256_or_manifest_named_artifacts_found_within_exact_job_scope": false,
+    "tensorboard_event_present": true,
+    "tensorboard_event_read": false,
+    "original_logging_jsonl_read": false
+  },
+  "current_remote_input_fingerprint": {
+    "hf_fs_stat_returned_size": true,
+    "hf_fs_stat_returned_sha256": false,
+    "input_file_bytes_hashed_by_agent": false,
+    "historical_job_input_sha256_verified": false,
+    "owner_mac_read_only_sha256_probe_prepared": true,
+    "owner_mac_sha256_probe_executed_on_real_bucket": false
+  },
+  "interpretation": {
+    "identity_exact_match_proves_historical_gpu_training": false,
+    "bucket_input_presence_proves_consumption": false,
+    "missing_bucket_checkpoints_proves_no_optimization": false,
+    "source_bucket_mutability_excluded": false,
+    "deleted_or_other_artifact_locations_excluded": false,
+    "actual_optimizer_updates_proven": false,
+    "confirmed_no_optimizer_updates": false,
+    "historical_train_validation_consumed_bytes_verified": false,
+    "complete_historical_training_sources_proven": false
+  },
+  "safety": {
+    "raw_logs_commands_arguments_environment_secrets_read": false,
+    "train_validation_jsonl_contents_read": false,
+    "private_digests_or_job_id_exported": false,
+    "hf_job_started": false,
+    "gpu_cpu_inference_or_training_started": false,
+    "protected_test_content_read": false,
+    "source_code_modified": false
+  },
+  "gates": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  },
+  "evidence_follow_up": "OWNER_MAC_SHA256_CURRENT_BUCKET_BYTES_THEN_REQUIRE_PRIMARY_HISTORICAL_RUNTIME_INPUT_BINDING_AND_TRAINER_UPDATE_EVIDENCE"
+}

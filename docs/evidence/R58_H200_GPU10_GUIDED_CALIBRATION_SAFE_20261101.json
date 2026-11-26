@@ -1,0 +1,51 @@
+{
+  "schema": "r58_gpu10_calibration_safe_v1",
+  "date": "2026-11-01",
+  "status": "R58_GPU10_H200_ENGINEERING_LOAD_PASS__SEMANTIC_RESULT_1_OF_10__NOT_ADMITTED",
+  "source_run_key": "r58-hfcpu132-20261101T082542Z-579309",
+  "model": "Qwen/Qwen3-32B",
+  "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+  "hf_gpu_sandbox_job_id": "6ae6fe2d0e0338d1bb7d6514",
+  "gpu_flavor": "h200",
+  "gpu_memory_total_mib_observed": 143771,
+  "gpu_memory_used_mib_observed_eager": 116157,
+  "max_model_len": 34816,
+  "max_output_tokens": 1200,
+  "source_rows_verified": 132,
+  "calibration_scope_first_n": 10,
+  "input_sha256_manifest_verified": true,
+  "private_bucket_read_only": true,
+  "weight_dtype": "bfloat16",
+  "calibration_rounds": [
+    {
+      "name": "unconstrained_json_initial",
+      "valid": 0,
+      "hold": 10,
+      "token_hold": 0
+    },
+    {
+      "name": "structured_json_guided",
+      "valid": 1,
+      "hold": 9,
+      "token_hold": 0,
+      "valid_json_outputs": 8,
+      "invalid_or_truncated_json_outputs": 2,
+      "finish_reasons": {
+        "stop": 8,
+        "length": 2
+      }
+    }
+  ],
+  "diagnosis": "Model output protocol and exact-source-quote validation remain major blockers. Fenced JSON, unexpected translated judgement keys and string instead of quote arrays observed before guided JSON. Guided JSON fixed one sample and increased parseable JSON count; strict quote validation still fails many samples.",
+  "conclusions": {
+    "h200_load_34816_bf16_pass": true,
+    "review10_semantic_gate_pass": false,
+    "full132_allowed": false,
+    "training_authorized": false,
+    "quality_v1_admitted": 0,
+    "history_truncation_approved": false,
+    "r50_accessed": false,
+    "private_text_emitted": false
+  },
+  "next": "Prioritize correctness of evidence extraction / conservative preservation and output budget; do not launch full GPU132."
+}

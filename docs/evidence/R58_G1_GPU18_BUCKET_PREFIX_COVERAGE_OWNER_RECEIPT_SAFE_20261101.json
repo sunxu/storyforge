@@ -1,0 +1,57 @@
+{
+  "schema": "r58_g1_gpu18_bucket_directory_coverage_safe_v1",
+  "status": "FROZEN_UNKNOWN_GPU18_BUCKET_PREFIX_METADATA_RECONCILED__ALL_PENDING",
+  "namespace": "adradar",
+  "original_unknown_job_count": 60,
+  "original_unknown_gpu": 18,
+  "original_unknown_cpu_unscanned": 42,
+  "bucket_root_scopes": [
+    "runs",
+    "baseline-runs/capacity"
+  ],
+  "bucket_job_directories_per_root": {
+    "runs": 4,
+    "baseline-runs/capacity": 2
+  },
+  "distinct_bucket_job_id_directories_seen": 6,
+  "gpu18_with_job_id_directory_in_scanned_roots": 4,
+  "gpu18_without_job_id_directory_in_scanned_roots": 14,
+  "with_directory_stage_counts": {
+    "CANCELED": 2,
+    "ERROR": 2
+  },
+  "without_directory_stage_counts": {
+    "COMPLETED": 7,
+    "ERROR": 7
+  },
+  "priority_canceled_gpu_job_present_in_scanned_roots": true,
+  "gpu18_jobs_removed_from_pending": 0,
+  "no_directory_means_nontraining": false,
+  "directory_presence_proves_optimizer_step": false,
+  "directory_presence_proves_train_input_consumption": false,
+  "historical_bucket_objects_immutable_proven": false,
+  "all_historical_job_roots_exhausted": false,
+  "other_namespaces_or_platforms_audited": false,
+  "hf_job_started": false,
+  "job_commands_logs_environment_training_bytes_read": false,
+  "raw_job_ids_or_private_hashes_exported": false,
+  "source_registry_complete": false,
+  "g1_clearance": "HOLD",
+  "g2_clearance": "HOLD",
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "teacher_admitted": 0,
+  "expansion_allowed": false,
+  "private_receipt_written_exclusive_0600": true,
+  "evidence_provenance_SAFE": "OWNER_MAC_REPORTED_SAFE_JSON_ONLY__NOT_AGENT_INDEPENDENT_PRIVATE_LEDGER_READ",
+  "script_repo_path_SAFE": "experiments/r58_round1/r58_g1_gpu18_bucket_metadata_coverage_readonly_20261101.py",
+  "interpretation_SAFE": {
+    "seven_completed_gpu_without_directories_in_two_scanned_roots_are_next_metadata_priority": true,
+    "seven_completed_gpu_proven_trained": false,
+    "seven_completed_gpu_proven_not_trained": false,
+    "four_directory_matches_reduce_pending_count": false,
+    "all_source_roots_and_historical_jobs_complete": false
+  },
+  "g3_status_SAFE": "NOT_STARTED",
+  "teacher_admitted_SAFE": 0
+}

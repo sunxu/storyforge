@@ -1,0 +1,75 @@
+{
+  "schema": "r58_skill_ruff_owner_mac_baseline_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_RUFF_CHECK_DOT_UPLOADED_TEXT__AGGREGATE_ONLY",
+  "owner_reported_ruff_baseline": {
+    "errors": 413,
+    "affected_files": 128,
+    "ruff_suggested_fixable": 212,
+    "ruff_hidden_unsafe_fixes": 58,
+    "rule_counts": {
+      "I001": 126,
+      "EXE001": 77,
+      "F401": 57,
+      "RUF059": 40,
+      "FURB167": 22,
+      "SIM117": 21,
+      "BLE001": 19,
+      "PLW1510": 10,
+      "F841": 9,
+      "B017": 7,
+      "C401": 5,
+      "TRY004": 4,
+      "UP017": 3,
+      "SIM102": 2,
+      "PLC0206": 2,
+      "PERF102": 2,
+      "RUF007": 1,
+      "FURB162": 1,
+      "TRY203": 1,
+      "PIE810": 1,
+      "C413": 1,
+      "C405": 1,
+      "C410": 1
+    },
+    "groups": {
+      "r58_round1_errors": 171,
+      "r58_replay_errors": 30,
+      "storyforge_skill_errors": 10,
+      "other_errors": 202
+    }
+  },
+  "targeted_commit": "a5d0d2bd5af8ca15c02d3dbd32dd0306c161ccdd",
+  "targeted_skill_edits": {
+    "files": 4,
+    "source_error_occurrences_targeted": 10,
+    "original_error_occurrences_by_file": {
+      "skills/storyforge-roleplay-sft/scripts/r58_intake.py": 3,
+      "skills/storyforge-roleplay-sft/tests/test_r58_intake.py": 2,
+      "skills/storyforge-roleplay-sft/v02/r58_evidence_preflight.py": 2,
+      "skills/storyforge-roleplay-sft/v02/test_r58_evidence_preflight.py": 3
+    },
+    "changes": "sorted_imports_remove_two_unused_imports_add_explicit_check_false_change_one_set_comprehension_set_git_exec_mode_on_two_shebang_scripts",
+    "changes_are_style_and_test_only": true,
+    "original_g1_g2_holds_unchanged": true,
+    "after_commit_local_ruff_rerun_received": false,
+    "expected_residual_error_count_if_no_other_changes": 403,
+    "expected_residual_is_not_a_verified_count": true
+  },
+  "full_repo_ci": "FAILURE_AT_BASELINE_WITH_UNREADABLE_JOB_LOGS",
+  "full_repo_ruff_pass": false,
+  "mitigation": "DO_NOT_RUN_BLIND_REPOSITORY_WIDE_RUFF_FIX; do staged isolated commits plus tests",
+  "privacy": {
+    "raw_log_uploaded_to_github": false,
+    "private_world_ids_uploaded": false,
+    "protected_r50_content_read": false
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "expansion_allowed": false,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0
+  }
+}

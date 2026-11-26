@@ -1,0 +1,44 @@
+{
+  "schema": "r58_owner_skill_v02_post_ruff_patch_24_pass_safe_v1",
+  "date": "2026-10-31",
+  "evidence_origin": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_ASSISTANT_LOCAL_RERUN",
+  "branch": "r58/roleplay-sft-skill-v01",
+  "tested_git_head": "1f77d3b5e10f5e445ac5efa6abf6d53c11f34f4e",
+  "git_fast_forward": "6d46d57_TO_1f77d3b",
+  "skill_v02_unittest": {
+    "command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q",
+    "tests_run": 24,
+    "result": "PASS_OWNER_REPORTED",
+    "seconds_reported": 0.003,
+    "failures": 0,
+    "errors": 0
+  },
+  "ruff_v02": {
+    "last_reported_errors_before_patch": 3,
+    "post_patch_result": "NOT_REPORTED",
+    "zero_errors_claimed": false
+  },
+  "full_round1_and_v01_tests_post_patch": "NOT_REPORTED",
+  "github_actions": {
+    "scoped_run_id": 41203330747,
+    "conclusion": "failure",
+    "failure_cause": "UNKNOWN",
+    "test_execution_proven": false
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "paid_hf_job_started": false,
+    "private_story_text_accessed": false,
+    "r50_protected_test_content_accessed": false,
+    "training_authorized": false
+  },
+  "notes": "24 synthetic tests PASS does not verify whole repository, post-fix Ruff, source-universe completeness, exact historical Provider request replay, or Dataset v0.4 admission."
+}

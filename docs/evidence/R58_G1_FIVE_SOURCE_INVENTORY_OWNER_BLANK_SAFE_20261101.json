@@ -1,0 +1,104 @@
+{
+  "schema": "r58_round1_g1_index_readiness_safe_v1",
+  "status": "R58_G1_SOURCE_EXISTENCE_PREFLIGHT_ONLY__WORLD_AND_PROTECTION_HOLD",
+  "evidence_origin_SAFE": "OWNER_MAC_USER_SUPPLIED_SAFE_JSON__NOT_DIRECT_PRIVATE_INVENTORY_READ",
+  "preflight_result": {
+    "scope_count": 5,
+    "source_files_present_unopened": 0,
+    "owner_coverage_claims_present": 0,
+    "independently_verified_complete_scopes": 0,
+    "scope_readiness": {
+      "semantic_world_graph": {
+        "status": "MISSING_SOURCE_REFERENCE",
+        "source_file_exists_unopened": false,
+        "revision_recorded": false,
+        "world_namespace_recorded": false,
+        "owner_coverage_attestation_present": false,
+        "independent_review_claim_in_inventory": false,
+        "independent_review_proven_by_this_tool": false,
+        "actual_index_coverage_verified": false,
+        "world_isolation_pass": false
+      },
+      "r50_protected_worlds": {
+        "status": "MISSING_SOURCE_REFERENCE",
+        "source_file_exists_unopened": false,
+        "revision_recorded": false,
+        "world_namespace_recorded": false,
+        "owner_coverage_attestation_present": false,
+        "independent_review_claim_in_inventory": false,
+        "independent_review_proven_by_this_tool": false,
+        "actual_index_coverage_verified": false,
+        "world_isolation_pass": false
+      },
+      "prior_sft_exposure": {
+        "status": "MISSING_SOURCE_REFERENCE",
+        "source_file_exists_unopened": false,
+        "revision_recorded": false,
+        "world_namespace_recorded": false,
+        "owner_coverage_attestation_present": false,
+        "independent_review_claim_in_inventory": false,
+        "independent_review_proven_by_this_tool": false,
+        "actual_index_coverage_verified": false,
+        "world_isolation_pass": false
+      },
+      "r55_r57_dev_worlds": {
+        "status": "MISSING_SOURCE_REFERENCE",
+        "source_file_exists_unopened": false,
+        "revision_recorded": false,
+        "world_namespace_recorded": false,
+        "owner_coverage_attestation_present": false,
+        "independent_review_claim_in_inventory": false,
+        "independent_review_proven_by_this_tool": false,
+        "actual_index_coverage_verified": false,
+        "world_isolation_pass": false
+      },
+      "other_protected_or_holdout": {
+        "status": "MISSING_SOURCE_REFERENCE",
+        "source_file_exists_unopened": false,
+        "revision_recorded": false,
+        "world_namespace_recorded": false,
+        "owner_coverage_attestation_present": false,
+        "independent_review_claim_in_inventory": false,
+        "independent_review_proven_by_this_tool": false,
+        "actual_index_coverage_verified": false,
+        "world_isolation_pass": false
+      }
+    }
+  },
+  "correct_interpretation_SAFE": {
+    "missing_source_reference_means_private_inventory_row_has_no_binding": true,
+    "missing_source_reference_proves_no_source_file_exists": false,
+    "old_owner_filename_discovery_reuse_required": true,
+    "old_owner_autodiscovery_outputs_existence_independently_rechecked_this_turn": false,
+    "filename_hint_equals_authoritative_metadata_roster": false,
+    "five_scopes_passed": false
+  },
+  "prior_owner_filename_discovery_reported_SAFE": {
+    "status": "PRIOR_OWNER_REPORTED_FILENAME_DISCOVERY_ONLY",
+    "semantic_world_graph_filename_matches": 8,
+    "prior_sft_exposure_filename_matches": 2,
+    "r55_r57_dev_worlds_filename_matches": 19,
+    "r50_protected_worlds_filename_matches": 0,
+    "other_protected_or_holdout_filename_matches": 0,
+    "distinct_candidate_paths_reported": 22,
+    "old_private_manifest_path_expected": "~/.storyforge-r58-private/round1_pilot_20261030/g1_index_candidates_autodiscovered_private.json",
+    "old_private_manifest_still_exists_verified_this_turn": false
+  },
+  "safety": {
+    "source_index_bytes_read": false,
+    "protected_test_content_read": false,
+    "candidate_story_content_read": false,
+    "private_paths_or_identifiers_returned": false,
+    "candidate_world_components_certified": 0,
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "hf_job_started": false,
+    "private_files_modified": false
+  },
+  "next": "REUSE_OWNER_EXISTING_PRIVATE_FILENAME_CANDIDATE_ROSTER__GENERATE_METADATA_ONLY_SELECTION_SHEET__DO_NOT_AUTOMATICALLY_BIND_INVENTORY"
+}

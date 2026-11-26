@@ -1,0 +1,38 @@
+{
+  "schema": "r58_gold195_card_source_coverage_receipt_safe_v1",
+  "date": "2026-11-01",
+  "workflow_run": "https://github.com/sunxu/storyforge/actions/runs/41278948835",
+  "verified_head": "74d60205427ba0bd2658ed159707d35ccf944b3c",
+  "source_archives": {
+    "gold108_06_15": {
+      "story_ids_with_cards": 10
+    },
+    "early_raw_backup": {
+      "story_ids_with_cards": 5
+    }
+  },
+  "gold195": {
+    "gold87": {
+      "rows": 87,
+      "matched_rows": 87,
+      "matched_worlds": 5
+    },
+    "gold108": {
+      "rows": 108,
+      "matched_rows": 108,
+      "matched_worlds": 8
+    },
+    "total_rows": 195,
+    "matched_rows": 195,
+    "distinct_world_ids": 13
+  },
+  "all_source_card_ids": 15,
+  "source_snapshot_conflicts": 0,
+  "card_semantics_approved": false,
+  "semantic_world_isolation_proven": false,
+  "quality_v1_admitted": 0,
+  "r50_accessed": false,
+  "private_card_content_exported": false,
+  "gpu_authorized": false,
+  "status": "SOURCE_CARD_COVERAGE_CONFIRMED__QUALITY_REVIEW_REQUIRED"
+}

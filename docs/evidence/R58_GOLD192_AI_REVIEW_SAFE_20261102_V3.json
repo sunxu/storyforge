@@ -1,0 +1,85 @@
+{
+  "schema": "r58_gold192_ai_semantic_review_safe_v2",
+  "date": "2026-11-02",
+  "status": "AI_SEMANTIC_REVIEW_UPDATED__OWNER_ATTESTATIONS_APPLIED__QUALITY_HOLD",
+  "scope": {
+    "story_packets": 13,
+    "candidate_cases": 192,
+    "gold87_cases": 87,
+    "gold108_cases": 105,
+    "excluded_world_identity_unresolved": 3,
+    "cross_cohort_story_uuid_overlap": 0
+  },
+  "ai_review_counts": {
+    "semantic_pass_only": 140,
+    "hold": 51,
+    "reject": 1,
+    "semantic_review_pending": 0
+  },
+  "newly_reviewed_source_rights_batch": {
+    "cases": 31,
+    "semantic_pass_only": 31,
+    "p1_assistant_first": 25,
+    "p2_user_first": 6,
+    "independent_blind_review_met": false
+  },
+  "owner_attestations": {
+    "source_rights": "All stories have clear source authorization: original works or works authorized by relevant rights holders; intended AI training use is included in the Owner attestation.",
+    "all_characters_adult": "Prior StoryForge Owner declaration: all story characters are adults.",
+    "independent_contract_review": "NOT_PERFORMED",
+    "handling": "Do not re-request general source-rights or adult-age attestations. Explicit contradictory case/card evidence remains separately reviewable."
+  },
+  "remaining_holds": [
+    {
+      "reason": "STORY1_CHARACTER_IDENTITY_MAPPING",
+      "cases": 12
+    },
+    {
+      "reason": "BIOLOGICAL_SIBLING_ROMANCE_BOUNDARY",
+      "cases": 15
+    },
+    {
+      "reason": "CHARACTER_NAME_MAPPING_MISSING",
+      "cases": 16
+    },
+    {
+      "reason": "CONSENT_BOUNDARY_CONFLICT",
+      "cases": 7
+    },
+    {
+      "reason": "CASE_LEVEL_CONTINUITY_HOLD",
+      "cases": 1
+    }
+  ],
+  "reject": {
+    "cases": 1,
+    "reason": "EXPLICIT_PLAYER_INTENT_VIOLATION"
+  },
+  "special_conflicts": [
+    "War & Blood export-time card explicitly lists a 17-year-old character, conflicting with the general adult attestation. Do not rewrite the card; the 15 sibling-romance cases were not expanded to this unrelated character.",
+    "General source-rights and adult-age attestations do not establish case-level consent to every intimate action or relationship.",
+    "Cohabitation story shows repeated dog-like imagery, bright-eyes and blushing motifs across the 17 reviewed targets; non-blocking style-diversity observation."
+  ],
+  "context_limits": {
+    "assistant_first_cases": 132,
+    "leading_user_antecedent_verified": 0,
+    "leading_user_antecedent_unverified": 132,
+    "historical_full_context_equivalence_verified": false,
+    "export_time_cards_proven_historical_system_prompts": false,
+    "world_cards_approved_for_training_system_prompt": false
+  },
+  "gates": {
+    "quality_v1_admitted": 0,
+    "training_authorized": false,
+    "gpu_started": false,
+    "source_frozen_gold_modified": false,
+    "r50_accessed": false
+  },
+  "method": {
+    "reviewer": "single AI reviewer",
+    "two_independent_blinded_reviews_required": true,
+    "two_independent_blinded_reviews_met": false,
+    "semantic_pass_is_not_training_admission": true
+  },
+  "private_case_level_review": "Stored locally only; no private targets, histories, card text or case-level private IDs are included in this SAFE receipt."
+}

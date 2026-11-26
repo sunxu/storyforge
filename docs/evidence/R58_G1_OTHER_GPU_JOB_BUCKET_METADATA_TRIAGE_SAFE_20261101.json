@@ -1,0 +1,102 @@
+{
+  "schema": "r58_g1_other_gpu_job_bucket_metadata_triage_safe_v1",
+  "date": "2026-11-01",
+  "status": "THREE_OTHER_PROVIDER_VERIFIED_GPU_JOBS_WITH_STAGED_INPUTS__UNKNOWN_HISTORICAL_TRAINING_EXPOSURE_HOLD",
+  "evidence_method": "DIRECT_HF_FS_READ_ONLY_DIRECTORY_FILE_STAT_AND_HF_JOBS_INSPECT_SELECTED_ID_STAGE_FLAVOR_FIELDS",
+  "evidence_limitations": "Metadata-only inspection of named Bucket paths and provider JobInfo; no log/command/argument/training-body inspection, no complete historical Job enumeration",
+  "source_repo": "sunxu/storyforge",
+  "pinned_branch": "r58/roleplay-sft-skill-v01",
+  "evidence_refs": {
+    "prior_single_canceled_job": "docs/evidence/R58_G1_CANCELED_GPU_TENSORBOARD_SCALAR_CROSSLINK_SAFE_20261101.json",
+    "frozen_five_and_historical_splits": "docs/evidence/R58_G1_GITHUB_HISTORICAL_TRAINING_SOURCES_SAFE_20261031.json",
+    "existing_unknown_job_ledger_contract": "experiments/r58_round1/triage_hf_job_exposure.py",
+    "prior_owner_unknown_job_count": 60
+  },
+  "audited_bucket_scope": {
+    "bucket": "hf://buckets/adradar/storyforge-training",
+    "recursive_file_listing_roots": [
+      "runs",
+      "baseline-runs",
+      "experiments"
+    ],
+    "recursive_listing_truncated": false,
+    "total_files_seen_in_three_roots": 333,
+    "files_by_root": {
+      "runs": 124,
+      "baseline-runs": 114,
+      "experiments": 95
+    },
+    "job_associated_directory_cohorts": {
+      "run_job_id_prefixes_observed": 4,
+      "baseline_job_id_prefixes_observed": 3,
+      "experiment_cohort_prefixes_observed": 2,
+      "sum_observed_cohort_prefixes": 9
+    },
+    "other_bucket_root_folders_present": true,
+    "other_root_folders_are_not_in_this_recursed_scope": true,
+    "all_historical_hf_jobs_proven_represented_by_bucket_files": false,
+    "file_absence_equates_no_historical_execution": false
+  },
+  "three_additional_jobs": {
+    "outside_frozen_five_known_update_jobs": true,
+    "outside_single_previously_pinned_canceled_priority_job": true,
+    "outside_four_documented_non_optimizer_purpose_job_ids": true,
+    "number_of_additional_bucket_job_directories": 3,
+    "provider_id_matches_own_bucket_directory_for_all": true,
+    "provider_stages": {
+      "ERROR": 2,
+      "CANCELED": 1
+    },
+    "provider_gpu_class_for_all": true,
+    "directory_distribution": {
+      "runs": 2,
+      "baseline-runs/capacity": 1
+    },
+    "per_job_train_jsonl_exists_for_all": true,
+    "per_job_validation_jsonl_exists_for_all": true,
+    "every_train_file_size_bytes": 2013373,
+    "every_validation_file_size_bytes": 381363,
+    "these_sizes_equal_prior_pinned_canceled_job_file_sizes": true,
+    "byte_sha256_equal_prior_target_not_proven": true,
+    "historical_input_consumption_not_proven": true,
+    "any_trainer_state_json_found": false,
+    "any_optimizer_pt_found": false,
+    "any_model_safetensors_found": false,
+    "any_checkpoint_named_artifact_found": false,
+    "any_sha256_manifest_found": false,
+    "no_checkpoint_files_does_not_prove_no_optimizer_update": true,
+    "original_gpu_job_private_ids_exported": false,
+    "original_job_commands_args_logs_train_text_read": false
+  },
+  "historical_job_coverage": {
+    "original_owner_reported_unclassified_jobs": 60,
+    "original_owner_reported_unclassified_gpu_jobs": 18,
+    "original_owner_reported_unclassified_cpu_jobs": 42,
+    "additional_jobs_crosschecked_against_owner_60_item_private_ledger": false,
+    "original_60_unclassified_jobs_count_must_not_be_decremented_without_ledger_binding": true,
+    "deleted_other_namespace_platform_universe_complete": false,
+    "source_registry_complete": false,
+    "next_required_evidence": "EXACT_OWNER_PRIVATE_60_JOB_LEDGER_SET_MEMBERSHIP_FOR_THREE_METADATA_ONLY_BUCKET_DIRS_THEN_SEPARATE_EVIDENCE_FOR_OPTIMIZER_AND_RUNTIME_INPUT",
+    "no_more_job_log_scans_by_default": true
+  },
+  "safety": {
+    "hf_jobs_started": false,
+    "hf_job_raw_commands_arguments_env_secrets_accessed": false,
+    "any_original_job_log_read_this_increment": false,
+    "training_jsonl_contents_read": false,
+    "r50_or_other_protected_text_read": false,
+    "private_job_ids_exported": false,
+    "freeze_queue_changed": false,
+    "skill_code_changed": false,
+    "main_branch_changed": false
+  },
+  "gates": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "schema": "r58_round1_owner_334_pass_ruff_91_323_batch5_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NO_ASSISTANT_LOCAL_RERUN",
+  "source_head_before_receipt": "fc0f701b4d2fbef781c4669ea0fb27dd9edc8b52",
+  "source_branch": "r58/roleplay-sft-skill-v01",
+  "result": {
+    "git_pull": "FAST_FORWARD_b64517d_TO_fc0f701",
+    "unittest": {
+      "command": "python3 -m unittest discover -s experiments/r58_round1 -p 'test_*.py' -q",
+      "cases": 334,
+      "failures": 0,
+      "errors": 0,
+      "seconds_reported": 0.204,
+      "status": "PASS_OWNER_REPORTED",
+      "negative_path_hold_messages_expected": true
+    },
+    "ruff_round1": {
+      "command": "ruff check experiments/r58_round1/ --statistics",
+      "errors": 91,
+      "fixable": 35,
+      "unsafe_fixable_additional": 19,
+      "top_codes": {
+        "RUF059": 17,
+        "SIM117": 16,
+        "I001": 15,
+        "F401": 15,
+        "BLE001": 10
+      },
+      "status": "NONZERO_OWNER_REPORTED"
+    },
+    "ruff_repo": {
+      "command": "ruff check . --statistics",
+      "errors": 323,
+      "fixable": 153,
+      "unsafe_fixable_additional": 57,
+      "top_codes": {
+        "I001": 96,
+        "EXE001": 48,
+        "F401": 46,
+        "RUF059": 40,
+        "SIM117": 21,
+        "BLE001": 19
+      },
+      "status": "NONZERO_OWNER_REPORTED"
+    }
+  },
+  "comparison": {
+    "previous_owner_round1_ruff": 97,
+    "previous_owner_repo_ruff": 329,
+    "round1_delta": -6,
+    "repo_delta": -6,
+    "last_batch_estimate_round1": 90,
+    "last_batch_estimate_repo": 322,
+    "actual_vs_estimate_each": 1
+  },
+  "ci": {
+    "head_sha": "fc0f701b4d2fbef781c4669ea0fb27dd9edc8b52",
+    "workflow_run_id": 41198638020,
+    "conclusion": "failure",
+    "logs_available_to_assistant": false,
+    "fail_step_independently_confirmed": false
+  },
+  "separate_v02_preflight": {
+    "synthetic_tests_present": 12,
+    "included_in_334_round1_tests": false,
+    "owner_run_for_this_turn": "NOT_REPORTED",
+    "real_g1_g2_end_to_end": "NOT_VALIDATED"
+  },
+  "admission": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train": 0,
+    "validation": 0,
+    "teacher": 0,
+    "expansion_allowed": false,
+    "round1_complete": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "private_case_text_accessed": false,
+    "private_world_uuids_exported": false,
+    "r50_protected_content_accessed": false,
+    "new_hf_paid_job_started": false,
+    "dataset_rebuilt": false,
+    "skill_v01_modified": false
+  }
+}

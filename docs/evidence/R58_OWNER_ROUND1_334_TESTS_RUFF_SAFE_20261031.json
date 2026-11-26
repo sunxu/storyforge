@@ -1,0 +1,59 @@
+{
+  "schema": "r58_owner_round1_334_tests_and_ruff_20261031_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_PASTED_SUMMARIZED_TERMINAL_OUTPUT_NO_PRIVATE_CONTENT",
+  "tests": {
+    "scope": "experiments/r58_round1",
+    "test_count": 334,
+    "result": "OK",
+    "elapsed_seconds_reported": 0.29,
+    "expected_negative_test_stderr": [
+      "R58_G1_SFT_SIX_SOURCE: HOLD (source metadata discrepancy or unavailable)",
+      "R58_G1_GITHUB_SOURCES: HOLD (frozen Git inputs missing or inconsistent)"
+    ],
+    "interpretation": "negative-path stderr is not an overall suite failure"
+  },
+  "ruff_before_this_commit": {
+    "r58_round1_errors": 144,
+    "repo_wide_errors": 376,
+    "round1_fixable": 88,
+    "repo_fixable": 206,
+    "round1_rule_counts": {
+      "I001": 41,
+      "F401": 24,
+      "FURB167": 17,
+      "RUF059": 17,
+      "SIM117": 16,
+      "BLE001": 10,
+      "B017": 7,
+      "UP017": 3,
+      "SIM102": 2,
+      "PLC0206": 2,
+      "F841": 2,
+      "PERF102": 1,
+      "PIE810": 1,
+      "C413": 1
+    },
+    "global_Ruff_pass": false
+  },
+  "changes": {
+    "files_changed": 7,
+    "imports_sorted_targeted": 7,
+    "unused_imports_removed": 1,
+    "regex_flag_aliases_replaced": 10,
+    "source_only_style_edits": true,
+    "verified_after_commit_by_ruff": false,
+    "verified_after_commit_by_unittest": false
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  },
+  "no_paid_hf_job_started": true,
+  "no_r50_test_read": true,
+  "no_private_uuids_exported": true
+}

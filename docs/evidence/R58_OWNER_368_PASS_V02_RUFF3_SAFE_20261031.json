@@ -1,0 +1,72 @@
+{
+  "schema": "r58_owner_368_regression_and_v02_ruff3_safe_v1",
+  "date": "2026-10-31",
+  "provenance": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_ASSISTANT_LOCAL_REEXECUTION",
+  "tested_branch": "r58/roleplay-sft-skill-v01",
+  "tested_head": "6d46d5736e13b9f5fa0dccee76e0fe9ec51b6cd0",
+  "git_pull": "FAST_FORWARD_91aebd8_TO_6d46d57",
+  "owner_regression": {
+    "round1": {
+      "command": "python3 -m unittest discover -s experiments/r58_round1 -p 'test_*.py' -q",
+      "cases": 334,
+      "seconds_reported": 0.195,
+      "status": "PASS_OWNER_REPORTED",
+      "negative_test_hold_messages_expected": true
+    },
+    "skill_v01": {
+      "command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/tests -p 'test_*.py' -q",
+      "cases": 10,
+      "seconds_reported": 0.667,
+      "status": "PASS_OWNER_REPORTED"
+    },
+    "skill_v02": {
+      "command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q",
+      "cases": 24,
+      "seconds_reported": 0.003,
+      "status": "PASS_OWNER_REPORTED"
+    },
+    "total_cases": 368,
+    "reported_result": "368_OF_368_PASS_OWNER_REPORTED",
+    "full_repo_pytest_performed": false
+  },
+  "skill_v02_evidence_preflight": {
+    "schema": "storyforge-r58-skill-v02-evidence-preflight-safe-v1",
+    "status": "G1_G2_SAFE_EVIDENCE_RECONCILED__BOTH_HOLD",
+    "owner_output_status": "PASS_OWNER_REPORTED_HOLD_EXPECTED",
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "known_update_jobs_current_inputs_matched": 5,
+    "hf_bucket_objects_owner_reported_matched": 12,
+    "known_frozen_split_placements": 184,
+    "remaining_candidate_worlds_held": 4,
+    "g2_blocking_byte_exact_components": 17,
+    "direct_target_request_link_proven": false,
+    "historical_training_universe_complete": false,
+    "other_protected_universe_complete": false
+  },
+  "ruff_v02": {
+    "command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics",
+    "errors": 3,
+    "breakdown": {
+      "SIM117": 1,
+      "EXE001": 1,
+      "I001": 1
+    },
+    "autofixable": 2,
+    "status": "NONZERO_OWNER_REPORTED",
+    "local_lint_after_future_fixes": "NOT_RETESTED"
+  },
+  "invariant": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "real_e2e": "NOT_ACCEPTED",
+    "r50_sealed": true,
+    "new_paid_hf_job_started": false,
+    "pr7_draft": true
+  },
+  "caveats": "Unit/synthetic and SAFE evidence consistency PASS do not constitute source-universe completeness, byte-exact provider-request replay, end-to-end release or training authorization."
+}

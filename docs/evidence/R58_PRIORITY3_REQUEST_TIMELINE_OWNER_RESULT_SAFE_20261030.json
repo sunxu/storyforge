@@ -1,0 +1,147 @@
+{
+  "schema": "storyforge-r58-request-timeline-owner-receipt-safe-v1",
+  "date": "2026-10-30",
+  "evidence_origin": "Owner supplied SAFE JSON aggregate from local fixed-source tool; no private source read by assistant",
+  "source_cases": [
+    "AUTHOR",
+    "CURRENT_PUBLIC",
+    "OLD_PUBLIC"
+  ],
+  "status": "OWNER_SOFT_SIGNALS_2_4_2_AMBIGUOUS__STOP_TEMPORAL_OVERFITTING__REQUEST_LINK_HOLD",
+  "cases": [
+    {
+      "cohort": "AUTHOR",
+      "target_found": true,
+      "target_created_matches": true,
+      "terminal_events_in_window": 2,
+      "events_with_matching_metric": 2,
+      "events_with_one_metric": 2,
+      "timing_compatible_joined_events": 2,
+      "missing_duration_events": 0,
+      "excess_candidates": false,
+      "events_with_history11_metric": 2,
+      "events_near_target_ledger_update": 2,
+      "events_with_both_soft_signals": 2
+    },
+    {
+      "cohort": "CURRENT_PUBLIC",
+      "target_found": true,
+      "target_created_matches": true,
+      "terminal_events_in_window": 5,
+      "events_with_matching_metric": 5,
+      "events_with_one_metric": 5,
+      "timing_compatible_joined_events": 5,
+      "missing_duration_events": 0,
+      "excess_candidates": false,
+      "events_with_history11_metric": 5,
+      "events_near_target_ledger_update": 4,
+      "events_with_both_soft_signals": 4
+    },
+    {
+      "cohort": "OLD_PUBLIC",
+      "target_found": true,
+      "target_created_matches": true,
+      "terminal_events_in_window": 2,
+      "events_with_matching_metric": 2,
+      "events_with_one_metric": 2,
+      "timing_compatible_joined_events": 2,
+      "missing_duration_events": 0,
+      "excess_candidates": false,
+      "events_with_history11_metric": 2,
+      "events_near_target_ledger_update": 2,
+      "events_with_both_soft_signals": 2
+    }
+  ],
+  "totals": {
+    "targets": 3,
+    "target_rows_verified": 3,
+    "terminal_events": 9,
+    "exact_event_metric_joined_events": 9,
+    "timing_compatible_events": 9,
+    "unique_target_request_candidates": 0
+  },
+  "scope": {
+    "candidate_window": "target_created_at - 2min to +20min",
+    "fixed_local_targets": true,
+    "source_reselected": false,
+    "sql_returned_only_aggregate": true
+  },
+  "interpretation": {
+    "exact_request_id_join_between_logs": true,
+    "exact_target_message_to_request_join": false,
+    "request_start_time_certified": false,
+    "historical_request_time_text_parity": "HOLD",
+    "provider_request_byte_exact": "HOLD",
+    "training_admission": "HOLD",
+    "asynchronous_terminal_event_note": "event timestamp is an asynchronous terminal insert; duration_ms estimate cannot certify request start",
+    "next_step": "Do not arbitrarily narrow time window; add independent signals such as 11-message metric and target assistant ledger completion temporal anchor. Never promote without direct target-to-request trace."
+  },
+  "synthetic_11_tests_owner_run": "NOT_SEPARATELY_REPORTED",
+  "owner_local_known_request_key_inventory": {
+    "status": "R58_LOCAL_REQUEST_KEY_INVENTORY_COMPLETE__DIRECT_LINK_HOLD",
+    "evidence_origin": "Owner-provided safe local JSON; no private metadata transmitted",
+    "cases": [
+      {
+        "cohort": "AUTHOR",
+        "known_request_keys_present_count": 0,
+        "keys_checked": 7
+      },
+      {
+        "cohort": "CURRENT_PUBLIC",
+        "known_request_keys_present_count": 0,
+        "keys_checked": 7
+      },
+      {
+        "cohort": "OLD_PUBLIC",
+        "known_request_keys_present_count": 0,
+        "keys_checked": 7
+      }
+    ],
+    "keys_checked": [
+      "analyticsEventId",
+      "analytics_event_id",
+      "apiRequestId",
+      "api_request_id",
+      "relayRequestId",
+      "requestId",
+      "request_id"
+    ],
+    "scan_scope": "Only the seven named top-level keys in target.metadata; does not search other columns or nested objects",
+    "direct_request_link_verified": false,
+    "synthetic_test_result": "NOT_REPORTED",
+    "training_admission": "HOLD"
+  },
+  "next_gate": {
+    "name": "DIRECT_REQUEST_PROVENANCE_OR_STOP_RULE",
+    "soft_signal_filtering": "STOP_UNLESS_NEW_INDEPENDENT_PROVENANCE",
+    "reason": "historyMsgCount=11 has zero discriminative value (9/9); 2min target ledger proximity excludes only one candidate (8/9)",
+    "direct_link_evidence_available": false,
+    "required_new_evidence": [
+      "historical deployment request-to-message mapping (trusted logs/instrumentation)",
+      "runtime request payload or provenance-backed request snapshot",
+      "as-of target time session summary cursor and dynamic memory/retrieval records"
+    ],
+    "classification_if_missing": "SOURCE_AND_CONDITIONAL_HISTORY_VERIFIED__REQUEST_AND_PROVIDER_BYTES_HOLD",
+    "training_admission": "HOLD",
+    "source_preservation": "IMMUTABLE"
+  },
+  "owner_soft_signal_followup": {
+    "status": "R58_REQUEST_TIMELINE_CORRELATION_HOLD",
+    "evidence_origin": "Owner-supplied fixed3 local safe JSON, no private source inspected",
+    "total_terminal_events": 9,
+    "total_history11_metric_events": 9,
+    "total_near_target_ledger_events": 8,
+    "total_combined_soft_signal_events": 8,
+    "per_case_combined_candidates": {
+      "AUTHOR": 2,
+      "CURRENT_PUBLIC": 4,
+      "OLD_PUBLIC": 2
+    },
+    "exact_event_metric_join": true,
+    "exact_target_request_join": false,
+    "request_start_certified": false,
+    "provider_request_byte_exact": "HOLD",
+    "training_admission": "HOLD",
+    "owner_15_synthetic_test_log": "NOT_SEPARATELY_REPORTED"
+  }
+}

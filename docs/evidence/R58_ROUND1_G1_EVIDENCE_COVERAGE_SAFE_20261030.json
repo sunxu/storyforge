@@ -1,0 +1,72 @@
+{
+  "schema": "r58_round1_g1_evidence_coverage_safe_v1",
+  "date": "2026-10-30",
+  "source": "Owner-local G1 queue and structural signal SAFE JSON",
+  "fixed_pilot": {
+    "metadata_eligible": 1280,
+    "story_records_under_review": 5,
+    "max_unique_worlds": 5,
+    "max_reply_targets": 20
+  },
+  "structural_signal_review": {
+    "owner_tests": "41_OF_41_PASS",
+    "compared_pairs": 10,
+    "same_author_pairs": 0,
+    "same_title_pairs": 0,
+    "same_world_setting_pairs": 0,
+    "same_v2_world_exact_pairs": 0,
+    "semantic_independence_verified": false
+  },
+  "mandatory_evidence": [
+    {
+      "scope": "semantic_world_graph",
+      "status": "OWNER_WORLD_IDENTITY_POLICY_SATISFIES_COMPONENT_DEFINITION__NO_GRAPH_PROOF_REQUIRED",
+      "acceptance": "Owner confirms same RolePlay UUID namespace and 1 story UUID = 1 independent world; use story UUID for component and skip cross-UUID alias proof in R58."
+    },
+    {
+      "scope": "r50_protected_worlds",
+      "status": "MISSING_INDEPENDENT_EVIDENCE",
+      "acceptance": "Authorized metadata-only protected-world coverage index; do not access R50 examples, prompts or target text"
+    },
+    {
+      "scope": "prior_sft_exposure",
+      "status": "MISSING_INDEPENDENT_EVIDENCE",
+      "acceptance": "Source revision and complete Train/Validation/Dev world exposure index across previous SFT rounds"
+    },
+    {
+      "scope": "r55_r57_dev_worlds",
+      "status": "MISSING_INDEPENDENT_EVIDENCE",
+      "acceptance": "Dev world component index from prior rounds, metadata only"
+    },
+    {
+      "scope": "other_protected_or_holdout",
+      "status": "MISSING_INDEPENDENT_EVIDENCE",
+      "acceptance": "All other relevant reserved, heldout or embargoed worlds; completeness evidence required"
+    }
+  ],
+  "policy": {
+    "unknown_means": "HOLD",
+    "zero_structural_collisions_means": "NO_EXACT_MATCHES_ONLY",
+    "metadata_evidence_source": "Owner-private verified source only",
+    "no_auto_false_to_true": true,
+    "no_private_content_export_until_g1_pass": true,
+    "no_automatic_expansion": true,
+    "owner_expansion_approval_required": true
+  },
+  "g1_status": "HOLD_R50_PRIOR_SFT_COMPLETENESS_R55_R57_DEV_OTHER_PROTECTED_UUID_SET_PROOFS",
+  "training_admission": {
+    "train": 0,
+    "validation": 0,
+    "teacher": 0
+  },
+  "round1_complete": false,
+  "owner_policy_supersession": {
+    "evidence": "docs/evidence/R58_OWNER_ROLEPLAY_UUID_WORLD_IDENTITY_POLICY_SAFE_20261030.json",
+    "scope": "R58 RolePlay world UUID identity only",
+    "historical_exact_uuid_overlap": 1,
+    "nonoverlap_with_r57_27_hist_uuids": 4,
+    "remaining_protected_scope_counts_to_review": 4,
+    "independent_graph_review_not_required": true,
+    "r50_dev_other_uuid_checks_still_required": true
+  }
+}

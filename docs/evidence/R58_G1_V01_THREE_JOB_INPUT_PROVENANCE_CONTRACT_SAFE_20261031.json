@@ -1,0 +1,44 @@
+{
+  "schema": "r58_g1_v01_three_job_source_contract_safe_v1",
+  "date": "2026-10-31",
+  "status": "GITHUB_SOURCE_AND_RUNNER_PATHS_DOCUMENTED__REMOTE_BYTES_HOLD",
+  "git_source_pins": {
+    "train": {
+      "rows": 65,
+      "git_blob": "3e64c9932ca43fefa8ecfb200085fe718581b6f9",
+      "sha256": "9a24f07befee9e701c587f4b154b0e780c29534abe3a0fa8b0c310511172a60f"
+    },
+    "validation": {
+      "rows": 15,
+      "git_blob": "db0ae8b86038be1b372d547fdb2d6b0b7e33b54e",
+      "sha256": "083a6f124abc414a0edf268d1a95788f738d55e7ecd229a78c67087991f46c36"
+    }
+  },
+  "historical_compiler": {
+    "path": "scripts/prepare_sft.py",
+    "git_blob": "2c60e69b0d288a3decfafdf2b07095c6dfed48a7",
+    "identical_in_commits": [
+      "b5915cbb434db64744a7343d6b4539670df70b79",
+      "35cb49e82f53a8931f765eb93aa9b8fcca3df9a6"
+    ]
+  },
+  "runner_source_paths": {
+    "shared_source_bucket_relative_prefix": "datasets/v0.3",
+    "three_run_output_prefixes": [
+      "runs/6ac73cabe7a0dae8a278117a",
+      "baseline-runs/capacity/6ac74ce3df2184ac91ac8f43",
+      "baseline-runs/baseline/6ac75bafdf2184ac91acb293"
+    ]
+  },
+  "expected_remote_objects": 8,
+  "expected_job_compiled_split_records_total": 240,
+  "source_split_records_not_unique": 80,
+  "remote_primary_input_bytes_verified": false,
+  "historical_bucket_immutability_proven": false,
+  "source_registry_complete": false,
+  "g1_clearance": "HOLD",
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "teacher_admitted": 0,
+  "expansion_allowed": false
+}

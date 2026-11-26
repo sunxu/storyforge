@@ -1,0 +1,87 @@
+{
+  "schema": "r58_g1_one_canceled_gpu_direct_logging_steps_safe_v1",
+  "date": "2026-11-01",
+  "status": "TARGET_CANCELED_GPU_LOGGING_GLOBAL_STEP_1_AND_2_OF_3__OPTIMIZER_UPDATE_NOT_INDEPENDENTLY_AUTHENTICATED",
+  "provenance": "DIRECT_READ_ONLY_HF_BUCKET_CAT_OF_ONE_OWNER_AUTHORIZED_JOB_LOGGING_JSONL",
+  "source_pin": {
+    "namespace": "adradar",
+    "target_job_exact_owner_private_ledger_bound": true,
+    "stage": "CANCELED",
+    "bucket_prefix_scope": "SINGLE_JOB_ONLY",
+    "under_output_version": "SINGLE_DISCOVERED_OUTPUT_VERSION",
+    "logging_file": "logging.jsonl",
+    "logging_size_bytes": 515,
+    "raw_job_id_exported": false
+  },
+  "evidence": {
+    "jsonl_record_count": 2,
+    "jsonl_records_parseable": 2,
+    "logged_global_step_max_steps": [
+      "1/3",
+      "2/3"
+    ],
+    "max_logged_global_step": 2,
+    "declared_max_steps": 3,
+    "numeric_scalars": [
+      {
+        "record": 1,
+        "loss": 1.62866712,
+        "grad_norm": 1.40553129,
+        "learning_rate": 0.0001,
+        "epoch": 0.06153846
+      },
+      {
+        "record": 2,
+        "loss": 1.72333097,
+        "grad_norm": 1.90299881,
+        "learning_rate": 0.00005,
+        "epoch": 0.12307692
+      }
+    ],
+    "source_frozen_input_current_bucket_pin_match": "OWNER_MAC_REPORTED_MATCH_FOR_BOTH_V01_DERIVED_COMPILED",
+    "trainer_state_or_optimizer_state_direct_artifact_available_in_scoped_bucket": false,
+    "timestamp_or_runner_semantics_independently_verified": false,
+    "optimizer_step_call_directly_observed": false,
+    "actual_parameter_update_independently_proven": false,
+    "confirmed_no_parameter_update": false
+  },
+  "tensorboard": {
+    "file_present": true,
+    "size_bytes": 10252,
+    "read_attempted_in_scope": true,
+    "hf_fs_cat_result": "HF_FS_TEXT_ONLY",
+    "tensorboard_binary_parsed": false,
+    "evidence_added_from_event_file": false,
+    "new_hf_job_started_for_binary_read": false
+  },
+  "interpretation": {
+    "recorded_global_step_progression_observed": true,
+    "step_values_consistent_with_trainer_progress": true,
+    "framework_global_step_semantics_need_confirmation": true,
+    "logging_progress_equivalent_to_independent_weight_update_proof": false,
+    "input_hash_match_equivalent_to_runtime_consumption_proof": false,
+    "historical_training_source_universe_complete": false,
+    "do_not_exclude_target_from_possible_training_exposure": true
+  },
+  "safety": {
+    "approved_read_scope": "ONE_EXISTING_LOGGING_JSONL_AND_ONE_EXISTING_TENSORBOARD_EVENT_ONLY",
+    "raw_log_or_job_command_exported": false,
+    "training_jsonl_contents_read": false,
+    "environment_or_secrets_read": false,
+    "other_job_logs_read": false,
+    "r50_protected_content_read": false,
+    "code_changed": false,
+    "hf_job_started": false,
+    "private_identifiers_or_hashes_exported": false
+  },
+  "next_step": "OWNER_MAC_READ_ONLY_TENSORBOARD_TFRECORD_SCALAR_SUMMARY__NO_NEW_HF_JOB__NO_RAW_EVENT_EXPORT",
+  "gates": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false
+  }
+}

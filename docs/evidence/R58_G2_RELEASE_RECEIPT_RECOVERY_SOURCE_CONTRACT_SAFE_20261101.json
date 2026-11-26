@@ -1,0 +1,93 @@
+{
+  "schema": "r58_g2_release_receipt_recovery_source_contract_safe_v1",
+  "date": "2026-11-01",
+  "status": "LATE_OCT_RELEASER_HISTORICAL_RECEIPT_FIELDS_GIT_VERIFIED__ACTUAL_TARGET_DEPLOYMENT_HOLD",
+  "repository": "sunxu/RolePlay",
+  "source_commit": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+  "frozen_owner_window_receipt": "docs/evidence/R58_G2_FROZEN_TARGET_CUTOVER_OWNER_AGGREGATE_SAFE_20261101.json",
+  "frozen_window_counts": {
+    "window_1": 1,
+    "window_5": 1,
+    "window_6": 1
+  },
+  "candidate_cutover_git_commits": [
+    "6dc474b963f11921e0fc12e3695d9e85dfacd35a",
+    "9d45083f1e5961a231f4d383c7612ebebbdeddee",
+    "8f9e56266089101a2448da3cafed734329964442",
+    "a11d55f32c58059c3aa0cc6a9cea08bfcc49ed86"
+  ],
+  "releaser_code": {
+    "local_deployer": "scripts/deploy-production-local.ps1",
+    "local_deployer_blob": "4d4886d849e5b02c35f92f9b8b098f7df891c175",
+    "atomic_deployer": "ops/deploy/deploy-standalone-release.sh",
+    "atomic_deployer_blob": "476323356f58b445ebc86cec08abdca2243ac2d4",
+    "rollback_library": "ops/deploy/deploy-rollback.sh",
+    "rollback_library_blob": "ddee9d18a34caa327ca1201668969f21148c25a2",
+    "retention": "ops/deploy/deploy-retention.sh",
+    "retention_blob": "fabe2ca87eba8e47cfcc61127d9859e07e7e869c",
+    "above_four_files_git_blob_identical_in_four_late_oct_candidate_commits": true,
+    "successful_current_deployment_file_fields": [
+      "sha",
+      "ref",
+      "actor",
+      "deployed_at",
+      "workflow_run_id",
+      "stage_dir"
+    ],
+    "deployed_sha_file_overwritten_at_each_successful_deploy": true,
+    "historical_stage_status_fields": [
+      "state",
+      "sha"
+    ],
+    "historical_stage_status_includes_actual_success_cutover_time": false,
+    "stage_name_timestamp_represents_start_not_cutover": true,
+    "staging_keep_count": 3,
+    "staging_max_age_seconds": 604800,
+    "retention_removes_only_when_both_rank_and_age_requirements_met": true,
+    "source_code_proves_historical_receipt_still_present": false
+  },
+  "additional_git_read_only": {
+    "existing_release_branch_named_20261030": "release/husband-round2-20261030",
+    "release_branch_commit": "8c40a033d908074a8d5f8721482b851758fcab9f",
+    "branch_commit_timestamp_utc": "2026-10-29T14:08:32Z",
+    "branch_code_eight_chat_blobs_same_as_source_pin": true,
+    "branch_presence_proves_deployed": false,
+    "main_commits_dated_after_2026_10_29_0000_utc_seen": 2,
+    "known_github_action_workflow_runs_created_2026_10_28_to_2026_11_02": 0,
+    "zero_github_actions_proves_no_manual_deploy": false,
+    "github_deployments_endpoint_query_succeeded": false,
+    "github_deployments_endpoint_result_interpreted_as_no_deployments": false
+  },
+  "historical_gap": {
+    "target_to_production_server_direct_link": false,
+    "immutable_per_deployment_success_cutover_receipt_verified": false,
+    "production_original_staged_receipts_read": false,
+    "complete_cutover_and_rollback_sequence_verified": false,
+    "post_2026_10_30_backend_code_version_proven": false,
+    "dynamic_model_catalog_original_request_time_snapshot_proven": false,
+    "app_version_alone_proves_provider_input_bytes": false,
+    "target_message_to_request_id_direct_identity": false
+  },
+  "recommended_next_action": {
+    "owner_approval_required": true,
+    "scope": "EXISTING_LOCAL_OR_SERVER_DEPLOYMENT_METADATA_RECEIPT_EXISTENCE_AND_WHITELISTED_STATUS_SHA_TIME_ONLY",
+    "never_read_user_message_or_story_content": true,
+    "never_read_runtime_env_secrets": true,
+    "never_read_chat_or_provider_logs_by_default": true,
+    "do_not_change_production_or_backup_state": true,
+    "stop_if_no_historically_preserved_authoritative_cutover_record": true,
+    "no_more_timestamp_proximity_narrowing": true
+  },
+  "gate": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "g3": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "production_host_connected": false,
+    "private_capture_read_by_assistant": false,
+    "hf_job_started": false
+  }
+}

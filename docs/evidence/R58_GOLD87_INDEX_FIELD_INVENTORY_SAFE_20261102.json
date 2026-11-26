@@ -1,0 +1,29 @@
+{
+  "schema": "r58_gold87_index_field_inventory_safe_v1",
+  "date": "2026-11-02",
+  "verification_scope": "GitHub frozen Gold87 index fields, not original reviewer output files",
+  "frozen_rows": 87,
+  "review_a_accept": 87,
+  "review_b_accept": 87,
+  "review_c_accept": 2,
+  "review_c_not_reviewed": 85,
+  "owner_quality_selected": 87,
+  "training_admission_pending": 87,
+  "split_unassigned": 87,
+  "a_citation_status": {
+    "ORIGINAL_EXACT_OR_VALID_COMPRESSED_QUOTE": 80,
+    "STRICT_CONTIGUOUS_PASS": 6,
+    "SEGMENT_MATCH_ONLY__REQUOTE_RECOMMENDED": 1
+  },
+  "age_consent_status": {
+    "NOT_REVALIDATED_AT_QUALITY_SELECTION": 77,
+    "TARGET_TIME_AGE_NOT_VERIFIED": 10
+  },
+  "original_review_text_verified": false,
+  "legacy_review_binding_complete": false,
+  "historical_context_equivalence_proven": false,
+  "quality_v1_admitted": 0,
+  "gpu_started": false,
+  "private_values_emitted": false,
+  "next_step": "Mac regression test then locate and validate actual Gold87 historical reviewer evidence; do not fabricate review data"
+}

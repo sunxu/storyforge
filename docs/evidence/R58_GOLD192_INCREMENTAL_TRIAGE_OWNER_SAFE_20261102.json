@@ -1,0 +1,34 @@
+{
+  "schema": "r58_gold192_incremental_triage_owner_safe_v1",
+  "date": "2026-11-02",
+  "source": "Owner Mac private triage output",
+  "status": "GOLD192_INCREMENTAL_REVIEW_ROUTING_READY__SEMANTIC_HOLD",
+  "counts": {
+    "eligible_for_incremental_review_not_training": 192,
+    "excluded_world_identity_unresolved": 3,
+    "gold108_assistant_first": 79,
+    "gold108_candidates": 105,
+    "gold108_card_source_recognized": 105,
+    "gold108_user_first": 26,
+    "gold87_assistant_first": 53,
+    "gold87_candidates": 87,
+    "gold87_card_source_recognized": 87,
+    "gold87_user_first": 34
+  },
+  "unique_story_uuids": 13,
+  "story_uuids_present_in_both_cohorts": 0,
+  "history_context_equivalence_verified": false,
+  "world_card_semantically_approved": false,
+  "world_component_isolation_proven": false,
+  "historical_exposure_decontaminated": false,
+  "old_review_evidence_new_quality_v1": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "gpu_started": false,
+  "private_values_emitted": false,
+  "limitations": [
+    "Structure-only route, not substantive review",
+    "Owner-reported Mac output; private inputs not fetched",
+    "Cannot infer world-component isolation or historical exposure status from unique UUID count"
+  ]
+}

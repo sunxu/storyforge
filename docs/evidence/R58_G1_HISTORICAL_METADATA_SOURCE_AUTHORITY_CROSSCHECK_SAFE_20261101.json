@@ -1,0 +1,157 @@
+{
+  "schema": "r58_g1_historical_metadata_source_authority_crosscheck_safe_v1",
+  "as_of": "2026-11-01",
+  "status": "HISTORICAL_SAFE_SOURCE_EVIDENCE_CLASSIFIED__NO_PRIVATE_CANDIDATE_FILE_QUALIFIED__G1_HOLD",
+  "repo": "sunxu/storyforge",
+  "branch": "r58/roleplay-sft-skill-v01",
+  "evidence_scope": "GITHUB_PINNED_SAFE_REPORTS_AND_OWNER_PREVIOUSLY_REPORTED_AGGREGATES_ONLY",
+  "review_target": "PRIOR_OWNER_22_DISTINCT_PRIVATE_FILENAME_CANDIDATE_PATHS_29_SCOPE_REFERENCES",
+  "private_candidate_file_names_or_paths_read": false,
+  "private_candidate_content_read": false,
+  "protected_r50_content_read": false,
+  "actual_private_candidate_to_git_evidence_same_file_identity_bound": false,
+  "source_groups": [
+    {
+      "id": "R52_SEVEN_WORLD_SOURCE_BOUND_REVIEW",
+      "tier": "GIT_SAFE_DESCRIPTION_OF_SCOPED_OWNER_REVIEW_NOT_AUTHENTICATED_PRIVATE_INDEX",
+      "proven": "Owner accepted 7-world source-bounded Reviewer E route, 21 pair checks and source witnesses for the R52/R53 staged 31/9 only",
+      "not_proven": "Transfer to R58 candidates, all-world universe, authenticated UUID-only roster, independent full semantic certification",
+      "refs": [
+        {
+          "path": "docs/evidence/V03_R52_OWNER_ACCEPTED_BOUNDED_WORLD_POLICY_20261021.md",
+          "blob": "2284c5e5b93d2bfa43d0cfcffa9c450a4a553645"
+        },
+        {
+          "path": "docs/evidence/V03_R52_REVIEWER_E_CORRECTED_21PAIR_WORLD_SOURCE_BOUNDED_ACCEPTANCE_20261021.md",
+          "blob": "03c5a9d67e0b31fc50730fa6f798def909e76f30"
+        }
+      ],
+      "potential_metadata_source_authenticity": "NOT_VERIFIED"
+    },
+    {
+      "id": "R52_R53_STAGE31_9_SOURCE_UUID_PROVENANCE",
+      "tier": "GIT_SAFE_DESCRIPTION_OF_OWNER_SCOPED_CERT_AND_PRIVATE_STAGED_BYTES",
+      "proven": "7 UUID distinct in R52 staged source-world split and no train-validation same-source UUID in that scoped proposal",
+      "not_proven": "Independently signed world-alias component graph, complete historical exposure, permission to reuse private staged data or treat it as R58 approved input",
+      "refs": [
+        {
+          "path": "docs/evidence/V03_R52_R53_WORLD7_SCOPED_CERT_AND_STAGED31_9_RELEASE_GATE_20261021.md",
+          "blob": "98c252cf8d66a29f7ae881492ff60b9f2b111ef9"
+        }
+      ],
+      "potential_metadata_source_authenticity": "NOT_VERIFIED"
+    },
+    {
+      "id": "R55_REUSED_DEV20_TWO_WORLDS",
+      "tier": "GIT_SAFE_DEV_REUSE_DOCUMENTATION",
+      "proven": "20 old R47/R48/R55 development cases reused from two historically exposed world sources; Owner-local 152 category judgments schema/quote-format validated",
+      "not_proven": "All R55/R57 new DEV, arbitration, source-world UUID metadata roster, independent judgment correctness",
+      "refs": [
+        {
+          "path": "docs/evidence/V03_R55_GOLD5_V2_ALL_THREE_ROUNDS_OWNER_FROZEN_20261023.md",
+          "blob": "496b02dbc0785247ac2f4c820728398004ebf989"
+        },
+        {
+          "path": "docs/evidence/V03_R55_GOLD5_ALL152_OWNER_VALIDATED_SAFE_RECEIPT_20261026.md",
+          "blob": "3288602ebd9139836df22ac18dd90efece280717"
+        }
+      ],
+      "potential_metadata_source_authenticity": "NOT_VERIFIED"
+    },
+    {
+      "id": "R56_GOLD195_FROZEN_SCOPED_REUSE",
+      "tier": "GIT_SAFE_OWNER_SCOPED_METADATA_REPORT",
+      "proven": "Stage7 inventory 5 of 5 old Gold195 source UUIDs, no new candidate in that inventory; 03/05 preliminary Gold-only, World11 prior development exposure, no formal Heldout admission",
+      "not_proven": "R56 all source exposure worlds, all R01/R04/DEV/heldout, private UUID-only source index, no other historical usage",
+      "refs": [
+        {
+          "path": "docs/evidence/V03_R56_STAGE7_GOLD_ONLY_SCOPE_PREFLIGHT_COUNTS_ONLY_20261022.json",
+          "blob": "afab5f6bf9ffae837d4cdca21574436e2b9d6dd0"
+        },
+        {
+          "path": "docs/evidence/V03_R56_STAGE3_CROSS_WORLD_SOURCE_SCAN_COUNTS_ONLY_20261022.md",
+          "blob": "baa8067ef0a77d571bf847f5249d4c090afa4f39"
+        },
+        {
+          "path": "docs/evidence/V03_R56_STAGE4_WORLD11_OWNER_SOURCE_RECEIPT_COUNTS_ONLY_20261022.md",
+          "blob": "d5f3902f1c81d0de9f44c4de5bf45a8df999522d"
+        }
+      ],
+      "potential_metadata_source_authenticity": "NOT_VERIFIED"
+    },
+    {
+      "id": "R57_EIGHT_SOURCE_UUID_AND_TARGET_REPLAY",
+      "tier": "OWNER_MAC_REPORTED_COUNT_ONLY_GIT_SAFE_REPLAY",
+      "proven": "Gold87 87, Gold108 108, v0.1/R46/R54 six split groups, target-anchored story UUID counts and limited exposure replays",
+      "not_proven": "All other historical training Jobs or consumed primary inputs, all reserved/DEV worlds, complete authenticated private roster",
+      "refs": [
+        {
+          "branch": "r57/v03b-data-design",
+          "path": "docs/evidence/R57_G2_EIGHT_SOURCE_TARGET_ANCHORED_UUID_OWNER_SAFE_20261026.json",
+          "blob": "817b6561361e84ad4da7ebc8556d8fe8a83d25cc"
+        },
+        {
+          "branch": "r57/v03b-data-design",
+          "path": "docs/evidence/R57_G2_EIGHT_SOURCE_OWNER_EXACT_REPLAY_SAFE_20261026.json",
+          "blob": "9e88842fed0beff9173597962ba5e24d19129738"
+        }
+      ],
+      "potential_metadata_source_authenticity": "NOT_VERIFIED"
+    },
+    {
+      "id": "R50_KNOWN_FIVE_PROTECTED_UUID_METADATA",
+      "tier": "R58_OWNER_REPORTED_SCOPED_COUNT_ONLY",
+      "proven": "5 protected source-world UUIDs were checked for exact UUID intersection against four held R58 candidates; no R50 body read",
+      "not_proven": "All protected worlds authoritative registry, admission or permission to open protected original test material",
+      "refs": [
+        {
+          "path": "docs/evidence/R58_G1_G2_SKILL_V02_READINESS_MATRIX_SAFE_20261031.json",
+          "blob": "a9a0773959e86ef856ff120ec43aba6eb093c27e"
+        }
+      ],
+      "potential_metadata_source_authenticity": "NOT_VERIFIED"
+    }
+  ],
+  "allowed_interpretation": {
+    "github_safe_reports_can_document_scope_methods_versions_and_reported_coverage": true,
+    "github_safe_reports_prove_private_candidate_metadata_file_identity": false,
+    "github_safe_reports_prove_private_candidate_is_uuid_only": false,
+    "r52_scoped_owner_policy_transferable_to_r58": false,
+    "owner_claim_is_independent_coverage_proof": false,
+    "sha256_or_report_count_is_full_universe_proof": false,
+    "no_additional_originals_means_no_other_historical_exposure": false
+  },
+  "scope_decision": {
+    "semantic_world_graph": "R52_RELATED_SOURCE_BOUND_REVIEW_DOCUMENTED__PRIVATE_CANDIDATE_UNBOUND",
+    "r50_protected_worlds": "SCOPED_FIVE_OWNER_METADATA_CHECK_ONLY__AUTHORITY_HOLD",
+    "prior_sft_exposure": "R57_EIGHT_SOURCE_REPLAY_DOCUMENTED__OTHER_60_HF_JOB_UNCLASSIFIED",
+    "r55_r57_dev_worlds": "R55_TWO_WORLD_DEV20_AND_R56_PARTIAL_SOURCE_WORK_DOCUMENTED__OTHER_DEV_ROSTER_HOLD",
+    "other_protected_or_holdout": "R56_AND_R50_PARTIAL_HELDOUT_BOUNDARIES_ONLY__COMPLETE_RESERVED_ROSTER_HOLD"
+  },
+  "private_review_sheet_decisions": {
+    "existing_29_entries_to_keep_unreviewed": 29,
+    "owner_approved_metadata_only_source_rows": 0,
+    "independent_coverage_verified_rows": 0,
+    "do_not_update_existing_private_inventory": true,
+    "do_not_request_owner_to_guess_from_filename": true
+  },
+  "next_authoritative_gate": {
+    "required_evidence": "EXACT_PRIVATE_INDEX_FILE_IDENTITY_TO_PINNED_SOURCE_PROVENANCE_AND_AUTHORIZED_UUID_ONLY_SCHEMA_PLUS_UNIVERSE_COMPLETENESS",
+    "current_evidence_allows_this_gate_to_pass": false,
+    "next_action": "STOP_FILENAME_SCREENING__REQUEST_ONLY_PREEXISTING_NONCONTENT_METADATA_SOURCE_PROVENANCE_ATTESTATION_IF_AVAILABLE",
+    "do_not_read_source_bytes_without_owner_scope": true,
+    "do_not_create_overlapping_uuid_checker": true,
+    "no_new_hf_job": true
+  },
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "g3_status": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "source_registry_complete": false,
+    "other_historical_training_job_universe_complete": false
+  }
+}

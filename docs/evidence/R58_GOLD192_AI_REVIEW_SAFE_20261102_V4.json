@@ -1,0 +1,91 @@
+{
+  "schema": "r58_gold192_ai_semantic_review_safe_v4",
+  "date": "2026-11-02",
+  "status": "ALL_192_AI_REVIEW_ACCOUNTED__QUALITY_AND_CONTEXT_GATES_STILL_SEPARATE",
+  "scope": {
+    "story_packets": 13,
+    "candidate_cases": 192,
+    "gold87_cases": 87,
+    "gold108_cases": 105,
+    "excluded_world_identity_unresolved": 3,
+    "cross_cohort_story_uuid_overlap": 0
+  },
+  "ai_review_counts": {
+    "semantic_pass_only": 186,
+    "hold": 3,
+    "reject": 3,
+    "semantic_review_pending": 0
+  },
+  "remaining_holds": {
+    "total": 3,
+    "categories": {
+      "unsupported_fact_assertion": 1,
+      "player_agency__invented_player_concerns": 1,
+      "player_boundary__possessive_response": 1
+    }
+  },
+  "reject": {
+    "total": 3,
+    "categories": {
+      "explicit_player_intent_violation": 1,
+      "explicit_player_action_overridden": 1,
+      "explicit_user_correction_ignored": 1
+    }
+  },
+  "newly_reviewed_remaining_hold_batch": {
+    "cases": 51,
+    "semantic_pass_only": 46,
+    "hold": 3,
+    "reject": 2,
+    "p1_assistant_first": 31,
+    "p2_user_first": 20,
+    "independent_blind_review_met": false
+  },
+  "owner_attestations": {
+    "source_rights": "All stories have clear source authorization: original works or works authorized by relevant rights holders; intended AI training use is included in the Owner attestation.",
+    "all_characters_adult": "Prior StoryForge Owner declaration: all story characters are adults.",
+    "independent_contract_review": "NOT_PERFORMED",
+    "handling": "Do not re-request general source-rights or adult-age attestations. Explicit contradictory source-card fields remain separately visible; do not silently rewrite frozen cards."
+  },
+  "identity_mapping_triage": {
+    "jing_circle": {
+      "cases_triaged": 12,
+      "semantic_pass_only": 10,
+      "remaining_hold": 2,
+      "resolution": "Same character-card object plus author note supports the old/new name mapping."
+    },
+    "noble_academy": {
+      "cases_triaged": 16,
+      "semantic_pass_only": 16,
+      "remaining_hold": 0,
+      "resolution": "Four high-confidence name correspondences inferred from distinctive appearance/personality/behavior traits; two names match directly. No formal alias field is claimed."
+    }
+  },
+  "special_conflicts": [
+    "War & Blood: the export-time card lists one character as age 17, conflicting with the prior general adult attestation. The card remains unapproved as a training System Prompt and must not be silently rewritten. The 15 related target replies were individually reviewed and did not retain a case-level HOLD.",
+    "Marshal husband story: five target replies pass the case-level review; one target is held for a possessive response after a workplace boundary; one target is rejected for overriding the player's explicit request to get up. The export-time card remains unapproved as a training System Prompt.",
+    "Source-rights and adult-age attestations do not establish case-level consent to every intimate action."
+  ],
+  "context_limits": {
+    "assistant_first_cases": 132,
+    "leading_user_antecedent_verified": 0,
+    "leading_user_antecedent_unverified": 132,
+    "historical_full_context_equivalence_verified": false,
+    "export_time_cards_proven_historical_system_prompts": false,
+    "world_cards_approved_for_training_system_prompt": false
+  },
+  "gates": {
+    "quality_v1_admitted": 0,
+    "training_authorized": false,
+    "gpu_started": false,
+    "source_frozen_gold_modified": false,
+    "r50_accessed": false
+  },
+  "method": {
+    "reviewer": "single AI reviewer",
+    "two_independent_blinded_reviews_required": true,
+    "two_independent_blinded_reviews_met": false,
+    "semantic_pass_is_not_training_admission": true
+  },
+  "private_materials": "Detailed case-level review and private supplement remain local/private; no raw target or history text is committed."
+}

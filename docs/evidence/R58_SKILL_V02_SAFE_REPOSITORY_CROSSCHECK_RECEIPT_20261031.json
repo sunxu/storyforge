@@ -1,0 +1,58 @@
+{
+  "schema": "storyforge-r58-skill-v02-repository-evidence-check-safe-v1",
+  "date": "2026-10-31",
+  "status": "GITHUB_SAFE_METADATA_PINS_AND_GATE_CONTRACT_PASS__PYTHON_TESTS_PENDING",
+  "provenance": "CONNECTED_GITHUB_READONLY_FETCH_OF_FIVE_SAFE_JSON_BLOBS",
+  "checked_branch": "r58/roleplay-sft-skill-v01",
+  "matrix": {
+    "path": "docs/evidence/R58_G1_G2_SKILL_V02_READINESS_MATRIX_SAFE_20261031.json",
+    "git_blob_sha": "a9a0773959e86ef856ff120ec43aba6eb093c27e"
+  },
+  "pinned_git_blobs": {
+    "known_five": "8762bd20c0dc20b609988caecfeec26f8d142337",
+    "round1": "740cedf5b5f143b66965f5f7092d1f52f11cd8f8",
+    "g1_coverage": "535bd253ac7dbcd88488fdcfb8a83744f1792775",
+    "g2_gap": "507fb5a47d8d9429a9efebe540f65b119f4c4677"
+  },
+  "checks_passed": 15,
+  "check_categories": [
+    "four_existing_Git_blob_pins",
+    "matrix_blob_pin",
+    "matrix_evidence_paths",
+    "G1_HOLD",
+    "G2_HOLD",
+    "admission_zero",
+    "eight_scopes_all_not_complete",
+    "five_job_receipt_count",
+    "twelve_current_bucket_objects",
+    "184_frozen_source_placements",
+    "four_candidates_held",
+    "R50_scoped_zero_overlap",
+    "G2_17_blockers",
+    "direct_request_link_unproven",
+    "no_private_content_access"
+  ],
+  "python_synthetic_test_count_authored": 12,
+  "python_synthetic_tests_run_in_this_turn": false,
+  "git_actions_recent_head": {
+    "commit_before_preflight": "1b9302c26d894fb269bad585368377d01b6a7e0c",
+    "earlier_conclusion": "failure",
+    "last_checked_r58_commit": "8e58c0e5fa310f503edbd90ea369ddb159299ecf",
+    "last_checked_conclusion": "failure",
+    "failing_step_determined": false,
+    "logs_obtained": false
+  },
+  "owner_mac_full_test_334_post_fix_success_received": false,
+  "gate": {
+    "g1_clearance": "HOLD",
+    "g2_clearance": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "source_registry_complete": false
+  },
+  "no_new_hf_job": true,
+  "no_private_world_uuid_export": true,
+  "no_r50_test_content_read": true
+}

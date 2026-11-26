@@ -1,0 +1,40 @@
+{
+  "schema": "r58_legacy_gold_target_reuse_owner_safe_receipt_v1",
+  "source": "owner_reported_mac_local_run_2026-11-02",
+  "tool_status": "TARGET_IDENTITY_TRIAGE_ONLY__SEMANTIC_HOLD",
+  "synthetic_tests": "PASS_5_TESTS_OWNER_REPORTED",
+  "ruff": "PASS_OWNER_REPORTED",
+  "counts": {
+    "current_tasks_checked": 195,
+    "gold87_rows": 87,
+    "gold108_rows": 108,
+    "legacy_rows": 195,
+    "legacy_double_accept_indexed": 195,
+    "legacy_duplicate_target_keys": 0,
+    "legacy_world_identity_missing": 3,
+    "target_identity_matched": 192,
+    "gold108_evidence_basic_bound": 105,
+    "CONTEXT_EQUIVALENCE_UNVERIFIED": 105,
+    "HISTORICAL_EVIDENCE_NOT_FULLY_BOUND": 87,
+    "WORLD_OR_TARGET_IDENTITY_HOLD": 3
+  },
+  "context_changes_verified": false,
+  "historical_full_context_equivalence_proven": false,
+  "quality_v1_admitted": 0,
+  "training_authorized": false,
+  "private_values_emitted": false,
+  "limitations": [
+    "Owner supplied SAFE JSON, not independently re-run on private Mac files",
+    "Gold87 reviewer evidence not yet cryptographically bound",
+    "Target-level SHA and world match do not establish full-input context equivalence",
+    "The three Gold108 missing-world entries remain HOLD",
+    "No Quality-v1 review admission",
+    "Owner confirms private queue was written; private queue itself was not accessed through GitHub"
+  ],
+  "private_queue_written": true,
+  "private_queue_record_count": 195,
+  "queue_contains_case_level_private_data": true,
+  "queue_retained_in_owner_private_storage": true,
+  "queue_uploaded_to_github": false,
+  "owner_queue_execution_result": "TARGET_IDENTITY_TRIAGE_ONLY__SEMANTIC_HOLD"
+}

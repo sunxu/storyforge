@@ -1,0 +1,154 @@
+{
+  "schema": "storyforge-r58-priority3-conditional-history-owner-report-safe-v1",
+  "observed_date": "2026-10-30",
+  "evidence_origin": "Owner-provided JSON stdout, not independently parsed from private source",
+  "source_pin_examined": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+  "reported_status": "R58_CONDITIONAL_HISTORY_WINDOW_STRUCTURE_PASS__RUNTIME_REPLAY_HOLD",
+  "source_integrity": "PASS_OWNER_REPORTED",
+  "source_11_message_structure_pass": 3,
+  "nearby_metric_count_11": 3,
+  "event_chain_direct_match": 2,
+  "event_chain_metadata_absent": 1,
+  "event_chain_holds": 0,
+  "actual_runtime_history_bytes_verified": false,
+  "actual_runtime_prompt_bytes_verified": false,
+  "private_source_was_modified": false,
+  "training_admission": "HOLD",
+  "cases": [
+    {
+      "cohort": "AUTHOR",
+      "conditional_window_count": 11,
+      "eleven_message_structure": "PASS_OWNER_REPORTED",
+      "nearby_metric_count_11": true,
+      "event_chain": "NOT_PRESENT",
+      "mutation_revision_positive_rows": 5,
+      "structured_scrub_may_apply": false,
+      "continue_in_window": false
+    },
+    {
+      "cohort": "CURRENT_PUBLIC",
+      "conditional_window_count": 11,
+      "eleven_message_structure": "PASS_OWNER_REPORTED",
+      "nearby_metric_count_11": true,
+      "event_chain": "JSONB_STRUCTURAL_EQUIVALENCE",
+      "mutation_revision_positive_rows": 5,
+      "structured_scrub_may_apply": false,
+      "continue_in_window": false
+    },
+    {
+      "cohort": "OLD_PUBLIC",
+      "conditional_window_count": 11,
+      "eleven_message_structure": "PASS_OWNER_REPORTED",
+      "nearby_metric_count_11": true,
+      "event_chain": "JSONB_STRUCTURAL_EQUIVALENCE",
+      "mutation_revision_positive_rows": 5,
+      "structured_scrub_may_apply": false,
+      "continue_in_window": false
+    }
+  ],
+  "new_finding": {
+    "db_trigger_function": "public.maintain_v2_message_mutation_revision()",
+    "mutations_mean": "Positive revision may reflect role/content/status/metadata/partial_content changes. Not proof of text edit.",
+    "ledger_logging": "Ledger trigger logs business mutations but ignores status-only and partial_content-only changes; zero post-target ledger events is insufficient to certify every historical row byte.",
+    "summary_field_disparity": "Plausibility window uses checkpoint snapshot last_summary_turn; production route reads story_v2_sessions.last_summary_turn. Equivalence at request timestamp is unverified."
+  },
+  "remaining_holds": [
+    "DEPLOYED_RUNTIME_COMMIT",
+    "AS_OF_TARGET_MESSAGE_CONTENT",
+    "SUMMARY_CURSOR_AS_OF_TARGET",
+    "REQUEST_FLAGS",
+    "DYNAMIC_MEMORY_AND_RAG",
+    "PROMPT_SCRUB_AND_INJECTION",
+    "METRICS_EXACT_REQUEST_JOIN",
+    "PROVIDER_BYTES",
+    "TRAINING_ADMISSION"
+  ],
+  "new_local_audit": {
+    "script": "experiments/r58_roleplay_replay/audit_priority3_mutation_revisions.py",
+    "tests": "experiments/r58_roleplay_replay/test_audit_priority3_mutation_revisions.py",
+    "new_tests": 8,
+    "owner_execution": "PASS_OWNER_REPORTED",
+    "output": "cohort, window length, positive revision counts by user/assistant, guard, HOLD values; no IDs/text/hash",
+    "actual_synthetic_test_result": "NOT_REPORTED"
+  },
+  "train_admitted": 0,
+  "validation_admitted": 0,
+  "owner_mutation_revision_role_audit": {
+    "status": "R58_MUTATION_REVISION_ROLE_AUDIT_PASS__HISTORICAL_TEXT_PARITY_HOLD",
+    "evidence_origin": "Owner-provided offline aggregate JSON; no private source files",
+    "source_bundle_integrity": "PASS",
+    "cases": [
+      {
+        "cohort": "AUTHOR",
+        "conditional_window_count": 11,
+        "assistant_total": 5,
+        "assistant_revision_positive": 5,
+        "user_total": 6,
+        "user_revision_positive": 0,
+        "post_target_ledger_events": 0,
+        "as_of_target_text_parity": "HOLD"
+      },
+      {
+        "cohort": "CURRENT_PUBLIC",
+        "conditional_window_count": 11,
+        "assistant_total": 5,
+        "assistant_revision_positive": 5,
+        "user_total": 6,
+        "user_revision_positive": 0,
+        "post_target_ledger_events": 0,
+        "as_of_target_text_parity": "HOLD"
+      },
+      {
+        "cohort": "OLD_PUBLIC",
+        "conditional_window_count": 11,
+        "assistant_total": 5,
+        "assistant_revision_positive": 5,
+        "user_total": 6,
+        "user_revision_positive": 0,
+        "post_target_ledger_events": 0,
+        "as_of_target_text_parity": "HOLD"
+      }
+    ],
+    "totals": {
+      "window_messages": 33,
+      "assistants": 15,
+      "assistants_revision_positive": 15,
+      "users": 18,
+      "users_revision_positive": 0,
+      "post_target_ledger_events": 0
+    },
+    "mutation_cause": "UNKNOWN_FROM_CAPTURE",
+    "stream_finalization": "POSSIBLE_NOT_VERIFIED",
+    "historical_content_unchanged": "HOLD",
+    "provider_request_bytes": "HOLD",
+    "training_admission": "HOLD"
+  },
+  "status": "OWNER_REVISION_DEPTH_3_OF_3_PASS__HISTORICAL_ASOF_LEDGER_HOLD",
+  "owner_revision_depth": {
+    "status": "R58_REVISION_DEPTH_INVENTORY_PASS__ASOF_RUNTIME_HOLD",
+    "origin": "Owner-supplied safe local JSON output",
+    "cohorts": [
+      "AUTHOR",
+      "CURRENT_PUBLIC",
+      "OLD_PUBLIC"
+    ],
+    "cases": 3,
+    "per_case": {
+      "assistant_total": 5,
+      "assistant_revision_0": 0,
+      "assistant_revision_1": 0,
+      "assistant_revision_2_plus": 5,
+      "user_total": 6,
+      "user_revision_0": 6,
+      "user_revision_1": 0,
+      "user_revision_2_plus": 0
+    },
+    "total_assistant_revision_2_plus": 15,
+    "total_user_revision_0": 18,
+    "source_bundle_integrity": "PASS",
+    "historical_content_unchanged": "HOLD",
+    "provider_request_byte_exact": "HOLD",
+    "training_admission": "HOLD",
+    "new_depth_tests_execution": "NOT_REPORTED"
+  }
+}

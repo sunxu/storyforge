@@ -1,0 +1,240 @@
+{
+  "schema": "r58_g2_roleplay_oct_2026_release_code_blob_parity_safe_v1",
+  "date": "2026-11-01",
+  "status": "13_HISTORICAL_ROLEPLAY_GIT_COMMITS_VERIFIED__SCOPED_CHAT_CODE_PARITY_GROUPED__TARGET_TIME_DEPLOYMENT_HOLD",
+  "evidence_level": "GITHUB_PINNED_OWNER_REPORTS_PLUS_GIT_COMMIT_AND_TREE_BLOB_ID_READ_ONLY",
+  "roleplay_repo": "sunxu/RolePlay",
+  "roleplay_fixed_source_pin": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+  "roleplay_pinned_tree_lookup_success": true,
+  "project_repo": "sunxu/storyforge",
+  "project_pr": 7,
+  "source_paths": {
+    "chat_route": "src/app/api/chat/v2/route.ts",
+    "prompt_index": "src/lib/story-v2/prompts/index.ts",
+    "prompt_runtime_rollout": "src/lib/story-v2/prompts/runtime-rollout.ts",
+    "message_service": "src/lib/db/v2-message-service.ts",
+    "request_event_service": "src/lib/db/v2-chat-request-event-service.ts",
+    "latency_metric_service": "src/lib/db/chat-latency-metrics-service.ts",
+    "message_codec": "src/lib/story-v2/message-codec.ts",
+    "chat_archive": "src/lib/archive/chat-archive.ts"
+  },
+  "report_constraints": {
+    "all_compared_git_commit_objects_exist": true,
+    "all_commit_tree_sources_accessible": true,
+    "source_files_per_commit": 8,
+    "compared_commit_count": 13,
+    "no_diff_content_exported": true,
+    "owner_document_reports_are_not_independent_production_runtime_receipts": true,
+    "git_commit_existence_proves_target_time_served_by_commit": false,
+    "identical_eight_blobs_proves_all_runtime_inputs_or_provider_bytes_equal": false,
+    "owner_docs_prove_contiguous_deployment_intervals": false,
+    "pinned_fixed_source_commit_historically_deployed_for_target": false,
+    "actual_target_timestamp_compared": false
+  },
+  "reported_releases": [
+    {
+      "owner_report_date": "2026-10-09",
+      "claimed_code_commit": "c8acf2a59392e140554bfb41f54bae67c9db9c0a",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/all-worktrees-merge-deploy-20261009.md",
+      "doc_git_blob_sha1": "70df95c73f1b2e96156f144c51cde8d1ba33e166",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-10",
+      "claimed_code_commit": "70548ba583074bdeec56b958b54acb73df39c435",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/creator-center-vps-deployment-20261010.md",
+      "doc_git_blob_sha1": "4b14e94bd4bc3cc81f3409f377267719cf22d053",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-14",
+      "claimed_code_commit": "93226cf498c5f7bca9f1556f915496245646a108",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/latest-main-release-20261013.md",
+      "doc_git_blob_sha1": "de31d86f6d94ff45f214b70f92263cbe1acd05cb",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-15",
+      "claimed_code_commit": "6b1a610696fa921f61faa66927dd69e2c61fdaf0",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/vps-preview-deployment-20261015.md",
+      "doc_git_blob_sha1": "a697fcfe20e643db30b70b7494c6a47c9da3a2e9",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-16",
+      "claimed_code_commit": "b5f20f874b1a12c252592668464b96949968cef1",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/vps-creator-sort-deployment-20261016.md",
+      "doc_git_blob_sha1": "421a81fe38aabf74fc636bf417cd64261c15dfc4",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-16",
+      "claimed_code_commit": "5dfa606ffa0ca43e5ea5f3620dde0f701b00d52e",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/web-creator-public-release-20261016.md",
+      "doc_git_blob_sha1": "ce93ea9ed5194fb750ac698d665218f276b899bf",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-17",
+      "claimed_code_commit": "8431d64b0848a86c7579f6d28822ded3398e00ed",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/sentry-fix-vps-deployment-20261017.md",
+      "doc_git_blob_sha1": "ffe67fd0a0698f4360481d725fc19f850a46fcbd",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 6,
+      "scoped_source_blobs_different_from_pinned": [
+        "chat_route",
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-19",
+      "claimed_code_commit": "8a02c15626605eed8f3ee42efbb034855dba577d",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": "docs/deployment-temp-inventory-20261019-8a02c156.json",
+      "doc_git_blob_sha1": "54b08314a37d974da886cf8c99323652c4c9a5e4",
+      "owner_report_role": "BASELINE_AND_RETAINED_TEMP_INVENTORY_NOT_VERIFIED_CUTOVER",
+      "scoped_source_blobs_identical_to_pinned_count": 7,
+      "scoped_source_blobs_different_from_pinned": [
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-21",
+      "claimed_code_commit": "9bedafe674ea2921621b999c94442b153b13c909",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/husband-preview-deployment-20261021.md",
+      "doc_git_blob_sha1": "4efd7e6ad9bd18a12c0bea47f5b8b58f88ac211a",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 7,
+      "scoped_source_blobs_different_from_pinned": [
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-22",
+      "claimed_code_commit": "10a01371352a533adf8520e08ab01f6836cb3cce",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/husband-completion-deployment-20261021.md",
+      "doc_git_blob_sha1": "b83b6e66158774918777e0d3b1b828a19fbcd3d0",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 7,
+      "scoped_source_blobs_different_from_pinned": [
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-23",
+      "claimed_code_commit": "6fa5c85b06db50bfdcb68e1de07c84e888008390",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/vps-husband-feedback-deployment-20261023.md",
+      "doc_git_blob_sha1": "5e1679d896176d7c6f656c6a63c586a8b12ec202",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 7,
+      "scoped_source_blobs_different_from_pinned": [
+        "message_service"
+      ],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-28",
+      "claimed_code_commit": "9d45083f1e5961a231f4d383c7612ebebbdeddee",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/husband-reference-ui-release-20261028.md",
+      "doc_git_blob_sha1": "8bee309eb10b62b1af4f77fdf330b1afb676863d",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 8,
+      "scoped_source_blobs_different_from_pinned": [],
+      "target_time_cutover_authenticated": false
+    },
+    {
+      "owner_report_date": "2026-10-29",
+      "claimed_code_commit": "8f9e56266089101a2448da3cafed734329964442",
+      "git_commit_object_verified": true,
+      "pinned_owner_source_doc": ".claude/docs/husband-pixel-pages-release-20261029.md",
+      "doc_git_blob_sha1": "bbfd00e520438403ab8fcb2362d6865bc6a68a3e",
+      "owner_report_role": "OWNER_DOC_SUCCESS_CLAIM",
+      "scoped_source_blobs_identical_to_pinned_count": 8,
+      "scoped_source_blobs_different_from_pinned": [],
+      "target_time_cutover_authenticated": false
+    }
+  ],
+  "summary": {
+    "route_and_message_service_both_different": 7,
+    "only_message_service_different": 4,
+    "all_eight_compared_source_blobs_identical": 2,
+    "target_time_active_backend_verified": false,
+    "frozen_three_target_time_extraction_performed": false,
+    "request_id_to_target_direct_link_verified": false,
+    "provider_original_request_bytes_verified": false,
+    "chronological_reported_commit_order_proves_no_intermediate_release": false
+  },
+  "next_required_evidence": {
+    "first_step": "OWNER_SCOPE_APPROVAL_TO_INSPECT_ONLY_THREE_ALREADY_FROZEN_CASE.target_created_at_METADATA_FIELDS_LOCALLY",
+    "second_step": "MATCH_PRE_EXISTING_TRUSTED_DEPLOYMENT_CUTOVER_OR_ROLLBACK_RECEIPTS_TO_TARGET_TIME_AND_BACKEND",
+    "third_step": "INDEPENDENT_TARGET_MESSAGE_TO_API_REQUEST_ID_AND_ORIGINAL_PROVIDER_REQUEST_ENVELOPE_BINDING",
+    "no_fetch_production_logs_by_default": true,
+    "no_new_database_queries": true,
+    "no_guess_frozen_target_times_from_nearby_metric_rows": true
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "g3": "NOT_STARTED",
+    "historical_deployment_sha_proven": false,
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "new_hf_job_started": false,
+    "private_case_content_or_uuid_read": false,
+    "protected_r50_content_read": false,
+    "roleplay_production_accessed": false
+  }
+}

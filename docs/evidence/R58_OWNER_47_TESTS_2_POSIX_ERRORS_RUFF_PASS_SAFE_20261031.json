@@ -1,0 +1,59 @@
+{
+  "schema": "r58_owner_v02_47_test_two_posix_errors_safe_v1",
+  "date": "2026-10-31",
+  "source": "OWNER_MAC_TERMINAL_OUTPUT_PASTED_IN_CHAT__NOT_ASSISTANT_LOCAL_RERUN",
+  "tested_head": "237f683eb084f1a73dc239ddd54335557825aaa7",
+  "unit_tests": {
+    "suite": "skills/storyforge-roleplay-sft/v02",
+    "ran": 47,
+    "errors": 2,
+    "failures": 0,
+    "status": "FAIL_OWNER_REPORTED",
+    "seconds_reported": 0.008,
+    "errors_by_test": [
+      {
+        "test": "test_nested_symlink_and_unsafe_nested_directory_rejected",
+        "exception": "NotADirectoryError",
+        "os_errno": 20
+      },
+      {
+        "test": "test_private_permissions_and_no_symlinks",
+        "exception": "OSError",
+        "os_errno": 62
+      }
+    ],
+    "error_classification": "EXPECTED_DENIAL_OCCURRED__ERROR_NOT_NORMALIZED_TO_HOLD",
+    "symlink_rejected_by_os": true,
+    "private_source_content_read_by_assistant": false
+  },
+  "ruff": {
+    "scope": "skills/storyforge-roleplay-sft/v02",
+    "owner_marker": "RUFF_V02_PASS",
+    "status": "PASS_OWNER_REPORTED",
+    "lint_errors_reported": 0
+  },
+  "remediation": {
+    "commit": "4e59bc28435ceb433016aa7d67c9441277fa4a82",
+    "file": "skills/storyforge-roleplay-sft/v02/r58_g1_scope_reconcile.py",
+    "change": "Catch OSError at read_private public boundary and fail closed as Hold without path/errno leakage",
+    "modified_security_flags": false,
+    "post_fix_tests": "NOT_YET_RUN_BY_OWNER",
+    "post_fix_ruff": "NOT_YET_RUN_BY_OWNER",
+    "expected_test_count": 47
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "pr7_draft": true
+  },
+  "safety": {
+    "no_hf_jobs_started": true,
+    "r50_content_accessed": false,
+    "private_story_uuid_exported": false,
+    "training_authorized": false
+  }
+}

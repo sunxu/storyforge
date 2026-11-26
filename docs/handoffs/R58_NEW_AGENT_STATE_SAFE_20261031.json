@@ -1,0 +1,147 @@
+{
+  "schema": "storyforge_r58_new_agent_handoff_safe_v1",
+  "as_of": "2026-10-31",
+  "project": {
+    "repository": "sunxu/storyforge",
+    "branch": "r58/roleplay-sft-skill-v01",
+    "pr_number": 7,
+    "pr_draft": true,
+    "pr_merged": false,
+    "pre_handoff_verified_head": "c7f0b1d4b230b9868c406c7b28d4412c78feb434",
+    "handoff_markdown": "docs/handoffs/R58_NEW_AGENT_HANDOFF_SAFE_20261031.md",
+    "head_is_moving_with_handoff_commits": true
+  },
+  "code_validation": {
+    "scope": "skills/storyforge-roleplay-sft/v02",
+    "owner_mac_tests": {
+      "count": 80,
+      "passed": true,
+      "errors": 0,
+      "failures": 0,
+      "seconds_reported": 0.014
+    },
+    "owner_mac_ruff": {
+      "passed": true,
+      "errors": 0,
+      "marker": "RUFF_V02_PASS"
+    },
+    "status": "OWNER_REPORTED_MAC_VERIFIED",
+    "independently_rerun_after_latest_docs": false,
+    "authoritative_receipt": "docs/evidence/R58_OWNER_V02_80_PASS_RUFF_ZERO_POSTFIX_SAFE_20261031.json",
+    "last_code_style_fix_commit": "24c52f48b075bece1b2635b601173e2edde84c55"
+  },
+  "gates": {
+    "g1": "HOLD",
+    "g2": "HOLD",
+    "g3": "NOT_STARTED",
+    "train_admitted": 0,
+    "validation_admitted": 0,
+    "teacher_admitted": 0,
+    "expansion_allowed": false,
+    "skill_v01_frozen": true,
+    "dataset_v04_frozen": false,
+    "model_promotion_approved": false
+  },
+  "pilot": {
+    "fixed_worlds_initial": 5,
+    "prior_sft_uuid_overlap_excluded": 1,
+    "worlds_remaining_hold": 4,
+    "max_worlds": 5,
+    "max_candidate_replies": 20,
+    "world_identity_policy": "ONE_ROLEPLAY_STORY_UUID_PER_WORLD",
+    "round1_completion_receipt_path": "docs/evidence/R58_ROUND1_PILOT_COMPLETION_SAFE.json",
+    "round1_completion_receipt_exists_at_pre_handoff_head": false,
+    "completion_status": "NOT_COMPLETE"
+  },
+  "g1": {
+    "known_optimizer_update_jobs": 5,
+    "known_input_hf_bucket_objects_current_sha256_matched_owner_reported": 12,
+    "known_train_validation_split_placements_not_unique": 184,
+    "known_job_associated_placements_not_unique": 344,
+    "known_historical_world_uuids_owner_reported": 27,
+    "visible_hf_jobs_previous_inventory": 69,
+    "other_documented_non_optimizer_intent_jobs": 4,
+    "unclassified_jobs": 60,
+    "unclassified_gpu": 18,
+    "unclassified_cpu": 42,
+    "priority_canceled_gpu_job": {
+      "metadata_crosslink": "PASS_OWNER_REPORTED",
+      "provider_started_at_present": true,
+      "provider_finished_at_present": false,
+      "command_intent_class": "NOT_ACCESSED_NO_OWNER_OPT_IN",
+      "optimizer_update_proven": false,
+      "no_optimizer_update_proven": false,
+      "exact_training_input_sha256_verified": false
+    },
+    "protected_sets": {
+      "r50_five_uuid_metadata_scoped_checked": true,
+      "other_dev_and_reserved_complete": false,
+      "historical_training_universe_complete": false
+    },
+    "pending_evidence": [
+      "authoritatively linked trainer optimizer/global-step and checkpoint run artifact",
+      "exact train/validation inputs linked to actual historical Job",
+      "historical Jobs and Protected/DEV/heldout world UUID universe completeness"
+    ]
+  },
+  "g2": {
+    "frozen_target_cases": 3,
+    "conditional_history_messages_per_case": 11,
+    "current_ledger_parity_messages": 33,
+    "prompt_components": 19,
+    "byte_exact_blockers": 17,
+    "request_event_to_latency_same_id_join_previous_report": "9_OF_9_LOG_LAYER_ONLY",
+    "target_request_direct_link_proven": false,
+    "original_provider_request_bytes_verified": false,
+    "soft_time_match_candidates": [
+      2,
+      4,
+      2
+    ],
+    "soft_time_match_may_be_used_for_release": false,
+    "roleplay_pinned_source": "e9fe29c42434caeb0bac5acc91845ab4741ecb2b",
+    "pinned_source_assistant_request_id_write_found": false,
+    "historical_production_deploy_sha_authenticated": false,
+    "deployment_marker_current_mutable": true,
+    "deployment_workflow_run_id_literal": "manual-local-build",
+    "optional_offline_deploy_interval_audit_structural_only": true,
+    "next_authoritative_evidence": [
+      "immutable deployment/rollback intervals bound to actual target-time serving backend",
+      "direct target physical message/attempt to API request_id binding",
+      "target-time exact Provider dispatch messages/parameters and runtime context"
+    ]
+  },
+  "privacy": {
+    "owner_private_root": "~/.storyforge-r58-private/",
+    "owner_private_directory_mode": "0700",
+    "owner_private_file_mode": "0600",
+    "no_private_story_uuid_export": true,
+    "no_r50_prompt_or_test_text_access": true,
+    "no_hf_paid_job_without_explicit_approval": true,
+    "no_production_ssh_without_scope_approval": true,
+    "do_not_overwrite_owner_private_receipts": true,
+    "no_train_or_merge": true
+  },
+  "entrypoints": {
+    "handoff": "docs/handoffs/R58_NEW_AGENT_HANDOFF_SAFE_20261031.md",
+    "starter": "docs/handoffs/R58_NEW_AGENT_START_PROMPT_SAFE_20261031.md",
+    "status_matrix": "docs/evidence/R58_G1_G2_SKILL_V02_READINESS_MATRIX_SAFE_20261031.json",
+    "g1_reconcile": "skills/storyforge-roleplay-sft/v02/r58_g1_scope_reconcile.py",
+    "g1_existing_metadata": "skills/storyforge-roleplay-sft/v02/r58_existing_priority_receipt.py",
+    "g2_offline_deploy": "skills/storyforge-roleplay-sft/v02/r58_deployment_interval_audit.py",
+    "g2_pinned_source_audit": "docs/evidence/R58_G2_PINNED_REQUEST_ID_PERSISTENCE_SOURCE_AUDIT_SAFE_20261031.json",
+    "g2_deployment_audit": "docs/evidence/R58_G2_DEPLOYMENT_SHA_SOURCE_PROVENANCE_SAFE_20261031.json",
+    "test_command": "python3 -m unittest discover -s skills/storyforge-roleplay-sft/v02 -p 'test_*.py' -q",
+    "ruff_command": "ruff check skills/storyforge-roleplay-sft/v02/ --statistics && echo RUFF_V02_PASS",
+    "expected_gate_exit_code": 42
+  },
+  "evidence_levels": {
+    "owner_mac_test_receipt": "OWNER_REPORTED",
+    "scoped_current_hf_hashes": "SCOPED_CURRENT_OBJECTS_ONLY",
+    "g1_full_historical_training_universe": "NOT_VERIFIED",
+    "g2_target_time_provider_bytes": "NOT_VERIFIED",
+    "authentic_historical_deployment_intervals": "NOT_VERIFIED"
+  },
+  "next_agent_first_action": "Read latest PR HEAD, this JSON and Markdown, verify frozen gate claims and inspect available existing SAFE evidence; do not request private text or auto promote.",
+  "safety_status": "SAFE_ONLY__NO_NEW_HF_JOB_NO_TRAINING_NO_RAW_PRIVATE_UPLOAD"
+}

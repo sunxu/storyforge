@@ -1,0 +1,38 @@
+{
+  "schema": "r58_owner_roleplay_uuid_world_identity_policy_safe_v1",
+  "date": "2026-10-30",
+  "authority": "OWNER_PROJECT_DECLARATION",
+  "owner_confirmed_statements": [
+    "RolePlay 与 R57 使用相同的 UUID 命名空间",
+    "所有已知故事均出自 RolePlay 数据库，能够通过故事 ID / UUID 关联",
+    "每个故事对应独立的语义世界，无需再次证明跨故事语义世界独立性"
+  ],
+  "scope": "R58 RolePlay story-level world identity and exact-ID exposure / isolation checks",
+  "world_identity_key": "canonical RolePlay story_id UUID (case-insensitive)",
+  "semantic_world_partition_rule": "one_story_uuid_is_one_independent_semantic_world",
+  "cross_uuid_alias_review_required": false,
+  "retrospective_provenance": "Owner assertion; no independent cross-platform replay claimed",
+  "known_r57_sft_roster_scope": {
+    "distinct_historical_training_story_uuids": 27,
+    "collections": "V01/R46/R54 Train and Validation as in frozen R57 eight-source roster",
+    "match_by": "exact canonical story UUID"
+  },
+  "owner_reported_current_five": {
+    "frozen_stories": 5,
+    "exact_historical_training_uuid_matches": 1,
+    "no_exact_historical_uuid_matches": 4
+  },
+  "remaining_required_gates": [
+    "R50 protected story UUID intersection with metadata-only permitted index",
+    "R55/R57 development and evaluation story UUID intersection",
+    "other heldout / reserved / protected story UUID intersection",
+    "evidence that protected/exposed ID set inventories are complete for the relevant rounds",
+    "later G2 target-time runtime replay and G3 independent quality / safety review"
+  ],
+  "do_not_rewrite_frozen_historical_reviewer_results": true,
+  "do_not_access_r50_test_content": true,
+  "frozen_candidate_pool_expansion_allowed": false,
+  "gpu_or_paid_cpu_authorized": false,
+  "training_admitted": 0,
+  "round1_complete": false
+}
