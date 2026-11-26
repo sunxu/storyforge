@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.12（2026-11-27）  
+**版本：** v1.13（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
@@ -75,6 +75,12 @@ Owner 实际回执：`FROZEN_MODULE_IMPORT_PASS`，`24 passed in 0.12s`。状态
 Owner 转交 RolePlay 最终核查结论：PRE/POST 所需数据库字段确认存在、既有只读权限已实际确认、接受 StoryForge 24/24 回执；不需要新增 RolePlay 代码、SQL 迁移、Worker、Archive、Export 或 Grant。现有能力原则上可支持首个受控原创会话。**本节优先于此前待确认来源字段合同的表述。** 本 Agent 接受转交结论，未独立重查实际数据库权限或逐字段查询原件；不得将原则可行性记为真实样本绑定通过。
 
 状态 `INDEPENDENT_SOURCE_PATH_READY__PRODUCTION_OFF_RECEIPT_PENDING`。唯一未取得的运行前置回执为 RolePlay 生产关闭态实时回读，由有权限的运行责任方完成；既有版本发布记录不能替代实际状态。保持原 PARTIAL/HOLD，不启动服务、不扩大审计、不新增验证器或测试。获取真实关闭态回执后，准备 T 后作者自有私密原创故事、短历史、无额外面具及复杂记忆依赖的单会话，核对原创权利、冻结完整规则/版本、221已知范围语义隔离及用途划分，并取得单条真实互动的独立批准。实际 PRE/POST 原件及字段映射在受控试点中如实核验；不因字段存在/权限已确认而推断真实来源认证。若发现真实缺件才 HOLD 并报告，禁止预先建设外围工程。首次试点只验证一条原始目标，后续质量双审及 Owner 审阅通过后再考虑扩展；当前真实采集未授权、质量/训练准入0、训练未授权、R61未启动、R60 NO_PROMOTE。221/T 和既有 HOLD 不变。
+
+## 0H. 技术预检 PASS，首个受控原创会话专项审批待定（2026-11-27）
+
+Owner 转交 RolePlay 实际 SAFE：`INDEPENDENT_SOURCE_PREFLIGHT_PASS`。production_revision=20412c0e，production_web_roles_verified=3，web_capture_os_env_enabled=0，capture_control_enabled=false，worker/gateway/canary/acceptance_running=false，archive/export_enabled=false；readonly_source_fields_verified/readonly_permissions_verified=true，binding_synthetic_passed/total=24/24，additional_development_required=false，first_controlled_session_ready=true。原 PARTIAL/HOLD 保持；真实候选、模型调用、生产变更均0，collection_authorized/training_authorized=false。本 Agent 接受运行责任方实际回执，未重新登录生产或查 DB，不将 first_controlled_session_ready 解释为已有真实故事或已完成来源绑定。**本节取代0G及此前关闭态回执待取得的下一步。技术预检正式收口，不重复核查或开发。**
+
+当前状态 `INDEPENDENT_SOURCE_PREFLIGHT_PASS__FIRST_ORIGINAL_SESSION_APPROVAL_PENDING`。下一步只准备首个 T 后全新原创私密世界，确认 Owner 自有会话与原创权利、221已知保护范围语义隔离及用途归属（不重开历史全集），冻结完整适用卡/规则及版本、短有效历史、当前 User、必要 persona/runtime context。初次专项审批严格限定一个世界、一个 Owner 自有会话、一次真实互动、一条未改写的原始 Assistant 目标；具体模型/路由、调用及数据用途需独立授权，不预填假身份或预算。生成前由独立只读路径保存 PRE 原件及 pin，生成后回读 POST 原件与唯一追加目标 revision，复用已有本地绑定器及 Source Stage。若真实字段或来源不符、规则/历史遗漏、出现并发修改/重生/额外目标等即 HOLD，不自动重试、不通过新生成补证。仅在真实绑定/合法性通过后安排质量双审和 Owner 审阅，进一步外发评审及训练另行授权。保留 RolePlay PARTIAL/HOLD、221/T、World04 原结论、R60 NO_PROMOTE、准入0、R61未启动；不启动 Worker/Archive/Export/Grant、不增加开发任务。当前尚未提供实际新故事及其隔离审核，不擅自生成或采集真实样本。
 
 ## 1. 唯一产品目标
 
