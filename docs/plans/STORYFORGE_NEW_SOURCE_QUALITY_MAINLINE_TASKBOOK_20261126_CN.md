@@ -1,10 +1,10 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.6（2026-11-27）  
+**版本：** v1.7（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
-**状态：** `WORLD04_QUALITY_APPROVED1__SOURCE_ISOLATION_HOLD`；下一阶段 `NEW_SOURCE_SCOPED_ISOLATION_POLICY_APPROVED__KNOWN_SCOPE_FREEZE_PENDING`。
+**状态：** `WORLD04_QUALITY_APPROVED1__SOURCE_ISOLATION_HOLD`；下一阶段 `KNOWN_SCOPE_FROZEN__CAPTURE_PREFLIGHT_PENDING`。
 
 ## 0. 2026-11-26 实际进展与现行下一步（覆盖下文旧采集状态）
 
@@ -30,7 +30,13 @@ Owner 在 v1.5 第 0A 节限定范围政策单独呈请后明确回复“批准�
 6. **质量和实验不变。** 六维 4/4/3/4/4/4、三严重标记、独立双审与原文证据、Owner 批准、隐私及版本绑定全部保留。首次仅验证一个新世界的一条真实目标，有余力且另获授权才扩展至 3–5 条；不把小试点当作足够训练量。新实验拟以固定 Qwen/Qwen3.8-27B Base 为共同起点、仅新获准入数据训练候选，使用独立新评估对照证明质量变化；不继承旧 Adapter/旧数据的未解决污染风险。训练设计、样本规模及 GPU/模型调用均另审。
 7. **最小工程变更。** 当前 main Quality-v1 仍只接受 gold195/r58_round1，现有 `EVIDENCE`、review、split、hash 和 overlap 合同不能假造。只有政策明确获批、具体证据前置可执行且出现真实合格新候选时，审查最小新 corpus 及 scope 声明兼容方案（与旧 corpus 门禁隔离，保留旧回归测试、缺证及已知冲突 fail-closed）；不先写代码或建立新注册服务。现阶段准入及训练计数仍为0。
 
-当前下一步：复用既有 Owner-local 权威元数据，逐范围核实已有清单、版本绑定、缺口及权限，形成真实已知保护集私有冻结回执；T 仅在该回执真实完成后登记，不能用文档提交时间代替。随后核查实际采集路径的来源合同是否可满足；未获独立操作授权不启动 World05、不改生产、不新增脚本、不运行 HF Job。此前历史资产及实际限制见 [可复用资产索引](../REUSABLE_ASSET_INDEX.md)。
+本节政策前置中的已知范围冻结及 T 已完成，实际回执和当前唯一下一步见第 0B 节。未获独立操作授权不启动 World05、不改生产、不新增脚本、不运行 HF Job。此前历史资产及实际限制见 [可复用资产索引](../REUSABLE_ASSET_INDEX.md)。
+
+## 0B. 已知保护集真实冻结完成与前瞻采集前置（2026-11-27）
+
+Owner-local SAFE：`KNOWN_SCOPE_FROZEN__CAPTURE_PREFLIGHT_PENDING`，原草案 221 Story（Base336 172/375 版本、History32 32/120 版本、R50 已知5、P2/Gold48 8/48题、E1–E4 4），7 份来源引用再验真，追加 Gold87/Gold108/R04/v0.1 Train/Validation/DEV20/R45 Train/Validation 8 个来源组均已覆盖、增量0、最终221。R57 历史目标回链回执已复核。T 为 Owner 实际冻结回执的 `2026-11-26T16:17:21.337667+00:00`，非文档提交时间。私有原件保留，Git 仅 SAFE 聚合。不再整理或扩大历史全集；`full_protected_universe_verified=false`、未知范围风险接受 true。新世界语义核查未完成，World04 不追溯适用；R50 sealed 未读，DB/模型调用0。
+
+**现行下一步：** RolePlay `main@6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424` 未变。实际源码 `src/lib/generation-evidence/assessment.ts::assessPendingEvidence` 对所有 attempt 无条件加入 RELAY_EGRESS_UNKNOWN，仅返回 PARTIAL/UNVERIFIABLE 与 HOLD；消费者 `verify-bundle.mjs` 也固定 HOLD。故完整采集和比较成功本身仍不能产生原合同下的训练可用证据。不能先采集再解决认证，不绕过原用途限制。优先请 RolePlay 运行责任方使用现有 preproduction-checklist、audit-runtime、grant-control 合同，给出关闭态实际部署、身份/权限、Worker/网关、SQL 已登记与当前有效状态，以及是否已有可复用的最终出口证据路径；只有源合同明确可执行、真实新世界原创及已知范围语义隔离审核通过、单会话操作/模型/费用/导出独立获批后才采集一条。若现有可验证独立派生输入路径可满足 StoryForge 来源合同且不违反 RolePlay HOLD/用途限制，先说明现成证据与许可边界；否则 HOLD，提出真实最小缺件，不提前开发。现有生产运行态尚未实查；不启用服务来获得审计 PID，不自动重复 SQL 或部署。不启动 HF Job、训练、R61。
 
 ## 1. 唯一产品目标
 
@@ -88,7 +94,7 @@ Owner 可控测试会话中进行真实多轮互动，原样保留有效角色�
 
 ## 5. 交付、停机与授权
 
-当前接手依据第 0 节保留 World04 冻结 HOLD，依据第 0A 节已批准的限定历史范围政策核实现存已知范围并冻结 T，不重开本批。后续新试点如另获批准，先确认已有材料；不得未经授权创建生产数据、启动模型请求、HF Job、付费 Judge、训练或晋升。
+当前接手依据第 0 节保留 World04 冻结 HOLD，依据第 0B 节已完成冻结的回执转入既有 RolePlay 采集前置核查，不重开本批。后续新试点如另获批准，先确认已有材料；不得未经授权创建生产数据、启动模型请求、HF Job、付费 Judge、训练或晋升。
 
 阶段交付：新源的版本/权利/用途与隔离证据、少量原始互动私有候选和 SAFE 回执；独立审核与编译仅在各前置成立时继续。有任何真实阻塞只报告缺件与下一项最小动作，不继续历史搜索或用假 PASS 补齐。首批目标、实际采集量、审核量均未发生时明确为0。
 
