@@ -2,7 +2,11 @@
 
 StoryForge is an experimental training and evaluation pipeline for interactive narrative language models, initially targeting `Qwen/Qwen3.8-27B` with SFT / QLoRA and curated multi-turn stories.
 
-## Project status (2026-10-09)
+## Current work (2026-11-26)
+
+R60 remains frozen as **NO_PROMOTE**; no R61, new training or production promotion is authorized. The Owner approved a shift from historical Gold remediation to a bounded pilot of new, source-controlled original multi-turn interactions. Start with one original world and 3–5 candidate replies; reuse existing quality and SFT infrastructure. Formal admission remains zero. See the [current taskbook](docs/plans/STORYFORGE_NEW_SOURCE_QUALITY_MAINLINE_TASKBOOK_20261126_CN.md) and [next-agent handoff](docs/handoffs/STORYFORGE_NEW_SOURCE_QUALITY_NEXT_AGENT_20261126_CN.md). The historical v0.1 status below remains unchanged.
+
+## Historical project status (2026-10-09)
 
 **v0.1 engineering: PASS. Model-quality promotion: NOT APPROVED.** Training and both held-out human review rounds are complete. The v0.1 evidence is frozen at Git tag [`v0.1-evidence-frozen`](https://github.com/sunxu/storyforge/tree/v0.1-evidence-frozen), commit `d1186a731a81219f86eb81b89ac1440dd116e9f4`.
 
