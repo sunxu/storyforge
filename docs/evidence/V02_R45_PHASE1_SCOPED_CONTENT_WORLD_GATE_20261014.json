@@ -1,0 +1,51 @@
+{
+  "schema": "storyforge-v02-r45-phase1-scoped-freeze-v1",
+  "date": "2026-10-14",
+  "original_gold_unchanged": 195,
+  "original_review_window": 82,
+  "prior_holds": 11,
+  "new_holds": 7,
+  "pilot_holds_total": 18,
+  "scoped_content_quality_accepted_candidates": 64,
+  "new_hold_sample_ids": [
+    "xz-gold-t04068",
+    "xz-gold-t04428",
+    "xz-gold-t05114",
+    "xz-gold-t06228",
+    "xz-gold-t06992",
+    "xz-gold-t07050",
+    "xz-gold-t07616"
+  ],
+  "grounded_user_rule_source_indices": [
+    3596,
+    3598
+  ],
+  "grounded_assistant_acceptance_source_indices": [
+    3597,
+    3599
+  ],
+  "new_hold_reason": "PERSISTENT_PLAYER_RULE_AND_NPC_SELF_REFERENCE_PROMISE",
+  "staged_train_rows": 49,
+  "staged_validation_rows": 15,
+  "train_sha256": "e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742",
+  "validation_sha256": "5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963",
+  "supervised_tokens_train": 12797,
+  "supervised_tokens_validation": 4048,
+  "ms_swift_last_round_collator_per_item_pass_inherited": 64,
+  "new_hf_run": false,
+  "known_world_component_04_07_respected": true,
+  "shared_story_uuids": 0,
+  "v01_exact_compiled_story_uuid_overlap": 0,
+  "global_hidden_aliases_exhaustively_certified": false,
+  "full_history_semantics_exhaustively_human_certified": false,
+  "scoped_experimental_content_review": "ACCEPTED_64_FOR_CANDIDATE_FREEZE",
+  "new_independent_heldout_received": 0,
+  "owner_arranging_heldout": true,
+  "formal_approved_train": 0,
+  "formal_approved_validation": 0,
+  "formal_approved_test": 0,
+  "paid_gpu_authorized": false,
+  "gpu_started": false,
+  "release": "FROZEN_CANDIDATE_ONLY_NOT_APPROVED",
+  "package_sha256": "da4b7718f1c1cbd0429553b684eeaf70f207fd2e41aae4e8fe0a52a11b647b9e"
+}

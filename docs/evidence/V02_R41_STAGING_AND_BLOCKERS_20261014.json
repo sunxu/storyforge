@@ -1,0 +1,40 @@
+{
+  "schema": "storyforge-v02-r41-bounded-target-review-v1",
+  "date": "2026-10-14",
+  "frozen_82_checksum": "f108c2b85ae096fd00e49e23e50d00b1cf0cf779682793ea6e3951e700b9e7c9",
+  "source_14_zip_checksum": "050af7034f9b2f3ef0401542364d23ef6ce126dd1699a49b1124d69245c98fdb",
+  "current_rows_checked": 79,
+  "source_targets_and_previous_users_exact": 79,
+  "prior_review": 10,
+  "new_bounded_review": 69,
+  "locally_suitable": 75,
+  "new_quality_holds": [
+    "s06-gold-t01355",
+    "sf15-gold-t00020",
+    "s10-gold-r03-t02283",
+    "s10-gold-r04-t02073"
+  ],
+  "previous_quality_holds": [
+    "na-gold-t0029",
+    "s10-gold-r04-t01717",
+    "sf14-gold-t02236"
+  ],
+  "staged_train": 59,
+  "staged_validation": 16,
+  "staged_train_sha256": "f542bf8d542a81bc3f01ee29ccf8ff6271223349ce99a5d39d781e4e4fb6b386",
+  "staged_validation_sha256": "87eb9f6a4b552c681edbfe3977af07c3a205234ad76f6de42810aa749a8fb47a",
+  "shared_story_uuids": 0,
+  "known_04_07_same_world_component_respected": true,
+  "full_world_alias_graph_cleared": false,
+  "full_history_semantic_cleared": false,
+  "owner_rights_and_legal_age_attested": true,
+  "documentation_required": false,
+  "authenticated_independent_heldout": 0,
+  "final_runtime_collator_pass": false,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "gpu_authorized": false,
+  "gpu_started": false,
+  "release": "STAGING_ONLY_NOT_APPROVED",
+  "private_package_sha256": "22813dfa844e9543471ec67ce059eed341657c23448e0ea30f30b05334426c2d"
+}

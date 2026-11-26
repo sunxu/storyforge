@@ -1,0 +1,33 @@
+{
+  "schema": "storyforge-v02-r40-owner-attestation-v1",
+  "date": "2026-10-14",
+  "source": "owner_user_statement_in_current_chat",
+  "declaration_scope": "9 existing StoryForge story groups, 79 remaining conditional samples",
+  "story_groups": 9,
+  "existing_story_use_rights": "OWNER_ATTESTED",
+  "relevant_age_legality": "OWNER_ATTESTED",
+  "documentation_required": {
+    "rights": false,
+    "age": false
+  },
+  "independent_legal_verification": "NOT_CLAIMED",
+  "all_characters_adult": "NOT_CLAIMED",
+  "public_redistribution_rights": "NOT_CLAIMED",
+  "r40_original_rows": 82,
+  "quality_quarantines": 3,
+  "conditional_rows": 79,
+  "per_sample_content_suitability_approved": 0,
+  "related_world_graph_cleared": false,
+  "v01_exposure_cleared": false,
+  "independent_heldout_received": 0,
+  "approved_train": 0,
+  "approved_validation": 0,
+  "balanced_a_after_quarantines": {
+    "train": 62,
+    "validation": 17,
+    "approved": false
+  },
+  "paid_gpu_approved": false,
+  "gpu_started": false,
+  "state": "OWNER_ATTESTATIONS_RECORDED__CONTENT_WORLD_HELDOUT_PENDING__NO_GPU"
+}
