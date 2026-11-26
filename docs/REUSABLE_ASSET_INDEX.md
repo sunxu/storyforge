@@ -1,5 +1,7 @@
 # StoryForge 历史可复用资产索引（SAFE）
 
+> **2026-11-26 增量：** 当前主线转向[新来源质量数据建设](plans/STORYFORGE_NEW_SOURCE_QUALITY_MAINLINE_TASKBOOK_20261126_CN.md)。PR #38 已合并；实查 `main@5de5f81f1db1724419dc699c815ae4e042639b17:src/storyforge_gold_quality/quality_v1.py` 存在，复用时优先调用 main 内核。该内核仍限定 `gold195`、`r58_round1` 及 `original_gold`，新来源不能冒用旧 corpus。SFT 编译器、Skill、历史恢复及 HF Runtime 仍按下表固定历史来源检查，不默认全部已进入 main。先取得真实新素材再决定必要的接口复用或最小扩展。旧索引快照保留，不重新清理历史分支。
+
 > 快照：2026-11-22；核对基线 `main` = `1b5ac810c304167f31626eba4cbf6e7b7235569d`。这是**代码/证据的查找地图**，不是自动合并清单、执行许可或质量准入回执。历史 PR、归档和本地备份均不得被误认为已经进入 `main`。
 
 ## 使用规则
