@@ -30,6 +30,10 @@ RolePlay 已查重：`main@6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424` 对上次�
 
 任务书 v1.8 第 0C 节记录 Owner 转交 SAFE 及 GitHub 复核。已知221/T 不重开；原 RolePlay PARTIAL/HOLD 不放宽，中转最终出口认证不作为本轮新工程。独立适用输入仍待实际验证。优先复用 RolePlay 现有指定会话查询逻辑（禁止默认批量排名）、故事卡版本/状态提取、目标 mutation_revision 与 StoryForge Source Stage；后者只验证结构/摘要，时间点 NOT_PROVEN。部分消息 GET 会触发修复，不能假定零写。当前任务只由运行责任方完成关闭态实时回读及零模型合成来源绑定预检（含版本、规则/历史、未来信息、目标和 scope 负例）；通过后另审一世界一会话一目标采集许可。独立路径若成立，不必启动留证组件或签发 grant；严禁使用用途受限 HOLD 导出包直接作为训练输入。无新代码、SQL、部署、付费调用、HF Job。
 
+## 独立来源预检已收口（v1.9 第0D节优先）
+
+Owner 转交报告：Source Stage 5/5 合成通过，独立时间/完整性/目标 revision 和七项端到端拒绝未验；生产实时关闭态回读未完成。最近可查部署文档另有较晚 20412c0e，非实时确认。现有 RolePlay 留证原合同 HOLD 不变。唯一待批准技术任务为 StoryForge 本地独立前后绑定与七类合成拒绝测试；先核查 Mac 固定旧 new-generation-evidence-pilot（远端422，不可假定缺失），复用 Source Stage 和历史 binder 逻辑，不用旧评估材料训练。无可复用能力才薄扩展；必须对独立原件验证，重算自报 hash 的负例仍 HOLD，人工规则完整性不自动 PASS。生产回读由运行责任方单独处理，不开服务。未获专项批准不写新增代码，不采集、不调用模型、不启动 R61。221/T 不重开。
+
 ## 保持不变的试点与准入合同
 
 后续另获批准的新试点才继续采集，优先 Owner 可控原创世界、3–5条真实原始目标（可少收或0）。不能将本对话生成的续写冒充真实历史。
@@ -47,6 +51,6 @@ RolePlay 已查重：`main@6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424` 对上次�
 
 先用简短报告说明实际 HEAD、已核对的权威文档、能复用哪些现有能力、首批新源材料是否已经存在。然后执行无需新增权限的最小动作；没有真实素材时，明确只缺哪一个 Owner 提供/确认的材料或采集操作，不重复征求已经批准的方向，不声称完成未来工作。每轮交付 SAFE 状态、实际完成量、证据缺口、下一项最小动作。不要以工程步骤替代内容质量进展。
 
-保持 `quality_v1_admitted=0`、`train_admitted=0`、`training_authorized=false`、`model_promoted=false`、`r61_started=false`，R60 NO_PROMOTE，直到相应门禁及独立授权真正通过。当前第一项实际动作是第 0C 节已限定的关闭态实时回读与纯合成独立来源绑定预检；已知清单/T 已冻结，不重复核查历史全集或征求同一政策批准。不自行采集、补评或重复征求已完成的质量批准。
+保持 `quality_v1_admitted=0`、`train_admitted=0`、`training_authorized=false`、`model_promoted=false`、`r61_started=false`，R60 NO_PROMOTE，直到相应门禁及独立授权真正通过。当前第一项实际动作是第 0D 节的待专项批准最小本地绑定任务（先查 Mac 旧 pilot）；已知清单/T 已冻结，不重复核查历史全集或征求同一政策批准。不自行采集、补评或重复征求已完成的质量批准。
 
 ---

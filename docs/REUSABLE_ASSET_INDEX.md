@@ -28,6 +28,8 @@
 
 - 独立适用训练输入查重（2026-11-27）：RolePlay 既有 `scripts/export-top-v2-chat-context.mjs::contextQuery`（只复用指定会话逻辑，禁止默认排名批量导出）、`scripts/export-v2-story-training-evidence.mjs`、`src/app/api/stories/v2/[id]/versions/route.ts`；消息 GET 部分分支会触发修复，非严格零写审计。冻结 R60 `experiments/r58_quality/gold_source_context_stage.py` 与 `test_gold_source_context_stage.py` 已有结构/摘要预检但时间点 NOT_PROVEN。原 HOLD 导出用途不变，独立合法来源前后绑定预检尚未完成，见任务书 v1.8 §0C。无需重复开发或先开留证。
 
+- 2026-11-27 独立来源预检 Owner 回执：Source Stage 5/5 合成通过；独立时间、完整性、目标 revision 与七类端到端拒绝未验。新增查重冻结 R60 `scripts/r60_p2_gold48_source_component_bind_cpu.py` 与旧 R02 point-in-time 合同：可参考既有 revision/组件绑定，旧 P2 用途仅评估，不复用为训练源。Mac 本地旧 pilot 固定 ca5ad674 提交远端请求422，待本机先查，不重复实现。最新可查 RolePlay 部署记录 20412c0e（2026-11-26 18:18:46 UTC+8），非当前运行实证。任务书 v1.9 §0D 待专项批准本地最小验证，不新增留证系统。
+
 ## 使用规则
 
 1. **默认从最新 `origin/main` 开始。** 新开发之前先搜索现有代码、测试、规范和本索引；以**固定 SHA + 文件路径**定位，不能仅凭会变动的分支名决定复用。
