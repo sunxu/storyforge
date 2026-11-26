@@ -18,7 +18,7 @@
 
 World04 Base336/History32/R50 known5/P2 精确 ID 零重叠；375+8 个现有版本字段/姓名初筛零命中，History32 版本级未完成；完整保护集及语义独立仍 HOLD。不再无限追查历史名册，绝不访问 R50 密封正文。
 
-Owner 已批准限定 HF 双审及外发，不设费用上限。旧路由 4 次 HTTP 400，真实有效评审0；HF Router 实时目录与合成测试已确认 `deepseek-ai/DeepSeek-V4.1-Flash-1017:cloudflare`、`moonshotai/Kimi-K3.1-Pro:deepinfra` 两条 HTTP 200/JSON/精确引用 PASS。新模型/服务商正式外发范围仍须确认。查 [资产索引](../REUSABLE_ASSET_INDEX.md) 的 HF 调用规范，直接复用已冻结盲审包和 Quality-v1 六维合同；不要重试失效路由、查询空 SDK 映射或重复合成测试。确认新路由外发后执行四次正式评审（每候选/Reviewer一次），分离调用、原始私有回执先落盘、精确引文和评分校验、SAFE 汇总。禁止自动重试和替代模型。两份评审不等于 Owner 质量批准、完整隔离或统计独立；只有双 PASS 候选才继续真实准入阻塞核查。无双 PASS 则停止本批，不开发新 corpus 扩展。GPU/HF Job/训练/晋升/R61 未授权。
+Owner 已批准限定 HF 双审及外发、不设费用上限，随后批准新路由。旧路由 4 次 HTTP 400，真实有效评审0；HF Router 合成2/2 PASS，正式评审4/4 HTTP 200、有效3/4（均PASS）、双PASS候选1、有效成对判定分歧0、有效评审低于门槛/严重标记均零。总38005 tokens、报告费用$0.105284028。剩余一份原始PASS声明9项证据中7项逐字匹配、rule_fidelity及hard_fact_or_ban两项无精确来源，保持HOLD；原始回执未改，诊断新增模型调用0。见 [资产索引](../REUSABLE_ASSET_INDEX.md) HF调用规范。禁止重试旧路由、重复合成测试、重复有效评审或改写引文；本轮不补评另一候选。仅推进已有双PASS的一条：Owner本地对照原始材料与两份评审，完成独立质量批准、上下文适用/无未来信息、来源版本等证据核查；完整保护集及语义独立仍HOLD，不伪造证明或无限追查旧历史。当前正式准入0，必要证据齐备后才核对最小 corpus 兼容阻塞及独立CPU授权。GPU/HF Job/训练/晋升/R61未授权。
 
 ## 保持不变的试点与准入合同
 
@@ -37,6 +37,6 @@ Owner 已批准限定 HF 双审及外发，不设费用上限。旧路由 4 次 
 
 先用简短报告说明实际 HEAD、已核对的权威文档、能复用哪些现有能力、首批新源材料是否已经存在。然后执行无需新增权限的最小动作；没有真实素材时，明确只缺哪一个 Owner 提供/确认的材料或采集操作，不重复征求已经批准的方向，不声称完成未来工作。每轮交付 SAFE 状态、实际完成量、证据缺口、下一项最小动作。不要以工程步骤替代内容质量进展。
 
-保持 `quality_v1_admitted=0`、`train_admitted=0`、`training_authorized=false`、`model_promoted=false`、`r61_started=false`，R60 NO_PROMOTE，直到相应门禁及独立授权真正通过。当前第一项实际动作是确认新 HF 路由的正式私有外发范围，然后执行已准备的双审，不重新采集。
+保持 `quality_v1_admitted=0`、`train_admitted=0`、`training_authorized=false`、`model_promoted=false`、`r61_started=false`，R60 NO_PROMOTE，直到相应门禁及独立授权真正通过。当前第一项实际动作是 Owner 本地核查唯一双 PASS 候选及尚缺准入证据；不重新采集或补评。
 
 ---
