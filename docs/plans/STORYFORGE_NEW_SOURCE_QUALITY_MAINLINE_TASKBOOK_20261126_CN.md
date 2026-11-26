@@ -1,10 +1,10 @@
 # StoryForge — 新来源质量数据建设任务书
 
-**版本：** v1.7（2026-11-27）  
+**版本：** v1.8（2026-11-27）  
 **决议：** Owner 已批准将数据建设主线转向新采集、来源可控的高质量原始互动样本。  
 **范围：** 新原创世界有限采集、审核、证据绑定；当前 World04 有限定 HF 双审授权，变更外发路由须确认；非 R61 启动、训练或生产部署授权。  
 **文档基线：** `main@5de5f81f1db1724419dc699c815ae4e042639b17`；接手时重新核验 HEAD。  
-**状态：** `WORLD04_QUALITY_APPROVED1__SOURCE_ISOLATION_HOLD`；下一阶段 `KNOWN_SCOPE_FROZEN__CAPTURE_PREFLIGHT_PENDING`。
+**状态：** `WORLD04_QUALITY_APPROVED1__SOURCE_ISOLATION_HOLD`；下一阶段 `REUSE_CONFIRMED__INDEPENDENT_SOURCE_PREFLIGHT_PENDING`。
 
 ## 0. 2026-11-26 实际进展与现行下一步（覆盖下文旧采集状态）
 
@@ -37,6 +37,16 @@ Owner 在 v1.5 第 0A 节限定范围政策单独呈请后明确回复“批准�
 Owner-local SAFE：`KNOWN_SCOPE_FROZEN__CAPTURE_PREFLIGHT_PENDING`，原草案 221 Story（Base336 172/375 版本、History32 32/120 版本、R50 已知5、P2/Gold48 8/48题、E1–E4 4），7 份来源引用再验真，追加 Gold87/Gold108/R04/v0.1 Train/Validation/DEV20/R45 Train/Validation 8 个来源组均已覆盖、增量0、最终221。R57 历史目标回链回执已复核。T 为 Owner 实际冻结回执的 `2026-11-26T16:17:21.337667+00:00`，非文档提交时间。私有原件保留，Git 仅 SAFE 聚合。不再整理或扩大历史全集；`full_protected_universe_verified=false`、未知范围风险接受 true。新世界语义核查未完成，World04 不追溯适用；R50 sealed 未读，DB/模型调用0。
 
 **现行下一步：** RolePlay `main@6cd4ccf5ebf9f44872e28bdec2c3a94b06c3d424` 未变。实际源码 `src/lib/generation-evidence/assessment.ts::assessPendingEvidence` 对所有 attempt 无条件加入 RELAY_EGRESS_UNKNOWN，仅返回 PARTIAL/UNVERIFIABLE 与 HOLD；消费者 `verify-bundle.mjs` 也固定 HOLD。故完整采集和比较成功本身仍不能产生原合同下的训练可用证据。不能先采集再解决认证，不绕过原用途限制。优先请 RolePlay 运行责任方使用现有 preproduction-checklist、audit-runtime、grant-control 合同，给出关闭态实际部署、身份/权限、Worker/网关、SQL 已登记与当前有效状态，以及是否已有可复用的最终出口证据路径；只有源合同明确可执行、真实新世界原创及已知范围语义隔离审核通过、单会话操作/模型/费用/导出独立获批后才采集一条。若现有可验证独立派生输入路径可满足 StoryForge 来源合同且不违反 RolePlay HOLD/用途限制，先说明现成证据与许可边界；否则 HOLD，提出真实最小缺件，不提前开发。现有生产运行态尚未实查；不启用服务来获得审计 PID，不自动重复 SQL 或部署。不启动 HF Job、训练、R61。
+
+## 0C. RolePlay 最小核查报告与独立来源路径预检（2026-11-27）
+
+Owner 转交 RolePlay 核查 SAFE：`REUSE_CONFIRMED__CAPTURE_PREFLIGHT_PENDING`。最新有记录生产版本 22c25fc6fc0a（11-26 12:16:37 双公网版本及 ready 复核），main 6cd4ccf5ebf9；本 Agent 复核两仓库 HEAD、RolePlay 固定发布文档及源码，未实时登录生产。报告称五份 evidence SQL 已由迁移登记接口回读；本 Agent 未独立重查登记/ACL/函数指纹。历史 Worker、网关、非 root 身份及 11-13 单会话 1 次真实调用/34551 字节对照 PASS 可复用，但原私有包未重验，最近记录关闭不等于当前关闭实证。禁止为审计 PID 启动服务、重复 SQL 或部署；19 份历史延期 SQL 和 Ledger 不纳入。
+
+**路线选择：** 原 RolePlay export/assessment/verify-bundle 保持 PARTIAL/HOLD、用途限制与原接收人约束；不启动最终出口认证工程。StoryForge 优先独立合法来源的 source-bound derived training input，不从用途受限 HOLD 包直接派生训练数据，不宣称 actual-sent。实际适用输入的规则/人物/历史/时间/目标必须独立可证；使用权及权限尚需真实绑定。独立路径若可成立，不必为取得训练候选开启留证 Worker/Archive/Export 或申请 grant；是否使用现有留证作独立辅助证据依单独许可，不作默认必需工程。
+
+**新增查重实证：** RolePlay 固定 main 6cd4ccf5 中 `scripts/export-top-v2-chat-context.mjs::contextQuery` 已有 READ ONLY 会话/故事/玩家设定/记忆与导演状态/有序消息（含 mutation_revision、created_at）查询，但入口默认排名批量采集，单会话三元组与前后快照绑定尚待核验，不运行默认入口；`scripts/export-v2-story-training-evidence.mjs` 已有当前卡、历史内容版本、审核快照、checkpoint 只读提取，不证明实际时间点；`src/app/api/stories/v2/[id]/versions/route.ts` 有认证后版本读取；`src/app/api/chat/v2/messages/route.ts` 的部分 GET 分支可能触发 stale streaming 修复，不能默认当严格零写只读审计入口。冻结 R60 `experiments/r58_quality/gold_source_context_stage.py::stage_source` 已验证目标 SHA、历史角色/完成态、System 绑定与 staged hash，但明确 temporal NOT_PROVEN、source_version_sha256 空；不冒充前瞻资格。已有 `test_gold_source_context_stage.py` 可复用。
+
+**当前唯一下一步：** RolePlay 运行责任方完成关闭态实时回读（不启动服务）与一次纯合成独立来源绑定预检：使用已有查询/版本/目标读回合同和既有测试；先固定新原创世界的适用卡版本及规则、玩家设定、有效历史、状态和当前 User，再模拟目标持久化及 revision 读回；验证生成前快照与生成后目标的同一来源/会话/轮次、原文及摘要，检测版本变化、历史/规则遗漏、未来消息、目标替换、跨会话与摘要不符；缺证即 HOLD。优先选择静态规则、无额外记忆/组件或动态状态依赖的可控会话，若实际存在则完整保留而非删规则。只使用现有合成资产，不访问真实候选、不开采集、不调用模型。随后若证实可行，另行批准一世界一会话一目标、实际所需调用/数据权限，先完成新世界语义审查；不先采集再补证。当前未完成该预检、未核实实时关闭态，不批准新增实现或任何生产/训练动作。保留 221/T 与 World04 原决定。
 
 ## 1. 唯一产品目标
 

@@ -26,6 +26,8 @@
 - 入口：`src/lib/generation-evidence/capture.ts`、`capture-control.ts`、`export-service.ts`、`ops/evidence/worker.ts`、`ops/evidence/verify-bundle.mjs`。历史单会话导出/独立字节比较成功，但 RELAY_EGRESS_UNKNOWN / PARTIAL / HOLD，接收人签收未完成；校验器实际固定 HOLD/certifiedLineage=false。不复写、不绕过、不冒称训练放行。比较器输出含私有文件摘要，留 Owner 本地，不粘贴完整输出到聊天/Git。现成能力不等于当前运行已开启，不继承历史生产批准。
 - 历史隔离权威缺口见冻结 R60 `docs/evidence/R58_G1_PROTECTED_SOURCE_INVENTORY_REUSE_NEXT_STEP_SAFE_20261101.md` 与 `docs/plans/R60_BASE336_P2_PROTECTED_CROSSWALK_EVIDENCE_INDEX_20261118_CN.md`。11月20日风险接受仅限 Gold48 评估；不再重复 2263 文件扫描。新来源限定范围政策已获 Owner 专项批准（主线任务书 v1.7 §0A/0B）；仅未来全新原创适用，已知清单221 Story及 T 已实际冻结（2026-11-26T16:17:21.337667+00:00），不替代当前 gate 或自动授权采集/训练。
 
+- 独立适用训练输入查重（2026-11-27）：RolePlay 既有 `scripts/export-top-v2-chat-context.mjs::contextQuery`（只复用指定会话逻辑，禁止默认排名批量导出）、`scripts/export-v2-story-training-evidence.mjs`、`src/app/api/stories/v2/[id]/versions/route.ts`；消息 GET 部分分支会触发修复，非严格零写审计。冻结 R60 `experiments/r58_quality/gold_source_context_stage.py` 与 `test_gold_source_context_stage.py` 已有结构/摘要预检但时间点 NOT_PROVEN。原 HOLD 导出用途不变，独立合法来源前后绑定预检尚未完成，见任务书 v1.8 §0C。无需重复开发或先开留证。
+
 ## 使用规则
 
 1. **默认从最新 `origin/main` 开始。** 新开发之前先搜索现有代码、测试、规范和本索引；以**固定 SHA + 文件路径**定位，不能仅凭会变动的分支名决定复用。
