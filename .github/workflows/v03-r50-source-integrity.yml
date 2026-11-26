@@ -1,0 +1,258 @@
+name: R50 Source Integrity (no GPU)
+
+on:
+  push:
+    branches:
+      - audit/r49-r50-source-intake-20261015
+    paths:
+      - '.github/workflows/v03-r50-source-integrity.yml'
+      - 'docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json'
+      - 'scripts/v03_r50_*.py'
+      - 'tests/test_v03_r50_*.py'
+      - 'evaluations/v0.2/source-archives/16-20/**'
+      - 'evaluations/v0.2/gold-quality-*/gold_quality_accepted_*.jsonl'
+      - 'evaluations/v0.1/test/prompts.jsonl'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-sources:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run R50 verifier unit tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_sources.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_id_isolation.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_world_alias_screen.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_text_reuse_screen.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_exhaustive_screen.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_private_r45_isolation.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_chronology_screen.py' -v
+          python3 -m unittest discover -s tests -p 'test_v03_r50_case_provenance.py' -v
+      - name: Synthetic test of old original LFS rank handling (no archive download)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_full_original_world_inventory.py' -v
+      - name: Synthetic W17 flagged-source overlap tests (private data unavailable)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_source_overlap.py' -v
+      - name: Verify recorded W17 known-literal exposure invariants (no private data)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_exposure_receipt.py' -v
+      - name: Synthetic tests for W17 private AI semantic kit (no private source)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_build_w17_semantic_kit.py' -v
+      - name: Verify private W17 semantic decision validator with synthetic inputs
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_ai_decision_validator.py' -v
+      - name: Synthetic read-only W17 invalid-citation classification tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_diagnose_w17_evidence_paths.py' -v
+      - name: Verify W17 owner-reported independent AI verdict remains a semantic HOLD
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_owner_review_receipt.py' -v
+      - name: Test private seven-gap W17 source locator (synthetic-only)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_index_w17_seven_gaps.py' -v
+      - name: Verify seven-gap private source index coverage contract (synthetic-only)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_seven_gap_coverage.py' -v
+      - name: Seven-gap private contextual packet synthetic provenance tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_build_seven_gap_context_packets.py' -v
+      - name: Synthetic seven-gap private AI workpaper verification tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_seven_gap_workpaper.py' -v
+      - name: Test fail-closed private AI reviewer runner (NO model call)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_seven_gap_ai_runner.py' -v
+      - name: Synthetic full-original-message private W17 evidence dossier tests
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_build_w17_full_source_dossiers.py' -v
+      - name: Verify SHA-pinned full-original W17 dossier and AI workpaper contracts
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_verify_w17_full_source_review.py' -v
+      - name: Synthetic fail-closed full-source AI reviewer runner test (no remote call)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_full_source_ai_runner.py' -v
+      - name: Synthetic W17 original-message temporal metadata audit gate
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_timepoint_metadata_gate.py' -v
+      - name: Verify W17 temporal owner receipt remains cutoff NOT_CERTIFIED
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r50_w17_timepoint_receipt.py' -v
+      - name: R51 Gold195 pinned original candidate integrity (NO admission, no GPU)
+        run: |
+          python3 -m unittest discover -s tests -p 'test_v03_r51_gold195_readiness.py' -v
+          python3 scripts/v03_r51_gold195_readiness.py --repo .
+      - name: Verify exact bytes against Git source receipt (no output upload)
+        run: |
+          python3 scripts/v03_r50_verify_sources.py \
+            --repo . \
+            --receipt docs/evidence/V03_R50_SOURCE_16_20_RECEIPT_20261015.json \
+            --output "$RUNNER_TEMP/r50-private-sha256.json"
+          python3 - "$RUNNER_TEMP/r50-private-sha256.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          doc = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert doc["status"] == "SOURCE_BYTES_VERIFIED_ONLY__NO_HELDOUT_ADMISSION"
+          assert doc["file_count"] == 35
+          assert doc["world_count"] == 5
+          assert doc["total_bytes"] == 70383383
+          print("R50_SOURCE_BYTES_VERIFIED_35_35__NO_HELDOUT_ADMISSION__NO_GPU")
+          PY
+      - name: Cross-check five story and session IDs against historic Gold195 and exposed Test20
+        run: |
+          python3 scripts/v03_r50_id_isolation.py --repo . --output "$RUNNER_TEMP/r50-id-isolation.json"
+          python3 - "$RUNNER_TEMP/r50-id-isolation.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert report["world_count"] == 5
+          assert sum(report["history_row_counts"].values()) == 215
+          assert not report["exact_story_id_conflicts"]
+          assert not report["exact_session_id_conflicts"]
+          assert report["semantic_alias_review"] == "PENDING"
+          print("R50_EXACT_ID_CHECK_PASS_ONLY__SEMANTIC_ISOLATION_PENDING")
+          print("historic_gold_story_ids:", report["known_historic_story_id_count"])
+          print("historic_gold_session_ids:", report["known_historic_session_id_count"])
+          PY
+      - name: Screen aliases, historic name mentions and exported-card chronology (not final isolation)
+        run: |
+          python3 scripts/v03_r50_world_alias_screen.py \
+            --repo . \
+            --output "$RUNNER_TEMP/r50-world-alias-screen.json"
+          python3 - "$RUNNER_TEMP/r50-world-alias-screen.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          a = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert a["status"] == "AUTOMATED_CANDIDATE_SCREEN_DONE__MANUAL_WORLD_ISOLATION_PENDING"
+          assert a["historic_rows_scanned"] == 215
+          assert len(a["worlds"]) == 5
+          assert a["final_heldout_cases"] == 0
+          print("R50_WORLD_ALIAS_SCREEN_COMPLETED__MANUAL_REVIEW_PENDING")
+          print("cross_world_character_id_groups:", len(a["same_character_id_world_groups"]))
+          print("cross_world_name_groups:", len(a["same_name_world_groups"]))
+          print("historic_name_mentions_by_story:", a["historical_rows_with_name_mentions_by_world"])
+          print("world_card_updates_after_first_message:",
+                [w["rank"] for w in a["worlds"] if w["export_card_updated_after_first_message"]])
+          PY
+      - name: Probe raw narrative JSONL structure without exposing text
+        run: |
+          python3 scripts/v03_r50_source_schema_probe.py --repo . --output "$RUNNER_TEMP/r50-source-structure.json"
+          python3 - "$RUNNER_TEMP/r50-source-structure.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          x = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert x["status"] == "SOURCE_JSONL_SCHEMA_IDENTIFIED__DEDUP_NOT_YET_PERFORMED"
+          assert len(x["worlds"]) == 5
+          for w in x["worlds"]:
+              print("R50_STRUCTURE", w["rank"], "rows", w["rows"],
+                    "root_type", w["root_type"], "keys", w["root_keys"],
+                    "child_fields", w["schema_fields"])
+          PY
+      - name: Scan historic Gold and old Test for long text reuse (privacy-preserving)
+        run: |
+          python3 scripts/v03_r50_text_reuse_screen.py --repo . --output "$RUNNER_TEMP/r50-text-screen.json"
+          python3 - "$RUNNER_TEMP/r50-text-screen.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          x = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert x["status"] == "LONG_TEXT_REUSE_SCREEN_COMPLETED__HUMAN_REVIEW_PENDING"
+          assert x["historic_records"] == 215
+          assert len(x["worlds"]) == 5
+          assert x["fresh_heldout_cases"] == 0
+          print("R50_TEXT_REUSE_SCAN_COMPLETED__NOT_SEALED")
+          print("cross_world_exact_message_pairs:", x["cross_world_exact_message_pairs"])
+          print("cross_world_shared_long_fragment_pairs:", x["cross_world_shared_long_fragment_pairs"])
+          for w in x["worlds"]:
+              print("R50_TEXT_COUNTS", w["rank"], "messages", w["text_messages"],
+                    "historic_exact", w["historic_exact_message_hit_count"],
+                    "historic_long_fragments", w["historic_120char_block_hit_count"])
+          PY
+      - name: Check every offset of 120-codepoint windows (no story text output)
+        run: |
+          python3 scripts/v03_r50_exhaustive_screen.py --repo . --output "$RUNNER_TEMP/r50-exhaustive.json"
+          python3 - "$RUNNER_TEMP/r50-exhaustive.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          d = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert d["status"] == "ALL_OFFSET_120_CODEPOINT_SCREEN_DONE__SEMANTIC_REVIEW_PENDING"
+          assert d["window_step"] == 1 and d["historic_records"] == 215
+          assert len(d["worlds"]) == 5 and d["heldout_test_cases"] == 0
+          print("R50_ALL_OFFSET_SCAN_DONE_NOT_A_FINAL_HELDOUT")
+          print("cross_world_pairs:", d["new_world_shared_120_codepoint_window_pairs"])
+          for v in d["worlds"]:
+              print("R50_EXHAUSTIVE_COUNTS", v["rank"], "historical_exact",
+                    v["historic_exact_long_message_fingerprints"], "historical_windows",
+                    v["historic_all_offset_120_codepoint_fingerprints"])
+          PY
+      - name: Inspect recorded chat and source-card chronology (without printing story)
+        run: |
+          python3 scripts/v03_r50_chronology_screen.py --repo . --output "$RUNNER_TEMP/r50-chronology.json"
+          python3 - "$RUNNER_TEMP/r50-chronology.json" <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+          report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+          assert report["status"] == "CHRONOLOGY_METADATA_CHECKED__POINT_IN_TIME_MANUAL_REVIEW_PENDING"
+          assert len(report["stories"]) == 5
+          assert report["fresh_heldout_cases"] == 0
+          print("R50_CHRONOLOGY_METADATA_CHECKED__MANUAL_CUTOFF_REVIEW_PENDING")
+          print("message_count_total:", report["total_message_records"])
+          for world in report["stories"]:
+              print("R50_CHRONOLOGY", world["story_number"],
+                    "messages", world["message_records"],
+                    "timestamps_missing", world["messages_missing_timestamp"],
+                    "pre_update", world["messages_before_export_card_update"],
+                    "versions", world["content_version_records"],
+                    "snapshot_records", world["moderation_snapshot_records"],
+                    "version_timestamp_buckets", world["content_version_timestamp_buckets"],
+                    "version_source_updated_at", world["content_version_source_update_buckets"],
+                    "version_archived_at", world["content_version_archive_time_buckets"],
+                    "review_snapshot_buckets", world["moderation_snapshot_timestamp_buckets"],
+                    "version_keys", world["content_version_schema_keys"],
+                    "snapshot_keys", world["moderation_snapshot_schema_keys"])
+          PY
+      - name: Verify real source message ID coverage for future case cutoffs
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("evaluations/v0.2/source-archives/16-20")
+          items = []
+          for folder in sorted(root.iterdir()):
+              if not folder.is_dir():
+                  raise ValueError("unexpected source entry")
+              rank = int(folder.name.split("-", 1)[0])
+              transcript = json.loads((folder / (folder.name + ".jsonl")).read_text(encoding="utf-8"))
+              card = json.loads((folder / "story-cards.json").read_text(encoding="utf-8"))
+              messages = transcript["messages"]
+              message_ids = [m.get("id") for m in messages if isinstance(m, dict)]
+              present = [v for v in message_ids if isinstance(v, str) and v]
+              if card["story_id"] != transcript["story"]["id"]:
+                  raise ValueError("source story mismatch")
+              if card["session_id"] != transcript["session"]["session_id"]:
+                  raise ValueError("source session mismatch")
+              if len(present) != len(set(present)):
+                  raise ValueError("duplicate message id")
+              items.append({"rank": rank, "messages": len(messages),
+                            "ids": len(present), "missing_id": len(messages)-len(present)})
+          if {x["rank"] for x in items} != set(range(16, 21)):
+              raise ValueError("missing source")
+          print("R50_REAL_SOURCE_MESSAGE_ID_SCHEMA_VERIFIED__TEST_AUTHORING_PENDING")
+          for x in items:
+              print("R50_SOURCE_IDS", x["rank"], "messages", x["messages"],
+                    "stable_ids", x["ids"], "missing", x["missing_id"])
+          PY

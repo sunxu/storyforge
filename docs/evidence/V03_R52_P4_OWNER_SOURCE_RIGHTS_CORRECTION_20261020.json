@@ -1,0 +1,21 @@
+{
+  "schema": "storyforge-r52-owner-clarification-evidence-v1",
+  "recorded_date": "2026-10-20",
+  "owner_statement": "P4 characters and story are unrelated to Link Click; ownership and usage rights are not disputed.",
+  "owner_statement_status": "OWNER_ATTESTED__NO_INDEPENDENT_LEGAL_FINDING",
+  "prior_external_ip_attribution": "RETRACTED_AS_UNSUPPORTED",
+  "alleged_third_party_ip_hold_for_p4": "WITHDRAWN",
+  "prior_frozen_private_review_receipt_sha256": "479315ae57731ca1e6c43cd34a5e0453dc9a6b718d704880bb8c3f3758014a21",
+  "blind_review_zip_sha256_unchanged": "937b27ea2a9ec3c504f0592a23be831855540bb7203cd4d74f3c0487ed9912cb",
+  "second_look_zip_sha256_unchanged": "9829477183082c8448873da241658a062f16c8775ab2bb4a0b8e606901610975",
+  "safe_addendum_sha256": "54adb1c46b8ab4dd1fe244633d16540c10ddeb5e5d19c412171b891c66e7fd02",
+  "all_story_and_candidate_source_material_unchanged": true,
+  "p4_nonblind_secondlook_plausible": 5,
+  "p4_nonblind_secondlook_soft_quality_concerns": 5,
+  "blind_independent_final_review_completed": 0,
+  "actual_train_admitted": 0,
+  "actual_validation_admitted": 0,
+  "world_isolation_signed": 0,
+  "r50_sealed_heldout_opened": false,
+  "notes": "This correction supersedes previous unsupported Link Click inference. It does not approve content, world isolation, experimental model training or release. P4 generic quality/safety gates remain separate from the withdrawn IP attribution."
+}

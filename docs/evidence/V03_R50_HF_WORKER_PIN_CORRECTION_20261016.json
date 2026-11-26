@@ -1,0 +1,33 @@
+{
+  "schema": "storyforge-r50-hf-cpu-worker-revision-typo-correction-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "branch": "audit/r49-r50-source-intake-20261015",
+  "failure_job": {
+    "id": "6ad1edc35ccb47ba0f7b1c00",
+    "exit_code": 1,
+    "cpu_guard": "PASS",
+    "jinja2": "PASS",
+    "tokenizer_download": "NOT_STARTED",
+    "error": "QWEN_MAIN_SHA_MISMATCH"
+  },
+  "previous_wrong_worker_sha": "1d4bf0f2ff6012fd82039d0dd7c60c0",
+  "canonical_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "root_cause": "Worker was committed with a truncated/incorrect SHA; not evidence of HF outage.",
+  "correction": [
+    "Correct worker revision to exact frozen 40-hex SHA",
+    "Run local triple-pin equality validation in CPU guard",
+    "Reject known previous bad SHA in regression test",
+    "Preserve per-file tokenizer Git snapshot checks"
+  ],
+  "status": "CODE_PATCH_PENDING_REMOTE_TOKENIZER_VERIFICATION",
+  "new_paid_hf_job": false,
+  "model_inference": false,
+  "gpu": false,
+  "r45_full_exact": "USER_REPORTED_PASS",
+  "semantic_world_alias": "HOLD",
+  "qwen_actual_tokens": "PENDING",
+  "four_arm_contract": "DRAFT",
+  "final_heldout_seal": "NOT_PERFORMED",
+  "privacy": "No raw cases, answer keys, provenance or tokenizer receipts committed"
+}

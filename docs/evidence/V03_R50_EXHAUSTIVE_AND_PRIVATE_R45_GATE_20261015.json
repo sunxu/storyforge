@@ -1,0 +1,47 @@
+{
+  "schema": "storyforge-r50-complete-window-and-r45-prep-v1",
+  "date": "2026-10-15",
+  "repository": "sunxu/storyforge",
+  "audit_branch": "audit/r49-r50-source-intake-20261015",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "actions": {
+    "exhaustive_codepoint_overlap": {
+      "ci": "https://github.com/sunxu/storyforge/actions/runs/38693811139",
+      "status": "SUCCESS",
+      "historic_records": 215,
+      "fresh_worlds": 5,
+      "normalized_window_codepoints": 120,
+      "stride_codepoints": 1,
+      "historical_same_long_messages": 0,
+      "historical_same_long_windows": 0,
+      "new_world_pairs_with_same_long_windows": [],
+      "limitations": [
+        "BLAKE2b-128 fingerprint equality used; exact text byte comparison not independently performed for a positive collision.",
+        "Does not identify paraphrases, shorter contexts or semantic aliases.",
+        "Sources in this check are Git Gold195 and exposed Test20; private R45 49/15 are separate."
+      ]
+    },
+    "frozen_r45_private_input_gate": {
+      "cli_script": "scripts/v03_r50_private_r45_isolation.py",
+      "synthetic_tests": 5,
+      "expected_train_rows": 49,
+      "expected_validation_rows": 15,
+      "pinned_train_sha256": "e7442993088617c4eaefd3a0c9efc7651932f7048f34586046bf6d5b5981a742",
+      "pinned_validation_sha256": "5ebbb3c6986a5ac4d294175bab1980ee61df08536f9b8438c8a67010630f1963",
+      "actual_private_file_verification": "NOT_EXECUTED_PRIVATE_FILES_NOT_AVAILABLE",
+      "blockers": [
+        "R45 original frozen private train and validation paths are not presently accessible to this audit.",
+        "No later R50 independent 40–60 prompt inputs yet received; no sealing."
+      ],
+      "privacy": "writes only aggregate results to an exclusive create-only 0600 output file outside repository"
+    },
+    "combined_ci": {
+      "run": "https://github.com/sunxu/storyforge/actions/runs/38694118322",
+      "status": "SUCCESS",
+      "synthetic_tests": 27,
+      "default_repo_ci": "FAIL_RUFF_TECHNICAL_DEBT_SEPARATE"
+    }
+  },
+  "current_release_state": "R50_SOURCE_SCREEN_AUTOMATED_PASS__PRIVATE_R45_REAL_INPUT_PENDING__FRESH_HELDOUT_NOT_SEALED__NO_GPU",
+  "model_quality_promoted": false
+}

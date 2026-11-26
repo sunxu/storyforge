@@ -1,0 +1,25 @@
+name: R52 Three-Pair Complete Source Pack (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_pack_priority_full_source_pairs.py
+      - tests/test_v03_r52_pack_priority_full_source_pairs.py
+      - .github/workflows/r52-priority-full-source-pack.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_pack_priority_full_source_pairs.py
+      - tests/test_v03_r52_pack_priority_full_source_pairs.py
+      - .github/workflows/r52-priority-full-source-pack.yml
+  workflow_dispatch:
+jobs:
+  fake-original-source-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Private complete-source packaging on fake data only
+        run: python -m unittest discover -s tests -p 'test_v03_r52_pack_priority_full_source_pairs.py' -v

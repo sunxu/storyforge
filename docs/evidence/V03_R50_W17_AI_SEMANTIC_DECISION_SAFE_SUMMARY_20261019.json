@@ -1,0 +1,44 @@
+{
+  "schema": "storyforge-r50-w17-sanitized-ai-review-verification-v1",
+  "review_source": "OWNER_LOCAL_PRIVATE_AI_REVIEW",
+  "verification": "KIT_AND_DECISION_SHA_SCHEMA_AND_RESOLVED_EVIDENCE_POINTERS_ONLY",
+  "reviewer_independence_or_correctness_verified_by_script": false,
+  "private_kit_sha256": "0c1dccd8de0926ab416a85ccb77f474e668138938171f0419eb43ce582a99cc3",
+  "private_decision_sha256": "61e4aa21370c2f9f8ef84d648fb600f51e2fa151e30e25999bb328f23da581bf",
+  "scoped_pair_count": 3,
+  "pair_decisions": [
+    {
+      "old_rank": 2,
+      "new_rank": 17,
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "evidence_pointer_count": 9
+    },
+    {
+      "old_rank": 4,
+      "new_rank": 17,
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "evidence_pointer_count": 9
+    },
+    {
+      "old_rank": 10,
+      "new_rank": 17,
+      "decision": "INSUFFICIENT_EVIDENCE",
+      "evidence_pointer_count": 8
+    }
+  ],
+  "decision_counts": {
+    "CLEAR_WITH_EVIDENCE": 0,
+    "INSUFFICIENT_EVIDENCE": 3,
+    "WORLD_LINK": 0
+  },
+  "shared_literal_type": "PLATFORM_TEMPLATE",
+  "known_04_07_graph_edge": "LINKED_CONFIRMED_IN_PRIOR_SCOPE",
+  "possible_transitive_link_to_w17": "INSUFFICIENT_EVIDENCE",
+  "remaining_evidence_item_count": 7,
+  "full_semantic_world_graph_gate": "HOLD",
+  "heldout_final_seal": "NOT_PERFORMED",
+  "r50_cases_modified": false,
+  "model_promotion": false,
+  "no_model_generation_or_gpu_by_this_validator": true,
+  "privacy": "No raw shared literal, source conversations, free-text rationales, character names, or per-case data in Git."
+}

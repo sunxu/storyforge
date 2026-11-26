@@ -1,0 +1,37 @@
+{
+  "schema": "storyforge-r50-w17-three-card-hint-citation-owner-diagnostic-v1",
+  "date": "2026-10-19",
+  "repository": "sunxu/storyforge",
+  "source": "OWNER_LOCAL_READ_ONLY_W17_EVIDENCE_PATH_DIAGNOSTIC",
+  "examined_pointer_count": 26,
+  "flagged_count": 3,
+  "flagged": [
+    {
+      "old_rank": 2,
+      "pointer_index": 8
+    },
+    {
+      "old_rank": 4,
+      "pointer_index": 8
+    },
+    {
+      "old_rank": 10,
+      "pointer_index": 7
+    }
+  ],
+  "common_root_class": "W17_CARD_HINTS",
+  "all_flagged_paths_grammar": "VALID",
+  "all_flagged_paths_exist_in_frozen_kit": true,
+  "all_flagged_values_nonempty": true,
+  "source_raw_strings_independently_read_by_assistant": false,
+  "inferred_only_missing_w17_card_hint_key_from_builder": "WARNING",
+  "inferred_key_verification_level": "SCHEMA_INFERENCE_NOT_DIRECT_RAW_DECISION_READ",
+  "policy": "Allow exact w17_export_card_review_hints.WARNING solely as non-substantive limitation context; it never satisfies W17 positive evidence requirement.",
+  "old_to_new_semantic_world_gate": "HOLD",
+  "no_final_heldout_seal": true,
+  "independent_ai_decision_file_modified": false,
+  "private_kit_modified": false,
+  "model_inference": false,
+  "gpu": false,
+  "hf_job": false
+}

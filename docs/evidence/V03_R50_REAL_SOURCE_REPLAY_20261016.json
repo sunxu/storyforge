@@ -1,0 +1,78 @@
+{
+  "schema": "storyforge-r50-real-immutable-source-replay-summary-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "branch": "audit/r49-r50-source-intake-20261015",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "method": "Read ten frozen Git blobs from authenticated private GitHub source commit: five full source conversation JSONL documents and five story-cards JSON documents. Compare all candidate historical message IDs, roles, exact content, contiguous order and cutoff timestamps to original; verify corresponding card version is present and valid as of cutoff, including archive upper bounds. Compare original 50 new user inputs with source user messages for normalized verbatim reuse.",
+  "uploaded_originals_sha256": {
+    "R50_FRESH_HELDOUT_50.jsonl": "8dbb66aeb47fd1fec34718d31b228c0378a79f43b7b847eb3e403752d8139781",
+    "R50_CASE_PROVENANCE_50.jsonl": "9306af53c6a53fbe46a6675c50e5fac4753162a5c19d6f3c1a0072919306b280",
+    "R50_AUTHORING_REPORT.md": "7d0862300d8a729f893f66c092dfa74a6e2adb75d85eae0cfe2276e105bdf8bd"
+  },
+  "case_count": 50,
+  "history_references": 392,
+  "history_exact_matches": 392,
+  "contiguous_source_history_and_cutoff_cases": 50,
+  "card_reference_and_active_interval_cases": 50,
+  "source_input_normalized_verbatim_reuses": 0,
+  "errors": 0,
+  "per_world": [
+    {
+      "story": 16,
+      "cases": 10,
+      "history_refs": 104,
+      "card_interval_pass": 10
+    },
+    {
+      "story": 17,
+      "cases": 10,
+      "history_refs": 116,
+      "card_interval_pass": 10
+    },
+    {
+      "story": 18,
+      "cases": 10,
+      "history_refs": 50,
+      "card_interval_pass": 10
+    },
+    {
+      "story": 19,
+      "cases": 10,
+      "history_refs": 84,
+      "card_interval_pass": 10
+    },
+    {
+      "story": 20,
+      "cases": 10,
+      "history_refs": 38,
+      "card_interval_pass": 10
+    }
+  ],
+  "earlier_long_term_rule_source_evidence": {
+    "source_confirmed_prior_to_cutoff_case_count": 5,
+    "content_scope_manual_review": "PENDING"
+  },
+  "private_full_report_digest": {
+    "file": "R50_REAL_SOURCE_REPLAY_20261016.json",
+    "sha256": "2e4f92fe71eecc7a8b50fdf238233ae092f44a8dc03f2c21d8c97e59d1585705"
+  },
+  "tests_and_release_boundary": {
+    "candidate_original_files_modified": false,
+    "old_r46_r48_artifacts_modified": false,
+    "source_reference_and_version_check": "PASS",
+    "full_world_card_fact_verification": "PENDING",
+    "rule_current_applicability": "PENDING",
+    "r45_private_train_val_file_verification": "PENDING",
+    "semantic_alias_and_paraphrase_review": "PENDING",
+    "independent_human_review": "PENDING",
+    "twelve_consecutive_user_role_contract": "PENDING",
+    "qwen_tokenizer_length": "PENDING",
+    "preregistration_approval": "PENDING",
+    "final_heldout_seal": "NOT_PERFORMED",
+    "gpu_executed": false,
+    "model_promotion": false
+  },
+  "privacy": "No prompt text, per-case provenance mappings, source message identifiers, reviewer comments, model responses or answer keys stored in this Git file.",
+  "status": "R50_REAL_SOURCE_REPLAY_PASS__FULL_HELDOUT_ADMISSION_HOLD"
+}

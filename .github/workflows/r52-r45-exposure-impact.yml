@@ -1,0 +1,25 @@
+name: R52 R45 Exposure Impact (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_r45_exposure_impact.py
+      - tests/test_v03_r52_r45_exposure_impact.py
+      - .github/workflows/r52-r45-exposure-impact.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_r45_exposure_impact.py
+      - tests/test_v03_r52_r45_exposure_impact.py
+      - .github/workflows/r52-r45-exposure-impact.yml
+  workflow_dispatch:
+jobs:
+  fake-impact:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test fake 7-world 46-target old-source overlap dedup and source tamper rejection
+        run: python -m unittest discover -s tests -p 'test_v03_r52_r45_exposure_impact.py' -v

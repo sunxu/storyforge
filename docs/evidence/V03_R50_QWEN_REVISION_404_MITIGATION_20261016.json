@@ -1,0 +1,29 @@
+{
+  "schema": "storyforge-r50-hf-cpu-model-revision-404-mitigation-v1",
+  "date": "2026-10-16",
+  "repo": "sunxu/storyforge",
+  "audit_branch": "audit/r49-r50-source-intake-20261015",
+  "failed_job": {
+    "id": "6ad1e42dc66288145225ae0f",
+    "exit_code": 1,
+    "error": "huggingface_hub.errors.RevisionNotFoundError: 404 at /api/models/Qwen/Qwen3.8-27B/revision/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "guard": "PASS",
+    "jinja2": "PASS",
+    "tokenizer_actual": "PENDING"
+  },
+  "public_model_evidence": {
+    "id": "Qwen/Qwen3.8-27B",
+    "sha": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "source": "https://huggingface.co/api/models/Qwen/Qwen3.8-27B",
+    "commit_page": "https://huggingface.co/Qwen/Qwen3.8-27B/commit/1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0"
+  },
+  "mitigation": "Retrieve default model metadata without explicit revision, reject any SHA mismatch, then fetch only tokenizer files via /resolve/main; verify each local cache path snapshots/<pinned SHA>/<filename>, recheck model HEAD SHA.",
+  "no_paid_preflight": "Launcher verify-model checks public model metadata SHA and tokenizer_config.json HEAD X-Repo-Commit before any paid HF jobs run.",
+  "old_private_input_sha_kept": true,
+  "repository_data_policy": "No R50 raw test cases, provenance or case-level tokenizer receipts in Git",
+  "actual_remote_execution": "NOT_EXECUTED",
+  "tokenizer_gate": "HOLD",
+  "semantic_alias_gate": "HOLD",
+  "four_arm_contract": "DRAFT",
+  "final_seal": "NOT_PERFORMED"
+}

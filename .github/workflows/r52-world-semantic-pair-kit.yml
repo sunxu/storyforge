@@ -1,0 +1,26 @@
+name: R52 Semantic World Pair Kit (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_world_semantic_review_kit.py
+      - tests/test_v03_r52_world_semantic_review_kit.py
+      - .github/workflows/r52-world-semantic-pair-kit.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_world_semantic_review_kit.py
+      - tests/test_v03_r52_world_semantic_review_kit.py
+      - .github/workflows/r52-world-semantic-pair-kit.yml
+  workflow_dispatch:
+
+jobs:
+  seven-world-pair-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Seven dossiers / 21 pairs / fail-closed synthetic checks
+        run: python -m unittest discover -s tests -p 'test_v03_r52_world_semantic_review_kit.py' -v

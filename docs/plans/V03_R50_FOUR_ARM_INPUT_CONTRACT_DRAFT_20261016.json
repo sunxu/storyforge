@@ -1,0 +1,140 @@
+{
+  "schema": "storyforge-r50-four-arm-evaluation-preregistration-DRAFT-v1",
+  "prepared": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "status": "DRAFT_OWNER_APPROVAL_PENDING__NO_TEST_INFERENCE",
+  "owner_ai_only_content_review_waiver": "ACCEPTED_FOR_R50_CONTENT_INTAKE_ONLY",
+  "dataset": {
+    "case_count": 46,
+    "expected_history_messages": 364,
+    "world_counts": {
+      "16": 9,
+      "17": 10,
+      "18": 9,
+      "19": 8,
+      "20": 10
+    },
+    "original_50_cases_sha256": "8dbb66aeb47fd1fec34718d31b228c0378a79f43b7b847eb3e403752d8139781",
+    "derived_46_cases_sha256": "109642a6c0e27895ae83274bec79ec9f53d922e407ca435431acf3f31a31e1f2",
+    "source_provenance_private": true,
+    "excluded_case_count": 4,
+    "original_files_mutation_forbidden": true,
+    "full_heldout_seal": "NOT_PERFORMED"
+  },
+  "four_arms": [
+    {
+      "label": "BASE",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter": "none",
+      "runtime_load_verified": false
+    },
+    {
+      "label": "V01",
+      "base_revision": "TO_VERIFY_AT_R56",
+      "adapter_sha256": "621d7328056758607c9d7797282ae4d5803cdb1727dab6b40a321ee959dd2478",
+      "runtime_load_verified": false,
+      "adapter_evidence": "docs/HF_RUN_REGISTRY.md; v0.1 checkpoint-9, CPU SHA report; remote runtime reload still unverified for R56"
+    },
+    {
+      "label": "V02",
+      "base_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+      "adapter_sha256": "bec4ba74d858db3ff117d581478ef9cac41b1ecc7ea2a67523f6db1096addf2b",
+      "runtime_load_verified": false,
+      "adapter_evidence": "docs/evidence/V02_R46_GPU_TRAINING_ACCEPTANCE_20261014.json; SHA reported, not independently rehashed here"
+    },
+    {
+      "label": "V03_A",
+      "base_revision": "TO_VERIFY_AFTER_R54",
+      "adapter_sha256": "NOT_YET_TRAINED_OR_SELECTED",
+      "runtime_load_verified": false
+    }
+  ],
+  "common_input": {
+    "option": "A",
+    "system": "R45 generic system candidate + world card + long-term rules in a single system message",
+    "system_plaintext_storage": "HF_PRIVATE_ONLY",
+    "generic_system_sha256": "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83",
+    "world_card_delimiters": [
+      "[STORY_WORLD_CARD]",
+      "[/STORY_WORLD_CARD]"
+    ],
+    "long_term_rule_delimiters": [
+      "[STORY_LONG_TERM_RULES]",
+      "[/STORY_LONG_TERM_RULES]"
+    ],
+    "concatenate_delimiter": "exactly as implemented in scripts/v03_r50_cpu_tokenizer_preflight_46.py",
+    "preserve_original_history_roles_and_order": true,
+    "preserve_consecutive_user_case_count": 12,
+    "append_one_new_user_input": true,
+    "suppress_focus_tags": true,
+    "tokenizer_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+    "transformers_version": "5.16.1",
+    "thinking": "disabled",
+    "tokenizer_json_sha256": "0997f410c57a1f4e53b09e4be8f4a172d90edd9564368fb0847030937229b9f3",
+    "tokenizer_config_sha256": "b11349aafa7cdc6a320767cf7ceb29ed82f7eda5d65e8e0819e76f0ce947bf27",
+    "chat_template_sha256": "c3cf9e34abf4f9e36c2d72165aa9c132d3e2a725b6c2586aaa3a8af9d7a81041",
+    "tokenizer_preflight_report_sha256": "7798e5b1f5c51fba23cb3c7ac076a80d16d599a46650973cdc3c110c4a672cb7",
+    "tokenizer_budget_tokens": 16384,
+    "reserved_generated_tokens": 1536,
+    "untruncated_input_max_tokens": 8757,
+    "truncation_allowed": false,
+    "overflow_action": "HALT_AND_HOLD_NO_SILENT_TRUNCATION",
+    "actual_four_arm_runtime_input_digest_equality": "PENDING"
+  },
+  "sampling": {
+    "proposed_do_sample": false,
+    "proposed_temperature": 0,
+    "proposed_seed": 42,
+    "proposed_max_new_tokens": 1536,
+    "proposed_max_input_plus_output_tokens": 16384,
+    "proposed_stop_token_policy": "MODEL_CHAT_TEMPLATE_AND_EOS_MUST_BE_PREDECLARED",
+    "deterministic_claim": "NOT_GUARANTEED_ACROSS_HARDWARE; use logged versions and generated-output checks",
+    "owner_approval_required": true
+  },
+  "blind_review": {
+    "four_way_best_of": "REPORT_ONLY_CANNOT_INFER_DIRECT_PAIRWISE",
+    "direct_v03_a_vs_v02_pairwise": "SEPARATE_BLIND_LEFT_RIGHT_TIE_REQUIRED",
+    "six_dimensions": [
+      "剧情连续性",
+      "角色一致性",
+      "指令遵循",
+      "文学表现力",
+      "互动推进",
+      "玩家自主权"
+    ],
+    "rating_range": [
+      1,
+      5
+    ],
+    "case_evidence": "REQUIRED",
+    "model_identity_mapping": "COORDINATOR_PRIVATE_ONLY",
+    "randomization_seed": "GENERATE_AND_FREEZE_BEFORE_MODEL_OUTPUTS",
+    "reviewer_count": "THREE_PROPOSED_FOR_R56_NOT_WAIVED_BY_R50_AI_ONLY_OWNER_DECISION",
+    "same_prompts_all_arms": true,
+    "case_level_output_hashes_required": true,
+    "critical_violations": "PLAYER_AGENCY_AND_VERBATIM_FORBIDDEN_TEXT_ARE_SEPARATE_GATES"
+  },
+  "proposed_promotion_gates": {
+    "direct_pairwise_v03_over_v02_nontie_win_fraction_strictly_over": 0.5,
+    "clustered_world_level_95pct_CI_must_support_advantage": true,
+    "overall_six_dim_avg_strictly_over_v02": true,
+    "literature_and_progression_must_not_degrade": true,
+    "adjudicated_serious_agency_violation_max_fraction": 0.05,
+    "serious_agency_not_worse_than_v02": true,
+    "confirmed_verbatim_forbidden_line_max_count": 0,
+    "if_uncertain": "INCONCLUSIVE_NO_PROMOTION",
+    "require_owner_approval_for_thresholds": true
+  },
+  "dependency_gates": {
+    "private_r45_full_exact": "USER_REPORTED_PASS",
+    "cpu_qwen_tokenizer": "VERIFIED_AGGREGATE_PASS",
+    "semantic_alias_graph_and_paraphrase": "HOLD",
+    "four_arm_input_runtime_parity": "NOT_VERIFIED",
+    "R49_R52_training_config_promotion": "NOT_APPROVED",
+    "owner_preregistration": "NOT_APPROVED",
+    "final_heldout_seal": "NOT_PERFORMED",
+    "paid_gpu_execution": "NOT_AUTHORIZED",
+    "model_promotion": "NOT_AUTHORIZED"
+  },
+  "pinned_adapter_evidence_review": "V01_V02_HISTORICAL_HASHES_GROUNDED__R56_LIVE_RUNTIME_LOAD_STILL_PENDING"
+}

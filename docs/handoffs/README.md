@@ -1,5 +1,15 @@
 # StoryForge v0.2 — Conversation handoff index (after R48)
 
+## Latest current handoff — 2026-10-19 (R51 mainline)
+
+- [R51 new-chat starter prompt](StoryForge_v03_New_Chat_Prompt_20261019.txt)
+- [R51 detailed handoff / Quickstart](StoryForge_v03_R51_Handoff_20261019.md)
+- [R51 machine-readable frozen state](StoryForge_v03_R51_State_20261019.json)
+
+The real Gold195 source integrity gate is PASS (CI [#39233810359](https://github.com/sunxu/storyforge/actions/runs/39233810359)); **formal training admission remains zero**. Mainline moves to R51 row-level source-anchored review. R50 W17 waits on NEW evidence, `SEMANTIC_HOLD`; no HF/GPU/model promotion/PR merge/heldout sealing.
+
+---
+
 **Latest historical stage:** R46 exploratory GPU SFT engineering PASS; R47 old 20-case 3-arm retrospective review complete; R48 old 20-case Gold+3-model retrospective review complete; **no model promotion**.
 
 **Next-stage plan (proposed, NOT executed):** [v0.3 R49–R57 detailed Test & Training plan](../plans/StoryForge_v03_Test_and_Training_Plan_20261014.md) and [machine-readable phase gates](../plans/StoryForge_v03_Test_and_Training_Gates_20261014.json). This is the current forward workplan, not a change to the frozen R46–R48 evidence; new paid GPU work remains unauthorized.

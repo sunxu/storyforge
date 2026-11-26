@@ -1,0 +1,38 @@
+{
+  "schema": "storyforge-r50-46-filtered-admission-status-v1",
+  "as_of": "2026-10-16",
+  "owner_instruction": "exclude exactly 4 previously HOLD/FAIL original cases",
+  "candidate_case_count": 46,
+  "source_world_count": 5,
+  "history_reference_count": 364,
+  "per_world": {
+    "W16": 9,
+    "W17": 10,
+    "W18": 9,
+    "W19": 8,
+    "W20": 10
+  },
+  "excluded_case_count": 4,
+  "exclude_ids": [
+    "SFH50-W16-005",
+    "SFH50-W18-003",
+    "SFH50-W19-003",
+    "SFH50-W19-010"
+  ],
+  "content_qualification": "46/46 AI_CONTENT_PASS (from prior adjudication)",
+  "exact_scope_screen": "R45_49_15_VS_R50_VISIBLE_46_NO_HITS",
+  "full_five_source_r45_isolation": "PENDING",
+  "semantic_alias_isolation": "PENDING",
+  "source_replay_previous_evidence": "392/392 historical messages over original 50; unchanged kept subset",
+  "system_r45_64_identical": true,
+  "system_sha256": "5e1b28cd9181f5d334f1f10a54a251f9255e655a3e597519c7cfcc530d8c5e83",
+  "actual_qwen_tokenizer": "UNAVAILABLE_NOT_RUN",
+  "contract_approval": "PENDING",
+  "independent_human_review": "WAIVED_BY_OWNER",
+  "model_generated": false,
+  "gpu_used": false,
+  "git_written": false,
+  "final_heldout_seal": "NOT_PERFORMED",
+  "promotion": "NOT_AUTHORIZED",
+  "status": "R50_PRIVATE_46_CONTENT_PASS__FULL_ADMISSION_HOLD"
+}

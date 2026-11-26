@@ -1,0 +1,26 @@
+{
+  "schema": "storyforge-r50-owner-reported-hf-cpu-tokenizer-completion-v1",
+  "date": "2026-10-16",
+  "job_id": "6ad1fd155ccb47ba0f7b1ec6",
+  "job_url": "https://huggingface.co/jobs/adradar/6ad1fd155ccb47ba0f7b1ec6",
+  "operator_provided_log_markers": [
+    "R50_TOKENIZER_PREFLIGHT__BUDGET_PASS",
+    "actual token counts for 46 private cases saved outside repository; no model ran",
+    "CPU_TOKENIZER_PREFLIGHT_DONE__NO_INFERENCE__NO_GPU__NO_FINAL_SEAL",
+    "Job 6ad1fd155ccb47ba0f7b1ec6 completed"
+  ],
+  "candidate_case_count": 46,
+  "result_type": "USER_REPORTED_SUCCESSFUL_CPU_PREFLIGHT",
+  "private_report": "Stored in adradar private HF Bucket; NOT FETCHED_BY_CHATGPT",
+  "independent_full_json_validation": "PENDING",
+  "verified_remote_file_sha256": "PENDING",
+  "expected_model_revision": "1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
+  "fixed_preflight_blob": "c546194bd02608e921d9c673fa3e549c022468ae",
+  "final_heldout_sha256_seal": "NOT_PERFORMED",
+  "semantic_alias_independence": "HOLD",
+  "four_arm_contract": "DRAFT_NOT_APPROVED",
+  "model_generation": false,
+  "gpu_execution": false,
+  "promotion": false,
+  "privacy": "No candidate story text, private mappings, case-level token lengths, input-ID hashes or secrets included."
+}

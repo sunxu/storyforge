@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "type": "string",
+      "enum": [
+        "storyforge-r50-w17-seven-gap-independent-ai-workpaper-v1"
+      ]
+    },
+    "reviewed_packet_manifest_sha256": {
+      "type": "string",
+      "enum": [
+        "b4e08232bdd12d9401d78fe6e0ab945a6f5156938c88ef811da9bf52a9b41a3b"
+      ]
+    },
+    "source_kit_sha256": {
+      "type": "string",
+      "enum": [
+        "0c1dccd8de0926ab416a85ccb77f474e668138938171f0419eb43ce582a99cc3"
+      ]
+    },
+    "prior_private_decision_sha256": {
+      "type": "string",
+      "enum": [
+        "61e4aa21370c2f9f8ef84d648fb600f51e2fa151e30e25999bb328f23da581bf"
+      ]
+    },
+    "gap_reviews": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "gap_index": {
+            "type": "integer"
+          },
+          "assessment": {
+            "type": "string",
+            "enum": [
+              "SUPPORTED_IN_SCOPED_CONTEXT",
+              "NOT_SUPPORTED_IN_REVIEWED_SCOPE",
+              "INSUFFICIENT_CONTEXT",
+              "SOURCE_UNAVAILABLE"
+            ]
+          },
+          "source_refs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "source_rank": {
+                  "type": "integer"
+                },
+                "source_message_index": {
+                  "type": "integer"
+                },
+                "full_untruncated_message_reviewed": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "source_rank",
+                "source_message_index",
+                "full_untruncated_message_reviewed"
+              ]
+            }
+          },
+          "private_reasoning": {
+            "type": "string"
+          },
+          "historical_card_timing": {
+            "type": "string",
+            "enum": [
+              "VERIFIED_AS_OF_CUTOFF",
+              "POSTDATE_RISK",
+              "NOT_CHECKED"
+            ]
+          },
+          "remaining_evidence_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "gap_index",
+          "assessment",
+          "source_refs",
+          "private_reasoning",
+          "historical_card_timing",
+          "remaining_evidence_requirements"
+        ]
+      }
+    },
+    "semantic_world_graph_gate": {
+      "type": "string",
+      "enum": [
+        "HOLD"
+      ]
+    },
+    "heldout_final_seal": {
+      "type": "string",
+      "enum": [
+        "NOT_PERFORMED"
+      ]
+    },
+    "model_promotion": {
+      "type": "boolean",
+      "enum": [
+        false
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "reviewed_packet_manifest_sha256",
+    "source_kit_sha256",
+    "prior_private_decision_sha256",
+    "gap_reviews",
+    "semantic_world_graph_gate",
+    "heldout_final_seal",
+    "model_promotion"
+  ]
+}

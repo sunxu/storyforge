@@ -1,0 +1,73 @@
+{
+  "schema": "storyforge-r50-case-provenance-preflight-readiness-v1",
+  "recorded_on": "2026-10-15",
+  "repository": "sunxu/storyforge",
+  "audit_branch": "audit/r49-r50-source-intake-20261015",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "no_gpu_ci": "https://github.com/sunxu/storyforge/actions/runs/38696942992",
+  "ci_result": "SUCCESS",
+  "synthetic_unit_tests_passed": 42,
+  "source_records": [
+    {
+      "story": 16,
+      "messages": 2354,
+      "unique_message_ids": 2354,
+      "missing_ids": 0
+    },
+    {
+      "story": 17,
+      "messages": 2374,
+      "unique_message_ids": 2374,
+      "missing_ids": 0
+    },
+    {
+      "story": 18,
+      "messages": 2352,
+      "unique_message_ids": 2352,
+      "missing_ids": 0
+    },
+    {
+      "story": 19,
+      "messages": 2314,
+      "unique_message_ids": 2314,
+      "missing_ids": 0
+    },
+    {
+      "story": 20,
+      "messages": 2308,
+      "unique_message_ids": 2308,
+      "missing_ids": 0
+    }
+  ],
+  "verified_source_identity": {
+    "total_messages": 11702,
+    "total_unique_message_ids": 11702,
+    "missing_ids": 0,
+    "story_and_session_ids_match_between_transcript_and_cards": true
+  },
+  "case_provenance_tool": {
+    "path": "scripts/v03_r50_case_provenance.py",
+    "private_input_schema": "docs/plans/V03_R50_CASE_PROVENANCE_GUIDE_20261015.md",
+    "checks": [
+      "immutable 35-file source receipt before any case processing",
+      "stable source story/session IDs",
+      "timestamped source message cutoff",
+      "source card evidence timestamp no later than cutoff",
+      "verbatim original contiguous history and message IDs",
+      "prohibits reuse of source player input as new case",
+      "aggregate-only no-overwrite private output outside Git checkout"
+    ],
+    "tool_unit_tests": 8,
+    "real_heldout_case_provenance_executed": false
+  },
+  "remaining_blockers": [
+    "Real R45 Train49 and Val15 original private input files not independently verified",
+    "Fresh independent prompt-only 40-60 samples have not been provided",
+    "Per-case source cutoff fact relevance, hidden aliases and rights/content human review not complete",
+    "Independent authorship not attested and no reviewer blindness confirmed",
+    "R49 evaluation preregistration is still proposed and has not been approved",
+    "No new Held-out SHA256 seal or model inference performed"
+  ],
+  "status": "R50_SOURCE_MESSAGE_ID_READINESS_PASS__NEW_INDEPENDENT_CASES_PENDING__NO_GPU",
+  "model_promotion_approved": false
+}

@@ -1,0 +1,90 @@
+{
+  "schema": "storyforge-r50-temporal-provenance-audit-v1",
+  "date": "2026-10-15",
+  "repository": "sunxu/storyforge",
+  "source_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "audit_branch": "audit/r49-r50-source-intake-20261015",
+  "verified_ci": "https://github.com/sunxu/storyforge/actions/runs/38695466774",
+  "ci_status": "success",
+  "synthetic_unit_tests": 34,
+  "source_messages": 11702,
+  "missing_source_message_timestamps": 0,
+  "candidate_worlds": [
+    {
+      "story_number": 16,
+      "total_messages": 2354,
+      "before_export_card_last_edit": 2354,
+      "historical_card_versions": 30,
+      "source_updated_at": {
+        "before_first_message": 0,
+        "during_chat": 29,
+        "after_last_message": 1
+      },
+      "archived_at": {
+        "before_first_message": 0,
+        "during_chat": 28,
+        "after_last_message": 2
+      },
+      "moderation_snapshots": 0
+    },
+    {
+      "story_number": 17,
+      "total_messages": 2374,
+      "before_export_card_last_edit": 0,
+      "historical_card_versions": 0,
+      "moderation_snapshots": 0
+    },
+    {
+      "story_number": 18,
+      "total_messages": 2352,
+      "before_export_card_last_edit": 1660,
+      "historical_card_versions": 0,
+      "moderation_snapshots": 0
+    },
+    {
+      "story_number": 19,
+      "total_messages": 2314,
+      "before_export_card_last_edit": 2224,
+      "historical_card_versions": 30,
+      "source_updated_at": {
+        "before_first_message": 2,
+        "during_chat": 28,
+        "after_last_message": 0
+      },
+      "archived_at": {
+        "before_first_message": 1,
+        "during_chat": 29,
+        "after_last_message": 0
+      },
+      "moderation_snapshots": 0
+    },
+    {
+      "story_number": 20,
+      "total_messages": 2308,
+      "before_export_card_last_edit": 284,
+      "historical_card_versions": 0,
+      "moderation_snapshots": 2,
+      "moderation_snapshot_created_before_chat": 2
+    }
+  ],
+  "evidence_notes": [
+    "source_updated_at is metadata reported by the source system, not an independently proven time when a specific fact became true.",
+    "archived_at is the snapshot archiving time and must not be conflated with the original card edit time.",
+    "A version having timestamps does not prove every field was already known at any previous prompt cutoff.",
+    "Pre-message moderation snapshots are not necessarily identical to an actual historical inference context.",
+    "For final independent prompts, use source timecut, context transcript evidence, specific card version and a reviewer verdict; never import later state facts.",
+    "No per-sample story card/alias/content adjudication has occurred."
+  ],
+  "pending_gates": [
+    "R45 original private Train49 / Val15 frozen file test not yet executed",
+    "Manual source timeline card-field reconstruction",
+    "Full semantic aliases and paraphrases",
+    "Independent 40-60 prompt-only case authoring and quality review",
+    "Private SHA256 heldout sealing",
+    "Owner approval of preregistered model evaluation contract"
+  ],
+  "full_story_or_prompt_text_committed": false,
+  "new_billable_gpu_executed": false,
+  "model_quality_promoted": false,
+  "status": "R50_SOURCE_TEMPORAL_METADATA_AUDIT_PASS__PER_CASE_RECONSTRUCTION_PENDING__NO_HELDOUT_SEAL"
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "storyforge-r50-ai-authored-candidate-receipt-v1",
+  "recorded_at": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "source_archive_commit": "a197923e1e15344e8c98bd96e593e84781b68c83",
+  "scope": "CANDIDATE_RECEIPT_ONLY_NOT_FINAL_HELDOUT_SEAL",
+  "uploaded_private_files": {
+    "R50_AUTHORING_REPORT.md": {
+      "size_bytes": 10070,
+      "sha256": "7d0862300d8a729f893f66c092dfa74a6e2adb75d85eae0cfe2276e105bdf8bd"
+    },
+    "R50_CASE_PROVENANCE_50.jsonl": {
+      "size_bytes": 31758,
+      "sha256": "9306af53c6a53fbe46a6675c50e5fac4753162a5c19d6f3c1a0072919306b280"
+    },
+    "R50_FRESH_HELDOUT_50.jsonl": {
+      "size_bytes": 422562,
+      "sha256": "8dbb66aeb47fd1fec34718d31b228c0378a79f43b7b847eb3e403752d8139781"
+    }
+  },
+  "machine_only_receipt": {
+    "status": "SCHEMA_PASS_PENDING_PRIVATE_PROVENANCE_AND_MANUAL_REVIEW",
+    "case_count": 50,
+    "source_reference_count": 50,
+    "world_count": 5,
+    "history_message_references": 392,
+    "unmodified_test_source_frozen_by_sha256": false
+  },
+  "privacy": {
+    "test_contents_committed": false,
+    "case_level_risk_or_topics_committed": false,
+    "private_provenance_content_committed": false,
+    "model_outputs_committed": false,
+    "private_answer_mapping_committed": false
+  },
+  "follow_up_gates": {
+    "source_verbatim_and_cutoff_replay": "PENDING",
+    "private_r45_train_val_evidence": "PENDING",
+    "independent_human_review": "PENDING",
+    "model_role_contract": "PENDING",
+    "manual_world_semantic_isolation": "PENDING",
+    "preregistered_model_evaluation": "PENDING",
+    "final_seal": "NOT_PERFORMED",
+    "gpu_authorized": false,
+    "model_promoted": false
+  }
+}

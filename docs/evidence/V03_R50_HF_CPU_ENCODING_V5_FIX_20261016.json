@@ -1,0 +1,54 @@
+{
+  "schema": "storyforge-r50-tokenizer-encoding-v5-compat-fix-v1",
+  "date": "2026-10-16",
+  "repository": "sunxu/storyforge",
+  "branch": "audit/r49-r50-source-intake-20261015",
+  "failed_job": {
+    "id": "6ad1f3bf5ccb47ba0f7b1d9c",
+    "stage": "ERROR",
+    "exit_code": 1,
+    "cpu_guard": "PASS",
+    "jinja2": "PASS",
+    "pinned_qwen_revision": "PASS",
+    "tokenizer_files": [
+      "tokenizer.json",
+      "tokenizer_config.json",
+      "chat_template.jinja",
+      "vocab.json",
+      "merges.txt"
+    ],
+    "files_pinned_to_commit": "PASS",
+    "first_case": "SFH50-W16-001",
+    "error": "TypeError: invalid encoded ids for SFH50-W16-001",
+    "token_counts_computed": 0
+  },
+  "confirmed_cause": "Transformers 5.x apply_chat_template with tokenize=True defaults to BatchEncoding mapping, not list[int]",
+  "supporting_reference": "https://github.com/huggingface/transformers/blob/main/MIGRATION_GUIDE_V5.md",
+  "code_fix": {
+    "explicit_return_dict": true,
+    "truncation": false,
+    "padding": false,
+    "input_ids": "Flat nonempty list[int] with uint32 range checks",
+    "id_digest": "UNCHANGED_SHA256_PACK_LITTLE_ENDIAN_UINT32",
+    "generation_prompt": "UNCHANGED",
+    "thinking_mode": "UNCHANGED_DISABLED_IN_CPU_JOB",
+    "tokenizer_revision": "UNCHANGED",
+    "original_candidate_sha": "UNCHANGED"
+  },
+  "regression_tests": "Six standard-library cases for valid mappings, wrong shape/types, missing key, thinking option and call kwargs; local guard runs tests before HF paid jobs",
+  "executed_remote_worker_with_patch": false,
+  "qwen_actual_tokens": "HOLD",
+  "semantic_world_alias": "HOLD",
+  "evaluation_contract": "DRAFT_NOT_APPROVED",
+  "final_seal": "NOT_PERFORMED",
+  "gpu": false,
+  "model_generation": false,
+  "privacy": "No prompt, provenance, answer key or per-case tokens in ordinary Git",
+  "staging_integrity_fix": {
+    "pinned_preflight_git_blob": "c546194bd02608e921d9c673fa3e549c022468ae",
+    "stale_preflight_from_original_commit": "BLOCKED",
+    "paid_submit_preflight_sha256_comparison": "REQUIRED",
+    "local_head_blob_equality": "REQUIRED",
+    "no_paid_job_executed": true
+  }
+}

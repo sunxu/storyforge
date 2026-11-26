@@ -1,0 +1,26 @@
+name: R52 Owner Eligibility Intake (synthetic only)
+on:
+  push:
+    paths:
+      - scripts/v03_r52_owner_eligibility_intake.py
+      - tests/test_v03_r52_owner_eligibility_intake.py
+      - .github/workflows/r52-owner-eligibility.yml
+  pull_request:
+    paths:
+      - scripts/v03_r52_owner_eligibility_intake.py
+      - tests/test_v03_r52_owner_eligibility_intake.py
+      - .github/workflows/r52-owner-eligibility.yml
+  workflow_dispatch:
+
+jobs:
+  synthetic-unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test only fake Gold108 fixtures (no private data, no GPU)
+        run: python -m unittest discover -s tests -p 'test_v03_r52_owner_eligibility_intake.py' -v

@@ -1,0 +1,26 @@
+# StoryForge v0.3 — 新对话启动提示词（R51 主线）
+
+你将接手私有 GitHub 仓库 `sunxu/storyforge` 的持续研发，工作分支
+`audit/r49-r50-source-intake-20261015`，Draft PR #2（未合并）。
+项目是中文互动小说 / 角色扮演大模型的 Gold 数据筛选、SFT / QLoRA 训练与独立盲测项目，主目标是提升叙事质量、连续性、NPC 推进和玩家自主权。
+
+**2026-10-19 的项目决策：停止使用相同来源反复进行 W17 的七项语义审计；主线正式切换到 R51 Gold195 训练数据准入。**
+
+第一步：通过 GitHub 连接核对当前 PR #2 HEAD，以及以下权威文件：
+1. `docs/handoffs/StoryForge_v03_R51_Handoff_20261019.md`
+2. `docs/handoffs/StoryForge_v03_R51_State_20261019.json`
+3. `docs/evidence/V03_R51_GOLD195_REAL_GIT_PREFLIGHT_20261019.json`
+4. `docs/plans/V03_R51_GOLD195_CONTEXT_ONLY_ADMISSION_NEXT_20261019.md`
+5. `docs/plans/StoryForge_v03_Test_and_Training_Gates_20261014.json`
+
+**已经完成：** v0.1 训练/盲测；v0.2 R46 探索性 GPU SFT（7 steps，工程 PASS，不晋升）；R47/R48 回顾性盲测；Gold87 + Gold108 共195条质量认可候选；R50 冻结保留46道独立测试候选；R51 真实 Git 原件预检 PASS（195 原始 Assistant 目标及 SHA、1909 条上下文消息，13 个来源故事 ID）。
+
+**仍未完成：** Gold195 工程训练准入（目前0条获批）、训练/验证世界分组、逐条权限/年龄/同意/玩家自主权/时间点/规则审查、部分原始来源指针和卡片证据、R50 完整语义隔离与最终 seal、R52–R57 正式实验闭环。
+
+**下一步任务：** 基于不变的 Gold195 原件，执行 R51 私有、逐条、来源锚定的准入分流：`CONTEXT_ONLY_POSSIBLE__HOLD`、`CARD_OR_LONG_RANGE_SOURCE_REQUIRED__HOLD`、`CONTENT_OR_RIGHTS_HOLD`、`SOURCE_POINTER_RECONCILIATION_HOLD`；允许一条样本多个风险标记。优先检查 171 条卡证据未核实标记、22 条部分源索引元数据缺失、10 条年龄 UNSPECIFIED 标记；这些数字可能重叠，未打标的样本也不能自动视为合格。源档案重放到原始历史聊天仍未由最新 R51 预检完成。
+
+R45 49 Train / 15 Val 仅为冻结实验候选，18 HOLD 不得擅自重新纳入；W17 的 10 条 R50 测试题保持原样冻结。Gold195 不是可以直接训练的 train.jsonl，全部当前为 `PENDING_NOT_APPROVED`，split=null。v0.1/R47/R48 已暴露测试不得当新独立 Held-out。
+
+**硬约束：** 先审来源再批准，Train/Val 按实际关联世界组件隔离；绝不上传私有剧情、裁定原文或答案映射到普通 Git/CI；只提交脱敏摘要、脚本、合成测试及明确的证据状态。禁止无授权的 HF/GPU/计费推理、自动训练/模型晋升、PR 合并、R50 题目改写、最终封存或虚构 PASS。尽量在 GitHub 以原子提交推进有意义的 R51 工作，不要反复加无收益的审计脚本。
+
+**立刻行动：** 先核实最新 HEAD 和 R51 专项 CI，再梳理 Gold195 原件的字段、风险与来源需求，拟定/实现最小、可重复的逐条准入工作底稿与脱敏统计。能在本轮完成的就实际完成，受限于私有原件或人工审查的部分明确 HOLD；不要只制定空泛计划。
