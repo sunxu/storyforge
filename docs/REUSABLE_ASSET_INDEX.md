@@ -4,6 +4,20 @@
 
 > 快照：2026-11-22；核对基线 `main` = `1b5ac810c304167f31626eba4cbf6e7b7235569d`。这是**代码/证据的查找地图**，不是自动合并清单、执行许可或质量准入回执。历史 PR、归档和本地备份均不得被误认为已经进入 `main`。
 
+## HF Inference Providers：语言模型 Reviewer 调用规范（2026-11-26，Owner 实测）
+
+- 首选 HF Router HTTP：`GET https://router.huggingface.co/v1/models` 查询实时 `data[].id/providers[]`，确认指定 Provider 为 live、上下文满足实际需求；`POST https://router.huggingface.co/v1/chat/completions`，model 使用目录原样 ID 加 `:provider` 固定路由。凭据从 Owner 私有环境 `HF_TOKEN` / 已登录凭据读取，组织计费请求使用 `X-HF-Bill-To`（组织名由 Owner 本机配置）。不记录凭据或私有账户信息。请求携带账单头、返回 is_byok=false 不等于已核实组织账单归属。
+- 历史 SDK `InferenceClient(provider=..., bill_to=...)` 曾成功；2026-11-26 huggingface_hub 2.4.0 对旧两条路由报不支持，Hub `model_info(expand=["inferenceProviderMapping"])` 四模型均空，而 Router 实际目录有 106 个模型。四次旧正式请求 HTTP 400、有效评审 0；不能用 Hub 空映射推断 Router 无服务。Novita 不在本次目标家族目录中。不要重试失效路由、盲猜模型 ID 或为此升级 SDK/重写框架。
+- 先对新路由执行一次无隐私合成 JSON + 逐字原文引文测试，验证 HTTP、finish_reason、JSON 类型和引文、实际返回模型/Provider；仅失败路由诊断。2026-11-26 Owner 实际回执：以下两条均 HTTP 200、stop、JSON 及精确引用 PASS。此为时点证据，不是永久可用或真实质量 PASS。
+
+| 请求 model | 实际返回 model / Provider | 合成测试 |
+|---|---|---|
+| `deepseek-ai/DeepSeek-V4.1-Flash-1017:cloudflare` | `deepseek/deepseek-v4.1-flash-1017` / Cloudflare | 225 tokens；$0.00004815；4.03s |
+| `moonshotai/Kimi-K3.1-Pro:deepinfra` | `moonshotai/kimi-k3.1-pro` / DeepInfra | 324 tokens；$0.0020216；8.35s |
+
+- 正式审核仅发送 Owner 批准的单条盲审输入，两个 Reviewer 分离调用；固定真实路由与 Prompt，禁止自动重试或替换。先 create-only 保存原始 HTTP 回执（包括失败），再验证输入/目标绑定、实际返回模型/Provider、六维、严重标记、精确引文与判定一致性；私有域保留用量/费用和请求绑定。日志/Git 仅 SAFE 汇总。技术有效与文学质量、独立性、训练准入分开；不同模型家族与服务商不能证明统计独立。新服务商及模型的正式外发范围须确认，不因合成测试成功扩大授权。
+- 复用现有 Quality-v1 审核合同与冻结证据，临时 stdlib HTTP 操作仅作执行入口，不提交一次性脚本，不新增 API 管理模块。OpenRouter 直连不是本轮已验证入口，不自动切换认证、账单或数据处理路径。
+
 ## 使用规则
 
 1. **默认从最新 `origin/main` 开始。** 新开发之前先搜索现有代码、测试、规范和本索引；以**固定 SHA + 文件路径**定位，不能仅凭会变动的分支名决定复用。
