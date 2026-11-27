@@ -4,7 +4,7 @@ StoryForge is an experimental training and evaluation pipeline for interactive n
 
 ## Current work (2026-11-26)
 
-R60 remains frozen as **NO_PROMOTE**; no R61, new training or production promotion is authorized. The Owner approved a shift from historical Gold remediation to a bounded pilot of new, source-controlled original multi-turn interactions. Start with one original world and 3–5 candidate replies; reuse existing quality and SFT infrastructure. Formal admission remains zero. See the [current taskbook](docs/plans/STORYFORGE_NEW_SOURCE_QUALITY_MAINLINE_TASKBOOK_20261126_CN.md) and [next-agent handoff](docs/handoffs/STORYFORGE_NEW_SOURCE_QUALITY_NEXT_AGENT_20261126_CN.md). The historical v0.1 status below remains unchanged.
+R60 remains frozen as **NO_PROMOTE**; no R61, new training or production promotion is authorized. The R54 context-window ablation is closed: no clear degradation was observed, but noninferiority was not established. Short history is a candidate only. The next task is a bounded proposal for independent, high-quality original supervision targets, using existing source, isolation, quality and SFT gates. No new collection or model calls are authorized; formal admission remains zero. See the [current taskbook](docs/plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md), [final SAFE report](docs/quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md) and [next-agent handoff](docs/handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md). The historical v0.1 status below remains unchanged.
 
 ## Historical project status (2026-10-09)
 
