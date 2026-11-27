@@ -1,5 +1,23 @@
 # StoryForge 历史可复用资产索引（SAFE）
 
+> **2026-11-27 最新现行入口（覆盖以下旧推进建议）：** 主线改为 [上下文消融实验 v2.1](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)；[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。停止普通历史会话筛选、新世界采集、RolePlay 留证补证、重复评审与离线 Teacher 生成；旧来源/HOLD/隔离/授权不变。本轮实查 main `5de5f81f1db1724419dc699c815ae4e042639b17`，原 R54 31/9 私有文件两份 SHA 匹配、40/40 可进行三消息历史消融（同 System、同目标）；旧 CPU40 PASS，短臂未冻结/未验收。只做对照可行性裁决及预算提案，不自动训练。
+
+## 当前优先复用资产：R54 上下文消融
+
+固定历史代码/证据来源均为 `15462b8779401833a5014846bc57318dd6bc1b1c`（除另列 main）；列出路径仅作定位，接手需核对 main 与固定来源实际差异，不整体移植或重新开发。
+
+| 资产 | 优先查看 |
+|---|---|
+| R53 31/9 私有发布与字节证据 | `docs/evidence/V03_R53_FORMAL_PRIVATE_31_9_RELEASE_OWNER_RECEIPT_ACCEPTED_20261021.md`；`docs/evidence/R58_G1_R46_R54_HF_PRIMARY_INPUT_OWNER_MAC_SAFE_RECEIPT_20261031.json`。R54 原运行 Stage 两文件已实际只读重验，308291/69938 bytes、SHA 一致；不重复远端读回。具体固定路径及已知摘要见 `docs/evidence/R58_G1_R46_R54_HF_PRIMARY_INPUT_BYTE_AUDIT_RUNBOOK_SAFE_20261031.md`。 |
+| R54 实际训练参照 | `configs/v03_r54_qlora_31_9_16step_v2.yaml`；`docs/evidence/V03_R54_TRAINER_STATE_LOSS_SUMMARY_20261022.md`；`docs/evidence/V03_R54_V2_GPU_OWNER_COMPLETED_PRE_INTAKE_20261021.md`；`scripts/v03_r54_gpu_runner.py` / `v03_r54_gpu_verify.py`。旧执行器固定旧输入/摘要，禁止直接提交新派生样本。 |
+| 编译与真实监督验收 | `scripts/prepare_sft.py`（如需原转换，先核对）；`scripts/hf_label_mask_audit.py`；`skills/storyforge-roleplay-sft/SKILL.md`。私有 `R53_HF_CPU40_AUDIT_REPORT_PRIVATE.json` 已核实40/40 REAL_LAST_ASSISTANT_AND_COLLATOR_PASS；仅原字节，不能转移到短臂。 |
+| 共享训练运行能力 | `src/storyforge_dataset/hf_runtime/`、`scripts/r60_base336_gpu_{contract,stage,worker}.py`、`skills/storyforge-hf-jobs/SKILL.md`。复用接口与安全约束，不复用写死旧数量/SHA/授权的执行入口；没有明确缺件不写代码。 |
+| 固定配对诊断及评分 | `src/storyforge_dataset/generation_eval/`、`scripts/prepare_eval_pairs.py`、`scripts/analyze_blind_eval.py`、`docs/R60_GOLD48_OWNER_LOCAL_RUNBOOK_20261121_CN.md`。Gold48 已暴露，只能作内部诊断；新推理/双审必须另行批准。 |
+| 退化依据与历史对照 | `docs/R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md`；`docs/evidence/V03_THREE_GPU_TRAININGS_EXACT_DATA_LINEAGE_PRELIMINARY_20261022.md`。R46/R54 的23个相同目标并非严格配对；R54/R60 参数不同，不作因果对照。 |
+
+以下为历史资产地图和原有决议，**不是现行工作队列**。
+
+
 > **2026-11-26 增量：** 当前主线转向[新来源质量数据建设](plans/STORYFORGE_NEW_SOURCE_QUALITY_MAINLINE_TASKBOOK_20261126_CN.md)。PR #38 已合并；实查 `main@5de5f81f1db1724419dc699c815ae4e042639b17:src/storyforge_gold_quality/quality_v1.py` 存在，复用时优先调用 main 内核。该内核仍限定 `gold195`、`r58_round1` 及 `original_gold`，新来源不能冒用旧 corpus。SFT 编译器、Skill、历史恢复及 HF Runtime 仍按下表固定历史来源检查，不默认全部已进入 main。先取得真实新素材再决定必要的接口复用或最小扩展。旧索引快照保留，不重新清理历史分支。
 
 > 快照：2026-11-22；核对基线 `main` = `1b5ac810c304167f31626eba4cbf6e7b7235569d`。这是**代码/证据的查找地图**，不是自动合并清单、执行许可或质量准入回执。历史 PR、归档和本地备份均不得被误认为已经进入 `main`。

@@ -1,6 +1,6 @@
 # StoryForge — 新来源质量数据建设任务书
 
-> **2026-11-27 主线调整：** Owner 批准质量问题驱动方案，现行唯一执行入口改为 [上下文消融实验任务书](./STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)。本文作为历史决议与已完成证据保留；不再逐节追加，不执行旧的采集/筛选入口。既有安全、保护、用途、旧HOLD及授权边界仍有效；不启动训练、Teacher生成或外发评审。
+> **2026-11-27 主线调整：** Owner 批准质量问题驱动方案，现行唯一执行入口改为 [上下文消融实验任务书](./STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)，接手使用 [新 Agent 提示词](../handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。本文作为历史决议与已完成证据保留；不再逐节追加，不执行旧的采集/筛选入口。既有安全、保护、用途、旧HOLD及授权边界仍有效；不启动训练、Teacher生成或外发评审。
 
 
 **版本：** v1.25（2026-11-27）  
