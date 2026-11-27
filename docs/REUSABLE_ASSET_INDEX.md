@@ -1,8 +1,14 @@
 # StoryForge 历史可复用资产索引（SAFE）
 
-> **2026-11-27 最新现行入口（覆盖以下旧推进建议）：** 主线改为 [上下文消融实验 v2.1](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)；[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。停止普通历史会话筛选、新世界采集、RolePlay 留证补证、重复评审与离线 Teacher 生成；旧来源/HOLD/隔离/授权不变。本轮实查 main `5de5f81f1db1724419dc699c815ae4e042639b17`，原 R54 31/9 私有文件两份 SHA 匹配、40/40 可进行三消息历史消融（同 System、同目标）；旧 CPU40 PASS，短臂未冻结/未验收。只做对照可行性裁决及预算提案，不自动训练。
+> **2026-11-27 最新现行入口（覆盖下文旧推进建议）：** [收口与质量主线任务书 v3.0](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[最终报告](quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md)、[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。上下文消融已关闭：无明确退化，未证明非劣效；短历史仅候选，B 不晋升。下一任务仅为独立高质量原始监督目标的最小来源/权限/隔离/质量提案；不重开旧 HOLD、不重复查库、不启动采集、Teacher、评审或训练。既有正式准入合同和保护范围不变。
 
-## 当前优先复用资产：R54 上下文消融
+## 当前优先复用资产：监督目标质量与来源独立性
+
+- 先查既有 Source Stage、World Isolation、Quality-v1（main 已有内核，旧 corpus 限制不绕过）、SFT/CPU mask、HF Runtime；路径与来源见下方历史索引。只有真实合格候选阻塞才提出最小兼容改动。
+- 上下文实验私有数据、权重、失败回执、盲态评分和 Owner-local 映射留原域；Git 仅 SAFE 聚合。原双审与试点不作最终统计；ChatGPT 单评审仅探索性诊断，不替代正式独立双审。真实长上下文试点须先验证有效率、推理预算、证据语义再扩批；不得把短合成请求或 HTTP 200 当作质量验收。本实验不再调用 Reviewer。
+- R60 NO_PROMOTE，R61 未启动，quality_v1_admitted=0，train_admitted=0（新来源），training_authorized=false，model_promoted=false。
+
+## 历史复用资产：R54 上下文消融（已关闭，不是待办）
 
 固定历史代码/证据来源均为 `15462b8779401833a5014846bc57318dd6bc1b1c`（除另列 main）；列出路径仅作定位，接手需核对 main 与固定来源实际差异，不整体移植或重新开发。
 
