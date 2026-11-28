@@ -1,8 +1,15 @@
 # StoryForge 历史可复用资产索引（SAFE）
 
-> **2026-11-27 最新现行入口（覆盖下文旧推进建议）：** [收口与质量主线任务书 v3.0](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[最终报告](quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md)、[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。上下文消融已关闭：无明确退化，未证明非劣效；短历史仅候选，B 不晋升。下一任务仅为独立高质量原始监督目标的最小来源/权限/隔离/质量提案；不重开旧 HOLD、不重复查库、不启动采集、Teacher、评审或训练。既有正式准入合同和保护范围不变。
+> **2026-11-28 最新现行入口（覆盖下文旧推进建议）：** [任务书 v3.1](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[上下文消融最终报告](quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md)、[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。上下文消融已关闭，短历史未建立非劣效；R60 退化根因未定位。当前唯一任务是复用既有证据、有限只读定位原因，再裁决数据建设与训练策略。新来源建设延后，不启动采集、Teacher、评审或训练。正式准入及保护范围不变。
 
-## 当前优先复用资产：监督目标质量与来源独立性
+## 当前优先复用资产：R60 退化原因定位
+
+- [R60 Gold48 最终 Owner 决议](https://github.com/sunxu/storyforge/blob/15462b8779401833a5014846bc57318dd6bc1b1c/docs/R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md)：原478/480评分及48/42诊断，不重新评分。相对 R54 连续性与推进负向，非根因证明。
+- [既有 Gold3 定性诊断](quality/GOLD3_OWNER_LOCAL_QUALITY_DIAGNOSIS_20261125_CN.md) 及其引用的历史诊断、P1 与私有回执；先盘点已有结论与覆盖，不重复旧案例选取或全量审查。
+- 训练数据血缘与真实运行/监督验收见下方冻结 R54/R60 资产索引。比较可比的现成监督目标质量、分布与配置差异；只在原许可域必要时有限核查，不把不同 Reviewer 协议分值直接相减，不以 loss 作质量结论。
+- 仅提出必要的最小后续验证；不开发工具，不重新训练、生成或调用评审，不将暴露题及回答用于训练或调优。根因不明可 HOLD。
+
+## 后续复用资产：监督目标质量与来源独立性（待裁决）
 
 - 先查既有 Source Stage、World Isolation、Quality-v1（main 已有内核，旧 corpus 限制不绕过）、SFT/CPU mask、HF Runtime；路径与来源见下方历史索引。只有真实合格候选阻塞才提出最小兼容改动。
 - 上下文实验私有数据、权重、失败回执、盲态评分和 Owner-local 映射留原域；Git 仅 SAFE 聚合。原双审与试点不作最终统计；ChatGPT 单评审仅探索性诊断，不替代正式独立双审。真实长上下文试点须先验证有效率、推理预算、证据语义再扩批；不得把短合成请求或 HTTP 200 当作质量验收。本实验不再调用 Reviewer。
