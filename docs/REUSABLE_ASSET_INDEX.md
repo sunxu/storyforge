@@ -1,18 +1,13 @@
 # StoryForge 历史可复用资产索引（SAFE）
 
-> **2026-11-28 最新现行入口（覆盖下文旧推进建议）：** [任务书 v3.1](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[上下文消融最终报告](quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md)、[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。上下文消融已关闭，短历史未建立非劣效；R60 退化根因未定位。当前唯一任务是复用既有证据、有限只读定位原因，再裁决数据建设与训练策略。新来源建设延后，不启动采集、Teacher、评审或训练。正式准入及保护范围不变。
+> **2026-11-28 最新现行入口（覆盖下文旧推进建议）：** [任务书 v3.2](plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[监督目标有限对照 SAFE](quality/STORYFORGE_R60_SUPERVISION_QUALITY_COMPARISON_20261128_CN.md)、[上下文消融最终报告](quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md)、[新 Agent 提示词](handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md)。两轮诊断已关闭；监督目标有效性假设获支持，因果 HOLD；唯一下一任务为只读质量改进方案设计，不执行采集、评审或训练。
 
-## 当前优先复用资产：R60 退化原因定位
+## 当前优先复用：监督目标质量改进设计
 
-- [R60 Gold48 最终 Owner 决议](https://github.com/sunxu/storyforge/blob/15462b8779401833a5014846bc57318dd6bc1b1c/docs/R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md)：原478/480评分及48/42诊断，不重新评分。相对 R54 连续性与推进负向，非根因证明。
-- [既有 Gold3 定性诊断](quality/GOLD3_OWNER_LOCAL_QUALITY_DIAGNOSIS_20261125_CN.md) 及其引用的历史诊断、P1 与私有回执；先盘点已有结论与覆盖，不重复旧案例选取或全量审查。
-- 训练数据血缘与真实运行/监督验收见下方冻结 R54/R60 资产索引。比较可比的现成监督目标质量、分布与配置差异；只在原许可域必要时有限核查，不把不同 Reviewer 协议分值直接相减，不以 loss 作质量结论。
-- 仅提出必要的最小后续验证；不开发工具，不重新训练、生成或调用评审，不将暴露题及回答用于训练或调优。根因不明可 HOLD。
-
-## 后续复用资产：监督目标质量与来源独立性（待裁决）
-
-- 先查既有 Source Stage、World Isolation、Quality-v1（main 已有内核，旧 corpus 限制不绕过）、SFT/CPU mask、HF Runtime；路径与来源见下方历史索引。只有真实合格候选阻塞才提出最小兼容改动。
-- 上下文实验私有数据、权重、失败回执、盲态评分和 Owner-local 映射留原域；Git 仅 SAFE 聚合。原双审与试点不作最终统计；ChatGPT 单评审仅探索性诊断，不替代正式独立双审。真实长上下文试点须先验证有效率、推理预算、证据语义再扩批；不得把短合成请求或 HTTP 200 当作质量验收。本实验不再调用 Reviewer。
+- 先读 main 的 `src/storyforge_gold_quality/quality_v1.py` 与 `tests/test_quality_v1.py`；再按下方历史索引查 Gold Quality Pipeline 的实际 rubric/prompt/证据校验和 SFT Skill；不假定历史模块已在 main。只做覆盖矩阵/最小方案，已有规则优先检查执行口径，不复制框架或自动修改门禁。
+- [监督目标有限对照 SAFE](quality/STORYFORGE_R60_SUPERVISION_QUALITY_COMPARISON_20261128_CN.md)：实际 Train31/293 分布及冻结20盲审解盲；推进 FAIL 1/4、增量0/5、重复0/2。单 AI、定向小样本、长尾未覆盖；只支持假设，不证明总体或因果。不重评、不追加样本；私有正文、逐案判定、映射留原域，已批准的单次外发不延伸。
+- [R60 Gold48 最终 Owner 决议](https://github.com/sunxu/storyforge/blob/15462b8779401833a5014846bc57318dd6bc1b1c/docs/R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md)、[既有 Gold3 定性诊断](quality/GOLD3_OWNER_LOCAL_QUALITY_DIAGNOSIS_20261125_CN.md)：只复用聚合诊断，不重做案例/隔离/评审，不作训练、Prompt/超参调优或独立验收。
+- 如确有必要仅提出一次后续质量单变量验证；无合规数据则 HOLD。复用 Source Stage、World Isolation、Quality-v1、SFT/CPU mask 与 HF Runtime，任何实施另批。保护范围、旧 HOLD 与正式独立双审门禁不变。
 - R60 NO_PROMOTE，R61 未启动，quality_v1_admitted=0，train_admitted=0（新来源），training_authorized=false，model_promoted=false。
 
 ## 历史复用资产：R54 上下文消融（已关闭，不是待办）

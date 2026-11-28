@@ -1,11 +1,12 @@
-# StoryForge — 下一任 Agent 接手提示词（v3.1）
+# StoryForge — 下一任 Agent 接手提示词（v3.2）
 
-2026-11-28 · PR #44 · 上下文消融已关闭；R60 退化原因尚未定位。
+2026-11-28 · PR #44 · 上下文消融、有限退化诊断均关闭；监督目标质量假设获支持，因果 HOLD。
 
-你是 StoryForge 的下一任执行 Agent。唯一产品目标：让 Qwen/Qwen3.8-27B 中文互动叙事质量可证明优于 Base。不要偏离主线，不要重复开发，遵循最小化原理、最短实现路径。
+你是 StoryForge 下一任执行 Agent。唯一产品目标：让 Qwen/Qwen3.8-27B 中文互动叙事质量可证明优于 Base。不要偏离主线，不要重复开发，遵循最小化原理、最短实现路径。
 
-1. 先读仓库 AGENTS.md、[现行任务书](../plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[最终报告](../quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md) 和 [资产索引](../REUSABLE_ASSET_INDEX.md) 顶部。核对 PR #44 当前 HEAD/main；历史归档 `15462b8779401833a5014846bc57318dd6bc1b1c` 不修改。未合并文档不当作 main 代码。
-2. 已完成且禁止重做：R54 A/B 31/9 末三历史消融、B CPU/GPU/Gold48、失败双审与小试点、ChatGPT 96份盲态评分与48/42配对本地解盲。主分析连续性 +0.0417、推进 −0.0417、自主权 +0.2292；敏感性 −0.0476/−0.1190/+0.1667。无明确退化但未建立非劣效。短历史只是候选；不推广 B、不继续历史长度实验/评审框架。单评审、旧暴露题、先见6份 J1 评分、采样顺序未证实均保留。不要用旧诊断题或答案训练、选参、改 Prompt，不以本次替代正式双审。
-3. 唯一下一任务（只读）：按任务书第2节有限定位 R60 退化原因。先读固定 [R60 最终 Owner 决议](https://github.com/sunxu/storyforge/blob/15462b8779401833a5014846bc57318dd6bc1b1c/docs/R60_BASE336_GOLD48_QUALITY_V1_FINAL_OWNER_DECISION_20261122_CN.md)、[既有 Gold3 诊断](../quality/GOLD3_OWNER_LOCAL_QUALITY_DIAGNOSIS_20261125_CN.md)、已有 P1/Gold48/数据血缘/训练回执，逐项标注已完成和证据缺口，不重复评审或全量扫描。P0 比较 R54/R60 监督目标质量与分布（仅现成可比证据）；P1 必要时有限核对已知失败模式与目标模式，兼顾对照；P2 核对 System 缺失及其余混杂因素；P3 只有必要才提出一个最小单变量验证申请。不同评审协议的数值不可直接相减。区分相关线索和因果证据，不能排除历史窗口，也不能直接认定数据质量为根因。独立高质量原始监督目标建设延期至原因定位裁决后，不预建 corpus、框架或重新采集。
-4. 不回开 World04/Common2；E2 收藏预留评估不入训；221/T 已冻结、完整历史全集未证，原限定范围政策不扩大，不读 R50 sealed。不启动离线 Teacher/RolePlay 留证，不重复申请已批准的平台内容使用权；不在 Git/聊天写正文、私有 ID、映射、凭据、权重。
-5. 交付简洁 SAFE 原因定位报告：候选原因、既有证据及反证、已证/未证、局限、最有价值的一个最小下一步；证据不足可 HOLD，不强求根因已证。先复用，必要补充必须限定范围/理由，不扩大私有访问授权。旧诊断题仅供诊断，不用于训练、Prompt/超参调优或独立验收。任何新采集、外发、模型调用、CPU/GPU、训练、部署或晋升须另批。R60 NO_PROMOTE；R61 未启动；`quality_v1_admitted=0`、`train_admitted=0`（新来源）、`training_authorized=false`、`model_promoted=false`。
+1. 先读 AGENTS.md、[任务书 v3.2](../plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md)、[监督目标 SAFE 对照](../quality/STORYFORGE_R60_SUPERVISION_QUALITY_COMPARISON_20261128_CN.md)、[上下文消融最终报告](../quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md) 和 [资产索引](../REUSABLE_ASSET_INDEX.md) 顶部。核对 PR #44 HEAD/main；归档 15462b8779401833a5014846bc57318dd6bc1b1c 不修改；未合并文档不冒称 main 实现。
+2. 不重做 R54 A/B 31/9 末三历史消融、B CPU/GPU/Gold48、失败双审/小试点、ChatGPT 96评分和48/42解盲。主分析连续性 +0.0417、推进 −0.0417、自主权 +0.2292；敏感性 −0.0476/−0.1190/+0.1667。无明确退化、非劣效未证、短历史仅候选、B 不晋升。单评审、旧题暴露、先见6份 J1、采样顺序未证保留。
+3. R54/R60 实际 Train31/293 分布及10+10盲审已完成，不重评、不追加样本。Story 5/146，目标字符均值431.258/549.546，P95 575/1126，精确重复0/0；推进 FAIL 1/4，增量0/5，重复0/2，自主权0/0，连续性 UNKNOWN 1/1。R54 Owner 授权 AI 不是独立人工；本次单 AI、长度匹配小样本、长尾未覆盖、完整 System/早期历史不可见；仅支持可操作质量假设，总体差异及根因未证。System 缺失、来源分布、梯度累积/步数等混杂保留，不跨协议直接减分。Gold48/P1 既有诊断不重做。
+4. 唯一下一任务：按任务书第3节 D0–D2，**只读设计监督目标质量改进方案**。先查 main 的 Quality-v1 内核、历史 Gold Quality Pipeline rubric/prompt/证据校验及 SFT Skill，记录 ref/path、真实覆盖与缺口，聚焦推进、信息增量、回放。已有规则则优先检查执行口径；缺件才提最小兼容改动。不新建框架、不改代码、阈值或运行配置、不再评审、不采集、不查 Supabase。交付一份 SAFE 覆盖矩阵、唯一方案或 HOLD；必要时只提出一次未来单变量验证申请，固定 Base/System/上下文/训练规模及参数步数，尽量平衡来源与长度，独立未曝光评估及预算/验收/停止条件先定；不可控混杂明示。无合规数据则 HOLD，不实施。
+5. 不回开 World04/Common2；E2 收藏预留评估不入训；221/T 冻结、完整历史全集未证，限定政策不扩大，不读 R50 sealed。不启动离线 Teacher/RolePlay 留证，不重复申请已有权利。不将旧诊断题/输出/评语或本次抽查用于训练、目标改写、Prompt/超参调优、checkpoint 选择或独立验收；只用聚合方向。匿名外发例外仅当次20条，已用毕。Git 只 SAFE 聚合，不写正文、逐案数据、身份、映射、凭据或权重。
+6. 任何新增采集、外发、模型调用、代码/门禁变更、CPU/GPU、准入、训练、部署或晋升须另批。R60 NO_PROMOTE；R61 未启动；quality_v1_admitted=0、train_admitted=0（新来源）、training_authorized=false、model_promoted=false。
