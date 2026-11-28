@@ -2,7 +2,11 @@
 
 StoryForge is an experimental training and evaluation pipeline for interactive narrative language models, initially targeting `Qwen/Qwen3.8-27B` with SFT / QLoRA and curated multi-turn stories.
 
-## Project status (2026-10-09)
+## Current work (2026-11-28)
+
+R60 remains frozen as **NO_PROMOTE**; no R61, new training or production promotion is authorized. The R54 context-window ablation is closed: no clear degradation, noninferiority not established. The bounded R54/R60 supervision-target investigation is also closed: actual Train31/293 distribution and a frozen, single-AI, length-matched 10+10 blind review support a target-quality hypothesis (progress/information increment/repetition), not a population difference or training causality. Missing System and other confounders remain unresolved. The sole next task is **read-only supervision-quality improvement design**, reusing the existing Quality-v1/Gold Quality Pipeline; at most one future controlled verification proposal, no implementation, collection, model calls, admission or training without separate approval. See the [current taskbook v3.2](docs/plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md), [supervision comparison SAFE report](docs/quality/STORYFORGE_R60_SUPERVISION_QUALITY_COMPARISON_20261128_CN.md), [context ablation final report](docs/quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md) and [next-agent handoff](docs/handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md). The historical v0.1 status below remains unchanged.
+
+## Historical project status (2026-10-09)
 
 **v0.1 engineering: PASS. Model-quality promotion: NOT APPROVED.** Training and both held-out human review rounds are complete. The v0.1 evidence is frozen at Git tag [`v0.1-evidence-frozen`](https://github.com/sunxu/storyforge/tree/v0.1-evidence-frozen), commit `d1186a731a81219f86eb81b89ac1440dd116e9f4`.
 

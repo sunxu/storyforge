@@ -1,5 +1,7 @@
 # StoryForge — 有限质量工程收敛任务书
 
+> **2026-11-26 当前执行入口：** Owner 已批准[新来源质量数据建设任务书](STORYFORGE_NEW_SOURCE_QUALITY_MAINLINE_TASKBOOK_20261126_CN.md)。Phase 1 的 Quality-v1 内核及原有合成测试已经由 PR #38 合入 main；下文保留历史实施合同，不再作为待执行的迁移任务。停止旧 Gold 扩展筛选与历史证据修复；后续从一个原创世界、3–5 条原始互动候选的采集试点开始。只在实际素材产生且证实必要缺口后复用/最小补充现有能力。R60 NO_PROMOTE、准入0、R61 未启动及各授权边界不变。[新 Agent 接手提示词](../handoffs/STORYFORGE_NEW_SOURCE_QUALITY_NEXT_AGENT_20261126_CN.md)。
+
 **版本：** v1.0（2026-11-24）  
 **性质：** 存量工程资产审计、最小复用和必要合成回归；**不是**新的模型质量实验、评审或 R61 授权。  
 **目标仓库：** `sunxu/storyforge`；唯一集成目标为 `main`，通过独立 PR 审查。  
