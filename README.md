@@ -2,9 +2,9 @@
 
 StoryForge is an experimental training and evaluation pipeline for interactive narrative language models, initially targeting `Qwen/Qwen3.8-27B` with SFT / QLoRA and curated multi-turn stories.
 
-## Current work (2026-11-26)
+## Current work (2026-11-28)
 
-R60 remains frozen as **NO_PROMOTE**; no R61, new training or production promotion is authorized. The R54 context-window ablation is closed: no clear degradation was observed, but noninferiority was not established. Short history is a candidate only. The next task is a bounded proposal for independent, high-quality original supervision targets, using existing source, isolation, quality and SFT gates. No new collection or model calls are authorized; formal admission remains zero. See the [current taskbook](docs/plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md), [final SAFE report](docs/quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md) and [next-agent handoff](docs/handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md). The historical v0.1 status below remains unchanged.
+R60 remains frozen as **NO_PROMOTE**; no R61, new training or production promotion is authorized. The R54 context-window ablation is closed: no clear degradation was observed, but noninferiority was not established. Short history is a candidate only. The current task is a bounded, read-only investigation of R60 quality regression using existing diagnostic, supervision-target, distribution and training evidence. Root cause is not established; independent high-quality data construction is deferred until the diagnostic decision. No full re-review or additional ablation is planned. No new collection or model calls are authorized; formal admission remains zero. See the [current taskbook](docs/plans/STORYFORGE_CONTEXT_ABLATION_TASKBOOK_20261127_CN.md), [final SAFE report](docs/quality/STORYFORGE_CONTEXT_ABLATION_FINAL_20261127_CN.md) and [next-agent handoff](docs/handoffs/STORYFORGE_CONTEXT_ABLATION_NEXT_AGENT_20261127_CN.md). The historical v0.1 status below remains unchanged.
 
 ## Historical project status (2026-10-09)
 
